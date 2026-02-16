@@ -1,0 +1,187 @@
+{
+  "metadata": {
+    "title": "GoMate - 极简地点组队平台",
+    "description": "发现精彩地点，找到志同道合的伙伴，一起组队出发"
+  },
+  "navigation": {
+    "home": "首页",
+    "explore": "探索",
+    "locations": "地点",
+    "teams": "队伍",
+    "profile": "个人资料",
+    "settings": "设置",
+    "signIn": "登录",
+    "signOut": "退出",
+    "createTeam": "创建队伍"
+  },
+  "home": {
+    "hero": {
+      "title": "发现地点，组队出发",
+      "subtitle": "找到志同道合的伙伴，一起探索精彩世界",
+      "cta": "开始探索"
+    },
+    "features": {
+      "discover": {
+        "title": "发现地点",
+        "description": "探索各种精彩目的地，找到你的下一个冒险"
+      },
+      "connect": {
+        "title": "找到伙伴",
+        "description": "与志同道合的人组队，分享旅行体验"
+      },
+      "experience": {
+        "title": "创造回忆",
+        "description": "一起出发，创造难忘的旅行回忆"
+      }
+    }
+  },
+  "auth": {
+    "signIn": {
+      "title": "欢迎回来",
+      "subtitle": "登录您的 GoMate 账号",
+      "email": "邮箱",
+      "password": "密码",
+      "submit": "登录",
+      "forgotPassword": "忘记密码？",
+      "noAccount": "还没有账号？",
+      "signUp": "立即注册",
+      "orContinueWith": "或使用以下方式登录"
+    },
+    "signUp": {
+      "title": "创建账号",
+      "subtitle": "开始您的 GoMate 之旅",
+      "name": "姓名",
+      "email": "邮箱",
+      "password": "密码",
+      "confirmPassword": "确认密码",
+      "submit": "注册",
+      "hasAccount": "已有账号？",
+      "signIn": "立即登录",
+      "agreement": "注册即表示您同意我们的",
+      "terms": "服务条款",
+      "privacy": "隐私政策"
+    },
+    "verifyEmail": {
+      "title": "验证邮箱",
+      "description": "我们已向您的邮箱发送了验证链接，请查收",
+      "resend": "重新发送",
+      "checkSpam": "没有收到？请检查垃圾邮件文件夹"
+    },
+    "errors": {
+      "invalidCredentials": "邮箱或密码错误",
+      "emailExists": "该邮箱已被注册",
+      "weakPassword": "密码强度不足",
+      "invalidEmail": "请输入有效的邮箱地址",
+      "required": "此字段为必填项"
+    }
+  },
+  "location": {
+    "title": "地点",
+    "search": "搜索地点...",
+    "filters": {
+      "all": "全部",
+      "popular": "热门",
+      "nearby": "附近",
+      "recent": "最新"
+    },
+    "details": {
+      "about": "关于",
+      "teams": "队伍",
+      "reviews": "评价",
+      "photos": "照片",
+      "createTeam": "创建队伍",
+      "joinTeam": "加入队伍"
+    },
+    "noTeams": "暂无队伍，成为第一个创建者吧！"
+  },
+  "team": {
+    "title": "队伍",
+    "create": {
+      "title": "创建队伍",
+      "name": "队伍名称",
+      "description": "队伍描述",
+      "maxMembers": "最大人数",
+      "date": "出发日期",
+      "submit": "创建队伍",
+      "success": "队伍创建成功！"
+    },
+    "details": {
+      "members": "成员",
+      "spotsLeft": "剩余名额",
+      "full": "已满员",
+      "join": "申请加入",
+      "leave": "退出队伍",
+      "edit": "编辑队伍",
+      "delete": "解散队伍",
+      "share": "分享队伍",
+      "chat": "队伍聊天"
+    },
+    "application": {
+      "title": "申请加入",
+      "message": "留言（可选）",
+      "placeholder": "介绍一下自己，让队长更好地了解你...",
+      "submit": "提交申请",
+      "pending": "申请审核中",
+      "approved": "申请已通过",
+      "rejected": "申请未通过"
+    },
+    "status": {
+      "open": "招募中",
+      "closed": "已关闭",
+      "full": "已满员"
+    }
+  },
+  "profile": {
+    "title": "个人资料",
+    "edit": "编辑资料",
+    "myTeams": "我的队伍",
+    "myApplications": "我的申请",
+    "settings": {
+      "title": "设置",
+      "language": "语言",
+      "notifications": "通知",
+      "privacy": "隐私",
+      "account": "账号"
+    },
+    "form": {
+      "name": "姓名",
+      "bio": "简介",
+      "location": "所在地",
+      "website": "网站",
+      "save": "保存更改",
+      "uploadAvatar": "上传头像"
+    }
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "出错了",
+    "retry": "重试",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "save": "保存",
+    "close": "关闭",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "search": "搜索",
+    "filter": "筛选",
+    "sort": "排序",
+    "showMore": "显示更多",
+    "showLess": "收起",
+    "noResults": "暂无结果",
+    "success": "成功",
+    "copy": "复制",
+    "copied": "已复制"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{count} 分钟前",
+    "hoursAgo": "{count} 小时前",
+    "daysAgo": "{count} 天前",
+    "weeksAgo": "{count} 周前",
+    "monthsAgo": "{count} 个月前",
+    "yearsAgo": "{count} 年前"
+  }
+}

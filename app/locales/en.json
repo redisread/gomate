@@ -1,0 +1,187 @@
+{
+  "metadata": {
+    "title": "GoMate - Minimalist Location-based Team Platform",
+    "description": "Discover amazing locations, find like-minded partners, and team up for adventures"
+  },
+  "navigation": {
+    "home": "Home",
+    "explore": "Explore",
+    "locations": "Locations",
+    "teams": "Teams",
+    "profile": "Profile",
+    "settings": "Settings",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "createTeam": "Create Team"
+  },
+  "home": {
+    "hero": {
+      "title": "Discover Locations, Team Up",
+      "subtitle": "Find like-minded partners and explore the world together",
+      "cta": "Start Exploring"
+    },
+    "features": {
+      "discover": {
+        "title": "Discover",
+        "description": "Explore amazing destinations and find your next adventure"
+      },
+      "connect": {
+        "title": "Connect",
+        "description": "Team up with like-minded people and share experiences"
+      },
+      "experience": {
+        "title": "Experience",
+        "description": "Create unforgettable memories together"
+      }
+    }
+  },
+  "auth": {
+    "signIn": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your GoMate account",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign In",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up now",
+      "orContinueWith": "Or continue with"
+    },
+    "signUp": {
+      "title": "Create Account",
+      "subtitle": "Start your GoMate journey",
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Sign Up",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "agreement": "By signing up, you agree to our",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy"
+    },
+    "verifyEmail": {
+      "title": "Verify Your Email",
+      "description": "We've sent a verification link to your email",
+      "resend": "Resend",
+      "checkSpam": "Didn't receive it? Check your spam folder"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "emailExists": "This email is already registered",
+      "weakPassword": "Password is too weak",
+      "invalidEmail": "Please enter a valid email address",
+      "required": "This field is required"
+    }
+  },
+  "location": {
+    "title": "Locations",
+    "search": "Search locations...",
+    "filters": {
+      "all": "All",
+      "popular": "Popular",
+      "nearby": "Nearby",
+      "recent": "Recent"
+    },
+    "details": {
+      "about": "About",
+      "teams": "Teams",
+      "reviews": "Reviews",
+      "photos": "Photos",
+      "createTeam": "Create Team",
+      "joinTeam": "Join Team"
+    },
+    "noTeams": "No teams yet. Be the first to create one!"
+  },
+  "team": {
+    "title": "Teams",
+    "create": {
+      "title": "Create Team",
+      "name": "Team Name",
+      "description": "Description",
+      "maxMembers": "Max Members",
+      "date": "Date",
+      "submit": "Create Team",
+      "success": "Team created successfully!"
+    },
+    "details": {
+      "members": "Members",
+      "spotsLeft": "Spots left",
+      "full": "Full",
+      "join": "Apply to Join",
+      "leave": "Leave Team",
+      "edit": "Edit Team",
+      "delete": "Delete Team",
+      "share": "Share Team",
+      "chat": "Team Chat"
+    },
+    "application": {
+      "title": "Apply to Join",
+      "message": "Message (Optional)",
+      "placeholder": "Introduce yourself to the team leader...",
+      "submit": "Submit Application",
+      "pending": "Application Pending",
+      "approved": "Application Approved",
+      "rejected": "Application Rejected"
+    },
+    "status": {
+      "open": "Open",
+      "closed": "Closed",
+      "full": "Full"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "edit": "Edit Profile",
+    "myTeams": "My Teams",
+    "myApplications": "My Applications",
+    "settings": {
+      "title": "Settings",
+      "language": "Language",
+      "notifications": "Notifications",
+      "privacy": "Privacy",
+      "account": "Account"
+    },
+    "form": {
+      "name": "Name",
+      "bio": "Bio",
+      "location": "Location",
+      "website": "Website",
+      "save": "Save Changes",
+      "uploadAvatar": "Upload Avatar"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "save": "Save",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "noResults": "No results found",
+    "success": "Success",
+    "copy": "Copy",
+    "copied": "Copied"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{count} minutes ago",
+    "hoursAgo": "{count} hours ago",
+    "daysAgo": "{count} days ago",
+    "weeksAgo": "{count} weeks ago",
+    "monthsAgo": "{count} months ago",
+    "yearsAgo": "{count} years ago"
+  }
+}

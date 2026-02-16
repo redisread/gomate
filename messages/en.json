@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "title": "GoMate - Find Your Hiking Buddy",
+    "description": "GoMate is a minimalist location-based team-up platform focused on Shenzhen hiking, helping you find like-minded outdoor partners."
+  },
+  "nav": {
+    "home": "Home",
+    "locations": "Locations",
+    "teams": "Teams",
+    "login": "Login",
+    "logout": "Logout",
+    "profile": "Profile"
+  },
+  "home": {
+    "hero": {
+      "title": "Find Your Hiking Buddy",
+      "subtitle": "Discover Shenzhen's most popular hiking trails together",
+      "cta": "Start Exploring"
+    },
+    "features": {
+      "title": "Why GoMate",
+      "simple": {
+        "title": "Minimalist",
+        "description": "No complex social features, just focused on team formation"
+      },
+      "local": {
+        "title": "Curated Local",
+        "description": "Handpicked quality hiking routes in and around Shenzhen"
+      },
+      "safe": {
+        "title": "Safe & Reliable",
+        "description": "Verified identities for peace of mind on every trip"
+      }
+    },
+    "popularLocations": {
+      "title": "Popular Hiking Spots",
+      "viewAll": "View All"
+    },
+    "activeTeams": {
+      "title": "Active Teams",
+      "viewAll": "View All"
+    }
+  },
+  "location": {
+    "difficulty": "Difficulty",
+    "duration": "Duration",
+    "distance": "Distance",
+    "bestSeason": "Best Season",
+    "routeDescription": "Route Description",
+    "equipmentNeeded": "Equipment Needed",
+    "tips": "Tips",
+    "activeTeams": "Active Teams",
+    "createTeam": "Create Team",
+    "noTeams": "No active teams yet, be the first to create one"
+  },
+  "team": {
+    "status": {
+      "recruiting": "Recruiting",
+      "full": "Full",
+      "ongoing": "Ongoing",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "members": "Members",
+    "maxMembers": "Max {count} people",
+    "startTime": "Start Time",
+    "meetingPoint": "Meeting Point",
+    "requirements": "Requirements",
+    "description": "Description",
+    "join": "Join Team",
+    "leave": "Leave Team",
+    "share": "Share",
+    "leader": "Leader",
+    "member": "Member"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "more": "More",
+    "less": "Less"
+  }
+}

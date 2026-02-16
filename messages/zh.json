@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "title": "GoMate - 找到你的徒步搭子",
+    "description": "GoMate 是一个极简的地点组队平台，专注于深圳徒步场景，帮你找到志同道合的户外伙伴。"
+  },
+  "nav": {
+    "home": "首页",
+    "locations": "徒步地点",
+    "teams": "队伍",
+    "login": "登录",
+    "logout": "退出",
+    "profile": "个人中心"
+  },
+  "home": {
+    "hero": {
+      "title": "找到你的徒步搭子",
+      "subtitle": "深圳最受欢迎的徒步路线，等你一起探索",
+      "cta": "开始探索"
+    },
+    "features": {
+      "title": "为什么选择 GoMate",
+      "simple": {
+        "title": "极简体验",
+        "description": "没有复杂的社交功能，专注于组队本身"
+      },
+      "local": {
+        "title": "本地精选",
+        "description": "精选深圳及周边优质徒步路线"
+      },
+      "safe": {
+        "title": "安全可靠",
+        "description": "实名认证，让每一次出行都安心"
+      }
+    },
+    "popularLocations": {
+      "title": "热门徒步地点",
+      "viewAll": "查看全部"
+    },
+    "activeTeams": {
+      "title": "正在招募的队伍",
+      "viewAll": "查看全部"
+    }
+  },
+  "location": {
+    "difficulty": "难度",
+    "duration": "耗时",
+    "distance": "距离",
+    "bestSeason": "最佳季节",
+    "routeDescription": "路线介绍",
+    "equipmentNeeded": "所需装备",
+    "tips": "注意事项",
+    "activeTeams": "活跃队伍",
+    "createTeam": "创建队伍",
+    "noTeams": "暂无活跃队伍，来创建第一个吧"
+  },
+  "team": {
+    "status": {
+      "recruiting": "招募中",
+      "full": "已满员",
+      "ongoing": "进行中",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    },
+    "members": "成员",
+    "maxMembers": "最多 {count} 人",
+    "startTime": "出发时间",
+    "meetingPoint": "集合地点",
+    "requirements": "入队要求",
+    "description": "队伍介绍",
+    "join": "加入队伍",
+    "leave": "退出队伍",
+    "share": "分享",
+    "leader": "队长",
+    "member": "成员"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "出错了",
+    "retry": "重试",
+    "cancel": "取消",
+    "confirm": "确认",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "search": "搜索",
+    "filter": "筛选",
+    "sort": "排序",
+    "more": "更多",
+    "less": "收起"
+  }
+}
