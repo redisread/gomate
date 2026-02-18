@@ -65,6 +65,7 @@ function LocationHeader({ location, className }: LocationHeaderProps) {
           fill
           className="object-cover"
           priority
+          unoptimized
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
@@ -111,6 +112,7 @@ function LocationHeader({ location, className }: LocationHeaderProps) {
                   alt={`${location.name} ${index + 1}`}
                   fill
                   className="object-cover"
+                  unoptimized
                 />
               </button>
             ))}

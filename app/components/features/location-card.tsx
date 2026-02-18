@@ -44,6 +44,7 @@ function LocationCard({
                   alt={location.name}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  unoptimized
                 />
                 <div className="absolute top-3 left-3">
                   <DifficultyBadge difficulty={location.difficulty} size="sm" />
