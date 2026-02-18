@@ -1,9 +1,12 @@
 name = "gomate"
+main = ".open-next/worker.js"
 compatibility_date = "2025-02-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Cloudflare Pages 构建输出目录
-pages_build_output_dir = ".vercel/output/static"
+# 静态资源
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
 
 # D1 数据库绑定
 [[d1_databases]]
@@ -18,8 +21,8 @@ bucket_name = "gomate-images"
 
 # 环境变量
 [vars]
-NEXT_PUBLIC_APP_URL = "https://gomate.pages.dev"
-BETTER_AUTH_URL = "https://gomate.pages.dev"
+NEXT_PUBLIC_APP_URL = "https://gomate.your-account.workers.dev"
+BETTER_AUTH_URL = "https://gomate.your-account.workers.dev"
 
 # 密钥（通过 wrangler secret put 设置）
 # BETTER_AUTH_SECRET

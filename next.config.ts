@@ -1,11 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // 静态导出配置
-  output: 'export',
-  distDir: '.vercel/output/static',
-  trailingSlash: true,
-
   // 模块解析
   webpack: (config) => {
     config.resolve.alias = {
@@ -15,9 +10,8 @@ const nextConfig: NextConfig = {
     return config;
   },
 
-  // 图片优化配置（静态导出需要禁用）
+  // 图片优化配置
   images: {
-    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
