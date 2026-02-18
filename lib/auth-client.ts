@@ -1,9 +1,16 @@
-import { createAuthClient } from "better-auth/client";
-import { auth } from "./auth";
+import { createAuthClient } from "better-auth/react";
 
 // 创建客户端 auth 实例
+// 优先使用 window.location.origin 确保客户端请求发送到当前域名
+const getBaseURL = () => {
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:8787";
+};
+
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  baseURL: getBaseURL(),
 });
 
 // 导出常用方法

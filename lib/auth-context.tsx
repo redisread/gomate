@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { authClient } from "@/lib/auth-client";
+import type { User } from "@/db/schema";
 
-export interface User {
+export interface AuthUser {
   id: string;
   name: string;
   avatar: string;
@@ -14,102 +16,65 @@ export interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = "gomate_auth";
-const USERS_KEY = "gomate_users";
-
-// 生成唯一ID
-function generateId(): string {
-  return `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}
-
 // 默认头像
 const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face";
 
-// 获取存储的用户列表
-function getStoredUsers(): Array<{ email: string; password: string; user: User }> {
-  if (typeof window === "undefined") return [];
-  const stored = localStorage.getItem(USERS_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
-// 保存用户列表
-function saveStoredUsers(users: Array<{ email: string; password: string; user: User }>) {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  }
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<User | null>(null);
+  const [user, setUser] = React.useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // 初始化时从 localStorage 加载登录状态
+  // 使用 Better Auth 的 useSession hook 获取 session
+  const { data: session, isPending } = authClient.useSession();
+
+  // 当 session 变化时更新用户状态
   React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setUser(parsed);
-        } catch {
-          setUser(null);
-        }
-      }
+    if (session?.user) {
+      const authUser: AuthUser = {
+        id: session.user.id,
+        name: session.user.name,
+        avatar: session.user.image || DEFAULT_AVATAR,
+        email: session.user.email,
+        level: (session.user.experience as AuthUser["level"]) || "beginner",
+        completedHikes: 0, // 从其他数据源获取
+        bio: session.user.bio || "新人户外爱好者，期待与你一起探索山野。",
+        createdAt: session.user.createdAt?.toISOString() || new Date().toISOString(),
+      };
+      setUser(authUser);
+    } else {
+      setUser(null);
     }
-    setIsLoading(false);
-  }, []);
+    setIsLoading(isPending);
+  }, [session, isPending]);
 
   // 登录
   const login = React.useCallback(async (
     email: string,
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
-    // 模拟网络延迟
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const result = await authClient.signIn.email({
+        email,
+        password,
+      });
 
-    const users = getStoredUsers();
-    const found = users.find((u) => u.email === email && u.password === password);
-
-    if (!found) {
-      // 检查是否是默认测试账号
-      if (email === "test@example.com" && password === "123456") {
-        const testUser: User = {
-          id: "user-test",
-          name: "测试用户",
-          avatar: DEFAULT_AVATAR,
-          email: "test@example.com",
-          level: "intermediate",
-          completedHikes: 5,
-          bio: "热爱户外，喜欢探索新的徒步路线。",
-          createdAt: new Date().toISOString(),
-        };
-        setUser(testUser);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(testUser));
-        return { success: true };
+      if (result.error) {
+        return { success: false, error: result.error.message || "邮箱或密码错误" };
       }
-      return { success: false, error: "邮箱或密码错误" };
-    }
 
-    setUser(found.user);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(found.user));
-    return { success: true };
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: "登录失败，请稍后重试" };
+    }
   }, []);
 
   // 注册
@@ -118,53 +83,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
-    // 模拟网络延迟
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const result = await authClient.signUp.email({
+        name,
+        email,
+        password,
+        bio: "新人户外爱好者，期待与你一起探索山野。",
+        experience: "beginner",
+      });
 
-    const users = getStoredUsers();
+      if (result.error) {
+        // 处理常见错误
+        const errorMessage = result.error.message || "";
+        if (errorMessage.includes("already exists") || errorMessage.includes("已存在")) {
+          return { success: false, error: "该邮箱已被注册" };
+        }
+        if (errorMessage.includes("password") || errorMessage.includes("密码")) {
+          return { success: false, error: "密码长度至少为6位" };
+        }
+        return { success: false, error: errorMessage || "注册失败，请稍后重试" };
+      }
 
-    // 检查邮箱是否已存在
-    if (users.some((u) => u.email === email)) {
-      return { success: false, error: "该邮箱已被注册" };
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: "注册失败，请稍后重试" };
     }
-
-    // 检查邮箱格式
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return { success: false, error: "请输入有效的邮箱地址" };
-    }
-
-    // 检查密码长度
-    if (password.length < 6) {
-      return { success: false, error: "密码长度至少为6位" };
-    }
-
-    const newUser: User = {
-      id: generateId(),
-      name,
-      avatar: DEFAULT_AVATAR,
-      email,
-      level: "beginner",
-      completedHikes: 0,
-      bio: "新人户外爱好者，期待与你一起探索山野。",
-      createdAt: new Date().toISOString(),
-    };
-
-    // 保存新用户
-    users.push({ email, password, user: newUser });
-    saveStoredUsers(users);
-
-    // 自动登录
-    setUser(newUser);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
-
-    return { success: true };
   }, []);
 
   // 登出
-  const logout = React.useCallback(() => {
+  const logout = React.useCallback(async () => {
+    await authClient.signOut();
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   const value = React.useMemo(() => ({

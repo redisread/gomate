@@ -17,15 +17,80 @@ export const users = sqliteTable(
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
-    emailVerified: integer("email_verified", { mode: "boolean" }).default(false).notNull(),
+    emailVerified: integer("emailVerified", { mode: "boolean" }).default(false).notNull(),
     image: text("image"),
     bio: text("bio"),
     experience: text("experience"), // beginner, intermediate, advanced, expert
-    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
     emailIdx: uniqueIndex("users_email_idx").on(table.email),
+  })
+);
+
+// Better Auth Session 表
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    token: text("token").notNull().unique(),
+    expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
+    ipAddress: text("ipAddress"),
+    userAgent: text("userAgent"),
+    createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    userIdx: index("sessions_user_idx").on(table.userId),
+    tokenIdx: uniqueIndex("sessions_token_idx").on(table.token),
+  })
+);
+
+// Better Auth Account 表（用于 OAuth）
+export const accounts = sqliteTable(
+  "accounts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    accountId: text("accountId").notNull(),
+    providerId: text("providerId").notNull(),
+    accessToken: text("accessToken"),
+    refreshToken: text("refreshToken"),
+    accessTokenExpiresAt: integer("accessTokenExpiresAt", { mode: "timestamp" }),
+    refreshTokenExpiresAt: integer("refreshTokenExpiresAt", { mode: "timestamp" }),
+    scope: text("scope"),
+    idToken: text("idToken"),
+    password: text("password"),
+    // Better Auth 要求的字段
+    expiresAt: integer("expiresAt", { mode: "timestamp" }),
+    createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    userIdx: index("accounts_user_idx").on(table.userId),
+    providerIdx: uniqueIndex("accounts_provider_idx").on(table.providerId, table.accountId),
+  })
+);
+
+// Better Auth Verification 表
+export const verifications = sqliteTable(
+  "verifications",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
+    createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    identifierIdx: uniqueIndex("verifications_identifier_idx").on(table.identifier),
   })
 );
 
@@ -117,6 +182,22 @@ export const teamMembers = sqliteTable(
 export const usersRelations = relations(users, ({ many }) => ({
   teams: many(teams, { relationName: "leaderTeams" }),
   teamMemberships: many(teamMembers),
+  sessions: many(sessions),
+  accounts: many(accounts),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
 }));
 
 export const locationsRelations = relations(locations, ({ many }) => ({
@@ -151,6 +232,15 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+
+export type Account = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+
+export type Verification = typeof verifications.$inferSelect;
+export type NewVerification = typeof verifications.$inferInsert;
 
 export type Location = typeof locations.$inferSelect;
 export type NewLocation = typeof locations.$inferInsert;

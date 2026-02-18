@@ -8,14 +8,14 @@ GoMate 旨在用结构化的方式解决小红书找搭子信息混乱的问题�
 
 ## 技术栈
 
-- **框架**: Next.js 16 + App Router
+- **框架**: Next.js 15 + App Router
 - **React**: 19
 - **语言**: TypeScript 5 (严格模式)
 - **样式**: Tailwind CSS v4
 - **UI 组件**: shadcn/ui
 - **数据库**: CloudFlare D1 (SQLite) + Drizzle ORM
-- **认证**: Better Auth
-- **国际化**: next-intl
+- **认证**: Better Auth 1.4+
+- **部署**: CloudFlare Workers/Pages
 
 ## 快速开始
 
@@ -32,139 +32,132 @@ cp .env.example .env.local
 # 编辑 .env.local 填写实际值
 ```
 
-### 3. 数据库配置
-
-项目支持三种数据模式，通过 `.env.local` 配置：
-
-#### 模式一：Mock 数据（推荐开发使用）
-无需数据库，使用本地 mock 数据。
-
+必需的环境变量：
 ```bash
-# .env.local
-USE_MOCK_DATA=true
-USE_LOCAL_DB=false
+# Better Auth 密钥（至少 32 位）
+BETTER_AUTH_SECRET=your-secret-key
+BETTER_AUTH_URL=http://localhost:8787
 ```
 
-#### 模式二：本地 SQLite（本地开发）
-使用本地 SQLite 数据库，模拟 CloudFlare D1 环境。
-
+生成密钥：
 ```bash
-# .env.local
-USE_MOCK_DATA=false
-USE_LOCAL_DB=true
-LOCAL_DB_PATH=./local.db
+openssl rand -base64 32
 ```
 
-**初始化本地数据库：**
+### 3. 启动开发服务器
 
+项目使用 **wrangler dev** 在本地模拟 CloudFlare Workers 环境（包含 D1 数据库）：
+
+```bash
+# 构建并启动
+npm run cf:dev
+```
+
+访问 http://localhost:8787
+
+### 4. 数据库说明
+
+本地开发时，数据存储在 SQLite 文件中：
+
+```
+.wrangler/state/v3/d1/miniflare-D1DatabaseObject/
+└── {database-id}.sqlite
+```
+
+**查看本地数据：**
+```bash
+# 查看所有用户
+sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite \
+  "SELECT id, name, email, createdAt FROM users;"
+
+# 查看所有表
+sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite ".tables"
+```
+
+**数据库迁移：**
 ```bash
 # 生成迁移文件
 npm run db:generate
 
-# 执行迁移（创建表结构）
-npx tsx db/migrate.ts
-
-# 填充测试数据
-npx tsx db/seed.ts
+# 查看生成的 SQL
+ls drizzle/
 ```
 
-#### 模式三：CloudFlare D1（生产环境）
+### 5. 生产环境部署
 
+**配置密钥：**
 ```bash
-# .env.local
-USE_MOCK_DATA=false
-USE_LOCAL_DB=false
-CLOUDFLARE_ACCOUNT_ID=your-account-id
-CLOUDFLARE_DATABASE_ID=your-database-id
-CLOUDFLARE_D1_TOKEN=your-api-token
+# 生成新的生产密钥（不要在本地使用）
+openssl rand -base64 32
+
+# 设置到 Cloudflare Secrets
+wrangler secret put BETTER_AUTH_SECRET
 ```
 
-**部署到 CloudFlare D1：**
-
+**部署：**
 ```bash
-# 1. 安装 Wrangler
-npm install -g wrangler
-
-# 2. 登录 CloudFlare
-wrangler login
-
-# 3. 创建数据库
-wrangler d1 create gomate-db
-
-# 4. 获取数据库 ID
-wrangler d1 list
-
-# 5. 配置环境变量后，推送数据库结构
-wrangler d1 migrations apply gomate-db
+# 部署到 Cloudflare
+npm run cf:deploy
 ```
-
-### 4. 启动开发服务器
-
-```bash
-npm run dev
-```
-
-访问 http://localhost:3000
 
 ## 项目结构
 
 ```
 app/
-├── (marketing)/          # 营销页面组
-│   ├── page.tsx          # 首页
-│   └── layout.tsx        # 营销布局
-├── (dashboard)/          # 应用页面组
-│   ├── locations/        # 地点页面
-│   │   ├── page.tsx
-│   │   └── [slug]/
-│   ├── teams/            # 队伍页面
-│   │   ├── page.tsx
-│   │   └── [id]/
-│   └── layout.tsx        # 应用布局
-├── api/                  # API 路由
-├── globals.css
-└── layout.tsx            # 根布局
+├── api/auth/[...all]/      # Better Auth API 路由
+├── login/                   # 登录页面
+├── register/                # 注册页面
+├── locations/               # 地点相关页面
+├── teams/                   # 队伍相关页面
+├── profile/                 # 用户资料
+└── page.tsx                 # 首页
 
-components/
-├── ui/                   # shadcn/ui 组件
-├── layout/               # 布局组件
-└── sections/             # 页面区块
-
+components/                  # UI 组件
 lib/
-├── actions/              # Server Actions
-├── data/                 # 数据获取函数
-└── utils/                # 工具函数
+├── auth.ts                  # Better Auth 服务端配置
+├── auth-client.ts           # Better Auth 客户端配置
+├── auth-context.tsx         # React 认证上下文
+└── actions/                 # Server Actions
 
 db/
-├── schema.ts             # 数据库表定义 (SQLite/D1)
-├── index.ts              # 数据库连接
-├── migrate.ts            # 本地 SQLite 迁移脚本
-├── seed.ts               # 测试数据填充脚本
-└── migrations/           # 迁移文件
-
-types/
-└── index.ts              # TypeScript 类型
-
-i18n/                     # 国际化配置
-messages/                 # 翻译文件
+├── schema.ts                # 数据库表定义
+├── index.ts                 # 数据库连接
+└── migrations/              # 迁移文件
 ```
 
-## V1 功能范围
+## 认证系统
 
-### 核心页面 (3个)
+项目使用 **Better Auth** 处理用户认证：
 
-1. **首页** `/` - 营销页面，展示平台价值
-2. **地点列表** `/locations` - 深圳徒步地点浏览
-3. **地点详情** `/locations/[slug]` - 地点详情和队伍
-4. **队伍列表** `/teams` - 浏览活跃队伍
-5. **队伍详情** `/teams/[id]` - 队伍详情和加入
+- 邮箱 + 密码注册/登录
+- Session 自动管理（Cookie）
+- 密码自动加密（bcrypt）
+- 支持自定义字段（bio, experience）
 
-### 不开发的功能
+**相关文件：**
+- `lib/auth-client.ts` - 客户端配置
+- `app/api/auth/[...all]/route.ts` - API 路由
 
-- 私聊系统
-- 动态流
-- 支付功能
-- 用户个人中心完整版
+## 常用命令
+
+```bash
+# 开发（推荐）
+npm run cf:dev              # 启动 wrangler 本地调试（含 D1 数据库）
+
+# 构建
+npm run cf:build            # 构建 Cloudflare Workers 版本
+
+# 数据库
+npm run db:generate         # 生成 Drizzle 迁移文件
+npm run db:studio           # 打开 Drizzle Studio
+
+# 部署
+npm run cf:deploy           # 部署到 Cloudflare
+
+# 本地 D1 数据库操作
+sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite ".tables"
+sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite "SELECT * FROM users;"
+```
 
 ## 开发规范
 
@@ -186,68 +179,6 @@ refactor: 重构
 test: 测试
 chore: 构建/工具
 ```
-
-## 常用命令
-
-```bash
-# 开发服务器
-npm run dev
-
-# 构建生产版本
-npm run build
-
-# 代码检查
-npm run lint
-
-# 数据库操作
-npm run db:generate          # 生成迁移文件
-npm run db:studio            # 打开 Drizzle Studio 可视化工具
-
-# 本地 SQLite 操作
-npx tsx db/migrate.ts        # 执行本地数据库迁移
-npx tsx db/seed.ts           # 填充本地测试数据
-
-# CloudFlare D1 操作
-wrangler d1 list             # 列出所有 D1 数据库
-wrangler d1 migrations apply gomate-db  # 应用迁移到 D1
-wrangler d1 execute gomate-db --command="SELECT * FROM locations"  # 执行 SQL
-```
-
-## 部署
-
-### 部署到 Vercel (推荐)
-
-```bash
-vercel --prod
-```
-
-### 部署到 CloudFlare Workers (使用 D1 数据库)
-
-```bash
-# 1. 配置 wrangler.toml
-# 2. 部署
-wrangler deploy
-```
-
-**wrangler.toml 配置示例：**
-
-```toml
-name = "gomate"
-main = "src/index.ts"
-compatibility_date = "2024-01-01"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "gomate-db"
-database_id = "your-database-id"
-```
-
-## 贡献
-
-1. Fork 仓库
-2. 创建功能分支
-3. 提交更改
-4. 发起 Pull Request
 
 ## 许可证
 

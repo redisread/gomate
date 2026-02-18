@@ -135,13 +135,6 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {/* 测试账号提示 */}
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <p className="text-sm text-amber-800">
-                    <strong>测试账号：</strong>test@example.com / 123456
-                  </p>
-                </div>
-
                 {/* 登录按钮 */}
                 <Button
                   type="submit"

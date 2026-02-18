@@ -1,3 +1,23 @@
+CREATE TABLE `accounts` (
+	`id` text PRIMARY KEY NOT NULL,
+	`userId` text NOT NULL,
+	`accountId` text NOT NULL,
+	`providerId` text NOT NULL,
+	`accessToken` text,
+	`refreshToken` text,
+	`accessTokenExpiresAt` integer,
+	`refreshTokenExpiresAt` integer,
+	`scope` text,
+	`idToken` text,
+	`password` text,
+	`expiresAt` integer,
+	`createdAt` integer NOT NULL,
+	`updatedAt` integer NOT NULL,
+	FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `accounts_user_idx` ON `accounts` (`userId`);--> statement-breakpoint
+CREATE UNIQUE INDEX `accounts_provider_idx` ON `accounts` (`providerId`,`accountId`);--> statement-breakpoint
 CREATE TABLE `locations` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
@@ -20,6 +40,21 @@ CREATE TABLE `locations` (
 CREATE UNIQUE INDEX `locations_slug_unique` ON `locations` (`slug`);--> statement-breakpoint
 CREATE UNIQUE INDEX `locations_slug_idx` ON `locations` (`slug`);--> statement-breakpoint
 CREATE INDEX `locations_difficulty_idx` ON `locations` (`difficulty`);--> statement-breakpoint
+CREATE TABLE `sessions` (
+	`id` text PRIMARY KEY NOT NULL,
+	`userId` text NOT NULL,
+	`token` text NOT NULL,
+	`expiresAt` integer NOT NULL,
+	`ipAddress` text,
+	`userAgent` text,
+	`createdAt` integer NOT NULL,
+	`updatedAt` integer NOT NULL,
+	FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `sessions_token_unique` ON `sessions` (`token`);--> statement-breakpoint
+CREATE INDEX `sessions_user_idx` ON `sessions` (`userId`);--> statement-breakpoint
+CREATE UNIQUE INDEX `sessions_token_idx` ON `sessions` (`token`);--> statement-breakpoint
 CREATE TABLE `team_members` (
 	`id` text PRIMARY KEY NOT NULL,
 	`team_id` text NOT NULL,
@@ -61,13 +96,23 @@ CREATE TABLE `users` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`email` text NOT NULL,
-	`email_verified` integer DEFAULT false NOT NULL,
+	`emailVerified` integer DEFAULT false NOT NULL,
 	`image` text,
 	`bio` text,
 	`experience` text,
-	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL
+	`createdAt` integer NOT NULL,
+	`updatedAt` integer NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `users_email_unique` ON `users` (`email`);--> statement-breakpoint
-CREATE UNIQUE INDEX `users_email_idx` ON `users` (`email`);
+CREATE UNIQUE INDEX `users_email_idx` ON `users` (`email`);--> statement-breakpoint
+CREATE TABLE `verifications` (
+	`id` text PRIMARY KEY NOT NULL,
+	`identifier` text NOT NULL,
+	`value` text NOT NULL,
+	`expiresAt` integer NOT NULL,
+	`createdAt` integer NOT NULL,
+	`updatedAt` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `verifications_identifier_idx` ON `verifications` (`identifier`);

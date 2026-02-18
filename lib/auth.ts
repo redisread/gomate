@@ -1,0 +1,104 @@
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import * as schema from "@/db/schema";
+
+// 判断是否在 Cloudflare Workers 环境
+const isCloudflareWorkers = typeof globalThis !== 'undefined' &&
+  (globalThis as { env?: { DB?: unknown } }).env?.DB !== undefined;
+
+// 动态创建 auth 配置
+export const createAuth = (env?: { DB?: D1Database }) => {
+  // 如果在 Cloudflare Workers 环境，使用 D1 数据库
+  if (env?.DB) {
+    return betterAuth({
+      database: drizzleAdapter(env.DB as unknown as import("drizzle-orm").BetterSQLite3Database<typeof schema>, {
+        provider: "sqlite",
+        schema: {
+          user: schema.users,
+          session: schema.sessions,
+          account: schema.accounts,
+          verification: schema.verifications,
+        },
+      }),
+      emailAndPassword: {
+        enabled: true,
+        autoSignIn: true,
+        minPasswordLength: 6,
+        maxPasswordLength: 128,
+      },
+      session: {
+        expiresIn: 60 * 60 * 24 * 7,
+        updateAge: 60 * 60 * 24,
+      },
+      user: {
+        additionalFields: {
+          bio: {
+            type: "string",
+            required: false,
+            defaultValue: "",
+          },
+          experience: {
+            type: "string",
+            required: false,
+            defaultValue: "beginner",
+          },
+        },
+      },
+      secret: process.env.BETTER_AUTH_SECRET || "dev-secret-key",
+      baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8787",
+    });
+  }
+
+  // 本地开发环境使用 better-sqlite3
+  // 动态导入避免在 Cloudflare Workers 中加载 better-sqlite3
+  const { db } = require("@/db");
+  return betterAuth({
+    database: drizzleAdapter(db, {
+      provider: "sqlite",
+      schema: {
+        user: schema.users,
+        session: schema.sessions,
+        account: schema.accounts,
+        verification: schema.verifications,
+      },
+    }),
+    emailAndPassword: {
+      enabled: true,
+      autoSignIn: true,
+      minPasswordLength: 6,
+      maxPasswordLength: 128,
+    },
+    session: {
+      expiresIn: 60 * 60 * 24 * 7,
+      updateAge: 60 * 60 * 24,
+    },
+    user: {
+      additionalFields: {
+        bio: {
+          type: "string",
+          required: false,
+          defaultValue: "",
+        },
+        experience: {
+          type: "string",
+          required: false,
+          defaultValue: "beginner",
+        },
+      },
+    },
+    secret: process.env.BETTER_AUTH_SECRET || "dev-secret-key",
+    baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  });
+};
+
+// 默认导出（用于本地开发）
+let authInstance: ReturnType<typeof createAuth> | undefined;
+
+export const auth = new Proxy({} as ReturnType<typeof createAuth>, {
+  get(_, prop) {
+    if (!authInstance) {
+      authInstance = createAuth();
+    }
+    return authInstance[prop as keyof typeof authInstance];
+  },
+});
