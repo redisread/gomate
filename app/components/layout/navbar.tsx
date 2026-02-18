@@ -13,9 +13,9 @@ interface NavbarProps {
 
 const navLinks = [
   { href: "/", label: "首页" },
-  { href: "#locations", label: "探索地点" },
-  { href: "#teams", label: "找队伍" },
-  { href: "#about", label: "关于我们" },
+  { href: "/#locations", label: "探索地点" },
+  { href: "/#teams", label: "找队伍" },
+  { href: "/about", label: "关于我们" },
 ];
 
 function Navbar({ className }: NavbarProps) {

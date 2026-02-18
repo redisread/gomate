@@ -1,65 +1,28 @@
 import {
-  pgTable,
-  uuid,
-  varchar,
+  sqliteTable,
   text,
-  timestamp,
   integer,
-  boolean,
-  jsonb,
-  pgEnum,
+  real,
   index,
   uniqueIndex,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
-
-// ==================== Enums ====================
-
-export const difficultyEnum = pgEnum("difficulty", [
-  "easy",
-  "moderate",
-  "hard",
-  "expert",
-]);
-
-export const teamStatusEnum = pgEnum("team_status", [
-  "recruiting",
-  "full",
-  "ongoing",
-  "completed",
-  "cancelled",
-]);
-
-export const teamMemberRoleEnum = pgEnum("team_member_role", [
-  "leader",
-  "member",
-]);
-
-export const teamMemberStatusEnum = pgEnum("team_member_status", [
-  "pending",
-  "approved",
-  "rejected",
-]);
 
 // ==================== Tables ====================
 
 // 用户表（Better Auth 扩展）
-export const users = pgTable(
+export const users = sqliteTable(
   "users",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    name: varchar("name", { length: 255 }).notNull(),
-    email: varchar("email", { length: 255 }).notNull().unique(),
-    emailVerified: boolean("email_verified").default(false).notNull(),
-    image: varchar("image", { length: 500 }),
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: integer("email_verified", { mode: "boolean" }).default(false).notNull(),
+    image: text("image"),
     bio: text("bio"),
-    experience: varchar("experience", { length: 50 }), // beginner, intermediate, advanced, expert
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    experience: text("experience"), // beginner, intermediate, advanced, expert
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
     emailIdx: uniqueIndex("users_email_idx").on(table.email),
@@ -67,29 +30,25 @@ export const users = pgTable(
 );
 
 // 地点表
-export const locations = pgTable(
+export const locations = sqliteTable(
   "locations",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    name: varchar("name", { length: 255 }).notNull(),
-    slug: varchar("slug", { length: 255 }).notNull().unique(),
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
     description: text("description").notNull(),
-    difficulty: difficultyEnum("difficulty").notNull(),
-    duration: varchar("duration", { length: 100 }).notNull(), // 例如: "4-5小时"
-    distance: varchar("distance", { length: 100 }).notNull(), // 例如: "8.5公里"
-    bestSeason: varchar("best_season", { length: 100 }).array().notNull(), // ["春季", "秋季"]
-    coverImage: varchar("cover_image", { length: 500 }).notNull(),
-    images: varchar("images", { length: 500 }).array().default([]).notNull(),
+    difficulty: text("difficulty").notNull(), // easy, moderate, hard, expert
+    duration: text("duration").notNull(), // 例如: "4-5小时"
+    distance: text("distance").notNull(), // 例如: "8.5公里"
+    bestSeason: text("best_season").notNull(), // JSON 数组: ["春季", "秋季"]
+    coverImage: text("cover_image").notNull(),
+    images: text("images").notNull(), // JSON 数组
     routeDescription: text("route_description"),
     tips: text("tips"),
-    equipmentNeeded: varchar("equipment_needed", { length: 200 }).array().default([]),
-    coordinates: jsonb("coordinates").$type<{ lat: number; lng: number }>().notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    equipmentNeeded: text("equipment_needed"), // JSON 数组
+    coordinates: text("coordinates").notNull(), // JSON: { lat: number; lng: number }
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
     slugIdx: uniqueIndex("locations_slug_idx").on(table.slug),
@@ -98,30 +57,26 @@ export const locations = pgTable(
 );
 
 // 队伍表
-export const teams = pgTable(
+export const teams = sqliteTable(
   "teams",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    locationId: uuid("location_id")
+    id: text("id").primaryKey(),
+    locationId: text("location_id")
       .references(() => locations.id, { onDelete: "cascade" })
       .notNull(),
-    leaderId: uuid("leader_id")
+    leaderId: text("leader_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    title: varchar("title", { length: 255 }).notNull(),
+    title: text("title").notNull(),
     description: text("description"),
-    startTime: timestamp("start_time", { withTimezone: true }).notNull(),
-    endTime: timestamp("end_time", { withTimezone: true }).notNull(),
+    startTime: integer("start_time", { mode: "timestamp" }).notNull(),
+    endTime: integer("end_time", { mode: "timestamp" }).notNull(),
     maxMembers: integer("max_members").notNull().default(10),
-    currentMembers: integer("current_members").notNull().default(1), // 队长默认算1人
+    currentMembers: integer("current_members").notNull().default(1),
     requirements: text("requirements"), // 入队要求
-    status: teamStatusEnum("status").notNull().default("recruiting"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    status: text("status").notNull().default("recruiting"), // recruiting, full, ongoing, completed, cancelled
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
     locationIdx: index("teams_location_idx").on(table.locationId),
@@ -132,22 +87,20 @@ export const teams = pgTable(
 );
 
 // 队伍成员表
-export const teamMembers = pgTable(
+export const teamMembers = sqliteTable(
   "team_members",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    teamId: uuid("team_id")
+    id: text("id").primaryKey(),
+    teamId: text("team_id")
       .references(() => teams.id, { onDelete: "cascade" })
       .notNull(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    role: teamMemberRoleEnum("role").notNull().default("member"),
-    status: teamMemberStatusEnum("status").notNull().default("pending"),
-    joinedAt: timestamp("joined_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    role: text("role").notNull().default("member"), // leader, member
+    status: text("status").notNull().default("pending"), // pending, approved, rejected
+    joinedAt: integer("joined_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
     teamIdx: index("team_members_team_idx").on(table.teamId),
@@ -208,7 +161,8 @@ export type NewTeam = typeof teams.$inferInsert;
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type NewTeamMember = typeof teamMembers.$inferInsert;
 
-export type Difficulty = (typeof difficultyEnum.enumValues)[number];
-export type TeamStatus = (typeof teamStatusEnum.enumValues)[number];
-export type TeamMemberRole = (typeof teamMemberRoleEnum.enumValues)[number];
-export type TeamMemberStatus = (typeof teamMemberStatusEnum.enumValues)[number];
+// 枚举类型定义
+export type Difficulty = "easy" | "moderate" | "hard" | "expert";
+export type TeamStatus = "recruiting" | "full" | "ongoing" | "completed" | "cancelled";
+export type TeamMemberRole = "leader" | "member";
+export type TeamMemberStatus = "pending" | "approved" | "rejected";

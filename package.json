@@ -13,9 +13,10 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@cloudflare/workers-types": "^4.20260218.0",
     "@radix-ui/react-slot": "^1.1.0",
-    "@vercel/postgres": "^0.10.0",
     "better-auth": "^0.8.0",
+    "better-sqlite3": "^12.6.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.36.0",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

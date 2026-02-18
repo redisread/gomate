@@ -224,19 +224,22 @@ export default function HomePage() {
               加入 GoMate，发现深圳最美的徒步路线，找到志同道合的户外伙伴
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-white text-stone-900 hover:bg-stone-100 px-8"
-              >
-                立即加入
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-stone-600 text-white hover:bg-stone-800 px-8"
-              >
-                了解更多
-              </Button>
+              <Link href="/locations" className="inline-block">
+                <Button
+                  size="lg"
+                  className="bg-white text-stone-900 hover:bg-stone-100 px-8 w-full sm:w-auto"
+                >
+                  立即加入
+                </Button>
+              </Link>
+              <Link href="/about" className="inline-block">
+                <Button
+                  size="lg"
+                  className="bg-white text-stone-900 hover:bg-stone-100 px-8 w-full sm:w-auto"
+                >
+                  了解更多
+                </Button>
+              </Link>
             </div>
           </motion.div>
         </div>

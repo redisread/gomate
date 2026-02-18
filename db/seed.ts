@@ -1,541 +1,417 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { v4 as uuidv4 } from "uuid";
-import {
-  users,
-  locations,
-  teams,
-  teamMembers,
-  Difficulty,
-  TeamStatus,
-  TeamMemberRole,
-  TeamMemberStatus,
-} from "./schema";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import * as schema from "./schema";
 
-// 数据库连接
-const connectionString = process.env.DATABASE_URL;
+const localDbPath = process.env.LOCAL_DB_PATH || "./local.db";
 
-if (!connectionString) {
-  console.error("请设置 DATABASE_URL 环境变量");
-  process.exit(1);
-}
+const sqlite = new Database(localDbPath);
+const db = drizzle(sqlite, { schema });
 
-const client = postgres(connectionString, { prepare: false });
-const db = drizzle(client);
-
-// ==================== 种子数据 ====================
-
-// 示例用户
+// 测试数据 - 用户
 const seedUsers = [
   {
-    id: uuidv4(),
+    id: "user-1",
     name: "山野行者",
     email: "hiker1@example.com",
-    emailVerified: true,
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=hiker1",
-    bio: "热爱户外徒步，喜欢探索深圳周边的山野小径。每周都会组织或参加徒步活动，欢迎志同道合的朋友加入！",
+    emailVerified: 1,
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+    bio: "资深户外爱好者，深圳百山打卡进行中",
     experience: "advanced",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
   },
   {
-    id: uuidv4(),
-    name: "城市探险家",
-    email: "explorer@example.com",
-    emailVerified: true,
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=explorer",
-    bio: "周末徒步爱好者，喜欢挑战有难度的路线。有5年户外经验，熟悉深圳各大徒步路线。",
+    id: "user-2",
+    name: "光影猎人",
+    email: "photo@example.com",
+    emailVerified: 1,
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
+    bio: "风光摄影师，专注山海摄影",
     experience: "expert",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
   },
   {
-    id: uuidv4(),
-    name: "新手小白",
-    email: "newbie@example.com",
-    emailVerified: true,
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=newbie",
-    bio: "刚开始接触徒步运动，希望能找到组织一起学习进步！",
-    experience: "beginner",
-  },
-  {
-    id: uuidv4(),
-    name: "山野清风",
-    email: "breeze@example.com",
-    emailVerified: true,
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=breeze",
-    bio: "摄影爱好者，徒步时喜欢记录沿途风景。寻找一起拍照徒步的伙伴。",
+    id: "user-3",
+    name: "暖心领队",
+    email: "leader@example.com",
+    emailVerified: 1,
+    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+    bio: "热爱分享，擅长带领新手入门",
     experience: "intermediate",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
   },
   {
-    id: uuidv4(),
-    name: "深圳通",
-    email: "szlocal@example.com",
-    emailVerified: true,
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=szlocal",
-    bio: "土生土长的深圳人，对本地徒步路线了如指掌。欢迎外地朋友来深圳徒步！",
-    experience: "expert",
+    id: "user-4",
+    name: "夜行侠",
+    email: "night@example.com",
+    emailVerified: 1,
+    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+    bio: "夜爬达人，熟悉梧桐山每一条夜路",
+    experience: "advanced",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "user-5",
+    name: "超级奶爸",
+    email: "dad@example.com",
+    emailVerified: 1,
+    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face",
+    bio: "两个孩子的爸爸，经常带孩子户外活动",
+    experience: "intermediate",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
   },
 ];
 
-// 深圳徒步地点
+// 测试数据 - 地点
 const seedLocations = [
   {
-    id: uuidv4(),
-    name: "梧桐山",
-    slug: "wutong-mountain",
-    description:
-      "梧桐山是深圳第一高峰，海拔943.7米，位于深圳东部，是深圳著名的风景名胜区。山上有丰富的植被，四季景色各异，是深圳市民最喜爱的登山目的地之一。",
-    difficulty: "moderate" as Difficulty,
-    duration: "4-6小时",
-    distance: "12公里",
-    bestSeason: ["春季", "秋季", "冬季"],
-    coverImage:
-      "https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&auto=format&fit=crop",
-    images: [
-      "https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&auto=format&fit=crop",
-    ],
-    routeDescription:
-      "梧桐山有多条登山路线，最常见的是从梧桐山村出发的泰山涧路线。沿途经过泰山涧、葫芦径，最后到达大梧桐顶。下山可以选择盘山公路或原路返回。",
-    tips:
-      "1. 建议早上6-7点开始登山，避开中午高温\n2. 带足饮用水（至少2L）\n3. 部分路段较陡，建议携带登山杖\n4. 山顶风大，记得带外套\n5. 雨天路滑，请谨慎前往",
-    equipmentNeeded: ["登山鞋", "登山杖", "背包", "水壶", "防晒霜", "帽子"],
-    coordinates: { lat: 22.5964, lng: 114.2176 },
-  },
-  {
-    id: uuidv4(),
+    id: "qiniangshan",
     name: "七娘山",
-    slug: "qiniang-mountain",
-    description:
-      "七娘山位于大鹏半岛，是深圳第二高峰，海拔869米。山势险峻，风景秀丽，是深圳最美的登山路线之一。山顶可以俯瞰大鹏湾和较场尾海滩，视野极佳。",
-    difficulty: "hard" as Difficulty,
-    duration: "5-7小时",
-    distance: "10公里",
-    bestSeason: ["秋季", "冬季", "春季"],
-    coverImage:
-      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&auto=format&fit=crop",
-    images: [
-      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&auto=format&fit=crop",
-    ],
-    routeDescription:
-      "从地质公园博物馆出发，沿着石阶路向上攀登。沿途经过一号观景台、二号观景台，最后到达主峰。下山可走原路或选择环线。",
-    tips:
-      "1. 路线较陡峭，体力要求较高\n2. 建议结伴而行，不要单独登山\n3. 部分路段无遮挡，注意防晒\n4. 带好急救药品\n5. 下山较早可以顺路去较场尾看海",
-    equipmentNeeded: ["登山鞋", "登山杖", "手套", "急救包", "充足的水和食物"],
-    coordinates: { lat: 22.5567, lng: 114.5432 },
-  },
-  {
-    id: uuidv4(),
-    name: "马峦山",
-    slug: "maluan-mountain",
-    description:
-      "马峦山位于坪山区，以瀑布群闻名，是深圳最适合溯溪的徒步路线。山上有深圳最大的瀑布群，夏季是最佳的游玩季节。",
-    difficulty: "easy" as Difficulty,
-    duration: "3-4小时",
-    distance: "8公里",
-    bestSeason: ["夏季", "春季"],
-    coverImage:
-      "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=800&auto=format&fit=crop",
-    images: [
-      "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop",
-    ],
-    routeDescription:
-      "从马峦山郊野公园入口出发，沿着溪流向上游走。沿途可以欣赏到多个大小不一的瀑布，终点是马峦山大瀑布。",
-    tips:
-      "1. 夏季是最佳季节，水量充沛\n2. 可以带泳衣在浅水区戏水\n3. 石头湿滑，建议穿防滑溯溪鞋\n4. 带好驱蚊用品\n5. 保护环境，不要留下垃圾",
-    equipmentNeeded: ["溯溪鞋", "泳衣", "防水袋", "驱蚊液", "换洗衣物"],
-    coordinates: { lat: 22.6789, lng: 114.3456 },
-  },
-  {
-    id: uuidv4(),
-    name: "东西冲",
-    slug: "dongchong-xichong",
-    description:
-      "东西冲穿越是深圳最经典的海岸线徒步路线，连接东冲和西冲两个海滩。沿途可以欣赏到壮丽的海岸风光，是深圳户外爱好者的必走路线。",
-    difficulty: "moderate" as Difficulty,
-    duration: "5-6小时",
-    distance: "9公里",
-    bestSeason: ["秋季", "冬季", "春季"],
-    coverImage:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop",
-    images: [
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop",
-    ],
-    routeDescription:
-      "从东冲村出发，沿着海岸线向西穿越。需要翻越多个海岬，经过天文台，最终到达西冲海滩。沿途有绳索辅助攀爬。",
-    tips:
-      "1. 检查潮汐时间，避免涨潮时通过\n2. 带手套，需要攀爬岩石\n3. 全程无补给，带足水和食物\n4. 建议穿长袖长裤，防止擦伤\n5. 可以预约参观天文台",
-    equipmentNeeded: [
-      "防滑登山鞋",
-      "手套",
-      "充足的水",
-      "高热量食物",
-      "防晒霜",
-      "帽子",
-    ],
-    coordinates: { lat: 22.4567, lng: 114.6543 },
-  },
-  {
-    id: uuidv4(),
-    name: "大雁顶",
-    slug: "dayan-peak",
-    description:
-      "大雁顶位于大鹏半岛，海拔801米，是深圳的第三高峰。山顶视野开阔，可以360度俯瞰大鹏半岛的美景，是摄影爱好者的天堂。",
-    difficulty: "hard" as Difficulty,
+    slug: "qiniangshan",
+    description: "七娘山位于大鹏半岛南端，是深圳第二高峰，主峰海拔869米。山势险峻、雄伟，山中奇峰异石、岩洞、山泉、密林交相辉映。",
+    difficulty: "hard",
     duration: "6-8小时",
-    distance: "14公里",
-    bestSeason: ["秋季", "冬季"],
-    coverImage:
-      "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=800&auto=format&fit=crop",
-    images: [
-      "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&auto=format&fit=crop",
-    ],
-    routeDescription:
-      "从杨梅坑出发，经过鹿嘴山庄，开始登山。路线较为原始，需要一定的户外经验。到达山顶后可以原路返回或选择环线下山。",
-    tips:
-      "1. 路线较长，需要较好的体力\n2. 部分路段不明显，建议下载离线地图\n3. 带好头灯，以防天黑下山\n4. 建议提前一天住在杨梅坑\n5. 可以顺路去鹿嘴山庄看美人鱼拍摄地",
-    equipmentNeeded: [
-      "专业登山鞋",
-      "登山杖",
-      "头灯",
-      "GPS或离线地图",
-      "充足的水（3L以上）",
-      "高热量食物",
-    ],
-    coordinates: { lat: 22.5234, lng: 114.5678 },
+    distance: "12公里",
+    bestSeason: JSON.stringify(["春季", "秋季", "冬季"]),
+    coverImage: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=600&fit=crop",
+    images: JSON.stringify([
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
+    ]),
+    routeDescription: "七娘山环线是经典徒步路线，从地质公园出发，经主峰后从另一侧下山，全程约12公里。",
+    tips: "建议携带登山杖\n山顶风大记得带外套\n全程无补给",
+    equipmentNeeded: JSON.stringify(["登山杖", "防风外套", "充足的水"]),
+    coordinates: JSON.stringify({ lat: 22.4523, lng: 114.5321 }),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "wutongshan",
+    name: "梧桐山",
+    slug: "wutongshan",
+    description: "梧桐山位于深圳东部，主峰大梧桐海拔943.7米，是深圳最高峰。这里山势巍峨，森林茂密，是深圳市民最喜爱的登山目的地之一。",
+    difficulty: "moderate",
+    duration: "4-6小时",
+    distance: "10公里",
+    bestSeason: JSON.stringify(["全年"]),
+    coverImage: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=600&fit=crop",
+    images: JSON.stringify([
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop",
+    ]),
+    routeDescription: "梧桐山有多条登山路线，最经典的是从梧桐山村出发，经好汉坡登顶，全程约10公里。",
+    tips: "周末人多建议早出发\n好汉坡较陡量力而行\n山顶有补给但价格较高",
+    equipmentNeeded: JSON.stringify(["登山鞋", "足够的水", "防晒用品"]),
+    coordinates: JSON.stringify({ lat: 22.5836, lng: 114.2165 }),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "dongxichong",
+    name: "东西冲",
+    slug: "dongxichong",
+    description: "东西冲穿越是深圳最经典的海岸线徒步路线，从东冲沙滩到西冲沙滩，全长约8公里。沿途可欣赏深圳最美的海岸风光。",
+    difficulty: "moderate",
+    duration: "5-7小时",
+    distance: "8公里",
+    bestSeason: JSON.stringify(["秋季", "冬季", "春季"]),
+    coverImage: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1200&h=600&fit=crop",
+    images: JSON.stringify([
+      "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1437719417032-8595fd9e9dc6?w=800&h=600&fit=crop",
+    ]),
+    routeDescription: "东西冲穿越是深圳最受欢迎的海岸线路线，沿途需要攀爬礁石、穿越沙滩，风景绝美。",
+    tips: "穿防滑鞋\n带手套\n注意潮汐时间",
+    equipmentNeeded: JSON.stringify(["防滑鞋", "手套", "防晒用品"]),
+    coordinates: JSON.stringify({ lat: 22.4567, lng: 114.5234 }),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "maluanshan",
+    name: "马峦山",
+    slug: "maluanshan",
+    description: "马峦山位于深圳坪山区，以瀑布群闻名。这里有深圳最大的瀑布群，最大的瀑布落差达30米。",
+    difficulty: "easy",
+    duration: "3-4小时",
+    distance: "6公里",
+    bestSeason: JSON.stringify(["夏季", "秋季"]),
+    coverImage: "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=1200&h=600&fit=crop",
+    images: JSON.stringify([
+      "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=800&h=600&fit=crop",
+    ]),
+    routeDescription: "马峦山有多条路线，最经典的是从北门进入，经瀑布群后从西北门出，全程约6公里。",
+    tips: "雨后瀑布水量更大\n可带泳衣\n夏季蚊虫多",
+    equipmentNeeded: JSON.stringify(["泳衣", "驱蚊水", "防滑鞋"]),
+    coordinates: JSON.stringify({ lat: 22.6789, lng: 114.3456 }),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "tanglangshan",
+    name: "塘朗山",
+    slug: "tanglangshan",
+    description: "塘朗山位于深圳南山区，是市中心的一片绿洲。主峰海拔430米，可俯瞰深圳湾和香港。",
+    difficulty: "easy",
+    duration: "2-3小时",
+    distance: "5公里",
+    bestSeason: JSON.stringify(["全年"]),
+    coverImage: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=1200&h=600&fit=crop",
+    images: JSON.stringify([
+      "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1511497584788-876760111969?w=800&h=600&fit=crop",
+    ]),
+    routeDescription: "塘朗山路线简单明了，从龙珠门进入，沿盘山公路或石阶路登顶，适合各年龄段。",
+    tips: "地铁直达\n可带宠物\n傍晚可看日落",
+    equipmentNeeded: JSON.stringify(["运动鞋", "水", "小零食"]),
+    coordinates: JSON.stringify({ lat: 22.5567, lng: 113.9789 }),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
   },
 ];
 
-// 示例队伍
-const createSeedTeams = (
-  users: typeof seedUsers,
-  locations: typeof seedLocations
-) => {
-  const now = new Date();
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  const nextWeekend = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+// 测试数据 - 队伍
+const seedTeams = [
+  {
+    id: "team-1",
+    locationId: "qiniangshan",
+    leaderId: "user-1",
+    title: "七娘山挑战队 - 周六登顶看海",
+    description: "本周六计划挑战七娘山，看绝美海景。目前已有3人，再找2-3位伙伴一起。",
+    startTime: new Date("2026-02-22T07:00:00").getTime(),
+    endTime: new Date("2026-02-22T14:00:00").getTime(),
+    maxMembers: 6,
+    currentMembers: 3,
+    requirements: JSON.stringify(["有徒步经验", "体能较好", "自备装备"]),
+    status: "recruiting",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "team-2",
+    locationId: "qiniangshan",
+    leaderId: "user-2",
+    title: "七娘山摄影小队 - 日出专线",
+    description: "周日清晨出发，登顶拍摄七娘山日出和云海。",
+    startTime: new Date("2026-02-23T05:30:00").getTime(),
+    endTime: new Date("2026-02-23T13:30:00").getTime(),
+    maxMembers: 4,
+    currentMembers: 4,
+    requirements: JSON.stringify(["摄影爱好者", "能早起", "有头灯"]),
+    status: "full",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "team-3",
+    locationId: "wutongshan",
+    leaderId: "user-4",
+    title: "梧桐山夜爬 - 看城市日出",
+    description: "周六凌晨夜爬梧桐山，在山顶看深圳最美日出。",
+    startTime: new Date("2026-02-22T04:00:00").getTime(),
+    endTime: new Date("2026-02-22T09:00:00").getTime(),
+    maxMembers: 10,
+    currentMembers: 6,
+    requirements: JSON.stringify(["有夜爬经验", "带头灯", "保暖衣物"]),
+    status: "recruiting",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "team-4",
+    locationId: "wutongshan",
+    leaderId: "user-5",
+    title: "梧桐山亲子徒步队",
+    description: "周日带小朋友一起爬梧桐山，走较轻松的泰山涧路线。",
+    startTime: new Date("2026-02-23T09:00:00").getTime(),
+    endTime: new Date("2026-02-23T14:00:00").getTime(),
+    maxMembers: 5,
+    currentMembers: 3,
+    requirements: JSON.stringify(["带6岁以上儿童", "家长陪同", "准备零食"]),
+    status: "recruiting",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "team-5",
+    locationId: "dongxichong",
+    leaderId: "user-1",
+    title: "东西冲穿越 - 海岸线探险",
+    description: "周日东西冲穿越，体验深圳最美海岸线。",
+    startTime: new Date("2026-02-23T08:30:00").getTime(),
+    endTime: new Date("2026-02-23T14:30:00").getTime(),
+    maxMembers: 8,
+    currentMembers: 5,
+    requirements: JSON.stringify(["防滑鞋", "手套", "不怕晒"]),
+    status: "recruiting",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "team-6",
+    locationId: "maluanshan",
+    leaderId: "user-3",
+    title: "马峦山瀑布探秘 - 休闲局",
+    description: "周六马峦山看瀑布，路线轻松，适合新手和想放松的朋友。",
+    startTime: new Date("2026-02-22T09:30:00").getTime(),
+    endTime: new Date("2026-02-22T13:30:00").getTime(),
+    maxMembers: 10,
+    currentMembers: 4,
+    requirements: JSON.stringify(["休闲装备", "可带泳衣", "防蚊液"]),
+    status: "recruiting",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: "team-7",
+    locationId: "tanglangshan",
+    leaderId: "user-4",
+    title: "塘朗山晨爬 - 开启活力一天",
+    description: "周日早上塘朗山晨练，轻松登顶后下山吃早餐。",
+    startTime: new Date("2026-02-23T06:30:00").getTime(),
+    endTime: new Date("2026-02-23T09:00:00").getTime(),
+    maxMembers: 6,
+    currentMembers: 2,
+    requirements: JSON.stringify(["准时", "轻松装备"]),
+    status: "recruiting",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+];
 
-  return [
-    // 梧桐山队伍
-    {
-      id: uuidv4(),
-      locationId: locations[0].id,
-      leaderId: users[0].id,
-      title: "梧桐山日出徒步",
-      description:
-        "周六早上5点集合，一起登梧桐山看日出！预计4小时完成，适合有一定运动基础的朋友。",
-      startTime: tomorrow,
-      endTime: new Date(tomorrow.getTime() + 4 * 60 * 60 * 1000),
-      maxMembers: 8,
-      currentMembers: 3,
-      requirements: "有徒步经验，能早起",
-      status: "recruiting" as TeamStatus,
-    },
-    {
-      id: uuidv4(),
-      locationId: locations[0].id,
-      leaderId: users[1].id,
-      title: "梧桐山亲子徒步",
-      description:
-        "周日带小朋友一起爬梧桐山，走比较轻松的盘山公路，适合家庭参加。",
-      startTime: nextWeekend,
-      endTime: new Date(nextWeekend.getTime() + 5 * 60 * 60 * 1000),
-      maxMembers: 12,
-      currentMembers: 5,
-      requirements: "带6岁以上儿童的家庭",
-      status: "recruiting" as TeamStatus,
-    },
-
-    // 七娘山队伍
-    {
-      id: uuidv4(),
-      locationId: locations[1].id,
-      leaderId: users[1].id,
-      title: "挑战七娘山",
-      description:
-        "七娘山难度较大，寻找有经验的徒步伙伴一起挑战。全程约6小时，需要较好的体力。",
-      startTime: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000),
-      endTime: new Date(
-        now.getTime() + 3 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000
-      ),
-      maxMembers: 6,
-      currentMembers: 2,
-      requirements: "有中等难度徒步经验",
-      status: "recruiting" as TeamStatus,
-    },
-
-    // 马峦山队伍
-    {
-      id: uuidv4(),
-      locationId: locations[2].id,
-      leaderId: users[3].id,
-      title: "马峦山溯溪玩水",
-      description:
-        "夏天最适合去马峦山溯溪了！一起看瀑布、玩水、拍照，轻松愉快的一天。",
-      startTime: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000),
-      endTime: new Date(
-        now.getTime() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000
-      ),
-      maxMembers: 10,
-      currentMembers: 4,
-      requirements: "会游泳优先",
-      status: "recruiting" as TeamStatus,
-    },
-    {
-      id: uuidv4(),
-      locationId: locations[2].id,
-      leaderId: users[4].id,
-      title: "马峦山摄影徒步",
-      description:
-        "寻找喜欢摄影的伙伴一起去马峦山拍瀑布！我会带相机和三脚架。",
-      startTime: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000),
-      endTime: new Date(
-        now.getTime() + 5 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000
-      ),
-      maxMembers: 6,
-      currentMembers: 2,
-      requirements: "有相机，喜欢风光摄影",
-      status: "recruiting" as TeamStatus,
-    },
-
-    // 东西冲队伍
-    {
-      id: uuidv4(),
-      locationId: locations[3].id,
-      leaderId: users[0].id,
-      title: "东西冲经典穿越",
-      description:
-        "深圳最美海岸线！一起挑战东西冲穿越，看大海、爬岩石、拍美照。",
-      startTime: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000),
-      endTime: new Date(
-        now.getTime() + 4 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000
-      ),
-      maxMembers: 8,
-      currentMembers: 4,
-      requirements: "有一定运动基础，不恐高",
-      status: "recruiting" as TeamStatus,
-    },
-
-    // 大雁顶队伍
-    {
-      id: uuidv4(),
-      locationId: locations[4].id,
-      leaderId: users[4].id,
-      title: "大雁顶+鹿嘴山庄一日游",
-      description:
-        "周六去大雁顶挑战深圳第三高峰，周日去鹿嘴山庄看海，两日游安排！",
-      startTime: new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000),
-      endTime: new Date(
-        now.getTime() + 6 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000
-      ),
-      maxMembers: 6,
-      currentMembers: 3,
-      requirements: "体力好，有重装徒步经验优先",
-      status: "recruiting" as TeamStatus,
-    },
-  ];
-};
-
-// 队伍成员关系
-const createSeedTeamMembers = (
-  teams: ReturnType<typeof createSeedTeams>,
-  users: typeof seedUsers
-) => {
-  const members: {
-    id: string;
-    teamId: string;
-    userId: string;
-    role: TeamMemberRole;
-    status: TeamMemberStatus;
-    joinedAt: Date | null;
-  }[] = [];
-
-  // 为每个队伍添加队长
-  teams.forEach((team) => {
-    members.push({
-      id: uuidv4(),
-      teamId: team.id,
-      userId: team.leaderId,
-      role: "leader",
-      status: "approved",
-      joinedAt: new Date(),
-    });
-  });
-
-  // 梧桐山日出徒步 - 添加成员
-  members.push(
-    {
-      id: uuidv4(),
-      teamId: teams[0].id,
-      userId: users[2].id,
-      role: "member",
-      status: "approved",
-      joinedAt: new Date(),
-    },
-    {
-      id: uuidv4(),
-      teamId: teams[0].id,
-      userId: users[3].id,
-      role: "member",
-      status: "approved",
-      joinedAt: new Date(),
-    }
-  );
-
-  // 梧桐山亲子徒步 - 添加成员
-  members.push(
-    {
-      id: uuidv4(),
-      teamId: teams[1].id,
-      userId: users[0].id,
-      role: "member",
-      status: "approved",
-      joinedAt: new Date(),
-    },
-    {
-      id: uuidv4(),
-      teamId: teams[1].id,
-      userId: users[3].id,
-      role: "member",
-      status: "approved",
-      joinedAt: new Date(),
-    }
-  );
-
-  // 挑战七娘山 - 添加成员
-  members.push({
-    id: uuidv4(),
-    teamId: teams[2].id,
-    userId: users[4].id,
-    role: "member",
-    status: "approved",
-    joinedAt: new Date(),
-  });
-
-  // 马峦山溯溪玩水 - 添加成员
-  members.push(
-    {
-      id: uuidv4(),
-      teamId: teams[3].id,
-      userId: users[0].id,
-      role: "member",
-      status: "approved",
-      joinedAt: new Date(),
-    },
-    {
-      id: uuidv4(),
-      teamId: teams[3].id,
-      userId: users[2].id,
-      role: "member",
-      status: "pending",
-      joinedAt: null,
-    }
-  );
-
-  // 东西冲经典穿越 - 添加成员
-  members.push(
-    {
-      id: uuidv4(),
-      teamId: teams[5].id,
-      userId: users[1].id,
-      role: "member",
-      status: "approved",
-      joinedAt: new Date(),
-    },
-    {
-      id: uuidv4(),
-      teamId: teams[5].id,
-      userId: users[4].id,
-      role: "member",
-      status: "approved",
-      joinedAt: new Date(),
-    }
-  );
-
-  // 大雁顶 - 添加成员
-  members.push(
-    {
-      id: uuidv4(),
-      teamId: teams[6].id,
-      userId: users[0].id,
-      role: "member",
-      status: "approved",
-      joinedAt: new Date(),
-    },
-    {
-      id: uuidv4(),
-      teamId: teams[6].id,
-      userId: users[1].id,
-      role: "member",
-      status: "approved",
-      joinedAt: new Date(),
-    }
-  );
-
-  return members;
-};
-
-// ==================== 执行种子 ====================
+// 队伍成员数据
+const seedTeamMembers = [
+  { id: "tm-1", teamId: "team-1", userId: "user-1", role: "leader", status: "approved", joinedAt: Date.now(), createdAt: Date.now() },
+  { id: "tm-2", teamId: "team-2", userId: "user-2", role: "leader", status: "approved", joinedAt: Date.now(), createdAt: Date.now() },
+  { id: "tm-3", teamId: "team-3", userId: "user-4", role: "leader", status: "approved", joinedAt: Date.now(), createdAt: Date.now() },
+  { id: "tm-4", teamId: "team-4", userId: "user-5", role: "leader", status: "approved", joinedAt: Date.now(), createdAt: Date.now() },
+  { id: "tm-5", teamId: "team-5", userId: "user-1", role: "leader", status: "approved", joinedAt: Date.now(), createdAt: Date.now() },
+  { id: "tm-6", teamId: "team-6", userId: "user-3", role: "leader", status: "approved", joinedAt: Date.now(), createdAt: Date.now() },
+  { id: "tm-7", teamId: "team-7", userId: "user-4", role: "leader", status: "approved", joinedAt: Date.now(), createdAt: Date.now() },
+];
 
 async function seed() {
-  console.log("开始种子数据...\n");
+  console.log("🌱 开始填充测试数据...\n");
 
   try {
-    // 清空现有数据（按依赖顺序）
-    console.log("清空现有数据...");
-    await db.delete(teamMembers);
-    await db.delete(teams);
-    await db.delete(locations);
-    await db.delete(users);
+    // 清空现有数据（按外键依赖顺序）
+    console.log("🗑️  清空现有数据...");
+    sqlite.exec("DELETE FROM team_members");
+    sqlite.exec("DELETE FROM teams");
+    sqlite.exec("DELETE FROM locations");
+    sqlite.exec("DELETE FROM users");
 
     // 插入用户
-    console.log("插入用户数据...");
+    console.log("👤 插入用户数据...");
+    const userStmt = sqlite.prepare(`
+      INSERT INTO users (id, name, email, email_verified, image, bio, experience, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
     for (const user of seedUsers) {
-      await db.insert(users).values(user);
+      userStmt.run(
+        user.id,
+        user.name,
+        user.email,
+        user.emailVerified,
+        user.image,
+        user.bio,
+        user.experience,
+        user.createdAt,
+        user.updatedAt
+      );
     }
-    console.log(`✓ 插入 ${seedUsers.length} 个用户`);
+    console.log(`   ✓ 插入 ${seedUsers.length} 个用户`);
 
     // 插入地点
-    console.log("\n插入地点数据...");
-    for (const location of seedLocations) {
-      await db.insert(locations).values(location);
+    console.log("🏔️  插入地点数据...");
+    const locationStmt = sqlite.prepare(`
+      INSERT INTO locations (id, name, slug, description, difficulty, duration, distance, best_season, cover_image, images, route_description, tips, equipment_needed, coordinates, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const loc of seedLocations) {
+      locationStmt.run(
+        loc.id,
+        loc.name,
+        loc.slug,
+        loc.description,
+        loc.difficulty,
+        loc.duration,
+        loc.distance,
+        loc.bestSeason,
+        loc.coverImage,
+        loc.images,
+        loc.routeDescription,
+        loc.tips,
+        loc.equipmentNeeded,
+        loc.coordinates,
+        loc.createdAt,
+        loc.updatedAt
+      );
     }
-    console.log(`✓ 插入 ${seedLocations.length} 个地点`);
+    console.log(`   ✓ 插入 ${seedLocations.length} 个地点`);
 
     // 插入队伍
-    console.log("\n插入队伍数据...");
-    const seedTeamsList = createSeedTeams(seedUsers, seedLocations);
-    for (const team of seedTeamsList) {
-      await db.insert(teams).values(team);
+    console.log("👥 插入队伍数据...");
+    const teamStmt = sqlite.prepare(`
+      INSERT INTO teams (id, location_id, leader_id, title, description, start_time, end_time, max_members, current_members, requirements, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const team of seedTeams) {
+      teamStmt.run(
+        team.id,
+        team.locationId,
+        team.leaderId,
+        team.title,
+        team.description,
+        team.startTime,
+        team.endTime,
+        team.maxMembers,
+        team.currentMembers,
+        team.requirements,
+        team.status,
+        team.createdAt,
+        team.updatedAt
+      );
     }
-    console.log(`✓ 插入 ${seedTeamsList.length} 个队伍`);
+    console.log(`   ✓ 插入 ${seedTeams.length} 个队伍`);
 
     // 插入队伍成员
-    console.log("\n插入队伍成员数据...");
-    const seedTeamMembersList = createSeedTeamMembers(seedTeamsList, seedUsers);
-    for (const member of seedTeamMembersList) {
-      await db.insert(teamMembers).values(member);
+    console.log("📝 插入队伍成员数据...");
+    const memberStmt = sqlite.prepare(`
+      INSERT INTO team_members (id, team_id, user_id, role, status, joined_at, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const member of seedTeamMembers) {
+      memberStmt.run(
+        member.id,
+        member.teamId,
+        member.userId,
+        member.role,
+        member.status,
+        member.joinedAt,
+        member.createdAt
+      );
     }
-    console.log(`✓ 插入 ${seedTeamMembersList.length} 个队伍成员关系`);
+    console.log(`   ✓ 插入 ${seedTeamMembers.length} 个队伍成员\n`);
 
-    console.log("\n✅ 种子数据完成！");
-    console.log("\n用户账号:");
-    seedUsers.forEach((user) => {
-      console.log(`  - ${user.name}: ${user.email}`);
-    });
+    console.log("✅ 数据填充完成！");
+    console.log("\n📊 数据概览:");
+    console.log(`   • 用户: ${seedUsers.length}`);
+    console.log(`   • 地点: ${seedLocations.length}`);
+    console.log(`   • 队伍: ${seedTeams.length}`);
+    console.log(`   • 队伍成员: ${seedTeamMembers.length}`);
+
   } catch (error) {
-    console.error("\n❌ 种子数据失败:", error);
+    console.error("❌ 数据填充失败:", error);
     process.exit(1);
-  } finally {
-    await client.end();
   }
+
+  sqlite.close();
 }
 
-// 运行种子
 seed();
