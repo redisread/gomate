@@ -39,6 +39,11 @@ const nextConfig: NextConfig = {
         hostname: "avatars.githubusercontent.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "gomate.cos.jiahongw.com",
+        pathname: "/**",
+      },
     ],
     formats: ["image/webp", "image/avif"],
     minimumCacheTTL: 60 * 60 * 24 * 30,

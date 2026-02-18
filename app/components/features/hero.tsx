@@ -5,8 +5,11 @@ import { motion } from "framer-motion";
 import { ArrowRight, MapPin, Users, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 
 function Hero() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-stone-50">
       {/* Background Pattern */}
@@ -74,8 +77,11 @@ function Hero() {
               variant="outline"
               size="lg"
               className="px-8 h-12 text-base border-stone-300 hover:bg-stone-100"
+              asChild
             >
-              发布队伍
+              <Link href={isAuthenticated ? "/teams/create" : "/login"}>
+                {isAuthenticated ? "发布队伍" : "登录 / 注册"}
+              </Link>
             </Button>
           </motion.div>
 

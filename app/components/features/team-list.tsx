@@ -15,15 +15,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Team, leaderLevelLabels } from "@/lib/data/mock";
+import { leaderLevelLabels } from "@/lib/data/mock";
+import { useTeams } from "@/lib/teams-context";
+import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
 interface TeamListProps {
-  teams: Team[];
   className?: string;
+  locationId?: string;
 }
 
-function TeamList({ teams, className }: TeamListProps) {
+function TeamList({ className, locationId }: TeamListProps) {
+  const { getTeamsByLocationId } = useTeams();
+  const { isAuthenticated } = useAuth();
+  const teams = locationId ? getTeamsByLocationId(locationId) : [];
   const openTeams = teams.filter((t) => t.status === "open");
   const fullTeams = teams.filter((t) => t.status === "full");
 
@@ -42,9 +47,15 @@ function TeamList({ teams, className }: TeamListProps) {
             共有 {openTeams.length} 个队伍正在招募
           </p>
         </div>
-        <Button className="bg-stone-900 hover:bg-stone-800">
-          <Plus className="h-4 w-4 mr-2" />
-          发布队伍
+        <Button className="bg-stone-900 hover:bg-stone-800" asChild>
+          <Link href={
+            isAuthenticated
+              ? (locationId ? `/teams/create?locationId=${locationId}` : "/teams/create")
+              : "/login"
+          }>
+            <Plus className="h-4 w-4 mr-2" />
+            {isAuthenticated ? "发布队伍" : "登录后发布"}
+          </Link>
         </Button>
       </div>
 
@@ -196,9 +207,15 @@ function TeamList({ teams, className }: TeamListProps) {
             <p className="text-sm text-stone-500 mb-4">
               成为第一个发布队伍的人，开启你的户外之旅
             </p>
-            <Button className="bg-stone-900 hover:bg-stone-800">
-              <Plus className="h-4 w-4 mr-2" />
-              发布队伍
+            <Button className="bg-stone-900 hover:bg-stone-800" asChild>
+              <Link href={
+                isAuthenticated
+                  ? (locationId ? `/teams/create?locationId=${locationId}` : "/teams/create")
+                  : "/login"
+              }>
+                <Plus className="h-4 w-4 mr-2" />
+                {isAuthenticated ? "发布队伍" : "登录后发布"}
+              </Link>
             </Button>
           </CardContent>
         </Card>

@@ -12,7 +12,6 @@ import { RouteGuide } from "@/app/components/features/route-guide";
 import { TeamList } from "@/app/components/features/team-list";
 import {
   getLocationById,
-  getTeamsByLocationId,
   locations,
 } from "@/lib/data/mock";
 
@@ -25,7 +24,6 @@ interface LocationPageProps {
 export default function LocationPage({ params }: LocationPageProps) {
   const [locationId, setLocationId] = React.useState<string>("");
   const [location, setLocation] = React.useState<ReturnType<typeof getLocationById>>(undefined);
-  const [teams, setTeams] = React.useState<ReturnType<typeof getTeamsByLocationId>>([]);
 
   React.useEffect(() => {
     params.then(({ id }) => {
@@ -35,7 +33,6 @@ export default function LocationPage({ params }: LocationPageProps) {
         notFound();
       }
       setLocation(loc);
-      setTeams(getTeamsByLocationId(id));
     });
   }, [params]);
 
@@ -79,7 +76,7 @@ export default function LocationPage({ params }: LocationPageProps) {
 
             {/* Teams Section */}
             <div id="teams">
-              <TeamList teams={teams} />
+              <TeamList locationId={locationId} />
             </div>
           </div>
 

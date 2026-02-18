@@ -12,9 +12,11 @@ import { SearchBar } from "@/app/components/features/search-bar";
 import { Filter } from "@/app/components/features/filter";
 import { LocationCard } from "@/app/components/features/location-card";
 import { Button } from "@/components/ui/button";
-import { locations, teams } from "@/lib/data/mock";
+import { locations } from "@/lib/data/mock";
+import { useTeams } from "@/lib/teams-context";
 
 export default function HomePage() {
+  const { teams } = useTeams();
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [selectedFilters, setSelectedFilters] = React.useState<
     Record<string, string[]>
@@ -39,6 +41,31 @@ export default function HomePage() {
     });
   };
 
+  // Parse duration string and return category
+  const getDurationCategory = (duration: string): string => {
+    // Extract hours from duration string (e.g., "6-8小时" -> max hours, "2小时" -> hours)
+    const match = duration.match(/(\d+(?:\.\d+)?)(?:-(\d+(?:\.\d+)?))?/);
+    if (!match) return "short";
+
+    const minHours = parseFloat(match[1]);
+    const maxHours = match[2] ? parseFloat(match[2]) : minHours;
+
+    // Use max hours to determine category
+    if (maxHours <= 4) return "short";      // 半日内 (<= 4 hours)
+    if (maxHours <= 10) return "day";       // 一日 (4-10 hours)
+    return "multi";                         // 多日 (> 10 hours or contains "天")
+  };
+
+  // Get region from address
+  const getRegionFromAddress = (address: string): string => {
+    if (address.includes("南山区")) return "nanshan";
+    if (address.includes("福田区")) return "futian";
+    if (address.includes("罗湖区")) return "luohu";
+    if (address.includes("大鹏新区")) return "dapeng";
+    if (address.includes("坪山区")) return "pingshan";
+    return "";
+  };
+
   // Filter locations based on selected filters
   const filteredLocations = React.useMemo(() => {
     return locations.filter((location) => {
@@ -49,6 +76,23 @@ export default function HomePage() {
       ) {
         return false;
       }
+
+      // Filter by duration
+      if (selectedFilters.duration?.length > 0) {
+        const category = getDurationCategory(location.duration);
+        if (!selectedFilters.duration.includes(category)) {
+          return false;
+        }
+      }
+
+      // Filter by region
+      if (selectedFilters.region?.length > 0) {
+        const region = getRegionFromAddress(location.location.address);
+        if (!selectedFilters.region.includes(region)) {
+          return false;
+        }
+      }
+
       return true;
     });
   }, [selectedFilters]);
@@ -116,9 +160,12 @@ export default function HomePage() {
               variant="outline"
               size="lg"
               className="border-stone-300 hover:bg-stone-50"
+              asChild
             >
-              查看全部地点
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <Link href="/locations">
+                查看全部地点
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </motion.div>
         </div>
@@ -200,9 +247,12 @@ export default function HomePage() {
               variant="outline"
               size="lg"
               className="border-stone-300 hover:bg-white"
+              asChild
             >
-              查看全部队伍
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <Link href="/teams">
+                查看全部队伍
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </motion.div>
         </div>

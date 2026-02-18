@@ -15,12 +15,8 @@ import { LeaderCard } from "@/app/components/features/leader-card";
 import { JoinButton } from "@/app/components/features/join-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  getTeamById,
-  getLocationById,
-  getTeamsByLocationId,
-  locations,
-} from "@/lib/data/mock";
+import { getLocationById, locations } from "@/lib/data/mock";
+import { useTeams } from "@/lib/teams-context";
 
 interface TeamPageProps {
   params: Promise<{
@@ -29,6 +25,7 @@ interface TeamPageProps {
 }
 
 export default function TeamPage({ params }: TeamPageProps) {
+  const { getTeamById, getTeamsByLocationId } = useTeams();
   const [teamId, setTeamId] = React.useState<string>("");
   const [team, setTeam] = React.useState<ReturnType<typeof getTeamById>>(undefined);
   const [location, setLocation] = React.useState<ReturnType<typeof getLocationById>>(undefined);
@@ -49,7 +46,7 @@ export default function TeamPage({ params }: TeamPageProps) {
       const allTeams = getTeamsByLocationId(t.locationId);
       setOtherTeams(allTeams.filter((ot) => ot.id !== id && ot.status === "open").slice(0, 2));
     });
-  }, [params]);
+  }, [params, getTeamById, getTeamsByLocationId]);
 
   if (!team || !location) {
     return (
@@ -75,6 +72,7 @@ export default function TeamPage({ params }: TeamPageProps) {
           alt={location.name}
           fill
           className="object-cover"
+          unoptimized={location.coverImage.includes('gomate.cos.jiahongw.com')}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
