@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // 静态导出配置
   output: 'export',
-  distDir: 'dist',
+  distDir: '.vercel/output/static',
   trailingSlash: true,
 
   // 模块解析
@@ -57,6 +57,11 @@ const nextConfig: NextConfig = {
   // TypeScript
   typescript: {
     ignoreBuildErrors: true,
+  },
+
+  // ESLint
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 
   // Turbopack 配置

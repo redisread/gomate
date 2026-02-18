@@ -15,7 +15,7 @@ import { LeaderCard } from "@/app/components/features/leader-card";
 import { JoinButton } from "@/app/components/features/join-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getLocationById, locations } from "@/lib/data/mock";
+import { getLocationById } from "@/lib/data/mock";
 import { useTeams } from "@/lib/teams-context";
 
 interface TeamPageContentProps {
