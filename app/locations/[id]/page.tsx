@@ -1,5 +1,5 @@
 import { locations } from "@/lib/data/mock";
-import { LocationPageClient } from "./location-page-client";
+import LocationPageContent from "./content";
 
 // 静态导出参数生成
 export function generateStaticParams() {
@@ -16,5 +16,5 @@ interface LocationPageProps {
 
 export default async function LocationPage({ params }: LocationPageProps) {
   const { id } = await params;
-  return <LocationPageClient locationId={id} />;
+  return <LocationPageContent locationId={id} />;
 }

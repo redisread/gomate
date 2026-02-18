@@ -1,14 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Turbopack is enabled by default in Next.js 16
-
-  // Cloudflare Pages 静态导出配置
+  // 静态导出配置
   output: 'export',
   distDir: 'dist',
   trailingSlash: true,
 
-  // Module resolution
+  // 模块解析
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -17,7 +15,7 @@ const nextConfig: NextConfig = {
     return config;
   },
 
-  // Image optimization configuration (静态导出需要禁用图片优化)
+  // 图片优化配置（静态导出需要禁用）
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -56,35 +54,12 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
 
-  // Headers
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: [
-          {
-            key: "X-Frame-Options",
-            value: "DENY",
-          },
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-        ],
-      },
-    ];
-  },
-
   // TypeScript
   typescript: {
     ignoreBuildErrors: true,
   },
 
-  // Turbopack configuration
+  // Turbopack 配置
   turbopack: {
     resolveAlias: {
       '@/app/*': './app/*',

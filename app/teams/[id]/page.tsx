@@ -1,5 +1,5 @@
 import { teams } from "@/lib/data/mock";
-import { TeamPageClient } from "./team-page-client";
+import TeamPageContent from "./content";
 
 // 静态导出参数生成
 export function generateStaticParams() {
@@ -16,5 +16,5 @@ interface TeamPageProps {
 
 export default async function TeamPage({ params }: TeamPageProps) {
   const { id } = await params;
-  return <TeamPageClient teamId={id} />;
+  return <TeamPageContent teamId={id} />;
 }

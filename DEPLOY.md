@@ -2,33 +2,23 @@
 
 ## 概述
 
-本文档详细介绍如何将 GoMate 项目（Next.js 16 + React 19）部署到 Cloudflare 平台。
+本文档介绍如何将 GoMate 项目部署到 Cloudflare Workers + D1。
 
 **技术栈**:
 - **框架**: Next.js 16.1.6 + React 19.2.3
-- **部署方式**: Cloudflare Pages 静态导出
+- **部署方式**: Cloudflare Workers (静态导出 + Worker 脚本)
 - **数据库**: Cloudflare D1 (SQLite)
-- **API**: Cloudflare Pages Functions
 - **存储**: Cloudflare R2 (图片，可选)
 - **认证**: Better Auth
 
-**部署架构**:
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Cloudflare Pages                         │
-│  ┌──────────────┐  ┌─────────────────┐  ┌──────────────┐   │
-│  │  静态页面     │  │  Pages Functions │  │  D1 数据库    │   │
-│  │  (Next.js)   │  │    (API)         │  │  (SQLite)    │   │
-│  └──────────────┘  └─────────────────┘  └──────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
+**注意**: 由于 OpenNext 与 Next.js 16 存在兼容性问题，本项目采用**静态导出 + Workers** 方案。
 
 ---
 
 ## 前置要求
 
 - Node.js 20+
-- npm 或 pnpm
+- npm
 - Cloudflare 账号
 - wrangler CLI
 
@@ -52,16 +42,14 @@ npm install
 wrangler login
 ```
 
-浏览器会打开授权页面，点击允许访问。
-
 ### 3. 创建 D1 数据库
 
 ```bash
 # 创建数据库
-npm run d1:create
+wrangler d1 create gomate-db
 
 # 记录输出中的 database_id
-# 例如: database_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+# 例如: database_id = "7d17d076-202f-48f8-b343-24209cdb0ba1"
 ```
 
 ### 4. 更新 wrangler.toml
@@ -72,17 +60,19 @@ npm run d1:create
 [[d1_databases]]
 binding = "DB"
 database_name = "gomate-db"
-database_id = "你的数据库ID"  # <-- 替换为第3步获取的ID
+database_id = "你的数据库ID"
 ```
 
-### 5. 运行数据库迁移
+### 5. 应用数据库迁移
 
 ```bash
 # 应用迁移（本地测试）
-npm run d1:migrate:local
+wrangler d1 execute gomate-db --file=./migrations/0001_init.sql --local
+wrangler d1 execute gomate-db --file=./migrations/0002_seed.sql --local
 
 # 应用迁移（生产环境）
-npm run d1:migrate:prod
+wrangler d1 execute gomate-db --file=./migrations/0001_init.sql --remote
+wrangler d1 execute gomate-db --file=./migrations/0002_seed.sql --remote
 ```
 
 ### 6. 设置密钥
@@ -91,38 +81,35 @@ npm run d1:migrate:prod
 # 生成 Better Auth Secret
 openssl rand -base64 32
 
-# 设置密钥
+# 设置密钥（需要先部署一次 Workers）
 wrangler secret put BETTER_AUTH_SECRET
-# 粘贴生成的密钥
 ```
 
-### 7. 本地构建测试
+### 7. 本地开发测试
 
 ```bash
 # 构建静态站点
-npm run pages:build
+npm run cf:build
 
-# 本地预览（需要先在 wrangler.toml 中配置数据库ID）
-npm run pages:preview
+# 本地开发
+wrangler dev
 ```
 
-### 8. 部署到 Cloudflare Pages
+### 8. 部署到 Cloudflare Workers
 
 ```bash
+# 构建
+npm run cf:build
+
 # 部署
-npm run pages:deploy
+npm run cf:deploy
 ```
 
-或使用 Git 集成（推荐）：
-
-1. 推送代码到 GitHub
-2. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
-3. 进入 Pages → 创建项目 → 连接 GitHub 仓库
-4. 构建设置：
-   - **Build command**: `npm run pages:build`
-   - **Build output directory**: `dist`
-5. 添加环境变量和数据库绑定
-6. 保存并部署
+部署成功后会显示 Workers 域名，例如：
+```
+✨ Successfully published your script to:
+https://gomate.your-account.workers.dev
+```
 
 ---
 
@@ -132,11 +119,9 @@ npm run pages:deploy
 
 ```toml
 name = "gomate"
+main = "worker.ts"
 compatibility_date = "2025-02-01"
 compatibility_flags = ["nodejs_compat"]
-
-# 构建输出目录
-pages_build_output_dir = "dist"
 
 # D1 数据库绑定
 [[d1_databases]]
@@ -151,8 +136,8 @@ bucket_name = "gomate-images"
 
 # 环境变量
 [vars]
-NEXT_PUBLIC_APP_URL = "https://gomate.pages.dev"
-BETTER_AUTH_URL = "https://gomate.pages.dev"
+NEXT_PUBLIC_APP_URL = "https://gomate.your-account.workers.dev"
+BETTER_AUTH_URL = "https://gomate.your-account.workers.dev"
 ```
 
 ### package.json Scripts
@@ -162,10 +147,8 @@ BETTER_AUTH_URL = "https://gomate.pages.dev"
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "pages:build": "next build",
-    "pages:preview": "wrangler pages dev dist --compatibility-flags=nodejs_compat",
-    "pages:deploy": "wrangler pages deploy dist",
-    "cf-typegen": "wrangler types",
+    "cf:build": "next build",
+    "cf:deploy": "wrangler deploy",
     "d1:create": "wrangler d1 create gomate-db",
     "d1:migrate:local": "wrangler d1 migrations apply gomate-db --local",
     "d1:migrate:prod": "wrangler d1 migrations apply gomate-db --remote"
@@ -176,8 +159,10 @@ BETTER_AUTH_URL = "https://gomate.pages.dev"
 ### next.config.ts 配置
 
 ```typescript
+import type { NextConfig } from "next";
+
 const nextConfig: NextConfig = {
-  // Cloudflare Pages 静态导出配置
+  // 静态导出配置
   output: 'export',
   distDir: 'dist',
   trailingSlash: true,
@@ -188,42 +173,46 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "*.r2.cloudflarestorage.com" },
-      { protocol: "https", hostname: "*.r2.dev" },
     ],
   },
-
-  // ... 其他配置
 };
+
+export default nextConfig;
+```
+
+---
+
+## 项目结构
+
+```
+gomate/
+├── app/                          # Next.js App Router
+│   ├── locations/[id]/           # 动态路由
+│   │   ├── page.tsx              # 服务器组件
+│   │   └── content.tsx           # 客户端组件
+│   └── teams/[id]/
+│       ├── page.tsx
+│       └── content.tsx
+├── db/                           # 数据库配置
+│   ├── schema.ts
+│   └── index.ts
+├── migrations/                   # D1 迁移文件
+│   ├── 0001_init.sql
+│   └── 0002_seed.sql
+├── worker.ts                     # Workers 入口脚本
+├── wrangler.toml                 # Wrangler 配置
+└── next.config.ts                # Next.js 配置
 ```
 
 ---
 
 ## 数据库管理
 
-### 创建迁移
-
-```bash
-# 创建新的迁移文件
-wrangler d1 migrations create gomate-db 迁移名称
-
-# 编辑 migrations/xxx_迁移名称.sql
-```
-
-### 应用迁移
-
-```bash
-# 本地测试
-wrangler d1 migrations apply gomate-db --local
-
-# 生产环境
-wrangler d1 migrations apply gomate-db --remote
-```
-
 ### 执行 SQL
 
 ```bash
 # 执行 SQL 文件
-wrangler d1 execute gomate-db --file=./migrations/0002_seed.sql --remote
+wrangler d1 execute gomate-db --file=./migrations/xxxx.sql --remote
 
 # 执行单行命令
 wrangler d1 execute gomate-db --command="SELECT * FROM locations" --remote
@@ -234,42 +223,6 @@ wrangler d1 execute gomate-db --command="SELECT * FROM locations" --remote
 ```bash
 # 导出数据
 wrangler d1 export gomate-db --remote --output=backup.sql
-```
-
----
-
-## API 开发
-
-### Pages Functions 目录结构
-
-```
-functions/
-└── api/
-    └── [[path]].ts    # 通配路由处理器
-```
-
-### 添加新 API 端点
-
-编辑 `functions/api/[[path]].ts`：
-
-```typescript
-// 示例：添加用户相关 API
-if (path === "/users" && request.method === "GET") {
-  const result = await (env as Env).DB.prepare(
-    "SELECT id, name, image FROM users LIMIT 10"
-  ).all();
-  return jsonResponse({ success: true, data: result.results });
-}
-```
-
-### 本地测试 API
-
-```bash
-# 启动本地开发服务器
-npm run pages:preview
-
-# 测试 API
-curl http://localhost:8788/api/health
 ```
 
 ---
@@ -291,7 +244,6 @@ BETTER_AUTH_URL=http://localhost:3000
 ```bash
 # 设置密钥
 wrangler secret put BETTER_AUTH_SECRET
-wrangler secret put DATABASE_URL  # 如果需要
 ```
 
 ### 生产环境 (Cloudflare Vars)
@@ -300,8 +252,8 @@ wrangler secret put DATABASE_URL  # 如果需要
 
 ```toml
 [vars]
-NEXT_PUBLIC_APP_URL = "https://gomate.pages.dev"
-BETTER_AUTH_URL = "https://gomate.pages.dev"
+NEXT_PUBLIC_APP_URL = "https://gomate.your-account.workers.dev"
+BETTER_AUTH_URL = "https://gomate.your-account.workers.dev"
 ```
 
 ---
@@ -331,35 +283,23 @@ export function generateStaticParams() {
 **解决**:
 1. 检查 `wrangler.toml` 中的 `database_id` 是否正确
 2. 确认数据库已创建：`wrangler d1 list`
-3. 检查数据库绑定是否在 Pages 设置中配置
 
-### 问题 3：API 404 错误
-
-**症状**: 调用 `/api/xxx` 返回 404
-
-**解决**:
-1. 检查 `functions/api/[[path]].ts` 是否正确配置
-2. 确认文件路径是 `functions/api/[[path]].ts`（双括号表示通配）
-3. 本地测试：`wrangler pages dev dist`
-
-### 问题 4：图片不显示
+### 问题 3：图片不显示
 
 **症状**: 图片加载失败
 
 **解决**:
 1. 确认 `next.config.ts` 中设置了 `unoptimized: true`
 2. 检查图片域名是否在 `remotePatterns` 中
-3. 确认图片 URL 是可公开访问的
 
-### 问题 5：Better Auth 认证失败
+### 问题 4：Better Auth 认证失败
 
 **症状**: 登录/注册报错
 
 **解决**:
-1. 检查 `BETTER_AUTH_SECRET` 是否设置：`wrangler secret list`
+1. 检查 `BETTER_AUTH_SECRET` 是否设置
 2. 确认 `BETTER_AUTH_URL` 使用生产域名
 3. 检查数据库表是否正确创建
-4. 确认用户表结构与 Better Auth 兼容
 
 ---
 
@@ -368,37 +308,35 @@ export function generateStaticParams() {
 ### 查看实时日志
 
 ```bash
-wrangler pages deployment tail --project-name gomate
+wrangler tail
 ```
 
 ### Dashboard 监控
 
 - [Cloudflare Dashboard](https://dash.cloudflare.com)
-- 选择你的 Pages 项目
+- 选择 **Workers & Pages**
 - 查看：
-  - 部署历史
-  - 流量分析
-  - Functions 日志
+  - 调用统计
+  - 错误率
   - D1 查询统计
 
 ---
 
 ## 自定义域名
 
-1. 在 Cloudflare Dashboard 进入 Pages 项目
-2. 点击 "Custom domains" 标签
-3. 点击 "Set up a custom domain"
+1. 在 Cloudflare Dashboard 进入 Workers 项目
+2. 点击 **Triggers** 标签
+3. 点击 **Add Custom Domain**
 4. 输入你的域名（如 `gomate.com`）
 5. 按照提示添加 DNS 记录
-6. 等待 SSL 证书生成（通常几分钟）
-7. 更新 `wrangler.toml` 和 `BETTER_AUTH_URL`
+6. 更新 `wrangler.toml` 中的 URL 配置
 
 ---
 
 ## 成本估算
 
 Cloudflare 免费额度：
-- **Pages**: 无限请求，500 次构建/月
+- **Workers**: 100,000 请求/天
 - **D1**: 500 万次查询/天，5GB 存储
 - **R2**: 10GB 存储，100 万次读取/月
 - **带宽**: 无限
@@ -407,24 +345,22 @@ Cloudflare 免费额度：
 
 ---
 
-## 注意事项
+## 部署方案对比
 
-1. **Next.js 16 静态导出**: 由于 Next.js 16 不完全兼容 Cloudflare Workers Edge Runtime，我们使用静态导出 + Pages Functions 的方案
-
-2. **动态路由**: 所有动态路由必须在构建时确定，使用 `generateStaticParams`
-
-3. **API 路由**: Server Actions 在静态导出时不直接支持，需要通过 Pages Functions 或 Fetch API 调用
-
-4. **图片优化**: 静态导出时禁用 Next.js 图片优化，使用原始图片 URL 或 Cloudflare Images
-
-5. **数据库**: D1 是 SQLite 兼容的，但不支持某些高级特性（如外键约束在默认情况下不启用）
+| 特性 | 当前方案 (Workers + 静态导出) | OpenNext + Workers | 静态导出 + Pages |
+|------|------------------------------|-------------------|------------------|
+| SSR | ❌ 不支持 | ✅ 完整支持 | ❌ 不支持 |
+| API Routes | ✅ Workers 支持 | ✅ 原生支持 | ⚠️ 需 Functions |
+| Server Actions | ❌ 不支持 | ✅ 原生支持 | ❌ 不支持 |
+| 动态路由 | ⚠️ 需 generateStaticParams | ✅ 无需配置 | ⚠️ 需 generateStaticParams |
+| 图片优化 | ❌ 需禁用 | ✅ 支持 | ❌ 需禁用 |
+| 部署复杂度 | 简单 | 中等 | 简单 |
 
 ---
 
 ## 参考链接
 
-- [Cloudflare Pages 文档](https://developers.cloudflare.com/pages/)
+- [Cloudflare Workers 文档](https://developers.cloudflare.com/workers/)
 - [Cloudflare D1 文档](https://developers.cloudflare.com/d1/)
-- [Cloudflare Pages Functions](https://developers.cloudflare.com/pages/functions/)
 - [Wrangler CLI 文档](https://developers.cloudflare.com/workers/wrangler/)
 - [Next.js Static Export](https://nextjs.org/docs/app/building-your-application/deploying/static-exports)
