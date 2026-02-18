@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { drizzle as drizzleD1 } from "drizzle-orm/d1";
 import Database from "better-sqlite3";
 import * as schema from "./schema";
 
@@ -22,6 +23,35 @@ if (!isMockMode && isLocalDb) {
 
 // 导出 drizzle 实例（mock 模式或远程 D1 模式下为 undefined）
 export const db = dbInstance;
+
+/**
+ * 创建 D1 数据库实例（用于 Cloudflare Workers/Pages 环境）
+ * @param d1Database - Cloudflare D1 数据库绑定
+ * @returns Drizzle ORM 实例
+ */
+export function createD1Client(d1Database: D1Database) {
+  return drizzleD1(d1Database, { schema });
+}
+
+/**
+ * 获取数据库实例（支持本地和 D1 模式）
+ * @param env - 环境变量（包含 D1 绑定）
+ * @returns Drizzle ORM 实例
+ */
+export function getDB(env?: { DB?: D1Database }) {
+  if (env?.DB) {
+    // Cloudflare D1 模式
+    return createD1Client(env.DB);
+  }
+  if (dbInstance) {
+    // 本地 SQLite 模式
+    return dbInstance;
+  }
+  throw new Error("No database available. Please configure DB binding or local database.");
+}
+
+// D1 数据库类型
+export type DB = ReturnType<typeof getDB>;
 
 // D1 数据库绑定类型（用于 Cloudflare Workers 环境）
 export interface D1Database {

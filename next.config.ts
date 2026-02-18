@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Turbopack is enabled by default in Next.js 16
+
+  // Cloudflare Pages 静态导出配置
+  output: 'export',
+  distDir: 'dist',
+  trailingSlash: true,
+
   // Module resolution
   webpack: (config) => {
     config.resolve.alias = {
@@ -11,8 +17,9 @@ const nextConfig: NextConfig = {
     return config;
   },
 
-  // Image optimization configuration
+  // Image optimization configuration (静态导出需要禁用图片优化)
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
