@@ -53,12 +53,9 @@ function Navbar({ className }: NavbarProps) {
 
   return (
     <>
-      <motion.header
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+      <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 animate-fade-in",
           isScrolled
             ? "bg-white/90 backdrop-blur-md shadow-sm"
             : "bg-transparent",
@@ -201,7 +198,7 @@ function Navbar({ className }: NavbarProps) {
             </button>
           </div>
         </div>
-      </motion.header>
+      </header>
 
       {/* Mobile Menu */}
       <motion.div

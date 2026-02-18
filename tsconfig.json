@@ -35,14 +35,15 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "next-env.d.ts",
+    "**/*.mts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts",
+    ".next/types/**/*.ts",
+    "dist/dev/types/**/*.ts",
     "dist/types/**/*.ts",
-    "dist/dev/types/**/*.ts"
+    "next-env.d.ts",
+    ".vercel/output/static/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
