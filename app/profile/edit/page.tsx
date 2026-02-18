@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, Loader2, Camera } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Camera, X } from "lucide-react";
 
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
@@ -25,6 +25,9 @@ const levelOptions = [
   { value: "expert", label: "资深", description: "资深户外专家" },
 ];
 
+// 默认头像
+const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face";
+
 export default function EditProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -37,6 +40,12 @@ export default function EditProfilePage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [message, setMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // 头像上传相关状态
+  const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   // 初始化表单数据
   React.useEffect(() => {
     if (user) {
@@ -45,8 +54,83 @@ export default function EditProfilePage() {
         bio: user.bio,
         level: user.level,
       });
+      setAvatarPreview(user.avatar);
     }
   }, [user]);
+
+  // 处理头像选择
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // 处理文件选择
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 验证文件类型
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setMessage({ type: "error", text: "请选择有效的图片文件 (JPEG, PNG, GIF, WebP)" });
+      return;
+    }
+
+    // 验证文件大小 (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setMessage({ type: "error", text: "图片大小不能超过 5MB" });
+      return;
+    }
+
+    // 创建预览
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    setSelectedFile(file);
+    setMessage(null);
+  };
+
+  // 清除选中的头像
+  const handleClearAvatar = () => {
+    setSelectedFile(null);
+    setAvatarPreview(user?.avatar || DEFAULT_AVATAR);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // 上传头像
+  const uploadAvatar = async (): Promise<string | null> => {
+    if (!selectedFile || !user) return null;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append("userId", user.id);
+
+      const response = await fetch("/api/upload/avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "上传失败");
+      }
+
+      return result.url;
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      setMessage({ type: "error", text: "头像上传失败，请重试" });
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // 未登录重定向
   React.useEffect(() => {
@@ -68,33 +152,54 @@ export default function EditProfilePage() {
     setIsSaving(true);
     setMessage(null);
 
-    // 模拟保存延迟
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      if (!user) {
+        throw new Error("用户未登录");
+      }
 
-    // 更新 localStorage 中的用户信息
-    if (user) {
-      const updatedUser = {
-        ...user,
-        name: formData.name,
-        bio: formData.bio,
-        level: formData.level as "beginner" | "intermediate" | "advanced" | "expert",
-      };
-      localStorage.setItem("gomate_auth", JSON.stringify(updatedUser));
+      let avatarUrl = user.avatar;
 
-      // 触发存储事件以更新其他组件
-      window.dispatchEvent(new StorageEvent("storage", {
-        key: "gomate_auth",
-        newValue: JSON.stringify(updatedUser),
-      }));
+      // 如果有新选择的头像，先上传
+      if (selectedFile) {
+        const uploadedUrl = await uploadAvatar();
+        if (uploadedUrl) {
+          avatarUrl = uploadedUrl;
+        }
+      }
+
+      // 更新用户信息到数据库
+      const response = await fetch("/api/user/update", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          name: formData.name,
+          bio: formData.bio,
+          experience: formData.level,
+          image: avatarUrl === DEFAULT_AVATAR ? null : avatarUrl,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "保存失败");
+      }
+
+      setMessage({ type: "success", text: "保存成功！" });
+
+      // 延迟返回个人资料页
+      setTimeout(() => {
+        router.push("/profile");
+      }, 1000);
+    } catch (error) {
+      console.error("Save error:", error);
+      setMessage({ type: "error", text: (error as Error).message || "保存失败，请重试" });
+    } finally {
+      setIsSaving(false);
     }
-
-    setMessage({ type: "success", text: "保存成功！" });
-    setIsSaving(false);
-
-    // 延迟返回个人资料页
-    setTimeout(() => {
-      router.push("/profile");
-    }, 1000);
   };
 
   if (isLoading || !user) {
@@ -151,20 +256,52 @@ export default function EditProfilePage() {
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center gap-4">
                   <div className="relative">
-                    <Avatar className="h-24 w-24 border-4 border-stone-100">
-                      <AvatarImage src={user.avatar} />
+                    <Avatar
+                      className="h-24 w-24 border-4 border-stone-100 cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={handleAvatarClick}
+                    >
+                      <AvatarImage src={avatarPreview || DEFAULT_AVATAR} />
                       <AvatarFallback className="text-2xl bg-stone-200 text-stone-600">
                         {user.name[0]}
                       </AvatarFallback>
                     </Avatar>
                     <button
                       type="button"
-                      className="absolute bottom-0 right-0 h-8 w-8 bg-stone-900 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-stone-800 transition-colors"
+                      onClick={handleAvatarClick}
+                      disabled={isUploading}
+                      className="absolute bottom-0 right-0 h-8 w-8 bg-stone-900 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Camera className="h-4 w-4" />
+                      {isUploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4" />
+                      )}
                     </button>
+                    {selectedFile && (
+                      <button
+                        type="button"
+                        onClick={handleClearAvatar}
+                        className="absolute -top-1 -right-1 h-6 w-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
                   </div>
-                  <p className="text-sm text-stone-500">点击更换头像（功能开发中）</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <div className="text-center">
+                    <p className="text-sm text-stone-500">
+                      {selectedFile ? `已选择: ${selectedFile.name}` : "点击更换头像"}
+                    </p>
+                    <p className="text-xs text-stone-400 mt-1">
+                      支持 JPEG、PNG、GIF、WebP，最大 5MB
+                    </p>
+                  </div>
                 </div>
 
                 {/* Name */}
@@ -276,12 +413,12 @@ export default function EditProfilePage() {
                   <Button
                     type="submit"
                     className="flex-1 bg-stone-900 hover:bg-stone-800"
-                    disabled={isSaving || formData.name.length < 2}
+                    disabled={isSaving || isUploading || formData.name.length < 2}
                   >
-                    {isSaving ? (
+                    {isSaving || isUploading ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        保存中...
+                        {isUploading ? "上传中..." : "保存中..."}
                       </>
                     ) : (
                       <>

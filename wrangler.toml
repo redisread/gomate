@@ -14,15 +14,16 @@ binding = "DB"
 database_name = "gomate-db"
 database_id = "7d17d076-202f-48f8-b343-24209cdb0ba1"
 
-# R2 存储桶绑定（可选，用于图片）
+# R2 存储桶绑定（用于头像上传）
 [[r2_buckets]]
 binding = "R2"
-bucket_name = "gomate-images"
+bucket_name = "gomate"
 
 # 环境变量
 [vars]
 NEXT_PUBLIC_APP_URL = "http://localhost:8787"
 BETTER_AUTH_URL = "http://localhost:8787"
+R2_PUBLIC_URL = "https://gomate.cos.jiahongw.com"
 
 # 密钥（通过 wrangler secret put 设置）
 # BETTER_AUTH_SECRET
