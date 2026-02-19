@@ -131,46 +131,40 @@ export async function POST(request: NextRequest) {
     // 生成队伍ID
     const teamId = `team-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // 使用 D1 直接插入队伍记录
-    await db.prepare(`
-      INSERT INTO teams (
-        id, location_id, leader_id, title, description,
-        start_time, end_time, max_members, current_members,
-        requirements, status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      teamId,
+    // 使用 Drizzle ORM 插入队伍记录
+    const { drizzle } = await import("drizzle-orm/d1");
+    const schema = await import("@/db/schema");
+    const ormDb = drizzle(db, { schema });
+
+    const now = new Date();
+    await ormDb.insert(schema.teams).values({
+      id: teamId,
       locationId,
-      userId,
+      leaderId: userId,
       title,
-      description || null,
-      startTime.toISOString(),
-      endTime.toISOString(),
+      description: description || null,
+      startTime: startTime,
+      endTime: endTime,
       maxMembers,
-      1, // currentMembers: 领队自己
-      requirements ? JSON.stringify(requirements) : null,
-      "recruiting",
-      new Date().toISOString(),
-      new Date().toISOString()
-    ).run();
+      currentMembers: 1,
+      requirements: requirements ? JSON.stringify(requirements) : null,
+      status: "recruiting",
+      createdAt: now,
+      updatedAt: now,
+    });
 
     // 创建领队成员记录
     const memberId = `tm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    await db.prepare(`
-      INSERT INTO team_members (
-        id, team_id, user_id, role, status, joined_at, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      memberId,
+    await ormDb.insert(schema.teamMembers).values({
+      id: memberId,
       teamId,
       userId,
-      "leader",
-      "approved",
-      new Date().toISOString(),
-      new Date().toISOString()
-    ).run();
+      role: "leader",
+      status: "approved",
+      joinedAt: now,
+      createdAt: now,
+    });
 
-    const now = new Date().toISOString();
     return NextResponse.json({
       success: true,
       team: {
@@ -185,7 +179,7 @@ export async function POST(request: NextRequest) {
         currentMembers: 1,
         requirements,
         status: "recruiting",
-        createdAt: now,
+        createdAt: now.toISOString(),
       },
     });
   } catch (error) {
@@ -217,47 +211,51 @@ export async function GET(request: NextRequest) {
 
     const db = env.DB as D1Database;
 
-    let query = `
-      SELECT
-        t.*,
-        u.name as leader_name,
-        u.image as leader_image,
-        u.experience as leader_experience
-      FROM teams t
-      LEFT JOIN users u ON t.leader_id = u.id
-    `;
+    // 使用 Drizzle ORM 查询
+    const { drizzle } = await import("drizzle-orm/d1");
+    const schema = await import("@/db/schema");
+    const { eq, desc } = await import("drizzle-orm");
+    const ormDb = drizzle(db, { schema });
 
-    const params: string[] = [];
+    let query = ormDb.query.teams.findMany({
+      with: {
+        leader: true,
+      },
+      orderBy: desc(schema.teams.createdAt),
+    });
 
     if (locationId) {
-      query += " WHERE t.location_id = ?";
-      params.push(locationId);
+      query = ormDb.query.teams.findMany({
+        where: eq(schema.teams.locationId, locationId),
+        with: {
+          leader: true,
+        },
+        orderBy: desc(schema.teams.createdAt),
+      });
     }
 
-    query += " ORDER BY t.created_at DESC";
-
-    const result = await db.prepare(query).bind(...params).all();
+    const result = await query;
 
     // 格式化返回数据
-    const teams = result.results?.map((row: Record<string, unknown>) => ({
+    const teams = result.map((row) => ({
       id: row.id,
-      locationId: row.location_id,
-      leaderId: row.leader_id,
+      locationId: row.locationId,
+      leaderId: row.leaderId,
       title: row.title,
       description: row.description,
-      startTime: row.start_time,
-      endTime: row.end_time,
-      maxMembers: row.max_members,
-      currentMembers: row.current_members,
-      requirements: row.requirements ? JSON.parse(row.requirements as string) : [],
+      startTime: row.startTime,
+      endTime: row.endTime,
+      maxMembers: row.maxMembers,
+      currentMembers: row.currentMembers,
+      requirements: row.requirements ? JSON.parse(row.requirements) : [],
       status: row.status,
-      createdAt: row.created_at,
-      leader: {
-        id: row.leader_id,
-        name: row.leader_name,
-        avatar: row.leader_image,
-        level: row.leader_experience,
-      },
+      createdAt: row.createdAt,
+      leader: row.leader ? {
+        id: row.leader.id,
+        name: row.leader.name,
+        avatar: row.leader.image,
+        level: row.leader.experience,
+      } : null,
     }));
 
     return NextResponse.json({

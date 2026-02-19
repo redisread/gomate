@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq, and } from "drizzle-orm";
 
 // 动态导入 @opennextjs/cloudflare 以避免构建时错误
 const getCloudflareContext = async () => {
@@ -32,28 +33,39 @@ async function validateSession(
   token: string
 ): Promise<{ userId: string; user: Record<string, unknown> } | null> {
   try {
+    const { drizzle } = await import("drizzle-orm/d1");
+    const schema = await import("@/db/schema");
+    const ormDb = drizzle(db, { schema });
+
     // Better Auth 使用秒级时间戳，需要转换为秒进行比较
     const nowInSeconds = Math.floor(Date.now() / 1000);
 
     // 查询 session
-    const session = await db.prepare(
-      "SELECT * FROM sessions WHERE token = ? AND expiresAt > ?"
-    ).bind(token, nowInSeconds).first();
+    const sessions = await ormDb.query.sessions.findMany({
+      where: and(
+        eq(schema.sessions.token, token),
+        eq(schema.sessions.expiresAt, nowInSeconds)
+      ),
+      limit: 1,
+    });
 
+    const session = sessions[0];
     if (!session) {
       return null;
     }
 
     // 查询用户
-    const user = await db.prepare(
-      "SELECT * FROM users WHERE id = ?"
-    ).bind(session.userId).first();
+    const users = await ormDb.query.users.findMany({
+      where: eq(schema.users.id, session.userId),
+      limit: 1,
+    });
 
+    const user = users[0];
     if (!user) {
       return null;
     }
 
-    return { userId: session.userId as string, user };
+    return { userId: session.userId, user };
   } catch (error) {
     console.error("Validate session error:", error);
     return null;
@@ -76,6 +88,11 @@ export async function POST(request: NextRequest) {
     }
 
     const db = env.DB as D1Database;
+
+    // 初始化 Drizzle ORM
+    const { drizzle } = await import("drizzle-orm/d1");
+    const schema = await import("@/db/schema");
+    const ormDb = drizzle(db, { schema });
 
     // 获取 session token
     const token = getSessionTokenFromCookie(request);
@@ -108,9 +125,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 获取队伍信息
-    const teamResult = await db.prepare(
-      "SELECT * FROM teams WHERE id = ?"
-    ).bind(teamId).first();
+    const teams = await ormDb.query.teams.findMany({
+      where: eq(schema.teams.id, teamId),
+      limit: 1,
+    });
+    const teamResult = teams[0];
 
     if (!teamResult) {
       return NextResponse.json(
@@ -128,7 +147,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查是否已满
-    if (teamResult.current_members >= teamResult.max_members) {
+    if (teamResult.currentMembers >= teamResult.maxMembers) {
       return NextResponse.json(
         { error: "队伍已满" },
         { status: 400 }
@@ -136,9 +155,14 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查是否已申请或已加入
-    const existingResult = await db.prepare(
-      "SELECT * FROM team_members WHERE team_id = ? AND user_id = ?"
-    ).bind(teamId, userId).first();
+    const existingMembers = await ormDb.query.teamMembers.findMany({
+      where: and(
+        eq(schema.teamMembers.teamId, teamId),
+        eq(schema.teamMembers.userId, userId)
+      ),
+      limit: 1,
+    });
+    const existingResult = existingMembers[0];
 
     if (existingResult) {
       if (existingResult.status === "approved") {
@@ -155,9 +179,9 @@ export async function POST(request: NextRequest) {
       }
       if (existingResult.status === "rejected") {
         // 更新为重新申请
-        await db.prepare(
-          "UPDATE team_members SET status = ?, created_at = ? WHERE id = ?"
-        ).bind("pending", new Date().toISOString(), existingResult.id).run();
+        await ormDb.update(schema.teamMembers)
+          .set({ status: "pending", createdAt: new Date() })
+          .where(eq(schema.teamMembers.id, existingResult.id));
 
         return NextResponse.json({
           success: true,
@@ -168,16 +192,14 @@ export async function POST(request: NextRequest) {
 
     // 创建申请
     const memberId = `tm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    await db.prepare(
-      "INSERT INTO team_members (id, team_id, user_id, role, status, created_at) VALUES (?, ?, ?, ?, ?, ?)"
-    ).bind(
-      memberId,
+    await ormDb.insert(schema.teamMembers).values({
+      id: memberId,
       teamId,
       userId,
-      "member",
-      "pending",
-      new Date().toISOString()
-    ).run();
+      role: "member",
+      status: "pending",
+      createdAt: new Date(),
+    });
 
     return NextResponse.json({
       success: true,
