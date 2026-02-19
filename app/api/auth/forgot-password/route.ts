@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, formatRemainingTime } from "@/lib/rate-limit";
+import { sendPasswordResetEmail, type EmailEnv } from "@/lib/email/resend";
 
 // 动态导入 @opennextjs/cloudflare 以避免构建时错误
 const getCloudflareContext = async () => {
@@ -71,23 +72,42 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 调用 Better Auth 的 forgot-password API
-    const baseUrl = process.env.BETTER_AUTH_URL || "http://localhost:8787";
-    const response = await fetch(`${baseUrl}/api/auth/forgot-password`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: email.toLowerCase(),
-        callbackURL: "/reset-password",
-      }),
-    });
+    // 生成重置令牌
+    const token = `reset-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const expiresAt = Math.floor(Date.now() / 1000) + 3600; // 1小时后过期
 
-    if (!response.ok) {
-      const error = await response.json();
-      console.error("Better Auth forgot password error:", error);
-      throw new Error(error.message || "发送失败");
+    // 保存重置令牌到数据库
+    await db.prepare(
+      "INSERT INTO password_resets (token, user_id, email, expires_at, created_at) VALUES (?, ?, ?, ?, ?)"
+    ).bind(
+      token,
+      user.id,
+      email.toLowerCase(),
+      expiresAt,
+      new Date().toISOString()
+    ).run();
+
+    // 构建重置链接
+    const baseUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:8787";
+    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+
+    // 发送重置邮件
+    const emailEnv: EmailEnv = {
+      RESEND_API_KEY: env.RESEND_API_KEY as string,
+      RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL as string,
+      NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL as string,
+    };
+
+    const result = await sendPasswordResetEmail(
+      email.toLowerCase(),
+      resetUrl,
+      user.name as string | undefined,
+      emailEnv
+    );
+
+    if (!result.success) {
+      console.error("Failed to send reset email:", result.error);
+      throw new Error(result.error || "发送邮件失败");
     }
 
     return NextResponse.json({

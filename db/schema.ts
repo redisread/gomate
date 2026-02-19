@@ -188,6 +188,27 @@ export const teamMembers = sqliteTable(
   })
 );
 
+// 密码重置令牌表
+export const passwordResets = sqliteTable(
+  "password_resets",
+  {
+    id: text("id").primaryKey(),
+    token: text("token").notNull().unique(),
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    email: text("email").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    usedAt: integer("used_at", { mode: "timestamp" }), // 使用时间
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    tokenIdx: uniqueIndex("password_resets_token_idx").on(table.token),
+    userIdx: index("password_resets_user_idx").on(table.userId),
+    emailIdx: index("password_resets_email_idx").on(table.email),
+  })
+);
+
 // ==================== Relations ====================
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -239,6 +260,13 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
   }),
 }));
 
+export const passwordResetsRelations = relations(passwordResets, ({ one }) => ({
+  user: one(users, {
+    fields: [passwordResets.userId],
+    references: [users.id],
+  }),
+}));
+
 // ==================== Types ====================
 
 export type User = typeof users.$inferSelect;
@@ -261,6 +289,9 @@ export type NewTeam = typeof teams.$inferInsert;
 
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type NewTeamMember = typeof teamMembers.$inferInsert;
+
+export type PasswordReset = typeof passwordResets.$inferSelect;
+export type NewPasswordReset = typeof passwordResets.$inferInsert;
 
 // 枚举类型定义
 export type Difficulty = "easy" | "moderate" | "hard" | "expert";

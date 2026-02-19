@@ -1,22 +1,77 @@
 import { Resend } from "resend";
 
-// Resend API Key - 从环境变量读取
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-
-// 发件人邮箱配置（使用 Resend 提供的默认域名或自定义域名）
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "GoMate <onboarding@resend.dev>";
-
 // 应用名称
 const APP_NAME = "GoMate";
+
+/**
+ * 获取环境变量（支持 Cloudflare Workers 和 Node.js 环境）
+ */
+function getEnv(key: string): string | undefined {
+  // Cloudflare Workers 环境
+  if (typeof globalThis !== 'undefined' && (globalThis as Record<string, unknown>)[key]) {
+    return (globalThis as Record<string, unknown>)[key] as string;
+  }
+  // Node.js 环境
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key];
+  }
+  return undefined;
+}
 
 /**
  * 创建 Resend 客户端
  */
 function createResendClient() {
-  if (!RESEND_API_KEY) {
+  const apiKey = getEnv("RESEND_API_KEY");
+  if (!apiKey) {
     throw new Error("RESEND_API_KEY is not configured");
   }
-  return new Resend(RESEND_API_KEY);
+  return new Resend(apiKey);
+}
+
+/**
+ * 获取发件人邮箱
+ */
+function getFromEmail(): string {
+  return getEnv("RESEND_FROM_EMAIL") || "GoMate <onboarding@resend.dev>";
+}
+
+/**
+ * 获取应用 URL
+ */
+function getAppUrl(): string {
+  return getEnv("NEXT_PUBLIC_APP_URL") || "http://localhost:8787";
+}
+
+export interface EmailEnv {
+  RESEND_API_KEY?: string;
+  RESEND_FROM_EMAIL?: string;
+  NEXT_PUBLIC_APP_URL?: string;
+}
+
+/**
+ * 创建 Resend 客户端（支持外部传入 env）
+ */
+function createResendClientWithEnv(env?: EmailEnv) {
+  const apiKey = env?.RESEND_API_KEY || getEnv("RESEND_API_KEY");
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is not configured");
+  }
+  return new Resend(apiKey);
+}
+
+/**
+ * 获取发件人邮箱（支持外部传入 env）
+ */
+function getFromEmailWithEnv(env?: EmailEnv): string {
+  return env?.RESEND_FROM_EMAIL || getEnv("RESEND_FROM_EMAIL") || "GoMate <onboarding@resend.dev>";
+}
+
+/**
+ * 获取应用 URL（支持外部传入 env）
+ */
+function getAppUrlWithEnv(env?: EmailEnv): string {
+  return env?.NEXT_PUBLIC_APP_URL || getEnv("NEXT_PUBLIC_APP_URL") || "http://localhost:8787";
 }
 
 /**
@@ -24,20 +79,22 @@ function createResendClient() {
  * @param to 收件人邮箱
  * @param resetUrl 重置密码链接
  * @param userName 用户名（可选）
+ * @param env 环境变量（Cloudflare Workers 环境需要传入）
  */
 export async function sendPasswordResetEmail(
   to: string,
   resetUrl: string,
-  userName?: string
+  userName?: string,
+  env?: EmailEnv
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const resend = createResendClient();
+    const resend = createResendClientWithEnv(env);
 
     const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: getFromEmailWithEnv(env),
       to: [to],
       subject: `重置您的 ${APP_NAME} 密码`,
-      html: getPasswordResetTemplate(resetUrl, userName),
+      html: getPasswordResetTemplate(resetUrl, userName, env),
       text: getPasswordResetText(resetUrl, userName),
     });
 
@@ -70,7 +127,7 @@ export async function sendWelcomeEmail(
     const resend = createResendClient();
 
     const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: getFromEmail(),
       to: [to],
       subject: `欢迎来到 ${APP_NAME}！`,
       html: getWelcomeTemplate(userName),
@@ -96,7 +153,8 @@ export async function sendWelcomeEmail(
 /**
  * 密码重置邮件 HTML 模板
  */
-function getPasswordResetTemplate(resetUrl: string, userName?: string): string {
+function getPasswordResetTemplate(resetUrl: string, userName?: string, env?: EmailEnv): string {
+  const appUrl = getAppUrlWithEnv(env);
   const greeting = userName ? `您好，${userName}` : "您好";
 
   return `
@@ -376,7 +434,7 @@ function getWelcomeTemplate(userName: string): string {
         </div>
       </div>
       <div class="button-container">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:8787"}/locations" class="button">开始探索</a>
+        <a href="${getAppUrl()}/locations" class="button">开始探索</a>
       </div>
       <div class="divider"></div>
       <div class="footer">
@@ -394,7 +452,7 @@ function getWelcomeTemplate(userName: string): string {
  * 欢迎邮件纯文本模板
  */
 function getWelcomeText(userName: string): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:8787";
+  const appUrl = getAppUrl();
 
   return `
 您好 ${userName}，
