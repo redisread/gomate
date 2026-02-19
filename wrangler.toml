@@ -24,6 +24,8 @@ bucket_name = "gomate"
 NEXT_PUBLIC_APP_URL = "http://localhost:8787"
 BETTER_AUTH_URL = "http://localhost:8787"
 R2_PUBLIC_URL = "https://gomate.cos.jiahongw.com"
+RESEND_FROM_EMAIL = "GoMate <onboarding@resend.dev>"
 
 # 密钥（通过 wrangler secret put 设置）
 # BETTER_AUTH_SECRET
+# RESEND_API_KEY

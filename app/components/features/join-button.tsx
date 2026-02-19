@@ -13,28 +13,53 @@ interface JoinButtonProps {
   onJoin?: () => void;
 }
 
-type JoinState = "idle" | "loading" | "success" | "full" | "closed";
+type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "error";
 
 function JoinButton({ team, className, onJoin }: JoinButtonProps) {
   const [joinState, setJoinState] = React.useState<JoinState>(
     team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle"
   );
+  const [errorMessage, setErrorMessage] = React.useState("");
 
   const handleJoin = async () => {
     if (joinState !== "idle") return;
 
     setJoinState("loading");
+    setErrorMessage("");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const response = await fetch("/api/teams/join", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ teamId: team.id }),
+      });
 
-    setJoinState("success");
-    onJoin?.();
+      const result = await response.json();
 
-    // Reset after showing success
-    setTimeout(() => {
-      setJoinState("idle");
-    }, 2000);
+      if (!response.ok) {
+        throw new Error(result.error || "申请失败");
+      }
+
+      setJoinState("success");
+      onJoin?.();
+
+      // Reset after showing success
+      setTimeout(() => {
+        setJoinState("idle");
+      }, 2000);
+    } catch (error) {
+      console.error("加入队伍失败:", error);
+      setErrorMessage(error instanceof Error ? error.message : "申请失败");
+      setJoinState("error");
+
+      // Reset after showing error
+      setTimeout(() => {
+        setJoinState("idle");
+        setErrorMessage("");
+      }, 3000);
+    }
   };
 
   const buttonConfig = {
@@ -68,6 +93,12 @@ function JoinButton({ team, className, onJoin }: JoinButtonProps) {
       variant: "secondary" as const,
       className: "bg-stone-200 text-stone-500 cursor-not-allowed",
     },
+    error: {
+      text: "申请失败",
+      icon: Users,
+      variant: "destructive" as const,
+      className: "bg-red-600 text-white",
+    },
   };
 
   const config = buttonConfig[joinState];
@@ -90,6 +121,8 @@ function JoinButton({ team, className, onJoin }: JoinButtonProps) {
                 ? "该队伍已结束招募"
                 : joinState === "success"
                 ? "领队会尽快与你联系"
+                : joinState === "error"
+                ? errorMessage || "申请失败，请稍后重试"
                 : `已有 ${team.currentMembers} 人报名，还剩 ${
                     team.maxMembers - team.currentMembers
                   } 个名额`}

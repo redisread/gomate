@@ -73,23 +73,26 @@ function CreateTeamForm() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // 模拟提交延迟
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // 创建新队伍
+      const newTeam = await addTeam({
+        locationId: formData.locationId,
+        title: formData.title,
+        description: formData.description,
+        date: formData.date,
+        time: formData.time,
+        duration: formData.duration,
+        maxMembers: parseInt(formData.maxMembers, 10),
+        requirements: requirements,
+      });
 
-    // 创建新队伍
-    const newTeam = addTeam({
-      locationId: formData.locationId,
-      title: formData.title,
-      description: formData.description,
-      date: formData.date,
-      time: formData.time,
-      duration: formData.duration,
-      maxMembers: parseInt(formData.maxMembers, 10),
-      requirements: requirements,
-    });
-
-    // 跳转到新创建的队伍详情页
-    router.push(`/teams/${newTeam.id}`);
+      // 跳转到新创建的队伍详情页
+      router.push(`/teams/${newTeam.id}`);
+    } catch (error) {
+      console.error("创建队伍失败:", error);
+      alert(error instanceof Error ? error.message : "创建队伍失败，请稍后重试");
+      setIsSubmitting(false);
+    }
   };
 
   return (

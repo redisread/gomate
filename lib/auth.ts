@@ -1,10 +1,39 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from "@/db/schema";
+import { sendPasswordResetEmail, sendWelcomeEmail } from "@/lib/email/resend";
 
 // 判断是否在 Cloudflare Workers 环境
 const isCloudflareWorkers = typeof globalThis !== 'undefined' &&
   (globalThis as { env?: { DB?: unknown } }).env?.DB !== undefined;
+
+// 邮件发送函数
+const handleSendResetPasswordEmail = async (data: {
+  user: { email: string; name?: string };
+  url: string;
+}) => {
+  const result = await sendPasswordResetEmail(
+    data.user.email,
+    data.url,
+    data.user.name
+  );
+
+  if (!result.success) {
+    console.error("Failed to send reset password email:", result.error);
+    throw new Error(result.error || "发送邮件失败");
+  }
+};
+
+const handleSendWelcomeEmail = async (data: { user: { email: string; name?: string } }) => {
+  if (!data.user.name) return;
+
+  const result = await sendWelcomeEmail(data.user.email, data.user.name);
+
+  if (!result.success) {
+    console.error("Failed to send welcome email:", result.error);
+    // 欢迎邮件发送失败不抛出错误，不影响注册流程
+  }
+};
 
 // 动态创建 auth 配置
 export const createAuth = (env?: { DB?: D1Database }) => {
@@ -25,6 +54,9 @@ export const createAuth = (env?: { DB?: D1Database }) => {
         autoSignIn: true,
         minPasswordLength: 6,
         maxPasswordLength: 128,
+        requireEmailVerification: false,
+        sendResetPasswordEmail: handleSendResetPasswordEmail,
+        resetPasswordTokenExpiresIn: 3600, // 1小时
       },
       session: {
         expiresIn: 60 * 60 * 24 * 7,

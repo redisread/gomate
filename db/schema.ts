@@ -20,7 +20,9 @@ export const users = sqliteTable(
     emailVerified: integer("emailVerified", { mode: "boolean" }).default(false).notNull(),
     image: text("image"),
     bio: text("bio"),
-    experience: text("experience"), // beginner, intermediate, advanced, expert
+    experience: text("experience"), // beginner, intermediate, advanced, expert (Better Auth 字段)
+    level: text("level").default("beginner"), // 领队等级: beginner, intermediate, advanced, expert
+    completedHikes: integer("completed_hikes").default(0), // 完成徒步次数
     createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
@@ -101,17 +103,25 @@ export const locations = sqliteTable(
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
+    subtitle: text("subtitle"), // 副标题，如"深圳第二高峰"
     description: text("description").notNull(),
     difficulty: text("difficulty").notNull(), // easy, moderate, hard, expert
     duration: text("duration").notNull(), // 例如: "4-5小时"
     distance: text("distance").notNull(), // 例如: "8.5公里"
+    elevation: text("elevation"), // 海拔高度，如"869米"
     bestSeason: text("best_season").notNull(), // JSON 数组: ["春季", "秋季"]
+    tags: text("tags"), // JSON 数组: ["海景", "山峰", "摄影"]
     coverImage: text("cover_image").notNull(),
     images: text("images").notNull(), // JSON 数组
+    address: text("address"), // 详细地址
     routeDescription: text("route_description"),
+    routeGuide: text("route_guide"), // JSON: { overview: string; tips: string[] }
+    waypoints: text("waypoints"), // JSON 数组: 路线途径点
     tips: text("tips"),
+    warnings: text("warnings"), // JSON 数组: 安全警告
     equipmentNeeded: text("equipment_needed"), // JSON 数组
     coordinates: text("coordinates").notNull(), // JSON: { lat: number; lng: number }
+    facilities: text("facilities"), // JSON: { parking: boolean; restroom: boolean; water: boolean; food: boolean }
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
@@ -136,10 +146,11 @@ export const teams = sqliteTable(
     description: text("description"),
     startTime: integer("start_time", { mode: "timestamp" }).notNull(),
     endTime: integer("end_time", { mode: "timestamp" }).notNull(),
+    duration: text("duration"), // 活动时长，如"6小时"
     maxMembers: integer("max_members").notNull().default(10),
     currentMembers: integer("current_members").notNull().default(1),
-    requirements: text("requirements"), // 入队要求
-    status: text("status").notNull().default("recruiting"), // recruiting, full, ongoing, completed, cancelled
+    requirements: text("requirements"), // 入队要求，JSON 数组
+    status: text("status").notNull().default("recruiting"), // recruiting, full, ongoing, completed, cancelled, open
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
