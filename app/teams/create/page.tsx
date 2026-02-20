@@ -26,11 +26,32 @@ function CreateTeamForm() {
   const searchParams = useSearchParams();
   const locationIdFromUrl = searchParams.get("locationId");
 
+  // 获取默认日期和时间（日期为今天，时间为4小时后）
+  const getDefaultDateTime = () => {
+    const now = new Date();
+
+    // 默认日期：今天
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const defaultDate = `${year}-${month}-${day}`;
+
+    // 默认时间：4小时后
+    const futureTime = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+    const hours = String(futureTime.getHours()).padStart(2, '0');
+    const minutes = String(futureTime.getMinutes()).padStart(2, '0');
+    const defaultTime = `${hours}:${minutes}`;
+
+    return { defaultDate, defaultTime };
+  };
+
+  const { defaultDate, defaultTime } = getDefaultDateTime();
+
   const [formData, setFormData] = React.useState({
     title: "",
     locationId: locationIdFromUrl || "",
-    date: "",
-    time: "",
+    date: defaultDate,
+    time: defaultTime,
     duration: "",
     maxMembers: "",
     description: "",
