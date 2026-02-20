@@ -1,31 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { teams as mockTeams, getLocationById } from "@/lib/data/mock";
 
 // 动态导入 @opennextjs/cloudflare 以避免构建时错误
 const getCloudflareContext = async () => {
   const mod = await import("@opennextjs/cloudflare");
   return mod.getCloudflareContext();
 };
-
-// 从 mock 数据获取队伍
-function getMockTeamById(id: string) {
-  const team = mockTeams.find(t => t.id === id);
-  if (!team) return null;
-
-  // 获取地点信息
-  const location = getLocationById(team.locationId);
-
-  return {
-    ...team,
-    leader: {
-      ...team.leader,
-      avatar: team.leader.avatar || '',
-      level: team.leader.level,
-      completedHikes: team.leader.completedHikes || 0,
-      bio: team.leader.bio || '',
-    },
-  };
-}
 
 /**
  * GET /api/teams/[id]
@@ -64,15 +43,7 @@ export async function GET(
 
     const team = teams[0];
 
-    // 如果数据库中没有找到，尝试从 mock 数据获取
     if (!team) {
-      const mockTeam = getMockTeamById(id);
-      if (mockTeam) {
-        return NextResponse.json({
-          success: true,
-          team: mockTeam,
-        });
-      }
       return NextResponse.json(
         { error: "队伍不存在" },
         { status: 404 }
