@@ -50,26 +50,54 @@ export async function GET(
       );
     }
 
-    // 格式化返回数据
+    // 从 startTime 提取日期和时间
+    const startDate = new Date(team.startTime);
+    const date = startDate.toISOString().split('T')[0];
+    const time = startDate.toTimeString().slice(0, 5);
+
+    // 计算活动时长
+    const endDate = new Date(team.endTime);
+    const durationHours = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60));
+    const duration = `${durationHours}小时`;
+
+    // 映射状态
+    const statusMap: Record<string, 'open' | 'full' | 'closed'> = {
+      'recruiting': 'open',
+      'full': 'full',
+      'ongoing': 'closed',
+      'completed': 'closed',
+      'cancelled': 'closed',
+    };
+
+    // 格式化返回数据，符合前端 Team 类型
     const formattedTeam = {
       id: team.id,
       locationId: team.locationId,
-      leaderId: team.leaderId,
       title: team.title,
-      description: team.description,
-      startTime: team.startTime,
-      endTime: team.endTime,
+      description: team.description || '',
+      date,
+      time,
+      duration,
       maxMembers: team.maxMembers,
       currentMembers: team.currentMembers,
       requirements: team.requirements ? JSON.parse(team.requirements) : [],
-      status: team.status,
+      status: statusMap[team.status] || 'open',
       createdAt: team.createdAt,
       leader: team.leader ? {
         id: team.leader.id,
         name: team.leader.name,
-        avatar: team.leader.image,
-        level: team.leader.experience,
-      } : null,
+        avatar: team.leader.image || '',
+        level: (team.leader.experience || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
+        completedHikes: 0,
+        bio: '',
+      } : {
+        id: 'unknown',
+        name: '未知用户',
+        avatar: '',
+        level: 'beginner' as const,
+        completedHikes: 0,
+        bio: '',
+      },
     };
 
     return NextResponse.json({

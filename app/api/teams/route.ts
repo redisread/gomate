@@ -236,27 +236,53 @@ export async function GET(request: NextRequest) {
 
     const result = await query;
 
-    // 格式化返回数据
-    const teams = result.map((row) => ({
-      id: row.id,
-      locationId: row.locationId,
-      leaderId: row.leaderId,
-      title: row.title,
-      description: row.description,
-      startTime: row.startTime,
-      endTime: row.endTime,
-      maxMembers: row.maxMembers,
-      currentMembers: row.currentMembers,
-      requirements: row.requirements ? JSON.parse(row.requirements) : [],
-      status: row.status,
-      createdAt: row.createdAt,
-      leader: row.leader ? {
-        id: row.leader.id,
-        name: row.leader.name,
-        avatar: row.leader.image,
-        level: row.leader.experience,
-      } : null,
-    }));
+    // 状态映射
+    const statusMap: Record<string, 'open' | 'full' | 'closed'> = {
+      'recruiting': 'open',
+      'full': 'full',
+      'ongoing': 'closed',
+      'completed': 'closed',
+      'cancelled': 'closed',
+    };
+
+    // 格式化返回数据，符合前端 Team 类型
+    const teams = result.map((row) => {
+      const startDate = new Date(row.startTime);
+      const date = startDate.toISOString().split('T')[0];
+      const time = startDate.toTimeString().slice(0, 5);
+      const endDate = new Date(row.endTime);
+      const durationHours = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60));
+
+      return {
+        id: row.id,
+        locationId: row.locationId,
+        title: row.title,
+        description: row.description || '',
+        date,
+        time,
+        duration: `${durationHours}小时`,
+        maxMembers: row.maxMembers,
+        currentMembers: row.currentMembers,
+        requirements: row.requirements ? JSON.parse(row.requirements) : [],
+        status: statusMap[row.status] || 'open',
+        createdAt: row.createdAt,
+        leader: row.leader ? {
+          id: row.leader.id,
+          name: row.leader.name,
+          avatar: row.leader.image || '',
+          level: (row.leader.experience || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
+          completedHikes: 0,
+          bio: '',
+        } : {
+          id: 'unknown',
+          name: '未知用户',
+          avatar: '',
+          level: 'beginner' as const,
+          completedHikes: 0,
+          bio: '',
+        },
+      };
+    });
 
     return NextResponse.json({
       success: true,
