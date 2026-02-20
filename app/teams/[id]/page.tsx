@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { notFound } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { MapPin, ArrowRight } from "lucide-react";
@@ -15,8 +15,8 @@ import { LeaderCard } from "@/app/components/features/leader-card";
 import { JoinButton } from "@/app/components/features/join-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getLocationById, locations } from "@/lib/data/mock";
-import { useTeams } from "@/lib/teams-context";
+import { getLocationById } from "@/lib/data/mock";
+import type { Team } from "@/lib/data/mock";
 
 interface TeamPageProps {
   params: Promise<{
@@ -25,33 +25,93 @@ interface TeamPageProps {
 }
 
 export default function TeamPage({ params }: TeamPageProps) {
-  const { getTeamById, getTeamsByLocationId } = useTeams();
+  const router = useRouter();
   const [teamId, setTeamId] = React.useState<string>("");
-  const [team, setTeam] = React.useState<ReturnType<typeof getTeamById>>(undefined);
+  const [team, setTeam] = React.useState<Team | null>(null);
   const [location, setLocation] = React.useState<ReturnType<typeof getLocationById>>(undefined);
-  const [otherTeams, setOtherTeams] = React.useState<ReturnType<typeof getTeamsByLocationId>>([]);
+  const [otherTeams, setOtherTeams] = React.useState<Team[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     params.then(({ id }) => {
       setTeamId(id);
-      const t = getTeamById(id);
-      if (!t) {
-        notFound();
-      }
-      setTeam(t);
-      const loc = getLocationById(t.locationId);
-      setLocation(loc);
-
-      // Get other teams from the same location
-      const allTeams = getTeamsByLocationId(t.locationId);
-      setOtherTeams(allTeams.filter((ot) => ot.id !== id && ot.status === "open").slice(0, 2));
+      fetchTeam(id);
     });
-  }, [params, getTeamById, getTeamsByLocationId]);
+  }, [params]);
 
-  if (!team || !location) {
+  const fetchTeam = async (id: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/teams/${id}`);
+
+      if (response.status === 404) {
+        setError("队伍不存在");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("获取队伍详情失败");
+      }
+
+      const result = await response.json();
+      if (result.success && result.team) {
+        const teamData = result.team;
+        setTeam(teamData);
+        const loc = getLocationById(teamData.locationId);
+        setLocation(loc);
+
+        // 获取该地点的其他队伍
+        fetchOtherTeams(id, teamData.locationId);
+      } else {
+        setError("队伍不存在");
+      }
+    } catch (err) {
+      console.error("获取队伍详情失败:", err);
+      setError("获取队伍详情失败");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchOtherTeams = async (currentId: string, locationId: string) => {
+    try {
+      const response = await fetch(`/api/teams?locationId=${locationId}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.teams) {
+          const filtered = result.teams
+            .filter((t: Team) => t.id !== currentId && t.status === "open")
+            .slice(0, 2);
+          setOtherTeams(filtered);
+        }
+      }
+    } catch (err) {
+      console.error("获取其他队伍失败:", err);
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="animate-pulse text-stone-400">加载中...</div>
+      </div>
+    );
+  }
+
+  if (error || !team || !location) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-stone-900 mb-2">{error || "队伍不存在"}</h1>
+          <button
+            onClick={() => router.push("/teams")}
+            className="text-stone-600 hover:text-stone-900 underline"
+          >
+            返回队伍列表
+          </button>
+        </div>
       </div>
     );
   }

@@ -40,7 +40,7 @@ function formatTeamFromDB(apiTeam: Record<string, unknown>): Team {
     duration: apiTeam.duration as string || "4小时",
     maxMembers: apiTeam.maxMembers as number,
     currentMembers: apiTeam.currentMembers as number,
-    requirements: apiTeam.requirements ? JSON.parse(apiTeam.requirements as string) : [],
+    requirements: Array.isArray(apiTeam.requirements) ? apiTeam.requirements : (apiTeam.requirements ? JSON.parse(apiTeam.requirements as string) : []),
     status: (apiTeam.status === "recruiting" ? "open" : apiTeam.status) as Team["status"],
     createdAt: apiTeam.createdAt ? new Date(apiTeam.createdAt as string).toISOString().split("T")[0] : getCurrentDate(),
     leader: apiTeam.leader ? {
