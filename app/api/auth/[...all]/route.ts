@@ -7,25 +7,24 @@ const getCloudflareContext = async () => {
   return mod.getCloudflareContext();
 };
 
+// 缓存 auth 实例（在 Workers 环境中，每个 isolate 会保持这个缓存）
+let authInstance: ReturnType<typeof betterAuth> | null = null;
+let dbInstance: D1Database | null = null;
+
 // 动态导入 drizzle 相关依赖（仅在 Cloudflare Workers 环境中使用）
-const createAuth = async (d1Database: D1Database) => {
+const getAuth = async (d1Database: D1Database) => {
+  // 如果数据库实例相同，直接返回缓存的 auth 实例
+  if (authInstance && dbInstance === d1Database) {
+    return authInstance;
+  }
+
   const { drizzleAdapter } = await import("better-auth/adapters/drizzle");
   const { drizzle } = await import("drizzle-orm/d1");
   const schema = await import("@/db/schema");
 
-  console.log("Schema loaded:", Object.keys(schema));
-
   const db = drizzle(d1Database, { schema });
 
-  // 测试查询
-  try {
-    const result = await db.select().from(schema.users).limit(1);
-    console.log("Test query result:", result);
-  } catch (e) {
-    console.error("Test query failed:", e);
-  }
-
-  const auth = betterAuth({
+  authInstance = betterAuth({
     database: drizzleAdapter(db, {
       provider: "sqlite",
       schema: {
@@ -42,65 +41,94 @@ const createAuth = async (d1Database: D1Database) => {
       maxPasswordLength: 128,
     },
     session: {
-      expiresIn: 60 * 60 * 24 * 7,
-      updateAge: 60 * 60 * 24,
+      expiresIn: 60 * 60 * 24 * 7, // 7 天
+      updateAge: 60 * 60 * 24, // 1 天
+    },
+    user: {
+      additionalFields: {
+        bio: {
+          type: "string",
+          required: false,
+          defaultValue: "",
+        },
+        experience: {
+          type: "string",
+          required: false,
+          defaultValue: "beginner",
+        },
+      },
     },
     secret: process.env.BETTER_AUTH_SECRET || "dev-secret-key",
     baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8787",
   });
 
-  return auth;
+  dbInstance = d1Database;
+  return authInstance;
 };
 
-export async function GET(request: NextRequest) {
+// 统一的请求处理器
+async function handleRequest(request: NextRequest) {
   try {
     const { env } = await getCloudflareContext();
     if (!env.DB) {
       throw new Error("D1 database binding not found");
     }
-    const auth = await createAuth(env.DB as D1Database);
-    // @ts-ignore - handler might be in different location
-    const handler = auth.handler || auth.api?.handler;
-    if (!handler || typeof handler !== 'function') {
-      throw new Error("Auth handler not found");
-    }
-    return handler(request);
-  } catch (error) {
-    console.error("Auth error:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal Server Error", message: (error as Error).message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
-}
 
-export async function POST(request: NextRequest) {
-  try {
-    const { env } = await getCloudflareContext();
-    if (!env.DB) {
-      throw new Error("D1 database binding not found");
-    }
-    const auth = await createAuth(env.DB as D1Database);
-    // @ts-ignore - handler might be in different location
-    const handler = auth.handler || auth.api?.handler;
+    const auth = await getAuth(env.DB as D1Database);
+
+    // Better Auth 1.1.0 的 handler 在 auth 对象上
+    const handler = (auth as unknown as { handler: (req: NextRequest) => Promise<Response> }).handler;
+
     if (!handler || typeof handler !== 'function') {
       throw new Error("Auth handler not found");
     }
+
     const response = await handler(request);
 
-    // 如果响应是错误，记录详细信息
+    // 如果响应是错误，记录详细信息用于调试
     if (!response.ok) {
-      const clonedResponse = response.clone();
-      const body = await clonedResponse.json();
-      console.error("Better Auth error:", JSON.stringify(body));
+      try {
+        const clonedResponse = response.clone();
+        const body = await clonedResponse.json();
+        console.error("Better Auth error:", JSON.stringify(body));
+      } catch {
+        // 忽略解析错误
+      }
     }
 
     return response;
   } catch (error) {
     console.error("Auth error:", error);
     return new Response(
-      JSON.stringify({ error: "Internal Server Error", message: (error as Error).message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({
+        error: "Internal Server Error",
+        message: (error as Error).message
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      }
     );
   }
+}
+
+export async function GET(request: NextRequest) {
+  return handleRequest(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleRequest(request);
+}
+
+// 支持其他 HTTP 方法
+export async function PUT(request: NextRequest) {
+  return handleRequest(request);
+}
+
+export async function PATCH(request: NextRequest) {
+  return handleRequest(request);
+}
+
+export async function DELETE(request: NextRequest) {
+  return handleRequest(request);
 }

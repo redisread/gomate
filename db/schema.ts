@@ -17,14 +17,14 @@ export const users = sqliteTable(
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
-    emailVerified: integer("emailVerified", { mode: "boolean" }).default(false).notNull(),
+    emailVerified: integer("email_verified", { mode: "boolean" }).default(false).notNull(),
     image: text("image"),
     bio: text("bio"),
     experience: text("experience"), // beginner, intermediate, advanced, expert (Better Auth 字段)
     level: text("level").default("beginner"), // 领队等级: beginner, intermediate, advanced, expert
     completedHikes: integer("completed_hikes").default(0), // 完成徒步次数
-    createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
     emailIdx: uniqueIndex("users_email_idx").on(table.email),
@@ -36,15 +36,15 @@ export const sessions = sqliteTable(
   "sessions",
   {
     id: text("id").primaryKey(),
-    userId: text("userId")
+    userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     token: text("token").notNull().unique(),
-    expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
-    ipAddress: text("ipAddress"),
-    userAgent: text("userAgent"),
-    createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
     userIdx: index("sessions_user_idx").on(table.userId),
@@ -57,22 +57,22 @@ export const accounts = sqliteTable(
   "accounts",
   {
     id: text("id").primaryKey(),
-    userId: text("userId")
+    userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    accountId: text("accountId").notNull(),
-    providerId: text("providerId").notNull(),
-    accessToken: text("accessToken"),
-    refreshToken: text("refreshToken"),
-    accessTokenExpiresAt: integer("accessTokenExpiresAt", { mode: "timestamp" }),
-    refreshTokenExpiresAt: integer("refreshTokenExpiresAt", { mode: "timestamp" }),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp" }),
+    refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp" }),
     scope: text("scope"),
-    idToken: text("idToken"),
+    idToken: text("id_token"),
     password: text("password"),
     // Better Auth 要求的字段
-    expiresAt: integer("expiresAt", { mode: "timestamp" }),
-    createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
     userIdx: index("accounts_user_idx").on(table.userId),
@@ -87,9 +87,9 @@ export const verifications = sqliteTable(
     id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
-    createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
     identifierIdx: uniqueIndex("verifications_identifier_idx").on(table.identifier),

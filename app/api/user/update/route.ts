@@ -31,6 +31,8 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { userId, name, bio, experience, image } = body;
 
+    console.log("Update user request:", { userId, name, bio, experience });
+
     if (!userId) {
       return NextResponse.json(
         { error: "User ID is required" },
@@ -39,31 +41,74 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 构建更新数据
-    const updateData: Partial<typeof schema.users.$inferInsert> = {
-      updatedAt: new Date(),
-    };
+    const updateData: Partial<typeof schema.users.$inferInsert> = {};
 
     if (name !== undefined) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
-    if (experience !== undefined) updateData.experience = experience;
+    if (experience !== undefined) {
+      updateData.experience = experience;
+      // 同时更新 level 字段，保持与 experience 一致
+      updateData.level = experience;
+    }
     if (image !== undefined) updateData.image = image;
 
+    // 手动设置 updatedAt（Drizzle ORM 会自动转换为时间戳）
+    updateData.updatedAt = new Date();
+
+    console.log("Update data:", updateData);
+
+    // 首先通过 email 查找用户（Better Auth 的 session.user.id 可能是 email）
+    const existingUser = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, userId))
+      .limit(1);
+
+    console.log("Existing user by email:", existingUser);
+
+    let targetUserId = userId;
+    if (existingUser.length > 0) {
+      targetUserId = existingUser[0].id;
+    }
+
+    console.log("Target user ID:", targetUserId);
+
+    // 先查询用ID查找用户
+    const userById = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, targetUserId))
+      .limit(1);
+
+    console.log("User by ID:", userById);
+
+    if (userById.length === 0) {
+      return NextResponse.json(
+        { error: "User not found with ID: " + targetUserId },
+        { status: 404 }
+      );
+    }
+
     // 更新数据库
-    await db
+    const updateResult = await db
       .update(schema.users)
       .set(updateData)
-      .where(eq(schema.users.id, userId));
+      .where(eq(schema.users.id, targetUserId));
+
+    console.log("Update result:", JSON.stringify(updateResult));
 
     // 获取更新后的用户信息
     const updatedUser = await db
       .select()
       .from(schema.users)
-      .where(eq(schema.users.id, userId))
+      .where(eq(schema.users.id, targetUserId))
       .limit(1);
+
+    console.log("Updated user from DB:", JSON.stringify(updatedUser[0]));
 
     if (!updatedUser.length) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "User not found after update" },
         { status: 404 }
       );
     }

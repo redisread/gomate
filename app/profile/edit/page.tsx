@@ -30,7 +30,7 @@ const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf37
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, refreshUser } = useAuth();
 
   const [formData, setFormData] = React.useState({
     name: "",
@@ -167,7 +167,7 @@ export default function EditProfilePage() {
         }
       }
 
-      // 更新用户信息到数据库
+      // 调用自定义 API 更新用户信息（支持 bio 和 experience 自定义字段）
       const response = await fetch("/api/user/update", {
         method: "PATCH",
         headers: {
@@ -176,9 +176,9 @@ export default function EditProfilePage() {
         body: JSON.stringify({
           userId: user.id,
           name: formData.name,
+          image: avatarUrl === DEFAULT_AVATAR ? null : avatarUrl,
           bio: formData.bio,
           experience: formData.level,
-          image: avatarUrl === DEFAULT_AVATAR ? null : avatarUrl,
         }),
       });
 
@@ -187,6 +187,9 @@ export default function EditProfilePage() {
       if (!response.ok) {
         throw new Error(result.error || "保存失败");
       }
+
+      // 刷新用户信息，确保获取最新的数据
+      await refreshUser();
 
       setMessage({ type: "success", text: "保存成功！" });
 

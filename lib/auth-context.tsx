@@ -15,12 +15,32 @@ export interface AuthUser {
   createdAt: string;
 }
 
+// 从 API 获取完整用户信息
+async function fetchFullUserInfo(userId: string): Promise<Partial<AuthUser> | null> {
+  try {
+    console.log("[fetchFullUserInfo] Fetching user:", userId);
+    const response = await fetch(`/api/user?id=${encodeURIComponent(userId)}`);
+    console.log("[fetchFullUserInfo] Response status:", response.status);
+    if (!response.ok) {
+      console.error("[fetchFullUserInfo] Response not ok:", response.status);
+      return null;
+    }
+    const data = await response.json();
+    console.log("[fetchFullUserInfo] User data:", data.user);
+    return data.user as Partial<AuthUser>;
+  } catch (error) {
+    console.error("[fetchFullUserInfo] Error:", error);
+    return null;
+  }
+}
+
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -36,25 +56,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 使用 Better Auth 的 useSession hook 获取 session
   const { data: session, isPending } = authClient.useSession();
 
-  // 当 session 变化时更新用户状态
-  React.useEffect(() => {
+  // 同步用户数据的函数
+  const syncUserData = React.useCallback(async () => {
     if (session?.user) {
+      // 处理 createdAt 可能是 Date 或整数时间戳的情况
+      let createdAtStr: string;
+      if (session.user.createdAt) {
+        if (typeof session.user.createdAt === 'number') {
+          createdAtStr = new Date(session.user.createdAt).toISOString();
+        } else if (session.user.createdAt instanceof Date) {
+          createdAtStr = session.user.createdAt.toISOString();
+        } else {
+          createdAtStr = new Date().toISOString();
+        }
+      } else {
+        createdAtStr = new Date().toISOString();
+      }
+
+      // 尝试从 API 获取完整用户信息（包含 bio、level 等自定义字段）
+      const fullUser = await fetchFullUserInfo(session.user.id);
+
       const authUser: AuthUser = {
         id: session.user.id,
-        name: session.user.name,
-        avatar: session.user.image || DEFAULT_AVATAR,
+        name: fullUser?.name !== undefined ? fullUser.name : session.user.name,
+        avatar: fullUser?.avatar !== undefined ? fullUser.avatar : (session.user.image || DEFAULT_AVATAR),
         email: session.user.email,
-        level: (session.user.experience as AuthUser["level"]) || "beginner",
-        completedHikes: 0, // 从其他数据源获取
-        bio: session.user.bio || "新人户外爱好者，期待与你一起探索山野。",
-        createdAt: session.user.createdAt?.toISOString() || new Date().toISOString(),
+        level: (fullUser?.level !== undefined ? fullUser.level : session.user.experience as AuthUser["level"]) || "beginner",
+        completedHikes: fullUser?.completedHikes !== undefined ? fullUser.completedHikes : ((session.user as unknown as { completedHikes?: number }).completedHikes || 0),
+        bio: fullUser?.bio !== undefined ? fullUser.bio : (session.user.bio || "新人户外爱好者，期待与你一起探索山野。"),
+        createdAt: fullUser?.createdAt !== undefined ? fullUser.createdAt : createdAtStr,
       };
+      console.log("[syncUserData] Setting user:", authUser);
       setUser(authUser);
     } else {
       setUser(null);
     }
+  }, [session]);
+
+  // 当 session 变化时更新用户状态
+  React.useEffect(() => {
+    syncUserData();
     setIsLoading(isPending);
-  }, [session, isPending]);
+  }, [session, isPending, syncUserData]);
+
+  // 手动刷新用户信息
+  const refreshUser = React.useCallback(async () => {
+    if (session?.user?.id) {
+      // 强制从 API 获取最新数据
+      const fullUser = await fetchFullUserInfo(session.user.id);
+      if (fullUser) {
+        setUser((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            name: fullUser.name !== undefined ? fullUser.name : prev.name,
+            avatar: fullUser.avatar !== undefined ? fullUser.avatar : prev.avatar,
+            bio: fullUser.bio !== undefined ? fullUser.bio : prev.bio,
+            level: (fullUser.level !== undefined ? fullUser.level : prev.level) || "beginner",
+            completedHikes: fullUser.completedHikes !== undefined ? fullUser.completedHikes : prev.completedHikes,
+          };
+        });
+      }
+    }
+  }, [session?.user?.id]);
 
   // 登录
   const login = React.useCallback(async (
@@ -122,8 +186,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     register,
     logout,
+    refreshUser,
     isAuthenticated: !!user,
-  }), [user, isLoading, login, register, logout]);
+  }), [user, isLoading, login, register, logout, refreshUser]);
 
   return (
     <AuthContext.Provider value={value}>
