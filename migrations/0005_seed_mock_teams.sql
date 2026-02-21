@@ -1,5 +1,5 @@
 -- 插入 mock 用户（领队）
-INSERT OR IGNORE INTO users (id, name, email, emailVerified, image, bio, experience, level, completed_hikes, createdAt, updatedAt) VALUES
+INSERT OR IGNORE INTO users (id, name, email, email_verified, image, bio, experience, level, completed_hikes, created_at, updated_at) VALUES
 ('user-1', '山野行者', 'user1@gomate.com', 0, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face', '资深户外爱好者，深圳百山打卡进行中，擅长路线规划和安全保障。', 'advanced', 'advanced', 47, 1707955200, 1707955200),
 ('user-2', '光影猎人', 'user2@gomate.com', 0, 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face', '风光摄影师，专注山海摄影，熟悉深圳各大观景点最佳拍摄时机。', 'expert', 'expert', 82, 1707868800, 1707868800),
 ('user-3', '暖心领队', 'user3@gomate.com', 0, 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face', '热爱分享，擅长带领新手入门，注重团队安全和体验。', 'intermediate', 'intermediate', 23, 1708041600, 1708041600),
