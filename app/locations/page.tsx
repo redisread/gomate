@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
 import { Button } from "@/components/ui/button";
-import { locations as mockLocations } from "@/lib/data/mock";
+import { useLocations } from "@/lib/locations-context";
 
 // 难度标签映射
 const difficultyLabels: Record<string, { label: string; color: string }> = {
@@ -19,7 +19,7 @@ const difficultyLabels: Record<string, { label: string; color: string }> = {
 };
 
 export default function LocationsPage() {
-  const locations = mockLocations;
+  const { locations } = useLocations();
 
   return (
     <main className="min-h-screen bg-stone-50">

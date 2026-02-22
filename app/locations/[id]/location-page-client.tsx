@@ -10,16 +10,14 @@ import { LocationHeader } from "@/app/components/features/location-header";
 import { LocationInfoCard } from "@/app/components/features/location-info-card";
 import { RouteGuide } from "@/app/components/features/route-guide";
 import { TeamList } from "@/app/components/features/team-list";
-import {
-  getLocationById,
-  locations,
-} from "@/lib/data/mock";
+import { useLocations } from "@/lib/locations-context";
 
 interface LocationPageClientProps {
   locationId: string;
 }
 
 export function LocationPageClient({ locationId }: LocationPageClientProps) {
+  const { locations, getLocationById } = useLocations();
   const location = getLocationById(locationId);
 
   if (!location) {

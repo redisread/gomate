@@ -12,11 +12,12 @@ import { SearchBar } from "@/app/components/features/search-bar";
 import { Filter } from "@/app/components/features/filter";
 import { LocationCard } from "@/app/components/features/location-card";
 import { Button } from "@/components/ui/button";
-import { locations } from "@/lib/data/mock";
+import { useLocations } from "@/lib/locations-context";
 import { useTeams } from "@/lib/teams-context";
 
 export default function HomePage() {
   const { teams } = useTeams();
+  const { locations } = useLocations();
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [selectedFilters, setSelectedFilters] = React.useState<
     Record<string, string[]>
@@ -95,7 +96,7 @@ export default function HomePage() {
 
       return true;
     });
-  }, [selectedFilters]);
+  }, [selectedFilters, locations]);
 
   return (
     <main className="min-h-screen bg-stone-50">

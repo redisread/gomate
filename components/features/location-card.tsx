@@ -8,7 +8,8 @@ import { MapPin, Clock, Route, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DifficultyBadge } from "@/app/components/ui/difficulty-badge";
 import { Tag } from "@/app/components/ui/tag";
-import { Location, getTeamsByLocationId } from "@/lib/data/mock";
+import type { Location } from "@/lib/types";
+import { useTeams } from "@/lib/teams-context";
 import { cn } from "@/lib/utils";
 
 interface LocationCardProps {
@@ -24,6 +25,7 @@ function LocationCard({
   className,
   variant = "default",
 }: LocationCardProps) {
+  const { getTeamsByLocationId } = useTeams();
   const teams = getTeamsByLocationId(location.id);
   const openTeams = teams.filter((t) => t.status === "open").length;
 

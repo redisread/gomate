@@ -16,7 +16,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Location } from "@/lib/data/mock";
+import type { Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface RouteGuideProps {

@@ -12,7 +12,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Team, Location } from "@/lib/data/mock";
+import type { Team, Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface TeamHeaderProps {

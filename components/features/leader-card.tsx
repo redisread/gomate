@@ -13,7 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Team, leaderLevelLabels } from "@/lib/data/mock";
+import type { Team } from "@/lib/types";
+import { leaderLevelLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface LeaderCardProps {

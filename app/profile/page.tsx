@@ -25,7 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
 import { useTeams } from "@/lib/teams-context";
-import { locations } from "@/lib/data/mock";
+import { useLocations } from "@/lib/locations-context";
 
 // 经验等级映射
 const levelLabels: Record<string, { label: string; color: string; description: string }> = {
@@ -39,6 +39,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const { teams } = useTeams();
+  const { locations } = useLocations();
 
   // 未登录重定向
   React.useEffect(() => {

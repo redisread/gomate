@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth-context";
 import { useTeams } from "@/lib/teams-context";
-import { locations } from "@/lib/data/mock";
+import { useLocations } from "@/lib/locations-context";
 
 // Loading fallback
 function MyTeamsLoading() {
@@ -59,6 +59,7 @@ function MyTeamsContent() {
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading } = useAuth();
   const { teams } = useTeams();
+  const { locations } = useLocations();
 
   // 从 URL 参数获取默认 Tab
   const defaultTab = searchParams.get("tab") || "created";

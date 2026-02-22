@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Team } from "@/lib/data/mock";
+import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface TeamInfoProps {

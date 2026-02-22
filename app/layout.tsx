@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { LocationsProvider } from "@/lib/locations-context";
 import { TeamsProvider } from "@/lib/teams-context";
 
 export const metadata: Metadata = {
@@ -19,9 +20,11 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className="font-sans antialiased">
         <AuthProvider>
-          <TeamsProvider>
-            {children}
-          </TeamsProvider>
+          <LocationsProvider>
+            <TeamsProvider>
+              {children}
+            </TeamsProvider>
+          </LocationsProvider>
         </AuthProvider>
       </body>
     </html>

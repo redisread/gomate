@@ -4,7 +4,7 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { Check, Loader2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Team } from "@/lib/data/mock";
+import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface JoinButtonProps {

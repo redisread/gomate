@@ -15,7 +15,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Team, leaderLevelLabels } from "@/lib/data/mock";
+import type { Team } from "@/lib/types";
+import { leaderLevelLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface TeamListProps {

@@ -15,12 +15,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { locations, getLocationById } from "@/lib/data/mock";
+import { useLocations } from "@/lib/locations-context";
 import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
 
 function CreateTeamForm() {
   const { addTeam } = useTeams();
+  const { locations, getLocationById } = useLocations();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();

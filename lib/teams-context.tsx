@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Team, teams as mockTeams } from "@/lib/data/mock";
+import type { Team } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 
 // 重新导出 Team 类型
@@ -63,7 +63,7 @@ function formatTeamFromDB(apiTeam: Record<string, unknown>): Team {
 
 export function TeamsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [teams, setTeams] = React.useState<Team[]>(mockTeams);
+  const [teams, setTeams] = React.useState<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   // 从数据库加载队伍列表
@@ -75,8 +75,7 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
         const result = await response.json();
         if (result.success && result.teams) {
           const dbTeams = result.teams.map(formatTeamFromDB);
-          // 合并 mock 数据和数据库数据
-          setTeams([...mockTeams, ...dbTeams]);
+          setTeams(dbTeams);
         }
       }
     } catch (error) {

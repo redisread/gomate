@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { MapPin, ChevronLeft, Share2, Heart } from "lucide-react";
 import Link from "next/link";
 import { DifficultyBadge } from "@/app/components/ui/difficulty-badge";
-import { Location } from "@/lib/data/mock";
+import type { Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface LocationHeaderProps {

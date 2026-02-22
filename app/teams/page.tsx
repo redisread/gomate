@@ -23,7 +23,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTeams } from "@/lib/teams-context";
-import { locations } from "@/lib/data/mock";
+import { useLocations } from "@/lib/locations-context";
 import { cn } from "@/lib/utils";
 
 // 状态映射
@@ -41,8 +41,8 @@ const difficultyLabels: Record<string, { label: string; color: string }> = {
   extreme: { label: "极难", color: "bg-red-100 text-red-700" },
 };
 
-// 筛选选项
-const filterOptions = {
+// 筛选选项（静态部分）
+const staticFilterOptions = {
   difficulty: [
     { id: "easy", label: "简单" },
     { id: "moderate", label: "中等" },
@@ -54,7 +54,6 @@ const filterOptions = {
     { id: "day", label: "一日" },
     { id: "multi", label: "多日" },
   ],
-  location: locations.map((l) => ({ id: l.id, label: l.name })),
 };
 
 // Parse duration string and return category
@@ -69,6 +68,12 @@ const getDurationCategory = (duration: string): string => {
 
 export default function TeamsPage() {
   const { teams } = useTeams();
+  const { locations } = useLocations();
+
+  const filterOptions = React.useMemo(() => ({
+    ...staticFilterOptions,
+    location: locations.map((l) => ({ id: l.id, label: l.name })),
+  }), [locations]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [showFilters, setShowFilters] = React.useState(false);
   const [selectedFilters, setSelectedFilters] = React.useState<{

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tag } from "@/app/components/ui/tag";
-import { Location } from "@/lib/data/mock";
+import type { Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface LocationInfoCardProps {

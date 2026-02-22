@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { difficultyLabels } from "@/lib/data/mock";
+import { difficultyLabels } from "@/lib/constants";
 
 interface DifficultyBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   difficulty: "easy" | "moderate" | "hard" | "extreme";

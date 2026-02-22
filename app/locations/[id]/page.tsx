@@ -1,4 +1,7 @@
-import { locations } from "@/lib/data/mock";
+"use client";
+
+import * as React from "react";
+import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
 import { LocationHeader } from "@/app/components/features/location-header";
 import { LocationInfoCard } from "@/app/components/features/location-info-card";
@@ -6,16 +9,21 @@ import { RouteGuide } from "@/app/components/features/route-guide";
 import { TeamList } from "@/app/components/features/team-list";
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
+import { useLocations } from "@/lib/locations-context";
 
-interface LocationPageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
-export default async function LocationPage({ params }: LocationPageProps) {
-  const { id } = await params;
+export default function LocationPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const { locations, isLoading } = useLocations();
   const location = locations.find((l) => l.id === id);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-pulse text-stone-400">加载中...</div>
+      </main>
+    );
+  }
 
   if (!location) {
     notFound();
