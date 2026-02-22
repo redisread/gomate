@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gt } from "drizzle-orm";
 
 // 动态导入 @opennextjs/cloudflare 以避免构建时错误
 const getCloudflareContext = async () => {
@@ -37,14 +37,13 @@ async function validateSession(
     const schema = await import("@/db/schema");
     const ormDb = drizzle(db, { schema });
 
-    // Better Auth 使用秒级时间戳，需要转换为秒进行比较
-    const nowInSeconds = Math.floor(Date.now() / 1000);
+    // 查询 session（expiresAt 需大于当前时间，且 mode: "timestamp" 需传 Date 对象）
+    const now = new Date();
 
-    // 查询 session
     const sessions = await ormDb.query.sessions.findMany({
       where: and(
         eq(schema.sessions.token, token),
-        eq(schema.sessions.expiresAt, nowInSeconds)
+        gt(schema.sessions.expiresAt, now)
       ),
       limit: 1,
     });

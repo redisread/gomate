@@ -37,7 +37,7 @@ async function validateSession(
 
     // 查询 session
     const session = await db.prepare(
-      "SELECT * FROM sessions WHERE token = ? AND expiresAt > ?"
+      "SELECT * FROM sessions WHERE token = ? AND expires_at > ?"
     ).bind(token, nowInSeconds).first();
 
     if (!session) {
@@ -47,13 +47,13 @@ async function validateSession(
     // 查询用户
     const user = await db.prepare(
       "SELECT * FROM users WHERE id = ?"
-    ).bind(session.userId).first();
+    ).bind(session.user_id).first();
 
     if (!user) {
       return null;
     }
 
-    return { userId: session.userId as string, user };
+    return { userId: session.user_id as string, user };
   } catch (error) {
     console.error("Validate session error:", error);
     return null;

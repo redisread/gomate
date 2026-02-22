@@ -15,8 +15,9 @@ import { LeaderCard } from "@/app/components/features/leader-card";
 import { JoinButton } from "@/app/components/features/join-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getLocationById } from "@/lib/data/mock";
-import type { Team } from "@/lib/data/mock";
+import { useLocations } from "@/lib/locations-context";
+import type { Team } from "@/lib/types";
+import type { Location } from "@/lib/types";
 
 interface TeamPageProps {
   params: Promise<{
@@ -28,7 +29,8 @@ export default function TeamPage({ params }: TeamPageProps) {
   const router = useRouter();
   const [teamId, setTeamId] = React.useState<string>("");
   const [team, setTeam] = React.useState<Team | null>(null);
-  const [location, setLocation] = React.useState<ReturnType<typeof getLocationById>>(undefined);
+  const [location, setLocation] = React.useState<Location | undefined>(undefined);
+  const { getLocationById, isLoading: locationsLoading } = useLocations();
   const [otherTeams, setOtherTeams] = React.useState<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -59,8 +61,6 @@ export default function TeamPage({ params }: TeamPageProps) {
       if (result.success && result.team) {
         const teamData = result.team;
         setTeam(teamData);
-        const loc = getLocationById(teamData.locationId);
-        setLocation(loc);
 
         // 获取该地点的其他队伍
         fetchOtherTeams(id, teamData.locationId);
@@ -92,7 +92,15 @@ export default function TeamPage({ params }: TeamPageProps) {
     }
   };
 
-  if (isLoading) {
+  // 当 team 数据和 locations 都加载完成后，查找对应的 location
+  React.useEffect(() => {
+    if (team && !locationsLoading) {
+      const loc = getLocationById(team.locationId);
+      setLocation(loc);
+    }
+  }, [team, locationsLoading, getLocationById]);
+
+  if (isLoading || (team && locationsLoading)) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="animate-pulse text-stone-400">加载中...</div>
