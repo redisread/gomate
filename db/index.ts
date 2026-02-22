@@ -3,9 +3,6 @@ import { drizzle as drizzleD1 } from "drizzle-orm/d1";
 import Database from "better-sqlite3";
 import * as schema from "./schema";
 
-// 是否使用 mock 数据模式（开发环境可用）- 已基本弃用，推荐使用本地 D1 模拟
-export const isMockMode = process.env.USE_MOCK_DATA === "true";
-
 // 是否使用本地 SQLite 数据库（当无法使用 D1 时的备用方案）
 export const isLocalDb = process.env.USE_LOCAL_DB === "true";
 
@@ -15,13 +12,13 @@ const localDbPath = process.env.LOCAL_DB_PATH || "./local.db";
 // 创建 drizzle 实例
 let dbInstance: ReturnType<typeof drizzle<typeof schema>> | undefined;
 
-if (!isMockMode && isLocalDb) {
+if (isLocalDb) {
   // 本地 SQLite 模式（备用方案）
   const sqlite = new Database(localDbPath);
   dbInstance = drizzle(sqlite, { schema });
 }
 
-// 导出 drizzle 实例（mock 模式或远程 D1 模式下为 undefined）
+// 导出 drizzle 实例（D1 模式下为 undefined）
 export const db = dbInstance;
 
 /**

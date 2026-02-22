@@ -22,8 +22,6 @@ export interface CloudflareEnv {
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      /** 使用 Mock 数据 */
-      USE_MOCK_DATA?: string;
       /** 使用本地数据库 */
       USE_LOCAL_DB?: string;
       /** 本地数据库路径 */

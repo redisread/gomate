@@ -3,8 +3,6 @@
  * 静态导出时使用 Fetch API 调用 Cloudflare Pages Functions
  */
 
-import { isMockMode, isLocalDb } from "@/db";
-
 // API 基础 URL
 const getBaseUrl = () => {
   if (typeof window === "undefined") {

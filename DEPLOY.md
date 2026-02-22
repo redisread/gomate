@@ -222,7 +222,6 @@ wrangler d1 export gomate-db --remote --output=backup.sql
 ### 开发环境 (.env.local)
 
 ```bash
-USE_MOCK_DATA=false
 USE_LOCAL_DB=true
 LOCAL_DB_PATH=./local.db
 BETTER_AUTH_SECRET=dev-secret-key

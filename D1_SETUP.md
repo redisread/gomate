@@ -6,18 +6,12 @@
 
 ## 开发模式
 
-### 模式 1: Mock 数据（推荐开发使用）
-```bash
-# .env.local
-USE_MOCK_DATA=true
-USE_LOCAL_DB=false
-```
-无需数据库，使用本地 mock 数据。
+### 模式 1: 本地 D1 模拟（推荐开发使用）
+运行 `npm run cf:dev` 自动启用本地 D1 模拟，无需额外配置。
 
-### 模式 2: 本地 SQLite
+### 模式 2: 本地 SQLite（备用方案）
 ```bash
 # .env.local
-USE_MOCK_DATA=false
 USE_LOCAL_DB=true
 LOCAL_DB_PATH=./local.db
 ```
@@ -25,7 +19,6 @@ LOCAL_DB_PATH=./local.db
 ### 模式 3: CloudFlare D1（生产环境）
 ```bash
 # .env.local
-USE_MOCK_DATA=false
 USE_LOCAL_DB=false
 CLOUDFLARE_ACCOUNT_ID=your-account-id
 CLOUDFLARE_DATABASE_ID=your-database-id
@@ -134,5 +127,5 @@ wrangler deploy
 - 考虑删除重建数据库或使用 `wrangler d1 execute` 执行原始 SQL
 
 ### 问题: 开发环境报错
-- Mock 模式下无需任何数据库配置
+- 本地 D1 模式需要运行 `npm run cf:dev`
 - 本地 SQLite 模式需要 `better-sqlite3` 正确安装

@@ -22,10 +22,8 @@ function JoinButton({ team, className, onJoin }: JoinButtonProps) {
     team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle"
   );
 
-  // 如果是当前用户创建的队伍，则不显示申请加入按钮
-  if (user && team.leader.id === user.id) {
-    return null; // 隐藏按钮，因为用户是队长
-  }
+  // 判断是否是队长
+  const isLeader = user && team?.leader?.id === user?.id;
 
   const handleJoin = async () => {
     if (joinState !== "idle") return;
@@ -121,28 +119,31 @@ function JoinButton({ team, className, onJoin }: JoinButtonProps) {
                   } 个名额`}
             </p>
           </div>
-          <Button
-            size="lg"
-            variant={config.variant}
-            onClick={handleJoin}
-            disabled={joinState === "loading" || joinState === "full" || joinState === "closed"}
-            className={cn(
-              "px-8 transition-all duration-300",
-              config.className
-            )}
-          >
-            <motion.div
-              animate={joinState === "loading" ? { rotate: 360 } : {}}
-              transition={
-                joinState === "loading"
-                  ? { duration: 1, repeat: Infinity, ease: "linear" }
-                  : {}
-              }
+          {/* 如果不是队长，则显示申请加入按钮 */}
+          {!isLeader && (
+            <Button
+              size="lg"
+              variant={config.variant}
+              onClick={handleJoin}
+              disabled={joinState === "loading" || joinState === "full" || joinState === "closed"}
+              className={cn(
+                "px-8 transition-all duration-300",
+                config.className
+              )}
             >
-              <Icon className="h-5 w-5 mr-2" />
-            </motion.div>
-            {config.text}
-          </Button>
+              <motion.div
+                animate={joinState === "loading" ? { rotate: 360 } : {}}
+                transition={
+                  joinState === "loading"
+                    ? { duration: 1, repeat: Infinity, ease: "linear" }
+                    : {}
+                }
+              >
+                <Icon className="h-5 w-5 mr-2" />
+              </motion.div>
+              {config.text}
+            </Button>
+          )}
         </div>
       </div>
     </motion.div>

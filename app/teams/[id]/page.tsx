@@ -1,5 +1,6 @@
 "use client";
 
+// DEBUG VERSION 3 - Force rebuild - TIMESTAMP: $(date +%s)
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -12,10 +13,11 @@ import { Footer } from "@/app/components/layout/footer";
 import { TeamHeader } from "@/app/components/features/team-header";
 import { TeamInfo } from "@/app/components/features/team-info";
 import { LeaderCard } from "@/app/components/features/leader-card";
-import { JoinButton } from "@/app/components/features/join-button";
+import { JoinButton } from "@/components/features/join-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocations } from "@/lib/locations-context";
+import { useAuth } from "@/lib/auth-context";
 import type { Team } from "@/lib/types";
 import type { Location } from "@/lib/types";
 
@@ -27,6 +29,7 @@ interface TeamPageProps {
 
 export default function TeamPage({ params }: TeamPageProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [teamId, setTeamId] = React.useState<string>("");
   const [team, setTeam] = React.useState<Team | null>(null);
   const [location, setLocation] = React.useState<Location | undefined>(undefined);
@@ -34,6 +37,7 @@ export default function TeamPage({ params }: TeamPageProps) {
   const [otherTeams, setOtherTeams] = React.useState<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+
 
   React.useEffect(() => {
     params.then(({ id }) => {
