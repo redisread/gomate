@@ -58,7 +58,7 @@ function MyTeamsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading } = useAuth();
-  const { teams } = useTeams();
+  const { teams, getUserJoinedTeams } = useTeams();
   const { locations } = useLocations();
 
   // 从 URL 参数获取默认 Tab
@@ -96,11 +96,34 @@ function MyTeamsContent() {
     );
   }
 
+  const [joinedTeams, setJoinedTeams] = React.useState<Team[]>([]);
+  const [joinedTeamsLoading, setJoinedTeamsLoading] = React.useState(true);
+
+  // 加载用户加入的队伍
+  React.useEffect(() => {
+    const fetchJoinedTeams = async () => {
+      if (user?.id) {
+        try {
+          setJoinedTeamsLoading(true);
+          const userJoinedTeams = await getUserJoinedTeams();
+          setJoinedTeams(userJoinedTeams);
+        } catch (error) {
+          console.error("获取用户加入的队伍失败:", error);
+          setJoinedTeams([]);
+        } finally {
+          setJoinedTeamsLoading(false);
+        }
+      } else {
+        setJoinedTeams([]);
+        setJoinedTeamsLoading(false);
+      }
+    };
+
+    fetchJoinedTeams();
+  }, [user?.id, getUserJoinedTeams]);
+
   // 获取用户创建的队伍
   const createdTeams = teams.filter((t) => t.leader.id === user.id);
-
-  // 获取用户加入的队伍（非自己创建的）- 目前 mock 数据不支持，需要后续实现
-  const joinedTeams: typeof teams = [];
 
   // 获取历史队伍（已结束的）
   const historyTeams = teams.filter(
@@ -325,7 +348,12 @@ function MyTeamsContent() {
 
             {/* Joined Teams */}
             <TabsContent value="joined" className="mt-6">
-              {joinedTeams.length === 0 ? (
+              {joinedTeamsLoading ? (
+                <div className="animate-pulse space-y-4">
+                  <div className="h-24 bg-stone-200 rounded" />
+                  <div className="h-24 bg-stone-200 rounded" />
+                </div>
+              ) : joinedTeams.length === 0 ? (
                 <EmptyState type="joined" />
               ) : (
                 <div className="space-y-4">

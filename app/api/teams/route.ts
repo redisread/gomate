@@ -199,6 +199,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const locationId = searchParams.get("locationId");
+    const userId = searchParams.get("userId"); // 新增：按用户ID查询用户加入的队伍
+    const includeJoined = searchParams.get("includeJoined") === "true"; // 新增：是否包含用户加入的队伍
 
     const { env } = await getCloudflareContext();
 
@@ -214,27 +216,51 @@ export async function GET(request: NextRequest) {
     // 使用 Drizzle ORM 查询
     const { drizzle } = await import("drizzle-orm/d1");
     const schema = await import("@/db/schema");
-    const { eq, desc } = await import("drizzle-orm");
+    const { eq, desc, and, ne } = await import("drizzle-orm");
     const ormDb = drizzle(db, { schema });
 
-    let query = ormDb.query.teams.findMany({
-      with: {
-        leader: true,
-      },
-      orderBy: desc(schema.teams.createdAt),
-    });
+    let result: typeof schema.teams.$inferSelect[];
 
-    if (locationId) {
-      query = ormDb.query.teams.findMany({
+    if (userId && includeJoined) {
+      // 查询用户加入的队伍（非自己创建的）
+      // 使用 innerJoin 来获取团队成员信息并过滤
+      const queryResult = await ormDb
+        .select({
+          teams: schema.teams,
+          leader: schema.users,
+        })
+        .from(schema.teams)
+        .innerJoin(schema.teamMembers, eq(schema.teamMembers.teamId, schema.teams.id))
+        .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
+        .where(and(
+          eq(schema.teamMembers.userId, userId),
+          ne(schema.teams.leaderId, userId), // 排除用户自己创建的队伍
+          eq(schema.teamMembers.status, "approved") // 只包含已批准的成员
+        ))
+        .orderBy(desc(schema.teams.createdAt));
+
+      result = queryResult.map(({ teams, leader }) => ({
+        ...teams,
+        leader, // 添加关联的用户数据
+      }));
+    } else if (locationId) {
+      // 按地点ID查询队伍
+      result = await ormDb.query.teams.findMany({
         where: eq(schema.teams.locationId, locationId),
         with: {
           leader: true,
         },
         orderBy: desc(schema.teams.createdAt),
       });
+    } else {
+      // 获取所有队伍
+      result = await ormDb.query.teams.findMany({
+        with: {
+          leader: true,
+        },
+        orderBy: desc(schema.teams.createdAt),
+      });
     }
-
-    const result = await query;
 
     // 状态映射
     const statusMap: Record<string, 'open' | 'full' | 'closed'> = {

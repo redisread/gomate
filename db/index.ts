@@ -3,10 +3,10 @@ import { drizzle as drizzleD1 } from "drizzle-orm/d1";
 import Database from "better-sqlite3";
 import * as schema from "./schema";
 
-// 是否使用 mock 数据模式（开发环境可用）
+// 是否使用 mock 数据模式（开发环境可用）- 已基本弃用，推荐使用本地 D1 模拟
 export const isMockMode = process.env.USE_MOCK_DATA === "true";
 
-// 是否使用本地 SQLite 数据库
+// 是否使用本地 SQLite 数据库（当无法使用 D1 时的备用方案）
 export const isLocalDb = process.env.USE_LOCAL_DB === "true";
 
 // 本地 SQLite 数据库路径
@@ -16,7 +16,7 @@ const localDbPath = process.env.LOCAL_DB_PATH || "./local.db";
 let dbInstance: ReturnType<typeof drizzle<typeof schema>> | undefined;
 
 if (!isMockMode && isLocalDb) {
-  // 本地 SQLite 模式
+  // 本地 SQLite 模式（备用方案）
   const sqlite = new Database(localDbPath);
   dbInstance = drizzle(sqlite, { schema });
 }
@@ -34,20 +34,22 @@ export function createD1Client(d1Database: D1Database) {
 }
 
 /**
- * 获取数据库实例（支持本地和 D1 模式）
+ * 获取数据库实例（支持 D1 模式优先，本地模式为备选）
  * @param env - 环境变量（包含 D1 绑定）
  * @returns Drizzle ORM 实例
  */
 export function getDB(env?: { DB?: D1Database }) {
   if (env?.DB) {
-    // Cloudflare D1 模式
+    // Cloudflare D1 模式（首选）
     return createD1Client(env.DB);
   }
   if (dbInstance) {
-    // 本地 SQLite 模式
+    // 本地 SQLite 模式（备选）
     return dbInstance;
   }
-  throw new Error("No database available. Please configure DB binding or local database.");
+  // 如果没有配置任何数据库，抛出错误
+  throw new Error("No database available. Please configure DB binding (D1) or local database (USE_LOCAL_DB=true).");
+  // 提示：对于本地开发，推荐使用 `npm run cf:dev` 命令启动，它会自动配置本地 D1 模拟
 }
 
 // D1 数据库类型

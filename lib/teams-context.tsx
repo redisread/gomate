@@ -13,6 +13,7 @@ interface TeamsContextType {
   addTeam: (team: Omit<Team, "id" | "status" | "createdAt" | "leader" | "currentMembers">) => Promise<Team>;
   getTeamsByLocationId: (locationId: string) => Team[];
   getTeamById: (id: string) => Team | undefined;
+  getUserJoinedTeams: () => Promise<Team[]>;
   refreshTeams: () => Promise<void>;
 }
 
@@ -158,8 +159,29 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
     await loadTeams();
   }, [loadTeams]);
 
+  // 获取用户加入的队伍（非自己创建的）
+  const getUserJoinedTeams = React.useCallback(async (): Promise<Team[]> => {
+    if (!user?.id) {
+      return [];
+    }
+
+    try {
+      const response = await fetch(`/api/teams?userId=${user.id}&includeJoined=true`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.teams) {
+          return result.teams.map(formatTeamFromDB);
+        }
+      }
+      return [];
+    } catch (error) {
+      console.error("获取用户加入的队伍失败:", error);
+      return [];
+    }
+  }, [user?.id]);
+
   return (
-    <TeamsContext.Provider value={{ teams, isLoading, addTeam, getTeamsByLocationId, getTeamById, refreshTeams }}>
+    <TeamsContext.Provider value={{ teams, isLoading, addTeam, getTeamsByLocationId, getTeamById, getUserJoinedTeams, refreshTeams }}>
       {children}
     </TeamsContext.Provider>
   );
