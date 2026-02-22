@@ -6,6 +6,7 @@ import { Check, Loader2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 
 interface JoinButtonProps {
   team: Team;
@@ -16,25 +17,50 @@ interface JoinButtonProps {
 type JoinState = "idle" | "loading" | "success" | "full" | "closed";
 
 function JoinButton({ team, className, onJoin }: JoinButtonProps) {
+  const { user } = useAuth();
   const [joinState, setJoinState] = React.useState<JoinState>(
     team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle"
   );
+
+  // 如果是当前用户创建的队伍，则不显示申请加入按钮
+  if (user && team.leader.id === user.id) {
+    return null; // 隐藏按钮，因为用户是队长
+  }
 
   const handleJoin = async () => {
     if (joinState !== "idle") return;
 
     setJoinState("loading");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // 实际的API调用
+      const response = await fetch('/api/teams/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ teamId: team.id }),
+      });
 
-    setJoinState("success");
-    onJoin?.();
+      const result = await response.json();
 
-    // Reset after showing success
-    setTimeout(() => {
-      setJoinState("idle");
-    }, 2000);
+      if (response.ok && result.success) {
+        setJoinState("success");
+        onJoin?.();
+
+        // 2秒后重置状态
+        setTimeout(() => {
+          setJoinState(team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle");
+        }, 2000);
+      } else {
+        alert(result.error || "申请加入失败");
+        setJoinState(team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle");
+      }
+    } catch (error) {
+      console.error("Join team error:", error);
+      alert("网络错误，申请加入失败");
+      setJoinState(team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle");
+    }
   };
 
   const buttonConfig = {
