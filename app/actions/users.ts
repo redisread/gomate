@@ -17,7 +17,7 @@ export async function getCurrentUser() {
     return null;
   }
 
-  // 获取完整的用户信息（包括 bio 和 experience）
+  // 获取完整的用户信息（包括 bio 和 level）
   const user = await db.query.users.findFirst({
     where: eq(users.id, session.user.id),
   });
@@ -34,7 +34,7 @@ export async function getUserProfile(userId: string) {
       name: true,
       image: true,
       bio: true,
-      experience: true,
+      level: true,
       createdAt: true,
     },
   });
@@ -46,7 +46,7 @@ export async function getUserProfile(userId: string) {
 export async function updateProfile(data: {
   name?: string;
   bio?: string;
-  experience?: string;
+  level?: string;
   image?: string;
 }) {
   const session = await auth.api.getSession({
@@ -68,7 +68,7 @@ export async function updateProfile(data: {
     throw new Error("个人简介不能超过 2000 个字符");
   }
 
-  if (data.experience && !["beginner", "intermediate", "advanced", "expert"].includes(data.experience)) {
+  if (data.level && !["beginner", "intermediate", "advanced", "expert"].includes(data.level)) {
     throw new Error("无效的经验等级");
   }
 
@@ -78,7 +78,7 @@ export async function updateProfile(data: {
     .set({
       ...(data.name && { name: data.name }),
       ...(data.bio !== undefined && { bio: data.bio }),
-      ...(data.experience && { experience: data.experience }),
+      ...(data.level && { level: data.level }),
       ...(data.image && { image: data.image }),
       updatedAt: new Date(),
     })

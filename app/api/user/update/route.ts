@@ -29,9 +29,9 @@ export async function PATCH(request: NextRequest) {
 
     // 解析请求体
     const body = await request.json();
-    const { userId, name, bio, experience, image } = body;
+    const { userId, name, bio, level, image } = body;
 
-    console.log("Update user request:", { userId, name, bio, experience });
+    console.log("Update user request:", { userId, name, bio, level });
 
     if (!userId) {
       return NextResponse.json(
@@ -45,10 +45,8 @@ export async function PATCH(request: NextRequest) {
 
     if (name !== undefined) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
-    if (experience !== undefined) {
-      updateData.experience = experience;
-      // 同时更新 level 字段，保持与 experience 一致
-      updateData.level = experience;
+    if (level !== undefined) {
+      updateData.level = level;
     }
     if (image !== undefined) updateData.image = image;
 

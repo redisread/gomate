@@ -69,11 +69,6 @@ export const createAuth = (env?: { DB?: D1Database }) => {
             required: false,
             defaultValue: "",
           },
-          experience: {
-            type: "string",
-            required: false,
-            defaultValue: "beginner",
-          },
         },
       },
       secret: process.env.BETTER_AUTH_SECRET || "dev-secret-key",
@@ -110,11 +105,6 @@ export const createAuth = (env?: { DB?: D1Database }) => {
           type: "string",
           required: false,
           defaultValue: "",
-        },
-        experience: {
-          type: "string",
-          required: false,
-          defaultValue: "beginner",
         },
       },
     },

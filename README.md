@@ -132,7 +132,7 @@ db/
 - 邮箱 + 密码注册/登录
 - Session 自动管理（Cookie）
 - 密码自动加密（bcrypt）
-- 支持自定义字段（bio, experience）
+- 支持自定义字段（bio, level）
 
 **相关文件：**
 - `lib/auth-client.ts` - 客户端配置

@@ -46,7 +46,7 @@ npm run lint
 ### 数据库层 (`db/`)
 
 使用 Drizzle ORM 和 SQLite 方言。核心数据表：
-- `users` - 用户账号（Better Auth 扩展字段：bio、experience、level）
+- `users` - 用户账号（Better Auth 扩展字段：bio、level）
 - `sessions`、`accounts`、`verifications` - Better Auth 表
 - `locations` - 徒步地点（含标签、坐标、难度等）
 - `teams` - 徒步队伍（状态：recruiting、full、ongoing、completed、cancelled）

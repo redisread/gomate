@@ -51,7 +51,7 @@ const getAuth = async (d1Database: D1Database) => {
           required: false,
           defaultValue: "",
         },
-        experience: {
+        level: {
           type: "string",
           required: false,
           defaultValue: "beginner",

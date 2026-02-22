@@ -20,7 +20,6 @@ export const users = sqliteTable(
     emailVerified: integer("email_verified", { mode: "boolean" }).default(false).notNull(),
     image: text("image"),
     bio: text("bio"),
-    experience: text("experience"), // beginner, intermediate, advanced, expert (Better Auth 字段)
     level: text("level").default("beginner"), // 领队等级: beginner, intermediate, advanced, expert
     completedHikes: integer("completed_hikes").default(0), // 完成徒步次数
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),

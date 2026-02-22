@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: fullUser?.name !== undefined ? fullUser.name : session.user.name,
         avatar: fullUser?.avatar !== undefined ? fullUser.avatar : (session.user.image || DEFAULT_AVATAR),
         email: session.user.email,
-        level: (fullUser?.level !== undefined ? fullUser.level : session.user.experience as AuthUser["level"]) || "beginner",
+        level: (fullUser?.level !== undefined ? fullUser.level : session.user.level as AuthUser["level"]) || "beginner",
         completedHikes: fullUser?.completedHikes !== undefined ? fullUser.completedHikes : ((session.user as unknown as { completedHikes?: number }).completedHikes || 0),
         bio: fullUser?.bio !== undefined ? fullUser.bio : (session.user.bio || "新人户外爱好者，期待与你一起探索山野。"),
         createdAt: fullUser?.createdAt !== undefined ? fullUser.createdAt : createdAtStr,
@@ -153,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         bio: "新人户外爱好者，期待与你一起探索山野。",
-        experience: "beginner",
+        level: "beginner",
       });
 
       if (result.error) {

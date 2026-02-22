@@ -87,7 +87,7 @@ export async function GET(
         id: team.leader.id,
         name: team.leader.name,
         avatar: team.leader.image || '',
-        level: (team.leader.experience || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
+        level: (team.leader.level || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
         completedHikes: 0,
         bio: '',
       } : {

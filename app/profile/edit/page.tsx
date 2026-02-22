@@ -167,7 +167,7 @@ export default function EditProfilePage() {
         }
       }
 
-      // 调用自定义 API 更新用户信息（支持 bio 和 experience 自定义字段）
+      // 调用自定义 API 更新用户信息（支持 bio 和 level 自定义字段）
       const response = await fetch("/api/user/update", {
         method: "PATCH",
         headers: {
@@ -178,7 +178,7 @@ export default function EditProfilePage() {
           name: formData.name,
           image: avatarUrl === DEFAULT_AVATAR ? null : avatarUrl,
           bio: formData.bio,
-          experience: formData.level,
+          level: formData.level,
         }),
       });
 
