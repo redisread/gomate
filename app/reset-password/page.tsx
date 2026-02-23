@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff, Loader2, CheckCircle, Lock } from "lucide-react";
+import { copy } from "@/lib/copy";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 function ResetPasswordLoading() {
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-      <div className="animate-pulse text-stone-400">加载中...</div>
+      <div className="animate-pulse text-stone-400">{copy.common.loading}</div>
     </div>
   );
 }
@@ -39,7 +40,7 @@ function ResetPasswordForm() {
   // 如果没有 token，显示错误
   React.useEffect(() => {
     if (!token) {
-      setError("无效的重置链接，请重新申请");
+      setError(copy.auth.resetLinkInvalid);
     }
   }, [token]);
 
@@ -56,13 +57,13 @@ function ResetPasswordForm() {
 
     // 验证密码
     if (formData.password.length < 6) {
-      setError("密码长度至少为6位");
+      setError(copy.auth.passwordTooShort);
       setIsLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError("两次输入的密码不一致");
+      setError(copy.auth.passwordMismatch);
       setIsLoading(false);
       return;
     }
@@ -82,12 +83,12 @@ function ResetPasswordForm() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "重置密码失败");
+        throw new Error(result.message || copy.auth.resetFailed);
       }
 
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "重置密码失败");
+      setError(err instanceof Error ? err.message : copy.auth.resetFailed);
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +103,7 @@ function ResetPasswordForm() {
           className="inline-flex items-center text-stone-600 hover:text-stone-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          返回登录
+          {copy.auth.backToLogin}
         </Link>
       </div>
 
@@ -117,7 +118,7 @@ function ResetPasswordForm() {
           <Card className="border-stone-200">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold text-stone-900">
-                重置密码
+                {copy.auth.resetPasswordTitle}
               </CardTitle>
               <p className="text-sm text-stone-500 mt-2">
                 设置您的新密码
@@ -132,14 +133,14 @@ function ResetPasswordForm() {
                 >
                   <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-stone-900 mb-2">
-                    密码重置成功
+                    {copy.auth.resetSuccess}
                   </h3>
                   <p className="text-sm text-stone-500 mb-6">
-                    请使用新密码登录
+                    {copy.auth.resetSuccessDesc}
                   </p>
                   <Link href="/login">
                     <Button className="bg-stone-900 hover:bg-stone-800">
-                      去登录
+                      {copy.auth.goToLogin}
                     </Button>
                   </Link>
                 </motion.div>
@@ -147,14 +148,14 @@ function ResetPasswordForm() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* 新密码 */}
                   <div className="space-y-2">
-                    <Label htmlFor="password">新密码</Label>
+                    <Label htmlFor="password">{copy.auth.newPassword}</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
                       <Input
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="请输入新密码（至少6位）"
+                        placeholder={copy.auth.newPasswordPlaceholder}
                         value={formData.password}
                         onChange={handleInputChange}
                         required
@@ -223,10 +224,10 @@ function ResetPasswordForm() {
                     {isLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        重置中...
+                        {copy.common.loading}
                       </>
                     ) : (
-                      "重置密码"
+                      <>{copy.auth.resetPassword}</>
                     )}
                   </Button>
                 </form>

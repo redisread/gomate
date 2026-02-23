@@ -2,6 +2,7 @@ import { Heading, Text, Section } from "@react-email/components";
 import * as React from "react";
 import { EmailLayout } from "./components/EmailLayout";
 import { Button } from "./components/Button";
+import { copy } from "@/lib/copy";
 
 interface WelcomeEmailProps {
   name: string;
@@ -13,28 +14,25 @@ export const WelcomeEmail: React.FC<WelcomeEmailProps> = ({
   exploreUrl,
 }) => {
   return (
-    <EmailLayout preview="欢迎加入 GoMate！">
-      <Heading style={heading}>欢迎加入 GoMate！</Heading>
+    <EmailLayout preview={copy.email.welcomePreview}>
+      <Heading style={heading}>{copy.email.welcomeTitle}</Heading>
       <Text style={text}>
-        您好 {name}，
-        <br />
-        <br />
-        欢迎加入 GoMate！我们很高兴您能在这里找到志同道合的伙伴，一起探索精彩的目的地。
+        {copy.email.welcomeBody.replace('{name}', name)}
       </Text>
       <Section style={featureBox}>
-        <Text style={featureTitle}>您可以：</Text>
+        <Text style={featureTitle}>{copy.email.features}</Text>
         <ul style={featureList}>
-          <li style={featureItem}>创建或加入感兴趣的地点组队</li>
-          <li style={featureItem}>与志同道合的伙伴交流</li>
-          <li style={featureItem}>发现新的旅行目的地</li>
-          <li style={featureItem}>分享您的旅行经历</li>
+          <li style={featureItem}>{copy.email.feature1}</li>
+          <li style={featureItem}>{copy.email.feature2}</li>
+          <li style={featureItem}>{copy.email.feature3}</li>
+          <li style={featureItem}>{copy.email.feature4}</li>
         </ul>
       </Section>
       <Section style={buttonContainer}>
-        <Button href={exploreUrl}>开始探索</Button>
+        <Button href={exploreUrl}>{copy.email.startExploring}</Button>
       </Section>
       <Text style={footer}>
-        如果您有任何问题，请随时联系我们的支持团队。
+        {copy.email.supportContact}
       </Text>
     </EmailLayout>
   );

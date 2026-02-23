@@ -16,13 +16,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
+import { copy } from "@/lib/copy";
 
 // 经验等级选项
 const levelOptions = [
-  { value: "beginner", label: "初级", description: "刚开始徒步之旅" },
-  { value: "intermediate", label: "中级", description: "有一定徒步经验" },
-  { value: "advanced", label: "高级", description: "经验丰富的徒步者" },
-  { value: "expert", label: "资深", description: "资深户外专家" },
+  { value: "beginner", label: copy.enums.level.beginner, description: copy.enums.levelDesc.beginner },
+  { value: "intermediate", label: copy.enums.level.intermediate, description: copy.enums.levelDesc.intermediate },
+  { value: "advanced", label: copy.enums.level.advanced, description: copy.enums.levelDesc.advanced },
+  { value: "expert", label: copy.enums.level.expert, description: copy.enums.levelDesc.expert },
 ];
 
 // 默认头像
@@ -71,14 +72,14 @@ export default function EditProfilePage() {
     // 验证文件类型
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      setMessage({ type: "error", text: "请选择有效的图片文件 (JPEG, PNG, GIF, WebP)" });
+      setMessage({ type: "error", text: copy.profile.avatarInvalidType });
       return;
     }
 
     // 验证文件大小 (5MB)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      setMessage({ type: "error", text: "图片大小不能超过 5MB" });
+      setMessage({ type: "error", text: copy.profile.avatarTooLarge });
       return;
     }
 
@@ -119,13 +120,13 @@ export default function EditProfilePage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "上传失败");
+        throw new Error(result.error || copy.api.failed);
       }
 
       return result.url;
     } catch (error) {
       console.error("Avatar upload error:", error);
-      setMessage({ type: "error", text: "头像上传失败，请重试" });
+      setMessage({ type: "error", text: copy.profile.avatarUploadFailed });
       return null;
     } finally {
       setIsUploading(false);
@@ -154,7 +155,7 @@ export default function EditProfilePage() {
 
     try {
       if (!user) {
-        throw new Error("用户未登录");
+        throw new Error(copy.api.notAuthorized);
       }
 
       let avatarUrl = user.avatar;
@@ -185,13 +186,13 @@ export default function EditProfilePage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "保存失败");
+        throw new Error(result.error || copy.common.save);
       }
 
       // 刷新用户信息，确保获取最新的数据
       await refreshUser();
 
-      setMessage({ type: "success", text: "保存成功！" });
+      setMessage({ type: "success", text: copy.profile.saveSuccess });
 
       // 延迟返回个人资料页
       setTimeout(() => {
@@ -199,7 +200,7 @@ export default function EditProfilePage() {
       }, 1000);
     } catch (error) {
       console.error("Save error:", error);
-      setMessage({ type: "error", text: (error as Error).message || "保存失败，请重试" });
+      setMessage({ type: "error", text: (error as Error).message || copy.common.save });
     } finally {
       setIsSaving(false);
     }
@@ -208,7 +209,7 @@ export default function EditProfilePage() {
   if (isLoading || !user) {
     return (
       <main className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-pulse text-stone-400">加载中...</div>
+        <div className="animate-pulse text-stone-400">{copy.common.loading}</div>
       </main>
     );
   }
@@ -231,7 +232,7 @@ export default function EditProfilePage() {
           >
             <Link href="/profile">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              返回个人资料
+              {copy.profile.backProfile}
             </Link>
           </Button>
         </motion.div>
@@ -243,8 +244,8 @@ export default function EditProfilePage() {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-stone-900">编辑个人资料</h1>
-          <p className="text-stone-600 mt-2">更新你的个人信息和户外经验</p>
+          <h1 className="text-3xl font-bold text-stone-900">{copy.profile.editTitle}</h1>
+          <p className="text-stone-600 mt-2">{copy.profile.editSubtitle}</p>
         </motion.div>
 
         {/* Form */}
@@ -299,10 +300,10 @@ export default function EditProfilePage() {
                   />
                   <div className="text-center">
                     <p className="text-sm text-stone-500">
-                      {selectedFile ? `已选择: ${selectedFile.name}` : "点击更换头像"}
+                      {selectedFile ? `${copy.profile.avatarSelected}: ${selectedFile.name}` : copy.profile.changeAvatar}
                     </p>
                     <p className="text-xs text-stone-400 mt-1">
-                      支持 JPEG、PNG、GIF、WebP，最大 5MB
+                      {copy.profile.avatarHint}
                     </p>
                   </div>
                 </div>
@@ -310,7 +311,7 @@ export default function EditProfilePage() {
                 {/* Name */}
                 <div className="space-y-2">
                   <Label htmlFor="name">
-                    昵称 <span className="text-red-500">*</span>
+                    {copy.auth.nickname} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="name"
@@ -321,14 +322,14 @@ export default function EditProfilePage() {
                     minLength={2}
                     maxLength={20}
                     className="border-stone-200"
-                    placeholder="请输入昵称"
+                    placeholder={copy.auth.nicknamePlaceholder}
                   />
-                  <p className="text-xs text-stone-500">2-20个字符</p>
+                  <p className="text-xs text-stone-500">{copy.auth.nicknameRange}</p>
                 </div>
 
                 {/* Bio */}
                 <div className="space-y-2">
-                  <Label htmlFor="bio">个人简介</Label>
+                  <Label htmlFor="bio">{copy.profile.bio}</Label>
                   <Textarea
                     id="bio"
                     name="bio"
@@ -337,17 +338,17 @@ export default function EditProfilePage() {
                     rows={4}
                     maxLength={200}
                     className="border-stone-200 resize-none"
-                    placeholder="介绍一下你自己，让更多人了解你..."
+                    placeholder={copy.profile.bioPlaceholder}
                   />
                   <div className="flex justify-between text-xs text-stone-500">
-                    <span>简短介绍你的户外经历和兴趣</span>
+                    <span>{copy.profile.bioHint}</span>
                     <span>{formData.bio.length}/200</span>
                   </div>
                 </div>
 
                 {/* Experience Level */}
                 <div className="space-y-2">
-                  <Label>徒步经验等级</Label>
+                  <Label>{copy.profile.levelLabel}</Label>
                   <div className="grid grid-cols-2 gap-3">
                     {levelOptions.map((option) => (
                       <label
@@ -370,7 +371,7 @@ export default function EditProfilePage() {
                         <span className="text-xs text-stone-500 mt-1">{option.description}</span>
                         {formData.level === option.value && (
                           <Badge className="absolute top-2 right-2 bg-stone-900 text-white text-xs">
-                            当前
+                            {copy.profile.levelCurrent}
                           </Badge>
                         )}
                       </label>
@@ -380,14 +381,14 @@ export default function EditProfilePage() {
 
                 {/* Email (Read-only) */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">邮箱</Label>
+                  <Label htmlFor="email">{copy.profile.emailLabel}</Label>
                   <Input
                     id="email"
                     value={user.email}
                     disabled
                     className="border-stone-200 bg-stone-50 text-stone-500"
                   />
-                  <p className="text-xs text-stone-500">邮箱暂不支持修改</p>
+                  <p className="text-xs text-stone-500">{copy.profile.emailReadonly}</p>
                 </div>
 
                 {/* Message */}
@@ -411,7 +412,7 @@ export default function EditProfilePage() {
                     className="flex-1 border-stone-200"
                     asChild
                   >
-                    <Link href="/profile">取消</Link>
+                    <Link href="/profile">{copy.common.cancel}</Link>
                   </Button>
                   <Button
                     type="submit"
@@ -421,12 +422,12 @@ export default function EditProfilePage() {
                     {isSaving || isUploading ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {isUploading ? "上传中..." : "保存中..."}
+                        {isUploading ? copy.common.uploadingImg : copy.common.saving}
                       </>
                     ) : (
                       <>
                         <Save className="h-4 w-4 mr-2" />
-                        保存
+                        {copy.common.save}
                       </>
                     )}
                   </Button>

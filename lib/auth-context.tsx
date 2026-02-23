@@ -3,6 +3,7 @@
 import * as React from "react";
 import { authClient } from "@/lib/auth-client";
 import type { User } from "@/db/schema";
+import { copy } from "@/lib/copy";
 
 export interface AuthUser {
   id: string;
@@ -18,15 +19,12 @@ export interface AuthUser {
 // 从 API 获取完整用户信息
 async function fetchFullUserInfo(userId: string): Promise<Partial<AuthUser> | null> {
   try {
-    console.log("[fetchFullUserInfo] Fetching user:", userId);
     const response = await fetch(`/api/user?id=${encodeURIComponent(userId)}`);
-    console.log("[fetchFullUserInfo] Response status:", response.status);
     if (!response.ok) {
       console.error("[fetchFullUserInfo] Response not ok:", response.status);
       return null;
     }
     const data = await response.json();
-    console.log("[fetchFullUserInfo] User data:", data.user);
     return data.user as Partial<AuthUser>;
   } catch (error) {
     console.error("[fetchFullUserInfo] Error:", error);
@@ -83,10 +81,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: session.user.email,
         level: (fullUser?.level !== undefined ? fullUser.level : session.user.level as AuthUser["level"]) || "beginner",
         completedHikes: fullUser?.completedHikes !== undefined ? fullUser.completedHikes : ((session.user as unknown as { completedHikes?: number }).completedHikes || 0),
-        bio: fullUser?.bio !== undefined ? fullUser.bio : (session.user.bio || "新人户外爱好者，期待与你一起探索山野。"),
+        bio: "新人户外爱好者，期待与你一起探索山野。",
         createdAt: fullUser?.createdAt !== undefined ? fullUser.createdAt : createdAtStr,
       };
-      console.log("[syncUserData] Setting user:", authUser);
       setUser(authUser);
     } else {
       setUser(null);
@@ -132,12 +129,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (result.error) {
-        return { success: false, error: result.error.message || "邮箱或密码错误" };
+        return { success: false, error: result.error.message || copy.auth.loginError };
       }
 
       return { success: true };
     } catch (error) {
-      return { success: false, error: "登录失败，请稍后重试" };
+      return { success: false, error: copy.api.sessionExpired };
     }
   }, []);
 
@@ -160,17 +157,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 处理常见错误
         const errorMessage = result.error.message || "";
         if (errorMessage.includes("already exists") || errorMessage.includes("已存在")) {
-          return { success: false, error: "该邮箱已被注册" };
+          return { success: false, error: copy.auth.emailTaken };
         }
         if (errorMessage.includes("password") || errorMessage.includes("密码")) {
-          return { success: false, error: "密码长度至少为6位" };
+          return { success: false, error: copy.auth.passwordTooShort };
         }
-        return { success: false, error: errorMessage || "注册失败，请稍后重试" };
+        return { success: false, error: errorMessage || copy.auth.registerErrorRetry };
       }
 
       return { success: true };
     } catch (error) {
-      return { success: false, error: "注册失败，请稍后重试" };
+      return { success: false, error: copy.api.sessionExpired };
     }
   }, []);
 

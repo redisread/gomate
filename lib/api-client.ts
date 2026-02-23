@@ -3,6 +3,8 @@
  * 静态导出时使用 Fetch API 调用 Cloudflare Pages Functions
  */
 
+import { copy } from "@/lib/copy";
+
 // API 基础 URL
 const getBaseUrl = () => {
   if (typeof window === "undefined") {
@@ -33,7 +35,7 @@ async function apiRequest<T>(
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: "Unknown error" }));
-    throw new Error(error.error || `API request failed: ${response.status}`);
+    throw new Error(error.error || `${copy.api.failed}: ${response.status}`);
   }
 
   return response.json();

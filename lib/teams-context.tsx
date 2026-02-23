@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { Team } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
+import { copy } from "@/lib/copy";
 
 // 重新导出 Team 类型
 export type { Team };
@@ -105,7 +106,7 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || "创建队伍失败");
+      throw new Error(error.error || copy.teams.createBtnLoading);
     }
 
     const result = await response.json();
@@ -134,7 +135,7 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
         bio: apiTeam.leader.bio || "",
       } : {
         id: user?.id || "unknown",
-        name: user?.name || "未知用户",
+        name: user?.name || copy.common.unknown,
         avatar: user?.avatar || "",
         level: user?.level || "beginner",
         completedHikes: 0,

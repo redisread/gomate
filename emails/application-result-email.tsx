@@ -2,6 +2,7 @@ import { Heading, Text, Section } from "@react-email/components";
 import * as React from "react";
 import { EmailLayout } from "./components/EmailLayout";
 import { Button } from "./components/Button";
+import { copy } from "@/lib/copy";
 
 interface ApplicationResultEmailProps {
   applicantName: string;
@@ -24,72 +25,72 @@ export const ApplicationResultEmail: React.FC<ApplicationResultEmailProps> = ({
 }) => {
   if (isApproved) {
     return (
-      <EmailLayout preview={`您的申请已通过 - ${teamTitle}`}>
+      <EmailLayout preview={copy.email.applicationApprovedPreview}>
         <Section style={iconContainer}>
           <Text style={successIcon}>✓</Text>
         </Section>
         <Heading style={{ ...heading, textAlign: "center" }}>
-          申请已通过！
+          {copy.email.applicationApproved}
         </Heading>
         <Text style={{ ...text, textAlign: "center" }}>
-          恭喜 {applicantName}！
+          {copy.email.applicationApprovedBody.replace('{applicantName}', applicantName)}
           <br />
-          您已成功加入 <strong>{locationName}</strong> 的队伍。
+          {copy.email.applicationApprovedBody2.replace('{locationName}', locationName)}。
         </Text>
         <Section style={infoBox}>
           <Text style={infoItem}>
-            <strong>队伍：</strong>
+            <strong>{copy.email.team}</strong>
             {teamTitle}
           </Text>
           <Text style={infoItem}>
-            <strong>地点：</strong>
+            <strong>{copy.email.location}</strong>
             {locationName}
           </Text>
         </Section>
         <Section style={buttonContainer}>
-          <Button href={teamUrl}>查看队伍</Button>
+          <Button href={teamUrl}>{copy.email.viewTeam}</Button>
         </Section>
-        <Text style={{ ...footer, textAlign: "center" }}>祝您旅途愉快！</Text>
+        <Text style={{ ...footer, textAlign: "center" }}>{copy.email.enjoyTravel}</Text>
       </EmailLayout>
     );
   }
 
   return (
-    <EmailLayout preview={`您的申请未通过 - ${teamTitle}`}>
+    <EmailLayout preview={copy.email.applicationRejectedPreview}>
       <Section style={iconContainer}>
         <Text style={rejectIcon}>✕</Text>
       </Section>
       <Heading style={{ ...heading, textAlign: "center" }}>
-        申请未通过
+        {copy.email.applicationRejected}
       </Heading>
       <Text style={{ ...text, textAlign: "center" }}>
-        您好 {applicantName}，
+        {copy.email.applicationRejectedBody.replace('{applicantName}', applicantName)}
         <br />
-        很抱歉，您申请加入 <strong>{locationName}</strong> 队伍的请求未被通过。
+        {copy.email.applicationRejectedBody2.replace('{locationName}', locationName)} {copy.email.applicationRejectedBody3}。
       </Text>
       <Section style={infoBox}>
         <Text style={infoItem}>
-          <strong>队伍：</strong>
+          <strong>{copy.email.team}</strong>
           {teamTitle}
         </Text>
         <Text style={infoItem}>
-          <strong>地点：</strong>
+          <strong>{copy.email.location}</strong>
           {locationName}
         </Text>
       </Section>
       {rejectionReason && (
         <Section style={rejectionBox}>
           <Text style={rejectionText}>
-            <strong>原因：</strong>
+            <strong>{copy.email.reason}：</strong>
             {rejectionReason}
           </Text>
         </Section>
       )}
       <Section style={buttonContainer}>
-        <Button href={exploreUrl}>探索其他队伍</Button>
+        <Button href={exploreUrl}>{copy.email.exploreOtherTeams}</Button>
       </Section>
       <Text style={{ ...footer, textAlign: "center" }}>
-        不要灰心，还有很多其他精彩的队伍等着您！
+        {copy.email.dontGiveUp}
       </Text>
     </EmailLayout>
   );

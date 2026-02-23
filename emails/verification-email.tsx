@@ -2,6 +2,7 @@ import { Heading, Text, Section, Link } from "@react-email/components";
 import * as React from "react";
 import { EmailLayout } from "./components/EmailLayout";
 import { Button } from "./components/Button";
+import { copy } from "@/lib/copy";
 
 interface VerificationEmailProps {
   name: string;
@@ -13,26 +14,23 @@ export const VerificationEmail: React.FC<VerificationEmailProps> = ({
   verificationUrl,
 }) => {
   return (
-    <EmailLayout preview="验证您的邮箱地址 - GoMate">
-      <Heading style={heading}>验证您的邮箱</Heading>
+    <EmailLayout preview={copy.email.verificationPreview}>
+      <Heading style={heading}>{copy.email.verificationTitle}</Heading>
       <Text style={text}>
-        您好 {name}，
-        <br />
-        <br />
-        感谢您注册 GoMate！请点击下方按钮验证您的邮箱地址：
+        {copy.email.verificationBody.replace('{name}', name)}
       </Text>
       <Section style={buttonContainer}>
-        <Button href={verificationUrl}>验证邮箱</Button>
+        <Button href={verificationUrl}>{copy.email.verifyEmail}</Button>
       </Section>
       <Text style={hint}>
-        或者复制以下链接到浏览器：
+        {copy.email.copyLinkToBrowser}
         <br />
         <Link href={verificationUrl} style={link}>
           {verificationUrl}
         </Link>
       </Text>
       <Text style={footer}>
-        此链接将在 24 小时后过期。如果您没有注册 GoMate，请忽略此邮件。
+        {copy.email.linkExpires}
       </Text>
     </EmailLayout>
   );

@@ -31,8 +31,6 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { userId, name, bio, level, image } = body;
 
-    console.log("Update user request:", { userId, name, bio, level });
-
     if (!userId) {
       return NextResponse.json(
         { error: "User ID is required" },
@@ -53,8 +51,6 @@ export async function PATCH(request: NextRequest) {
     // 手动设置 updatedAt（Drizzle ORM 会自动转换为时间戳）
     updateData.updatedAt = new Date();
 
-    console.log("Update data:", updateData);
-
     // 首先通过 email 查找用户（Better Auth 的 session.user.id 可能是 email）
     const existingUser = await db
       .select()
@@ -62,14 +58,10 @@ export async function PATCH(request: NextRequest) {
       .where(eq(schema.users.email, userId))
       .limit(1);
 
-    console.log("Existing user by email:", existingUser);
-
     let targetUserId = userId;
     if (existingUser.length > 0) {
       targetUserId = existingUser[0].id;
     }
-
-    console.log("Target user ID:", targetUserId);
 
     // 先查询用ID查找用户
     const userById = await db
@@ -77,8 +69,6 @@ export async function PATCH(request: NextRequest) {
       .from(schema.users)
       .where(eq(schema.users.id, targetUserId))
       .limit(1);
-
-    console.log("User by ID:", userById);
 
     if (userById.length === 0) {
       return NextResponse.json(
@@ -93,16 +83,12 @@ export async function PATCH(request: NextRequest) {
       .set(updateData)
       .where(eq(schema.users.id, targetUserId));
 
-    console.log("Update result:", JSON.stringify(updateResult));
-
     // 获取更新后的用户信息
     const updatedUser = await db
       .select()
       .from(schema.users)
       .where(eq(schema.users.id, targetUserId))
       .limit(1);
-
-    console.log("Updated user from DB:", JSON.stringify(updatedUser[0]));
 
     if (!updatedUser.length) {
       return NextResponse.json(

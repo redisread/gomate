@@ -20,6 +20,7 @@ import { useLocations } from "@/lib/locations-context";
 import { useAuth } from "@/lib/auth-context";
 import type { Team } from "@/lib/types";
 import type { Location } from "@/lib/types";
+import { copy } from "@/lib/copy";
 
 interface TeamPageProps {
   params: Promise<{
@@ -52,13 +53,13 @@ export default function TeamPage({ params }: TeamPageProps) {
       const response = await fetch(`/api/teams/${id}`);
 
       if (response.status === 404) {
-        setError("队伍不存在");
+        setError(copy.teams.notFound);
         setIsLoading(false);
         return;
       }
 
       if (!response.ok) {
-        throw new Error("获取队伍详情失败");
+        throw new Error(copy.teams.loadFailed);
       }
 
       const result = await response.json();
@@ -69,11 +70,11 @@ export default function TeamPage({ params }: TeamPageProps) {
         // 获取该地点的其他队伍
         fetchOtherTeams(id, teamData.locationId);
       } else {
-        setError("队伍不存在");
+        setError(copy.teams.notFound);
       }
     } catch (err) {
       console.error("获取队伍详情失败:", err);
-      setError("获取队伍详情失败");
+      setError(copy.teams.loadFailed);
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +108,7 @@ export default function TeamPage({ params }: TeamPageProps) {
   if (isLoading || (team && locationsLoading)) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-pulse text-stone-400">加载中...</div>
+        <div className="animate-pulse text-stone-400">{copy.common.loading}</div>
       </div>
     );
   }
@@ -116,12 +117,12 @@ export default function TeamPage({ params }: TeamPageProps) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-stone-900 mb-2">{error || "队伍不存在"}</h1>
+          <h1 className="text-2xl font-bold text-stone-900 mb-2">{error || copy.teams.notFound}</h1>
           <button
             onClick={() => router.push("/teams")}
             className="text-stone-600 hover:text-stone-900 underline"
           >
-            返回队伍列表
+            {copy.nav.teams}
           </button>
         </div>
       </div>
@@ -192,19 +193,19 @@ export default function TeamPage({ params }: TeamPageProps) {
                       </h3>
                       <p className="text-sm text-stone-500 mb-3">
                         {location.difficulty === "easy"
-                          ? "简单"
+                          ? copy.enums.difficulty.easy
                           : location.difficulty === "moderate"
-                          ? "中等"
+                          ? copy.enums.difficulty.moderate
                           : location.difficulty === "hard"
-                          ? "困难"
-                          : "极难"}{" "}
+                          ? copy.enums.difficulty.hard
+                          : copy.enums.difficulty.extreme}{" "}
                         · {location.duration} · {location.distance}
                       </p>
                       <Link
                         href={`/locations/${location.id}`}
                         className="inline-flex items-center text-sm font-medium text-stone-700 hover:text-stone-900 transition-colors"
                       >
-                        查看地点详情
+                        {copy.teams.viewLocationDetail}
                         <ArrowRight className="ml-1 h-4 w-4" />
                       </Link>
                     </div>
@@ -221,7 +222,7 @@ export default function TeamPage({ params }: TeamPageProps) {
                 transition={{ duration: 0.5, delay: 0.35 }}
               >
                 <h3 className="text-lg font-semibold text-stone-900 mb-4">
-                  该地点的其他队伍
+                  {copy.teams.otherTeamsAtLocation}
                 </h3>
                 <div className="space-y-3">
                   {otherTeams.map((otherTeam) => (
@@ -242,7 +243,7 @@ export default function TeamPage({ params }: TeamPageProps) {
                               variant="secondary"
                               className="bg-emerald-50 text-emerald-700"
                             >
-                              招募中
+                              {copy.enums.teamStatus.recruiting}
                             </Badge>
                           </div>
                         </CardContent>
@@ -268,13 +269,13 @@ export default function TeamPage({ params }: TeamPageProps) {
                 <Card className="border-amber-200 bg-amber-50/50">
                   <CardContent className="p-4">
                     <h4 className="font-medium text-amber-800 mb-2">
-                      安全提示
+                      {copy.teams.safetyTips}
                     </h4>
                     <ul className="text-sm text-amber-700 space-y-1">
-                      <li>• 请评估自身体能，量力而行</li>
-                      <li>• 建议购买户外保险</li>
-                      <li>• 遵守领队安排，不擅自离队</li>
-                      <li>• 注意天气变化，做好防护</li>
+                      <li>{copy.teams.safetyTip1}</li>
+                      <li>{copy.teams.safetyTip2}</li>
+                      <li>{copy.teams.safetyTip3}</li>
+                      <li>{copy.teams.safetyTip4}</li>
                     </ul>
                   </CardContent>
                 </Card>

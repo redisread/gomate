@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { copy } from "@/lib/copy";
 
 interface JoinButtonProps {
   team: Team;
@@ -51,43 +52,43 @@ function JoinButton({ team, className, onJoin }: JoinButtonProps) {
           setJoinState(team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle");
         }, 2000);
       } else {
-        alert(result.error || "申请加入失败");
+        alert(result.error || copy.api.failed);
         setJoinState(team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle");
       }
     } catch (error) {
       console.error("Join team error:", error);
-      alert("网络错误，申请加入失败");
+      alert(copy.api.networkError);
       setJoinState(team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle");
     }
   };
 
   const buttonConfig = {
     idle: {
-      text: "申请加入",
+      text: copy.teams.joinTeam,
       icon: Users,
       variant: "default" as const,
       className: "bg-stone-900 hover:bg-stone-800 text-white",
     },
     loading: {
-      text: "处理中...",
+      text: copy.common.loading,
       icon: Loader2,
       variant: "default" as const,
       className: "bg-stone-700 text-white cursor-not-allowed",
     },
     success: {
-      text: "申请已发送",
+      text: copy.success.applied,
       icon: Check,
       variant: "default" as const,
       className: "bg-emerald-600 text-white",
     },
     full: {
-      text: "队伍已满员",
+      text: copy.teams.statusFull,
       icon: Users,
       variant: "secondary" as const,
       className: "bg-stone-200 text-stone-500 cursor-not-allowed",
     },
     closed: {
-      text: "报名已截止",
+      text: copy.teams.statusEnded,
       icon: Users,
       variant: "secondary" as const,
       className: "bg-stone-200 text-stone-500 cursor-not-allowed",
@@ -109,11 +110,11 @@ function JoinButton({ team, className, onJoin }: JoinButtonProps) {
           <div className="flex-1">
             <p className="text-sm text-stone-500">
               {joinState === "full"
-                ? "该队伍已达到人数上限"
+                ? copy.errors.teamFull
                 : joinState === "closed"
-                ? "该队伍已结束招募"
+                ? copy.errors.teamNotAccepting
                 : joinState === "success"
-                ? "领队会尽快与你联系"
+                ? copy.teams.leader
                 : `已有 ${team.currentMembers} 人报名，还剩 ${
                     team.maxMembers - team.currentMembers
                   } 个名额`}

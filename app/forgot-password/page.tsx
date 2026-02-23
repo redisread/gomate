@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, Mail, CheckCircle, Trash2 } from "lucide-react";
+import { copy } from "@/lib/copy";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,12 +46,12 @@ export default function ForgotPasswordPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || result.message || "发送失败");
+        throw new Error(result.error || result.message || copy.auth.sendEmailFailed);
       }
 
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "发送重置邮件失败");
+      setError(err instanceof Error ? err.message : copy.auth.sendEmailFailed);
     } finally {
       setIsLoading(false);
     }
@@ -79,12 +80,12 @@ export default function ForgotPasswordPage() {
 
       if (response.ok) {
         setError("");
-        alert("速率限制已清除，请重新发送");
+        alert(copy.success.emailSentClear);
       } else {
-        throw new Error(result.message || "清除失败");
+        throw new Error(result.message || copy.common.clearFailed);
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "清除失败");
+      alert(err instanceof Error ? err.message : copy.common.clearFailed);
     } finally {
       setIsClearing(false);
     }
@@ -102,7 +103,7 @@ export default function ForgotPasswordPage() {
           className="inline-flex items-center text-stone-600 hover:text-stone-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          返回登录
+          {copy.auth.backToLogin}
         </Link>
       </div>
 
@@ -117,10 +118,10 @@ export default function ForgotPasswordPage() {
           <Card className="border-stone-200">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold text-stone-900">
-                忘记密码
+                {copy.auth.forgotPasswordTitle}
               </CardTitle>
               <p className="text-sm text-stone-500 mt-2">
-                输入您的邮箱，我们将发送重置密码链接
+                {copy.auth.forgotPasswordSubtitle}
               </p>
             </CardHeader>
             <CardContent>
@@ -132,14 +133,14 @@ export default function ForgotPasswordPage() {
                 >
                   <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-stone-900 mb-2">
-                    邮件已发送
+                    {copy.success.emailSent}
                   </h3>
                   <p className="text-sm text-stone-500 mb-6">
-                    请检查您的邮箱，点击邮件中的链接重置密码
+                    {copy.email.checkInbox}
                   </p>
                   <Link href="/login">
                     <Button className="bg-stone-900 hover:bg-stone-800">
-                      返回登录
+                      {copy.auth.backToLogin}
                     </Button>
                   </Link>
                 </motion.div>
@@ -147,7 +148,7 @@ export default function ForgotPasswordPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* 邮箱 */}
                   <div className="space-y-2">
-                    <Label htmlFor="email">邮箱</Label>
+                    <Label htmlFor="email">{copy.auth.email}</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
                       <Input
@@ -175,7 +176,7 @@ export default function ForgotPasswordPage() {
                           className="mt-2 text-xs text-stone-500 hover:text-stone-700 underline flex items-center gap-1"
                         >
                           <Trash2 className="h-3 w-3" />
-                          {isClearing ? "清除中..." : "清除限制（开发测试用）"}
+                          {isClearing ? copy.common.loading : copy.auth.clearLimit}
                         </button>
                       )}
                     </div>
@@ -190,16 +191,16 @@ export default function ForgotPasswordPage() {
                     {isLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        发送中...
+                        {copy.common.loading}
                       </>
                     ) : (
-                      "发送重置链接"
+                      <>{copy.auth.sendResetLink}</>
                     )}
                   </Button>
 
                   {/* 提示 */}
                   <p className="text-center text-xs text-stone-400">
-                    如果没有收到邮件，请检查垃圾邮件文件夹
+                    {copy.email.checkJunkFolder}
                   </p>
                 </form>
               )}

@@ -2,6 +2,7 @@ import { Heading, Text, Section } from "@react-email/components";
 import * as React from "react";
 import { EmailLayout } from "./components/EmailLayout";
 import { Button } from "./components/Button";
+import { copy } from "@/lib/copy";
 
 interface TeamApplicationEmailProps {
   teamOwnerName: string;
@@ -21,26 +22,25 @@ export const TeamApplicationEmail: React.FC<TeamApplicationEmailProps> = ({
   reviewUrl,
 }) => {
   return (
-    <EmailLayout preview={`${applicantName} 申请加入您的队伍 - ${teamTitle}`}>
-      <Heading style={heading}>新的组队申请</Heading>
+    <EmailLayout preview={copy.email.applicationPreview.replace('{applicantName}', applicantName)}>
+      <Heading style={heading}>{copy.email.newApplication}</Heading>
       <Text style={text}>
-        您好 {teamOwnerName}，
+        {copy.email.applicationBody.replace('{teamOwnerName}', teamOwnerName)}
         <br />
         <br />
-        <strong>{applicantName}</strong> 申请加入您在{" "}
-        <strong>{locationName}</strong> 的队伍。
+        <strong>{copy.email.applicant}</strong> {copy.email.applicationBody2.replace('{locationName}', locationName)}。
       </Text>
       <Section style={infoBox}>
         <Text style={infoItem}>
-          <strong>队伍：</strong>
+          <strong>{copy.email.team}</strong>
           {teamTitle}
         </Text>
         <Text style={infoItem}>
-          <strong>地点：</strong>
+          <strong>{copy.email.location}</strong>
           {locationName}
         </Text>
         <Text style={infoItem}>
-          <strong>申请人：</strong>
+          <strong>{copy.email.applicant}</strong>
           {applicantName}
         </Text>
       </Section>
@@ -50,9 +50,9 @@ export const TeamApplicationEmail: React.FC<TeamApplicationEmailProps> = ({
         </Section>
       )}
       <Section style={buttonContainer}>
-        <Button href={reviewUrl}>查看申请</Button>
+        <Button href={reviewUrl}>{copy.email.viewApplication}</Button>
       </Section>
-      <Text style={footer}>请及时处理申请，申请人正在等待您的回复。</Text>
+      <Text style={footer}>{copy.email.processPrompt}</Text>
     </EmailLayout>
   );
 };

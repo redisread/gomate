@@ -39,7 +39,6 @@ export default function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // 这里可以添加实际的提交逻辑
-    console.log("Form submitted:", formData);
     setIsSubmitted(true);
   };
 

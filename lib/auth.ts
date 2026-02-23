@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from "@/db/schema";
 import { sendPasswordResetEmail, sendWelcomeEmail } from "@/lib/email/resend";
+import { copy } from "@/lib/copy";
 
 // 判断是否在 Cloudflare Workers 环境
 const isCloudflareWorkers = typeof globalThis !== 'undefined' &&
@@ -20,7 +21,7 @@ const handleSendResetPasswordEmail = async (data: {
 
   if (!result.success) {
     console.error("Failed to send reset password email:", result.error);
-    throw new Error(result.error || "发送邮件失败");
+    throw new Error(result.error || copy.api.sendEmailFailed);
   }
 };
 

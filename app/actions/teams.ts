@@ -14,6 +14,7 @@ import { eq, and, desc, sql, ne } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { copy } from "@/lib/copy";
 
 // 获取当前用户
 async function getCurrentUser() {
@@ -118,7 +119,7 @@ export async function createTeam(data: {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("请先登录");
+    throw new Error(copy.errors.loginRequired);
   }
 
   // 验证地点存在
@@ -127,7 +128,7 @@ export async function createTeam(data: {
   });
 
   if (!location) {
-    throw new Error("地点不存在");
+    throw new Error(copy.errors.locationLoadFailed);
   }
 
   // 验证时间
@@ -182,7 +183,7 @@ export async function joinTeam(teamId: string) {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("请先登录");
+    throw new Error(copy.errors.loginRequired);
   }
 
   // 获取队伍信息
@@ -194,17 +195,17 @@ export async function joinTeam(teamId: string) {
   });
 
   if (!team) {
-    throw new Error("队伍不存在");
+    throw new Error(copy.errors.teamNotFound);
   }
 
   // 检查队伍状态
   if (team.status !== "recruiting") {
-    throw new Error("该队伍当前不接受新成员");
+    throw new Error(copy.errors.teamNotAccepting);
   }
 
   // 检查是否已满
   if (team.currentMembers >= team.maxMembers) {
-    throw new Error("队伍已满");
+    throw new Error(copy.errors.teamFull);
   }
 
   // 检查是否已申请或已加入
@@ -217,10 +218,10 @@ export async function joinTeam(teamId: string) {
 
   if (existingMembership) {
     if (existingMembership.status === "approved") {
-      throw new Error("你已经是该队伍的成员");
+      throw new Error(copy.errors.alreadyMemberDirect);
     }
     if (existingMembership.status === "pending") {
-      throw new Error("你已经提交了申请，请等待审核");
+      throw new Error(copy.errors.alreadyApplied);
     }
     if (existingMembership.status === "rejected") {
       // 更新为重新申请
@@ -232,7 +233,7 @@ export async function joinTeam(teamId: string) {
         })
         .where(eq(teamMembers.id, existingMembership.id));
 
-      return { success: true, message: "重新申请已提交" };
+      return { success: true, message: copy.success.reapplied };
     }
   }
 
@@ -248,7 +249,7 @@ export async function joinTeam(teamId: string) {
   revalidateTag(`team-${teamId}`);
   revalidateTag(`location-${team.location.slug}`);
 
-  return { success: true, message: "申请已提交，等待队长审核" };
+  return { success: true, message: copy.success.applied };
 }
 
 // 批准成员加入
@@ -273,12 +274,12 @@ export async function approveMember(teamId: string, userId: string) {
 
   // 检查是否是队长
   if (team.leaderId !== currentUser.id) {
-    throw new Error("只有队长可以审核成员");
+    throw new Error(copy.errors.onlyLeaderCanReview);
   }
 
   // 检查队伍是否已满
   if (team.currentMembers >= team.maxMembers) {
-    throw new Error("队伍已满，无法批准新成员");
+    throw new Error(copy.errors.teamAlreadyFull);
   }
 
   // 获取成员申请
@@ -291,7 +292,7 @@ export async function approveMember(teamId: string, userId: string) {
   });
 
   if (!membership) {
-    throw new Error("未找到该成员的申请");
+    throw new Error(copy.errors.applicationNotFound);
   }
 
   // 更新成员状态
@@ -322,7 +323,7 @@ export async function approveMember(teamId: string, userId: string) {
   revalidateTag("teams");
   revalidateTag(`location-${team.location.slug}`);
 
-  return { success: true, message: "已批准该成员加入" };
+  return { success: true, message: copy.success.approved };
 }
 
 // 拒绝成员申请
@@ -347,7 +348,7 @@ export async function rejectMember(teamId: string, userId: string) {
 
   // 检查是否是队长
   if (team.leaderId !== currentUser.id) {
-    throw new Error("只有队长可以审核成员");
+    throw new Error(copy.errors.onlyLeaderCanReview);
   }
 
   // 获取成员申请
@@ -360,7 +361,7 @@ export async function rejectMember(teamId: string, userId: string) {
   });
 
   if (!membership) {
-    throw new Error("未找到该成员的申请");
+    throw new Error(copy.errors.applicationNotFound);
   }
 
   // 更新成员状态为拒绝
@@ -374,7 +375,7 @@ export async function rejectMember(teamId: string, userId: string) {
   // 清除缓存
   revalidateTag(`team-${teamId}`);
 
-  return { success: true, message: "已拒绝该成员的申请" };
+  return { success: true, message: copy.errors.rejected };
 }
 
 // 离开队伍
@@ -382,7 +383,7 @@ export async function leaveTeam(teamId: string) {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("请先登录");
+    throw new Error(copy.errors.loginRequired);
   }
 
   // 获取队伍信息
@@ -394,7 +395,7 @@ export async function leaveTeam(teamId: string) {
   });
 
   if (!team) {
-    throw new Error("队伍不存在");
+    throw new Error(copy.errors.teamNotFound);
   }
 
   // 获取成员关系
@@ -407,12 +408,12 @@ export async function leaveTeam(teamId: string) {
   });
 
   if (!membership) {
-    throw new Error("你不是该队伍的成员");
+    throw new Error(copy.errors.notMember);
   }
 
   // 队长不能离开队伍（需要先转让队长或解散队伍）
   if (membership.role === "leader") {
-    throw new Error("队长无法直接离开队伍，请先转让队长权限或解散队伍");
+    throw new Error(copy.errors.leaderCannotLeave);
   }
 
   // 删除成员记录
@@ -435,7 +436,7 @@ export async function leaveTeam(teamId: string) {
   revalidateTag("teams");
   revalidateTag(`location-${team.location.slug}`);
 
-  return { success: true, message: "已成功离开队伍" };
+  return { success: true, message: copy.success.leftTeam };
 }
 
 // 解散队伍（队长）
@@ -443,7 +444,7 @@ export async function dissolveTeam(teamId: string) {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("请先登录");
+    throw new Error(copy.errors.loginRequired);
   }
 
   // 获取队伍信息
@@ -455,7 +456,7 @@ export async function dissolveTeam(teamId: string) {
   });
 
   if (!team) {
-    throw new Error("队伍不存在");
+    throw new Error(copy.errors.teamNotFound);
   }
 
   // 检查是否是队长
@@ -477,7 +478,7 @@ export async function dissolveTeam(teamId: string) {
   revalidateTag("teams");
   revalidateTag(`location-${team.location.slug}`);
 
-  return { success: true, message: "队伍已解散" };
+  return { success: true, message: copy.success.dissolved };
 }
 
 // 获取用户的队伍列表
@@ -485,7 +486,7 @@ export async function getUserTeams() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("请先登录");
+    throw new Error(copy.errors.loginRequired);
   }
 
   const memberships = await db.query.teamMembers.findMany({
@@ -518,7 +519,7 @@ export async function getUserPendingApplications() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("请先登录");
+    throw new Error(copy.errors.loginRequired);
   }
 
   const applications = await db.query.teamMembers.findMany({
@@ -558,7 +559,7 @@ export async function getPendingApplicationsForLeader() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("请先登录");
+    throw new Error(copy.errors.loginRequired);
   }
 
   // 获取用户作为队长的所有队伍

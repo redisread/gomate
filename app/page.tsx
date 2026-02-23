@@ -14,6 +14,7 @@ import { LocationCard } from "@/app/components/features/location-card";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/lib/locations-context";
 import { useTeams } from "@/lib/teams-context";
+import { copy } from "@/lib/copy";
 
 export default function HomePage() {
   const { teams } = useTeams();
@@ -116,10 +117,10 @@ export default function HomePage() {
             className="text-center mb-10"
           >
             <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-4">
-              探索徒步地点
+              {copy.locations.pageTitle}
             </h2>
             <p className="text-stone-600 max-w-2xl mx-auto">
-              深圳及周边精选徒步路线，从城市公园到山野海岸，找到适合你的户外目的地
+              {copy.locations.pageSubtitle}
             </p>
           </motion.div>
 
@@ -164,7 +165,7 @@ export default function HomePage() {
               asChild
             >
               <Link href="/locations">
-                查看全部地点
+                {copy.common.viewAll}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -183,10 +184,10 @@ export default function HomePage() {
             className="text-center mb-10"
           >
             <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-4">
-              热门队伍
+              {copy.teams.pageTitle}
             </h2>
             <p className="text-stone-600 max-w-2xl mx-auto">
-              加入志同道合的户外伙伴，一起探索山野，安全又有趣
+              {copy.teams.pageSubtitle}
             </p>
           </motion.div>
 
@@ -251,7 +252,7 @@ export default function HomePage() {
               asChild
             >
               <Link href="/teams">
-                查看全部队伍
+                {copy.common.viewAll}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -269,10 +270,10 @@ export default function HomePage() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              准备好开始你的户外之旅了吗？
+              {copy.hero.titleLine1}，{copy.hero.titleLine2}？
             </h2>
             <p className="text-stone-400 text-lg mb-8 max-w-2xl mx-auto">
-              加入 GoMate，发现深圳最美的徒步路线，找到志同道合的户外伙伴
+              {copy.hero.description}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/locations" className="inline-block">
@@ -280,7 +281,7 @@ export default function HomePage() {
                   size="lg"
                   className="bg-white text-stone-900 hover:bg-stone-100 px-8 w-full sm:w-auto"
                 >
-                  立即加入
+                  {copy.hero.loginRegisterBtn}
                 </Button>
               </Link>
               <Link href="/about" className="inline-block">
@@ -288,7 +289,7 @@ export default function HomePage() {
                   size="lg"
                   className="bg-white text-stone-900 hover:bg-stone-100 px-8 w-full sm:w-auto"
                 >
-                  了解更多
+                  {copy.hero.viewDetail}
                 </Button>
               </Link>
             </div>

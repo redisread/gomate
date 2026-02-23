@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLocations } from "@/lib/locations-context";
 import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
+import { copy } from "@/lib/copy";
 
 function CreateTeamForm() {
   const { addTeam } = useTeams();
@@ -112,7 +113,7 @@ function CreateTeamForm() {
       router.push(`/teams/${newTeam.id}`);
     } catch (error) {
       console.error("创建队伍失败:", error);
-      alert(error instanceof Error ? error.message : "创建队伍失败，请稍后重试");
+      alert(error instanceof Error ? error.message : copy.teams.createBtnLoading);
       setIsSubmitting(false);
     }
   };
@@ -136,7 +137,7 @@ function CreateTeamForm() {
           >
             <Link href={locationIdFromUrl ? `/locations/${locationIdFromUrl}` : "/"}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              返回
+              {copy.common.back}
             </Link>
           </Button>
         </motion.div>
@@ -148,9 +149,9 @@ function CreateTeamForm() {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-stone-900">发布队伍</h1>
+          <h1 className="text-3xl font-bold text-stone-900">{copy.teams.createTitle}</h1>
           <p className="text-stone-600 mt-2">
-            创建一个新的徒步队伍，邀请志同道合的伙伴一起探索山野
+            {copy.teams.createSubtitle}
           </p>
         </motion.div>
 
@@ -169,12 +170,12 @@ function CreateTeamForm() {
                 {/* 队伍标题 */}
                 <div className="space-y-2">
                   <Label htmlFor="title">
-                    队伍标题 <span className="text-red-500">*</span>
+                    {copy.teams.formLabel.name} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="title"
                     name="title"
-                    placeholder="例如：七娘山挑战队 - 周六登顶看海"
+                    placeholder={copy.teams.formPlaceholder.name}
                     value={formData.title}
                     onChange={handleInputChange}
                     required
@@ -185,7 +186,7 @@ function CreateTeamForm() {
                 {/* 选择地点 */}
                 <div className="space-y-2">
                   <Label htmlFor="locationId">
-                    徒步地点 <span className="text-red-500">*</span>
+                    {copy.teams.formLabel.location} <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
@@ -197,7 +198,7 @@ function CreateTeamForm() {
                       required
                       className="flex h-10 w-full rounded-md border border-stone-200 bg-white pl-10 pr-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
                     >
-                      <option value="">请选择徒步地点</option>
+                      <option value="">{copy.teams.formPlaceholder.location}</option>
                       {locations.map((loc) => (
                         <option key={loc.id} value={loc.id}>
                           {loc.name} - {loc.subtitle}
@@ -208,12 +209,12 @@ function CreateTeamForm() {
                   {selectedLocation && (
                     <p className="text-sm text-stone-500">
                       {selectedLocation.difficulty === "easy"
-                        ? "简单"
+                        ? copy.enums.difficulty.easy
                         : selectedLocation.difficulty === "moderate"
-                        ? "中等"
+                        ? copy.enums.difficulty.moderate
                         : selectedLocation.difficulty === "hard"
-                        ? "困难"
-                        : "极难"}{" "}
+                        ? copy.enums.difficulty.hard
+                        : copy.enums.difficulty.extreme}{" "}
                       · {selectedLocation.duration} · {selectedLocation.distance}
                     </p>
                   )}
@@ -223,7 +224,7 @@ function CreateTeamForm() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="date">
-                      活动日期 <span className="text-red-500">*</span>
+                      {copy.teams.formLabel.date} <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
@@ -240,7 +241,7 @@ function CreateTeamForm() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="time">
-                      集合时间 <span className="text-red-500">*</span>
+                      {copy.teams.formLabel.meetTime} <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative">
                       <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
@@ -261,14 +262,14 @@ function CreateTeamForm() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="duration">
-                      预计时长 <span className="text-red-500">*</span>
+                      {copy.teams.formLabel.duration} <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative">
                       <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
                       <Input
                         id="duration"
                         name="duration"
-                        placeholder="例如：6-8小时"
+                        placeholder={copy.teams.formPlaceholder.duration}
                         value={formData.duration}
                         onChange={handleInputChange}
                         required
@@ -278,7 +279,7 @@ function CreateTeamForm() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="maxMembers">
-                      最大人数 <span className="text-red-500">*</span>
+                      {copy.teams.formLabel.maxSize} <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative">
                       <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
@@ -288,7 +289,7 @@ function CreateTeamForm() {
                         type="number"
                         min={2}
                         max={50}
-                        placeholder="例如：6"
+                        placeholder={copy.teams.formPlaceholder.maxSize}
                         value={formData.maxMembers}
                         onChange={handleInputChange}
                         required
@@ -301,12 +302,12 @@ function CreateTeamForm() {
                 {/* 队伍描述 */}
                 <div className="space-y-2">
                   <Label htmlFor="description">
-                    队伍描述 <span className="text-red-500">*</span>
+                    {copy.teams.formLabel.description} <span className="text-red-500">*</span>
                   </Label>
                   <Textarea
                     id="description"
                     name="description"
-                    placeholder="描述一下这次行程的具体安排、难度、风景特色等..."
+                    placeholder={copy.teams.formPlaceholder.description}
                     value={formData.description}
                     onChange={handleInputChange}
                     required
@@ -317,10 +318,10 @@ function CreateTeamForm() {
 
                 {/* 加入要求 */}
                 <div className="space-y-2">
-                  <Label>加入要求</Label>
+                  <Label>{copy.teams.formLabel.requirements}</Label>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="例如：有徒步经验"
+                      placeholder={copy.teams.formPlaceholder.requirements}
                       value={newRequirement}
                       onChange={(e) => setNewRequirement(e.target.value)}
                       onKeyDown={(e) => {
@@ -365,8 +366,8 @@ function CreateTeamForm() {
                 {/* 提示信息 */}
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <p className="text-sm text-amber-800">
-                    <strong>提示：</strong>
-                    发布队伍后，其他用户可以申请加入。请确保填写的信息准确，并在活动开始前及时与队员沟通集合细节。
+                    <strong>{copy.common.confirm}：</strong>
+                    {copy.teams.createTip}
                   </p>
                 </div>
 
@@ -378,14 +379,14 @@ function CreateTeamForm() {
                     className="flex-1 border-stone-200"
                     onClick={() => router.back()}
                   >
-                    取消
+                    {copy.common.cancel}
                   </Button>
                   <Button
                     type="submit"
                     className="flex-1 bg-stone-900 hover:bg-stone-800"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "发布中..." : "发布队伍"}
+                    {isSubmitting ? copy.teams.createBtnLoading : copy.teams.createBtn}
                   </Button>
                 </div>
               </form>

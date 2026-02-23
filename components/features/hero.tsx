@@ -26,7 +26,7 @@ function Hero() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-100 text-stone-600 text-sm font-medium mb-8"
           >
             <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
-            深圳户外爱好者聚集地
+            探索自然 · 连接伙伴
           </motion.div>
 
           {/* Title */}
