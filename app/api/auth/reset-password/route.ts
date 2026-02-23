@@ -53,33 +53,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 调用 Better Auth 的 reset-password API
-    const baseUrl = process.env.BETTER_AUTH_URL || "http://localhost:8787";
-    const response = await fetch(`${baseUrl}/api/auth/reset-password`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        token,
-        newPassword,
-      }),
+    // 动态导入 auth 配置（避免构建时依赖 DB）
+    const { createAuth } = await import("@/lib/auth");
+    const auth = createAuth(env);
+
+    // 使用 Better Auth 的 resetPassword 方法
+    await auth.api.resetPassword({
+      body: { token, newPassword }
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.error("Better Auth reset password error:", error);
-
-      // 根据错误类型返回不同的消息
-      if (error.code === "INVALID_TOKEN" || error.code === "TOKEN_EXPIRED") {
-        return NextResponse.json(
-          { error: "重置链接已过期或无效，请重新申请" },
-          { status: 400 }
-        );
-      }
-
-      throw new Error(error.message || "重置失败");
-    }
 
     return NextResponse.json({
       success: true,
@@ -87,10 +68,20 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Reset password error:", error);
+    const errorMessage = (error as Error).message;
+
+    // 根据错误类型返回不同的消息
+    if (errorMessage.includes("token") || errorMessage.includes("expired") || errorMessage.includes("invalid")) {
+      return NextResponse.json(
+        { error: "重置链接已过期或无效，请重新申请" },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: "重置密码失败，请稍后重试",
-        message: (error as Error).message,
+        message: errorMessage,
       },
       { status: 500 }
     );

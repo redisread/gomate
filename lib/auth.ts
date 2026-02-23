@@ -95,6 +95,9 @@ export const createAuth = (env?: { DB?: D1Database }) => {
       autoSignIn: true,
       minPasswordLength: 6,
       maxPasswordLength: 128,
+      requireEmailVerification: false,
+      sendResetPasswordEmail: handleSendResetPasswordEmail,
+      resetPasswordTokenExpiresIn: 3600, // 1小时
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
