@@ -7,9 +7,9 @@ const APP_NAME = "GoMate";
  * 获取环境变量（支持 Cloudflare Workers 和 Node.js 环境）
  */
 function getEnv(key: string): string | undefined {
-  // Cloudflare Workers 环境
-  if (typeof globalThis !== 'undefined' && (globalThis as Record<string, unknown>)[key]) {
-    return (globalThis as Record<string, unknown>)[key] as string;
+  // Cloudflare Workers 环境 - 环境变量在 globalThis.env 上
+  if (typeof globalThis !== 'undefined' && (globalThis as { env?: Record<string, string> }).env) {
+    return (globalThis as { env: Record<string, string> }).env[key];
   }
   // Node.js 环境
   if (typeof process !== 'undefined' && process.env) {
