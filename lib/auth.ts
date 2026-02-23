@@ -6,17 +6,32 @@ import { copy } from "@/lib/copy";
 
 // 判断是否在 Cloudflare Workers 环境
 const isCloudflareWorkers = typeof globalThis !== 'undefined' &&
+  typeof (globalThis as { env?: unknown }).env === 'object' &&
   (globalThis as { env?: { DB?: unknown } }).env?.DB !== undefined;
+
+// 获取 Cloudflare Workers 环境变量
+function getCloudflareEnv() {
+  if (!isCloudflareWorkers) return undefined;
+  const env = (globalThis as { env: Record<string, string> }).env;
+  return {
+    RESEND_API_KEY: env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL,
+    NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL,
+  };
+}
 
 // 邮件发送函数
 const handleSendResetPasswordEmail = async (data: {
   user: { email: string; name?: string };
   url: string;
 }) => {
+  const env = getCloudflareEnv();
+
   const result = await sendPasswordResetEmail(
     data.user.email,
     data.url,
-    data.user.name
+    data.user.name,
+    env
   );
 
   if (!result.success) {
