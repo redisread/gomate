@@ -22,7 +22,10 @@ GoMate 是一个极简的「地点组队」平台，专注于深圳徒步场景�
 ## 开发命令
 
 ```bash
-# 开发（推荐 - 使用 wrangler dev 并模拟 D1 数据库）
+# 本地开发（使用 Next.js Turbopack）
+npm run dev
+
+# CloudFlare 环境开发（使用 wrangler dev 模拟 D1 数据库）
 npm run cf:dev
 
 # 构建 CloudFlare 版本
@@ -94,7 +97,7 @@ Webpack 和 Turbopack 配置使用 `@/` 前缀：
 `.env.local` 中必需的变量：
 ```bash
 BETTER_AUTH_SECRET=        # 至少 32 位，生成命令：openssl rand -base64 32
-BETTER_AUTH_URL=http://localhost:8787
+BETTER_AUTH_URL=http://localhost:3000   # cf:dev 模式下使用 8787
 ```
 
 D1 远程操作的可选变量：

@@ -8,14 +8,14 @@ GoMate 旨在用结构化的方式解决小红书找搭子信息混乱的问题�
 
 ## 技术栈
 
-- **框架**: Next.js 15 + App Router
-- **React**: 19
+- **框架**: Next.js 15.5 + App Router
+- **React**: 18.3.1
 - **语言**: TypeScript 5 (严格模式)
-- **样式**: Tailwind CSS v4
-- **UI 组件**: shadcn/ui
+- **样式**: Tailwind CSS v4 + shadcn/ui
 - **数据库**: CloudFlare D1 (SQLite) + Drizzle ORM
-- **认证**: Better Auth 1.4+
-- **部署**: CloudFlare Workers/Pages
+- **认证**: Better Auth 1.1.0（邮箱/密码）
+- **部署**: CloudFlare Workers/Pages（通过 OpenNext）
+- **存储**: CloudFlare R2（图片上传）
 
 ## 快速开始
 
@@ -34,9 +34,8 @@ cp .env.example .env.local
 
 必需的环境变量：
 ```bash
-# Better Auth 密钥（至少 32 位）
-BETTER_AUTH_SECRET=your-secret-key
-BETTER_AUTH_URL=http://localhost:8787
+BETTER_AUTH_SECRET=your-secret-key   # 至少 32 位
+BETTER_AUTH_URL=http://localhost:3000
 ```
 
 生成密钥：
@@ -46,58 +45,61 @@ openssl rand -base64 32
 
 ### 3. 启动开发服务器
 
-项目使用 **wrangler dev** 在本地模拟 CloudFlare Workers 环境（包含 D1 数据库）：
-
 ```bash
-# 构建并启动
-npm run cf:dev
+npm run dev
 ```
 
-访问 http://localhost:8787
+访问 http://localhost:3000
 
 ### 4. 数据库说明
 
-本地开发时，数据存储在 SQLite 文件中：
+本地开发使用 SQLite。使用 CloudFlare 环境开发时，数据存储在：
 
 ```
 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/
 └── {database-id}.sqlite
 ```
 
-**查看本地数据：**
+**查看本地 D1 数据：**
 ```bash
-# 查看所有用户
 sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite \
   "SELECT id, name, email, createdAt FROM users;"
-
-# 查看所有表
-sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite ".tables"
 ```
 
 **数据库迁移：**
 ```bash
-# 生成迁移文件
-npm run db:generate
-
-# 查看生成的 SQL
-ls drizzle/
+npm run db:generate    # 生成迁移文件
 ```
 
 ### 5. 生产环境部署
 
-**配置密钥：**
 ```bash
-# 生成新的生产密钥（不要在本地使用）
-openssl rand -base64 32
-
-# 设置到 Cloudflare Secrets
+# 设置 Cloudflare 密钥
 wrangler secret put BETTER_AUTH_SECRET
+
+# 部署
+npm run cf:deploy
 ```
 
-**部署：**
+## 常用命令
+
 ```bash
-# 部署到 Cloudflare
-npm run cf:deploy
+# 开发
+npm run dev              # 本地开发（Next.js Turbopack）
+npm run cf:dev           # CloudFlare 环境开发（wrangler + D1 模拟）
+
+# 构建 & 部署
+npm run cf:build         # 构建 Cloudflare Workers 版本
+npm run cf:deploy        # 部署到 Cloudflare
+
+# 数据库
+npm run db:generate      # 生成 Drizzle 迁移文件
+npm run db:studio        # 打开 Drizzle Studio
+npm run d1:migrate:local # 本地应用 D1 迁移
+npm run d1:migrate:prod  # 生产环境应用 D1 迁移
+
+# 代码检查
+npm run lint
 ```
 
 ## 项目结构
@@ -133,31 +135,6 @@ db/
 - Session 自动管理（Cookie）
 - 密码自动加密（bcrypt）
 - 支持自定义字段（bio, level）
-
-**相关文件：**
-- `lib/auth-client.ts` - 客户端配置
-- `app/api/auth/[...all]/route.ts` - API 路由
-
-## 常用命令
-
-```bash
-# 开发（推荐）
-npm run cf:dev              # 启动 wrangler 本地调试（含 D1 数据库）
-
-# 构建
-npm run cf:build            # 构建 Cloudflare Workers 版本
-
-# 数据库
-npm run db:generate         # 生成 Drizzle 迁移文件
-npm run db:studio           # 打开 Drizzle Studio
-
-# 部署
-npm run cf:deploy           # 部署到 Cloudflare
-
-# 本地 D1 数据库操作
-sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite ".tables"
-sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite "SELECT * FROM users;"
-```
 
 ## 开发规范
 

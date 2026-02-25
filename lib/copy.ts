@@ -71,8 +71,8 @@ export const copy = {
   // ─── Hero 首屏 ────────────────────────────────────────────────────────────
   hero: {
     badge: "探索自然 · 连接伙伴",
-    titleLine1: "find trails",
-    titleLine2: "find company",
+    titleLine1: "探索路线",
+    titleLine2: "结伴同行",
     description:
       "在山野与海岸间，用脚步丈量世界，与同频的人一起出发。",
     exploreBtn: "探索地点",

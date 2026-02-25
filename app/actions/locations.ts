@@ -1,12 +1,13 @@
 "use server";
 
-import { db } from "@/db";
+import { getDB } from "@/db";
 import { locations, teams, users, teamMembers } from "@/db/schema";
 import { eq, desc, asc } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 
 // 获取地点列表
 export async function getLocations() {
+  const db = await getDB();
   const data = await db.query.locations.findMany({
     orderBy: [asc(locations.name)],
   });
@@ -25,6 +26,7 @@ export const getCachedLocations = unstable_cache(
 
 // 获取地点详情（通过 ID）
 export async function getLocationById(id: string) {
+  const db = await getDB();
   const location = await db.query.locations.findFirst({
     where: eq(locations.id, id),
     with: {
@@ -61,6 +63,7 @@ export async function getLocationById(id: string) {
 
 // 获取地点详情（通过 slug）
 export async function getLocationBySlug(slug: string) {
+  const db = await getDB();
   const location = await db.query.locations.findFirst({
     where: eq(locations.slug, slug),
     with: {

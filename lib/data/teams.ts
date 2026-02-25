@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { db } from "@/db";
+import { getDB } from "@/db";
 import { teams } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -14,9 +14,7 @@ function parseTeam(team: any) {
 
 // 缓存队伍列表获取
 export const getCachedTeams = cache(async () => {
-  if (!db) {
-    throw new Error("Database not initialized");
-  }
+  const db = await getDB();
 
   const results = await db.query.teams.findMany({
     orderBy: [desc(teams.createdAt)],
@@ -31,9 +29,7 @@ export const getCachedTeams = cache(async () => {
 
 // 缓存单个队伍获取
 export const getCachedTeamById = cache(async (id: string) => {
-  if (!db) {
-    throw new Error("Database not initialized");
-  }
+  const db = await getDB();
 
   const result = await db.query.teams.findFirst({
     where: eq(teams.id, id),
@@ -53,9 +49,7 @@ export const getCachedTeamById = cache(async (id: string) => {
 
 // 获取地点相关的活跃队伍
 export const getCachedTeamsByLocation = cache(async (locationId: string) => {
-  if (!db) {
-    throw new Error("Database not initialized");
-  }
+  const db = await getDB();
 
   const results = await db.query.teams.findMany({
     where: eq(teams.locationId, locationId),

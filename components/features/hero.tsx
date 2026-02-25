@@ -48,9 +48,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg sm:text-xl text-stone-600 mb-10 max-w-2xl mx-auto leading-relaxed"
           >
-            极简「地点组队」平台，探索深圳最美徒步路线，
-            <br className="hidden sm:block" />
-            找到志同道合的户外伙伴。
+            极简「地点组队」平台，找到同行的人，出发就不远。
           </motion.p>
 
           {/* CTA Buttons */}
@@ -74,8 +72,11 @@ function Hero() {
               variant="outline"
               size="lg"
               className="px-8 h-12 text-base border-stone-300 hover:bg-stone-100"
+              asChild
             >
-              发布队伍
+              <Link href="#teams">
+                找队伍
+              </Link>
             </Button>
           </motion.div>
 

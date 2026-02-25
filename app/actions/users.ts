@@ -1,14 +1,15 @@
 "use server";
 
-import { db } from "@/db";
+import { getDB } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidateTag } from "next/cache";
 
 // 获取当前用户
 export async function getCurrentUser() {
+  const auth = await getAuth();
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -18,6 +19,7 @@ export async function getCurrentUser() {
   }
 
   // 获取完整的用户信息（包括 bio 和 level）
+  const db = await getDB();
   const user = await db.query.users.findFirst({
     where: eq(users.id, session.user.id),
   });
@@ -27,6 +29,7 @@ export async function getCurrentUser() {
 
 // 获取用户公开资料
 export async function getUserProfile(userId: string) {
+  const db = await getDB();
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
     columns: {
@@ -49,6 +52,7 @@ export async function updateProfile(data: {
   level?: string;
   image?: string;
 }) {
+  const auth = await getAuth();
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -58,6 +62,7 @@ export async function updateProfile(data: {
   }
 
   const userId = session.user.id;
+  const db = await getDB();
 
   // 验证数据
   if (data.name && data.name.length > 255) {
@@ -98,6 +103,7 @@ export async function updateAvatar(imageUrl: string) {
 
 // 检查用户是否已验证邮箱
 export async function isEmailVerified() {
+  const auth = await getAuth();
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -106,6 +112,7 @@ export async function isEmailVerified() {
     return false;
   }
 
+  const db = await getDB();
   const user = await db.query.users.findFirst({
     where: eq(users.id, session.user.id),
     columns: {

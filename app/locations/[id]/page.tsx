@@ -11,13 +11,56 @@ import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
 import { useLocations } from "@/lib/locations-context";
 
+interface Location {
+  id: string;
+  name: string;
+  slug: string;
+  subtitle: string;
+  description: string;
+  coverImage: string;
+  images: string[];
+  difficulty: string;
+  duration: string;
+  distance: string;
+  elevation: string;
+  bestSeason: string[];
+  tags: string[];
+  location: {
+    address: string;
+    coordinates: { lat: number; lng: number };
+  };
+  routeGuide: {
+    overview: string;
+    waypoints: { name: string; description: string; distance: string }[];
+    tips: string[];
+    warnings: string[];
+  };
+  facilities: {
+    parking: boolean;
+    restroom: boolean;
+    water: boolean;
+    food: boolean;
+  };
+  routeDescription: string;
+  waypoints: any[];
+  warnings: string[];
+  tips: string;
+}
+
 export default function LocationPage() {
   const params = useParams();
   const id = params.id as string;
-  const { locations, isLoading } = useLocations();
-  const location = locations.find((l) => l.id === id);
+  const { locations, isLoading, getLocationById, refreshLocations } = useLocations();
 
-  if (isLoading) {
+  // Find location using the context method
+  const location = getLocationById(id);
+
+  // Simple loading state - if locations array is empty, show loading
+  // This will be updated when LocationsProvider fetches data
+  const showLoading = isLoading || locations.length === 0;
+
+  if (showLoading) {
+    console.log("[LocationPage] showLoading is true, returning spinner");
     return (
       <main className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="animate-pulse text-stone-400">加载中...</div>
@@ -26,6 +69,7 @@ export default function LocationPage() {
   }
 
   if (!location) {
+    console.error("[LocationPage] location not found!");
     notFound();
   }
 

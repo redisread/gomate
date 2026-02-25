@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/db";
+import { getDB } from "@/db";
 import { teams, teamMembers, type NewTeam, type NewTeamMember } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -21,6 +21,7 @@ const createTeamSchema = z.object({
 // 获取队伍列表
 export async function getTeams(filters?: TeamFilters) {
   try {
+    const db = await getDB();
     let query = db.query.teams.findMany({
       orderBy: [desc(teams.createdAt)],
       with: {
@@ -42,6 +43,7 @@ export async function getTeams(filters?: TeamFilters) {
 // 获取单个队伍详情
 export async function getTeamById(id: string) {
   try {
+    const db = await getDB();
     const team = await db.query.teams.findFirst({
       where: eq(teams.id, id),
       with: {
@@ -78,6 +80,7 @@ export async function createTeam(input: CreateTeamInput, leaderId: string) {
       currentMembers: 1,
     };
 
+    const db = await getDB();
     const [team] = await db.insert(teams).values(newTeam).returning();
 
     // 自动将创建者添加为队长
@@ -105,6 +108,7 @@ export async function createTeam(input: CreateTeamInput, leaderId: string) {
 // 加入队伍
 export async function joinTeam(teamId: string, userId: string, message?: string) {
   try {
+    const db = await getDB();
     // 检查队伍是否存在且正在招募
     const team = await db.query.teams.findFirst({
       where: eq(teams.id, teamId),
@@ -153,6 +157,7 @@ export async function joinTeam(teamId: string, userId: string, message?: string)
 // 退出队伍
 export async function leaveTeam(teamId: string, userId: string) {
   try {
+    const db = await getDB();
     await db
       .delete(teamMembers)
       .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)));
@@ -180,6 +185,7 @@ export async function reviewMemberApplication(
   approve: boolean
 ) {
   try {
+    const db = await getDB();
     // 验证操作者是队长
     const team = await db.query.teams.findFirst({
       where: eq(teams.id, teamId),

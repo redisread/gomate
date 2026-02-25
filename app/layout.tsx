@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/lib/auth-context";
-import { LocationsProvider } from "@/lib/locations-context";
-import { TeamsProvider } from "@/lib/teams-context";
+import { AppProviders } from "@/app/components/providers";
 
 export const metadata: Metadata = {
   title: "GoMate - 发现山野，组队同行",
   description:
-    "GoMate 是一个极简的地点组队平台，探索深圳最美徒步路线，找到志同道合的户外伙伴。",
+    "GoMate 是一个极简的地点组队平台，找到同行的人，出发就不远。",
   keywords: ["徒步", "深圳", "户外", "组队", "搭子", "hiking", "shenzhen"],
 };
 
@@ -19,13 +17,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body className="font-sans antialiased">
-        <AuthProvider>
-          <LocationsProvider>
-            <TeamsProvider>
-              {children}
-            </TeamsProvider>
-          </LocationsProvider>
-        </AuthProvider>
+        <AppProviders>
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

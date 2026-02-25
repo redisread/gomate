@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/db";
+import { getDB } from "@/db";
 import {
   teams,
   teamMembers,
@@ -12,12 +12,13 @@ import {
 } from "@/db/schema";
 import { eq, and, desc, sql, ne } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
-import { auth } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { copy } from "@/lib/copy";
 
 // 获取当前用户
 async function getCurrentUser() {
+  const auth = await getAuth();
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -26,6 +27,7 @@ async function getCurrentUser() {
 
 // 获取队伍列表
 export async function getTeams(locationId?: string) {
+  const db = await getDB();
   const whereClause = locationId
     ? and(
         eq(teams.locationId, locationId),
@@ -73,6 +75,7 @@ export async function getTeams(locationId?: string) {
 
 // 获取队伍详情
 export async function getTeamById(id: string) {
+  const db = await getDB();
   const team = await db.query.teams.findFirst({
     where: eq(teams.id, id),
     with: {
@@ -121,6 +124,8 @@ export async function createTeam(data: {
   if (!user) {
     throw new Error(copy.errors.loginRequired);
   }
+
+  const db = await getDB();
 
   // 验证地点存在
   const location = await db.query.locations.findFirst({
@@ -185,6 +190,8 @@ export async function joinTeam(teamId: string) {
   if (!user) {
     throw new Error(copy.errors.loginRequired);
   }
+
+  const db = await getDB();
 
   // 获取队伍信息
   const team = await db.query.teams.findFirst({
@@ -260,6 +267,8 @@ export async function approveMember(teamId: string, userId: string) {
     throw new Error("请先登录");
   }
 
+  const db = await getDB();
+
   // 获取队伍信息
   const team = await db.query.teams.findFirst({
     where: eq(teams.id, teamId),
@@ -334,6 +343,8 @@ export async function rejectMember(teamId: string, userId: string) {
     throw new Error("请先登录");
   }
 
+  const db = await getDB();
+
   // 获取队伍信息
   const team = await db.query.teams.findFirst({
     where: eq(teams.id, teamId),
@@ -385,6 +396,8 @@ export async function leaveTeam(teamId: string) {
   if (!user) {
     throw new Error(copy.errors.loginRequired);
   }
+
+  const db = await getDB();
 
   // 获取队伍信息
   const team = await db.query.teams.findFirst({
@@ -447,6 +460,8 @@ export async function dissolveTeam(teamId: string) {
     throw new Error(copy.errors.loginRequired);
   }
 
+  const db = await getDB();
+
   // 获取队伍信息
   const team = await db.query.teams.findFirst({
     where: eq(teams.id, teamId),
@@ -489,6 +504,7 @@ export async function getUserTeams() {
     throw new Error(copy.errors.loginRequired);
   }
 
+  const db = await getDB();
   const memberships = await db.query.teamMembers.findMany({
     where: and(
       eq(teamMembers.userId, user.id),
@@ -522,6 +538,7 @@ export async function getUserPendingApplications() {
     throw new Error(copy.errors.loginRequired);
   }
 
+  const db = await getDB();
   const applications = await db.query.teamMembers.findMany({
     where: and(
       eq(teamMembers.userId, user.id),
@@ -561,6 +578,8 @@ export async function getPendingApplicationsForLeader() {
   if (!user) {
     throw new Error(copy.errors.loginRequired);
   }
+
+  const db = await getDB();
 
   // 获取用户作为队长的所有队伍
   const leaderTeams = await db.query.teams.findMany({

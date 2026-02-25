@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/db";
+import { getDB } from "@/db";
 import { locations } from "@/db/schema";
 import { eq, ilike, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -10,6 +10,7 @@ import type { LocationFilters } from "@/types";
 // 获取地点列表
 export async function getLocations(filters?: LocationFilters) {
   try {
+    const db = await getDB();
     let query = db.query.locations.findMany({
       orderBy: (locations, { desc }) => [desc(locations.createdAt)],
     });
@@ -26,6 +27,7 @@ export async function getLocations(filters?: LocationFilters) {
 // 获取单个地点详情
 export async function getLocationById(id: string) {
   try {
+    const db = await getDB();
     const location = await db.query.locations.findFirst({
       where: eq(locations.id, id),
       with: {
@@ -47,6 +49,7 @@ export async function getLocationById(id: string) {
 // 根据 slug 获取地点
 export async function getLocationBySlug(slug: string) {
   try {
+    const db = await getDB();
     const location = await db.query.locations.findFirst({
       where: eq(locations.slug, slug),
       with: {
@@ -73,6 +76,7 @@ export async function getLocationBySlug(slug: string) {
 // 搜索地点
 export async function searchLocations(searchTerm: string) {
   try {
+    const db = await getDB();
     const results = await db.query.locations.findMany({
       where: ilike(locations.name, `%${searchTerm}%`),
     });

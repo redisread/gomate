@@ -19,7 +19,15 @@ const difficultyLabels: Record<string, { label: string; color: string }> = {
 };
 
 export default function LocationsPage() {
-  const { locations } = useLocations();
+  const { locations, isLoading } = useLocations();
+  console.log("[LocationsPage] locations count:", locations.length, "isLoading:", isLoading);
+
+  // If locations is empty and not loading, try to refresh
+  React.useEffect(() => {
+    if (locations.length === 0 && !isLoading) {
+      console.log("[LocationsPage] No locations, refreshing...");
+    }
+  }, [locations.length, isLoading]);
 
   return (
     <main className="min-h-screen bg-stone-50">

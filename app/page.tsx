@@ -14,11 +14,14 @@ import { LocationCard } from "@/app/components/features/location-card";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/lib/locations-context";
 import { useTeams } from "@/lib/teams-context";
+import { useAuth } from "@/lib/auth-context";
 import { copy } from "@/lib/copy";
 
 export default function HomePage() {
   const { teams } = useTeams();
-  const { locations } = useLocations();
+  const { locations, isLoading } = useLocations();
+  const { isAuthenticated } = useAuth();
+  console.error("[HomePage] locations count:", locations.length, "isLoading:", isLoading);
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [selectedFilters, setSelectedFilters] = React.useState<
     Record<string, string[]>
@@ -270,28 +273,39 @@ export default function HomePage() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              {copy.hero.titleLine1}，{copy.hero.titleLine2}？
+              {copy.hero.titleLine1}，{copy.hero.titleLine2}
             </h2>
             <p className="text-stone-400 text-lg mb-8 max-w-2xl mx-auto">
               {copy.hero.description}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/locations" className="inline-block">
+              {isAuthenticated ? (
+                <Link href="/teams/create" className="inline-block">
+                  <Button
+                    size="lg"
+                    className="bg-white text-stone-900 hover:bg-stone-100 px-8 w-full sm:w-auto"
+                  >
+                    {copy.hero.createTeamBtn}
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/login" className="inline-block">
+                  <Button
+                    size="lg"
+                    className="bg-white text-stone-900 hover:bg-stone-100 px-8 w-full sm:w-auto"
+                  >
+                    {copy.hero.loginRegisterBtn}
+                  </Button>
+                </Link>
+              )}
+              <a href="#locations" className="inline-block">
                 <Button
                   size="lg"
                   className="bg-white text-stone-900 hover:bg-stone-100 px-8 w-full sm:w-auto"
                 >
-                  {copy.hero.loginRegisterBtn}
+                  {copy.hero.exploreBtn}
                 </Button>
-              </Link>
-              <Link href="/about" className="inline-block">
-                <Button
-                  size="lg"
-                  className="bg-white text-stone-900 hover:bg-stone-100 px-8 w-full sm:w-auto"
-                >
-                  {copy.hero.viewDetail}
-                </Button>
-              </Link>
+              </a>
             </div>
           </motion.div>
         </div>

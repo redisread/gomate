@@ -6,19 +6,7 @@ import { copy } from "@/lib/copy";
 
 // 判断是否在 Cloudflare Workers 环境
 const isCloudflareWorkers = typeof globalThis !== 'undefined' &&
-  typeof (globalThis as { env?: unknown }).env === 'object' &&
   (globalThis as { env?: { DB?: unknown } }).env?.DB !== undefined;
-
-// 获取 Cloudflare Workers 环境变量
-function getCloudflareEnv() {
-  if (!isCloudflareWorkers) return undefined;
-  const env = (globalThis as { env: Record<string, string> }).env;
-  return {
-    RESEND_API_KEY: env.RESEND_API_KEY,
-    RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL,
-    NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL,
-  };
-}
 
 // 邮件发送函数
 const handleSendResetPasswordEmail = async (data: {
@@ -110,9 +98,6 @@ export const createAuth = (env?: { DB?: D1Database }) => {
       autoSignIn: true,
       minPasswordLength: 6,
       maxPasswordLength: 128,
-      requireEmailVerification: false,
-      sendResetPasswordEmail: handleSendResetPasswordEmail,
-      resetPasswordTokenExpiresIn: 3600, // 1小时
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
@@ -123,7 +108,7 @@ export const createAuth = (env?: { DB?: D1Database }) => {
         bio: {
           type: "string",
           required: false,
-          defaultValue: "",
+          defaultValue: "beginner",
         },
       },
     },
@@ -132,14 +117,15 @@ export const createAuth = (env?: { DB?: D1Database }) => {
   });
 };
 
-// 默认导出（用于本地开发）
-let authInstance: ReturnType<typeof createAuth> | undefined;
-
-export const auth = new Proxy({} as ReturnType<typeof createAuth>, {
-  get(_, prop) {
-    if (!authInstance) {
-      authInstance = createAuth();
-    }
-    return authInstance[prop as keyof typeof authInstance];
-  },
-});
+/**
+ * 获取 auth 实例（自动通过 getCloudflareContext 获取 D1 绑定）
+ * 适用于 Server Actions 等无法直接传入 env 的场景
+ */
+export async function getAuth() {
+  const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+  const { env } = await getCloudflareContext();
+  if (!env.DB) {
+    throw new Error("D1 database binding not found.");
+  }
+  return createAuth({ DB: env.DB as D1Database });
+}

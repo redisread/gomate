@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { db } from "@/db";
+import { getDB } from "@/db";
 import { locations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -22,9 +22,7 @@ function parseLocation(location: any) {
 
 // 缓存地点列表获取
 export const getCachedLocations = cache(async () => {
-  if (!db) {
-    throw new Error("Database not initialized");
-  }
+  const db = await getDB();
 
   const results = await db.query.locations.findMany({
     orderBy: (locations, { desc }) => [desc(locations.createdAt)],
@@ -35,9 +33,7 @@ export const getCachedLocations = cache(async () => {
 
 // 缓存单个地点获取（通过 slug）
 export const getCachedLocationBySlug = cache(async (slug: string) => {
-  if (!db) {
-    throw new Error("Database not initialized");
-  }
+  const db = await getDB();
 
   const result = await db.query.locations.findFirst({
     where: eq(locations.slug, slug),
@@ -55,9 +51,7 @@ export const getCachedLocationBySlug = cache(async (slug: string) => {
 
 // 根据 ID 获取地点（用于 teams.ts）
 export const getCachedLocationById = cache(async (id: string) => {
-  if (!db) {
-    throw new Error("Database not initialized");
-  }
+  const db = await getDB();
 
   const result = await db.query.locations.findFirst({
     where: eq(locations.id, id),

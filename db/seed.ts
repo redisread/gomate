@@ -16,7 +16,7 @@ const seedUsers = [
     emailVerified: 1,
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
     bio: "资深户外爱好者，深圳百山打卡进行中",
-    level: "advanced",
+    experience: "advanced", // 使用 experience 字段以匹配现有 schema
     createdAt: Date.now(),
     updatedAt: Date.now(),
   },
@@ -27,7 +27,7 @@ const seedUsers = [
     emailVerified: 1,
     image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
     bio: "风光摄影师，专注山海摄影",
-    level: "expert",
+    experience: "expert",
     createdAt: Date.now(),
     updatedAt: Date.now(),
   },
@@ -38,7 +38,7 @@ const seedUsers = [
     emailVerified: 1,
     image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
     bio: "热爱分享，擅长带领新手入门",
-    level: "intermediate",
+    experience: "intermediate",
     createdAt: Date.now(),
     updatedAt: Date.now(),
   },
@@ -49,7 +49,7 @@ const seedUsers = [
     emailVerified: 1,
     image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
     bio: "夜爬达人，熟悉梧桐山每一条夜路",
-    level: "advanced",
+    experience: "advanced",
     createdAt: Date.now(),
     updatedAt: Date.now(),
   },
@@ -60,7 +60,7 @@ const seedUsers = [
     emailVerified: 1,
     image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face",
     bio: "两个孩子的爸爸，经常带孩子户外活动",
-    level: "intermediate",
+    experience: "intermediate",
     createdAt: Date.now(),
     updatedAt: Date.now(),
   },
@@ -309,7 +309,7 @@ async function seed() {
     // 插入用户
     console.log("👤 插入用户数据...");
     const userStmt = sqlite.prepare(`
-      INSERT INTO users (id, name, email, email_verified, image, bio, level, created_at, updated_at)
+      INSERT INTO users (id, name, email, email_verified, image, bio, experience, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     for (const user of seedUsers) {
@@ -320,7 +320,7 @@ async function seed() {
         user.emailVerified,
         user.image,
         user.bio,
-        user.level,
+        user.experience,
         user.createdAt,
         user.updatedAt
       );
