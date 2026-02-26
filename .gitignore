@@ -48,3 +48,7 @@ dist/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+cloudflare-env.d.ts
+
+# backups
+.backup/

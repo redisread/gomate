@@ -11,7 +11,7 @@ import type { LocationFilters } from "@/types";
 export async function getLocations(filters?: LocationFilters) {
   try {
     const db = await getDB();
-    let query = db.query.locations.findMany({
+    const query = db.query.locations.findMany({
       orderBy: (locations, { desc }) => [desc(locations.createdAt)],
     });
 

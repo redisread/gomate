@@ -22,7 +22,7 @@ const createTeamSchema = z.object({
 export async function getTeams(filters?: TeamFilters) {
   try {
     const db = await getDB();
-    let query = db.query.teams.findMany({
+    const query = db.query.teams.findMany({
       orderBy: [desc(teams.createdAt)],
       with: {
         location: true,

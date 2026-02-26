@@ -12,11 +12,12 @@ const getCloudflareContext = async () => {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
     // 获取 Cloudflare 上下文
     const { env } = await getCloudflareContext();
+    const { path } = await params;
 
     if (!env.R2) {
       return NextResponse.json(
@@ -28,7 +29,7 @@ export async function GET(
     const r2 = env.R2 as R2Bucket;
 
     // 构建文件 key
-    const key = params.path.join("/");
+    const key = path.join("/");
 
     if (!key) {
       return NextResponse.json(

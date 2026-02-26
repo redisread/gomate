@@ -1,31 +1,81 @@
 name = "gomate"
 main = ".open-next/worker.js"
-compatibility_date = "2025-02-01"
-compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2026-02-26"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+logpush = false
 
-# 静态资源
+# Static assets binding - required for OpenNext.js Cloudflare
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"
+run_worker_first = false
 
-# D1 数据库绑定
+# Service binding - self reference required for ISR revalidation and res.revalidate
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "gomate"
+
+# R2 bucket for incremental cache (ISR/SSG pages)
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "gomate"
+
+# D1 database binding
+# TODO: Create your D1 database and update the database_id
+# Run: wrangler d1 create gomate-db
 [[d1_databases]]
 binding = "DB"
 database_name = "gomate-db"
 database_id = "7d17d076-202f-48f8-b343-24209cdb0ba1"
 
-# R2 存储桶绑定（用于头像上传）
-[[r2_buckets]]
-binding = "R2"
-bucket_name = "gomate"
+# Image optimization binding (Cloudflare Images)
+[images]
+binding = "IMAGES"
+
+# Analytics Engine binding
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
+
+# Production environment
+[env.production]
+compatibility_date = "2026-02-26"
+
+[env.production.observability]
+enabled = true
+head_sampling_rate = 0.1
+
+[env.production.observability.logs]
+enabled = true
+head_sampling_rate = 0.1
+invocation_logs = true
+persist = true
+
+[env.production.observability.traces]
+enabled = true
+head_sampling_rate = 0.1
+persist = true
+
+# Smart placement - automatically positions Worker in optimal data center
+[placement]
+mode = "smart"
+
 
 # 环境变量
 [vars]
-NEXT_PUBLIC_APP_URL = "http://localhost:8787"
-BETTER_AUTH_URL = "http://localhost:8787"
 R2_PUBLIC_URL = "https://gomate.cos.jiahongw.com"
 RESEND_FROM_EMAIL = "GoMate <onboarding@resend.dev>"
-
-# 密钥（通过 wrangler secret put 设置）
-# BETTER_AUTH_SECRET
-# RESEND_API_KEY

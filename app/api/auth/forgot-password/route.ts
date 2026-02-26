@@ -41,15 +41,20 @@ export async function POST(request: NextRequest) {
 
     // 动态导入 auth 配置（避免构建时依赖 DB）
     const { createAuth } = await import("@/lib/auth");
-    const auth = createAuth(env);
+    const auth = createAuth({
+      DB: env.DB as D1Database,
+      RESEND_API_KEY: env.RESEND_API_KEY as string | undefined,
+      RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL as string | undefined,
+      NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL as string | undefined,
+    });
 
     // 构建重置链接的回调 URL
     const baseUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:8787";
     const redirectTo = `${baseUrl}/reset-password`;
 
-    // 使用 Better Auth 的 forgetPassword 方法
+    // 使用 Better Auth 的 requestPasswordReset 方法
     // 注意：即使邮箱不存在，也会返回成功（防止枚举用户）
-    await auth.api.forgetPassword({
+    await auth.api.requestPasswordReset({
       body: { email, redirectTo }
     });
 

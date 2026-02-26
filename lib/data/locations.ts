@@ -4,7 +4,7 @@ import { locations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 // 解析 SQLite JSON 字段
-function parseLocation(location: any) {
+function parseLocation(location: Record<string, unknown>) {
   if (!location) return null;
   return {
     ...location,

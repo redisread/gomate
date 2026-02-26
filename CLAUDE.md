@@ -22,11 +22,8 @@ GoMate 是一个极简的「地点组队」平台，专注于深圳徒步场景�
 ## 开发命令
 
 ```bash
-# 本地开发（使用 Next.js Turbopack）
+# 本地开发（支持热更新，自动注入 Cloudflare D1/R2 绑定）
 npm run dev
-
-# CloudFlare 环境开发（使用 wrangler dev 模拟 D1 数据库）
-npm run cf:dev
 
 # 构建 CloudFlare 版本
 npm run cf:build
@@ -43,6 +40,8 @@ npm run d1:migrate:prod  # 生产环境应用 D1 迁移
 # 代码检查
 npm run lint
 ```
+
+> **注意**: `npm run dev` 通过 `initOpenNextCloudflareForDev()` 自动注入 Cloudflare 绑定（D1、R2），支持热更新，无需使用 `wrangler dev`。
 
 ## 架构说明
 
@@ -97,7 +96,7 @@ Webpack 和 Turbopack 配置使用 `@/` 前缀：
 `.env.local` 中必需的变量：
 ```bash
 BETTER_AUTH_SECRET=        # 至少 32 位，生成命令：openssl rand -base64 32
-BETTER_AUTH_URL=http://localhost:3000   # cf:dev 模式下使用 8787
+BETTER_AUTH_URL=http://localhost:3000
 ```
 
 D1 远程操作的可选变量：
@@ -110,9 +109,10 @@ RESEND_API_KEY=
 
 ## 数据库开发模式
 
-1. **本地 D1（`cf:dev` 默认）**: 数据存储在 `.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite`
-2. **本地 SQLite 文件**: 在 drizzle.config.ts 中设置 `LOCAL_DB_PATH`
-3. **远程 D1**: 配置 CloudFlare 凭证用于生产环境操作
+本地开发时，`npm run dev` 通过 `initOpenNextCloudflareForDev()` 自动模拟 Cloudflare 环境：
+
+- 数据存储在 `.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite`
+- R2 存储模拟在 `.wrangler/state/v3/r2/`
 
 直接查询本地 D1：
 ```bash

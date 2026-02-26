@@ -4,7 +4,7 @@ import { teams } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 // 解析 SQLite JSON 字段
-function parseTeam(team: any) {
+function parseTeam(team: Record<string, unknown>) {
   if (!team) return null;
   return {
     ...team,

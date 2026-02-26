@@ -55,7 +55,12 @@ export async function POST(request: NextRequest) {
 
     // 动态导入 auth 配置（避免构建时依赖 DB）
     const { createAuth } = await import("@/lib/auth");
-    const auth = createAuth(env);
+    const auth = createAuth({
+      DB: env.DB as D1Database,
+      RESEND_API_KEY: env.RESEND_API_KEY as string | undefined,
+      RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL as string | undefined,
+      NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL as string | undefined,
+    });
 
     // 使用 Better Auth 的 resetPassword 方法
     await auth.api.resetPassword({

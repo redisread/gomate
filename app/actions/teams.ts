@@ -4,17 +4,15 @@ import { getDB } from "@/db";
 import {
   teams,
   teamMembers,
-  users,
   locations,
   TeamStatus,
-  TeamMemberStatus,
-  TeamMemberRole,
 } from "@/db/schema";
-import { eq, and, desc, sql, ne } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { copy } from "@/lib/copy";
+import { nanoid } from "nanoid";
 
 // 获取当前用户
 async function getCurrentUser() {
@@ -151,9 +149,11 @@ export async function createTeam(data: {
   }
 
   // 创建队伍
+  const teamId = nanoid();
   const [team] = await db
     .insert(teams)
     .values({
+      id: teamId,
       locationId: data.locationId,
       leaderId: user.id,
       title: data.title,
@@ -169,6 +169,7 @@ export async function createTeam(data: {
 
   // 创建队长成员记录
   await db.insert(teamMembers).values({
+    id: nanoid(),
     teamId: team.id,
     userId: user.id,
     role: "leader",
@@ -246,6 +247,7 @@ export async function joinTeam(teamId: string) {
 
   // 创建申请
   await db.insert(teamMembers).values({
+    id: nanoid(),
     teamId,
     userId: user.id,
     role: "member",
@@ -386,7 +388,7 @@ export async function rejectMember(teamId: string, userId: string) {
   // 清除缓存
   revalidateTag(`team-${teamId}`);
 
-  return { success: true, message: copy.errors.rejected };
+  return { success: true, message: copy.success.rejected };
 }
 
 // 离开队伍

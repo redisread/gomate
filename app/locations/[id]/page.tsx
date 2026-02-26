@@ -42,7 +42,7 @@ interface Location {
     food: boolean;
   };
   routeDescription: string;
-  waypoints: any[];
+  waypoints: unknown[];
   warnings: string[];
   tips: string;
 }

@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from "@/db/schema";
+import { createD1Client } from "@/db";
 import { sendPasswordResetEmail, sendWelcomeEmail } from "@/lib/email/resend";
 import { copy } from "@/lib/copy";
 
@@ -8,13 +9,12 @@ import { copy } from "@/lib/copy";
 const isCloudflareWorkers = typeof globalThis !== 'undefined' &&
   (globalThis as { env?: { DB?: unknown } }).env?.DB !== undefined;
 
-// 邮件发送函数
-const handleSendResetPasswordEmail = async (data: {
-  user: { email: string; name?: string };
-  url: string;
-}) => {
-  const env = getCloudflareEnv();
-
+// 邮件发送函数 - 接收 env 参数
+const handleSendResetPasswordEmail = async (
+  data: { user: { id: string; email: string; name?: string; emailVerified: boolean; createdAt: Date; updatedAt: Date; image?: string }; url: string; token: string },
+  request: Request,
+  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string; NEXT_PUBLIC_APP_URL?: string }
+) => {
   const result = await sendPasswordResetEmail(
     data.user.email,
     data.url,
@@ -40,11 +40,19 @@ const handleSendWelcomeEmail = async (data: { user: { email: string; name?: stri
 };
 
 // 动态创建 auth 配置
-export const createAuth = (env?: { DB?: D1Database }) => {
+export const createAuth = (env?: {
+  DB?: D1Database;
+  RESEND_API_KEY?: string;
+  RESEND_FROM_EMAIL?: string;
+  NEXT_PUBLIC_APP_URL?: string;
+}) => {
   // 如果在 Cloudflare Workers 环境，使用 D1 数据库
   if (env?.DB) {
+    // 创建 Drizzle D1 客户端（关键修复：drizzleAdapter 需要 Drizzle 客户端实例，而非原始 D1 绑定）
+    const db = createD1Client(env.DB);
+
     return betterAuth({
-      database: drizzleAdapter(env.DB as unknown as import("drizzle-orm").BetterSQLite3Database<typeof schema>, {
+      database: drizzleAdapter(db as unknown as import("drizzle-orm").BetterSQLite3Database<typeof schema>, {
         provider: "sqlite",
         schema: {
           user: schema.users,
@@ -59,7 +67,9 @@ export const createAuth = (env?: { DB?: D1Database }) => {
         minPasswordLength: 6,
         maxPasswordLength: 128,
         requireEmailVerification: false,
-        sendResetPasswordEmail: handleSendResetPasswordEmail,
+        sendResetPassword: async (data, request) => {
+          await handleSendResetPasswordEmail(data, request, env);
+        },
         resetPasswordTokenExpiresIn: 3600, // 1小时
       },
       session: {
@@ -73,6 +83,11 @@ export const createAuth = (env?: { DB?: D1Database }) => {
             required: false,
             defaultValue: "",
           },
+          level: {
+            type: "string",
+            required: false,
+            defaultValue: "beginner",
+          },
         },
       },
       secret: process.env.BETTER_AUTH_SECRET || "dev-secret-key",
@@ -82,6 +97,7 @@ export const createAuth = (env?: { DB?: D1Database }) => {
 
   // 本地开发环境使用 better-sqlite3
   // 动态导入避免在 Cloudflare Workers 中加载 better-sqlite3
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { db } = require("@/db");
   return betterAuth({
     database: drizzleAdapter(db, {
@@ -98,6 +114,11 @@ export const createAuth = (env?: { DB?: D1Database }) => {
       autoSignIn: true,
       minPasswordLength: 6,
       maxPasswordLength: 128,
+      requireEmailVerification: false,
+      sendResetPassword: async (data, request) => {
+        await handleSendResetPasswordEmail(data, request, {});
+      },
+      resetPasswordTokenExpiresIn: 3600, // 1小时
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
@@ -127,5 +148,10 @@ export async function getAuth() {
   if (!env.DB) {
     throw new Error("D1 database binding not found.");
   }
-  return createAuth({ DB: env.DB as D1Database });
+  return createAuth({
+    DB: env.DB as D1Database,
+    RESEND_API_KEY: env.RESEND_API_KEY as string | undefined,
+    RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL as string | undefined,
+    NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL as string | undefined,
+  });
 }

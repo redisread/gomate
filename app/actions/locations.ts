@@ -1,7 +1,7 @@
 "use server";
 
 import { getDB } from "@/db";
-import { locations, teams, users, teamMembers } from "@/db/schema";
+import { locations, teams, teamMembers } from "@/db/schema";
 import { eq, desc, asc } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 
@@ -99,11 +99,13 @@ export async function getLocationBySlug(slug: string) {
 }
 
 // 缓存版本的地点详情
-export const getCachedLocationBySlug = unstable_cache(
-  async (slug: string) => getLocationBySlug(slug),
-  (slug) => [`location-${slug}`],
-  {
-    revalidate: 300, // 5分钟缓存
-    tags: (slug) => [`location-${slug}`, "locations"],
-  }
-);
+export async function getCachedLocationBySlug(slug: string) {
+  return unstable_cache(
+    async () => getLocationBySlug(slug),
+    [`location-${slug}`],
+    {
+      revalidate: 300, // 5分钟缓存
+      tags: [`location-${slug}`, "locations"],
+    }
+  )();
+}

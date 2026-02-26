@@ -53,12 +53,10 @@ npm run dev
 
 ### 4. 数据库说明
 
-本地开发使用 SQLite。使用 CloudFlare 环境开发时，数据存储在：
+本地开发使用 `npm run dev` 时，通过 OpenNext 自动模拟 Cloudflare D1/R2 环境：
 
-```
-.wrangler/state/v3/d1/miniflare-D1DatabaseObject/
-└── {database-id}.sqlite
-```
+- 数据存储在 `.wrangler/state/v3/d1/miniflare-D1DatabaseObject/`
+- 支持热更新，代码修改自动生效
 
 **查看本地 D1 数据：**
 ```bash
@@ -84,9 +82,8 @@ npm run cf:deploy
 ## 常用命令
 
 ```bash
-# 开发
-npm run dev              # 本地开发（Next.js Turbopack）
-npm run cf:dev           # CloudFlare 环境开发（wrangler + D1 模拟）
+# 开发（支持热更新，自动注入 Cloudflare D1/R2 绑定）
+npm run dev
 
 # 构建 & 部署
 npm run cf:build         # 构建 Cloudflare Workers 版本
@@ -101,6 +98,8 @@ npm run d1:migrate:prod  # 生产环境应用 D1 迁移
 # 代码检查
 npm run lint
 ```
+
+> **注意**: `npm run dev` 通过 `initOpenNextCloudflareForDev()` 自动注入 Cloudflare 绑定（D1、R2），支持热更新，无需使用 `wrangler dev`。
 
 ## 项目结构
 

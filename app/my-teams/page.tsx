@@ -65,6 +65,10 @@ function MyTeamsContent() {
   const defaultTab = searchParams.get("tab") || "created";
   const [activeTab, setActiveTab] = React.useState(defaultTab);
 
+  // 用户加入的队伍状态 - 必须在条件返回之前声明
+  const [joinedTeams, setJoinedTeams] = React.useState<Team[]>([]);
+  const [joinedTeamsLoading, setJoinedTeamsLoading] = React.useState(true);
+
   // 未登录重定向
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -79,25 +83,6 @@ function MyTeamsContent() {
       setActiveTab(tab);
     }
   }, [searchParams]);
-
-  // 当 Tab 切换时更新 URL（不刷新页面）
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    const params = new URLSearchParams(searchParams);
-    params.set("tab", value);
-    router.replace(`/my-teams?${params.toString()}`, { scroll: false });
-  };
-
-  if (isLoading || !user) {
-    return (
-      <main className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-pulse text-stone-400">加载中...</div>
-      </main>
-    );
-  }
-
-  const [joinedTeams, setJoinedTeams] = React.useState<Team[]>([]);
-  const [joinedTeamsLoading, setJoinedTeamsLoading] = React.useState(true);
 
   // 加载用户加入的队伍
   React.useEffect(() => {
@@ -121,6 +106,22 @@ function MyTeamsContent() {
 
     fetchJoinedTeams();
   }, [user?.id, getUserJoinedTeams]);
+
+  // 当 Tab 切换时更新 URL（不刷新页面）
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", value);
+    router.replace(`/my-teams?${params.toString()}`, { scroll: false });
+  };
+
+  if (isLoading || !user) {
+    return (
+      <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="animate-pulse text-stone-400">加载中...</div>
+      </main>
+    );
+  }
 
   // 获取用户创建的队伍
   const createdTeams = teams.filter((t) => t.leader.id === user.id);
