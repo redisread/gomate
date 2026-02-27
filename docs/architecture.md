@@ -11,7 +11,7 @@ GoMate 是一个基于 Next.js 全栈技术栈的极简「地点组队」平台�
 - **语言**: TypeScript 5 (严格模式)
 - **样式**: Tailwind CSS v4
 - **UI 组件**: shadcn/ui
-- **数据库**: PostgreSQL + Drizzle ORM
+- **数据库**: Cloudclare D1 + Drizzle ORM
 - **认证**: Better Auth
 - **国际化**: next-intl
 - **表单验证**: Zod
@@ -165,7 +165,7 @@ users (1) ───< (N) team_members (N) >─── (1) teams (N) >─── (1
 
 ```bash
 # 数据库
-DATABASE_URL="postgresql://..."
+DATABASE_URL=""
 
 # Better Auth
 BETTER_AUTH_SECRET="..."
