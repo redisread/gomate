@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { uploadUserAvatar, deleteImage } from "@/lib/storage";
 
 // 允许的图片类型
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
@@ -6,40 +7,12 @@ const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp
 // 最大文件大小 (5MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-// 动态导入 @opennextjs/cloudflare 以避免构建时错误
-const getCloudflareContext = async () => {
-  const mod = await import("@opennextjs/cloudflare");
-  return mod.getCloudflareContext();
-};
-
-/**
- * 生成唯一文件名
- */
-function generateFileName(userId: string, originalName: string): string {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 10);
-  const extension = originalName.split(".").pop() || "jpg";
-  return `avatars/${userId}/${timestamp}-${random}.${extension}`;
-}
-
 /**
  * POST /api/upload/avatar
  * 上传用户头像到 R2 存储
  */
 export async function POST(request: NextRequest) {
   try {
-    // 获取 Cloudflare 上下文和 R2 绑定
-    const { env } = await getCloudflareContext();
-
-    if (!env.R2) {
-      return NextResponse.json(
-        { error: "R2 storage not configured" },
-        { status: 500 }
-      );
-    }
-
-    const r2 = env.R2 as R2Bucket;
-
     // 解析表单数据
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -79,32 +52,26 @@ export async function POST(request: NextRequest) {
     // 读取文件内容
     const arrayBuffer = await file.arrayBuffer();
 
-    // 生成唯一文件名
-    const key = generateFileName(userId, file.name);
+    // 使用 lib/storage.ts 中的上传函数
+    const result = await uploadUserAvatar(
+      arrayBuffer,
+      file.name,
+      file.type
+    );
 
-    // 上传到 R2
-    await r2.put(key, arrayBuffer, {
-      httpMetadata: {
-        contentType: file.type,
-        cacheControl: "public, max-age=31536000", // 1 year cache
-      },
-    });
-
-    // 获取公开 URL
-    // 本地开发模式下使用 /api/r2/ 路径访问，生产环境使用 R2_PUBLIC_URL
-    // 通过检查请求头判断是否是本地开发环境
+    // 本地开发模式下使用 /api/r2/ 路径访问
     const host = request.headers.get("host") || "";
     const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
     const publicUrl = isLocalDev
-      ? `/api/r2/${key}`
-      : `${process.env.R2_PUBLIC_URL || ""}/${key}`;
+      ? `/api/r2/${result.key}`
+      : result.publicUrl;
 
     return NextResponse.json({
       success: true,
-      key,
+      key: result.key,
       url: publicUrl,
-      size: file.size,
-      type: file.type,
+      size: result.size,
+      type: `image/${result.format}`,
     });
   } catch (error) {
     console.error("Avatar upload error:", error);
@@ -121,16 +88,6 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const { env } = await getCloudflareContext();
-
-    if (!env.R2) {
-      return NextResponse.json(
-        { error: "R2 storage not configured" },
-        { status: 500 }
-      );
-    }
-
-    const r2 = env.R2 as R2Bucket;
     const { searchParams } = new URL(request.url);
     const key = searchParams.get("key");
 
@@ -141,7 +98,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await r2.delete(key);
+    await deleteImage(key);
 
     return NextResponse.json({ success: true });
   } catch (error) {
