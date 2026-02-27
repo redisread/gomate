@@ -14,34 +14,22 @@ GoMate 是一个极简的「地点组队」平台，专注于深圳徒步场景�
 - **样式**: Tailwind CSS v4 + shadcn/ui 组件
 - **ORM**: Drizzle ORM
 - **数据库**: CloudFlare D1 (SQLite)
-- **认证**: Better Auth 1.1.0（邮箱/密码）
+- **认证**: Better Auth （邮箱/密码）
 - **部署**: CloudFlare Workers/Pages（通过 OpenNext）
 - **邮件**: Resend
-- **存储**: CloudFlare R2（图片上传）
+- **w文件存储**: CloudFlare R2（图片上传）
+
+## 开发参考
+
+遵守使用 OpenNext 的最佳实践，可以参考 ：
+
+
+Cloudflare 适配器提供了一个 opennextjs-cloudflare 命令行界面 (CLI)，用于开发、构建和部署应用程序。除非另有文档说明或您清楚自己在做什么，否则不应直接使用 wrangler 命令。可以参考 https://opennext.js.org/cloudflare/cli
+
+
 
 ## 开发命令
 
-```bash
-# 本地开发（支持热更新，自动注入 Cloudflare D1/R2 绑定）
-npm run dev
-
-# 构建 CloudFlare 版本
-npm run cf:build
-
-# 部署到 CloudFlare
-npm run cf:deploy
-
-# 数据库操作
-npm run db:generate      # 生成 Drizzle 迁移文件
-npm run db:studio        # 打开 Drizzle Studio
-npm run d1:migrate:local # 本地应用 D1 迁移
-npm run d1:migrate:prod  # 生产环境应用 D1 迁移
-
-# 代码检查
-npm run lint
-```
-
-> **注意**: `npm run dev` 通过 `initOpenNextCloudflareForDev()` 自动注入 Cloudflare 绑定（D1、R2），支持热更新，无需使用 `wrangler dev`。
 
 ## 架构说明
 
@@ -150,10 +138,3 @@ chore: 构建/工具
 - `drizzle.config.ts` - Drizzle ORM 配置（自动检测驱动）
 - `open-next.config.ts` - OpenNext CloudFlare 适配器配置
 - `worker.ts` - CloudFlare Worker 入口文件
-
-## 注意事项
-
-- 当前未配置测试框架
-- 图片优化已配置支持 Unsplash、R2、Google 和 GitHub 头像
-- TypeScript 严格模式已启用；生产构建时忽略构建错误
-- 生产构建时忽略 ESLint 错误

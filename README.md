@@ -13,7 +13,7 @@ GoMate 旨在用结构化的方式解决小红书找搭子信息混乱的问题�
 - **语言**: TypeScript 5 (严格模式)
 - **样式**: Tailwind CSS v4 + shadcn/ui
 - **数据库**: CloudFlare D1 (SQLite) + Drizzle ORM
-- **认证**: Better Auth 1.1.0（邮箱/密码）
+- **认证**: Better Auth （邮箱/密码）
 - **部署**: CloudFlare Workers/Pages（通过 OpenNext）
 - **存储**: CloudFlare R2（图片上传）
 
