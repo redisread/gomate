@@ -63,7 +63,15 @@ export async function GET(request: NextRequest) {
         address: row.address || "",
         coordinates: safeJsonParse(row.coordinates, { lat: 0, lng: 0 }),
       },
-      routeGuide: safeJsonParse(row.routeGuide, { overview: "", waypoints: [], tips: [], warnings: [] }),
+      routeGuide: (() => {
+        const guide = safeJsonParse<Record<string, unknown>>(row.routeGuide, {});
+        return {
+          overview: (guide.overview as string) || row.routeDescription || "",
+          waypoints: safeJsonParse(row.waypoints, []),
+          tips: Array.isArray(guide.tips) ? guide.tips : (row.tips ? row.tips.split('\n').filter(Boolean) : []),
+          warnings: safeJsonParse(row.warnings, []),
+        };
+      })(),
       facilities: safeJsonParse(row.facilities, { parking: false, restroom: false, water: false, food: false }),
       equipmentNeeded: safeJsonParse(row.equipmentNeeded, []),
       routeDescription: row.routeDescription || "",

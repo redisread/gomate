@@ -21,7 +21,6 @@ export default function HomePage() {
   const { teams } = useTeams();
   const { locations, isLoading } = useLocations();
   const { isAuthenticated } = useAuth();
-  console.error("[HomePage] locations count:", locations.length, "isLoading:", isLoading);
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [selectedFilters, setSelectedFilters] = React.useState<
     Record<string, string[]>

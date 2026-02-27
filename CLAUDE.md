@@ -22,10 +22,10 @@ GoMate 是一个极简的「地点组队」平台，专注于深圳徒步场景�
 ## 开发参考
 
 遵守使用 OpenNext 的最佳实践，可以参考 ：
-
+- https://opennext.js.org/cloudflare/get-started
+- https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/
 
 Cloudflare 适配器提供了一个 opennextjs-cloudflare 命令行界面 (CLI)，用于开发、构建和部署应用程序。除非另有文档说明或您清楚自己在做什么，否则不应直接使用 wrangler 命令。可以参考 https://opennext.js.org/cloudflare/cli
-
 
 
 ## 开发命令
@@ -137,3 +137,4 @@ chore: 构建/工具
 - `wrangler.toml` - CloudFlare Workers 配置（含 D1/R2 绑定）
 - `drizzle.config.ts` - Drizzle ORM 配置（自动检测驱动）
 - `open-next.config.ts` - OpenNext CloudFlare 适配器配置
+- `worker.ts` - CloudFlare Worker 入口文件
