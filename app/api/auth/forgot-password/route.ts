@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 构建重置链接的回调 URL
-    const baseUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:8787";
+    const baseUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const redirectTo = `${baseUrl}/reset-password`;
 
     // 使用 Better Auth 的 requestPasswordReset 方法

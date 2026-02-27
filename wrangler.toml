@@ -78,4 +78,4 @@ mode = "smart"
 # 环境变量
 [vars]
 R2_PUBLIC_URL = "https://gomate.cos.jiahongw.com"
-RESEND_FROM_EMAIL = "GoMate <onboarding@resend.dev>"
+RESEND_FROM_EMAIL = "GoMate <noreply@gomate.jiahongw.com>"

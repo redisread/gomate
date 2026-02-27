@@ -7,13 +7,14 @@ const APP_NAME = "GoMate";
  * 获取环境变量（支持 Cloudflare Workers 和 Node.js 环境）
  */
 function getEnv(key: string): string | undefined {
+  // 优先从 process.env 获取（支持 .env.local）
+  // 这确保本地开发时能正确读取 RESEND_API_KEY 等变量
+  if (typeof process !== 'undefined' && process.env[key]) {
+    return process.env[key];
+  }
   // Cloudflare Workers 环境 - 环境变量在 globalThis.env 上
   if (typeof globalThis !== 'undefined' && (globalThis as { env?: Record<string, string> }).env) {
     return (globalThis as { env: Record<string, string> }).env[key];
-  }
-  // Node.js 环境
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env[key];
   }
   return undefined;
 }
@@ -33,7 +34,7 @@ function createResendClient() {
  * 获取发件人邮箱
  */
 function getFromEmail(): string {
-  return getEnv("RESEND_FROM_EMAIL") || "GoMate <onboarding@resend.dev>";
+  return getEnv("RESEND_FROM_EMAIL") || "GoMate <noreply@gomate.jiahongw.com>";
 }
 
 /**
@@ -64,7 +65,7 @@ function createResendClientWithEnv(env?: EmailEnv) {
  * 获取发件人邮箱（支持外部传入 env）
  */
 function getFromEmailWithEnv(env?: EmailEnv): string {
-  return env?.RESEND_FROM_EMAIL || getEnv("RESEND_FROM_EMAIL") || "GoMate <onboarding@resend.dev>";
+  return env?.RESEND_FROM_EMAIL || getEnv("RESEND_FROM_EMAIL") || "GoMate <noreply@gomate.jiahongw.com>";
 }
 
 /**
