@@ -145,7 +145,6 @@ export default function TeamPage({ params }: TeamPageProps) {
           alt={location.name}
           fill
           className="object-cover"
-          unoptimized={location.coverImage.includes('gomate.cos.jiahongw.com')}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">

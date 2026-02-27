@@ -16,8 +16,6 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "cf:build": "opennextjs-cloudflare build",
-    "cf:deploy": "wrangler deploy",
-    "cf:dev": "wrangler dev",
     "cf:typegen": "wrangler types",
     "d1:create": "wrangler d1 create gomate-db",
     "d1:migrate:local": "wrangler d1 migrations apply gomate-db --local",

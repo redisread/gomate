@@ -137,4 +137,3 @@ chore: 构建/工具
 - `wrangler.toml` - CloudFlare Workers 配置（含 D1/R2 绑定）
 - `drizzle.config.ts` - Drizzle ORM 配置（自动检测驱动）
 - `open-next.config.ts` - OpenNext CloudFlare 适配器配置
-- `worker.ts` - CloudFlare Worker 入口文件
