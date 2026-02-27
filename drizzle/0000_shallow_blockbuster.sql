@@ -1,60 +1,83 @@
 CREATE TABLE `accounts` (
 	`id` text PRIMARY KEY NOT NULL,
-	`userId` text NOT NULL,
-	`accountId` text NOT NULL,
-	`providerId` text NOT NULL,
-	`accessToken` text,
-	`refreshToken` text,
-	`accessTokenExpiresAt` integer,
-	`refreshTokenExpiresAt` integer,
+	`user_id` text NOT NULL,
+	`account_id` text NOT NULL,
+	`provider_id` text NOT NULL,
+	`access_token` text,
+	`refresh_token` text,
+	`access_token_expires_at` integer,
+	`refresh_token_expires_at` integer,
 	`scope` text,
-	`idToken` text,
+	`id_token` text,
 	`password` text,
-	`expiresAt` integer,
-	`createdAt` integer NOT NULL,
-	`updatedAt` integer NOT NULL,
-	FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+	`expires_at` integer,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `accounts_user_idx` ON `accounts` (`userId`);--> statement-breakpoint
-CREATE UNIQUE INDEX `accounts_provider_idx` ON `accounts` (`providerId`,`accountId`);--> statement-breakpoint
+CREATE INDEX `accounts_user_idx` ON `accounts` (`user_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `accounts_provider_idx` ON `accounts` (`provider_id`,`account_id`);--> statement-breakpoint
 CREATE TABLE `locations` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`slug` text NOT NULL,
+	`subtitle` text,
 	`description` text NOT NULL,
 	`difficulty` text NOT NULL,
 	`duration` text NOT NULL,
 	`distance` text NOT NULL,
+	`elevation` text,
 	`best_season` text NOT NULL,
+	`tags` text,
 	`cover_image` text NOT NULL,
 	`images` text NOT NULL,
+	`address` text,
 	`route_description` text,
+	`route_guide` text,
+	`waypoints` text,
 	`tips` text,
+	`warnings` text,
 	`equipment_needed` text,
 	`coordinates` text NOT NULL,
+	`facilities` text,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `locations_slug_unique` ON `locations` (`slug`);--> statement-breakpoint
-CREATE UNIQUE INDEX `locations_slug_idx` ON `locations` (`slug`);--> statement-breakpoint
+CREATE INDEX `locations_slug_idx` ON `locations` (`slug`);--> statement-breakpoint
 CREATE INDEX `locations_difficulty_idx` ON `locations` (`difficulty`);--> statement-breakpoint
+CREATE TABLE `password_resets` (
+	`id` text PRIMARY KEY NOT NULL,
+	`token` text NOT NULL,
+	`user_id` text NOT NULL,
+	`email` text NOT NULL,
+	`expires_at` integer NOT NULL,
+	`used_at` integer,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `password_resets_token_unique` ON `password_resets` (`token`);--> statement-breakpoint
+CREATE INDEX `password_resets_token_idx` ON `password_resets` (`token`);--> statement-breakpoint
+CREATE INDEX `password_resets_user_idx` ON `password_resets` (`user_id`);--> statement-breakpoint
+CREATE INDEX `password_resets_email_idx` ON `password_resets` (`email`);--> statement-breakpoint
 CREATE TABLE `sessions` (
 	`id` text PRIMARY KEY NOT NULL,
-	`userId` text NOT NULL,
+	`user_id` text NOT NULL,
 	`token` text NOT NULL,
-	`expiresAt` integer NOT NULL,
-	`ipAddress` text,
-	`userAgent` text,
-	`createdAt` integer NOT NULL,
-	`updatedAt` integer NOT NULL,
-	FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+	`expires_at` integer NOT NULL,
+	`ip_address` text,
+	`user_agent` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `sessions_token_unique` ON `sessions` (`token`);--> statement-breakpoint
-CREATE INDEX `sessions_user_idx` ON `sessions` (`userId`);--> statement-breakpoint
-CREATE UNIQUE INDEX `sessions_token_idx` ON `sessions` (`token`);--> statement-breakpoint
+CREATE INDEX `sessions_user_idx` ON `sessions` (`user_id`);--> statement-breakpoint
+CREATE INDEX `sessions_token_idx` ON `sessions` (`token`);--> statement-breakpoint
 CREATE TABLE `team_members` (
 	`id` text PRIMARY KEY NOT NULL,
 	`team_id` text NOT NULL,
@@ -78,6 +101,7 @@ CREATE TABLE `teams` (
 	`description` text,
 	`start_time` integer NOT NULL,
 	`end_time` integer NOT NULL,
+	`duration` text,
 	`max_members` integer DEFAULT 10 NOT NULL,
 	`current_members` integer DEFAULT 1 NOT NULL,
 	`requirements` text,
@@ -96,42 +120,24 @@ CREATE TABLE `users` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`email` text NOT NULL,
-	`emailVerified` integer DEFAULT false NOT NULL,
+	`email_verified` integer DEFAULT false NOT NULL,
 	`image` text,
 	`bio` text,
-	`experience` text,
 	`level` text DEFAULT 'beginner',
 	`completed_hikes` integer DEFAULT 0,
-	`createdAt` integer NOT NULL,
-	`updatedAt` integer NOT NULL
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `users_email_unique` ON `users` (`email`);--> statement-breakpoint
-CREATE UNIQUE INDEX `users_email_idx` ON `users` (`email`);--> statement-breakpoint
+CREATE INDEX `users_email_idx` ON `users` (`email`);--> statement-breakpoint
 CREATE TABLE `verifications` (
 	`id` text PRIMARY KEY NOT NULL,
 	`identifier` text NOT NULL,
 	`value` text NOT NULL,
-	`expiresAt` integer NOT NULL,
-	`createdAt` integer NOT NULL,
-	`updatedAt` integer NOT NULL
+	`expires_at` integer NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `verifications_identifier_idx` ON `verifications` (`identifier`);
---> statement-breakpoint
-CREATE TABLE `password_resets` (
-	`id` text PRIMARY KEY NOT NULL,
-	`token` text NOT NULL,
-	`user_id` text NOT NULL,
-	`email` text NOT NULL,
-	`expires_at` integer NOT NULL,
-	`used_at` integer,
-	`created_at` integer NOT NULL,
-	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
-);
---> statement-breakpoint
-CREATE UNIQUE INDEX `password_resets_token_idx` ON `password_resets` (`token`);
---> statement-breakpoint
-CREATE INDEX `password_resets_user_idx` ON `password_resets` (`user_id`);
---> statement-breakpoint
-CREATE INDEX `password_resets_email_idx` ON `password_resets` (`email`);

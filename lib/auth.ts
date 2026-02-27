@@ -129,6 +129,11 @@ export const createAuth = (env?: {
         bio: {
           type: "string",
           required: false,
+          defaultValue: "",
+        },
+        level: {
+          type: "string",
+          required: false,
           defaultValue: "beginner",
         },
       },

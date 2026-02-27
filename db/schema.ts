@@ -2,7 +2,6 @@ import {
   sqliteTable,
   text,
   integer,
-  real,
   index,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
@@ -26,7 +25,7 @@ export const users = sqliteTable(
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
-    emailIdx: uniqueIndex("users_email_idx").on(table.email),
+    emailIdx: index("users_email_idx").on(table.email),
   })
 );
 
@@ -47,7 +46,7 @@ export const sessions = sqliteTable(
   },
   (table) => ({
     userIdx: index("sessions_user_idx").on(table.userId),
-    tokenIdx: uniqueIndex("sessions_token_idx").on(table.token),
+    tokenIdx: index("sessions_token_idx").on(table.token),
   })
 );
 
@@ -125,7 +124,7 @@ export const locations = sqliteTable(
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
-    slugIdx: uniqueIndex("locations_slug_idx").on(table.slug),
+    slugIdx: index("locations_slug_idx").on(table.slug),
     difficultyIdx: index("locations_difficulty_idx").on(table.difficulty),
   })
 );
@@ -202,7 +201,7 @@ export const passwordResets = sqliteTable(
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
-    tokenIdx: uniqueIndex("password_resets_token_idx").on(table.token),
+    tokenIdx: index("password_resets_token_idx").on(table.token),
     userIdx: index("password_resets_user_idx").on(table.userId),
     emailIdx: index("password_resets_email_idx").on(table.email),
   })
@@ -294,6 +293,6 @@ export type NewPasswordReset = typeof passwordResets.$inferInsert;
 
 // 枚举类型定义
 export type Difficulty = "easy" | "moderate" | "hard" | "expert";
-export type TeamStatus = "recruiting" | "full" | "ongoing" | "completed" | "cancelled";
+export type TeamStatus = "recruiting" | "full" | "ongoing" | "completed" | "cancelled" | "open";
 export type TeamMemberRole = "leader" | "member";
 export type TeamMemberStatus = "pending" | "approved" | "rejected";

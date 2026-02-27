@@ -2,37 +2,73 @@ import Database from "better-sqlite3";
 import * as fs from "fs";
 import * as path from "path";
 
-const localDbPath = process.env.LOCAL_DB_PATH || "./local.db";
-const sqlite = new Database(localDbPath);
+// 查找本地 D1 数据库路径
+function findLocalD1Path(): string {
+  if (process.env.LOCAL_DB_PATH) {
+    return process.env.LOCAL_DB_PATH;
+  }
+  const d1Dir = path.join(__dirname, "../.wrangler/state/v3/d1/miniflare-D1DatabaseObject");
+  if (fs.existsSync(d1Dir)) {
+    const files = fs.readdirSync(d1Dir).filter((f) => f.endsWith(".sqlite"));
+    if (files.length > 0) {
+      return path.join(d1Dir, files[0]);
+    }
+  }
+  throw new Error(
+    "找不到本地 D1 数据库。请先运行 `npm run dev` 初始化本地环境，或设置 LOCAL_DB_PATH 环境变量。"
+  );
+}
+
+// 从 drizzle journal 中按顺序读取迁移文件
+function getMigrationFiles(): string[] {
+  const drizzleDir = path.join(__dirname, "../drizzle");
+  const journalPath = path.join(drizzleDir, "meta/_journal.json");
+
+  if (!fs.existsSync(journalPath)) {
+    throw new Error("找不到 drizzle journal 文件。请先运行 `npm run db:generate`。");
+  }
+
+  const journal = JSON.parse(fs.readFileSync(journalPath, "utf-8"));
+  const entries: { idx: number; tag: string }[] = journal.entries;
+
+  return entries
+    .sort((a, b) => a.idx - b.idx)
+    .map((entry) => {
+      const filePath = path.join(drizzleDir, `${entry.tag}.sql`);
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`迁移文件不存在: ${filePath}`);
+      }
+      return filePath;
+    });
+}
+
+const dbPath = findLocalD1Path();
+console.log(`📂 数据库路径: ${dbPath}`);
+
+const sqlite = new Database(dbPath);
 
 console.log("🔄 开始执行数据库迁移...\n");
 
-// 读取迁移文件
-const migrationPath = path.join(__dirname, "../drizzle/0000_zippy_bulldozer.sql");
-const migrationSql = fs.readFileSync(migrationPath, "utf-8");
+const migrationFiles = getMigrationFiles();
+console.log(`📄 找到 ${migrationFiles.length} 个迁移文件\n`);
 
-// 分割 SQL 语句
-const statements = migrationSql.split(";--> statement-breakpoint");
-
-console.log(`📄 找到 ${statements.length} 个迁移语句\n`);
-
-// 执行每个语句
 try {
-  for (let i = 0; i < statements.length; i++) {
-    const stmt = statements[i].trim();
-    if (!stmt) continue;
+  for (const filePath of migrationFiles) {
+    const fileName = path.basename(filePath);
+    console.log(`  ▸ 执行: ${fileName}`);
 
-    // 清理语句
-    const cleanStmt = stmt.replace(/--> statement-breakpoint/g, "").trim();
-    if (!cleanStmt) continue;
+    const migrationSql = fs.readFileSync(filePath, "utf-8");
+    const statements = migrationSql.split("--> statement-breakpoint");
 
-    console.log(`  [${i + 1}/${statements.length}] 执行 SQL...`);
-    sqlite.exec(cleanStmt);
+    for (const stmt of statements) {
+      const cleanStmt = stmt.trim();
+      if (!cleanStmt) continue;
+      sqlite.exec(cleanStmt);
+    }
   }
 
   console.log("\n✅ 迁移完成！");
-  console.log(`📁 数据库文件: ${localDbPath}`);
-
+  console.log(`📁 数据库文件: ${dbPath}`);
 } catch (error) {
   console.error("\n❌ 迁移失败:", error);
   process.exit(1);
