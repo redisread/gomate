@@ -7,6 +7,30 @@ const getCloudflareContext = async () => {
 };
 
 /**
+ * 根据文件扩展名推断 Content-Type
+ */
+function getContentTypeFromKey(key: string): string {
+  const ext = key.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    case "gif":
+      return "image/gif";
+    case "webp":
+      return "image/webp";
+    case "svg":
+      return "image/svg+xml";
+    case "ico":
+      return "image/x-icon";
+    default:
+      return "application/octet-stream";
+  }
+}
+
+/**
  * GET /api/r2/[...path]
  * 从 R2 存储获取文件（用于本地开发模式）
  */
@@ -50,9 +74,17 @@ export async function GET(
 
     // 返回文件内容
     const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set("etag", object.httpEtag);
+
+    // 手动设置 content-type（从对象元数据获取或根据扩展名推断）
+    const contentType =
+      object.httpMetadata?.contentType || getContentTypeFromKey(key);
+    headers.set("content-type", contentType);
     headers.set("cache-control", "public, max-age=31536000");
+
+    // 尝试设置 etag，如果可用
+    if (object.httpEtag) {
+      headers.set("etag", object.httpEtag);
+    }
 
     return new NextResponse(object.body, {
       status: 200,
