@@ -39,7 +39,8 @@ binding = "IMAGES"
 
 # Analytics Engine binding
 [[analytics_engine_datasets]]
-binding = "ANALYTICS"
+binding = "GOMATE_ANALYTICS"
+dataset = "GOMATE_DATASET"
 
 [observability]
 enabled = true
