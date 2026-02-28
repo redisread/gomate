@@ -15,9 +15,15 @@ run_worker_first = false
 binding = "WORKER_SELF_REFERENCE"
 service = "gomate"
 
-# R2 bucket for incremental cache (ISR/SSG pages)
+# R2 bucket for application storage (images, avatars, etc.)
 [[r2_buckets]]
 binding = "R2"
+bucket_name = "gomate"
+
+# R2 bucket for Next.js incremental cache (ISR/SSG)
+# Note: r2IncrementalCache requires this specific binding name
+[[r2_buckets]]
+binding = "NEXT_INC_CACHE_R2_BUCKET"
 bucket_name = "gomate"
 
 # D1 database binding
