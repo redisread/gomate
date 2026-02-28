@@ -10,6 +10,8 @@ export interface CloudflareEnv {
   DB: D1Database;
   /** R2 存储桶绑定 */
   R2?: R2Bucket;
+  /** KV 命名空间，用于缓存 session（可选，缺失时自动降级） */
+  GOMATE_KV?: KVNamespace;
   /** Better Auth 密钥 */
   BETTER_AUTH_SECRET: string;
   /** Better Auth URL */

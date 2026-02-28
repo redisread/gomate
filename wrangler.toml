@@ -28,6 +28,11 @@ binding = "DB"
 database_name = "gomate-db"
 database_id = "7d17d076-202f-48f8-b343-24209cdb0ba1"
 
+# KV namespace for session cache
+[[kv_namespaces]]
+binding = "GOMATE_KV"
+id = "638ecd78e70c48fda01904bc9c2105d8"
+
 # Image optimization binding (Cloudflare Images)
 [images]
 binding = "IMAGES"

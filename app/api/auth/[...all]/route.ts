@@ -18,6 +18,7 @@ async function handleRequest(request: NextRequest) {
     // 使用共享的 createAuth，传入完整的 env（包含 RESEND_API_KEY 等）
     const auth = createAuth({
       DB: env.DB as D1Database,
+      GOMATE_KV: (env as { GOMATE_KV?: KVNamespace }).GOMATE_KV,
       RESEND_API_KEY: env.RESEND_API_KEY as string | undefined,
       RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL as string | undefined,
       NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL as string | undefined,

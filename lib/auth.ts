@@ -39,9 +39,49 @@ const handleSendWelcomeEmail = async (data: { user: { email: string; name?: stri
   }
 };
 
+/** KV TTL 最小值（Cloudflare KV 限制） */
+const KV_MIN_TTL = 60;
+
+/**
+ * 将 KVNamespace 包装为 Better Auth secondaryStorage 接口。
+ * KV 不可用时返回 undefined，auth 回退到纯 D1 查询。
+ */
+function buildKvSecondaryStorage(
+  kv: KVNamespace | undefined
+): import("better-auth").BetterAuthOptions["secondaryStorage"] | undefined {
+  if (!kv) return undefined;
+  return {
+    get: async (key: string) => {
+      try {
+        return await kv.get(key);
+      } catch (err) {
+        console.warn("[KV] get failed, fallback to D1:", err);
+        return null;
+      }
+    },
+    set: async (key: string, value: string, ttl?: number) => {
+      try {
+        // TTL < 60s 时 KV 会报错，且 session 即将过期意义不大，直接跳过
+        if (ttl !== undefined && ttl < KV_MIN_TTL) return;
+        await kv.put(key, value, ttl !== undefined ? { expirationTtl: ttl } : undefined);
+      } catch (err) {
+        console.warn("[KV] set failed:", err);
+      }
+    },
+    delete: async (key: string) => {
+      try {
+        await kv.delete(key);
+      } catch (err) {
+        console.warn("[KV] delete failed:", err);
+      }
+    },
+  };
+}
+
 // 动态创建 auth 配置
 export const createAuth = (env?: {
   DB?: D1Database;
+  GOMATE_KV?: KVNamespace;
   RESEND_API_KEY?: string;
   RESEND_FROM_EMAIL?: string;
   NEXT_PUBLIC_APP_URL?: string;
@@ -61,6 +101,7 @@ export const createAuth = (env?: {
           verification: schema.verifications,
         },
       }),
+      secondaryStorage: buildKvSecondaryStorage(env.GOMATE_KV),
       emailAndPassword: {
         enabled: true,
         autoSignIn: true,
@@ -155,6 +196,7 @@ export async function getAuth() {
   }
   return createAuth({
     DB: env.DB as D1Database,
+    GOMATE_KV: (env as { GOMATE_KV?: KVNamespace }).GOMATE_KV,
     RESEND_API_KEY: env.RESEND_API_KEY as string | undefined,
     RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL as string | undefined,
     NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL as string | undefined,
