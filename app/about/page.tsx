@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Mountain, Users, MapPin, Sprout, Sparkles, ArrowRight } from "lucide-react";
+import { Mountain, Users, MapPin, Sprout, Sparkles, ArrowRight, Map, UserPlus, Compass } from "lucide-react";
 import Link from "next/link";
 
 import { Navbar } from "@/app/components/layout/navbar";
@@ -18,7 +18,7 @@ const values = [
   {
     icon: MapPin,
     title: "探索发现",
-    description: "挖掘深圳及周边的隐秘角落，发现城市中的自然之美。",
+    description: "挖掘城市及周边的隐秘角落，发现城市中的自然之美。",
   },
   {
     icon: Sprout,
@@ -29,6 +29,27 @@ const values = [
     icon: Sparkles,
     title: "简单纯粹",
     description: "回归户外本质，用简单设计连接真诚的人。",
+  },
+];
+
+const steps = [
+  {
+    number: "1",
+    icon: Map,
+    title: "选择地点",
+    description: "发现城市周边优质徒步路线",
+  },
+  {
+    number: "2",
+    icon: UserPlus,
+    title: "创建或加入队伍",
+    description: "设置强度、时间、人数",
+  },
+  {
+    number: "3",
+    icon: Compass,
+    title: "一起出发",
+    description: "和志同道合的伙伴探索自然",
   },
 ];
 
@@ -56,7 +77,7 @@ export default function AboutPage() {
               <span className="text-stone-600">都有伙伴同行</span>
             </h1>
             <p className="text-lg text-stone-600 leading-relaxed">
-              GoMate 是一个极简的「地点组队」平台，专注于深圳徒步场景。
+              GoMate 是一个极简的「地点组队」平台，专注于户外徒步场景。
               我们致力于用结构化的方式解决小红书找搭子信息混乱的问题，
               帮助户外爱好者快速找到志同道合的徒步伙伴。
             </p>
@@ -91,24 +112,32 @@ export default function AboutPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="grid grid-cols-2 gap-4"
+              className="space-y-6"
             >
-              <div className="bg-stone-800 rounded-2xl p-6 text-center">
-                <div className="text-3xl font-bold text-white mb-2">20+</div>
-                <div className="text-stone-400">精选路线</div>
-              </div>
-              <div className="bg-stone-800 rounded-2xl p-6 text-center">
-                <div className="text-3xl font-bold text-white mb-2">500+</div>
-                <div className="text-stone-400">成功组队</div>
-              </div>
-              <div className="bg-stone-800 rounded-2xl p-6 text-center">
-                <div className="text-3xl font-bold text-white mb-2">10000+</div>
-                <div className="text-stone-400">活跃用户</div>
-              </div>
-              <div className="bg-stone-800 rounded-2xl p-6 text-center">
-                <div className="text-3xl font-bold text-white mb-2">98%</div>
-                <div className="text-stone-400">好评率</div>
-              </div>
+              <h3 className="text-xl font-semibold text-white mb-6">
+                3步开始户外探索
+              </h3>
+              {steps.map((step, index) => (
+                <motion.div
+                  key={step.number}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  className="flex items-start gap-4 bg-stone-800 rounded-2xl p-5"
+                >
+                  <div className="flex-shrink-0 w-10 h-10 bg-white text-stone-900 rounded-full flex items-center justify-center font-bold text-lg">
+                    {step.number}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <step.icon className="h-5 w-5 text-stone-300" />
+                      <h4 className="font-semibold text-white">{step.title}</h4>
+                    </div>
+                    <p className="text-stone-400 text-sm">{step.description}</p>
+                  </div>
+                </motion.div>
+              ))}
             </motion.div>
           </div>
         </div>

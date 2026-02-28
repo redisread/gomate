@@ -16,8 +16,8 @@ const contactMethods = [
   {
     icon: Mail,
     title: "邮箱联系",
-    description: "wujiahong2013@gmail.com",
-    href: "mailto:wujiahong2013@gmail.com",
+    description: "gomate@jiahongw.com",
+    href: "mailto:gomate@jiahongw.com",
   },
   {
     icon: MessageSquare,
@@ -96,7 +96,7 @@ export default function ContactPage() {
               与我们取得联系
             </h1>
             <p className="text-lg text-stone-600 leading-relaxed">
-              无论是产品建议、商务合作，还是加入我们的团队，都欢迎随时联系。
+              无论是产品建议、商务合作，都欢迎随时联系。
               我们期待听到您的声音。
             </p>
           </motion.div>

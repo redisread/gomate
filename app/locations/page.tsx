@@ -46,7 +46,7 @@ export default function LocationsPage() {
               探索徒步地点
             </h1>
             <p className="text-stone-400 text-lg max-w-2xl mx-auto">
-              深圳及周边精选徒步路线，从城市公园到山野海岸，找到适合你的户外目的地
+              精选徒步路线，从城市公园到山野海岸，找到适合你的户外目的地
             </p>
           </motion.div>
         </div>

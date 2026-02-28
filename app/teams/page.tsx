@@ -164,7 +164,7 @@ export default function TeamsPage() {
           >
             <h1 className="text-3xl font-bold text-stone-900 mb-2">探索队伍</h1>
             <p className="text-stone-600">
-              发现志同道合的户外伙伴，一起探索深圳的山野
+              发现志同道合的户外伙伴，一起探索山野
             </p>
           </motion.div>
 

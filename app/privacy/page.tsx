@@ -85,8 +85,8 @@ const sections = [
     title: "11. 联系我们",
     content: "如果您对本隐私政策有任何疑问，请通过以下方式联系我们：",
     list: [
-      "邮箱：hello@gomate.app",
-      "微信公众号：GoMate户外",
+      "邮箱：gomate@jiahongw.com",
+      "微信公众号：VictorHong111",
     ],
   },
 ];

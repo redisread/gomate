@@ -160,7 +160,7 @@ export const copy = {
   locations: {
     pageTitle: "探索徒步地点",
     pageSubtitle:
-      "深圳及周边精选徒步路线，从城市公园到山野海岸，找到适合你的户外目的地",
+      "精选徒步路线，从城市公园到山野海岸，找到适合你的户外目的地",
     locationIntro: "地点介绍",
     defaultCity: "深圳",
     viewDetail: "查看详情",
@@ -175,7 +175,7 @@ export const copy = {
   teams: {
     // 列表页
     pageTitle: "探索队伍",
-    pageSubtitle: "发现志同道合的户外伙伴，一起探索深圳的山野",
+    pageSubtitle: "发现志同道合的户外伙伴，一起探索山野",
     searchPlaceholder: "搜索队伍名称、描述或地点...",
     totalCount: "个队伍", // 「共 N 个队伍」，N 在组件内拼接
     noResults: "没有找到匹配的队伍",
@@ -325,7 +325,7 @@ export const copy = {
     pageTitle: "联系我们",
     pageSubtitle: "与我们取得联系",
     pageDesc:
-      "无论是产品建议、商务合作，还是加入我们的团队，都欢迎随时联系。我们期待听到您的声音。",
+      "无论是产品建议、商务合作，都欢迎随时联系。我们期待听到您的声音。",
 
     emailContact: "邮箱联系",
     wechatContact: "微信咨询",
