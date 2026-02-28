@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Mountain, Send, Mail, MessageSquare, CheckCircle } from "lucide-react";
+import { Mountain, Send, Mail, MessageSquare, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import { Navbar } from "@/app/components/layout/navbar";
@@ -29,6 +29,8 @@ const contactMethods = [
 
 export default function ContactPage() {
   const [isSubmitted, setIsSubmitted] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const [formData, setFormData] = React.useState({
     name: "",
     email: "",
@@ -36,10 +38,32 @@ export default function ContactPage() {
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 这里可以添加实际的提交逻辑
-    setIsSubmitted(true);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "提交失败，请稍后重试");
+      }
+
+      setIsSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "提交失败，请稍后重试");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (
@@ -144,6 +168,7 @@ export default function ContactPage() {
                   onClick={() => {
                     setIsSubmitted(false);
                     setFormData({ name: "", email: "", subject: "", message: "" });
+                    setError(null);
                   }}
                 >
                   继续提交
@@ -151,6 +176,11 @@ export default function ContactPage() {
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                    {error}
+                  </div>
+                )}
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name">您的姓名</Label>
@@ -206,10 +236,20 @@ export default function ContactPage() {
                   <Button
                     type="submit"
                     size="lg"
+                    disabled={isLoading}
                     className="bg-stone-800 hover:bg-stone-700 text-white px-8"
                   >
-                    <Send className="mr-2 h-4 w-4" />
-                    提交建议
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        提交中...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        提交建议
+                      </>
+                    )}
                   </Button>
                   <Button
                     type="button"

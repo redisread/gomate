@@ -473,3 +473,241 @@ function getWelcomeText(userName: string): string {
 &copy; ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.
   `.trim();
 }
+
+/**
+ * 发送联系表单邮件
+ * @param data 表单数据
+ * @param env 环境变量（Cloudflare Workers 环境需要传入）
+ */
+export async function sendContactFormEmail(
+  data: {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+  },
+  env?: EmailEnv
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resend = createResendClientWithEnv(env);
+    const contactEmail = getEnv("CONTACT_EMAIL") || "gomate@jiahongw.com";
+
+    const { data: result, error } = await resend.emails.send({
+      from: getFromEmailWithEnv(env),
+      to: [contactEmail],
+      subject: `[GoMate 建议] ${data.subject}`,
+      html: getContactFormTemplate(data),
+      text: getContactFormText(data),
+      replyTo: data.email,
+    });
+
+    if (error) {
+      console.error("Resend email error:", error);
+      return { success: false, error: error.message };
+    }
+
+    console.log("Contact form email sent:", result?.id);
+    return { success: true };
+  } catch (error) {
+    console.error("Send contact form email error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "发送邮件失败",
+    };
+  }
+}
+
+/**
+ * 联系表单邮件 HTML 模板
+ */
+function getContactFormTemplate(data: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}): string {
+  const timestamp = new Date().toLocaleString("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[GoMate 建议] ${data.subject}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #44403c;
+      background-color: #fafaf9;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .card {
+      background-color: #ffffff;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .logo-text {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1c1917;
+      text-decoration: none;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1c1917;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .info-block {
+      background-color: #f5f5f4;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .info-row {
+      display: flex;
+      margin-bottom: 12px;
+    }
+    .info-row:last-child {
+      margin-bottom: 0;
+    }
+    .info-label {
+      font-weight: 600;
+      color: #1c1917;
+      min-width: 80px;
+    }
+    .info-value {
+      color: #57534e;
+    }
+    .message-block {
+      background-color: #fff;
+      border: 1px solid #e7e5e4;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+    .message-title {
+      font-weight: 600;
+      color: #1c1917;
+      margin-bottom: 12px;
+    }
+    .message-content {
+      color: #57534e;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .divider {
+      border-top: 1px solid #e7e5e4;
+      margin: 32px 0;
+    }
+    .footer {
+      font-size: 14px;
+      color: #a8a29e;
+      text-align: center;
+    }
+    .timestamp {
+      font-size: 14px;
+      color: #78716c;
+      text-align: right;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="logo">
+        <span class="logo-text">GoMate</span>
+      </div>
+      <h1 class="title">新的用户建议</h1>
+
+      <div class="info-block">
+        <div class="info-row">
+          <span class="info-label">用户姓名</span>
+          <span class="info-value">${data.name}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">联系邮箱</span>
+          <span class="info-value"><a href="mailto:${data.email}">${data.email}</a></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">主题</span>
+          <span class="info-value">${data.subject}</span>
+        </div>
+      </div>
+
+      <div class="message-block">
+        <div class="message-title">详细建议</div>
+        <div class="message-content">${data.message}</div>
+      </div>
+
+      <div class="timestamp">提交时间：${timestamp}</div>
+
+      <div class="divider"></div>
+      <div class="footer">
+        <p>此邮件由 GoMate 联系表单自动发送</p>
+        <p>回复此邮件将直接发送至用户邮箱</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * 联系表单邮件纯文本模板
+ */
+function getContactFormText(data: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}): string {
+  const timestamp = new Date().toLocaleString("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return `
+[GoMate 建议] ${data.subject}
+
+用户姓名：${data.name}
+联系邮箱：${data.email}
+主题：${data.subject}
+
+详细建议：
+${data.message}
+
+提交时间：${timestamp}
+
+---
+此邮件由 GoMate 联系表单自动发送
+回复此邮件将直接发送至用户邮箱
+  `.trim();
+}
