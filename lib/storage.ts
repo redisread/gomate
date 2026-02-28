@@ -30,7 +30,7 @@ export interface UploadResult {
  */
 async function getR2Bucket(): Promise<R2Bucket> {
   const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-  const { env } = await getCloudflareContext();
+  const { env } = await getCloudflareContext({ async: true });
 
   if (!env.R2) {
     throw new Error("R2 storage not configured. Make sure R2 binding is set in wrangler.toml");
