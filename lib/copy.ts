@@ -458,6 +458,7 @@ export const copy = {
     emailEmpty: "邮箱地址不能为空",
     emailInvalid: "邮箱格式不正确",
     dbNotConfigured: "数据库未配置",
+    emailNotRegistered: "该邮箱未注册，请先注册账号",
     resetEmailSentAnon: "如果该邮箱已注册，我们将发送重置密码链接",
     resetEmailSent: "重置密码链接已发送到您的邮箱",
     resetEmailFailed: "发送重置邮件失败，请稍后重试",
