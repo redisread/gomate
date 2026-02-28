@@ -97,6 +97,22 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // 清除 KV 缓存中的用户相关数据
+    // Better Auth 使用 KV 作为 secondaryStorage，需要清除缓存以保持一致性
+    if ((env as { GOMATE_KV?: KVNamespace }).GOMATE_KV) {
+      const kv = (env as { GOMATE_KV: KVNamespace }).GOMATE_KV;
+      const keysToDelete = [`user:${targetUserId}`];
+
+      for (const key of keysToDelete) {
+        try {
+          await kv.delete(key);
+          console.log("[KV] Deleted cache key:", key);
+        } catch (err) {
+          console.warn("[KV] Failed to delete key:", key, err);
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       user: updatedUser[0],
