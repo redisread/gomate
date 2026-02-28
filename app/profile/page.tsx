@@ -29,10 +29,10 @@ import { useLocations } from "@/lib/locations-context";
 
 // 经验等级映射
 const levelLabels: Record<string, { label: string; color: string; description: string }> = {
-  beginner: { label: "初级", color: "bg-emerald-100 text-emerald-700", description: "刚开始徒步之旅" },
-  intermediate: { label: "中级", color: "bg-blue-100 text-blue-700", description: "有一定徒步经验" },
-  advanced: { label: "高级", color: "bg-purple-100 text-purple-700", description: "经验丰富的徒步者" },
-  expert: { label: "资深", color: "bg-amber-100 text-amber-700", description: "资深户外专家" },
+  beginner: { label: "新芽", color: "bg-emerald-100 text-emerald-700", description: "刚开始徒步之旅" },
+  intermediate: { label: "破风者", color: "bg-blue-100 text-blue-700", description: "有一定徒步经验" },
+  advanced: { label: "巅峰行者", color: "bg-purple-100 text-purple-700", description: "经验丰富的徒步者" },
+  expert: { label: "传奇徒步家", color: "bg-amber-100 text-amber-700", description: "资深户外专家" },
 };
 
 export default function ProfilePage() {

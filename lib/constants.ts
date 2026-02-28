@@ -10,8 +10,8 @@ export const difficultyLabels: Record<string, { label: string; color: string }> 
 
 // 领队等级映射
 export const leaderLevelLabels: Record<string, string> = {
-  beginner: '初级领队',
-  intermediate: '中级领队',
-  advanced: '高级领队',
-  expert: '资深领队',
+  beginner: '新芽领队',
+  intermediate: '破风者领队',
+  advanced: '巅峰行者领队',
+  expert: '传奇徒步家领队',
 };
