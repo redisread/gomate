@@ -18,7 +18,13 @@ function LocationHeader({ location, className }: LocationHeaderProps) {
   const [isLiked, setIsLiked] = React.useState(false);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
 
-  const allImages = [location.coverImage, ...location.images];
+  // 过滤掉与 coverImage 相同的图片（比较图片 ID，忽略尺寸参数）
+  const uniqueImages = location.images.filter((img) => {
+    const coverId = location.coverImage.split("?")[0];
+    const imgId = img.split("?")[0];
+    return coverId !== imgId;
+  });
+  const allImages = [location.coverImage, ...uniqueImages];
 
   return (
     <div className={cn("relative", className)}>
