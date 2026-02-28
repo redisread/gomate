@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: session.user.email,
         level: (fullUser?.level !== undefined ? fullUser.level : session.user.level as AuthUser["level"]) || "beginner",
         completedHikes: fullUser?.completedHikes !== undefined ? fullUser.completedHikes : ((session.user as unknown as { completedHikes?: number }).completedHikes || 0),
-        bio: "新人户外爱好者，期待与你一起探索山野。",
+        bio: fullUser?.bio !== undefined ? fullUser.bio : "新人户外爱好者，期待与你一起探索山野。",
         createdAt: fullUser?.createdAt !== undefined ? fullUser.createdAt : createdAtStr,
       };
       setUser(authUser);
