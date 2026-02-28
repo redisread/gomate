@@ -92,8 +92,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // 当 session 变化时更新用户状态
   React.useEffect(() => {
-    syncUserData();
-    setIsLoading(isPending);
+    if (isPending) {
+      setIsLoading(true);
+      return;
+    }
+    const sync = async () => {
+      await syncUserData();
+      setIsLoading(false);
+    };
+    sync();
   }, [session, isPending, syncUserData]);
 
   // 手动刷新用户信息
