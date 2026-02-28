@@ -2,20 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Mountain, Twitter, MessageCircle } from "lucide-react";
+import { Mountain, MessageCircle } from "lucide-react";
 
-// 即刻图标
-const JikeIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-    <circle cx="12" cy="12" r="5"/>
-  </svg>
-);
-
-// 小红书图标
-const XiaohongshuIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.615 14.154h-1.846v-3.077h-1.538v3.077h-2.462v-3.077H9.231v3.077H7.385V7.846h1.846v3.077h1.538V7.846h2.462v3.077h1.538V7.846h1.846v8.308z"/>
+// X (Twitter) 图标
+const XIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
   </svg>
 );
 
@@ -33,9 +25,7 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: Twitter, href: "https://x.com/VictorHong1022", label: "Twitter" },
-  { icon: JikeIcon, href: "https://okjk.co/Z73r9S", label: "即刻" },
-  { icon: XiaohongshuIcon, href: "https://xhslink.com/m/7Fx4uIYo2lv", label: "小红书" },
+  { icon: XIcon, href: "https://x.com/VictorHong1022", label: "X" },
   { icon: MessageCircle, href: "/wechat.jpg", label: "WeChat" },
 ];
 
