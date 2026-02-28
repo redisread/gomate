@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
+import { users } from "@/db/schema";
+import { copy } from "@/lib/copy";
 
 // 动态导入 @opennextjs/cloudflare 以避免构建时错误
 const getCloudflareContext = async () => {
@@ -16,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     if (!email || typeof email !== "string") {
       return NextResponse.json(
-        { error: "邮箱地址不能为空" },
+        { error: copy.errors.emailEmpty },
         { status: 400 }
       );
     }
@@ -25,7 +28,7 @@ export async function POST(request: NextRequest) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: "邮箱格式不正确" },
+        { error: copy.errors.emailInvalid },
         { status: 400 }
       );
     }
@@ -34,8 +37,26 @@ export async function POST(request: NextRequest) {
 
     if (!env.DB) {
       return NextResponse.json(
-        { error: "数据库未配置" },
+        { error: copy.errors.dbNotConfigured },
         { status: 500 }
+      );
+    }
+
+    // 动态导入 Drizzle 客户端
+    const { createD1Client } = await import("@/db");
+    const db = createD1Client(env.DB as D1Database);
+
+    // 先检查用户是否存在
+    const existingUser = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()))
+      .limit(1);
+
+    if (existingUser.length === 0) {
+      return NextResponse.json(
+        { error: copy.errors.emailNotRegistered },
+        { status: 400 }
       );
     }
 
@@ -53,33 +74,21 @@ export async function POST(request: NextRequest) {
     const redirectTo = `${baseUrl}/reset-password`;
 
     // 使用 Better Auth 的 requestPasswordReset 方法
-    // 注意：即使邮箱不存在，也会返回成功（防止枚举用户）
     await auth.api.requestPasswordReset({
       body: { email, redirectTo }
     });
 
     return NextResponse.json({
       success: true,
-      message: "如果该邮箱已注册，我们将发送重置密码链接",
+      message: copy.errors.resetEmailSent,
     });
   } catch (error) {
     console.error("Forgot password error:", error);
 
-    // 如果用户不存在，Better Auth 会抛出错误
-    // 但为了安全，我们仍然返回成功消息
-    const errorMessage = (error as Error).message;
-
-    if (errorMessage.includes("user") || errorMessage.includes("not found")) {
-      return NextResponse.json({
-        success: true,
-        message: "如果该邮箱已注册，我们将发送重置密码链接",
-      });
-    }
-
     return NextResponse.json(
       {
-        error: "发送重置邮件失败，请稍后重试",
-        message: errorMessage,
+        error: copy.errors.resetEmailFailed,
+        message: (error as Error).message,
       },
       { status: 500 }
     );
