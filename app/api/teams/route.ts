@@ -1,64 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// 动态导入 @opennextjs/cloudflare 以避免构建时错误
-const getCloudflareContext = async () => {
-  const mod = await import("@opennextjs/cloudflare");
-  return mod.getCloudflareContext();
-};
-
-// 从 cookie 获取 session token
-function getSessionTokenFromCookie(request: NextRequest): string | null {
-  const cookieHeader = request.headers.get("cookie");
-  if (!cookieHeader) return null;
-
-  const cookies = cookieHeader.split(";");
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split("=");
-    // Better Auth 使用 better-auth.session_token 作为 cookie 名称
-    if (name === "better-auth.session_token") {
-      // cookie 格式: tokenId.signature
-      // 数据库存储的是 tokenId 部分
-      const fullToken = decodeURIComponent(value);
-      const tokenId = fullToken.split(".")[0];
-      return tokenId;
-    }
-  }
-  return null;
-}
-
-// 验证 session 并获取用户信息
-async function validateSession(
-  db: D1Database,
-  token: string
-): Promise<{ userId: string; user: Record<string, unknown> } | null> {
-  try {
-    // Better Auth 使用秒级时间戳，需要转换为秒进行比较
-    const nowInSeconds = Math.floor(Date.now() / 1000);
-
-    // 查询 session
-    const session = await db.prepare(
-      "SELECT * FROM sessions WHERE token = ? AND expires_at > ?"
-    ).bind(token, nowInSeconds).first();
-
-    if (!session) {
-      return null;
-    }
-
-    // 查询用户
-    const user = await db.prepare(
-      "SELECT * FROM users WHERE id = ?"
-    ).bind(session.user_id).first();
-
-    if (!user) {
-      return null;
-    }
-
-    return { userId: session.user_id as string, user };
-  } catch (error) {
-    console.error("Validate session error:", error);
-    return null;
-  }
-}
+import { headers } from "next/headers";
+import { getAuth } from "@/lib/auth";
 
 /**
  * POST /api/teams
@@ -66,7 +8,22 @@ async function validateSession(
  */
 export async function POST(request: NextRequest) {
   try {
-    const { env } = await getCloudflareContext();
+    // 使用 Better Auth API 验证 session
+    const auth = await getAuth();
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "请先登录" },
+        { status: 401 }
+      );
+    }
+
+    const userId = session.user.id;
+
+    const { env } = await import("@opennextjs/cloudflare").then(m => m.getCloudflareContext());
 
     if (!env.DB) {
       return NextResponse.json(
@@ -76,26 +33,6 @@ export async function POST(request: NextRequest) {
     }
 
     const db = env.DB as D1Database;
-
-    // 获取 session token
-    const token = getSessionTokenFromCookie(request);
-    if (!token) {
-      return NextResponse.json(
-        { error: "请先登录" },
-        { status: 401 }
-      );
-    }
-
-    // 验证 session
-    const sessionData = await validateSession(db, token);
-    if (!sessionData) {
-      return NextResponse.json(
-        { error: "登录已过期，请重新登录" },
-        { status: 401 }
-      );
-    }
-
-    const userId = sessionData.userId;
 
     const body = await request.json();
     const {
@@ -202,7 +139,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get("userId"); // 新增：按用户ID查询用户加入的队伍
     const includeJoined = searchParams.get("includeJoined") === "true"; // 新增：是否包含用户加入的队伍
 
-    const { env } = await getCloudflareContext();
+    const { env } = await import("@opennextjs/cloudflare").then(m => m.getCloudflareContext());
 
     if (!env.DB) {
       return NextResponse.json(
