@@ -1,75 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and, gt } from "drizzle-orm";
-
-// 动态导入 @opennextjs/cloudflare 以避免构建时错误
-const getCloudflareContext = async () => {
-  const mod = await import("@opennextjs/cloudflare");
-  return mod.getCloudflareContext();
-};
-
-// 从 cookie 获取 session token
-function getSessionTokenFromCookie(request: NextRequest): string | null {
-  const cookieHeader = request.headers.get("cookie");
-  if (!cookieHeader) return null;
-
-  const cookies = cookieHeader.split(";");
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split("=");
-    // Better Auth 使用 better-auth.session_token 作为 cookie 名称
-    if (name === "better-auth.session_token") {
-      // cookie 格式: tokenId.signature
-      // 数据库存储的是 tokenId 部分
-      const fullToken = decodeURIComponent(value);
-      const tokenId = fullToken.split(".")[0];
-      return tokenId;
-    }
-  }
-  return null;
-}
-
-// 验证 session 并获取用户信息
-async function validateSession(
-  db: D1Database,
-  token: string
-): Promise<{ userId: string; user: Record<string, unknown> } | null> {
-  try {
-    const { drizzle } = await import("drizzle-orm/d1");
-    const schema = await import("@/db/schema");
-    const ormDb = drizzle(db, { schema });
-
-    // 查询 session（expiresAt 需大于当前时间，且 mode: "timestamp" 需传 Date 对象）
-    const now = new Date();
-
-    const sessions = await ormDb.query.sessions.findMany({
-      where: and(
-        eq(schema.sessions.token, token),
-        gt(schema.sessions.expiresAt, now)
-      ),
-      limit: 1,
-    });
-
-    const session = sessions[0];
-    if (!session) {
-      return null;
-    }
-
-    // 查询用户
-    const users = await ormDb.query.users.findMany({
-      where: eq(schema.users.id, session.userId),
-      limit: 1,
-    });
-
-    const user = users[0];
-    if (!user) {
-      return null;
-    }
-
-    return { userId: session.userId, user };
-  } catch (error) {
-    console.error("Validate session error:", error);
-    return null;
-  }
-}
+import { eq, and } from "drizzle-orm";
+import { headers } from "next/headers";
+import { getAuth } from "@/lib/auth";
 
 /**
  * POST /api/teams/join
@@ -77,7 +9,22 @@ async function validateSession(
  */
 export async function POST(request: NextRequest) {
   try {
-    const { env } = await getCloudflareContext();
+    // 使用 Better Auth API 验证 session
+    const auth = await getAuth();
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "请先登录" },
+        { status: 401 }
+      );
+    }
+
+    const userId = session.user.id;
+
+    const { env } = await import("@opennextjs/cloudflare").then(m => m.getCloudflareContext());
 
     if (!env.DB) {
       return NextResponse.json(
@@ -92,26 +39,6 @@ export async function POST(request: NextRequest) {
     const { drizzle } = await import("drizzle-orm/d1");
     const schema = await import("@/db/schema");
     const ormDb = drizzle(db, { schema });
-
-    // 获取 session token
-    const token = getSessionTokenFromCookie(request);
-    if (!token) {
-      return NextResponse.json(
-        { error: "请先登录" },
-        { status: 401 }
-      );
-    }
-
-    // 验证 session
-    const sessionData = await validateSession(db, token);
-    if (!sessionData) {
-      return NextResponse.json(
-        { error: "登录已过期，请重新登录" },
-        { status: 401 }
-      );
-    }
-
-    const userId = sessionData.userId;
 
     const body = await request.json();
     const { teamId } = body;
