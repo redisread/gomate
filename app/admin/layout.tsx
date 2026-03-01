@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getAuth } from "@/lib/auth";
+import { drizzle } from "drizzle-orm/d1";
+import { eq } from "drizzle-orm";
+import * as schema from "@/db/schema";
 import Link from "next/link";
 import { Mountain, MapPin, Users, Settings } from "lucide-react";
 
@@ -25,8 +28,23 @@ export default async function AdminLayout({
     const session = await auth.api.getSession({
       headers: await headers(),
     });
-    isAuthenticated = !!session?.user;
-    isAdmin = session?.user?.role === "admin";
+
+    if (session?.user) {
+      isAuthenticated = true;
+
+      // 从数据库直接查询用户角色，因为 session.user 可能不包含自定义字段
+      const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+      const { env } = await getCloudflareContext();
+      const db = drizzle(env.DB as D1Database, { schema });
+
+      const users = await db
+        .select({ role: schema.users.role })
+        .from(schema.users)
+        .where(eq(schema.users.id, session.user.id))
+        .limit(1);
+
+      isAdmin = users[0]?.role === "admin";
+    }
   } catch (error) {
     console.error("[Admin Layout] Auth check failed:", error);
     isAuthenticated = false;
