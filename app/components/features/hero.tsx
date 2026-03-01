@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, MapPin, Users, Shield } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 function Hero() {
@@ -56,7 +56,7 @@ function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16"
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <Button
               size="lg"
@@ -78,36 +78,6 @@ function Hero() {
                 找队伍
               </Link>
             </Button>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="grid grid-cols-3 gap-8 max-w-lg mx-auto"
-          >
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <MapPin className="h-5 w-5 text-stone-400" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-bold text-stone-900">50+</div>
-              <div className="text-sm text-stone-500">精选路线</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Users className="h-5 w-5 text-stone-400" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-bold text-stone-900">2k+</div>
-              <div className="text-sm text-stone-500">活跃玩家</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Shield className="h-5 w-5 text-stone-400" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-bold text-stone-900">100%</div>
-              <div className="text-sm text-stone-500">安全出行</div>
-            </div>
           </motion.div>
         </div>
       </div>

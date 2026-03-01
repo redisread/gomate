@@ -78,9 +78,9 @@ export const copy = {
     exploreBtn: "探索地点",
     createTeamBtn: "发布队伍",
     loginRegisterBtn: "登录 / 注册",
-    statRoutes: "精选路线",
-    statPlayers: "活跃玩家",
-    statSafety: "安全出行",
+    statRoutes: "林间小径",
+    statPlayers: "山野相逢",
+    statSafety: "尽兴而归",
   },
 
   // ─── 认证（登录 / 注册 / 忘记密码 / 重置密码）────────────────────────────
