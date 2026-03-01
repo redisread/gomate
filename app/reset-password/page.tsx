@@ -139,7 +139,7 @@ function ResetPasswordForm() {
                     {copy.auth.resetSuccessDesc}
                   </p>
                   <Link href="/login">
-                    <Button className="bg-stone-900 hover:bg-stone-800">
+                    <Button className="bg-stone-900 hover:bg-stone-800 text-white">
                       {copy.auth.goToLogin}
                     </Button>
                   </Link>
@@ -218,7 +218,7 @@ function ResetPasswordForm() {
                   {/* 重置按钮 */}
                   <Button
                     type="submit"
-                    className="w-full bg-stone-900 hover:bg-stone-800"
+                    className="w-full bg-stone-900 hover:bg-stone-800 text-white"
                     disabled={isLoading || !token}
                   >
                     {isLoading ? (

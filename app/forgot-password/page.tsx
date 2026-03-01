@@ -139,7 +139,7 @@ export default function ForgotPasswordPage() {
                     {copy.email.checkInbox}
                   </p>
                   <Link href="/login">
-                    <Button className="bg-stone-900 hover:bg-stone-800">
+                    <Button className="bg-stone-900 hover:bg-stone-800 text-white">
                       {copy.auth.backToLogin}
                     </Button>
                   </Link>
@@ -185,7 +185,7 @@ export default function ForgotPasswordPage() {
                   {/* 发送按钮 */}
                   <Button
                     type="submit"
-                    className="w-full bg-stone-900 hover:bg-stone-800"
+                    className="w-full bg-stone-900 hover:bg-stone-800 text-white"
                     disabled={isLoading}
                   >
                     {isLoading ? (
