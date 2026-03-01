@@ -1,6 +1,5 @@
 "use client";
 
-// DEBUG VERSION 3 - Force rebuild - TIMESTAMP: $(date +%s)
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -14,6 +13,7 @@ import { TeamHeader } from "@/app/components/features/team-header";
 import { TeamInfo } from "@/app/components/features/team-info";
 import { LeaderCard } from "@/app/components/features/leader-card";
 import { JoinButton } from "@/components/features/join-button";
+import { ApplicantList } from "@/components/features/applicant-list";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocations } from "@/lib/locations-context";
@@ -28,6 +28,19 @@ interface TeamPageProps {
   }>;
 }
 
+interface Application {
+  id: string;
+  userId: string;
+  createdAt: Date | string;
+  user: {
+    id: string;
+    name: string;
+    image: string | null;
+    bio: string | null;
+    level: string;
+  } | null;
+}
+
 export default function TeamPage({ params }: TeamPageProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -38,7 +51,8 @@ export default function TeamPage({ params }: TeamPageProps) {
   const [otherTeams, setOtherTeams] = React.useState<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-
+  const [userMemberStatus, setUserMemberStatus] = React.useState<"pending" | "approved" | "rejected" | null>(null);
+  const [applications, setApplications] = React.useState<Application[]>([]);
 
   React.useEffect(() => {
     params.then(({ id }) => {
@@ -46,6 +60,14 @@ export default function TeamPage({ params }: TeamPageProps) {
       fetchTeam(id);
     });
   }, [params]);
+
+  // 当用户登录状态变化时，获取用户成员状态和申请列表
+  React.useEffect(() => {
+    if (teamId && user) {
+      fetchUserMemberStatus(teamId);
+      fetchApplications(teamId);
+    }
+  }, [teamId, user]);
 
   const fetchTeam = async (id: string) => {
     try {
@@ -80,6 +102,34 @@ export default function TeamPage({ params }: TeamPageProps) {
     }
   };
 
+  const fetchUserMemberStatus = async (id: string) => {
+    try {
+      const response = await fetch(`/api/teams/${id}/my-status`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setUserMemberStatus(result.status);
+        }
+      }
+    } catch (err) {
+      console.error("获取成员状态失败:", err);
+    }
+  };
+
+  const fetchApplications = async (id: string) => {
+    try {
+      const response = await fetch(`/api/teams/${id}/applications`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setApplications(result.applications || []);
+        }
+      }
+    } catch (err) {
+      console.error("获取申请列表失败:", err);
+    }
+  };
+
   const fetchOtherTeams = async (currentId: string, locationId: string) => {
     try {
       const response = await fetch(`/api/teams?locationId=${locationId}`);
@@ -104,6 +154,9 @@ export default function TeamPage({ params }: TeamPageProps) {
       setLocation(loc);
     }
   }, [team, locationsLoading, getLocationById]);
+
+  // 判断是否是队长
+  const isLeader = user && team?.leader?.id === user?.id;
 
   if (isLoading || (team && locationsLoading)) {
     return (
@@ -172,6 +225,20 @@ export default function TeamPage({ params }: TeamPageProps) {
           {/* Left Column - Team Info */}
           <div className="lg:col-span-2 space-y-6">
             <TeamInfo team={team} />
+
+            {/* 队长审核申请面板 */}
+            {isLeader && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <ApplicantList
+                  teamId={teamId}
+                  initialApplications={applications}
+                />
+              </motion.div>
+            )}
 
             {/* Location Info Summary */}
             <motion.div
@@ -287,7 +354,16 @@ export default function TeamPage({ params }: TeamPageProps) {
       {/* Sticky Join Button */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 p-4 z-40">
         <div className="max-w-7xl mx-auto">
-          <JoinButton team={team} />
+          <JoinButton
+            team={team}
+            userMemberStatus={userMemberStatus}
+            onJoin={() => {
+              // 申请成功后刷新状态
+              if (teamId) {
+                fetchUserMemberStatus(teamId);
+              }
+            }}
+          />
         </div>
       </div>
 
