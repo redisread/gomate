@@ -6,7 +6,7 @@ import { getAuth } from "@/lib/auth";
 // 动态导入 @opennextjs/cloudflare 以避免构建时错误
 const getCloudflareContext = async () => {
   const mod = await import("@opennextjs/cloudflare");
-  return mod.getCloudflareContext();
+  return mod.getCloudflareContext({ async: true });
 };
 
 /**

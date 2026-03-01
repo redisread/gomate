@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     const userId = session.user.id;
 
-    const { env } = await import("@opennextjs/cloudflare").then(m => m.getCloudflareContext());
+    const { env } = await import("@opennextjs/cloudflare").then(m => m.getCloudflareContext({ async: true }));
 
     if (!env.DB) {
       return NextResponse.json(
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get("userId"); // 新增：按用户ID查询用户加入的队伍
     const includeJoined = searchParams.get("includeJoined") === "true"; // 新增：是否包含用户加入的队伍
 
-    const { env } = await import("@opennextjs/cloudflare").then(m => m.getCloudflareContext());
+    const { env } = await import("@opennextjs/cloudflare").then(m => m.getCloudflareContext({ async: true }));
 
     if (!env.DB) {
       return NextResponse.json(

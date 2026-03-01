@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     const userId = session.user.id;
 
-    const { env } = await import("@opennextjs/cloudflare").then(m => m.getCloudflareContext());
+    const { env } = await import("@opennextjs/cloudflare").then(m => m.getCloudflareContext({ async: true }));
 
     if (!env.DB) {
       return NextResponse.json(

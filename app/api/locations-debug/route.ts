@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const getCloudflareContext = async () => {
   const mod = await import("@opennextjs/cloudflare");
-  return mod.getCloudflareContext();
+  return mod.getCloudflareContext({ async: true });
 };
 
 /**

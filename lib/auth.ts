@@ -210,7 +210,7 @@ export const createAuth = (env?: {
  */
 export async function getAuth() {
   const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-  const { env } = await getCloudflareContext();
+  const { env } = await getCloudflareContext({ async: true });
   if (!env.DB) {
     throw new Error("D1 database binding not found.");
   }

@@ -23,7 +23,7 @@ export async function getDB(env?: { DB?: D1Database }) {
   }
   // 自动从 Cloudflare context 获取 D1 绑定（next dev + initOpenNextCloudflareForDev 或 wrangler dev）
   const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-  const { env: cfEnv } = await getCloudflareContext();
+  const { env: cfEnv } = await getCloudflareContext({ async: true });
   if (!cfEnv.DB) {
     throw new Error("D1 database binding not found. Make sure wrangler.toml has D1 binding configured.");
   }

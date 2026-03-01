@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin";
 
 const getCloudflareContext = async () => {
   const mod = await import("@opennextjs/cloudflare");
-  return mod.getCloudflareContext();
+  return mod.getCloudflareContext({ async: true });
 };
 
 /**
