@@ -3,6 +3,7 @@
 import { AuthProvider } from "@/lib/auth-context";
 import { LocationsProvider } from "@/lib/locations-context";
 import { TeamsProvider } from "@/lib/teams-context";
+import { ToastProvider } from "@/components/ui/toast";
 
 console.log("[Providers] Rendering...");
 
@@ -12,7 +13,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <AuthProvider>
       <LocationsProvider>
         <TeamsProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </TeamsProvider>
       </LocationsProvider>
     </AuthProvider>

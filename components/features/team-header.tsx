@@ -11,7 +11,7 @@ import {
   Clock,
   MapPin,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ShareTeamDialog } from "@/components/features/share-team-dialog";
 import type { Team, Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +50,7 @@ function TeamHeader({ team, location, className }: TeamHeaderProps) {
             返回地点
           </Link>
           <button
-            onClick={() => setIsShareOpen(!isShareOpen)}
+            onClick={() => setIsShareOpen(true)}
             className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
             aria-label="分享"
           >
@@ -96,6 +96,14 @@ function TeamHeader({ team, location, className }: TeamHeaderProps) {
           </div>
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <ShareTeamDialog
+        open={isShareOpen}
+        onOpenChange={setIsShareOpen}
+        team={team}
+        location={location}
+      />
     </motion.div>
   );
 }

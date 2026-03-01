@@ -499,6 +499,15 @@ export const copy = {
     userNotFoundWithId: "User not found with ID",
   },
 
+  // ─── 分享 ─────────────────────────────────────────────────────────────────
+  share: {
+    title: "分享队伍",
+    linkCopied: "链接已复制到剪贴板",
+    copyLink: "复制链接",
+    shareVia: "通过应用分享",
+    inviteText: "邀请你加入徒步队伍",
+  },
+
   // ─── 枚举标签（与数据库枚举值一一对应）──────────────────────────────────
   enums: {
     difficulty: {
