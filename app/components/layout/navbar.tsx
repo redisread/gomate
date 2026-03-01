@@ -21,7 +21,7 @@ const navLinks = [
 ];
 
 function Navbar({ className }: NavbarProps) {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
@@ -153,6 +153,17 @@ function Navbar({ className }: NavbarProps) {
                             <Users className="h-4 w-4 text-stone-400" />
                             我的队伍
                           </Link>
+
+                          {isAdmin && (
+                            <Link
+                              href="/admin/locations"
+                              onClick={() => setShowUserMenu(false)}
+                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
+                            >
+                              <Crown className="h-4 w-4 text-yellow-500" />
+                              管理后台
+                            </Link>
+                          )}
 
                           <div className="border-t border-stone-100 my-1" />
 

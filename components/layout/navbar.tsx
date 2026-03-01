@@ -3,9 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Mountain, Menu, X, User } from "lucide-react";
+import { Mountain, Menu, X, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 
 interface NavbarProps {
   className?: string;
@@ -21,6 +22,7 @@ const navLinks = [
 function Navbar({ className }: NavbarProps) {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const { user, isAdmin } = useAuth();
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -75,6 +77,14 @@ function Navbar({ className }: NavbarProps) {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-3">
+              {isAdmin && (
+                <Link href="/admin/locations">
+                  <Button variant="ghost" size="sm" className="text-stone-600">
+                    <Settings className="h-4 w-4 mr-1" />
+                    管理后台
+                  </Button>
+                </Link>
+              )}
               <Button variant="ghost" size="sm" className="text-stone-600">
                 登录
               </Button>
@@ -147,6 +157,14 @@ function Navbar({ className }: NavbarProps) {
               ))}
             </nav>
             <div className="mt-auto flex flex-col gap-3">
+              {isAdmin && (
+                <Link href="/admin/locations" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="outline" className="w-full justify-center">
+                    <Settings className="h-4 w-4 mr-2" />
+                    管理后台
+                  </Button>
+                </Link>
+              )}
               <Button variant="outline" className="w-full justify-center">
                 <User className="h-4 w-4 mr-2" />
                 登录

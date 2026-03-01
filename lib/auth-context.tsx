@@ -5,6 +5,8 @@ import { authClient } from "@/lib/auth-client";
 import type { User } from "@/db/schema";
 import { copy } from "@/lib/copy";
 
+export type UserRole = "user" | "admin";
+
 export interface AuthUser {
   id: string;
   name: string;
@@ -14,6 +16,7 @@ export interface AuthUser {
   completedHikes: number;
   bio: string;
   wechat?: string;
+  role: UserRole;
   createdAt: string;
 }
 
@@ -41,6 +44,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
+  isAdmin: boolean;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -84,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         completedHikes: fullUser?.completedHikes !== undefined ? fullUser.completedHikes : ((session.user as unknown as { completedHikes?: number }).completedHikes || 0),
         bio: fullUser?.bio !== undefined ? fullUser.bio : "新人户外爱好者，期待与你一起探索山野。",
         wechat: fullUser?.wechat,
+        role: (fullUser?.role !== undefined ? fullUser.role : (session.user as unknown as { role?: UserRole }).role) || "user",
         createdAt: fullUser?.createdAt !== undefined ? fullUser.createdAt : createdAtStr,
       };
       setUser(authUser);
@@ -195,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     refreshUser,
     isAuthenticated: !!user,
+    isAdmin: user?.role === "admin",
   }), [user, isLoading, login, register, logout, refreshUser]);
 
   return (

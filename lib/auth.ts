@@ -129,6 +129,11 @@ export const createAuth = (env?: {
             required: false,
             defaultValue: "beginner",
           },
+          role: {
+            type: "string",
+            required: false,
+            defaultValue: "user",
+          },
         },
       },
       secret: process.env.BETTER_AUTH_SECRET || "dev-secret-key",
@@ -181,6 +186,11 @@ export const createAuth = (env?: {
           type: "string",
           required: false,
           defaultValue: "beginner",
+        },
+        role: {
+          type: "string",
+          required: false,
+          defaultValue: "user",
         },
       },
     },

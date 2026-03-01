@@ -21,6 +21,7 @@ export const users = sqliteTable(
     bio: text("bio"), // 个人简介
     level: text("level").default("beginner"), // 领队等级: beginner(新手), intermediate(进阶), advanced(资深), expert(专家)
     wechat: text("wechat"), // 微信号（可选，加入队伍时必填）
+    role: text("role").default("user"), // 角色: user(普通用户), admin(管理员)
     completedHikes: integer("completed_hikes").default(0), // 完成徒步次数
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 账号创建时间
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 资料更新时间
@@ -298,3 +299,4 @@ export type Difficulty = "easy" | "moderate" | "hard" | "expert"; // 难度等�
 export type TeamStatus = "recruiting" | "full" | "ongoing" | "completed" | "cancelled" | "open"; // 队伍状态：招募中、已满、进行中、已完成、已取消、开放
 export type TeamMemberRole = "leader" | "member"; // 成员角色：领队、队员
 export type TeamMemberStatus = "pending" | "approved" | "rejected"; // 成员状态：待审核、已通过、已拒绝
+export type UserRole = "user" | "admin"; // 用户角色：普通用户、管理员

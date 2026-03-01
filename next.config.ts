@@ -43,7 +43,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "gomate.cos.jiahongw.com",
+        hostname: "*.jiahongw.com",
         pathname: "/**",
       },
     ],
