@@ -15,6 +15,7 @@ import {
   Calendar,
   Award,
   Users,
+  MessageCircle,
 } from "lucide-react";
 
 import { Navbar } from "@/app/components/layout/navbar";
@@ -150,6 +151,14 @@ export default function ProfilePage() {
                   <p className="mt-4 text-stone-600 leading-relaxed">
                     {user.bio}
                   </p>
+                )}
+
+                {/* WeChat - only visible to self */}
+                {user.wechat && (
+                  <div className="mt-4 flex items-center gap-2 text-stone-500">
+                    <MessageCircle className="h-4 w-4" />
+                    <span className="text-sm">微信号：{user.wechat}</span>
+                  </div>
                 )}
               </div>
             </CardContent>

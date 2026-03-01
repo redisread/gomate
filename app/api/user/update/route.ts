@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest) {
 
     // 解析请求体
     const body = await request.json();
-    const { userId, name, bio, level, image } = body;
+    const { userId, name, bio, level, image, wechat } = body;
 
     if (!userId) {
       return NextResponse.json(
@@ -47,6 +47,7 @@ export async function PATCH(request: NextRequest) {
       updateData.level = level;
     }
     if (image !== undefined) updateData.image = image;
+    if (wechat !== undefined) updateData.wechat = wechat;
 
     // 手动设置 updatedAt（Drizzle ORM 会自动转换为时间戳）
     updateData.updatedAt = new Date();

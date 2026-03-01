@@ -254,6 +254,9 @@ export const copy = {
     levelCurrent: "当前",
     emailLabel: "邮箱",
     emailReadonly: "邮箱暂不支持修改",
+    wechat: "微信号",
+    wechatPlaceholder: "请输入微信号",
+    wechatHint: "方便队友联系你（加入队伍时需要填写）",
     changeAvatar: "点击更换头像",
     avatarHint: "支持 JPEG、PNG、GIF、WebP，最大 5MB",
     avatarSelected: "已选择", // 「已选择：filename」，filename 在组件内拼接
@@ -468,6 +471,7 @@ export const copy = {
     teamTitleTooLong: "标题最多100个字符",
     teamDescTooLong: "描述最多1000个字符",
     teamReqsTooLong: "要求最多500个字符",
+    wechatRequired: "请先在个人资料中填写微信号，以便队友联系您",
   },
 
   // ─── 操作成功消息 ─────────────────────────────────────────────────────────

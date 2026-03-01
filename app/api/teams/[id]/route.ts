@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 // 动态导入 @opennextjs/cloudflare 以避免构建时错误
 const getCloudflareContext = async () => {
@@ -30,13 +32,18 @@ export async function GET(
     // 使用 Drizzle ORM 查询
     const { drizzle } = await import("drizzle-orm/d1");
     const schema = await import("@/db/schema");
-    const { eq } = await import("drizzle-orm");
+    const { eq, and } = await import("drizzle-orm");
     const ormDb = drizzle(db, { schema });
 
     const teams = await ormDb.query.teams.findMany({
       where: eq(schema.teams.id, id),
       with: {
         leader: true,
+        members: {
+          with: {
+            user: true,
+          },
+        },
       },
       limit: 1,
     });
@@ -48,6 +55,28 @@ export async function GET(
         { error: "队伍不存在" },
         { status: 404 }
       );
+    }
+
+    // 获取当前用户（如果已登录）
+    let currentUserId: string | null = null;
+    try {
+      const auth = await getAuth();
+      const session = await auth.api.getSession({
+        headers: await headers(),
+      });
+      currentUserId = session?.user?.id || null;
+    } catch {
+      // 用户未登录，忽略
+    }
+
+    // 检查当前用户是否是该队伍的成员（已审核通过）
+    let isTeamMember = false;
+    if (currentUserId) {
+      const membership = team.members?.find(
+        (m: { userId: string; status: string }) =>
+          m.userId === currentUserId && m.status === "approved"
+      );
+      isTeamMember = !!membership;
     }
 
     // 从 startTime 提取日期和时间
@@ -89,7 +118,9 @@ export async function GET(
         avatar: team.leader.image || '',
         level: (team.leader.level || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
         completedHikes: 0,
-        bio: '',
+        bio: team.leader.bio || '',
+        // 只有队长自己或队伍成员可以看到队长的微信号
+        wechat: (isTeamMember || currentUserId === team.leader.id) ? (team.leader.wechat || '') : undefined,
       } : {
         id: 'unknown',
         name: '未知用户',

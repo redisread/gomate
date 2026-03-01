@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
         bio: user[0].bio,
         level: user[0].level || "beginner",
         completedHikes: user[0].completedHikes,
+        wechat: user[0].wechat,
         createdAt: user[0].createdAt,
         updatedAt: user[0].updatedAt,
       },
