@@ -222,6 +222,20 @@ export const copy = {
     safetyTip3: "遵守领队安排，不擅自离队",
     safetyTip4: "注意天气变化，做好防护",
 
+    // 申请审核
+    reviewTitle: "待审核申请",
+    reviewEmpty: "暂无待审核申请",
+    reviewEmptyDesc: "有新成员申请加入时会显示在这里",
+    approveBtn: "批准",
+    rejectBtn: "拒绝",
+    approving: "批准中...",
+    rejecting: "拒绝中...",
+    approveConfirm: "确定批准该成员加入队伍？",
+    rejectConfirm: "确定拒绝该成员的申请？",
+    applicationCount: "个待审核申请",
+    appliedAt: "申请时间",
+    noBio: "暂无简介",
+
     // 状态标签（UI 展示用，枚举值映射请用 copy.enums.teamStatus）
     statusRecruiting: "招募中",
     statusFull: "已满员",
@@ -232,6 +246,12 @@ export const copy = {
     leaveTeam: "退出队伍",
     viewLocationDetail: "查看地点详情",
     leader: "队长",
+
+    // 申请状态
+    statusPending: "申请审核中",
+    statusApproved: "已加入队伍",
+    statusRejected: "申请被拒绝",
+    reapply: "重新申请",
   },
 
   // ─── 个人资料 ─────────────────────────────────────────────────────────────

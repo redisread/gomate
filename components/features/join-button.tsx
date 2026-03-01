@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Check, Loader2, Users, AlertCircle } from "lucide-react";
+import { Check, Loader2, Users, Clock, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -14,26 +14,40 @@ interface JoinButtonProps {
   team: Team;
   className?: string;
   onJoin?: () => void;
+  userMemberStatus?: "pending" | "approved" | "rejected" | null;
 }
 
-type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "wechat_required";
+type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" | "approved" | "rejected" | "wechat_required";
 
-function JoinButton({ team, className, onJoin }: JoinButtonProps) {
+function JoinButton({ team, className, onJoin, userMemberStatus }: JoinButtonProps) {
   const { user } = useAuth();
-  const [joinState, setJoinState] = React.useState<JoinState>(
-    team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle"
-  );
+  // 根据用户成员状态和队伍状态初始化
+  const getInitialState = React.useCallback((): JoinState => {
+    if (userMemberStatus === "approved") return "approved";
+    if (userMemberStatus === "pending") return "pending";
+    if (userMemberStatus === "rejected") return "rejected";
+    if (team.status === "full") return "full";
+    if (team.status === "closed") return "closed";
+    return "idle";
+  }, [userMemberStatus, team.status]);
+
+  const [joinState, setJoinState] = React.useState<JoinState>(getInitialState);
+
+  // 当 userMemberStatus 或 team.status 变化时更新状态
+  React.useEffect(() => {
+    setJoinState(getInitialState());
+  }, [getInitialState]);
 
   // 判断是否是队长
   const isLeader = user && team?.leader?.id === user?.id;
 
   const handleJoin = async () => {
-    if (joinState !== "idle") return;
+    // 只有 idle 或 rejected 状态可以申请
+    if (joinState !== "idle" && joinState !== "rejected") return;
 
     setJoinState("loading");
 
     try {
-      // 实际的API调用
       const response = await fetch('/api/teams/join', {
         method: 'POST',
         headers: {
@@ -45,70 +59,113 @@ function JoinButton({ team, className, onJoin }: JoinButtonProps) {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setJoinState("success");
+        setJoinState("pending");
         onJoin?.();
-
-        // 2秒后重置状态
-        setTimeout(() => {
-          setJoinState(team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle");
-        }, 2000);
       } else {
         // 检查是否是微信号缺失错误
         if (result.error?.includes("微信号")) {
           setJoinState("wechat_required");
         } else {
           alert(result.error || copy.api.failed);
-          setJoinState(team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle");
+          // 重置到之前的状态
+          setJoinState(getInitialState());
         }
       }
     } catch (error) {
       console.error("Join team error:", error);
       alert(copy.api.networkError);
-      setJoinState(team.status === "full" ? "full" : team.status === "closed" ? "closed" : "idle");
+      setJoinState(getInitialState());
     }
   };
 
-  const buttonConfig = {
+  const buttonConfig: Record<JoinState, { text: string; icon: React.ElementType; variant: "default" | "secondary" | "outline"; className: string; disabled: boolean }> = {
     idle: {
       text: copy.teams.joinTeam,
       icon: Users,
       variant: "default" as const,
       className: "bg-stone-900 hover:bg-stone-800 text-white",
+      disabled: false,
     },
     loading: {
       text: copy.common.loading,
       icon: Loader2,
       variant: "default" as const,
       className: "bg-stone-700 text-white cursor-not-allowed",
+      disabled: true,
     },
     success: {
       text: copy.success.applied,
       icon: Check,
       variant: "default" as const,
       className: "bg-emerald-600 text-white",
+      disabled: true,
     },
     full: {
       text: copy.teams.statusFull,
       icon: Users,
       variant: "secondary" as const,
       className: "bg-stone-200 text-stone-500 cursor-not-allowed",
+      disabled: true,
     },
     closed: {
       text: copy.teams.statusEnded,
       icon: Users,
       variant: "secondary" as const,
       className: "bg-stone-200 text-stone-500 cursor-not-allowed",
+      disabled: true,
+    },
+    pending: {
+      text: copy.teams.statusPending,
+      icon: Clock,
+      variant: "secondary" as const,
+      className: "bg-amber-100 text-amber-800 cursor-default",
+      disabled: true,
+    },
+    approved: {
+      text: copy.teams.statusApproved,
+      icon: Check,
+      variant: "default" as const,
+      className: "bg-emerald-600 text-white cursor-default",
+      disabled: true,
+    },
+    rejected: {
+      text: copy.teams.reapply,
+      icon: RefreshCw,
+      variant: "outline" as const,
+      className: "border-red-300 text-red-600 hover:bg-red-50",
+      disabled: false,
     },
     wechat_required: {
       text: "请先填写微信号",
       icon: AlertCircle,
       variant: "outline" as const,
       className: "border-amber-500 text-amber-600",
+      disabled: false,
     },
   };
 
   const config = buttonConfig[joinState];
   const Icon = config.icon;
+
+  // 获取状态描述文本
+  const getStatusText = () => {
+    switch (joinState) {
+      case "full":
+        return copy.errors.teamFull;
+      case "closed":
+        return copy.errors.teamNotAccepting;
+      case "pending":
+        return copy.teams.statusPending;
+      case "approved":
+        return copy.teams.statusApproved;
+      case "rejected":
+        return copy.teams.statusRejected;
+      case "wechat_required":
+        return copy.errors.wechatRequired;
+      default:
+        return `已有 ${team.currentMembers} 人报名，还剩 ${team.maxMembers - team.currentMembers} 个名额`;
+    }
+  };
 
   return (
     <motion.div
@@ -120,19 +177,7 @@ function JoinButton({ team, className, onJoin }: JoinButtonProps) {
       <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-lg">
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
-            <p className="text-sm text-stone-500">
-              {joinState === "full"
-                ? copy.errors.teamFull
-                : joinState === "closed"
-                ? copy.errors.teamNotAccepting
-                : joinState === "wechat_required"
-                ? copy.errors.wechatRequired
-                : joinState === "success"
-                ? copy.teams.leader
-                : `已有 ${team.currentMembers} 人报名，还剩 ${
-                    team.maxMembers - team.currentMembers
-                  } 个名额`}
-            </p>
+            <p className="text-sm text-stone-500">{getStatusText()}</p>
           </div>
           {/* 如果不是队长，则显示申请加入按钮 */}
           {!isLeader && (
@@ -152,7 +197,7 @@ function JoinButton({ team, className, onJoin }: JoinButtonProps) {
                 size="lg"
                 variant={config.variant}
                 onClick={handleJoin}
-                disabled={joinState === "loading" || joinState === "full" || joinState === "closed"}
+                disabled={config.disabled}
                 className={cn(
                   "px-8 transition-all duration-300",
                   config.className
