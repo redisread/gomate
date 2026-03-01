@@ -11,6 +11,7 @@ import {
   Clock,
   MapPin,
 } from "lucide-react";
+import { ShareTeamDialog } from "@/components/features/share-team-dialog";
 import { Badge } from "@/components/ui/badge";
 import type { Team, Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -96,6 +97,14 @@ function TeamHeader({ team, location, className }: TeamHeaderProps) {
           </div>
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <ShareTeamDialog
+        open={isShareOpen}
+        onOpenChange={setIsShareOpen}
+        team={team}
+        location={location}
+      />
     </motion.div>
   );
 }
