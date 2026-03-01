@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
 import { useTeams } from "@/lib/teams-context";
 import { useLocations } from "@/lib/locations-context";
+import type { Team } from "@/lib/types";
 
 // 经验等级映射
 const levelLabels: Record<string, { label: string; color: string; description: string }> = {
@@ -39,8 +40,12 @@ const levelLabels: Record<string, { label: string; color: string; description: s
 export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const { teams } = useTeams();
+  const { teams, getUserJoinedTeams } = useTeams();
   const { locations } = useLocations();
+
+  // 加入的队伍状态
+  const [joinedTeams, setJoinedTeams] = React.useState<Team[]>([]);
+  const [joinedTeamsLoading, setJoinedTeamsLoading] = React.useState(true);
 
   // 未登录重定向
   React.useEffect(() => {
@@ -48,6 +53,29 @@ export default function ProfilePage() {
       router.push("/login");
     }
   }, [isAuthenticated, isLoading, router]);
+
+  // 获取用户加入的队伍
+  React.useEffect(() => {
+    const fetchJoinedTeams = async () => {
+      if (user?.id) {
+        try {
+          setJoinedTeamsLoading(true);
+          const teams = await getUserJoinedTeams();
+          setJoinedTeams(teams);
+        } catch (error) {
+          console.error("获取用户加入的队伍失败:", error);
+          setJoinedTeams([]);
+        } finally {
+          setJoinedTeamsLoading(false);
+        }
+      } else {
+        setJoinedTeams([]);
+        setJoinedTeamsLoading(false);
+      }
+    };
+
+    fetchJoinedTeams();
+  }, [user?.id, getUserJoinedTeams]);
 
   if (isLoading || !user) {
     return (
@@ -59,9 +87,6 @@ export default function ProfilePage() {
 
   // 获取用户创建的队伍
   const createdTeams = teams.filter((t) => t.leader.id === user.id);
-
-  // 获取用户加入的队伍（非自己创建的）
-  const joinedTeams: typeof teams = []; // 暂时为空，需要后端支持
 
   const levelInfo = levelLabels[user.level] || levelLabels.beginner;
 
@@ -194,7 +219,9 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-stone-500 group-hover:text-stone-700">我加入的队伍</p>
-                    <p className="text-3xl font-bold text-stone-900 mt-1">{joinedTeams.length}</p>
+                    <p className="text-3xl font-bold text-stone-900 mt-1">
+                      {joinedTeamsLoading ? "-" : joinedTeams.length}
+                    </p>
                   </div>
                   <div className="h-12 w-12 bg-stone-100 rounded-full flex items-center justify-center group-hover:bg-stone-200 transition-colors">
                     <User className="h-6 w-6 text-stone-600" />
