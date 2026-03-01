@@ -34,7 +34,7 @@ export default async function AdminLayout({
 
       // 从数据库直接查询用户角色，因为 session.user 可能不包含自定义字段
       const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-      const { env } = await getCloudflareContext();
+      const { env } = await getCloudflareContext({ async: true });
       const db = drizzle(env.DB as D1Database, { schema });
 
       const users = await db
