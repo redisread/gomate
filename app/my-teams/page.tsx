@@ -15,6 +15,9 @@ import {
   User,
   ChevronRight,
   Clock,
+  Hourglass,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 
 import { Navbar } from "@/app/components/layout/navbar";
@@ -54,6 +57,40 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   closed: { label: "已结束", color: "bg-stone-100 text-stone-600" },
 };
 
+// 申请状态映射
+const applicationStatusLabels: Record<string, { label: string; color: string; icon: typeof Clock }> = {
+  pending: { label: "待审核", color: "bg-amber-100 text-amber-700", icon: Hourglass },
+  approved: { label: "已通过", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
+  rejected: { label: "已拒绝", color: "bg-red-100 text-red-700", icon: XCircle },
+};
+
+// 申请记录类型
+interface ApplicationRecord {
+  id: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: Date | string;
+  joinedAt: Date | string | null;
+  team: {
+    id: string;
+    title: string;
+    date: string | null;
+    time: string | null;
+    currentMembers: number;
+    maxMembers: number;
+    status: string;
+    location: {
+      id: string;
+      name: string;
+      coverImage: string;
+    } | null;
+    leader: {
+      id: string;
+      name: string;
+      image: string | null;
+    } | null;
+  } | null;
+}
+
 function MyTeamsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -69,6 +106,11 @@ function MyTeamsContent() {
   const [joinedTeams, setJoinedTeams] = React.useState<Team[]>([]);
   const [joinedTeamsLoading, setJoinedTeamsLoading] = React.useState(true);
 
+  // 用户申请记录状态
+  const [applications, setApplications] = React.useState<ApplicationRecord[]>([]);
+  const [applicationsLoading, setApplicationsLoading] = React.useState(true);
+  const [applicationStats, setApplicationStats] = React.useState({ pending: 0, approved: 0, rejected: 0 });
+
   // 未登录重定向
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -79,10 +121,39 @@ function MyTeamsContent() {
   // 当 URL 参数变化时更新 Tab
   React.useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab && ["created", "joined", "history"].includes(tab)) {
+    if (tab && ["created", "joined", "applications", "history"].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
+
+  // 加载用户申请记录
+  React.useEffect(() => {
+    const fetchApplications = async () => {
+      if (user?.id) {
+        try {
+          setApplicationsLoading(true);
+          const response = await fetch("/api/user/applications");
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              setApplications(result.applications || []);
+              setApplicationStats(result.stats || { pending: 0, approved: 0, rejected: 0 });
+            }
+          }
+        } catch (error) {
+          console.error("获取申请记录失败:", error);
+          setApplications([]);
+        } finally {
+          setApplicationsLoading(false);
+        }
+      } else {
+        setApplications([]);
+        setApplicationsLoading(false);
+      }
+    };
+
+    fetchApplications();
+  }, [user?.id]);
 
   // 加载用户加入的队伍
   React.useEffect(() => {
@@ -218,7 +289,86 @@ function MyTeamsContent() {
     );
   };
 
-  const EmptyState = ({ type }: { type: "created" | "joined" | "history" }) => {
+  // 申请卡片组件
+  const ApplicationCard = ({ application }: { application: ApplicationRecord }) => {
+    const team = application.team;
+    const appStatus = applicationStatusLabels[application.status] || applicationStatusLabels.pending;
+    const StatusIcon = appStatus.icon;
+
+    if (!team) return null;
+
+    return (
+      <Link href={`/teams/${team.id}`}>
+        <Card className="border-stone-200 hover:shadow-lg transition-all cursor-pointer group">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              {/* Location Image */}
+              <div
+                className="w-20 h-20 rounded-xl bg-cover bg-center flex-shrink-0"
+                style={{ backgroundImage: `url(${team.location?.coverImage})` }}
+              />
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-stone-900 group-hover:text-stone-700 transition-colors">
+                        {team.title}
+                      </h3>
+                    </div>
+                    <p className="text-sm text-stone-500 mt-1 flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {team.location?.name}
+                    </p>
+                  </div>
+                  <Badge className={appStatus.color}>
+                    <StatusIcon className="h-3 w-3 mr-1" />
+                    {appStatus.label}
+                  </Badge>
+                </div>
+
+                {/* Meta Info */}
+                <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-stone-500">
+                  {team.date && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {team.date}
+                    </span>
+                  )}
+                  {team.time && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {team.time}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    <span className={team.currentMembers >= team.maxMembers ? "text-amber-600" : "text-emerald-600"}>
+                      {team.currentMembers}/{team.maxMembers}人
+                    </span>
+                  </span>
+                </div>
+
+                {/* 队长信息 */}
+                {team.leader && (
+                  <div className="flex items-center gap-2 mt-3 text-sm text-stone-500">
+                    <span>队长：</span>
+                    <span className="font-medium text-stone-700">{team.leader.name}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Arrow */}
+              <ChevronRight className="h-5 w-5 text-stone-300 group-hover:text-stone-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+    );
+  };
+
+  const EmptyState = ({ type }: { type: "created" | "joined" | "applications" | "history" }) => {
     const configs = {
       created: {
         icon: Crown,
@@ -233,6 +383,13 @@ function MyTeamsContent() {
         description: "浏览地点，加入感兴趣的队伍",
         action: "探索地点",
         href: "/locations",
+      },
+      applications: {
+        icon: Hourglass,
+        title: "没有申请记录",
+        description: "浏览队伍，申请加入感兴趣的队伍",
+        action: "探索队伍",
+        href: "/teams",
       },
       history: {
         icon: Clock,
@@ -302,7 +459,7 @@ function MyTeamsContent() {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex bg-stone-100">
+            <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:inline-flex bg-stone-100">
               <TabsTrigger value="created" className="data-[state=active]:bg-white">
                 <Crown className="h-4 w-4 mr-2 sm:mr-1" />
                 <span className="hidden sm:inline">我创建的</span>
@@ -323,9 +480,20 @@ function MyTeamsContent() {
                   </span>
                 )}
               </TabsTrigger>
+              <TabsTrigger value="applications" className="data-[state=active]:bg-white">
+                <Hourglass className="h-4 w-4 mr-2 sm:mr-1" />
+                <span className="hidden sm:inline">申请记录</span>
+                <span className="sm:hidden">申请</span>
+                {applicationStats.pending > 0 && (
+                  <span className="ml-1.5 text-xs bg-amber-200 text-amber-700 px-1.5 py-0.5 rounded-full">
+                    {applicationStats.pending}
+                  </span>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="history" className="data-[state=active]:bg-white">
                 <Clock className="h-4 w-4 mr-2 sm:mr-1" />
-                历史
+                <span className="hidden sm:inline">历史</span>
+                <span className="sm:hidden">历史</span>
                 {historyTeams.length > 0 && (
                   <span className="ml-1.5 text-xs bg-stone-200 text-stone-700 px-1.5 py-0.5 rounded-full">
                     {historyTeams.length}
@@ -360,6 +528,24 @@ function MyTeamsContent() {
                 <div className="space-y-4">
                   {joinedTeams.map((team) => (
                     <TeamCard key={team.id} team={team} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Applications */}
+            <TabsContent value="applications" className="mt-6">
+              {applicationsLoading ? (
+                <div className="animate-pulse space-y-4">
+                  <div className="h-24 bg-stone-200 rounded" />
+                  <div className="h-24 bg-stone-200 rounded" />
+                </div>
+              ) : applications.length === 0 ? (
+                <EmptyState type="applications" />
+              ) : (
+                <div className="space-y-4">
+                  {applications.map((application) => (
+                    <ApplicationCard key={application.id} application={application} />
                   ))}
                 </div>
               )}
