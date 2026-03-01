@@ -98,6 +98,19 @@ export async function GET(
       'cancelled': 'closed',
     };
 
+    // 格式化已审核通过的成员列表
+    const approvedMembers = team.members
+      ?.filter((m: { status: string }) => m.status === "approved")
+      .map((m: { userId: string; role: string; joinedAt: Date | null; user: { id: string; name: string; image: string | null; bio: string | null; level: string | null } }) => ({
+        id: m.user?.id || m.userId,
+        name: m.user?.name || '未知用户',
+        image: m.user?.image || null,
+        bio: m.user?.bio || null,
+        level: m.user?.level || 'beginner',
+        role: m.role,
+        joinedAt: m.joinedAt,
+      })) || [];
+
     // 格式化返回数据，符合前端 Team 类型
     const formattedTeam = {
       id: team.id,
@@ -129,6 +142,7 @@ export async function GET(
         completedHikes: 0,
         bio: '',
       },
+      members: approvedMembers,
     };
 
     return NextResponse.json({

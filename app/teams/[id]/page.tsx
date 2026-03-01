@@ -14,6 +14,7 @@ import { TeamInfo } from "@/app/components/features/team-info";
 import { LeaderCard } from "@/app/components/features/leader-card";
 import { JoinButton } from "@/components/features/join-button";
 import { ApplicantList } from "@/components/features/applicant-list";
+import { MemberList } from "@/components/features/member-list";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocations } from "@/lib/locations-context";
@@ -226,6 +227,17 @@ export default function TeamPage({ params }: TeamPageProps) {
           <div className="lg:col-span-2 space-y-6">
             <TeamInfo team={team} />
 
+            {/* 队伍成员列表 */}
+            {team.members && team.members.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.15 }}
+              >
+                <MemberList members={team.members} leaderId={team.leader?.id} />
+              </motion.div>
+            )}
+
             {/* 队长审核申请面板 */}
             {isLeader && (
               <motion.div
@@ -358,9 +370,10 @@ export default function TeamPage({ params }: TeamPageProps) {
             team={team}
             userMemberStatus={userMemberStatus}
             onJoin={() => {
-              // 申请成功后刷新状态
+              // 申请成功后刷新状态和申请列表
               if (teamId) {
                 fetchUserMemberStatus(teamId);
+                fetchApplications(teamId);
               }
             }}
           />

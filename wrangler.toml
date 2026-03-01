@@ -3,6 +3,7 @@ main = ".open-next/worker.js"
 compatibility_date = "2026-02-26"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 logpush = false
+account_id = "e3afbb613458022947cd9dc9f5bd6334"
 
 # Static assets binding - required for OpenNext.js Cloudflare
 [assets]

@@ -32,6 +32,11 @@ function ApplicantList({ teamId, initialApplications = [] }: ApplicantListProps)
   const [loadingIds, setLoadingIds] = React.useState<Set<string>>(new Set());
   const [error, setError] = React.useState<string | null>(null);
 
+  // 当 initialApplications 变化时更新列表
+  React.useEffect(() => {
+    setApplications(initialApplications);
+  }, [initialApplications]);
+
   // 格式化申请时间
   const formatTime = (date: Date | string) => {
     const d = new Date(date);

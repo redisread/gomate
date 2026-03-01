@@ -38,6 +38,16 @@ export interface Location {
   };
 }
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  image: string | null;
+  bio: string | null;
+  level: string;
+  role: 'leader' | 'member';
+  joinedAt: Date | string | null;
+}
+
 export interface Team {
   id: string;
   locationId: string;
@@ -60,4 +70,5 @@ export interface Team {
   };
   status: 'open' | 'full' | 'closed';
   createdAt: string;
+  members?: TeamMember[]; // 已加入的成员列表
 }
