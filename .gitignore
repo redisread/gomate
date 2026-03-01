@@ -52,4 +52,4 @@ cloudflare-env.d.ts
 
 # backups
 .backup/
-.claude/worktree/*
+.claude/worktrees/
