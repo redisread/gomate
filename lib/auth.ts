@@ -132,7 +132,12 @@ export const createAuth = (env?: {
         },
       },
       secret: process.env.BETTER_AUTH_SECRET || "dev-secret-key",
-      baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8787",
+      baseURL: env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL || "http://localhost:8787",
+      trustedOrigins: [
+        "http://localhost:3000",
+        "http://localhost:8787",
+        "https://gomate.jiahongw.com",
+      ],
     });
   }
 
@@ -181,6 +186,11 @@ export const createAuth = (env?: {
     },
     secret: process.env.BETTER_AUTH_SECRET || "dev-secret-key",
     baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+    trustedOrigins: [
+      "http://localhost:3000",
+      "http://localhost:8787",
+      "https://gomate.jiahongw.com",
+    ],
   });
 };
 
