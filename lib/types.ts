@@ -46,6 +46,7 @@ export interface TeamMember {
   level: string;
   role: 'leader' | 'member';
   joinedAt: Date | string | null;
+  wechat?: string; // 微信号（仅队友可见）
 }
 
 export interface Team {

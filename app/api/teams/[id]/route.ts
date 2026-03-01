@@ -101,7 +101,7 @@ export async function GET(
     // 格式化已审核通过的成员列表
     const approvedMembers = team.members
       ?.filter((m: { status: string }) => m.status === "approved")
-      .map((m: { userId: string; role: string; joinedAt: Date | null; user: { id: string; name: string; image: string | null; bio: string | null; level: string | null } }) => ({
+      .map((m: { userId: string; role: string; joinedAt: Date | null; user: { id: string; name: string; image: string | null; bio: string | null; level: string | null; wechat: string | null } }) => ({
         id: m.user?.id || m.userId,
         name: m.user?.name || '未知用户',
         image: m.user?.image || null,
@@ -109,6 +109,8 @@ export async function GET(
         level: m.user?.level || 'beginner',
         role: m.role,
         joinedAt: m.joinedAt,
+        // 只有队伍成员可以看到其他成员的微信号
+        wechat: isTeamMember ? (m.user?.wechat || undefined) : undefined,
       })) || [];
 
     // 格式化返回数据，符合前端 Team 类型

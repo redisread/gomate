@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Users, Crown } from "lucide-react";
+import { Users, Crown, MessageCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -74,9 +74,18 @@ function MemberList({ members, leaderId }: MemberListProps) {
                       <Crown className="h-4 w-4 text-amber-500" />
                     )}
                   </div>
-                  <Badge variant="outline" className="text-xs mt-1">
-                    {getLevelName(member.level)}
-                  </Badge>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs">
+                      {getLevelName(member.level)}
+                    </Badge>
+                    {/* 显示微信号（仅队友可见） */}
+                    {member.wechat && (
+                      <div className="flex items-center gap-1 text-xs text-stone-500">
+                        <MessageCircle className="h-3 w-3" />
+                        <span className="truncate max-w-[100px]">{member.wechat}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );
