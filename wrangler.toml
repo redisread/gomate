@@ -91,3 +91,4 @@ mode = "smart"
 [vars]
 R2_PUBLIC_URL = "https://gomate.cos.jiahongw.com"
 RESEND_FROM_EMAIL = "GoMate <noreply@gomate.jiahongw.com>"
+NEXT_PUBLIC_APP_URL = "https://gomate.jiahongw.com"
