@@ -1,8 +1,8 @@
 "use server";
 
 import { getDB } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { users, teamMembers } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidateTag } from "next/cache";
@@ -39,6 +39,7 @@ export async function getUserProfile(userId: string) {
       bio: true,
       level: true,
       createdAt: true,
+      wechat: true,
     },
   });
 
@@ -51,6 +52,7 @@ export async function updateProfile(data: {
   bio?: string;
   level?: string;
   image?: string;
+  wechat?: string;
 }) {
   const auth = await getAuth();
   const session = await auth.api.getSession({
@@ -85,6 +87,7 @@ export async function updateProfile(data: {
       ...(data.bio !== undefined && { bio: data.bio }),
       ...(data.level && { level: data.level }),
       ...(data.image && { image: data.image }),
+      ...(data.wechat !== undefined && { wechat: data.wechat }),
       updatedAt: new Date(),
     })
     .where(eq(users.id, userId))
@@ -121,4 +124,68 @@ export async function isEmailVerified() {
   });
 
   return user?.emailVerified || false;
+}
+
+// 获取队友的微信号（仅限同队成员可见）
+export async function getTeammateWechat(userId: string) {
+  const auth = await getAuth();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user) {
+    throw new Error("请先登录");
+  }
+
+  const currentUserId = session.user.id;
+  const db = await getDB();
+
+  // 如果是查看自己的微信号，直接返回
+  if (currentUserId === userId) {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { wechat: true },
+    });
+    return user?.wechat || null;
+  }
+
+  // 检查是否是队友关系（两人都在同一个已审核通过的队伍中）
+  const currentUserTeams = await db
+    .selectDistinct({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(
+      and(
+        eq(teamMembers.userId, currentUserId),
+        eq(teamMembers.status, "approved")
+      )
+    )
+    .execute();
+
+  const targetUserTeams = await db
+    .selectDistinct({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(
+      and(
+        eq(teamMembers.userId, userId),
+        eq(teamMembers.status, "approved")
+      )
+    )
+    .execute();
+
+  // 检查是否有共同的队伍
+  const hasCommonTeam = currentUserTeams.some((t1) =>
+    targetUserTeams.some((t2) => t1.teamId === t2.teamId)
+  );
+
+  if (!hasCommonTeam) {
+    return null; // 不是队友，不返回微信号
+  }
+
+  // 返回目标用户的微信号
+  const targetUser = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { wechat: true },
+  });
+
+  return targetUser?.wechat || null;
 }

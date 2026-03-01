@@ -20,6 +20,7 @@ export const users = sqliteTable(
     image: text("image"), // 用户头像 URL
     bio: text("bio"), // 个人简介
     level: text("level").default("beginner"), // 领队等级: beginner(新手), intermediate(进阶), advanced(资深), expert(专家)
+    wechat: text("wechat"), // 微信号（可选，加入队伍时必填）
     completedHikes: integer("completed_hikes").default(0), // 完成徒步次数
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 账号创建时间
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 资料更新时间

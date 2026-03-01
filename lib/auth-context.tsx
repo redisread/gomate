@@ -13,6 +13,7 @@ export interface AuthUser {
   level: "beginner" | "intermediate" | "advanced" | "expert";
   completedHikes: number;
   bio: string;
+  wechat?: string;
   createdAt: string;
 }
 
@@ -82,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         level: (fullUser?.level !== undefined ? fullUser.level : session.user.level as AuthUser["level"]) || "beginner",
         completedHikes: fullUser?.completedHikes !== undefined ? fullUser.completedHikes : ((session.user as unknown as { completedHikes?: number }).completedHikes || 0),
         bio: fullUser?.bio !== undefined ? fullUser.bio : "新人户外爱好者，期待与你一起探索山野。",
+        wechat: fullUser?.wechat,
         createdAt: fullUser?.createdAt !== undefined ? fullUser.createdAt : createdAtStr,
       };
       setUser(authUser);
@@ -118,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             bio: fullUser.bio !== undefined ? fullUser.bio : prev.bio,
             level: (fullUser.level !== undefined ? fullUser.level : prev.level) || "beginner",
             completedHikes: fullUser.completedHikes !== undefined ? fullUser.completedHikes : prev.completedHikes,
+            wechat: fullUser.wechat !== undefined ? fullUser.wechat : prev.wechat,
           };
         });
       }

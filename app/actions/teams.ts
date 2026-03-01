@@ -5,6 +5,7 @@ import {
   teams,
   teamMembers,
   locations,
+  users,
   TeamStatus,
 } from "@/db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -193,6 +194,16 @@ export async function joinTeam(teamId: string) {
   }
 
   const db = await getDB();
+
+  // 检查用户是否已填写微信号
+  const userRecord = await db.query.users.findFirst({
+    where: eq(users.id, user.id),
+    columns: { wechat: true },
+  });
+
+  if (!userRecord?.wechat) {
+    throw new Error(copy.errors.wechatRequired);
+  }
 
   // 获取队伍信息
   const team = await db.query.teams.findFirst({

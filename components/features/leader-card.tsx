@@ -8,6 +8,8 @@ import {
   Star,
   MessageCircle,
   Shield,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import type { Team } from "@/lib/types";
 import { leaderLevelLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { copy as copyText } from "@/lib/copy";
 
 interface LeaderCardProps {
   team: Team;
@@ -38,6 +41,15 @@ const levelStars: Record<string, number> = {
 
 function LeaderCard({ team, className }: LeaderCardProps) {
   const { leader } = team;
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopyWechat = async () => {
+    if (leader.wechat) {
+      await navigator.clipboard.writeText(leader.wechat);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <motion.div
@@ -121,13 +133,39 @@ function LeaderCard({ team, className }: LeaderCardProps) {
           </div>
 
           {/* Contact Button */}
-          <Button
-            variant="outline"
-            className="w-full border-stone-300 hover:bg-stone-50"
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            联系领队
-          </Button>
+          {leader.wechat ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-stone-100 rounded-lg">
+                <div>
+                  <p className="text-xs text-stone-500">微信号</p>
+                  <p className="font-medium text-stone-900">{leader.wechat}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyWechat}
+                  className="h-8 w-8 p-0"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-stone-600" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-stone-400 text-center">
+                复制微信号，添加领队为好友
+              </p>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full border-stone-300 hover:bg-stone-50"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              联系领队
+            </Button>
+          )}
         </CardContent>
       </Card>
     </motion.div>

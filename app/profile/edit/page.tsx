@@ -37,6 +37,7 @@ export default function EditProfilePage() {
     name: "",
     bio: "",
     level: "beginner" as const,
+    wechat: "",
   });
   const [isSaving, setIsSaving] = React.useState(false);
   const [message, setMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -54,6 +55,7 @@ export default function EditProfilePage() {
         name: user.name,
         bio: user.bio,
         level: user.level,
+        wechat: user.wechat || "",
       });
       setAvatarPreview(user.avatar);
     }
@@ -180,6 +182,7 @@ export default function EditProfilePage() {
           image: avatarUrl === DEFAULT_AVATAR ? null : avatarUrl,
           bio: formData.bio,
           level: formData.level,
+          wechat: formData.wechat,
         }),
       });
 
@@ -377,6 +380,21 @@ export default function EditProfilePage() {
                       </label>
                     ))}
                   </div>
+                </div>
+
+                {/* WeChat ID */}
+                <div className="space-y-2">
+                  <Label htmlFor="wechat">{copy.profile.wechat}</Label>
+                  <Input
+                    id="wechat"
+                    name="wechat"
+                    value={formData.wechat}
+                    onChange={handleInputChange}
+                    maxLength={50}
+                    className="border-stone-200"
+                    placeholder={copy.profile.wechatPlaceholder}
+                  />
+                  <p className="text-xs text-stone-500">{copy.profile.wechatHint}</p>
                 </div>
 
                 {/* Email (Read-only) */}

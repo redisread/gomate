@@ -56,6 +56,7 @@ export interface Team {
     level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
     completedHikes: number;
     bio: string;
+    wechat?: string; // 微信号（仅队友可见）
   };
   status: 'open' | 'full' | 'closed';
   createdAt: string;
