@@ -260,9 +260,10 @@ export default function TeamPage({ params }: TeamPageProps) {
                   teamId={teamId}
                   initialApplications={applications}
                   onApprove={() => {
-                    // 审核通过后刷新队伍数据（包含成员列表）
+                    // 审核通过后刷新队伍数据（包含成员列表）和申请列表
                     if (teamId) {
                       fetchTeam(teamId);
+                      fetchApplications(teamId);
                     }
                   }}
                 />
