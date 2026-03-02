@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Plus, X, Clock, Users, Calendar } from "lucide-react";
+import { ArrowLeft, Clock, Users, Calendar } from "lucide-react";
 
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { RequirementSelector } from "@/components/ui/requirement-selector";
 import { useAuth } from "@/lib/auth-context";
 import { copy } from "@/lib/copy";
 import type { Team } from "@/lib/types";
@@ -42,7 +42,6 @@ function EditTeamForm({ params }: EditTeamPageProps) {
   });
 
   const [requirements, setRequirements] = React.useState<string[]>([]);
-  const [newRequirement, setNewRequirement] = React.useState("");
 
   // 获取队伍数据
   React.useEffect(() => {
@@ -109,17 +108,6 @@ function EditTeamForm({ params }: EditTeamPageProps) {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddRequirement = () => {
-    if (newRequirement.trim() && !requirements.includes(newRequirement.trim())) {
-      setRequirements((prev) => [...prev, newRequirement.trim()]);
-      setNewRequirement("");
-    }
-  };
-
-  const handleRemoveRequirement = (req: string) => {
-    setRequirements((prev) => prev.filter((r) => r !== req));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -324,48 +312,11 @@ function EditTeamForm({ params }: EditTeamPageProps) {
                   {/* 加入要求 */}
                   <div className="space-y-2">
                     <Label>{copy.teams.formLabel.requirements}</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder={copy.teams.formPlaceholder.requirements}
-                        value={newRequirement}
-                        onChange={(e) => setNewRequirement(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAddRequirement();
-                          }
-                        }}
-                        className="border-stone-200"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddRequirement}
-                        className="border-stone-200"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {requirements.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {requirements.map((req) => (
-                          <Badge
-                            key={req}
-                            variant="secondary"
-                            className="bg-stone-100 text-stone-700 hover:bg-stone-200 px-3 py-1"
-                          >
-                            {req}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveRequirement(req)}
-                              className="ml-2 hover:text-red-500"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                    <RequirementSelector
+                      value={requirements}
+                      onChange={setRequirements}
+                      placeholder={copy.teams.formPlaceholder.requirements}
+                    />
                   </div>
 
                   {/* 提交按钮 */}

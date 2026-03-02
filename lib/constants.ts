@@ -15,3 +15,17 @@ export const leaderLevelLabels: Record<string, string> = {
   advanced: '巅峰行者领队',
   expert: '传奇徒步家领队',
 };
+
+// 预设参与要求标签
+export const REQUIREMENT_PRESETS = [
+  // 装备类
+  "防滑鞋", "手套", "头灯", "登山杖", "防晒用品", "保暖衣物",
+  // 经验类
+  "有徒步经验", "有夜爬经验", "体能较好",
+  // 行为类
+  "准时", "能早起", "不怕晒",
+  // 特殊类
+  "家长陪同", "自备装备",
+] as const;
+
+export type RequirementPreset = typeof REQUIREMENT_PRESETS[number];
