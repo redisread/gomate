@@ -218,7 +218,7 @@ export default function TeamPage({ params }: TeamPageProps) {
       </motion.div>
 
       {/* Team Header */}
-      <TeamHeader team={team} location={location} />
+      <TeamHeader team={team} location={location} isLeader={isLeader} />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32">

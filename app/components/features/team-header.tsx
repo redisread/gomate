@@ -10,19 +10,23 @@ import {
   Calendar,
   Clock,
   MapPin,
+  Edit,
 } from "lucide-react";
 import { ShareTeamDialog } from "@/components/features/share-team-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { Team, Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { copy } from "@/lib/copy";
 
 interface TeamHeaderProps {
   team: Team;
   location: Location;
+  isLeader?: boolean;
   className?: string;
 }
 
-function TeamHeader({ team, location, className }: TeamHeaderProps) {
+function TeamHeader({ team, location, isLeader = false, className }: TeamHeaderProps) {
   const [isShareOpen, setIsShareOpen] = React.useState(false);
 
   const statusConfig = {
@@ -50,13 +54,23 @@ function TeamHeader({ team, location, className }: TeamHeaderProps) {
             <ChevronLeft className="h-4 w-4" />
             返回地点
           </Link>
-          <button
-            onClick={() => setIsShareOpen(!isShareOpen)}
-            className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
-            aria-label="分享"
-          >
-            <Share2 className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {isLeader && (
+              <Link href={`/teams/${team.id}/edit`}>
+                <Button variant="outline" size="sm" className="text-sm">
+                  <Edit className="h-4 w-4 mr-1" />
+                  {copy.teams.editBtn}
+                </Button>
+              </Link>
+            )}
+            <button
+              onClick={() => setIsShareOpen(!isShareOpen)}
+              className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
+              aria-label="分享"
+            >
+              <Share2 className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Title Section */}

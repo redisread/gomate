@@ -270,6 +270,15 @@ export const copy = {
     // 领队联系方式
     contactAfterJoin: "加入队伍后可查看领队联系方式",
     viewContact: "查看联系方式",
+
+    // 编辑队伍
+    editTitle: "编辑队伍",
+    editSubtitle: "更新队伍信息",
+    editBtn: "编辑队伍",
+    editBtnLoading: "保存中...",
+    editSuccess: "队伍信息已更新",
+    editFailed: "更新队伍失败",
+    notLeader: "只有队长可以编辑队伍信息",
   },
 
   // ─── 个人资料 ─────────────────────────────────────────────────────────────

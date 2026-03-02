@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { revalidateTag } from "next/cache";
+import { copy } from "@/lib/copy";
 
 // 动态导入 @opennextjs/cloudflare 以避免构建时错误
 const getCloudflareContext = async () => {
@@ -156,6 +158,136 @@ export async function GET(
     console.error("Get team error:", error);
     return NextResponse.json(
       { error: "获取队伍详情失败", message: (error as Error).message },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PUT /api/teams/[id]
+ * 更新队伍信息（仅队长可操作）
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // 验证登录状态
+    const auth = await getAuth();
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: copy.errors.loginRequired },
+        { status: 401 }
+      );
+    }
+
+    const { id: teamId } = await params;
+    const { env } = await getCloudflareContext();
+
+    if (!env.DB) {
+      return NextResponse.json(
+        { success: false, error: "Database not configured" },
+        { status: 500 }
+      );
+    }
+
+    const db = env.DB as D1Database;
+
+    // 初始化 Drizzle ORM
+    const { drizzle } = await import("drizzle-orm/d1");
+    const schema = await import("@/db/schema");
+    const { eq } = await import("drizzle-orm");
+    const ormDb = drizzle(db, { schema });
+
+    // 获取队伍信息
+    const teams = await ormDb.query.teams.findMany({
+      where: eq(schema.teams.id, teamId),
+      with: {
+        location: true,
+      },
+      limit: 1,
+    });
+    const team = teams[0];
+
+    if (!team) {
+      return NextResponse.json(
+        { success: false, error: copy.errors.teamNotFound },
+        { status: 404 }
+      );
+    }
+
+    // 检查是否是队长
+    if (team.leaderId !== session.user.id) {
+      return NextResponse.json(
+        { success: false, error: copy.teams.notLeader },
+        { status: 403 }
+      );
+    }
+
+    // 解析请求体
+    const body = await request.json();
+    const { title, description, date, time, maxMembers, requirements } = body;
+
+    // 验证必填字段
+    if (!title || !date || !time || !maxMembers) {
+      return NextResponse.json(
+        { success: false, error: "缺少必填字段" },
+        { status: 400 }
+      );
+    }
+
+    // 解析日期时间
+    const startTime = new Date(`${date}T${time}`);
+    if (isNaN(startTime.getTime())) {
+      return NextResponse.json(
+        { success: false, error: "无效的日期或时间格式" },
+        { status: 400 }
+      );
+    }
+
+    // 估算结束时间（保持原有时长或默认4小时）
+    const originalDuration = team.endTime
+      ? new Date(team.endTime).getTime() - new Date(team.startTime).getTime()
+      : 4 * 60 * 60 * 1000;
+    const endTime = new Date(startTime.getTime() + originalDuration);
+
+    // 更新队伍信息
+    await ormDb
+      .update(schema.teams)
+      .set({
+        title,
+        description: description || null,
+        startTime,
+        endTime,
+        maxMembers,
+        requirements: requirements ? JSON.stringify(requirements) : null,
+        status: maxMembers <= team.currentMembers ? "full" : team.status,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.teams.id, teamId));
+
+    // 清除缓存
+    revalidateTag(`team-${teamId}`);
+    revalidateTag("teams");
+    if (team.location?.slug) {
+      revalidateTag(`location-${team.location.slug}`);
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: copy.teams.editSuccess,
+    });
+  } catch (error) {
+    console.error("Update team error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : copy.teams.editFailed,
+      },
       { status: 500 }
     );
   }
