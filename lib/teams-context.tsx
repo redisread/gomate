@@ -50,7 +50,7 @@ function formatTeamFromDB(apiTeam: Record<string, unknown>): Team {
       name: (apiTeam.leader as Record<string, unknown>).name as string,
       avatar: (apiTeam.leader as Record<string, unknown>).avatar as string || (apiTeam.leader as Record<string, unknown>).image as string || "",
       level: ((apiTeam.leader as Record<string, unknown>).level as string) || "beginner",
-      completedHikes: 0,
+      completedHikes: ((apiTeam.leader as Record<string, unknown>).completedHikes as number) || 0,
       bio: (apiTeam.leader as Record<string, unknown>).bio as string || "",
     } : {
       id: "unknown",
@@ -131,14 +131,14 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
         name: apiTeam.leader.name,
         avatar: apiTeam.leader.avatar || apiTeam.leader.image || "",
         level: apiTeam.leader.level || "beginner",
-        completedHikes: 0,
+        completedHikes: apiTeam.leader.completedHikes || 0,
         bio: apiTeam.leader.bio || "",
       } : {
         id: user?.id || "unknown",
         name: user?.name || copy.common.unknown,
         avatar: user?.avatar || "",
         level: user?.level || "beginner",
-        completedHikes: 0,
+        completedHikes: user?.completedHikes || 0,
         bio: "",
       },
     };

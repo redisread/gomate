@@ -135,7 +135,7 @@ export async function GET(
         name: team.leader.name,
         avatar: team.leader.image || '',
         level: (team.leader.level || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
-        completedHikes: 0,
+        completedHikes: team.leader.completedHikes || 0,
         bio: team.leader.bio || '',
         // 只有队长自己或队伍成员可以看到队长的微信号
         wechat: (isTeamMember || currentUserId === team.leader.id) ? (team.leader.wechat || '') : undefined,

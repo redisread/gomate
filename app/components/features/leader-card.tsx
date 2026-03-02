@@ -4,7 +4,6 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import {
   Mountain,
-  Star,
   MessageCircle,
   Shield,
   Copy,
@@ -31,13 +30,6 @@ const levelColors: Record<string, string> = {
   intermediate: "bg-blue-100 text-blue-700",
   advanced: "bg-purple-100 text-purple-700",
   expert: "bg-amber-100 text-amber-700",
-};
-
-const levelStars: Record<string, number> = {
-  beginner: 1,
-  intermediate: 2,
-  advanced: 3,
-  expert: 4,
 };
 
 function LeaderCard({ team, isTeamMember = false, className }: LeaderCardProps) {
@@ -87,41 +79,17 @@ function LeaderCard({ team, isTeamMember = false, className }: LeaderCardProps) 
                 >
                   {leaderLevelLabels[leader.level]}
                 </Badge>
+                <span className="flex items-center gap-1 text-sm text-stone-500">
+                  <Mountain className="h-3.5 w-3.5" />
+                  {leader.completedHikes}次带队
+                </span>
               </div>
-
-              {/* Level Stars */}
-              <div className="flex items-center gap-1 mt-1">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={cn(
-                      "h-4 w-4",
-                      i < levelStars[leader.level]
-                        ? "text-amber-400 fill-amber-400"
-                        : "text-stone-200"
-                    )}
-                  />
-                ))}
-              </div>
+              {leader.bio && (
+                <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                  {leader.bio}
+                </p>
+              )}
             </div>
-          </div>
-
-          {/* Stats */}
-          <div className="p-4 bg-stone-50 rounded-xl">
-            <div className="flex items-center justify-center gap-2 text-stone-500 mb-1">
-              <Mountain className="h-4 w-4" />
-              <span className="text-sm">带队次数</span>
-            </div>
-            <p className="text-2xl font-bold text-stone-900 text-center">
-              {leader.completedHikes}
-            </p>
-          </div>
-
-          {/* Bio */}
-          <div className="p-4 bg-stone-50 rounded-xl">
-            <p className="text-sm text-stone-600 leading-relaxed">
-              {leader.bio}
-            </p>
           </div>
 
           {/* Contact Section */}

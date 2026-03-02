@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Check, Loader2, Users, Clock, RefreshCw, AlertCircle, LogOut } from "lucide-react";
+import { Check, Loader2, Users, Clock, RefreshCw, AlertCircle, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -235,8 +235,18 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
           <div className="flex-1">
             <p className="text-sm text-stone-500">{getStatusText()}</p>
           </div>
-          {/* 如果不是队长，则显示申请加入/退出队伍按钮 */}
-          {!isLeader && (
+          {isLeader ? (
+            <div className="flex items-center gap-2 text-stone-600">
+              <Shield className="h-5 w-5 text-amber-600" />
+              <span>你是队长</span>
+              <Link href={`/teams/${team.id}/edit`} className="ml-auto">
+                <Button variant="outline" size="sm">
+                  管理队伍
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            // 非队长显示申请加入/退出队伍按钮
             joinState === "wechat_required" ? (
               <Button
                 size="lg"

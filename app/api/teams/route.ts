@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
           name: row.leader.name,
           avatar: row.leader.image || '',
           level: (row.leader.level || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
-          completedHikes: 0,
+          completedHikes: row.leader.completedHikes || 0,
           bio: '',
         } : {
           id: 'unknown',
