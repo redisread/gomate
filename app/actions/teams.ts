@@ -541,17 +541,20 @@ export async function removeMember(teamId: string, userId: string) {
     throw new Error(copy.teams.cannotRemoveSelf);
   }
 
-  // 获取成员记录
+  // 获取成员记录 - 同时检查 pending 和 approved 状态
   const membership = await db.query.teamMembers.findFirst({
     where: and(
       eq(teamMembers.teamId, teamId),
-      eq(teamMembers.userId, userId),
-      eq(teamMembers.status, "approved")
+      eq(teamMembers.userId, userId)
     ),
   });
 
   if (!membership) {
     throw new Error("该用户不是队伍成员");
+  }
+
+  if (membership.status !== "approved") {
+    throw new Error("该成员尚未通过审核");
   }
 
   // 不能移除队长（虽然理论上不会发生，但作为安全检查）
