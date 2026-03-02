@@ -3,11 +3,13 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import {
-  Award,
   Mountain,
   Star,
   MessageCircle,
   Shield,
+  Copy,
+  Check,
+  Lock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,9 +18,11 @@ import { Button } from "@/components/ui/button";
 import type { Team } from "@/lib/types";
 import { leaderLevelLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { copy as copyText } from "@/lib/copy";
 
 interface LeaderCardProps {
   team: Team;
+  isTeamMember?: boolean; // 是否是队伍成员（已批准）
   className?: string;
 }
 
@@ -36,8 +40,17 @@ const levelStars: Record<string, number> = {
   expert: 4,
 };
 
-function LeaderCard({ team, className }: LeaderCardProps) {
+function LeaderCard({ team, isTeamMember = false, className }: LeaderCardProps) {
   const { leader } = team;
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopyWechat = async () => {
+    if (leader.wechat) {
+      await navigator.clipboard.writeText(leader.wechat);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <motion.div
@@ -94,23 +107,14 @@ function LeaderCard({ team, className }: LeaderCardProps) {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-stone-50 rounded-xl text-center">
-              <div className="flex items-center justify-center gap-1 text-stone-500 mb-1">
-                <Mountain className="h-4 w-4" />
-                <span className="text-xs">带队次数</span>
-              </div>
-              <p className="text-xl font-bold text-stone-900">
-                {leader.completedHikes}
-              </p>
+          <div className="p-4 bg-stone-50 rounded-xl">
+            <div className="flex items-center justify-center gap-2 text-stone-500 mb-1">
+              <Mountain className="h-4 w-4" />
+              <span className="text-sm">带队次数</span>
             </div>
-            <div className="p-3 bg-stone-50 rounded-xl text-center">
-              <div className="flex items-center justify-center gap-1 text-stone-500 mb-1">
-                <Award className="h-4 w-4" />
-                <span className="text-xs">好评率</span>
-              </div>
-              <p className="text-xl font-bold text-stone-900">98%</p>
-            </div>
+            <p className="text-2xl font-bold text-stone-900 text-center">
+              {leader.completedHikes}
+            </p>
           </div>
 
           {/* Bio */}
@@ -120,14 +124,42 @@ function LeaderCard({ team, className }: LeaderCardProps) {
             </p>
           </div>
 
-          {/* Contact Button */}
-          <Button
-            variant="outline"
-            className="w-full border-stone-300 hover:bg-stone-50"
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            联系领队
-          </Button>
+          {/* Contact Section */}
+          {isTeamMember && leader.wechat ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-stone-100 rounded-lg">
+                <div>
+                  <p className="text-xs text-stone-500">微信号</p>
+                  <p className="font-medium text-stone-900">{leader.wechat}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyWechat}
+                  className="h-8 w-8 p-0"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-stone-600" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-stone-400 text-center">
+                复制微信号，添加领队为好友
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 bg-stone-50 rounded-xl text-center">
+              <div className="flex items-center justify-center gap-2 text-stone-400 mb-2">
+                <Lock className="h-4 w-4" />
+                <span className="text-sm">{copyText.teams.contactAfterJoin}</span>
+              </div>
+              <p className="text-xs text-stone-400">
+                成为队伍成员后即可查看领队微信号
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>

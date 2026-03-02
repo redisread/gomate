@@ -266,6 +266,10 @@ export const copy = {
     removeMemberFailed: "移除成员失败",
     cannotRemoveSelf: "不能移除自己",
     cannotRemoveLeader: "不能移除队长",
+
+    // 领队联系方式
+    contactAfterJoin: "加入队伍后可查看领队联系方式",
+    viewContact: "查看联系方式",
   },
 
   // ─── 个人资料 ─────────────────────────────────────────────────────────────
