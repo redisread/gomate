@@ -284,39 +284,92 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <>
               {/* Created Teams */}
-              {createdTeams.slice(0, 3).map((team) => {
-                const location = locations.find((l) => l.id === team.locationId);
-                return (
-                  <Link key={team.id} href={`/teams/${team.id}`}>
-                    <Card className="border-stone-200 hover:shadow-md transition-all cursor-pointer mb-4">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
-                          <div
-                            className="w-16 h-16 rounded-lg bg-cover bg-center flex-shrink-0"
-                            style={{ backgroundImage: `url(${location?.coverImage})` }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-stone-900 truncate">
-                                {team.title}
-                              </h3>
-                              <Badge variant="secondary" className="text-xs">
-                                队长
-                              </Badge>
+              {createdTeams.length > 0 && (
+                <div className="space-y-4 mb-8">
+                  {createdTeams.slice(0, 3).map((team) => {
+                    const location = locations.find((l) => l.id === team.locationId);
+                    return (
+                      <Link key={team.id} href={`/teams/${team.id}`}>
+                        <Card className="border-stone-200 hover:shadow-md transition-all cursor-pointer mb-4">
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-4">
+                              <div
+                                className="w-16 h-16 rounded-lg bg-cover bg-center flex-shrink-0"
+                                style={{ backgroundImage: `url(${location?.coverImage})` }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-semibold text-stone-900 truncate">
+                                    {team.title}
+                                  </h3>
+                                  <Badge variant="secondary" className="text-xs">
+                                    队长
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-stone-500 mt-1">
+                                  {location?.name} · {team.date} · {team.currentMembers}/{team.maxMembers}人
+                                </p>
+                              </div>
                             </div>
-                            <p className="text-sm text-stone-500 mt-1">
-                              {location?.name} · {team.date} · {team.currentMembers}/{team.maxMembers}人
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Joined Teams */}
+              {joinedTeams.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-6 mt-8">
+                    <div>
+                      <h2 className="text-xl font-bold text-stone-900">最近加入的队伍</h2>
+                      <p className="text-sm text-stone-500 mt-1">你作为成员参与的队伍</p>
+                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href="/my-teams?tab=joined">
+                        查看全部
+                      </Link>
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {joinedTeams.slice(0, 3).map((team) => {
+                      const location = locations.find((l) => l.id === team.locationId);
+                      return (
+                        <Link key={team.id} href={`/teams/${team.id}`}>
+                          <Card className="border-stone-200 hover:shadow-md transition-all cursor-pointer mb-4">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-4">
+                                <div
+                                  className="w-16 h-16 rounded-lg bg-cover bg-center flex-shrink-0"
+                                  style={{ backgroundImage: `url(${location?.coverImage})` }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-semibold text-stone-900 truncate">
+                                      {team.title}
+                                    </h3>
+                                    <Badge variant="outline" className="text-xs">
+                                      成员
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-stone-500 mt-1">
+                                    {location?.name} · {team.date} · {team.currentMembers}/{team.maxMembers}人
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </motion.div>
       </div>
