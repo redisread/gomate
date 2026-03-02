@@ -243,7 +243,6 @@ export const copy = {
 
     // 操作
     joinTeam: "申请加入",
-    leaveTeam: "退出队伍",
     viewLocationDetail: "查看地点详情",
     leader: "队长",
 
@@ -252,6 +251,21 @@ export const copy = {
     statusApproved: "已加入队伍",
     statusRejected: "申请被拒绝",
     reapply: "重新申请",
+
+    // 退出队伍
+    leaveTeam: "退出队伍",
+    leaveTeamConfirm: "确定要退出队伍吗？",
+    leaveTeamWarning: "退出后需要重新申请才能加入",
+    leaveTeamSuccess: "已退出队伍",
+    leaveTeamFailed: "退出队伍失败",
+
+    // 移除成员
+    removeMember: "移除",
+    removeMemberConfirm: "确定要将该成员移出队伍吗？",
+    removeMemberSuccess: "已将该成员移出队伍",
+    removeMemberFailed: "移除成员失败",
+    cannotRemoveSelf: "不能移除自己",
+    cannotRemoveLeader: "不能移除队长",
   },
 
   // ─── 个人资料 ─────────────────────────────────────────────────────────────
@@ -469,6 +483,7 @@ export const copy = {
     onlyLeaderCanReview: "只有队长可以审核成员",
     teamAlreadyFull: "队伍已满，无法批准新成员",
     applicationNotFound: "未找到该成员的申请",
+    notMember: "你不是该队伍的成员",
 
     // 地点
     locationLoadFailed: "加载地点列表失败",

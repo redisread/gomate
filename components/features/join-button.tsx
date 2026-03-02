@@ -2,25 +2,40 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Check, Loader2, Users, Clock, RefreshCw, AlertCircle } from "lucide-react";
+import { Check, Loader2, Users, Clock, RefreshCw, AlertCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { copy } from "@/lib/copy";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface JoinButtonProps {
   team: Team;
   className?: string;
   onJoin?: () => void;
+  onLeave?: () => void;
   userMemberStatus?: "pending" | "approved" | "rejected" | null;
 }
 
-type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" | "approved" | "rejected" | "wechat_required";
+type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" | "approved" | "rejected" | "wechat_required" | "leaving";
 
-function JoinButton({ team, className, onJoin, userMemberStatus }: JoinButtonProps) {
+function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: JoinButtonProps) {
   const { user } = useAuth();
+  const router = useRouter();
+
   // 根据用户成员状态和队伍状态初始化
   const getInitialState = React.useCallback((): JoinState => {
     if (userMemberStatus === "approved") return "approved";
@@ -32,6 +47,7 @@ function JoinButton({ team, className, onJoin, userMemberStatus }: JoinButtonPro
   }, [userMemberStatus, team.status]);
 
   const [joinState, setJoinState] = React.useState<JoinState>(getInitialState);
+  const [showLeaveDialog, setShowLeaveDialog] = React.useState(false);
 
   // 当 userMemberStatus 或 team.status 变化时更新状态
   React.useEffect(() => {
@@ -56,7 +72,7 @@ function JoinButton({ team, className, onJoin, userMemberStatus }: JoinButtonPro
         body: JSON.stringify({ teamId: team.id }),
       });
 
-      const result = await response.json();
+      const result = await response.json() as { success?: boolean; error?: string };
 
       if (response.ok && result.success) {
         setJoinState("pending");
@@ -142,6 +158,40 @@ function JoinButton({ team, className, onJoin, userMemberStatus }: JoinButtonPro
       className: "border-amber-500 text-amber-600",
       disabled: false,
     },
+    leaving: {
+      text: copy.common.loading,
+      icon: Loader2,
+      variant: "default" as const,
+      className: "bg-stone-700 text-white cursor-not-allowed",
+      disabled: true,
+    },
+  };
+
+  // 退出队伍处理函数
+  const handleLeave = async () => {
+    setJoinState("leaving");
+    setShowLeaveDialog(false);
+
+    try {
+      const response = await fetch(`/api/teams/${team.id}/leave`, {
+        method: 'POST',
+      });
+
+      const result = await response.json() as { success?: boolean; error?: string };
+
+      if (response.ok && result.success) {
+        // 退出成功后刷新页面或调用回调
+        onLeave?.();
+        router.refresh();
+      } else {
+        alert(result.error || copy.teams.leaveTeamFailed);
+        setJoinState("approved");
+      }
+    } catch (error) {
+      console.error("Leave team error:", error);
+      alert(copy.api.networkError);
+      setJoinState("approved");
+    }
   };
 
   const config = buttonConfig[joinState];
@@ -179,7 +229,7 @@ function JoinButton({ team, className, onJoin, userMemberStatus }: JoinButtonPro
           <div className="flex-1">
             <p className="text-sm text-stone-500">{getStatusText()}</p>
           </div>
-          {/* 如果不是队长，则显示申请加入按钮 */}
+          {/* 如果不是队长，则显示申请加入/退出队伍按钮 */}
           {!isLeader && (
             joinState === "wechat_required" ? (
               <Button
@@ -191,6 +241,47 @@ function JoinButton({ team, className, onJoin, userMemberStatus }: JoinButtonPro
                 <Link href="/profile/edit">
                   去填写
                 </Link>
+              </Button>
+            ) : joinState === "approved" ? (
+              // 已加入状态显示退出队伍按钮
+              <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="px-8 border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut className="h-5 w-5 mr-2" />
+                    {copy.teams.leaveTeam}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{copy.teams.leaveTeamConfirm}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {copy.teams.leaveTeamWarning}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{copy.common.cancel}</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleLeave}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {copy.common.confirm}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : joinState === "leaving" ? (
+              <Button
+                size="lg"
+                variant="default"
+                disabled
+                className="px-8 bg-stone-700 text-white cursor-not-allowed"
+              >
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                {copy.common.loading}
               </Button>
             ) : (
               <Button

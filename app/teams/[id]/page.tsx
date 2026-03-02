@@ -234,7 +234,18 @@ export default function TeamPage({ params }: TeamPageProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.15 }}
               >
-                <MemberList members={team.members} leaderId={team.leader?.id} />
+                <MemberList
+                  members={team.members}
+                  leaderId={team.leader?.id}
+                  teamId={teamId}
+                  isLeader={isLeader}
+                  onMemberRemoved={() => {
+                    // 移除成员后刷新队伍数据
+                    if (teamId) {
+                      fetchTeam(teamId);
+                    }
+                  }}
+                />
               </motion.div>
             )}
 

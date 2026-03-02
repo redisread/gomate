@@ -509,6 +509,79 @@ export async function dissolveTeam(teamId: string) {
   return { success: true, message: copy.success.dissolved };
 }
 
+// 移除成员（队长踢人）
+export async function removeMember(teamId: string, userId: string) {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    throw new Error(copy.errors.loginRequired);
+  }
+
+  const db = await getDB();
+
+  // 获取队伍信息
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamId),
+    with: {
+      location: true,
+    },
+  });
+
+  if (!team) {
+    throw new Error(copy.errors.teamNotFound);
+  }
+
+  // 检查是否是队长
+  if (team.leaderId !== currentUser.id) {
+    throw new Error("只有队长可以移除成员");
+  }
+
+  // 不能移除自己
+  if (userId === currentUser.id) {
+    throw new Error(copy.teams.cannotRemoveSelf);
+  }
+
+  // 获取成员记录
+  const membership = await db.query.teamMembers.findFirst({
+    where: and(
+      eq(teamMembers.teamId, teamId),
+      eq(teamMembers.userId, userId),
+      eq(teamMembers.status, "approved")
+    ),
+  });
+
+  if (!membership) {
+    throw new Error("该用户不是队伍成员");
+  }
+
+  // 不能移除队长（虽然理论上不会发生，但作为安全检查）
+  if (membership.role === "leader") {
+    throw new Error(copy.teams.cannotRemoveLeader);
+  }
+
+  // 删除成员记录
+  await db.delete(teamMembers).where(eq(teamMembers.id, membership.id));
+
+  // 更新队伍人数
+  const newMemberCount = Math.max(1, team.currentMembers - 1);
+
+  await db
+    .update(teams)
+    .set({
+      currentMembers: newMemberCount,
+      status: newMemberCount < team.maxMembers ? "recruiting" : team.status,
+      updatedAt: new Date(),
+    })
+    .where(eq(teams.id, teamId));
+
+  // 清除缓存
+  revalidateTag(`team-${teamId}`);
+  revalidateTag("teams");
+  revalidateTag(`location-${team.location.slug}`);
+
+  return { success: true, message: copy.teams.removeMemberSuccess };
+}
+
 // 获取用户的队伍列表
 export async function getUserTeams() {
   const user = await getCurrentUser();
