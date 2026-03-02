@@ -240,11 +240,31 @@ export const copy = {
     statusRecruiting: "招募中",
     statusFull: "已满员",
     statusEnded: "已结束",
+    statusFormed: "已组建",
 
     // 操作
     joinTeam: "申请加入",
     viewLocationDetail: "查看地点详情",
     leader: "队长",
+
+    // 组建队伍
+    formTeam: "组建队伍",
+    formTeamUnderfilled: "不满人数组建",
+    formTeamConfirm: "确定组建队伍？",
+    formTeamUnderfilledConfirm: "当前人数未满，确定以不满人数组建队伍？",
+    formTeamSuccess: "队伍组建成功",
+    formTeamFailed: "组建失败",
+
+    // 申请退出
+    requestLeave: "申请退出",
+    requestLeaveConfirm: "确定申请退出队伍？队长审批后才能退出",
+    requestLeaveSuccess: "退出申请已提交",
+    requestLeaveFailed: "申请退出失败",
+    leavePending: "退出审批中",
+    leaveRequestTitle: "退出申请",
+    approveLeave: "批准退出",
+    rejectLeaveRequest: "拒绝申请",
+    cannotLeaveDirectly: "队伍已组建，需向队长申请退出",
 
     // 申请状态
     statusPending: "申请审核中",
@@ -572,6 +592,7 @@ export const copy = {
     teamStatus: {
       recruiting: "招募中",
       full: "已满员",
+      formed: "已组建",
       ongoing: "进行中",
       completed: "已完成",
       cancelled: "已取消",
@@ -582,6 +603,7 @@ export const copy = {
       pending: "待审核",
       approved: "已通过",
       rejected: "已拒绝",
+      leave_pending: "退出申请中",
     },
     level: {
       beginner: "新芽",

@@ -49,7 +49,7 @@ export function TeamClientPage({ teamId }: TeamClientPageProps) {
   const [otherTeams, setOtherTeams] = React.useState<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [userMemberStatus, setUserMemberStatus] = React.useState<"pending" | "approved" | "rejected" | null>(null);
+  const [userMemberStatus, setUserMemberStatus] = React.useState<"pending" | "approved" | "rejected" | "leave_pending" | null>(null);
   const [applications, setApplications] = React.useState<Application[]>([]);
 
   React.useEffect(() => {
@@ -235,6 +235,7 @@ export function TeamClientPage({ teamId }: TeamClientPageProps) {
                   leaderId={team.leader?.id}
                   teamId={teamId}
                   isLeader={isLeader}
+                  teamStatus={team.status}
                   onMemberRemoved={() => {
                     // 移除成员后刷新队伍数据
                     if (teamId) {

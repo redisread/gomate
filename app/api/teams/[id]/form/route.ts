@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { getAuth } from "@/lib/auth";
 import { revalidateTag } from "next/cache";
@@ -12,10 +12,13 @@ const getCloudflareContext = async () => {
 };
 
 /**
- * POST /api/teams/[id]/leave
- * 成员退出队伍
+ * POST /api/teams/[id]/form
+ * 组建队伍（仅队长可操作）
  */
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     // 验证登录状态
     const auth = await getAuth();
@@ -38,6 +41,10 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
         { status: 400 }
       );
     }
+
+    // 解析请求体获取 isUnderfilled 参数
+    const body = await request.json().catch(() => ({})) as { isUnderfilled?: boolean };
+    const isUnderfilled = body.isUnderfilled === true;
 
     const { env } = await getCloudflareContext();
 
@@ -72,53 +79,35 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       );
     }
 
-    // 获取成员关系
-    const members = await ormDb.query.teamMembers.findMany({
-      where: and(
-        eq(schema.teamMembers.teamId, teamId),
-        eq(schema.teamMembers.userId, session.user.id),
-        eq(schema.teamMembers.status, "approved")
-      ),
-      limit: 1,
-    });
-    const membership = members[0];
-
-    if (!membership) {
+    // 检查是否是队长
+    if (team.leaderId !== session.user.id) {
       return NextResponse.json(
-        { success: false, error: copy.errors.notMember },
+        { success: false, error: "只有队长可以组建队伍" },
+        { status: 403 }
+      );
+    }
+
+    // 检查队伍状态
+    if (team.status !== "recruiting" && team.status !== "full") {
+      return NextResponse.json(
+        { success: false, error: "当前队伍状态无法组建" },
         { status: 400 }
       );
     }
 
-    // 队长不能离开队伍（需要先转让队长或解散队伍）
-    if (membership.role === "leader") {
+    // 检查是否有成员（至少需要队长自己）
+    if (team.currentMembers < 1) {
       return NextResponse.json(
-        { success: false, error: copy.errors.leaderCannotLeave },
+        { success: false, error: "队伍至少需要1人才能组建" },
         { status: 400 }
       );
     }
 
-    // 检查队伍状态是否为已组建
-    if (team.status === "formed") {
-      return NextResponse.json(
-        { success: false, error: copy.teams.cannotLeaveDirectly },
-        { status: 400 }
-      );
-    }
-
-    // 删除成员记录
-    await ormDb
-      .delete(schema.teamMembers)
-      .where(eq(schema.teamMembers.id, membership.id));
-
-    // 更新队伍人数
-    const newMemberCount = Math.max(0, team.currentMembers - 1);
-
+    // 更新队伍状态为已组建
     await ormDb
       .update(schema.teams)
       .set({
-        currentMembers: newMemberCount,
-        status: newMemberCount < team.maxMembers ? "recruiting" : team.status,
+        status: "formed",
         updatedAt: new Date(),
       })
       .where(eq(schema.teams.id, teamId));
@@ -132,14 +121,15 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json({
       success: true,
-      message: copy.success.leftTeam,
+      message: copy.teams.formTeamSuccess,
+      isUnderfilled,
     });
   } catch (error) {
-    console.error("Leave team error:", error);
+    console.error("Form team error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : copy.teams.leaveTeamFailed,
+        error: error instanceof Error ? error.message : copy.teams.formTeamFailed,
       },
       { status: 500 }
     );

@@ -12,10 +12,13 @@ const getCloudflareContext = async () => {
 };
 
 /**
- * POST /api/teams/[id]/leave
- * 成员退出队伍
+ * POST /api/teams/[id]/members/[userId]/approve-leave
+ * 批准退出申请（仅队长可操作）
  */
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  _request: Request,
+  { params }: { params: Promise<{ id: string; userId: string }> }
+) {
   try {
     // 验证登录状态
     const auth = await getAuth();
@@ -30,9 +33,9 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       );
     }
 
-    const { id: teamId } = await params;
+    const { id: teamId, userId } = await params;
 
-    if (!teamId) {
+    if (!teamId || !userId) {
       return NextResponse.json(
         { success: false, error: copy.errors.missingTeamId },
         { status: 400 }
@@ -72,12 +75,20 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       );
     }
 
-    // 获取成员关系
+    // 检查是否是队长
+    if (team.leaderId !== session.user.id) {
+      return NextResponse.json(
+        { success: false, error: "只有队长可以批准退出申请" },
+        { status: 403 }
+      );
+    }
+
+    // 获取成员的退出申请
     const members = await ormDb.query.teamMembers.findMany({
       where: and(
         eq(schema.teamMembers.teamId, teamId),
-        eq(schema.teamMembers.userId, session.user.id),
-        eq(schema.teamMembers.status, "approved")
+        eq(schema.teamMembers.userId, userId),
+        eq(schema.teamMembers.status, "leave_pending")
       ),
       limit: 1,
     });
@@ -85,24 +96,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
     if (!membership) {
       return NextResponse.json(
-        { success: false, error: copy.errors.notMember },
-        { status: 400 }
-      );
-    }
-
-    // 队长不能离开队伍（需要先转让队长或解散队伍）
-    if (membership.role === "leader") {
-      return NextResponse.json(
-        { success: false, error: copy.errors.leaderCannotLeave },
-        { status: 400 }
-      );
-    }
-
-    // 检查队伍状态是否为已组建
-    if (team.status === "formed") {
-      return NextResponse.json(
-        { success: false, error: copy.teams.cannotLeaveDirectly },
-        { status: 400 }
+        { success: false, error: "未找到该成员的退出申请" },
+        { status: 404 }
       );
     }
 
@@ -112,13 +107,12 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       .where(eq(schema.teamMembers.id, membership.id));
 
     // 更新队伍人数
-    const newMemberCount = Math.max(0, team.currentMembers - 1);
+    const newMemberCount = Math.max(1, team.currentMembers - 1);
 
     await ormDb
       .update(schema.teams)
       .set({
         currentMembers: newMemberCount,
-        status: newMemberCount < team.maxMembers ? "recruiting" : team.status,
         updatedAt: new Date(),
       })
       .where(eq(schema.teams.id, teamId));
@@ -132,14 +126,14 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json({
       success: true,
-      message: copy.success.leftTeam,
+      message: "已批准退出申请",
     });
   } catch (error) {
-    console.error("Leave team error:", error);
+    console.error("Approve leave error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : copy.teams.leaveTeamFailed,
+        error: error instanceof Error ? error.message : "批准退出申请失败",
       },
       { status: 500 }
     );

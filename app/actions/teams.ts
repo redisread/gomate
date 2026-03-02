@@ -424,6 +424,11 @@ export async function leaveTeam(teamId: string) {
     throw new Error(copy.errors.teamNotFound);
   }
 
+  // 检查队伍状态是否为已组建
+  if (team.status === "formed") {
+    throw new Error(copy.teams.cannotLeaveDirectly);
+  }
+
   // 获取成员关系
   const membership = await db.query.teamMembers.findFirst({
     where: and(
@@ -708,4 +713,255 @@ export async function getPendingApplicationsForLeader() {
   });
 
   return applications;
+}
+
+// 组建队伍
+export async function formTeam(teamId: string, isUnderfilled: boolean) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    throw new Error(copy.errors.loginRequired);
+  }
+
+  const db = await getDB();
+
+  // 获取队伍信息
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamId),
+    with: {
+      location: true,
+      members: {
+        where: eq(teamMembers.status, "approved"),
+        with: {
+          user: {
+            columns: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!team) {
+    throw new Error(copy.errors.teamNotFound);
+  }
+
+  // 检查是否是队长
+  if (team.leaderId !== user.id) {
+    throw new Error("只有队长可以组建队伍");
+  }
+
+  // 检查队伍状态
+  if (team.status !== "recruiting" && team.status !== "full") {
+    throw new Error("当前队伍状态无法组建");
+  }
+
+  // 检查是否有成员（至少需要队长自己）
+  if (team.currentMembers < 1) {
+    throw new Error("队伍至少需要1人才能组建");
+  }
+
+  // 更新队伍状态为已组建
+  await db
+    .update(teams)
+    .set({
+      status: "formed",
+      updatedAt: new Date(),
+    })
+    .where(eq(teams.id, teamId));
+
+  // 清除缓存
+  revalidateTag(`team-${teamId}`);
+  revalidateTag("teams");
+  revalidateTag(`location-${team.location.slug}`);
+
+  return { success: true, message: copy.teams.formTeamSuccess, isUnderfilled };
+}
+
+// 申请退出队伍（已组建的队伍）
+export async function requestLeave(teamId: string) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    throw new Error(copy.errors.loginRequired);
+  }
+
+  const db = await getDB();
+
+  // 获取队伍信息
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamId),
+    with: {
+      location: true,
+    },
+  });
+
+  if (!team) {
+    throw new Error(copy.errors.teamNotFound);
+  }
+
+  // 检查队伍状态是否为已组建
+  if (team.status !== "formed") {
+    throw new Error("只有已组建的队伍需要申请退出");
+  }
+
+  // 获取成员关系
+  const membership = await db.query.teamMembers.findFirst({
+    where: and(
+      eq(teamMembers.teamId, teamId),
+      eq(teamMembers.userId, user.id),
+      eq(teamMembers.status, "approved")
+    ),
+  });
+
+  if (!membership) {
+    throw new Error(copy.errors.notMember);
+  }
+
+  // 队长不能申请退出
+  if (membership.role === "leader") {
+    throw new Error(copy.errors.leaderCannotLeave);
+  }
+
+  // 检查是否已有退出申请
+  const existingLeaveRequest = await db.query.teamMembers.findFirst({
+    where: and(
+      eq(teamMembers.teamId, teamId),
+      eq(teamMembers.userId, user.id),
+      eq(teamMembers.status, "leave_pending")
+    ),
+  });
+
+  if (existingLeaveRequest) {
+    throw new Error("您已提交退出申请，请等待队长审批");
+  }
+
+  // 更新成员状态为退出申请中
+  await db
+    .update(teamMembers)
+    .set({
+      status: "leave_pending",
+    })
+    .where(eq(teamMembers.id, membership.id));
+
+  // 清除缓存
+  revalidateTag(`team-${teamId}`);
+
+  return { success: true, message: copy.teams.requestLeaveSuccess };
+}
+
+// 批准退出申请
+export async function approveLeave(teamId: string, userId: string) {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    throw new Error(copy.errors.loginRequired);
+  }
+
+  const db = await getDB();
+
+  // 获取队伍信息
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamId),
+    with: {
+      location: true,
+    },
+  });
+
+  if (!team) {
+    throw new Error(copy.errors.teamNotFound);
+  }
+
+  // 检查是否是队长
+  if (team.leaderId !== currentUser.id) {
+    throw new Error("只有队长可以批准退出申请");
+  }
+
+  // 获取成员的退出申请
+  const membership = await db.query.teamMembers.findFirst({
+    where: and(
+      eq(teamMembers.teamId, teamId),
+      eq(teamMembers.userId, userId),
+      eq(teamMembers.status, "leave_pending")
+    ),
+  });
+
+  if (!membership) {
+    throw new Error("未找到该成员的退出申请");
+  }
+
+  // 删除成员记录
+  await db.delete(teamMembers).where(eq(teamMembers.id, membership.id));
+
+  // 更新队伍人数
+  const newMemberCount = Math.max(1, team.currentMembers - 1);
+
+  await db
+    .update(teams)
+    .set({
+      currentMembers: newMemberCount,
+      updatedAt: new Date(),
+    })
+    .where(eq(teams.id, teamId));
+
+  // 清除缓存
+  revalidateTag(`team-${teamId}`);
+  revalidateTag("teams");
+  revalidateTag(`location-${team.location.slug}`);
+
+  return { success: true, message: "已批准退出申请" };
+}
+
+// 拒绝退出申请
+export async function rejectLeave(teamId: string, userId: string) {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    throw new Error(copy.errors.loginRequired);
+  }
+
+  const db = await getDB();
+
+  // 获取队伍信息
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamId),
+  });
+
+  if (!team) {
+    throw new Error(copy.errors.teamNotFound);
+  }
+
+  // 检查是否是队长
+  if (team.leaderId !== currentUser.id) {
+    throw new Error("只有队长可以拒绝退出申请");
+  }
+
+  // 获取成员的退出申请
+  const membership = await db.query.teamMembers.findFirst({
+    where: and(
+      eq(teamMembers.teamId, teamId),
+      eq(teamMembers.userId, userId),
+      eq(teamMembers.status, "leave_pending")
+    ),
+  });
+
+  if (!membership) {
+    throw new Error("未找到该成员的退出申请");
+  }
+
+  // 将成员状态改回已通过
+  await db
+    .update(teamMembers)
+    .set({
+      status: "approved",
+    })
+    .where(eq(teamMembers.id, membership.id));
+
+  // 清除缓存
+  revalidateTag(`team-${teamId}`);
+
+  return { success: true, message: "已拒绝退出申请" };
 }

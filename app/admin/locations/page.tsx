@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { MultiImageUpload } from "@/components/ui/multi-image-upload";
 
 interface Location {
   id: string;
@@ -66,6 +67,7 @@ const defaultFormData = {
   distance: "",
   elevation: "",
   coverImage: "",
+  images: [] as string[],
   bestSeason: "",
   tags: "",
   address: "",
@@ -132,6 +134,7 @@ export default function AdminLocationsPage() {
           distance: loc.distance || "",
           elevation: loc.elevation || "",
           coverImage: loc.coverImage || "",
+          images: Array.isArray(loc.images) ? loc.images : [],
           bestSeason: Array.isArray(loc.bestSeason) ? loc.bestSeason.join(", ") : (loc.bestSeason || ""),
           tags: Array.isArray(loc.tags) ? loc.tags.join(", ") : (loc.tags || ""),
           address: loc.address || "",
@@ -169,7 +172,7 @@ export default function AdminLocationsPage() {
         coordinates: formData.coordinates ? JSON.parse(formData.coordinates) : { lat: 0, lng: 0 },
         routeDescription: formData.routeDescription || null,
         tips: formData.tips || null,
-        images: [],
+        images: formData.images,
       };
 
       const res = await fetch("/api/locations", {
@@ -448,6 +451,17 @@ export default function AdminLocationsPage() {
                 uploadEndpoint="/api/upload/location"
                 maxSize={10}
                 hint="点击上传封面图片"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>图片列表</Label>
+              <MultiImageUpload
+                value={formData.images}
+                onChange={(urls) => setFormData({ ...formData, images: urls })}
+                uploadEndpoint="/api/upload/location"
+                maxImages={9}
+                maxSize={10}
               />
             </div>
 

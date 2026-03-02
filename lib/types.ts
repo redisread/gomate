@@ -46,6 +46,7 @@ export interface TeamMember {
   bio: string | null;
   level: string;
   role: 'leader' | 'member';
+  status?: 'pending' | 'approved' | 'rejected' | 'leave_pending';
   joinedAt: Date | string | null;
   wechat?: string; // 微信号（仅队友可见）
 }
@@ -70,7 +71,7 @@ export interface Team {
     bio: string;
     wechat?: string; // 微信号（仅队友可见）
   };
-  status: 'open' | 'full' | 'closed';
+  status: 'recruiting' | 'full' | 'formed' | 'ongoing' | 'completed' | 'cancelled' | 'open' | 'closed';
   createdAt: string;
   members?: TeamMember[]; // 已加入的成员列表
 }

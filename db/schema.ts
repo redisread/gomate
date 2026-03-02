@@ -296,7 +296,7 @@ export type NewPasswordReset = typeof passwordResets.$inferInsert; // 密码重�
 // ==================== Enums（枚举类型定义）====================
 
 export type Difficulty = "easy" | "moderate" | "hard" | "expert"; // 难度等级：简单、中等、困难、专家
-export type TeamStatus = "recruiting" | "full" | "ongoing" | "completed" | "cancelled" | "open"; // 队伍状态：招募中、已满、进行中、已完成、已取消、开放
+export type TeamStatus = "recruiting" | "full" | "formed" | "ongoing" | "completed" | "cancelled" | "open"; // 队伍状态：招募中、已满、已组建、进行中、已完成、已取消、开放
 export type TeamMemberRole = "leader" | "member"; // 成员角色：领队、队员
-export type TeamMemberStatus = "pending" | "approved" | "rejected"; // 成员状态：待审核、已通过、已拒绝
+export type TeamMemberStatus = "pending" | "approved" | "rejected" | "leave_pending"; // 成员状态：待审核、已通过、已拒绝、退出申请中
 export type UserRole = "user" | "admin"; // 用户角色：普通用户、管理员

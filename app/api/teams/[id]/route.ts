@@ -92,18 +92,19 @@ export async function GET(
     const duration = `${durationHours}小时`;
 
     // 映射状态
-    const statusMap: Record<string, 'open' | 'full' | 'closed'> = {
+    const statusMap: Record<string, 'open' | 'full' | 'closed' | 'formed'> = {
       'recruiting': 'open',
       'full': 'full',
+      'formed': 'formed',
       'ongoing': 'closed',
       'completed': 'closed',
       'cancelled': 'closed',
     };
 
-    // 格式化已审核通过的成员列表
-    const approvedMembers = team.members
-      ?.filter((m: { status: string }) => m.status === "approved")
-      .map((m: { userId: string; role: string; joinedAt: Date | null; user: { id: string; name: string; image: string | null; bio: string | null; level: string | null; wechat: string | null } }) => ({
+    // 格式化已审核通过和退出申请中的成员列表
+    const relevantMembers = team.members
+      ?.filter((m: { status: string }) => m.status === "approved" || m.status === "leave_pending")
+      .map((m: { userId: string; role: string; status: string; joinedAt: Date | null; user: { id: string; name: string; image: string | null; bio: string | null; level: string | null; wechat: string | null } }) => ({
         id: m.user?.id || m.userId,
         userId: m.userId,
         name: m.user?.name || '未知用户',
@@ -111,6 +112,7 @@ export async function GET(
         bio: m.user?.bio || null,
         level: m.user?.level || 'beginner',
         role: m.role,
+        status: m.status,
         joinedAt: m.joinedAt,
         // 只有队伍成员可以看到其他成员的微信号
         wechat: isTeamMember ? (m.user?.wechat || undefined) : undefined,
@@ -147,7 +149,7 @@ export async function GET(
         completedHikes: 0,
         bio: '',
       },
-      members: approvedMembers,
+      members: relevantMembers,
     };
 
     return NextResponse.json({

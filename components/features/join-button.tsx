@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Check, Loader2, Users, Clock, RefreshCw, AlertCircle, LogOut, Shield } from "lucide-react";
+import { Check, Loader2, Users, Clock, RefreshCw, AlertCircle, LogOut, Shield, UserCheck, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -28,10 +28,10 @@ interface JoinButtonProps {
   className?: string;
   onJoin?: () => void;
   onLeave?: () => void;
-  userMemberStatus?: "pending" | "approved" | "rejected" | null;
+  userMemberStatus?: "pending" | "approved" | "rejected" | "leave_pending" | null;
 }
 
-type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" | "approved" | "rejected" | "wechat_required" | "leaving";
+type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" | "approved" | "rejected" | "wechat_required" | "leaving" | "leave_pending" | "requesting_leave";
 
 function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: JoinButtonProps) {
   const { user } = useAuth();
@@ -43,6 +43,7 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
     if (userMemberStatus === "approved") return "approved";
     if (userMemberStatus === "pending") return "pending";
     if (userMemberStatus === "rejected") return "rejected";
+    if (userMemberStatus === "leave_pending") return "leave_pending";
     if (team.status === "full") return "full";
     if (team.status === "closed") return "closed";
     return "idle";
@@ -50,6 +51,8 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
 
   const [joinState, setJoinState] = React.useState<JoinState>(getInitialState);
   const [showLeaveDialog, setShowLeaveDialog] = React.useState(false);
+  const [showFormTeamDialog, setShowFormTeamDialog] = React.useState(false);
+  const [showRequestLeaveDialog, setShowRequestLeaveDialog] = React.useState(false);
 
   // 当 userMemberStatus 或 team.status 变化时更新状态
   React.useEffect(() => {
@@ -167,6 +170,20 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       className: "bg-stone-700 text-white cursor-not-allowed",
       disabled: true,
     },
+    leave_pending: {
+      text: copy.teams.leavePending,
+      icon: Clock,
+      variant: "secondary" as const,
+      className: "bg-amber-100 text-amber-800 cursor-default",
+      disabled: true,
+    },
+    requesting_leave: {
+      text: copy.common.loading,
+      icon: Loader2,
+      variant: "default" as const,
+      className: "bg-stone-700 text-white cursor-not-allowed",
+      disabled: true,
+    },
   };
 
   // 退出队伍处理函数
@@ -191,6 +208,61 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       }
     } catch (error) {
       console.error("Leave team error:", error);
+      alert(copy.api.networkError);
+      setJoinState("approved");
+    }
+  };
+
+  // 组建队伍处理函数
+  const handleFormTeam = async (isUnderfilled: boolean) => {
+    setJoinState("loading");
+    setShowFormTeamDialog(false);
+
+    try {
+      const response = await fetch(`/api/teams/${team.id}/form`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isUnderfilled }),
+      });
+
+      const result = await response.json() as { success?: boolean; error?: string };
+
+      if (response.ok && result.success) {
+        router.refresh();
+      } else {
+        alert(result.error || copy.teams.formTeamFailed);
+        setJoinState(getInitialState());
+      }
+    } catch (error) {
+      console.error("Form team error:", error);
+      alert(copy.api.networkError);
+      setJoinState(getInitialState());
+    }
+  };
+
+  // 申请退出处理函数
+  const handleRequestLeave = async () => {
+    setJoinState("requesting_leave");
+    setShowRequestLeaveDialog(false);
+
+    try {
+      const response = await fetch(`/api/teams/${team.id}/leave-request`, {
+        method: 'POST',
+      });
+
+      const result = await response.json() as { success?: boolean; error?: string };
+
+      if (response.ok && result.success) {
+        setJoinState("leave_pending");
+        router.refresh();
+      } else {
+        alert(result.error || copy.teams.requestLeaveFailed);
+        setJoinState("approved");
+      }
+    } catch (error) {
+      console.error("Request leave error:", error);
       alert(copy.api.networkError);
       setJoinState("approved");
     }
@@ -239,6 +311,43 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
             <div className="flex items-center gap-2 text-stone-600">
               <Shield className="h-5 w-5 text-amber-600" />
               <span>你是队长</span>
+              {/* 组建队伍按钮 - 仅在 open 或 full 状态显示 */}
+              {(team.status === "open" || team.status === "full") && (
+                <AlertDialog open={showFormTeamDialog} onOpenChange={setShowFormTeamDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="default" size="sm" className="ml-2 bg-emerald-600 hover:bg-emerald-700">
+                      <UserCheck className="h-4 w-4 mr-1" />
+                      {team.status === "full" ? copy.teams.formTeam : copy.teams.formTeamUnderfilled}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {team.status === "full" ? copy.teams.formTeamConfirm : copy.teams.formTeamUnderfilledConfirm}
+                      </AlertDialogTitle>
+                      {team.status !== "full" && (
+                        <AlertDialogDescription className="flex items-start gap-2 text-amber-600">
+                          <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                          <span>当前 {team.currentMembers}/{team.maxMembers} 人，组建后队员退出需要队长审批</span>
+                        </AlertDialogDescription>
+                      )}
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{copy.common.cancel}</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleFormTeam(team.status !== "full")}
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        {copy.common.confirm}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              {/* 已组建状态显示 */}
+              {team.status === "formed" && (
+                <span className="text-sm text-emerald-600 ml-2">· {copy.teams.statusFormed}</span>
+              )}
               <Link href={`/teams/${team.id}/edit`} className="ml-auto">
                 <Button variant="outline" size="sm">
                   管理队伍
@@ -260,35 +369,87 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
               </Button>
             ) : joinState === "approved" ? (
               // 已加入状态显示退出队伍按钮
-              <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="px-8 border-red-300 text-red-600 hover:bg-red-50"
-                  >
-                    <LogOut className="h-5 w-5 mr-2" />
-                    {copy.teams.leaveTeam}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{copy.teams.leaveTeamConfirm}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {copy.teams.leaveTeamWarning}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{copy.common.cancel}</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleLeave}
-                      className="bg-red-600 hover:bg-red-700"
+              // 如果队伍已组建，显示申请退出按钮
+              team.status === "formed" ? (
+                <AlertDialog open={showRequestLeaveDialog} onOpenChange={setShowRequestLeaveDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="px-8 border-amber-300 text-amber-600 hover:bg-amber-50"
                     >
-                      {copy.common.confirm}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      <LogOut className="h-5 w-5 mr-2" />
+                      {copy.teams.requestLeave}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{copy.teams.requestLeaveConfirm}</AlertDialogTitle>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{copy.common.cancel}</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleRequestLeave}
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        {copy.common.confirm}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              ) : (
+                // 未组建的队伍，可以直接退出
+                <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="px-8 border-red-300 text-red-600 hover:bg-red-50"
+                    >
+                      <LogOut className="h-5 w-5 mr-2" />
+                      {copy.teams.leaveTeam}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{copy.teams.leaveTeamConfirm}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {copy.teams.leaveTeamWarning}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{copy.common.cancel}</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleLeave}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {copy.common.confirm}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )
+            ) : joinState === "leave_pending" ? (
+              // 退出申请中状态
+              <Button
+                size="lg"
+                variant="secondary"
+                disabled
+                className="px-8 bg-amber-100 text-amber-800 cursor-default"
+              >
+                <Clock className="h-5 w-5 mr-2" />
+                {copy.teams.leavePending}
+              </Button>
+            ) : joinState === "requesting_leave" ? (
+              <Button
+                size="lg"
+                variant="default"
+                disabled
+                className="px-8 bg-stone-700 text-white cursor-not-allowed"
+              >
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                {copy.common.loading}
+              </Button>
             ) : joinState === "leaving" ? (
               <Button
                 size="lg"
