@@ -25,9 +25,11 @@ interface Applicant {
 interface ApplicantListProps {
   teamId: string;
   initialApplications?: Applicant[];
+  onApprove?: () => void;
+  onReject?: () => void;
 }
 
-function ApplicantList({ teamId, initialApplications = [] }: ApplicantListProps) {
+function ApplicantList({ teamId, initialApplications = [], onApprove, onReject }: ApplicantListProps) {
   const [applications, setApplications] = React.useState<Applicant[]>(initialApplications);
   const [loadingIds, setLoadingIds] = React.useState<Set<string>>(new Set());
   const [error, setError] = React.useState<string | null>(null);
@@ -85,6 +87,8 @@ function ApplicantList({ teamId, initialApplications = [] }: ApplicantListProps)
       if (response.ok && result.success) {
         // 从列表中移除已处理的申请
         setApplications((prev) => prev.filter((app) => app.id !== applicationId));
+        // 调用回调刷新队伍成员列表
+        onApprove?.();
       } else {
         setError(result.error || copy.api.failed);
       }
