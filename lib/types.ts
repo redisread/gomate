@@ -40,6 +40,7 @@ export interface Location {
 
 export interface TeamMember {
   id: string;
+  userId: string; // 用户 ID
   name: string;
   image: string | null;
   bio: string | null;
