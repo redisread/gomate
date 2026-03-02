@@ -18,6 +18,7 @@ import {
 import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { useMobileMenu } from "@/lib/mobile-menu-context";
 import { copy } from "@/lib/copy";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,7 @@ type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" 
 function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: JoinButtonProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const { isOpen: isMobileMenuOpen } = useMobileMenu();
 
   // 根据用户成员状态和队伍状态初始化
   const getInitialState = React.useCallback((): JoinState => {
@@ -220,7 +222,11 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{
+        opacity: isMobileMenuOpen ? 0 : 1,
+        y: isMobileMenuOpen ? 20 : 0,
+        pointerEvents: isMobileMenuOpen ? "none" : "auto"
+      }}
       transition={{ duration: 0.5, delay: 0.3 }}
       className={cn("sticky bottom-4 z-30", className)}
     >

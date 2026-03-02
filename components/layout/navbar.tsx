@@ -7,6 +7,7 @@ import { Mountain, Menu, X, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { useMobileMenu } from "@/lib/mobile-menu-context";
 
 interface NavbarProps {
   className?: string;
@@ -21,8 +22,8 @@ const navLinks = [
 
 function Navbar({ className }: NavbarProps) {
   const [isScrolled, setIsScrolled] = React.useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const { user, isAdmin } = useAuth();
+  const { isOpen: isMobileMenuOpen, setIsOpen: setIsMobileMenuOpen } = useMobileMenu();
 
   React.useEffect(() => {
     const handleScroll = () => {
