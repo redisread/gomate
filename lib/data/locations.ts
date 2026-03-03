@@ -17,6 +17,8 @@ function parseLocation(location: Record<string, unknown>) {
     warnings: typeof location.warnings === 'string' ? JSON.parse(location.warnings) : location.warnings,
     facilities: typeof location.facilities === 'string' ? JSON.parse(location.facilities) : location.facilities,
     routeGuide: typeof location.routeGuide === 'string' ? JSON.parse(location.routeGuide) : location.routeGuide,
+    adcode: location.adcode || undefined,
+    cityName: location.cityName || undefined,
   };
 }
 

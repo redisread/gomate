@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       SELECT
         id, name, slug, subtitle, description, difficulty, duration, distance, elevation,
         cover_image as coverImage, images, best_season as bestSeason, tags,
-        address, coordinates, route_description as routeDescription,
+        address, adcode, city_name as cityName, coordinates, route_description as routeDescription,
         route_guide as routeGuide, waypoints, tips, warnings, equipment_needed as equipmentNeeded, facilities,
         created_at as createdAt, updated_at as updatedAt
       FROM locations
@@ -71,6 +71,8 @@ export async function GET(request: NextRequest) {
       elevation: row.elevation || "",
       bestSeason: safeJsonParse(row.bestSeason as string, []),
       tags: safeJsonParse(row.tags as string, []),
+      adcode: row.adcode || undefined,
+      cityName: row.cityName || undefined,
       location: {
         address: row.address || "",
         coordinates: safeJsonParse(row.coordinates as string, { lat: 0, lng: 0 }),
@@ -150,6 +152,8 @@ export async function POST(request: NextRequest) {
       coverImage: body.coverImage,
       images: JSON.stringify(body.images || []),
       address: body.address || null,
+      adcode: body.adcode || null,
+      cityName: body.cityName || null,
       routeDescription: body.routeDescription || null,
       routeGuide: body.routeGuide ? JSON.stringify(body.routeGuide) : null,
       waypoints: body.waypoints ? JSON.stringify(body.waypoints) : null,
@@ -230,6 +234,8 @@ export async function PUT(request: NextRequest) {
     if (updateData.coverImage !== undefined) dataToUpdate.coverImage = updateData.coverImage;
     if (updateData.images !== undefined) dataToUpdate.images = JSON.stringify(updateData.images);
     if (updateData.address !== undefined) dataToUpdate.address = updateData.address || null;
+    if (updateData.adcode !== undefined) dataToUpdate.adcode = updateData.adcode || null;
+    if (updateData.cityName !== undefined) dataToUpdate.cityName = updateData.cityName || null;
     if (updateData.routeDescription !== undefined) dataToUpdate.routeDescription = updateData.routeDescription || null;
     if (updateData.routeGuide !== undefined) dataToUpdate.routeGuide = updateData.routeGuide ? JSON.stringify(updateData.routeGuide) : null;
     if (updateData.waypoints !== undefined) dataToUpdate.waypoints = updateData.waypoints ? JSON.stringify(updateData.waypoints) : null;

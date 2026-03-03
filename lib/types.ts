@@ -3,6 +3,8 @@
 export interface Location {
   id: string;
   name: string;
+  adcode?: string; // 高德行政区划代码
+  cityName?: string; // 城市名称
   subtitle: string;
   description: string;
   coverImage: string;

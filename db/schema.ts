@@ -114,6 +114,8 @@ export const locations = sqliteTable(
     coverImage: text("cover_image").notNull(), // 封面图片 URL
     images: text("images").notNull(), // 图片列表（JSON 数组）
     address: text("address"), // 详细地址
+    adcode: text("adcode"), // 高德行政区划代码，如 "440300"（深圳）
+    cityName: text("city_name"), // 城市名称，如 "深圳"（冗余存储便于展示）
     routeDescription: text("route_description"), // 路线描述
     routeGuide: text("route_guide"), // 路线指南（JSON）: { overview: string; tips: string[] }
     waypoints: text("waypoints"), // 途径点列表（JSON 数组）: [{ name, lat, lng, description }]
@@ -128,6 +130,7 @@ export const locations = sqliteTable(
   (table) => ({
     slugIdx: index("locations_slug_idx").on(table.slug),
     difficultyIdx: index("locations_difficulty_idx").on(table.difficulty),
+    adcodeIdx: index("locations_adcode_idx").on(table.adcode),
   })
 );
 

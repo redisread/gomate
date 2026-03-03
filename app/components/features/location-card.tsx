@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { MapPin, Clock, Route, Users } from "lucide-react";
+import { MapPin, Clock, Route, Users, Locate } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DifficultyBadge } from "@/app/components/ui/difficulty-badge";
 import { Tag } from "@/app/components/ui/tag";
@@ -47,9 +47,15 @@ function LocationCard({
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute top-3 left-3">
-                  <DifficultyBadge difficulty={location.difficulty} size="sm" />
-                </div>
+                <div className="absolute top-3 left-3 flex gap-2">
+                <DifficultyBadge difficulty={location.difficulty} size="sm" />
+                {location.cityName && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-stone-700">
+                    <Locate className="h-3 w-3" />
+                    {location.cityName}
+                  </span>
+                )}
+              </div>
               </div>
 
               {/* Content */}
@@ -122,8 +128,14 @@ function LocationCard({
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute top-3 left-3">
+              <div className="absolute top-3 left-3 flex gap-2">
                 <DifficultyBadge difficulty={location.difficulty} size="sm" />
+                {location.cityName && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-stone-700">
+                    <Locate className="h-3 w-3" />
+                    {location.cityName}
+                  </span>
+                )}
               </div>
               <div className="absolute bottom-3 left-3 right-3">
                 <h3 className="text-lg font-semibold text-white">
@@ -172,6 +184,12 @@ function LocationCard({
             {/* Badges */}
             <div className="absolute top-4 left-4 flex gap-2">
               <DifficultyBadge difficulty={location.difficulty} size="sm" />
+              {location.cityName && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-stone-700">
+                  <Locate className="h-3 w-3" />
+                  {location.cityName}
+                </span>
+              )}
             </div>
 
             {/* Open Teams Badge */}

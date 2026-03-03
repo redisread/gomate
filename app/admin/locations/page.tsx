@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { MultiImageUpload } from "@/components/ui/multi-image-upload";
+import { SUPPORTED_CITIES } from "@/lib/constants/cities";
 
 interface Location {
   id: string;
@@ -46,6 +47,8 @@ interface Location {
   coverImage: string;
   bestSeason: string;
   tags: string | null;
+  adcode?: string;
+  cityName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +74,8 @@ const defaultFormData = {
   bestSeason: "",
   tags: "",
   address: "",
+  adcode: "",
+  cityName: "",
   coordinates: "",
   routeDescription: "",
   tips: "",
@@ -138,6 +143,8 @@ export default function AdminLocationsPage() {
           bestSeason: Array.isArray(loc.bestSeason) ? loc.bestSeason.join(", ") : (loc.bestSeason || ""),
           tags: Array.isArray(loc.tags) ? loc.tags.join(", ") : (loc.tags || ""),
           address: loc.address || "",
+          adcode: loc.adcode || "",
+          cityName: loc.cityName || "",
           coordinates: loc.coordinates ? JSON.stringify(loc.coordinates) : "",
           routeDescription: loc.routeDescription || "",
           tips: loc.tips || "",
@@ -169,6 +176,8 @@ export default function AdminLocationsPage() {
         bestSeason: formData.bestSeason.split(",").map(s => s.trim()).filter(Boolean),
         tags: formData.tags ? formData.tags.split(",").map(s => s.trim()).filter(Boolean) : null,
         address: formData.address || null,
+        adcode: formData.adcode || null,
+        cityName: formData.cityName || null,
         coordinates: formData.coordinates ? JSON.parse(formData.coordinates) : { lat: 0, lng: 0 },
         routeDescription: formData.routeDescription || null,
         tips: formData.tips || null,
@@ -251,6 +260,7 @@ export default function AdminLocationsPage() {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">名称</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">城市</th>
               <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">难度</th>
               <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">时长</th>
               <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">距离</th>
@@ -262,7 +272,7 @@ export default function AdminLocationsPage() {
           <tbody className="divide-y divide-stone-100">
             {locations.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-stone-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-stone-500">
                   暂无地点数据
                 </td>
               </tr>
@@ -286,6 +296,7 @@ export default function AdminLocationsPage() {
                       </div>
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-stone-600">{location.cityName || "-"}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-block px-2 py-1 text-xs rounded ${
                       location.difficulty === "easy" ? "bg-green-100 text-green-700" :
@@ -439,6 +450,44 @@ export default function AdminLocationsPage() {
                   value={formData.bestSeason}
                   onChange={(e) => setFormData({ ...formData, bestSeason: e.target.value })}
                   placeholder="如: 春季, 秋季"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cityName">城市</Label>
+                <Select
+                  value={formData.cityName}
+                  onValueChange={(value) => {
+                    const selected = SUPPORTED_CITIES.find(c => c.name === value);
+                    setFormData({
+                      ...formData,
+                      cityName: selected?.name || "",
+                      adcode: selected?.adcode || "",
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择城市" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_CITIES.map((city) => (
+                      <SelectItem key={city.adcode} value={city.name}>
+                        {city.name} ({city.province})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="adcode">行政区划代码</Label>
+                <Input
+                  id="adcode"
+                  value={formData.adcode}
+                  readOnly
+                  placeholder="自动填充"
+                  className="bg-stone-50"
                 />
               </div>
             </div>
