@@ -96,7 +96,6 @@ export async function POST(request: NextRequest) {
       id: memberId,
       teamId,
       userId,
-      role: "leader",
       status: "approved",
       joinedAt: now,
       createdAt: now,

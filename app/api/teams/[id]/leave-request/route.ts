@@ -99,7 +99,7 @@ export async function POST(
     }
 
     // 队长不能申请退出
-    if (membership.role === "leader") {
+    if (membership.userId === team.leaderId) {
       return NextResponse.json(
         { success: false, error: copy.errors.leaderCannotLeave },
         { status: 400 }

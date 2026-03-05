@@ -110,7 +110,7 @@ export async function POST(
     }
 
     // 不能移除队长
-    if (membership.role === "leader") {
+    if (membership.userId === team.leaderId) {
       return NextResponse.json(
         { success: false, error: copy.teams.cannotRemoveLeader },
         { status: 400 }

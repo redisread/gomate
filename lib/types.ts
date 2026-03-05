@@ -47,7 +47,6 @@ export interface TeamMember {
   image: string | null;
   bio: string | null;
   level: string;
-  role: 'leader' | 'member';
   status?: 'pending' | 'approved' | 'rejected' | 'leave_pending';
   joinedAt: Date | string | null;
   wechat?: string; // 微信号（仅队友可见）

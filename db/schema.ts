@@ -185,7 +185,6 @@ export const teamMembers = sqliteTable(
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(), // 关联用户 ID
-    role: text("role").notNull().default("member"), // 角色: leader(领队), member(队员)
     status: text("status").notNull().default("pending"), // 状态: pending(待审核), approved(已通过), rejected(已拒绝)
     joinedAt: integer("joined_at", { mode: "timestamp" }), // 加入时间（审核通过时设置）
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 申请创建时间
@@ -309,7 +308,6 @@ export type NewPasswordReset = typeof passwordResets.$inferInsert; // 密码重�
 
 export type Difficulty = "easy" | "moderate" | "hard" | "expert"; // 难度等级：简单、中等、困难、专家
 export type TeamStatus = "recruiting" | "full" | "formed" | "ongoing" | "completed" | "cancelled" | "open"; // 队伍状态：招募中、已满、已组建、进行中、已完成、已取消、开放
-export type TeamMemberRole = "leader" | "member"; // 成员角色：领队、队员
 export type TeamMemberStatus = "pending" | "approved" | "rejected" | "leave_pending"; // 成员状态：待审核、已通过、已拒绝、退出申请中
 export type UserRole = "user" | "admin"; // 用户角色：普通用户、管理员
 export type UserLevel = "beginner" | "intermediate" | "advanced" | "expert"; // 用户等级：新手、进阶、资深、专家

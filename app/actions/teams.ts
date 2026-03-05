@@ -173,7 +173,6 @@ export async function createTeam(data: {
     id: nanoid(),
     teamId: team.id,
     userId: user.id,
-    role: "leader",
     status: "approved",
     joinedAt: new Date(),
   });
@@ -261,7 +260,6 @@ export async function joinTeam(teamId: string) {
     id: nanoid(),
     teamId,
     userId: user.id,
-    role: "member",
     status: "pending",
   });
 
@@ -443,7 +441,7 @@ export async function leaveTeam(teamId: string) {
   }
 
   // 队长不能离开队伍（需要先转让队长或解散队伍）
-  if (membership.role === "leader") {
+  if (membership.userId === team.leaderId) {
     throw new Error(copy.errors.leaderCannotLeave);
   }
 
@@ -563,7 +561,7 @@ export async function removeMember(teamId: string, userId: string) {
   }
 
   // 不能移除队长（虽然理论上不会发生，但作为安全检查）
-  if (membership.role === "leader") {
+  if (membership.userId === team.leaderId) {
     throw new Error(copy.teams.cannotRemoveLeader);
   }
 
@@ -822,7 +820,7 @@ export async function requestLeave(teamId: string) {
   }
 
   // 队长不能申请退出
-  if (membership.role === "leader") {
+  if (membership.userId === team.leaderId) {
     throw new Error(copy.errors.leaderCannotLeave);
   }
 

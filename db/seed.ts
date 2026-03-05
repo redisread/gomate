@@ -368,13 +368,13 @@ const seedTeams: schema.NewTeam[] = [
 
 // 队伍成员数据
 const seedTeamMembers: schema.NewTeamMember[] = [
-  { id: "tm-1", teamId: "team-1", userId: "user-1", role: "leader", status: "approved", joinedAt: new Date(), createdAt: new Date() },
-  { id: "tm-2", teamId: "team-2", userId: "user-2", role: "leader", status: "approved", joinedAt: new Date(), createdAt: new Date() },
-  { id: "tm-3", teamId: "team-3", userId: "user-4", role: "leader", status: "approved", joinedAt: new Date(), createdAt: new Date() },
-  { id: "tm-4", teamId: "team-4", userId: "user-5", role: "leader", status: "approved", joinedAt: new Date(), createdAt: new Date() },
-  { id: "tm-5", teamId: "team-5", userId: "user-1", role: "leader", status: "approved", joinedAt: new Date(), createdAt: new Date() },
-  { id: "tm-6", teamId: "team-6", userId: "user-3", role: "leader", status: "approved", joinedAt: new Date(), createdAt: new Date() },
-  { id: "tm-7", teamId: "team-7", userId: "user-4", role: "leader", status: "approved", joinedAt: new Date(), createdAt: new Date() },
+  { id: "tm-1", teamId: "team-1", userId: "user-1", status: "approved", joinedAt: new Date(), createdAt: new Date() },
+  { id: "tm-2", teamId: "team-2", userId: "user-2", status: "approved", joinedAt: new Date(), createdAt: new Date() },
+  { id: "tm-3", teamId: "team-3", userId: "user-4", status: "approved", joinedAt: new Date(), createdAt: new Date() },
+  { id: "tm-4", teamId: "team-4", userId: "user-5", status: "approved", joinedAt: new Date(), createdAt: new Date() },
+  { id: "tm-5", teamId: "team-5", userId: "user-1", status: "approved", joinedAt: new Date(), createdAt: new Date() },
+  { id: "tm-6", teamId: "team-6", userId: "user-3", status: "approved", joinedAt: new Date(), createdAt: new Date() },
+  { id: "tm-7", teamId: "team-7", userId: "user-4", status: "approved", joinedAt: new Date(), createdAt: new Date() },
 ];
 
 async function seed() {

@@ -281,7 +281,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <AnimatePresence>
               {approvedMembers.map((member, index) => {
-              const isMemberLeader = member.role === "leader" || member.id === leaderId;
+              const isMemberLeader = member.userId === leaderId;
               const isRemoving = removingMemberId === member.userId;
               // 队长不能被移除，自己不能移除自己
               const canRemove = isLeader && !isMemberLeader && teamId;

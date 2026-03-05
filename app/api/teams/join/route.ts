@@ -122,7 +122,6 @@ export async function POST(request: NextRequest) {
       id: memberId,
       teamId,
       userId,
-      role: "member",
       status: "pending",
       createdAt: new Date(),
     });

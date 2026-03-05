@@ -91,7 +91,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     }
 
     // 队长不能离开队伍（需要先转让队长或解散队伍）
-    if (membership.role === "leader") {
+    if (membership.userId === team.leaderId) {
       return NextResponse.json(
         { success: false, error: copy.errors.leaderCannotLeave },
         { status: 400 }

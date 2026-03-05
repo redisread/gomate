@@ -60,7 +60,7 @@ function RouteGuide({ location, className }: RouteGuideProps) {
             <div className="space-y-6">
               {location.routeGuide.waypoints.map((waypoint, index) => (
                 <motion.div
-                  key={waypoint.name}
+                  key={`waypoint-${index}`}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
