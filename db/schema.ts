@@ -105,7 +105,27 @@ export const verifications = sqliteTable(
   })
 );
 
-// 地点表（徒步路线/景点）
+// 城市表（城市信息管理）
+export const cities = sqliteTable(
+  "cities",
+  {
+    id: text("id").primaryKey(), // 城市唯一标识
+    adcode: text("adcode").notNull().unique(), // 高德行政区划代码（如"440300"）
+    name: text("name").notNull(), // 城市名称（如"深圳"）
+    pinyin: text("pinyin"), // 拼音（用于 A-Z 排序）
+    province: text("province"), // 所属省份
+    level: text("level"), // city / district
+    isHot: integer("is_hot", { mode: "boolean" }).default(false).notNull(), // 是否热门城市
+    parentId: text("parent_id"), // 父级 ID（省市区层级）
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
+  },
+  (table) => ({
+    adcodeIdx: uniqueIndex("cities_adcode_idx").on(table.adcode),
+    isHotIdx: index("cities_is_hot_idx").on(table.isHot),
+  })
+);
+
+// 地点表（徒步地点基础信息）
 export const locations = sqliteTable(
   "locations",
   {
@@ -114,32 +134,91 @@ export const locations = sqliteTable(
     slug: text("slug").notNull().unique(), // URL 友好的唯一标识（如 "wutong-mountain"）
     subtitle: text("subtitle"), // 副标题，如"深圳第二高峰"
     description: text("description").notNull(), // 详细描述
-    difficulty: text("difficulty").notNull(), // 难度等级: easy(简单), moderate(中等), hard(困难), expert(专家)
-    duration: text("duration").notNull(), // 预计耗时，如 "4-5小时"
-    distance: text("distance").notNull(), // 路线长度，如 "8.5公里"
-    elevation: text("elevation"), // 海拔高度，如 "869米"
+    address: text("address"), // 详细地址
+    cityId: text("city_id")
+      .references(() => cities.id, { onDelete: "restrict" })
+      .notNull(), // 关联城市 ID
+    cityName: text("city_name"), // 城市名称（冗余存储便于展示）
     bestSeason: text("best_season").notNull(), // 最佳季节（JSON 数组）: ["春季", "秋季"]
-    tags: text("tags"), // 标签（JSON 数组）: ["海景", "山峰", "摄影"]
     coverImage: text("cover_image").notNull(), // 封面图片 URL
     images: text("images").notNull(), // 图片列表（JSON 数组）
-    address: text("address"), // 详细地址
-    adcode: text("adcode"), // 高德行政区划代码，如 "440300"（深圳）
-    cityName: text("city_name"), // 城市名称，如 "深圳"（冗余存储便于展示）
-    routeDescription: text("route_description"), // 路线描述
-    routeGuide: text("route_guide"), // 路线指南（JSON）: { overview: string; tips: string[] }
-    waypoints: text("waypoints"), // 途径点列表（JSON 数组）: [{ name, lat, lng, description }]
-    tips: text("tips"), // 徒步贴士
-    warnings: text("warnings"), // 安全警告（JSON 数组）
-    equipmentNeeded: text("equipment_needed"), // 建议装备（JSON 数组）
     coordinates: text("coordinates").notNull(), // 坐标（JSON）: { lat: number; lng: number }
-    facilities: text("facilities"), // 设施信息（JSON）: { parking, restroom, water, food }
+    extra: text("extra"), // 扩展字段（JSON）: { facilities, tips, warnings }
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 更新时间
   },
   (table) => ({
-    slugIdx: index("locations_slug_idx").on(table.slug),
-    difficultyIdx: index("locations_difficulty_idx").on(table.difficulty),
-    adcodeIdx: index("locations_adcode_idx").on(table.adcode),
+    slugIdx: uniqueIndex("locations_slug_idx").on(table.slug),
+    cityIdx: index("locations_city_idx").on(table.cityId),
+  })
+);
+
+// 路线表（徒步路线详情）
+export const routes = sqliteTable(
+  "routes",
+  {
+    id: text("id").primaryKey(), // 路线唯一标识
+    locationId: text("location_id")
+      .references(() => locations.id, { onDelete: "cascade" })
+      .notNull(), // 关联地点 ID
+    cityId: text("city_id")
+      .references(() => cities.id, { onDelete: "restrict" })
+      .notNull(), // 关联城市 ID
+    name: text("name").notNull(), // 路线名称（如"泰山涧线路"）
+    description: text("description"), // 路线描述
+    difficulty: text("difficulty").notNull(), // easy(简单), moderate(中等), hard(困难), expert(专家)
+    duration: text("duration").notNull(), // 预计耗时，如 "4-5小时"
+    distance: text("distance").notNull(), // 路线长度，如 "8.5公里"
+    elevation: text("elevation"), // 海拔高度，如 "869米"
+    routeGuide: text("route_guide"), // 路线指南（JSON）: { overview: string; tips: string[] }
+    waypoints: text("waypoints"), // 途径点列表（JSON 数组）: [{ name, lat, lng, description }]
+    equipmentNeeded: text("equipment_needed"), // 建议装备（JSON 数组）
+    warnings: text("warnings"), // 安全警告（JSON 数组）
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
+    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 更新时间
+  },
+  (table) => ({
+    locationIdx: index("routes_location_idx").on(table.locationId),
+    cityIdx: index("routes_city_idx").on(table.cityId),
+    difficultyIdx: index("routes_difficulty_idx").on(table.difficulty),
+  })
+);
+
+// 标签表
+export const tags = sqliteTable(
+  "tags",
+  {
+    id: text("id").primaryKey(), // 标签唯一标识
+    name: text("name").notNull().unique(), // 标签名称（如"溯溪"、"观景"）
+    type: text("type").notNull(), // location | route | activity
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
+  },
+  (table) => ({
+    nameIdx: uniqueIndex("tags_name_idx").on(table.name),
+    typeIdx: index("tags_type_idx").on(table.type),
+  })
+);
+
+// 标签关联表
+export const entityToTags = sqliteTable(
+  "entity_to_tags",
+  {
+    id: text("id").primaryKey(), // 关联记录唯一标识
+    entityId: text("entity_id").notNull(), // 关联实体 ID（location_id 或 route_id）
+    entityType: text("entity_type").notNull(), // location | route | activity
+    tagId: text("tag_id")
+      .references(() => tags.id, { onDelete: "cascade" })
+      .notNull(), // 关联标签 ID
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
+  },
+  (table) => ({
+    entityIdx: index("entity_to_tags_entity_idx").on(table.entityId, table.entityType),
+    tagIdx: index("entity_to_tags_tag_idx").on(table.tagId),
+    uniqueEntityTag: uniqueIndex("entity_to_tags_unique_idx").on(
+      table.entityId,
+      table.entityType,
+      table.tagId
+    ), // 防止重复关联
   })
 );
 
@@ -151,6 +230,9 @@ export const teams = sqliteTable(
     locationId: text("location_id")
       .references(() => locations.id, { onDelete: "cascade" })
       .notNull(), // 关联地点 ID
+    routeId: text("route_id")
+      .references(() => routes.id, { onDelete: "cascade" })
+      .notNull(), // 关联路线 ID
     leaderId: text("leader_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(), // 领队用户 ID
@@ -168,6 +250,7 @@ export const teams = sqliteTable(
   },
   (table) => ({
     locationIdx: index("teams_location_idx").on(table.locationId),
+    routeIdx: index("teams_route_idx").on(table.routeId),
     leaderIdx: index("teams_leader_idx").on(table.leaderId),
     statusIdx: index("teams_status_idx").on(table.status),
     startTimeIdx: index("teams_start_time_idx").on(table.startTime),
@@ -243,8 +326,41 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
   }), // 账号所属用户
 }));
 
-export const locationsRelations = relations(locations, ({ many }) => ({
+export const citiesRelations = relations(cities, ({ many }) => ({
+  locations: many(locations), // 该城市的地点
+  routes: many(routes), // 该城市的路线
+}));
+
+export const locationsRelations = relations(locations, ({ one, many }) => ({
+  city: one(cities, {
+    fields: [locations.cityId],
+    references: [cities.id],
+  }), // 所属城市
+  routes: many(routes), // 该地点的路线
   teams: many(teams), // 该地点的徒步队伍
+}));
+
+export const routesRelations = relations(routes, ({ one, many }) => ({
+  location: one(locations, {
+    fields: [routes.locationId],
+    references: [locations.id],
+  }), // 所属地点
+  city: one(cities, {
+    fields: [routes.cityId],
+    references: [cities.id],
+  }), // 所属城市
+  teams: many(teams), // 该路线的队伍
+}));
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  entityToTags: many(entityToTags), // 标签关联记录
+}));
+
+export const entityToTagsRelations = relations(entityToTags, ({ one }) => ({
+  tag: one(tags, {
+    fields: [entityToTags.tagId],
+    references: [tags.id],
+  }), // 关联的标签
 }));
 
 export const teamsRelations = relations(teams, ({ one, many }) => ({
@@ -252,6 +368,10 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
     fields: [teams.locationId],
     references: [locations.id],
   }), // 队伍活动地点
+  route: one(routes, {
+    fields: [teams.routeId],
+    references: [routes.id],
+  }), // 队伍活动路线
   leader: one(users, {
     fields: [teams.leaderId],
     references: [users.id],
@@ -292,8 +412,20 @@ export type NewAccount = typeof accounts.$inferInsert; // 账号类型（插入�
 export type Verification = typeof verifications.$inferSelect; // 验证码类型（查询结果）
 export type NewVerification = typeof verifications.$inferInsert; // 验证码类型（插入数据）
 
+export type City = typeof cities.$inferSelect; // 城市类型（查询结果）
+export type NewCity = typeof cities.$inferInsert; // 城市类型（插入数据）
+
 export type Location = typeof locations.$inferSelect; // 地点类型（查询结果）
 export type NewLocation = typeof locations.$inferInsert; // 地点类型（插入数据）
+
+export type Route = typeof routes.$inferSelect; // 路线类型（查询结果）
+export type NewRoute = typeof routes.$inferInsert; // 路线类型（插入数据）
+
+export type Tag = typeof tags.$inferSelect; // 标签类型（查询结果）
+export type NewTag = typeof tags.$inferInsert; // 标签类型（插入数据）
+
+export type EntityToTag = typeof entityToTags.$inferSelect; // 标签关联类型（查询结果）
+export type NewEntityToTag = typeof entityToTags.$inferInsert; // 标签关联类型（插入数据）
 
 export type Team = typeof teams.$inferSelect; // 队伍类型（查询结果）
 export type NewTeam = typeof teams.$inferInsert; // 队伍类型（插入数据）
@@ -313,3 +445,6 @@ export type UserRole = "user" | "admin"; // 用户角色：普通用户、管理
 export type UserLevel = "beginner" | "intermediate" | "advanced" | "expert"; // 用户等级：新手、进阶、资深、专家
 export type UserStatus = "active" | "suspended" | "banned" | "deleted"; // 用户状态：活跃、暂停、封禁、已删除
 export type UserGender = "male" | "female" | "other"; // 用户性别：男、女、其他
+export type CityLevel = "city" | "district"; // 城市级别：城市、区县
+export type TagType = "location" | "route" | "activity"; // 标签类型：地点标签、路线标签、活动标签
+export type EntityType = "location" | "route" | "activity"; // 实体类型：地点、路线、活动

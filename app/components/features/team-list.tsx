@@ -23,12 +23,21 @@ import { cn } from "@/lib/utils";
 interface TeamListProps {
   className?: string;
   locationId?: string;
+  routeId?: string;
 }
 
-function TeamList({ className, locationId }: TeamListProps) {
-  const { getTeamsByLocationId } = useTeams();
+function TeamList({ className, locationId, routeId }: TeamListProps) {
+  const { getTeamsByLocationId, getTeamsByRouteId } = useTeams();
   const { isAuthenticated } = useAuth();
-  const teams = locationId ? getTeamsByLocationId(locationId) : [];
+
+  // 根据 routeId 或 locationId 获取队伍列表
+  let teams = [];
+  if (routeId) {
+    teams = getTeamsByRouteId(routeId);
+  } else if (locationId) {
+    teams = getTeamsByLocationId(locationId);
+  }
+
   const openTeams = teams.filter((t) => t.status === "open");
   const fullTeams = teams.filter((t) => t.status === "full");
 
@@ -50,7 +59,11 @@ function TeamList({ className, locationId }: TeamListProps) {
         <Button className="bg-stone-900 hover:bg-stone-800" asChild>
           <Link href={
             isAuthenticated
-              ? (locationId ? `/teams/create?locationId=${locationId}` : "/teams/create")
+              ? (routeId
+                  ? `/teams/create?routeId=${routeId}`
+                  : locationId
+                  ? `/teams/create?locationId=${locationId}`
+                  : "/teams/create")
               : "/login"
           }>
             <Plus className="h-4 w-4 mr-2" />

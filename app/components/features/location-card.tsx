@@ -6,7 +6,6 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { MapPin, Clock, Route, Users, Locate } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { DifficultyBadge } from "@/app/components/ui/difficulty-badge";
 import { Tag } from "@/app/components/ui/tag";
 import type { Location } from "@/lib/types";
 import { useTeams } from "@/lib/teams-context";
@@ -29,6 +28,24 @@ function LocationCard({
   const teams = getTeamsByLocationId(location.id);
   const openTeams = teams.filter((t) => t.status === "open").length;
 
+  // 获取路线数量和难度范围
+  const routeCount = location.routes?.length || 0;
+  const getDifficultyRange = () => {
+    if (!location.routes || location.routes.length === 0) {
+      return location.difficulty || "未知";
+    }
+    if (location.routes.length === 1) {
+      const difficultyMap = { easy: "简单", moderate: "中等", hard: "困难", expert: "专家" };
+      return difficultyMap[location.routes[0].difficulty];
+    }
+    const difficulties = ["easy", "moderate", "hard", "expert"];
+    const routeDifficulties = location.routes.map((r) => r.difficulty);
+    const minDiff = difficulties.find((d) => routeDifficulties.includes(d as any));
+    const maxDiff = [...difficulties].reverse().find((d) => routeDifficulties.includes(d as any));
+    const difficultyMap = { easy: "简单", moderate: "中等", hard: "困难", expert: "专家" };
+    return `${difficultyMap[minDiff as keyof typeof difficultyMap]}-${difficultyMap[maxDiff as keyof typeof difficultyMap]}`;
+  };
+
   if (variant === "horizontal") {
     return (
       <motion.div
@@ -48,11 +65,16 @@ function LocationCard({
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute top-3 left-3 flex gap-2">
-                <DifficultyBadge difficulty={location.difficulty} size="sm" />
                 {location.cityName && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-stone-700">
                     <Locate className="h-3 w-3" />
                     {location.cityName}
+                  </span>
+                )}
+                {routeCount > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-stone-700">
+                    <Route className="h-3 w-3" />
+                    {routeCount}条路线
                   </span>
                 )}
               </div>
@@ -82,26 +104,28 @@ function LocationCard({
                 </p>
 
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {location.tags.slice(0, 3).map((tag) => (
-                    <Tag key={tag} variant="subtle" color="default" size="sm">
-                      {tag}
+                  {location.tags && location.tags.slice(0, 3).map((tag) => (
+                    <Tag key={typeof tag === 'string' ? tag : tag.id} variant="subtle" color="default" size="sm">
+                      {typeof tag === 'string' ? tag : tag.name}
                     </Tag>
                   ))}
                 </div>
 
                 <div className="flex items-center gap-4 mt-4 text-sm text-stone-500">
                   <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {location.duration}
-                  </div>
-                  <div className="flex items-center gap-1">
                     <Route className="h-4 w-4" />
-                    {location.distance}
+                    {routeCount}条路线
                   </div>
                   <div className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
-                    {location.location.address.split("区")[0]}区
+                    {getDifficultyRange()}
                   </div>
+                  {location.address && (
+                    <div className="flex items-center gap-1">
+                      <Locate className="h-4 w-4" />
+                      {location.address.split("区")[0]}区
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </div>
@@ -129,11 +153,16 @@ function LocationCard({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute top-3 left-3 flex gap-2">
-                <DifficultyBadge difficulty={location.difficulty} size="sm" />
                 {location.cityName && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-stone-700">
                     <Locate className="h-3 w-3" />
                     {location.cityName}
+                  </span>
+                )}
+                {routeCount > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-stone-700">
+                    <Route className="h-3 w-3" />
+                    {routeCount}条路线
                   </span>
                 )}
               </div>
@@ -147,12 +176,12 @@ function LocationCard({
             <CardContent className="p-4">
               <div className="flex items-center gap-3 text-sm text-stone-500">
                 <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {location.duration}
+                  <Route className="h-4 w-4" />
+                  {routeCount}条路线
                 </span>
                 <span className="flex items-center gap-1">
-                  <Route className="h-4 w-4" />
-                  {location.distance}
+                  <MapPin className="h-4 w-4" />
+                  {getDifficultyRange()}
                 </span>
               </div>
             </CardContent>
@@ -183,11 +212,16 @@ function LocationCard({
 
             {/* Badges */}
             <div className="absolute top-4 left-4 flex gap-2">
-              <DifficultyBadge difficulty={location.difficulty} size="sm" />
               {location.cityName && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-stone-700">
                   <Locate className="h-3 w-3" />
                   {location.cityName}
+                </span>
+              )}
+              {routeCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-stone-700">
+                  <Route className="h-3 w-3" />
+                  {routeCount}条路线
                 </span>
               )}
             </div>
@@ -212,33 +246,29 @@ function LocationCard({
           {/* Content */}
           <CardContent className="p-5">
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {location.tags.slice(0, 4).map((tag) => (
-                <Tag key={tag} variant="subtle" color="default" size="sm">
-                  {tag}
-                </Tag>
-              ))}
-            </div>
+            {location.tags && location.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {location.tags.slice(0, 4).map((tag) => (
+                  <Tag key={typeof tag === 'string' ? tag : tag.id} variant="subtle" color="default" size="sm">
+                    {typeof tag === 'string' ? tag : tag.name}
+                  </Tag>
+                ))}
+              </div>
+            )}
 
             {/* Info Grid */}
-            <div className="grid grid-cols-3 gap-3 text-sm">
-              <div className="flex items-center gap-2 text-stone-600">
-                <div className="p-1.5 bg-stone-100 rounded-lg">
-                  <Clock className="h-4 w-4 text-stone-500" />
-                </div>
-                <span>{location.duration}</span>
-              </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2 text-stone-600">
                 <div className="p-1.5 bg-stone-100 rounded-lg">
                   <Route className="h-4 w-4 text-stone-500" />
                 </div>
-                <span>{location.distance}</span>
+                <span>{routeCount}条路线</span>
               </div>
               <div className="flex items-center gap-2 text-stone-600">
                 <div className="p-1.5 bg-stone-100 rounded-lg">
                   <MapPin className="h-4 w-4 text-stone-500" />
                 </div>
-                <span className="truncate">{location.elevation}</span>
+                <span className="truncate">{getDifficultyRange()}</span>
               </div>
             </div>
           </CardContent>

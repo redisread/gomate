@@ -1,43 +1,108 @@
 // GoMate 前端类型定义
 
+// 城市信息
+export interface City {
+  id: string;
+  adcode: string;
+  name: string;
+  pinyin?: string;
+  province?: string;
+  level: 'city' | 'district';
+  isHot: boolean;
+  parentId?: string;
+}
+
+// 标签
+export interface Tag {
+  id: string;
+  name: string;
+  type: 'location' | 'route' | 'activity';
+}
+
+// 地点信息（基础信息）
 export interface Location {
   id: string;
   name: string;
-  adcode?: string; // 高德行政区划代码
-  cityName?: string; // 城市名称
-  subtitle: string;
+  slug: string;
+  subtitle?: string;
   description: string;
+  address?: string;
+  cityId: string;
+  cityName: string;
+  bestSeason: string[];
   coverImage: string;
   images: string[];
-  difficulty: 'easy' | 'moderate' | 'hard' | 'expert';
-  duration: string;
-  distance: string;
-  elevation: string;
-  bestSeason: string[];
-  tags: string[];
-  location: {
-    address: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
+  coordinates: {
+    lat: number;
+    lng: number;
   };
-  routeGuide: {
+  extra?: {
+    facilities?: {
+      parking: boolean;
+      restroom: boolean;
+      water: boolean;
+      food: boolean;
+    };
+    tips?: string;
+    warnings?: string[];
+  };
+
+  // 新增：关联的路线数组
+  routes?: Route[];
+  tags?: Tag[];
+
+  // 兼容层（临时，从 routes[0] 提取）
+  // 这些字段将在所有组件迁移完成后移除
+  difficulty?: 'easy' | 'moderate' | 'hard' | 'expert';
+  duration?: string;
+  distance?: string;
+  elevation?: string;
+  routeGuide?: {
     overview: string;
-    waypoints: {
-      name: string;
-      description: string;
-      distance: string;
-    }[];
+    waypoints: { name: string; description: string; distance: string }[];
     tips: string[];
     warnings: string[];
   };
-  facilities: {
+  waypoints?: { name: string; lat: number; lng: number; description: string }[];
+  equipmentNeeded?: string[];
+  facilities?: {
     parking: boolean;
     restroom: boolean;
     water: boolean;
     food: boolean;
   };
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 路线信息
+export interface Route {
+  id: string;
+  locationId: string;
+  cityId: string;
+  name: string;
+  description?: string;
+  difficulty: 'easy' | 'moderate' | 'hard' | 'expert';
+  duration: string;
+  distance: string;
+  elevation?: string;
+  routeGuide?: {
+    overview: string;
+    tips: string[];
+  };
+  waypoints?: {
+    name: string;
+    lat: number;
+    lng: number;
+    description: string;
+  }[];
+  equipmentNeeded?: string[];
+  warnings?: string[];
+  tags?: Tag[]; // 关联的标签
+  location?: Location; // 关联的地点
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface TeamMember {
@@ -58,6 +123,7 @@ export interface TeamMember {
 export interface Team {
   id: string;
   locationId: string;
+  routeId: string; // 关联路线 ID
   title: string;
   description: string;
   date: string;
@@ -81,4 +147,6 @@ export interface Team {
   status: 'recruiting' | 'full' | 'formed' | 'ongoing' | 'completed' | 'cancelled' | 'open' | 'closed';
   createdAt: string;
   members?: TeamMember[]; // 已加入的成员列表
+  route?: Route; // 关联的路线信息
+  location?: Location; // 关联的地点信息
 }

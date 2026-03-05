@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { requireAdmin } from "@/lib/admin";
+import { getLocations } from "@/app/actions/locations";
 
 const getCloudflareContext = async () => {
   const mod = await import("@opennextjs/cloudflare");
@@ -9,96 +10,75 @@ const getCloudflareContext = async () => {
 
 /**
  * GET /api/locations
- * 获取地点列表
+ * 获取地点列表（包含关联的路线）
  */
 export async function GET(request: NextRequest) {
   try {
-    const { env } = await getCloudflareContext();
+    const locations = await getLocations();
 
-    if (!env.DB) {
-      return NextResponse.json(
-        { error: "Database not configured" },
-        { status: 500 }
-      );
-    }
+    // 格式化返回数据，添加兼容层
+    const formattedLocations = locations.map((location) => {
+      // 从第一条路线提取字段作为兼容层
+      const firstRoute = location.routes?.[0];
 
-    const db = env.DB as D1Database;
+      return {
+        id: location.id,
+        name: location.name,
+        slug: location.slug,
+        subtitle: location.subtitle,
+        description: location.description,
+        address: location.address,
+        cityId: location.cityId,
+        cityName: location.city?.name || location.cityName,
+        coverImage: location.coverImage,
+        images: location.images ? JSON.parse(location.images as string) : [],
+        bestSeason: location.bestSeason ? JSON.parse(location.bestSeason as string) : [],
+        coordinates: location.coordinates ? JSON.parse(location.coordinates as string) : { lat: 0, lng: 0 },
+        extra: {
+          facilities: location.facilities ? JSON.parse(location.facilities as string) : undefined,
+          tips: location.tips || undefined,
+          warnings: location.warnings ? JSON.parse(location.warnings as string) : undefined,
+        },
 
-    // 使用原始 SQL 查询以正确获取时间戳
-    const results = await db.prepare(`
-      SELECT
-        id, name, slug, subtitle, description, difficulty, duration, distance, elevation,
-        cover_image as coverImage, images, best_season as bestSeason, tags,
-        address, adcode, city_name as cityName, coordinates, route_description as routeDescription,
-        route_guide as routeGuide, waypoints, tips, warnings, equipment_needed as equipmentNeeded, facilities,
-        created_at as createdAt, updated_at as updatedAt
-      FROM locations
-      ORDER BY created_at DESC
-    `).all();
+        // 新字段：完整的 routes 数组
+        routes: location.routes?.map((route) => ({
+          id: route.id,
+          locationId: route.locationId,
+          cityId: route.cityId,
+          name: route.name,
+          description: route.description,
+          difficulty: route.difficulty,
+          duration: route.duration,
+          distance: route.distance,
+          elevation: route.elevation,
+          routeGuide: route.routeGuide ? JSON.parse(route.routeGuide as string) : undefined,
+          waypoints: route.waypoints ? JSON.parse(route.waypoints as string) : [],
+          equipmentNeeded: route.equipmentNeeded ? JSON.parse(route.equipmentNeeded as string) : [],
+          warnings: route.warnings ? JSON.parse(route.warnings as string) : [],
+          createdAt: route.createdAt,
+          updatedAt: route.updatedAt,
+        })) || [],
 
-    // 安全解析 JSON 字段（部分字段可能是普通字符串而非 JSON）
-    function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
-      if (!value) return fallback;
-      try {
-        return JSON.parse(value);
-      } catch {
-        // 如果不是有效 JSON，按逗号分隔转为数组（适用于 bestSeason 等字段）
-        if (Array.isArray(fallback)) {
-          return value.split(/[,、]/).map((s: string) => s.trim()).filter(Boolean) as unknown as T;
-        }
-        return fallback;
-      }
-    }
+        tags: location.tags || [],
 
-    // 格式化时间戳（毫秒级）
-    function formatTimestamp(ts: number | null | undefined): string | null {
-      if (!ts) return null;
-      // 数据库存储的是毫秒级时间戳
-      return new Date(ts).toISOString();
-    }
+        // 兼容层：从第一条路线提取字段（临时）
+        difficulty: firstRoute?.difficulty,
+        duration: firstRoute?.duration,
+        distance: firstRoute?.distance,
+        elevation: firstRoute?.elevation,
+        routeGuide: firstRoute?.routeGuide ? JSON.parse(firstRoute.routeGuide as string) : undefined,
+        waypoints: firstRoute?.waypoints ? JSON.parse(firstRoute.waypoints as string) : [],
+        equipmentNeeded: firstRoute?.equipmentNeeded ? JSON.parse(firstRoute.equipmentNeeded as string) : [],
+        facilities: location.facilities ? JSON.parse(location.facilities as string) : undefined,
 
-    const locations = (results.results as Record<string, unknown>[]).map((row) => ({
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      subtitle: row.subtitle || "",
-      description: row.description,
-      coverImage: row.coverImage,
-      images: safeJsonParse(row.images as string, []),
-      difficulty: row.difficulty,
-      duration: row.duration,
-      distance: row.distance,
-      elevation: row.elevation || "",
-      bestSeason: safeJsonParse(row.bestSeason as string, []),
-      tags: safeJsonParse(row.tags as string, []),
-      adcode: row.adcode || undefined,
-      cityName: row.cityName || undefined,
-      location: {
-        address: row.address || "",
-        coordinates: safeJsonParse(row.coordinates as string, { lat: 0, lng: 0 }),
-      },
-      routeGuide: (() => {
-        const guide = safeJsonParse<Record<string, unknown>>(row.routeGuide as string, {});
-        return {
-          overview: (guide.overview as string) || row.routeDescription || "",
-          waypoints: safeJsonParse(row.waypoints as string, []),
-          tips: Array.isArray(guide.tips) ? guide.tips : (row.tips ? (row.tips as string).split('\n').filter(Boolean) : []),
-          warnings: safeJsonParse(row.warnings as string, []),
-        };
-      })(),
-      facilities: safeJsonParse(row.facilities as string, { parking: false, restroom: false, water: false, food: false }),
-      equipmentNeeded: safeJsonParse(row.equipmentNeeded as string, []),
-      routeDescription: row.routeDescription || "",
-      waypoints: safeJsonParse(row.waypoints as string, []),
-      warnings: safeJsonParse(row.warnings as string, []),
-      tips: row.tips || "",
-      createdAt: formatTimestamp(row.createdAt as number),
-      updatedAt: formatTimestamp(row.updatedAt as number),
-    }));
+        createdAt: location.createdAt,
+        updatedAt: location.updatedAt,
+      };
+    });
 
     return NextResponse.json({
       success: true,
-      locations,
+      locations: formattedLocations,
     });
   } catch (error) {
     console.error("Get locations error:", error);

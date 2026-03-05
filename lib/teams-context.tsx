@@ -13,6 +13,7 @@ interface TeamsContextType {
   isLoading: boolean;
   addTeam: (team: Omit<Team, "id" | "status" | "createdAt" | "leader" | "currentMembers">) => Promise<Team>;
   getTeamsByLocationId: (locationId: string) => Team[];
+  getTeamsByRouteId: (routeId: string) => Team[];
   getTeamById: (id: string) => Team | undefined;
   getUserJoinedTeams: () => Promise<Team[]>;
   refreshTeams: () => Promise<void>;
@@ -35,6 +36,7 @@ function formatTeamFromDB(apiTeam: Record<string, unknown>): Team {
   return {
     id: apiTeam.id as string,
     locationId: apiTeam.locationId as string,
+    routeId: apiTeam.routeId as string, // 新增路线 ID
     title: apiTeam.title as string,
     description: apiTeam.description as string || "",
     date: apiTeam.date as string || (apiTeam.startTime ? new Date(apiTeam.startTime as string).toISOString().split("T")[0] : getCurrentDate()),
@@ -60,6 +62,9 @@ function formatTeamFromDB(apiTeam: Record<string, unknown>): Team {
       completedHikes: 0,
       bio: "",
     },
+    // 如果 API 返回了 route 对象，一并包含
+    route: apiTeam.route ? apiTeam.route as Team["route"] : undefined,
+    location: apiTeam.location ? apiTeam.location as Team["location"] : undefined,
   };
 }
 
@@ -116,6 +121,7 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
     const newTeam: Team = {
       id: apiTeam.id,
       locationId: apiTeam.locationId,
+      routeId: apiTeam.routeId, // 新增路线 ID
       title: apiTeam.title,
       description: apiTeam.description,
       date: teamData.date,
@@ -141,6 +147,8 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
         completedHikes: user?.completedHikes || 0,
         bio: "",
       },
+      route: apiTeam.route,
+      location: apiTeam.location,
     };
 
     setTeams((prev) => [newTeam, ...prev]);
@@ -149,6 +157,10 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
 
   const getTeamsByLocationId = React.useCallback((locationId: string) => {
     return teams.filter((team) => team.locationId === locationId);
+  }, [teams]);
+
+  const getTeamsByRouteId = React.useCallback((routeId: string) => {
+    return teams.filter((team) => team.routeId === routeId);
   }, [teams]);
 
   const getTeamById = React.useCallback((id: string) => {
@@ -182,7 +194,7 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
   }, [user?.id]);
 
   return (
-    <TeamsContext.Provider value={{ teams, isLoading, addTeam, getTeamsByLocationId, getTeamById, getUserJoinedTeams, refreshTeams }}>
+    <TeamsContext.Provider value={{ teams, isLoading, addTeam, getTeamsByLocationId, getTeamsByRouteId, getTeamById, getUserJoinedTeams, refreshTeams }}>
       {children}
     </TeamsContext.Provider>
   );

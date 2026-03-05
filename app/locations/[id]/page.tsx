@@ -11,42 +11,6 @@ import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
 import { useLocations } from "@/lib/locations-context";
 
-interface Location {
-  id: string;
-  name: string;
-  slug: string;
-  subtitle: string;
-  description: string;
-  coverImage: string;
-  images: string[];
-  difficulty: string;
-  duration: string;
-  distance: string;
-  elevation: string;
-  bestSeason: string[];
-  tags: string[];
-  location: {
-    address: string;
-    coordinates: { lat: number; lng: number };
-  };
-  routeGuide: {
-    overview: string;
-    waypoints: { name: string; description: string; distance: string }[];
-    tips: string[];
-    warnings: string[];
-  };
-  facilities: {
-    parking: boolean;
-    restroom: boolean;
-    water: boolean;
-    food: boolean;
-  };
-  routeDescription: string;
-  waypoints: unknown[];
-  warnings: string[];
-  tips: string;
-}
-
 export default function LocationPage() {
   const params = useParams();
   const id = params.id as string;

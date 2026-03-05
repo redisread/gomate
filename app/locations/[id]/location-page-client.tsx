@@ -9,7 +9,10 @@ import { Footer } from "@/app/components/layout/footer";
 import { LocationHeader } from "@/app/components/features/location-header";
 import { LocationInfoCard } from "@/app/components/features/location-info-card";
 import { RouteGuide } from "@/app/components/features/route-guide";
+import { RouteList } from "@/app/components/features/route-list";
 import { TeamList } from "@/app/components/features/team-list";
+import { EquipmentList } from "@/app/components/features/equipment-list";
+import { FeaturedTeams } from "@/app/components/features/featured-teams";
 import { useLocations } from "@/lib/locations-context";
 
 interface LocationPageClientProps {
@@ -19,10 +22,31 @@ interface LocationPageClientProps {
 export function LocationPageClient({ locationId }: LocationPageClientProps) {
   const { locations, getLocationById } = useLocations();
   const location = getLocationById(locationId);
+  const [selectedRouteId, setSelectedRouteId] = React.useState<string | null>(null);
 
   if (!location) {
     notFound();
   }
+
+  // 获取路线列表
+  const routes = location.routes || [];
+  const hasRoutes = routes.length > 0;
+  const hasSingleRoute = routes.length === 1;
+  const hasMultipleRoutes = routes.length > 1;
+
+  // 如果只有一条路线,默认选中
+  React.useEffect(() => {
+    if (hasSingleRoute && !selectedRouteId) {
+      setSelectedRouteId(routes[0].id);
+    }
+  }, [hasSingleRoute, routes, selectedRouteId]);
+
+  // 获取当前选中的路线
+  const selectedRoute = selectedRouteId
+    ? routes.find((r) => r.id === selectedRouteId)
+    : hasSingleRoute
+    ? routes[0]
+    : null;
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -51,12 +75,46 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
               </p>
             </motion.div>
 
-            {/* Route Guide */}
-            <RouteGuide location={location} />
+            {/* Routes Section */}
+            {hasMultipleRoutes && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <RouteList
+                  locationId={locationId}
+                  routes={routes}
+                  locationName={location.name}
+                  showFilters={true}
+                  onRouteSelect={(routeId) => {
+                    setSelectedRouteId(routeId);
+                    // 滚动到路线详情
+                    document.getElementById("route-details")?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {/* Route Details (when a route is selected) */}
+            {selectedRoute && (
+              <div id="route-details" className="space-y-6">
+                {/* 路线概览 + 安全须知 */}
+                <RouteGuide route={selectedRoute} locationName={location.name} />
+
+                {/* 装备建议 */}
+                {selectedRoute.equipmentNeeded && selectedRoute.equipmentNeeded.length > 0 && (
+                  <EquipmentList equipment={selectedRoute.equipmentNeeded} />
+                )}
+
+                {/* 热门队伍精选 */}
+                <FeaturedTeams routeId={selectedRoute.id} limit={3} />
+              </div>
+            )}
 
             {/* Teams Section */}
             <div id="teams">
-              <TeamList locationId={locationId} />
+              <TeamList locationId={locationId} routeId={selectedRouteId || undefined} />
             </div>
           </div>
 

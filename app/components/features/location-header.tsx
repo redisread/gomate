@@ -84,10 +84,12 @@ function LocationHeader({ location, className }: LocationHeaderProps) {
             >
               <div className="flex items-center gap-2 mb-3">
                 <DifficultyBadge difficulty={location.difficulty} />
-                <span className="flex items-center gap-1 text-white/80 text-sm">
-                  <MapPin className="h-4 w-4" />
-                  {location.location.address}
-                </span>
+                {location.address && (
+                  <span className="flex items-center gap-1 text-white/80 text-sm">
+                    <MapPin className="h-4 w-4" />
+                    {location.address}
+                  </span>
+                )}
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">

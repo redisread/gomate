@@ -27,6 +27,7 @@ function CreateTeamForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const locationIdFromUrl = searchParams.get("locationId");
+  const routeIdFromUrl = searchParams.get("routeId");
 
   // 获取默认日期和时间（日期为今天，时间为4小时后）
   const getDefaultDateTime = () => {
@@ -52,6 +53,7 @@ function CreateTeamForm() {
   const [formData, setFormData] = React.useState({
     title: "",
     locationId: locationIdFromUrl || "",
+    routeId: routeIdFromUrl || "", // 新增路线 ID
     date: defaultDate,
     time: defaultTime,
     duration: "",
@@ -64,6 +66,21 @@ function CreateTeamForm() {
 
   const selectedLocation = formData.locationId
     ? getLocationById(formData.locationId)
+    : null;
+
+  // 获取选中地点的路线列表
+  const locationRoutes = selectedLocation?.routes || [];
+
+  // 当地点改变时,自动选择第一条路线(如果有)
+  React.useEffect(() => {
+    if (selectedLocation && locationRoutes.length > 0 && !formData.routeId) {
+      setFormData((prev) => ({ ...prev, routeId: locationRoutes[0].id }));
+    }
+  }, [selectedLocation, locationRoutes, formData.routeId]);
+
+  // 获取选中的路线
+  const selectedRoute = formData.routeId
+    ? locationRoutes.find((r) => r.id === formData.routeId)
     : null;
 
   // 检查登录状态，未登录重定向到登录页
@@ -85,9 +102,17 @@ function CreateTeamForm() {
     setIsSubmitting(true);
 
     try {
+      // 验证必须选择路线
+      if (!formData.routeId) {
+        alert("请选择一条路线");
+        setIsSubmitting(false);
+        return;
+      }
+
       // 创建新队伍
       const newTeam = await addTeam({
         locationId: formData.locationId,
+        routeId: formData.routeId, // 新增路线 ID
         title: formData.title,
         description: formData.description,
         date: formData.date,
@@ -194,19 +219,75 @@ function CreateTeamForm() {
                       ))}
                     </select>
                   </div>
-                  {selectedLocation && (
-                    <p className="text-sm text-stone-500">
-                      {selectedLocation.difficulty === "easy"
-                        ? copy.enums.difficulty.easy
-                        : selectedLocation.difficulty === "moderate"
-                        ? copy.enums.difficulty.moderate
-                        : selectedLocation.difficulty === "hard"
-                        ? copy.enums.difficulty.hard
-                        : copy.enums.difficulty.expert}{" "}
-                      · {selectedLocation.duration} · {selectedLocation.distance}
-                    </p>
-                  )}
                 </div>
+
+                {/* 选择路线 */}
+                {selectedLocation && locationRoutes.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="routeId">
+                      选择路线 <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="space-y-2">
+                      {locationRoutes.map((route) => {
+                        const difficultyLabel =
+                          route.difficulty === "easy" ? copy.enums.difficulty.easy :
+                          route.difficulty === "moderate" ? copy.enums.difficulty.moderate :
+                          route.difficulty === "hard" ? copy.enums.difficulty.hard :
+                          copy.enums.difficulty.expert;
+
+                        return (
+                          <label
+                            key={route.id}
+                            className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                              formData.routeId === route.id
+                                ? "border-stone-900 bg-stone-50"
+                                : "border-stone-200 hover:border-stone-300"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="routeId"
+                              value={route.id}
+                              checked={formData.routeId === route.id}
+                              onChange={handleInputChange}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-stone-900">{route.name}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  route.difficulty === "easy" ? "bg-green-100 text-green-800" :
+                                  route.difficulty === "moderate" ? "bg-blue-100 text-blue-800" :
+                                  route.difficulty === "hard" ? "bg-orange-100 text-orange-800" :
+                                  "bg-red-100 text-red-800"
+                                }`}>
+                                  {difficultyLabel}
+                                </span>
+                              </div>
+                              <div className="text-sm text-stone-500">
+                                {route.duration} · {route.distance}
+                                {route.elevation && ` · 爬升 ${route.elevation}`}
+                              </div>
+                              {route.description && (
+                                <p className="text-sm text-stone-600 mt-1 line-clamp-2">
+                                  {route.description}
+                                </p>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {selectedLocation && locationRoutes.length === 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <p className="text-sm text-amber-800">
+                      该地点暂无可用路线，请联系管理员添加路线信息。
+                    </p>
+                  </div>
+                )}
 
                 {/* 日期和时间 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
