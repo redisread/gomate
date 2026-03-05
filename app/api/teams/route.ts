@@ -225,7 +225,23 @@ export async function GET(request: NextRequest) {
         duration: `${durationHours}小时`,
         maxMembers: row.maxMembers,
         currentMembers: row.currentMembers,
-        requirements: row.requirements ? JSON.parse(row.requirements) : [],
+        requirements: (() => {
+          try {
+            // 检查是否为有效的 JSON 字符串
+            if (row.requirements && typeof row.requirements === 'string') {
+              // 如果是状态值（recruiting/full 等），说明数据错位，返回空数组
+              if (['recruiting', 'full', 'ongoing', 'completed', 'cancelled', 'open'].includes(row.requirements)) {
+                console.warn(`Data misalignment detected for team ${row.id}: requirements field contains status value`);
+                return [];
+              }
+              return JSON.parse(row.requirements);
+            }
+            return [];
+          } catch (error) {
+            console.error(`Failed to parse requirements for team ${row.id}:`, error);
+            return [];
+          }
+        })(),
         status: statusMap[row.status] || 'open',
         createdAt: row.createdAt,
         leader: row.leader ? {
