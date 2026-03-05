@@ -3,9 +3,10 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { difficultyLabels } from "@/lib/constants";
+import type { Difficulty } from "@/db/schema";
 
 interface DifficultyBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  difficulty: "easy" | "moderate" | "hard" | "extreme";
+  difficulty: Difficulty;
   size?: "sm" | "md" | "lg";
 }
 
@@ -21,7 +22,12 @@ function DifficultyBadge({
   className,
   ...props
 }: DifficultyBadgeProps) {
-  const { label, color } = difficultyLabels[difficulty];
+  // 防御性编程：如果 difficulty 未定义，使用默认值
+  const difficultyInfo = difficultyLabels[difficulty] || {
+    label: difficulty || "未知",
+    color: "bg-gray-100 text-gray-700"
+  };
+  const { label, color } = difficultyInfo;
 
   return (
     <span

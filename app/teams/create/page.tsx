@@ -202,7 +202,7 @@ function CreateTeamForm() {
                         ? copy.enums.difficulty.moderate
                         : selectedLocation.difficulty === "hard"
                         ? copy.enums.difficulty.hard
-                        : copy.enums.difficulty.extreme}{" "}
+                        : copy.enums.difficulty.expert}{" "}
                       · {selectedLocation.duration} · {selectedLocation.distance}
                     </p>
                   )}

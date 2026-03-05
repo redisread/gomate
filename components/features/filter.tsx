@@ -24,7 +24,7 @@ const filterGroups: FilterGroup[] = [
       { id: "easy", label: "简单" },
       { id: "moderate", label: "中等" },
       { id: "hard", label: "困难" },
-      { id: "extreme", label: "极难" },
+      { id: "expert", label: "专家" },
     ],
   },
   {

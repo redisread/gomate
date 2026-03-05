@@ -10,13 +10,18 @@ export type UserRole = "user" | "admin";
 export interface AuthUser {
   id: string;
   name: string;
+  nickname?: string;
   avatar: string;
   email: string;
   level: "beginner" | "intermediate" | "advanced" | "expert";
   completedHikes: number;
   bio: string;
   wechat?: string;
+  gender?: "male" | "female" | "other";
+  birthday?: string | number;
+  extra?: string; // JSON 字符串
   role: UserRole;
+  status?: "active" | "suspended" | "banned" | "deleted";
   createdAt: string;
 }
 
@@ -82,13 +87,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const authUser: AuthUser = {
         id: session.user.id,
         name: fullUser?.name !== undefined ? fullUser.name : session.user.name,
+        nickname: fullUser?.nickname,
         avatar: fullUser?.avatar !== undefined ? fullUser.avatar : (session.user.image || DEFAULT_AVATAR),
         email: session.user.email,
         level: (fullUser?.level !== undefined ? fullUser.level : session.user.level as AuthUser["level"]) || "beginner",
         completedHikes: fullUser?.completedHikes !== undefined ? fullUser.completedHikes : ((session.user as unknown as { completedHikes?: number }).completedHikes || 0),
         bio: fullUser?.bio !== undefined ? fullUser.bio : "新人户外爱好者，期待与你一起探索山野。",
         wechat: fullUser?.wechat,
+        gender: fullUser?.gender,
+        birthday: fullUser?.birthday,
+        extra: fullUser?.extra,
         role: (fullUser?.role !== undefined ? fullUser.role : (session.user as unknown as { role?: UserRole }).role) || "user",
+        status: fullUser?.status || "active",
         createdAt: fullUser?.createdAt !== undefined ? fullUser.createdAt : createdAtStr,
       };
       setUser(authUser);

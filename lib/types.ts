@@ -9,7 +9,7 @@ export interface Location {
   description: string;
   coverImage: string;
   images: string[];
-  difficulty: 'easy' | 'moderate' | 'hard' | 'extreme';
+  difficulty: 'easy' | 'moderate' | 'hard' | 'expert';
   duration: string;
   distance: string;
   elevation: string;
@@ -51,6 +51,9 @@ export interface TeamMember {
   status?: 'pending' | 'approved' | 'rejected' | 'leave_pending';
   joinedAt: Date | string | null;
   wechat?: string; // 微信号（仅队友可见）
+  gender?: string | null; // 性别
+  birthday?: Date | number | string | null; // 生日（可能是 Date、时间戳或字符串）
+  extra?: string | null; // 扩展信息（JSON 字符串）
 }
 
 export interface Team {
@@ -72,6 +75,9 @@ export interface Team {
     completedHikes: number;
     bio: string;
     wechat?: string; // 微信号（仅队友可见）
+    gender?: string | null; // 性别
+    birthday?: Date | number | string | null; // 生日（可能是 Date、时间戳或字符串）
+    extra?: string | null; // 扩展信息（JSON 字符串）
   };
   status: 'recruiting' | 'full' | 'formed' | 'ongoing' | 'completed' | 'cancelled' | 'open' | 'closed';
   createdAt: string;

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import * as schema from "@/db/schema";
+import { validateUserExtra, stringifyUserExtra } from "@/lib/user-extra";
+import type { UserExtra } from "@/lib/user-extra";
 
 // 动态导入 @opennextjs/cloudflare 以避免构建时错误
 const getCloudflareContext = async () => {
@@ -29,7 +31,7 @@ export async function PATCH(request: NextRequest) {
 
     // 解析请求体
     const body = await request.json();
-    const { userId, name, bio, level, image, wechat } = body;
+    const { userId, name, nickname, bio, level, image, wechat, gender, birthday, extra } = body;
 
     if (!userId) {
       return NextResponse.json(
@@ -42,12 +44,29 @@ export async function PATCH(request: NextRequest) {
     const updateData: Partial<typeof schema.users.$inferInsert> = {};
 
     if (name !== undefined) updateData.name = name;
+    if (nickname !== undefined) updateData.nickname = nickname;
     if (bio !== undefined) updateData.bio = bio;
     if (level !== undefined) {
       updateData.level = level;
     }
     if (image !== undefined) updateData.image = image;
     if (wechat !== undefined) updateData.wechat = wechat;
+    if (gender !== undefined) updateData.gender = gender;
+    if (birthday !== undefined) {
+      // 如果是字符串日期,转换为时间戳
+      updateData.birthday = typeof birthday === "string" ? new Date(birthday) : birthday;
+    }
+
+    // 校验并处理 extra 字段
+    if (extra !== undefined) {
+      if (!validateUserExtra(extra)) {
+        return NextResponse.json(
+          { error: "Invalid extra field format" },
+          { status: 400 }
+        );
+      }
+      updateData.extra = stringifyUserExtra(extra as UserExtra);
+    }
 
     // 手动设置 updatedAt（Drizzle ORM 会自动转换为时间戳）
     updateData.updatedAt = new Date();

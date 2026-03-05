@@ -28,6 +28,8 @@ import { useAuth } from "@/lib/auth-context";
 import { useTeams } from "@/lib/teams-context";
 import { useLocations } from "@/lib/locations-context";
 import type { Team } from "@/lib/types";
+import { getUserDisplayName, getAgeText, getGenderText } from "@/lib/user-utils";
+import { parseUserExtra } from "@/lib/user-extra";
 
 // 经验等级映射
 const levelLabels: Record<string, { label: string; color: string; description: string }> = {
@@ -90,6 +92,18 @@ export default function ProfilePage() {
 
   const levelInfo = levelLabels[user.level] || levelLabels.beginner;
 
+  // 解析 extra 字段
+  const userExtra = parseUserExtra(user.extra || null);
+
+  // 获取展示名称
+  const displayName = getUserDisplayName(user);
+
+  // 获取年龄
+  const ageText = getAgeText(user.birthday || null);
+
+  // 获取性别文本
+  const genderText = getGenderText(user.gender || null);
+
   return (
     <main className="min-h-screen bg-stone-50">
       <Navbar />
@@ -139,11 +153,26 @@ export default function ProfilePage() {
               <div className="pt-20 sm:pt-4 sm:pl-40">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <h1 className="text-2xl font-bold text-stone-900">{user.name}</h1>
+                    <h1 className="text-2xl font-bold text-stone-900">{displayName}</h1>
                     <p className="text-stone-500 flex items-center gap-2 mt-1">
                       <Mail className="h-4 w-4" />
                       {user.email}
                     </p>
+                    {(ageText || genderText !== "未设置" || user.wechat) && (
+                      <p className="text-stone-500 flex items-center gap-2 mt-1 text-sm">
+                        <User className="h-4 w-4" />
+                        {genderText !== "未设置" && genderText}
+                        {genderText !== "未设置" && ageText && " · "}
+                        {ageText}
+                        {(genderText !== "未设置" || ageText) && user.wechat && " · "}
+                        {user.wechat && (
+                          <>
+                            <MessageCircle className="h-3.5 w-3.5" />
+                            {user.wechat}
+                          </>
+                        )}
+                      </p>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" asChild>
@@ -178,11 +207,27 @@ export default function ProfilePage() {
                   </p>
                 )}
 
-                {/* WeChat - only visible to self */}
-                {user.wechat && (
-                  <div className="mt-4 flex items-center gap-2 text-stone-500">
-                    <MessageCircle className="h-4 w-4" />
-                    <span className="text-sm">微信号：{user.wechat}</span>
+                {/* Equipment & Experience */}
+                {(userExtra.equipment || userExtra.experience) && (
+                  <div className="mt-4 space-y-2">
+                    {userExtra.equipment && userExtra.equipment.length > 0 && (
+                      <div className="flex items-start gap-2 text-stone-600">
+                        <Mountain className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <span className="text-sm font-medium">常用装备：</span>
+                          <span className="text-sm">{userExtra.equipment.join("、")}</span>
+                        </div>
+                      </div>
+                    )}
+                    {userExtra.experience && (
+                      <div className="flex items-start gap-2 text-stone-600">
+                        <Award className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <span className="text-sm font-medium">徒步经验：</span>
+                          <span className="text-sm">{userExtra.experience}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -104,7 +104,7 @@ export async function GET(
     // 格式化已审核通过和退出申请中的成员列表
     const relevantMembers = team.members
       ?.filter((m: { status: string }) => m.status === "approved" || m.status === "leave_pending")
-      .map((m: { userId: string; role: string; status: string; joinedAt: Date | null; user: { id: string; name: string; image: string | null; bio: string | null; level: string | null; wechat: string | null } }) => ({
+      .map((m: { userId: string; role: string; status: string; joinedAt: Date | null; user: { id: string; name: string; image: string | null; bio: string | null; level: string | null; wechat: string | null; gender: string | null; birthday: Date | number | null; extra: string | null } }) => ({
         id: m.user?.id || m.userId,
         userId: m.userId,
         name: m.user?.name || '未知用户',
@@ -116,6 +116,9 @@ export async function GET(
         joinedAt: m.joinedAt,
         // 只有队伍成员可以看到其他成员的微信号
         wechat: isTeamMember ? (m.user?.wechat || undefined) : undefined,
+        gender: m.user?.gender || null,
+        birthday: m.user?.birthday || null,
+        extra: m.user?.extra || null,
       })) || [];
 
     // 格式化返回数据，符合前端 Team 类型
@@ -141,6 +144,9 @@ export async function GET(
         bio: team.leader.bio || '',
         // 只有队长自己或队伍成员可以看到队长的微信号
         wechat: (isTeamMember || currentUserId === team.leader.id) ? (team.leader.wechat || '') : undefined,
+        gender: team.leader.gender || null,
+        birthday: team.leader.birthday || null,
+        extra: team.leader.extra || null,
       } : {
         id: 'unknown',
         name: '未知用户',

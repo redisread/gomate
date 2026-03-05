@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Crown, MessageCircle, UserX, Loader2, LogOut, Check, X } from "lucide-react";
+import { Users, Crown, MessageCircle, UserX, Loader2, LogOut, Check, X, User, Mountain } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { copy } from "@/lib/copy";
 import type { TeamMember } from "@/lib/types";
+import { getGenderText, getAgeText } from "@/lib/user-utils";
+import { parseUserExtra } from "@/lib/user-extra";
 
 interface MemberListProps {
   members: TeamMember[];
@@ -313,18 +315,40 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                         <Crown className="h-4 w-4 text-amber-500" />
                       )}
                     </div>
+
+                    {/* 等级徽章 */}
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="outline" className="text-xs">
                         {getLevelName(member.level)}
                       </Badge>
-                      {/* 显示微信号（仅队友可见） */}
-                      {member.wechat && (
-                        <div className="flex items-center gap-1 text-xs text-stone-500">
-                          <MessageCircle className="h-3 w-3" />
-                          <span className="truncate max-w-[100px]">{member.wechat}</span>
-                        </div>
+
+                      {/* 性别 + 年龄 */}
+                      {(member.gender || member.birthday) && (
+                        <span className="text-xs text-stone-500">
+                          {member.gender && getGenderText(member.gender)}
+                          {member.gender && member.birthday && " · "}
+                          {member.birthday && getAgeText(member.birthday)}
+                        </span>
                       )}
                     </div>
+
+                    {/* 装备（简化显示前2个） */}
+                    {member.extra && parseUserExtra(member.extra).equipment && parseUserExtra(member.extra).equipment!.length > 0 && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-stone-500">
+                        <Mountain className="h-3 w-3" />
+                        <span className="truncate">
+                          {parseUserExtra(member.extra).equipment?.slice(0, 2).join("、")}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* 微信号 */}
+                    {member.wechat && (
+                      <div className="flex items-center gap-1 text-xs text-stone-500 mt-1">
+                        <MessageCircle className="h-3 w-3" />
+                        <span className="truncate max-w-[100px]">{member.wechat}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* 移除按钮（仅队长可见，不显示在队长身上） */}

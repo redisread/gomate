@@ -291,7 +291,7 @@ export function TeamClientPage({ teamId }: TeamClientPageProps) {
                           ? copy.enums.difficulty.moderate
                           : location.difficulty === "hard"
                           ? copy.enums.difficulty.hard
-                          : copy.enums.difficulty.extreme}{" "}
+                          : copy.enums.difficulty.expert}{" "}
                         · {location.duration} · {location.distance}
                       </p>
                       <Link

@@ -38,7 +38,7 @@ const difficultyLabels: Record<string, { label: string; color: string }> = {
   easy: { label: "简单", color: "bg-emerald-100 text-emerald-700" },
   moderate: { label: "中等", color: "bg-amber-100 text-amber-700" },
   hard: { label: "困难", color: "bg-orange-100 text-orange-700" },
-  extreme: { label: "极难", color: "bg-red-100 text-red-700" },
+  expert: { label: "专家", color: "bg-red-100 text-red-700" },
 };
 
 // 筛选选项（静态部分）
@@ -47,7 +47,7 @@ const staticFilterOptions = {
     { id: "easy", label: "简单" },
     { id: "moderate", label: "中等" },
     { id: "hard", label: "困难" },
-    { id: "extreme", label: "极难" },
+    { id: "expert", label: "专家" },
   ],
   duration: [
     { id: "short", label: "半日内" },

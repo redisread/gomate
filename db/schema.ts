@@ -7,6 +7,9 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
+// 导入 UserExtra 类型（用于 extra 字段）
+export type { UserExtra } from "@/lib/user-extra";
+
 // ==================== Tables ====================
 
 // 用户表（Better Auth 扩展）
@@ -14,20 +17,26 @@ export const users = sqliteTable(
   "users",
   {
     id: text("id").primaryKey(), // 用户唯一标识
-    name: text("name").notNull(), // 用户昵称
+    name: text("name").notNull(), // Better Auth 标准字段（用于认证）
+    nickname: text("nickname"), // 用户昵称（用于展示，可为空则显示 name）
     email: text("email").notNull().unique(), // 邮箱地址（登录账号）
     emailVerified: integer("email_verified", { mode: "boolean" }).default(false).notNull(), // 邮箱是否已验证
     image: text("image"), // 用户头像 URL
     bio: text("bio"), // 个人简介
-    level: text("level").default("beginner"), // 领队等级: beginner(新手), intermediate(进阶), advanced(资深), expert(专家)
+    gender: text("gender"), // 性别: male(男) | female(女) | other(其他) | null(未设置)
+    birthday: integer("birthday", { mode: "timestamp" }), // 生日时间戳（可用于计算年龄段）
+    level: text("level").default("beginner").notNull(), // beginner | intermediate | advanced | expert
     wechat: text("wechat"), // 微信号（可选，加入队伍时必填）
-    role: text("role").default("user"), // 角色: user(普通用户), admin(管理员)
-    completedHikes: integer("completed_hikes").default(0), // 完成徒步次数
+    role: text("role").default("user").notNull(), // user | admin
+    status: text("status").default("active").notNull(), // active | suspended | banned | deleted
+    extra: text("extra"), // JSON: { equipment, experience }
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 账号创建时间
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 资料更新时间
+    deletedAt: integer("deleted_at", { mode: "timestamp" }), // 软删除时间戳
   },
   (table) => ({
     emailIdx: index("users_email_idx").on(table.email),
+    nameIdx: index("users_name_idx").on(table.name), // 支持按用户名搜索
   })
 );
 
@@ -303,3 +312,6 @@ export type TeamStatus = "recruiting" | "full" | "formed" | "ongoing" | "complet
 export type TeamMemberRole = "leader" | "member"; // 成员角色：领队、队员
 export type TeamMemberStatus = "pending" | "approved" | "rejected" | "leave_pending"; // 成员状态：待审核、已通过、已拒绝、退出申请中
 export type UserRole = "user" | "admin"; // 用户角色：普通用户、管理员
+export type UserLevel = "beginner" | "intermediate" | "advanced" | "expert"; // 用户等级：新手、进阶、资深、专家
+export type UserStatus = "active" | "suspended" | "banned" | "deleted"; // 用户状态：活跃、暂停、封禁、已删除
+export type UserGender = "male" | "female" | "other"; // 用户性别：男、女、其他

@@ -35,9 +35,14 @@ export default function EditProfilePage() {
 
   const [formData, setFormData] = React.useState({
     name: "",
+    nickname: "",
     bio: "",
     level: "beginner" as const,
     wechat: "",
+    gender: "" as "male" | "female" | "other" | "",
+    birthday: "",
+    equipment: [] as string[],
+    experience: "",
   });
   const [isSaving, setIsSaving] = React.useState(false);
   const [message, setMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -51,11 +56,36 @@ export default function EditProfilePage() {
   // 初始化表单数据
   React.useEffect(() => {
     if (user) {
+      // 解析 extra 字段
+      let equipment: string[] = [];
+      let experience = "";
+      if (user.extra) {
+        try {
+          const extraData = JSON.parse(user.extra);
+          equipment = extraData.equipment || [];
+          experience = extraData.experience || "";
+        } catch (e) {
+          console.error("Failed to parse extra:", e);
+        }
+      }
+
+      // 格式化生日为 YYYY-MM-DD
+      let birthdayStr = "";
+      if (user.birthday) {
+        const date = typeof user.birthday === "number" ? new Date(user.birthday) : new Date(user.birthday);
+        birthdayStr = date.toISOString().split("T")[0];
+      }
+
       setFormData({
         name: user.name,
+        nickname: user.nickname || "",
         bio: user.bio,
         level: user.level,
         wechat: user.wechat || "",
+        gender: (user.gender as "male" | "female" | "other") || "",
+        birthday: birthdayStr,
+        equipment,
+        experience,
       });
       setAvatarPreview(user.avatar);
     }
@@ -170,6 +200,12 @@ export default function EditProfilePage() {
         }
       }
 
+      // 构建 extra 字段
+      const extra = {
+        equipment: formData.equipment.length > 0 ? formData.equipment : undefined,
+        experience: formData.experience || undefined,
+      };
+
       // 调用自定义 API 更新用户信息（支持 bio 和 level 自定义字段）
       const response = await fetch("/api/user/update", {
         method: "PATCH",
@@ -179,10 +215,14 @@ export default function EditProfilePage() {
         body: JSON.stringify({
           userId: user.id,
           name: formData.name,
+          nickname: formData.nickname || null,
           image: avatarUrl === DEFAULT_AVATAR ? null : avatarUrl,
           bio: formData.bio,
           level: formData.level,
           wechat: formData.wechat,
+          gender: formData.gender || null,
+          birthday: formData.birthday || null,
+          extra,
         }),
       });
 
@@ -314,7 +354,7 @@ export default function EditProfilePage() {
                 {/* Name */}
                 <div className="space-y-2">
                   <Label htmlFor="name">
-                    {copy.auth.nickname} <span className="text-red-500">*</span>
+                    用户名 <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="name"
@@ -325,9 +365,27 @@ export default function EditProfilePage() {
                     minLength={2}
                     maxLength={20}
                     className="border-stone-200"
-                    placeholder={copy.auth.nicknamePlaceholder}
+                    placeholder="请输入用户名"
                   />
-                  <p className="text-xs text-stone-500">{copy.auth.nicknameRange}</p>
+                  <p className="text-xs text-stone-500">用于认证和系统标识,2-20个字符</p>
+                </div>
+
+                {/* Nickname */}
+                <div className="space-y-2">
+                  <Label htmlFor="nickname">
+                    昵称
+                  </Label>
+                  <Input
+                    id="nickname"
+                    name="nickname"
+                    value={formData.nickname}
+                    onChange={handleInputChange}
+                    minLength={2}
+                    maxLength={20}
+                    className="border-stone-200"
+                    placeholder="请输入昵称（为空则显示用户名）"
+                  />
+                  <p className="text-xs text-stone-500">用于展示的昵称,可以随时修改</p>
                 </div>
 
                 {/* Bio */}
@@ -395,6 +453,75 @@ export default function EditProfilePage() {
                     placeholder={copy.profile.wechatPlaceholder}
                   />
                   <p className="text-xs text-stone-500">{copy.profile.wechatHint}</p>
+                </div>
+
+                {/* Gender */}
+                <div className="space-y-2">
+                  <Label htmlFor="gender">性别</Label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleInputChange}
+                    className="flex h-10 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-stone-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">未设置</option>
+                    <option value="male">男</option>
+                    <option value="female">女</option>
+                    <option value="other">其他</option>
+                  </select>
+                  <p className="text-xs text-stone-500">可选填写,用于更好的匹配队友</p>
+                </div>
+
+                {/* Birthday */}
+                <div className="space-y-2">
+                  <Label htmlFor="birthday">生日</Label>
+                  <Input
+                    id="birthday"
+                    name="birthday"
+                    type="date"
+                    value={formData.birthday}
+                    onChange={handleInputChange}
+                    className="border-stone-200"
+                  />
+                  <p className="text-xs text-stone-500">可选填写,用于计算年龄段</p>
+                </div>
+
+                {/* Equipment */}
+                <div className="space-y-2">
+                  <Label htmlFor="equipment">常用装备</Label>
+                  <Input
+                    id="equipment"
+                    name="equipment"
+                    value={formData.equipment.join(", ")}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const equipmentArray = value.split(",").map(item => item.trim()).filter(Boolean);
+                      setFormData(prev => ({ ...prev, equipment: equipmentArray }));
+                    }}
+                    className="border-stone-200"
+                    placeholder="例如: 登山鞋, 冲锋衣, 登山杖"
+                  />
+                  <p className="text-xs text-stone-500">用逗号分隔多个装备</p>
+                </div>
+
+                {/* Experience */}
+                <div className="space-y-2">
+                  <Label htmlFor="experience">徒步经验</Label>
+                  <Textarea
+                    id="experience"
+                    name="experience"
+                    value={formData.experience}
+                    onChange={handleInputChange}
+                    rows={3}
+                    maxLength={200}
+                    className="border-stone-200 resize-none"
+                    placeholder="例如: 有3年徒步经验,完成过梧桐山、七娘山等路线"
+                  />
+                  <div className="flex justify-between text-xs text-stone-500">
+                    <span>简单描述你的徒步经历</span>
+                    <span>{formData.experience.length}/200</span>
+                  </div>
                 </div>
 
                 {/* Email (Read-only) */}

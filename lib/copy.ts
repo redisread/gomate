@@ -586,8 +586,7 @@ export const copy = {
       easy: "简单",
       moderate: "中等",
       hard: "困难",
-      extreme: "极难",
-      expert: "极难",
+      expert: "专家",
     },
     teamStatus: {
       recruiting: "招募中",

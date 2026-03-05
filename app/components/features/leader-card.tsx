@@ -9,6 +9,8 @@ import {
   Copy,
   Check,
   Lock,
+  User,
+  Award,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,6 +20,8 @@ import type { Team } from "@/lib/types";
 import { leaderLevelLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { copy as copyText } from "@/lib/copy";
+import { getGenderText, getAgeText } from "@/lib/user-utils";
+import { parseUserExtra } from "@/lib/user-extra";
 
 interface LeaderCardProps {
   team: Team;
@@ -79,15 +83,53 @@ function LeaderCard({ team, isTeamMember = false, className }: LeaderCardProps) 
                 >
                   {leaderLevelLabels[leader.level]}
                 </Badge>
-                <span className="flex items-center gap-1 text-sm text-stone-500">
+              </div>
+
+              {/* 带队次数 + 性别年龄 */}
+              <div className="flex items-center gap-3 mt-2 text-sm text-stone-500">
+                <span className="flex items-center gap-1">
                   <Mountain className="h-3.5 w-3.5" />
                   {leader.completedHikes}次带队
                 </span>
+                {(leader.gender || leader.birthday) && (
+                  <>
+                    <span>·</span>
+                    <span className="flex items-center gap-1">
+                      <User className="h-3.5 w-3.5" />
+                      {getGenderText(leader.gender)}
+                      {leader.birthday && ` · ${getAgeText(leader.birthday)}`}
+                    </span>
+                  </>
+                )}
               </div>
+
+              {/* 简介 */}
               {leader.bio && (
                 <p className="text-sm text-stone-600 mt-2 leading-relaxed">
                   {leader.bio}
                 </p>
+              )}
+
+              {/* 装备和经验（折叠显示） */}
+              {leader.extra && (parseUserExtra(leader.extra).equipment || parseUserExtra(leader.extra).experience) && (
+                <div className="mt-3 p-3 bg-stone-50 rounded-lg space-y-2">
+                  {parseUserExtra(leader.extra).equipment && parseUserExtra(leader.extra).equipment!.length > 0 && (
+                    <div className="flex items-start gap-2 text-xs text-stone-600">
+                      <Mountain className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                      <span className="line-clamp-1">
+                        {parseUserExtra(leader.extra).equipment?.join("、")}
+                      </span>
+                    </div>
+                  )}
+                  {parseUserExtra(leader.extra).experience && (
+                    <div className="flex items-start gap-2 text-xs text-stone-600">
+                      <Award className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                      <span className="line-clamp-2">
+                        {parseUserExtra(leader.extra).experience}
+                      </span>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
