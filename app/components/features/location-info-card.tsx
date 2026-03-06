@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { getAmapNavigateUrl, isValidCoordinates } from "@/lib/map-utils";
 
 interface LocationInfoCardProps {
   location: Location;
@@ -79,11 +80,23 @@ function LocationInfoCard({ location, className }: LocationInfoCardProps) {
                 </div>
               </div>
             )}
-            {location.address && (
+            {(location.address || isValidCoordinates(location.coordinates)) && (
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-stone-100 rounded-lg">
-                  <MapPin className="h-4 w-4 text-stone-600" />
-                </div>
+                {isValidCoordinates(location.coordinates) ? (
+                  <a
+                    href={getAmapNavigateUrl(location.coordinates!, location.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 bg-stone-100 rounded-lg flex-shrink-0 hover:bg-stone-200 transition-colors"
+                    aria-label={`在高德地图中查看 ${location.name} 位置`}
+                  >
+                    <MapPin className="h-4 w-4 text-stone-600" />
+                  </a>
+                ) : (
+                  <div className="p-2 bg-stone-100 rounded-lg flex-shrink-0">
+                    <MapPin className="h-4 w-4 text-stone-600" />
+                  </div>
+                )}
                 <div>
                   <p className="text-xs text-stone-500">地址</p>
                   <p className="text-sm font-medium text-stone-900">

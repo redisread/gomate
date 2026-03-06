@@ -71,19 +71,6 @@ function SearchBar({ className, onSearch, onFilterClick }: SearchBarProps) {
           </div>
         </div>
 
-        {/* Quick Tags */}
-        <div className="flex flex-wrap gap-2 mt-4 justify-center">
-          {["七娘山", "梧桐山", "东西冲", "马峦山", "塘朗山"].map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => setQuery(tag)}
-              className="px-3 py-1.5 text-sm text-stone-600 bg-white border border-stone-200 rounded-full hover:border-stone-400 hover:text-stone-900 transition-colors"
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
       </form>
     </motion.div>
   );

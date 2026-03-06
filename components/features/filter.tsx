@@ -16,7 +16,7 @@ interface FilterGroup {
   options: FilterOption[];
 }
 
-const filterGroups: FilterGroup[] = [
+const defaultFilterGroups: FilterGroup[] = [
   {
     id: "difficulty",
     label: "难度",
@@ -28,23 +28,14 @@ const filterGroups: FilterGroup[] = [
     ],
   },
   {
-    id: "duration",
-    label: "时长",
+    id: "season",
+    label: "季节",
     options: [
-      { id: "short", label: "半日内" },
-      { id: "day", label: "一日" },
-      { id: "multi", label: "多日" },
-    ],
-  },
-  {
-    id: "region",
-    label: "区域",
-    options: [
-      { id: "nanshan", label: "南山区" },
-      { id: "futian", label: "福田区" },
-      { id: "luohu", label: "罗湖区" },
-      { id: "dapeng", label: "大鹏新区" },
-      { id: "pingshan", label: "坪山区" },
+      { id: "春季", label: "春季" },
+      { id: "夏季", label: "夏季" },
+      { id: "秋季", label: "秋季" },
+      { id: "冬季", label: "冬季" },
+      { id: "全年", label: "全年" },
     ],
   },
 ];
@@ -55,6 +46,7 @@ interface FilterProps {
   onClose?: () => void;
   selectedFilters?: Record<string, string[]>;
   onFilterChange?: (groupId: string, optionId: string) => void;
+  extraGroups?: FilterGroup[];
 }
 
 function Filter({
@@ -63,10 +55,34 @@ function Filter({
   onClose,
   selectedFilters = {},
   onFilterChange,
+  extraGroups = [],
 }: FilterProps) {
+  const filterGroups = React.useMemo(
+    () => [...defaultFilterGroups, ...extraGroups],
+    [extraGroups]
+  );
+  // 桌面端：当前打开的下拉菜单 groupId
+  const [openDesktopGroup, setOpenDesktopGroup] = React.useState<string | null>(null);
+  // 移动端抽屉内：展开的分组
   const [expandedGroups, setExpandedGroups] = React.useState<string[]>(
     filterGroups.map((g) => g.id)
   );
+  const desktopRef = React.useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭桌面端下拉菜单
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (desktopRef.current && !desktopRef.current.contains(e.target as Node)) {
+        setOpenDesktopGroup(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleDesktopGroup = (groupId: string) => {
+    setOpenDesktopGroup((prev) => (prev === groupId ? null : groupId));
+  };
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups((prev) =>
@@ -85,42 +101,54 @@ function Filter({
   return (
     <>
       {/* Desktop Filter */}
-      <div className={cn("hidden lg:block", className)}>
+      <div ref={desktopRef} className={cn("hidden lg:block", className)}>
         <div className="flex items-center gap-2 flex-wrap">
           {filterGroups.map((group) => (
-            <div key={group.id} className="relative group">
+            <div key={group.id} className="relative">
               <button
-                className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-stone-700 bg-white border border-stone-200 rounded-full hover:border-stone-400 transition-colors"
-                onClick={() => toggleGroup(group.id)}
+                className={cn(
+                  "flex items-center gap-1 px-4 py-2 text-sm font-medium text-stone-700 bg-white border rounded-full transition-colors",
+                  openDesktopGroup === group.id
+                    ? "border-stone-400"
+                    : "border-stone-200 hover:border-stone-400"
+                )}
+                onClick={() => toggleDesktopGroup(group.id)}
               >
                 {group.label}
-                <ChevronDown className="h-4 w-4 text-stone-400" />
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 text-stone-400 transition-transform",
+                    openDesktopGroup === group.id && "rotate-180"
+                  )}
+                />
               </button>
 
               {/* Dropdown */}
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl border border-stone-200 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
-                <div className="p-2">
-                  {group.options.map((option) => (
-                    <button
-                      key={option.id}
-                      onClick={() => onFilterChange?.(group.id, option.id)}
-                      className={cn(
-                        "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
-                        isSelected(group.id, option.id)
-                          ? "bg-stone-100 text-stone-900 font-medium"
-                          : "text-stone-600 hover:bg-stone-50"
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        {option.label}
-                        {isSelected(group.id, option.id) && (
-                          <span className="w-2 h-2 rounded-full bg-stone-800" />
+              {openDesktopGroup === group.id && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl border border-stone-200 shadow-lg z-20">
+                  <div className="p-2">
+                    {group.options.map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => onFilterChange?.(group.id, option.id)}
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
+                          isSelected(group.id, option.id)
+                            ? "bg-stone-100 text-stone-900 font-medium"
+                            : "text-stone-600 hover:bg-stone-50"
                         )}
-                      </div>
-                    </button>
-                  ))}
+                      >
+                        <div className="flex items-center justify-between">
+                          {option.label}
+                          {isSelected(group.id, option.id) && (
+                            <span className="w-2 h-2 rounded-full bg-stone-800" />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ))}
 

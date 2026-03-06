@@ -2,7 +2,7 @@
 
 import { getDB } from "@/db";
 import { locations, routes, cities, teams, teamMembers, tags, entityToTags } from "@/db/schema";
-import { eq, desc, asc, and, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, inArray, sql, count } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 
 // 获取地点列表（包含路线信息）
@@ -238,4 +238,71 @@ async function getRoutesTags(routeIds: string[]): Promise<Record<string, any[]>>
   });
 
   return tagsMap;
+}
+
+// 获取热门标签（按关联次数排序）
+export async function getPopularTags(limit: number = 15) {
+  const db = await getDB();
+
+  // 查询标签及其关联数量
+  const result = await db
+    .select({
+      tagId: tags.id,
+      tagName: tags.name,
+      tagType: tags.type,
+      count: count(entityToTags.entityId),
+    })
+    .from(tags)
+    .leftJoin(entityToTags, eq(tags.id, entityToTags.tagId))
+    .where(eq(entityToTags.entityType, "location"))
+    .groupBy(tags.id)
+    .orderBy(desc(count(entityToTags.entityId)))
+    .limit(limit);
+
+  return result.map(item => ({
+    id: item.tagId,
+    name: item.tagName,
+    type: item.tagType,
+    count: item.count,
+  }));
+}
+
+// 获取所有标签（按类型分组）
+export async function getAllTagsByType() {
+  const db = await getDB();
+
+  const allTags = await db
+    .select({
+      tagId: tags.id,
+      tagName: tags.name,
+      tagType: tags.type,
+      count: count(entityToTags.entityId),
+    })
+    .from(tags)
+    .leftJoin(entityToTags, eq(tags.id, entityToTags.tagId))
+    .where(eq(entityToTags.entityType, "location"))
+    .groupBy(tags.id)
+    .orderBy(desc(count(entityToTags.entityId)));
+
+  // 按类型分组
+  const grouped = {
+    location: [] as Array<{ id: string; name: string; count: number }>,
+    activity: [] as Array<{ id: string; name: string; count: number }>,
+  };
+
+  allTags.forEach(item => {
+    const tagData = {
+      id: item.tagId,
+      name: item.tagName,
+      count: item.count,
+    };
+
+    if (item.tagType === "location") {
+      grouped.location.push(tagData);
+    } else if (item.tagType === "activity") {
+      grouped.activity.push(tagData);
+    }
+  });
+
+  return grouped;
 }

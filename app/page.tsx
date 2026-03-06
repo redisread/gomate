@@ -9,13 +9,14 @@ import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
 import { Hero } from "@/app/components/features/hero";
 import { SearchBar } from "@/app/components/features/search-bar";
-import { Filter } from "@/app/components/features/filter";
+import { Filter } from "@/components/features/filter";
 import { LocationCard } from "@/app/components/features/location-card";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/lib/locations-context";
 import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
 import { copy } from "@/lib/copy";
+import type { Tag } from "@/lib/types";
 
 export default function HomePage() {
   const { teams } = useTeams();
@@ -45,35 +46,29 @@ export default function HomePage() {
     });
   };
 
-  // Parse duration string and return category
-  const getDurationCategory = (duration: string): string => {
-    // Extract hours from duration string (e.g., "6-8小时" -> max hours, "2小时" -> hours)
-    const match = duration.match(/(\d+(?:\.\d+)?)(?:-(\d+(?:\.\d+)?))?/);
-    if (!match) return "short";
-
-    const minHours = parseFloat(match[1]);
-    const maxHours = match[2] ? parseFloat(match[2]) : minHours;
-
-    // Use max hours to determine category
-    if (maxHours <= 4) return "short";      // 半日内 (<= 4 hours)
-    if (maxHours <= 10) return "day";       // 一日 (4-10 hours)
-    return "multi";                         // 多日 (> 10 hours or contains "天")
-  };
-
-  // Get region from address
-  const getRegionFromAddress = (address: string): string => {
-    if (address.includes("南山区")) return "nanshan";
-    if (address.includes("福田区")) return "futian";
-    if (address.includes("罗湖区")) return "luohu";
-    if (address.includes("大鹏新区")) return "dapeng";
-    if (address.includes("坪山区")) return "pingshan";
-    return "";
-  };
+  // 从所有 locations 聚合唯一标签，生成标签筛选分组
+  const tagFilterGroup = React.useMemo(() => {
+    const tagMap = new Map<string, Tag>();
+    locations.forEach(location => {
+      (location.tags as Tag[] ?? []).forEach(tag => {
+        if (tag?.id && !tagMap.has(tag.id)) {
+          tagMap.set(tag.id, tag);
+        }
+      });
+    });
+    const tags = Array.from(tagMap.values()).sort((a, b) => a.name.localeCompare(b.name, "zh"));
+    if (tags.length === 0) return null;
+    return {
+      id: "tag",
+      label: "标签",
+      options: tags.map(t => ({ id: t.id, label: t.name })),
+    };
+  }, [locations]);
 
   // Filter locations based on selected filters
   const filteredLocations = React.useMemo(() => {
     return locations.filter((location) => {
-      // Filter by difficulty
+      // 难度筛选
       if (
         selectedFilters.difficulty?.length > 0 &&
         !selectedFilters.difficulty.includes(location.difficulty)
@@ -81,18 +76,10 @@ export default function HomePage() {
         return false;
       }
 
-      // Filter by duration
-      if (selectedFilters.duration?.length > 0) {
-        const category = getDurationCategory(location.duration);
-        if (!selectedFilters.duration.includes(category)) {
-          return false;
-        }
-      }
-
-      // Filter by region
-      if (selectedFilters.region?.length > 0) {
-        const region = getRegionFromAddress(location.location.address);
-        if (!selectedFilters.region.includes(region)) {
+      // 标签筛选（OR 逻辑：匹配任一已选标签即通过）
+      if (selectedFilters.tag?.length > 0) {
+        const locationTagIds = (location.tags as Tag[] ?? []).map(t => t.id);
+        if (!selectedFilters.tag.some(id => locationTagIds.includes(id))) {
           return false;
         }
       }
@@ -139,6 +126,7 @@ export default function HomePage() {
               onClose={() => setIsFilterOpen(false)}
               selectedFilters={selectedFilters}
               onFilterChange={handleFilterChange}
+              extraGroups={tagFilterGroup ? [tagFilterGroup] : []}
             />
           </div>
 

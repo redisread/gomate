@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { requireAdmin } from "@/lib/admin";
-import { getLocations } from "@/app/actions/locations";
+import { getLocations, getPopularTags, getAllTagsByType } from "@/app/actions/locations";
 
 const getCloudflareContext = async () => {
   const mod = await import("@opennextjs/cloudflare");
@@ -11,9 +11,32 @@ const getCloudflareContext = async () => {
 /**
  * GET /api/locations
  * 获取地点列表（包含关联的路线）
+ * 支持查询参数：
+ *   - tags=true: 返回热门标签
+ *   - allTags=true: 返回所有标签（按类型分组）
  */
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+
+    // 返回热门标签
+    if (searchParams.get("tags") === "true") {
+      const popularTags = await getPopularTags(15);
+      return NextResponse.json({
+        success: true,
+        tags: popularTags,
+      });
+    }
+
+    // 返回所有标签（按类型分组）
+    if (searchParams.get("allTags") === "true") {
+      const allTags = await getAllTagsByType();
+      return NextResponse.json({
+        success: true,
+        tags: allTags,
+      });
+    }
+
     const locations = await getLocations();
 
     // 格式化返回数据，添加兼容层
