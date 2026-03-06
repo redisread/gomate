@@ -37,12 +37,7 @@ export interface Location {
     lng: number;
   };
   extra?: {
-    facilities?: {
-      parking: boolean;
-      restroom: boolean;
-      water: boolean;
-      food: boolean;
-    };
+    facilities?: string[];  // ["parking", "restroom", "water", "food"]
     tips?: string;
     warnings?: string[];
   };
@@ -65,12 +60,6 @@ export interface Location {
   };
   waypoints?: { name: string; lat: number; lng: number; description: string }[];
   equipmentNeeded?: string[];
-  facilities?: {
-    parking: boolean;
-    restroom: boolean;
-    water: boolean;
-    food: boolean;
-  };
 
   createdAt: string;
   updatedAt: string;

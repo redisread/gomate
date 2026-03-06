@@ -21,6 +21,9 @@ export async function GET(
       );
     }
 
+    // 解析 extra 字段
+    const extra = route.extra ? JSON.parse(route.extra as string) : {};
+
     // 格式化返回数据
     const formattedRoute = {
       id: route.id,
@@ -29,13 +32,13 @@ export async function GET(
       name: route.name,
       description: route.description,
       difficulty: route.difficulty,
-      duration: route.duration,
+      durationMin: route.durationMin,
+      durationMax: route.durationMax,
       distance: route.distance,
       elevation: route.elevation,
       routeGuide: route.routeGuide ? JSON.parse(route.routeGuide as string) : null,
-      waypoints: route.waypoints ? JSON.parse(route.waypoints as string) : [],
-      equipmentNeeded: route.equipmentNeeded ? JSON.parse(route.equipmentNeeded as string) : [],
-      warnings: route.warnings ? JSON.parse(route.warnings as string) : [],
+      equipmentNeeded: extra.equipmentNeeded || [],
+      warnings: extra.warnings || [],
       tags: route.tags || [],
       location: route.location,
       city: route.city,

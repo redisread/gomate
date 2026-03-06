@@ -133,11 +133,11 @@ export async function createRoute(data: {
   name: string;
   description?: string;
   difficulty: "easy" | "moderate" | "hard" | "expert";
-  duration: string;
-  distance: string;
-  elevation?: string;
+  durationMin: number; // 最短耗时（分钟）
+  durationMax: number; // 最长耗时（分钟）
+  distance: number; // 路线长度（公里）
+  elevation?: number; // 累计爬升（米）
   routeGuide?: { overview: string; tips: string[] };
-  waypoints?: { name: string; lat: number; lng: number; description: string }[];
   equipmentNeeded?: string[];
   warnings?: string[];
   tagIds?: string[];
@@ -146,6 +146,15 @@ export async function createRoute(data: {
     const db = await getDB();
     const routeId = `route_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
+    // 构建 extra JSON
+    const extra: { equipmentNeeded?: string[]; warnings?: string[] } = {};
+    if (data.equipmentNeeded) {
+      extra.equipmentNeeded = data.equipmentNeeded;
+    }
+    if (data.warnings) {
+      extra.warnings = data.warnings;
+    }
+
     const newRoute: any = {
       id: routeId,
       locationId: data.locationId,
@@ -153,13 +162,12 @@ export async function createRoute(data: {
       name: data.name,
       description: data.description,
       difficulty: data.difficulty,
-      duration: data.duration,
+      durationMin: data.durationMin,
+      durationMax: data.durationMax,
       distance: data.distance,
       elevation: data.elevation,
       routeGuide: data.routeGuide ? JSON.stringify(data.routeGuide) : null,
-      waypoints: data.waypoints ? JSON.stringify(data.waypoints) : null,
-      equipmentNeeded: data.equipmentNeeded ? JSON.stringify(data.equipmentNeeded) : null,
-      warnings: data.warnings ? JSON.stringify(data.warnings) : null,
+      extra: Object.keys(extra).length > 0 ? JSON.stringify(extra) : null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -193,11 +201,11 @@ export async function updateRoute(
     name: string;
     description: string;
     difficulty: "easy" | "moderate" | "hard" | "expert";
-    duration: string;
-    distance: string;
-    elevation: string;
+    durationMin: number; // 最短耗时（分钟）
+    durationMax: number; // 最长耗时（分钟）
+    distance: number; // 路线长度（公里）
+    elevation: number; // 累计爬升（米）
     routeGuide: { overview: string; tips: string[] };
-    waypoints: { name: string; lat: number; lng: number; description: string }[];
     equipmentNeeded: string[];
     warnings: string[];
     tagIds: string[];
@@ -214,14 +222,19 @@ export async function updateRoute(
     if (data.routeGuide) {
       updateData.routeGuide = JSON.stringify(data.routeGuide);
     }
-    if (data.waypoints) {
-      updateData.waypoints = JSON.stringify(data.waypoints);
-    }
-    if (data.equipmentNeeded) {
-      updateData.equipmentNeeded = JSON.stringify(data.equipmentNeeded);
-    }
-    if (data.warnings) {
-      updateData.warnings = JSON.stringify(data.warnings);
+
+    // 构建 extra JSON（如果有 equipmentNeeded 或 warnings）
+    if (data.equipmentNeeded !== undefined || data.warnings !== undefined) {
+      const extra: { equipmentNeeded?: string[]; warnings?: string[] } = {};
+      if (data.equipmentNeeded !== undefined) {
+        extra.equipmentNeeded = data.equipmentNeeded;
+      }
+      if (data.warnings !== undefined) {
+        extra.warnings = data.warnings;
+      }
+      updateData.extra = Object.keys(extra).length > 0 ? JSON.stringify(extra) : null;
+      delete updateData.equipmentNeeded;
+      delete updateData.warnings;
     }
 
     // 移除 tagIds（单独处理）

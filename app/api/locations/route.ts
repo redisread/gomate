@@ -34,11 +34,7 @@ export async function GET(request: NextRequest) {
         images: location.images ? JSON.parse(location.images as string) : [],
         bestSeason: location.bestSeason ? JSON.parse(location.bestSeason as string) : [],
         coordinates: location.coordinates ? JSON.parse(location.coordinates as string) : { lat: 0, lng: 0 },
-        extra: {
-          facilities: location.facilities ? JSON.parse(location.facilities as string) : undefined,
-          tips: location.tips || undefined,
-          warnings: location.warnings ? JSON.parse(location.warnings as string) : undefined,
-        },
+        extra: location.extra ? JSON.parse(location.extra as string) : undefined,
 
         // 新字段：完整的 routes 数组
         routes: location.routes?.map((route) => ({
@@ -69,7 +65,6 @@ export async function GET(request: NextRequest) {
         routeGuide: firstRoute?.routeGuide ? JSON.parse(firstRoute.routeGuide as string) : undefined,
         waypoints: firstRoute?.waypoints ? JSON.parse(firstRoute.waypoints as string) : [],
         equipmentNeeded: firstRoute?.equipmentNeeded ? JSON.parse(firstRoute.equipmentNeeded as string) : [],
-        facilities: location.facilities ? JSON.parse(location.facilities as string) : undefined,
 
         createdAt: location.createdAt,
         updatedAt: location.updatedAt,
@@ -123,25 +118,14 @@ export async function POST(request: NextRequest) {
       slug,
       subtitle: body.subtitle || null,
       description: body.description,
-      difficulty: body.difficulty,
-      duration: body.duration,
-      distance: body.distance,
-      elevation: body.elevation || null,
+      address: body.address || null,
+      cityId: body.cityId,
+      cityName: body.cityName || null,
       bestSeason: JSON.stringify(body.bestSeason || []),
-      tags: body.tags ? JSON.stringify(body.tags) : null,
       coverImage: body.coverImage,
       images: JSON.stringify(body.images || []),
-      address: body.address || null,
-      adcode: body.adcode || null,
-      cityName: body.cityName || null,
-      routeDescription: body.routeDescription || null,
-      routeGuide: body.routeGuide ? JSON.stringify(body.routeGuide) : null,
-      waypoints: body.waypoints ? JSON.stringify(body.waypoints) : null,
-      tips: body.tips || null,
-      warnings: body.warnings ? JSON.stringify(body.warnings) : null,
-      equipmentNeeded: body.equipmentNeeded ? JSON.stringify(body.equipmentNeeded) : null,
       coordinates: JSON.stringify(body.coordinates || { lat: 0, lng: 0 }),
-      facilities: body.facilities ? JSON.stringify(body.facilities) : null,
+      extra: body.extra ? JSON.stringify(body.extra) : null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -205,25 +189,14 @@ export async function PUT(request: NextRequest) {
     if (updateData.slug !== undefined) dataToUpdate.slug = updateData.slug;
     if (updateData.subtitle !== undefined) dataToUpdate.subtitle = updateData.subtitle || null;
     if (updateData.description !== undefined) dataToUpdate.description = updateData.description;
-    if (updateData.difficulty !== undefined) dataToUpdate.difficulty = updateData.difficulty;
-    if (updateData.duration !== undefined) dataToUpdate.duration = updateData.duration;
-    if (updateData.distance !== undefined) dataToUpdate.distance = updateData.distance;
-    if (updateData.elevation !== undefined) dataToUpdate.elevation = updateData.elevation || null;
+    if (updateData.address !== undefined) dataToUpdate.address = updateData.address || null;
+    if (updateData.cityId !== undefined) dataToUpdate.cityId = updateData.cityId;
+    if (updateData.cityName !== undefined) dataToUpdate.cityName = updateData.cityName || null;
     if (updateData.bestSeason !== undefined) dataToUpdate.bestSeason = JSON.stringify(updateData.bestSeason);
-    if (updateData.tags !== undefined) dataToUpdate.tags = updateData.tags ? JSON.stringify(updateData.tags) : null;
     if (updateData.coverImage !== undefined) dataToUpdate.coverImage = updateData.coverImage;
     if (updateData.images !== undefined) dataToUpdate.images = JSON.stringify(updateData.images);
-    if (updateData.address !== undefined) dataToUpdate.address = updateData.address || null;
-    if (updateData.adcode !== undefined) dataToUpdate.adcode = updateData.adcode || null;
-    if (updateData.cityName !== undefined) dataToUpdate.cityName = updateData.cityName || null;
-    if (updateData.routeDescription !== undefined) dataToUpdate.routeDescription = updateData.routeDescription || null;
-    if (updateData.routeGuide !== undefined) dataToUpdate.routeGuide = updateData.routeGuide ? JSON.stringify(updateData.routeGuide) : null;
-    if (updateData.waypoints !== undefined) dataToUpdate.waypoints = updateData.waypoints ? JSON.stringify(updateData.waypoints) : null;
-    if (updateData.tips !== undefined) dataToUpdate.tips = updateData.tips || null;
-    if (updateData.warnings !== undefined) dataToUpdate.warnings = updateData.warnings ? JSON.stringify(updateData.warnings) : null;
-    if (updateData.equipmentNeeded !== undefined) dataToUpdate.equipmentNeeded = updateData.equipmentNeeded ? JSON.stringify(updateData.equipmentNeeded) : null;
     if (updateData.coordinates !== undefined) dataToUpdate.coordinates = JSON.stringify(updateData.coordinates);
-    if (updateData.facilities !== undefined) dataToUpdate.facilities = updateData.facilities ? JSON.stringify(updateData.facilities) : null;
+    if (updateData.extra !== undefined) dataToUpdate.extra = updateData.extra ? JSON.stringify(updateData.extra) : null;
 
     await ormDb.update(schema.locations)
       .set(dataToUpdate)

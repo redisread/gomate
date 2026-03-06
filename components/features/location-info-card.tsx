@@ -48,12 +48,17 @@ function LocationInfoCard({ location, className }: LocationInfoCardProps) {
     },
   ];
 
-  const facilities = [
-    { icon: Car, label: "停车场", available: location.facilities.parking },
-    { icon: Toilet, label: "洗手间", available: location.facilities.restroom },
-    { icon: Droplets, label: "补给点", available: location.facilities.water },
-    { icon: UtensilsCrossed, label: "餐饮", available: location.facilities.food },
+  const facilitiesData = location.extra?.facilities || [];
+  const facilityConfig = [
+    { key: "parking", icon: Car, label: "停车场" },
+    { key: "restroom", icon: Toilet, label: "洗手间" },
+    { key: "water", icon: Droplets, label: "补给点" },
+    { key: "food", icon: UtensilsCrossed, label: "餐饮" },
   ];
+  const facilities = facilityConfig.map(config => ({
+    ...config,
+    available: facilitiesData.includes(config.key),
+  }));
 
   return (
     <motion.div

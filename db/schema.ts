@@ -2,13 +2,23 @@ import {
   sqliteTable,
   text,
   integer,
+  real,
   index,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
-// 导入 UserExtra 类型（用于 extra 字段）
+// 导入 Extra 类型（用于 extra 字段）
 export type { UserExtra } from "@/lib/user-extra";
+export type { RouteExtra } from "@/lib/route-extra";
+export type {
+  PoiExtra,
+  PoiCategory,
+  PoiEntityType,
+  PoiRoleType,
+  PoiRoleSpecificData,
+  Coordinates,
+} from "@/lib/poi-types";
 
 // ==================== Tables ====================
 
@@ -118,6 +128,7 @@ export const cities = sqliteTable(
     isHot: integer("is_hot", { mode: "boolean" }).default(false).notNull(), // 是否热门城市
     parentId: text("parent_id"), // 父级 ID（省市区层级）
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
+    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 更新时间
   },
   (table) => ({
     adcodeIdx: uniqueIndex("cities_adcode_idx").on(table.adcode),
@@ -167,13 +178,13 @@ export const routes = sqliteTable(
     name: text("name").notNull(), // 路线名称（如"泰山涧线路"）
     description: text("description"), // 路线描述
     difficulty: text("difficulty").notNull(), // easy(简单), moderate(中等), hard(困难), expert(专家)
-    duration: text("duration").notNull(), // 预计耗时，如 "4-5小时"
-    distance: text("distance").notNull(), // 路线长度，如 "8.5公里"
-    elevation: text("elevation"), // 海拔高度，如 "869米"
+    // 数值类型字段（支持 SQL 排序和范围查询）
+    durationMin: integer("duration_min").notNull(), // 最短耗时（分钟）
+    durationMax: integer("duration_max").notNull(), // 最长耗时（分钟）
+    distance: real("distance").notNull(), // 路线长度（公里）
+    elevation: integer("elevation"), // 累计爬升（米）
     routeGuide: text("route_guide"), // 路线指南（JSON）: { overview: string; tips: string[] }
-    waypoints: text("waypoints"), // 途径点列表（JSON 数组）: [{ name, lat, lng, description }]
-    equipmentNeeded: text("equipment_needed"), // 建议装备（JSON 数组）
-    warnings: text("warnings"), // 安全警告（JSON 数组）
+    extra: text("extra"), // 扩展字段（JSON）: { equipmentNeeded: string[], warnings: string[] }
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 更新时间
   },
@@ -181,6 +192,9 @@ export const routes = sqliteTable(
     locationIdx: index("routes_location_idx").on(table.locationId),
     cityIdx: index("routes_city_idx").on(table.cityId),
     difficultyIdx: index("routes_difficulty_idx").on(table.difficulty),
+    durationIdx: index("routes_duration_idx").on(table.durationMin, table.durationMax),
+    distanceIdx: index("routes_distance_idx").on(table.distance),
+    elevationIdx: index("routes_elevation_idx").on(table.elevation),
   })
 );
 
@@ -222,7 +236,7 @@ export const entityToTags = sqliteTable(
   })
 );
 
-// 队伍表（徒步活动）
+// 队伍表
 export const teams = sqliteTable(
   "teams",
   {
@@ -300,6 +314,58 @@ export const passwordResets = sqliteTable(
     tokenIdx: index("password_resets_token_idx").on(table.token),
     userIdx: index("password_resets_user_idx").on(table.userId),
     emailIdx: index("password_resets_email_idx").on(table.email),
+  })
+);
+
+// POI 库（物理兴趣点 - Physical Point of Interest）
+// 存储真实世界的物理位置，如山峰、瀑布、停车场等
+export const pois = sqliteTable(
+  "pois",
+  {
+    id: text("id").primaryKey(), // POI 唯一标识
+    name: text("name").notNull(), // 物理位置名称（如"梧桐山山顶"）
+    description: text("description"), // 通用描述
+    coordinates: text("coordinates").notNull(), // 坐标（JSON）: { lat: number; lng: number }（唯一真实来源）
+    category: text("category"), // 类别：mountain_peak, waterfall, parking, viewpoint 等
+    images: text("images"), // JSON 数组：通用图片
+    extra: text("extra"), // JSON：通用扩展字段（elevation、openHours、fee 等）
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
+    updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 更新时间
+  },
+  (table) => ({
+    nameIdx: index("pois_name_idx").on(table.name),
+    categoryIdx: index("pois_category_idx").on(table.category),
+  })
+);
+
+// 实体-POI 角色关联表
+// 定义 POI 在不同上下文中的角色（如同一山峰可以是路线途径点，也可以是地点观景点）
+export const entityToPois = sqliteTable(
+  "entity_to_pois",
+  {
+    id: text("id").primaryKey(), // 关联记录唯一标识
+    poiId: text("poi_id")
+      .references(() => pois.id, { onDelete: "cascade" })
+      .notNull(), // 关联的 POI ID
+    entityType: text("entity_type").notNull(), // 关联实体类型："route" | "location" | "city"
+    entityId: text("entity_id").notNull(), // 关联实体的 ID
+    roleType: text("role_type").notNull(), // 角色类型："waypoint" | "checkpoint" | "viewpoint" | "facility" | "poi"
+    order: integer("order"), // 仅用于有序角色（如路线途径点），无序角色为 null
+    roleSpecificData: text("role_specific_data"), // JSON：角色特定的额外数据（如途径点的 instructions）
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
+  },
+  (table) => ({
+    poiIdx: index("entity_to_pois_poi_idx").on(table.poiId),
+    entityIdx: index("entity_to_pois_entity_idx").on(table.entityType, table.entityId),
+    roleIdx: index("entity_to_pois_role_idx").on(table.roleType),
+    orderIdx: index("entity_to_pois_order_idx").on(table.entityId, table.order),
+    // 防止重复关联：同一 POI 在同一实体中的同一角色只能出现一次
+    uniquePoiEntityRole: uniqueIndex("entity_to_pois_unique_idx").on(
+      table.poiId,
+      table.entityType,
+      table.entityId,
+      table.roleType
+    ),
   })
 );
 
@@ -398,6 +464,19 @@ export const passwordResetsRelations = relations(passwordResets, ({ one }) => ({
   }), // 重置请求所属用户
 }));
 
+// POI 关联
+export const poisRelations = relations(pois, ({ many }) => ({
+  entityToPois: many(entityToPois), // 该 POI 的所有角色关联
+}));
+
+// 实体-POI 角色关联
+export const entityToPoisRelations = relations(entityToPois, ({ one }) => ({
+  poi: one(pois, {
+    fields: [entityToPois.poiId],
+    references: [pois.id],
+  }), // 关联的 POI
+}));
+
 // ==================== Types（类型导出）====================
 
 export type User = typeof users.$inferSelect; // 用户类型（查询结果）
@@ -435,6 +514,12 @@ export type NewTeamMember = typeof teamMembers.$inferInsert; // 队伍成员类�
 
 export type PasswordReset = typeof passwordResets.$inferSelect; // 密码重置类型（查询结果）
 export type NewPasswordReset = typeof passwordResets.$inferInsert; // 密码重置类型（插入数据）
+
+export type Poi = typeof pois.$inferSelect; // POI 类型（查询结果）
+export type NewPoi = typeof pois.$inferInsert; // POI 类型（插入数据）
+
+export type EntityToPoi = typeof entityToPois.$inferSelect; // 实体-POI 关联类型（查询结果）
+export type NewEntityToPoi = typeof entityToPois.$inferInsert; // 实体-POI 关联类型（插入数据）
 
 // ==================== Enums（枚举类型定义）====================
 

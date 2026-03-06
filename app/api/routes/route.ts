@@ -26,26 +26,31 @@ export async function GET(request: NextRequest) {
     const routes = await getRoutes(filters);
 
     // 格式化返回数据
-    const formattedRoutes = routes.map((route) => ({
-      id: route.id,
-      locationId: route.locationId,
-      cityId: route.cityId,
-      name: route.name,
-      description: route.description,
-      difficulty: route.difficulty,
-      duration: route.duration,
-      distance: route.distance,
-      elevation: route.elevation,
-      routeGuide: route.routeGuide ? JSON.parse(route.routeGuide as string) : null,
-      waypoints: route.waypoints ? JSON.parse(route.waypoints as string) : [],
-      equipmentNeeded: route.equipmentNeeded ? JSON.parse(route.equipmentNeeded as string) : [],
-      warnings: route.warnings ? JSON.parse(route.warnings as string) : [],
-      tags: route.tags || [],
-      location: route.location,
-      city: route.city,
-      createdAt: route.createdAt,
-      updatedAt: route.updatedAt,
-    }));
+    const formattedRoutes = routes.map((route) => {
+      // 解析 extra 字段
+      const extra = route.extra ? JSON.parse(route.extra as string) : {};
+
+      return {
+        id: route.id,
+        locationId: route.locationId,
+        cityId: route.cityId,
+        name: route.name,
+        description: route.description,
+        difficulty: route.difficulty,
+        durationMin: route.durationMin,
+        durationMax: route.durationMax,
+        distance: route.distance,
+        elevation: route.elevation,
+        routeGuide: route.routeGuide ? JSON.parse(route.routeGuide as string) : null,
+        equipmentNeeded: extra.equipmentNeeded || [],
+        warnings: extra.warnings || [],
+        tags: route.tags || [],
+        location: route.location,
+        city: route.city,
+        createdAt: route.createdAt,
+        updatedAt: route.updatedAt,
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -72,7 +77,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // 验证必填字段
-    if (!body.locationId || !body.cityId || !body.name || !body.difficulty || !body.duration || !body.distance) {
+    if (
+      !body.locationId ||
+      !body.cityId ||
+      !body.name ||
+      !body.difficulty ||
+      body.durationMin === undefined ||
+      body.durationMax === undefined ||
+      body.distance === undefined
+    ) {
       return NextResponse.json(
         { error: "缺少必填字段" },
         { status: 400 }

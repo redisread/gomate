@@ -58,13 +58,8 @@ export async function GET(
         ...location,
         images: safeJsonParse(location.images, []),
         bestSeason: safeJsonParse(location.bestSeason, []),
-        tags: safeJsonParse(location.tags, []),
         coordinates: safeJsonParse(location.coordinates, { lat: 0, lng: 0 }),
-        waypoints: safeJsonParse(location.waypoints, []),
-        warnings: safeJsonParse(location.warnings, []),
-        equipmentNeeded: safeJsonParse(location.equipmentNeeded, []),
-        facilities: safeJsonParse(location.facilities, { parking: false, restroom: false, water: false, food: false }),
-        routeGuide: safeJsonParse(location.routeGuide, {}),
+        extra: safeJsonParse(location.extra, undefined),
       },
     });
   } catch (error) {

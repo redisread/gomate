@@ -34,13 +34,17 @@ const difficultyConfig = {
 };
 
 function LocationInfoCard({ location, className }: LocationInfoCardProps) {
-  const facilities = location.extra?.facilities || location.facilities;
-  const facilityList = facilities ? [
-    { icon: Car, label: "停车场", available: facilities.parking },
-    { icon: Toilet, label: "洗手间", available: facilities.restroom },
-    { icon: Droplets, label: "补给点", available: facilities.water },
-    { icon: UtensilsCrossed, label: "餐饮", available: facilities.food },
-  ] : [];
+  const facilities = location.extra?.facilities || [];
+  const facilityConfig = [
+    { key: "parking", icon: Car, label: "停车场" },
+    { key: "restroom", icon: Toilet, label: "洗手间" },
+    { key: "water", icon: Droplets, label: "补给点" },
+    { key: "food", icon: UtensilsCrossed, label: "餐饮" },
+  ];
+  const facilityList = facilityConfig.map(config => ({
+    ...config,
+    available: facilities.includes(config.key),
+  }));
 
   return (
     <motion.div
