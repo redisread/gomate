@@ -27,7 +27,7 @@ function LocationCard({
 }: LocationCardProps) {
   const { getTeamsByLocationId } = useTeams();
   const teams = getTeamsByLocationId(location.id);
-  const openTeams = teams.filter((t) => t.status === "open").length;
+  const openTeams = teams.filter((t) => t.status === "recruiting").length;
 
   if (variant === "horizontal") {
     return (

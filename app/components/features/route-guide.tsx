@@ -2,16 +2,12 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import {
-  AlertTriangle,
-  Footprints,
-} from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import type { Location, Route } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -31,7 +27,9 @@ function RouteGuide({ location, route, locationName, className }: RouteGuideProp
     return null;
   }
 
-  const { overview, warnings = [] } = routeData.routeGuide;
+  const { warnings = [] } = routeData.routeGuide;
+
+  if (warnings.length === 0) return null;
 
   return (
     <motion.div
@@ -40,17 +38,6 @@ function RouteGuide({ location, route, locationName, className }: RouteGuideProp
       transition={{ duration: 0.5, delay: 0.3 }}
       className={cn("space-y-6", className)}
     >
-      {/* Overview */}
-      <Card className="border-stone-200">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-stone-900 flex items-center gap-2">
-            <Footprints className="h-5 w-5 text-stone-600" />
-            路线概览
-          </CardTitle>
-          <CardDescription>{overview}</CardDescription>
-        </CardHeader>
-      </Card>
-
       {/* Warnings */}
       {warnings.length > 0 && (
         <Card className="border-red-200 bg-red-50/50">

@@ -38,7 +38,7 @@ function TeamList({ className, locationId, routeId }: TeamListProps) {
     teams = getTeamsByLocationId(locationId);
   }
 
-  const openTeams = teams.filter((t) => t.status === "open");
+  const openTeams = teams.filter((t) => t.status === "recruiting");
   const fullTeams = teams.filter((t) => t.status === "full");
 
   return (

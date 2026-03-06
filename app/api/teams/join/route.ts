@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { getAuth } from "@/lib/auth";
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const schema = await import("@/db/schema");
     const ormDb = drizzle(db, { schema });
 
-    const body = await request.json();
+    const body = await request.json() as { teamId?: string };
     const { teamId } = body;
 
     if (!teamId) {
@@ -72,8 +72,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 检查是否已满
-    if (teamResult.currentMembers >= teamResult.maxMembers) {
+    // 检查是否已满（通过 SQL COUNT 动态计算）
+    const [{ approvedCount }] = await ormDb
+      .select({ approvedCount: sql<number>`count(*)` })
+      .from(schema.teamMembers)
+      .where(and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, "approved")));
+
+    if (approvedCount >= teamResult.maxMembers) {
       return NextResponse.json(
         { error: "队伍已满" },
         { status: 400 }

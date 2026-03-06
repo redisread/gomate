@@ -53,15 +53,16 @@ function getLevelColor(level: string): string {
 
 // 获取状态标签文本
 function getStatusText(status: string, currentMembers: number, maxMembers: number): string {
-  if (status === "recruiting" || status === "open") {
+  if (status === "recruiting") {
     return currentMembers >= maxMembers ? "已满" : "招募中";
   }
+  if (status === "full") return "已满";
   return "已关闭";
 }
 
 // 获取状态标签颜色
 function getStatusColor(status: string, currentMembers: number, maxMembers: number): string {
-  if (status === "recruiting" || status === "open") {
+  if (status === "recruiting") {
     return currentMembers >= maxMembers
       ? "bg-stone-100 text-stone-600 border-stone-200"
       : "bg-emerald-100 text-emerald-700 border-emerald-200";
@@ -76,8 +77,8 @@ export function FeaturedTeams({ routeId, limit = 3, className }: FeaturedTeamsPr
   const featuredTeams = React.useMemo(() => {
     return getTeamsByRouteId(routeId)
       .filter(team => {
-        // 筛选条件：状态为 open 或 recruiting，且未过期
-        const isOpen = team.status === 'open' || team.status === 'recruiting';
+        // 筛选条件：状态为 recruiting，且未过期
+        const isOpen = team.status === 'recruiting';
         const isFuture = new Date(`${team.date}T${team.time}`) > new Date();
         return isOpen && isFuture;
       })

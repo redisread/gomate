@@ -43,7 +43,6 @@ export async function getTeams(locationId?: string) {
           name: true,
           slug: true,
           coverImage: true,
-          difficulty: true,
         },
       },
       leader: {
@@ -111,6 +110,7 @@ export async function getTeamById(id: string) {
 // 创建队伍
 export async function createTeam(data: {
   locationId: string;
+  routeId: string;
   title: string;
   description?: string;
   startTime: Date;
@@ -149,32 +149,38 @@ export async function createTeam(data: {
     throw new Error("队伍人数必须在 2-50 人之间");
   }
 
-  // 创建队伍
+  // 创建队伍（使用事务保证原子性）
   const teamId = nanoid();
-  const [team] = await db
-    .insert(teams)
-    .values({
-      id: teamId,
-      locationId: data.locationId,
-      leaderId: user.id,
-      title: data.title,
-      description: data.description || null,
-      startTime: data.startTime,
-      endTime: data.endTime,
-      maxMembers: data.maxMembers,
-      currentMembers: 1, // 队长算1人
-      requirements: data.requirements || null,
-      status: "recruiting",
-    })
-    .returning();
+  const now = new Date();
+  const [team] = await db.transaction(async (tx) => {
+    const [newTeam] = await tx
+      .insert(teams)
+      .values({
+        id: teamId,
+        locationId: data.locationId,
+        routeId: data.routeId,
+        leaderId: user.id,
+        title: data.title,
+        description: data.description || null,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        maxMembers: data.maxMembers,
+        requirements: data.requirements || null,
+        status: "recruiting",
+      })
+      .returning();
 
-  // 创建队长成员记录
-  await db.insert(teamMembers).values({
-    id: nanoid(),
-    teamId: team.id,
-    userId: user.id,
-    status: "approved",
-    joinedAt: new Date(),
+    // 创建队长成员记录
+    await tx.insert(teamMembers).values({
+      id: nanoid(),
+      teamId: newTeam.id,
+      userId: user.id,
+      status: "approved",
+      joinedAt: now,
+      statusUpdatedAt: now,
+    });
+
+    return [newTeam];
   });
 
   // 清除缓存
@@ -221,8 +227,12 @@ export async function joinTeam(teamId: string) {
     throw new Error(copy.errors.teamNotAccepting);
   }
 
-  // 检查是否已满
-  if (team.currentMembers >= team.maxMembers) {
+  // 检查是否已满（通过 SQL COUNT 动态计算）
+  const [{ count: approvedCount }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(teamMembers)
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.status, "approved")));
+  if (approvedCount >= team.maxMembers) {
     throw new Error(copy.errors.teamFull);
   }
 
@@ -297,11 +307,6 @@ export async function approveMember(teamId: string, userId: string) {
     throw new Error(copy.errors.onlyLeaderCanReview);
   }
 
-  // 检查队伍是否已满
-  if (team.currentMembers >= team.maxMembers) {
-    throw new Error(copy.errors.teamAlreadyFull);
-  }
-
   // 获取成员申请
   const membership = await db.query.teamMembers.findFirst({
     where: and(
@@ -315,28 +320,42 @@ export async function approveMember(teamId: string, userId: string) {
     throw new Error(copy.errors.applicationNotFound);
   }
 
-  // 更新成员状态
-  await db
-    .update(teamMembers)
-    .set({
-      status: "approved",
-      joinedAt: new Date(),
-    })
-    .where(eq(teamMembers.id, membership.id));
+  // 使用事务保证原子性
+  await db.transaction(async (tx) => {
+    const now = new Date();
 
-  // 更新队伍当前人数
-  const newMemberCount = team.currentMembers + 1;
-  const newStatus: TeamStatus =
-    newMemberCount >= team.maxMembers ? "full" : "recruiting";
+    // 先查询当前已审核通过的人数（在事务内保证一致性）
+    const [{ count: approvedCount }] = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(teamMembers)
+      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.status, "approved")));
 
-  await db
-    .update(teams)
-    .set({
-      currentMembers: newMemberCount,
-      status: newStatus,
-      updatedAt: new Date(),
-    })
-    .where(eq(teams.id, teamId));
+    if (approvedCount >= team.maxMembers) {
+      throw new Error(copy.errors.teamAlreadyFull);
+    }
+
+    // 更新成员状态
+    await tx
+      .update(teamMembers)
+      .set({
+        status: "approved",
+        joinedAt: now,
+        statusUpdatedAt: now,
+      })
+      .where(eq(teamMembers.id, membership.id));
+
+    // 重新计算人数并更新队伍状态
+    const newCount = approvedCount + 1;
+    const newStatus: TeamStatus = newCount >= team.maxMembers ? "full" : "recruiting";
+
+    await tx
+      .update(teams)
+      .set({
+        status: newStatus,
+        updatedAt: now,
+      })
+      .where(eq(teams.id, teamId));
+  });
 
   // 清除缓存
   revalidateTag(`team-${teamId}`);
@@ -391,6 +410,7 @@ export async function rejectMember(teamId: string, userId: string) {
     .update(teamMembers)
     .set({
       status: "rejected",
+      statusUpdatedAt: new Date(),
     })
     .where(eq(teamMembers.id, membership.id));
 
@@ -445,20 +465,25 @@ export async function leaveTeam(teamId: string) {
     throw new Error(copy.errors.leaderCannotLeave);
   }
 
-  // 删除成员记录
-  await db.delete(teamMembers).where(eq(teamMembers.id, membership.id));
+  // 使用事务保证原子性
+  await db.transaction(async (tx) => {
+    // 删除成员记录
+    await tx.delete(teamMembers).where(eq(teamMembers.id, membership.id));
 
-  // 更新队伍人数
-  const newMemberCount = Math.max(0, team.currentMembers - 1);
+    // 重新计算剩余人数并更新队伍状态
+    const [{ count: remainingCount }] = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(teamMembers)
+      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.status, "approved")));
 
-  await db
-    .update(teams)
-    .set({
-      currentMembers: newMemberCount,
-      status: newMemberCount < team.maxMembers ? "recruiting" : team.status,
-      updatedAt: new Date(),
-    })
-    .where(eq(teams.id, teamId));
+    await tx
+      .update(teams)
+      .set({
+        status: remainingCount < team.maxMembers ? "recruiting" : team.status,
+        updatedAt: new Date(),
+      })
+      .where(eq(teams.id, teamId));
+  });
 
   // 清除缓存
   revalidateTag(`team-${teamId}`);
@@ -565,20 +590,25 @@ export async function removeMember(teamId: string, userId: string) {
     throw new Error(copy.teams.cannotRemoveLeader);
   }
 
-  // 删除成员记录
-  await db.delete(teamMembers).where(eq(teamMembers.id, membership.id));
+  // 使用事务保证原子性
+  await db.transaction(async (tx) => {
+    // 删除成员记录
+    await tx.delete(teamMembers).where(eq(teamMembers.id, membership.id));
 
-  // 更新队伍人数
-  const newMemberCount = Math.max(1, team.currentMembers - 1);
+    // 重新计算剩余人数并更新队伍状态
+    const [{ count: remainingCount }] = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(teamMembers)
+      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.status, "approved")));
 
-  await db
-    .update(teams)
-    .set({
-      currentMembers: newMemberCount,
-      status: newMemberCount < team.maxMembers ? "recruiting" : team.status,
-      updatedAt: new Date(),
-    })
-    .where(eq(teams.id, teamId));
+    await tx
+      .update(teams)
+      .set({
+        status: remainingCount < team.maxMembers ? "recruiting" : team.status,
+        updatedAt: new Date(),
+      })
+      .where(eq(teams.id, teamId));
+  });
 
   // 清除缓存
   revalidateTag(`team-${teamId}`);
@@ -757,8 +787,13 @@ export async function formTeam(teamId: string, isUnderfilled: boolean) {
     throw new Error("当前队伍状态无法组建");
   }
 
-  // 检查是否有成员（至少需要队长自己）
-  if (team.currentMembers < 1) {
+  // 检查是否有成员（至少需要队长自己，通过 SQL COUNT 动态计算）
+  const [{ count: approvedCount }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(teamMembers)
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.status, "approved")));
+
+  if (approvedCount < 1) {
     throw new Error("队伍至少需要1人才能组建");
   }
 
@@ -842,6 +877,7 @@ export async function requestLeave(teamId: string) {
     .update(teamMembers)
     .set({
       status: "leave_pending",
+      statusUpdatedAt: new Date(),
     })
     .where(eq(teamMembers.id, membership.id));
 
@@ -891,19 +927,25 @@ export async function approveLeave(teamId: string, userId: string) {
     throw new Error("未找到该成员的退出申请");
   }
 
-  // 删除成员记录
-  await db.delete(teamMembers).where(eq(teamMembers.id, membership.id));
+  // 使用事务保证原子性
+  await db.transaction(async (tx) => {
+    // 删除成员记录
+    await tx.delete(teamMembers).where(eq(teamMembers.id, membership.id));
 
-  // 更新队伍人数
-  const newMemberCount = Math.max(1, team.currentMembers - 1);
+    // 重新计算剩余人数并更新队伍状态
+    const [{ count: remainingCount }] = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(teamMembers)
+      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.status, "approved")));
 
-  await db
-    .update(teams)
-    .set({
-      currentMembers: newMemberCount,
-      updatedAt: new Date(),
-    })
-    .where(eq(teams.id, teamId));
+    await tx
+      .update(teams)
+      .set({
+        status: remainingCount < team.maxMembers ? "recruiting" : team.status,
+        updatedAt: new Date(),
+      })
+      .where(eq(teams.id, teamId));
+  });
 
   // 清除缓存
   revalidateTag(`team-${teamId}`);
@@ -955,6 +997,7 @@ export async function rejectLeave(teamId: string, userId: string) {
     .update(teamMembers)
     .set({
       status: "approved",
+      statusUpdatedAt: new Date(),
     })
     .where(eq(teamMembers.id, membership.id));
 

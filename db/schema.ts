@@ -36,6 +36,7 @@ export const users = sqliteTable(
     gender: text("gender"), // 性别: male(男) | female(女) | other(其他) | null(未设置)
     birthday: integer("birthday", { mode: "timestamp" }), // 生日时间戳（可用于计算年龄段）
     level: text("level").default("beginner").notNull(), // beginner | intermediate | advanced | expert
+    completedHikes: integer("completed_hikes").default(0), // 已完成徒步次数
     wechat: text("wechat"), // 微信号（可选，加入队伍时必填）
     role: text("role").default("user").notNull(), // user | admin
     status: text("status").default("active").notNull(), // active | suspended | banned | deleted
@@ -254,11 +255,9 @@ export const teams = sqliteTable(
     description: text("description"), // 活动描述
     startTime: integer("start_time", { mode: "timestamp" }).notNull(), // 活动开始时间
     endTime: integer("end_time", { mode: "timestamp" }).notNull(), // 活动结束时间
-    duration: text("duration"), // 活动时长，如 "6小时"
     maxMembers: integer("max_members").notNull().default(10), // 最大人数限制
-    currentMembers: integer("current_members").notNull().default(1), // 当前已加入人数
     requirements: text("requirements"), // 入队要求（JSON 数组）
-    status: text("status").notNull().default("recruiting"), // 状态: recruiting(招募中), full(已满), ongoing(进行中), completed(已完成), cancelled(已取消), open(开放)
+    status: text("status").notNull().default("recruiting"), // 状态: recruiting(招募中), full(已满), formed(已组建), completed(已完成), cancelled(已取消)
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 更新时间
   },
@@ -268,6 +267,9 @@ export const teams = sqliteTable(
     leaderIdx: index("teams_leader_idx").on(table.leaderId),
     statusIdx: index("teams_status_idx").on(table.status),
     startTimeIdx: index("teams_start_time_idx").on(table.startTime),
+    // 复合索引：支持按状态+时间排序的高效查询
+    statusCreatedAtIdx: index("teams_status_created_at_idx").on(table.status, table.createdAt),
+    statusStartTimeIdx: index("teams_status_start_time_idx").on(table.status, table.startTime),
   })
 );
 
@@ -282,8 +284,9 @@ export const teamMembers = sqliteTable(
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(), // 关联用户 ID
-    status: text("status").notNull().default("pending"), // 状态: pending(待审核), approved(已通过), rejected(已拒绝)
+    status: text("status").notNull().default("pending"), // 状态: pending(待审核), approved(已通过), rejected(已拒绝), leave_pending(退出申请中)
     joinedAt: integer("joined_at", { mode: "timestamp" }), // 加入时间（审核通过时设置）
+    statusUpdatedAt: integer("status_updated_at", { mode: "timestamp" }), // 状态最后变更时间
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 申请创建时间
   },
   (table) => ({
@@ -524,7 +527,7 @@ export type NewEntityToPoi = typeof entityToPois.$inferInsert; // 实体-POI 关
 // ==================== Enums（枚举类型定义）====================
 
 export type Difficulty = "easy" | "moderate" | "hard" | "expert"; // 难度等级：简单、中等、困难、专家
-export type TeamStatus = "recruiting" | "full" | "formed" | "ongoing" | "completed" | "cancelled" | "open"; // 队伍状态：招募中、已满、已组建、进行中、已完成、已取消、开放
+export type TeamStatus = "recruiting" | "full" | "formed" | "cancelled" | "completed"; // 队伍状态：招募中、已满、已组建、已取消、已完成
 export type TeamMemberStatus = "pending" | "approved" | "rejected" | "leave_pending"; // 成员状态：待审核、已通过、已拒绝、退出申请中
 export type UserRole = "user" | "admin"; // 用户角色：普通用户、管理员
 export type UserLevel = "beginner" | "intermediate" | "advanced" | "expert"; // 用户等级：新手、进阶、资深、专家

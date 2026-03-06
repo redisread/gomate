@@ -34,9 +34,19 @@ export async function POST(request: NextRequest) {
 
     const db = env.DB as D1Database;
 
-    const body = await request.json();
+    const body = await request.json() as {
+      locationId?: string;
+      routeId?: string;
+      title?: string;
+      description?: string;
+      date?: string;
+      time?: string;
+      maxMembers?: number;
+      requirements?: string[];
+    };
     const {
       locationId,
+      routeId,
       title,
       description,
       date,
@@ -46,7 +56,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // 验证必填字段
-    if (!locationId || !title || !date || !time || !maxMembers) {
+    if (!locationId || !routeId || !title || !date || !time || !maxMembers) {
       return NextResponse.json(
         { error: "缺少必填字段" },
         { status: 400 }
@@ -77,13 +87,13 @@ export async function POST(request: NextRequest) {
     await ormDb.insert(schema.teams).values({
       id: teamId,
       locationId,
+      routeId,
       leaderId: userId,
       title,
       description: description || null,
       startTime: startTime,
       endTime: endTime,
       maxMembers,
-      currentMembers: 1,
       requirements: requirements ? JSON.stringify(requirements) : null,
       status: "recruiting",
       createdAt: now,
@@ -112,7 +122,7 @@ export async function POST(request: NextRequest) {
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         maxMembers,
-        currentMembers: 1,
+        currentMembers: 1, // 创建时队长为第一个成员
         requirements,
         status: "recruiting",
         createdAt: now.toISOString(),
@@ -152,62 +162,87 @@ export async function GET(request: NextRequest) {
     // 使用 Drizzle ORM 查询
     const { drizzle } = await import("drizzle-orm/d1");
     const schema = await import("@/db/schema");
-    const { eq, desc, and, ne } = await import("drizzle-orm");
+    const { eq, desc, and, ne, sql } = await import("drizzle-orm");
     const ormDb = drizzle(db, { schema });
 
-    let result: typeof schema.teams.$inferSelect[];
+    // currentMembers 子查询：动态计算已审核通过的成员数
+    const currentMembersSubquery = sql<number>`(
+      SELECT COUNT(*) FROM team_members
+      WHERE team_members.team_id = ${schema.teams.id}
+      AND team_members.status = 'approved'
+    )`;
+
+    // 公共列选择（teams 字段 + currentMembers 子查询）
+    const teamColumns = {
+      id: schema.teams.id,
+      locationId: schema.teams.locationId,
+      routeId: schema.teams.routeId,
+      leaderId: schema.teams.leaderId,
+      title: schema.teams.title,
+      description: schema.teams.description,
+      startTime: schema.teams.startTime,
+      endTime: schema.teams.endTime,
+      maxMembers: schema.teams.maxMembers,
+      requirements: schema.teams.requirements,
+      status: schema.teams.status,
+      createdAt: schema.teams.createdAt,
+      updatedAt: schema.teams.updatedAt,
+      currentMembers: currentMembersSubquery,
+      leaderImage: schema.users.image,
+      leaderName: schema.users.name,
+      leaderLevel: schema.users.level,
+    };
+
+    type TeamRow = {
+      id: string;
+      locationId: string;
+      routeId: string;
+      leaderId: string;
+      title: string;
+      description: string | null;
+      startTime: Date;
+      endTime: Date;
+      maxMembers: number;
+      requirements: string | null;
+      status: string;
+      createdAt: Date;
+      updatedAt: Date;
+      currentMembers: number;
+      leaderImage: string | null;
+      leaderName: string;
+      leaderLevel: string | null;
+    };
+
+    let result: TeamRow[];
 
     if (userId && includeJoined) {
-      // 查询用户加入的队伍（非自己创建的）
-      // 使用 innerJoin 来获取团队成员信息并过滤
-      const queryResult = await ormDb
-        .select({
-          teams: schema.teams,
-          leader: schema.users,
-        })
+      result = await ormDb
+        .select(teamColumns)
         .from(schema.teams)
         .innerJoin(schema.teamMembers, eq(schema.teamMembers.teamId, schema.teams.id))
         .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
         .where(and(
           eq(schema.teamMembers.userId, userId),
-          ne(schema.teams.leaderId, userId), // 排除用户自己创建的队伍
-          eq(schema.teamMembers.status, "approved") // 只包含已批准的成员
+          ne(schema.teams.leaderId, userId),
+          eq(schema.teamMembers.status, "approved")
         ))
-        .orderBy(desc(schema.teams.createdAt));
-
-      result = queryResult.map(({ teams, leader }) => ({
-        ...teams,
-        leader, // 添加关联的用户数据
-      }));
+        .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
     } else if (locationId) {
-      // 按地点ID查询队伍
-      result = await ormDb.query.teams.findMany({
-        where: eq(schema.teams.locationId, locationId),
-        with: {
-          leader: true,
-        },
-        orderBy: desc(schema.teams.createdAt),
-      });
+      result = await ormDb
+        .select(teamColumns)
+        .from(schema.teams)
+        .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
+        .where(eq(schema.teams.locationId, locationId))
+        .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
     } else {
-      // 获取所有队伍
-      result = await ormDb.query.teams.findMany({
-        with: {
-          leader: true,
-        },
-        orderBy: desc(schema.teams.createdAt),
-      });
+      result = await ormDb
+        .select(teamColumns)
+        .from(schema.teams)
+        .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
+        .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
     }
 
-    // 状态映射
-    const statusMap: Record<string, 'open' | 'full' | 'closed'> = {
-      'recruiting': 'open',
-      'full': 'full',
-      'ongoing': 'closed',
-      'completed': 'closed',
-      'cancelled': 'closed',
-    };
-
-    // 格式化返回数据，符合前端 Team 类型
+    // 格式化返回数据，符合前端 Team 类型（直接使用数据库原始 status 值）
     const teams = result.map((row) => {
       const startDate = new Date(row.startTime);
       const date = startDate.toISOString().split('T')[0];
@@ -227,13 +262,7 @@ export async function GET(request: NextRequest) {
         currentMembers: row.currentMembers,
         requirements: (() => {
           try {
-            // 检查是否为有效的 JSON 字符串
             if (row.requirements && typeof row.requirements === 'string') {
-              // 如果是状态值（recruiting/full 等），说明数据错位，返回空数组
-              if (['recruiting', 'full', 'ongoing', 'completed', 'cancelled', 'open'].includes(row.requirements)) {
-                console.warn(`Data misalignment detected for team ${row.id}: requirements field contains status value`);
-                return [];
-              }
               return JSON.parse(row.requirements);
             }
             return [];
@@ -242,20 +271,13 @@ export async function GET(request: NextRequest) {
             return [];
           }
         })(),
-        status: statusMap[row.status] || 'open',
+        status: row.status,
         createdAt: row.createdAt,
-        leader: row.leader ? {
-          id: row.leader.id,
-          name: row.leader.name,
-          avatar: row.leader.image || '',
-          level: (row.leader.level || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
-          completedHikes: row.leader.completedHikes || 0,
-          bio: '',
-        } : {
-          id: 'unknown',
-          name: '未知用户',
-          avatar: '',
-          level: 'beginner' as const,
+        leader: {
+          id: row.leaderId,
+          name: row.leaderName,
+          avatar: row.leaderImage || '',
+          level: (row.leaderLevel || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
           completedHikes: 0,
           bio: '',
         },

@@ -26,7 +26,7 @@ interface Team {
   maxMembers: number;
   currentMembers: number;
   requirements: string[];
-  status: "open" | "full" | "closed";
+  status: "recruiting" | "full" | "formed" | "cancelled" | "completed";
   leader: {
     id: string;
     name: string;
@@ -74,22 +74,20 @@ function getLevelColor(level: string): string {
 
 // 获取状态标签文本
 function getStatusText(status: string, currentMembers: number, maxMembers: number): string {
-  if (status === "open") {
+  if (status === "recruiting") {
     return currentMembers >= maxMembers ? "已满" : "招募中";
   }
-  if (status === "full") {
-    return "已满";
-  }
+  if (status === "full") return "已满";
+  if (status === "formed") return "已组建";
+  if (status === "completed") return "已完成";
+  if (status === "cancelled") return "已取消";
   return "已关闭";
 }
 
 // 获取状态标签颜色
 function getStatusColor(status: string, currentMembers: number, maxMembers: number): string {
-  if (status === "open" && currentMembers < maxMembers) {
+  if (status === "recruiting" && currentMembers < maxMembers) {
     return "bg-emerald-100 text-emerald-700 border-emerald-200";
-  }
-  if (status === "full" || currentMembers >= maxMembers) {
-    return "bg-stone-100 text-stone-600 border-stone-200";
   }
   return "bg-stone-100 text-stone-600 border-stone-200";
 }
@@ -181,9 +179,9 @@ export function TeamCard({ team, className, showLocation = false }: TeamCardProp
         )}
 
         {/* 操作按钮 */}
-        <Button className="w-full" variant={team.status === "open" && remainingSlots > 0 ? "default" : "outline"} asChild>
+        <Button className="w-full" variant={team.status === "recruiting" && remainingSlots > 0 ? "default" : "outline"} asChild>
           <Link href={`/teams/${team.id}`}>
-            {team.status === "open" && remainingSlots > 0 ? "加入队伍" : "查看详情"}
+            {team.status === "recruiting" && remainingSlots > 0 ? "加入队伍" : "查看详情"}
           </Link>
         </Button>
       </CardContent>

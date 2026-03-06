@@ -34,10 +34,48 @@ export async function GET(
     // 使用 Drizzle ORM 查询
     const { drizzle } = await import("drizzle-orm/d1");
     const schema = await import("@/db/schema");
-    const { eq, and } = await import("drizzle-orm");
+    const { eq, sql } = await import("drizzle-orm");
     const ormDb = drizzle(db, { schema });
 
-    const teams = await ormDb.query.teams.findMany({
+    // currentMembers 子查询：动态计算已审核通过的成员数
+    const currentMembersSubquery = sql<number>`(
+      SELECT COUNT(*) FROM team_members
+      WHERE team_members.team_id = ${schema.teams.id}
+      AND team_members.status = 'approved'
+    )`;
+
+    const teamsWithCount = await ormDb
+      .select({
+        id: schema.teams.id,
+        locationId: schema.teams.locationId,
+        routeId: schema.teams.routeId,
+        leaderId: schema.teams.leaderId,
+        title: schema.teams.title,
+        description: schema.teams.description,
+        startTime: schema.teams.startTime,
+        endTime: schema.teams.endTime,
+        maxMembers: schema.teams.maxMembers,
+        requirements: schema.teams.requirements,
+        status: schema.teams.status,
+        createdAt: schema.teams.createdAt,
+        updatedAt: schema.teams.updatedAt,
+        currentMembers: currentMembersSubquery,
+      })
+      .from(schema.teams)
+      .where(eq(schema.teams.id, id))
+      .limit(1);
+
+    const teamRow = teamsWithCount[0];
+
+    if (!teamRow) {
+      return NextResponse.json(
+        { error: "队伍不存在" },
+        { status: 404 }
+      );
+    }
+
+    // 单独查询 leader 和 members
+    const teamWithRelations = await ormDb.query.teams.findFirst({
       where: eq(schema.teams.id, id),
       with: {
         leader: true,
@@ -47,12 +85,11 @@ export async function GET(
           },
         },
       },
-      limit: 1,
     });
 
-    const team = teams[0];
+    const team = teamWithRelations ? { ...teamRow, ...teamWithRelations, currentMembers: teamRow.currentMembers } : null;
 
-    if (!team) {
+    if (!team || !teamWithRelations) {
       return NextResponse.json(
         { error: "队伍不存在" },
         { status: 404 }
@@ -91,27 +128,16 @@ export async function GET(
     const durationHours = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60));
     const duration = `${durationHours}小时`;
 
-    // 映射状态
-    const statusMap: Record<string, 'open' | 'full' | 'closed' | 'formed'> = {
-      'recruiting': 'open',
-      'full': 'full',
-      'formed': 'formed',
-      'ongoing': 'closed',
-      'completed': 'closed',
-      'cancelled': 'closed',
-    };
-
     // 格式化已审核通过和退出申请中的成员列表
     const relevantMembers = team.members
       ?.filter((m: { status: string }) => m.status === "approved" || m.status === "leave_pending")
-      .map((m: { userId: string; role: string; status: string; joinedAt: Date | null; user: { id: string; name: string; image: string | null; bio: string | null; level: string | null; wechat: string | null; gender: string | null; birthday: Date | number | null; extra: string | null } }) => ({
+      .map((m: { userId: string; status: string; joinedAt: Date | null; user: { id: string; name: string; image: string | null; bio: string | null; level: string | null; wechat: string | null; gender: string | null; birthday: Date | number | null; extra: string | null } }) => ({
         id: m.user?.id || m.userId,
         userId: m.userId,
         name: m.user?.name || '未知用户',
         image: m.user?.image || null,
         bio: m.user?.bio || null,
         level: m.user?.level || 'beginner',
-        role: m.role,
         status: m.status,
         joinedAt: m.joinedAt,
         // 只有队伍成员可以看到其他成员的微信号
@@ -133,14 +159,14 @@ export async function GET(
       maxMembers: team.maxMembers,
       currentMembers: team.currentMembers,
       requirements: team.requirements ? JSON.parse(team.requirements) : [],
-      status: statusMap[team.status] || 'open',
+      status: team.status,
       createdAt: team.createdAt,
       leader: team.leader ? {
         id: team.leader.id,
         name: team.leader.name,
         avatar: team.leader.image || '',
         level: (team.leader.level || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
-        completedHikes: team.leader.completedHikes || 0,
+        completedHikes: 0,
         bio: team.leader.bio || '',
         // 只有队长自己或队伍成员可以看到队长的微信号
         wechat: (isTeamMember || currentUserId === team.leader.id) ? (team.leader.wechat || '') : undefined,
@@ -273,7 +299,7 @@ export async function PUT(
         endTime,
         maxMembers,
         requirements: requirements ? JSON.stringify(requirements) : null,
-        status: maxMembers <= team.currentMembers ? "full" : team.status,
+        status: team.status,
         updatedAt: new Date(),
       })
       .where(eq(schema.teams.id, teamId));

@@ -34,7 +34,8 @@ const difficultyConfig = {
 };
 
 function LocationInfoCard({ location, className }: LocationInfoCardProps) {
-  const facilities = location.extra?.facilities || [];
+  const rawFacilities = location.extra?.facilities;
+  // 兼容两种格式：string[] 或 { [key]: boolean }
   const facilityConfig = [
     { key: "parking", icon: Car, label: "停车场" },
     { key: "restroom", icon: Toilet, label: "洗手间" },
@@ -43,7 +44,11 @@ function LocationInfoCard({ location, className }: LocationInfoCardProps) {
   ];
   const facilityList = facilityConfig.map(config => ({
     ...config,
-    available: facilities.includes(config.key),
+    available: Array.isArray(rawFacilities)
+      ? rawFacilities.includes(config.key)
+      : rawFacilities != null && typeof rawFacilities === "object"
+        ? !!(rawFacilities as Record<string, boolean>)[config.key]
+        : false,
   }));
 
   return (

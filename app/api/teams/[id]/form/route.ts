@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { getAuth } from "@/lib/auth";
 import { revalidateTag } from "next/cache";
@@ -95,8 +95,13 @@ export async function POST(
       );
     }
 
-    // 检查是否有成员（至少需要队长自己）
-    if (team.currentMembers < 1) {
+    // 检查是否有成员（至少需要队长自己，通过 SQL COUNT 动态计算）
+    const [{ approvedCount }] = await ormDb
+      .select({ approvedCount: sql<number>`count(*)` })
+      .from(schema.teamMembers)
+      .where(eq(schema.teamMembers.teamId, teamId));
+
+    if (approvedCount < 1) {
       return NextResponse.json(
         { success: false, error: "队伍至少需要1人才能组建" },
         { status: 400 }

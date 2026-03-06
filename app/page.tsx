@@ -196,7 +196,7 @@ export default function HomePage() {
           {/* Featured Teams */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {teams
-              .filter((t) => t.status === "open")
+              .filter((t) => t.status === "recruiting")
               .slice(0, 4)
               .map((team, index) => {
                 const location = locations.find(

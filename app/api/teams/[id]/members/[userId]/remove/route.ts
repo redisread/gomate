@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { getAuth } from "@/lib/auth";
 import { revalidateTag } from "next/cache";
@@ -122,14 +122,16 @@ export async function POST(
       .delete(schema.teamMembers)
       .where(eq(schema.teamMembers.id, membership.id));
 
-    // 更新队伍人数
-    const newMemberCount = Math.max(1, team.currentMembers - 1);
+    // 重新计算剩余人数并更新队伍状态
+    const [{ remainingCount }] = await ormDb
+      .select({ remainingCount: sql<number>`count(*)` })
+      .from(schema.teamMembers)
+      .where(and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, "approved")));
 
     await ormDb
       .update(schema.teams)
       .set({
-        currentMembers: newMemberCount,
-        status: newMemberCount < team.maxMembers ? "recruiting" : team.status,
+        status: remainingCount < team.maxMembers ? "recruiting" : team.status,
         updatedAt: new Date(),
       })
       .where(eq(schema.teams.id, teamId));

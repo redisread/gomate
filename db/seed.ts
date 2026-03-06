@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema";
 import * as fs from "fs";
 import * as path from "path";
+import { hashPassword } from "better-auth/crypto";
 
 // 查找本地 D1 数据库路径
 function findLocalD1Path(): string {
@@ -27,8 +28,43 @@ console.log(`📂 数据库路径: ${dbPath}\n`);
 const sqlite = new Database(dbPath);
 const db = drizzle(sqlite, { schema });
 
+// 清空 miniflare KV（Better Auth 用 KV 缓存 session，需要同步清理）
+function clearLocalKV(): void {
+  try {
+    const kvDir = path.join(__dirname, "../.wrangler/state/v3/kv/miniflare-KVNamespaceObject");
+    if (!fs.existsSync(kvDir)) return;
+    const kvFiles = fs.readdirSync(kvDir).filter((f) => f.endsWith(".sqlite"));
+    for (const file of kvFiles) {
+      const kvSqlite = new Database(path.join(kvDir, file));
+      kvSqlite.prepare("DELETE FROM _mf_entries").run();
+      kvSqlite.close();
+    }
+    console.log("   ✓ 清空 KV session 缓存");
+  } catch {
+    // KV 不存在时忽略
+  }
+}
+
 // 测试数据 - 用户
 const seedUsers: schema.NewUser[] = [
+  {
+    id: "test-user-1",
+    name: "测试用户1",
+    email: "wujiahong2013@gmail.com",
+    emailVerified: true,
+    level: "beginner",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "test-user-2",
+    name: "测试用户2",
+    email: "1427298682@qq.com",
+    emailVerified: true,
+    level: "beginner",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
   {
     id: "user-1",
     name: "山野行者",
@@ -37,7 +73,6 @@ const seedUsers: schema.NewUser[] = [
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
     bio: "资深户外爱好者，深圳百山打卡进行中",
     level: "advanced",
-    completedHikes: 42,
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -49,7 +84,6 @@ const seedUsers: schema.NewUser[] = [
     image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
     bio: "风光摄影师，专注山海摄影",
     level: "expert",
-    completedHikes: 88,
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -61,7 +95,6 @@ const seedUsers: schema.NewUser[] = [
     image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
     bio: "热爱分享，擅长带领新手入门",
     level: "intermediate",
-    completedHikes: 25,
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -73,7 +106,6 @@ const seedUsers: schema.NewUser[] = [
     image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
     bio: "夜爬达人，熟悉梧桐山每一条夜路",
     level: "advanced",
-    completedHikes: 56,
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -85,13 +117,12 @@ const seedUsers: schema.NewUser[] = [
     image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face",
     bio: "两个孩子的爸爸，经常带孩子户外活动",
     level: "intermediate",
-    completedHikes: 18,
     createdAt: new Date(),
     updatedAt: new Date(),
   },
 ];
 
-// 测试数据 - 地点
+// 测试数据 - 地点（匹配当前 locations 表结构）
 const seedLocations: schema.NewLocation[] = [
   {
     id: "qiniangshan",
@@ -99,28 +130,17 @@ const seedLocations: schema.NewLocation[] = [
     slug: "qiniangshan",
     subtitle: "深圳第二高峰",
     description: "七娘山位于大鹏半岛南端，是深圳第二高峰，主峰海拔869米。山势险峻、雄伟，山中奇峰异石、岩洞、山泉、密林交相辉映。",
-    difficulty: "hard",
-    duration: "6-8小时",
-    distance: "12公里",
-    elevation: "869米",
     bestSeason: JSON.stringify(["春季", "秋季", "冬季"]),
-    tags: JSON.stringify(["山峰", "挑战", "海景"]),
     coverImage: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=600&fit=crop",
     images: JSON.stringify([
       "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&h=600&fit=crop",
       "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
     ]),
     address: "深圳市大鹏新区南澳街道七娘山地质公园",
-    adcode: "440300",
+    cityId: "city_shenzhen",
     cityName: "深圳",
-    routeDescription: "七娘山环线是经典徒步路线，从地质公园出发，经主峰后从另一侧下山，全程约12公里。",
-    routeGuide: JSON.stringify({ overview: "地质公园入口→主峰→环线下山", tips: ["注意标识牌", "不要走野路"] }),
-    waypoints: JSON.stringify(["地质公园入口", "半山亭", "主峰869米", "西北下山口"]),
-    tips: "建议携带登山杖\n山顶风大记得带外套\n全程无补给",
-    warnings: JSON.stringify(["山势陡峭，注意安全", "夏季雷雨多发", "全程无补给点"]),
-    equipmentNeeded: JSON.stringify(["登山杖", "防风外套", "充足的水"]),
     coordinates: JSON.stringify({ lat: 22.4523, lng: 114.5321 }),
-    facilities: JSON.stringify({ parking: true, restroom: true, water: false, food: false }),
+    extra: JSON.stringify({ facilities: ["parking", "restroom"], warnings: ["山势陡峭，注意安全", "夏季雷雨多发", "全程无补给点"] }),
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -130,28 +150,17 @@ const seedLocations: schema.NewLocation[] = [
     slug: "wutongshan",
     subtitle: "深圳最高峰",
     description: "梧桐山位于深圳东部，主峰大梧桐海拔943.7米，是深圳最高峰。这里山势巍峨，森林茂密，是深圳市民最喜爱的登山目的地之一。",
-    difficulty: "moderate",
-    duration: "4-6小时",
-    distance: "10公里",
-    elevation: "943.7米",
     bestSeason: JSON.stringify(["全年"]),
-    tags: JSON.stringify(["城市登山", "日出", "森林"]),
     coverImage: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=600&fit=crop",
     images: JSON.stringify([
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&h=600&fit=crop",
       "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop",
     ]),
     address: "深圳市罗湖区梧桐山风景区",
-    adcode: "440300",
+    cityId: "city_shenzhen",
     cityName: "深圳",
-    routeDescription: "梧桐山有多条登山路线，最经典的是从梧桐山村出发，经好汉坡登顶，全程约10公里。",
-    routeGuide: JSON.stringify({ overview: "梧桐山村→好汉坡→大梧桐顶→泰山涧下山", tips: ["好汉坡较陡", "可选择泰山涧路线"] }),
-    waypoints: JSON.stringify(["梧桐山村", "好汉坡入口", "小梧桐", "大梧桐943.7米"]),
-    tips: "周末人多建议早出发\n好汉坡较陡量力而行\n山顶有补给但价格较高",
-    warnings: JSON.stringify(["好汉坡路段较陡", "周末人流量大"]),
-    equipmentNeeded: JSON.stringify(["登山鞋", "足够的水", "防晒用品"]),
     coordinates: JSON.stringify({ lat: 22.5836, lng: 114.2165 }),
-    facilities: JSON.stringify({ parking: true, restroom: true, water: true, food: true }),
+    extra: JSON.stringify({ facilities: ["parking", "restroom", "water", "food"], warnings: ["好汉坡路段较陡", "周末人流量大"] }),
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -161,28 +170,17 @@ const seedLocations: schema.NewLocation[] = [
     slug: "dongxichong",
     subtitle: "深圳最美海岸线",
     description: "东西冲穿越是深圳最经典的海岸线徒步路线，从东冲沙滩到西冲沙滩，全长约8公里。沿途可欣赏深圳最美的海岸风光。",
-    difficulty: "moderate",
-    duration: "5-7小时",
-    distance: "8公里",
-    elevation: "200米",
     bestSeason: JSON.stringify(["秋季", "冬季", "春季"]),
-    tags: JSON.stringify(["海岸线", "沙滩", "礁石"]),
     coverImage: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1200&h=600&fit=crop",
     images: JSON.stringify([
       "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&h=600&fit=crop",
       "https://images.unsplash.com/photo-1437719417032-8595fd9e9dc6?w=800&h=600&fit=crop",
     ]),
     address: "深圳市大鹏新区东冲沙滩",
-    adcode: "440300",
+    cityId: "city_shenzhen",
     cityName: "深圳",
-    routeDescription: "东西冲穿越是深圳最受欢迎的海岸线路线，沿途需要攀爬礁石、穿越沙滩，风景绝美。",
-    routeGuide: JSON.stringify({ overview: "东冲沙滩→礁石群→穿鼻岩→西冲沙滩", tips: ["注意潮汐时间", "礁石湿滑小心"] }),
-    waypoints: JSON.stringify(["东冲沙滩", "礁石区", "穿鼻岩", "西冲沙滩"]),
-    tips: "穿防滑鞋\n带手套\n注意潮汐时间",
-    warnings: JSON.stringify(["涨潮时部分路段不可通行", "礁石湿滑注意安全", "夏季紫外线强"]),
-    equipmentNeeded: JSON.stringify(["防滑鞋", "手套", "防晒用品"]),
     coordinates: JSON.stringify({ lat: 22.4567, lng: 114.5234 }),
-    facilities: JSON.stringify({ parking: true, restroom: false, water: false, food: false }),
+    extra: JSON.stringify({ facilities: ["parking"], warnings: ["涨潮时部分路段不可通行", "礁石湿滑注意安全"] }),
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -192,28 +190,17 @@ const seedLocations: schema.NewLocation[] = [
     slug: "maluanshan",
     subtitle: "深圳最大瀑布群",
     description: "马峦山位于深圳坪山区，以瀑布群闻名。这里有深圳最大的瀑布群，最大的瀑布落差达30米。",
-    difficulty: "easy",
-    duration: "3-4小时",
-    distance: "6公里",
-    elevation: "590米",
     bestSeason: JSON.stringify(["夏季", "秋季"]),
-    tags: JSON.stringify(["瀑布", "休闲", "戏水"]),
     coverImage: "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=1200&h=600&fit=crop",
     images: JSON.stringify([
       "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=800&h=600&fit=crop",
       "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=800&h=600&fit=crop",
     ]),
     address: "深圳市坪山区马峦山郊野公园",
-    adcode: "440300",
+    cityId: "city_shenzhen",
     cityName: "深圳",
-    routeDescription: "马峦山有多条路线，最经典的是从北门进入，经瀑布群后从西北门出，全程约6公里。",
-    routeGuide: JSON.stringify({ overview: "北门入口→龙潭瀑布→马峦山瀑布群→西北门", tips: ["雨后瀑布最壮观", "路面可能湿滑"] }),
-    waypoints: JSON.stringify(["北门入口", "龙潭瀑布", "马峦山瀑布群", "西北门"]),
-    tips: "雨后瀑布水量更大\n可带泳衣\n夏季蚊虫多",
-    warnings: JSON.stringify(["雨后溪水暴涨注意安全", "夏季蚊虫较多"]),
-    equipmentNeeded: JSON.stringify(["泳衣", "驱蚊水", "防滑鞋"]),
     coordinates: JSON.stringify({ lat: 22.6789, lng: 114.3456 }),
-    facilities: JSON.stringify({ parking: true, restroom: true, water: false, food: false }),
+    extra: JSON.stringify({ facilities: ["parking", "restroom"], warnings: ["雨后溪水暴涨注意安全", "夏季蚊虫较多"] }),
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -223,46 +210,186 @@ const seedLocations: schema.NewLocation[] = [
     slug: "tanglangshan",
     subtitle: "城市中的绿洲",
     description: "塘朗山位于深圳南山区，是市中心的一片绿洲。主峰海拔430米，可俯瞰深圳湾和香港。",
-    difficulty: "easy",
-    duration: "2-3小时",
-    distance: "5公里",
-    elevation: "430米",
     bestSeason: JSON.stringify(["全年"]),
-    tags: JSON.stringify(["休闲", "日落", "城市风光"]),
     coverImage: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=1200&h=600&fit=crop",
     images: JSON.stringify([
       "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800&h=600&fit=crop",
       "https://images.unsplash.com/photo-1511497584788-876760111969?w=800&h=600&fit=crop",
     ]),
     address: "深圳市南山区塘朗山郊野公园（龙珠门入口）",
-    adcode: "440300",
+    cityId: "city_shenzhen",
     cityName: "深圳",
-    routeDescription: "塘朗山路线简单明了，从龙珠门进入，沿盘山公路或石阶路登顶，适合各年龄段。",
-    routeGuide: JSON.stringify({ overview: "龙珠门→盘山公路/石阶路→山顶观景台", tips: ["石阶路更快但更陡", "傍晚时分风景最好"] }),
-    waypoints: JSON.stringify(["龙珠门", "盘山公路/石阶分叉口", "山顶观景台"]),
-    tips: "地铁直达\n可带宠物\n傍晚可看日落",
-    warnings: JSON.stringify(["傍晚下山注意天黑", "部分路段无灯"]),
-    equipmentNeeded: JSON.stringify(["运动鞋", "水", "小零食"]),
     coordinates: JSON.stringify({ lat: 22.5567, lng: 113.9789 }),
-    facilities: JSON.stringify({ parking: true, restroom: true, water: true, food: false }),
+    extra: JSON.stringify({ facilities: ["parking", "restroom", "water"], warnings: ["傍晚下山注意天黑", "部分路段无灯"] }),
     createdAt: new Date(),
     updatedAt: new Date(),
   },
 ];
 
-// 测试数据 - 队伍
+// 测试数据 - 路线（每个 location 一条主路线，匹配 routes 表结构）
+const seedRoutes: schema.NewRoute[] = [
+  {
+    id: "route-qiniangshan",
+    locationId: "qiniangshan",
+    cityId: "city_shenzhen",
+    name: "七娘山环线",
+    description: "七娘山环线是经典徒步路线，从地质公园出发，经主峰后从另一侧下山，全程约12公里。",
+    difficulty: "hard",
+    durationMin: 360,
+    durationMax: 480,
+    distance: 12,
+    elevation: 869,
+    routeGuide: JSON.stringify({ overview: "地质公园入口→半山亭→主峰→环线下山", tips: ["注意标识牌", "不要走野路"] }),
+    extra: JSON.stringify({ equipmentNeeded: ["登山杖", "防风外套", "充足的水"], warnings: ["山势陡峭，注意安全", "夏季雷雨多发"] }),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "route-wutongshan",
+    locationId: "wutongshan",
+    cityId: "city_shenzhen",
+    name: "梧桐山好汉坡线",
+    description: "梧桐山最经典路线，从梧桐山村出发，经好汉坡登顶，全程约10公里。",
+    difficulty: "moderate",
+    durationMin: 240,
+    durationMax: 360,
+    distance: 10,
+    elevation: 944,
+    routeGuide: JSON.stringify({ overview: "梧桐山村→好汉坡→大梧桐顶→泰山涧下山", tips: ["好汉坡较陡", "可选择泰山涧路线"] }),
+    extra: JSON.stringify({ equipmentNeeded: ["登山鞋", "足够的水", "防晒用品"], warnings: ["好汉坡路段较陡", "周末人流量大"] }),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "route-dongxichong",
+    locationId: "dongxichong",
+    cityId: "city_shenzhen",
+    name: "东西冲海岸穿越",
+    description: "东西冲穿越是深圳最受欢迎的海岸线路线，沿途需要攀爬礁石、穿越沙滩，风景绝美。",
+    difficulty: "moderate",
+    durationMin: 300,
+    durationMax: 420,
+    distance: 8,
+    elevation: 200,
+    routeGuide: JSON.stringify({ overview: "东冲沙滩→礁石群→穿鼻岩→西冲沙滩", tips: ["注意潮汐时间", "礁石湿滑小心"] }),
+    extra: JSON.stringify({ equipmentNeeded: ["防滑鞋", "手套", "防晒用品"], warnings: ["涨潮时部分路段不可通行", "礁石湿滑注意安全"] }),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "route-maluanshan",
+    locationId: "maluanshan",
+    cityId: "city_shenzhen",
+    name: "马峦山瀑布线",
+    description: "马峦山最经典路线，从北门进入，经瀑布群后从西北门出，全程约6公里。",
+    difficulty: "easy",
+    durationMin: 180,
+    durationMax: 240,
+    distance: 6,
+    elevation: 590,
+    routeGuide: JSON.stringify({ overview: "北门入口→龙潭瀑布→马峦山瀑布群→西北门", tips: ["雨后瀑布最壮观", "路面可能湿滑"] }),
+    extra: JSON.stringify({ equipmentNeeded: ["泳衣", "驱蚊水", "防滑鞋"], warnings: ["雨后溪水暴涨注意安全", "夏季蚊虫较多"] }),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "route-tanglangshan",
+    locationId: "tanglangshan",
+    cityId: "city_shenzhen",
+    name: "塘朗山龙珠门线",
+    description: "塘朗山路线简单明了，从龙珠门进入，沿盘山公路或石阶路登顶，适合各年龄段。",
+    difficulty: "easy",
+    durationMin: 120,
+    durationMax: 180,
+    distance: 5,
+    elevation: 430,
+    routeGuide: JSON.stringify({ overview: "龙珠门→盘山公路/石阶路→山顶观景台", tips: ["石阶路更快但更陡", "傍晚时分风景最好"] }),
+    extra: JSON.stringify({ equipmentNeeded: ["运动鞋", "水", "小零食"], warnings: ["傍晚下山注意天黑", "部分路段无灯"] }),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+];
+
+// 测试数据 - 打卡点 POI（每个 location 5 个有意义的地标打卡点）
+const seedPois: schema.NewPoi[] = [
+  // 七娘山
+  { id: "poi-qnns-1", name: "七娘山地质公园", description: "七娘山地质公园入口，徒步起点", coordinates: JSON.stringify({ lat: 22.4523, lng: 114.5321 }), category: "checkpoint", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-qnns-2", name: "半山亭", description: "半山休息亭，可俯瞰山下风光", coordinates: JSON.stringify({ lat: 22.4556, lng: 114.5342 }), category: "rest_area", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-qnns-3", name: "七娘山主峰", description: "七娘山主峰，海拔869米", coordinates: JSON.stringify({ lat: 22.4601, lng: 114.5389 }), category: "mountain_peak", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-qnns-4", name: "三角山", description: "七娘山三角山，重要地标", coordinates: JSON.stringify({ lat: 22.4578, lng: 114.5412 }), category: "mountain_peak", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-qnns-5", name: "杨梅坑观景点", description: "可远眺杨梅坑海湾的绝佳观景点", coordinates: JSON.stringify({ lat: 22.4534, lng: 114.5445 }), category: "viewpoint", createdAt: new Date(), updatedAt: new Date() },
+  // 梧桐山
+  { id: "poi-wts-1", name: "梧桐山村", description: "梧桐山登山起点，村落入口", coordinates: JSON.stringify({ lat: 22.5836, lng: 114.2165 }), category: "checkpoint", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-wts-2", name: "好汉坡", description: "梧桐山著名陡坡，考验体力的关键路段", coordinates: JSON.stringify({ lat: 22.5856, lng: 114.2178 }), category: "trail_marker", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-wts-3", name: "小梧桐", description: "梧桐山小梧桐峰，登顶前的中间站", coordinates: JSON.stringify({ lat: 22.5878, lng: 114.2189 }), category: "mountain_peak", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-wts-4", name: "大梧桐顶", description: "梧桐山主峰，深圳最高峰，海拔943.7米", coordinates: JSON.stringify({ lat: 22.5912, lng: 114.2198 }), category: "mountain_peak", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-wts-5", name: "泰山涧", description: "梧桐山泰山涧，溪流景观优美", coordinates: JSON.stringify({ lat: 22.5889, lng: 114.2212 }), category: "viewpoint", createdAt: new Date(), updatedAt: new Date() },
+  // 东西冲
+  { id: "poi-dxc-1", name: "东冲沙滩", description: "东西冲穿越起点，大鹏半岛知名沙滩", coordinates: JSON.stringify({ lat: 22.4567, lng: 114.5234 }), category: "checkpoint", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-dxc-2", name: "礁石区", description: "海岸礁石群，海蚀地貌奇观", coordinates: JSON.stringify({ lat: 22.4556, lng: 114.5198 }), category: "viewpoint", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-dxc-3", name: "穿鼻岩", description: "天然穿孔岩石，东西冲标志性景观", coordinates: JSON.stringify({ lat: 22.4534, lng: 114.5178 }), category: "viewpoint", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-dxc-4", name: "海蚀洞", description: "海浪侵蚀形成的天然洞穴", coordinates: JSON.stringify({ lat: 22.4512, lng: 114.5156 }), category: "viewpoint", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-dxc-5", name: "西冲沙滩", description: "东西冲穿越终点，宁静优美的沙滩", coordinates: JSON.stringify({ lat: 22.4489, lng: 114.5134 }), category: "checkpoint", createdAt: new Date(), updatedAt: new Date() },
+  // 马峦山
+  { id: "poi-mls-1", name: "马峦山北门", description: "马峦山郊野公园北门入口", coordinates: JSON.stringify({ lat: 22.6789, lng: 114.3456 }), category: "checkpoint", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-mls-2", name: "龙潭瀑布", description: "马峦山龙潭瀑布，水势磅礴", coordinates: JSON.stringify({ lat: 22.6812, lng: 114.3478 }), category: "waterfall", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-mls-3", name: "马峦山瀑布", description: "马峦山主瀑布，落差约30米", coordinates: JSON.stringify({ lat: 22.6834, lng: 114.3489 }), category: "waterfall", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-mls-4", name: "马峦山顶", description: "马峦山主峰，海拔590米", coordinates: JSON.stringify({ lat: 22.6856, lng: 114.3501 }), category: "mountain_peak", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-mls-5", name: "西北门观景台", description: "马峦山西北门观景台，俯瞰坪山全景", coordinates: JSON.stringify({ lat: 22.6823, lng: 114.3523 }), category: "viewpoint", createdAt: new Date(), updatedAt: new Date() },
+  // 塘朗山
+  { id: "poi-tls-1", name: "龙珠门", description: "塘朗山郊野公园龙珠门入口", coordinates: JSON.stringify({ lat: 22.5567, lng: 113.9789 }), category: "checkpoint", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-tls-2", name: "石阶古道", description: "塘朗山传统石阶登山道", coordinates: JSON.stringify({ lat: 22.5578, lng: 113.9801 }), category: "trail_marker", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-tls-3", name: "塘朗山顶", description: "塘朗山主峰，海拔430米", coordinates: JSON.stringify({ lat: 22.5601, lng: 113.9823 }), category: "mountain_peak", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-tls-4", name: "山顶观景台", description: "塘朗山顶观景台，可俯瞰深圳湾", coordinates: JSON.stringify({ lat: 22.5601, lng: 113.9823 }), category: "viewpoint", createdAt: new Date(), updatedAt: new Date() },
+  { id: "poi-tls-5", name: "深圳湾观景点", description: "远眺深圳湾和香港的最佳观景点", coordinates: JSON.stringify({ lat: 22.5589, lng: 113.9845 }), category: "viewpoint", createdAt: new Date(), updatedAt: new Date() },
+];
+
+// 测试数据 - 实体-POI 关联（将 POI 关联到对应 location，roleType: "checkpoint"）
+const seedEntityToPois: schema.NewEntityToPoi[] = [
+  // 七娘山
+  { id: "etp-qnns-1", poiId: "poi-qnns-1", entityType: "location", entityId: "qiniangshan", roleType: "checkpoint", order: 1, createdAt: new Date() },
+  { id: "etp-qnns-2", poiId: "poi-qnns-2", entityType: "location", entityId: "qiniangshan", roleType: "checkpoint", order: 2, createdAt: new Date() },
+  { id: "etp-qnns-3", poiId: "poi-qnns-3", entityType: "location", entityId: "qiniangshan", roleType: "checkpoint", order: 3, createdAt: new Date() },
+  { id: "etp-qnns-4", poiId: "poi-qnns-4", entityType: "location", entityId: "qiniangshan", roleType: "checkpoint", order: 4, createdAt: new Date() },
+  { id: "etp-qnns-5", poiId: "poi-qnns-5", entityType: "location", entityId: "qiniangshan", roleType: "checkpoint", order: 5, createdAt: new Date() },
+  // 梧桐山
+  { id: "etp-wts-1", poiId: "poi-wts-1", entityType: "location", entityId: "wutongshan", roleType: "checkpoint", order: 1, createdAt: new Date() },
+  { id: "etp-wts-2", poiId: "poi-wts-2", entityType: "location", entityId: "wutongshan", roleType: "checkpoint", order: 2, createdAt: new Date() },
+  { id: "etp-wts-3", poiId: "poi-wts-3", entityType: "location", entityId: "wutongshan", roleType: "checkpoint", order: 3, createdAt: new Date() },
+  { id: "etp-wts-4", poiId: "poi-wts-4", entityType: "location", entityId: "wutongshan", roleType: "checkpoint", order: 4, createdAt: new Date() },
+  { id: "etp-wts-5", poiId: "poi-wts-5", entityType: "location", entityId: "wutongshan", roleType: "checkpoint", order: 5, createdAt: new Date() },
+  // 东西冲
+  { id: "etp-dxc-1", poiId: "poi-dxc-1", entityType: "location", entityId: "dongxichong", roleType: "checkpoint", order: 1, createdAt: new Date() },
+  { id: "etp-dxc-2", poiId: "poi-dxc-2", entityType: "location", entityId: "dongxichong", roleType: "checkpoint", order: 2, createdAt: new Date() },
+  { id: "etp-dxc-3", poiId: "poi-dxc-3", entityType: "location", entityId: "dongxichong", roleType: "checkpoint", order: 3, createdAt: new Date() },
+  { id: "etp-dxc-4", poiId: "poi-dxc-4", entityType: "location", entityId: "dongxichong", roleType: "checkpoint", order: 4, createdAt: new Date() },
+  { id: "etp-dxc-5", poiId: "poi-dxc-5", entityType: "location", entityId: "dongxichong", roleType: "checkpoint", order: 5, createdAt: new Date() },
+  // 马峦山
+  { id: "etp-mls-1", poiId: "poi-mls-1", entityType: "location", entityId: "maluanshan", roleType: "checkpoint", order: 1, createdAt: new Date() },
+  { id: "etp-mls-2", poiId: "poi-mls-2", entityType: "location", entityId: "maluanshan", roleType: "checkpoint", order: 2, createdAt: new Date() },
+  { id: "etp-mls-3", poiId: "poi-mls-3", entityType: "location", entityId: "maluanshan", roleType: "checkpoint", order: 3, createdAt: new Date() },
+  { id: "etp-mls-4", poiId: "poi-mls-4", entityType: "location", entityId: "maluanshan", roleType: "checkpoint", order: 4, createdAt: new Date() },
+  { id: "etp-mls-5", poiId: "poi-mls-5", entityType: "location", entityId: "maluanshan", roleType: "checkpoint", order: 5, createdAt: new Date() },
+  // 塘朗山
+  { id: "etp-tls-1", poiId: "poi-tls-1", entityType: "location", entityId: "tanglangshan", roleType: "checkpoint", order: 1, createdAt: new Date() },
+  { id: "etp-tls-2", poiId: "poi-tls-2", entityType: "location", entityId: "tanglangshan", roleType: "checkpoint", order: 2, createdAt: new Date() },
+  { id: "etp-tls-3", poiId: "poi-tls-3", entityType: "location", entityId: "tanglangshan", roleType: "checkpoint", order: 3, createdAt: new Date() },
+  { id: "etp-tls-4", poiId: "poi-tls-4", entityType: "location", entityId: "tanglangshan", roleType: "checkpoint", order: 4, createdAt: new Date() },
+  { id: "etp-tls-5", poiId: "poi-tls-5", entityType: "location", entityId: "tanglangshan", roleType: "checkpoint", order: 5, createdAt: new Date() },
+];
+
+// 测试数据 - 队伍（匹配当前 teams 表结构，加上 routeId）
 const seedTeams: schema.NewTeam[] = [
   {
     id: "team-1",
     locationId: "qiniangshan",
+    routeId: "route-qiniangshan",
     leaderId: "user-1",
     title: "七娘山挑战队 - 周六登顶看海",
     description: "本周六计划挑战七娘山，看绝美海景。目前已有3人，再找2-3位伙伴一起。",
     startTime: new Date("2026-03-07T07:00:00"),
     endTime: new Date("2026-03-07T14:00:00"),
-    duration: "7小时",
     maxMembers: 6,
-    currentMembers: 3,
     requirements: JSON.stringify(["有徒步经验", "体能较好", "自备装备"]),
     status: "recruiting",
     createdAt: new Date(),
@@ -271,14 +398,13 @@ const seedTeams: schema.NewTeam[] = [
   {
     id: "team-2",
     locationId: "qiniangshan",
+    routeId: "route-qiniangshan",
     leaderId: "user-2",
     title: "七娘山摄影小队 - 日出专线",
     description: "周日清晨出发，登顶拍摄七娘山日出和云海。",
     startTime: new Date("2026-03-08T05:30:00"),
     endTime: new Date("2026-03-08T13:30:00"),
-    duration: "8小时",
     maxMembers: 4,
-    currentMembers: 4,
     requirements: JSON.stringify(["摄影爱好者", "能早起", "有头灯"]),
     status: "full",
     createdAt: new Date(),
@@ -287,14 +413,13 @@ const seedTeams: schema.NewTeam[] = [
   {
     id: "team-3",
     locationId: "wutongshan",
+    routeId: "route-wutongshan",
     leaderId: "user-4",
     title: "梧桐山夜爬 - 看城市日出",
     description: "周六凌晨夜爬梧桐山，在山顶看深圳最美日出。",
     startTime: new Date("2026-03-07T04:00:00"),
     endTime: new Date("2026-03-07T09:00:00"),
-    duration: "5小时",
     maxMembers: 10,
-    currentMembers: 6,
     requirements: JSON.stringify(["有夜爬经验", "带头灯", "保暖衣物"]),
     status: "recruiting",
     createdAt: new Date(),
@@ -303,14 +428,13 @@ const seedTeams: schema.NewTeam[] = [
   {
     id: "team-4",
     locationId: "wutongshan",
+    routeId: "route-wutongshan",
     leaderId: "user-5",
     title: "梧桐山亲子徒步队",
     description: "周日带小朋友一起爬梧桐山，走较轻松的泰山涧路线。",
     startTime: new Date("2026-03-08T09:00:00"),
     endTime: new Date("2026-03-08T14:00:00"),
-    duration: "5小时",
     maxMembers: 5,
-    currentMembers: 3,
     requirements: JSON.stringify(["带6岁以上儿童", "家长陪同", "准备零食"]),
     status: "recruiting",
     createdAt: new Date(),
@@ -319,14 +443,13 @@ const seedTeams: schema.NewTeam[] = [
   {
     id: "team-5",
     locationId: "dongxichong",
+    routeId: "route-dongxichong",
     leaderId: "user-1",
     title: "东西冲穿越 - 海岸线探险",
     description: "周日东西冲穿越，体验深圳最美海岸线。",
     startTime: new Date("2026-03-08T08:30:00"),
     endTime: new Date("2026-03-08T14:30:00"),
-    duration: "6小时",
     maxMembers: 8,
-    currentMembers: 5,
     requirements: JSON.stringify(["防滑鞋", "手套", "不怕晒"]),
     status: "recruiting",
     createdAt: new Date(),
@@ -335,14 +458,13 @@ const seedTeams: schema.NewTeam[] = [
   {
     id: "team-6",
     locationId: "maluanshan",
+    routeId: "route-maluanshan",
     leaderId: "user-3",
     title: "马峦山瀑布探秘 - 休闲局",
     description: "周六马峦山看瀑布，路线轻松，适合新手和想放松的朋友。",
     startTime: new Date("2026-03-07T09:30:00"),
     endTime: new Date("2026-03-07T13:30:00"),
-    duration: "4小时",
     maxMembers: 10,
-    currentMembers: 4,
     requirements: JSON.stringify(["休闲装备", "可带泳衣", "防蚊液"]),
     status: "recruiting",
     createdAt: new Date(),
@@ -351,14 +473,13 @@ const seedTeams: schema.NewTeam[] = [
   {
     id: "team-7",
     locationId: "tanglangshan",
+    routeId: "route-tanglangshan",
     leaderId: "user-4",
     title: "塘朗山晨爬 - 开启活力一天",
     description: "周日早上塘朗山晨练，轻松登顶后下山吃早餐。",
     startTime: new Date("2026-03-08T06:30:00"),
     endTime: new Date("2026-03-08T09:00:00"),
-    duration: "2.5小时",
     maxMembers: 6,
-    currentMembers: 2,
     requirements: JSON.stringify(["准时", "轻松装备"]),
     status: "recruiting",
     createdAt: new Date(),
@@ -385,10 +506,14 @@ async function seed() {
     console.log("🗑️  清空现有数据...");
     db.delete(schema.teamMembers).run();
     db.delete(schema.teams).run();
+    db.delete(schema.entityToPois).run();
+    db.delete(schema.pois).run();
+    db.delete(schema.routes).run();
     db.delete(schema.locations).run();
     db.delete(schema.sessions).run();
     db.delete(schema.accounts).run();
     db.delete(schema.users).run();
+    clearLocalKV(); // 同步清空 KV session 缓存，防止旧 session 指向已删除用户
 
     // 插入用户
     console.log("👤 插入用户数据...");
@@ -404,6 +529,27 @@ async function seed() {
     }
     console.log(`   ✓ 插入 ${seedLocations.length} 个地点`);
 
+    // 插入路线
+    console.log("🗺️  插入路线数据...");
+    for (const route of seedRoutes) {
+      db.insert(schema.routes).values(route).run();
+    }
+    console.log(`   ✓ 插入 ${seedRoutes.length} 条路线`);
+
+    // 插入 POI 数据
+    console.log("📍 插入 POI 数据...");
+    for (const poi of seedPois) {
+      db.insert(schema.pois).values(poi).onConflictDoNothing().run();
+    }
+    console.log(`   ✓ 插入 ${seedPois.length} 个 POI`);
+
+    // 插入实体-POI 关联数据
+    console.log("🔗 插入实体-POI 关联数据...");
+    for (const etp of seedEntityToPois) {
+      db.insert(schema.entityToPois).values(etp).onConflictDoNothing().run();
+    }
+    console.log(`   ✓ 插入 ${seedEntityToPois.length} 条关联记录`);
+
     // 插入队伍
     console.log("👥 插入队伍数据...");
     for (const team of seedTeams) {
@@ -416,14 +562,46 @@ async function seed() {
     for (const member of seedTeamMembers) {
       db.insert(schema.teamMembers).values(member).run();
     }
-    console.log(`   ✓ 插入 ${seedTeamMembers.length} 个队伍成员\n`);
+    console.log(`   ✓ 插入 ${seedTeamMembers.length} 个队伍成员`);
+
+    // 插入测试账号密码（Better Auth credential 账号）
+    console.log("🔑 插入测试账号凭据...");
+    const testPassword = await hashPassword("11111111");
+    const testAccounts: schema.NewAccount[] = [
+      {
+        id: "acc-test-1",
+        userId: "test-user-1",
+        accountId: "wujiahong2013@gmail.com",
+        providerId: "credential",
+        password: testPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "acc-test-2",
+        userId: "test-user-2",
+        accountId: "1427298682@qq.com",
+        providerId: "credential",
+        password: testPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+    for (const acc of testAccounts) {
+      db.insert(schema.accounts).values(acc).run();
+    }
+    console.log(`   ✓ 插入 ${testAccounts.length} 个测试账号凭据\n`);
 
     console.log("✅ 数据填充完成！");
     console.log("\n📊 数据概览:");
     console.log(`   • 用户: ${seedUsers.length}`);
     console.log(`   • 地点: ${seedLocations.length}`);
+    console.log(`   • 路线: ${seedRoutes.length}`);
+    console.log(`   • POI: ${seedPois.length}`);
+    console.log(`   • 实体-POI 关联: ${seedEntityToPois.length}`);
     console.log(`   • 队伍: ${seedTeams.length}`);
     console.log(`   • 队伍成员: ${seedTeamMembers.length}`);
+    console.log(`   • 测试账号凭据: ${testAccounts.length}`);
   } catch (error) {
     console.error("❌ 数据填充失败:", error);
     process.exit(1);

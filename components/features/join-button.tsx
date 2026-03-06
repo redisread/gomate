@@ -45,7 +45,7 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
     if (userMemberStatus === "rejected") return "rejected";
     if (userMemberStatus === "leave_pending") return "leave_pending";
     if (team.status === "full") return "full";
-    if (team.status === "closed") return "closed";
+    if (team.status === "formed" || team.status === "completed" || team.status === "cancelled") return "closed";
     return "idle";
   }, [userMemberStatus, team.status]);
 
@@ -311,8 +311,8 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
             <div className="flex items-center gap-2 text-stone-600">
               <Shield className="h-5 w-5 text-amber-600" />
               <span>你是队长</span>
-              {/* 组建队伍按钮 - 仅在 open 或 full 状态显示 */}
-              {(team.status === "open" || team.status === "full") && (
+              {/* 组建队伍按钮 - 仅在 recruiting 或 full 状态显示 */}
+              {(team.status === "recruiting" || team.status === "full") && (
                 <AlertDialog open={showFormTeamDialog} onOpenChange={setShowFormTeamDialog}>
                   <AlertDialogTrigger asChild>
                     <Button variant="default" size="sm" className="ml-2 bg-emerald-600 hover:bg-emerald-700">

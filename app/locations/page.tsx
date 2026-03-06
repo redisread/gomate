@@ -112,12 +112,12 @@ export default function LocationsPage() {
 
                       {/* Tags */}
                       <div className="flex flex-wrap gap-2">
-                        {location.tags?.slice(0, 3).map((tag: string) => (
+                        {location.tags?.slice(0, 3).map((tag: any, i: number) => (
                           <span
-                            key={tag}
+                            key={tag?.id ?? i}
                             className="px-2 py-1 bg-stone-100 text-stone-600 rounded text-xs"
                           >
-                            {tag}
+                            {typeof tag === "string" ? tag : tag?.name}
                           </span>
                         ))}
                       </div>

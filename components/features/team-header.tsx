@@ -25,12 +25,14 @@ function TeamHeader({ team, location, className }: TeamHeaderProps) {
   const [isShareOpen, setIsShareOpen] = React.useState(false);
 
   const statusConfig = {
-    open: { label: "招募中", color: "bg-emerald-100 text-emerald-700" },
+    recruiting: { label: "招募中", color: "bg-emerald-100 text-emerald-700" },
     full: { label: "已满员", color: "bg-amber-100 text-amber-700" },
-    closed: { label: "已结束", color: "bg-stone-100 text-stone-500" },
+    formed: { label: "已组建", color: "bg-blue-100 text-blue-700" },
+    completed: { label: "已完成", color: "bg-stone-100 text-stone-500" },
+    cancelled: { label: "已取消", color: "bg-stone-100 text-stone-500" },
   };
 
-  const status = statusConfig[team.status];
+  const status = statusConfig[team.status] || statusConfig.recruiting;
 
   return (
     <motion.div

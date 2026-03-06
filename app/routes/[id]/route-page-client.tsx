@@ -15,7 +15,7 @@ interface RoutePageClientProps {
 
 export function RoutePageClient({ route }: RoutePageClientProps) {
   const { teams } = useTeams();
-  const routeTeams = teams.filter((team) => team.routeId === route.id && team.status === "open");
+  const routeTeams = teams.filter((team) => team.routeId === route.id && team.status === "recruiting");
 
   return (
     <div className="min-h-screen bg-background">

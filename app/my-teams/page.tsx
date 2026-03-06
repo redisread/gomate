@@ -52,9 +52,11 @@ function MyTeamsLoading() {
 
 // 状态映射
 const statusLabels: Record<string, { label: string; color: string }> = {
-  open: { label: "招募中", color: "bg-emerald-100 text-emerald-700" },
+  recruiting: { label: "招募中", color: "bg-emerald-100 text-emerald-700" },
   full: { label: "已满员", color: "bg-amber-100 text-amber-700" },
-  closed: { label: "已结束", color: "bg-stone-100 text-stone-600" },
+  formed: { label: "已组建", color: "bg-blue-100 text-blue-700" },
+  completed: { label: "已完成", color: "bg-stone-100 text-stone-600" },
+  cancelled: { label: "已取消", color: "bg-stone-100 text-stone-600" },
 };
 
 // 申请状态映射
@@ -199,12 +201,12 @@ function MyTeamsContent() {
 
   // 获取历史队伍（已结束的）
   const historyTeams = teams.filter(
-    (t) => t.leader.id === user.id && t.status === "closed"
+    (t) => t.leader.id === user.id && (t.status === "completed" || t.status === "cancelled")
   );
 
   const TeamCard = ({ team, isLeader = false }: { team: typeof teams[0]; isLeader?: boolean }) => {
     const location = locations.find((l) => l.id === team.locationId);
-    const status = statusLabels[team.status] || statusLabels.open;
+    const status = statusLabels[team.status] || statusLabels.recruiting;
 
     return (
       <Link href={`/teams/${team.id}`}>

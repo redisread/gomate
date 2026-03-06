@@ -134,7 +134,7 @@ export function TeamClientPage({ teamId }: TeamClientPageProps) {
         const result = await response.json();
         if (result.success && result.teams) {
           const filtered = result.teams
-            .filter((t: Team) => t.id !== currentId && t.status === "open")
+            .filter((t: Team) => t.id !== currentId && t.status === "recruiting")
             .slice(0, 2);
           setOtherTeams(filtered);
         }

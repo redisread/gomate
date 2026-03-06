@@ -79,7 +79,7 @@ export default function EditProfilePage() {
       setFormData({
         name: user.name,
         nickname: user.nickname || "",
-        bio: user.bio,
+        bio: user.bio ?? "",
         level: user.level,
         wechat: user.wechat || "",
         gender: (user.gender as "male" | "female" | "other") || "",

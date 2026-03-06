@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
+import { getDB } from "@/db";
 import * as schema from "@/db/schema";
-
-// 动态导入 @opennextjs/cloudflare 以避免构建时错误
-const getCloudflareContext = async () => {
-  const mod = await import("@opennextjs/cloudflare");
-  return mod.getCloudflareContext({ async: true });
-};
 
 /**
  * GET /api/user?id={userId}
@@ -15,18 +9,6 @@ const getCloudflareContext = async () => {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { env } = await getCloudflareContext();
-
-    if (!env.DB) {
-      return NextResponse.json(
-        { error: "Database not configured" },
-        { status: 500 }
-      );
-    }
-
-    const db = drizzle(env.DB as D1Database, { schema });
-
-    // 获取查询参数
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("id");
 
@@ -37,7 +19,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 查询用户
+    const db = await getDB();
+
     const user = await db
       .select()
       .from(schema.users)
@@ -51,21 +34,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 返回用户信息
     return NextResponse.json({
       user: {
         id: user[0].id,
         name: user[0].name,
+        nickname: user[0].nickname,
         email: user[0].email,
         avatar: user[0].image,
         bio: user[0].bio,
         gender: user[0].gender,
         birthday: user[0].birthday,
         level: user[0].level || "beginner",
-        completedHikes: user[0].completedHikes,
+        completedHikes: user[0].completedHikes ?? 0,
         wechat: user[0].wechat,
         extra: user[0].extra,
         role: user[0].role || "user",
+        status: user[0].status,
         createdAt: user[0].createdAt,
         updatedAt: user[0].updatedAt,
       },

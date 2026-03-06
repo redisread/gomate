@@ -25,7 +25,7 @@ interface TeamListProps {
 }
 
 function TeamList({ teams, className }: TeamListProps) {
-  const openTeams = teams.filter((t) => t.status === "open");
+  const openTeams = teams.filter((t) => t.status === "recruiting");
   const fullTeams = teams.filter((t) => t.status === "full");
 
   return (

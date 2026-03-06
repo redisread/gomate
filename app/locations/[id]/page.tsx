@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { LocationHeader } from "@/app/components/features/location-header";
 import { LocationInfoCard } from "@/app/components/features/location-info-card";
 import { RouteGuide } from "@/app/components/features/route-guide";
+import { LocationCheckpoints } from "@/app/components/features/location-checkpoints";
 import { TeamList } from "@/app/components/features/team-list";
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
@@ -48,6 +49,7 @@ export default function LocationPage() {
               <h2 className="text-xl font-semibold text-stone-900 mb-4">地点介绍</h2>
               <p className="text-stone-600 leading-relaxed">{location.description}</p>
             </div>
+            <LocationCheckpoints locationId={id} />
             <RouteGuide location={location} />
             <div id="teams">
               <TeamList locationId={id} />

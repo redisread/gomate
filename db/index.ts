@@ -71,5 +71,29 @@ export interface D1Results<T> {
   };
 }
 
+/**
+ * 本地开发用 better-sqlite3 实例（供 lib/auth.ts 的本地分支使用）
+ * 在 Cloudflare Workers 环境中 better-sqlite3 不可用，此导出为 undefined
+ */
+export let db: import("drizzle-orm/better-sqlite3").BetterSQLite3Database<typeof schema> | undefined;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Database = require("better-sqlite3");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { drizzle } = require("drizzle-orm/better-sqlite3");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const fs = require("fs") as typeof import("fs");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const path = require("path") as typeof import("path");
+  const d1Dir = path.join(process.cwd(), ".wrangler/state/v3/d1/miniflare-D1DatabaseObject");
+  const files = fs.readdirSync(d1Dir).filter((f: string) => f.endsWith(".sqlite"));
+  if (files.length > 0) {
+    const sqlite = new Database(path.join(d1Dir, files[0]));
+    db = drizzle(sqlite, { schema });
+  }
+} catch {
+  // Cloudflare Workers 环境中 better-sqlite3 不可用，db 保持 undefined
+}
+
 // 导出 schema
 export * from "./schema";

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { getAuth } from "@/lib/auth";
 import { revalidateTag } from "next/cache";
@@ -74,14 +74,6 @@ export async function POST(
       );
     }
 
-    // 检查队伍是否已满
-    if (team.currentMembers >= team.maxMembers) {
-      return NextResponse.json(
-        { error: "队伍已满，无法批准新成员" },
-        { status: 400 }
-      );
-    }
-
     // 获取成员申请
     const members = await ormDb.query.teamMembers.findMany({
       where: and(
@@ -100,25 +92,40 @@ export async function POST(
       );
     }
 
+    // 查询当前已审核通过的人数
+    const [{ approvedCount }] = await ormDb
+      .select({ approvedCount: sql<number>`count(*)` })
+      .from(schema.teamMembers)
+      .where(and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, "approved")));
+
+    if (approvedCount >= team.maxMembers) {
+      return NextResponse.json(
+        { error: "队伍已满，无法批准新成员" },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date();
+
     // 更新成员状态
     await ormDb
       .update(schema.teamMembers)
       .set({
         status: "approved",
-        joinedAt: new Date(),
+        joinedAt: now,
+        statusUpdatedAt: now,
       })
       .where(eq(schema.teamMembers.id, membership.id));
 
-    // 更新队伍当前人数
-    const newMemberCount = team.currentMembers + 1;
-    const newStatus = newMemberCount >= team.maxMembers ? "full" : "recruiting";
+    // 重新计算人数并更新队伍状态
+    const newCount = approvedCount + 1;
+    const newStatus = newCount >= team.maxMembers ? "full" : "recruiting";
 
     await ormDb
       .update(schema.teams)
       .set({
-        currentMembers: newMemberCount,
         status: newStatus,
-        updatedAt: new Date(),
+        updatedAt: now,
       })
       .where(eq(schema.teams.id, teamId));
 

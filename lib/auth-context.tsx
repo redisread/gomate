@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { authClient } from "@/lib/auth-client";
-import type { User } from "@/db/schema";
 import { copy } from "@/lib/copy";
 
 export type UserRole = "user" | "admin";
@@ -33,8 +32,8 @@ async function fetchFullUserInfo(userId: string): Promise<Partial<AuthUser> | nu
       console.error("[fetchFullUserInfo] Response not ok:", response.status);
       return null;
     }
-    const data = await response.json();
-    return data.user as Partial<AuthUser>;
+    const data = await response.json() as { user: Partial<AuthUser> };
+    return data.user;
   } catch (error) {
     console.error("[fetchFullUserInfo] Error:", error);
     return null;
@@ -90,9 +89,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nickname: fullUser?.nickname,
         avatar: fullUser?.avatar !== undefined ? fullUser.avatar : (session.user.image || DEFAULT_AVATAR),
         email: session.user.email,
-        level: (fullUser?.level !== undefined ? fullUser.level : session.user.level as AuthUser["level"]) || "beginner",
+        level: (fullUser?.level !== undefined ? fullUser.level : (session.user as unknown as { level?: AuthUser["level"] }).level) || "beginner",
         completedHikes: fullUser?.completedHikes !== undefined ? fullUser.completedHikes : ((session.user as unknown as { completedHikes?: number }).completedHikes || 0),
-        bio: fullUser?.bio !== undefined ? fullUser.bio : "新人户外爱好者，期待与你一起探索山野。",
+        bio: (fullUser?.bio != null && fullUser.bio !== "") ? fullUser.bio : "新人户外爱好者，期待与你一起探索山野。",
         wechat: fullUser?.wechat,
         gender: fullUser?.gender,
         birthday: fullUser?.birthday,
@@ -132,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             ...prev,
             name: fullUser.name !== undefined ? fullUser.name : prev.name,
             avatar: fullUser.avatar !== undefined ? fullUser.avatar : prev.avatar,
-            bio: fullUser.bio !== undefined ? fullUser.bio : prev.bio,
+            bio: (fullUser.bio != null && fullUser.bio !== "") ? fullUser.bio : prev.bio,
             level: (fullUser.level !== undefined ? fullUser.level : prev.level) || "beginner",
             completedHikes: fullUser.completedHikes !== undefined ? fullUser.completedHikes : prev.completedHikes,
             wechat: fullUser.wechat !== undefined ? fullUser.wechat : prev.wechat,
@@ -174,8 +173,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name,
         email,
         password,
-        bio: "新人户外爱好者，期待与你一起探索山野。",
-        level: "beginner",
       });
 
       if (result.error) {

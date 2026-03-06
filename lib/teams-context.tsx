@@ -45,13 +45,13 @@ function formatTeamFromDB(apiTeam: Record<string, unknown>): Team {
     maxMembers: apiTeam.maxMembers as number,
     currentMembers: apiTeam.currentMembers as number,
     requirements: Array.isArray(apiTeam.requirements) ? apiTeam.requirements : (apiTeam.requirements ? JSON.parse(apiTeam.requirements as string) : []),
-    status: (apiTeam.status === "recruiting" ? "open" : apiTeam.status) as Team["status"],
+    status: apiTeam.status as Team["status"],
     createdAt: apiTeam.createdAt ? new Date(apiTeam.createdAt as string).toISOString().split("T")[0] : getCurrentDate(),
     leader: apiTeam.leader ? {
       id: (apiTeam.leader as Record<string, unknown>).id as string,
       name: (apiTeam.leader as Record<string, unknown>).name as string,
       avatar: (apiTeam.leader as Record<string, unknown>).avatar as string || (apiTeam.leader as Record<string, unknown>).image as string || "",
-      level: ((apiTeam.leader as Record<string, unknown>).level as string) || "beginner",
+      level: (((apiTeam.leader as Record<string, unknown>).level as string) || "beginner") as "beginner" | "intermediate" | "advanced" | "expert",
       completedHikes: ((apiTeam.leader as Record<string, unknown>).completedHikes as number) || 0,
       bio: (apiTeam.leader as Record<string, unknown>).bio as string || "",
     } : {
@@ -130,7 +130,7 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
       maxMembers: apiTeam.maxMembers,
       currentMembers: apiTeam.currentMembers,
       requirements: apiTeam.requirements || [],
-      status: apiTeam.status === "recruiting" ? "open" : apiTeam.status,
+      status: apiTeam.status,
       createdAt: apiTeam.createdAt ? new Date(apiTeam.createdAt).toISOString().split("T")[0] : getCurrentDate(),
       leader: apiTeam.leader ? {
         id: apiTeam.leader.id,

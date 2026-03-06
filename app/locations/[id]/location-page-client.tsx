@@ -9,6 +9,7 @@ import { Footer } from "@/app/components/layout/footer";
 import { LocationHeader } from "@/app/components/features/location-header";
 import { LocationInfoCard } from "@/app/components/features/location-info-card";
 import { RouteGuide } from "@/app/components/features/route-guide";
+import { LocationCheckpoints } from "@/app/components/features/location-checkpoints";
 import { RouteList } from "@/app/components/features/route-list";
 import { TeamList } from "@/app/components/features/team-list";
 import { EquipmentList } from "@/app/components/features/equipment-list";
@@ -99,7 +100,10 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
             {/* Route Details (when a route is selected) */}
             {selectedRoute && (
               <div id="route-details" className="space-y-6">
-                {/* 路线概览 + 安全须知 */}
+                {/* 核心打卡点 */}
+                <LocationCheckpoints locationId={locationId} />
+
+                {/* 安全须知 */}
                 <RouteGuide route={selectedRoute} locationName={location.name} />
 
                 {/* 装备建议 */}
