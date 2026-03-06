@@ -55,9 +55,13 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Get user error:", error);
+    console.error("[API /user] Error details:", error);
+    // 详细记录错误信息便于诊断
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("[API /user] Error stack:", errorStack);
     return NextResponse.json(
-      { error: "Failed to get user", message: (error as Error).message },
+      { error: "Failed to get user", message: errorMessage },
       { status: 500 }
     );
   }

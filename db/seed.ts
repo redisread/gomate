@@ -245,6 +245,28 @@ const seedRoutes: schema.NewRoute[] = [
     updatedAt: new Date(),
   },
   {
+    id: "route-qiniangshan-kekao",
+    locationId: "qiniangshan",
+    cityId: "city_shenzhen",
+    name: "七娘山主峰科考线",
+    description: "官方修建的主要登山道，从地质公园博物馆出发，经一号观景台、二号观景台到达主峰后原路返回，路况最好，适合大多数徒步者",
+    difficulty: "moderate",
+    durationMin: 300,
+    durationMax: 360,
+    distance: 9,
+    elevation: 850,
+    routeGuide: JSON.stringify({
+      overview: "地质公园博物馆→主峰科考线入口→一号观景台→二号观景台→七娘山主峰→原路返回",
+      tips: ["登山口需要登记身份证", "全程台阶路，路况良好", "山上无补给，带足水和食物"]
+    }),
+    extra: JSON.stringify({
+      equipmentNeeded: ["登山鞋", "充足的水(2-2.5L)", "路餐", "防晒用品", "防风外套"],
+      warnings: ["下午3点后不建议上山", "禁止夜间登山", "不要偏离步道"]
+    }),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
     id: "route-wutongshan",
     locationId: "wutongshan",
     cityId: "city_shenzhen",

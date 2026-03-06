@@ -36,6 +36,7 @@ interface CheckpointPoi {
 interface LocationCheckpointsProps {
   locationId: string;
   className?: string;
+  cardStyle?: boolean;
 }
 
 const categoryIconMap: Record<PoiCategory, React.ElementType> = {
@@ -123,6 +124,7 @@ function CheckpointCard({
 export function LocationCheckpoints({
   locationId,
   className,
+  cardStyle = false,
 }: LocationCheckpointsProps) {
   const [pois, setPois] = React.useState<CheckpointPoi[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -165,7 +167,7 @@ export function LocationCheckpoints({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className={cn(className)}
+      className={cn(cardStyle && "bg-white rounded-2xl border border-stone-200 p-6", className)}
     >
       {/* 标题区域 */}
       <div className="flex items-center justify-between mb-3">

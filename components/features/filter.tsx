@@ -16,29 +16,8 @@ interface FilterGroup {
   options: FilterOption[];
 }
 
-const defaultFilterGroups: FilterGroup[] = [
-  {
-    id: "difficulty",
-    label: "难度",
-    options: [
-      { id: "easy", label: "简单" },
-      { id: "moderate", label: "中等" },
-      { id: "hard", label: "困难" },
-      { id: "expert", label: "专家" },
-    ],
-  },
-  {
-    id: "season",
-    label: "季节",
-    options: [
-      { id: "春季", label: "春季" },
-      { id: "夏季", label: "夏季" },
-      { id: "秋季", label: "秋季" },
-      { id: "冬季", label: "冬季" },
-      { id: "全年", label: "全年" },
-    ],
-  },
-];
+// 默认筛选组为空，城市筛选通过 extraGroups 传入
+const defaultFilterGroups: FilterGroup[] = [];
 
 interface FilterProps {
   className?: string;
@@ -47,6 +26,8 @@ interface FilterProps {
   selectedFilters?: Record<string, string[]>;
   onFilterChange?: (groupId: string, optionId: string) => void;
   extraGroups?: FilterGroup[];
+  /** @deprecated Use extraGroups instead */
+  cities?: { id: string; name: string }[];
 }
 
 function Filter({
@@ -56,11 +37,25 @@ function Filter({
   selectedFilters = {},
   onFilterChange,
   extraGroups = [],
+  cities = [],
 }: FilterProps) {
-  const filterGroups = React.useMemo(
-    () => [...defaultFilterGroups, ...extraGroups],
-    [extraGroups]
-  );
+  const filterGroups = React.useMemo(() => {
+    const groups: FilterGroup[] = [];
+
+    // 城市筛选
+    if (cities.length > 0) {
+      groups.push({
+        id: "city",
+        label: "城市",
+        options: cities.map(c => ({ id: c.id, label: c.name })),
+      });
+    }
+
+    // 额外分组
+    groups.push(...extraGroups);
+
+    return groups;
+  }, [extraGroups, cities]);
   // 桌面端：当前打开的下拉菜单 groupId
   const [openDesktopGroup, setOpenDesktopGroup] = React.useState<string | null>(null);
   // 移动端抽屉内：展开的分组

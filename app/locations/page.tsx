@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 import { motion } from "framer-motion";
-import { MapPin, ArrowRight, Search, SlidersHorizontal, Compass } from "lucide-react";
+import { MapPin, ArrowRight, Search, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -22,11 +23,6 @@ const difficultyLabels: Record<string, { label: string; color: string }> = {
   expert: { label: "专家", color: "bg-red-100 text-red-700" },
 };
 
-// 标签分组配置
-const tagGroups = {
-  location: { label: "地点类型", icon: MapPin },
-  activity: { label: "活动类型", icon: Compass },
-};
 
 // 热门标签类型
 interface PopularTag {
@@ -36,7 +32,8 @@ interface PopularTag {
   count: number;
 }
 
-export default function LocationsPage() {
+// 内部组件 - 使用 useSearchParams
+function LocationsPageContent() {
   const { locations, isLoading } = useLocations();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,38 +46,42 @@ export default function LocationsPage() {
     searchParams.get("tags")?.split(",").filter(Boolean) || []
   );
 
-  // 热门标签和分组标签
+  // 热门标签
   const [popularTags, setPopularTags] = React.useState<PopularTag[]>([]);
-  const [groupedTags, setGroupedTags] = React.useState<{
-    location: Array<{ id: string; name: string; count: number }>;
-    activity: Array<{ id: string; name: string; count: number }>;
-  }>({ location: [], activity: [] });
   const [isTagsLoading, setIsTagsLoading] = React.useState(true);
+
+  // 聚合城市数据
+  const cityList = React.useMemo(() => {
+    const cityMap = new Map<string, string>();
+    locations.forEach((loc) => {
+      if (loc.cityId && loc.cityName) {
+        cityMap.set(loc.cityId, loc.cityName);
+      }
+    });
+    return Array.from(cityMap.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "zh"));
+  }, [locations]);
 
   console.log("[LocationsPage] locations count:", locations.length, "isLoading:", isLoading);
 
-  // 加载标签数据
+  // 同步 URL 搜索参数到状态
+  React.useEffect(() => {
+    const queryFromUrl = searchParams.get("q") || "";
+    setSearchQuery(queryFromUrl);
+  }, [searchParams]);
+
+  // 加载热门标签
   React.useEffect(() => {
     async function loadTags() {
       try {
         setIsTagsLoading(true);
-        // 并行加载热门标签和分组标签
-        const [popularRes, groupedRes] = await Promise.all([
-          fetch("/api/locations?tags=true"),
-          fetch("/api/locations?allTags=true"),
-        ]);
+        const popularRes = await fetch("/api/locations?tags=true");
 
         if (popularRes.ok) {
           const popularData = await popularRes.json();
           if (popularData.success) {
             setPopularTags(popularData.tags);
-          }
-        }
-
-        if (groupedRes.ok) {
-          const groupedData = await groupedRes.json();
-          if (groupedData.success) {
-            setGroupedTags(groupedData.tags);
           }
         }
       } catch (error) {
@@ -139,13 +140,11 @@ export default function LocationsPage() {
 
 
   const handleTagToggle = (tagId: string) => {
-    setSelectedTags(prev => {
-      const newTags = prev.includes(tagId)
-        ? prev.filter(t => t !== tagId)
-        : [...prev, tagId];
-      updateUrl(newTags);
-      return newTags;
-    });
+    const newTags = selectedTags.includes(tagId)
+      ? selectedTags.filter(t => t !== tagId)
+      : [...selectedTags, tagId];
+    setSelectedTags(newTags);
+    updateUrl(newTags);
   };
 
   // 清除所有标签筛选
@@ -170,7 +169,7 @@ export default function LocationsPage() {
   };
 
   const filteredLocations = React.useMemo(() => {
-    return locations.filter(location => {
+    return locations.filter((location) => {
       // 搜索词匹配（名称 + 描述）
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -179,23 +178,16 @@ export default function LocationsPage() {
         if (!matchName && !matchDesc) return false;
       }
 
-      // 难度筛选
-      const difficulties = selectedFilters["difficulty"] ?? [];
-      if (difficulties.length > 0 && !difficulties.includes(location.difficulty ?? "")) {
-        return false;
-      }
-
-      // 季节筛选
-      const seasons = selectedFilters["season"] ?? [];
-      if (seasons.length > 0) {
-        const locationSeasons = location.bestSeason ?? [];
-        if (!seasons.some(s => locationSeasons.includes(s))) return false;
+      // 城市筛选
+      const cities = selectedFilters["city"] ?? [];
+      if (cities.length > 0) {
+        if (!cities.includes(location.cityId)) return false;
       }
 
       // 标签快速筛选（OR 逻辑：匹配任一已选标签即通过）
       if (selectedTags.length > 0) {
-        const locationTagIds = (location.tags as Tag[] ?? []).map(t => t.id);
-        if (!selectedTags.some(id => locationTagIds.includes(id))) return false;
+        const locationTagIds = ((location.tags as Tag[]) ?? []).map((t) => t.id);
+        if (!selectedTags.some((id) => locationTagIds.includes(id))) return false;
       }
 
       return true;
@@ -264,9 +256,7 @@ export default function LocationsPage() {
                 <span className="text-stone-400 text-sm">已选:</span>
                 <div className="flex flex-wrap gap-2">
                   {selectedTags.map(tagId => {
-                    const tag = popularTags.find(t => t.id === tagId) ||
-                               groupedTags.location.find(t => t.id === tagId) ||
-                               groupedTags.activity.find(t => t.id === tagId);
+                    const tag = popularTags.find(t => t.id === tagId);
                     return (
                       <span
                         key={tagId}
@@ -303,86 +293,10 @@ export default function LocationsPage() {
       {/* Locations Grid */}
       <section className="py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* 详细筛选 - 按类型分组的标签 */}
-          {!isTagsLoading && (groupedTags.location.length > 0 || groupedTags.activity.length > 0) && (
-            <div className="mb-8 p-6 bg-white rounded-2xl border border-stone-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-stone-900">详细筛选</h3>
-                {(selectedTags.length > 0 || searchQuery || Object.values(selectedFilters).flat().length > 0) && (
-                  <button
-                    type="button"
-                    onClick={handleClearAllFilters}
-                    className="text-sm text-stone-500 hover:text-stone-700 underline"
-                  >
-                    清除全部筛选
-                  </button>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                {/* 地点类型标签 */}
-                {groupedTags.location.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <MapPin className="h-4 w-4 text-stone-400" />
-                      <span className="text-sm font-medium text-stone-700">{tagGroups.location.label}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {groupedTags.location.map(tag => (
-                        <button
-                          key={tag.id}
-                          type="button"
-                          onClick={() => handleTagToggle(tag.id)}
-                          className={cn(
-                            "px-3 py-1.5 text-sm rounded-full border transition-colors",
-                            selectedTags.includes(tag.id)
-                              ? "bg-stone-900 text-white border-stone-900"
-                              : "bg-stone-50 text-stone-600 border-stone-200 hover:border-stone-400"
-                          )}
-                        >
-                          {tag.name}
-                          <span className="ml-1 text-xs opacity-60">({tag.count})</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 活动类型标签 */}
-                {groupedTags.activity.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Compass className="h-4 w-4 text-stone-400" />
-                      <span className="text-sm font-medium text-stone-700">{tagGroups.activity.label}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {groupedTags.activity.map(tag => (
-                        <button
-                          key={tag.id}
-                          type="button"
-                          onClick={() => handleTagToggle(tag.id)}
-                          className={cn(
-                            "px-3 py-1.5 text-sm rounded-full border transition-colors",
-                            selectedTags.includes(tag.id)
-                              ? "bg-stone-900 text-white border-stone-900"
-                              : "bg-stone-50 text-stone-600 border-stone-200 hover:border-stone-400"
-                          )}
-                        >
-                          {tag.name}
-                          <span className="ml-1 text-xs opacity-60">({tag.count})</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* 筛选栏 + 结果计数 */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              {/* 移动端筛选按钮 */}
+              {/* 移动端筛选按钮 - 城市筛选 */}
               <button
                 onClick={() => setIsMobileFilterOpen(true)}
                 className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 rounded-full text-sm font-medium text-stone-700 hover:border-stone-400 transition-colors"
@@ -390,10 +304,11 @@ export default function LocationsPage() {
                 <SlidersHorizontal className="h-4 w-4" />
                 筛选
               </button>
-              {/* 桌面端筛选组件 */}
+              {/* 桌面端筛选组件 - 城市筛选 */}
               <Filter
                 selectedFilters={selectedFilters}
                 onFilterChange={handleFilterChange}
+                cities={cityList}
               />
             </div>
             <p className="text-sm text-stone-500">
@@ -401,12 +316,36 @@ export default function LocationsPage() {
             </p>
           </div>
 
-          {/* Mobile Filter Drawer */}
+          {/* 搜索结果指示器 */}
+          {searchQuery && (
+            <div className="mb-6 p-4 bg-white rounded-xl border border-stone-200">
+              <div className="flex items-center justify-between">
+                <p className="text-stone-600">
+                  搜索 <span className="font-medium text-stone-900">"{searchQuery}"</span> 的结果
+                  <span className="ml-2 text-sm text-stone-400">
+                    ({filteredLocations.length} 个地点)
+                  </span>
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    updateUrl(selectedTags, "");
+                  }}
+                  className="text-sm text-stone-500 hover:text-stone-700 underline"
+                >
+                  清除搜索
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Filter Drawer - 城市筛选 */}
           <Filter
             isOpen={isMobileFilterOpen}
             onClose={() => setIsMobileFilterOpen(false)}
             selectedFilters={selectedFilters}
             onFilterChange={handleFilterChange}
+            cities={cityList}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -459,7 +398,7 @@ export default function LocationsPage() {
                             {location.name}
                           </h3>
                           <p className="text-sm text-stone-500">
-                            {location.location?.address || "深圳"}
+                            {location.address || "深圳"}
                           </p>
                         </div>
                       </div>
@@ -527,5 +466,41 @@ export default function LocationsPage() {
 
       <Footer />
     </main>
+  );
+}
+
+// 加载状态组件
+function LocationsPageSkeleton() {
+  return (
+    <main className="min-h-screen bg-stone-50">
+      <Navbar />
+      <section className="pt-32 pb-16 bg-stone-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="h-12 w-64 bg-white/10 rounded-lg mx-auto mb-4 animate-pulse" />
+            <div className="h-6 w-96 bg-white/10 rounded-lg mx-auto animate-pulse" />
+          </div>
+        </div>
+      </section>
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white rounded-2xl h-80 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </section>
+      <Footer />
+    </main>
+  );
+}
+
+// 导出默认组件 - 包裹在 Suspense 中
+export default function LocationsPage() {
+  return (
+    <Suspense fallback={<LocationsPageSkeleton />}>
+      <LocationsPageContent />
+    </Suspense>
   );
 }

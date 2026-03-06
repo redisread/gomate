@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mountain, Menu, X, User, LogOut, Plus, Users, Settings, Crown, ChevronRight } from "lucide-react";
+import { Mountain, Menu, X, User, LogOut, Plus, Users, Settings, Crown, ChevronRight, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -154,6 +154,15 @@ function Navbar({ className }: NavbarProps) {
                             我的队伍
                           </Link>
 
+                          <Link
+                            href="/favorites"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
+                          >
+                            <Heart className="h-4 w-4 text-stone-400" />
+                            收藏地点
+                          </Link>
+
                           {isAdmin && (
                             <Link
                               href="/admin/locations"
@@ -283,6 +292,15 @@ function Navbar({ className }: NavbarProps) {
                   >
                     <Users className="h-5 w-5 text-stone-500" />
                     <span className="font-medium">我的队伍</span>
+                  </Link>
+
+                  <Link
+                    href="/favorites"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-stone-700 hover:bg-stone-50 rounded-lg transition-colors"
+                  >
+                    <Heart className="h-5 w-5 text-stone-500" />
+                    <span className="font-medium">收藏地点</span>
                   </Link>
 
                   <Button

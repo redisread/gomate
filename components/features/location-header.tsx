@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { MapPin, ChevronLeft, Share2, Heart } from "lucide-react";
+import { MapPin, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { DifficultyBadge } from "@/app/components/ui/difficulty-badge";
 import type { Location } from "@/lib/types";
@@ -15,50 +15,24 @@ interface LocationHeaderProps {
 }
 
 function LocationHeader({ location, className }: LocationHeaderProps) {
-  const [isLiked, setIsLiked] = React.useState(false);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
 
   const allImages = [location.coverImage, ...location.images];
 
   return (
     <div className={cn("relative", className)}>
-      {/* Back Navigation */}
-      <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-        <Link
-          href="/"
-          className="flex items-center gap-1 px-3 py-2 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-stone-700 hover:bg-white transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          返回
-        </Link>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-        <button
-          onClick={() => setIsLiked(!isLiked)}
-          className={cn(
-            "p-2 rounded-full backdrop-blur-sm transition-colors",
-            isLiked
-              ? "bg-red-500 text-white"
-              : "bg-white/90 text-stone-700 hover:bg-white"
-          )}
-          aria-label={isLiked ? "取消收藏" : "收藏"}
-        >
-          <Heart
-            className={cn("h-5 w-5", isLiked && "fill-current")}
-          />
-        </button>
-        <button
-          className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-stone-700 hover:bg-white transition-colors"
-          aria-label="分享"
-        >
-          <Share2 className="h-5 w-5" />
-        </button>
-      </div>
-
       {/* Main Image */}
       <div className="relative h-[50vh] sm:h-[60vh] lg:h-[70vh]">
+        {/* Back Navigation */}
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+          <Link
+            href="/"
+            className="flex items-center gap-1 px-3 py-2 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-stone-700 hover:bg-white transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            返回
+          </Link>
+        </div>
         <Image
           src={allImages[currentImageIndex]}
           alt={location.name}

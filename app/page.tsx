@@ -17,15 +17,39 @@ import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
 import { copy } from "@/lib/copy";
 import type { Tag } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const { teams } = useTeams();
   const { locations, isLoading } = useLocations();
   const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [selectedFilters, setSelectedFilters] = React.useState<
     Record<string, string[]>
   >({});
+
+  // 搜索处理：跳转到 locations 页面
+  const handleSearch = (query: string) => {
+    if (query.trim()) {
+      router.push(`/locations?q=${encodeURIComponent(query.trim())}`);
+    } else {
+      router.push("/locations");
+    }
+  };
+
+  // 聚合城市数据
+  const cityList = React.useMemo(() => {
+    const cityMap = new Map<string, string>();
+    locations.forEach((loc) => {
+      if (loc.cityId && loc.cityName) {
+        cityMap.set(loc.cityId, loc.cityName);
+      }
+    });
+    return Array.from(cityMap.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "zh"));
+  }, [locations]);
 
   const handleFilterChange = (groupId: string, optionId: string) => {
     if (groupId === "clear") {
@@ -68,6 +92,14 @@ export default function HomePage() {
   // Filter locations based on selected filters
   const filteredLocations = React.useMemo(() => {
     return locations.filter((location) => {
+      // 城市筛选
+      if (
+        selectedFilters.city?.length > 0 &&
+        !selectedFilters.city.includes(location.cityId)
+      ) {
+        return false;
+      }
+
       // 难度筛选
       if (
         selectedFilters.difficulty?.length > 0 &&
@@ -78,8 +110,8 @@ export default function HomePage() {
 
       // 标签筛选（OR 逻辑：匹配任一已选标签即通过）
       if (selectedFilters.tag?.length > 0) {
-        const locationTagIds = (location.tags as Tag[] ?? []).map(t => t.id);
-        if (!selectedFilters.tag.some(id => locationTagIds.includes(id))) {
+        const locationTagIds = ((location.tags as Tag[]) ?? []).map((t) => t.id);
+        if (!selectedFilters.tag.some((id) => locationTagIds.includes(id))) {
           return false;
         }
       }
@@ -116,6 +148,7 @@ export default function HomePage() {
           {/* Search Bar */}
           <SearchBar
             className="mb-6"
+            onSearch={handleSearch}
             onFilterClick={() => setIsFilterOpen(true)}
           />
 
@@ -126,6 +159,7 @@ export default function HomePage() {
               onClose={() => setIsFilterOpen(false)}
               selectedFilters={selectedFilters}
               onFilterChange={handleFilterChange}
+              cities={cityList}
               extraGroups={tagFilterGroup ? [tagFilterGroup] : []}
             />
           </div>

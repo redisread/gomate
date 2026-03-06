@@ -3,18 +3,21 @@
 import * as React from "react";
 import { notFound } from "next/navigation";
 import { motion } from "framer-motion";
-
+import { Heart, Share2 } from "lucide-react";
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
 import { LocationHeader } from "@/app/components/features/location-header";
 import { LocationInfoCard } from "@/app/components/features/location-info-card";
 import { RouteGuide } from "@/app/components/features/route-guide";
 import { LocationCheckpoints } from "@/app/components/features/location-checkpoints";
-import { RouteList } from "@/app/components/features/route-list";
 import { TeamList } from "@/app/components/features/team-list";
 import { EquipmentList } from "@/app/components/features/equipment-list";
 import { FeaturedTeams } from "@/app/components/features/featured-teams";
 import { useLocations } from "@/lib/locations-context";
+import { useAuth } from "@/lib/auth-context";
+import { useFavorite } from "@/lib/hooks/use-favorite";
+import { ShareLocationDialog } from "@/components/features/share-location-dialog";
+import { cn } from "@/lib/utils";
 
 interface LocationPageClientProps {
   locationId: string;
@@ -24,6 +27,12 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
   const { locations, getLocationById } = useLocations();
   const location = getLocationById(locationId);
   const [selectedRouteId, setSelectedRouteId] = React.useState<string | null>(null);
+  const [shareOpen, setShareOpen] = React.useState(false);
+  const { isAuthenticated } = useAuth();
+  const { isFavorite, isLoading, isToggling, toggleFavorite } = useFavorite({
+    entityType: "location",
+    entityId: locationId,
+  });
 
   if (!location) {
     notFound();
@@ -68,41 +77,48 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
               transition={{ duration: 0.5 }}
               className="bg-white rounded-2xl border border-stone-200 p-6"
             >
-              <h2 className="text-xl font-semibold text-stone-900 mb-4">
-                地点介绍
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-stone-900">
+                  地点介绍
+                </h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShareOpen(true)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:bg-stone-100 transition-colors"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    分享
+                  </button>
+                  {isAuthenticated && (
+                    <button
+                      onClick={toggleFavorite}
+                      disabled={isLoading || isToggling}
+                      className={cn(
+                        "flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                        isFavorite
+                          ? "bg-red-50 text-red-500 hover:bg-red-100"
+                          : "text-stone-600 hover:bg-stone-100"
+                      )}
+                    >
+                      <Heart
+                        className={cn("h-4 w-4", isFavorite && "fill-current")}
+                      />
+                      {isFavorite ? "已收藏" : "收藏"}
+                    </button>
+                  )}
+                </div>
+              </div>
               <p className="text-stone-600 leading-relaxed">
                 {location.description}
               </p>
             </motion.div>
 
-            {/* Routes Section */}
-            {hasMultipleRoutes && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <RouteList
-                  locationId={locationId}
-                  routes={routes}
-                  locationName={location.name}
-                  showFilters={true}
-                  onRouteSelect={(routeId) => {
-                    setSelectedRouteId(routeId);
-                    // 滚动到路线详情
-                    document.getElementById("route-details")?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                />
-              </motion.div>
-            )}
+            {/* 核心打卡点 */}
+            <LocationCheckpoints locationId={locationId} cardStyle />
 
             {/* Route Details (when a route is selected) */}
             {selectedRoute && (
               <div id="route-details" className="space-y-6">
-                {/* 核心打卡点 */}
-                <LocationCheckpoints locationId={locationId} />
-
                 {/* 安全须知 */}
                 <RouteGuide route={selectedRoute} locationName={location.name} />
 
@@ -125,7 +141,14 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
           {/* Right Column - Info Card */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <LocationInfoCard location={location} />
+              <LocationInfoCard
+                location={location}
+                selectedRouteId={selectedRouteId}
+                onRouteSelect={(routeId) => {
+                  setSelectedRouteId(routeId);
+                  document.getElementById("route-details")?.scrollIntoView({ behavior: "smooth" });
+                }}
+              />
 
               {/* Quick Actions */}
               <motion.div
@@ -176,6 +199,14 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
       </div>
 
       <Footer />
+
+      {location && (
+        <ShareLocationDialog
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          location={location}
+        />
+      )}
     </main>
   );
 }

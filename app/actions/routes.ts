@@ -7,6 +7,42 @@ import { revalidatePath } from "next/cache";
 import type { Route } from "@/db/schema";
 
 /**
+ * 将分钟数格式化为时长字符串
+ * @param durationMin - 最短耗时（分钟）
+ * @param durationMax - 最长耗时（分钟）
+ * @returns 格式化的时长字符串，如 "6-8小时" 或 "1.5小时"
+ */
+function formatDuration(durationMin: number, durationMax: number): string {
+  const minHours = durationMin / 60;
+  const maxHours = durationMax / 60;
+
+  // 如果最小和最大相同，只显示一个值
+  if (durationMin === durationMax) {
+    return `${minHours}小时`;
+  }
+
+  // 根据数值是否为整数决定格式
+  const minStr = Number.isInteger(minHours) ? String(minHours) : minHours.toFixed(1);
+  const maxStr = Number.isInteger(maxHours) ? String(maxHours) : maxHours.toFixed(1);
+
+  return `${minStr}-${maxStr}小时`;
+}
+
+/**
+ * 将路线数据转换为前端格式
+ * @param route - 数据库路线原始数据
+ * @returns 包含格式化 duration 字段的路线数据
+ */
+function formatRouteData(route: any) {
+  return {
+    ...route,
+    duration: formatDuration(route.durationMin, route.durationMax),
+    distance: `${route.distance}公里`,
+    elevation: route.elevation ? `${route.elevation}米` : undefined,
+  };
+}
+
+/**
  * 获取路线列表
  * @param filters - 筛选条件
  * @returns 路线列表
@@ -63,7 +99,7 @@ export async function getRoutes(filters?: {
     const routeTags = await getRoutesTags(routeIds);
 
     return results.map((result) => ({
-      ...result.route,
+      ...formatRouteData(result.route),
       location: result.location,
       city: result.city,
       tags: routeTags[result.route.id] || [],
@@ -102,7 +138,7 @@ export async function getRouteById(id: string) {
     const routeTags = await getRoutesTags([id]);
 
     return {
-      ...result[0].route,
+      ...formatRouteData(result[0].route),
       location: result[0].location,
       city: result[0].city,
       tags: routeTags[id] || [],

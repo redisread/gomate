@@ -13,6 +13,9 @@ import {
   X,
   MapPin,
   Route as RouteIcon,
+  Clock,
+  Ruler,
+  Mountain,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tag } from "@/app/components/ui/tag";
@@ -25,6 +28,8 @@ import { getAmapNavigateUrl, isValidCoordinates } from "@/lib/map-utils";
 interface LocationInfoCardProps {
   location: Location;
   className?: string;
+  selectedRouteId?: string | null;
+  onRouteSelect?: (routeId: string) => void;
 }
 
 const difficultyConfig = {
@@ -34,7 +39,16 @@ const difficultyConfig = {
   expert: { label: "专家", color: "bg-red-100 text-red-800" },
 };
 
-function LocationInfoCard({ location, className }: LocationInfoCardProps) {
+const DIFFICULTY_OPTIONS = [
+  { value: "all", label: "全部" },
+  { value: "easy", label: "简单" },
+  { value: "moderate", label: "中等" },
+  { value: "hard", label: "困难" },
+  { value: "expert", label: "专家" },
+] as const;
+
+function LocationInfoCard({ location, className, selectedRouteId, onRouteSelect }: LocationInfoCardProps) {
+  const [difficultyFilter, setDifficultyFilter] = React.useState<string>("all");
   const rawFacilities = location.extra?.facilities;
   // 兼容两种格式：string[] 或 { [key]: boolean }
   const facilityConfig = [
@@ -151,39 +165,105 @@ function LocationInfoCard({ location, className }: LocationInfoCardProps) {
           {/* Routes List */}
           {location.routes && location.routes.length > 0 && (
             <div>
-              <p className="text-xs text-stone-500 mb-3">
-                可选路线 ({location.routes.length})
-              </p>
-              <div className="space-y-2">
-                {location.routes.map((route) => {
-                  const difficulty = difficultyConfig[route.difficulty];
-                  return (
-                    <Link
-                      key={route.id}
-                      href={`/routes/${route.id}`}
-                      className="block p-3 rounded-lg border border-stone-200 hover:border-stone-300 hover:shadow-sm transition-all"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <RouteIcon className="h-3.5 w-3.5 text-stone-500 flex-shrink-0" />
-                            <span className="text-sm font-medium text-stone-900 truncate">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-stone-500">
+                  可选路线 ({location.routes.length})
+                </p>
+              </div>
+              {/* 难度筛选 */}
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {DIFFICULTY_OPTIONS.filter(opt =>
+                  opt.value === "all" || location.routes!.some(r => r.difficulty === opt.value)
+                ).map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setDifficultyFilter(opt.value)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                      difficultyFilter === opt.value
+                        ? "bg-stone-800 text-white"
+                        : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-3">
+                {location.routes
+                  .filter(r => difficultyFilter === "all" || r.difficulty === difficultyFilter)
+                  .map((route) => {
+                    const difficulty = difficultyConfig[route.difficulty];
+                    const isSelected = selectedRouteId === route.id;
+                    const content = (
+                      <>
+                        {/* 路线名称和难度 */}
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <RouteIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                            <span className="text-sm font-semibold text-stone-900 truncate">
                               {route.name}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-stone-500">
-                            <span>{route.duration}</span>
-                            <span>·</span>
-                            <span>{route.distance}</span>
-                          </div>
+                          <Badge className={difficulty.color} variant="secondary">
+                            {difficulty.label}
+                          </Badge>
                         </div>
-                        <Badge className={difficulty.color} variant="secondary">
-                          {difficulty.label}
-                        </Badge>
-                      </div>
-                    </Link>
-                  );
-                })}
+
+                        {/* 路线描述 */}
+                        {route.description && (
+                          <p className="text-xs text-stone-600 line-clamp-2 mb-3 leading-relaxed">
+                            {route.description}
+                          </p>
+                        )}
+
+                        {/* 路线信息：时长、距离、海拔 */}
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500">
+                          {route.duration && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5 text-stone-400" />
+                              <span>{route.duration}</span>
+                            </div>
+                          )}
+                          {route.distance && (
+                            <div className="flex items-center gap-1">
+                              <Ruler className="h-3.5 w-3.5 text-stone-400" />
+                              <span>路线长度 {route.distance}{typeof route.distance === 'number' ? '公里' : ''}</span>
+                            </div>
+                          )}
+                          {route.elevation && (
+                            <div className="flex items-center gap-1">
+                              <Mountain className="h-3.5 w-3.5 text-stone-400" />
+                              <span>爬升 {route.elevation}</span>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+
+                    return onRouteSelect ? (
+                      <button
+                        key={route.id}
+                        onClick={() => onRouteSelect(route.id)}
+                        className={cn(
+                          "w-full text-left p-4 rounded-xl border transition-all",
+                          isSelected
+                            ? "border-emerald-500 bg-emerald-50 shadow-sm"
+                            : "border-stone-200 bg-white hover:border-stone-300 hover:shadow-md"
+                        )}
+                      >
+                        {content}
+                      </button>
+                    ) : (
+                      <Link
+                        key={route.id}
+                        href={`/routes/${route.id}`}
+                        className="block p-4 rounded-xl border border-stone-200 hover:border-stone-300 hover:shadow-md transition-all bg-white"
+                      >
+                        {content}
+                      </Link>
+                    );
+                  })}
               </div>
             </div>
           )}

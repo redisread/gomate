@@ -372,6 +372,30 @@ export const entityToPois = sqliteTable(
   })
 );
 
+// 用户收藏表（支持收藏地点、路线等多种实体）
+export const userFavorites = sqliteTable(
+  "user_favorites",
+  {
+    id: text("id").primaryKey(), // 收藏记录唯一标识
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(), // 关联用户 ID
+    entityType: text("entity_type").notNull(), // 实体类型：location | route
+    entityId: text("entity_id").notNull(), // 关联实体 ID（地点ID或路线ID）
+    createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 收藏时间
+  },
+  (table) => ({
+    userIdx: index("user_favorites_user_idx").on(table.userId),
+    entityIdx: index("user_favorites_entity_idx").on(table.entityType, table.entityId),
+    // 联合唯一索引：防止重复收藏
+    uniqueFavorite: uniqueIndex("user_favorites_unique_idx").on(
+      table.userId,
+      table.entityType,
+      table.entityId
+    ),
+  })
+);
+
 // ==================== Relations（表间关系定义）====================
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -379,6 +403,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   teamMemberships: many(teamMembers), // 用户参加的队伍成员记录
   sessions: many(sessions), // 用户的登录会话
   accounts: many(accounts), // 用户绑定的第三方账号
+  favorites: many(userFavorites), // 用户收藏的地点
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -480,6 +505,14 @@ export const entityToPoisRelations = relations(entityToPois, ({ one }) => ({
   }), // 关联的 POI
 }));
 
+// 用户收藏关联
+export const userFavoritesRelations = relations(userFavorites, ({ one }) => ({
+  user: one(users, {
+    fields: [userFavorites.userId],
+    references: [users.id],
+  }), // 收藏用户
+}));
+
 // ==================== Types（类型导出）====================
 
 export type User = typeof users.$inferSelect; // 用户类型（查询结果）
@@ -523,6 +556,9 @@ export type NewPoi = typeof pois.$inferInsert; // POI 类型（插入数据）
 
 export type EntityToPoi = typeof entityToPois.$inferSelect; // 实体-POI 关联类型（查询结果）
 export type NewEntityToPoi = typeof entityToPois.$inferInsert; // 实体-POI 关联类型（插入数据）
+
+export type UserFavorite = typeof userFavorites.$inferSelect; // 用户收藏类型（查询结果）
+export type NewUserFavorite = typeof userFavorites.$inferInsert; // 用户收藏类型（插入数据）
 
 // ==================== Enums（枚举类型定义）====================
 
