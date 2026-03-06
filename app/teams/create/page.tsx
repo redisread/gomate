@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Users, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Clock, Users, Calendar, MapPin, Route } from "lucide-react";
 
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
@@ -19,6 +19,7 @@ import { useLocations } from "@/lib/locations-context";
 import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
 import { copy } from "@/lib/copy";
+import { Checkbox } from "@/components/ui/checkbox";
 
 function CreateTeamForm() {
   const { addTeam } = useTeams();
@@ -63,6 +64,8 @@ function CreateTeamForm() {
 
   const [requirements, setRequirements] = React.useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  // 是否关联具体路线
+  const [hasRoute, setHasRoute] = React.useState(true);
 
   const selectedLocation = formData.locationId
     ? getLocationById(formData.locationId)
@@ -71,12 +74,12 @@ function CreateTeamForm() {
   // 获取选中地点的路线列表
   const locationRoutes = selectedLocation?.routes || [];
 
-  // 当地点改变时,自动选择第一条路线(如果有)
+  // 当地点改变时,根据 hasRoute 状态自动选择第一条路线(如果有)
   React.useEffect(() => {
-    if (selectedLocation && locationRoutes.length > 0 && !formData.routeId) {
+    if (selectedLocation && locationRoutes.length > 0 && hasRoute && !formData.routeId) {
       setFormData((prev) => ({ ...prev, routeId: locationRoutes[0].id }));
     }
-  }, [selectedLocation, locationRoutes, formData.routeId]);
+  }, [selectedLocation, locationRoutes, formData.routeId, hasRoute]);
 
   // 获取选中的路线
   const selectedRoute = formData.routeId
@@ -102,9 +105,9 @@ function CreateTeamForm() {
     setIsSubmitting(true);
 
     try {
-      // 验证必须选择路线
-      if (!formData.routeId) {
-        alert("请选择一条路线");
+      // 验证：如果勾选了"关联路线"，则必须选择路线
+      if (hasRoute && !formData.routeId) {
+        alert("请选择一条路线，或取消勾选\"关联具体路线\"");
         setIsSubmitting(false);
         return;
       }
@@ -112,7 +115,7 @@ function CreateTeamForm() {
       // 创建新队伍
       const newTeam = await addTeam({
         locationId: formData.locationId,
-        routeId: formData.routeId, // 新增路线 ID
+        routeId: hasRoute ? formData.routeId : undefined, // 根据 hasRoute 决定是否传递 routeId
         title: formData.title,
         description: formData.description,
         date: formData.date,
@@ -221,10 +224,38 @@ function CreateTeamForm() {
                   </div>
                 </div>
 
-                {/* 选择路线 */}
+                {/* 关联路线开关 */}
                 {selectedLocation && locationRoutes.length > 0 && (
+                  <div className="flex items-center gap-3 p-4 rounded-lg border border-stone-200 bg-stone-50">
+                    <Checkbox
+                      id="hasRoute"
+                      checked={hasRoute}
+                      onCheckedChange={(checked) => {
+                        const isChecked = checked as boolean;
+                        setHasRoute(isChecked);
+                        if (!isChecked) {
+                          setFormData(prev => ({ ...prev, routeId: "" }));
+                        } else if (locationRoutes.length > 0) {
+                          setFormData(prev => ({ ...prev, routeId: locationRoutes[0].id }));
+                        }
+                      }}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="hasRoute" className="cursor-pointer font-medium">
+                        关联具体路线
+                      </Label>
+                      <p className="text-sm text-stone-500">
+                        不勾选则表示自由组队、路线未定
+                      </p>
+                    </div>
+                    <Route className="h-5 w-5 text-stone-400" />
+                  </div>
+                )}
+
+                {/* 选择路线（仅在勾选"关联路线"时显示） */}
+                {selectedLocation && hasRoute && locationRoutes.length > 0 && (
                   <div className="space-y-2">
-                    <Label htmlFor="routeId">
+                    <Label>
                       选择路线 <span className="text-red-500">*</span>
                     </Label>
                     <div className="space-y-2">
@@ -281,10 +312,11 @@ function CreateTeamForm() {
                   </div>
                 )}
 
-                {selectedLocation && locationRoutes.length === 0 && (
+                {/* 无路线提示（仅在勾选"关联路线"但无可用路线时显示） */}
+                {selectedLocation && hasRoute && locationRoutes.length === 0 && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <p className="text-sm text-amber-800">
-                      该地点暂无可用路线，请联系管理员添加路线信息。
+                      该地点暂无可用路线，请取消勾选"关联具体路线"或联系管理员添加路线信息。
                     </p>
                   </div>
                 )}

@@ -57,6 +57,13 @@
       "when": 1773200000000,
       "tag": "0007_user_favorites",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1772820805424,
+      "tag": "0008_tense_kabuki",
+      "breakpoints": true
     }
   ]
 }

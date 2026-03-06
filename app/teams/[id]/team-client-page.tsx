@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { MapPin, ArrowRight } from "lucide-react";
+import { MapPin, ArrowRight, Route, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
 import { Navbar } from "@/app/components/layout/navbar";
@@ -15,7 +15,7 @@ import { LeaderCard } from "@/app/components/features/leader-card";
 import { JoinButton } from "@/components/features/join-button";
 import { ApplicantList } from "@/components/features/applicant-list";
 import { MemberList } from "@/components/features/member-list";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocations } from "@/lib/locations-context";
 import { useAuth } from "@/lib/auth-context";
@@ -222,6 +222,74 @@ export function TeamClientPage({ teamId }: TeamClientPageProps) {
           {/* Left Column - Team Info */}
           <div className="lg:col-span-2 space-y-6">
             <TeamInfo team={team} />
+
+            {/* 路线信息 */}
+            {team.routeId ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.12 }}
+              >
+                <Card className="border-stone-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold text-stone-900 flex items-center gap-2">
+                      <Route className="h-5 w-5 text-stone-500" />
+                      路线信息
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-medium text-stone-900">
+                          {team.route?.name || "已选路线"}
+                        </h3>
+                        {team.route?.difficulty && (
+                          <p className="text-sm text-stone-500 mt-1">
+                            难度：
+                            {team.route.difficulty === "easy"
+                              ? copy.enums.difficulty.easy
+                              : team.route.difficulty === "moderate"
+                              ? copy.enums.difficulty.moderate
+                              : team.route.difficulty === "hard"
+                              ? copy.enums.difficulty.hard
+                              : copy.enums.difficulty.expert}
+                          </p>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                        已确定
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.12 }}
+              >
+                <Card className="border-amber-200 bg-amber-50/30">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold text-stone-900 flex items-center gap-2">
+                      <Route className="h-5 w-5 text-amber-500" />
+                      路线信息
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-stone-700">路线未定，可与队员协商</p>
+                        <p className="text-sm text-stone-500 mt-1">
+                          这是一支自由组队的队伍，具体路线可在队伍组建后与队员们共同商议决定。
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
 
             {/* 队伍成员列表 */}
             {team.members && team.members.length > 0 && (

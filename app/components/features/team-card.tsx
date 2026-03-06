@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Users, Calendar, Clock, MapPin } from "lucide-react";
+import { Users, Calendar, Clock, MapPin, Route } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -33,6 +33,10 @@ interface Team {
     avatar?: string;
     level: "beginner" | "intermediate" | "advanced" | "expert";
     completedHikes?: number;
+  };
+  route?: {
+    name: string;
+    difficulty?: string;
   };
 }
 
@@ -155,6 +159,20 @@ export function TeamCard({ team, className, showLocation = false }: TeamCardProp
               {remainingSlots > 0 && ` · 还差 ${remainingSlots} 人`}
             </span>
           </div>
+          {/* 路线信息 */}
+          {team.routeId ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Route className="h-4 w-4 shrink-0" />
+              <span className="truncate">{team.route?.name || "已选路线"}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Route className="h-4 w-4 shrink-0 text-amber-500" />
+              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                自由组队
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 描述 */}

@@ -112,7 +112,7 @@ export interface TeamMember {
 export interface Team {
   id: string;
   locationId: string;
-  routeId: string; // 关联路线 ID
+  routeId?: string; // 关联路线 ID（可选）
   title: string;
   description: string;
   date: string;

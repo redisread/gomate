@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       description?: string;
       date?: string;
       time?: string;
+      duration?: string;
       maxMembers?: number;
       requirements?: string[];
     };
@@ -51,12 +52,13 @@ export async function POST(request: NextRequest) {
       description,
       date,
       time,
+      duration,
       maxMembers,
       requirements,
     } = body;
 
-    // 验证必填字段
-    if (!locationId || !routeId || !title || !date || !time || !maxMembers) {
+    // 验证必填字段（routeId 改为可选）
+    if (!locationId || !title || !date || !time || !maxMembers) {
       return NextResponse.json(
         { error: "缺少必填字段" },
         { status: 400 }
@@ -72,8 +74,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 估算结束时间（根据时长，默认为开始时间后4小时）
-    const endTime = new Date(startTime.getTime() + 4 * 60 * 60 * 1000);
+    // 解析 duration 字符串为小时数（如 "4小时" → 4，"1.5小时" → 1.5），默认 4 小时
+    const durationHours = duration
+      ? parseFloat(duration.replace(/[^0-9.]/g, "")) || 4
+      : 4;
+    const endTime = new Date(startTime.getTime() + durationHours * 60 * 60 * 1000);
 
     // 生成队伍ID
     const teamId = `team-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

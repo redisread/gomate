@@ -24,7 +24,7 @@ interface LocationPageClientProps {
 }
 
 export function LocationPageClient({ locationId }: LocationPageClientProps) {
-  const { locations, getLocationById } = useLocations();
+  const { locations, isLoading: isLocationsLoading, getLocationById } = useLocations();
   const location = getLocationById(locationId);
   const [selectedRouteId, setSelectedRouteId] = React.useState<string | null>(null);
   const [shareOpen, setShareOpen] = React.useState(false);
@@ -34,9 +34,32 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
     entityId: locationId,
   });
 
-  if (!location) {
+  if (isLocationsLoading && !location) {
+    return (
+      <main className="min-h-screen bg-stone-50">
+        <Navbar />
+        <div className="h-64 bg-stone-200 animate-pulse" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="h-48 bg-stone-200 rounded-2xl animate-pulse" />
+              <div className="h-32 bg-stone-200 rounded-2xl animate-pulse" />
+            </div>
+            <div className="lg:col-span-1">
+              <div className="h-64 bg-stone-200 rounded-2xl animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isLocationsLoading && !location) {
     notFound();
   }
+
+  // 类型收窄：经过上方 guard，此处 location 一定存在
+  if (!location) return null;
 
   // 获取路线列表
   const routes = location.routes || [];

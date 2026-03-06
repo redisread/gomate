@@ -246,8 +246,7 @@ export const teams = sqliteTable(
       .references(() => locations.id, { onDelete: "cascade" })
       .notNull(), // 关联地点 ID
     routeId: text("route_id")
-      .references(() => routes.id, { onDelete: "cascade" })
-      .notNull(), // 关联路线 ID
+      .references(() => routes.id, { onDelete: "set null" }), // 关联路线 ID（可选）
     leaderId: text("leader_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(), // 领队用户 ID

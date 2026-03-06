@@ -29,7 +29,7 @@ interface LocationInfoCardProps {
   location: Location;
   className?: string;
   selectedRouteId?: string | null;
-  onRouteSelect?: (routeId: string) => void;
+  onRouteSelect?: (routeId: string | null) => void;
 }
 
 const difficultyConfig = {
@@ -242,18 +242,31 @@ function LocationInfoCard({ location, className, selectedRouteId, onRouteSelect 
                     );
 
                     return onRouteSelect ? (
-                      <button
+                      <div
                         key={route.id}
-                        onClick={() => onRouteSelect(route.id)}
                         className={cn(
-                          "w-full text-left p-4 rounded-xl border transition-all",
+                          "w-full p-4 rounded-xl border transition-all",
                           isSelected
                             ? "border-emerald-500 bg-emerald-50 shadow-sm"
                             : "border-stone-200 bg-white hover:border-stone-300 hover:shadow-md"
                         )}
                       >
-                        {content}
-                      </button>
+                        <button
+                          onClick={() => onRouteSelect(isSelected ? null : route.id)}
+                          className="w-full text-left"
+                        >
+                          {content}
+                        </button>
+                        <div className="mt-3 pt-3 border-t border-stone-200 flex justify-end">
+                          <Link
+                            href={`/routes/${route.id}`}
+                            className="text-xs font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                          >
+                            查看路线详情
+                            <span className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
+                          </Link>
+                        </div>
+                      </div>
                     ) : (
                       <Link
                         key={route.id}

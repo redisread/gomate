@@ -36,7 +36,7 @@ function formatTeamFromDB(apiTeam: Record<string, unknown>): Team {
   return {
     id: apiTeam.id as string,
     locationId: apiTeam.locationId as string,
-    routeId: apiTeam.routeId as string, // 新增路线 ID
+    routeId: apiTeam.routeId as string | undefined, // 新增路线 ID（可选）
     title: apiTeam.title as string,
     description: apiTeam.description as string || "",
     date: apiTeam.date as string || (apiTeam.startTime ? new Date(apiTeam.startTime as string).toISOString().split("T")[0] : getCurrentDate()),
