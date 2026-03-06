@@ -60,17 +60,11 @@ export function RoutePageClient({ route }: RoutePageClientProps) {
                   该路线的队伍
                   <span className="text-muted-foreground text-lg">({routeTeams.length})</span>
                 </h2>
-                <Button asChild>
-                  <Link href={`/teams/create?routeId=${route.id}`}>创建队伍</Link>
-                </Button>
               </div>
 
               {routeTeams.length === 0 ? (
                 <div className="text-center py-12 border rounded-lg bg-muted/50">
-                  <p className="text-muted-foreground mb-4">暂无队伍使用此路线</p>
-                  <Button asChild>
-                    <Link href={`/teams/create?routeId=${route.id}`}>成为第一个创建队伍的人</Link>
-                  </Button>
+                  <p className="text-muted-foreground">暂无队伍使用此路线</p>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">

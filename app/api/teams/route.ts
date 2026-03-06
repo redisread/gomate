@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
       team: {
         id: teamId,
         locationId,
+        routeId,
         leaderId: userId,
         title,
         description,
@@ -258,6 +259,7 @@ export async function GET(request: NextRequest) {
       return {
         id: row.id,
         locationId: row.locationId,
+        routeId: row.routeId,
         title: row.title,
         description: row.description || '',
         date,

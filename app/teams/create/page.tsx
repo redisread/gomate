@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Users, Calendar, MapPin, Route } from "lucide-react";
+import { ArrowLeft, Clock, Users, Calendar, MapPin, Route, Lock } from "lucide-react";
 
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
@@ -20,6 +20,8 @@ import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
 import { copy } from "@/lib/copy";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getRouteById } from "@/app/actions/routes";
+import type { Route as RouteType } from "@/lib/types";
 
 function CreateTeamForm() {
   const { addTeam } = useTeams();
@@ -29,6 +31,32 @@ function CreateTeamForm() {
   const searchParams = useSearchParams();
   const locationIdFromUrl = searchParams.get("locationId");
   const routeIdFromUrl = searchParams.get("routeId");
+
+  // 从路线页面进入时，预加载的路线信息
+  const [preloadedRoute, setPreloadedRoute] = React.useState<RouteType | null>(null);
+  const [isLoadingRoute, setIsLoadingRoute] = React.useState(false);
+
+  // 是否从路线页面进入（有 routeId 参数）
+  const isFromRoutePage = !!routeIdFromUrl;
+
+  // 从路线页面进入时，自动加载路线信息
+  React.useEffect(() => {
+    if (routeIdFromUrl) {
+      setIsLoadingRoute(true);
+      getRouteById(routeIdFromUrl)
+        .then((route) => {
+          if (route) {
+            setPreloadedRoute(route as RouteType);
+          }
+        })
+        .catch((error) => {
+          console.error("加载路线信息失败:", error);
+        })
+        .finally(() => {
+          setIsLoadingRoute(false);
+        });
+    }
+  }, [routeIdFromUrl]);
 
   // 获取默认日期和时间（日期为今天，时间为4小时后）
   const getDefaultDateTime = () => {
@@ -54,13 +82,24 @@ function CreateTeamForm() {
   const [formData, setFormData] = React.useState({
     title: "",
     locationId: locationIdFromUrl || "",
-    routeId: routeIdFromUrl || "", // 新增路线 ID
+    routeId: routeIdFromUrl || "",
     date: defaultDate,
     time: defaultTime,
     duration: "",
     maxMembers: "",
     description: "",
   });
+
+  // 当预加载路线信息获取成功后，自动设置地点
+  React.useEffect(() => {
+    if (preloadedRoute) {
+      setFormData((prev) => ({
+        ...prev,
+        locationId: preloadedRoute.locationId,
+        routeId: preloadedRoute.id,
+      }));
+    }
+  }, [preloadedRoute]);
 
   const [requirements, setRequirements] = React.useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -151,7 +190,11 @@ function CreateTeamForm() {
             className="mb-6 text-stone-600 hover:text-stone-900"
             asChild
           >
-            <Link href={locationIdFromUrl ? `/locations/${locationIdFromUrl}` : "/"}>
+            <Link href={
+              routeIdFromUrl ? `/routes/${routeIdFromUrl}` :
+              locationIdFromUrl ? `/locations/${locationIdFromUrl}` :
+              "/"
+            }>
               <ArrowLeft className="h-4 w-4 mr-2" />
               {copy.common.back}
             </Link>
@@ -204,28 +247,37 @@ function CreateTeamForm() {
                   <Label htmlFor="locationId">
                     {copy.teams.formLabel.location} <span className="text-red-500">*</span>
                   </Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-                    <select
-                      id="locationId"
-                      name="locationId"
-                      value={formData.locationId}
-                      onChange={handleInputChange}
-                      required
-                      className="flex h-10 w-full rounded-md border border-stone-200 bg-white pl-10 pr-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
-                    >
-                      <option value="">{copy.teams.formPlaceholder.location}</option>
-                      {locations.map((loc) => (
-                        <option key={loc.id} value={loc.id}>
-                          {loc.name} - {loc.subtitle}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {isFromRoutePage ? (
+                    // 从路线页面进入时，地点为只读
+                    <div className="flex h-10 w-full rounded-md border border-stone-200 bg-stone-100 pl-10 pr-3 py-2 text-sm text-stone-600 items-center relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                      <Lock className="h-3 w-3 mr-2 text-stone-400" />
+                      {selectedLocation?.name || "加载中..."}
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                      <select
+                        id="locationId"
+                        name="locationId"
+                        value={formData.locationId}
+                        onChange={handleInputChange}
+                        required
+                        className="flex h-10 w-full rounded-md border border-stone-200 bg-white pl-10 pr-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
+                      >
+                        <option value="">{copy.teams.formPlaceholder.location}</option>
+                        {locations.map((loc) => (
+                          <option key={loc.id} value={loc.id}>
+                            {loc.name} - {loc.subtitle}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
-                {/* 关联路线开关 */}
-                {selectedLocation && locationRoutes.length > 0 && (
+                {/* 关联路线开关 - 仅在非路线页面进入时显示 */}
+                {selectedLocation && locationRoutes.length > 0 && !isFromRoutePage && (
                   <div className="flex items-center gap-3 p-4 rounded-lg border border-stone-200 bg-stone-50">
                     <Checkbox
                       id="hasRoute"
@@ -252,8 +304,8 @@ function CreateTeamForm() {
                   </div>
                 )}
 
-                {/* 选择路线（仅在勾选"关联路线"时显示） */}
-                {selectedLocation && hasRoute && locationRoutes.length > 0 && (
+                {/* 选择路线（仅在勾选"关联路线"时显示，或从路线页面进入时显示只读信息） */}
+                {selectedLocation && hasRoute && locationRoutes.length > 0 && !isFromRoutePage && (
                   <div className="space-y-2">
                     <Label>
                       选择路线 <span className="text-red-500">*</span>
@@ -312,8 +364,47 @@ function CreateTeamForm() {
                   </div>
                 )}
 
-                {/* 无路线提示（仅在勾选"关联路线"但无可用路线时显示） */}
-                {selectedLocation && hasRoute && locationRoutes.length === 0 && (
+                {/* 从路线页面进入时，显示只读的路线信息 */}
+                {isFromRoutePage && preloadedRoute && (
+                  <div className="space-y-2">
+                    <Label>
+                      关联路线 <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="p-4 rounded-lg border-2 border-stone-900 bg-stone-50">
+                      <div className="flex items-start gap-3">
+                        <Lock className="h-4 w-4 text-stone-400 mt-1 shrink-0" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-stone-900">{preloadedRoute.name}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              preloadedRoute.difficulty === "easy" ? "bg-green-100 text-green-800" :
+                              preloadedRoute.difficulty === "moderate" ? "bg-blue-100 text-blue-800" :
+                              preloadedRoute.difficulty === "hard" ? "bg-orange-100 text-orange-800" :
+                              "bg-red-100 text-red-800"
+                            }`}>
+                              {preloadedRoute.difficulty === "easy" ? copy.enums.difficulty.easy :
+                               preloadedRoute.difficulty === "moderate" ? copy.enums.difficulty.moderate :
+                               preloadedRoute.difficulty === "hard" ? copy.enums.difficulty.hard :
+                               copy.enums.difficulty.expert}
+                            </span>
+                          </div>
+                          <div className="text-sm text-stone-500">
+                            {preloadedRoute.duration} · {preloadedRoute.distance}
+                            {preloadedRoute.elevation && ` · 爬升 ${preloadedRoute.elevation}`}
+                          </div>
+                          {preloadedRoute.description && (
+                            <p className="text-sm text-stone-600 mt-1 line-clamp-2">
+                              {preloadedRoute.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 无路线提示（仅在勾选"关联路线"但无可用路线时显示，且非路线页面进入） */}
+                {selectedLocation && hasRoute && locationRoutes.length === 0 && !isFromRoutePage && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <p className="text-sm text-amber-800">
                       该地点暂无可用路线，请取消勾选"关联具体路线"或联系管理员添加路线信息。

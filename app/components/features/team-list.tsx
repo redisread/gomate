@@ -10,11 +10,13 @@ import {
   ChevronRight,
   Plus,
   CheckCircle2,
+  Route,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { leaderLevelLabels } from "@/lib/constants";
 import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
@@ -29,6 +31,7 @@ interface TeamListProps {
 function TeamList({ className, locationId, routeId }: TeamListProps) {
   const { getTeamsByLocationId, getTeamsByRouteId } = useTeams();
   const { isAuthenticated } = useAuth();
+  const [showUnboundOnly, setShowUnboundOnly] = React.useState(false);
 
   // 根据 routeId 或 locationId 获取队伍列表
   let teams = [];
@@ -36,6 +39,11 @@ function TeamList({ className, locationId, routeId }: TeamListProps) {
     teams = getTeamsByRouteId(routeId);
   } else if (locationId) {
     teams = getTeamsByLocationId(locationId);
+  }
+
+  // 筛选未绑定路线的队伍
+  if (showUnboundOnly) {
+    teams = teams.filter((t) => !t.routeId);
   }
 
   const openTeams = teams.filter((t) => t.status === "recruiting");
@@ -56,20 +64,34 @@ function TeamList({ className, locationId, routeId }: TeamListProps) {
             共有 {openTeams.length} 个队伍正在招募
           </p>
         </div>
-        <Button className="bg-stone-900 hover:bg-stone-800" asChild>
-          <Link href={
-            isAuthenticated
-              ? (routeId
-                  ? `/teams/create?routeId=${routeId}`
-                  : locationId
-                  ? `/teams/create?locationId=${locationId}`
-                  : "/teams/create")
-              : "/login"
-          }>
-            <Plus className="h-4 w-4 mr-2" />
-            {isAuthenticated ? "发布队伍" : "登录后发布"}
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* 仅看未绑定路线的队伍筛选开关 */}
+          {!routeId && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-stone-100 rounded-full">
+              <Route className="h-3.5 w-3.5 text-stone-500" />
+              <span className="text-sm text-stone-600">仅未绑定路线</span>
+              <Switch
+                checked={showUnboundOnly}
+                onCheckedChange={setShowUnboundOnly}
+                className="data-[state=checked]:bg-stone-900"
+              />
+            </div>
+          )}
+          <Button className="bg-stone-900 hover:bg-stone-800" asChild>
+            <Link href={
+              isAuthenticated
+                ? (routeId
+                    ? `/teams/create?routeId=${routeId}`
+                    : locationId
+                    ? `/teams/create?locationId=${locationId}`
+                    : "/teams/create")
+                : "/login"
+            }>
+              <Plus className="h-4 w-4 mr-2" />
+              {isAuthenticated ? "发布队伍" : "登录后发布"}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Open Teams */}
@@ -215,21 +237,33 @@ function TeamList({ className, locationId, routeId }: TeamListProps) {
               <Users className="h-8 w-8 text-stone-400" />
             </div>
             <h3 className="text-lg font-medium text-stone-900 mb-2">
-              暂无招募中的队伍
+              {showUnboundOnly ? "暂无未绑定路线的队伍" : "暂无招募中的队伍"}
             </h3>
             <p className="text-sm text-stone-500 mb-4">
-              成为第一个发布队伍的人，开启你的户外之旅
+              {showUnboundOnly
+                ? "该地点下所有队伍都已绑定路线，试试关闭筛选查看全部队伍"
+                : "成为第一个发布队伍的人，开启你的户外之旅"}
             </p>
-            <Button className="bg-stone-900 hover:bg-stone-800" asChild>
-              <Link href={
-                isAuthenticated
-                  ? (locationId ? `/teams/create?locationId=${locationId}` : "/teams/create")
-                  : "/login"
-              }>
-                <Plus className="h-4 w-4 mr-2" />
-                {isAuthenticated ? "发布队伍" : "登录后发布"}
-              </Link>
-            </Button>
+            {showUnboundOnly ? (
+              <Button
+                variant="outline"
+                className="border-stone-300"
+                onClick={() => setShowUnboundOnly(false)}
+              >
+                查看全部队伍
+              </Button>
+            ) : (
+              <Button className="bg-stone-900 hover:bg-stone-800" asChild>
+                <Link href={
+                  isAuthenticated
+                    ? (locationId ? `/teams/create?locationId=${locationId}` : "/teams/create")
+                    : "/login"
+                }>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {isAuthenticated ? "发布队伍" : "登录后发布"}
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}

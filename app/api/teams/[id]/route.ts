@@ -74,7 +74,7 @@ export async function GET(
       );
     }
 
-    // 单独查询 leader 和 members
+    // 单独查询 leader、members 和 route
     const teamWithRelations = await ormDb.query.teams.findFirst({
       where: eq(schema.teams.id, id),
       with: {
@@ -84,6 +84,7 @@ export async function GET(
             user: true,
           },
         },
+        route: true,
       },
     });
 
@@ -151,6 +152,7 @@ export async function GET(
     const formattedTeam = {
       id: team.id,
       locationId: team.locationId,
+      routeId: team.routeId,
       title: team.title,
       description: team.description || '',
       date,
@@ -161,6 +163,7 @@ export async function GET(
       requirements: team.requirements ? JSON.parse(team.requirements) : [],
       status: team.status,
       createdAt: team.createdAt,
+      route: team.route || undefined,
       leader: team.leader ? {
         id: team.leader.id,
         name: team.leader.name,

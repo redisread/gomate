@@ -80,7 +80,7 @@ function TeamInfo({ team, className }: TeamInfoProps) {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className={cn("grid gap-4", team.duration ? "grid-cols-3" : "grid-cols-2")}>
             <div className="p-4 bg-stone-50 rounded-xl">
               <div className="flex items-center gap-2 text-stone-500 mb-1">
                 <Calendar className="h-4 w-4" />
@@ -95,6 +95,15 @@ function TeamInfo({ team, className }: TeamInfoProps) {
               </div>
               <p className="font-semibold text-stone-900">{team.time}</p>
             </div>
+            {team.duration && (
+              <div className="p-4 bg-stone-50 rounded-xl">
+                <div className="flex items-center gap-2 text-stone-500 mb-1">
+                  <Clock className="h-4 w-4" />
+                  <span className="text-xs">预计时长</span>
+                </div>
+                <p className="font-semibold text-stone-900">{team.duration}</p>
+              </div>
+            )}
           </div>
 
           {/* Requirements */}

@@ -206,7 +206,7 @@ export const copy = {
     formPlaceholder: {
       name: "例如：七娘山挑战队 - 周六登顶看海",
       location: "请选择徒步地点",
-      duration: "例如：6-8小时",
+      duration: "请输入预计小时数，如 6",
       maxSize: "例如：6",
       description: "描述一下这次行程的具体安排、难度、风景特色等...",
       requirements: "例如：有徒步经验",

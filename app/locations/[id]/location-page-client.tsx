@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useFavorite } from "@/lib/hooks/use-favorite";
 import { ShareLocationDialog } from "@/components/features/share-location-dialog";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface LocationPageClientProps {
   locationId: string;
@@ -67,18 +68,9 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
   const hasSingleRoute = routes.length === 1;
   const hasMultipleRoutes = routes.length > 1;
 
-  // 如果只有一条路线,默认选中
-  React.useEffect(() => {
-    if (hasSingleRoute && !selectedRouteId) {
-      setSelectedRouteId(routes[0].id);
-    }
-  }, [hasSingleRoute, routes, selectedRouteId]);
-
   // 获取当前选中的路线
   const selectedRoute = selectedRouteId
     ? routes.find((r) => r.id === selectedRouteId)
-    : hasSingleRoute
-    ? routes[0]
     : null;
 
   return (
@@ -188,7 +180,7 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
                     .filter((l) => l.id !== location.id)
                     .slice(0, 3)
                     .map((loc) => (
-                      <a
+                      <Link
                         key={loc.id}
                         href={`/locations/${loc.id}`}
                         className="flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 transition-colors group"
@@ -212,7 +204,7 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
                             · {loc.duration}
                           </p>
                         </div>
-                      </a>
+                      </Link>
                     ))}
                 </div>
               </motion.div>

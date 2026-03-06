@@ -58,7 +58,7 @@ export function LocationsProvider({ children }: { children: React.ReactNode }) {
 
   // Use default locations as initial state, then update from API if available
   const [locations, setLocations] = React.useState<Location[]>(defaultLocations);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   // Load locations from API on mount
   React.useEffect(() => {
