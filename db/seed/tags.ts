@@ -81,6 +81,95 @@ const entityTagAssociations = [
   { entityType: "route", entitySlug: "bainian-gudao", tagName: "入门级" },
   { entityType: "route", entitySlug: "bainian-gudao", tagName: "古村" },
   { entityType: "route", entitySlug: "bainian-gudao", tagName: "森林" },
+
+  // ==================== 新增地点标签 ====================
+
+  // 麦理浩径地点标签
+  { entityType: "location", entitySlug: "maclehose-trail", tagName: "海岸线" },
+  { entityType: "location", entitySlug: "maclehose-trail", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "maclehose-trail", tagName: "露营" },
+
+  // 武功山地点标签
+  { entityType: "location", entitySlug: "wugong-mountain", tagName: "山峰" },
+  { entityType: "location", entitySlug: "wugong-mountain", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "wugong-mountain", tagName: "日出" },
+  { entityType: "location", entitySlug: "wugong-mountain", tagName: "露营" },
+  { entityType: "location", entitySlug: "wugong-mountain", tagName: "摄影" },
+
+  // 衡山地点标签
+  { entityType: "location", entitySlug: "heng-mountain", tagName: "山峰" },
+  { entityType: "location", entitySlug: "heng-mountain", tagName: "古村" },
+  { entityType: "location", entitySlug: "heng-mountain", tagName: "日出" },
+  { entityType: "location", entitySlug: "heng-mountain", tagName: "观鸟" },
+
+  // 昆明西山地点标签
+  { entityType: "location", entitySlug: "kunming-xishan", tagName: "山峰" },
+  { entityType: "location", entitySlug: "kunming-xishan", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "kunming-xishan", tagName: "日出" },
+  { entityType: "location", entitySlug: "kunming-xishan", tagName: "日落" },
+
+  // ==================== 新增路线标签 ====================
+
+  // 麦理浩径第一段
+  { entityType: "route", entitySlug: "麦理浩径第一段", tagName: "入门级" },
+  { entityType: "route", entitySlug: "麦理浩径第一段", tagName: "适合拍照" },
+  { entityType: "route", entitySlug: "麦理浩径第一段", tagName: "海岸线" },
+
+  // 麦理浩径第二段
+  { entityType: "route", entitySlug: "麦理浩径第二段", tagName: "进阶级" },
+  { entityType: "route", entitySlug: "麦理浩径第二段", tagName: "适合拍照" },
+  { entityType: "route", entitySlug: "麦理浩径第二段", tagName: "海岸线" },
+  { entityType: "route", entitySlug: "麦理浩径第二段", tagName: "露营" },
+
+  // 麦理浩径一二段连穿
+  { entityType: "route", entitySlug: "麦理浩径一二段连穿", tagName: "挑战级" },
+  { entityType: "route", entitySlug: "麦理浩径一二段连穿", tagName: "日出" },
+  { entityType: "route", entitySlug: "麦理浩径一二段连穿", tagName: "海岸线" },
+
+  // 武功山经典登山线
+  { entityType: "route", entitySlug: "武功山经典登山线", tagName: "进阶级" },
+  { entityType: "route", entitySlug: "武功山经典登山线", tagName: "适合拍照" },
+  { entityType: "route", entitySlug: "武功山经典登山线", tagName: "日出" },
+
+  // 武功山全程穿越
+  { entityType: "route", entitySlug: "武功山全程穿越", tagName: "挑战级" },
+  { entityType: "route", entitySlug: "武功山全程穿越", tagName: "日出" },
+  { entityType: "route", entitySlug: "武功山全程穿越", tagName: "露营" },
+  { entityType: "route", entitySlug: "武功山全程穿越", tagName: "摄影" },
+
+  // 武功山休闲索道路线
+  { entityType: "route", entitySlug: "武功山休闲索道路线", tagName: "入门级" },
+  { entityType: "route", entitySlug: "武功山休闲索道路线", tagName: "亲子友好" },
+  { entityType: "route", entitySlug: "武功山休闲索道路线", tagName: "适合拍照" },
+
+  // 衡山经典登山线
+  { entityType: "route", entitySlug: "衡山经典登山线", tagName: "进阶级" },
+  { entityType: "route", entitySlug: "衡山经典登山线", tagName: "日出" },
+  { entityType: "route", entitySlug: "衡山经典登山线", tagName: "古村" },
+
+  // 衡山古道朝圣线
+  { entityType: "route", entitySlug: "衡山古道朝圣线", tagName: "进阶级" },
+  { entityType: "route", entitySlug: "衡山古道朝圣线", tagName: "古村" },
+  { entityType: "route", entitySlug: "衡山古道朝圣线", tagName: "日出" },
+
+  // 衡山休闲索道路线
+  { entityType: "route", entitySlug: "衡山休闲索道路线", tagName: "入门级" },
+  { entityType: "route", entitySlug: "衡山休闲索道路线", tagName: "亲子友好" },
+
+  // 西山龙门线
+  { entityType: "route", entitySlug: "西山龙门线", tagName: "进阶级" },
+  { entityType: "route", entitySlug: "西山龙门线", tagName: "适合拍照" },
+  { entityType: "route", entitySlug: "西山龙门线", tagName: "日出" },
+
+  // 西山全景穿越线
+  { entityType: "route", entitySlug: "西山全景穿越线", tagName: "挑战级" },
+  { entityType: "route", entitySlug: "西山全景穿越线", tagName: "日出" },
+  { entityType: "route", entitySlug: "西山全景穿越线", tagName: "摄影" },
+
+  // 西山索道上山徒步线
+  { entityType: "route", entitySlug: "西山索道上山徒步线", tagName: "入门级" },
+  { entityType: "route", entitySlug: "西山索道上山徒步线", tagName: "亲子友好" },
+  { entityType: "route", entitySlug: "西山索道上山徒步线", tagName: "适合拍照" },
 ];
 
 /**
