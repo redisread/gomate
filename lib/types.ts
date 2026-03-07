@@ -65,6 +65,20 @@ export interface Location {
   updatedAt: string;
 }
 
+// 路线 POI 类型
+export interface RoutePoi {
+  id: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  coordinates: { lat: number; lng: number };
+  images?: string[];
+  extra?: Record<string, any> | null;
+  order?: number | null;
+  roleType: 'waypoint' | 'checkpoint' | 'viewpoint' | 'facility' | 'poi';
+  roleSpecificData?: Record<string, any> | null;
+}
+
 // 路线信息
 export interface Route {
   id: string;
@@ -90,6 +104,7 @@ export interface Route {
   warnings?: string[];
   tags?: Tag[]; // 关联的标签
   location?: Location; // 关联的地点
+  pois?: RoutePoi[]; // 关联的 POI
   createdAt: string;
   updatedAt: string;
 }
@@ -109,6 +124,29 @@ export interface TeamMember {
   extra?: string | null; // 扩展信息（JSON 字符串）
 }
 
+// 用户等级
+export type UserLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+
+// 用户公开资料
+export interface UserPublicProfile {
+  id: string;
+  name: string;
+  nickname: string | null;
+  image: string | null;
+  bio: string | null;
+  gender: string | null;
+  birthday: number | null;
+  level: UserLevel;
+  completedHikes: number;
+  extra: string | null; // JSON字符串: { equipment: string[], experience: string }
+  createdAt: number;
+  stats: {
+    createdTeams: number;    // 创建的队伍数
+    joinedTeams: number;     // 参加的队伍数（不包括自己创建的）
+    completedTeams: number;  // 完成的队伍数
+  };
+}
+
 export interface Team {
   id: string;
   locationId: string;
@@ -118,6 +156,7 @@ export interface Team {
   date: string;
   time: string;
   duration: string;
+  durationMin?: number; // 活动时长（分钟）
   maxMembers: number;
   currentMembers: number;
   requirements: string[];
@@ -126,7 +165,7 @@ export interface Team {
     id: string;
     name: string;
     avatar: string;
-    level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+    level: UserLevel;
     completedHikes: number;
     bio: string;
     wechat?: string; // 微信号（仅队友可见）

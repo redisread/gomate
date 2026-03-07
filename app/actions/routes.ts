@@ -1,10 +1,9 @@
 "use server";
 
 import { getDB } from "@/db";
-import { routes, locations, cities, tags, entityToTags } from "@/db/schema";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { routes, locations, cities, tags, entityToTags, pois, entityToPois } from "@/db/schema";
+import { eq, and, inArray, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import type { Route } from "@/db/schema";
 
 /**
  * 将分钟数格式化为时长字符串
@@ -137,11 +136,42 @@ export async function getRouteById(id: string) {
     // 获取标签
     const routeTags = await getRoutesTags([id]);
 
+    // 获取 POI 数据
+    const routePois = await db
+      .select({
+        poi: pois,
+        role: entityToPois,
+      })
+      .from(entityToPois)
+      .innerJoin(pois, eq(entityToPois.poiId, pois.id))
+      .where(
+        and(
+          eq(entityToPois.entityType, "route"),
+          eq(entityToPois.entityId, id)
+        )
+      )
+      .orderBy(asc(entityToPois.order));
+
+    // 格式化 POI 数据
+    const formattedPois = routePois.map(({ poi, role }) => ({
+      id: poi.id,
+      name: poi.name,
+      description: poi.description,
+      category: poi.category,
+      coordinates: JSON.parse(poi.coordinates),
+      images: poi.images ? JSON.parse(poi.images) : [],
+      extra: poi.extra ? JSON.parse(poi.extra) : null,
+      order: role.order,
+      roleType: role.roleType,
+      roleSpecificData: role.roleSpecificData ? JSON.parse(role.roleSpecificData) : null,
+    }));
+
     return {
       ...formatRouteData(result[0].route),
       location: result[0].location,
       city: result[0].city,
       tags: routeTags[id] || [],
+      pois: formattedPois,
     };
   } catch (error) {
     console.error("获取路线详情失败:", error);

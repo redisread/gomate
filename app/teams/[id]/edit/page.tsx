@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Users, Calendar } from "lucide-react";
+import { ArrowLeft, Clock, Users, Calendar, AlertCircle } from "lucide-react";
 
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
@@ -37,6 +37,7 @@ function EditTeamForm({ params }: EditTeamPageProps) {
     title: "",
     date: "",
     time: "",
+    durationMin: "240",
     maxMembers: "",
     description: "",
   });
@@ -76,6 +77,7 @@ function EditTeamForm({ params }: EditTeamPageProps) {
           title: teamData.title,
           date: teamData.date,
           time: teamData.time,
+          durationMin: (teamData.durationMin || 240).toString(),
           maxMembers: teamData.maxMembers.toString(),
           description: teamData.description,
         });
@@ -123,10 +125,10 @@ function EditTeamForm({ params }: EditTeamPageProps) {
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
-          date: formData.date,
-          time: formData.time,
           maxMembers: parseInt(formData.maxMembers, 10),
           requirements,
+          time: formData.time,
+          durationMin: parseInt(formData.durationMin, 10),
         }),
       });
 
@@ -232,21 +234,14 @@ function EditTeamForm({ params }: EditTeamPageProps) {
                   {/* 日期和时间 */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="date">
-                        {copy.teams.formLabel.date} <span className="text-red-500">*</span>
+                      <Label>
+                        {copy.teams.formLabel.date}
                       </Label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-                        <Input
-                          id="date"
-                          name="date"
-                          type="date"
-                          value={formData.date}
-                          onChange={handleInputChange}
-                          required
-                          className="border-stone-200 pl-10"
-                        />
+                      <div className="flex items-center gap-2 p-2.5 rounded-md bg-stone-100 text-stone-700 border border-stone-200">
+                        <Calendar className="h-4 w-4 text-stone-500" />
+                        <span>{formData.date}</span>
                       </div>
+                      <p className="text-xs text-stone-500">活动日期创建后不可修改</p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="time">
@@ -264,6 +259,35 @@ function EditTeamForm({ params }: EditTeamPageProps) {
                           className="border-stone-200 pl-10"
                         />
                       </div>
+                    </div>
+                  </div>
+
+                  {/* 预计时长 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="durationMin">
+                      {copy.teams.formLabel.duration} <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                      <select
+                        id="durationMin"
+                        name="durationMin"
+                        value={formData.durationMin}
+                        onChange={handleInputChange}
+                        required
+                        className="flex h-10 w-full rounded-md border border-stone-200 bg-white px-3 py-2 pl-10 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="120">2小时</option>
+                        <option value="180">3小时</option>
+                        <option value="240">4小时</option>
+                        <option value="300">5小时</option>
+                        <option value="360">6小时</option>
+                        <option value="420">7小时</option>
+                        <option value="480">8小时</option>
+                        <option value="540">9小时</option>
+                        <option value="600">10小时</option>
+                        <option value="720">12小时</option>
+                      </select>
                     </div>
                   </div>
 

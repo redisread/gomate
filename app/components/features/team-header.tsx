@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ChevronLeft,
@@ -11,10 +12,23 @@ import {
   Clock,
   MapPin,
   Edit,
+  Trash2,
 } from "lucide-react";
 import { ShareTeamDialog } from "@/components/features/share-team-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { dissolveTeam } from "@/app/actions/teams";
 import type { Team, Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
@@ -27,7 +41,9 @@ interface TeamHeaderProps {
 }
 
 function TeamHeader({ team, location, isLeader = false, className }: TeamHeaderProps) {
+  const router = useRouter();
   const [isShareOpen, setIsShareOpen] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   const statusConfig = {
     recruiting: { label: "招募中", color: "bg-emerald-100 text-emerald-700" },
@@ -38,6 +54,21 @@ function TeamHeader({ team, location, isLeader = false, className }: TeamHeaderP
   };
 
   const status = statusConfig[team.status as keyof typeof statusConfig] || statusConfig.recruiting;
+
+  // 处理删除队伍
+  const handleDelete = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+
+    try {
+      await dissolveTeam(team.id);
+      router.push("/teams");
+    } catch (error) {
+      console.error("删除队伍失败:", error);
+      alert(error instanceof Error ? error.message : copy.teams.deleteTeamFailed);
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <motion.div
@@ -57,13 +88,41 @@ function TeamHeader({ team, location, isLeader = false, className }: TeamHeaderP
             返回地点
           </Link>
           <div className="flex items-center gap-2">
-            {isLeader && (
-              <Link href={`/teams/${team.id}/edit`}>
-                <Button variant="outline" size="sm" className="text-sm">
-                  <Edit className="h-4 w-4 mr-1" />
-                  {copy.teams.editBtn}
-                </Button>
-              </Link>
+            {isLeader && team.status !== "cancelled" && (
+              <>
+                <Link href={`/teams/${team.id}/edit`}>
+                  <Button variant="outline" size="sm" className="text-sm">
+                    <Edit className="h-4 w-4 mr-1" />
+                    {copy.teams.editBtn}
+                  </Button>
+                </Link>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="text-sm">
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      {copy.teams.deleteTeam}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>确认删除队伍？</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {copy.teams.deleteTeamConfirm}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>取消</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {isDeleting ? "删除中..." : "确认删除"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
             )}
             <button
               onClick={() => setIsShareOpen(!isShareOpen)}

@@ -36,12 +36,14 @@ export async function GET(
       durationMax: route.durationMax,
       distance: route.distance,
       elevation: route.elevation,
-      routeGuide: route.routeGuide ? JSON.parse(route.routeGuide as string) : null,
+      routeGuide: route.routeGuide
+        ? { ...JSON.parse(route.routeGuide as string), warnings: extra.warnings || [] }
+        : { overview: "", tips: [], warnings: extra.warnings || [] },
       equipmentNeeded: extra.equipmentNeeded || [],
-      warnings: extra.warnings || [],
       tags: route.tags || [],
       location: route.location,
       city: route.city,
+      pois: route.pois || [],
       createdAt: route.createdAt,
       updatedAt: route.updatedAt,
     };

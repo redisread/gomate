@@ -31,7 +31,7 @@ interface JoinButtonProps {
   userMemberStatus?: "pending" | "approved" | "rejected" | "leave_pending" | null;
 }
 
-type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" | "approved" | "rejected" | "wechat_required" | "leaving" | "leave_pending" | "requesting_leave";
+type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" | "approved" | "rejected" | "wechat_required" | "leaving" | "leave_pending" | "requesting_leave" | "cancelled";
 
 function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: JoinButtonProps) {
   const { user } = useAuth();
@@ -40,12 +40,16 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
 
   // 根据用户成员状态和队伍状态初始化
   const getInitialState = React.useCallback((): JoinState => {
+    // 队伍取消状态优先显示
+    if (team.status === "cancelled") return "cancelled";
+    // 队伍结束/已完成状态
+    if (team.status === "formed" || team.status === "completed") return "closed";
+    // 用户成员状态
     if (userMemberStatus === "approved") return "approved";
     if (userMemberStatus === "pending") return "pending";
     if (userMemberStatus === "rejected") return "rejected";
     if (userMemberStatus === "leave_pending") return "leave_pending";
     if (team.status === "full") return "full";
-    if (team.status === "formed" || team.status === "completed" || team.status === "cancelled") return "closed";
     return "idle";
   }, [userMemberStatus, team.status]);
 
@@ -133,6 +137,13 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       icon: Users,
       variant: "secondary" as const,
       className: "bg-stone-200 text-stone-500 cursor-not-allowed",
+      disabled: true,
+    },
+    cancelled: {
+      text: copy.teams.statusCancelled,
+      icon: AlertCircle,
+      variant: "secondary" as const,
+      className: "bg-red-100 text-red-700 cursor-not-allowed",
       disabled: true,
     },
     pending: {
@@ -278,6 +289,8 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
         return copy.errors.teamFull;
       case "closed":
         return copy.errors.teamNotAccepting;
+      case "cancelled":
+        return "活动已过期，队伍未组建成功";
       case "pending":
         return copy.teams.statusPending;
       case "approved":
@@ -302,10 +315,18 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       transition={{ duration: 0.5, delay: 0.3 }}
       className={cn("sticky bottom-4 z-30", className)}
     >
-      <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-lg">
+      <div className={cn(
+        "rounded-2xl p-4 shadow-lg border",
+        joinState === "cancelled"
+          ? "bg-red-50 border-red-200"
+          : "bg-white border-stone-200"
+      )}>
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
-            <p className="text-sm text-stone-500">{getStatusText()}</p>
+            <p className={cn(
+              "text-sm",
+              joinState === "cancelled" ? "text-red-600" : "text-stone-500"
+            )}>{getStatusText()}</p>
           </div>
           {isLeader ? (
             <div className="flex items-center gap-2 text-stone-600">

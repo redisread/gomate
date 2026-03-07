@@ -33,6 +33,11 @@ function getCurrentDate(): string {
 
 // 将数据库队伍格式转换为前端 Team 格式
 function formatTeamFromDB(apiTeam: Record<string, unknown>): Team {
+  // 计算活动时长字符串
+  const durationMin = (apiTeam.durationMin as number) || 240;
+  const durationHours = Math.round(durationMin / 60);
+  const duration = `${durationHours}小时`;
+
   return {
     id: apiTeam.id as string,
     locationId: apiTeam.locationId as string,
@@ -41,7 +46,8 @@ function formatTeamFromDB(apiTeam: Record<string, unknown>): Team {
     description: apiTeam.description as string || "",
     date: apiTeam.date as string || (apiTeam.startTime ? new Date(apiTeam.startTime as string).toISOString().split("T")[0] : getCurrentDate()),
     time: apiTeam.time as string || (apiTeam.startTime ? new Date(apiTeam.startTime as string).toTimeString().slice(0, 5) : "08:00"),
-    duration: apiTeam.duration as string || "4小时",
+    duration: duration,
+    durationMin: durationMin,
     maxMembers: apiTeam.maxMembers as number,
     currentMembers: apiTeam.currentMembers as number,
     requirements: Array.isArray(apiTeam.requirements) ? apiTeam.requirements : (apiTeam.requirements ? JSON.parse(apiTeam.requirements as string) : []),
@@ -118,6 +124,11 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
     const result = await response.json();
     const apiTeam = result.team;
 
+    // 计算活动时长字符串
+    const newTeamDurationMin = apiTeam.durationMin || teamData.durationMin || 240;
+    const newTeamDurationHours = Math.round(newTeamDurationMin / 60);
+    const newTeamDuration = `${newTeamDurationHours}小时`;
+
     // 转换为前端使用的 Team 格式
     const newTeam: Team = {
       id: apiTeam.id,
@@ -127,7 +138,8 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
       description: apiTeam.description,
       date: teamData.date,
       time: teamData.time,
-      duration: teamData.duration,
+      duration: newTeamDuration,
+      durationMin: newTeamDurationMin,
       maxMembers: apiTeam.maxMembers,
       currentMembers: apiTeam.currentMembers,
       requirements: apiTeam.requirements || [],

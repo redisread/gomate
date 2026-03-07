@@ -12,6 +12,7 @@ import {
   User,
   Award,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ const levelColors: Record<string, string> = {
 };
 
 function LeaderCard({ team, isTeamMember = false, className }: LeaderCardProps) {
+  const router = useRouter();
   const { leader } = team;
   const [copied, setCopied] = React.useState(false);
 
@@ -64,7 +66,10 @@ function LeaderCard({ team, isTeamMember = false, className }: LeaderCardProps) 
         <CardContent className="space-y-5">
           {/* Leader Profile */}
           <div className="flex items-start gap-4">
-            <Avatar className="h-16 w-16 border-2 border-stone-100">
+            <Avatar
+              className="h-16 w-16 border-2 border-stone-100 cursor-pointer hover:border-stone-300 transition-colors"
+              onClick={() => router.push(`/users/${leader.id}`)}
+            >
               <AvatarImage src={leader.avatar} />
               <AvatarFallback className="text-lg">
                 {leader.name[0]}
@@ -72,7 +77,10 @@ function LeaderCard({ team, isTeamMember = false, className }: LeaderCardProps) 
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-lg font-semibold text-stone-900">
+                <h3
+                  className="text-lg font-semibold text-stone-900 cursor-pointer hover:text-stone-600 transition-colors"
+                  onClick={() => router.push(`/users/${leader.id}`)}
+                >
                   {leader.name}
                 </h3>
                 <Badge

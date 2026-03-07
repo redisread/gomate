@@ -3,6 +3,7 @@ import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidateTag } from "next/cache";
 import { copy } from "@/lib/copy";
+import { updateExpiredTeams } from "@/lib/team-status";
 
 // 动态导入 @opennextjs/cloudflare 以避免构建时错误
 const getCloudflareContext = async () => {
@@ -31,6 +32,9 @@ export async function GET(
 
     const db = env.DB as D1Database;
 
+    // 自动检查并更新该队伍状态（如果已过期且为 formed）
+    await updateExpiredTeams(db, id);
+
     // 使用 Drizzle ORM 查询
     const { drizzle } = await import("drizzle-orm/d1");
     const schema = await import("@/db/schema");
@@ -47,6 +51,7 @@ export async function GET(
         description: schema.teams.description,
         startTime: schema.teams.startTime,
         endTime: schema.teams.endTime,
+        durationMin: schema.teams.durationMin,
         maxMembers: schema.teams.maxMembers,
         requirements: schema.teams.requirements,
         status: schema.teams.status,
@@ -121,9 +126,9 @@ export async function GET(
     const date = startDate.toISOString().split('T')[0];
     const time = startDate.toTimeString().slice(0, 5);
 
-    // 计算活动时长
-    const endDate = new Date(team.endTime);
-    const durationHours = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60));
+    // 计算活动时长，优先使用数据库中的 durationMin 字段
+    const durationMinutes = team.durationMin || Math.round((new Date(team.endTime).getTime() - startDate.getTime()) / (1000 * 60));
+    const durationHours = Math.round(durationMinutes / 60);
     const duration = `${durationHours}小时`;
 
     // 格式化已审核通过和退出申请中的成员列表
@@ -155,6 +160,7 @@ export async function GET(
       date,
       time,
       duration,
+      durationMin: durationMinutes,
       maxMembers: team.maxMembers,
       currentMembers: team.currentMembers,
       requirements: team.requirements ? JSON.parse(team.requirements) : [],
@@ -264,44 +270,62 @@ export async function PUT(
 
     // 解析请求体
     const body = await request.json();
-    const { title, description, date, time, maxMembers, requirements } = body;
+    const { title, description, maxMembers, requirements, time, durationMin } = body;
 
     // 验证必填字段
-    if (!title || !date || !time || !maxMembers) {
+    if (!title || !maxMembers) {
       return NextResponse.json(
         { success: false, error: "缺少必填字段" },
         { status: 400 }
       );
     }
 
-    // 解析日期时间
-    const startTime = new Date(`${date}T${time}`);
-    if (isNaN(startTime.getTime())) {
-      return NextResponse.json(
-        { success: false, error: "无效的日期或时间格式" },
-        { status: 400 }
-      );
-    }
+    // 准备更新的数据
+    const updateData: {
+      title: string;
+      description: string | null;
+      maxMembers: number;
+      requirements: string | null;
+      durationMin?: number;
+      updatedAt: Date;
+      startTime?: Date;
+      endTime?: Date;
+    } = {
+      title,
+      description: description || null,
+      maxMembers,
+      requirements: requirements ? JSON.stringify(requirements) : null,
+      updatedAt: new Date(),
+    };
 
-    // 估算结束时间（保持原有时长或默认4小时）
-    const originalDuration = team.endTime
-      ? new Date(team.endTime).getTime() - new Date(team.startTime).getTime()
-      : 4 * 60 * 60 * 1000;
-    const endTime = new Date(startTime.getTime() + originalDuration);
+    // 如果修改了时间或时长，重新计算 startTime 和 endTime
+    if (time || durationMin) {
+      const originalStartTime = new Date(team.startTime);
+      // 使用新的时长或数据库中的现有时长，默认240分钟（4小时）
+      const currentDurationMin = durationMin || team.durationMin || 240;
+
+      let newStartTime = originalStartTime;
+      if (time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        newStartTime = new Date(originalStartTime);
+        newStartTime.setHours(hours, minutes, 0, 0);
+        updateData.startTime = newStartTime;
+      }
+
+      // 使用新的时长计算 endTime
+      const newEndTime = new Date(newStartTime.getTime() + currentDurationMin * 60000);
+      updateData.endTime = newEndTime;
+
+      // 更新 durationMin 字段
+      if (durationMin) {
+        updateData.durationMin = durationMin;
+      }
+    }
 
     // 更新队伍信息
     await ormDb
       .update(schema.teams)
-      .set({
-        title,
-        description: description || null,
-        startTime,
-        endTime,
-        maxMembers,
-        requirements: requirements ? JSON.stringify(requirements) : null,
-        status: team.status,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(schema.teams.id, teamId));
 
     // 清除缓存

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getAuth } from "@/lib/auth";
 import { getRandomTeamIcon } from "@/lib/constants";
+import { updateExpiredTeams } from "@/lib/team-status";
 
 /**
  * POST /api/teams
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
       date?: string;
       time?: string;
       duration?: string;
+      durationMin?: number;
       maxMembers?: number;
       requirements?: string[];
     };
@@ -54,6 +56,7 @@ export async function POST(request: NextRequest) {
       date,
       time,
       duration,
+      durationMin,
       maxMembers,
       requirements,
     } = body;
@@ -75,11 +78,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 解析 duration 字符串为小时数（如 "4小时" → 4，"1.5小时" → 1.5），默认 4 小时
-    const durationHours = duration
-      ? parseFloat(duration.replace(/[^0-9.]/g, "")) || 4
-      : 4;
-    const endTime = new Date(startTime.getTime() + durationHours * 60 * 60 * 1000);
+    // 计算活动时长（分钟），优先使用传入的 durationMin，否则解析 duration 字符串
+    const durationMinutes = durationMin || (duration
+      ? parseFloat(duration.replace(/[^0-9.]/g, "")) * 60 || 240
+      : 240);
+    const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
 
     // 生成队伍ID
     const teamId = `team-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -100,6 +103,7 @@ export async function POST(request: NextRequest) {
       description: description || null,
       startTime: startTime,
       endTime: endTime,
+      durationMin: durationMinutes,
       maxMembers,
       requirements: requirements ? JSON.stringify(requirements) : null,
       icon: teamIcon,
@@ -141,6 +145,7 @@ export async function POST(request: NextRequest) {
         description,
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
+        durationMin: durationMinutes,
         maxMembers,
         currentMembers: 1, // 创建时队长为第一个成员
         requirements,
@@ -180,6 +185,9 @@ export async function GET(request: NextRequest) {
 
     const db = env.DB as D1Database;
 
+    // 自动更新已过期的 formed 状态队伍为 completed
+    await updateExpiredTeams(db);
+
     // 使用 Drizzle ORM 查询
     const { drizzle } = await import("drizzle-orm/d1");
     const schema = await import("@/db/schema");
@@ -203,6 +211,7 @@ export async function GET(request: NextRequest) {
       description: schema.teams.description,
       startTime: schema.teams.startTime,
       endTime: schema.teams.endTime,
+      durationMin: schema.teams.durationMin,
       maxMembers: schema.teams.maxMembers,
       requirements: schema.teams.requirements,
       icon: schema.teams.icon,
@@ -224,6 +233,7 @@ export async function GET(request: NextRequest) {
       description: string | null;
       startTime: Date;
       endTime: Date;
+      durationMin: number | null;
       maxMembers: number;
       requirements: string | null;
       icon: string;
@@ -282,6 +292,7 @@ export async function GET(request: NextRequest) {
         date,
         time,
         duration: `${durationHours}小时`,
+        durationMin: row.durationMin || durationHours * 60,
         maxMembers: row.maxMembers,
         currentMembers: row.currentMembers,
         icon: row.icon || '⭿️',

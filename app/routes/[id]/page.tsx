@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getRouteById } from "@/app/actions/routes";
+import { getUserTeams } from "@/app/actions/teams";
 import { RoutePageClient } from "./route-page-client";
 import type { Metadata } from "next";
 
@@ -38,7 +39,27 @@ export default async function RoutePage({ params }: RoutePageProps) {
     waypoints: routeData.waypoints ? JSON.parse(routeData.waypoints as string) : [],
     equipmentNeeded: routeData.equipmentNeeded ? JSON.parse(routeData.equipmentNeeded as string) : [],
     warnings: routeData.warnings ? JSON.parse(routeData.warnings as string) : [],
+    pois: routeData.pois || [],
   };
 
-  return <RoutePageClient route={route} />;
+  // 获取用户在该路线的队伍
+  let userTeamsInRoute = [];
+  try {
+    const userTeams = await getUserTeams();
+    userTeamsInRoute = userTeams
+      .filter((membership) => membership.team?.routeId === id)
+      .map((membership) => ({
+        id: membership.team.id,
+        title: membership.team.title,
+        status: membership.team.status,
+        startTime: membership.team.startTime,
+        locationId: membership.team.locationId,
+        locationName: membership.team.location?.name,
+        joinedAt: membership.joinedAt,
+      }));
+  } catch {
+    // 用户未登录时忽略错误
+  }
+
+  return <RoutePageClient route={route} userTeamsInRoute={userTeamsInRoute} />;
 }

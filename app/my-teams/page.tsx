@@ -14,6 +14,7 @@ import {
   Crown,
   User,
   ChevronRight,
+  ChevronDown,
   Clock,
   Hourglass,
   CheckCircle,
@@ -358,10 +359,70 @@ function MyTeamsContent() {
   // 获取用户创建的队伍
   const createdTeams = teams.filter((t) => t.leader.id === user.id);
 
-  // 获取历史队伍（已结束的）
-  const historyTeams = teams.filter(
-    (t) => t.leader.id === user.id && (t.status === "completed" || t.status === "cancelled")
+  // 按状态分组队伍
+  const activeTeams = createdTeams.filter(
+    (t) => t.status === "recruiting" || t.status === "full" || t.status === "formed"
   );
+  const completedTeams = createdTeams.filter((t) => t.status === "completed");
+  const cancelledTeams = createdTeams.filter((t) => t.status === "cancelled");
+  const archivedTeams = [...completedTeams, ...cancelledTeams];
+
+  // 按时间排序（最新的在前）
+  const sortedActiveTeams = [...activeTeams].sort((a, b) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  const sortedArchivedTeams = [...archivedTeams].sort((a, b) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  // 获取我加入的活跃队伍（ recruiting、ongoing、full、formed）
+  const activeJoinedTeams = joinedTeams.filter(
+    (t) => t.status === "recruiting" || t.status === "ongoing" || t.status === "full" || t.status === "formed"
+  );
+
+  // 获取我加入的历史队伍（作为队员加入的已完成/已取消队伍）
+  const joinedHistoryTeams = joinedTeams.filter(
+    (t) => t.status === "completed" || t.status === "cancelled"
+  );
+
+  // 历史tab展示：我创建的历史队伍 + 我加入的历史队伍
+  const allHistoryTeams = [...archivedTeams, ...joinedHistoryTeams].sort((a, b) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  // 分组标题组件
+  interface TeamSectionProps {
+    title: string;
+    count: number;
+    children: React.ReactNode;
+    defaultExpanded?: boolean;
+  }
+
+  const TeamSection = ({ title, count, children, defaultExpanded = true }: TeamSectionProps) => {
+    const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
+
+    return (
+      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-between p-4 bg-stone-50 hover:bg-stone-100 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-stone-900">{title}</h3>
+            <span className="text-sm text-stone-500">({count})</span>
+          </div>
+          <ChevronDown
+            className={`h-5 w-5 text-stone-400 transition-transform ${isExpanded ? "" : "-rotate-90"}`}
+          />
+        </button>
+        {isExpanded && (
+          <div className="p-4 space-y-3">
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const TeamCard = ({ team, isLeader = false }: { team: typeof teams[0]; isLeader?: boolean }) => {
     const location = locations.find((l) => l.id === team.locationId);
@@ -743,9 +804,9 @@ function MyTeamsContent() {
                 <Crown className="h-4 w-4 mr-2 sm:mr-1" />
                 <span className="hidden sm:inline">我创建的</span>
                 <span className="sm:hidden">创建的</span>
-                {createdTeams.length > 0 && (
-                  <span className="ml-1.5 text-xs bg-stone-200 text-stone-700 px-1.5 py-0.5 rounded-full">
-                    {createdTeams.length}
+                {activeTeams.length > 0 && (
+                  <span className="ml-1.5 text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
+                    {activeTeams.length}
                   </span>
                 )}
               </TabsTrigger>
@@ -753,9 +814,9 @@ function MyTeamsContent() {
                 <User className="h-4 w-4 mr-2 sm:mr-1" />
                 <span className="hidden sm:inline">我加入的</span>
                 <span className="sm:hidden">加入的</span>
-                {joinedTeams.length > 0 && (
+                {activeJoinedTeams.length > 0 && (
                   <span className="ml-1.5 text-xs bg-stone-200 text-stone-700 px-1.5 py-0.5 rounded-full">
-                    {joinedTeams.length}
+                    {activeJoinedTeams.length}
                   </span>
                 )}
               </TabsTrigger>
@@ -783,39 +844,72 @@ function MyTeamsContent() {
                 <Clock className="h-4 w-4 mr-2 sm:mr-1" />
                 <span className="hidden sm:inline">历史</span>
                 <span className="sm:hidden">历史</span>
-                {historyTeams.length > 0 && (
+                {allHistoryTeams.length > 0 && (
                   <span className="ml-1.5 text-xs bg-stone-200 text-stone-700 px-1.5 py-0.5 rounded-full">
-                    {historyTeams.length}
+                    {allHistoryTeams.length}
                   </span>
                 )}
               </TabsTrigger>
             </TabsList>
 
-            {/* Created Teams */}
-            <TabsContent value="created" className="mt-6">
+            {/* Created Teams - 分组展示 */}
+            <TabsContent value="created" className="mt-6 space-y-6">
               {createdTeams.length === 0 ? (
                 <EmptyState type="created" />
               ) : (
-                <div className="space-y-4">
-                  {createdTeams.map((team) => (
-                    <TeamCard key={team.id} team={team} isLeader />
-                  ))}
-                </div>
+                <>
+                  {/* 活跃队伍区域 */}
+                  <TeamSection
+                    title="活跃队伍"
+                    count={activeTeams.length}
+                    defaultExpanded={true}
+                  >
+                    {activeTeams.length === 0 ? (
+                      <p className="text-sm text-stone-500 text-center py-4">
+                        暂无活跃队伍，去创建一个新的队伍吧！
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {sortedActiveTeams.map((team) => (
+                          <TeamCard key={team.id} team={team} isLeader />
+                        ))}
+                      </div>
+                    )}
+                  </TeamSection>
+
+                  {/* 已归档队伍区域 */}
+                  {archivedTeams.length > 0 && (
+                    <TeamSection
+                      title="已归档"
+                      count={archivedTeams.length}
+                      defaultExpanded={false}
+                    >
+                      <div className="space-y-3">
+                        {sortedArchivedTeams.map((team) => (
+                          <TeamCard key={team.id} team={team} isLeader />
+                        ))}
+                      </div>
+                      <div className="pt-2 text-xs text-stone-400 text-center">
+                        已完成 {completedTeams.length} · 已取消 {cancelledTeams.length}
+                      </div>
+                    </TeamSection>
+                  )}
+                </>
               )}
             </TabsContent>
 
-            {/* Joined Teams */}
+            {/* Joined Teams - 只展示活跃队伍 */}
             <TabsContent value="joined" className="mt-6">
               {joinedTeamsLoading ? (
                 <div className="animate-pulse space-y-4">
                   <div className="h-24 bg-stone-200 rounded" />
                   <div className="h-24 bg-stone-200 rounded" />
                 </div>
-              ) : joinedTeams.length === 0 ? (
+              ) : activeJoinedTeams.length === 0 ? (
                 <EmptyState type="joined" />
               ) : (
                 <div className="space-y-4">
-                  {joinedTeams.map((team) => (
+                  {activeJoinedTeams.map((team) => (
                     <TeamCard key={team.id} team={team} />
                   ))}
                 </div>
@@ -858,13 +952,13 @@ function MyTeamsContent() {
               )}
             </TabsContent>
 
-            {/* History */}
+            {/* History - 展示我创建的历史队伍 + 我加入的历史队伍 */}
             <TabsContent value="history" className="mt-6">
-              {historyTeams.length === 0 ? (
+              {allHistoryTeams.length === 0 ? (
                 <EmptyState type="history" />
               ) : (
                 <div className="space-y-4">
-                  {historyTeams.map((team) => (
+                  {allHistoryTeams.map((team) => (
                     <TeamCard key={team.id} team={team} isLeader={team.leader.id === user.id} />
                   ))}
                 </div>

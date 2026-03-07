@@ -254,6 +254,7 @@ export const teams = sqliteTable(
     description: text("description"), // 活动描述
     startTime: integer("start_time", { mode: "timestamp" }).notNull(), // 活动开始时间
     endTime: integer("end_time", { mode: "timestamp" }).notNull(), // 活动结束时间
+    durationMin: integer("duration_min").notNull().default(240), // 活动时长（分钟），默认4小时
     maxMembers: integer("max_members").notNull().default(10), // 最大人数限制
     requirements: text("requirements"), // 入队要求（JSON 数组）
     icon: text("icon").default("⭿️").notNull(), // 队伍图标（emoji）

@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Users, Calendar, MapPin, Route, Lock } from "lucide-react";
+import { ArrowLeft, Clock, Users, Calendar, MapPin, Route, Lock, AlertCircle } from "lucide-react";
 
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
@@ -85,7 +85,7 @@ function CreateTeamForm() {
     routeId: routeIdFromUrl || "",
     date: defaultDate,
     time: defaultTime,
-    duration: "",
+    durationMin: "240",
     maxMembers: "",
     description: "",
   });
@@ -159,7 +159,7 @@ function CreateTeamForm() {
         description: formData.description,
         date: formData.date,
         time: formData.time,
-        duration: formData.duration,
+        durationMin: parseInt(formData.durationMin, 10),
         maxMembers: parseInt(formData.maxMembers, 10),
         requirements: requirements,
       });
@@ -449,24 +449,38 @@ function CreateTeamForm() {
                     </div>
                   </div>
                 </div>
+                <p className="text-xs text-amber-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  提示：活动日期创建后不可修改，但集合时间可在编辑时调整
+                </p>
 
                 {/* 时长和人数 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="duration">
+                    <Label htmlFor="durationMin">
                       {copy.teams.formLabel.duration} <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative">
                       <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-                      <Input
-                        id="duration"
-                        name="duration"
-                        placeholder={copy.teams.formPlaceholder.duration}
-                        value={formData.duration}
+                      <select
+                        id="durationMin"
+                        name="durationMin"
+                        value={formData.durationMin}
                         onChange={handleInputChange}
                         required
-                        className="border-stone-200 pl-10"
-                      />
+                        className="flex h-10 w-full rounded-md border border-stone-200 bg-white pl-10 pr-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
+                      >
+                        <option value="120">2小时</option>
+                        <option value="180">3小时</option>
+                        <option value="240">4小时</option>
+                        <option value="300">5小时</option>
+                        <option value="360">6小时</option>
+                        <option value="420">7小时</option>
+                        <option value="480">8小时</option>
+                        <option value="540">9小时</option>
+                        <option value="600">10小时</option>
+                        <option value="720">12小时</option>
+                      </select>
                     </div>
                   </div>
                   <div className="space-y-2">

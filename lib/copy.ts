@@ -241,6 +241,7 @@ export const copy = {
     statusFull: "已满员",
     statusEnded: "已结束",
     statusFormed: "已组建",
+    statusCancelled: "已取消",
 
     // 操作
     joinTeam: "申请加入",
@@ -299,6 +300,13 @@ export const copy = {
     editSuccess: "队伍信息已更新",
     editFailed: "更新队伍失败",
     notLeader: "只有队长可以编辑队伍信息",
+
+    // 删除队伍
+    deleteTeam: "删除队伍",
+    deleteTeamConfirm: "确定要删除该队伍吗？删除后队伍将标记为已取消，无法恢复。",
+    deleteTeamSuccess: "队伍已删除",
+    deleteTeamFailed: "删除队伍失败",
+    onlyLeaderCanDelete: "只有队长可以删除队伍",
   },
 
   // ─── 个人资料 ─────────────────────────────────────────────────────────────
@@ -510,6 +518,7 @@ export const copy = {
     createTeamFailed: "创建队伍失败",
     missingTeamId: "缺少队伍ID",
     teamNotAccepting: "该队伍当前不接受新成员",
+    teamCancelled: "该队伍已取消",
     alreadyMemberDirect: "你已经是该队伍的成员",
     alreadyApplied: "你已经提交了申请，请等待审核",
     leaderCannotLeave: "队长无法直接离开队伍，请先转让队长权限或解散队伍",

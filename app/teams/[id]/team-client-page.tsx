@@ -262,44 +262,49 @@ export function TeamClientPage({ teamId }: TeamClientPageProps) {
 
             {/* 路线信息 */}
             {team.routeId ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.12 }}
-              >
-                <Card className="border-stone-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg font-semibold text-stone-900 flex items-center gap-2">
-                      <Route className="h-5 w-5 text-stone-500" />
-                      路线信息
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-medium text-stone-900">
-                          {team.route?.name || "已选路线"}
-                        </h3>
-                        {team.route?.difficulty && (
-                          <p className="text-sm text-stone-500 mt-1">
-                            难度：
-                            {team.route.difficulty === "easy"
-                              ? copy.enums.difficulty.easy
-                              : team.route.difficulty === "moderate"
-                              ? copy.enums.difficulty.moderate
-                              : team.route.difficulty === "hard"
-                              ? copy.enums.difficulty.hard
-                              : copy.enums.difficulty.expert}
-                          </p>
-                        )}
+              <Link href={`/routes/${team.routeId}`} className="block">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.12 }}
+                >
+                  <Card className="border-stone-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-semibold text-stone-900 flex items-center gap-2">
+                        <Route className="h-5 w-5 text-stone-500" />
+                        路线信息
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-medium text-stone-900">
+                            {team.route?.name || "已选路线"}
+                          </h3>
+                          {team.route?.difficulty && (
+                            <p className="text-sm text-stone-500 mt-1">
+                              难度：
+                              {team.route.difficulty === "easy"
+                                ? copy.enums.difficulty.easy
+                                : team.route.difficulty === "moderate"
+                                ? copy.enums.difficulty.moderate
+                                : team.route.difficulty === "hard"
+                                ? copy.enums.difficulty.hard
+                                : copy.enums.difficulty.expert}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                            已确定
+                          </Badge>
+                          <ArrowRight className="h-4 w-4 text-stone-400" />
+                        </div>
                       </div>
-                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                        已确定
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </Link>
             ) : (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}

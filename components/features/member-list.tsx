@@ -3,6 +3,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users, Crown, MessageCircle, UserX, Loader2, LogOut, Check, X, User, Mountain } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ interface MemberListProps {
 }
 
 function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberRemoved }: MemberListProps) {
+  const router = useRouter();
   const [removingMemberId, setRemovingMemberId] = React.useState<string | null>(null);
   const [approvingLeaveId, setApprovingLeaveId] = React.useState<string | null>(null);
   const [rejectingLeaveId, setRejectingLeaveId] = React.useState<string | null>(null);
@@ -293,7 +295,8 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -100 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="flex items-center gap-3 p-3 bg-stone-50 rounded-lg border border-stone-100"
+                  className="flex items-center gap-3 p-3 bg-stone-50 rounded-lg border border-stone-100 hover:border-stone-300 hover:shadow-sm transition-all cursor-pointer"
+                  onClick={() => router.push(`/users/${member.userId}`)}
                 >
                   {/* 用户头像 */}
                   <Avatar className="h-10 w-10">
@@ -360,6 +363,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                           variant="ghost"
                           className="text-red-500 hover:text-red-700 hover:bg-red-50"
                           disabled={isRemoving}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           {isRemoving ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
