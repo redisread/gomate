@@ -125,6 +125,11 @@ export default function TeamsPage() {
         }
       }
 
+      // Status filter - 只显示活跃队伍
+      if (team.status === "completed" || team.status === "cancelled") {
+        return false;
+      }
+
       return true;
     });
   }, [teams, searchQuery, selectedFilters]);

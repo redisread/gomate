@@ -251,6 +251,7 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       const result = await response.json() as { success?: boolean; error?: string };
 
       if (response.ok && result.success) {
+        showToast(copy.teams.formTeamSuccess, "success");
         router.refresh();
       } else {
         showToast(result.error || copy.teams.formTeamFailed, "error");

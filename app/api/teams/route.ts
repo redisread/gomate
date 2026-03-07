@@ -283,15 +283,11 @@ export async function GET(request: NextRequest) {
         .where(eq(schema.teams.locationId, locationId))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
     } else {
-      // 探索队伍列表：排除已取消和已完成的队伍
+      // 返回所有状态的队伍（前端会根据需要过滤）
       result = await ormDb
         .select(teamColumns)
         .from(schema.teams)
         .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
-        .where(and(
-          ne(schema.teams.status, "cancelled"),
-          ne(schema.teams.status, "completed")
-        ))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
     }
 

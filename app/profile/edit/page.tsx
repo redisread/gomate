@@ -8,6 +8,7 @@ import { ArrowLeft, Save, Loader2, Camera, X } from "lucide-react";
 
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
+import { EquipmentSelector } from "@/app/components/features/equipment-selector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -149,6 +150,12 @@ export default function EditProfilePage() {
         body: formData,
       });
 
+      // 检查响应内容类型，避免解析非 JSON 错误页面
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        throw new Error(copy.api.failed);
+      }
+
       const result = await response.json();
 
       if (!response.ok) {
@@ -225,6 +232,12 @@ export default function EditProfilePage() {
           extra,
         }),
       });
+
+      // 检查响应内容类型，避免解析非 JSON 错误页面
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        throw new Error(copy.common.save);
+      }
 
       const result = await response.json();
 
@@ -489,20 +502,14 @@ export default function EditProfilePage() {
 
                 {/* Equipment */}
                 <div className="space-y-2">
-                  <Label htmlFor="equipment">常用装备</Label>
-                  <Input
-                    id="equipment"
-                    name="equipment"
-                    value={formData.equipment.join(", ")}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const equipmentArray = value.split(",").map(item => item.trim()).filter(Boolean);
-                      setFormData(prev => ({ ...prev, equipment: equipmentArray }));
-                    }}
-                    className="border-stone-200"
-                    placeholder="例如: 登山鞋, 冲锋衣, 登山杖"
+                  <Label>常用装备</Label>
+                  <EquipmentSelector
+                    value={formData.equipment}
+                    onChange={(equipment) =>
+                      setFormData((prev) => ({ ...prev, equipment }))
+                    }
+                    maxCount={20}
                   />
-                  <p className="text-xs text-stone-500">用逗号分隔多个装备</p>
                 </div>
 
                 {/* Experience */}
