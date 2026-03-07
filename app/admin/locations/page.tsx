@@ -33,10 +33,18 @@ import {
 import { ImageUpload } from "@/components/ui/image-upload";
 import { MultiImageUpload } from "@/components/ui/multi-image-upload";
 import { LocationEditDialog } from "@/app/components/features/location-edit-dialog";
-import { SUPPORTED_CITIES } from "@/lib/constants/cities";
 import { copy } from "@/lib/copy";
+import { cn } from "@/lib/utils";
 
 const a = copy.admin;
+
+// 季节选项
+const SEASONS = [
+  { value: "春季", label: copy.admin.seasons.spring },
+  { value: "夏季", label: copy.admin.seasons.summer },
+  { value: "秋季", label: copy.admin.seasons.autumn },
+  { value: "冬季", label: copy.admin.seasons.winter },
+] as const;
 
 interface Location {
   id: string;
@@ -67,7 +75,7 @@ const defaultFormData = {
   description: "",
   coverImage: "",
   images: [] as string[],
-  bestSeason: "",
+  bestSeason: [] as string[],
   address: "",
   cityId: "",
   cityName: "",
@@ -87,6 +95,35 @@ export default function AdminLocationsPage() {
 
   // 删除确认对话框状态
   const [deleteTarget, setDeleteTarget] = React.useState<Location | null>(null);
+
+  // 城市列表状态
+  const [cities, setCities] = React.useState<Array<{id: string; name: string; province: string}>>([]);
+
+  // 加载城市列表
+  React.useEffect(() => {
+    fetch("/api/cities")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setCities(data.cities);
+        }
+      })
+      .catch(err => console.error("加载城市列表失败:", err));
+  }, []);
+
+  // 切换季节选择
+  const toggleSeason = (season: string) => {
+    setFormData(prev => {
+      const current = prev.bestSeason as string[];
+      const exists = current.includes(season);
+      return {
+        ...prev,
+        bestSeason: exists
+          ? current.filter(s => s !== season)
+          : [...current, season],
+      };
+    });
+  };
 
   // 加载地点列表
   const loadLocations = React.useCallback(async () => {
@@ -145,7 +182,7 @@ export default function AdminLocationsPage() {
         subtitle: formData.subtitle || null,
         description: formData.description,
         coverImage: formData.coverImage,
-        bestSeason: formData.bestSeason.split(",").map(s => s.trim()).filter(Boolean),
+        bestSeason: formData.bestSeason,
         address: formData.address || null,
         cityId: formData.cityId || null,
         cityName: formData.cityName || null,
@@ -345,23 +382,34 @@ export default function AdminLocationsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="bestSeason">{a.formBestSeason}</Label>
-                <Input
-                  id="bestSeason"
-                  value={formData.bestSeason}
-                  onChange={(e) => setFormData({ ...formData, bestSeason: e.target.value })}
-                  placeholder={a.placeholderBestSeason}
-                />
+                <Label>{a.formBestSeason}</Label>
+                <div className="flex flex-wrap gap-2">
+                  {SEASONS.map((season) => (
+                    <button
+                      key={season.value}
+                      type="button"
+                      onClick={() => toggleSeason(season.value)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-sm transition-colors",
+                        (formData.bestSeason as string[]).includes(season.value)
+                          ? "bg-stone-800 text-white"
+                          : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                      )}
+                    >
+                      {season.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cityId">{a.formCity}</Label>
                 <Select
                   value={formData.cityId}
                   onValueChange={(value) => {
-                    const selected = SUPPORTED_CITIES.find(c => `city_${c.adcode}` === value);
+                    const selected = cities.find(c => c.id === value);
                     setFormData({
                       ...formData,
-                      cityId: selected ? `city_${selected.adcode}` : "",
+                      cityId: selected ? selected.id : "",
                       cityName: selected?.name || "",
                     });
                   }}
@@ -370,8 +418,8 @@ export default function AdminLocationsPage() {
                     <SelectValue placeholder={a.placeholderSelectCity} />
                   </SelectTrigger>
                   <SelectContent>
-                    {SUPPORTED_CITIES.map((city) => (
-                      <SelectItem key={city.adcode} value={`city_${city.adcode}`}>
+                    {cities.map((city) => (
+                      <SelectItem key={city.id} value={city.id}>
                         {city.name} ({city.province})
                       </SelectItem>
                     ))}

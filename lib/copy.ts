@@ -861,6 +861,14 @@ export const copy = {
     placeholderCoordinates: '{"lat": 22.5, "lng": 114.1}',
     placeholderUploadCover: "点击上传封面图片",
 
+    // 季节选项
+    seasons: {
+      spring: "春季",
+      summer: "夏季",
+      autumn: "秋季",
+      winter: "冬季",
+    },
+
     // 按钮
     cancel: "取消",
     saving: "保存中...",
