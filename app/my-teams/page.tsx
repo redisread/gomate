@@ -52,6 +52,11 @@ import { useTeams } from "@/lib/teams-context";
 import { useLocations } from "@/lib/locations-context";
 import { approveMember, rejectMember } from "@/app/actions/teams";
 import { useToast } from "@/components/ui/toast";
+import { copy } from "@/lib/copy";
+
+const c = copy.myTeams;
+const com = copy.common;
+const e = copy.enums;
 
 // Loading fallback
 function MyTeamsLoading() {
@@ -73,20 +78,20 @@ function MyTeamsLoading() {
   );
 }
 
-// 状态映射
+// 状态映射（颜色样式，文案从 copy.ts 获取）
 const statusLabels: Record<string, { label: string; color: string }> = {
-  recruiting: { label: "招募中", color: "bg-emerald-100 text-emerald-700" },
-  full: { label: "已满员", color: "bg-amber-100 text-amber-700" },
-  formed: { label: "已组建", color: "bg-blue-100 text-blue-700" },
-  completed: { label: "已完成", color: "bg-stone-100 text-stone-600" },
-  cancelled: { label: "已取消", color: "bg-stone-100 text-stone-600" },
+  recruiting: { label: c.statusRecruiting, color: "bg-emerald-100 text-emerald-700" },
+  full: { label: c.statusFull, color: "bg-amber-100 text-amber-700" },
+  formed: { label: c.statusFormed, color: "bg-blue-100 text-blue-700" },
+  completed: { label: c.statusCompleted, color: "bg-stone-100 text-stone-600" },
+  cancelled: { label: c.statusCancelled, color: "bg-stone-100 text-stone-600" },
 };
 
-// 申请状态映射
+// 申请状态映射（颜色样式，文案从 copy.ts 获取）
 const applicationStatusLabels: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  pending: { label: "待审核", color: "bg-amber-100 text-amber-700", icon: Hourglass },
-  approved: { label: "已通过", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
-  rejected: { label: "已拒绝", color: "bg-red-100 text-red-700", icon: XCircle },
+  pending: { label: c.appStatusPending, color: "bg-amber-100 text-amber-700", icon: Hourglass },
+  approved: { label: c.appStatusApproved, color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
+  rejected: { label: c.appStatusRejected, color: "bg-red-100 text-red-700", icon: XCircle },
 };
 
 // 申请记录类型
@@ -309,7 +314,7 @@ function MyTeamsContent() {
         await refreshPendingApprovals();
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "审批失败");
+      showToast(error instanceof Error ? error.message : copy.errors.reviewFailed);
     } finally {
       setIsProcessing(false);
     }
@@ -334,7 +339,7 @@ function MyTeamsContent() {
         await refreshPendingApprovals();
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "操作失败");
+      showToast(error instanceof Error ? error.message : copy.api.failed);
     } finally {
       setIsProcessing(false);
     }
@@ -351,7 +356,7 @@ function MyTeamsContent() {
   if (isLoading || !user) {
     return (
       <main className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-pulse text-stone-400">加载中...</div>
+        <div className="animate-pulse text-stone-400">{com.loading}</div>
       </main>
     );
   }
@@ -450,7 +455,7 @@ function MyTeamsContent() {
                       {isLeader && (
                         <Badge variant="secondary" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
                           <Crown className="h-3 w-3 mr-1" />
-                          队长
+                          {c.roleLeader}
                         </Badge>
                       )}
                     </div>
@@ -477,7 +482,7 @@ function MyTeamsContent() {
                   <span className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
                     <span className={team.currentMembers >= team.maxMembers ? "text-amber-600" : "text-emerald-600"}>
-                      {team.currentMembers}/{team.maxMembers}人
+                      {team.currentMembers}/{team.maxMembers}{com.person}
                     </span>
                   </span>
                 </div>
@@ -495,7 +500,7 @@ function MyTeamsContent() {
                     ))}
                     {team.requirements.length > 3 && (
                       <span className="text-xs px-2 py-1 bg-stone-100 text-stone-500 rounded-full">
-                        +{team.requirements.length - 3}
+                        {c.requirementsMore.replace("{count}", String(team.requirements.length - 3))}
                       </span>
                     )}
                   </div>
@@ -567,7 +572,7 @@ function MyTeamsContent() {
                   <span className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
                     <span className={team.currentMembers >= team.maxMembers ? "text-amber-600" : "text-emerald-600"}>
-                      {team.currentMembers}/{team.maxMembers}人
+                      {team.currentMembers}/{team.maxMembers}{com.person}
                     </span>
                   </span>
                 </div>
@@ -575,7 +580,7 @@ function MyTeamsContent() {
                 {/* 队长信息 */}
                 {team.leader && (
                   <div className="flex items-center gap-2 mt-3 text-sm text-stone-500">
-                    <span>队长：</span>
+                    <span>{c.teamLeader}：</span>
                     <span className="font-medium text-stone-700">{team.leader.name}</span>
                   </div>
                 )}
@@ -590,12 +595,12 @@ function MyTeamsContent() {
     );
   };
 
-  // 等级显示映射
+  // 等级显示映射（文案从 copy.ts 获取）
   const levelLabels: Record<string, string> = {
-    beginner: "新手",
-    intermediate: "进阶",
-    advanced: "资深",
-    expert: "专家",
+    beginner: c.levelBeginner,
+    intermediate: c.levelIntermediate,
+    advanced: c.levelAdvanced,
+    expert: c.levelExpert,
   };
 
   // 格式化时间
@@ -608,11 +613,11 @@ function MyTeamsContent() {
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 60) {
-      return `${minutes}分钟前`;
+      return `${minutes}${c.minutesAgo}`;
     } else if (hours < 24) {
-      return `${hours}小时前`;
+      return `${hours}${c.hoursAgo}`;
     } else {
-      return `${days}天前`;
+      return `${days}${c.daysAgo}`;
     }
   };
 
@@ -646,23 +651,23 @@ function MyTeamsContent() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-stone-900 group-hover:text-stone-700 transition-colors">{applicant.name}</h3>
                     <Badge variant="outline" className="text-xs">
-                      {levelLabels[applicant.level] || "新手"}
+                      {levelLabels[applicant.level] || e.level.beginner}
                     </Badge>
                   </div>
                   <p className="text-sm text-stone-500 mt-1 line-clamp-1">
-                    {applicant.bio || "暂无简介"}
+                    {applicant.bio || c.noBio}
                   </p>
                 </div>
                 <Badge className="bg-amber-100 text-amber-700">
                   <Hourglass className="h-3 w-3 mr-1" />
-                  待审核
+                  {c.pendingReview}
                 </Badge>
               </div>
 
               {/* Team Info */}
               <div className="mt-3 p-3 bg-stone-50 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-medium text-stone-700">申请加入：</span>
+                  <span className="text-sm font-medium text-stone-700">{c.applyToJoin}：</span>
                   <span className="text-sm text-stone-900">{team.title}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-sm text-stone-500">
@@ -680,14 +685,14 @@ function MyTeamsContent() {
                   )}
                   <span className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" />
-                    {team.currentMembers}/{team.maxMembers}人
+                    {team.currentMembers}/{team.maxMembers}{com.person}
                   </span>
                 </div>
               </div>
 
               {/* Apply Time */}
               <p className="text-xs text-stone-400 mt-2">
-                申请时间：{formatTimeAgo(approval.createdAt)}
+                {c.applyTime}：{formatTimeAgo(approval.createdAt)}
               </p>
             </div>
 
@@ -705,37 +710,37 @@ function MyTeamsContent() {
     const configs = {
       created: {
         icon: Crown,
-        title: "还没有创建队伍",
-        description: "作为队长创建队伍，带领伙伴探索山野",
-        action: "创建队伍",
+        title: c.emptyCreated,
+        description: c.emptyCreatedDesc,
+        action: c.emptyCreatedBtn,
         href: "/teams/create",
       },
       joined: {
         icon: User,
-        title: "还没有加入队伍",
-        description: "浏览地点，加入感兴趣的队伍",
-        action: "探索地点",
+        title: c.emptyJoined,
+        description: c.emptyJoinedDesc,
+        action: c.emptyJoinedBtn,
         href: "/locations",
       },
       applications: {
         icon: Hourglass,
-        title: "没有申请记录",
-        description: "浏览队伍，申请加入感兴趣的队伍",
-        action: "探索队伍",
+        title: c.emptyApplications,
+        description: c.emptyApplicationsDesc,
+        action: c.emptyApplicationsBtn,
         href: "/teams",
       },
       pending: {
         icon: ClipboardCheck,
-        title: "没有待审批申请",
-        description: "作为队长，有人申请加入你的队伍时会显示在这里",
-        action: "查看队伍",
+        title: c.emptyPending,
+        description: c.emptyPendingDesc,
+        action: c.emptyPendingBtn,
         href: "/my-teams?tab=created",
       },
       history: {
         icon: Clock,
-        title: "没有历史记录",
-        description: "完成的徒步活动会显示在这里",
-        action: "去徒步",
+        title: c.emptyHistory,
+        description: c.emptyHistoryDesc,
+        action: c.emptyHistoryBtn,
         href: "/locations",
       },
     };
@@ -779,15 +784,15 @@ function MyTeamsContent() {
             >
               <Link href="/profile">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                返回
+                {c.backBtn}
               </Link>
             </Button>
-            <h1 className="text-2xl font-bold text-stone-900">我的队伍</h1>
+            <h1 className="text-2xl font-bold text-stone-900">{c.pageTitle}</h1>
           </div>
           <Button className="bg-stone-900 hover:bg-stone-800" asChild>
             <Link href="/teams/create">
               <Plus className="h-4 w-4 mr-2" />
-              创建队伍
+              {c.createBtn}
             </Link>
           </Button>
         </motion.div>
@@ -802,8 +807,8 @@ function MyTeamsContent() {
             <TabsList className="w-full sm:w-auto grid grid-cols-5 sm:inline-flex bg-stone-100">
               <TabsTrigger value="created" className="data-[state=active]:bg-white">
                 <Crown className="h-4 w-4 mr-2 sm:mr-1" />
-                <span className="hidden sm:inline">我创建的</span>
-                <span className="sm:hidden">创建的</span>
+                <span className="hidden sm:inline">{c.tabCreated}</span>
+                <span className="sm:hidden">{c.tabCreatedShort}</span>
                 {activeTeams.length > 0 && (
                   <span className="ml-1.5 text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
                     {activeTeams.length}
@@ -812,8 +817,8 @@ function MyTeamsContent() {
               </TabsTrigger>
               <TabsTrigger value="joined" className="data-[state=active]:bg-white">
                 <User className="h-4 w-4 mr-2 sm:mr-1" />
-                <span className="hidden sm:inline">我加入的</span>
-                <span className="sm:hidden">加入的</span>
+                <span className="hidden sm:inline">{c.tabJoined}</span>
+                <span className="sm:hidden">{c.tabJoinedShort}</span>
                 {activeJoinedTeams.length > 0 && (
                   <span className="ml-1.5 text-xs bg-stone-200 text-stone-700 px-1.5 py-0.5 rounded-full">
                     {activeJoinedTeams.length}
@@ -822,8 +827,8 @@ function MyTeamsContent() {
               </TabsTrigger>
               <TabsTrigger value="applications" className="data-[state=active]:bg-white">
                 <Hourglass className="h-4 w-4 mr-2 sm:mr-1" />
-                <span className="hidden sm:inline">申请记录</span>
-                <span className="sm:hidden">申请</span>
+                <span className="hidden sm:inline">{c.tabApplications}</span>
+                <span className="sm:hidden">{c.tabApplicationsShort}</span>
                 {applicationStats.pending > 0 && (
                   <span className="ml-1.5 text-xs bg-amber-200 text-amber-700 px-1.5 py-0.5 rounded-full">
                     {applicationStats.pending}
@@ -832,8 +837,8 @@ function MyTeamsContent() {
               </TabsTrigger>
               <TabsTrigger value="pending" className="data-[state=active]:bg-white">
                 <ClipboardCheck className="h-4 w-4 mr-2 sm:mr-1" />
-                <span className="hidden sm:inline">待审批</span>
-                <span className="sm:hidden">审批</span>
+                <span className="hidden sm:inline">{c.tabPending}</span>
+                <span className="sm:hidden">{c.tabPendingShort}</span>
                 {pendingApprovalsTotal > 0 && (
                   <span className="ml-1.5 text-xs bg-red-200 text-red-700 px-1.5 py-0.5 rounded-full">
                     {pendingApprovalsTotal}
@@ -842,8 +847,8 @@ function MyTeamsContent() {
               </TabsTrigger>
               <TabsTrigger value="history" className="data-[state=active]:bg-white">
                 <Clock className="h-4 w-4 mr-2 sm:mr-1" />
-                <span className="hidden sm:inline">历史</span>
-                <span className="sm:hidden">历史</span>
+                <span className="hidden sm:inline">{c.tabHistory}</span>
+                <span className="sm:hidden">{c.tabHistory}</span>
                 {allHistoryTeams.length > 0 && (
                   <span className="ml-1.5 text-xs bg-stone-200 text-stone-700 px-1.5 py-0.5 rounded-full">
                     {allHistoryTeams.length}
@@ -860,13 +865,13 @@ function MyTeamsContent() {
                 <>
                   {/* 活跃队伍区域 */}
                   <TeamSection
-                    title="活跃队伍"
+                    title={c.activeTeams}
                     count={activeTeams.length}
                     defaultExpanded={true}
                   >
                     {activeTeams.length === 0 ? (
                       <p className="text-sm text-stone-500 text-center py-4">
-                        暂无活跃队伍，去创建一个新的队伍吧！
+                        {c.noActiveTeams}
                       </p>
                     ) : (
                       <div className="space-y-3">
@@ -880,7 +885,7 @@ function MyTeamsContent() {
                   {/* 已归档队伍区域 */}
                   {archivedTeams.length > 0 && (
                     <TeamSection
-                      title="已归档"
+                      title={c.archivedTeams}
                       count={archivedTeams.length}
                       defaultExpanded={false}
                     >
@@ -890,7 +895,7 @@ function MyTeamsContent() {
                         ))}
                       </div>
                       <div className="pt-2 text-xs text-stone-400 text-center">
-                        已完成 {completedTeams.length} · 已取消 {cancelledTeams.length}
+                        {c.completedCount} {completedTeams.length} · {c.cancelledCount} {cancelledTeams.length}
                       </div>
                     </TeamSection>
                   )}
@@ -974,9 +979,9 @@ function MyTeamsContent() {
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>申请人详情</DialogTitle>
+            <DialogTitle>{c.applicantDetailTitle}</DialogTitle>
             <DialogDescription>
-              查看申请人的详细信息和申请详情
+              {c.applicantDetailDesc}
             </DialogDescription>
           </DialogHeader>
           {selectedApproval && (
@@ -1002,29 +1007,29 @@ function MyTeamsContent() {
                       {selectedApproval.applicant?.name}
                     </h3>
                     <Badge variant="outline" className="text-xs">
-                      {levelLabels[selectedApproval.applicant?.level || "beginner"] || "新手"}
+                      {levelLabels[selectedApproval.applicant?.level || "beginner"] || e.level.beginner}
                     </Badge>
                   </div>
                   <p className="text-sm text-stone-500 mt-1">
-                    申请时间：{formatTimeAgo(selectedApproval.createdAt)}
+                    {c.applyTime}：{formatTimeAgo(selectedApproval.createdAt)}
                   </p>
                 </div>
               </div>
 
               {/* 简介 */}
               <div className="bg-stone-50 p-4 rounded-lg">
-                <h4 className="text-sm font-medium text-stone-700 mb-2">个人简介</h4>
+                <h4 className="text-sm font-medium text-stone-700 mb-2">{c.personalBio}</h4>
                 <p className="text-sm text-stone-600">
-                  {selectedApproval.applicant?.bio || "暂无简介"}
+                  {selectedApproval.applicant?.bio || c.noBio}
                 </p>
               </div>
 
               {/* 队伍信息 */}
               <div className="border-t border-stone-200 pt-4">
-                <h4 className="text-sm font-medium text-stone-700 mb-3">申请加入的队伍</h4>
+                <h4 className="text-sm font-medium text-stone-700 mb-3">{c.applyTeamTitle}</h4>
                 <div className="bg-stone-50 p-4 rounded-lg space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-stone-500">队伍名称：</span>
+                    <span className="text-sm text-stone-500">{c.teamName}：</span>
                     <Link
                       href={`/teams/${selectedApproval.team?.id}`}
                       className="text-sm font-medium text-stone-900 hover:underline"
@@ -1051,7 +1056,7 @@ function MyTeamsContent() {
                       <span className={selectedApproval.team && selectedApproval.team.currentMembers >= selectedApproval.team.maxMembers ? "text-amber-600" : "text-emerald-600"}>
                         {selectedApproval.team?.currentMembers}
                       </span>
-                      /{selectedApproval.team?.maxMembers}人
+                      /{selectedApproval.team?.maxMembers}{com.person}
                     </span>
                   </div>
                 </div>
@@ -1066,7 +1071,7 @@ function MyTeamsContent() {
               className="flex-1"
             >
               {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              拒绝
+              {c.rejectBtn}
             </Button>
             <Button
               onClick={handleApprove}
@@ -1074,7 +1079,7 @@ function MyTeamsContent() {
               className="flex-1 bg-stone-900 hover:bg-stone-800"
             >
               {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              通过
+              {c.approveBtn}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1084,20 +1089,20 @@ function MyTeamsContent() {
       <AlertDialog open={isRejectConfirmOpen} onOpenChange={setIsRejectConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认拒绝申请？</AlertDialogTitle>
+            <AlertDialogTitle>{c.rejectConfirmTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              拒绝后，该申请人将不能加入此队伍。此操作不可撤销。
+              {c.rejectConfirmDesc}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>取消</AlertDialogCancel>
+            <AlertDialogCancel disabled={isProcessing}>{com.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmReject}
               disabled={isProcessing}
               className="bg-red-600 hover:bg-red-700"
             >
               {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              确认拒绝
+              {c.confirmRejectBtn}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

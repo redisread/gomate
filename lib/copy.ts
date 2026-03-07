@@ -41,6 +41,7 @@ export const copy = {
     uploadingImg: "上传中...",
     unknown: "未知",
     person: "人",
+    current: "当前",
     searchPlaceholder: "搜索地点、路线或队伍...",
   },
 
@@ -56,12 +57,28 @@ export const copy = {
     profile: "个人资料",
     myTeams: "我的队伍",
     logout: "退出登录",
+    admin: "管理后台",
+    explore: "开始探索",
   },
 
   // ─── 页脚 ─────────────────────────────────────────────────────────────────
   footer: {
     tagline: "极简「地点组队」平台，让每一次户外探索都有志同道合的伙伴同行。",
     product: "产品",
+    productLocations: "探索地点",
+    productTeams: "找队伍",
+    productGuides: "路线攻略",
+    productSafety: "安全保障",
+    company: "公司",
+    companyAbout: "关于我们",
+    companyCareers: "加入团队",
+    companyContact: "联系我们",
+    companyPartners: "合作伙伴",
+    support: "支持",
+    supportHelp: "帮助中心",
+    supportSafety: "安全指南",
+    supportGuidelines: "社区规范",
+    supportPrivacy: "隐私政策",
     about: "关于",
     privacy: "隐私政策",
     terms: "服务条款",
@@ -71,11 +88,12 @@ export const copy = {
   // ─── Hero 首屏 ────────────────────────────────────────────────────────────
   hero: {
     badge: "探索自然 · 连接伙伴",
-    titleLine1: "探索路线",
-    titleLine2: "结伴同行",
+    titleLine1: "发现趣处",
+    titleLine2: "组队同行",
     description:
-      "在山野与海岸间，用脚步丈量世界，与同频的人一起出发。",
+      "极简「地点组队」平台，找到同行的人，出发就不远。",
     exploreBtn: "探索地点",
+    findTeamBtn: "找队伍",
     createTeamBtn: "发布队伍",
     loginRegisterBtn: "登录 / 注册",
     statRoutes: "林间小径",
@@ -165,10 +183,33 @@ export const copy = {
     defaultCity: "深圳",
     viewDetail: "查看详情",
 
+    // 路线信息卡片
+    routeInfo: "路线信息",
+    routeTags: "路线标签",
+    facilities: "配套设施",
+    estimatedTime: "预计用时",
+    routeLength: "路线长度",
+    totalElevation: "累计爬升",
+    bestSeason: "最佳季节",
+    facilityParking: "停车场",
+    facilityRestroom: "洗手间",
+    facilityWater: "补给点",
+    facilityFood: "餐饮",
+
     // CTA section
     ctaTitle: "没找到心仪的地点？",
     ctaDesc: "联系我们推荐新的徒步路线，或者创建自己的队伍",
     ctaBtn: "联系我们",
+
+    // 路线指南
+    routeGuideOverview: "路线概览",
+    waypoints: "途经点",
+    tips: "温馨提示",
+    safetyNotice: "安全须知",
+
+    // 图片导航
+    prevImage: "上一张图片",
+    nextImage: "下一张图片",
   },
 
   // ─── 队伍 ─────────────────────────────────────────────────────────────────
@@ -183,6 +224,36 @@ export const copy = {
     clearFilters: "清除筛选",
     otherTeamsAtLocation: "该地点的其他队伍",
 
+    // 队伍列表组件
+    openTeamsTitle: "可加入的队伍",
+    openTeamsSubtitle: "共有 {count} 个队伍正在招募", // 动态数值
+    fullTeamsTitle: "已满员",
+    leaderLabel: "领队:",
+    leaderTripCountSuffix: "次带队", // 「N 次带队」
+    personCountSuffix: "人", // 「N 人」
+    emptyOpenTeamsTitle: "暂无招募中的队伍",
+    emptyOpenTeamsDesc: "成为第一个发布队伍的人，开启你的户外之旅",
+    teamCountSuffix: "个队伍", // 「N 个队伍」
+    openTeamCountSuffix: "个队伍可加入", // 「N 个队伍可加入」
+
+    // 队伍头部组件
+    backToLocation: "返回地点",
+    shareLabel: "分享",
+    departureSuffix: "出发", // 「{time} 出发」
+    estimatedPrefix: "预计", // 「预计{duration}」
+
+    // 领队卡片组件
+    leaderInfoTitle: "领队信息",
+    copyWechatHint: "复制微信号，添加领队为好友",
+    contactLeader: "联系领队",
+
+    // 成员列表组件
+    teamMembersTitle: "队伍成员",
+    requestingLeaveBadge: "申请退出",
+    approveLeaveDesc: "确定批准 {name} 的退出申请？批准后该成员将退出队伍。",
+    rejectLeaveDesc: "确定拒绝 {name} 的退出申请？拒绝后该成员将继续留在队伍中。",
+    removeMemberDesc: "{name} 将被移出队伍，移除后该成员需要重新申请才能加入。",
+
     // 创建页
     createTitle: "发布队伍",
     createSubtitle:
@@ -191,6 +262,14 @@ export const copy = {
     createBtnLoading: "发布中...",
     createTip:
       "提示：发布队伍后，其他用户可以申请加入。请确保填写的信息准确，并在活动开始前及时与队员沟通集合细节。",
+
+    // 创建页验证和提示
+    routeRequired: "请选择一条路线，或取消勾选\"关联具体路线\"",
+    wechatRequiredTitle: "请填写微信号",
+    wechatRequiredDesc: "创建队伍前需要在个人资料中填写微信号，以便队友联系您。",
+    loading: "加载中...",
+    noRouteAvailable: "该地点暂无可用路线，请取消勾选\"关联具体路线\"或联系管理员添加路线信息。",
+    dateImmutableTip: "提示：活动日期创建后不可修改，但集合时间可在编辑时调整",
 
     // 表单字段
     formLabel: {
@@ -226,6 +305,8 @@ export const copy = {
     reviewTitle: "待审核申请",
     reviewEmpty: "暂无待审核申请",
     reviewEmptyDesc: "有新成员申请加入时会显示在这里",
+    approveLeaveFailed: "批准退出申请失败",
+    rejectLeaveFailed: "拒绝退出申请失败",
     approveBtn: "批准",
     rejectBtn: "拒绝",
     approving: "批准中...",
@@ -242,17 +323,22 @@ export const copy = {
     statusEnded: "已结束",
     statusFormed: "已组建",
     statusCancelled: "已取消",
+    statusExpiredNotFormed: "活动已过期，队伍未组建成功",
 
     // 操作
     joinTeam: "申请加入",
     viewLocationDetail: "查看地点详情",
     leader: "队长",
 
+    // 报名人数状态
+    registrationStatus: "已有 {current} 人报名，还剩 {remaining} 个名额",
+
     // 组建队伍
     formTeam: "组建队伍",
     formTeamUnderfilled: "不满人数组建",
     formTeamConfirm: "确定组建队伍？",
     formTeamUnderfilledConfirm: "当前人数未满，确定以不满人数组建队伍？",
+    formTeamWarning: "组建后队员退出需要队长审批",
     formTeamSuccess: "队伍组建成功",
     formTeamFailed: "组建失败",
 
@@ -286,6 +372,12 @@ export const copy = {
     leaveTeamWarning: "退出后需要重新申请才能加入",
     leaveTeamSuccess: "已退出队伍",
     leaveTeamFailed: "退出队伍失败",
+
+    // 队长相关
+    youAreLeader: "你是队长",
+    manageTeam: "管理队伍",
+    wechatRequiredBtn: "请先填写微信号",
+    fillWechatBtn: "去填写",
 
     // 移除成员
     removeMember: "移除",
@@ -324,14 +416,18 @@ export const copy = {
     editProfileBtn: "编辑资料",
     logoutBtn: "退出",
     defaultBio: "新人户外爱好者，期待与你一起探索山野。",
+    backProfile: "返回个人资料",
 
     // 字段
+    usernameLabel: "用户名",
+    usernamePlaceholder: "请输入用户名",
+    usernameHint: "用于认证和系统标识",
+    nicknameLabel: "昵称",
+    nicknamePlaceholder: "请输入昵称（为空则显示用户名）",
+    nicknameHint: "用于展示的昵称，可以随时修改",
     bio: "个人简介",
     bioPlaceholder: "介绍一下你自己，让更多人了解你...",
     bioHint: "简短介绍你的户外经历和兴趣",
-    nicknameLabel: "昵称",
-    nicknamePlaceholder: "请输入昵称",
-    nicknameHint: "2-20个字符",
     levelLabel: "徒步经验等级",
     levelCurrent: "当前",
     emailLabel: "邮箱",
@@ -339,6 +435,10 @@ export const copy = {
     wechat: "微信号",
     wechatPlaceholder: "请输入微信号",
     wechatHint: "方便队友联系你（加入队伍时需要填写）",
+    genderLabel: "性别",
+    genderHint: "可选填写，用于更好的匹配队友",
+    birthdayLabel: "生日",
+    birthdayHint: "可选填写，用于计算年龄段",
     changeAvatar: "点击更换头像",
     avatarHint: "支持 JPEG、PNG、GIF、WebP，最大 5MB",
     avatarSelected: "已选择", // 「已选择：filename」，filename 在组件内拼接
@@ -346,9 +446,12 @@ export const copy = {
     avatarTooLarge: "图片大小不能超过 5MB",
     avatarUploadFailed: "头像上传失败，请重试",
     saveSuccess: "保存成功！",
+    experiencePlaceholder: "例如：有3年徒步经验，完成过梧桐山、七娘山等路线",
+    experienceHint: "简单描述你的徒步经历",
 
     // 统计
     hikesCompleted: "次徒步", // 「已完成 N 次徒步」，N 在组件内拼接
+    ageSuffix: "岁", // 年龄后缀，如「25岁」
     registeredAt: "注册时间",
 
     // 我创建的队伍
@@ -356,9 +459,17 @@ export const copy = {
     createdTeamsDesc: "你作为领队创建的队伍",
     recentTeams: "最近创建的队伍",
     joinedTeams: "我加入的队伍",
+    joinedTeamsDesc: "你作为成员参与的队伍",
+    recentJoinedTeams: "最近加入的队伍",
     noTeamsYet: "还没有队伍",
     noTeamsTip: "创建或加入一个队伍，开始你的户外之旅",
     createTeamBtn: "创建队伍",
+
+    // 其他
+    levelTitleSuffix: "徒步者",
+    member: "成员",
+    equipment: "常用装备",
+    experience: "徒步经验",
   },
 
   // ─── 我的队伍页 ───────────────────────────────────────────────────────────
@@ -369,8 +480,69 @@ export const copy = {
     tabCreatedShort: "创建的",
     tabJoined: "我加入的",
     tabJoinedShort: "加入的",
+    tabApplications: "申请记录",
+    tabApplicationsShort: "申请",
+    tabPending: "待审批",
+    tabPendingShort: "审批",
     tabHistory: "历史",
     roleLeader: "队长",
+    backBtn: "返回",
+
+    // 状态标签
+    statusRecruiting: "招募中",
+    statusFull: "已满员",
+    statusFormed: "已组建",
+    statusCompleted: "已完成",
+    statusCancelled: "已取消",
+
+    // 申请状态
+    appStatusPending: "待审核",
+    appStatusApproved: "已通过",
+    appStatusRejected: "已拒绝",
+
+    // 要求标签
+    requirementsMore: "+{count}",
+
+    // 等级标签
+    levelBeginner: "新手",
+    levelIntermediate: "进阶",
+    levelAdvanced: "资深",
+    levelExpert: "专家",
+
+    // 时间格式化
+    minutesAgo: "分钟前",
+    hoursAgo: "小时前",
+    daysAgo: "天前",
+    minutesAgoTemplate: "{count}分钟前",
+    hoursAgoTemplate: "{count}小时前",
+    daysAgoTemplate: "{count}天前",
+
+    // 待审批相关
+    pendingReview: "待审核",
+    applyToJoin: "申请加入",
+    applyTime: "申请时间",
+    noBio: "暂无简介",
+    teamLeader: "队长",
+
+    // 分组标题
+    activeTeams: "活跃队伍",
+    noActiveTeams: "暂无活跃队伍，去创建一个新的队伍吧！",
+    archivedTeams: "已归档",
+    completedCount: "已完成",
+    cancelledCount: "已取消",
+
+    // 申请人详情弹窗
+    applicantDetailTitle: "申请人详情",
+    applicantDetailDesc: "查看申请人的详细信息和申请详情",
+    personalBio: "个人简介",
+    applyTeamTitle: "申请加入的队伍",
+    teamName: "队伍名称",
+    rejectBtn: "拒绝",
+    approveBtn: "通过",
+    rejectConfirmTitle: "确认拒绝申请？",
+    rejectConfirmDesc: "拒绝后，该申请人将不能加入此队伍。此操作不可撤销。",
+    cancelBtn: "取消",
+    confirmRejectBtn: "确认拒绝",
 
     // 空状态
     emptyCreated: "还没有创建队伍",
@@ -379,6 +551,12 @@ export const copy = {
     emptyJoined: "还没有加入队伍",
     emptyJoinedDesc: "浏览地点，加入感兴趣的队伍",
     emptyJoinedBtn: "探索地点",
+    emptyApplications: "没有申请记录",
+    emptyApplicationsDesc: "浏览队伍，申请加入感兴趣的队伍",
+    emptyApplicationsBtn: "探索队伍",
+    emptyPending: "没有待审批申请",
+    emptyPendingDesc: "作为队长，有人申请加入你的队伍时会显示在这里",
+    emptyPendingBtn: "查看队伍",
     emptyHistory: "没有历史记录",
     emptyHistoryDesc: "完成的徒步活动会显示在这里",
     emptyHistoryBtn: "去徒步",
@@ -390,7 +568,10 @@ export const copy = {
     difficulty: "难度",
     duration: "时长",
     region: "区域",
+    city: "城市",
     clearAll: "清除全部",
+    reset: "重置",
+    viewResults: "查看结果",
 
     // 时长选项
     durationHalfDay: "半日内",
@@ -422,15 +603,19 @@ export const copy = {
     nameLabel: "您的姓名",
     namePlaceholder: "请输入姓名",
     emailLabel: "联系邮箱",
+    emailPlaceholder: "your@email.com",
     subjectLabel: "主题",
     subjectPlaceholder: "请简述您的建议主题",
     messageLabel: "详细建议",
     messagePlaceholder: "请详细描述您的建议或反馈...",
     submitBtn: "提交建议",
+    submitting: "提交中...",
 
     successTitle: "感谢您的反馈！",
     successDesc: "我们已经收到您的建议，会尽快查看并回复。",
     continueSubmitBtn: "继续提交",
+
+    submitError: "提交失败，请稍后重试",
   },
 
   // ─── 邮件模板 ─────────────────────────────────────────────────────────────
@@ -504,6 +689,7 @@ export const copy = {
     checkJunkFolder: "如果没有收到邮件，请检查垃圾邮件文件夹",
     sendResetLink: "发送重置链接",
     teamSuccessPreview: "队伍组建成功！",
+    autoSendFooter: "此邮件由 GoMate 自动发送，请勿回复。",
   },
 
   // ─── 错误与提示消息 ───────────────────────────────────────────────────────
@@ -598,6 +784,129 @@ export const copy = {
     shareVia: "通过应用分享",
     inviteText: "邀请你加入徒步队伍",
     locationInviteText: "推荐你一个徒步好去处",
+    tabLink: "链接",
+    tabQRCode: "二维码",
+    shareLinkLabel: "分享链接",
+    scanToJoin: "扫描二维码加入队伍",
+    scanToViewLocation: "扫描二维码查看地点详情",
+    downloadQRCode: "下载二维码",
+    noAddress: "暂无地址信息",
+  },
+
+  // ─── 管理后台 ─────────────────────────────────────────────────────────────
+  admin: {
+    // 导航
+    navLocations: "地点管理",
+    navUsers: "用户管理",
+    navSettings: "系统设置",
+    adminBadge: "管理后台",
+    backToFrontend: "返回前台",
+
+    // 地点管理页面
+    locationsTitle: "地点管理",
+    locationsDesc: "管理所有徒步地点信息",
+    addLocation: "新增地点",
+    editLocation: "编辑地点",
+    createLocation: "新增地点",
+
+    // 表格列头
+    colName: "名称",
+    colCity: "城市",
+    colDifficulty: "难度",
+    colDuration: "时长",
+    colDistance: "距离",
+    colCreatedAt: "创建时间",
+    colUpdatedAt: "更新时间",
+    colActions: "操作",
+
+    // 空状态
+    noLocations: "暂无地点数据",
+
+    // 表单标签
+    formName: "名称",
+    formNameRequired: "名称 *",
+    formSlug: "Slug（留空自动生成）",
+    formSubtitle: "副标题",
+    formDescription: "描述",
+    formDescriptionRequired: "描述 *",
+    formDifficulty: "难度",
+    formDifficultyRequired: "难度 *",
+    formDuration: "时长",
+    formDurationRequired: "时长 *",
+    formDistance: "距离",
+    formDistanceRequired: "距离 *",
+    formElevation: "海拔",
+    formBestSeason: "最佳季节（逗号分隔）",
+    formCity: "城市",
+    formAdcode: "行政区划代码",
+    formCoverImage: "封面图片",
+    formCoverImageRequired: "封面图片 *",
+    formImages: "图片列表",
+    formTags: "标签（逗号分隔）",
+    formAddress: "地址",
+    formCoordinates: "坐标（JSON 格式）",
+    formRouteDesc: "路线描述",
+    formTips: "徒步贴士",
+
+    // 表单占位符
+    placeholderSlug: "如: wutong-mountain",
+    placeholderSubtitle: "如: 深圳第二高峰",
+    placeholderDuration: "如: 4-5小时",
+    placeholderDistance: "如: 8.5公里",
+    placeholderElevation: "如: 869米",
+    placeholderBestSeason: "如: 春季, 秋季",
+    placeholderSelectCity: "选择城市",
+    placeholderAdcode: "自动填充",
+    placeholderTags: "如: 海景, 山峰, 摄影",
+    placeholderCoordinates: '{"lat": 22.5, "lng": 114.1}',
+    placeholderUploadCover: "点击上传封面图片",
+
+    // 按钮
+    cancel: "取消",
+    saving: "保存中...",
+    save: "保存",
+
+    // 删除对话框
+    deleteConfirmTitle: "确认删除",
+    deleteConfirmDesc: "确定要删除地点「{name}」吗？此操作不可撤销。",
+    delete: "删除",
+
+    // 错误消息
+    loadLocationsFailed: "加载地点列表失败:",
+    getLocationDetailFailed: "获取地点详情失败:",
+    submitFailed: "提交失败:",
+    operationFailed: "操作失败",
+    operationFailedRetry: "操作失败，请重试",
+    deleteFailed: "删除失败:",
+    deleteFailedRetry: "删除失败，请重试",
+  },
+
+  // ─── UI 组件 ──────────────────────────────────────────────────────────────
+  ui: {
+    // 图片上传组件
+    upload: {
+      hint: "点击上传图片",
+      uploading: "上传中...",
+      maxSize: "最大 {size}MB",
+      invalidType: "不支持的文件格式",
+      fileTooLarge: "文件太大，最大 {size}MB",
+      uploadFailed: "上传失败",
+      preview: "预览",
+      maxImagesReached: "最多只能上传 {max} 张图片",
+      supportedFormats: "仅支持 JPG、PNG、GIF、WebP 格式",
+      fileSizeExceeded: "文件 {name} 超过 {size}MB",
+      addImage: "添加图片",
+      uploadedCount: "已上传 {current}/{max} 张",
+      dragToSort: "拖拽可排序，最大 {size}MB/张",
+      imageAlt: "图片 {index}",
+    },
+    // 要求选择器
+    requirementSelector: {
+      presetLabel: "常用标签（点击快速添加）",
+      customLabel: "或自定义添加",
+      placeholder: "输入其他要求...",
+      selectedLabel: "已选择",
+    },
   },
 
   // ─── 枚举标签（与数据库枚举值一一对应）──────────────────────────────────
@@ -647,6 +956,11 @@ export const copy = {
       intermediate: "破风者",
       advanced: "巅峰行者",
       expert: "传奇徒步家",
+    },
+    gender: {
+      male: "男",
+      female: "女",
+      other: "其他",
     },
   },
 } as const;

@@ -92,7 +92,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
       if (response.ok && result.success) {
         onMemberRemoved?.();
       } else {
-        alert(result.error || "批准退出申请失败");
+        alert(result.error || copy.teams.approveLeaveFailed);
       }
     } catch (error) {
       console.error("Approve leave error:", error);
@@ -118,7 +118,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
       if (response.ok && result.success) {
         onMemberRemoved?.();
       } else {
-        alert(result.error || "拒绝退出申请失败");
+        alert(result.error || copy.teams.rejectLeaveFailed);
       }
     } catch (error) {
       console.error("Reject leave error:", error);
@@ -146,7 +146,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
               <LogOut className="h-5 w-5" />
               {copy.teams.leaveRequestTitle}
               <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-800">
-                {leavePendingMembers.length} 人
+                {leavePendingMembers.length} {copy.common.person}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -185,7 +185,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">
-                            申请退出
+                            {copy.teams.requestingLeaveBadge}
                           </Badge>
                         </div>
                       </div>
@@ -211,7 +211,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                             <AlertDialogHeader>
                               <AlertDialogTitle>{copy.teams.approveLeave}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                确定批准 {member.name} 的退出申请？批准后该成员将退出队伍。
+                                {copy.teams.approveLeaveDesc.replace("{name}", member.name)}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -244,7 +244,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                             <AlertDialogHeader>
                               <AlertDialogTitle>{copy.teams.rejectLeaveRequest}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                确定拒绝 {member.name} 的退出申请？拒绝后该成员将继续留在队伍中。
+                                {copy.teams.rejectLeaveDesc.replace("{name}", member.name)}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -273,9 +273,9 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Users className="h-5 w-5" />
-            队伍成员
+            {copy.teams.teamMembersTitle}
             <Badge variant="secondary" className="ml-2">
-              {approvedMembers.length} 人
+              {approvedMembers.length} {copy.common.person}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -376,7 +376,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                         <AlertDialogHeader>
                           <AlertDialogTitle>{copy.teams.removeMemberConfirm}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            {member.name} 将被移出队伍，移除后该成员需要重新申请才能加入。
+                            {copy.teams.removeMemberDesc.replace("{name}", member.name)}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

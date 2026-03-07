@@ -6,12 +6,15 @@ import { eq } from "drizzle-orm";
 import * as schema from "@/db/schema";
 import Link from "next/link";
 import { Mountain, MapPin, Users, Settings } from "lucide-react";
+import { copy } from "@/lib/copy";
+
+const a = copy.admin;
 
 const navItems = [
-  { href: "/admin/locations", label: "地点管理", icon: MapPin },
+  { href: "/admin/locations", label: a.navLocations, icon: MapPin },
   // 未来可扩展其他管理模块
-  // { href: "/admin/users", label: "用户管理", icon: Users },
-  // { href: "/admin/settings", label: "系统设置", icon: Settings },
+  // { href: "/admin/users", label: a.navUsers, icon: Users },
+  // { href: "/admin/settings", label: a.navSettings, icon: Settings },
 ];
 
 export default async function AdminLayout({
@@ -63,7 +66,7 @@ export default async function AdminLayout({
           <Link href="/" className="flex items-center gap-2">
             <Mountain className="h-6 w-6 text-stone-800" />
             <span className="text-lg font-bold text-stone-800">GoMate</span>
-            <span className="text-xs bg-stone-800 text-white px-2 py-0.5 rounded">管理后台</span>
+            <span className="text-xs bg-stone-800 text-white px-2 py-0.5 rounded">{a.adminBadge}</span>
           </Link>
         </div>
         <nav className="p-4">
@@ -89,7 +92,7 @@ export default async function AdminLayout({
             href="/"
             className="block text-center text-sm text-stone-500 hover:text-stone-700 transition-colors"
           >
-            返回前台
+            {a.backToFrontend}
           </Link>
         </div>
       </aside>

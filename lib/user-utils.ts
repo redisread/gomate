@@ -4,6 +4,9 @@
  */
 
 import type { User } from "@/db/schema";
+import { copy } from "./copy";
+
+const e = copy.enums;
 
 /**
  * 获取用户展示名称（优先使用 nickname，回退到 name）
@@ -18,13 +21,13 @@ export function getUserDisplayName(user: Pick<User, "nickname" | "name">): strin
 export function getGenderText(gender: string | null): string {
   switch (gender) {
     case "male":
-      return "男";
+      return e.gender.male;
     case "female":
-      return "女";
+      return e.gender.female;
     case "other":
-      return "其他";
+      return e.gender.other;
     default:
-      return "未设置";
+      return copy.common.unknown;
   }
 }
 
@@ -54,5 +57,5 @@ export function calculateAge(birthday: string | null | undefined): number | null
  */
 export function getAgeText(birthday: string | null | undefined): string {
   const age = calculateAge(birthday);
-  return age !== null ? `${age}岁` : "";
+  return age !== null ? `${age}${copy.profile.ageSuffix}` : "";
 }

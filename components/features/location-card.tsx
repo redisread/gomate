@@ -11,6 +11,7 @@ import { Tag } from "@/app/components/ui/tag";
 import type { Location } from "@/lib/types";
 import { useTeams } from "@/lib/teams-context";
 import { cn } from "@/lib/utils";
+import { copy } from "@/lib/copy";
 
 interface LocationCardProps {
   location: Location;
@@ -66,7 +67,7 @@ function LocationCard({
                   {openTeams > 0 && (
                     <div className="flex items-center gap-1 text-sm text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                       <Users className="h-3.5 w-3.5" />
-                      {openTeams}个队伍
+                      {openTeams}{copy.teams.teamCountSuffix}
                     </div>
                   )}
                 </div>
@@ -178,7 +179,7 @@ function LocationCard({
             {openTeams > 0 && (
               <div className="absolute top-4 right-4 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-medium text-stone-800">
                 <Users className="h-3.5 w-3.5 text-emerald-600" />
-                {openTeams}个队伍可加入
+                {openTeams}{copy.teams.openTeamCountSuffix}
               </div>
             )}
 

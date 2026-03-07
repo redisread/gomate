@@ -170,6 +170,103 @@ const entityTagAssociations = [
   { entityType: "route", entitySlug: "西山索道上山徒步线", tagName: "入门级" },
   { entityType: "route", entitySlug: "西山索道上山徒步线", tagName: "亲子友好" },
   { entityType: "route", entitySlug: "西山索道上山徒步线", tagName: "适合拍照" },
+
+  // ==================== 新增城市地点标签 ====================
+
+  // 昆明城市标签
+  { entityType: "location", entitySlug: "kunming-city", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "kunming-city", tagName: "古村" },
+  { entityType: "location", entitySlug: "kunming-city", tagName: "亲子" },
+
+  // 长沙城市标签
+  { entityType: "location", entitySlug: "changsha-city", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "changsha-city", tagName: "山峰" },
+  { entityType: "location", entitySlug: "changsha-city", tagName: "亲子" },
+
+  // 香港城市标签
+  { entityType: "location", entitySlug: "hongkong-city", tagName: "海岸线" },
+  { entityType: "location", entitySlug: "hongkong-city", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "hongkong-city", tagName: "亲子" },
+
+  // 深圳城市标签
+  { entityType: "location", entitySlug: "shenzhen-city", tagName: "海岸线" },
+  { entityType: "location", entitySlug: "shenzhen-city", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "shenzhen-city", tagName: "亲子" },
+
+  // 成都城市标签
+  { entityType: "location", entitySlug: "chengdu-city", tagName: "古村" },
+  { entityType: "location", entitySlug: "chengdu-city", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "chengdu-city", tagName: "亲子" },
+
+  // 壹方天地标签
+  { entityType: "location", entitySlug: "yifang-tiandi", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "yifang-tiandi", tagName: "亲子" },
+  { entityType: "location", entitySlug: "yifang-tiandi", tagName: "团建" },
+
+  // Kuddo Coffee 标签
+  { entityType: "location", entitySlug: "kuddo-coffee", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "kuddo-coffee", tagName: "亲子" },
+  { entityType: "location", entitySlug: "kuddo-coffee", tagName: "团建" },
+
+  // ==================== 云南三城标签 ====================
+
+  // 大理标签
+  { entityType: "location", entitySlug: "dali-old-town", tagName: "古村" },
+  { entityType: "location", entitySlug: "dali-old-town", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "dali-old-town", tagName: "亲子" },
+  { entityType: "location", entitySlug: "erhai-lake", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "erhai-lake", tagName: "日出" },
+  { entityType: "location", entitySlug: "erhai-lake", tagName: "日落" },
+  { entityType: "location", entitySlug: "cangshan-mountain", tagName: "山峰" },
+  { entityType: "location", entitySlug: "cangshan-mountain", tagName: "适合拍照" },
+
+  // 丽江标签
+  { entityType: "location", entitySlug: "lijiang-old-town", tagName: "古村" },
+  { entityType: "location", entitySlug: "lijiang-old-town", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "lijiang-old-town", tagName: "亲子" },
+  { entityType: "location", entitySlug: "yulong-snow-mountain", tagName: "山峰" },
+  { entityType: "location", entitySlug: "yulong-snow-mountain", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "yulong-snow-mountain", tagName: "摄影" },
+  { entityType: "location", entitySlug: "lugu-lake", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "lugu-lake", tagName: "日出" },
+  { entityType: "location", entitySlug: "lugu-lake", tagName: "露营" },
+
+  // 西双版纳标签
+  { entityType: "location", entitySlug: "jinghong-city", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "jinghong-city", tagName: "亲子" },
+  { entityType: "location", entitySlug: "xtbg", tagName: "森林" },
+  { entityType: "location", entitySlug: "xtbg", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "xtbg", tagName: "亲子" },
+  { entityType: "location", entitySlug: "wild-elephant-valley", tagName: "森林" },
+  { entityType: "location", entitySlug: "wild-elephant-valley", tagName: "亲子" },
+  { entityType: "location", entitySlug: "wild-elephant-valley", tagName: "观鸟" },
+
+  // ==================== 广西三城标签 ====================
+
+  // 桂林标签
+  { entityType: "location", entitySlug: "guilin-city", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "guilin-city", tagName: "亲子" },
+  { entityType: "location", entitySlug: "guilin-city", tagName: "古村" },
+  { entityType: "location", entitySlug: "yangshuo-west-street", tagName: "古村" },
+  { entityType: "location", entitySlug: "yangshuo-west-street", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "yangshuo-west-street", tagName: "亲子" },
+  { entityType: "location", entitySlug: "longji-terraces", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "longji-terraces", tagName: "日出" },
+  { entityType: "location", entitySlug: "longji-terraces", tagName: "摄影" },
+
+  // 漓江标签
+  { entityType: "location", entitySlug: "lijiang-river", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "lijiang-river", tagName: "摄影" },
+  { entityType: "location", entitySlug: "lijiang-river", tagName: "日出" },
+  { entityType: "location", entitySlug: "xingping-old-town", tagName: "古村" },
+  { entityType: "location", entitySlug: "xingping-old-town", tagName: "适合拍照" },
+
+  // 柳州标签
+  { entityType: "location", entitySlug: "liuzhou-city", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "liuzhou-city", tagName: "亲子" },
+  { entityType: "location", entitySlug: "chengyang-bazhai", tagName: "古村" },
+  { entityType: "location", entitySlug: "chengyang-bazhai", tagName: "适合拍照" },
+  { entityType: "location", entitySlug: "chengyang-bazhai", tagName: "亲子" },
 ];
 
 /**

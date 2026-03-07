@@ -1,8 +1,11 @@
 "use client";
 
+"use client";
+
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { difficultyLabels } from "@/lib/constants";
+import { copy } from "@/lib/copy";
 import type { Difficulty } from "@/db/schema";
 
 interface DifficultyBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -24,7 +27,7 @@ function DifficultyBadge({
 }: DifficultyBadgeProps) {
   // 防御性编程：如果 difficulty 未定义，使用默认值
   const difficultyInfo = difficultyLabels[difficulty] || {
-    label: difficulty || "未知",
+    label: difficulty || copy.common.unknown,
     color: "bg-gray-100 text-gray-700"
   };
   const { label, color } = difficultyInfo;

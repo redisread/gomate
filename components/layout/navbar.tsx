@@ -8,16 +8,17 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { useMobileMenu } from "@/lib/mobile-menu-context";
+import { copy } from "@/lib/copy";
 
 interface NavbarProps {
   className?: string;
 }
 
 const navLinks = [
-  { href: "/", label: "首页" },
-  { href: "#locations", label: "探索地点" },
-  { href: "#teams", label: "找队伍" },
-  { href: "#about", label: "关于我们" },
+  { href: "/", label: copy.nav.home },
+  { href: "#locations", label: copy.nav.locations },
+  { href: "#teams", label: copy.nav.teams },
+  { href: "#about", label: copy.nav.about },
 ];
 
 function Navbar({ className }: NavbarProps) {
@@ -82,18 +83,18 @@ function Navbar({ className }: NavbarProps) {
                 <Link href="/admin/locations">
                   <Button variant="ghost" size="sm" className="text-stone-600">
                     <Settings className="h-4 w-4 mr-1" />
-                    管理后台
+                    {copy.nav.admin}
                   </Button>
                 </Link>
               )}
               <Button variant="ghost" size="sm" className="text-stone-600">
-                登录
+                {copy.nav.login}
               </Button>
               <Button
                 size="sm"
                 className="bg-stone-800 hover:bg-stone-700 text-white"
               >
-                开始探索
+                {copy.nav.explore}
               </Button>
             </div>
 
@@ -162,16 +163,16 @@ function Navbar({ className }: NavbarProps) {
                 <Link href="/admin/locations" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button variant="outline" className="w-full justify-center">
                     <Settings className="h-4 w-4 mr-2" />
-                    管理后台
+                    {copy.nav.admin}
                   </Button>
                 </Link>
               )}
               <Button variant="outline" className="w-full justify-center">
                 <User className="h-4 w-4 mr-2" />
-                登录
+                {copy.nav.login}
               </Button>
               <Button className="w-full justify-center bg-stone-800 hover:bg-stone-700">
-                开始探索
+                {copy.nav.explore}
               </Button>
             </div>
           </div>

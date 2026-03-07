@@ -7,6 +7,7 @@ import { MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { DifficultyBadge } from "@/app/components/ui/difficulty-badge";
 import type { Location } from "@/lib/types";
+import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 
 interface LocationHeaderProps {
@@ -106,7 +107,7 @@ function LocationHeader({ location, className }: LocationHeaderProps) {
             className="flex items-center gap-1 px-3 py-2 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-stone-700 hover:bg-white transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
-            返回
+            {copy.common.back}
           </Link>
         </div>
         {/* Image with drag and animation */}
@@ -154,7 +155,7 @@ function LocationHeader({ location, className }: LocationHeaderProps) {
                 currentImageIndex === 0 && "opacity-50 cursor-not-allowed hover:scale-100"
               )}
               disabled={currentImageIndex === 0}
-              aria-label="上一张图片"
+              aria-label={copy.locations.prevImage}
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
@@ -171,7 +172,7 @@ function LocationHeader({ location, className }: LocationHeaderProps) {
                 currentImageIndex === allImages.length - 1 && "opacity-50 cursor-not-allowed hover:scale-100"
               )}
               disabled={currentImageIndex === allImages.length - 1}
-              aria-label="下一张图片"
+              aria-label={copy.locations.nextImage}
             >
               <ChevronRight className="h-6 w-6" />
             </button>

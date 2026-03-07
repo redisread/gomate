@@ -148,6 +148,66 @@ sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite "SELECT * FROM
   - `TeamMemberRole`: "leader" | "member"
   - `TeamMemberStatus`: "pending" | "approved" | "rejected"
 
+## 中文文案管理规范
+
+### copy.ts 架构
+
+所有用户可见的中文字符串统一在 `lib/copy.ts` 中管理，作为 Single Source of Truth。
+
+**文件结构：**
+- 按功能域（feature）组织，最多 2 层嵌套（如 `copy.nav.home`）
+- 枚举文案统一放在 `copy.enums`，与数据库枚举值一一对应
+- 导出时使用 `as const` 确保类型推断精确
+
+**主要章节：**
+```typescript
+copy.common      // 通用文案（加载中、返回、保存等）
+copy.nav         // 导航栏
+copy.auth        // 认证相关（登录、注册、重置密码）
+copy.locations   // 地点相关
+copy.teams       // 队伍相关
+copy.myTeams     // 我的队伍页
+copy.filter      // 筛选面板
+copy.contact     // 联系我们
+copy.email       // 邮件模板
+copy.errors      // 错误消息
+copy.success     // 成功消息
+copy.api         // API 错误
+copy.share       // 分享功能
+copy.admin       // 管理后台
+copy.ui          // UI 组件文案
+copy.enums       // 枚举值映射（与数据库枚举对应）
+```
+
+### 使用规范
+
+**1. 基本使用**
+```typescript
+import { copy } from "@/lib/copy";
+
+// 直接引用
+<button>{copy.auth.loginBtn}</button>
+
+// 动态文案使用模板字符串
+<span>{`共 ${count} ${copy.teams.teamCountSuffix}`}</span>
+// 或使用 replace
+copy.teams.openTeamsSubtitle.replace("{count}", String(count))
+```
+
+**2. 添加新文案**
+- 在对应功能域下添加，保持层级不超过 2 层
+- 键名使用 camelCase，语义化命名
+- 避免重复：先搜索是否已有相同/类似文案
+
+**3. 枚举文案**
+- 所有枚举值的显示文案必须放在 `copy.enums` 下
+- 与数据库 schema.ts 中的枚举定义保持一致
+
+**4. 禁止事项**
+- 禁止在组件中直接写硬编码中文字符串
+- 禁止在 copy.ts 中使用 JSX
+- 禁止超过 2 层嵌套
+
 ## Git 提交规范
 
 ```

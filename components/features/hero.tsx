@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { copy } from "@/lib/copy";
+
+const h = copy.hero;
 
 function Hero() {
   return (
@@ -26,7 +29,7 @@ function Hero() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-100 text-stone-600 text-sm font-medium mb-8"
           >
             <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
-            探索自然 · 连接伙伴
+            {h.badge}
           </motion.div>
 
           {/* Title */}
@@ -36,9 +39,9 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl sm:text-5xl lg:text-7xl font-bold text-stone-900 tracking-tight mb-6"
           >
-            发现趣处
+            {h.titleLine1}
             <br />
-            <span className="text-stone-500">组队同行</span>
+            <span className="text-stone-500">{h.titleLine2}</span>
           </motion.h1>
 
           {/* Description */}
@@ -48,7 +51,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg sm:text-xl text-stone-600 mb-10 max-w-2xl mx-auto leading-relaxed"
           >
-            极简「地点组队」平台，找到同行的人，出发就不远。
+            {h.description}
           </motion.p>
 
           {/* CTA Buttons */}
@@ -64,7 +67,7 @@ function Hero() {
               asChild
             >
               <Link href="#locations">
-                探索地点
+                {h.exploreBtn}
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
@@ -75,7 +78,7 @@ function Hero() {
               asChild
             >
               <Link href="#teams">
-                找队伍
+                {h.findTeamBtn}
               </Link>
             </Button>
           </motion.div>

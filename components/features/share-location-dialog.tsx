@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
 import type { Location } from "@/lib/types";
-import { copy as copyText } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 
 interface ShareLocationDialogProps {
@@ -37,12 +37,12 @@ function ShareLocationDialog({
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      showToast(copyText.share.linkCopied);
+      showToast(copy.share.linkCopied);
     } catch {
       // 降级方案：选中输入框内容
       inputRef.current?.select();
       document.execCommand("copy");
-      showToast(copyText.share.linkCopied);
+      showToast(copy.share.linkCopied);
     }
   };
 
@@ -52,7 +52,7 @@ function ShareLocationDialog({
       try {
         await navigator.share({
           title: `${location.name} - GoMate`,
-          text: `${copyText.share.locationInviteText}：${location.name}`,
+          text: `${copy.share.locationInviteText}：${location.name}`,
           url: shareUrl,
         });
       } catch {
@@ -124,7 +124,7 @@ function ShareLocationDialog({
         {/* 头部 */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200">
           <h2 className="text-lg font-semibold text-stone-900">
-            {copyText.share.locationTitle}
+            {copy.share.locationTitle}
           </h2>
           <button
             onClick={() => onOpenChange(false)}
@@ -139,7 +139,7 @@ function ShareLocationDialog({
           {/* 地点信息 */}
           <div className="space-y-1">
             <p className="font-medium text-stone-900">{location.name}</p>
-            <p className="text-sm text-stone-500">{location.address || '暂无地址信息'}</p>
+            <p className="text-sm text-stone-500">{location.address || copy.share.noAddress}</p>
           </div>
 
           {/* 标签页切换 */}
@@ -147,18 +147,18 @@ function ShareLocationDialog({
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="link" className="gap-1.5">
                 <Link2 className="h-4 w-4" />
-                链接
+                {copy.share.tabLink}
               </TabsTrigger>
               <TabsTrigger value="qrcode" className="gap-1.5">
                 <QrCode className="h-4 w-4" />
-                二维码
+                {copy.share.tabQRCode}
               </TabsTrigger>
             </TabsList>
 
             {/* 链接分享 */}
             <TabsContent value="link" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <label className="text-sm text-stone-600">分享链接</label>
+                <label className="text-sm text-stone-600">{copy.share.shareLinkLabel}</label>
                 <div className="flex gap-2">
                   <Input
                     ref={inputRef}
@@ -177,12 +177,12 @@ function ShareLocationDialog({
               <div className="flex gap-2">
                 <Button onClick={handleCopyLink} className="flex-1">
                   <Copy className="h-4 w-4 mr-2" />
-                  {copyText.share.copyLink}
+                  {copy.share.copyLink}
                 </Button>
                 {canNativeShare && (
                   <Button onClick={handleNativeShare} variant="outline" className="flex-1">
                     <Share2 className="h-4 w-4 mr-2" />
-                    {copyText.share.shareVia}
+                    {copy.share.shareVia}
                   </Button>
                 )}
               </div>
@@ -205,7 +205,7 @@ function ShareLocationDialog({
                 </div>
               </div>
               <p className="text-sm text-stone-500 text-center">
-                扫描二维码查看地点详情
+                {copy.share.scanToViewLocation}
               </p>
               <Button
                 onClick={handleDownloadQRCode}
@@ -213,7 +213,7 @@ function ShareLocationDialog({
                 className="w-full"
               >
                 <Download className="h-4 w-4 mr-2" />
-                下载二维码
+                {copy.share.downloadQRCode}
               </Button>
             </TabsContent>
           </Tabs>

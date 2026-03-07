@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Team } from "@/lib/types";
 import { leaderLevelLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { copy } from "@/lib/copy";
 
 interface TeamListProps {
   teams: Team[];
@@ -38,14 +39,14 @@ function TeamList({ teams, className }: TeamListProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-stone-900">可加入的队伍</h2>
+          <h2 className="text-xl font-semibold text-stone-900">{copy.teams.openTeamsTitle}</h2>
           <p className="text-sm text-stone-500 mt-1">
-            共有 {openTeams.length} 个队伍正在招募
+            {copy.teams.openTeamsSubtitle.replace("{count}", String(openTeams.length))}
           </p>
         </div>
         <Button className="bg-stone-900 hover:bg-stone-800">
           <Plus className="h-4 w-4 mr-2" />
-          发布队伍
+          {copy.teams.createBtn}
         </Button>
       </div>
 
@@ -101,7 +102,7 @@ function TeamList({ teams, className }: TeamListProps) {
                                 : "text-emerald-600"
                             )}
                           >
-                            {team.currentMembers}/{team.maxMembers}人
+                            {team.currentMembers}/{team.maxMembers}{copy.teams.personCountSuffix}
                           </span>
                         </span>
                       </div>
@@ -121,7 +122,7 @@ function TeamList({ teams, className }: TeamListProps) {
 
                       {/* Leader Info */}
                       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100">
-                        <span className="text-sm text-stone-500">领队:</span>
+                        <span className="text-sm text-stone-500">{copy.teams.leaderLabel}</span>
                         <span className="text-sm font-medium text-stone-700">
                           {team.leader.name}
                         </span>
@@ -132,7 +133,7 @@ function TeamList({ teams, className }: TeamListProps) {
                           {leaderLevelLabels[team.leader.level]}
                         </Badge>
                         <span className="text-xs text-stone-400">
-                          {team.leader.completedHikes}次带队
+                          {team.leader.completedHikes}{copy.teams.leaderTripCountSuffix}
                         </span>
                       </div>
                     </div>
@@ -147,7 +148,7 @@ function TeamList({ teams, className }: TeamListProps) {
       {/* Full Teams */}
       {fullTeams.length > 0 && (
         <div className="pt-4 border-t border-stone-200">
-          <h3 className="text-sm font-medium text-stone-500 mb-4">已满员</h3>
+          <h3 className="text-sm font-medium text-stone-500 mb-4">{copy.teams.fullTeamsTitle}</h3>
           <div className="space-y-3 opacity-60">
             {fullTeams.map((team) => (
               <Card
@@ -166,7 +167,7 @@ function TeamList({ teams, className }: TeamListProps) {
                           {team.title}
                         </h4>
                         <p className="text-xs text-stone-500">
-                          {team.date} · {team.currentMembers}/{team.maxMembers}人
+                          {team.date} · {team.currentMembers}/{team.maxMembers}{copy.teams.personCountSuffix}
                         </p>
                       </div>
                     </div>
@@ -174,7 +175,7 @@ function TeamList({ teams, className }: TeamListProps) {
                       variant="secondary"
                       className="bg-stone-200 text-stone-500"
                     >
-                      已满员
+                      {copy.teams.statusFull}
                     </Badge>
                   </div>
                 </CardContent>
@@ -192,14 +193,14 @@ function TeamList({ teams, className }: TeamListProps) {
               <Users className="h-8 w-8 text-stone-400" />
             </div>
             <h3 className="text-lg font-medium text-stone-900 mb-2">
-              暂无招募中的队伍
+              {copy.teams.emptyOpenTeamsTitle}
             </h3>
             <p className="text-sm text-stone-500 mb-4">
-              成为第一个发布队伍的人，开启你的户外之旅
+              {copy.teams.emptyOpenTeamsDesc}
             </p>
             <Button className="bg-stone-900 hover:bg-stone-800">
               <Plus className="h-4 w-4 mr-2" />
-              发布队伍
+              {copy.teams.createBtn}
             </Button>
           </CardContent>
         </Card>

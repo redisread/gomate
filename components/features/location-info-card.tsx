@@ -18,6 +18,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tag } from "@/app/components/ui/tag";
 import type { Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { copy } from "@/lib/copy";
+
+const loc = copy.locations;
 
 interface LocationInfoCardProps {
   location: Location;
@@ -28,32 +31,32 @@ function LocationInfoCard({ location, className }: LocationInfoCardProps) {
   const infoItems = [
     {
       icon: Clock,
-      label: "预计用时",
+      label: loc.estimatedTime,
       value: location.duration,
     },
     {
       icon: Route,
-      label: "路线长度",
+      label: loc.routeLength,
       value: location.distance,
     },
     {
       icon: Mountain,
-      label: "累计爬升",
+      label: loc.totalElevation,
       value: location.elevation,
     },
     {
       icon: Calendar,
-      label: "最佳季节",
+      label: loc.bestSeason,
       value: location.bestSeason.join("、"),
     },
   ];
 
   const facilitiesData = location.extra?.facilities || [];
   const facilityConfig = [
-    { key: "parking", icon: Car, label: "停车场" },
-    { key: "restroom", icon: Toilet, label: "洗手间" },
-    { key: "water", icon: Droplets, label: "补给点" },
-    { key: "food", icon: UtensilsCrossed, label: "餐饮" },
+    { key: "parking", icon: Car, label: loc.facilityParking },
+    { key: "restroom", icon: Toilet, label: loc.facilityRestroom },
+    { key: "water", icon: Droplets, label: loc.facilityWater },
+    { key: "food", icon: UtensilsCrossed, label: loc.facilityFood },
   ];
   const facilities = facilityConfig.map(config => ({
     ...config,
@@ -69,7 +72,7 @@ function LocationInfoCard({ location, className }: LocationInfoCardProps) {
       <Card className={cn("border-stone-200", className)}>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold text-stone-900">
-            路线信息
+            {loc.routeInfo}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -92,7 +95,7 @@ function LocationInfoCard({ location, className }: LocationInfoCardProps) {
 
           {/* Tags */}
           <div>
-            <p className="text-xs text-stone-500 mb-2">路线标签</p>
+            <p className="text-xs text-stone-500 mb-2">{loc.routeTags}</p>
             <div className="flex flex-wrap gap-2">
               {location.tags.map((tag) => (
                 <Tag key={tag} variant="subtle" color="default" size="sm">
@@ -104,7 +107,7 @@ function LocationInfoCard({ location, className }: LocationInfoCardProps) {
 
           {/* Facilities */}
           <div>
-            <p className="text-xs text-stone-500 mb-3">配套设施</p>
+            <p className="text-xs text-stone-500 mb-3">{loc.facilities}</p>
             <div className="grid grid-cols-4 gap-2">
               {facilities.map((facility) => (
                 <div

@@ -12,15 +12,19 @@ const XIcon = ({ className }: { className?: string }) => (
 );
 
 import { motion } from "framer-motion";
+import { copy } from "@/lib/copy";
+
+const f = copy.footer;
+const n = copy.nav;
 
 const footerLinks = {
   product: [
-    { label: "探索地点", href: "#locations" },
-    { label: "找队伍", href: "#teams" },
+    { label: n.locations, href: "#locations" },
+    { label: n.teams, href: "#teams" },
   ],
   about: [
-    { label: "关于我们", href: "/about" },
-    { label: "联系我们", href: "/contact" },
+    { label: n.about, href: "/about" },
+    { label: copy.contact.pageTitle, href: "/contact" },
   ],
 };
 
@@ -41,7 +45,7 @@ function Footer() {
               <span className="text-lg font-bold text-stone-100">GoMate</span>
             </Link>
             <p className="text-sm text-stone-400 mb-6">
-              极简「地点组队」平台，让每一次户外探索都有志同道合的伙伴同行。
+              {f.tagline}
             </p>
             <div className="flex gap-4">
               {socialLinks.map((social) => (
@@ -62,7 +66,7 @@ function Footer() {
           {/* Links - Right side */}
           <div className="flex gap-16 lg:gap-24">
             <div>
-              <h3 className="text-sm font-semibold text-stone-100 mb-4">产品</h3>
+              <h3 className="text-sm font-semibold text-stone-100 mb-4">{f.product}</h3>
               <ul className="space-y-3">
                 {footerLinks.product.map((link) => (
                   <li key={link.label}>
@@ -77,7 +81,7 @@ function Footer() {
               </ul>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-stone-100 mb-4">关于</h3>
+              <h3 className="text-sm font-semibold text-stone-100 mb-4">{f.about}</h3>
               <ul className="space-y-3">
                 {footerLinks.about.map((link) => (
                   <li key={link.label}>
@@ -97,20 +101,20 @@ function Footer() {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-stone-800 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-stone-500">
-            &copy; {new Date().getFullYear()} · GoMate 版权所有
+            &copy; {new Date().getFullYear()} · {f.copyright}
           </p>
           <div className="flex gap-6">
             <Link
               href="/privacy"
               className="text-sm text-stone-500 hover:text-stone-300 transition-colors"
             >
-              隐私政策
+              {f.privacy}
             </Link>
             <Link
               href="/terms"
               className="text-sm text-stone-500 hover:text-stone-300 transition-colors"
             >
-              服务条款
+              {f.terms}
             </Link>
           </div>
         </div>

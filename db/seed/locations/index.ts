@@ -9,6 +9,19 @@ import { seedMaclehoseLocations } from "./maclehose";
 import { seedWugongshanLocations } from "./wugongshan";
 import { seedHengshanLocations } from "./hengshan";
 import { seedKunmingLocations } from "./kunming";
+import { seedKunmingCityLocations } from "./kunming-city";
+import { seedChangshaCityLocations } from "./changsha";
+import { seedHongkongCityLocations } from "./hongkong-city";
+import { seedShenzhenCityLocations } from "./shenzhen-city";
+import { seedChengduCityLocations } from "./chengdu-city";
+import { seedYifangTiandiLocations } from "./yifang-tiandi";
+import { seedKuddoCoffeeLocations } from "./kuddo-coffee";
+import { seedDaliLocations } from "./dali";
+import { seedLijiangLocations } from "./lijiang";
+import { seedXishuangbannaLocations } from "./xishuangbanna";
+import { seedGuilinLocations } from "./guilin";
+import { seedLijiangRiverLocations } from "./lijiang-river";
+import { seedLiuzhouLocations } from "./liuzhou";
 
 export interface LocationData {
   id: string;
@@ -44,6 +57,60 @@ export function seedLocations(db: Database, cities: CityData[]): LocationData[] 
   // 昆明西山
   const kunmingLocations = seedKunmingLocations(db, cities);
   allLocations.push(...kunmingLocations);
+
+  // 昆明城市
+  const kunmingCityLocations = seedKunmingCityLocations(db, cities);
+  allLocations.push(...kunmingCityLocations);
+
+  // 长沙城市
+  const changshaCityLocations = seedChangshaCityLocations(db, cities);
+  allLocations.push(...changshaCityLocations);
+
+  // 香港城市
+  const hongkongCityLocations = seedHongkongCityLocations(db, cities);
+  allLocations.push(...hongkongCityLocations);
+
+  // 深圳城市
+  const shenzhenCityLocations = seedShenzhenCityLocations(db, cities);
+  allLocations.push(...shenzhenCityLocations);
+
+  // 成都城市
+  const chengduCityLocations = seedChengduCityLocations(db, cities);
+  allLocations.push(...chengduCityLocations);
+
+  // 壹方天地
+  const yifangTiandiLocations = seedYifangTiandiLocations(db, cities);
+  allLocations.push(...yifangTiandiLocations);
+
+  // Kuddo Coffee
+  const kuddoCoffeeLocations = seedKuddoCoffeeLocations(db, cities);
+  allLocations.push(...kuddoCoffeeLocations);
+
+  // 云南三城
+  // 大理
+  const daliLocations = seedDaliLocations(db, cities);
+  allLocations.push(...daliLocations);
+
+  // 丽江
+  const lijiangLocations = seedLijiangLocations(db, cities);
+  allLocations.push(...lijiangLocations);
+
+  // 西双版纳
+  const xishuangbannaLocations = seedXishuangbannaLocations(db, cities);
+  allLocations.push(...xishuangbannaLocations);
+
+  // 广西三城
+  // 桂林
+  const guilinLocations = seedGuilinLocations(db, cities);
+  allLocations.push(...guilinLocations);
+
+  // 漓江
+  const lijiangRiverLocations = seedLijiangRiverLocations(db, cities);
+  allLocations.push(...lijiangRiverLocations);
+
+  // 柳州
+  const liuzhouLocations = seedLiuzhouLocations(db, cities);
+  allLocations.push(...liuzhouLocations);
 
   console.log(`✅ 地点数据插入完成，共 ${allLocations.length} 个地点\n`);
   return allLocations;

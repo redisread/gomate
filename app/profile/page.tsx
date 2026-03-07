@@ -30,14 +30,19 @@ import { useLocations } from "@/lib/locations-context";
 import type { Team } from "@/lib/types";
 import { getUserDisplayName, getAgeText, getGenderText } from "@/lib/user-utils";
 import { parseUserExtra } from "@/lib/user-extra";
+import { copy } from "@/lib/copy";
 
-// 经验等级映射
-const levelLabels: Record<string, { label: string; color: string; description: string }> = {
-  beginner: { label: "新芽", color: "bg-emerald-100 text-emerald-700", description: "刚开始徒步之旅" },
-  intermediate: { label: "破风者", color: "bg-blue-100 text-blue-700", description: "有一定徒步经验" },
-  advanced: { label: "巅峰行者", color: "bg-purple-100 text-purple-700", description: "经验丰富的徒步者" },
-  expert: { label: "传奇徒步家", color: "bg-amber-100 text-amber-700", description: "资深户外专家" },
+// 经验等级映射（颜色样式，文案从 copy.enums.level 获取）
+const levelStyles: Record<string, { color: string }> = {
+  beginner: { color: "bg-emerald-100 text-emerald-700" },
+  intermediate: { color: "bg-blue-100 text-blue-700" },
+  advanced: { color: "bg-purple-100 text-purple-700" },
+  expert: { color: "bg-amber-100 text-amber-700" },
 };
+
+const p = copy.profile;
+const c = copy.common;
+const e = copy.enums;
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -82,7 +87,7 @@ export default function ProfilePage() {
   if (isLoading || !user) {
     return (
       <main className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-pulse text-stone-400">加载中...</div>
+        <div className="animate-pulse text-stone-400">{c.loading}</div>
       </main>
     );
   }
@@ -90,7 +95,8 @@ export default function ProfilePage() {
   // 获取用户创建的队伍
   const createdTeams = teams.filter((t) => t.leader.id === user.id);
 
-  const levelInfo = levelLabels[user.level] || levelLabels.beginner;
+  const levelStyle = levelStyles[user.level] || levelStyles.beginner;
+  const levelLabel = e.level[user.level as keyof typeof e.level] || e.level.beginner;
 
   // 解析 extra 字段
   const userExtra = parseUserExtra(user.extra || null);
@@ -122,7 +128,7 @@ export default function ProfilePage() {
           >
             <Link href="/">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              返回首页
+              {c.backHome}
             </Link>
           </Button>
         </motion.div>
@@ -158,13 +164,13 @@ export default function ProfilePage() {
                       <Mail className="h-4 w-4" />
                       {user.email}
                     </p>
-                    {(ageText || genderText !== "未设置" || user.wechat) && (
+                    {(ageText || genderText !== c.unknown || user.wechat) && (
                       <p className="text-stone-500 flex items-center gap-2 mt-1 text-sm">
                         <User className="h-4 w-4" />
-                        {genderText !== "未设置" && genderText}
-                        {genderText !== "未设置" && ageText && " · "}
+                        {genderText !== c.unknown && genderText}
+                        {genderText !== c.unknown && ageText && " · "}
                         {ageText}
-                        {(genderText !== "未设置" || ageText) && user.wechat && " · "}
+                        {(genderText !== c.unknown || ageText) && user.wechat && " · "}
                         {user.wechat && (
                           <>
                             <MessageCircle className="h-3.5 w-3.5" />
@@ -178,25 +184,25 @@ export default function ProfilePage() {
                     <Button variant="outline" size="sm" asChild>
                       <Link href="/profile/edit">
                         <Edit3 className="h-4 w-4 mr-2" />
-                        编辑资料
+                        {p.editProfileBtn}
                       </Link>
                     </Button>
                     <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={logout}>
                       <LogOut className="h-4 w-4 mr-2" />
-                      退出
+                      {p.logoutBtn}
                     </Button>
                   </div>
                 </div>
 
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2 mt-4">
-                  <Badge className={levelInfo.color}>
+                  <Badge className={levelStyle.color}>
                     <Award className="h-3 w-3 mr-1" />
-                    {levelInfo.label}徒步者
+                    {levelLabel}{p.levelTitleSuffix}
                   </Badge>
                   <Badge variant="secondary" className="bg-stone-100">
                     <Mountain className="h-3 w-3 mr-1" />
-                    已完成 {user.completedHikes} 次徒步
+                    {c.person} {user.completedHikes} {p.hikesCompleted}
                   </Badge>
                 </div>
 
@@ -214,7 +220,7 @@ export default function ProfilePage() {
                       <div className="flex items-start gap-2 text-stone-600">
                         <Mountain className="h-4 w-4 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-medium">常用装备：</span>
+                          <span className="text-sm font-medium">{p.equipment}：</span>
                           <span className="text-sm">{userExtra.equipment.join("、")}</span>
                         </div>
                       </div>
@@ -223,7 +229,7 @@ export default function ProfilePage() {
                       <div className="flex items-start gap-2 text-stone-600">
                         <Award className="h-4 w-4 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-medium">徒步经验：</span>
+                          <span className="text-sm font-medium">{p.experience}：</span>
                           <span className="text-sm">{userExtra.experience}</span>
                         </div>
                       </div>
@@ -247,7 +253,7 @@ export default function ProfilePage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-stone-500 group-hover:text-stone-700">我创建的队伍</p>
+                    <p className="text-sm text-stone-500 group-hover:text-stone-700">{p.createdTeams}</p>
                     <p className="text-3xl font-bold text-stone-900 mt-1">{createdTeams.length}</p>
                   </div>
                   <div className="h-12 w-12 bg-stone-100 rounded-full flex items-center justify-center group-hover:bg-stone-200 transition-colors">
@@ -263,7 +269,7 @@ export default function ProfilePage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-stone-500 group-hover:text-stone-700">我加入的队伍</p>
+                    <p className="text-sm text-stone-500 group-hover:text-stone-700">{p.joinedTeams}</p>
                     <p className="text-3xl font-bold text-stone-900 mt-1">
                       {joinedTeamsLoading ? "-" : joinedTeams.length}
                     </p>
@@ -280,7 +286,7 @@ export default function ProfilePage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-stone-500">注册时间</p>
+                  <p className="text-sm text-stone-500">{p.registeredAt}</p>
                   <p className="text-lg font-bold text-stone-900 mt-1">
                     {new Date(user.createdAt).toLocaleDateString("zh-CN")}
                   </p>
@@ -301,12 +307,12 @@ export default function ProfilePage() {
         >
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-stone-900">最近创建的队伍</h2>
-              <p className="text-sm text-stone-500 mt-1">你作为领队创建的队伍</p>
+              <h2 className="text-xl font-bold text-stone-900">{p.recentTeams}</h2>
+              <p className="text-sm text-stone-500 mt-1">{p.createdTeamsDesc}</p>
             </div>
             <Button variant="outline" size="sm" asChild>
               <Link href="/my-teams">
-                查看全部
+                {c.viewAll}
               </Link>
             </Button>
           </div>
@@ -318,13 +324,13 @@ export default function ProfilePage() {
                   <Users className="h-8 w-8 text-stone-400" />
                 </div>
                 <h3 className="text-lg font-medium text-stone-900 mb-2">
-                  还没有队伍
+                  {p.noTeamsYet}
                 </h3>
                 <p className="text-sm text-stone-500 mb-4">
-                  创建或加入一个队伍，开始你的户外之旅
+                  {p.noTeamsTip}
                 </p>
                 <Button className="bg-stone-900 hover:bg-stone-800" asChild>
-                  <Link href="/teams/create">创建队伍</Link>
+                  <Link href="/teams/create">{p.createTeamBtn}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -350,11 +356,11 @@ export default function ProfilePage() {
                                     {team.title}
                                   </h3>
                                   <Badge variant="secondary" className="text-xs">
-                                    队长
+                                    {e.leaderLevel[user.level as keyof typeof e.leaderLevel] || e.leaderLevel.beginner}
                                   </Badge>
                                 </div>
                                 <p className="text-sm text-stone-500 mt-1">
-                                  {location?.name} · {team.date} · {team.currentMembers}/{team.maxMembers}人
+                                  {location?.name} · {team.date} · {team.currentMembers}/{team.maxMembers}{c.person}
                                 </p>
                               </div>
                             </div>
@@ -371,12 +377,12 @@ export default function ProfilePage() {
                 <div>
                   <div className="flex items-center justify-between mb-6 mt-8">
                     <div>
-                      <h2 className="text-xl font-bold text-stone-900">最近加入的队伍</h2>
-                      <p className="text-sm text-stone-500 mt-1">你作为成员参与的队伍</p>
+                      <h2 className="text-xl font-bold text-stone-900">{p.recentJoinedTeams}</h2>
+                      <p className="text-sm text-stone-500 mt-1">{p.joinedTeamsDesc}</p>
                     </div>
                     <Button variant="outline" size="sm" asChild>
                       <Link href="/my-teams?tab=joined">
-                        查看全部
+                        {c.viewAll}
                       </Link>
                     </Button>
                   </div>
@@ -398,11 +404,11 @@ export default function ProfilePage() {
                                       {team.title}
                                     </h3>
                                     <Badge variant="outline" className="text-xs">
-                                      成员
+                                      {p.member}
                                     </Badge>
                                   </div>
                                   <p className="text-sm text-stone-500 mt-1">
-                                    {location?.name} · {team.date} · {team.currentMembers}/{team.maxMembers}人
+                                    {location?.name} · {team.date} · {team.currentMembers}/{team.maxMembers}{c.person}
                                   </p>
                                 </div>
                               </div>

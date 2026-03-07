@@ -8,6 +8,7 @@ import {
   Text,
 } from "@react-email/components";
 import * as React from "react";
+import { copy } from "@/lib/copy";
 
 interface EmailLayoutProps {
   children: React.ReactNode;
@@ -30,7 +31,7 @@ export const EmailLayout: React.FC<EmailLayoutProps> = ({
           <Section style={content}>{children}</Section>
           <Section style={footer}>
             <Text style={footerText}>
-              此邮件由 GoMate 自动发送，请勿回复。
+              {copy.email.autoSendFooter}
             </Text>
             <Text style={footerText}>
               © {new Date().getFullYear()} GoMate. All rights reserved.

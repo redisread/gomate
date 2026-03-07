@@ -49,11 +49,11 @@ function ApplicantList({ teamId, initialApplications = [], onApprove, onReject }
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 60) {
-      return `${minutes}分钟前`;
+      return copy.myTeams.minutesAgoTemplate.replace("{count}", String(minutes));
     } else if (hours < 24) {
-      return `${hours}小时前`;
+      return copy.myTeams.hoursAgoTemplate.replace("{count}", String(hours));
     } else {
-      return `${days}天前`;
+      return copy.myTeams.daysAgoTemplate.replace("{count}", String(days));
     }
   };
 

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Upload, X, Loader2, ImageIcon, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { copy } from "@/lib/copy";
 
 interface MultiImageUploadProps {
   /** 当前图片 URL 数组 */
@@ -41,7 +42,7 @@ export function MultiImageUpload({
 
     // 检查数量限制
     if (value.length + files.length > maxImages) {
-      setError(`最多只能上传 ${maxImages} 张图片`);
+      setError(copy.ui.upload.maxImagesReached.replace("{max}", String(maxImages)));
       return;
     }
 
@@ -52,14 +53,14 @@ export function MultiImageUpload({
       // 验证文件类型
       const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
       if (!allowedTypes.includes(file.type)) {
-        setError("仅支持 JPG、PNG、GIF、WebP 格式");
+        setError(copy.ui.upload.supportedFormats);
         continue;
       }
 
       // 验证文件大小
       const maxBytes = maxSize * 1024 * 1024;
       if (file.size > maxBytes) {
-        setError(`文件 ${file.name} 超过 ${maxSize}MB`);
+        setError(copy.ui.upload.fileSizeExceeded.replace("{name}", file.name).replace("{size}", String(maxSize)));
         continue;
       }
 
@@ -77,7 +78,7 @@ export function MultiImageUpload({
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || "上传失败");
+          throw new Error(result.error || copy.ui.upload.uploadFailed);
         }
 
         // 添加新图片 URL
@@ -145,7 +146,7 @@ export function MultiImageUpload({
           >
             <img
               src={url}
-              alt={`图片 ${index + 1}`}
+              alt={copy.ui.upload.imageAlt.replace("{index}", String(index + 1))}
               className="w-full h-full object-cover"
             />
             {/* 拖拽手柄 */}
@@ -194,7 +195,7 @@ export function MultiImageUpload({
               className="hidden"
             />
             <Upload className="h-5 w-5 text-stone-400" />
-            <span className="mt-1 text-xs text-stone-400">添加图片</span>
+            <span className="mt-1 text-xs text-stone-400">{copy.ui.upload.addImage}</span>
           </label>
         )}
       </div>
@@ -202,10 +203,10 @@ export function MultiImageUpload({
       {/* 提示信息 */}
       <div className="flex items-center justify-between text-xs text-stone-500">
         <span>
-          已上传 {value.length}/{maxImages} 张
+          {copy.ui.upload.uploadedCount.replace("{current}", String(value.length)).replace("{max}", String(maxImages))}
         </span>
         <span>
-          拖拽可排序，最大 {maxSize}MB/张
+          {copy.ui.upload.dragToSort.replace("{size}", String(maxSize))}
         </span>
       </div>
 

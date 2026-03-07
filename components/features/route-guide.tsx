@@ -17,6 +17,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import type { Location } from "@/lib/types";
+import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 
 interface RouteGuideProps {
@@ -37,7 +38,7 @@ function RouteGuide({ location, className }: RouteGuideProps) {
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-stone-900 flex items-center gap-2">
             <Footprints className="h-5 w-5 text-stone-600" />
-            路线概览
+            {copy.locations.routeGuideOverview}
           </CardTitle>
           <CardDescription>{location.routeGuide.overview}</CardDescription>
         </CardHeader>
@@ -48,7 +49,7 @@ function RouteGuide({ location, className }: RouteGuideProps) {
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-stone-900 flex items-center gap-2">
             <MapPin className="h-5 w-5 text-stone-600" />
-            途经点
+            {copy.locations.waypoints}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -111,7 +112,7 @@ function RouteGuide({ location, className }: RouteGuideProps) {
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-stone-900 flex items-center gap-2">
             <Lightbulb className="h-5 w-5 text-amber-500" />
-            温馨提示
+            {copy.locations.tips}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -134,7 +135,7 @@ function RouteGuide({ location, className }: RouteGuideProps) {
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-red-800 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            安全须知
+            {copy.locations.safetyNotice}
           </CardTitle>
         </CardHeader>
         <CardContent>

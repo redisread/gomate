@@ -4,25 +4,26 @@ import * as React from "react";
 import Link from "next/link";
 import { Mountain, Instagram, Twitter, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { copy } from "@/lib/copy";
 
 const footerLinks = {
   product: [
-    { label: "探索地点", href: "#locations" },
-    { label: "找队伍", href: "#teams" },
-    { label: "路线攻略", href: "#guides" },
-    { label: "安全保障", href: "#safety" },
+    { label: copy.footer.productLocations, href: "#locations" },
+    { label: copy.footer.productTeams, href: "#teams" },
+    { label: copy.footer.productGuides, href: "#guides" },
+    { label: copy.footer.productSafety, href: "#safety" },
   ],
   company: [
-    { label: "关于我们", href: "#about" },
-    { label: "加入团队", href: "#careers" },
-    { label: "联系我们", href: "#contact" },
-    { label: "合作伙伴", href: "#partners" },
+    { label: copy.footer.companyAbout, href: "#about" },
+    { label: copy.footer.companyCareers, href: "#careers" },
+    { label: copy.footer.companyContact, href: "#contact" },
+    { label: copy.footer.companyPartners, href: "#partners" },
   ],
   support: [
-    { label: "帮助中心", href: "#help" },
-    { label: "安全指南", href: "#safety-guide" },
-    { label: "社区规范", href: "#guidelines" },
-    { label: "隐私政策", href: "#privacy" },
+    { label: copy.footer.supportHelp, href: "#help" },
+    { label: copy.footer.supportSafety, href: "#safety-guide" },
+    { label: copy.footer.supportGuidelines, href: "#guidelines" },
+    { label: copy.footer.supportPrivacy, href: "#privacy" },
   ],
 };
 
@@ -44,7 +45,7 @@ function Footer() {
               <span className="text-lg font-bold text-stone-100">GoMate</span>
             </Link>
             <p className="text-sm text-stone-400 mb-6 max-w-xs">
-              极简「地点组队」平台，让每一次户外探索都有志同道合的伙伴同行。
+              {copy.footer.tagline}
             </p>
             <div className="flex gap-4">
               {socialLinks.map((social) => (
@@ -64,7 +65,7 @@ function Footer() {
 
           {/* Product Links */}
           <div>
-            <h3 className="text-sm font-semibold text-stone-100 mb-4">产品</h3>
+            <h3 className="text-sm font-semibold text-stone-100 mb-4">{copy.footer.product}</h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.label}>
@@ -81,7 +82,7 @@ function Footer() {
 
           {/* Company Links */}
           <div>
-            <h3 className="text-sm font-semibold text-stone-100 mb-4">公司</h3>
+            <h3 className="text-sm font-semibold text-stone-100 mb-4">{copy.footer.company}</h3>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.label}>
@@ -98,7 +99,7 @@ function Footer() {
 
           {/* Support Links */}
           <div>
-            <h3 className="text-sm font-semibold text-stone-100 mb-4">支持</h3>
+            <h3 className="text-sm font-semibold text-stone-100 mb-4">{copy.footer.support}</h3>
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
@@ -124,13 +125,13 @@ function Footer() {
               href="#terms"
               className="text-sm text-stone-500 hover:text-stone-300 transition-colors"
             >
-              服务条款
+              {copy.footer.terms}
             </Link>
             <Link
               href="#privacy"
               className="text-sm text-stone-500 hover:text-stone-300 transition-colors"
             >
-              隐私政策
+              {copy.footer.privacy}
             </Link>
           </div>
         </div>

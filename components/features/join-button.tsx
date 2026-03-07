@@ -171,7 +171,7 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       disabled: false,
     },
     wechat_required: {
-      text: "请先填写微信号",
+      text: copy.teams.wechatRequiredBtn,
       icon: AlertCircle,
       variant: "outline" as const,
       className: "border-amber-500 text-amber-600",
@@ -329,7 +329,7 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       case "closed":
         return copy.errors.teamNotAccepting;
       case "cancelled":
-        return "活动已过期，队伍未组建成功";
+        return copy.teams.statusExpiredNotFormed;
       case "pending":
         return copy.teams.statusPending;
       case "approved":
@@ -339,7 +339,9 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       case "wechat_required":
         return copy.errors.wechatRequired;
       default:
-        return `已有 ${team.currentMembers} 人报名，还剩 ${team.maxMembers - team.currentMembers} 个名额`;
+        return copy.teams.registrationStatus
+          .replace("{current}", String(team.currentMembers))
+          .replace("{remaining}", String(team.maxMembers - team.currentMembers));
     }
   };
 
@@ -370,7 +372,7 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
           {isLeader ? (
             <div className="flex items-center gap-2 text-stone-600">
               <Shield className="h-5 w-5 text-amber-600" />
-              <span>你是队长</span>
+              <span>{copy.teams.youAreLeader}</span>
               {/* 组建队伍按钮 - 仅在 recruiting 或 full 状态显示 */}
               {(team.status === "recruiting" || team.status === "full") && (
                 <AlertDialog open={showFormTeamDialog} onOpenChange={setShowFormTeamDialog}>
@@ -388,7 +390,7 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
                       {team.status !== "full" && (
                         <AlertDialogDescription className="flex items-start gap-2 text-amber-600">
                           <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                          <span>当前 {team.currentMembers}/{team.maxMembers} 人，组建后队员退出需要队长审批</span>
+                          <span>{copy.common.current} {team.currentMembers}/{team.maxMembers} {copy.common.person}，{copy.teams.formTeamWarning}</span>
                         </AlertDialogDescription>
                       )}
                     </AlertDialogHeader>
@@ -410,7 +412,7 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
               )}
               <Link href={`/teams/${team.id}/edit`} className="ml-auto">
                 <Button variant="outline" size="sm">
-                  管理队伍
+                  {copy.teams.manageTeam}
                 </Button>
               </Link>
             </div>
@@ -424,7 +426,7 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
                 className="px-8 border-amber-500 text-amber-600 hover:bg-amber-50"
               >
                 <Link href="/profile/edit">
-                  去填写
+                  {copy.teams.fillWechatBtn}
                 </Link>
               </Button>
             ) : joinState === "pending" ? (

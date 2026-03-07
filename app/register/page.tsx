@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
+import { copy } from "@/lib/copy";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -27,6 +28,8 @@ export default function RegisterPage() {
   });
 
   // 如果已登录，重定向到首页
+  const t = copy.auth;
+  const c = copy.common;
   React.useEffect(() => {
     if (isAuthenticated) {
       router.push("/");
@@ -46,14 +49,14 @@ export default function RegisterPage() {
 
     // 验证密码
     if (formData.password !== formData.confirmPassword) {
-      setError("两次输入的密码不一致");
+      setError(t.passwordMismatch);
       setIsLoading(false);
       return;
     }
 
     // 验证用户名
     if (formData.name.length < 2) {
-      setError("昵称至少为2个字符");
+      setError(t.nicknameTooShort);
       setIsLoading(false);
       return;
     }
@@ -61,7 +64,7 @@ export default function RegisterPage() {
     const result = await register(formData.name, formData.email, formData.password);
 
     if (!result.success) {
-      setError(result.error || "注册失败");
+      setError(result.error || t.registerFailed);
       setIsLoading(false);
       return;
     }
@@ -84,8 +87,8 @@ export default function RegisterPage() {
           <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="h-8 w-8 text-emerald-600" />
           </div>
-          <h2 className="text-2xl font-bold text-stone-900 mb-2">注册成功！</h2>
-          <p className="text-stone-500">正在跳转到首页...</p>
+          <h2 className="text-2xl font-bold text-stone-900 mb-2">{t.registerSuccess}</h2>
+          <p className="text-stone-500">{t.registerSuccessRedirect}</p>
         </motion.div>
       </main>
     );
@@ -100,7 +103,7 @@ export default function RegisterPage() {
           className="inline-flex items-center text-stone-600 hover:text-stone-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          返回首页
+          {c.backHome}
         </Link>
       </div>
 
@@ -115,22 +118,22 @@ export default function RegisterPage() {
           <Card className="border-stone-200">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold text-stone-900">
-                创建账号
+                {t.registerTitle}
               </CardTitle>
               <p className="text-sm text-stone-500 mt-2">
-                加入 GoMate，发现更多户外伙伴
+                {t.registerSubtitle}
               </p>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* 昵称 */}
                 <div className="space-y-2">
-                  <Label htmlFor="name">昵称</Label>
+                  <Label htmlFor="name">{t.nickname}</Label>
                   <Input
                     id="name"
                     name="name"
                     type="text"
-                    placeholder="请输入昵称"
+                    placeholder={t.nicknamePlaceholder}
                     value={formData.name}
                     onChange={handleInputChange}
                     required
@@ -140,12 +143,12 @@ export default function RegisterPage() {
 
                 {/* 邮箱 */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">邮箱</Label>
+                  <Label htmlFor="email">{t.email}</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t.emailPlaceholder}
                     value={formData.email}
                     onChange={handleInputChange}
                     required
@@ -155,13 +158,13 @@ export default function RegisterPage() {
 
                 {/* 密码 */}
                 <div className="space-y-2">
-                  <Label htmlFor="password">密码</Label>
+                  <Label htmlFor="password">{t.password}</Label>
                   <div className="relative">
                     <Input
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="至少6位字符"
+                      placeholder={t.passwordTooShort}
                       value={formData.password}
                       onChange={handleInputChange}
                       required
@@ -184,12 +187,12 @@ export default function RegisterPage() {
 
                 {/* 确认密码 */}
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">确认密码</Label>
+                  <Label htmlFor="confirmPassword">{t.confirmPassword}</Label>
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
                     type="password"
-                    placeholder="再次输入密码"
+                    placeholder={t.reenterPassword}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     required
@@ -213,21 +216,21 @@ export default function RegisterPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      注册中...
+                      {t.registerBtnLoading}
                     </>
                   ) : (
-                    "注册"
+                    t.registerBtn
                   )}
                 </Button>
 
                 {/* 登录链接 */}
                 <p className="text-center text-sm text-stone-500">
-                  已有账号？{" "}
+                  {t.hasAccount}{" "}
                   <Link
                     href="/login"
                     className="text-stone-900 font-medium hover:underline"
                   >
-                    立即登录
+                    {t.loginNow}
                   </Link>
                 </p>
               </form>

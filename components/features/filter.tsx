@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { copy } from "@/lib/copy";
 
 interface FilterOption {
   id: string;
@@ -46,7 +47,7 @@ function Filter({
     if (cities.length > 0) {
       groups.push({
         id: "city",
-        label: "城市",
+        label: copy.filter.city,
         options: cities.map(c => ({ id: c.id, label: c.name })),
       });
     }
@@ -153,7 +154,7 @@ function Filter({
               onClick={() => onFilterChange?.("clear", "all")}
               className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700 transition-colors"
             >
-              清除全部 ({activeFiltersCount})
+              {copy.common.clearAll} ({activeFiltersCount})
             </button>
           )}
         </div>
@@ -178,7 +179,7 @@ function Filter({
               className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl z-50 lg:hidden max-h-[80vh] overflow-auto"
             >
               <div className="p-4 border-b border-stone-100 flex items-center justify-between sticky top-0 bg-white">
-                <h2 className="text-lg font-semibold text-stone-900">筛选</h2>
+                <h2 className="text-lg font-semibold text-stone-900">{copy.filter.title}</h2>
                 <button
                   onClick={onClose}
                   className="p-2 hover:bg-stone-100 rounded-full transition-colors"
@@ -235,13 +236,13 @@ function Filter({
                     onClick={() => onFilterChange?.("clear", "all")}
                     className="flex-1 px-4 py-3 text-sm font-medium text-stone-700 bg-stone-100 rounded-xl hover:bg-stone-200 transition-colors"
                   >
-                    重置
+                    {copy.filter.reset}
                   </button>
                   <button
                     onClick={onClose}
                     className="flex-1 px-4 py-3 text-sm font-medium text-white bg-stone-900 rounded-xl hover:bg-stone-800 transition-colors"
                   >
-                    查看结果
+                    {copy.filter.viewResults}
                   </button>
                 </div>
               </div>

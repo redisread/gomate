@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import type { Team } from "@/lib/types";
 import { leaderLevelLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { copy as copyText } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 
 interface LeaderCardProps {
   team: Team;
@@ -52,7 +52,7 @@ function LeaderCard({ team, className }: LeaderCardProps) {
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold text-stone-900 flex items-center gap-2">
             <Shield className="h-5 w-5 text-stone-600" />
-            领队信息
+            {copy.teams.leaderInfoTitle}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -79,7 +79,7 @@ function LeaderCard({ team, className }: LeaderCardProps) {
                 </Badge>
                 <span className="flex items-center gap-1 text-sm text-stone-500">
                   <Mountain className="h-3.5 w-3.5" />
-                  {leader.completedHikes}次带队
+                  {leader.completedHikes}{copy.teams.leaderTripCountSuffix}
                 </span>
               </div>
               {leader.bio && (
@@ -95,7 +95,7 @@ function LeaderCard({ team, className }: LeaderCardProps) {
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-stone-100 rounded-lg">
                 <div>
-                  <p className="text-xs text-stone-500">微信号</p>
+                  <p className="text-xs text-stone-500">{copy.profile.wechat}</p>
                   <p className="font-medium text-stone-900">{leader.wechat}</p>
                 </div>
                 <Button
@@ -112,7 +112,7 @@ function LeaderCard({ team, className }: LeaderCardProps) {
                 </Button>
               </div>
               <p className="text-xs text-stone-400 text-center">
-                复制微信号，添加领队为好友
+                {copy.teams.copyWechatHint}
               </p>
             </div>
           ) : (
@@ -121,7 +121,7 @@ function LeaderCard({ team, className }: LeaderCardProps) {
               className="w-full border-stone-300 hover:bg-stone-50"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
-              联系领队
+              {copy.teams.contactLeader}
             </Button>
           )}
         </CardContent>

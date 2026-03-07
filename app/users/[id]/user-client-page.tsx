@@ -23,6 +23,7 @@ import { leaderLevelLabels } from "@/lib/constants";
 import { getGenderText, getAgeText } from "@/lib/user-utils";
 import { parseUserExtra } from "@/lib/user-extra";
 import { cn } from "@/lib/utils";
+import { copy } from "@/lib/copy";
 
 interface UserClientPageProps {
   user: UserPublicProfile;
@@ -72,7 +73,7 @@ function UserClientPage({ user }: UserClientPageProps) {
             className="text-stone-600 hover:text-stone-900 -ml-2"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            返回
+            {copy.common.back}
           </Button>
         </motion.div>
 
@@ -152,7 +153,7 @@ function UserClientPage({ user }: UserClientPageProps) {
               <div className="text-2xl font-bold text-stone-900">
                 {user.stats.createdTeams}
               </div>
-              <div className="text-xs text-stone-500">创建队伍</div>
+              <div className="text-xs text-stone-500">{copy.teams.createTeamBtn}</div>
             </CardContent>
           </Card>
 

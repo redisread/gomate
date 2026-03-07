@@ -8,16 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { copy } from "@/lib/copy";
 
 interface NavbarProps {
   className?: string;
 }
 
+const n = copy.nav;
+const com = copy.common;
+
 const navLinks = [
-  { href: "/", label: "首页" },
-  { href: "/#locations", label: "探索地点" },
-  { href: "/#teams", label: "找队伍" },
-  { href: "/about", label: "关于我们" },
+  { href: "/", label: n.home },
+  { href: "/#locations", label: n.locations },
+  { href: "/#teams", label: n.teams },
+  { href: "/about", label: n.about },
 ];
 
 function Navbar({ className }: NavbarProps) {
@@ -103,7 +107,7 @@ function Navbar({ className }: NavbarProps) {
                   >
                     <Link href="/teams/create">
                       <Plus className="h-4 w-4 mr-1" />
-                      发布队伍
+                      {n.createTeam}
                     </Link>
                   </Button>
                   <div className="relative user-menu-container">
@@ -142,7 +146,7 @@ function Navbar({ className }: NavbarProps) {
                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
                           >
                             <Settings className="h-4 w-4 text-stone-400" />
-                            个人资料
+                            {n.profile}
                           </Link>
 
                           <Link
@@ -151,7 +155,7 @@ function Navbar({ className }: NavbarProps) {
                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
                           >
                             <Users className="h-4 w-4 text-stone-400" />
-                            我的队伍
+                            {n.myTeams}
                           </Link>
 
                           <Link
@@ -170,7 +174,7 @@ function Navbar({ className }: NavbarProps) {
                               className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
                             >
                               <Crown className="h-4 w-4 text-yellow-500" />
-                              管理后台
+                              {copy.admin.adminBadge}
                             </Link>
                           )}
 
@@ -181,7 +185,7 @@ function Navbar({ className }: NavbarProps) {
                             className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
                           >
                             <LogOut className="h-4 w-4" />
-                            退出登录
+                            {n.logout}
                           </button>
                         </motion.div>
                       )}
@@ -191,14 +195,14 @@ function Navbar({ className }: NavbarProps) {
               ) : (
                 <>
                   <Button variant="ghost" size="sm" className="text-stone-600" asChild>
-                    <Link href="/login">登录</Link>
+                    <Link href="/login">{n.login}</Link>
                   </Button>
                   <Button
                     size="sm"
                     className="bg-stone-800 hover:bg-stone-700 text-white"
                     asChild
                   >
-                    <Link href="/register">注册</Link>
+                    <Link href="/register">{n.register}</Link>
                   </Button>
                 </>
               )}
@@ -291,7 +295,7 @@ function Navbar({ className }: NavbarProps) {
                     className="flex items-center gap-3 px-4 py-3 text-stone-700 hover:bg-stone-50 rounded-lg transition-colors"
                   >
                     <Users className="h-5 w-5 text-stone-500" />
-                    <span className="font-medium">我的队伍</span>
+                    <span className="font-medium">{n.myTeams}</span>
                   </Link>
 
                   <Link
@@ -310,7 +314,7 @@ function Navbar({ className }: NavbarProps) {
                   >
                     <Link href="/teams/create" onClick={() => setIsMobileMenuOpen(false)}>
                       <Plus className="h-4 w-4 mr-2" />
-                      发布队伍
+                      {n.createTeam}
                     </Link>
                   </Button>
 
@@ -325,7 +329,7 @@ function Navbar({ className }: NavbarProps) {
                     }}
                   >
                     <LogOut className="h-4 w-4 mr-2" />
-                    退出登录
+                    {n.logout}
                   </Button>
                 </>
               ) : (
@@ -333,12 +337,12 @@ function Navbar({ className }: NavbarProps) {
                   <Button variant="outline" className="w-full justify-center" asChild>
                     <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
                       <User className="h-4 w-4 mr-2" />
-                      登录
+                      {n.login}
                     </Link>
                   </Button>
                   <Button className="w-full justify-center bg-stone-800 hover:bg-stone-700" asChild>
                     <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                      注册
+                      {n.register}
                     </Link>
                   </Button>
                 </>

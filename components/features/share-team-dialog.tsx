@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
 import type { Team, Location } from "@/lib/types";
-import { copy as copyText } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 
 interface ShareTeamDialogProps {
@@ -149,18 +149,18 @@ function ShareTeamDialog({
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="link" className="gap-1.5">
                 <Link2 className="h-4 w-4" />
-                链接
+                {copyText.share.tabLink}
               </TabsTrigger>
               <TabsTrigger value="qrcode" className="gap-1.5">
                 <QrCode className="h-4 w-4" />
-                二维码
+                {copyText.share.tabQRCode}
               </TabsTrigger>
             </TabsList>
 
             {/* 链接分享 */}
             <TabsContent value="link" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <label className="text-sm text-stone-600">分享链接</label>
+                <label className="text-sm text-stone-600">{copyText.share.shareLinkLabel}</label>
                 <div className="flex gap-2">
                   <Input
                     ref={inputRef}
@@ -207,7 +207,7 @@ function ShareTeamDialog({
                 </div>
               </div>
               <p className="text-sm text-stone-500 text-center">
-                扫描二维码加入队伍
+                {copyText.share.scanToJoin}
               </p>
               <Button
                 onClick={handleDownloadQRCode}
@@ -215,7 +215,7 @@ function ShareTeamDialog({
                 className="w-full"
               >
                 <Download className="h-4 w-4 mr-2" />
-                下载二维码
+                {copyText.share.downloadQRCode}
               </Button>
             </TabsContent>
           </Tabs>

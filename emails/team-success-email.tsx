@@ -20,7 +20,7 @@ export const TeamSuccessEmail: React.FC<TeamSuccessEmailProps> = ({
   memberCount,
 }) => {
   return (
-    <EmailLayout preview={`队伍组建成功！ - ${teamTitle}`}>
+    <EmailLayout preview={`${copy.email.teamSuccessPreview} - ${teamTitle}`}>
       <Section style={iconContainer}>
         <Text style={celebrationIcon}>🎉</Text>
       </Section>

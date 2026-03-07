@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
+import { copy } from "@/lib/copy";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,6 +25,8 @@ export default function LoginPage() {
   });
 
   // 如果已登录，重定向到首页
+  const t = copy.auth;
+  const c = copy.common;
   React.useEffect(() => {
     if (isAuthenticated) {
       router.push("/");
@@ -44,7 +47,7 @@ export default function LoginPage() {
     const result = await login(formData.email, formData.password);
 
     if (!result.success) {
-      setError(result.error || "登录失败");
+      setError(result.error || t.loginFailed);
       setIsLoading(false);
       return;
     }
@@ -62,7 +65,7 @@ export default function LoginPage() {
           className="inline-flex items-center text-stone-600 hover:text-stone-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          返回首页
+          {c.backHome}
         </Link>
       </div>
 
@@ -77,22 +80,22 @@ export default function LoginPage() {
           <Card className="border-stone-200">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold text-stone-900">
-                欢迎回来
+                {t.loginTitle}
               </CardTitle>
               <p className="text-sm text-stone-500 mt-2">
-                登录 GoMate，开始你的户外之旅
+                {t.loginSubtitle}
               </p>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* 邮箱 */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">邮箱</Label>
+                  <Label htmlFor="email">{t.email}</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t.emailPlaceholder}
                     value={formData.email}
                     onChange={handleInputChange}
                     required
@@ -103,12 +106,12 @@ export default function LoginPage() {
                 {/* 密码 */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password">密码</Label>
+                    <Label htmlFor="password">{t.password}</Label>
                     <Link
                       href="/forgot-password"
                       className="text-xs text-stone-500 hover:text-stone-900"
                     >
-                      忘记密码？
+                      {t.forgotPassword}
                     </Link>
                   </div>
                   <div className="relative">
@@ -116,7 +119,7 @@ export default function LoginPage() {
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="请输入密码"
+                      placeholder={t.passwordPlaceholder}
                       value={formData.password}
                       onChange={handleInputChange}
                       required
@@ -152,21 +155,21 @@ export default function LoginPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      登录中...
+                      {t.loginBtnLoading}
                     </>
                   ) : (
-                    "登录"
+                    t.loginBtn
                   )}
                 </Button>
 
                 {/* 注册链接 */}
                 <p className="text-center text-sm text-stone-500">
-                  还没有账号？{" "}
+                  {t.noAccount}{" "}
                   <Link
                     href="/register"
                     className="text-stone-900 font-medium hover:underline"
                   >
-                    立即注册
+                    {t.registerNow}
                   </Link>
                 </p>
               </form>

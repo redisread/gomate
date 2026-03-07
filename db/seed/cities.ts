@@ -93,6 +93,62 @@ const citiesData: Omit<CityData, "id" | "createdAt" | "updatedAt">[] = [
     isHot: false,
     parentId: null,
   },
+  {
+    adcode: "510100",
+    name: "成都",
+    pinyin: "chengdu",
+    province: "四川省",
+    level: "city",
+    isHot: true,
+    parentId: null,
+  },
+  // 云南省
+  {
+    adcode: "532900",
+    name: "大理",
+    pinyin: "dali",
+    province: "云南省",
+    level: "city",
+    isHot: true,
+    parentId: null,
+  },
+  {
+    adcode: "530700",
+    name: "丽江",
+    pinyin: "lijiang",
+    province: "云南省",
+    level: "city",
+    isHot: true,
+    parentId: null,
+  },
+  {
+    adcode: "532800",
+    name: "西双版纳",
+    pinyin: "xishuangbanna",
+    province: "云南省",
+    level: "city",
+    isHot: true,
+    parentId: null,
+  },
+  // 广西
+  {
+    adcode: "450300",
+    name: "桂林",
+    pinyin: "guilin",
+    province: "广西壮族自治区",
+    level: "city",
+    isHot: true,
+    parentId: null,
+  },
+  {
+    adcode: "450200",
+    name: "柳州",
+    pinyin: "liuzhou",
+    province: "广西壮族自治区",
+    level: "city",
+    isHot: false,
+    parentId: null,
+  },
 ];
 
 /**

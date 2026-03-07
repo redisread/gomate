@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { REQUIREMENT_PRESETS } from "@/lib/constants";
+import { copy } from "@/lib/copy";
 
 interface RequirementSelectorProps {
   value: string[];
@@ -16,7 +17,7 @@ interface RequirementSelectorProps {
 export function RequirementSelector({
   value,
   onChange,
-  placeholder = "输入其他要求...",
+  placeholder = copy.ui.requirementSelector.placeholder,
 }: RequirementSelectorProps) {
   const [newRequirement, setNewRequirement] = React.useState("");
 
@@ -44,7 +45,7 @@ export function RequirementSelector({
     <div className="space-y-3">
       {/* 预设标签 */}
       <div className="space-y-2">
-        <p className="text-sm text-stone-500">常用标签（点击快速添加）</p>
+        <p className="text-sm text-stone-500">{copy.ui.requirementSelector.presetLabel}</p>
         <div className="flex flex-wrap gap-2">
           {REQUIREMENT_PRESETS.map((preset) => {
             const isSelected = value.includes(preset);
@@ -68,7 +69,7 @@ export function RequirementSelector({
 
       {/* 自定义输入 */}
       <div className="space-y-2">
-        <p className="text-sm text-stone-500">或自定义添加</p>
+        <p className="text-sm text-stone-500">{copy.ui.requirementSelector.customLabel}</p>
         <div className="flex gap-2">
           <Input
             placeholder={placeholder}
@@ -96,7 +97,7 @@ export function RequirementSelector({
       {/* 已选择 */}
       {value.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm text-stone-500">已选择</p>
+          <p className="text-sm text-stone-500">{copy.ui.requirementSelector.selectedLabel}</p>
           <div className="flex flex-wrap gap-2">
             {value.map((req) => (
               <Badge

@@ -11,18 +11,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { copy } from "@/lib/copy";
+
+const c = copy.contact;
+const com = copy.common;
 
 const contactMethods = [
   {
     icon: Mail,
-    title: "邮箱联系",
+    title: c.emailContact,
     description: "gomate@jiahongw.com",
     href: "mailto:gomate@jiahongw.com",
   },
   {
     icon: MessageSquare,
-    title: "微信咨询",
-    description: "扫码添加客服微信",
+    title: c.wechatContact,
+    description: c.wechatScanHint,
     href: "/wechat.jpg",
   },
 ];
@@ -55,12 +59,12 @@ export default function ContactPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "提交失败，请稍后重试");
+        throw new Error(data.error || c.submitError);
       }
 
       setIsSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "提交失败，请稍后重试");
+      setError(err instanceof Error ? err.message : c.submitError);
     } finally {
       setIsLoading(false);
     }
@@ -90,14 +94,13 @@ export default function ContactPage() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-stone-100 rounded-full text-sm text-stone-600 mb-6">
               <Mountain className="h-4 w-4" />
-              <span>联系我们</span>
+              <span>{c.pageTitle}</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 mb-6 tracking-tight">
-              与我们取得联系
+              {c.pageSubtitle}
             </h1>
             <p className="text-lg text-stone-600 leading-relaxed">
-              无论是产品建议、商务合作，都欢迎随时联系。
-              我们期待听到您的声音。
+              {c.pageDesc}
             </p>
           </motion.div>
         </div>
@@ -141,10 +144,10 @@ export default function ContactPage() {
           >
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-stone-900 mb-4">
-                发送您的建议
+                {c.formTitle}
               </h2>
               <p className="text-stone-600">
-                您的反馈是我们改进产品的动力
+                {c.formSubtitle}
               </p>
             </div>
 
@@ -158,10 +161,10 @@ export default function ContactPage() {
                   <CheckCircle className="h-8 w-8 text-emerald-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-stone-900 mb-2">
-                  感谢您的反馈！
+                  {c.successTitle}
                 </h3>
                 <p className="text-stone-600 mb-6">
-                  我们已经收到您的建议，会尽快查看并回复。
+                  {c.successDesc}
                 </p>
                 <Button
                   variant="outline"
@@ -171,7 +174,7 @@ export default function ContactPage() {
                     setError(null);
                   }}
                 >
-                  继续提交
+                  {c.continueSubmitBtn}
                 </Button>
               </motion.div>
             ) : (
@@ -183,23 +186,23 @@ export default function ContactPage() {
                 )}
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">您的姓名</Label>
+                    <Label htmlFor="name">{c.nameLabel}</Label>
                     <Input
                       id="name"
                       name="name"
-                      placeholder="请输入姓名"
+                      placeholder={c.namePlaceholder}
                       value={formData.name}
                       onChange={handleChange}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">联系邮箱</Label>
+                    <Label htmlFor="email">{c.emailLabel}</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder={c.emailPlaceholder}
                       value={formData.email}
                       onChange={handleChange}
                       required
@@ -208,11 +211,11 @@ export default function ContactPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="subject">主题</Label>
+                  <Label htmlFor="subject">{c.subjectLabel}</Label>
                   <Input
                     id="subject"
                     name="subject"
-                    placeholder="请简述您的建议主题"
+                    placeholder={c.subjectPlaceholder}
                     value={formData.subject}
                     onChange={handleChange}
                     required
@@ -220,11 +223,11 @@ export default function ContactPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="message">详细建议</Label>
+                  <Label htmlFor="message">{c.messageLabel}</Label>
                   <Textarea
                     id="message"
                     name="message"
-                    placeholder="请详细描述您的建议或反馈..."
+                    placeholder={c.messagePlaceholder}
                     rows={6}
                     value={formData.message}
                     onChange={handleChange}
@@ -242,12 +245,12 @@ export default function ContactPage() {
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        提交中...
+                        {c.submitting}
                       </>
                     ) : (
                       <>
                         <Send className="mr-2 h-4 w-4" />
-                        提交建议
+                        {c.submitBtn}
                       </>
                     )}
                   </Button>
@@ -258,7 +261,7 @@ export default function ContactPage() {
                     className="border-stone-300 hover:bg-stone-50 px-8"
                     asChild
                   >
-                    <Link href="/">返回首页</Link>
+                    <Link href="/">{com.backHome}</Link>
                   </Button>
                 </div>
               </form>

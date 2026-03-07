@@ -163,7 +163,7 @@ function CreateTeamForm() {
     try {
       // 验证：如果勾选了"关联路线"，则必须选择路线
       if (hasRoute && !formData.routeId) {
-        showToast("请选择一条路线，或取消勾选\"关联具体路线\"", "error");
+        showToast(copy.teams.routeRequired, "error");
         setIsSubmitting(false);
         return;
       }
@@ -244,10 +244,10 @@ function CreateTeamForm() {
                 <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm text-amber-800">
-                    <strong>请填写微信号</strong>
+                    <strong>{copy.teams.wechatRequiredTitle}</strong>
                   </p>
                   <p className="text-sm text-amber-700 mt-1">
-                    创建队伍前需要在个人资料中填写微信号，以便队友联系您。
+                    {copy.teams.wechatRequiredDesc}
                   </p>
                   <div className="mt-3">
                     <Button
@@ -305,7 +305,7 @@ function CreateTeamForm() {
                     <div className="flex h-10 w-full rounded-md border border-stone-200 bg-stone-100 pl-10 pr-3 py-2 text-sm text-stone-600 items-center relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
                       <Lock className="h-3 w-3 mr-2 text-stone-400" />
-                      {selectedLocation?.name || "加载中..."}
+                      {selectedLocation?.name || copy.teams.loading}
                     </div>
                   ) : (
                     <div className="relative">
@@ -460,7 +460,7 @@ function CreateTeamForm() {
                 {selectedLocation && hasRoute && locationRoutes.length === 0 && !isFromRoutePage && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <p className="text-sm text-amber-800">
-                      该地点暂无可用路线，请取消勾选"关联具体路线"或联系管理员添加路线信息。
+                      {copy.teams.noRouteAvailable}
                     </p>
                   </div>
                 )}
@@ -505,7 +505,7 @@ function CreateTeamForm() {
                 </div>
                 <p className="text-xs text-amber-600 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  提示：活动日期创建后不可修改，但集合时间可在编辑时调整
+                  {copy.teams.dateImmutableTip}
                 </p>
 
                 {/* 时长和人数 */}

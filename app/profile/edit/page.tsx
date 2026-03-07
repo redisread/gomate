@@ -367,7 +367,7 @@ export default function EditProfilePage() {
                 {/* Name */}
                 <div className="space-y-2">
                   <Label htmlFor="name">
-                    用户名 <span className="text-red-500">*</span>
+                    {copy.profile.usernameLabel} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="name"
@@ -378,15 +378,15 @@ export default function EditProfilePage() {
                     minLength={2}
                     maxLength={20}
                     className="border-stone-200"
-                    placeholder="请输入用户名"
+                    placeholder={copy.profile.usernamePlaceholder}
                   />
-                  <p className="text-xs text-stone-500">用于认证和系统标识,2-20个字符</p>
+                  <p className="text-xs text-stone-500">{copy.profile.usernameHint}，{copy.auth.nicknameRange}</p>
                 </div>
 
                 {/* Nickname */}
                 <div className="space-y-2">
                   <Label htmlFor="nickname">
-                    昵称
+                    {copy.profile.nicknameLabel}
                   </Label>
                   <Input
                     id="nickname"
@@ -396,9 +396,9 @@ export default function EditProfilePage() {
                     minLength={2}
                     maxLength={20}
                     className="border-stone-200"
-                    placeholder="请输入昵称（为空则显示用户名）"
+                    placeholder={copy.profile.nicknamePlaceholder}
                   />
-                  <p className="text-xs text-stone-500">用于展示的昵称,可以随时修改</p>
+                  <p className="text-xs text-stone-500">{copy.profile.nicknameHint}</p>
                 </div>
 
                 {/* Bio */}
@@ -470,7 +470,7 @@ export default function EditProfilePage() {
 
                 {/* Gender */}
                 <div className="space-y-2">
-                  <Label htmlFor="gender">性别</Label>
+                  <Label htmlFor="gender">{copy.profile.genderLabel}</Label>
                   <select
                     id="gender"
                     name="gender"
@@ -478,17 +478,17 @@ export default function EditProfilePage() {
                     onChange={handleInputChange}
                     className="flex h-10 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-stone-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <option value="">未设置</option>
-                    <option value="male">男</option>
-                    <option value="female">女</option>
-                    <option value="other">其他</option>
+                    <option value="">{copy.common.unknown}</option>
+                    <option value="male">{copy.enums.gender.male}</option>
+                    <option value="female">{copy.enums.gender.female}</option>
+                    <option value="other">{copy.enums.gender.other}</option>
                   </select>
-                  <p className="text-xs text-stone-500">可选填写,用于更好的匹配队友</p>
+                  <p className="text-xs text-stone-500">{copy.profile.genderHint}</p>
                 </div>
 
                 {/* Birthday */}
                 <div className="space-y-2">
-                  <Label htmlFor="birthday">生日</Label>
+                  <Label htmlFor="birthday">{copy.profile.birthdayLabel}</Label>
                   <Input
                     id="birthday"
                     name="birthday"
@@ -497,12 +497,12 @@ export default function EditProfilePage() {
                     onChange={handleInputChange}
                     className="border-stone-200"
                   />
-                  <p className="text-xs text-stone-500">可选填写,用于计算年龄段</p>
+                  <p className="text-xs text-stone-500">{copy.profile.birthdayHint}</p>
                 </div>
 
                 {/* Equipment */}
                 <div className="space-y-2">
-                  <Label>常用装备</Label>
+                  <Label>{copy.profile.equipment}</Label>
                   <EquipmentSelector
                     value={formData.equipment}
                     onChange={(equipment) =>
@@ -514,7 +514,7 @@ export default function EditProfilePage() {
 
                 {/* Experience */}
                 <div className="space-y-2">
-                  <Label htmlFor="experience">徒步经验</Label>
+                  <Label htmlFor="experience">{copy.profile.experience}</Label>
                   <Textarea
                     id="experience"
                     name="experience"
@@ -523,10 +523,10 @@ export default function EditProfilePage() {
                     rows={3}
                     maxLength={200}
                     className="border-stone-200 resize-none"
-                    placeholder="例如: 有3年徒步经验,完成过梧桐山、七娘山等路线"
+                    placeholder={copy.profile.experiencePlaceholder}
                   />
                   <div className="flex justify-between text-xs text-stone-500">
-                    <span>简单描述你的徒步经历</span>
+                    <span>{copy.profile.experienceHint}</span>
                     <span>{formData.experience.length}/200</span>
                   </div>
                 </div>

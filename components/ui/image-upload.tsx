@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Upload, X, Loader2, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { copy } from "@/lib/copy";
 
 interface ImageUploadProps {
   /** 当前图片 URL */
@@ -31,7 +32,7 @@ export function ImageUpload({
   maxSize = 10,
   previewClassName = "w-full h-40",
   disabled = false,
-  hint = "点击上传图片",
+  hint = copy.ui.upload.hint,
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -54,14 +55,14 @@ export function ImageUpload({
     // 验证文件类型
     const allowedTypes = accept.split(",");
     if (!allowedTypes.includes(file.type)) {
-      setError("不支持的文件格式");
+      setError(copy.ui.upload.invalidType);
       return;
     }
 
     // 验证文件大小
     const maxBytes = maxSize * 1024 * 1024;
     if (file.size > maxBytes) {
-      setError(`文件太大，最大 ${maxSize}MB`);
+      setError(copy.ui.upload.fileTooLarge.replace("{size}", String(maxSize)));
       return;
     }
 
@@ -86,7 +87,7 @@ export function ImageUpload({
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "上传失败");
+        throw new Error(result.error || copy.ui.upload.uploadFailed);
       }
 
       onChange(result.url);
@@ -141,7 +142,7 @@ export function ImageUpload({
           <>
             <img
               src={displayImage}
-              alt="预览"
+              alt={copy.ui.upload.preview}
               className="w-full h-full object-cover"
             />
             {/* 遮罩层 */}
@@ -169,14 +170,14 @@ export function ImageUpload({
             {isUploading ? (
               <>
                 <Loader2 className="h-8 w-8 animate-spin" />
-                <span className="mt-2 text-sm">上传中...</span>
+                <span className="mt-2 text-sm">{copy.ui.upload.uploading}</span>
               </>
             ) : (
               <>
                 <ImageIcon className="h-8 w-8" />
                 <span className="mt-2 text-sm">{hint}</span>
                 <span className="mt-1 text-xs text-stone-400">
-                  最大 {maxSize}MB
+                  {copy.ui.upload.maxSize.replace("{size}", String(maxSize))}
                 </span>
               </>
             )}

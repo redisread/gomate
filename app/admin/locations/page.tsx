@@ -33,6 +33,10 @@ import {
 import { ImageUpload } from "@/components/ui/image-upload";
 import { MultiImageUpload } from "@/components/ui/multi-image-upload";
 import { SUPPORTED_CITIES } from "@/lib/constants/cities";
+import { copy } from "@/lib/copy";
+
+const a = copy.admin;
+const e = copy.enums;
 
 interface Location {
   id: string;
@@ -54,10 +58,10 @@ interface Location {
 }
 
 const difficultyOptions = [
-  { value: "easy", label: "简单" },
-  { value: "moderate", label: "中等" },
-  { value: "hard", label: "困难" },
-  { value: "expert", label: "专家" },
+  { value: "easy", label: e.difficulty.easy },
+  { value: "moderate", label: e.difficulty.moderate },
+  { value: "hard", label: e.difficulty.hard },
+  { value: "expert", label: e.difficulty.expert },
 ];
 
 const defaultFormData = {
@@ -103,7 +107,7 @@ export default function AdminLocationsPage() {
         setLocations(data.locations);
       }
     } catch (error) {
-      console.error("加载地点列表失败:", error);
+      console.error(a.loadLocationsFailed, error);
     } finally {
       setIsLoading(false);
     }
@@ -151,7 +155,7 @@ export default function AdminLocationsPage() {
         });
       }
     } catch (error) {
-      console.error("获取地点详情失败:", error);
+      console.error(a.getLocationDetailFailed, error);
     }
     setIsFormOpen(true);
   };
@@ -196,11 +200,11 @@ export default function AdminLocationsPage() {
         setIsFormOpen(false);
         loadLocations();
       } else {
-        alert(data.error || "操作失败");
+        alert(data.error || a.operationFailed);
       }
     } catch (error) {
-      console.error("提交失败:", error);
-      alert("操作失败，请重试");
+      console.error(a.submitFailed, error);
+      alert(a.operationFailedRetry);
     } finally {
       setIsSubmitting(false);
     }
@@ -221,11 +225,11 @@ export default function AdminLocationsPage() {
         setDeleteTarget(null);
         loadLocations();
       } else {
-        alert(data.error || "删除失败");
+        alert(data.error || a.deleteFailed);
       }
     } catch (error) {
-      console.error("删除失败:", error);
-      alert("删除失败，请重试");
+      console.error(a.deleteFailed, error);
+      alert(a.deleteFailedRetry);
     }
   };
 
@@ -245,12 +249,12 @@ export default function AdminLocationsPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-stone-800">地点管理</h1>
-          <p className="text-stone-500 mt-1">管理所有徒步地点信息</p>
+          <h1 className="text-2xl font-bold text-stone-800">{a.locationsTitle}</h1>
+          <p className="text-stone-500 mt-1">{a.locationsDesc}</p>
         </div>
         <Button onClick={openCreateForm} className="bg-stone-800 hover:bg-stone-700">
           <Plus className="h-4 w-4 mr-2" />
-          新增地点
+          {a.addLocation}
         </Button>
       </div>
 
@@ -259,21 +263,21 @@ export default function AdminLocationsPage() {
         <table className="w-full">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">名称</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">城市</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">难度</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">时长</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">距离</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">创建时间</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">更新时间</th>
-              <th className="text-right px-4 py-3 text-sm font-medium text-stone-600">操作</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colName}</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colCity}</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colDifficulty}</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colDuration}</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colDistance}</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colCreatedAt}</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colUpdatedAt}</th>
+              <th className="text-right px-4 py-3 text-sm font-medium text-stone-600">{a.colActions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {locations.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-stone-500">
-                  暂无地点数据
+                  {a.noLocations}
                 </td>
               </tr>
             ) : (
@@ -346,13 +350,13 @@ export default function AdminLocationsPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingLocation ? "编辑地点" : "新增地点"}
+              {editingLocation ? a.editLocation : a.createLocation}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">名称 *</Label>
+                <Label htmlFor="name">{a.formNameRequired}</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -361,28 +365,28 @@ export default function AdminLocationsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="slug">Slug（留空自动生成）</Label>
+                <Label htmlFor="slug">{a.formSlug}</Label>
                 <Input
                   id="slug"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="如: wutong-mountain"
+                  placeholder={a.placeholderSlug}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subtitle">副标题</Label>
+              <Label htmlFor="subtitle">{a.formSubtitle}</Label>
               <Input
                 id="subtitle"
                 value={formData.subtitle}
                 onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                placeholder="如: 深圳第二高峰"
+                placeholder={a.placeholderSubtitle}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">描述 *</Label>
+              <Label htmlFor="description">{a.formDescriptionRequired}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -394,7 +398,7 @@ export default function AdminLocationsPage() {
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="difficulty">难度 *</Label>
+                <Label htmlFor="difficulty">{a.formDifficultyRequired}</Label>
                 <Select
                   value={formData.difficulty}
                   onValueChange={(value) => setFormData({ ...formData, difficulty: value })}
@@ -412,22 +416,22 @@ export default function AdminLocationsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="duration">时长 *</Label>
+                <Label htmlFor="duration">{a.formDurationRequired}</Label>
                 <Input
                   id="duration"
                   value={formData.duration}
                   onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  placeholder="如: 4-5小时"
+                  placeholder={a.placeholderDuration}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="distance">距离 *</Label>
+                <Label htmlFor="distance">{a.formDistanceRequired}</Label>
                 <Input
                   id="distance"
                   value={formData.distance}
                   onChange={(e) => setFormData({ ...formData, distance: e.target.value })}
-                  placeholder="如: 8.5公里"
+                  placeholder={a.placeholderDistance}
                   required
                 />
               </div>
@@ -435,28 +439,28 @@ export default function AdminLocationsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="elevation">海拔</Label>
+                <Label htmlFor="elevation">{a.formElevation}</Label>
                 <Input
                   id="elevation"
                   value={formData.elevation}
                   onChange={(e) => setFormData({ ...formData, elevation: e.target.value })}
-                  placeholder="如: 869米"
+                  placeholder={a.placeholderElevation}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bestSeason">最佳季节（逗号分隔）</Label>
+                <Label htmlFor="bestSeason">{a.formBestSeason}</Label>
                 <Input
                   id="bestSeason"
                   value={formData.bestSeason}
                   onChange={(e) => setFormData({ ...formData, bestSeason: e.target.value })}
-                  placeholder="如: 春季, 秋季"
+                  placeholder={a.placeholderBestSeason}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="cityName">城市</Label>
+                <Label htmlFor="cityName">{a.formCity}</Label>
                 <Select
                   value={formData.cityName}
                   onValueChange={(value) => {
@@ -469,7 +473,7 @@ export default function AdminLocationsPage() {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="选择城市" />
+                    <SelectValue placeholder={a.placeholderSelectCity} />
                   </SelectTrigger>
                   <SelectContent>
                     {SUPPORTED_CITIES.map((city) => (
@@ -481,30 +485,30 @@ export default function AdminLocationsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="adcode">行政区划代码</Label>
+                <Label htmlFor="adcode">{a.formAdcode}</Label>
                 <Input
                   id="adcode"
                   value={formData.adcode}
                   readOnly
-                  placeholder="自动填充"
+                  placeholder={a.placeholderAdcode}
                   className="bg-stone-50"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>封面图片 *</Label>
+              <Label>{a.formCoverImageRequired}</Label>
               <ImageUpload
                 value={formData.coverImage}
                 onChange={(url) => setFormData({ ...formData, coverImage: url })}
                 uploadEndpoint="/api/upload/location"
                 maxSize={10}
-                hint="点击上传封面图片"
+                hint={a.placeholderUploadCover}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>图片列表</Label>
+              <Label>{a.formImages}</Label>
               <MultiImageUpload
                 value={formData.images}
                 onChange={(urls) => setFormData({ ...formData, images: urls })}
@@ -516,16 +520,16 @@ export default function AdminLocationsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="tags">标签（逗号分隔）</Label>
+                <Label htmlFor="tags">{a.formTags}</Label>
                 <Input
                   id="tags"
                   value={formData.tags}
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  placeholder="如: 海景, 山峰, 摄影"
+                  placeholder={a.placeholderTags}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">地址</Label>
+                <Label htmlFor="address">{a.formAddress}</Label>
                 <Input
                   id="address"
                   value={formData.address}
@@ -535,17 +539,17 @@ export default function AdminLocationsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="coordinates">坐标（JSON 格式）</Label>
+              <Label htmlFor="coordinates">{a.formCoordinates}</Label>
               <Input
                 id="coordinates"
                 value={formData.coordinates}
                 onChange={(e) => setFormData({ ...formData, coordinates: e.target.value })}
-                placeholder='{"lat": 22.5, "lng": 114.1}'
+                placeholder={a.placeholderCoordinates}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="routeDescription">路线描述</Label>
+              <Label htmlFor="routeDescription">{a.formRouteDesc}</Label>
               <Textarea
                 id="routeDescription"
                 value={formData.routeDescription}
@@ -555,7 +559,7 @@ export default function AdminLocationsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tips">徒步贴士</Label>
+              <Label htmlFor="tips">{a.formTips}</Label>
               <Textarea
                 id="tips"
                 value={formData.tips}
@@ -566,10 +570,10 @@ export default function AdminLocationsPage() {
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>
-                取消
+                {a.cancel}
               </Button>
               <Button type="submit" disabled={isSubmitting} className="bg-stone-800 hover:bg-stone-700">
-                {isSubmitting ? "保存中..." : "保存"}
+                {isSubmitting ? a.saving : a.save}
               </Button>
             </DialogFooter>
           </form>
@@ -580,18 +584,18 @@ export default function AdminLocationsPage() {
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogTitle>{a.deleteConfirmTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除地点「{deleteTarget?.name}」吗？此操作不可撤销。
+              {a.deleteConfirmDesc.replace("{name}", deleteTarget?.name || "")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{a.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
             >
-              删除
+              {a.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

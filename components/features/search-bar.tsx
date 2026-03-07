@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { Search, MapPin, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { copy } from "@/lib/copy";
 
 interface SearchBarProps {
   className?: string;
@@ -44,7 +45,7 @@ function SearchBar({ className, onSearch, onFilterClick }: SearchBarProps) {
           {/* Input */}
           <input
             type="text"
-            placeholder="搜索地点、路线或队伍..."
+            placeholder={copy.common.searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
@@ -58,7 +59,7 @@ function SearchBar({ className, onSearch, onFilterClick }: SearchBarProps) {
               type="button"
               onClick={onFilterClick}
               className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-xl transition-colors"
-              aria-label="筛选"
+              aria-label={copy.common.filter}
             >
               <SlidersHorizontal className="h-5 w-5" />
             </button>
@@ -66,7 +67,7 @@ function SearchBar({ className, onSearch, onFilterClick }: SearchBarProps) {
               type="submit"
               className="px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-xl hover:bg-stone-800 transition-colors"
             >
-              搜索
+              {copy.common.search}
             </button>
           </div>
         </div>

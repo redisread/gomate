@@ -21,6 +21,17 @@ import { seedMaclehosePois } from "./maclehose";
 import { seedWugongshanPois } from "./wugongshan";
 import { seedHengshanPois } from "./hengshan";
 import { seedKunmingPois } from "./kunming";
+import { seedKunmingCityPois } from "./kunming-city";
+import { seedChangshaCityPois } from "./changsha";
+import { seedHongkongCityPois } from "./hongkong-city";
+import { seedShenzhenCityPois } from "./shenzhen-city";
+import { seedChengduCityPois } from "./chengdu-city";
+import { seedDaliPois } from "./dali";
+import { seedLijiangPois } from "./lijiang";
+import { seedXishuangbannaPois } from "./xishuangbanna";
+import { seedGuilinPois } from "./guilin";
+import { seedLijiangRiverPois } from "./lijiang-river";
+import { seedLiuzhouPois } from "./liuzhou";
 
 export interface PoiData {
   id: string;
@@ -102,6 +113,52 @@ export function seedPois(
   // 昆明西山 POI
   const kunmingPois = seedKunmingPois(db, locations, routes);
   allPois.push(...kunmingPois);
+
+  // 昆明城市 POI
+  const kunmingCityPois = seedKunmingCityPois(db, locations, routes);
+  allPois.push(...kunmingCityPois);
+
+  // 长沙城市 POI
+  const changshaCityPois = seedChangshaCityPois(db, locations, routes);
+  allPois.push(...changshaCityPois);
+
+  // 香港城市 POI
+  const hongkongCityPois = seedHongkongCityPois(db, locations, routes);
+  allPois.push(...hongkongCityPois);
+
+  // 深圳城市 POI
+  const shenzhenCityPois = seedShenzhenCityPois(db, locations, routes);
+  allPois.push(...shenzhenCityPois);
+
+  // 成都城市 POI
+  const chengduCityPois = seedChengduCityPois(db, locations, routes);
+  allPois.push(...chengduCityPois);
+
+  // 云南三城 POI
+  // 大理 POI
+  const daliPois = seedDaliPois(db, locations, routes);
+  allPois.push(...daliPois);
+
+  // 丽江 POI
+  const lijiangPois = seedLijiangPois(db, locations, routes);
+  allPois.push(...lijiangPois);
+
+  // 西双版纳 POI
+  const xishuangbannaPois = seedXishuangbannaPois(db, locations, routes);
+  allPois.push(...xishuangbannaPois);
+
+  // 广西三城 POI
+  // 桂林 POI
+  const guilinPois = seedGuilinPois(db, locations, routes);
+  allPois.push(...guilinPois);
+
+  // 漓江 POI
+  const lijiangRiverPois = seedLijiangRiverPois(db, locations, routes);
+  allPois.push(...lijiangRiverPois);
+
+  // 柳州 POI
+  const liuzhouPois = seedLiuzhouPois(db, locations, routes);
+  allPois.push(...liuzhouPois);
 
   console.log(`✅ POI 数据插入完成，共 ${allPois.length} 个 POI\n`);
   return allPois;

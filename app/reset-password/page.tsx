@@ -179,7 +179,7 @@ function ResetPasswordForm() {
 
                   {/* 确认密码 */}
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">确认密码</Label>
+                    <Label htmlFor="confirmPassword">{copy.auth.confirmPassword}</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
                       <Input
