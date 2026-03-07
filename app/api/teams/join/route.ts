@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { getAuth } from "@/lib/auth";
+import { copy } from "@/lib/copy";
 
 /**
  * POST /api/teams/join
@@ -40,6 +41,20 @@ export async function POST(request: NextRequest) {
     const schema = await import("@/db/schema");
     const ormDb = drizzle(db, { schema });
 
+    // 检查用户是否已填写微信号
+    const userRecord = await ormDb
+      .select({ wechat: schema.users.wechat })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .then(rows => rows[0]);
+
+    if (!userRecord?.wechat) {
+      return NextResponse.json(
+        { error: copy.errors.wechatRequired },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json() as { teamId?: string };
     const { teamId } = body;
 
@@ -51,11 +66,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 获取队伍信息
-    const teams = await ormDb.query.teams.findMany({
+    const teamResult = await ormDb.query.teams.findFirst({
       where: eq(schema.teams.id, teamId),
-      limit: 1,
     });
-    const teamResult = teams[0];
 
     if (!teamResult) {
       return NextResponse.json(

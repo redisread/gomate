@@ -3,10 +3,16 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, AlertCircle } from "lucide-react";
+
+interface Toast {
+  id: number;
+  message: string;
+  type: "success" | "error";
+}
 
 interface ToastContextValue {
-  showToast: (message: string) => void;
+  showToast: (message: string, type?: "success" | "error") => void;
 }
 
 const ToastContext = React.createContext<ToastContextValue | null>(null);
@@ -20,22 +26,33 @@ function useToast() {
 }
 
 function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = React.useState<{ id: number; message: string }[]>([]);
+  const [toasts, setToasts] = React.useState<Toast[]>([]);
   const [mounted, setMounted] = React.useState(false);
+  const timersRef = React.useRef<Set<NodeJS.Timeout>>(new Set());
 
   // 只在客户端挂载后才渲染 portal
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  const showToast = React.useCallback((message: string) => {
+  // 组件卸载时清理所有定时器
+  React.useEffect(() => {
+    return () => {
+      timersRef.current.forEach((timer) => clearTimeout(timer));
+      timersRef.current.clear();
+    };
+  }, []);
+
+  const showToast = React.useCallback((message: string, type: "success" | "error" = "success") => {
     const id = Date.now();
-    setToasts((prev) => [...prev, { id, message }]);
+    setToasts((prev) => [...prev, { id, message, type }]);
 
     // 3秒后自动消失
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
+      timersRef.current.delete(timer);
     }, 3000);
+    timersRef.current.add(timer);
   }, []);
 
   return (
@@ -45,7 +62,7 @@ function ToastProvider({ children }: { children: React.ReactNode }) {
         createPortal(
           <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[600] flex flex-col gap-2">
             {toasts.map((toast) => (
-              <Toast key={toast.id} message={toast.message} />
+              <Toast key={toast.id} message={toast.message} type={toast.type} />
             ))}
           </div>,
           document.body
@@ -54,17 +71,22 @@ function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Toast({ message }: { message: string }) {
+function Toast({ message, type }: { message: string; type: "success" | "error" }) {
   return (
     <div
       className={cn(
         "flex items-center gap-2 px-4 py-3 rounded-lg",
-        "bg-stone-900 text-white text-sm font-medium",
+        "text-white text-sm font-medium",
         "shadow-lg animate-in fade-in-0 slide-in-from-bottom-4",
-        "duration-300"
+        "duration-300",
+        type === "success" ? "bg-stone-900" : "bg-red-600"
       )}
     >
-      <Check className="h-4 w-4 text-emerald-400" />
+      {type === "success" ? (
+        <Check className="h-4 w-4 text-emerald-400" />
+      ) : (
+        <AlertCircle className="h-4 w-4 text-white" />
+      )}
       <span>{message}</span>
     </div>
   );

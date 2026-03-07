@@ -19,6 +19,7 @@ import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { useMobileMenu } from "@/lib/mobile-menu-context";
+import { useToast } from "@/components/ui/toast";
 import { copy } from "@/lib/copy";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,7 @@ type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" 
 function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: JoinButtonProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const { showToast } = useToast();
   const { isOpen: isMobileMenuOpen } = useMobileMenu();
 
   // 根据用户成员状态和队伍状态初始化
@@ -91,14 +93,14 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
         if (result.error?.includes("微信号")) {
           setJoinState("wechat_required");
         } else {
-          alert(result.error || copy.api.failed);
+          showToast(result.error || copy.api.failed, "error");
           // 重置到之前的状态
           setJoinState(getInitialState());
         }
       }
     } catch (error) {
       console.error("Join team error:", error);
-      alert(copy.api.networkError);
+      showToast(copy.api.networkError, "error");
       setJoinState(getInitialState());
     }
   };
@@ -214,12 +216,12 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
         onLeave?.();
         router.refresh();
       } else {
-        alert(result.error || copy.teams.leaveTeamFailed);
+        showToast(result.error || copy.teams.leaveTeamFailed, "error");
         setJoinState("approved");
       }
     } catch (error) {
       console.error("Leave team error:", error);
-      alert(copy.api.networkError);
+      showToast(copy.api.networkError, "error");
       setJoinState("approved");
     }
   };
@@ -243,12 +245,12 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       if (response.ok && result.success) {
         router.refresh();
       } else {
-        alert(result.error || copy.teams.formTeamFailed);
+        showToast(result.error || copy.teams.formTeamFailed, "error");
         setJoinState(getInitialState());
       }
     } catch (error) {
       console.error("Form team error:", error);
-      alert(copy.api.networkError);
+      showToast(copy.api.networkError, "error");
       setJoinState(getInitialState());
     }
   };
@@ -269,12 +271,12 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
         setJoinState("leave_pending");
         router.refresh();
       } else {
-        alert(result.error || copy.teams.requestLeaveFailed);
+        showToast(result.error || copy.teams.requestLeaveFailed, "error");
         setJoinState("approved");
       }
     } catch (error) {
       console.error("Request leave error:", error);
-      alert(copy.api.networkError);
+      showToast(copy.api.networkError, "error");
       setJoinState("approved");
     }
   };

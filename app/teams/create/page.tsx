@@ -18,6 +18,7 @@ import { RequirementSelector } from "@/components/ui/requirement-selector";
 import { useLocations } from "@/lib/locations-context";
 import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/components/ui/toast";
 import { copy } from "@/lib/copy";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getRouteById } from "@/app/actions/routes";
@@ -27,6 +28,7 @@ function CreateTeamForm() {
   const { addTeam } = useTeams();
   const { locations, getLocationById } = useLocations();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { showToast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const locationIdFromUrl = searchParams.get("locationId");
@@ -132,6 +134,12 @@ function CreateTeamForm() {
     }
   }, [isAuthenticated, isAuthLoading, router]);
 
+  // 从 useAuth 获取 user 对象（包含微信号）
+  const { user } = useAuth();
+
+  // 检查是否已填写微信号
+  const hasWechat = !!user?.wechat;
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -146,7 +154,7 @@ function CreateTeamForm() {
     try {
       // 验证：如果勾选了"关联路线"，则必须选择路线
       if (hasRoute && !formData.routeId) {
-        alert("请选择一条路线，或取消勾选\"关联具体路线\"");
+        showToast("请选择一条路线，或取消勾选\"关联具体路线\"", "error");
         setIsSubmitting(false);
         return;
       }
@@ -168,7 +176,7 @@ function CreateTeamForm() {
       router.push(`/teams/${newTeam.id}`);
     } catch (error) {
       console.error("创建队伍失败:", error);
-      alert(error instanceof Error ? error.message : copy.teams.createBtnLoading);
+      showToast(error instanceof Error ? error.message : copy.teams.createBtnLoading, "error");
       setIsSubmitting(false);
     }
   };
@@ -214,13 +222,49 @@ function CreateTeamForm() {
           </p>
         </motion.div>
 
+        {/* 微信号未填写提示 */}
+        {!hasWechat && !isAuthLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mb-6"
+          >
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-amber-800">
+                    <strong>请填写微信号</strong>
+                  </p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    创建队伍前需要在个人资料中填写微信号，以便队友联系您。
+                  </p>
+                  <div className="mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100"
+                      asChild
+                    >
+                      <Link href="/profile">
+                        去填写微信号
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Form */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Card className="border-stone-200">
+          <Card className={`border-stone-200 ${!hasWechat ? 'opacity-50 pointer-events-none' : ''}`}>
             <CardHeader>
               <CardTitle className="text-lg">队伍信息</CardTitle>
             </CardHeader>
@@ -552,10 +596,11 @@ function CreateTeamForm() {
                   </Button>
                   <Button
                     type="submit"
-                    className="flex-1 bg-stone-900 hover:bg-stone-800"
-                    disabled={isSubmitting}
+                    className="flex-1 bg-stone-900 hover:bg-stone-800 disabled:bg-stone-300"
+                    disabled={isSubmitting || !hasWechat}
+                    title={!hasWechat ? "请先填写微信号" : undefined}
                   >
-                    {isSubmitting ? copy.teams.createBtnLoading : copy.teams.createBtn}
+                    {!hasWechat ? "请填写微信号" : (isSubmitting ? copy.teams.createBtnLoading : copy.teams.createBtn)}
                   </Button>
                 </div>
               </form>

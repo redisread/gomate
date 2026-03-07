@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { eq } from "drizzle-orm";
 import { getAuth } from "@/lib/auth";
 import { getRandomTeamIcon } from "@/lib/constants";
 import { updateExpiredTeams } from "@/lib/team-status";
+import { copy } from "@/lib/copy";
 
 /**
  * POST /api/teams
@@ -35,6 +37,25 @@ export async function POST(request: NextRequest) {
     }
 
     const db = env.DB as D1Database;
+
+    // 使用 Drizzle ORM 检查用户是否已填写微信号
+    const { drizzle } = await import("drizzle-orm/d1");
+    const schema = await import("@/db/schema");
+    const ormDb = drizzle(db, { schema });
+
+    // 检查用户是否已填写微信号
+    const userRecord = await ormDb
+      .select({ wechat: schema.users.wechat })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .then(rows => rows[0]);
+
+    if (!userRecord?.wechat) {
+      return NextResponse.json(
+        { error: copy.errors.wechatRequired },
+        { status: 400 }
+      );
+    }
 
     const body = await request.json() as {
       locationId?: string;
@@ -87,11 +108,6 @@ export async function POST(request: NextRequest) {
     // 生成队伍ID
     const teamId = `team-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // 使用 Drizzle ORM 插入队伍记录
-    const { drizzle } = await import("drizzle-orm/d1");
-    const schema = await import("@/db/schema");
-    const ormDb = drizzle(db, { schema });
-
     const now = new Date();
     const teamIcon = getRandomTeamIcon();
     await ormDb.insert(schema.teams).values({
@@ -111,17 +127,6 @@ export async function POST(request: NextRequest) {
       createdAt: now,
       updatedAt: now,
     });
-
-    // 查询刚创建的队伍以获取完整数据（包括 icon）
-    const { eq } = await import("drizzle-orm");
-    const newTeamRecord = await ormDb
-      .select({
-        id: schema.teams.id,
-        icon: schema.teams.icon,
-      })
-      .from(schema.teams)
-      .where(eq(schema.teams.id, teamId))
-      .then(rows => rows[0]);
 
     // 创建领队成员记录
     const memberId = `tm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -149,7 +154,7 @@ export async function POST(request: NextRequest) {
         maxMembers,
         currentMembers: 1, // 创建时队长为第一个成员
         requirements,
-        icon: newTeamRecord?.icon || teamIcon,
+        icon: teamIcon,
         status: "recruiting",
         createdAt: now.toISOString(),
       },
