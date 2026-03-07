@@ -243,24 +243,6 @@ const entityTagAssociations = [
 
   // ==================== 广西三城标签 ====================
 
-  // 桂林标签
-  { entityType: "location", entitySlug: "guilin-city", tagName: "适合拍照" },
-  { entityType: "location", entitySlug: "guilin-city", tagName: "亲子" },
-  { entityType: "location", entitySlug: "guilin-city", tagName: "古村" },
-  { entityType: "location", entitySlug: "yangshuo-west-street", tagName: "古村" },
-  { entityType: "location", entitySlug: "yangshuo-west-street", tagName: "适合拍照" },
-  { entityType: "location", entitySlug: "yangshuo-west-street", tagName: "亲子" },
-  { entityType: "location", entitySlug: "longji-terraces", tagName: "适合拍照" },
-  { entityType: "location", entitySlug: "longji-terraces", tagName: "日出" },
-  { entityType: "location", entitySlug: "longji-terraces", tagName: "摄影" },
-
-  // 漓江标签
-  { entityType: "location", entitySlug: "lijiang-river", tagName: "适合拍照" },
-  { entityType: "location", entitySlug: "lijiang-river", tagName: "摄影" },
-  { entityType: "location", entitySlug: "lijiang-river", tagName: "日出" },
-  { entityType: "location", entitySlug: "xingping-old-town", tagName: "古村" },
-  { entityType: "location", entitySlug: "xingping-old-town", tagName: "适合拍照" },
-
   // 柳州标签
   { entityType: "location", entitySlug: "liuzhou-city", tagName: "适合拍照" },
   { entityType: "location", entitySlug: "liuzhou-city", tagName: "亲子" },

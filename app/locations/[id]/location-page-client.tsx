@@ -3,7 +3,7 @@
 import * as React from "react";
 import { notFound } from "next/navigation";
 import { motion } from "framer-motion";
-import { Heart, Share2 } from "lucide-react";
+import { Heart, Share2, Pencil } from "lucide-react";
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
 import { LocationHeader } from "@/app/components/features/location-header";
@@ -17,6 +17,8 @@ import { useLocations } from "@/lib/locations-context";
 import { useAuth } from "@/lib/auth-context";
 import { useFavorite } from "@/lib/hooks/use-favorite";
 import { ShareLocationDialog } from "@/components/features/share-location-dialog";
+import { LocationEditDialog } from "@/app/components/features/location-edit-dialog";
+import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -29,7 +31,9 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
   const location = getLocationById(locationId);
   const [selectedRouteId, setSelectedRouteId] = React.useState<string | null>(null);
   const [shareOpen, setShareOpen] = React.useState(false);
-  const { isAuthenticated } = useAuth();
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false);
+  const { isAuthenticated, user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const { isFavorite, isLoading, isToggling, toggleFavorite } = useFavorite({
     entityType: "location",
     entityId: locationId,
@@ -97,6 +101,16 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
                   地点介绍
                 </h2>
                 <div className="flex items-center gap-2">
+                  {/* 管理员编辑按钮 */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => setEditDialogOpen(true)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:bg-stone-100 transition-colors"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      {copy.common.edit}
+                    </button>
+                  )}
                   <button
                     onClick={() => setShareOpen(true)}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:bg-stone-100 transition-colors"
@@ -228,6 +242,18 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
           open={shareOpen}
           onOpenChange={setShareOpen}
           location={location}
+        />
+      )}
+
+      {isAdmin && location && (
+        <LocationEditDialog
+          location={location}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSuccess={() => {
+            // 刷新地点数据
+            window.location.reload();
+          }}
         />
       )}
     </main>

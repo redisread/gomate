@@ -19,8 +19,6 @@ import { seedKuddoCoffeeLocations } from "./kuddo-coffee";
 import { seedDaliLocations } from "./dali";
 import { seedLijiangLocations } from "./lijiang";
 import { seedXishuangbannaLocations } from "./xishuangbanna";
-import { seedGuilinLocations } from "./guilin";
-import { seedLijiangRiverLocations } from "./lijiang-river";
 import { seedLiuzhouLocations } from "./liuzhou";
 
 export interface LocationData {
@@ -98,15 +96,6 @@ export function seedLocations(db: Database, cities: CityData[]): LocationData[] 
   // 西双版纳
   const xishuangbannaLocations = seedXishuangbannaLocations(db, cities);
   allLocations.push(...xishuangbannaLocations);
-
-  // 广西三城
-  // 桂林
-  const guilinLocations = seedGuilinLocations(db, cities);
-  allLocations.push(...guilinLocations);
-
-  // 漓江
-  const lijiangRiverLocations = seedLijiangRiverLocations(db, cities);
-  allLocations.push(...lijiangRiverLocations);
 
   // 柳州
   const liuzhouLocations = seedLiuzhouLocations(db, cities);

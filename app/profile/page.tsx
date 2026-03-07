@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -31,6 +30,7 @@ import type { Team } from "@/lib/types";
 import { getUserDisplayName, getAgeText, getGenderText } from "@/lib/user-utils";
 import { parseUserExtra } from "@/lib/user-extra";
 import { copy } from "@/lib/copy";
+import { useAuthGuard } from "@/lib/hooks/use-auth-guard";
 
 // 经验等级映射（颜色样式，文案从 copy.enums.level 获取）
 const levelStyles: Record<string, { color: string }> = {
@@ -45,8 +45,7 @@ const c = copy.common;
 const e = copy.enums;
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const { teams, getUserJoinedTeams } = useTeams();
   const { locations } = useLocations();
 
@@ -55,11 +54,7 @@ export default function ProfilePage() {
   const [joinedTeamsLoading, setJoinedTeamsLoading] = React.useState(true);
 
   // 未登录重定向
-  React.useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, isLoading, router]);
+  useAuthGuard();
 
   // 获取用户加入的队伍
   React.useEffect(() => {

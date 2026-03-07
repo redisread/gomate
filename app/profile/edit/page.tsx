@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
 import { copy } from "@/lib/copy";
+import { useAuthGuard } from "@/lib/hooks/use-auth-guard";
 
 // 经验等级选项
 const levelOptions = [
@@ -32,7 +33,7 @@ const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf37
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, refreshUser } = useAuth();
+  const { user, isLoading, refreshUser } = useAuth();
 
   const [formData, setFormData] = React.useState({
     name: "",
@@ -173,11 +174,7 @@ export default function EditProfilePage() {
   };
 
   // 未登录重定向
-  React.useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, isLoading, router]);
+  useAuthGuard();
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>

@@ -30,10 +30,13 @@ Cloudflare 适配器提供了一个 opennextjs-cloudflare 命令行界面 (CLI)�
 
 测试用户账号信息：
 - 测试账号 1：
-  账号：wujiahong2013@gmail.com
+  账号：wujiahong2013@gmail.com （管理员）
   密码：11111111
 - 测试账号 2：
-  账号：1427298682@qq.com
+  账号：1427298682@qq.com （管理员）
+  密码：11111111
+- 测试账号 3：
+  账号：1427298683@qq.com （普通用户）
   密码：11111111
 
 

@@ -106,28 +106,27 @@ export async function POST(
     }
 
     const now = new Date();
-
-    // 更新成员状态
-    await ormDb
-      .update(schema.teamMembers)
-      .set({
-        status: "approved",
-        joinedAt: now,
-        statusUpdatedAt: now,
-      })
-      .where(eq(schema.teamMembers.id, membership.id));
-
-    // 重新计算人数并更新队伍状态
     const newCount = approvedCount + 1;
     const newStatus = newCount >= team.maxMembers ? "full" : "recruiting";
 
-    await ormDb
-      .update(schema.teams)
-      .set({
-        status: newStatus,
-        updatedAt: now,
-      })
-      .where(eq(schema.teams.id, teamId));
+    // 使用 drizzle batch 将成员状态更新和队伍状态更新合并为原子操作，避免竞态条件
+    await ormDb.batch([
+      ormDb
+        .update(schema.teamMembers)
+        .set({
+          status: "approved",
+          joinedAt: now,
+          statusUpdatedAt: now,
+        })
+        .where(eq(schema.teamMembers.id, membership.id)),
+      ormDb
+        .update(schema.teams)
+        .set({
+          status: newStatus,
+          updatedAt: now,
+        })
+        .where(eq(schema.teams.id, teamId)),
+    ]);
 
     // 清除缓存
     revalidateTag(`team-${teamId}`);

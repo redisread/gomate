@@ -4,7 +4,6 @@ import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 interface PaginationProps {
   currentPage: number;
@@ -23,8 +22,6 @@ export function Pagination({
   onPageChange,
   className,
 }: PaginationProps) {
-  const [jumpPage, setJumpPage] = React.useState("");
-
   // 生成页码数组
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -63,20 +60,6 @@ export function Pagination({
     }
 
     return pages;
-  };
-
-  const handleJump = () => {
-    const page = parseInt(jumpPage, 10);
-    if (!isNaN(page) && page >= 1 && page <= totalPages) {
-      onPageChange(page);
-      setJumpPage("");
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleJump();
-    }
   };
 
   // 计算当前页显示的范围
@@ -148,30 +131,6 @@ export function Pagination({
         </Button>
       </div>
 
-      {/* 跳转输入框 */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-stone-500">跳转到</span>
-        <Input
-          type="number"
-          min={1}
-          max={totalPages}
-          value={jumpPage}
-          onChange={(e) => setJumpPage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="h-8 w-16 text-center"
-          placeholder="页码"
-        />
-        <span className="text-sm text-stone-500">页</span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleJump}
-          disabled={!jumpPage || parseInt(jumpPage, 10) < 1 || parseInt(jumpPage, 10) > totalPages}
-          className="h-8"
-        >
-          跳转
-        </Button>
-      </div>
     </div>
   );
 }

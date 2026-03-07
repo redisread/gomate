@@ -12,7 +12,14 @@ function findLocalD1Path(): string {
   }
   const d1Dir = path.join(__dirname, "../.wrangler/state/v3/d1/miniflare-D1DatabaseObject");
   if (fs.existsSync(d1Dir)) {
-    const files = fs.readdirSync(d1Dir).filter((f) => f.endsWith(".sqlite"));
+    // 排除 *.sqlite 空文件，按修改时间排序选择最新的
+    const files = fs.readdirSync(d1Dir)
+      .filter((f) => f.endsWith(".sqlite") && f !== "*.sqlite")
+      .sort((a, b) => {
+        const statA = fs.statSync(path.join(d1Dir, a));
+        const statB = fs.statSync(path.join(d1Dir, b));
+        return statB.mtime.getTime() - statA.mtime.getTime();
+      });
     if (files.length > 0) {
       return path.join(d1Dir, files[0]);
     }
@@ -53,6 +60,7 @@ const seedUsers: schema.NewUser[] = [
     email: "wujiahong2013@gmail.com",
     emailVerified: true,
     level: "beginner",
+    role: "admin",
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -60,6 +68,16 @@ const seedUsers: schema.NewUser[] = [
     id: "test-user-2",
     name: "测试用户2",
     email: "1427298682@qq.com",
+    emailVerified: true,
+    level: "beginner",
+    role: "admin",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "test-user-3",
+    name: "测试用户3",
+    email: "1427298683@qq.com",
     emailVerified: true,
     level: "beginner",
     createdAt: new Date(),
@@ -289,7 +307,7 @@ const seedLocations: schema.NewLocation[] = [
     name: "阳台山",
     slug: "yangtaishan",
     subtitle: "羊台叠翠",
-    description: "阳台山（原名羊台山）海拔587米，是深圳八景之一"羊台叠翠"所在地。横跨宝安、龙华、南山三区，是深圳西部最高峰。",
+    description: "阳台山（原名羊台山）海拔587米，是深圳八景之一「羊台叠翠」所在地。横跨宝安、龙华、南山三区，是深圳西部最高峰。",
     bestSeason: JSON.stringify(["全年"]),
     coverImage: "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=1200&h=600&fit=crop",
     images: JSON.stringify([
@@ -309,7 +327,7 @@ const seedLocations: schema.NewLocation[] = [
     name: "凤凰山",
     slug: "fenghuangshan",
     subtitle: "宝安第一山",
-    description: "凤凰山海拔376米，被誉为"宝安第一山"。山上有凤岩古庙，是深圳著名的祈福圣地，也是休闲徒步的好去处。",
+    description: "凤凰山海拔376米，被誉为「宝安第一山」。山上有凤岩古庙，是深圳著名的祈福圣地，也是休闲徒步的好去处。",
     bestSeason: JSON.stringify(["全年"]),
     coverImage: "https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=1200&h=600&fit=crop",
     images: JSON.stringify([
@@ -916,6 +934,7 @@ async function seed() {
     db.delete(schema.pois).run();
     db.delete(schema.routes).run();
     db.delete(schema.locations).run();
+    db.delete(schema.cities).run();
     db.delete(schema.sessions).run();
     db.delete(schema.accounts).run();
     db.delete(schema.users).run();
@@ -927,6 +946,16 @@ async function seed() {
       db.insert(schema.users).values(user).run();
     }
     console.log(`   ✓ 插入 ${seedUsers.length} 个用户`);
+
+    // 插入城市数据（locations 和 routes 依赖）
+    console.log("🏙️  插入城市数据...");
+    const seedCities = [
+      { id: "city_shenzhen", adcode: "440300", name: "深圳", province: "广东省", createdAt: new Date(), updatedAt: new Date() },
+    ];
+    for (const city of seedCities) {
+      db.insert(schema.cities).values(city).run();
+    }
+    console.log(`   ✓ 插入 ${seedCities.length} 个城市`);
 
     // 插入地点
     console.log("🏔️  插入地点数据...");
@@ -987,6 +1016,15 @@ async function seed() {
         id: "acc-test-2",
         userId: "test-user-2",
         accountId: "1427298682@qq.com",
+        providerId: "credential",
+        password: testPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "acc-test-3",
+        userId: "test-user-3",
+        accountId: "1427298683@qq.com",
         providerId: "credential",
         password: testPassword,
         createdAt: new Date(),

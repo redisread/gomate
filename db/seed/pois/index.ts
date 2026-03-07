@@ -29,9 +29,10 @@ import { seedChengduCityPois } from "./chengdu-city";
 import { seedDaliPois } from "./dali";
 import { seedLijiangPois } from "./lijiang";
 import { seedXishuangbannaPois } from "./xishuangbanna";
-import { seedGuilinPois } from "./guilin";
-import { seedLijiangRiverPois } from "./lijiang-river";
 import { seedLiuzhouPois } from "./liuzhou";
+import { seedKuddoCoffeePois } from "./kuddo-coffee";
+import { seedYifangTiandiPois } from "./yifang-tiandi";
+import { seedErhaiLakePois } from "./erhai-lake";
 
 export interface PoiData {
   id: string;
@@ -147,18 +148,21 @@ export function seedPois(
   const xishuangbannaPois = seedXishuangbannaPois(db, locations, routes);
   allPois.push(...xishuangbannaPois);
 
-  // 广西三城 POI
-  // 桂林 POI
-  const guilinPois = seedGuilinPois(db, locations, routes);
-  allPois.push(...guilinPois);
-
-  // 漓江 POI
-  const lijiangRiverPois = seedLijiangRiverPois(db, locations, routes);
-  allPois.push(...lijiangRiverPois);
-
   // 柳州 POI
   const liuzhouPois = seedLiuzhouPois(db, locations, routes);
   allPois.push(...liuzhouPois);
+
+  // Kuddo Coffee POI
+  const kuddoCoffeePois = seedKuddoCoffeePois(db, locations, routes);
+  allPois.push(...kuddoCoffeePois);
+
+  // 壹方天地 POI
+  const yifangTiandiPois = seedYifangTiandiPois(db, locations, routes);
+  allPois.push(...yifangTiandiPois);
+
+  // 洱海 POI
+  const erhaiLakePois = seedErhaiLakePois(db, locations, routes);
+  allPois.push(...erhaiLakePois);
 
   console.log(`✅ POI 数据插入完成，共 ${allPois.length} 个 POI\n`);
   return allPois;

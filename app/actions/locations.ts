@@ -405,7 +405,7 @@ export async function getLocationsWithPagination(
   // 查询分页数据
   const data = await db.query.locations.findMany({
     where: whereClause,
-    orderBy: [asc(locations.name)],
+    orderBy: [desc(locations.updatedAt)],
     limit,
     offset,
     with: {

@@ -75,6 +75,50 @@ const lijiangPoisData = [
       bestTime: "清晨观日出",
     }),
   },
+  {
+    name: "草海走婚桥",
+    description: "泸沽湖标志性景点，摩梭人走婚文化的象征",
+    coordinates: JSON.stringify({ lat: 27.75, lng: 100.82 }),
+    category: "checkpoint",
+    extra: JSON.stringify({
+      feature: "文化景点",
+      type: "古桥",
+      tips: "了解摩梭走婚文化",
+    }),
+  },
+  {
+    name: "女神湾",
+    description: "泸沽湖最美的湖湾，日落景观绝佳",
+    coordinates: JSON.stringify({ lat: 27.68, lng: 100.75 }),
+    category: "viewpoint",
+    extra: JSON.stringify({
+      feature: "湖湾景观",
+      type: "自然景点",
+      bestTime: "傍晚观日落",
+    }),
+  },
+  {
+    name: "大嘴村",
+    description: "泸沽湖畔的摩梭人村落，体验母系氏族文化",
+    coordinates: JSON.stringify({ lat: 27.73, lng: 100.79 }),
+    category: "checkpoint",
+    extra: JSON.stringify({
+      feature: "摩梭村落",
+      type: "文化体验",
+      tips: "可品尝摩梭美食",
+    }),
+  },
+  {
+    name: "格姆女神山",
+    description: "泸沽湖最高峰，可俯瞰整个湖面",
+    coordinates: JSON.stringify({ lat: 27.77, lng: 100.81 }),
+    category: "viewpoint",
+    extra: JSON.stringify({
+      feature: "观景山顶",
+      type: "自然景点",
+      ticket: "索道收费",
+    }),
+  },
 ];
 
 const entityToPoisData = [
@@ -110,6 +154,30 @@ const entityToPoisData = [
   },
   {
     poiName: "里格半岛",
+    entityType: "location",
+    entitySlug: "lugu-lake",
+    roleType: "viewpoint",
+  },
+  {
+    poiName: "草海走婚桥",
+    entityType: "location",
+    entitySlug: "lugu-lake",
+    roleType: "checkpoint",
+  },
+  {
+    poiName: "女神湾",
+    entityType: "location",
+    entitySlug: "lugu-lake",
+    roleType: "viewpoint",
+  },
+  {
+    poiName: "大嘴村",
+    entityType: "location",
+    entitySlug: "lugu-lake",
+    roleType: "checkpoint",
+  },
+  {
+    poiName: "格姆女神山",
     entityType: "location",
     entitySlug: "lugu-lake",
     roleType: "viewpoint",

@@ -65,6 +65,39 @@ const daliPoisData = [
     }),
   },
   {
+    name: "感通索道",
+    description: "苍山景区主要索道之一，可直达玉带路",
+    coordinates: JSON.stringify({ lat: 25.678, lng: 100.145 }),
+    category: "checkpoint",
+    extra: JSON.stringify({
+      feature: "索道入口",
+      type: "交通设施",
+      ticket: "索道收费",
+    }),
+  },
+  {
+    name: "寂照庵",
+    description: "苍山腰间的尼姑庵，以多肉植物和素斋闻名",
+    coordinates: JSON.stringify({ lat: 25.679, lng: 100.148 }),
+    category: "checkpoint",
+    extra: JSON.stringify({
+      feature: "佛教庵堂",
+      type: "文化景点",
+      tips: "素斋很有名",
+    }),
+  },
+  {
+    name: "玉带路",
+    description: "苍山半山腰的徒步步道，可俯瞰洱海全景",
+    coordinates: JSON.stringify({ lat: 25.685, lng: 100.12 }),
+    category: "viewpoint",
+    extra: JSON.stringify({
+      feature: "徒步路线",
+      type: "自然景观",
+      tips: "平路适合散步",
+    }),
+  },
+  {
     name: "大理火车站",
     description: "大理主要铁路交通枢纽",
     coordinates: JSON.stringify({ lat: 25.6065, lng: 100.2509 }),
@@ -104,6 +137,24 @@ const entityToPoisData = [
   },
   {
     poiName: "苍山洗马潭",
+    entityType: "location",
+    entitySlug: "cangshan-mountain",
+    roleType: "viewpoint",
+  },
+  {
+    poiName: "感通索道",
+    entityType: "location",
+    entitySlug: "cangshan-mountain",
+    roleType: "checkpoint",
+  },
+  {
+    poiName: "寂照庵",
+    entityType: "location",
+    entitySlug: "cangshan-mountain",
+    roleType: "checkpoint",
+  },
+  {
+    poiName: "玉带路",
     entityType: "location",
     entitySlug: "cangshan-mountain",
     roleType: "viewpoint",

@@ -48,6 +48,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth-context";
+import { useAuthGuard } from "@/lib/hooks/use-auth-guard";
 import { useTeams } from "@/lib/teams-context";
 import { useLocations } from "@/lib/locations-context";
 import { approveMember, rejectMember } from "@/app/actions/teams";
@@ -152,7 +153,7 @@ interface PendingApproval {
 function MyTeamsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const { teams, getUserJoinedTeams } = useTeams();
   const { locations } = useLocations();
   const { showToast } = useToast();
@@ -182,11 +183,7 @@ function MyTeamsContent() {
   const [isProcessing, setIsProcessing] = React.useState(false);
 
   // 未登录重定向
-  React.useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, isLoading, router]);
+  useAuthGuard();
 
   // 当 URL 参数变化时更新 Tab
   React.useEffect(() => {

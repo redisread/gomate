@@ -1,5 +1,5 @@
 /**
- * 七娘山 POI 数据种子
+ * Kuddo Coffee POI 数据种子
  */
 
 import type Database from "better-sqlite3";
@@ -8,96 +8,82 @@ import type { LocationData } from "../locations";
 import type { RouteData } from "../routes";
 import type { PoiData } from "./index";
 
-const qiniangshanPoisData = [
+const kuddoCoffeePoisData = [
   {
-    name: "七娘山主峰",
-    description: "七娘山最高峰，海拔869米，深圳第二高峰，可俯瞰大鹏半岛全景",
-    coordinates: JSON.stringify({ lat: 22.5289, lng: 114.5456 }),
-    category: "mountain_peak",
-    extra: JSON.stringify({
-      elevation: 869,
-      openHours: "全天开放",
-      fee: "免费",
-    }),
-  },
-  {
-    name: "七娘山登山口",
-    description: "主峰登山口起点，有登山指引标识",
-    coordinates: JSON.stringify({ lat: 22.5234, lng: 114.5412 }),
+    name: "手冲吧台",
+    description: "专业咖啡师手冲咖啡展示区，可观看冲煮过程",
+    coordinates: JSON.stringify({ lat: 22.6545, lng: 114.0323 }),
     category: "checkpoint",
     extra: JSON.stringify({
-      hasRestroom: true,
-      hasParking: true,
+      feature: "咖啡制作",
+      type: "互动体验",
+      tips: "可与咖啡师交流",
     }),
   },
   {
-    name: "七娘山观景平台",
-    description: "半山腰观景平台，可远眺大鹏湾海景",
-    coordinates: JSON.stringify({ lat: 22.5267, lng: 114.5434 }),
+    name: "拍照打卡墙",
+    description: "Kuddo标志性背景墙，工业风设计拍照圣地",
+    coordinates: JSON.stringify({ lat: 22.6546, lng: 114.0323 }),
     category: "viewpoint",
     extra: JSON.stringify({
-      elevation: 600,
-      bestTime: "晴天视野最佳",
+      feature: "拍照打卡",
+      type: "网红墙",
+      bestTime: "光线充足的下午",
     }),
   },
   {
-    name: "七娘山二号峰",
-    description: "七娘山第二高峰，与主峰相连的姐妹峰，景色同样壮观",
-    coordinates: JSON.stringify({ lat: 22.5275, lng: 114.5465 }),
-    category: "mountain_peak",
+    name: "靠窗景观位",
+    description: "落地窗边最佳观景座位，自然光充足",
+    coordinates: JSON.stringify({ lat: 22.6545, lng: 114.0324 }),
+    category: "viewpoint",
     extra: JSON.stringify({
-      elevation: 850,
-      openHours: "全天开放",
-      tips: "与主峰相连的环线必经点",
+      feature: "景观座位",
+      type: "休闲区",
+      tips: "适合办公和阅读",
     }),
   },
   {
-    name: "七娘山科考线入口",
-    description: "国家地质公园科考线路入口，有完善的地质科普标识",
-    coordinates: JSON.stringify({ lat: 22.5225, lng: 114.5405 }),
-    category: "checkpoint",
+    name: "户外露台",
+    description: "壹方天地商业街区景观露台座位",
+    coordinates: JSON.stringify({ lat: 22.6544, lng: 114.0323 }),
+    category: "viewpoint",
+    categoryType: "checkpoint",
     extra: JSON.stringify({
-      hasParking: true,
-      hasInformation: true,
-      feature: "地质科普路线起点",
+      feature: "户外座位",
+      type: "吸烟区",
+      tips: "可欣赏街景",
     }),
   },
 ];
 
 const entityToPoisData = [
   {
-    poiName: "七娘山主峰",
+    poiName: "手冲吧台",
     entityType: "location",
-    entitySlug: "qiniang-mountain",
+    entitySlug: "kuddo-coffee",
     roleType: "checkpoint",
   },
   {
-    poiName: "七娘山登山口",
+    poiName: "拍照打卡墙",
     entityType: "location",
-    entitySlug: "qiniang-mountain",
-    roleType: "checkpoint",
-  },
-  {
-    poiName: "七娘山观景平台",
-    entityType: "location",
-    entitySlug: "qiniang-mountain",
+    entitySlug: "kuddo-coffee",
     roleType: "viewpoint",
   },
   {
-    poiName: "七娘山二号峰",
+    poiName: "靠窗景观位",
     entityType: "location",
-    entitySlug: "qiniang-mountain",
-    roleType: "checkpoint",
+    entitySlug: "kuddo-coffee",
+    roleType: "viewpoint",
   },
   {
-    poiName: "七娘山科考线入口",
+    poiName: "户外露台",
     entityType: "location",
-    entitySlug: "qiniang-mountain",
+    entitySlug: "kuddo-coffee",
     roleType: "checkpoint",
   },
 ];
 
-export function seedQiniangshanPois(
+export function seedKuddoCoffeePois(
   db: Database,
   locations: LocationData[],
   routes: RouteData[]
@@ -110,7 +96,7 @@ export function seedQiniangshanPois(
   const now = Date.now();
   const poiMap = new Map<string, string>();
 
-  for (const poi of qiniangshanPoisData) {
+  for (const poi of kuddoCoffeePoisData) {
     const id = nanoid();
     insertPoiStmt.run(
       id,
@@ -156,7 +142,7 @@ export function seedQiniangshanPois(
     }
   }
 
-  return qiniangshanPoisData.map((poi) => ({
+  return kuddoCoffeePoisData.map((poi) => ({
     id: poiMap.get(poi.name)!,
     name: poi.name,
   }));

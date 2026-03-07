@@ -10,7 +10,7 @@ import type { LocationData } from "./index";
 
 const daliLocations = [
   {
-    name: "大理古城",
+    name: "大理",
     slug: "dali-old-town",
     subtitle: "风花雪月之地",
     description:
@@ -18,11 +18,11 @@ const daliLocations = [
     address: "云南省大理白族自治州大理市",
     bestSeason: JSON.stringify(["春季", "夏季", "秋季", "冬季"]),
     coverImage:
-      "https://images.unsplash.com/photo-1527212986666-4d2d47a4d0cc?w=800&q=80",
+      "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=800&q=80",
     images: JSON.stringify([
-      "https://images.unsplash.com/photo-1527212986666-4d2d47a4d0cc?w=800&q=80",
-      "https://images.unsplash.com/photo-1548013146-72479768bada?w=800&q=80",
-      "https://images.unsplash.com/photo-1599577908906-8d6c700342b5?w=800&q=80",
+      "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=800&q=80",
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
     ]),
     coordinates: JSON.stringify({ lat: 25.6949, lng: 100.1661 }),
     extra: JSON.stringify({

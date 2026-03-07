@@ -132,15 +132,6 @@ const citiesData: Omit<CityData, "id" | "createdAt" | "updatedAt">[] = [
   },
   // 广西
   {
-    adcode: "450300",
-    name: "桂林",
-    pinyin: "guilin",
-    province: "广西壮族自治区",
-    level: "city",
-    isHot: true,
-    parentId: null,
-  },
-  {
     adcode: "450200",
     name: "柳州",
     pinyin: "liuzhou",

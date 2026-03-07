@@ -54,6 +54,61 @@ const xishuangbannaPoisData = [
     }),
   },
   {
+    name: "棕榈园",
+    description: "热带棕榈科植物专类园，种类丰富",
+    coordinates: JSON.stringify({ lat: 21.935, lng: 101.245 }),
+    category: "viewpoint",
+    extra: JSON.stringify({
+      feature: "植物专类园",
+      type: "园林景观",
+      tips: "拍照效果好",
+    }),
+  },
+  {
+    name: "奇花异卉园",
+    description: "汇集各类珍稀奇特花卉，四季花开不断",
+    coordinates: JSON.stringify({ lat: 21.928, lng: 101.252 }),
+    category: "viewpoint",
+    extra: JSON.stringify({
+      feature: "花卉展览",
+      type: "园林景观",
+      bestTime: "全年皆宜",
+    }),
+  },
+  {
+    name: "热带雨林区",
+    description: "原始热带雨林景观，板根、绞杀等景观独特",
+    coordinates: JSON.stringify({ lat: 21.925, lng: 101.258 }),
+    category: "viewpoint",
+    extra: JSON.stringify({
+      feature: "热带雨林",
+      type: "自然景观",
+      tips: "注意防蚊虫",
+    }),
+  },
+  {
+    name: "名人名树园",
+    description: "各国名人亲手种植的树木，具有纪念意义",
+    coordinates: JSON.stringify({ lat: 21.932, lng: 101.248 }),
+    category: "checkpoint",
+    extra: JSON.stringify({
+      feature: "纪念园林",
+      type: "文化景点",
+      tips: "了解名人故事",
+    }),
+  },
+  {
+    name: "绿石林",
+    description: "石灰岩地貌与热带植物共生的独特景观",
+    coordinates: JSON.stringify({ lat: 21.938, lng: 101.255 }),
+    category: "viewpoint",
+    extra: JSON.stringify({
+      feature: "喀斯特地貌",
+      type: "自然奇观",
+      ticket: "电瓶车可达",
+    }),
+  },
+  {
     name: "野象谷高空栈道",
     description: "安全观赏野生亚洲象的最佳位置",
     coordinates: JSON.stringify({ lat: 22.13, lng: 100.87 }),
@@ -98,6 +153,36 @@ const entityToPoisData = [
   },
   {
     poiName: "王莲池",
+    entityType: "location",
+    entitySlug: "xtbg",
+    roleType: "viewpoint",
+  },
+  {
+    poiName: "棕榈园",
+    entityType: "location",
+    entitySlug: "xtbg",
+    roleType: "viewpoint",
+  },
+  {
+    poiName: "奇花异卉园",
+    entityType: "location",
+    entitySlug: "xtbg",
+    roleType: "viewpoint",
+  },
+  {
+    poiName: "热带雨林区",
+    entityType: "location",
+    entitySlug: "xtbg",
+    roleType: "viewpoint",
+  },
+  {
+    poiName: "名人名树园",
+    entityType: "location",
+    entitySlug: "xtbg",
+    roleType: "checkpoint",
+  },
+  {
+    poiName: "绿石林",
     entityType: "location",
     entitySlug: "xtbg",
     roleType: "viewpoint",

@@ -11,23 +11,34 @@ import { Hero } from "@/app/components/features/hero";
 import { SearchBar } from "@/app/components/features/search-bar";
 import { Filter } from "@/components/features/filter";
 import { LocationCard } from "@/app/components/features/location-card";
+import { Pagination } from "@/app/components/features/pagination";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/lib/locations-context";
 import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
 import { copy } from "@/lib/copy";
-import type { Tag } from "@/lib/types";
+import type { Location, Tag } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const { teams } = useTeams();
-  const { locations, isLoading } = useLocations();
+  const { locations } = useLocations();
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
-  const [selectedFilters, setSelectedFilters] = React.useState<
-    Record<string, string[]>
-  >({});
+
+  // 首页地点列表独立状态
+  const [homeLocations, setHomeLocations] = React.useState<Location[]>([]);
+  const [homePagination, setHomePagination] = React.useState({
+    page: 1,
+    pageSize: 9,
+    total: 0,
+    totalPages: 0,
+  });
+  const [homeIsLoading, setHomeIsLoading] = React.useState(true);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [selectedCityId, setSelectedCityId] = React.useState("");
+  const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
 
   // 搜索处理：跳转到 locations 页面
   const handleSearch = (query: string) => {
@@ -38,7 +49,7 @@ export default function HomePage() {
     }
   };
 
-  // 聚合城市数据
+  // 聚合城市数据（从全局 Context 的全量数据中聚合）
   const cityList = React.useMemo(() => {
     const cityMap = new Map<string, string>();
     locations.forEach((loc) => {
@@ -51,74 +62,95 @@ export default function HomePage() {
       .sort((a, b) => a.name.localeCompare(b.name, "zh"));
   }, [locations]);
 
-  const handleFilterChange = (groupId: string, optionId: string) => {
-    if (groupId === "clear") {
-      setSelectedFilters({});
-      return;
-    }
-
-    setSelectedFilters((prev) => {
-      const current = prev[groupId] || [];
-      const updated = current.includes(optionId)
-        ? current.filter((id) => id !== optionId)
-        : [...current, optionId];
-
-      return {
-        ...prev,
-        [groupId]: updated,
-      };
-    });
-  };
-
   // 从所有 locations 聚合唯一标签，生成标签筛选分组
   const tagFilterGroup = React.useMemo(() => {
     const tagMap = new Map<string, Tag>();
-    locations.forEach(location => {
-      (location.tags as Tag[] ?? []).forEach(tag => {
+    locations.forEach((location) => {
+      (location.tags as Tag[] ?? []).forEach((tag) => {
         if (tag?.id && !tagMap.has(tag.id)) {
           tagMap.set(tag.id, tag);
         }
       });
     });
-    const tags = Array.from(tagMap.values()).sort((a, b) => a.name.localeCompare(b.name, "zh"));
+    const tags = Array.from(tagMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, "zh")
+    );
     if (tags.length === 0) return null;
     return {
       id: "tag",
       label: "标签",
-      options: tags.map(t => ({ id: t.id, label: t.name })),
+      options: tags.map((t) => ({ id: t.id, label: t.name })),
     };
   }, [locations]);
 
-  // Filter locations based on selected filters
-  const filteredLocations = React.useMemo(() => {
-    return locations.filter((location) => {
-      // 城市筛选
-      if (
-        selectedFilters.city?.length > 0 &&
-        !selectedFilters.city.includes(location.cityId)
-      ) {
-        return false;
-      }
+  // 供 Filter 组件使用的已选筛选项
+  const selectedFilters = React.useMemo(
+    () => ({
+      city: selectedCityId ? [selectedCityId] : [],
+      tag: selectedTagIds,
+    }),
+    [selectedCityId, selectedTagIds]
+  );
 
-      // 难度筛选
-      if (
-        selectedFilters.difficulty?.length > 0 &&
-        !selectedFilters.difficulty.includes(location.difficulty)
-      ) {
-        return false;
-      }
-
-      // 标签筛选（OR 逻辑：匹配任一已选标签即通过）
-      if (selectedFilters.tag?.length > 0) {
-        const locationTagIds = ((location.tags as Tag[]) ?? []).map((t) => t.id);
-        if (!selectedFilters.tag.some((id) => locationTagIds.includes(id))) {
-          return false;
+  // 获取首页地点列表（后端分页+筛选）
+  const fetchHomeLocations = React.useCallback(
+    async (params: { page: number; cityId?: string; tagIds?: string[] }) => {
+      setHomeIsLoading(true);
+      try {
+        const query = new URLSearchParams();
+        query.set("page", params.page.toString());
+        query.set("pageSize", "9");
+        if (params.cityId) query.set("cityId", params.cityId);
+        if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
+        const res = await fetch(`/api/locations?${query}`);
+        const data = await res.json();
+        if (data.success) {
+          setHomeLocations(data.locations);
+          setHomePagination(data.pagination);
         }
+      } finally {
+        setHomeIsLoading(false);
       }
+    },
+    []
+  );
 
-      return true;
-    });
-  }, [selectedFilters, locations]);
+  // 初始加载
+  React.useEffect(() => {
+    fetchHomeLocations({ page: 1 });
+  }, [fetchHomeLocations]);
+
+  const handleFilterChange = (groupId: string, optionId: string) => {
+    if (groupId === "clear") {
+      setSelectedCityId("");
+      setSelectedTagIds([]);
+      setCurrentPage(1);
+      fetchHomeLocations({ page: 1 });
+      return;
+    }
+
+    if (groupId === "city") {
+      const newCityId = selectedCityId === optionId ? "" : optionId;
+      setSelectedCityId(newCityId);
+      setCurrentPage(1);
+      fetchHomeLocations({ page: 1, cityId: newCityId, tagIds: selectedTagIds });
+    }
+
+    if (groupId === "tag") {
+      const newTagIds = selectedTagIds.includes(optionId)
+        ? selectedTagIds.filter((t) => t !== optionId)
+        : [...selectedTagIds, optionId];
+      setSelectedTagIds(newTagIds);
+      setCurrentPage(1);
+      fetchHomeLocations({ page: 1, cityId: selectedCityId, tagIds: newTagIds });
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchHomeLocations({ page, cityId: selectedCityId, tagIds: selectedTagIds });
+    document.getElementById("locations")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -165,15 +197,39 @@ export default function HomePage() {
           </div>
 
           {/* Locations Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredLocations.map((location, index) => (
-              <LocationCard
-                key={location.id}
-                location={location}
-                index={index}
+          {homeIsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-64 rounded-2xl bg-stone-100 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {homeLocations.map((location, index) => (
+                <LocationCard
+                  key={location.id}
+                  location={location}
+                  index={index}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {homeLocations.length > 0 && homePagination.totalPages > 1 && (
+            <div className="mt-8">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={homePagination.totalPages}
+                totalItems={homePagination.total}
+                pageSize={homePagination.pageSize}
+                onPageChange={handlePageChange}
               />
-            ))}
-          </div>
+            </div>
+          )}
 
           {/* View All Button */}
           <motion.div
@@ -221,9 +277,7 @@ export default function HomePage() {
               .filter((t) => t.status === "recruiting")
               .slice(0, 4)
               .map((team, index) => {
-                const location = locations.find(
-                  (l) => l.id === team.locationId
-                );
+                const location = locations.find((l) => l.id === team.locationId);
                 if (!location) return null;
 
                 return (
@@ -248,7 +302,9 @@ export default function HomePage() {
                               {location.name} · {team.date}
                             </p>
                             <div className="flex items-center gap-3 mt-2 text-sm text-stone-600">
-                              <span>{team.currentMembers}/{team.maxMembers}人</span>
+                              <span>
+                                {team.currentMembers}/{team.maxMembers}人
+                              </span>
                               <span className="text-stone-300">|</span>
                               <span>领队: {team.leader.name}</span>
                             </div>

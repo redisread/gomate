@@ -88,7 +88,7 @@ export function LocationsProvider({ children }: { children: React.ReactNode }) {
 
   // 初始加载
   React.useEffect(() => {
-    fetchLocations({ page: 1 });
+    fetchLocations({ page: 1, pageSize: 200 });
   }, [fetchLocations]);
 
   const getLocationById = React.useCallback((id: string) => {

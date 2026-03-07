@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Pencil, Trash2, X, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,11 +32,11 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { MultiImageUpload } from "@/components/ui/multi-image-upload";
+import { LocationEditDialog } from "@/app/components/features/location-edit-dialog";
 import { SUPPORTED_CITIES } from "@/lib/constants/cities";
 import { copy } from "@/lib/copy";
 
 const a = copy.admin;
-const e = copy.enums;
 
 interface Location {
   id: string;
@@ -44,44 +44,34 @@ interface Location {
   slug: string;
   subtitle: string | null;
   description: string;
-  difficulty: string;
-  duration: string;
-  distance: string;
-  elevation: string | null;
   coverImage: string;
-  bestSeason: string;
-  tags: string | null;
-  adcode?: string;
-  cityName?: string;
+  images?: string[];
+  bestSeason?: string[] | string;
+  address?: string | null;
+  cityId?: string | null;
+  cityName?: string | null;
+  coordinates?: { lat: number; lng: number } | null;
+  extra?: {
+    facilities?: string[];
+    tips?: string;
+    warnings?: string[];
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
-
-const difficultyOptions = [
-  { value: "easy", label: e.difficulty.easy },
-  { value: "moderate", label: e.difficulty.moderate },
-  { value: "hard", label: e.difficulty.hard },
-  { value: "expert", label: e.difficulty.expert },
-];
 
 const defaultFormData = {
   name: "",
   slug: "",
   subtitle: "",
   description: "",
-  difficulty: "easy",
-  duration: "",
-  distance: "",
-  elevation: "",
   coverImage: "",
   images: [] as string[],
   bestSeason: "",
-  tags: "",
   address: "",
-  adcode: "",
+  cityId: "",
   cityName: "",
   coordinates: "",
-  routeDescription: "",
   tips: "",
 };
 
@@ -126,70 +116,48 @@ export default function AdminLocationsPage() {
 
   // 打开编辑表单
   const openEditForm = async (location: Location) => {
-    setEditingLocation(location);
     // 获取完整数据
     try {
       const res = await fetch(`/api/locations/${location.id}`);
       const data = await res.json();
       if (data.success) {
-        const loc = data.location;
-        setFormData({
-          name: loc.name || "",
-          slug: loc.slug || "",
-          subtitle: loc.subtitle || "",
-          description: loc.description || "",
-          difficulty: loc.difficulty || "easy",
-          duration: loc.duration || "",
-          distance: loc.distance || "",
-          elevation: loc.elevation || "",
-          coverImage: loc.coverImage || "",
-          images: Array.isArray(loc.images) ? loc.images : [],
-          bestSeason: Array.isArray(loc.bestSeason) ? loc.bestSeason.join(", ") : (loc.bestSeason || ""),
-          tags: Array.isArray(loc.tags) ? loc.tags.join(", ") : (loc.tags || ""),
-          address: loc.address || "",
-          adcode: loc.adcode || "",
-          cityName: loc.cityName || "",
-          coordinates: loc.coordinates ? JSON.stringify(loc.coordinates) : "",
-          routeDescription: loc.routeDescription || "",
-          tips: loc.tips || "",
-        });
+        // 将完整数据传递给编辑对话框
+        setEditingLocation(data.location);
+        setIsFormOpen(true);
+      } else {
+        alert(data.error || a.getLocationDetailFailed);
       }
     } catch (error) {
       console.error(a.getLocationDetailFailed, error);
+      alert(a.getLocationDetailFailed);
     }
-    setIsFormOpen(true);
   };
 
-  // 提交表单
+  // 提交创建表单
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
       const submitData = {
-        ...(editingLocation ? { id: editingLocation.id } : {}),
         name: formData.name,
         slug: formData.slug || undefined,
         subtitle: formData.subtitle || null,
         description: formData.description,
-        difficulty: formData.difficulty,
-        duration: formData.duration,
-        distance: formData.distance,
-        elevation: formData.elevation || null,
         coverImage: formData.coverImage,
         bestSeason: formData.bestSeason.split(",").map(s => s.trim()).filter(Boolean),
-        tags: formData.tags ? formData.tags.split(",").map(s => s.trim()).filter(Boolean) : null,
         address: formData.address || null,
-        adcode: formData.adcode || null,
+        cityId: formData.cityId || null,
         cityName: formData.cityName || null,
         coordinates: formData.coordinates ? JSON.parse(formData.coordinates) : { lat: 0, lng: 0 },
-        routeDescription: formData.routeDescription || null,
-        tips: formData.tips || null,
+        extra: {
+          tips: formData.tips || null,
+        },
         images: formData.images,
       };
 
       const res = await fetch("/api/locations", {
-        method: editingLocation ? "PUT" : "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submitData),
       });
@@ -233,10 +201,6 @@ export default function AdminLocationsPage() {
     }
   };
 
-  const getDifficultyLabel = (difficulty: string) => {
-    return difficultyOptions.find(d => d.value === difficulty)?.label || difficulty;
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -265,9 +229,6 @@ export default function AdminLocationsPage() {
             <tr>
               <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colName}</th>
               <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colCity}</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colDifficulty}</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colDuration}</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colDistance}</th>
               <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colCreatedAt}</th>
               <th className="text-left px-4 py-3 text-sm font-medium text-stone-600">{a.colUpdatedAt}</th>
               <th className="text-right px-4 py-3 text-sm font-medium text-stone-600">{a.colActions}</th>
@@ -276,7 +237,7 @@ export default function AdminLocationsPage() {
           <tbody className="divide-y divide-stone-100">
             {locations.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-stone-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-stone-500">
                   {a.noLocations}
                 </td>
               </tr>
@@ -301,18 +262,6 @@ export default function AdminLocationsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-stone-600">{location.cityName || "-"}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block px-2 py-1 text-xs rounded ${
-                      location.difficulty === "easy" ? "bg-green-100 text-green-700" :
-                      location.difficulty === "moderate" ? "bg-yellow-100 text-yellow-700" :
-                      location.difficulty === "hard" ? "bg-orange-100 text-orange-700" :
-                      "bg-red-100 text-red-700"
-                    }`}>
-                      {getDifficultyLabel(location.difficulty)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-stone-600">{location.duration || "-"}</td>
-                  <td className="px-4 py-3 text-stone-600">{location.distance || "-"}</td>
                   <td className="px-4 py-3 text-stone-500 text-sm">
                     {location.createdAt ? new Date(location.createdAt).toLocaleDateString("zh-CN") : "-"}
                   </td>
@@ -345,13 +294,11 @@ export default function AdminLocationsPage() {
         </table>
       </div>
 
-      {/* 新增/编辑表单对话框 */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+      {/* 新增表单对话框 */}
+      <Dialog open={isFormOpen && !editingLocation} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingLocation ? a.editLocation : a.createLocation}
-            </DialogTitle>
+            <DialogTitle>{a.createLocation}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -396,57 +343,7 @@ export default function AdminLocationsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="difficulty">{a.formDifficultyRequired}</Label>
-                <Select
-                  value={formData.difficulty}
-                  onValueChange={(value) => setFormData({ ...formData, difficulty: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {difficultyOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="duration">{a.formDurationRequired}</Label>
-                <Input
-                  id="duration"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  placeholder={a.placeholderDuration}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="distance">{a.formDistanceRequired}</Label>
-                <Input
-                  id="distance"
-                  value={formData.distance}
-                  onChange={(e) => setFormData({ ...formData, distance: e.target.value })}
-                  placeholder={a.placeholderDistance}
-                  required
-                />
-              </div>
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="elevation">{a.formElevation}</Label>
-                <Input
-                  id="elevation"
-                  value={formData.elevation}
-                  onChange={(e) => setFormData({ ...formData, elevation: e.target.value })}
-                  placeholder={a.placeholderElevation}
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="bestSeason">{a.formBestSeason}</Label>
                 <Input
@@ -456,19 +353,16 @@ export default function AdminLocationsPage() {
                   placeholder={a.placeholderBestSeason}
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="cityName">{a.formCity}</Label>
+                <Label htmlFor="cityId">{a.formCity}</Label>
                 <Select
-                  value={formData.cityName}
+                  value={formData.cityId}
                   onValueChange={(value) => {
-                    const selected = SUPPORTED_CITIES.find(c => c.name === value);
+                    const selected = SUPPORTED_CITIES.find(c => `city_${c.adcode}` === value);
                     setFormData({
                       ...formData,
+                      cityId: selected ? `city_${selected.adcode}` : "",
                       cityName: selected?.name || "",
-                      adcode: selected?.adcode || "",
                     });
                   }}
                 >
@@ -477,22 +371,12 @@ export default function AdminLocationsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {SUPPORTED_CITIES.map((city) => (
-                      <SelectItem key={city.adcode} value={city.name}>
+                      <SelectItem key={city.adcode} value={`city_${city.adcode}`}>
                         {city.name} ({city.province})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="adcode">{a.formAdcode}</Label>
-                <Input
-                  id="adcode"
-                  value={formData.adcode}
-                  readOnly
-                  placeholder={a.placeholderAdcode}
-                  className="bg-stone-50"
-                />
               </div>
             </div>
 
@@ -520,15 +404,6 @@ export default function AdminLocationsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="tags">{a.formTags}</Label>
-                <Input
-                  id="tags"
-                  value={formData.tags}
-                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  placeholder={a.placeholderTags}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="address">{a.formAddress}</Label>
                 <Input
                   id="address"
@@ -536,26 +411,15 @@ export default function AdminLocationsPage() {
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="coordinates">{a.formCoordinates}</Label>
-              <Input
-                id="coordinates"
-                value={formData.coordinates}
-                onChange={(e) => setFormData({ ...formData, coordinates: e.target.value })}
-                placeholder={a.placeholderCoordinates}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="routeDescription">{a.formRouteDesc}</Label>
-              <Textarea
-                id="routeDescription"
-                value={formData.routeDescription}
-                onChange={(e) => setFormData({ ...formData, routeDescription: e.target.value })}
-                rows={2}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="coordinates">{a.formCoordinates}</Label>
+                <Input
+                  id="coordinates"
+                  value={formData.coordinates}
+                  onChange={(e) => setFormData({ ...formData, coordinates: e.target.value })}
+                  placeholder={a.placeholderCoordinates}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -579,6 +443,19 @@ export default function AdminLocationsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* 编辑表单对话框 */}
+      {editingLocation && (
+        <LocationEditDialog
+          location={editingLocation}
+          open={isFormOpen}
+          onOpenChange={setIsFormOpen}
+          onSuccess={() => {
+            setEditingLocation(null);
+            loadLocations();
+          }}
+        />
+      )}
 
       {/* 删除确认对话框 */}
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { requireAdmin } from "@/lib/admin";
-import { getLocations, getPopularTags, getAllTagsByType, getLocationsWithPagination } from "@/app/actions/locations";
+import { getPopularTags, getAllTagsByType, getLocationsWithPagination } from "@/app/actions/locations";
 
 const getCloudflareContext = async () => {
   const mod = await import("@opennextjs/cloudflare");
@@ -15,7 +15,7 @@ const getCloudflareContext = async () => {
  *   - tags=true: 返回热门标签
  *   - allTags=true: 返回所有标签（按类型分组）
  *   - page: 页码（从1开始，默认1）
- *   - pageSize: 每页数量（默认12，最大50）
+ *   - pageSize: 每页数量（默认12，最大200）
  *   - search: 搜索关键词
  *   - cityId: 城市ID筛选
  *   - tagIds: 标签ID数组（逗号分隔）
@@ -42,94 +42,24 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 检查是否需要分页查询
     const page = parseInt(searchParams.get("page") || "1", 10);
-    const pageSize = Math.min(parseInt(searchParams.get("pageSize") || "12", 10), 50);
+    const pageSize = Math.min(parseInt(searchParams.get("pageSize") || "12", 10), 200);
     const search = searchParams.get("search") || "";
     const cityId = searchParams.get("cityId") || "";
     const tagIdsParam = searchParams.get("tagIds");
     const tagIds = tagIdsParam ? tagIdsParam.split(",").filter(Boolean) : [];
 
-    // 如果有分页或筛选参数，使用分页查询
-    if (page > 1 || search || cityId || tagIds.length > 0) {
-      const result = await getLocationsWithPagination({
-        page,
-        pageSize,
-        search,
-        cityId,
-        tagIds,
-      });
+    // 统一使用分页查询
+    const result = await getLocationsWithPagination({
+      page,
+      pageSize,
+      search,
+      cityId,
+      tagIds,
+    });
 
-      // 格式化返回数据
-      const formattedLocations = result.locations.map((location) => {
-        const firstRoute = location.routes?.[0];
-
-        return {
-          id: location.id,
-          name: location.name,
-          slug: location.slug,
-          subtitle: location.subtitle,
-          description: location.description,
-          address: location.address,
-          cityId: location.cityId,
-          cityName: location.city?.name || location.cityName,
-          coverImage: location.coverImage,
-          images: location.images ? JSON.parse(location.images as string) : [],
-          bestSeason: location.bestSeason ? JSON.parse(location.bestSeason as string) : [],
-          coordinates: location.coordinates ? JSON.parse(location.coordinates as string) : { lat: 0, lng: 0 },
-          extra: location.extra ? JSON.parse(location.extra as string) : undefined,
-
-          routes: location.routes?.map((route: any) => ({
-            id: route.id,
-            locationId: route.locationId,
-            cityId: route.cityId,
-            name: route.name,
-            description: route.description,
-            difficulty: route.difficulty,
-            duration: route.duration,
-            distance: route.distance,
-            elevation: route.elevation,
-            routeGuide: route.routeGuide ? JSON.parse(route.routeGuide as string) : undefined,
-            waypoints: route.waypoints ? JSON.parse(route.waypoints as string) : [],
-            equipmentNeeded: route.equipmentNeeded ? JSON.parse(route.equipmentNeeded as string) : [],
-            warnings: route.warnings ? JSON.parse(route.warnings as string) : [],
-            createdAt: route.createdAt,
-            updatedAt: route.updatedAt,
-          })) || [],
-
-          tags: location.tags || [],
-
-          difficulty: firstRoute?.difficulty,
-          duration: firstRoute?.duration,
-          distance: firstRoute?.distance,
-          elevation: firstRoute?.elevation,
-          routeGuide: firstRoute?.routeGuide ? JSON.parse(firstRoute.routeGuide as string) : undefined,
-          waypoints: firstRoute?.waypoints ? JSON.parse(firstRoute.waypoints as string) : [],
-          equipmentNeeded: firstRoute?.equipmentNeeded ? JSON.parse(firstRoute.equipmentNeeded as string) : [],
-
-          createdAt: location.createdAt,
-          updatedAt: location.updatedAt,
-        };
-      });
-
-      return NextResponse.json({
-        success: true,
-        locations: formattedLocations,
-        pagination: {
-          page: result.page,
-          pageSize: result.pageSize,
-          total: result.total,
-          totalPages: result.totalPages,
-        },
-      });
-    }
-
-    // 默认使用全量查询（向后兼容）
-    const locations = await getLocations();
-
-    // 格式化返回数据，添加兼容层
-    const formattedLocations = locations.map((location) => {
-      // 从第一条路线提取字段作为兼容层
+    // 格式化返回数据
+    const formattedLocations = result.locations.map((location) => {
       const firstRoute = location.routes?.[0];
 
       return {
@@ -147,8 +77,7 @@ export async function GET(request: NextRequest) {
         coordinates: location.coordinates ? JSON.parse(location.coordinates as string) : { lat: 0, lng: 0 },
         extra: location.extra ? JSON.parse(location.extra as string) : undefined,
 
-        // 新字段：完整的 routes 数组
-        routes: location.routes?.map((route) => ({
+        routes: location.routes?.map((route: any) => ({
           id: route.id,
           locationId: route.locationId,
           cityId: route.cityId,
@@ -168,7 +97,6 @@ export async function GET(request: NextRequest) {
 
         tags: location.tags || [],
 
-        // 兼容层：从第一条路线提取字段（临时）
         difficulty: firstRoute?.difficulty,
         duration: firstRoute?.duration,
         distance: firstRoute?.distance,
@@ -185,6 +113,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       locations: formattedLocations,
+      pagination: {
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
     });
   } catch (error) {
     console.error("Get locations error:", error);

@@ -18,11 +18,11 @@ const lijiangLocations = [
     address: "云南省丽江市古城区",
     bestSeason: JSON.stringify(["春季", "秋季"]),
     coverImage:
-      "https://images.unsplash.com/photo-1545063914-885712560550?w=800&q=80",
-    images: JSON.stringify([
-      "https://images.unsplash.com/photo-1545063914-885712560550?w=800&q=80",
       "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=800&q=80",
-      "https://images.unsplash.com/photo-1598887142487-3c8e6876c477?w=800&q=80",
+    images: JSON.stringify([
+      "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=800&q=80",
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
     ]),
     coordinates: JSON.stringify({ lat: 26.8721, lng: 100.2296 }),
     extra: JSON.stringify({
