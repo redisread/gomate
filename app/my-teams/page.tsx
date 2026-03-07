@@ -18,6 +18,8 @@ import {
   Hourglass,
   CheckCircle,
   XCircle,
+  ClipboardCheck,
+  Loader2,
 } from "lucide-react";
 
 import { Navbar } from "@/app/components/layout/navbar";
@@ -26,9 +28,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth-context";
 import { useTeams } from "@/lib/teams-context";
 import { useLocations } from "@/lib/locations-context";
+import { approveMember, rejectMember } from "@/app/actions/teams";
+import { useToast } from "@/components/ui/toast";
 
 // Loading fallback
 function MyTeamsLoading() {
@@ -93,12 +115,41 @@ interface ApplicationRecord {
   } | null;
 }
 
+// 待审批记录类型
+interface PendingApproval {
+  id: string;
+  teamId: string;
+  userId: string;
+  createdAt: Date | string;
+  team: {
+    id: string;
+    title: string;
+    date: string | null;
+    time: string | null;
+    currentMembers: number;
+    maxMembers: number;
+    location: {
+      id: string;
+      name: string;
+      coverImage: string;
+    } | null;
+  } | null;
+  applicant: {
+    id: string;
+    name: string;
+    image: string | null;
+    bio: string | null;
+    level: string;
+  } | null;
+}
+
 function MyTeamsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading } = useAuth();
   const { teams, getUserJoinedTeams } = useTeams();
   const { locations } = useLocations();
+  const { showToast } = useToast();
 
   // 从 URL 参数获取默认 Tab
   const defaultTab = searchParams.get("tab") || "created";
@@ -113,6 +164,17 @@ function MyTeamsContent() {
   const [applicationsLoading, setApplicationsLoading] = React.useState(true);
   const [applicationStats, setApplicationStats] = React.useState({ pending: 0, approved: 0, rejected: 0 });
 
+  // 待审批申请状态（队长视角）
+  const [pendingApprovals, setPendingApprovals] = React.useState<PendingApproval[]>([]);
+  const [pendingApprovalsLoading, setPendingApprovalsLoading] = React.useState(true);
+  const [pendingApprovalsTotal, setPendingApprovalsTotal] = React.useState(0);
+
+  // 待审批详情弹窗状态
+  const [selectedApproval, setSelectedApproval] = React.useState<PendingApproval | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = React.useState(false);
+  const [isRejectConfirmOpen, setIsRejectConfirmOpen] = React.useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
+
   // 未登录重定向
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -123,7 +185,7 @@ function MyTeamsContent() {
   // 当 URL 参数变化时更新 Tab
   React.useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab && ["created", "joined", "applications", "history"].includes(tab)) {
+    if (tab && ["created", "joined", "applications", "pending", "history"].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -179,6 +241,103 @@ function MyTeamsContent() {
 
     fetchJoinedTeams();
   }, [user?.id, getUserJoinedTeams]);
+
+  // 加载待审批申请（队长视角）
+  React.useEffect(() => {
+    const fetchPendingApprovals = async () => {
+      if (user?.id) {
+        try {
+          setPendingApprovalsLoading(true);
+          const response = await fetch("/api/user/pending-approvals");
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              setPendingApprovals(result.approvals || []);
+              setPendingApprovalsTotal(result.total || 0);
+            }
+          }
+        } catch (error) {
+          console.error("获取待审批申请失败:", error);
+          setPendingApprovals([]);
+        } finally {
+          setPendingApprovalsLoading(false);
+        }
+      } else {
+        setPendingApprovals([]);
+        setPendingApprovalsLoading(false);
+      }
+    };
+
+    fetchPendingApprovals();
+  }, [user?.id]);
+
+  // 刷新待审批申请列表
+  const refreshPendingApprovals = async () => {
+    if (user?.id) {
+      try {
+        const response = await fetch("/api/user/pending-approvals");
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setPendingApprovals(result.approvals || []);
+            setPendingApprovalsTotal(result.total || 0);
+          }
+        }
+      } catch (error) {
+        console.error("刷新待审批申请失败:", error);
+      }
+    }
+  };
+
+  // 打开申请人详情弹窗
+  const handleCardClick = (approval: PendingApproval) => {
+    setSelectedApproval(approval);
+    setIsDetailOpen(true);
+  };
+
+  // 处理通过申请
+  const handleApprove = async () => {
+    if (!selectedApproval) return;
+
+    setIsProcessing(true);
+    try {
+      const result = await approveMember(selectedApproval.teamId, selectedApproval.userId);
+      if (result.success) {
+        showToast(result.message);
+        setIsDetailOpen(false);
+        await refreshPendingApprovals();
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "审批失败");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 处理拒绝申请（打开确认弹窗）
+  const handleReject = () => {
+    setIsRejectConfirmOpen(true);
+  };
+
+  // 确认拒绝申请
+  const handleConfirmReject = async () => {
+    if (!selectedApproval) return;
+
+    setIsProcessing(true);
+    try {
+      const result = await rejectMember(selectedApproval.teamId, selectedApproval.userId);
+      if (result.success) {
+        showToast(result.message);
+        setIsRejectConfirmOpen(false);
+        setIsDetailOpen(false);
+        await refreshPendingApprovals();
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "操作失败");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // 当 Tab 切换时更新 URL（不刷新页面）
   const handleTabChange = (value: string) => {
@@ -370,7 +529,118 @@ function MyTeamsContent() {
     );
   };
 
-  const EmptyState = ({ type }: { type: "created" | "joined" | "applications" | "history" }) => {
+  // 等级显示映射
+  const levelLabels: Record<string, string> = {
+    beginner: "新手",
+    intermediate: "进阶",
+    advanced: "资深",
+    expert: "专家",
+  };
+
+  // 格式化时间
+  const formatTimeAgo = (date: Date | string) => {
+    const d = new Date(date);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 60) {
+      return `${minutes}分钟前`;
+    } else if (hours < 24) {
+      return `${hours}小时前`;
+    } else {
+      return `${days}天前`;
+    }
+  };
+
+  // 待审批卡片组件
+  const PendingApprovalCard = ({ approval, onClick }: { approval: PendingApproval; onClick: (approval: PendingApproval) => void }) => {
+    const team = approval.team;
+    const applicant = approval.applicant;
+
+    if (!team || !applicant) return null;
+
+    return (
+      <Card
+        className="border-stone-200 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer group"
+        onClick={() => onClick(approval)}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start gap-4">
+            {/* Applicant Avatar */}
+            <div className="w-16 h-16 rounded-full bg-stone-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {applicant.image ? (
+                <img src={applicant.image} alt={applicant.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xl font-medium text-stone-500">{applicant.name?.charAt(0) || "?"}</span>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-stone-900 group-hover:text-stone-700 transition-colors">{applicant.name}</h3>
+                    <Badge variant="outline" className="text-xs">
+                      {levelLabels[applicant.level] || "新手"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-stone-500 mt-1 line-clamp-1">
+                    {applicant.bio || "暂无简介"}
+                  </p>
+                </div>
+                <Badge className="bg-amber-100 text-amber-700">
+                  <Hourglass className="h-3 w-3 mr-1" />
+                  待审核
+                </Badge>
+              </div>
+
+              {/* Team Info */}
+              <div className="mt-3 p-3 bg-stone-50 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-medium text-stone-700">申请加入：</span>
+                  <span className="text-sm text-stone-900">{team.title}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-stone-500">
+                  {team.date && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {team.date}
+                    </span>
+                  )}
+                  {team.time && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      {team.time}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3.5 w-3.5" />
+                    {team.currentMembers}/{team.maxMembers}人
+                  </span>
+                </div>
+              </div>
+
+              {/* Apply Time */}
+              <p className="text-xs text-stone-400 mt-2">
+                申请时间：{formatTimeAgo(approval.createdAt)}
+              </p>
+            </div>
+
+            {/* Chevron */}
+            <div className="flex-shrink-0 self-center">
+              <ChevronRight className="h-5 w-5 text-stone-300 group-hover:text-stone-500 group-hover:translate-x-1 transition-all" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const EmptyState = ({ type }: { type: "created" | "joined" | "applications" | "pending" | "history" }) => {
     const configs = {
       created: {
         icon: Crown,
@@ -392,6 +662,13 @@ function MyTeamsContent() {
         description: "浏览队伍，申请加入感兴趣的队伍",
         action: "探索队伍",
         href: "/teams",
+      },
+      pending: {
+        icon: ClipboardCheck,
+        title: "没有待审批申请",
+        description: "作为队长，有人申请加入你的队伍时会显示在这里",
+        action: "查看队伍",
+        href: "/my-teams?tab=created",
       },
       history: {
         icon: Clock,
@@ -461,7 +738,7 @@ function MyTeamsContent() {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:inline-flex bg-stone-100">
+            <TabsList className="w-full sm:w-auto grid grid-cols-5 sm:inline-flex bg-stone-100">
               <TabsTrigger value="created" className="data-[state=active]:bg-white">
                 <Crown className="h-4 w-4 mr-2 sm:mr-1" />
                 <span className="hidden sm:inline">我创建的</span>
@@ -489,6 +766,16 @@ function MyTeamsContent() {
                 {applicationStats.pending > 0 && (
                   <span className="ml-1.5 text-xs bg-amber-200 text-amber-700 px-1.5 py-0.5 rounded-full">
                     {applicationStats.pending}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="data-[state=active]:bg-white">
+                <ClipboardCheck className="h-4 w-4 mr-2 sm:mr-1" />
+                <span className="hidden sm:inline">待审批</span>
+                <span className="sm:hidden">审批</span>
+                {pendingApprovalsTotal > 0 && (
+                  <span className="ml-1.5 text-xs bg-red-200 text-red-700 px-1.5 py-0.5 rounded-full">
+                    {pendingApprovalsTotal}
                   </span>
                 )}
               </TabsTrigger>
@@ -553,6 +840,24 @@ function MyTeamsContent() {
               )}
             </TabsContent>
 
+            {/* Pending Approvals */}
+            <TabsContent value="pending" className="mt-6">
+              {pendingApprovalsLoading ? (
+                <div className="animate-pulse space-y-4">
+                  <div className="h-24 bg-stone-200 rounded" />
+                  <div className="h-24 bg-stone-200 rounded" />
+                </div>
+              ) : pendingApprovals.length === 0 ? (
+                <EmptyState type="pending" />
+              ) : (
+                <div className="space-y-4">
+                  {pendingApprovals.map((approval) => (
+                    <PendingApprovalCard key={approval.id} approval={approval} onClick={handleCardClick} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
             {/* History */}
             <TabsContent value="history" className="mt-6">
               {historyTeams.length === 0 ? (
@@ -570,6 +875,139 @@ function MyTeamsContent() {
       </div>
 
       <Footer />
+
+      {/* 申请人详情弹窗 */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>申请人详情</DialogTitle>
+            <DialogDescription>
+              查看申请人的详细信息和申请详情
+            </DialogDescription>
+          </DialogHeader>
+          {selectedApproval && (
+            <div className="space-y-6">
+              {/* 申请人信息 */}
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 rounded-full bg-stone-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {selectedApproval.applicant?.image ? (
+                    <img
+                      src={selectedApproval.applicant.image}
+                      alt={selectedApproval.applicant.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-medium text-stone-500">
+                      {selectedApproval.applicant?.name?.charAt(0) || "?"}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-stone-900">
+                      {selectedApproval.applicant?.name}
+                    </h3>
+                    <Badge variant="outline" className="text-xs">
+                      {levelLabels[selectedApproval.applicant?.level || "beginner"] || "新手"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-stone-500 mt-1">
+                    申请时间：{formatTimeAgo(selectedApproval.createdAt)}
+                  </p>
+                </div>
+              </div>
+
+              {/* 简介 */}
+              <div className="bg-stone-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-stone-700 mb-2">个人简介</h4>
+                <p className="text-sm text-stone-600">
+                  {selectedApproval.applicant?.bio || "暂无简介"}
+                </p>
+              </div>
+
+              {/* 队伍信息 */}
+              <div className="border-t border-stone-200 pt-4">
+                <h4 className="text-sm font-medium text-stone-700 mb-3">申请加入的队伍</h4>
+                <div className="bg-stone-50 p-4 rounded-lg space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-stone-500">队伍名称：</span>
+                    <Link
+                      href={`/teams/${selectedApproval.team?.id}`}
+                      className="text-sm font-medium text-stone-900 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {selectedApproval.team?.title}
+                    </Link>
+                  </div>
+                  {selectedApproval.team?.date && (
+                    <div className="flex items-center gap-2 text-sm text-stone-500">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>{selectedApproval.team.date}</span>
+                    </div>
+                  )}
+                  {selectedApproval.team?.time && (
+                    <div className="flex items-center gap-2 text-sm text-stone-500">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>{selectedApproval.team.time}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-sm text-stone-500">
+                    <Users className="h-3.5 w-3.5" />
+                    <span>
+                      <span className={selectedApproval.team && selectedApproval.team.currentMembers >= selectedApproval.team.maxMembers ? "text-amber-600" : "text-emerald-600"}>
+                        {selectedApproval.team?.currentMembers}
+                      </span>
+                      /{selectedApproval.team?.maxMembers}人
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={handleReject}
+              disabled={isProcessing}
+              className="flex-1"
+            >
+              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              拒绝
+            </Button>
+            <Button
+              onClick={handleApprove}
+              disabled={isProcessing}
+              className="flex-1 bg-stone-900 hover:bg-stone-800"
+            >
+              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              通过
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 拒绝确认弹窗 */}
+      <AlertDialog open={isRejectConfirmOpen} onOpenChange={setIsRejectConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认拒绝申请？</AlertDialogTitle>
+            <AlertDialogDescription>
+              拒绝后，该申请人将不能加入此队伍。此操作不可撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessing}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmReject}
+              disabled={isProcessing}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              确认拒绝
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }

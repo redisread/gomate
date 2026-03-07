@@ -29,3 +29,27 @@ export const REQUIREMENT_PRESETS = [
 ] as const;
 
 export type RequirementPreset = typeof REQUIREMENT_PRESETS[number];
+
+// 队伍图标（Emoji）列表 - 户外/徒步主题
+export const TEAM_ICONS = [
+  // 山峰类
+  '⭿️', '🏔️', '🗻', '🏞️', '🌄', '🌅',
+  // 自然类
+  '🌲', '🌳', '🌴', '🌵', '🎋', '🌿', '🍃', '🍂',
+  // 动物类
+  '🦅', '🦉', '🦋', '🐿️', '🦌', '🦊', '🐻', '🐺',
+  // 活动类
+  '🥽', '🏃', '🚶', '🥾', '🎒', '⛺', '🏕️', '🔥',
+  // 天气/风景类
+  '☀️', '⛅', '🌤️', '🌈', '⭐', '🌟', '💫', '🌙',
+  // 方向/地标类
+  '🧭', '🗺️', '🚩', '🎯', '🎪', '🌉', '🛤️',
+] as const;
+
+/**
+ * 随机获取一个队伍图标（emoji）
+ * @returns 随机 emoji 字符
+ */
+export function getRandomTeamIcon(): string {
+  return TEAM_ICONS[Math.floor(Math.random() * TEAM_ICONS.length)];
+}

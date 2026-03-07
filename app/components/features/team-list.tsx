@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { leaderLevelLabels } from "@/lib/constants";
@@ -108,11 +107,10 @@ function TeamList({ className, locationId, routeId }: TeamListProps) {
                 <Card className="group hover:shadow-md transition-all duration-300 border-stone-200 cursor-pointer hover:border-stone-300">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-3">
-                      {/* Leader Avatar */}
-                      <Avatar className="h-10 w-10 border-2 border-stone-100 flex-shrink-0">
-                        <AvatarImage src={team.leader.avatar} />
-                        <AvatarFallback>{team.leader.name[0]}</AvatarFallback>
-                      </Avatar>
+                      {/* Team Icon (Emoji) */}
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 border-2 border-stone-100 flex-shrink-0 flex items-center justify-center text-lg">
+                        {team.icon || '⭿️'}
+                      </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
@@ -209,11 +207,10 @@ function TeamList({ className, locationId, routeId }: TeamListProps) {
               >
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
-                    {/* Leader Avatar */}
-                    <Avatar className="h-10 w-10 border-2 border-stone-100 flex-shrink-0">
-                      <AvatarImage src={team.leader.avatar} />
-                      <AvatarFallback>{team.leader.name[0]}</AvatarFallback>
-                    </Avatar>
+                    {/* Team Icon (Emoji) */}
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-stone-200 to-stone-300 border-2 border-stone-100 flex-shrink-0 flex items-center justify-center text-lg opacity-70">
+                      {team.icon || '⭿️'}
+                    </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">

@@ -8,7 +8,7 @@ import {
   users,
   TeamStatus,
 } from "@/db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -320,42 +320,39 @@ export async function approveMember(teamId: string, userId: string) {
     throw new Error(copy.errors.applicationNotFound);
   }
 
-  // 使用事务保证原子性
-  await db.transaction(async (tx) => {
-    const now = new Date();
+  // D1 不支持 transaction，先查询再执行更新
+  const now = new Date();
 
-    // 先查询当前已审核通过的人数（在事务内保证一致性）
-    const [{ count: approvedCount }] = await tx
-      .select({ count: sql<number>`count(*)` })
-      .from(teamMembers)
-      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.status, "approved")));
+  // 查询当前已审核通过的人数
+  const [{ count: approvedCount }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(teamMembers)
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.status, "approved")));
 
-    if (approvedCount >= team.maxMembers) {
-      throw new Error(copy.errors.teamAlreadyFull);
-    }
+  if (approvedCount >= team.maxMembers) {
+    throw new Error(copy.errors.teamAlreadyFull);
+  }
 
+  // 使用 batch 保证原子性（D1 支持）
+  await db.batch([
     // 更新成员状态
-    await tx
+    db
       .update(teamMembers)
       .set({
         status: "approved",
         joinedAt: now,
         statusUpdatedAt: now,
       })
-      .where(eq(teamMembers.id, membership.id));
-
+      .where(eq(teamMembers.id, membership.id)),
     // 重新计算人数并更新队伍状态
-    const newCount = approvedCount + 1;
-    const newStatus: TeamStatus = newCount >= team.maxMembers ? "full" : "recruiting";
-
-    await tx
+    db
       .update(teams)
       .set({
-        status: newStatus,
+        status: (approvedCount + 1) >= team.maxMembers ? "full" : "recruiting",
         updatedAt: now,
       })
-      .where(eq(teams.id, teamId));
-  });
+      .where(eq(teams.id, teamId)),
+  ]);
 
   // 清除缓存
   revalidateTag(`team-${teamId}`);
@@ -718,7 +715,7 @@ export async function getPendingApplicationsForLeader() {
   const applications = await db.query.teamMembers.findMany({
     where: and(
       eq(teamMembers.status, "pending"),
-      sql`${teamMembers.teamId} IN (${sql.join(teamIds)})`
+      inArray(teamMembers.teamId, teamIds)
     ),
     with: {
       team: {

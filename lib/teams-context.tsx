@@ -45,6 +45,7 @@ function formatTeamFromDB(apiTeam: Record<string, unknown>): Team {
     maxMembers: apiTeam.maxMembers as number,
     currentMembers: apiTeam.currentMembers as number,
     requirements: Array.isArray(apiTeam.requirements) ? apiTeam.requirements : (apiTeam.requirements ? JSON.parse(apiTeam.requirements as string) : []),
+    icon: (apiTeam.icon as string) || "⛰️",
     status: apiTeam.status as Team["status"],
     createdAt: apiTeam.createdAt ? new Date(apiTeam.createdAt as string).toISOString().split("T")[0] : getCurrentDate(),
     leader: apiTeam.leader ? {
@@ -130,6 +131,7 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
       maxMembers: apiTeam.maxMembers,
       currentMembers: apiTeam.currentMembers,
       requirements: apiTeam.requirements || [],
+      icon: apiTeam.icon || "⛰️",
       status: apiTeam.status,
       createdAt: apiTeam.createdAt ? new Date(apiTeam.createdAt).toISOString().split("T")[0] : getCurrentDate(),
       leader: apiTeam.leader ? {

@@ -2,7 +2,7 @@
 
 import { getDB } from "@/db";
 import { locations, routes, cities, teams, teamMembers, tags, entityToTags } from "@/db/schema";
-import { eq, desc, asc, and, inArray, sql, count } from "drizzle-orm";
+import { eq, desc, asc, and, inArray, sql, count, like, or } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 
 // 获取地点列表（包含路线信息）
@@ -305,4 +305,131 @@ export async function getAllTagsByType() {
   });
 
   return grouped;
+}
+
+// 分页查询参数类型
+export interface GetLocationsPaginationParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  cityId?: string;
+  tagIds?: string[];
+}
+
+// 分页查询返回类型
+export interface GetLocationsPaginationResult {
+  locations: any[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+// 获取地点列表（分页 + 筛选）
+export async function getLocationsWithPagination(
+  params: GetLocationsPaginationParams = {}
+): Promise<GetLocationsPaginationResult> {
+  const db = await getDB();
+
+  const {
+    page = 1,
+    pageSize = 12,
+    search = "",
+    cityId = "",
+    tagIds = [],
+  } = params;
+
+  // 限制每页最大数量
+  const limit = Math.min(pageSize, 50);
+  const offset = (page - 1) * limit;
+
+  // 构建筛选条件
+  const conditions: any[] = [];
+
+  // 搜索条件（名称或描述）
+  if (search.trim()) {
+    const searchPattern = `%${search.trim()}%`;
+    conditions.push(
+      or(
+        like(locations.name, searchPattern),
+        like(locations.description, searchPattern)
+      )
+    );
+  }
+
+  // 城市筛选
+  if (cityId) {
+    conditions.push(eq(locations.cityId, cityId));
+  }
+
+  // 标签筛选 - 获取符合标签的地点ID
+  let locationIdsWithTags: string[] = [];
+  if (tagIds.length > 0) {
+    const tagResults = await db
+      .select({ locationId: entityToTags.entityId })
+      .from(entityToTags)
+      .where(
+        and(
+          eq(entityToTags.entityType, "location"),
+          inArray(entityToTags.tagId, tagIds)
+        )
+      )
+      .groupBy(entityToTags.entityId);
+
+    locationIdsWithTags = tagResults.map((r) => r.locationId);
+
+    if (locationIdsWithTags.length === 0) {
+      // 没有符合条件的地点，直接返回空结果
+      return {
+        locations: [],
+        total: 0,
+        page,
+        pageSize: limit,
+        totalPages: 0,
+      };
+    }
+
+    conditions.push(inArray(locations.id, locationIdsWithTags));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // 查询总数
+  const countResult = await db
+    .select({ count: count() })
+    .from(locations)
+    .where(whereClause || sql`1=1`);
+
+  const total = countResult[0]?.count || 0;
+
+  // 查询分页数据
+  const data = await db.query.locations.findMany({
+    where: whereClause,
+    orderBy: [asc(locations.name)],
+    limit,
+    offset,
+    with: {
+      city: true,
+      routes: {
+        orderBy: [asc(routes.difficulty)],
+      },
+    },
+  });
+
+  // 获取标签
+  const locationIds = data.map((loc) => loc.id);
+  const locationTags = await getLocationsTags(locationIds);
+
+  const locationsWithTags = data.map((location) => ({
+    ...location,
+    tags: locationTags[location.id] || [],
+  }));
+
+  return {
+    locations: locationsWithTags,
+    total,
+    page,
+    pageSize: limit,
+    totalPages: Math.ceil(total / limit),
+  };
 }

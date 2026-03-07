@@ -121,6 +121,7 @@ export interface Team {
   maxMembers: number;
   currentMembers: number;
   requirements: string[];
+  icon?: string; // 队伍图标（emoji）
   leader: {
     id: string;
     name: string;

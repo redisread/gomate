@@ -64,6 +64,13 @@
       "when": 1772820805424,
       "tag": "0008_tense_kabuki",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1772852711597,
+      "tag": "0009_sweet_omega_sentinel",
+      "breakpoints": true
     }
   ]
 }

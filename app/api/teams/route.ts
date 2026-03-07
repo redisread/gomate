@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getAuth } from "@/lib/auth";
+import { getRandomTeamIcon } from "@/lib/constants";
 
 /**
  * POST /api/teams
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
     const ormDb = drizzle(db, { schema });
 
     const now = new Date();
+    const teamIcon = getRandomTeamIcon();
     await ormDb.insert(schema.teams).values({
       id: teamId,
       locationId,
@@ -100,10 +102,22 @@ export async function POST(request: NextRequest) {
       endTime: endTime,
       maxMembers,
       requirements: requirements ? JSON.stringify(requirements) : null,
+      icon: teamIcon,
       status: "recruiting",
       createdAt: now,
       updatedAt: now,
     });
+
+    // 查询刚创建的队伍以获取完整数据（包括 icon）
+    const { eq } = await import("drizzle-orm");
+    const newTeamRecord = await ormDb
+      .select({
+        id: schema.teams.id,
+        icon: schema.teams.icon,
+      })
+      .from(schema.teams)
+      .where(eq(schema.teams.id, teamId))
+      .then(rows => rows[0]);
 
     // 创建领队成员记录
     const memberId = `tm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -130,6 +144,7 @@ export async function POST(request: NextRequest) {
         maxMembers,
         currentMembers: 1, // 创建时队长为第一个成员
         requirements,
+        icon: newTeamRecord?.icon || teamIcon,
         status: "recruiting",
         createdAt: now.toISOString(),
       },
@@ -190,6 +205,7 @@ export async function GET(request: NextRequest) {
       endTime: schema.teams.endTime,
       maxMembers: schema.teams.maxMembers,
       requirements: schema.teams.requirements,
+      icon: schema.teams.icon,
       status: schema.teams.status,
       createdAt: schema.teams.createdAt,
       updatedAt: schema.teams.updatedAt,
@@ -210,6 +226,7 @@ export async function GET(request: NextRequest) {
       endTime: Date;
       maxMembers: number;
       requirements: string | null;
+      icon: string;
       status: string;
       createdAt: Date;
       updatedAt: Date;
@@ -267,6 +284,7 @@ export async function GET(request: NextRequest) {
         duration: `${durationHours}小时`,
         maxMembers: row.maxMembers,
         currentMembers: row.currentMembers,
+        icon: row.icon || '⭿️',
         requirements: (() => {
           try {
             if (row.requirements && typeof row.requirements === 'string') {

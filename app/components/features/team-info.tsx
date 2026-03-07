@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { MarkdownText } from "@/components/ui/markdown-text";
 import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +40,10 @@ function TeamInfo({ team, className }: TeamInfoProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Description */}
-          <p className="text-stone-600 leading-relaxed">{team.description}</p>
+          <MarkdownText
+            text={team.description || ''}
+            className="text-stone-600 leading-relaxed"
+          />
 
           {/* Member Progress */}
           <div>

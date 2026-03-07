@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     const ormDb = drizzle(db, { schema });
 
     // 获取用户的所有申请记录（包括 pending, approved, rejected）
-    const applications = await ormDb.query.teamMembers.findMany({
+    const allApplications = await ormDb.query.teamMembers.findMany({
       where: eq(schema.teamMembers.userId, session.user.id),
       with: {
         team: {
@@ -70,6 +70,11 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [desc(schema.teamMembers.createdAt)],
     });
+
+    // 过滤掉用户自己是队长的申请记录
+    const applications = allApplications.filter(
+      (app) => app.team?.leaderId !== session.user.id
+    );
 
     // 格式化返回数据
     const formattedApplications = applications.map((app) => {
@@ -103,7 +108,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // 按状态分组统计
+    // 按状态分组统计（基于过滤后的数据）
     const stats = {
       pending: applications.filter((a) => a.status === "pending").length,
       approved: applications.filter((a) => a.status === "approved").length,

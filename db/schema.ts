@@ -256,6 +256,7 @@ export const teams = sqliteTable(
     endTime: integer("end_time", { mode: "timestamp" }).notNull(), // 活动结束时间
     maxMembers: integer("max_members").notNull().default(10), // 最大人数限制
     requirements: text("requirements"), // 入队要求（JSON 数组）
+    icon: text("icon").default("⭿️").notNull(), // 队伍图标（emoji）
     status: text("status").notNull().default("recruiting"), // 状态: recruiting(招募中), full(已满), formed(已组建), completed(已完成), cancelled(已取消)
     createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 创建时间
     updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(), // 更新时间
