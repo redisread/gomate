@@ -27,3 +27,32 @@ export function getGenderText(gender: string | null): string {
       return "未设置";
   }
 }
+
+/**
+ * 计算年龄
+ */
+export function calculateAge(birthday: string | null | undefined): number | null {
+  if (!birthday) return null;
+
+  const birthDate = new Date(birthday);
+  if (isNaN(birthDate.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  // 如果今年生日还没到，年龄减1
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  return age >= 0 ? age : null;
+}
+
+/**
+ * 获取年龄展示文本
+ */
+export function getAgeText(birthday: string | null | undefined): string {
+  const age = calculateAge(birthday);
+  return age !== null ? `${age}岁` : "";
+}
