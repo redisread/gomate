@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { MultiImageUpload } from "@/components/ui/multi-image-upload";
+import { TagSelector } from "@/components/ui/tag-selector";
 import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 import {
@@ -30,8 +31,22 @@ import {
   getAmapNavigateUrl,
   AmapGeocodeResult,
 } from "@/lib/map-utils";
+import { getEntityTags } from "@/app/actions/tags";
 
 const a = copy.admin;
+
+// 辅助函数：格式化坐标显示
+const formatCoordinatesDisplay = (coordsJson: string): string => {
+  try {
+    const coords = JSON.parse(coordsJson);
+    if (coords.lat !== undefined && coords.lng !== undefined) {
+      return `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+    }
+  } catch {
+    // 解析失败返回空
+  }
+  return "未设置";
+};
 
 // 季节选项
 const SEASONS = [
@@ -99,7 +114,11 @@ export function LocationEditDialog({
   const [isSearching, setIsSearching] = React.useState(false);
   const [showSearchResults, setShowSearchResults] = React.useState(false);
 
-  // 加载城市列表
+  // 标签状态
+  const [availableTags, setAvailableTags] = React.useState<Array<{ id: string; name: string }>>([]);
+  const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
+
+  // 加载城市列表和可用标签
   React.useEffect(() => {
     fetch("/api/cities")
       .then(res => res.json())
@@ -109,6 +128,16 @@ export function LocationEditDialog({
         }
       })
       .catch(err => console.error("加载城市列表失败:", err));
+
+    // 加载所有 location 类型的标签
+    fetch("/api/tags?type=location")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setAvailableTags(data.tags);
+        }
+      })
+      .catch(err => console.error("加载标签列表失败:", err));
   }, []);
 
   // 切换季节选择
@@ -171,7 +200,7 @@ export function LocationEditDialog({
     }
   };
 
-  // 当弹窗打开时，加载地点数据
+  // 当弹窗打开时，加载地点数据和标签
   React.useEffect(() => {
     if (open && location) {
       setFormData({
@@ -191,6 +220,11 @@ export function LocationEditDialog({
           ? JSON.stringify(location.coordinates)
           : "",
       });
+
+      // 加载地点当前关联的标签
+      getEntityTags(location.id, "location")
+        .then(tags => setSelectedTagIds(tags.map(t => t.id)))
+        .catch(err => console.error("加载地点标签失败:", err));
     }
   }, [open, location]);
 
@@ -216,6 +250,7 @@ export function LocationEditDialog({
           : { lat: 0, lng: 0 },
         extra: {},
         images: formData.images,
+        tagIds: selectedTagIds,
       };
 
       const res = await fetch("/api/locations", {
@@ -338,6 +373,17 @@ export function LocationEditDialog({
           </div>
 
           <div className="space-y-2">
+            <Label>{copy.admin.formTags}</Label>
+            <TagSelector
+              value={selectedTagIds}
+              onChange={setSelectedTagIds}
+              availableTags={availableTags}
+              entityType="location"
+              placeholder={copy.admin.addTagPlaceholder}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label>{a.formCoverImageRequired}</Label>
             <ImageUpload
               value={formData.coverImage}
@@ -366,7 +412,13 @@ export function LocationEditDialog({
                 id="address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="输入地址后点击搜索"
+                placeholder="输入地址后点击搜索或按回车键"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSearchAddress();
+                  }
+                }}
               />
               <Button
                 type="button"
@@ -418,10 +470,13 @@ export function LocationEditDialog({
               <Label htmlFor="coordinates">{a.formCoordinates}</Label>
               <Input
                 id="coordinates"
-                value={formData.coordinates}
-                onChange={(e) => setFormData({ ...formData, coordinates: e.target.value })}
-                placeholder={a.placeholderCoordinates}
+                value={formatCoordinatesDisplay(formData.coordinates)}
+                disabled
+                className="bg-stone-50 text-stone-600"
               />
+              <p className="text-xs text-stone-500">
+                {copy.locations.coordinatesHint}
+              </p>
             </div>
             <div className="space-y-2 flex items-end">
               <Button

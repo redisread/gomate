@@ -175,6 +175,12 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     });
 
+    // 如果有标签，关联到地点
+    if (body.tagIds && body.tagIds.length > 0) {
+      const { addTagsToEntity } = await import("@/app/actions/tags");
+      await addTagsToEntity(id, "location", body.tagIds);
+    }
+
     return NextResponse.json({
       success: true,
       location: { id, slug },
@@ -246,6 +252,12 @@ export async function PUT(request: NextRequest) {
     await ormDb.update(schema.locations)
       .set(dataToUpdate)
       .where(eq(schema.locations.id, id));
+
+    // 同步标签关联（如果有传 tagIds）
+    if (body.tagIds !== undefined) {
+      const { setLocationTags } = await import("@/app/actions/tags");
+      await setLocationTags(id, body.tagIds);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

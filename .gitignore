@@ -53,3 +53,4 @@ cloudflare-env.d.ts
 # backups
 .backup/
 .claude/worktrees/
+.env.local

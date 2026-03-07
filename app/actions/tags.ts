@@ -245,6 +245,7 @@ export async function removeTagsFromEntity(
   tagIds: string[]
 ) {
   try {
+    const db = await getDB();
     await db
       .delete(entityToTags)
       .where(
@@ -287,5 +288,45 @@ export async function createTagsByNames(
   } catch (error) {
     console.error("批量创建标签失败:", error);
     throw new Error("批量创建标签失败");
+  }
+}
+
+/**
+ * 批量设置地点标签（同步操作：添加新标签、移除不存在标签）
+ * @param locationId - 地点 ID
+ * @param tagIds - 要设置的标签 ID 数组
+ * @returns 操作结果统计
+ */
+export async function setLocationTags(locationId: string, tagIds: string[]) {
+  try {
+    // 获取当前地点的所有标签
+    const currentTags = await getEntityTags(locationId, "location");
+    const currentTagIds = currentTags.map((t) => t.id);
+
+    // 计算需要添加的标签（传入但当前不存在）
+    const toAdd = tagIds.filter((id) => !currentTagIds.includes(id));
+    // 计算需要移除的标签（当前存在但未传入）
+    const toRemove = currentTagIds.filter((id) => !tagIds.includes(id));
+
+    // 执行批量添加
+    if (toAdd.length > 0) {
+      await addTagsToEntity(locationId, "location", toAdd);
+    }
+
+    // 执行批量移除
+    if (toRemove.length > 0) {
+      await removeTagsFromEntity(locationId, "location", toRemove);
+    }
+
+    return {
+      success: true,
+      added: toAdd.length,
+      removed: toRemove.length,
+      currentTagIds,
+      newTagIds: tagIds,
+    };
+  } catch (error) {
+    console.error("设置地点标签失败:", error);
+    throw new Error("设置地点标签失败");
   }
 }

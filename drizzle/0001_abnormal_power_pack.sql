@@ -1,0 +1,1 @@
+ALTER TABLE `teams` ADD `duration_min` integer DEFAULT 240 NOT NULL;

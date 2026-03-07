@@ -210,6 +210,9 @@ export const copy = {
     // 图片导航
     prevImage: "上一张图片",
     nextImage: "下一张图片",
+
+    // 坐标提示
+    coordinatesHint: "通过地址搜索自动获取坐标",
   },
 
   // ─── 队伍 ─────────────────────────────────────────────────────────────────
@@ -842,9 +845,11 @@ export const copy = {
     formCoverImage: "封面图片",
     formCoverImageRequired: "封面图片 *",
     formImages: "图片列表",
-    formTags: "标签（逗号分隔）",
+    formTags: "地点标签",
     formAddress: "地址",
-    formCoordinates: "坐标（JSON 格式）",
+    formCoordinates: "坐标",
+    addTagPlaceholder: "输入标签名称，回车添加",
+    noTagsSelected: "暂无标签",
     formRouteDesc: "路线描述",
     formTips: "徒步贴士",
 
@@ -914,6 +919,13 @@ export const copy = {
       customLabel: "或自定义添加",
       placeholder: "输入其他要求...",
       selectedLabel: "已选择",
+    },
+    // 标签选择器
+    tagSelector: {
+      presetLabel: "可选标签（点击选择）",
+      customLabel: "新建标签",
+      selectedLabel: "已选标签",
+      placeholder: "输入标签名称",
     },
   },
 

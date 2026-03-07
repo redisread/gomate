@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "7ccbc07f-ad4c-4340-bef8-c09745afafc5",
-  "prevId": "e5008283-6ed6-4466-9e31-4f79d0e4e3da",
+  "id": "22eac0cc-df65-4d3c-8680-b0849c1f2429",
+  "prevId": "dc231e75-8f9d-42f5-80ed-27dcd7ee9e00",
   "tables": {
     "accounts": {
       "name": "accounts",
@@ -142,6 +142,314 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "cities": {
+      "name": "cities",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "adcode": {
+          "name": "adcode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pinyin": {
+          "name": "pinyin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "level": {
+          "name": "level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_hot": {
+          "name": "is_hot",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "cities_adcode_unique": {
+          "name": "cities_adcode_unique",
+          "columns": [
+            "adcode"
+          ],
+          "isUnique": true
+        },
+        "cities_adcode_idx": {
+          "name": "cities_adcode_idx",
+          "columns": [
+            "adcode"
+          ],
+          "isUnique": true
+        },
+        "cities_is_hot_idx": {
+          "name": "cities_is_hot_idx",
+          "columns": [
+            "is_hot"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "entity_to_pois": {
+      "name": "entity_to_pois",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "poi_id": {
+          "name": "poi_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "role_type": {
+          "name": "role_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "role_specific_data": {
+          "name": "role_specific_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "entity_to_pois_poi_idx": {
+          "name": "entity_to_pois_poi_idx",
+          "columns": [
+            "poi_id"
+          ],
+          "isUnique": false
+        },
+        "entity_to_pois_entity_idx": {
+          "name": "entity_to_pois_entity_idx",
+          "columns": [
+            "entity_type",
+            "entity_id"
+          ],
+          "isUnique": false
+        },
+        "entity_to_pois_role_idx": {
+          "name": "entity_to_pois_role_idx",
+          "columns": [
+            "role_type"
+          ],
+          "isUnique": false
+        },
+        "entity_to_pois_order_idx": {
+          "name": "entity_to_pois_order_idx",
+          "columns": [
+            "entity_id",
+            "order"
+          ],
+          "isUnique": false
+        },
+        "entity_to_pois_unique_idx": {
+          "name": "entity_to_pois_unique_idx",
+          "columns": [
+            "poi_id",
+            "entity_type",
+            "entity_id",
+            "role_type"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "entity_to_pois_poi_id_pois_id_fk": {
+          "name": "entity_to_pois_poi_id_pois_id_fk",
+          "tableFrom": "entity_to_pois",
+          "tableTo": "pois",
+          "columnsFrom": [
+            "poi_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "entity_to_tags": {
+      "name": "entity_to_tags",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tag_id": {
+          "name": "tag_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "entity_to_tags_entity_idx": {
+          "name": "entity_to_tags_entity_idx",
+          "columns": [
+            "entity_id",
+            "entity_type"
+          ],
+          "isUnique": false
+        },
+        "entity_to_tags_tag_idx": {
+          "name": "entity_to_tags_tag_idx",
+          "columns": [
+            "tag_id"
+          ],
+          "isUnique": false
+        },
+        "entity_to_tags_unique_idx": {
+          "name": "entity_to_tags_unique_idx",
+          "columns": [
+            "entity_id",
+            "entity_type",
+            "tag_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "entity_to_tags_tag_id_tags_id_fk": {
+          "name": "entity_to_tags_tag_id_tags_id_fk",
+          "tableFrom": "entity_to_tags",
+          "tableTo": "tags",
+          "columnsFrom": [
+            "tag_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "locations": {
       "name": "locations",
       "columns": {
@@ -180,29 +488,22 @@
           "notNull": true,
           "autoincrement": false
         },
-        "difficulty": {
-          "name": "difficulty",
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "city_id": {
+          "name": "city_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "duration": {
-          "name": "duration",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "distance": {
-          "name": "distance",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "elevation": {
-          "name": "elevation",
+        "city_name": {
+          "name": "city_name",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -213,13 +514,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "tags": {
-          "name": "tags",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         },
         "cover_image": {
@@ -236,55 +530,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "address": {
-          "name": "address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "route_description": {
-          "name": "route_description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "route_guide": {
-          "name": "route_guide",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "waypoints": {
-          "name": "waypoints",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "tips": {
-          "name": "tips",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "warnings": {
-          "name": "warnings",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "equipment_needed": {
-          "name": "equipment_needed",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "coordinates": {
           "name": "coordinates",
           "type": "text",
@@ -292,8 +537,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "facilities": {
-          "name": "facilities",
+        "extra": {
+          "name": "extra",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -327,17 +572,31 @@
           "columns": [
             "slug"
           ],
-          "isUnique": false
+          "isUnique": true
         },
-        "locations_difficulty_idx": {
-          "name": "locations_difficulty_idx",
+        "locations_city_idx": {
+          "name": "locations_city_idx",
           "columns": [
-            "difficulty"
+            "city_id"
           ],
           "isUnique": false
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "locations_city_id_cities_id_fk": {
+          "name": "locations_city_id_cities_id_fk",
+          "tableFrom": "locations",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -437,6 +696,273 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "pois": {
+      "name": "pois",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "coordinates": {
+          "name": "coordinates",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "images": {
+          "name": "images",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "extra": {
+          "name": "extra",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "pois_name_idx": {
+          "name": "pois_name_idx",
+          "columns": [
+            "name"
+          ],
+          "isUnique": false
+        },
+        "pois_category_idx": {
+          "name": "pois_category_idx",
+          "columns": [
+            "category"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "routes": {
+      "name": "routes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "location_id": {
+          "name": "location_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "city_id": {
+          "name": "city_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "difficulty": {
+          "name": "difficulty",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "duration_min": {
+          "name": "duration_min",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "duration_max": {
+          "name": "duration_max",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "distance": {
+          "name": "distance",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "elevation": {
+          "name": "elevation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "route_guide": {
+          "name": "route_guide",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "extra": {
+          "name": "extra",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "routes_location_idx": {
+          "name": "routes_location_idx",
+          "columns": [
+            "location_id"
+          ],
+          "isUnique": false
+        },
+        "routes_city_idx": {
+          "name": "routes_city_idx",
+          "columns": [
+            "city_id"
+          ],
+          "isUnique": false
+        },
+        "routes_difficulty_idx": {
+          "name": "routes_difficulty_idx",
+          "columns": [
+            "difficulty"
+          ],
+          "isUnique": false
+        },
+        "routes_duration_idx": {
+          "name": "routes_duration_idx",
+          "columns": [
+            "duration_min",
+            "duration_max"
+          ],
+          "isUnique": false
+        },
+        "routes_distance_idx": {
+          "name": "routes_distance_idx",
+          "columns": [
+            "distance"
+          ],
+          "isUnique": false
+        },
+        "routes_elevation_idx": {
+          "name": "routes_elevation_idx",
+          "columns": [
+            "elevation"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "routes_location_id_locations_id_fk": {
+          "name": "routes_location_id_locations_id_fk",
+          "tableFrom": "routes",
+          "tableTo": "locations",
+          "columnsFrom": [
+            "location_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "routes_city_id_cities_id_fk": {
+          "name": "routes_city_id_cities_id_fk",
+          "tableFrom": "routes",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -546,6 +1072,66 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "tags": {
+      "name": "tags",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "tags_name_unique": {
+          "name": "tags_name_unique",
+          "columns": [
+            "name"
+          ],
+          "isUnique": true
+        },
+        "tags_name_idx": {
+          "name": "tags_name_idx",
+          "columns": [
+            "name"
+          ],
+          "isUnique": true
+        },
+        "tags_type_idx": {
+          "name": "tags_type_idx",
+          "columns": [
+            "type"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "team_members": {
       "name": "team_members",
       "columns": {
@@ -570,14 +1156,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "role": {
-          "name": "role",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'member'"
-        },
         "status": {
           "name": "status",
           "type": "text",
@@ -588,6 +1166,13 @@
         },
         "joined_at": {
           "name": "joined_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status_updated_at": {
+          "name": "status_updated_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -674,6 +1259,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "route_id": {
+          "name": "route_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "leader_id": {
           "name": "leader_id",
           "type": "text",
@@ -709,12 +1301,13 @@
           "notNull": true,
           "autoincrement": false
         },
-        "duration": {
-          "name": "duration",
-          "type": "text",
+        "duration_min": {
+          "name": "duration_min",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": true,
+          "autoincrement": false,
+          "default": 240
         },
         "max_members": {
           "name": "max_members",
@@ -724,20 +1317,20 @@
           "autoincrement": false,
           "default": 10
         },
-        "current_members": {
-          "name": "current_members",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 1
-        },
         "requirements": {
           "name": "requirements",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "icon": {
+          "name": "icon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'⭿️'"
         },
         "status": {
           "name": "status",
@@ -770,6 +1363,13 @@
           ],
           "isUnique": false
         },
+        "teams_route_idx": {
+          "name": "teams_route_idx",
+          "columns": [
+            "route_id"
+          ],
+          "isUnique": false
+        },
         "teams_leader_idx": {
           "name": "teams_leader_idx",
           "columns": [
@@ -790,6 +1390,22 @@
             "start_time"
           ],
           "isUnique": false
+        },
+        "teams_status_created_at_idx": {
+          "name": "teams_status_created_at_idx",
+          "columns": [
+            "status",
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "teams_status_start_time_idx": {
+          "name": "teams_status_start_time_idx",
+          "columns": [
+            "status",
+            "start_time"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -806,12 +1422,109 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
+        "teams_route_id_routes_id_fk": {
+          "name": "teams_route_id_routes_id_fk",
+          "tableFrom": "teams",
+          "tableTo": "routes",
+          "columnsFrom": [
+            "route_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
         "teams_leader_id_users_id_fk": {
           "name": "teams_leader_id_users_id_fk",
           "tableFrom": "teams",
           "tableTo": "users",
           "columnsFrom": [
             "leader_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "user_favorites": {
+      "name": "user_favorites",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "user_favorites_user_idx": {
+          "name": "user_favorites_user_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "user_favorites_entity_idx": {
+          "name": "user_favorites_entity_idx",
+          "columns": [
+            "entity_type",
+            "entity_id"
+          ],
+          "isUnique": false
+        },
+        "user_favorites_unique_idx": {
+          "name": "user_favorites_unique_idx",
+          "columns": [
+            "user_id",
+            "entity_type",
+            "entity_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "user_favorites_user_id_users_id_fk": {
+          "name": "user_favorites_user_id_users_id_fk",
+          "tableFrom": "user_favorites",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -839,6 +1552,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "nickname": {
+          "name": "nickname",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "email": {
@@ -870,20 +1590,27 @@
           "notNull": false,
           "autoincrement": false
         },
-        "level": {
-          "name": "level",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'beginner'"
-        },
-        "wechat": {
-          "name": "wechat",
+        "gender": {
+          "name": "gender",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "birthday": {
+          "name": "birthday",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "level": {
+          "name": "level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'beginner'"
         },
         "completed_hikes": {
           "name": "completed_hikes",
@@ -892,6 +1619,36 @@
           "notNull": false,
           "autoincrement": false,
           "default": 0
+        },
+        "wechat": {
+          "name": "wechat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'user'"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'active'"
+        },
+        "extra": {
+          "name": "extra",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
@@ -905,6 +1662,13 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         }
       },
@@ -920,6 +1684,13 @@
           "name": "users_email_idx",
           "columns": [
             "email"
+          ],
+          "isUnique": false
+        },
+        "users_name_idx": {
+          "name": "users_name_idx",
+          "columns": [
+            "name"
           ],
           "isUnique": false
         }
