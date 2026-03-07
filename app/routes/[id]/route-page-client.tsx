@@ -4,7 +4,7 @@ import { Route } from "@/lib/types";
 import { RouteInfoCard } from "@/app/components/features/route-info-card";
 import { RouteGuide } from "@/app/components/features/route-guide";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, Users, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useTeams } from "@/lib/teams-context";
 import { TeamCard } from "@/app/components/features/team-card";
@@ -29,11 +29,6 @@ export function RoutePageClient({ route }: RoutePageClientProps) {
               </Link>
             </Button>
             <div className="flex-1">
-              <div className="text-sm text-muted-foreground mb-1">
-                <Link href={`/locations/${route.locationId}`} className="hover:underline">
-                  {route.location?.name || "返回地点"}
-                </Link>
-              </div>
               <h1 className="text-3xl font-bold">{route.name}</h1>
             </div>
           </div>
@@ -80,6 +75,25 @@ export function RoutePageClient({ route }: RoutePageClientProps) {
           <div className="lg:col-span-1">
             <div className="sticky top-4 space-y-4">
               <RouteInfoCard route={route} />
+
+              {/* 关联地点卡片 */}
+              {route.location && (
+                <Link href={`/locations/${route.locationId}`}>
+                  <div className="rounded-lg border bg-card p-4 hover:shadow-md transition-shadow cursor-pointer">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>所属地点</span>
+                    </div>
+                    <div className="font-semibold text-lg">{route.location.name}</div>
+                    {route.location.subtitle && (
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {route.location.subtitle}
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              )}
+
               <Button className="w-full" size="lg" asChild>
                 <Link href={`/teams/create?routeId=${route.id}`}>
                   <Users className="h-5 w-5 mr-2" />

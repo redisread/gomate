@@ -389,16 +389,6 @@ export function TeamClientPage({ teamId }: TeamClientPageProps) {
                       <h3 className="font-semibold text-stone-900 mb-1">
                         {location.name}
                       </h3>
-                      <p className="text-sm text-stone-500 mb-3">
-                        {location.difficulty === "easy"
-                          ? copy.enums.difficulty.easy
-                          : location.difficulty === "moderate"
-                          ? copy.enums.difficulty.moderate
-                          : location.difficulty === "hard"
-                          ? copy.enums.difficulty.hard
-                          : copy.enums.difficulty.expert}{" "}
-                        · {location.duration} · {location.distance}
-                      </p>
                       <Link
                         href={`/locations/${location.id}`}
                         className="inline-flex items-center text-sm font-medium text-stone-700 hover:text-stone-900 transition-colors"
