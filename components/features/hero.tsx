@@ -36,7 +36,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl sm:text-5xl lg:text-7xl font-bold text-stone-900 tracking-tight mb-6"
           >
-            发现山野
+            发现趣处
             <br />
             <span className="text-stone-500">组队同行</span>
           </motion.h1>

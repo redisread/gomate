@@ -271,7 +271,7 @@ function LocationsPageContent() {
             className="text-center"
           >
             <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-              探索徒步地点
+              探索地点
             </h1>
             <p className="text-stone-400 text-lg max-w-2xl mx-auto">
               精选徒步路线，从城市公园到山野海岸，找到适合你的户外目的地

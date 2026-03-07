@@ -158,9 +158,9 @@ export const copy = {
 
   // ─── 地点 ─────────────────────────────────────────────────────────────────
   locations: {
-    pageTitle: "探索徒步地点",
+    pageTitle: "探索地点",
     pageSubtitle:
-      "精选徒步路线，从城市公园到山野海岸，找到适合你的户外目的地",
+      "从城市公园到山野海岸，找到适合你的户外目的地",
     locationIntro: "地点介绍",
     defaultCity: "深圳",
     viewDetail: "查看详情",
