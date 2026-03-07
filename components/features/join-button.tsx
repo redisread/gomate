@@ -32,7 +32,7 @@ interface JoinButtonProps {
   userMemberStatus?: "pending" | "approved" | "rejected" | "leave_pending" | null;
 }
 
-type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" | "approved" | "rejected" | "wechat_required" | "leaving" | "leave_pending" | "requesting_leave" | "cancelled";
+type JoinState = "idle" | "loading" | "success" | "full" | "closed" | "pending" | "approved" | "rejected" | "wechat_required" | "leaving" | "leave_pending" | "requesting_leave" | "cancelled" | "cancelling";
 
 function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: JoinButtonProps) {
   const { user } = useAuth();
@@ -59,6 +59,7 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
   const [showLeaveDialog, setShowLeaveDialog] = React.useState(false);
   const [showFormTeamDialog, setShowFormTeamDialog] = React.useState(false);
   const [showRequestLeaveDialog, setShowRequestLeaveDialog] = React.useState(false);
+  const [showCancelDialog, setShowCancelDialog] = React.useState(false);
 
   // 当 userMemberStatus 或 team.status 变化时更新状态
   React.useEffect(() => {
@@ -197,6 +198,13 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       className: "bg-stone-700 text-white cursor-not-allowed",
       disabled: true,
     },
+    cancelling: {
+      text: copy.common.loading,
+      icon: Loader2,
+      variant: "default" as const,
+      className: "bg-stone-700 text-white cursor-not-allowed",
+      disabled: true,
+    },
   };
 
   // 退出队伍处理函数
@@ -278,6 +286,34 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
       console.error("Request leave error:", error);
       showToast(copy.api.networkError, "error");
       setJoinState("approved");
+    }
+  };
+
+  // 取消申请处理函数
+  const handleCancelApplication = async () => {
+    setJoinState("cancelling");
+    setShowCancelDialog(false);
+
+    try {
+      const response = await fetch(`/api/teams/${team.id}/cancel-application`, {
+        method: 'POST',
+      });
+
+      const result = await response.json() as { success?: boolean; error?: string };
+
+      if (response.ok && result.success) {
+        showToast(copy.success.applicationCancelled, "success");
+        setJoinState("idle");
+        onLeave?.();
+        router.refresh();
+      } else {
+        showToast(result.error || copy.teams.cancelApplicationFailed, "error");
+        setJoinState("pending");
+      }
+    } catch (error) {
+      console.error("Cancel application error:", error);
+      showToast(copy.api.networkError, "error");
+      setJoinState("pending");
     }
   };
 
@@ -389,6 +425,47 @@ function JoinButton({ team, className, onJoin, onLeave, userMemberStatus }: Join
                 <Link href="/profile/edit">
                   去填写
                 </Link>
+              </Button>
+            ) : joinState === "pending" ? (
+              // 申请审核中状态 - 显示取消申请按钮
+              <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="px-8 border-amber-300 text-amber-600 hover:bg-amber-50"
+                  >
+                    <Clock className="h-5 w-5 mr-2" />
+                    {copy.teams.cancelApplication}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{copy.teams.cancelApplicationConfirm}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {copy.teams.cancelApplicationDesc}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{copy.common.cancel}</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleCancelApplication}
+                      className="bg-amber-600 hover:bg-amber-700"
+                    >
+                      {copy.common.confirm}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : joinState === "cancelling" ? (
+              <Button
+                size="lg"
+                variant="default"
+                disabled
+                className="px-8 bg-stone-700 text-white cursor-not-allowed"
+              >
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                {copy.common.loading}
               </Button>
             ) : joinState === "approved" ? (
               // 已加入状态显示退出队伍按钮

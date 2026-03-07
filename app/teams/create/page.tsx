@@ -79,6 +79,15 @@ function CreateTeamForm() {
     return { defaultDate, defaultTime };
   };
 
+  // 获取今天的日期字符串（用于限制日期选择器的最小值）
+  const getTodayString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const { defaultDate, defaultTime } = getDefaultDateTime();
 
   const [formData, setFormData] = React.useState({
@@ -470,6 +479,7 @@ function CreateTeamForm() {
                         type="date"
                         value={formData.date}
                         onChange={handleInputChange}
+                        min={getTodayString()}
                         required
                         className="border-stone-200 pl-10"
                       />

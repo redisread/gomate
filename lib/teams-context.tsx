@@ -193,7 +193,7 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const response = await fetch(`/api/teams?userId=${user.id}&includeJoined=true`);
+      const response = await fetch(`/api/teams?userId=${user.id}&includeJoined=true&activeOnly=true`);
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.teams) {

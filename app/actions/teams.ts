@@ -1013,3 +1013,49 @@ export async function rejectLeave(teamId: string, userId: string) {
 
   return { success: true, message: "已拒绝退出申请" };
 }
+
+// 取消申请（用户在审核中主动取消自己的申请）
+export async function cancelApplication(teamId: string) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    throw new Error(copy.errors.loginRequired);
+  }
+
+  const db = await getDB();
+
+  // 获取队伍信息
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamId),
+    with: {
+      location: true,
+    },
+  });
+
+  if (!team) {
+    throw new Error(copy.errors.teamNotFound);
+  }
+
+  // 查询用户的 pending 申请记录
+  const membership = await db.query.teamMembers.findFirst({
+    where: and(
+      eq(teamMembers.teamId, teamId),
+      eq(teamMembers.userId, user.id),
+      eq(teamMembers.status, "pending")
+    ),
+  });
+
+  if (!membership) {
+    throw new Error(copy.errors.applicationNotFound);
+  }
+
+  // 删除申请记录
+  await db.delete(teamMembers).where(eq(teamMembers.id, membership.id));
+
+  // 清除缓存
+  revalidateTag(`team-${teamId}`);
+  revalidateTag("teams");
+  revalidateTag(`location-${team.location.slug}`);
+
+  return { success: true, message: copy.success.applicationCancelled };
+}

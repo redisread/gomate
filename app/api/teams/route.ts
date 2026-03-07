@@ -178,6 +178,7 @@ export async function GET(request: NextRequest) {
     const locationId = searchParams.get("locationId");
     const userId = searchParams.get("userId"); // 新增：按用户ID查询用户加入的队伍
     const includeJoined = searchParams.get("includeJoined") === "true"; // 新增：是否包含用户加入的队伍
+    const activeOnly = searchParams.get("activeOnly") === "true"; // 新增：是否只查询活跃状态的队伍
 
     const { env } = await import("@opennextjs/cloudflare").then(m => m.getCloudflareContext({ async: true }));
 
@@ -254,16 +255,25 @@ export async function GET(request: NextRequest) {
     let result: TeamRow[];
 
     if (userId && includeJoined) {
+      // 构建查询条件
+      const conditions = [
+        eq(schema.teamMembers.userId, userId),
+        ne(schema.teams.leaderId, userId),
+        eq(schema.teamMembers.status, "approved")
+      ];
+
+      // 如果只查询活跃队伍，排除 completed 和 cancelled 状态
+      if (activeOnly) {
+        conditions.push(ne(schema.teams.status, "completed"));
+        conditions.push(ne(schema.teams.status, "cancelled"));
+      }
+
       result = await ormDb
         .select(teamColumns)
         .from(schema.teams)
         .innerJoin(schema.teamMembers, eq(schema.teamMembers.teamId, schema.teams.id))
         .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
-        .where(and(
-          eq(schema.teamMembers.userId, userId),
-          ne(schema.teams.leaderId, userId),
-          eq(schema.teamMembers.status, "approved")
-        ))
+        .where(and(...conditions))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
     } else if (locationId) {
       result = await ormDb

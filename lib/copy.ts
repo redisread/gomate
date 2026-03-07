@@ -273,6 +273,13 @@ export const copy = {
     statusRejected: "申请被拒绝",
     reapply: "重新申请",
 
+    // 取消申请
+    cancelApplication: "取消申请",
+    cancelApplicationConfirm: "确定要取消申请吗？",
+    cancelApplicationDesc: "取消后可以重新申请加入该队伍",
+    cancelApplicationSuccess: "申请已取消",
+    cancelApplicationFailed: "取消申请失败",
+
     // 退出队伍
     leaveTeam: "退出队伍",
     leaveTeamConfirm: "确定要退出队伍吗？",
@@ -526,6 +533,7 @@ export const copy = {
     teamAlreadyFull: "队伍已满，无法批准新成员",
     applicationNotFound: "未找到该成员的申请",
     notMember: "你不是该队伍的成员",
+    cannotCancelApplication: "无法取消申请",
 
     // 地点
     locationLoadFailed: "加载地点列表失败",
@@ -561,6 +569,7 @@ export const copy = {
     added: "已成功加入",
     leftTeam: "已成功离开队伍",
     dissolved: "队伍已解散",
+    applicationCancelled: "申请已取消",
     resetSuccess: "密码重置成功",
     emailSent: "邮件已发送",
     emailSentClear: "速率限制已清除，请重新发送",
