@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +24,12 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { MultiImageUpload } from "@/components/ui/multi-image-upload";
 import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
+import {
+  searchAddress,
+  parseAmapLocation,
+  getAmapNavigateUrl,
+  AmapGeocodeResult,
+} from "@/lib/map-utils";
 
 const a = copy.admin;
 
@@ -74,7 +80,6 @@ const defaultFormData = {
   cityId: "",
   cityName: "",
   coordinates: "",
-  tips: "",
 };
 
 export function LocationEditDialog({
@@ -88,6 +93,11 @@ export function LocationEditDialog({
 
   // 城市列表状态
   const [cities, setCities] = React.useState<Array<{id: string; name: string; province: string}>>([]);
+
+  // 地址搜索状态
+  const [searchResults, setSearchResults] = React.useState<AmapGeocodeResult[]>([]);
+  const [isSearching, setIsSearching] = React.useState(false);
+  const [showSearchResults, setShowSearchResults] = React.useState(false);
 
   // 加载城市列表
   React.useEffect(() => {
@@ -115,6 +125,52 @@ export function LocationEditDialog({
     });
   };
 
+  // 执行地址搜索
+  const handleSearchAddress = async () => {
+    if (!formData.address.trim()) return;
+
+    setIsSearching(true);
+    setShowSearchResults(false);
+
+    try {
+      const results = await searchAddress(
+        formData.address,
+        formData.cityName || undefined
+      );
+      setSearchResults(results);
+      setShowSearchResults(true);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // 选择搜索结果
+  const selectSearchResult = (result: AmapGeocodeResult) => {
+    const coords = parseAmapLocation(result.location);
+    if (coords) {
+      setFormData(prev => ({
+        ...prev,
+        address: result.formatted_address,
+        coordinates: JSON.stringify(coords),
+      }));
+    }
+    setShowSearchResults(false);
+  };
+
+  // 在地图中查看坐标
+  const viewOnMap = () => {
+    if (!formData.coordinates) return;
+    try {
+      const coords = JSON.parse(formData.coordinates);
+      if (coords.lat && coords.lng) {
+        const url = getAmapNavigateUrl(coords, formData.name || "地点");
+        window.open(url, "_blank");
+      }
+    } catch {
+      // 无效的坐标格式
+    }
+  };
+
   // 当弹窗打开时，加载地点数据
   React.useEffect(() => {
     if (open && location) {
@@ -134,7 +190,6 @@ export function LocationEditDialog({
         coordinates: location.coordinates
           ? JSON.stringify(location.coordinates)
           : "",
-        tips: location.extra?.tips || "",
       });
     }
   }, [open, location]);
@@ -159,9 +214,7 @@ export function LocationEditDialog({
         coordinates: formData.coordinates
           ? JSON.parse(formData.coordinates)
           : { lat: 0, lng: 0 },
-        extra: {
-          tips: formData.tips || null,
-        },
+        extra: {},
         images: formData.images,
       };
 
@@ -306,15 +359,61 @@ export function LocationEditDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="address">{a.formAddress}</Label>
+          <div className="space-y-2">
+            <Label htmlFor="address">{a.formAddress}</Label>
+            <div className="flex gap-2">
               <Input
                 id="address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="输入地址后点击搜索"
               />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSearchAddress}
+                disabled={isSearching || !formData.address.trim()}
+              >
+                {isSearching ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4 mr-1" />
+                )}
+                搜索
+              </Button>
             </div>
+
+            {/* 搜索结果 */}
+            {showSearchResults && searchResults.length > 0 && (
+              <div className="border rounded-md mt-2 overflow-hidden">
+                <div className="bg-stone-50 px-3 py-2 text-xs text-stone-500 border-b">
+                  搜索结果：
+                </div>
+                {searchResults.map((result, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => selectSearchResult(result)}
+                    className="w-full text-left px-3 py-2 hover:bg-stone-50 border-b last:border-b-0 text-sm"
+                  >
+                    <div className="font-medium text-stone-800">
+                      {result.formatted_address}
+                    </div>
+                    <div className="text-xs text-stone-500">
+                      {result.province} {result.city} {result.district}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {showSearchResults && searchResults.length === 0 && !isSearching && (
+              <div className="text-sm text-stone-500 mt-2">
+                未找到相关地址，请尝试其他关键词
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="coordinates">{a.formCoordinates}</Label>
               <Input
@@ -324,17 +423,19 @@ export function LocationEditDialog({
                 placeholder={a.placeholderCoordinates}
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tips">{a.formTips}</Label>
-            <Textarea
-              id="tips"
-              value={formData.tips}
-              onChange={(e) => setFormData({ ...formData, tips: e.target.value })}
-              rows={2}
-              placeholder={a.placeholderTips}
-            />
+            <div className="space-y-2 flex items-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={viewOnMap}
+                disabled={!formData.coordinates}
+                className="text-stone-600"
+              >
+                <MapPin className="h-4 w-4 mr-1" />
+                在地图中查看
+              </Button>
+            </div>
           </div>
 
           <DialogFooter>
