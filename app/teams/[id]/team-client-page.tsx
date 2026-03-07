@@ -4,8 +4,9 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { MapPin, ArrowRight, Route, AlertCircle } from "lucide-react";
+import { MapPin, ArrowRight, Route, AlertCircle, Users, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 import { Navbar } from "@/app/components/layout/navbar";
 import { Footer } from "@/app/components/layout/footer";
@@ -38,6 +39,42 @@ interface Application {
 
 interface TeamClientPageProps {
   teamId: string;
+}
+
+// 获取状态标签文本
+function getStatusText(status: string, current: number, max: number): string {
+  if (status === "recruiting") return current >= max ? "已满" : "招募中";
+  if (status === "full") return "已满";
+  if (status === "formed" || status === "ongoing") return "进行中";
+  if (status === "completed") return "已完成";
+  if (status === "cancelled") return "已取消";
+  return "招募中";
+}
+
+// 获取状态标签颜色
+function getStatusColor(status: string, current: number, max: number): string {
+  if (status === "recruiting" && current < max) {
+    return "bg-emerald-100 text-emerald-700 border-emerald-200";
+  }
+  if (status === "full" || (status === "recruiting" && current >= max)) {
+    return "bg-amber-100 text-amber-700 border-amber-200";
+  }
+  if (status === "formed" || status === "ongoing") {
+    return "bg-blue-100 text-blue-700 border-blue-200";
+  }
+  if (status === "completed") {
+    return "bg-stone-100 text-stone-600 border-stone-200";
+  }
+  if (status === "cancelled") {
+    return "bg-red-100 text-red-700 border-red-200";
+  }
+  return "bg-stone-100 text-stone-600 border-stone-200";
+}
+
+// 格式化日期
+function formatDate(dateStr: string, timeStr: string): string {
+  const d = new Date(dateStr);
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${timeStr}`;
 }
 
 export function TeamClientPage({ teamId }: TeamClientPageProps) {
@@ -386,31 +423,89 @@ export function TeamClientPage({ teamId }: TeamClientPageProps) {
                   {copy.teams.otherTeamsAtLocation}
                 </h3>
                 <div className="space-y-3">
-                  {otherTeams.map((otherTeam) => (
-                    <Link key={otherTeam.id} href={`/teams/${otherTeam.id}`}>
-                      <Card className="border-stone-200 hover:shadow-md transition-all cursor-pointer">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-medium text-stone-900">
-                                {otherTeam.title}
-                              </h4>
-                              <p className="text-sm text-stone-500 mt-1">
-                                {otherTeam.date} · {otherTeam.time} ·{" "}
-                                {otherTeam.currentMembers}/{otherTeam.maxMembers}人
-                              </p>
-                            </div>
-                            <Badge
-                              variant="secondary"
-                              className="bg-emerald-50 text-emerald-700"
-                            >
-                              {copy.enums.teamStatus.recruiting}
-                            </Badge>
+                  {otherTeams.map((otherTeam) => {
+                    const statusText = getStatusText(
+                      otherTeam.status,
+                      otherTeam.currentMembers,
+                      otherTeam.maxMembers
+                    );
+                    const statusColor = getStatusColor(
+                      otherTeam.status,
+                      otherTeam.currentMembers,
+                      otherTeam.maxMembers
+                    );
+
+                    return (
+                      <Link
+                        key={otherTeam.id}
+                        href={`/teams/${otherTeam.id}`}
+                        className="block p-4 rounded-xl border border-stone-200 hover:border-stone-300 hover:shadow-md transition-all bg-white"
+                      >
+                        {/* 第一行：队伍标题 + 状态Badge */}
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Users className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                            <span className="text-sm font-semibold text-stone-900 truncate">
+                              {otherTeam.title}
+                            </span>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
+                          <Badge
+                            className={statusColor}
+                            variant="secondary"
+                          >
+                            {statusText}
+                          </Badge>
+                        </div>
+
+                        {/* 第二行：描述（如有，2行截断） */}
+                        {otherTeam.description && (
+                          <p className="text-xs text-stone-600 line-clamp-2 mb-3 leading-relaxed">
+                            {otherTeam.description}
+                          </p>
+                        )}
+
+                        {/* 第三行：日期、时长、人数 */}
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5 text-stone-400" />
+                            <span>
+                              {formatDate(otherTeam.date, otherTeam.time)}
+                            </span>
+                          </div>
+                          {otherTeam.duration && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5 text-stone-400" />
+                              <span>{otherTeam.duration}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5 text-stone-400" />
+                            <span>
+                              {otherTeam.currentMembers}/{otherTeam.maxMembers}人
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 第四行：队长信息 */}
+                        {otherTeam.leader && (
+                          <div className="mt-3 pt-3 border-t border-stone-100 flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage
+                                src={otherTeam.leader.avatar}
+                                alt={otherTeam.leader.name}
+                              />
+                              <AvatarFallback className="text-[10px] bg-stone-200">
+                                {otherTeam.leader.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-stone-600">
+                              {otherTeam.leader.name}
+                            </span>
+                          </div>
+                        )}
+                      </Link>
+                    );
+                  })}
                 </div>
               </motion.div>
             )}

@@ -34,15 +34,8 @@ export async function GET(
     // 使用 Drizzle ORM 查询
     const { drizzle } = await import("drizzle-orm/d1");
     const schema = await import("@/db/schema");
-    const { eq, sql } = await import("drizzle-orm");
+    const { eq } = await import("drizzle-orm");
     const ormDb = drizzle(db, { schema });
-
-    // currentMembers 子查询：动态计算已审核通过的成员数
-    const currentMembersSubquery = sql<number>`(
-      SELECT COUNT(*) FROM team_members
-      WHERE team_members.team_id = ${schema.teams.id}
-      AND team_members.status = 'approved'
-    )`;
 
     const teamsWithCount = await ormDb
       .select({
@@ -59,7 +52,6 @@ export async function GET(
         status: schema.teams.status,
         createdAt: schema.teams.createdAt,
         updatedAt: schema.teams.updatedAt,
-        currentMembers: currentMembersSubquery,
       })
       .from(schema.teams)
       .where(eq(schema.teams.id, id))
@@ -88,7 +80,12 @@ export async function GET(
       },
     });
 
-    const team = teamWithRelations ? { ...teamRow, ...teamWithRelations, currentMembers: teamRow.currentMembers } : null;
+    // 从 members 数组计算已审核通过的成员数
+    const currentMembers = teamWithRelations?.members?.filter(
+      (m: { status: string }) => m.status === 'approved'
+    ).length || 0;
+
+    const team = teamWithRelations ? { ...teamRow, ...teamWithRelations, currentMembers } : null;
 
     if (!team || !teamWithRelations) {
       return NextResponse.json(

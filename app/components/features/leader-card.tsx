@@ -135,31 +135,46 @@ function LeaderCard({ team, isTeamMember = false, className }: LeaderCardProps) 
           </div>
 
           {/* Contact Section */}
-          {isTeamMember && leader.wechat ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-stone-100 rounded-lg">
-                <div>
-                  <p className="text-xs text-stone-500">微信号</p>
-                  <p className="font-medium text-stone-900">{leader.wechat}</p>
+          {isTeamMember ? (
+            leader.wechat ? (
+              // 是成员且有微信号 - 显示联系方式
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-stone-100 rounded-lg">
+                  <div>
+                    <p className="text-xs text-stone-500">微信号</p>
+                    <p className="font-medium text-stone-900">{leader.wechat}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyWechat}
+                    className="h-8 w-8 p-0"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-stone-600" />
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopyWechat}
-                  className="h-8 w-8 p-0"
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-emerald-600" />
-                  ) : (
-                    <Copy className="h-4 w-4 text-stone-600" />
-                  )}
-                </Button>
+                <p className="text-xs text-stone-400 text-center">
+                  复制微信号，添加领队为好友
+                </p>
               </div>
-              <p className="text-xs text-stone-400 text-center">
-                复制微信号，添加领队为好友
-              </p>
-            </div>
+            ) : (
+              // 是成员但领队未设置联系方式
+              <div className="p-4 bg-stone-50 rounded-xl text-center">
+                <div className="flex items-center justify-center gap-2 text-stone-400 mb-2">
+                  <MessageCircle className="h-4 w-4" />
+                  <span className="text-sm">领队尚未设置联系方式</span>
+                </div>
+                <p className="text-xs text-stone-400">
+                  您可以通过站内功能与领队沟通
+                </p>
+              </div>
+            )
           ) : (
+            // 不是成员 - 提示加入后查看
             <div className="p-4 bg-stone-50 rounded-xl text-center">
               <div className="flex items-center justify-center gap-2 text-stone-400 mb-2">
                 <Lock className="h-4 w-4" />
