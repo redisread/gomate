@@ -5,6 +5,10 @@
 import type Database from "better-sqlite3";
 import type { CityData } from "../cities";
 import { seedShenzhenLocations } from "./shenzhen";
+import { seedMaclehoseLocations } from "./maclehose";
+import { seedWugongshanLocations } from "./wugongshan";
+import { seedHengshanLocations } from "./hengshan";
+import { seedKunmingLocations } from "./kunming";
 
 export interface LocationData {
   id: string;
@@ -24,6 +28,22 @@ export function seedLocations(db: Database, cities: CityData[]): LocationData[] 
   // 深圳地点
   const shenzhenLocations = seedShenzhenLocations(db, cities);
   allLocations.push(...shenzhenLocations);
+
+  // 香港麦理浩径
+  const maclehoseLocations = seedMaclehoseLocations(db, cities);
+  allLocations.push(...maclehoseLocations);
+
+  // 武功山
+  const wugongshanLocations = seedWugongshanLocations(db, cities);
+  allLocations.push(...wugongshanLocations);
+
+  // 衡山
+  const hengshanLocations = seedHengshanLocations(db, cities);
+  allLocations.push(...hengshanLocations);
+
+  // 昆明西山
+  const kunmingLocations = seedKunmingLocations(db, cities);
+  allLocations.push(...kunmingLocations);
 
   console.log(`✅ 地点数据插入完成，共 ${allLocations.length} 个地点\n`);
   return allLocations;

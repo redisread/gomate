@@ -104,17 +104,39 @@ CLOUDFLARE_D1_TOKEN=
 RESEND_API_KEY=
 ```
 
-## 数据库开发模式
+## 本地开发与测试规范
+
+### 本地 Cloudflare 环境模拟
+
+本项目本地测试**直接使用 Cloudflare 的真实服务**（D1、R2 等），通过 OpenNext 的 Cloudflare 适配器在本地模拟 Workers 运行环境。
 
 本地开发时，`npm run dev` 通过 `initOpenNextCloudflareForDev()` 自动模拟 Cloudflare 环境：
 
-- 数据存储在 `.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite`
-- R2 存储模拟在 `.wrangler/state/v3/r2/`
+- **D1 数据库**：数据存储在 `.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite`
+- **R2 对象存储**：文件存储模拟在 `.wrangler/state/v3/r2/`
 
-直接查询本地 D1：
+### 数据库操作规范
+
+**直接查询本地 D1（调试用）：**
 ```bash
 sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite "SELECT * FROM users;"
 ```
+
+**数据库迁移：**
+- 迁移文件位于 `db/migrations/`
+- 本地应用迁移通过 `npx opennextjs-cloudflare` 相关命令执行，避免直接使用 `wrangler` 命令
+- 生产环境迁移需通过 Cloudflare Dashboard 或 CI/CD 流程执行
+
+**Seed 数据：**
+- Seed 脚本位于 `db/seed/`，入口为 `db/seed.ts`
+- 包含地点（locations）、POI 和路线（routes）数据
+- 执行 seed 前确保本地 D1 数据库已完成迁移
+
+### R2 文件存储规范
+
+- 本地开发时 R2 通过 miniflare 模拟，上传的文件存储在 `.wrangler/state/v3/r2/` 目录
+- 图片上传通过 `app/api/upload/` 和 `app/api/r2/` 路由处理
+- 生产环境文件存储在真实 Cloudflare R2 Bucket，需在 `wrangler.toml` 中配置 R2 绑定
 
 ## 关键约定
 

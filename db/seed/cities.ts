@@ -57,6 +57,42 @@ const citiesData: Omit<CityData, "id" | "createdAt" | "updatedAt">[] = [
     isHot: false,
     parentId: null,
   },
+  {
+    adcode: "810000",
+    name: "香港",
+    pinyin: "hongkong",
+    province: "香港特别行政区",
+    level: "city",
+    isHot: true,
+    parentId: null,
+  },
+  {
+    adcode: "530100",
+    name: "昆明",
+    pinyin: "kunming",
+    province: "云南省",
+    level: "city",
+    isHot: true,
+    parentId: null,
+  },
+  {
+    adcode: "430100",
+    name: "长沙",
+    pinyin: "changsha",
+    province: "湖南省",
+    level: "city",
+    isHot: true,
+    parentId: null,
+  },
+  {
+    adcode: "360300",
+    name: "萍乡",
+    pinyin: "pingxiang",
+    province: "江西省",
+    level: "city",
+    isHot: false,
+    parentId: null,
+  },
 ];
 
 /**

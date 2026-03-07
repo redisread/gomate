@@ -25,18 +25,23 @@ export interface AuthUser {
 }
 
 // 从 API 获取完整用户信息
-async function fetchFullUserInfo(userId: string): Promise<Partial<AuthUser> | null> {
+async function fetchFullUserInfo(userId: string): Promise<{ user: Partial<AuthUser> | null; shouldLogout?: boolean }> {
   try {
     const response = await fetch(`/api/user?id=${encodeURIComponent(userId)}`);
     if (!response.ok) {
+      // 404 表示用户不存在（数据库被清空或用户被删除），应该登出
+      if (response.status === 404) {
+        console.log("[fetchFullUserInfo] User not found (404), will logout");
+        return { user: null, shouldLogout: true };
+      }
       console.error("[fetchFullUserInfo] Response not ok:", response.status);
-      return null;
+      return { user: null };
     }
     const data = await response.json() as { user: Partial<AuthUser> };
-    return data.user;
+    return { user: data.user };
   } catch (error) {
     console.error("[fetchFullUserInfo] Error:", error);
-    return null;
+    return { user: null };
   }
 }
 
@@ -81,7 +86,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 尝试从 API 获取完整用户信息（包含 bio、level 等自定义字段）
-      const fullUser = await fetchFullUserInfo(session.user.id);
+      const { user: fullUser, shouldLogout } = await fetchFullUserInfo(session.user.id);
+
+      // 如果用户不存在（如数据库被清空），自动登出
+      if (shouldLogout) {
+        await authClient.signOut();
+        setUser(null);
+        return;
+      }
 
       const authUser: AuthUser = {
         id: session.user.id,
@@ -123,7 +135,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = React.useCallback(async () => {
     if (session?.user?.id) {
       // 强制从 API 获取最新数据
-      const fullUser = await fetchFullUserInfo(session.user.id);
+      const { user: fullUser, shouldLogout } = await fetchFullUserInfo(session.user.id);
+
+      // 如果用户不存在，自动登出
+      if (shouldLogout) {
+        await authClient.signOut();
+        setUser(null);
+        return;
+      }
+
       if (fullUser) {
         setUser((prev) => {
           if (!prev) return null;
