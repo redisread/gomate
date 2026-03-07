@@ -172,9 +172,12 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className="bg-white rounded-2xl border border-stone-200 p-6"
               >
-                <h3 className="font-semibold text-stone-900 mb-4">
+                <h3 className="font-semibold text-stone-900 mb-1">
                   其他推荐地点
                 </h3>
+                <p className="text-sm text-stone-500 mb-4">
+                  探索更多深圳优质徒步路线
+                </p>
                 <div className="space-y-3">
                   {locations
                     .filter((l) => l.id !== location.id)
@@ -186,14 +189,19 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
                         className="flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 transition-colors group"
                       >
                         <div
-                          className="w-12 h-12 rounded-lg bg-cover bg-center"
+                          className="w-14 h-14 rounded-lg bg-cover bg-center flex-shrink-0"
                           style={{ backgroundImage: `url(${loc.coverImage})` }}
                         />
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-stone-900 group-hover:text-stone-700 transition-colors truncate">
                             {loc.name}
                           </h4>
-                          <p className="text-xs text-stone-500">
+                          {loc.subtitle && (
+                            <p className="text-xs text-stone-500 truncate">
+                              {loc.subtitle}
+                            </p>
+                          )}
+                          <p className="text-xs text-stone-400">
                             {loc.difficulty === "easy"
                               ? "简单"
                               : loc.difficulty === "moderate"
