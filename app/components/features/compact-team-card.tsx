@@ -7,69 +7,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import type { Team, UserLevel } from "@/lib/types";
+import type { Team } from "@/lib/types";
+import {
+  getLevelText,
+  getLevelColor,
+  getStatusText,
+  getStatusColor,
+  formatTeamDate,
+} from "@/lib/team-display";
 
 interface CompactTeamCardProps {
   team: Team;
   className?: string;
-}
-
-// 获取等级标签颜色
-function getLevelColor(level: UserLevel): string {
-  const colorMap: Record<string, string> = {
-    beginner: "bg-green-100 text-green-700 border-green-200",
-    intermediate: "bg-blue-100 text-blue-700 border-blue-200",
-    advanced: "bg-purple-100 text-purple-700 border-purple-200",
-    expert: "bg-orange-100 text-orange-700 border-orange-200",
-  };
-  return colorMap[level] || "bg-stone-100 text-stone-700 border-stone-200";
-}
-
-// 获取等级标签文本
-function getLevelText(level: UserLevel): string {
-  const levelMap: Record<string, string> = {
-    beginner: "新手",
-    intermediate: "进阶",
-    advanced: "资深",
-    expert: "专家",
-  };
-  return levelMap[level] || "新手";
-}
-
-// 获取状态标签文本
-function getStatusText(
-  status: string,
-  currentMembers: number,
-  maxMembers: number
-): string {
-  if (status === "recruiting") {
-    return currentMembers >= maxMembers ? "已满" : "招募中";
-  }
-  if (status === "full") return "已满";
-  if (status === "formed") return "已组建";
-  if (status === "completed") return "已完成";
-  if (status === "cancelled") return "已取消";
-  return "已关闭";
-}
-
-// 获取状态标签颜色
-function getStatusColor(
-  status: string,
-  currentMembers: number,
-  maxMembers: number
-): string {
-  if (status === "recruiting" && currentMembers < maxMembers) {
-    return "bg-emerald-100 text-emerald-700 border-emerald-200";
-  }
-  return "bg-stone-100 text-stone-600 border-stone-200";
-}
-
-// 格式化日期（MM月DD日）
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  return `${month}月${day}日`;
 }
 
 export function CompactTeamCard({ team, className }: CompactTeamCardProps) {
@@ -115,7 +64,7 @@ export function CompactTeamCard({ team, className }: CompactTeamCardProps) {
               <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {formatDate(team.date)}
+                  {formatTeamDate(team.date)}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />

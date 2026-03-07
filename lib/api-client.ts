@@ -62,10 +62,3 @@ export async function fetchTeams() {
 export async function fetchTeamById(id: string) {
   return apiRequest<{ success: boolean; data: unknown }>(`/teams/${id}`);
 }
-
-/**
- * 健康检查
- */
-export async function fetchHealth() {
-  return apiRequest<{ status: string; timestamp: string }>("/health");
-}

@@ -5,6 +5,7 @@ import { Route } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, TrendingUp } from "lucide-react";
+import { difficultyLabels } from "@/lib/constants";
 
 interface RouteCardProps {
   route: Route;
@@ -14,13 +15,6 @@ interface RouteCardProps {
   onSelect?: (routeId: string) => void;
 }
 
-const difficultyConfig = {
-  easy: { label: "简单", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
-  moderate: { label: "中等", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300" },
-  hard: { label: "困难", color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300" },
-  expert: { label: "专家", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" },
-};
-
 export function RouteCard({
   route,
   locationName,
@@ -28,7 +22,7 @@ export function RouteCard({
   showCreateTeamButton = false,
   onSelect,
 }: RouteCardProps) {
-  const difficulty = difficultyConfig[route.difficulty];
+  const difficulty = difficultyLabels[route.difficulty];
 
   const handleSelect = () => {
     if (onSelect) {

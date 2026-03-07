@@ -1,23 +1,3 @@
-/** 生成高德静态地图图片 URL */
-export function getAmapStaticImageUrl(
-  coordinates: { lat: number; lng: number },
-  options?: { zoom?: number; width?: number; height?: number }
-): string {
-  const { lat, lng } = coordinates;
-  const zoom = options?.zoom ?? 14;
-  const width = options?.width ?? 400;
-  const height = options?.height ?? 200;
-  const params = new URLSearchParams({
-    location: `${lng},${lat}`,
-    zoom: String(zoom),
-    size: `${width}*${height}`,
-    markers: `mid,0xE84031,A:${lng},${lat}`,
-    scale: "2",
-    key: "web",
-  });
-  return `https://restapi.amap.com/v3/staticmap?${params.toString()}`;
-}
-
 /** 生成高德地图导航跳转 URL（优先唤起 App） */
 export function getAmapNavigateUrl(
   coordinates: { lat: number; lng: number },

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Users, Calendar, Clock, TrendingUp } from "lucide-react";
+import { Users, Calendar, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import {
   Card,
@@ -14,60 +14,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTeams } from "@/lib/teams-context";
 import { cn } from "@/lib/utils";
+import {
+  getLevelText,
+  getLevelColor,
+  getStatusText,
+  getStatusColor,
+  formatTeamDate,
+} from "@/lib/team-display";
 
 interface FeaturedTeamsProps {
   routeId: string;
   limit?: number;
   className?: string;
-}
-
-// 格式化日期（MM月DD日 HH:mm）
-function formatDate(date: string, time: string): string {
-  const dateObj = new Date(date);
-  const month = dateObj.getMonth() + 1;
-  const day = dateObj.getDate();
-  return `${month}月${day}日 ${time}`;
-}
-
-// 获取等级标签文本
-function getLevelText(level: string): string {
-  const levelMap: Record<string, string> = {
-    beginner: "新手",
-    intermediate: "进阶",
-    advanced: "资深",
-    expert: "专家",
-  };
-  return levelMap[level] || "新手";
-}
-
-// 获取等级标签颜色
-function getLevelColor(level: string): string {
-  const colorMap: Record<string, string> = {
-    beginner: "bg-green-100 text-green-700 border-green-200",
-    intermediate: "bg-blue-100 text-blue-700 border-blue-200",
-    advanced: "bg-purple-100 text-purple-700 border-purple-200",
-    expert: "bg-orange-100 text-orange-700 border-orange-200",
-  };
-  return colorMap[level] || "bg-stone-100 text-stone-700 border-stone-200";
-}
-
-// 获取状态标签文本
-function getStatusText(status: string, currentMembers: number, maxMembers: number): string {
-  if (status === "recruiting") {
-    return currentMembers >= maxMembers ? "已满" : "招募中";
-  }
-  if (status === "full") return "已满";
-  return "已关闭";
-}
-
-// 获取状态标签颜色
-function getStatusColor(status: string, currentMembers: number, maxMembers: number): string {
-  if (status === "recruiting") {
-    return currentMembers >= maxMembers
-      ? "bg-stone-100 text-stone-600 border-stone-200"
-      : "bg-emerald-100 text-emerald-700 border-emerald-200";
-  }
-  return "bg-stone-100 text-stone-600 border-stone-200";
 }
 
 export function FeaturedTeams({ routeId, limit = 3, className }: FeaturedTeamsProps) {
@@ -161,7 +119,7 @@ export function FeaturedTeams({ routeId, limit = 3, className }: FeaturedTeamsPr
                   <div className="flex items-center gap-4 text-sm text-stone-600">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="h-4 w-4 text-stone-400" />
-                      <span>{formatDate(team.date, team.time)}</span>
+                      <span>{formatTeamDate(team.date, team.time)}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-4 w-4 text-stone-400" />

@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import type { Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { getAmapNavigateUrl, isValidCoordinates } from "@/lib/map-utils";
+import { difficultyLabels } from "@/lib/constants";
 
 interface LocationInfoCardProps {
   location: Location;
@@ -31,13 +32,6 @@ interface LocationInfoCardProps {
   selectedRouteId?: string | null;
   onRouteSelect?: (routeId: string | null) => void;
 }
-
-const difficultyConfig = {
-  easy: { label: "简单", color: "bg-green-100 text-green-800" },
-  moderate: { label: "中等", color: "bg-blue-100 text-blue-800" },
-  hard: { label: "困难", color: "bg-orange-100 text-orange-800" },
-  expert: { label: "专家", color: "bg-red-100 text-red-800" },
-};
 
 const DIFFICULTY_OPTIONS = [
   { value: "all", label: "全部" },
@@ -193,7 +187,7 @@ function LocationInfoCard({ location, className, selectedRouteId, onRouteSelect 
                 {location.routes
                   .filter(r => difficultyFilter === "all" || r.difficulty === difficultyFilter)
                   .map((route) => {
-                    const difficulty = difficultyConfig[route.difficulty];
+                    const difficulty = difficultyLabels[route.difficulty];
                     const isSelected = selectedRouteId === route.id;
                     const content = (
                       <>
