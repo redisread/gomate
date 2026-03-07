@@ -274,7 +274,7 @@ function LocationsPageContent() {
               探索地点
             </h1>
             <p className="text-stone-400 text-lg max-w-2xl mx-auto">
-              精选徒步路线，从城市公园到山野海岸，找到适合你的户外目的地
+              从城市公园到山野海岸，找到适合你的户外目的地
             </p>
             {/* 搜索框 */}
             <div className="mt-8 max-w-xl mx-auto">

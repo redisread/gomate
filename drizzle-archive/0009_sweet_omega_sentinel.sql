@@ -1,1 +1,0 @@
-ALTER TABLE `teams` ADD `icon` text DEFAULT '⭿️' NOT NULL;
