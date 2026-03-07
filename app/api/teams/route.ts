@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
     // 使用 Drizzle ORM 查询
     const { drizzle } = await import("drizzle-orm/d1");
     const schema = await import("@/db/schema");
-    const { eq, desc, and, ne, sql } = await import("drizzle-orm");
+    const { eq, desc, and, ne, sql, not } = await import("drizzle-orm");
     const ormDb = drizzle(db, { schema });
 
     // currentMembers 子查询：动态计算已审核通过的成员数
@@ -268,10 +268,15 @@ export async function GET(request: NextRequest) {
         .where(eq(schema.teams.locationId, locationId))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
     } else {
+      // 探索队伍列表：排除已取消和已完成的队伍
       result = await ormDb
         .select(teamColumns)
         .from(schema.teams)
         .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
+        .where(and(
+          ne(schema.teams.status, "cancelled"),
+          ne(schema.teams.status, "completed")
+        ))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
     }
 

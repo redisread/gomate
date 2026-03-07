@@ -126,6 +126,16 @@ export async function createTeam(data: {
 
   const db = await getDB();
 
+  // 检查用户是否已填写微信号
+  const userRecord = await db.query.users.findFirst({
+    where: eq(users.id, user.id),
+    columns: { wechat: true },
+  });
+
+  if (!userRecord?.wechat) {
+    throw new Error(copy.errors.wechatRequired);
+  }
+
   // 验证地点存在
   const location = await db.query.locations.findFirst({
     where: eq(locations.id, data.locationId),
