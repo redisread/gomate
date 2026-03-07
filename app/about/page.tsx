@@ -13,22 +13,22 @@ const values = [
   {
     icon: Users,
     title: "真实连接",
-    description: "我们相信面对面的真实社交，让户外成为连接彼此的桥梁。",
+    description: "我们相信面对面的真实社交，让共同的兴趣成为连接彼此的桥梁。",
   },
   {
     icon: MapPin,
     title: "探索发现",
-    description: "挖掘城市及周边的隐秘角落，发现城市中的自然之美。",
+    description: "挖掘城市及周边值得一去的地方，发现更多有意思的角落。",
   },
   {
     icon: Sprout,
     title: "共同成长",
-    description: "户外不只是徒步，更是遇见更好的自己。",
+    description: "与志同道合的人同行，每一次出发都是一次新的收获。",
   },
   {
     icon: Sparkles,
     title: "简单纯粹",
-    description: "回归户外本质，用简单设计连接真诚的人。",
+    description: "去掉多余的噪音，用简单的设计连接真诚的人。",
   },
 ];
 
@@ -37,19 +37,19 @@ const steps = [
     number: "1",
     icon: Map,
     title: "选择地点",
-    description: "发现城市周边优质徒步路线",
+    description: "浏览精选地点，找到你感兴趣的目的地",
   },
   {
     number: "2",
     icon: UserPlus,
     title: "创建或加入队伍",
-    description: "设置强度、时间、人数",
+    description: "设置活动时间、人数，或直接加入已有队伍",
   },
   {
     number: "3",
     icon: Compass,
     title: "一起出发",
-    description: "和志同道合的伙伴探索自然",
+    description: "和志同道合的伙伴一起，开启这段旅程",
   },
 ];
 
@@ -72,14 +72,14 @@ export default function AboutPage() {
               <span>GoMate</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 mb-6 tracking-tight">
-              让每一次户外探索
+              找到同行的人
               <br />
-              <span className="text-stone-600">都有伙伴同行</span>
+              <span className="text-stone-600">从这里出发</span>
             </h1>
             <p className="text-lg text-stone-600 leading-relaxed">
-              GoMate 是一个极简的「地点组队」平台，专注于户外徒步场景。
-              我们致力于用结构化的方式解决小红书找搭子信息混乱的问题，
-              帮助户外爱好者快速找到志同道合的徒步伙伴。
+              GoMate 是一个极简的「地点组队」平台。
+              我们用结构化的方式取代混乱的帖子和评论区，
+              帮助你快速找到志同道合的同行伙伴。
             </p>
           </motion.div>
         </div>
@@ -99,12 +99,12 @@ export default function AboutPage() {
                 我们的使命
               </h2>
               <p className="text-stone-400 text-lg leading-relaxed mb-6">
-                在快节奏的都市生活中，越来越多人渴望走进自然，但缺少合适的伙伴。
-                我们希望通过技术连接志同道合的户外爱好者，让每一次出发都充满期待。
+                想去某个地方，却苦于找不到合适的同伴——
+                这是很多人的困境。社交媒体的评论区、微信群，信息混乱、效率低下。
               </p>
               <p className="text-stone-400 text-lg leading-relaxed">
-                无论是周末的轻松徒步，还是挑战自我的长线穿越，
-                GoMate 都能帮你找到合适的队伍，安全、便捷、有趣。
+                GoMate 想做的事很简单：让「找人一起去」这件事变得清晰、高效、可靠。
+                无论你想去哪、玩什么，都能快速找到合适的队伍。
               </p>
             </motion.div>
             <motion.div
@@ -115,7 +115,7 @@ export default function AboutPage() {
               className="space-y-6"
             >
               <h3 className="text-xl font-semibold text-white mb-6">
-                3步开始户外探索
+                3步找到同行伙伴
               </h3>
               {steps.map((step, index) => (
                 <motion.div
@@ -199,7 +199,7 @@ export default function AboutPage() {
               加入我们
             </h2>
             <p className="text-stone-600 text-lg mb-8 max-w-2xl mx-auto">
-              无论是寻找徒步伙伴，还是希望加入我们的团队，都欢迎与我们联系
+              无论是寻找同行伙伴，还是有想法想和我们聊聊，都欢迎联系
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button

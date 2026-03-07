@@ -9,11 +9,35 @@ import { seedLocations } from "./locations";
 import { seedRoutes } from "./routes";
 import { seedPois } from "./pois";
 import { seedTags } from "./tags";
+import { seedUsers } from "./users";
+import { seedTeams } from "./teams";
 
 // 动态导入 better-sqlite3 以避免 TypeScript 模块问题
 async function getDatabase() {
   const { default: Database } = await import("better-sqlite3");
   return Database;
+}
+
+/**
+ * 清空本地 miniflare KV 存储
+ */
+function clearLocalKV(): void {
+  const fs = require("fs");
+  const path = require("path");
+  const glob = require("glob");
+
+  const kvPath = "./.wrangler/state/v3/kv";
+  if (fs.existsSync(kvPath)) {
+    try {
+      const files = glob.sync(`${kvPath}/**/*`, { nodir: true });
+      for (const file of files) {
+        fs.unlinkSync(file);
+      }
+      console.log("  ✓ 清空 miniflare KV 缓存");
+    } catch (e) {
+      // 忽略清理错误
+    }
+  }
 }
 
 /**
@@ -70,6 +94,9 @@ function clearAllTables(db: Database): void {
     "users",
   ];
 
+  // 清空 miniflare KV（Better Auth 用 KV 缓存 session，需要同步清理）
+  clearLocalKV();
+
   for (const table of tables) {
     try {
       db.exec(`DELETE FROM ${table}`);
@@ -109,26 +136,34 @@ async function seed() {
     // 1. 城市（无依赖）
     const cities = seedCities(db);
 
-    // 2. 地点（依赖城市）
+    // 2. 用户（无依赖）
+    const users = await seedUsers(db);
+
+    // 3. 地点（依赖城市）
     const locations = seedLocations(db, cities);
 
-    // 3. 路线（依赖地点、城市）
+    // 4. 路线（依赖地点、城市）
     const routes = seedRoutes(db, cities, locations);
 
-    // 4. POI（无依赖，但关联需要地点和路线）
+    // 5. POI（无依赖，但关联需要地点和路线）
     const pois = seedPois(db, locations, routes);
 
-    // 5. 标签（无依赖，但关联需要地点和路线）
+    // 6. 标签（无依赖，但关联需要地点和路线）
     const tags = seedTags(db, locations, routes);
+
+    // 7. 队伍（依赖用户、地点、路线）
+    const teams = seedTeams(db, users, locations, routes);
 
     console.log("=".repeat(40));
     console.log("\n✅ 数据库种子执行完成！");
     console.log(`\n📊 插入统计:`);
     console.log(`  • 城市: ${cities.length}`);
+    console.log(`  • 用户: ${users.length}`);
     console.log(`  • 地点: ${locations.length}`);
     console.log(`  • 路线: ${routes.length}`);
     console.log(`  • POI: ${pois.length}`);
     console.log(`  • 标签: ${tags.length}`);
+    console.log(`  • 队伍: ${teams.length}`);
     console.log();
   } catch (error) {
     console.error("\n❌ 种子执行失败:", error);
