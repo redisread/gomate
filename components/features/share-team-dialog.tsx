@@ -39,12 +39,12 @@ function ShareTeamDialog({
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      showToast(copyText.share.linkCopied);
+      showToast(copy.share.linkCopied);
     } catch {
       // 降级方案：选中输入框内容
       inputRef.current?.select();
       document.execCommand("copy");
-      showToast(copyText.share.linkCopied);
+      showToast(copy.share.linkCopied);
     }
   };
 
@@ -54,7 +54,7 @@ function ShareTeamDialog({
       try {
         await navigator.share({
           title: `${team.title} - GoMate`,
-          text: `${copyText.share.inviteText}：${team.title}`,
+          text: `${copy.share.inviteText}：${team.title}`,
           url: shareUrl,
         });
       } catch {
@@ -126,7 +126,7 @@ function ShareTeamDialog({
         {/* 头部 */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200">
           <h2 className="text-lg font-semibold text-stone-900">
-            {copyText.share.title}
+            {copy.share.title}
           </h2>
           <button
             onClick={() => onOpenChange(false)}
@@ -149,18 +149,18 @@ function ShareTeamDialog({
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="link" className="gap-1.5">
                 <Link2 className="h-4 w-4" />
-                {copyText.share.tabLink}
+                {copy.share.tabLink}
               </TabsTrigger>
               <TabsTrigger value="qrcode" className="gap-1.5">
                 <QrCode className="h-4 w-4" />
-                {copyText.share.tabQRCode}
+                {copy.share.tabQRCode}
               </TabsTrigger>
             </TabsList>
 
             {/* 链接分享 */}
             <TabsContent value="link" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <label className="text-sm text-stone-600">{copyText.share.shareLinkLabel}</label>
+                <label className="text-sm text-stone-600">{copy.share.shareLinkLabel}</label>
                 <div className="flex gap-2">
                   <Input
                     ref={inputRef}
@@ -179,12 +179,12 @@ function ShareTeamDialog({
               <div className="flex gap-2">
                 <Button onClick={handleCopyLink} className="flex-1">
                   <Copy className="h-4 w-4 mr-2" />
-                  {copyText.share.copyLink}
+                  {copy.share.copyLink}
                 </Button>
                 {canNativeShare && (
                   <Button onClick={handleNativeShare} variant="outline" className="flex-1">
                     <Share2 className="h-4 w-4 mr-2" />
-                    {copyText.share.shareVia}
+                    {copy.share.shareVia}
                   </Button>
                 )}
               </div>
@@ -207,7 +207,7 @@ function ShareTeamDialog({
                 </div>
               </div>
               <p className="text-sm text-stone-500 text-center">
-                {copyText.share.scanToJoin}
+                {copy.share.scanToJoin}
               </p>
               <Button
                 onClick={handleDownloadQRCode}
@@ -215,7 +215,7 @@ function ShareTeamDialog({
                 className="w-full"
               >
                 <Download className="h-4 w-4 mr-2" />
-                {copyText.share.downloadQRCode}
+                {copy.share.downloadQRCode}
               </Button>
             </TabsContent>
           </Tabs>
