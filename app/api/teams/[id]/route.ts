@@ -134,10 +134,11 @@ export async function GET(
     // 格式化已审核通过和退出申请中的成员列表
     const relevantMembers = team.members
       ?.filter((m: { status: string }) => m.status === "approved" || m.status === "leave_pending")
-      .map((m: { userId: string; status: string; joinedAt: Date | null; user: { id: string; name: string; image: string | null; bio: string | null; level: string | null; wechat: string | null; gender: string | null; birthday: Date | number | null; extra: string | null } }) => ({
+      .map((m: { userId: string; status: string; joinedAt: Date | null; user: { id: string; name: string; nickname?: string | null; image: string | null; bio: string | null; level: string | null; wechat: string | null; gender: string | null; birthday: Date | number | null; extra: string | null } }) => ({
         id: m.user?.id || m.userId,
         userId: m.userId,
         name: m.user?.name || '未知用户',
+        nickname: m.user?.nickname || null,
         image: m.user?.image || null,
         bio: m.user?.bio || null,
         level: m.user?.level || 'beginner',
@@ -170,6 +171,7 @@ export async function GET(
       leader: team.leader ? {
         id: team.leader.id,
         name: team.leader.name,
+        nickname: team.leader.nickname || null,
         avatar: team.leader.image || '',
         level: (team.leader.level || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
         completedHikes: 0,

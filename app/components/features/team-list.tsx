@@ -19,6 +19,7 @@ import { leaderLevelLabels } from "@/lib/constants";
 import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { getUserDisplayName } from "@/lib/user-utils";
 
 interface TeamListProps {
   className?: string;
@@ -152,7 +153,7 @@ function TeamList({ className, locationId, routeId }: TeamListProps) {
                         {/* Third Row: Leader Info + Requirements */}
                         <div className="flex items-center gap-2 mt-1.5">
                           <span className="text-xs text-stone-500">
-                            领队:{team.leader.name}
+                            领队:{getUserDisplayName(team.leader)}
                           </span>
                           <Badge
                             variant="outline"

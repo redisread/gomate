@@ -20,6 +20,7 @@ import {
   getStatusColor,
   formatTeamDate,
 } from "@/lib/team-display";
+import { getUserDisplayName } from "@/lib/user-utils";
 
 interface Team {
   id: string;
@@ -37,6 +38,7 @@ interface Team {
   leader: {
     id: string;
     name: string;
+    nickname?: string | null;
     avatar?: string;
     level: "beginner" | "intermediate" | "advanced" | "expert";
     completedHikes?: number;
@@ -79,14 +81,14 @@ export function TeamCard({ team, className, showLocation = false }: TeamCardProp
         {/* 队长信息 */}
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={team.leader.avatar} alt={team.leader.name} />
+            <AvatarImage src={team.leader.avatar} alt={getUserDisplayName(team.leader)} />
             <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-              {team.leader.name.charAt(0).toUpperCase()}
+              {getUserDisplayName(team.leader).charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-sm truncate">{team.leader.name}</span>
+              <span className="font-medium text-sm truncate">{getUserDisplayName(team.leader)}</span>
               <Badge variant="outline" className={cn("text-xs px-1.5 py-0", getLevelColor(team.leader.level))}>
                 {getLevelText(team.leader.level)}
               </Badge>

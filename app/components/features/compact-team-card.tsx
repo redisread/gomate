@@ -15,6 +15,7 @@ import {
   getStatusColor,
   formatTeamDate,
 } from "@/lib/team-display";
+import { getUserDisplayName } from "@/lib/user-utils";
 
 interface CompactTeamCardProps {
   team: Team;
@@ -49,9 +50,9 @@ export function CompactTeamCard({ team, className }: CompactTeamCardProps) {
           <div className="flex items-start justify-between gap-3">
             {/* 左侧：队长头像 */}
             <Avatar className="h-10 w-10 shrink-0">
-              <AvatarImage src={team.leader.avatar} alt={team.leader.name} />
+              <AvatarImage src={team.leader.avatar} alt={getUserDisplayName(team.leader)} />
               <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-sm">
-                {team.leader.name.charAt(0).toUpperCase()}
+                {getUserDisplayName(team.leader).charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
 

@@ -17,6 +17,7 @@ import type { Team } from "@/lib/types";
 import { leaderLevelLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
+import { getUserDisplayName } from "@/lib/user-utils";
 
 interface LeaderCardProps {
   team: Team;
@@ -61,13 +62,13 @@ function LeaderCard({ team, className }: LeaderCardProps) {
             <Avatar className="h-16 w-16 border-2 border-stone-100">
               <AvatarImage src={leader.avatar} />
               <AvatarFallback className="text-lg">
-                {leader.name[0]}
+                {getUserDisplayName(leader)[0]}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-lg font-semibold text-stone-900">
-                  {leader.name}
+                  {getUserDisplayName(leader)}
                 </h3>
                 <Badge
                   className={cn(

@@ -81,6 +81,7 @@ export async function GET(
           columns: {
             id: true,
             name: true,
+            nickname: true,
             image: true,
             bio: true,
             level: true,
@@ -98,6 +99,7 @@ export async function GET(
       user: app.user ? {
         id: app.user.id,
         name: app.user.name,
+        nickname: app.user.nickname || null,
         image: app.user.image || null,
         bio: app.user.bio || null,
         level: app.user.level || "beginner",

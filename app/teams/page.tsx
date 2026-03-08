@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTeams } from "@/lib/teams-context";
 import { useLocations } from "@/lib/locations-context";
 import { cn } from "@/lib/utils";
+import { getUserDisplayName } from "@/lib/user-utils";
 
 // 状态映射
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -416,11 +417,11 @@ export default function TeamsPage() {
                                 <Avatar className="h-6 w-6">
                                   <AvatarImage src={team.leader.avatar} />
                                   <AvatarFallback className="text-xs">
-                                    {team.leader.name[0]}
+                                    {getUserDisplayName(team.leader)[0]}
                                   </AvatarFallback>
                                 </Avatar>
                                 <span className="text-sm text-stone-600">
-                                  领队: {team.leader.name}
+                                  领队: {getUserDisplayName(team.leader)}
                                 </span>
                                 {team.leader.level === "expert" && (
                                   <Crown className="h-3.5 w-3.5 text-amber-500" />

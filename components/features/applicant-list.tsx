@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { copy } from "@/lib/copy";
+import { getUserDisplayName } from "@/lib/user-utils";
 
 interface Applicant {
   id: string;
@@ -16,6 +17,7 @@ interface Applicant {
   user: {
     id: string;
     name: string;
+    nickname?: string | null;
     image: string | null;
     bio: string | null;
     level: string;
@@ -198,10 +200,10 @@ function ApplicantList({ teamId, initialApplications = [], onApprove, onReject }
                     {/* 用户头像 */}
                     <Avatar size="lg">
                       {user.image ? (
-                        <AvatarImage src={user.image} alt={user.name} />
+                        <AvatarImage src={user.image} alt={getUserDisplayName(user)} />
                       ) : null}
                       <AvatarFallback className="bg-stone-200 text-stone-600">
-                        {user.name?.charAt(0) || "?"}
+                        {getUserDisplayName(user).charAt(0) || "?"}
                       </AvatarFallback>
                     </Avatar>
 
@@ -209,7 +211,7 @@ function ApplicantList({ teamId, initialApplications = [], onApprove, onReject }
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-stone-900 truncate">
-                          {user.name}
+                          {getUserDisplayName(user)}
                         </span>
                         <Badge variant="outline" className="text-xs">
                           {getLevelName(user.level)}

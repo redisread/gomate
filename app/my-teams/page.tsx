@@ -54,6 +54,7 @@ import { useLocations } from "@/lib/locations-context";
 import { approveMember, rejectMember } from "@/app/actions/teams";
 import { useToast } from "@/components/ui/toast";
 import { copy } from "@/lib/copy";
+import { getUserDisplayName } from "@/lib/user-utils";
 
 const c = copy.myTeams;
 const com = copy.common;
@@ -578,7 +579,7 @@ function MyTeamsContent() {
                 {team.leader && (
                   <div className="flex items-center gap-2 mt-3 text-sm text-stone-500">
                     <span>{c.teamLeader}：</span>
-                    <span className="font-medium text-stone-700">{team.leader.name}</span>
+                    <span className="font-medium text-stone-700">{getUserDisplayName(team.leader)}</span>
                   </div>
                 )}
               </div>

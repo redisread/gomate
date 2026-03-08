@@ -113,6 +113,7 @@ export interface TeamMember {
   id: string;
   userId: string; // 用户 ID
   name: string;
+  nickname?: string | null; // 昵称（优先显示）
   image: string | null;
   bio: string | null;
   level: string;
@@ -164,6 +165,7 @@ export interface Team {
   leader: {
     id: string;
     name: string;
+    nickname?: string | null; // 昵称（优先显示）
     avatar: string;
     level: UserLevel;
     completedHikes: number;

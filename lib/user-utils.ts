@@ -3,7 +3,6 @@
  * 提供用户信息展示等功能
  */
 
-import type { User } from "@/db/schema";
 import { copy } from "./copy";
 
 const e = copy.enums;
@@ -11,7 +10,7 @@ const e = copy.enums;
 /**
  * 获取用户展示名称（优先使用 nickname，回退到 name）
  */
-export function getUserDisplayName(user: Pick<User, "nickname" | "name">): string {
+export function getUserDisplayName(user: { nickname?: string | null; name: string }): string {
   return user.nickname || user.name;
 }
 

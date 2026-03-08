@@ -19,6 +19,7 @@ import type { Team } from "@/lib/types";
 import { leaderLevelLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
+import { getUserDisplayName } from "@/lib/user-utils";
 
 interface TeamListProps {
   teams: Team[];
@@ -66,7 +67,7 @@ function TeamList({ teams, className }: TeamListProps) {
                     {/* Leader Avatar */}
                     <Avatar className="h-12 w-12 border-2 border-stone-100">
                       <AvatarImage src={team.leader.avatar} />
-                      <AvatarFallback>{team.leader.name[0]}</AvatarFallback>
+                      <AvatarFallback>{getUserDisplayName(team.leader)[0]}</AvatarFallback>
                     </Avatar>
 
                     {/* Content */}
@@ -124,7 +125,7 @@ function TeamList({ teams, className }: TeamListProps) {
                       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100">
                         <span className="text-sm text-stone-500">{copy.teams.leaderLabel}</span>
                         <span className="text-sm font-medium text-stone-700">
-                          {team.leader.name}
+                          {getUserDisplayName(team.leader)}
                         </span>
                         <Badge
                           variant="outline"
@@ -160,7 +161,7 @@ function TeamList({ teams, className }: TeamListProps) {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={team.leader.avatar} />
-                        <AvatarFallback>{team.leader.name[0]}</AvatarFallback>
+                        <AvatarFallback>{getUserDisplayName(team.leader)[0]}</AvatarFallback>
                       </Avatar>
                       <div>
                         <h4 className="font-medium text-stone-700 line-clamp-1">

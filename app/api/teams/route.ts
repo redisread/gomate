@@ -227,6 +227,7 @@ export async function GET(request: NextRequest) {
       currentMembers: currentMembersSubquery,
       leaderImage: schema.users.image,
       leaderName: schema.users.name,
+      leaderNickname: schema.users.nickname,
       leaderLevel: schema.users.level,
     };
 
@@ -249,6 +250,7 @@ export async function GET(request: NextRequest) {
       currentMembers: number;
       leaderImage: string | null;
       leaderName: string;
+      leaderNickname: string | null;
       leaderLevel: string | null;
     };
 
@@ -328,6 +330,7 @@ export async function GET(request: NextRequest) {
         leader: {
           id: row.leaderId,
           name: row.leaderName,
+          nickname: row.leaderNickname || null,
           avatar: row.leaderImage || '',
           level: (row.leaderLevel || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'expert',
           completedHikes: 0,

@@ -18,6 +18,7 @@ import { useTeams } from "@/lib/teams-context";
 import { useAuth } from "@/lib/auth-context";
 import { copy } from "@/lib/copy";
 import type { Location, Tag } from "@/lib/types";
+import { getUserDisplayName } from "@/lib/user-utils";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
@@ -306,7 +307,7 @@ export default function HomePage() {
                                 {team.currentMembers}/{team.maxMembers}人
                               </span>
                               <span className="text-stone-300">|</span>
-                              <span>领队: {team.leader.name}</span>
+                              <span>领队: {getUserDisplayName(team.leader)}</span>
                             </div>
                           </div>
                           <ArrowRight className="h-5 w-5 text-stone-400 group-hover:text-stone-600 group-hover:translate-x-1 transition-all flex-shrink-0" />

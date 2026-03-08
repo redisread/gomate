@@ -21,7 +21,7 @@ import type { Team } from "@/lib/types";
 import { leaderLevelLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { copy as copyText } from "@/lib/copy";
-import { getGenderText, getAgeText } from "@/lib/user-utils";
+import { getGenderText, getAgeText, getUserDisplayName } from "@/lib/user-utils";
 import { parseUserExtra } from "@/lib/user-extra";
 
 interface LeaderCardProps {
@@ -72,7 +72,7 @@ function LeaderCard({ team, isTeamMember = false, className }: LeaderCardProps) 
             >
               <AvatarImage src={leader.avatar} />
               <AvatarFallback className="text-lg">
-                {leader.name[0]}
+                {getUserDisplayName(leader)[0]}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
@@ -81,7 +81,7 @@ function LeaderCard({ team, isTeamMember = false, className }: LeaderCardProps) 
                   className="text-lg font-semibold text-stone-900 cursor-pointer hover:text-stone-600 transition-colors"
                   onClick={() => router.push(`/users/${leader.id}`)}
                 >
-                  {leader.name}
+                  {getUserDisplayName(leader)}
                 </h3>
                 <Badge
                   className={cn(

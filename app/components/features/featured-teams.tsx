@@ -21,6 +21,7 @@ import {
   getStatusColor,
   formatTeamDate,
 } from "@/lib/team-display";
+import { getUserDisplayName } from "@/lib/user-utils";
 
 interface FeaturedTeamsProps {
   routeId: string;
@@ -90,14 +91,14 @@ export function FeaturedTeams({ routeId, limit = 3, className }: FeaturedTeamsPr
                     >
                       {!team.leader.avatar && (
                         <div className="w-full h-full flex items-center justify-center text-white font-semibold text-sm">
-                          {team.leader.name.charAt(0).toUpperCase()}
+                          {getUserDisplayName(team.leader).charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-stone-900 truncate">
-                          {team.leader.name}
+                          {getUserDisplayName(team.leader)}
                         </span>
                         <Badge
                           variant="outline"

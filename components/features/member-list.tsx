@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { copy } from "@/lib/copy";
 import type { TeamMember } from "@/lib/types";
-import { getGenderText, getAgeText } from "@/lib/user-utils";
+import { getGenderText, getAgeText, getUserDisplayName } from "@/lib/user-utils";
 import { parseUserExtra } from "@/lib/user-extra";
 
 interface MemberListProps {
@@ -169,10 +169,10 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                       {/* 用户头像 */}
                       <Avatar className="h-10 w-10">
                         {member.image ? (
-                          <AvatarImage src={member.image} alt={member.name} />
+                          <AvatarImage src={member.image} alt={getUserDisplayName(member)} />
                         ) : null}
                         <AvatarFallback className="bg-stone-200 text-stone-600 text-sm">
-                          {member.name?.charAt(0) || "?"}
+                          {getUserDisplayName(member).charAt(0) || "?"}
                         </AvatarFallback>
                       </Avatar>
 
@@ -180,7 +180,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-stone-900 truncate text-sm">
-                            {member.name}
+                            {getUserDisplayName(member)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mt-1">
@@ -211,7 +211,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                             <AlertDialogHeader>
                               <AlertDialogTitle>{copy.teams.approveLeave}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                {copy.teams.approveLeaveDesc.replace("{name}", member.name)}
+                                {copy.teams.approveLeaveDesc.replace("{name}", getUserDisplayName(member))}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -244,7 +244,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                             <AlertDialogHeader>
                               <AlertDialogTitle>{copy.teams.rejectLeaveRequest}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                {copy.teams.rejectLeaveDesc.replace("{name}", member.name)}
+                                {copy.teams.rejectLeaveDesc.replace("{name}", getUserDisplayName(member))}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -301,10 +301,10 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                   {/* 用户头像 */}
                   <Avatar className="h-10 w-10">
                     {member.image ? (
-                      <AvatarImage src={member.image} alt={member.name} />
+                      <AvatarImage src={member.image} alt={getUserDisplayName(member)} />
                     ) : null}
                     <AvatarFallback className="bg-stone-200 text-stone-600 text-sm">
-                      {member.name?.charAt(0) || "?"}
+                      {getUserDisplayName(member).charAt(0) || "?"}
                     </AvatarFallback>
                   </Avatar>
 
@@ -312,7 +312,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-stone-900 truncate text-sm">
-                        {member.name}
+                        {getUserDisplayName(member)}
                       </span>
                       {isMemberLeader && (
                         <Crown className="h-4 w-4 text-amber-500" />
@@ -376,7 +376,7 @@ function MemberList({ members, leaderId, teamId, isLeader, teamStatus, onMemberR
                         <AlertDialogHeader>
                           <AlertDialogTitle>{copy.teams.removeMemberConfirm}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            {copy.teams.removeMemberDesc.replace("{name}", member.name)}
+                            {copy.teams.removeMemberDesc.replace("{name}", getUserDisplayName(member))}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

@@ -23,6 +23,7 @@ import { useAuth } from "@/lib/auth-context";
 import type { Team } from "@/lib/types";
 import type { Location } from "@/lib/types";
 import { copy } from "@/lib/copy";
+import { getUserDisplayName } from "@/lib/user-utils";
 
 interface Application {
   id: string;
@@ -487,14 +488,14 @@ export function TeamClientPage({ teamId }: TeamClientPageProps) {
                             <Avatar className="h-5 w-5">
                               <AvatarImage
                                 src={otherTeam.leader.avatar}
-                                alt={otherTeam.leader.name}
+                                alt={getUserDisplayName(otherTeam.leader)}
                               />
                               <AvatarFallback className="text-[10px] bg-stone-200">
-                                {otherTeam.leader.name.charAt(0).toUpperCase()}
+                                {getUserDisplayName(otherTeam.leader).charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-xs text-stone-600">
-                              {otherTeam.leader.name}
+                              {getUserDisplayName(otherTeam.leader)}
                             </span>
                           </div>
                         )}
