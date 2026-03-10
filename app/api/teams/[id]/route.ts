@@ -167,6 +167,7 @@ export async function GET(
       requirements: team.requirements ? JSON.parse(team.requirements) : [],
       status: team.status,
       createdAt: team.createdAt,
+      difficulty: team.route?.difficulty || 'moderate',
       route: team.route || undefined,
       leader: team.leader ? {
         id: team.leader.id,

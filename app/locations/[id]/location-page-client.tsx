@@ -179,57 +179,66 @@ export function LocationPageClient({ locationId }: LocationPageClientProps) {
                 }}
               />
 
-              {/* Quick Actions */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-white rounded-2xl border border-stone-200 p-6"
-              >
-                <h3 className="font-semibold text-stone-900 mb-1">
-                  其他推荐地点
-                </h3>
-                <p className="text-sm text-stone-500 mb-4">
-                  探索更多深圳优质徒步路线
-                </p>
-                <div className="space-y-3">
-                  {locations
-                    .filter((l) => l.id !== location.id)
-                    .slice(0, 3)
-                    .map((loc) => (
-                      <Link
-                        key={loc.id}
-                        href={`/locations/${loc.id}`}
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 transition-colors group"
-                      >
-                        <div
-                          className="w-14 h-14 rounded-lg bg-cover bg-center flex-shrink-0"
-                          style={{ backgroundImage: `url(${loc.coverImage})` }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-stone-900 group-hover:text-stone-700 transition-colors truncate">
-                            {loc.name}
-                          </h4>
-                          {loc.subtitle && (
-                            <p className="text-xs text-stone-500 truncate">
-                              {loc.subtitle}
+              {/* 同城市推荐地点 */}
+              {(() => {
+                const sameCityLocations = locations
+                  .filter((l) => l.id !== location.id && l.cityId === location.cityId)
+                  .slice(0, 3);
+
+                if (sameCityLocations.length === 0) return null;
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                    className="bg-white rounded-2xl border border-stone-200 p-6"
+                  >
+                    <h3 className="font-semibold text-stone-900 mb-1">
+                      其他推荐地点
+                    </h3>
+                    <p className="text-sm text-stone-500 mb-4">
+                      {location.cityName
+                        ? `探索更多${location.cityName}优质徒步路线`
+                        : "探索更多优质徒步路线"}
+                    </p>
+                    <div className="space-y-3">
+                      {sameCityLocations.map((loc) => (
+                        <Link
+                          key={loc.id}
+                          href={`/locations/${loc.id}`}
+                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 transition-colors group"
+                        >
+                          <div
+                            className="w-14 h-14 rounded-lg bg-cover bg-center flex-shrink-0"
+                            style={{ backgroundImage: `url(${loc.coverImage})` }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-stone-900 group-hover:text-stone-700 transition-colors truncate">
+                              {loc.name}
+                            </h4>
+                            {loc.subtitle && (
+                              <p className="text-xs text-stone-500 truncate">
+                                {loc.subtitle}
+                              </p>
+                            )}
+                            <p className="text-xs text-stone-400">
+                              {loc.difficulty === "easy"
+                                ? "简单"
+                                : loc.difficulty === "moderate"
+                                ? "中等"
+                                : loc.difficulty === "hard"
+                                ? "困难"
+                                : "极难"}{" "}
+                              · {loc.duration}
                             </p>
-                          )}
-                          <p className="text-xs text-stone-400">
-                            {loc.difficulty === "easy"
-                              ? "简单"
-                              : loc.difficulty === "moderate"
-                              ? "中等"
-                              : loc.difficulty === "hard"
-                              ? "困难"
-                              : "极难"}{" "}
-                            · {loc.duration}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                </div>
-              </motion.div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                );
+              })()}
             </div>
           </div>
         </div>

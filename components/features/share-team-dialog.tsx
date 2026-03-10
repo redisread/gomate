@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { X, Copy, Share2, Download, QrCode, Link2 } from "lucide-react";
+import { X, Copy, Share2, Download, QrCode, Link2, ImageIcon, Mountain, MapPin, Calendar, Clock, Users } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import html2canvas from "html2canvas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +20,22 @@ interface ShareTeamDialogProps {
   location: Location;
 }
 
+// 难度映射
+const difficultyMap: Record<string, string> = {
+  easy: "简单",
+  moderate: "中等",
+  hard: "困难",
+  expert: "极难",
+};
+
+// 格式化日期
+function formatDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
 function ShareTeamDialog({
   open,
   onOpenChange,
@@ -28,6 +45,8 @@ function ShareTeamDialog({
   const { showToast } = useToast();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const qrCodeRef = React.useRef<HTMLDivElement>(null);
+  const posterRef = React.useRef<HTMLDivElement>(null);
+  const [isGenerating, setIsGenerating] = React.useState(false);
 
   // 生成分享链接
   const shareUrl =
@@ -41,7 +60,6 @@ function ShareTeamDialog({
       await navigator.clipboard.writeText(shareUrl);
       showToast(copy.share.linkCopied);
     } catch {
-      // 降级方案：选中输入框内容
       inputRef.current?.select();
       document.execCommand("copy");
       showToast(copy.share.linkCopied);
@@ -68,38 +86,60 @@ function ShareTeamDialog({
     const svg = qrCodeRef.current?.querySelector("svg");
     if (!svg) return;
 
-    // 创建 canvas
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // 获取 SVG 尺寸
     const svgRect = svg.getBoundingClientRect();
     const size = Math.max(svgRect.width, svgRect.height, 200);
     canvas.width = size;
     canvas.height = size;
 
-    // 将 SVG 转换为图片
     const svgData = new XMLSerializer().serializeToString(svg);
     const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(svgBlob);
 
     const img = new Image();
     img.onload = () => {
-      // 填充白色背景
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, size, size);
-      // 绘制二维码
       ctx.drawImage(img, 0, 0, size, size);
       URL.revokeObjectURL(url);
 
-      // 下载图片
       const link = document.createElement("a");
       link.download = `team-${team.id}-qrcode.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
     };
     img.src = url;
+  };
+
+  // 生成并下载海报
+  const handleGeneratePoster = async () => {
+    if (!posterRef.current) return;
+
+    setIsGenerating(true);
+    try {
+      const canvas = await html2canvas(posterRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const link = document.createElement("a");
+      link.download = `team-${team.id}-poster.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+
+      showToast("海报已生成并下载");
+    } catch (error) {
+      console.error("生成海报失败:", error);
+      showToast("生成海报失败，请重试");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // 是否支持原生分享
@@ -146,7 +186,7 @@ function ShareTeamDialog({
 
           {/* 标签页切换 */}
           <Tabs defaultValue="link" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="link" className="gap-1.5">
                 <Link2 className="h-4 w-4" />
                 {copy.share.tabLink}
@@ -154,6 +194,10 @@ function ShareTeamDialog({
               <TabsTrigger value="qrcode" className="gap-1.5">
                 <QrCode className="h-4 w-4" />
                 {copy.share.tabQRCode}
+              </TabsTrigger>
+              <TabsTrigger value="poster" className="gap-1.5">
+                <ImageIcon className="h-4 w-4" />
+                海报
               </TabsTrigger>
             </TabsList>
 
@@ -216,6 +260,118 @@ function ShareTeamDialog({
               >
                 <Download className="h-4 w-4 mr-2" />
                 {copy.share.downloadQRCode}
+              </Button>
+            </TabsContent>
+
+            {/* 海报分享 */}
+            <TabsContent value="poster" className="space-y-4 mt-4">
+              {/* 海报预览 */}
+              <div className="flex justify-center">
+                <div
+                  ref={posterRef}
+                  className="w-[280px] bg-gradient-to-br from-stone-50 to-stone-100 rounded-xl overflow-hidden shadow-lg"
+                  style={{ aspectRatio: "3/4" }}
+                >
+                  {/* 顶部装饰条 */}
+                  <div className="h-1.5 bg-gradient-to-r from-stone-700 via-stone-600 to-stone-700" />
+
+                  {/* 内容区域 */}
+                  <div className="p-5 flex flex-col h-full">
+                    {/* 头部 Logo */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 bg-stone-800 rounded-lg flex items-center justify-center">
+                        <Mountain className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-sm font-semibold text-stone-700">GoMate 徒步组队</span>
+                    </div>
+
+                    {/* 封面图区域 */}
+                    <div className="relative mb-4 rounded-lg overflow-hidden bg-stone-200 aspect-[16/10]">
+                      {location.coverImage ? (
+                        <img
+                          src={location.coverImage}
+                          alt={location.name}
+                          className="w-full h-full object-cover"
+                          crossOrigin="anonymous"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-stone-200">
+                          <Mountain className="w-12 h-12 text-stone-400" />
+                        </div>
+                      )}
+                      {/* 地点标签 */}
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/50 backdrop-blur-sm rounded text-white text-xs">
+                        {location.name}
+                      </div>
+                    </div>
+
+                    {/* 队伍标题 */}
+                    <h3 className="text-lg font-bold text-stone-900 mb-3 line-clamp-2">
+                      {team.title}
+                    </h3>
+
+                    {/* 信息列表 */}
+                    <div className="space-y-2.5 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-stone-600">
+                        <Calendar className="w-4 h-4 text-stone-400" />
+                        <span>出发：{formatDate(team.date)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-stone-600">
+                        <Clock className="w-4 h-4 text-stone-400" />
+                        <span>集合：{team.time || "待定"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-stone-600">
+                        <Users className="w-4 h-4 text-stone-400" />
+                        <span>人数：{team.currentMembers}/{team.maxMembers}人</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-stone-600">
+                        <MapPin className="w-4 h-4 text-stone-400" />
+                        <span>难度：{difficultyMap[team.difficulty || "moderate"] || "中等"}</span>
+                      </div>
+                    </div>
+
+                    {/* 分隔线 */}
+                    <div className="border-t border-stone-200 my-3" />
+
+                    {/* 二维码区域 */}
+                    <div className="flex flex-col items-center">
+                      <div className="p-2 bg-white rounded-lg shadow-sm mb-2">
+                        <QRCodeSVG
+                          value={shareUrl}
+                          size={100}
+                          level="H"
+                          bgColor="#ffffff"
+                          fgColor="#1c1917"
+                        />
+                      </div>
+                      <p className="text-xs text-stone-500">扫码加入队伍</p>
+                    </div>
+
+                    {/* 底部品牌 */}
+                    <div className="mt-auto pt-3 text-center">
+                      <p className="text-xs text-stone-400">gomate.jiahongw.com</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 下载按钮 */}
+              <Button
+                onClick={handleGeneratePoster}
+                disabled={isGenerating}
+                className="w-full"
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    生成中...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    下载分享海报
+                  </>
+                )}
               </Button>
             </TabsContent>
           </Tabs>
