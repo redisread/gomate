@@ -36,6 +36,38 @@ function formatDate(dateStr: string): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
+// 预加载图片
+function preloadImage(src: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!src) {
+      resolve("");
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(src);
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.src = src;
+  });
+}
+
+// 将图片转为 Base64
+async function getBase64Image(src: string): Promise<string> {
+  try {
+    const response = await fetch(src, { mode: "cors" });
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error("Image to base64 failed:", error);
+    return src; // 失败时返回原地址
+  }
+}
+
 function ShareTeamDialog({
   open,
   onOpenChange,
@@ -47,12 +79,22 @@ function ShareTeamDialog({
   const qrCodeRef = React.useRef<HTMLDivElement>(null);
   const posterRef = React.useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [coverImageBase64, setCoverImageBase64] = React.useState<string>("");
 
   // 生成分享链接
   const shareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/teams/${team.id}`
       : "";
+
+  // 预加载封面图
+  React.useEffect(() => {
+    if (open && location.coverImage) {
+      getBase64Image(location.coverImage)
+        .then(setCoverImageBase64)
+        .catch(() => setCoverImageBase64(""));
+    }
+  }, [open, location.coverImage]);
 
   // 复制链接
   const handleCopyLink = async () => {
@@ -120,12 +162,22 @@ function ShareTeamDialog({
 
     setIsGenerating(true);
     try {
+      // 等待二维码渲染完成
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const canvas = await html2canvas(posterRef.current, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
-        logging: false,
+        logging: process.env.NODE_ENV === "development",
+        onclone: (clonedDoc) => {
+          // 在克隆的文档中处理二维码
+          const qrContainer = clonedDoc.querySelector("[data-qr-container]");
+          if (qrContainer) {
+            qrContainer.setAttribute("data-rendered", "true");
+          }
+        },
       });
 
       const link = document.createElement("a");
@@ -287,9 +339,9 @@ function ShareTeamDialog({
 
                     {/* 封面图区域 */}
                     <div className="relative mb-4 rounded-lg overflow-hidden bg-stone-200 aspect-[16/10]">
-                      {location.coverImage ? (
+                      {(coverImageBase64 || location.coverImage) ? (
                         <img
-                          src={location.coverImage}
+                          src={coverImageBase64 || location.coverImage}
                           alt={location.name}
                           className="w-full h-full object-cover"
                           crossOrigin="anonymous"
@@ -334,7 +386,7 @@ function ShareTeamDialog({
                     <div className="border-t border-stone-200 my-3" />
 
                     {/* 二维码区域 */}
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center" data-qr-container>
                       <div className="p-2 bg-white rounded-lg shadow-sm mb-2">
                         <QRCodeSVG
                           value={shareUrl}
