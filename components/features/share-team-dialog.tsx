@@ -36,38 +36,6 @@ function formatDate(dateStr: string): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
-// 预加载图片
-function preloadImage(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!src) {
-      resolve("");
-      return;
-    }
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(src);
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
-
-// 将图片转为 Base64
-async function getBase64Image(src: string): Promise<string> {
-  try {
-    const response = await fetch(src, { mode: "cors" });
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.error("Image to base64 failed:", error);
-    return src; // 失败时返回原地址
-  }
-}
-
 function ShareTeamDialog({
   open,
   onOpenChange,
@@ -79,22 +47,12 @@ function ShareTeamDialog({
   const qrCodeRef = React.useRef<HTMLDivElement>(null);
   const posterRef = React.useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = React.useState(false);
-  const [coverImageBase64, setCoverImageBase64] = React.useState<string>("");
 
   // 生成分享链接
   const shareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/teams/${team.id}`
       : "";
-
-  // 预加载封面图
-  React.useEffect(() => {
-    if (open && location.coverImage) {
-      getBase64Image(location.coverImage)
-        .then(setCoverImageBase64)
-        .catch(() => setCoverImageBase64(""));
-    }
-  }, [open, location.coverImage]);
 
   // 复制链接
   const handleCopyLink = async () => {
@@ -167,17 +125,10 @@ function ShareTeamDialog({
 
       const canvas = await html2canvas(posterRef.current, {
         scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
+        useCORS: false,
+        allowTaint: false,
+        backgroundColor: "#fafaf9",
         logging: process.env.NODE_ENV === "development",
-        onclone: (clonedDoc) => {
-          // 在克隆的文档中处理二维码
-          const qrContainer = clonedDoc.querySelector("[data-qr-container]");
-          if (qrContainer) {
-            qrContainer.setAttribute("data-rendered", "true");
-          }
-        },
       });
 
       const link = document.createElement("a");
@@ -321,87 +272,90 @@ function ShareTeamDialog({
               <div className="flex justify-center">
                 <div
                   ref={posterRef}
-                  className="w-[280px] bg-gradient-to-br from-stone-50 to-stone-100 rounded-xl overflow-hidden shadow-lg"
+                  className="w-[280px] bg-stone-50 rounded-xl overflow-hidden shadow-lg"
                   style={{ aspectRatio: "3/4" }}
                 >
-                  {/* 顶部装饰条 */}
-                  <div className="h-1.5 bg-gradient-to-r from-stone-700 via-stone-600 to-stone-700" />
+                  {/* 顶部装饰条 - 品牌色渐变 */}
+                  <div className="h-2 bg-gradient-to-r from-stone-800 via-stone-700 to-stone-800" />
 
                   {/* 内容区域 */}
                   <div className="p-5 flex flex-col h-full">
                     {/* 头部 Logo */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 bg-stone-800 rounded-lg flex items-center justify-center">
+                    <div className="flex items-center gap-2 mb-5">
+                      <div className="w-9 h-9 bg-stone-800 rounded-xl flex items-center justify-center shadow-sm">
                         <Mountain className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-sm font-semibold text-stone-700">GoMate 徒步组队</span>
+                      <div>
+                        <span className="text-sm font-bold text-stone-800">GoMate</span>
+                        <span className="text-xs text-stone-500 ml-1">徒步组队</span>
+                      </div>
                     </div>
 
-                    {/* 封面图区域 */}
-                    <div className="relative mb-4 rounded-lg overflow-hidden bg-stone-200 aspect-[16/10]">
-                      {(coverImageBase64 || location.coverImage) ? (
-                        <img
-                          src={coverImageBase64 || location.coverImage}
-                          alt={location.name}
-                          className="w-full h-full object-cover"
-                          crossOrigin="anonymous"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-stone-200">
-                          <Mountain className="w-12 h-12 text-stone-400" />
-                        </div>
-                      )}
-                      {/* 地点标签 */}
-                      <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/50 backdrop-blur-sm rounded text-white text-xs">
+                    {/* 地点标签 */}
+                    <div className="mb-4">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-stone-200/60 rounded-full text-xs text-stone-700">
+                        <MapPin className="w-3 h-3" />
                         {location.name}
-                      </div>
+                      </span>
                     </div>
 
                     {/* 队伍标题 */}
-                    <h3 className="text-lg font-bold text-stone-900 mb-3 line-clamp-2">
+                    <h3 className="text-xl font-bold text-stone-900 mb-5 line-clamp-2 leading-tight">
                       {team.title}
                     </h3>
 
-                    {/* 信息列表 */}
-                    <div className="space-y-2.5 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-stone-600">
-                        <Calendar className="w-4 h-4 text-stone-400" />
-                        <span>出发：{formatDate(team.date)}</span>
+                    {/* 信息卡片网格 */}
+                    <div className="grid grid-cols-2 gap-3 mb-5">
+                      <div className="bg-white rounded-lg p-3 shadow-sm">
+                        <div className="flex items-center gap-1.5 text-stone-400 mb-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span className="text-xs">出发日期</span>
+                        </div>
+                        <p className="text-sm font-semibold text-stone-800">{formatDate(team.date)}</p>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-stone-600">
-                        <Clock className="w-4 h-4 text-stone-400" />
-                        <span>集合：{team.time || "待定"}</span>
+                      <div className="bg-white rounded-lg p-3 shadow-sm">
+                        <div className="flex items-center gap-1.5 text-stone-400 mb-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span className="text-xs">集合时间</span>
+                        </div>
+                        <p className="text-sm font-semibold text-stone-800">{team.time || "待定"}</p>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-stone-600">
-                        <Users className="w-4 h-4 text-stone-400" />
-                        <span>人数：{team.currentMembers}/{team.maxMembers}人</span>
+                      <div className="bg-white rounded-lg p-3 shadow-sm">
+                        <div className="flex items-center gap-1.5 text-stone-400 mb-1">
+                          <Users className="w-3.5 h-3.5" />
+                          <span className="text-xs">队伍人数</span>
+                        </div>
+                        <p className="text-sm font-semibold text-stone-800">{team.currentMembers}/{team.maxMembers}人</p>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-stone-600">
-                        <MapPin className="w-4 h-4 text-stone-400" />
-                        <span>难度：{difficultyMap[team.difficulty || "moderate"] || "中等"}</span>
+                      <div className="bg-white rounded-lg p-3 shadow-sm">
+                        <div className="flex items-center gap-1.5 text-stone-400 mb-1">
+                          <Mountain className="w-3.5 h-3.5" />
+                          <span className="text-xs">难度等级</span>
+                        </div>
+                        <p className="text-sm font-semibold text-stone-800">{difficultyMap[team.difficulty || "moderate"] || "中等"}</p>
                       </div>
                     </div>
 
                     {/* 分隔线 */}
-                    <div className="border-t border-stone-200 my-3" />
+                    <div className="border-t border-stone-200/60 my-2" />
 
                     {/* 二维码区域 */}
-                    <div className="flex flex-col items-center" data-qr-container>
-                      <div className="p-2 bg-white rounded-lg shadow-sm mb-2">
+                    <div className="flex flex-col items-center py-2">
+                      <div className="p-3 bg-white rounded-xl shadow-sm mb-2">
                         <QRCodeSVG
                           value={shareUrl}
-                          size={100}
+                          size={90}
                           level="H"
                           bgColor="#ffffff"
                           fgColor="#1c1917"
                         />
                       </div>
-                      <p className="text-xs text-stone-500">扫码加入队伍</p>
+                      <p className="text-xs text-stone-500 font-medium">扫码加入队伍</p>
                     </div>
 
                     {/* 底部品牌 */}
                     <div className="mt-auto pt-3 text-center">
-                      <p className="text-xs text-stone-400">gomate.jiahongw.com</p>
+                      <p className="text-[10px] text-stone-400 tracking-wide">gomate.jiahongw.com</p>
                     </div>
                   </div>
                 </div>
