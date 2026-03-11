@@ -4,7 +4,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { X, Copy, Share2, Download, QrCode, Link2, ImageIcon, Mountain, MapPin, Calendar, Clock, Users } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import html2canvas from "html2canvas";
+import * as htmlToImage from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -123,23 +123,20 @@ function ShareTeamDialog({
       // 等待二维码渲染完成
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const canvas = await html2canvas(posterRef.current, {
-        scale: 2,
-        useCORS: false,
-        allowTaint: false,
-        backgroundColor: "#fafaf9",
-        logging: process.env.NODE_ENV === "development",
+      const dataUrl = await htmlToImage.toPng(posterRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
       });
 
       const link = document.createElement("a");
       link.download = `team-${team.id}-poster.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.href = dataUrl;
       link.click();
 
-      showToast("海报已生成并下载");
+      showToast(copy.share.posterDownloaded);
     } catch (error) {
       console.error("生成海报失败:", error);
-      showToast("生成海报失败，请重试");
+      showToast(copy.share.generatePosterFailed);
     } finally {
       setIsGenerating(false);
     }
@@ -272,90 +269,102 @@ function ShareTeamDialog({
               <div className="flex justify-center">
                 <div
                   ref={posterRef}
-                  className="w-[280px] bg-stone-50 rounded-xl overflow-hidden shadow-lg"
+                  className="w-[280px] bg-gradient-to-b from-stone-50 to-stone-100 rounded-xl overflow-visible shadow-xl"
                   style={{ aspectRatio: "3/4" }}
                 >
                   {/* 顶部装饰条 - 品牌色渐变 */}
-                  <div className="h-2 bg-gradient-to-r from-stone-800 via-stone-700 to-stone-800" />
+                  <div className="h-1.5 bg-gradient-to-r from-stone-800 via-stone-600 to-stone-800" />
 
                   {/* 内容区域 */}
-                  <div className="p-5 flex flex-col h-full">
+                  <div className="px-4 py-3 flex flex-col h-full">
                     {/* 头部 Logo */}
-                    <div className="flex items-center gap-2 mb-5">
-                      <div className="w-9 h-9 bg-stone-800 rounded-xl flex items-center justify-center shadow-sm">
-                        <Mountain className="w-5 h-5 text-white" />
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <div className="w-8 h-8 bg-stone-800 rounded-lg flex items-center justify-center shadow-sm">
+                        <Mountain className="w-4 h-4 text-white" />
                       </div>
                       <div>
                         <span className="text-sm font-bold text-stone-800">GoMate</span>
-                        <span className="text-xs text-stone-500 ml-1">徒步组队</span>
+                        <p className="text-[9px] text-stone-500">发现深圳最美徒步路线</p>
                       </div>
                     </div>
 
                     {/* 地点标签 */}
-                    <div className="mb-4">
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-stone-200/60 rounded-full text-xs text-stone-700">
+                    <div className="mb-1.5">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-stone-200/70 rounded-full text-[11px] text-stone-700 font-medium">
                         <MapPin className="w-3 h-3" />
                         {location.name}
                       </span>
                     </div>
 
-                    {/* 队伍标题 */}
-                    <h3 className="text-xl font-bold text-stone-900 mb-5 line-clamp-2 leading-tight">
-                      {team.title}
-                    </h3>
+                    {/* 队伍标题 - 突出显示 */}
+                    <div className="bg-white/70 rounded-lg p-2 mb-2 shadow-sm border border-stone-100">
+                      <p className="text-[9px] text-stone-400 mb-0.5">徒步组队</p>
+                      <h3 className="text-base font-bold text-stone-900 line-clamp-2 leading-snug">
+                        {team.title}
+                      </h3>
+                    </div>
 
-                    {/* 信息卡片网格 */}
-                    <div className="grid grid-cols-2 gap-3 mb-5">
-                      <div className="bg-white rounded-lg p-3 shadow-sm">
-                        <div className="flex items-center gap-1.5 text-stone-400 mb-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span className="text-xs">出发日期</span>
+                    {/* 信息列表 - 紧凑布局 */}
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded bg-white flex items-center justify-center shadow-sm">
+                          <Calendar className="w-3 h-3 text-stone-500" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-800">{formatDate(team.date)}</p>
+                        <div>
+                          <p className="text-[9px] text-stone-400">出发日期</p>
+                          <p className="text-xs font-semibold text-stone-800">{formatDate(team.date)}</p>
+                        </div>
                       </div>
-                      <div className="bg-white rounded-lg p-3 shadow-sm">
-                        <div className="flex items-center gap-1.5 text-stone-400 mb-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span className="text-xs">集合时间</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded bg-white flex items-center justify-center shadow-sm">
+                          <Clock className="w-3 h-3 text-stone-500" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-800">{team.time || "待定"}</p>
+                        <div>
+                          <p className="text-[9px] text-stone-400">集合时间</p>
+                          <p className="text-xs font-semibold text-stone-800">{team.time || "待定"}</p>
+                        </div>
                       </div>
-                      <div className="bg-white rounded-lg p-3 shadow-sm">
-                        <div className="flex items-center gap-1.5 text-stone-400 mb-1">
-                          <Users className="w-3.5 h-3.5" />
-                          <span className="text-xs">队伍人数</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded bg-white flex items-center justify-center shadow-sm">
+                          <Users className="w-3 h-3 text-stone-500" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-800">{team.currentMembers}/{team.maxMembers}人</p>
+                        <div>
+                          <p className="text-[9px] text-stone-400">队伍人数</p>
+                          <p className="text-xs font-semibold text-stone-800">{team.currentMembers}/{team.maxMembers}人</p>
+                        </div>
                       </div>
-                      <div className="bg-white rounded-lg p-3 shadow-sm">
-                        <div className="flex items-center gap-1.5 text-stone-400 mb-1">
-                          <Mountain className="w-3.5 h-3.5" />
-                          <span className="text-xs">难度等级</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded bg-white flex items-center justify-center shadow-sm">
+                          <Mountain className="w-3 h-3 text-stone-500" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-800">{difficultyMap[team.difficulty || "moderate"] || "中等"}</p>
+                        <div>
+                          <p className="text-[9px] text-stone-400">难度等级</p>
+                          <p className="text-xs font-semibold text-stone-800">{difficultyMap[team.difficulty || "moderate"] || "中等"}</p>
+                        </div>
                       </div>
                     </div>
 
                     {/* 分隔线 */}
-                    <div className="border-t border-stone-200/60 my-2" />
+                    <div className="border-t border-stone-200/80 my-1" />
 
-                    {/* 二维码区域 */}
-                    <div className="flex flex-col items-center py-2">
-                      <div className="p-3 bg-white rounded-xl shadow-sm mb-2">
+                    {/* 二维码区域 - 放大并突出 */}
+                    <div className="flex flex-col items-center">
+                      <div className="p-1 bg-white rounded-lg shadow-md border border-stone-100">
                         <QRCodeSVG
                           value={shareUrl}
-                          size={90}
+                          size={88}
                           level="H"
                           bgColor="#ffffff"
                           fgColor="#1c1917"
                         />
                       </div>
-                      <p className="text-xs text-stone-500 font-medium">扫码加入队伍</p>
+                      <p className="text-xs text-stone-600 font-semibold mt-0.5 leading-none">扫码加入队伍</p>
+                      <p className="text-[10px] text-stone-400 leading-none">长按识别二维码</p>
                     </div>
 
                     {/* 底部品牌 */}
-                    <div className="mt-auto pt-3 text-center">
-                      <p className="text-[10px] text-stone-400 tracking-wide">gomate.jiahongw.com</p>
+                    <div className="text-center mt-0.5">
+                      <p className="text-[10px] text-stone-400 tracking-wide leading-none">gomate.jiahongw.com</p>
                     </div>
                   </div>
                 </div>

@@ -793,6 +793,8 @@ export const copy = {
     scanToJoin: "扫描二维码加入队伍",
     scanToViewLocation: "扫描二维码查看地点详情",
     downloadQRCode: "下载二维码",
+    posterDownloaded: "海报已生成并下载",
+    generatePosterFailed: "生成海报失败，请重试",
     noAddress: "暂无地址信息",
   },
 
