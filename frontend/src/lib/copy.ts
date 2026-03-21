@@ -940,13 +940,13 @@ export const copy = {
       expert: "专家",
     },
     teamStatus: {
-      recruiting: "招募中",
-      full: "已满员",
-      formed: "已组建",
+      recruiting: "正在招募",
+      full: "名额已满",
+      formed: "队伍已集结",
       ongoing: "进行中",
-      completed: "已完成",
+      completed: "圆满收队",
       cancelled: "已取消",
-      open: "招募中",
+      open: "正在招募",
       closed: "已结束",
     },
     memberStatus: {

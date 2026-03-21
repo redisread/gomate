@@ -13,23 +13,75 @@ import {
   Award,
   Users,
   Loader2,
+  ChevronRight,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
 import { signOut } from "@/lib/auth-client";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { cn } from "@/lib/utils";
 import type { SessionUser } from "@/lib/types";
 
-const levelStyles: Record<string, { color: string; label: string }> = {
-  beginner: { color: "bg-emerald-100 text-emerald-700", label: "初级" },
-  intermediate: { color: "bg-blue-100 text-blue-700", label: "中级" },
-  advanced: { color: "bg-purple-100 text-purple-700", label: "高级" },
-  expert: { color: "bg-amber-100 text-amber-700", label: "专家" },
+/**
+ * 等级对应的设计系统语义色
+ */
+const LEVEL_STYLES: Record<string, { badge: string; icon: string }> = {
+  beginner:     { badge: "bg-success-subtle text-success border border-success/20",   icon: "text-success" },
+  intermediate: { badge: "bg-brand-subtle text-brand border border-brand/20",         icon: "text-brand" },
+  advanced:     { badge: "bg-[#f2effe] text-[#7c5ce8] border border-[#7c5ce8]/20",   icon: "text-[#7c5ce8]" },
+  expert:       { badge: "bg-warning-subtle text-warning border border-warning/20",   icon: "text-warning" },
 };
 
 /**
+ * 统计卡片
+ */
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  href,
+  accent = false,
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ElementType;
+  href?: string;
+  accent?: boolean;
+}) {
+  const inner = (
+    <div
+      className={cn(
+        "bg-card rounded-2xl border border-border p-5 transition-all duration-200",
+        href && "hover:-translate-y-0.5 hover:shadow-[0_4px_18px_rgba(36,154,135,0.10)] hover:border-brand/25 cursor-pointer"
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">{label}</p>
+          <p className={cn("text-3xl font-bold", accent ? "text-brand" : "text-foreground")}>{value}</p>
+        </div>
+        <div className={cn(
+          "w-11 h-11 rounded-xl flex items-center justify-center",
+          accent ? "bg-brand-subtle" : "bg-muted"
+        )}>
+          <Icon className={cn("h-5 w-5", accent ? "text-brand" : "text-muted-foreground")} />
+        </div>
+      </div>
+    </div>
+  );
+  return href ? <a href={href}>{inner}</a> : inner;
+}
+
+/**
  * 个人资料页客户端组件 - React Island
+ * 视觉规范：GoMate Design System v2.0
+ *  - 封面：品牌渐变 Banner
+ *  - 头像：ring-4 ring-background + 品牌色占位
+ *  - 等级徽章：语义色系
+ *  - 统计卡：hover 品牌绿光晕
+ *  - 队伍列表：card-interactive 风格
  */
 export function ProfileClient() {
   const [user, setUser] = React.useState<SessionUser | null>(null);
@@ -77,12 +129,13 @@ export function ProfileClient() {
     window.location.href = "/";
   };
 
+  /* ── 加载态 ── */
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-stone-50">
+      <main className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-stone-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
         </div>
       </main>
     );
@@ -90,180 +143,233 @@ export function ProfileClient() {
 
   if (!user) return null;
 
-  const levelStyle = levelStyles[user.level] || levelStyles.beginner;
+  const levelStyle = LEVEL_STYLES[user.level] || LEVEL_STYLES.beginner;
   const displayName = user.nickname || user.name;
+  const levelLabel = copy.enums.level[user.level as keyof typeof copy.enums.level];
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-background">
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-        {/* Back */}
-        <a href="/" className="inline-flex items-center text-stone-600 hover:text-stone-900 transition-colors mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
+
+        {/* 返回 */}
+        <a
+          href="/"
+          className="inline-flex items-center text-muted-foreground hover:text-brand transition-colors duration-150 mb-6 text-sm"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1.5" />
           {copy.common.backHome}
         </a>
 
-        {/* Profile Header */}
-        <div className="mb-8">
-          <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
-            <div className="relative h-40 bg-gradient-to-r from-stone-900 to-stone-700">
-              <div className="absolute inset-0 bg-gradient-to-t from-stone-900/30 to-transparent" />
-            </div>
-            <div className="relative px-6 pb-6">
-              {/* Avatar */}
-              <div className="absolute -top-20 left-6">
-                <div className="h-32 w-32 rounded-full border-4 border-white shadow-lg bg-stone-200 flex items-center justify-center overflow-hidden">
-                  {user.image ? (
-                    <img src={user.image} alt={displayName} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-3xl font-bold text-stone-600">{displayName?.[0]}</span>
-                  )}
-                </div>
-              </div>
+        {/* ── 个人信息卡 ── */}
+        <div className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
 
-              {/* User Info */}
-              <div className="pt-24 sm:pt-4 sm:pl-40">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <h1 className="text-2xl font-bold text-stone-900">{displayName}</h1>
-                    <p className="text-stone-500 flex items-center gap-2 mt-1">
-                      <Mail className="h-4 w-4" />
-                      {user.email}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <a href="/profile/edit">
-                      <button className="flex items-center gap-2 bg-stone-900 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-stone-800 transition-colors">
-                        <Edit3 className="h-4 w-4" />
-                        {copy.profile.editProfileBtn}
-                      </button>
-                    </a>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-2 border border-stone-200 text-red-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {copy.profile.logoutBtn}
+          {/* 封面 Banner — 品牌渐变 */}
+          <div
+            className="relative h-36"
+            style={{
+              background: "linear-gradient(135deg, #1a6459 0%, #249a87 50%, #3fb5a0 80%, #74d0bf 100%)",
+            }}
+          >
+            {/* 装饰性山脊 */}
+            <svg
+              className="absolute bottom-0 left-0 right-0 w-full"
+              style={{ opacity: 0.12 }}
+              viewBox="0 0 1200 80"
+              fill="none"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path d="M0 80L200 30L400 55L600 10L800 40L1000 20L1200 50V80H0Z" fill="white" />
+            </svg>
+          </div>
+
+          <div className="relative px-6 pb-6">
+            {/* 头像 — 从 Banner 底部溢出 */}
+            <div className="absolute -top-14 left-6">
+              <div className="h-28 w-28 rounded-full ring-4 ring-card shadow-[0_4px_18px_rgba(30,24,18,0.15)] bg-muted flex items-center justify-center overflow-hidden">
+                {user.image ? (
+                  <img src={user.image} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  <span
+                    className="text-3xl font-bold text-white"
+                    style={{ textShadow: "0 1px 4px rgba(0,0,0,0.2)" }}
+                  >
+                    {displayName?.[0]?.toUpperCase()}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 用户信息 */}
+            <div className="pt-20 sm:pt-4 sm:pl-36">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
+                  <p className="text-muted-foreground flex items-center gap-1.5 mt-1 text-sm">
+                    <Mail className="h-3.5 w-3.5" />
+                    {user.email}
+                  </p>
+                </div>
+
+                {/* 操作按钮 */}
+                <div className="flex gap-2 shrink-0">
+                  <a href="/profile/edit">
+                    <button className="inline-flex items-center gap-1.5 bg-brand text-brand-foreground px-3.5 py-2 rounded-xl text-sm font-medium hover:bg-brand/90 hover:-translate-y-px transition-all duration-150 shadow-[0_2px_8px_rgba(36,154,135,0.25)]">
+                      <Edit3 className="h-3.5 w-3.5" />
+                      {copy.profile.editProfileBtn}
                     </button>
-                  </div>
+                  </a>
+                  <button
+                    onClick={handleLogout}
+                    className="inline-flex items-center gap-1.5 border border-border text-muted-foreground px-3.5 py-2 rounded-xl text-sm font-medium hover:border-destructive/40 hover:text-destructive hover:bg-destructive/5 transition-all duration-150"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    {copy.profile.logoutBtn}
+                  </button>
                 </div>
+              </div>
 
-                {/* Badges */}
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${levelStyle.color}`}>
-                    <Award className="h-3 w-3" />
-                    {copy.enums.level[user.level as keyof typeof copy.enums.level] || levelStyle.label}{copy.profile.levelTitleSuffix}
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-600">
+              {/* 徽章行 */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                {/* 等级徽章 */}
+                <span className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium",
+                  levelStyle.badge
+                )}>
+                  <Award className={cn("h-3 w-3", levelStyle.icon)} />
+                  {levelLabel}{copy.profile.levelTitleSuffix}
+                </span>
+
+                {/* 徒步次数 */}
+                {(user.completedHikes ?? 0) > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
                     <Mountain className="h-3 w-3" />
-                    {copy.common.person} {user.completedHikes || 0} {copy.profile.hikesCompleted}
+                    已完成 {user.completedHikes} {copy.profile.hikesCompleted}
                   </span>
-                </div>
+                )}
+              </div>
 
-                {/* Bio */}
-                {user.bio && <p className="mt-4 text-stone-600 leading-relaxed">{user.bio}</p>}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <a href="/my-teams?tab=created">
-            <div className="bg-white rounded-2xl border border-stone-200 hover:shadow-md hover:border-stone-300 transition-all cursor-pointer p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-stone-500">{copy.profile.createdTeams}</p>
-                  <p className="text-3xl font-bold text-stone-900 mt-1">{createdTeams.length}</p>
-                </div>
-                <div className="h-12 w-12 bg-stone-900 rounded-full flex items-center justify-center">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </div>
-          </a>
-          <a href="/my-teams?tab=joined">
-            <div className="bg-white rounded-2xl border border-stone-200 hover:shadow-md hover:border-stone-300 transition-all cursor-pointer p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-stone-500">{copy.profile.joinedTeams}</p>
-                  <p className="text-3xl font-bold text-stone-900 mt-1">{joinedTeams.length}</p>
-                </div>
-                <div className="h-12 w-12 bg-stone-900 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </div>
-          </a>
-          <div className="bg-white rounded-2xl border border-stone-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-stone-500">{copy.profile.registeredAt}</p>
-                <p className="text-lg font-bold text-stone-900 mt-1">
-                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString("zh-CN") : "-"}
+              {/* 个人简介 */}
+              {user.bio && (
+                <p className="mt-4 text-muted-foreground text-sm leading-relaxed border-t border-border pt-4">
+                  {user.bio}
                 </p>
-              </div>
-              <div className="h-12 w-12 bg-stone-900 rounded-full flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-white" />
-              </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Created Teams */}
+        {/* ── 统计卡片 ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <StatCard
+            label={copy.profile.createdTeams}
+            value={createdTeams.length}
+            icon={Users}
+            href="/my-teams?tab=created"
+            accent
+          />
+          <StatCard
+            label={copy.profile.joinedTeams}
+            value={joinedTeams.length}
+            icon={User}
+            href="/my-teams?tab=joined"
+            accent
+          />
+          <StatCard
+            label={copy.profile.registeredAt}
+            value={user.createdAt ? new Date(user.createdAt).toLocaleDateString("zh-CN", { year: "numeric", month: "short" }) : "—"}
+            icon={Calendar}
+          />
+        </div>
+
+        {/* ── 我发起的队伍 ── */}
         {createdTeams.length > 0 && (
-          <div className="mb-8">
+          <section className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-bold text-stone-900">{copy.profile.recentTeams}</h2>
-                <p className="text-sm text-stone-500 mt-1">{copy.profile.createdTeamsDesc}</p>
+                <h2 className="text-lg font-bold text-foreground">{copy.profile.recentTeams}</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">{copy.profile.createdTeamsDesc}</p>
               </div>
-              <a href="/my-teams">
-                <button className="border border-stone-200 text-stone-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-stone-50 transition-colors">
-                  {copy.common.viewAll}
-                </button>
+              <a
+                href="/my-teams"
+                className="inline-flex items-center gap-1 text-sm text-brand hover:text-brand/80 font-medium transition-colors"
+              >
+                {copy.common.viewAll}
+                <ChevronRight className="h-4 w-4" />
               </a>
             </div>
+
             <div className="space-y-3">
               {createdTeams.map((team: any) => (
                 <a key={team.id} href={`/teams/${team.id}`}>
-                  <div className="bg-white rounded-xl border border-stone-200 hover:shadow-xl transition-all duration-300 p-4 mb-3">
-                    <div className="flex items-start gap-4">
-                      {team.location?.coverImage && (
-                        <div className="w-16 h-16 rounded-lg bg-cover bg-center flex-shrink-0"
-                          style={{ backgroundImage: `url(${team.location.coverImage})` }} />
+                  <div className="bg-card rounded-xl border border-border p-4 mb-3 hover:-translate-y-0.5 hover:shadow-[0_4px_18px_rgba(36,154,135,0.08)] hover:border-brand/25 transition-all duration-200 group">
+                    <div className="flex items-center gap-4">
+                      {/* 封面图 / 占位 */}
+                      {team.location?.coverImage ? (
+                        <div
+                          className="w-14 h-14 rounded-xl bg-cover bg-center flex-shrink-0"
+                          style={{ backgroundImage: `url(${team.location.coverImage})` }}
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-brand-subtle flex items-center justify-center flex-shrink-0">
+                          <Mountain className="h-6 w-6 text-brand/50" />
+                        </div>
                       )}
+
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-stone-900 truncate">{team.title}</h3>
-                        <p className="text-sm text-stone-500 mt-1">
-                          {team.location?.name && <><MapPin className="h-3 w-3 inline mr-1" />{team.location.name} · </>}
-                          {team.date} · {team.currentMembers}/{team.maxMembers}{copy.common.person}
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground truncate group-hover:text-brand transition-colors duration-150 text-sm">
+                            {team.title}
+                          </h3>
+                          <StatusBadge status={team.status} size="sm" />
+                        </div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                          {team.location?.name && (
+                            <span className="flex items-center gap-0.5">
+                              <MapPin className="h-3 w-3" />
+                              {team.location.name}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-0.5">
+                            <Calendar className="h-3 w-3" />
+                            {team.date}
+                          </span>
+                          <span className="flex items-center gap-0.5">
+                            <Users className="h-3 w-3" />
+                            {team.currentMembers}/{team.maxMembers}人
+                          </span>
                         </p>
                       </div>
+
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-brand group-hover:translate-x-0.5 transition-all duration-150 flex-shrink-0" />
                     </div>
                   </div>
                 </a>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Empty State */}
+        {/* ── 空状态 ── */}
         {createdTeams.length === 0 && joinedTeams.length === 0 && (
-          <div className="bg-white rounded-2xl border border-dashed border-stone-300 p-12 text-center">
-            <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="h-8 w-8 text-stone-400" />
+          <div className="bg-card rounded-2xl border border-dashed border-border p-14 text-center">
+            <div className="w-16 h-16 bg-brand-subtle rounded-full flex items-center justify-center mx-auto mb-5">
+              <Mountain className="h-8 w-8 text-brand/60" />
             </div>
-            <h3 className="text-lg font-medium text-stone-900 mb-2">{copy.profile.noTeamsYet}</h3>
-            <p className="text-sm text-stone-500 mb-4">{copy.profile.noTeamsTip}</p>
+            <h3 className="text-base font-semibold text-foreground mb-2">{copy.profile.noTeamsYet}</h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto leading-relaxed">
+              {copy.profile.noTeamsTip}
+            </p>
             <a href="/teams/create">
-              <button className="bg-stone-900 hover:bg-stone-800 text-white px-6 py-2.5 rounded-lg font-medium transition-colors">
+              <button className="bg-brand hover:bg-brand/90 text-brand-foreground px-6 py-2.5 rounded-xl font-medium transition-all duration-150 shadow-[0_4px_14px_rgba(36,154,135,0.30)] hover:-translate-y-px active:scale-[0.97] text-sm">
                 {copy.profile.createTeamBtn}
               </button>
             </a>
           </div>
         )}
+
       </div>
 
       <Footer />
