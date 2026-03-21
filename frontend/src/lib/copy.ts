@@ -213,31 +213,36 @@ export const copy = {
 
     // 坐标提示
     coordinatesHint: "通过地址搜索自动获取坐标",
+
+    // 城市筛选
+    allCities: "全部城市",
+    cityFilter: "按城市筛选",
   },
 
   // ─── 队伍 ─────────────────────────────────────────────────────────────────
   teams: {
     // 列表页
-    pageTitle: "探索队伍",
-    pageSubtitle: "发现志同道合的户外伙伴，一起探索山野",
-    searchPlaceholder: "搜索队伍名称、描述或地点...",
-    totalCount: "个队伍", // 「共 N 个队伍」，N 在组件内拼接
-    noResults: "没有找到匹配的队伍",
-    noResultsTip: "尝试调整筛选条件或搜索关键词",
+    pageTitle: "找到你的山野伙伴",
+    pageSubtitle: "山野不孤独，总有人和你走同一条路",
+    pageBadge: "等你一起出发",
+    searchPlaceholder: "梧桐山？七娘山？或者输入任意关键词",
+    totalCount: "支队伍向你敞开，随时可以出发", // 「N 支队伍向你敞开，随时可以出发」，N 在组件内拼接
+    noResults: "这条路还没人走，要不要你来开头？",
+    noResultsTip: "改变筛选条件，或者干脆自己发起一支",
     clearFilters: "清除筛选",
     otherTeamsAtLocation: "该地点的其他队伍",
 
     // 队伍列表组件
-    openTeamsTitle: "可加入的队伍",
-    openTeamsSubtitle: "共有 {count} 个队伍正在招募", // 动态数值
+    openTeamsTitle: "正在等你的队伍",
+    openTeamsSubtitle: "有 {count} 支队伍正在等待伙伴", // 动态数值
     fullTeamsTitle: "已满员",
     leaderLabel: "领队:",
     leaderTripCountSuffix: "次带队", // 「N 次带队」
     personCountSuffix: "人", // 「N 人」
-    emptyOpenTeamsTitle: "暂无招募中的队伍",
-    emptyOpenTeamsDesc: "成为第一个发布队伍的人，开启你的户外之旅",
-    teamCountSuffix: "个队伍", // 「N 个队伍」
-    openTeamCountSuffix: "个队伍可加入", // 「N 个队伍可加入」
+    emptyOpenTeamsTitle: "这条路还没人走，要不要你来开头？",
+    emptyOpenTeamsDesc: "改变筛选条件，或者干脆自己发起一支",
+    teamCountSuffix: "支队伍", // 「N 支队伍」
+    openTeamCountSuffix: "支队伍在等你", // 「N 支队伍在等你」
 
     // 队伍头部组件
     backToLocation: "返回地点",
@@ -334,7 +339,10 @@ export const copy = {
     leader: "队长",
 
     // 报名人数状态
-    registrationStatus: "已有 {current} 人报名，还剩 {remaining} 个名额",
+    registrationStatus: "已有 {current} 位伙伴，还差 {remaining} 人就出发",
+    spotsRemaining: "还差 {remaining} 个伙伴",
+    spotsRemainingOne: "就差你一个了",
+    teamFull: "满员，准备出发",
 
     // 组建队伍
     formTeam: "组建队伍",
@@ -402,6 +410,11 @@ export const copy = {
     editSuccess: "队伍信息已更新",
     editFailed: "更新队伍失败",
     notLeader: "只有队长可以编辑队伍信息",
+
+    // CTA 区域
+    ctaTitle: "找不到合适的，那就自己组一支",
+    ctaDesc: "发布你的计划，让和你一样热爱山野的人找到你",
+    ctaBtn: "我来发布队伍",
 
     // 删除队伍
     deleteTeam: "删除队伍",
@@ -934,19 +947,19 @@ export const copy = {
   // ─── 枚举标签（与数据库枚举值一一对应）──────────────────────────────────
   enums: {
     difficulty: {
-      easy: "简单",
-      moderate: "中等",
-      hard: "困难",
-      expert: "专家",
+      easy: "🌿 轻松",
+      moderate: "⛰ 适中",
+      hard: "🧗 挑战",
+      expert: "🏔 专家",
     },
     teamStatus: {
-      recruiting: "正在招募",
-      full: "名额已满",
-      formed: "队伍已集结",
+      recruiting: "等你一起",
+      full: "名额告急，可关注",
+      formed: "整装待发",
       ongoing: "进行中",
-      completed: "圆满收队",
+      completed: "圆满归来",
       cancelled: "已取消",
-      open: "正在招募",
+      open: "等你一起",
       closed: "已结束",
     },
     memberStatus: {
