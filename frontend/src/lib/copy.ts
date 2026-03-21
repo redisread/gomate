@@ -217,6 +217,17 @@ export const copy = {
     // 城市筛选
     allCities: "全部城市",
     cityFilter: "按城市筛选",
+
+    // 视觉升级文案
+    heroTagline: "每一片山野，都在等待有缘人",
+    searchPlaceholder: "梧桐山？七娘山？输入你心仪的目的地...",
+    tagsLabel: "探索标签",
+    resultCount: "个目的地等你探索",
+    clearFilter: "清除筛选",
+    emptyTitle: "这片山野暂时没有结果",
+    emptyDesc: "试试放宽条件，也许有更多意想不到的好地方等着你",
+    emptyBtn: "重新探索",
+    ctaHeroBadge: "深圳周边 · 精选目的地",
   },
 
   // ─── 队伍 ─────────────────────────────────────────────────────────────────
@@ -486,6 +497,26 @@ export const copy = {
     member: "成员",
     equipment: "常用装备",
     experience: "徒步经验",
+
+    // 重构新增文案
+    loadingHint: "正在加载你的足迹...",
+    bannerAlt: "个人主页封面",
+    statsTitle: "我的足迹",
+    noTeamsTitle: "山野等待你的第一步",
+    noTeamsDesc: "创建或加入一支队伍，开始记录属于你的户外故事",
+    memberCount: "人",
+    createdTeamsSectionTitle: "我发起的队伍",
+    joinedTeamsSectionTitle: "我加入的队伍",
+    viewMyTeams: "查看全部",
+    statSublabelTeams: "支队伍",
+
+    // 等级标题（LEVEL_CONFIG.title）
+    levelTitle: {
+      beginner: "新手探索者",
+      intermediate: "进阶徒步者",
+      advanced: "资深山友",
+      expert: "专家级探险家",
+    },
   },
 
   // ─── 我的队伍页 ───────────────────────────────────────────────────────────
