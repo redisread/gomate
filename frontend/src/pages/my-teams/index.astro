@@ -1,0 +1,11 @@
+---
+/**
+ * 我的队伍页
+ */
+import Layout from "../../layouts/Layout.astro";
+import { MyTeamsClient } from "../../components/features/my-teams-client";
+---
+
+<Layout title="我的队伍 - GoMate" showNavbar={false} showFooter={false}>
+  <MyTeamsClient client:load />
+</Layout>

@@ -1,0 +1,115 @@
+import '../constants/api_constants.dart';
+import '../models/team.dart';
+import 'api_client.dart';
+
+/// 队伍相关 API 封装
+class TeamsApi {
+  final ApiClient _client;
+
+  TeamsApi({ApiClient? client}) : _client = client ?? ApiClient();
+
+  /// 获取队伍列表
+  /// [status] 队伍状态筛选（recruiting/full/formed/completed/cancelled）
+  /// [locationId] 按地点筛选
+  /// [page] 页码（从 1 开始）
+  /// [limit] 每页数量
+  Future<List<TeamModel>> getTeams({
+    String? status,
+    String? locationId,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'page': page,
+      'pageSize': limit,
+      if (status != null) 'status': status,
+      if (locationId != null) 'locationId': locationId,
+    };
+
+    final response = await _client.get(
+      ApiConstants.teams,
+      queryParameters: queryParams,
+    );
+    final list = response.data['teams'] as List<dynamic>;
+    return list
+        .map((item) => TeamModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 获取队伍详情
+  /// [id] 队伍 ID
+  Future<TeamModel> getTeam(String id) async {
+    final response = await _client.get(ApiConstants.teamDetail(id));
+    return TeamModel.fromJson(response.data['team'] as Map<String, dynamic>);
+  }
+
+  /// 创建队伍
+  /// [data] 队伍信息（title, locationId, routeId, startTime, endTime, maxMembers 等）
+  Future<TeamModel> createTeam(Map<String, dynamic> data) async {
+    final response = await _client.post(
+      ApiConstants.teams,
+      data: data,
+    );
+    return TeamModel.fromJson(response.data['team'] as Map<String, dynamic>);
+  }
+
+  /// 申请加入队伍
+  /// [id] 队伍 ID
+  Future<void> joinTeam(String id) async {
+    await _client.post(ApiConstants.joinTeam(id));
+  }
+
+  /// 退出/取消申请队伍
+  /// [id] 队伍 ID
+  Future<void> leaveTeam(String id) async {
+    await _client.post(ApiConstants.leaveTeam(id));
+  }
+
+  /// 获取当前用户在队伍中的状态
+  /// [teamId] 队伍 ID
+  Future<MyTeamStatus> getMyStatus(String teamId) async {
+    final response = await _client.get(ApiConstants.teamMyStatus(teamId));
+    return MyTeamStatus.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// 获取队伍申请列表（领队专用）
+  /// [teamId] 队伍 ID
+  Future<List<TeamMemberApplication>> getApplications(String teamId) async {
+    final response = await _client.get(ApiConstants.teamApplications(teamId));
+    final list = response.data['applications'] as List<dynamic>;
+    return list
+        .map((item) =>
+            TeamMemberApplication.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 审批通过成员申请（领队专用）
+  /// [teamId] 队伍 ID，[userId] 申请者用户 ID
+  Future<void> approveApplication(String teamId, String userId) async {
+    await _client.post(ApiConstants.approveMember(teamId, userId));
+  }
+
+  /// 拒绝成员申请（领队专用）
+  /// [teamId] 队伍 ID，[userId] 申请者用户 ID
+  Future<void> rejectApplication(String teamId, String userId) async {
+    await _client.post(ApiConstants.rejectMember(teamId, userId));
+  }
+
+  /// 审批通过成员退出申请（领队专用）
+  /// [teamId] 队伍 ID，[userId] 申请退出的用户 ID
+  Future<void> approveLeave(String teamId, String userId) async {
+    await _client.post(ApiConstants.approveLeave(teamId, userId));
+  }
+
+  /// 拒绝成员退出申请（领队专用）
+  /// [teamId] 队伍 ID，[userId] 申请退出的用户 ID
+  Future<void> rejectLeave(String teamId, String userId) async {
+    await _client.post(ApiConstants.rejectLeave(teamId, userId));
+  }
+
+  /// 申请退出队伍（成员专用）
+  /// [teamId] 队伍 ID
+  Future<void> requestLeave(String teamId) async {
+    await _client.post(ApiConstants.leaveTeamRequest(teamId));
+  }
+}

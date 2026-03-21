@@ -46,6 +46,10 @@
     ".vercel/output/static/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "api",
+    "frontend",
+    "mobile",
+    "packages"
   ]
 }

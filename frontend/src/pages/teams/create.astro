@@ -1,0 +1,11 @@
+---
+/**
+ * 创建队伍页
+ */
+import Layout from "../../layouts/Layout.astro";
+import { CreateTeamClient } from "../../components/features/create-team-client";
+---
+
+<Layout title="创建队伍 - GoMate" showNavbar={false} showFooter={false}>
+  <CreateTeamClient client:load />
+</Layout>

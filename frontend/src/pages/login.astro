@@ -1,0 +1,15 @@
+---
+/**
+ * 登录页
+ */
+import Layout from "../layouts/Layout.astro";
+import { LoginClient } from "../components/features/login-client";
+---
+
+<Layout
+  title="登录 - GoMate"
+  showNavbar={false}
+  showFooter={false}
+>
+  <LoginClient client:load />
+</Layout>

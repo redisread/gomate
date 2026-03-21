@@ -1,0 +1,15 @@
+---
+/**
+ * 注册页
+ */
+import Layout from "../layouts/Layout.astro";
+import { RegisterClient } from "../components/features/register-client";
+---
+
+<Layout
+  title="注册 - GoMate"
+  showNavbar={false}
+  showFooter={false}
+>
+  <RegisterClient client:load />
+</Layout>

@@ -1,0 +1,71 @@
+name = "gomate-api"
+main = "src/index.ts"
+compatibility_date = "2026-02-26"
+compatibility_flags = ["nodejs_compat"]
+
+# 本地开发：监听所有网络接口，iOS 模拟器可通过宿主机 IP 访问
+[dev]
+ip = "0.0.0.0"
+port = 8799
+
+# R2 bucket for application storage (images, avatars, etc.)
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "gomate"
+
+# D1 database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "gomate-db"
+database_id = "7d17d076-202f-48f8-b343-24209cdb0ba1"
+
+# KV namespace for session cache
+[[kv_namespaces]]
+binding = "GOMATE_KV"
+id = "638ecd78e70c48fda01904bc9c2105d8"
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[placement]
+mode = "smart"
+
+# 环境变量（本地开发）
+[vars]
+R2_PUBLIC_URL = "https://gomate.cos.jiahongw.com"
+RESEND_FROM_EMAIL = "GoMate <noreply@gomate.jiahongw.com>"
+APP_URL = "http://localhost:8799"
+FRONTEND_URL = "http://localhost:5432"
+# BETTER_AUTH_SECRET 通过 wrangler secret put 设置，不在此处明文存储
+
+# 生产环境
+[env.production]
+compatibility_date = "2026-02-26"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production.vars]
+R2_PUBLIC_URL = "https://gomate.cos.jiahongw.com"
+RESEND_FROM_EMAIL = "GoMate <noreply@gomate.jiahongw.com>"
+APP_URL = "https://gomate-api-production.wujiahong2013.workers.dev"
+FRONTEND_URL = "https://gomate.jiahongw.com"
+
+[[env.production.r2_buckets]]
+binding = "R2"
+bucket_name = "gomate"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "gomate-db"
+database_id = "7d17d076-202f-48f8-b343-24209cdb0ba1"
+
+[[env.production.kv_namespaces]]
+binding = "GOMATE_KV"
+id = "638ecd78e70c48fda01904bc9c2105d8"
+
+[env.production.placement]
+mode = "smart"
+
+[env.production.observability]
+enabled = true
+head_sampling_rate = 0.1

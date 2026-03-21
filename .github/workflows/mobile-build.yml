@@ -1,0 +1,24 @@
+name: Build Mobile
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**']
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '3.24.0' }
+      - run: cp mobile/.env.example mobile/.env
+      - run: cd mobile && flutter pub get
+      - run: cd mobile && flutter build apk --release
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '3.24.0' }
+      - run: cp mobile/.env.example mobile/.env
+      - run: cd mobile && flutter pub get
+      - run: cd mobile && flutter build ios --release --no-codesign

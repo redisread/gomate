@@ -1,0 +1,11 @@
+---
+/**
+ * 首页 - GoMate
+ */
+import Layout from "../layouts/Layout.astro";
+import { HomeClient } from "../components/features/home-client";
+---
+
+<Layout title="GoMate - 发现趣处，组队同行">
+  <HomeClient client:load />
+</Layout>

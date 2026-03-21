@@ -1,0 +1,40 @@
+---
+/**
+ * 主布局 - 包含 HTML 骨架、全局样式和 React 导航栏
+ */
+import "../styles/globals.css";
+import { Navbar } from "../components/layout/navbar";
+import { Footer } from "../components/layout/footer";
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** 是否显示导航栏，默认 true */
+  showNavbar?: boolean;
+  /** 是否显示页脚，默认 true */
+  showFooter?: boolean;
+}
+
+const {
+  title = "GoMate - 极简地点组队平台",
+  description = "GoMate 是一个极简的「地点组队」平台，帮助户外爱好者找到志同道合的徒步伙伴。",
+  showNavbar = true,
+  showFooter = true,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body class="min-h-screen bg-stone-50">
+    {showNavbar && <Navbar client:load />}
+    <slot />
+    {showFooter && <Footer client:load />}
+  </body>
+</html>

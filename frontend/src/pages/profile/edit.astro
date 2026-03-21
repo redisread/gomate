@@ -1,0 +1,11 @@
+---
+/**
+ * 编辑个人资料页
+ */
+import Layout from "../../layouts/Layout.astro";
+import { ProfileEditClient } from "../../components/features/profile-edit-client";
+---
+
+<Layout title="编辑资料 - GoMate" showNavbar={false} showFooter={false}>
+  <ProfileEditClient client:load />
+</Layout>

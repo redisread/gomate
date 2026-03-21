@@ -1,0 +1,11 @@
+---
+/**
+ * 个人资料页
+ */
+import Layout from "../../layouts/Layout.astro";
+import { ProfileClient } from "../../components/features/profile-client";
+---
+
+<Layout title="个人资料 - GoMate" showNavbar={false} showFooter={false}>
+  <ProfileClient client:load />
+</Layout>

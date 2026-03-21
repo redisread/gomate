@@ -1,0 +1,13 @@
+---
+/**
+ * 用户详情页 - 动态路由
+ */
+import Layout from "../../layouts/Layout.astro";
+import { UserDetailClient } from "../../components/features/user-detail-client";
+
+const { id } = Astro.params;
+---
+
+<Layout title="用户资料 - GoMate" showNavbar={false} showFooter={false}>
+  <UserDetailClient userId={id!} client:load />
+</Layout>

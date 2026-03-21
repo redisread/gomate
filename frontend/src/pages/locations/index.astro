@@ -1,0 +1,11 @@
+---
+/**
+ * 地点列表页
+ */
+import Layout from "../../layouts/Layout.astro";
+import { LocationsClient } from "../../components/features/locations-client";
+---
+
+<Layout title="探索地点 - GoMate" showNavbar={false} showFooter={false}>
+  <LocationsClient client:load />
+</Layout>

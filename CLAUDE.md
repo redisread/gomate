@@ -6,114 +6,189 @@
 
 GoMate 是一个极简的「地点组队」平台，专注于深圳徒步场景，帮助户外爱好者通过结构化组队找到志同道合的徒步伙伴。
 
+## 项目架构（pnpm Monorepo）
+
+```
+gomate/
+├── api/          # 后端 - Hono 4 + Cloudflare Workers + Drizzle ORM
+├── frontend/     # 前端 - Astro 4 + React 18 + Tailwind CSS 4
+├── mobile/       # 移动端 - Flutter 3.24 + Riverpod 2.6
+├── packages/
+│   ├── types/    # 共享 TypeScript 类型 (@gomate/types)
+│   └── config/   # 共享 tsconfig 配置 (@gomate/config)
+├── package.json
+└── pnpm-workspace.yaml
+```
+
 ## 技术栈
 
-- **框架**: Next.js 15.5 + App Router
-- **React**: 18.3.1
-- **语言**: TypeScript 5（启用严格模式）
-- **样式**: Tailwind CSS v4 + shadcn/ui 组件
-- **ORM**: Drizzle ORM
-- **数据库**: CloudFlare D1 (SQLite)
-- **认证**: Better Auth （邮箱/密码）
-- **部署**: CloudFlare Workers/Pages（通过 OpenNext）
+### 后端（api/）
+- **框架**: Hono 4 + Cloudflare Workers
+- **ORM**: Drizzle ORM + SQLite 方言
+- **数据库**: Cloudflare D1 (SQLite)
+- **认证**: Better Auth 1.3（邮箱/密码）
+- **文件存储**: Cloudflare R2
 - **邮件**: Resend
-- **w文件存储**: CloudFlare R2（图片上传）
+- **验证**: Zod
 
-## 开发参考
+### 前端（frontend/）
+- **框架**: Astro 4.16（SSR 模式，Cloudflare 适配器）
+- **UI**: React 18 + Tailwind CSS 4 + shadcn/ui
+- **语言**: TypeScript 5（严格模式）
+- **架构**: Astro 薄壳 + React Islands（client:load）
 
-遵守使用 OpenNext 的最佳实践，可以参考 ：
-- https://opennext.js.org/cloudflare/get-started
-- https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/
-
-Cloudflare 适配器提供了一个 opennextjs-cloudflare 命令行界面 (CLI)，用于开发、构建和部署应用程序。除非另有文档说明或您清楚自己在做什么，否则不应直接使用 wrangler 命令。可以参考 https://opennext.js.org/cloudflare/cli
-
-
-测试用户账号信息：
-- 测试账号 1：
-  账号：wujiahong2013@gmail.com （管理员）
-  密码：11111111
-- 测试账号 2：
-  账号：1427298682@qq.com （管理员）
-  密码：11111111
-- 测试账号 3：
-  账号：1427298683@qq.com （普通用户）
-  密码：11111111
-
+### 移动端（mobile/）
+- **框架**: Flutter 3.24+
+- **状态管理**: Riverpod 2.6
+- **路由**: GoRouter 14
+- **HTTP**: Dio 5.7
 
 ## 开发命令
 
+```bash
+# 安装依赖
+pnpm install
+
+# 同时启动 API 和前端
+pnpm dev
+
+# 单独启动
+pnpm api:dev        # API: localhost:8799
+pnpm web:dev        # Frontend: localhost:5432
+cd mobile && flutter run
+
+# 构建
+pnpm api:deploy     # 部署 API 到 Cloudflare Workers
+pnpm web:build      # 构建前端
+
+# 类型检查和 Lint
+pnpm type-check
+pnpm lint
+```
+
+## 测试账号
+
+- 账号 1：`wujiahong2013@gmail.com`（管理员）密码：`11111111`
+- 账号 2：`1427298682@qq.com`（管理员）密码：`11111111`
+- 账号 3：`1427298683@qq.com`（普通用户）密码：`11111111`
 
 ## 架构说明
 
-### 数据库层 (`db/`)
+### 后端 API（api/src/）
 
-使用 Drizzle ORM 和 SQLite 方言。核心数据表：
-- `users` - 用户账号（Better Auth 扩展字段：bio、level）
-- `sessions`、`accounts`、`verifications` - Better Auth 表
-- `locations` - 徒步地点（含标签、坐标、难度等）
-- `teams` - 徒步队伍（状态：recruiting、full、ongoing、completed、cancelled）
-- `team_members` - 队伍成员（角色：leader/member，状态：pending/approved/rejected）
-- `password_resets` - 密码重置令牌
-
-JSON 字段以文本形式存储：`bestSeason`、`tags`、`images`、`waypoints`、`facilities`、`requirements`、`warnings`、`equipmentNeeded`。
-
-时间戳使用 Unix 整数：`createdAt`、`updatedAt`、`expiresAt`，配置为 `{ mode: "timestamp" }`。
-
-### 认证系统 (`lib/auth.ts`)
-
-Better Auth 支持双环境：
-- CloudFlare Workers：通过 `drizzleAdapter` 使用 D1 数据库绑定
-- 本地开发：通过动态导入使用 `better-sqlite3`
-
-`createAuth(env?)` 函数检测环境并返回相应配置。默认导出的 `auth` 是一个 Proxy，用于延迟初始化认证实例。
-
-### API 路由 (`app/api/`)
-
-- `auth/[...all]/route.ts` - Better Auth 处理程序（所有认证端点）
-- `teams/` - 队伍的增删改查和搜索
-- `locations/` - 地点列表和详情
-- `user/` - 用户资料操作
-- `upload/` - 文件上传处理
-- `r2/` - CloudFlare R2 图片操作
-
-### Server Actions (`app/actions/`)
-
-用于数据变更的 Server Actions：
-- `teams.ts` - 创建、更新、加入、退出队伍
-- `locations.ts` - 地点操作
-- `users.ts` - 用户资料更新
-
-### 路径别名
-
-Webpack 和 Turbopack 配置使用 `@/` 前缀：
-- `@/app/*` → `./app/*`
-- `@/components/*` → `./components/*`
-- `@/lib/*` → `./lib/*`
-- `@/db/*` → `./db/*`
-
-## 环境变量配置
-
-`.env.local` 中必需的变量：
-```bash
-BETTER_AUTH_SECRET=        # 至少 32 位，生成命令：openssl rand -base64 32
-BETTER_AUTH_URL=http://localhost:3000
+```
+api/src/
+├── index.ts              # Worker 入口（11 个路由注册）
+├── routes/
+│   ├── auth.ts           # Better Auth 代理
+│   ├── teams.ts          # 队伍管理（核心，~978 行）
+│   ├── locations.ts      # 地点管理
+│   ├── users.ts          # 用户信息
+│   ├── hiking-routes.ts  # 路线管理
+│   ├── upload.ts         # R2 文件上传
+│   ├── favorites.ts      # 收藏功能
+│   ├── cities.ts         # 城市列表
+│   ├── tags.ts           # 标签列表
+│   ├── contact.ts        # 联系表单
+│   └── admin.ts          # 管理工具
+├── middleware/
+│   ├── cors.ts           # CORS 中间件
+│   └── auth.ts           # 认证中间件
+├── db/
+│   ├── schema.ts         # Drizzle ORM schema（17 张表）
+│   └── index.ts          # D1 数据库初始化
+└── lib/
+    ├── auth.ts           # Better Auth + Hono 适配
+    ├── email.ts          # Resend 邮件服务
+    ├── storage.ts        # R2 存储工具
+    └── team-status.ts    # 队伍状态工具
 ```
 
-D1 远程操作的可选变量：
-```bash
-CLOUDFLARE_ACCOUNT_ID=
-CLOUDFLARE_DATABASE_ID=
-CLOUDFLARE_D1_TOKEN=
-RESEND_API_KEY=
+### 前端（frontend/src/）
+
 ```
+frontend/src/
+├── pages/                # Astro 页面（SSR 壳）
+│   ├── index.astro
+│   ├── locations/[id].astro
+│   ├── teams/[id].astro
+│   ├── teams/create.astro
+│   ├── my-teams/index.astro
+│   ├── profile/index.astro
+│   └── users/[id].astro
+├── components/
+│   ├── features/         # React Islands（client:load）
+│   │   ├── home-client.tsx
+│   │   ├── locations-client.tsx
+│   │   ├── teams-client.tsx
+│   │   ├── team-detail-client.tsx
+│   │   ├── create-team-client.tsx
+│   │   ├── my-teams-client.tsx
+│   │   ├── profile-client.tsx
+│   │   └── ...（共 13 个）
+│   ├── layout/
+│   │   ├── navbar.tsx
+│   │   └── footer.tsx
+│   └── ui/               # shadcn/ui 组件
+├── layouts/
+│   └── Layout.astro      # 主布局模板
+└── lib/
+    ├── api.ts            # fetch 封装（指向 API 服务）
+    ├── auth-client.ts    # Better Auth 客户端
+    ├── copy.ts           # 中文文案（Single Source of Truth）
+    ├── types.ts          # 前端类型定义
+    └── utils.ts          # 工具函数
+```
+
+**API 基地址配置：**
+- 本地：`http://localhost:8799`
+- 生产：通过环境变量 `PUBLIC_API_URL` 注入
+
+### 数据库层（api/src/db/schema.ts）
+
+17 张数据表，使用 Drizzle ORM + SQLite 方言：
+
+| 表名 | 用途 |
+|------|------|
+| `users` | 用户账号（Better Auth 扩展：bio、level、nickname） |
+| `sessions` | Better Auth 会话 |
+| `accounts` | Better Auth 外部账户 |
+| `verifications` | 邮件验证 |
+| `cities` | 城市（行政级别、热门标记） |
+| `locations` | 徒步地点（坐标、图片、季节） |
+| `routes` | 徒步路线（难度、距离、时长、高程） |
+| `tags` | 标签 |
+| `entityToTags` | 标签关联（多对多） |
+| `teams` | 队伍（状态、时间、人数限制） |
+| `teamMembers` | 队伍成员（状态、加入时间） |
+| `passwordResets` | 密码重置令牌 |
+| `pois` | 兴趣点（地标、设施） |
+| `entityToPois` | POI 关联（角色类型） |
+| `userFavorites` | 用户收藏 |
+
+**枚举类型（定义在 schema.ts 和 packages/types/src/enums.ts）：**
+- `Difficulty`: `"easy"` | `"moderate"` | `"hard"` | `"expert"`
+- `TeamStatus`: `"recruiting"` | `"full"` | `"formed"` | `"cancelled"` | `"completed"`
+- `TeamMemberStatus`: `"pending"` | `"approved"` | `"rejected"` | `"leave_pending"`
+- `UserRole`: `"user"` | `"admin"`
+- `UserLevel`: `"beginner"` | `"intermediate"` | `"advanced"` | `"expert"`
+- `PoiRoleType`: `"waypoint"` | `"checkpoint"` | `"viewpoint"` | `"facility"` | `"poi"`
+
+**时间戳：** Unix 整数，配置为 `{ mode: "timestamp" }`。
+
+**JSON 字段（以文本形式存储）：** `bestSeason`、`tags`、`images`、`waypoints`、`facilities`、`requirements`、`warnings`、`equipmentNeeded`。
+
+### 认证系统（api/src/lib/auth.ts）
+
+Better Auth 集成 Hono，支持双环境：
+- **Cloudflare Workers**：通过 `drizzleAdapter` 使用 D1 数据库绑定
+- **本地开发**：通过动态导入使用 `better-sqlite3`
 
 ## 本地开发与测试规范
 
 ### 本地 Cloudflare 环境模拟
 
-本项目本地测试**直接使用 Cloudflare 的真实服务**（D1、R2 等），通过 OpenNext 的 Cloudflare 适配器在本地模拟 Workers 运行环境。
-
-本地开发时，`npm run dev` 通过 `initOpenNextCloudflareForDev()` 自动模拟 Cloudflare 环境：
+本地开发通过 `wrangler dev` 模拟 Cloudflare Workers 环境：
 
 - **D1 数据库**：数据存储在 `.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite`
 - **R2 对象存储**：文件存储模拟在 `.wrangler/state/v3/r2/`
@@ -125,37 +200,45 @@ RESEND_API_KEY=
 sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite "SELECT * FROM users;"
 ```
 
-**数据库迁移：**
-- 迁移文件位于 `db/migrations/`
-- 本地应用迁移通过 `npx opennextjs-cloudflare` 相关命令执行，避免直接使用 `wrangler` 命令
-- 生产环境迁移需通过 Cloudflare Dashboard 或 CI/CD 流程执行
+**数据库迁移（在 api/ 目录下）：**
+```bash
+npx drizzle-kit migrate
+```
 
-**Seed 数据：**
-- Seed 脚本位于 `db/seed/`，入口为 `db/seed.ts`
-- 包含地点（locations）、POI 和路线（routes）数据
-- 执行 seed 前确保本地 D1 数据库已完成迁移
+**Seed 数据（在 api/ 目录下）：**
+```bash
+node db/seed.ts
+```
 
-### R2 文件存储规范
+## 部署架构
 
-- 本地开发时 R2 通过 miniflare 模拟，上传的文件存储在 `.wrangler/state/v3/r2/` 目录
-- 图片上传通过 `app/api/upload/` 和 `app/api/r2/` 路由处理
-- 生产环境文件存储在真实 Cloudflare R2 Bucket，需在 `wrangler.toml` 中配置 R2 绑定
+```
+生产环境（Cloudflare）：
+  API Worker  → https://gomate-api-production.wujiahong2013.workers.dev
+  Frontend    → https://gomate.jiahongw.com
+  R2 公共 URL → https://gomate.cos.jiahongw.com
+
+本地开发：
+  API         → http://localhost:8799
+  Frontend    → http://localhost:5432
+```
+
+**CI/CD（GitHub Actions）：**
+- `api/**` 推送 main → 部署 API 到 Cloudflare Workers
+- `frontend/**` 或 `packages/**` 推送 main → 部署前端到 Cloudflare Pages
+- `mobile/**` 推送 main → 构建 Android APK + iOS IPA
 
 ## 关键约定
 
 - 组件命名：PascalCase
 - 函数/变量命名：camelCase
-- 数据库枚举（定义在 schema.ts）：
-  - `Difficulty`: "easy" | "moderate" | "hard" | "expert"
-  - `TeamStatus`: "recruiting" | "full" | "ongoing" | "completed" | "cancelled"
-  - `TeamMemberRole`: "leader" | "member"
-  - `TeamMemberStatus`: "pending" | "approved" | "rejected"
+- 路径别名：`@/*` → `./src/*`（frontend 内）
 
 ## 中文文案管理规范
 
 ### copy.ts 架构
 
-所有用户可见的中文字符串统一在 `lib/copy.ts` 中管理，作为 Single Source of Truth。
+所有用户可见的中文字符串统一在 `frontend/src/lib/copy.ts` 中管理，作为 Single Source of Truth。
 
 **文件结构：**
 - 按功能域（feature）组织，最多 2 层嵌套（如 `copy.nav.home`）
@@ -204,7 +287,7 @@ copy.teams.openTeamsSubtitle.replace("{count}", String(count))
 
 **3. 枚举文案**
 - 所有枚举值的显示文案必须放在 `copy.enums` 下
-- 与数据库 schema.ts 中的枚举定义保持一致
+- 与 `api/src/db/schema.ts` 中的枚举定义保持一致
 
 **4. 禁止事项**
 - 禁止在组件中直接写硬编码中文字符串
@@ -225,10 +308,20 @@ chore: 构建/工具
 
 ## 重要文件
 
-- `db/schema.ts` - 数据库模式和类型定义
-- `lib/auth.ts` - Better Auth 配置（双环境支持）
-- `lib/auth-client.ts` - 客户端认证工具
-- `wrangler.toml` - CloudFlare Workers 配置（含 D1/R2 绑定）
-- `drizzle.config.ts` - Drizzle ORM 配置（自动检测驱动）
-- `open-next.config.ts` - OpenNext CloudFlare 适配器配置
-- `worker.ts` - CloudFlare Worker 入口文件
+| 文件 | 用途 |
+|------|------|
+| `api/src/db/schema.ts` | 数据库模式和类型定义 |
+| `api/src/lib/auth.ts` | Better Auth + Hono 配置 |
+| `api/wrangler.toml` | Cloudflare Workers 配置（D1/R2/KV 绑定） |
+| `api/drizzle.config.ts` | Drizzle ORM 配置 |
+| `frontend/astro.config.mjs` | Astro + Cloudflare 适配器配置 |
+| `frontend/src/lib/copy.ts` | 中文文案管理 |
+| `frontend/src/lib/api.ts` | API 客户端封装 |
+| `packages/types/src/index.ts` | 跨包共享 TypeScript 类型 |
+| `packages/types/src/enums.ts` | 共享枚举定义 |
+| `pnpm-workspace.yaml` | pnpm 工作区配置 |
+
+
+
+## 开发建议 
+我默认打开了调试，你不需要执执行调试指令，除非我主动和你说。

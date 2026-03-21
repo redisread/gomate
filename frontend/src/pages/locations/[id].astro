@@ -1,0 +1,13 @@
+---
+/**
+ * 地点详情页 - 动态路由
+ */
+import Layout from "../../layouts/Layout.astro";
+import { LocationDetailClient } from "../../components/features/location-detail-client";
+
+const { id } = Astro.params;
+---
+
+<Layout title="地点详情 - GoMate" showNavbar={false} showFooter={false}>
+  <LocationDetailClient locationId={id!} client:load />
+</Layout>
