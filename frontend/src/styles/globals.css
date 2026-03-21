@@ -145,10 +145,77 @@
     100% { transform: scale(1); }
   }
 
+  /* 浮动卡片上下漂浮 */
+  @keyframes float-up {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-12px); }
+  }
+  @keyframes float-down {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(12px); }
+  }
+
+  /* 搜索按钮输入弹跳 */
+  @keyframes bounce-in {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.12); }
+    70%  { transform: scale(0.94); }
+    100% { transform: scale(1); }
+  }
+
+  /* 清空按钮旋转出现 */
+  @keyframes spin-in {
+    from { opacity: 0; transform: scale(0.6) rotate(-90deg); }
+    to   { opacity: 1; transform: scale(1) rotate(0deg); }
+  }
+
+  /* Section 滚动进入 */
+  @keyframes section-in {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   /* shimmer 扫光骨架屏 */
   @keyframes shimmer {
     from { background-position: -200% 0; }
     to   { background-position: 200% 0; }
+  }
+
+  /* 搜索按钮输入弹跳 */
+  --animate-bounce-in: bounce-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  @keyframes bounce-in {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.15); }
+    70%  { transform: scale(0.92); }
+    100% { transform: scale(1); }
+  }
+
+  /* 清空按钮旋转消失 */
+  --animate-spin-out: spin-out 0.2s ease-in forwards;
+  @keyframes spin-out {
+    from { transform: rotate(0deg) scale(1); opacity: 1; }
+    to   { transform: rotate(90deg) scale(0.6); opacity: 0; }
+  }
+
+  /* 清空按钮旋转出现 */
+  --animate-spin-in: spin-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  @keyframes spin-in {
+    from { transform: rotate(-90deg) scale(0.6); opacity: 0; }
+    to   { transform: rotate(0deg) scale(1); opacity: 1; }
+  }
+
+  /* 卡片 overlay 从底部滑入 */
+  --animate-slide-up-in: slide-up-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  @keyframes slide-up-in {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+
+  /* section 进入动画：fade + 轻微上移 */
+  --animate-section-in: section-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  @keyframes section-in {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 }
 
@@ -469,4 +536,37 @@
   .duration-fast    { transition-duration: var(--duration-fast); }
   .duration-normal  { transition-duration: var(--duration-normal); }
   .duration-slow    { transition-duration: var(--duration-slow); }
+
+  /* ---- 新增动画工具类 ---- */
+  .animate-float-up   { animation: float-up 6s ease-in-out infinite; }
+  .animate-float-down { animation: float-down 7s ease-in-out infinite; }
+  .animate-bounce-in  { animation: bounce-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-spin-in    { animation: spin-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-section-in { animation: section-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+  /* Section 滚动入场：初始隐藏 → 进入视口后触发 */
+  .section-hidden  { opacity: 0; transform: translateY(24px); }
+  .section-visible { animation: section-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+  /* ---- 微交互动画工具类 ---- */
+  .animate-bounce-in  { animation: var(--animate-bounce-in); }
+  .animate-spin-out   { animation: var(--animate-spin-out); }
+  .animate-spin-in    { animation: var(--animate-spin-in); }
+  .animate-slide-up-in { animation: var(--animate-slide-up-in); }
+  .animate-section-in { animation: var(--animate-section-in); }
+
+  /* 搜索框 focus glow — 通过 JS inline style 控制，这里仅作备用 */
+  .search-glow-focus {
+    box-shadow: 0 4px 18px rgba(36,154,135,0.22), 0 0 0 3px rgba(36,154,135,0.12);
+    border-color: var(--primary);
+  }
+
+  /* section 初始隐藏状态，inView=true 时移除 */
+  .section-hidden {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  .section-visible {
+    animation: var(--animate-section-in);
+  }
 }
