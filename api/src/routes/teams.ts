@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, desc, and, ne, sql, like, inArray } from "drizzle-orm";
+import { eq, desc, and, ne, sql, like, inArray, lt } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -13,16 +13,16 @@ function getRandomTeamIcon() {
   return TEAM_ICONS[Math.floor(Math.random() * TEAM_ICONS.length)];
 }
 
-/** 将过期的 formed 队伍更新为 completed */
+/** 将 endTime 已过期的 formed 队伍更新为 completed */
 async function updateExpiredTeams(db: ReturnType<typeof createDb>, teamId?: string) {
   const now = new Date();
   const condition = teamId
-    ? and(eq(schema.teams.id, teamId), eq(schema.teams.status, "formed"))
-    : eq(schema.teams.status, "formed");
+    ? and(eq(schema.teams.id, teamId), eq(schema.teams.status, "formed"), lt(schema.teams.endTime, now))
+    : and(eq(schema.teams.status, "formed"), lt(schema.teams.endTime, now));
   await db
     .update(schema.teams)
     .set({ status: "completed", updatedAt: now })
-    .where(and(condition as ReturnType<typeof and>));
+    .where(condition as ReturnType<typeof and>);
 }
 
 /**
@@ -972,6 +972,37 @@ teams.post("/:id/form", async (c) => {
   } catch (error) {
     console.error("Form team error:", error);
     return c.json({ success: false, error: "组建队伍失败" }, 500);
+  }
+});
+
+/**
+ * POST /teams/:id/cancel
+ * 取消队伍（仅队长，仅 recruiting/full 状态）
+ */
+teams.post("/:id/cancel", async (c) => {
+  try {
+    const authInstance = createAuth(c.env);
+    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
+
+    const teamId = c.req.param("id");
+    const db = createDb(c.env.DB);
+
+    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    if (!team) return c.json({ success: false, error: "队伍不存在" }, 404);
+    if (team.leaderId !== session.user.id)
+      return c.json({ success: false, error: "只有队长可以取消队伍" }, 403);
+    if (team.status !== "recruiting" && team.status !== "full")
+      return c.json({ success: false, error: "当前队伍状态无法取消" }, 400);
+
+    await db.update(schema.teams)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(eq(schema.teams.id, teamId));
+
+    return c.json({ success: true, message: "队伍已取消" });
+  } catch (error) {
+    console.error("Cancel team error:", error);
+    return c.json({ success: false, error: "取消队伍失败" }, 500);
   }
 });
 
