@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/auth_provider.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 /// 注册页面
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -74,32 +74,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }) {
     return InputDecoration(
       labelText: labelText,
-      labelStyle: const TextStyle(color: AppColors.textSecondary),
+      labelStyle: const TextStyle(color: AppTokens.textSecondary),
       hintText: hintText,
-      hintStyle: const TextStyle(color: AppColors.textPlaceholder),
+      hintStyle: const TextStyle(color: AppTokens.textTertiary),
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: AppColors.surface,
+      fillColor: AppTokens.bgSurface,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border, width: 1),
+        borderRadius: BorderRadius.circular(AppTokens.radiusM),
+        borderSide: const BorderSide(color: AppTokens.borderDefault, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border, width: 1),
+        borderRadius: BorderRadius.circular(AppTokens.radiusM),
+        borderSide: const BorderSide(color: AppTokens.borderDefault, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+        borderRadius: BorderRadius.circular(AppTokens.radiusM),
+        borderSide: const BorderSide(color: AppTokens.brandPrimary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.error, width: 1),
+        borderRadius: BorderRadius.circular(AppTokens.radiusM),
+        borderSide: const BorderSide(color: AppTokens.semanticError, width: 1),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        borderRadius: BorderRadius.circular(AppTokens.radiusM),
+        borderSide: const BorderSide(color: AppTokens.semanticError, width: 1.5),
       ),
     );
   }
@@ -108,7 +108,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authProvider).isLoading;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppTokens.bgBase,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -123,7 +123,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     alignment: Alignment.centerLeft,
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back,
-                          color: AppColors.textPrimary),
+                          color: AppTokens.textPrimary),
                       onPressed: () => context.pop(),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -138,7 +138,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AppTokens.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -148,7 +148,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.textSecondary,
+                    color: AppTokens.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -156,12 +156,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // 用户名输入框
                 TextFormField(
                   controller: _nameController,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: const TextStyle(color: AppTokens.textPrimary),
                   decoration: _buildInputDecoration(
                     labelText: '用户名',
                     hintText: '请输入你的名字',
                     prefixIcon: const Icon(Icons.person_outlined,
-                        color: AppColors.textPlaceholder),
+                        color: AppTokens.textTertiary),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -179,12 +179,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: const TextStyle(color: AppTokens.textPrimary),
                   decoration: _buildInputDecoration(
                     labelText: '邮箱',
                     hintText: 'your@email.com',
                     prefixIcon: const Icon(Icons.email_outlined,
-                        color: AppColors.textPlaceholder),
+                        color: AppTokens.textTertiary),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -203,18 +203,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: const TextStyle(color: AppTokens.textPrimary),
                   decoration: _buildInputDecoration(
                     labelText: '密码',
                     hintText: '至少 8 个字符',
                     prefixIcon: const Icon(Icons.lock_outlined,
-                        color: AppColors.textPlaceholder),
+                        color: AppTokens.textTertiary),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: AppColors.textPlaceholder,
+                        color: AppTokens.textTertiary,
                       ),
                       onPressed: () {
                         setState(() {
@@ -239,17 +239,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirm,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: const TextStyle(color: AppTokens.textPrimary),
                   decoration: _buildInputDecoration(
                     labelText: '确认密码',
                     prefixIcon: const Icon(Icons.lock_outlined,
-                        color: AppColors.textPlaceholder),
+                        color: AppTokens.textTertiary),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirm
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: AppColors.textPlaceholder,
+                        color: AppTokens.textTertiary,
                       ),
                       onPressed: () {
                         setState(() {
@@ -274,7 +274,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     child: Text(
                       _errorMessage!,
                       style: const TextStyle(
-                          color: AppColors.error, fontSize: 14),
+                          color: AppTokens.semanticError, fontSize: 14),
                     ),
                   ),
 
@@ -285,13 +285,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   width: double.infinity,
                   height: 52,
                   decoration: BoxDecoration(
-                    gradient: AppGradients.brand,
-                    borderRadius: BorderRadius.circular(14),
+                    gradient: AppTokens.gradientBrand,
+                    borderRadius: BorderRadius.circular(AppTokens.radiusM),
                   ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       onTap: isLoading ? null : _handleRegister,
                       child: Center(
                         child: isLoading
@@ -324,13 +324,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   children: [
                     const Text(
                       '已有账号？',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: AppTokens.textSecondary),
                     ),
                     TextButton(
                       onPressed: () => context.go('/login'),
                       child: const Text(
                         '立即登录',
-                        style: TextStyle(color: AppColors.brand),
+                        style: TextStyle(color: AppTokens.brandPrimary),
                       ),
                     ),
                   ],

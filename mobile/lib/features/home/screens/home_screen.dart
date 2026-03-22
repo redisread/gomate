@@ -6,7 +6,8 @@ import '../../../core/api/locations_api.dart';
 import '../../../core/api/teams_api.dart';
 import '../../../core/models/location.dart';
 import '../../../core/models/team.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
+import '../../../shared/widgets/app_shimmer.dart';
 
 /// 首页：展示精选地点和最新招募队伍
 class HomeScreen extends ConsumerStatefulWidget {
@@ -59,55 +60,88 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  /// 骨架屏加载状态
+  Widget _buildLoadingSkeleton() {
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppTokens.space4),
+            child: AppShimmer(
+                width: double.infinity,
+                height: 48,
+                borderRadius: AppTokens.radiusM),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTokens.space4),
+            child: AppShimmer(width: 120, height: 24),
+          ),
+          const SizedBox(height: AppTokens.space3),
+          const HomeLocationShimmer(),
+          const SizedBox(height: AppTokens.space6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTokens.space4),
+            child: AppShimmer(width: 120, height: 24),
+          ),
+          const SizedBox(height: AppTokens.space3),
+          const HomeTeamShimmer(),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppTokens.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppTokens.bgBase,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         title: ShaderMask(
-          shaderCallback: (bounds) => AppGradients.brand.createShader(bounds),
+          shaderCallback: (bounds) =>
+              AppTokens.gradientBrand.createShader(bounds),
           blendMode: BlendMode.srcIn,
           child: const Text(
             'GoMate',
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 22,
+              fontSize: AppTokens.fontSizeXXL,
             ),
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_outlined,
-                color: AppColors.textSecondary),
+            icon: const Icon(Icons.person_outline_rounded,
+                color: AppTokens.textSecondary),
             onPressed: () => context.go('/profile'),
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? _buildLoadingSkeleton()
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(AppTokens.space6),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.error_outline,
-                            size: 48, color: AppColors.error),
-                        const SizedBox(height: 12),
+                            size: 48, color: AppTokens.semanticError),
+                        const SizedBox(height: AppTokens.space3),
                         Text(
                           _error!,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
+                            fontSize: AppTokens.fontSizeS,
+                            color: AppTokens.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppTokens.space4),
                         ElevatedButton(
                             onPressed: _loadData, child: const Text('重试')),
                       ],
@@ -121,29 +155,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 搜索栏（假搜索框）
+                        // 搜索栏（点击跳转地点页，语义化提示）
                         Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppTokens.space4),
                           child: GestureDetector(
                             onTap: () => context.go('/locations'),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
+                                  horizontal: AppTokens.space4,
+                                  vertical: AppTokens.space3),
                               decoration: BoxDecoration(
-                                color: AppColors.cardBackground,
-                                borderRadius: BorderRadius.circular(14),
+                                color: AppTokens.bgSurface,
+                                borderRadius:
+                                    BorderRadius.circular(AppTokens.radiusM),
                                 border: Border.all(
-                                    color: AppColors.border, width: 1),
+                                    color: AppTokens.borderDefault, width: 1),
                               ),
                               child: const Row(
                                 children: [
-                                  Icon(Icons.search,
-                                      color: AppColors.textPlaceholder),
-                                  SizedBox(width: 8),
+                                  Icon(Icons.search_rounded,
+                                      color: AppTokens.textTertiary,
+                                      size: AppTokens.iconL),
+                                  SizedBox(width: AppTokens.space2),
                                   Text(
                                     '搜索地点、路线或队伍...',
                                     style: TextStyle(
-                                        color: AppColors.textPlaceholder),
+                                        color: AppTokens.textTertiary,
+                                        fontSize: AppTokens.fontSizeBase),
                                   ),
                                 ],
                               ),
@@ -153,24 +191,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                         // 热门地点标题行
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppTokens.space4),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
                                 '热门地点',
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: AppTokens.fontSizeXL,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                                  color: AppTokens.textPrimary,
                                 ),
                               ),
                               TextButton(
                                 onPressed: () => context.go('/locations'),
-                                child: const Text(
-                                  '查看全部',
-                                  style: TextStyle(color: AppColors.brand),
-                                ),
+                                child: const Text('查看全部'),
                               ),
                             ],
                           ),
@@ -181,8 +217,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           height: 200,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: AppTokens.space4),
                             itemCount: _locations.length,
                             itemBuilder: (context, index) {
                               final location = _locations[index];
@@ -191,28 +227,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: AppTokens.space6),
 
                         // 招募中队伍标题行
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppTokens.space4),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
                                 '招募中队伍',
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: AppTokens.fontSizeXL,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                                  color: AppTokens.textPrimary,
                                 ),
                               ),
                               TextButton(
                                 onPressed: () => context.go('/teams'),
-                                child: const Text(
-                                  '查看全部',
-                                  style: TextStyle(color: AppColors.brand),
-                                ),
+                                child: const Text('查看全部'),
                               ),
                             ],
                           ),
@@ -222,11 +256,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppTokens.space4),
                           itemCount: _teams.length,
                           separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
+                              const SizedBox(height: AppTokens.space2),
                           itemBuilder: (context, index) {
                             final team = _teams[index];
                             return _TeamListItem(team: team);
@@ -252,14 +286,14 @@ class _LocationCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push('/locations/${location.id}'),
       child: Container(
-        width: 160,
-        margin: const EdgeInsets.only(right: 12),
+        width: AppTokens.cardWidthHorizontal,
+        margin: const EdgeInsets.only(right: AppTokens.space3),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(AppTokens.radiusL),
+          color: AppTokens.bgSurfaceElevated,
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppTokens.radiusL),
           child: Stack(
             children: [
               // 封面图
@@ -268,29 +302,28 @@ class _LocationCard extends StatelessWidget {
                   location.coverImage,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                    color: AppColors.cardBackground,
-                    child: const Icon(Icons.landscape,
-                        color: AppColors.textPlaceholder),
+                    color: AppTokens.bgSurfaceElevated,
+                    child: const Icon(Icons.landscape_outlined,
+                        color: AppTokens.textTertiary,
+                        size: AppTokens.iconXL),
                   ),
                 ),
               ),
-              // 底部渐变遮罩：透明 → 黑色
+              // 底部渐变遮罩
+              const Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: AppTokens.gradientImageOverlay,
+                  ),
+                ),
+              ),
+              // 底部文字内容
               Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.7),
-                      ],
-                    ),
-                  ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTokens.space3),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -299,7 +332,7 @@ class _LocationCard extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          fontSize: AppTokens.fontSizeBase,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -309,7 +342,7 @@ class _LocationCard extends StatelessWidget {
                           location.cityName!,
                           style: const TextStyle(
                             color: Colors.white70,
-                            fontSize: 12,
+                            fontSize: AppTokens.fontSizeS,
                           ),
                         ),
                     ],
@@ -335,21 +368,21 @@ class _TeamListItem extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push('/teams/${team.id}'),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTokens.space4),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(14),
+          color: AppTokens.bgSurface,
+          border: Border.all(color: AppTokens.borderDefault),
+          borderRadius: BorderRadius.circular(AppTokens.radiusM),
         ),
         child: Row(
           children: [
-            // 队伍图标容器：浅橙背景
+            // 队伍图标容器：蓝绿浅色背景
             Container(
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.brandMuted,
-                borderRadius: BorderRadius.circular(10),
+                color: AppTokens.brandPrimaryLight,
+                borderRadius: BorderRadius.circular(AppTokens.radiusS),
               ),
               child: Center(
                 child: Text(
@@ -358,7 +391,7 @@ class _TeamListItem extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppTokens.space3),
             // 队伍信息
             Expanded(
               child: Column(
@@ -368,26 +401,26 @@ class _TeamListItem extends StatelessWidget {
                     team.title,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
+                      fontSize: AppTokens.fontSizeM,
+                      color: AppTokens.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppTokens.space1),
                   Row(
                     children: [
                       const Icon(
                         Icons.people_outlined,
-                        size: 14,
-                        color: AppColors.textPlaceholder,
+                        size: AppTokens.iconXS,
+                        color: AppTokens.textTertiary,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppTokens.space1),
                       Text(
                         '${team.approvedMemberCount}/${team.maxMembers} 人',
                         style: const TextStyle(
-                          color: AppColors.textPlaceholder,
-                          fontSize: 12,
+                          color: AppTokens.textTertiary,
+                          fontSize: AppTokens.fontSizeS,
                         ),
                       ),
                     ],
@@ -395,19 +428,19 @@ class _TeamListItem extends StatelessWidget {
                 ],
               ),
             ),
-            // 状态标签（招募中）
+            // 状态标签（使用状态专用 Token）
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppTokens.space2, vertical: AppTokens.space1),
               decoration: BoxDecoration(
-                color: AppColors.brandMuted,
-                borderRadius: BorderRadius.circular(6),
+                color: AppTokens.statusRecruitingBg,
+                borderRadius: BorderRadius.circular(AppTokens.radiusXS),
               ),
               child: Text(
                 team.status.label,
                 style: const TextStyle(
-                  color: AppColors.brand,
-                  fontSize: 12,
+                  color: AppTokens.statusRecruiting,
+                  fontSize: AppTokens.fontSizeS,
                   fontWeight: FontWeight.w500,
                 ),
               ),

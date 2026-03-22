@@ -1,21 +1,82 @@
 "use client";
 
 import * as React from "react";
-import { MapPin, Share2, ArrowRight, Mountain, Clock, Users } from "lucide-react";
+import {
+  MapPin,
+  Share2,
+  ArrowRight,
+  Mountain,
+  Clock,
+  Users,
+  Ruler,
+  TrendingUp,
+  Heart,
+  Sparkles,
+  CalendarDays,
+  ChevronRight,
+} from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
-import type { Location } from "@/lib/types";
+import type { Location, Team, Tag } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
-// 难度标签
-const difficultyLabels: Record<string, { label: string; color: string }> = {
-  easy: { label: "简单", color: "bg-emerald-100 text-emerald-700" },
-  moderate: { label: "中等", color: "bg-amber-100 text-amber-700" },
-  hard: { label: "困难", color: "bg-orange-100 text-orange-700" },
-  expert: { label: "专家", color: "bg-red-100 text-red-700" },
+// ─── 难度配置（与列表页保持一致）────────────────────────────────────────────
+const difficultyConfig: Record<
+  string,
+  { label: string; dot: string; text: string }
+> = {
+  easy: { label: copy.enums.difficulty.easy, dot: "bg-emerald-500", text: "text-emerald-700" },
+  moderate: { label: copy.enums.difficulty.moderate, dot: "bg-amber-500", text: "text-amber-700" },
+  hard: { label: copy.enums.difficulty.hard, dot: "bg-orange-500", text: "text-orange-700" },
+  expert: { label: copy.enums.difficulty.expert, dot: "bg-red-500", text: "text-red-700" },
 };
+
+// ─── 队伍进度条（地点详情页内队伍卡片用）────────────────────────────────────
+function TeamProgress({ current, max }: { current: number; max: number }) {
+  const [width, setWidth] = React.useState(0);
+  const ratio = max > 0 ? Math.round((current / max) * 100) : 0;
+  const isFull = current >= max;
+
+  React.useEffect(() => {
+    const t = setTimeout(() => setWidth(ratio), 100);
+    return () => clearTimeout(t);
+  }, [ratio]);
+
+  return (
+    <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+      <div
+        className={cn(
+          "h-full rounded-full transition-[width] duration-300 ease-out motion-reduce:transition-none",
+          isFull ? "bg-warm" : "bg-gradient-to-r from-emerald-600 to-emerald-500"
+        )}
+        style={{ width: `${width}%` }}
+      />
+    </div>
+  );
+}
+
+// ─── 骨架屏（shimmer 扫光）────────────────────────────────────────────────────
+function LoadingSkeleton() {
+  return (
+    <main className="min-h-screen bg-stone-50">
+      <Navbar />
+      {/* 封面骨架 */}
+      <div className="h-[360px] sm:h-[480px] skeleton" />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-5">
+            <div className="h-40 skeleton rounded-2xl" />
+            <div className="h-28 skeleton rounded-2xl" />
+            <div className="h-52 skeleton rounded-2xl" />
+          </div>
+          <div className="h-64 skeleton rounded-2xl" />
+        </div>
+      </div>
+    </main>
+  );
+}
 
 interface LocationDetailClientProps {
   locationId: string;
@@ -23,13 +84,19 @@ interface LocationDetailClientProps {
 
 /**
  * 地点详情页客户端组件 - React Island
+ * 视觉规范：GoMate Design Spec v1.0（Section F）
  */
 export function LocationDetailClient({ locationId }: LocationDetailClientProps) {
   const [location, setLocation] = React.useState<Location | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [teams, setTeams] = React.useState<any[]>([]);
+  const [teams, setTeams] = React.useState<Team[]>([]);
   const [relatedLocations, setRelatedLocations] = React.useState<Location[]>([]);
+  // 收藏状态（本地 UI 演示，无后端持久化）
+  const [isFavorited, setIsFavorited] = React.useState(false);
+  const [heartAnimating, setHeartAnimating] = React.useState(false);
+  // 分享提示
+  const [shareCopied, setShareCopied] = React.useState(false);
 
   React.useEffect(() => {
     loadLocation();
@@ -42,15 +109,13 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       const data = await res.json();
       if (data.success && data.location) {
         setLocation(data.location);
-        // 加载该地点的队伍
         loadTeams(data.location.id);
-        // 加载推荐地点
         loadRelatedLocations();
       } else {
-        setError("地点不存在");
+        setError(copy.api.locationNotFound);
       }
     } catch {
-      setError("加载失败，请稍后重试");
+      setError(copy.common.loading);
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +126,9 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       const res = await fetchAPI(`/api/teams?locationId=${locId}&status=recruiting&pageSize=5`);
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
-    } catch {}
+    } catch (error) {
+      console.error("[LocationDetail] 获取队伍列表失败:", error);
+    }
   };
 
   const loadRelatedLocations = async () => {
@@ -73,26 +140,34 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
           (data.locations || []).filter((l: Location) => l.id !== locationId).slice(0, 3)
         );
       }
-    } catch {}
+    } catch (error) {
+      console.error("[LocationDetail] 获取相关地点失败:", error);
+    }
   };
 
-  if (isLoading) {
-    return (
-      <main className="min-h-screen bg-stone-50">
-        <Navbar />
-        <div className="h-64 bg-stone-200 animate-pulse" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-4">
-              <div className="h-48 bg-stone-200 rounded-2xl animate-pulse" />
-              <div className="h-32 bg-stone-200 rounded-2xl animate-pulse" />
-            </div>
-            <div className="h-64 bg-stone-200 rounded-2xl animate-pulse" />
-          </div>
-        </div>
-      </main>
-    );
-  }
+  /** 收藏按钮点击：本地状态切换 + 心跳动效 */
+  const handleFavorite = () => {
+    setIsFavorited((v) => !v);
+    setHeartAnimating(true);
+    setTimeout(() => setHeartAnimating(false), 400);
+  };
+
+  /** 分享：优先 Web Share API，降级复制链接 */
+  const handleShare = async () => {
+    if (navigator.share && location) {
+      try {
+        await navigator.share({ title: location.name, url: window.location.href });
+        return;
+      } catch {
+        // intentionally ignored: 用户取消分享
+      }
+    }
+    await navigator.clipboard.writeText(window.location.href);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  };
+
+  if (isLoading) return <LoadingSkeleton />;
 
   if (error || !location) {
     return (
@@ -100,9 +175,14 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
         <Navbar />
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-stone-900 mb-2">{error || "地点不存在"}</h1>
-            <a href="/locations" className="text-stone-600 hover:text-stone-900 underline">
-              返回地点列表
+            <h1 className="text-2xl font-bold text-stone-900 mb-3">
+              {error || copy.api.locationNotFound}
+            </h1>
+            <a
+              href="/locations"
+              className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2 transition-colors"
+            >
+              {copy.common.back}
             </a>
           </div>
         </div>
@@ -111,155 +191,313 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     );
   }
 
-  const diffInfo = difficultyLabels[location.difficulty] || { label: location.difficulty, color: "bg-stone-100 text-stone-700" };
+  const diffInfo = (location.difficulty ? difficultyConfig[location.difficulty] : null) ?? {
+    label: location.difficulty || "",
+    dot: "bg-stone-400",
+    text: "text-stone-700",
+  };
 
   return (
     <main className="min-h-screen bg-stone-50">
       <Navbar />
 
-      {/* Cover Image */}
-      <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-stone-900">
-        {location.coverImage && (
+      {/* ================================================================
+          Hero 封面区域
+          高度：h-[360px] sm:h-[480px] lg:h-[560px]
+          渐变：from-black/65 via-black/15 to-transparent（Design Spec F.6）
+          ================================================================ */}
+      <div className="relative h-[360px] sm:h-[480px] lg:h-[560px] overflow-hidden bg-stone-900">
+        {location.coverImage ? (
           <img
             src={location.coverImage}
             alt={location.name}
-            className="w-full h-full object-cover opacity-80"
+            className="w-full h-full object-cover"
           />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-800 to-stone-900">
+            <Mountain className="h-24 w-24 text-stone-600" />
+          </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-2 mb-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${diffInfo.color}`}>
+
+        {/* 双层渐变遮罩 */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-transparent" />
+
+        {/* 封面右上角：收藏 + 分享按钮 */}
+        <div className="absolute top-5 right-5 flex items-center gap-2">
+          {/* 分享按钮 */}
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white text-xs font-medium transition-all duration-150 active:scale-95"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            {shareCopied ? copy.share.linkCopied : copy.locations.detailShareBtn}
+          </button>
+
+          {/* 情感化收藏按钮 */}
+          <button
+            onClick={handleFavorite}
+            className="w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center transition-all duration-150 active:scale-95"
+            aria-label={isFavorited ? "取消收藏" : "收藏"}
+          >
+            <Heart
+              className={cn(
+                "h-4 w-4 transition-colors duration-200",
+                isFavorited ? "fill-red-400 text-red-400" : "text-white",
+                heartAnimating && "motion-reduce:animate-none"
+              )}
+              style={
+                heartAnimating
+                  ? { animation: "heartbeat 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards" }
+                  : undefined
+              }
+            />
+          </button>
+        </div>
+
+        {/* 封面底部：面包屑 */}
+        <div className="absolute bottom-20 left-0 right-0 px-4 sm:px-8">
+          <div className="max-w-4xl mx-auto">
+            <a
+              href="/locations"
+              className="inline-flex items-center gap-1 text-white/70 hover:text-white text-sm transition-colors duration-150"
+            >
+              <MapPin className="h-3.5 w-3.5" />
+              {copy.nav.locations}
+              <ChevronRight className="h-3.5 w-3.5" />
+            </a>
+          </div>
+        </div>
+
+        {/* 封面底部：标题 + 副标题 + 徽章 */}
+        <div className="absolute bottom-6 left-0 right-0 px-4 sm:px-8">
+          <div className="max-w-4xl mx-auto">
+            {/* 难度徽章（Design Spec F.6：bg-white/90 backdrop-blur-sm）*/}
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur-sm",
+                  diffInfo.text
+                )}
+              >
+                <span className={cn("w-1.5 h-1.5 rounded-full", diffInfo.dot)} />
                 {diffInfo.label}
               </span>
+              {location.bestSeason && location.bestSeason.length > 0 && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-black/40 text-white backdrop-blur-sm">
+                  <Sparkles className="w-3 h-3" />
+                  {location.bestSeason[0]}
+                </span>
+              )}
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-1">{location.name}</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-1">
+              {location.name}
+            </h1>
             {location.subtitle && (
-              <p className="text-stone-300 text-lg">{location.subtitle}</p>
+              <p className="text-white/80 text-sm sm:text-base">{location.subtitle}</p>
             )}
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* ================================================================
+          主内容区
+          ================================================================ */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column */}
+
+          {/* ---- 左/中栏：主信息 ---- */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Description */}
-            <div className="bg-white rounded-2xl border border-stone-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-stone-900">地点介绍</h2>
-                <button
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({ title: location.name, url: window.location.href });
-                    } else {
-                      navigator.clipboard.writeText(window.location.href);
-                      alert("链接已复制");
-                    }
-                  }}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:bg-stone-100 transition-colors"
-                >
-                  <Share2 className="h-4 w-4" />
-                  分享
-                </button>
-              </div>
-              <p className="text-stone-600 leading-relaxed">{location.description}</p>
-            </div>
 
-            {/* Stats */}
-            <div className="bg-white rounded-2xl border border-stone-200 p-6">
-              <h2 className="text-xl font-semibold text-stone-900 mb-4">基本信息</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-stone-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Mountain className="h-5 w-5 text-stone-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-stone-500">难度</p>
-                    <p className="font-medium text-stone-900">{diffInfo.label}</p>
-                  </div>
-                </div>
-                {location.duration && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-stone-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Clock className="h-5 w-5 text-stone-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-stone-500">时长</p>
-                      <p className="font-medium text-stone-900">{location.duration}</p>
-                    </div>
-                  </div>
-                )}
-                {location.address && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-stone-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <MapPin className="h-5 w-5 text-stone-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-stone-500">位置</p>
-                      <p className="font-medium text-stone-900 text-sm">{location.address}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* 地点介绍卡片（含标签）*/}
+            <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm p-6">
+              <h2 className="text-lg font-semibold text-stone-900 mb-3">
+                {copy.locations.locationIntro}
+              </h2>
+              <p className="text-sm text-stone-500 leading-relaxed">
+                {location.description}
+              </p>
 
-            {/* Tags */}
-            {location.tags && location.tags.length > 0 && (
-              <div className="bg-white rounded-2xl border border-stone-200 p-6">
-                <h2 className="text-xl font-semibold text-stone-900 mb-4">标签</h2>
-                <div className="flex flex-wrap gap-2">
-                  {location.tags.map((tag: any, i: number) => (
+              {/* 标签：并入介绍卡片底部（Design Spec C.1.3）*/}
+              {location.tags && location.tags.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-stone-50 flex flex-wrap gap-2">
+                  {location.tags.map((tag: Tag, i: number) => (
                     <span
                       key={tag?.id ?? i}
-                      className="px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full text-sm"
+                      className="px-2.5 py-1 bg-emerald-50/80 text-emerald-700 rounded-full text-xs border border-emerald-100"
                     >
                       {typeof tag === "string" ? tag : tag?.name}
                     </span>
                   ))}
                 </div>
+              )}
+            </div>
+
+            {/* 路线信息数据网格（4列）*/}
+            <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm p-6">
+              <h2 className="text-lg font-semibold text-stone-900 mb-5">
+                {copy.locations.routeInfo}
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {/* 难度 */}
+                <div className="flex flex-col items-center text-center gap-2">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                    <Mountain className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-400 mb-0.5">{copy.locations.difficultyLabel}</p>
+                    <p className={cn("font-semibold text-sm", diffInfo.text)}>
+                      {diffInfo.label}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 时长 */}
+                {location.duration && (
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-sky-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-stone-400 mb-0.5">{copy.locations.estimatedTime}</p>
+                      <p className="font-semibold text-sm text-stone-700">{location.duration}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 距离 */}
+                {(location as any).distance && (
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                      <Ruler className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-stone-400 mb-0.5">{copy.locations.routeLength}</p>
+                      <p className="font-semibold text-sm text-stone-700">{(location as any).distance}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 爬升 */}
+                {(location as any).elevation && (
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center">
+                      <TrendingUp className="h-5 w-5 text-stone-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-stone-400 mb-0.5">{copy.locations.totalElevation}</p>
+                      <p className="font-semibold text-sm text-stone-700">{(location as any).elevation}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 最佳季节 */}
+              {location.bestSeason && location.bestSeason.length > 0 && (
+                <div className="mt-5 pt-5 border-t border-stone-50">
+                  <p className="text-xs text-stone-400 mb-2 flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {copy.locations.detailSeasonsLabel}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {location.bestSeason.map((season: string, i: number) => (
+                      <span
+                        key={i}
+                        className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100"
+                      >
+                        {season}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 地址信息 */}
+            {location.address && (
+              <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm px-5 py-4 flex items-start gap-3">
+                <MapPin className="h-4 w-4 text-stone-400 mt-0.5 flex-shrink-0" />
+                <span className="text-sm text-stone-500">{location.address}</span>
               </div>
             )}
 
-            {/* Active Teams */}
-            <div className="bg-white rounded-2xl border border-stone-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-stone-900">正在招募的队伍</h2>
+            {/* 正在招募的队伍（情感化标题）*/}
+            <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-lg font-semibold text-stone-900">
+                    {copy.locations.detailWaiting}
+                  </h2>
+                  <p className="text-xs text-stone-400 mt-0.5">
+                    {teams.length > 0
+                      ? `${teams.length} ${copy.locations.teamsWaitingDesc}`
+                      : copy.locations.detailNoTeamsDesc}
+                  </p>
+                </div>
                 <a
                   href="/teams/create"
-                  className="text-sm text-stone-600 hover:text-stone-900 font-medium"
+                  className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors flex items-center gap-1"
                 >
-                  发起组队
+                  {copy.locations.detailCreateTeam}
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </a>
               </div>
 
               {teams.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="h-8 w-8 text-stone-300 mx-auto mb-2" />
-                  <p className="text-stone-500 text-sm mb-3">暂无招募中的队伍</p>
+                // 空状态：温暖情感化设计
+                <div className="flex flex-col items-center py-10">
+                  <div className="relative mb-5">
+                    <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-full bg-emerald-100/80 flex items-center justify-center">
+                        <Users
+                          className="h-6 w-6 text-emerald-400 motion-reduce:animate-none"
+                          style={{ animation: "float 3s ease-in-out infinite" }}
+                        />
+                      </div>
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-200" />
+                    <div className="absolute -bottom-1.5 -left-1.5 w-2.5 h-2.5 rounded-full bg-emerald-200" />
+                  </div>
+                  <p className="text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-5">
+                    {copy.locations.detailNoTeamsDesc}
+                  </p>
                   <a href="/teams/create">
-                    <button className="bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                      发起第一支队伍
+                    <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-full text-sm font-medium transition-all duration-200 shadow-brand-glow hover:shadow-brand-glow-lg active:scale-[0.97]">
+                      <Users className="h-4 w-4" />
+                      {copy.locations.detailNoTeamsBtn}
                     </button>
                   </a>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {teams.map((team: any) => (
-                    <a key={team.id} href={`/teams/${team.id}`}>
-                      <div className="p-4 rounded-xl border border-stone-200 hover:border-stone-300 hover:shadow-md transition-all bg-stone-50">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium text-stone-900">{team.title}</h3>
-                            <p className="text-sm text-stone-500 mt-1">
-                              {team.date} · {team.currentMembers}/{team.maxMembers}人
+                  {teams.map((team: Team) => (
+                    <a
+                      key={team.id}
+                      href={`/teams/${team.id}`}
+                      className="block group"
+                    >
+                      {/* 队伍卡片：Design Spec F.6 bg-white border-stone-100 */}
+                      <div className="p-4 rounded-xl bg-white border border-stone-100 hover:shadow-warm-md hover:-translate-y-0.5 transition-all duration-200">
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-stone-900 group-hover:text-emerald-700 transition-colors text-sm leading-snug truncate">
+                              {team.title}
+                            </h3>
+                            <p className="text-xs text-stone-400 mt-1 flex items-center gap-2">
+                              <span>{team.date}</span>
+                              <span>·</span>
+                              <span className={cn(
+                                "font-medium",
+                                team.currentMembers >= team.maxMembers ? "text-warm" : "text-emerald-600"
+                              )}>
+                                {team.currentMembers}/{team.maxMembers} 人
+                              </span>
                             </p>
                           </div>
-                          <ArrowRight className="h-4 w-4 text-stone-400" />
+                          <ArrowRight className="h-4 w-4 text-stone-300 group-hover:text-emerald-500 transition-colors flex-shrink-0 mt-0.5" />
                         </div>
+                        {/* 进度条 */}
+                        <TeamProgress current={team.currentMembers} max={team.maxMembers} />
                       </div>
                     </a>
                   ))}
@@ -268,63 +506,84 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 sticky top-24">
-              <h3 className="font-semibold text-stone-900 mb-4">参加活动</h3>
-              <a href="/teams/create">
-                <button className="w-full bg-stone-900 hover:bg-stone-800 text-white py-3 rounded-xl font-medium transition-colors mb-3">
-                  发起组队
-                </button>
-              </a>
-              <a href="/teams">
-                <button className="w-full border border-stone-200 hover:bg-stone-50 text-stone-900 py-3 rounded-xl font-medium transition-colors">
-                  浏览所有队伍
-                </button>
-              </a>
+          {/* ---- 右栏：sticky 操作卡 ---- */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-5">
 
-              {/* Location Info */}
-              {location.address && (
-                <div className="mt-4 pt-4 border-t border-stone-100">
-                  <div className="flex items-start gap-2 text-sm text-stone-600">
-                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-stone-400" />
-                    <span>{location.address}</span>
+              {/* 主操作卡（情感化 sticky 卡）*/}
+              <div className="bg-white rounded-2xl border border-stone-100 shadow-warm p-6">
+                <p className="text-sm font-semibold text-stone-900 mb-4">
+                  {copy.locations.detailParticipate}
+                </p>
+
+                {/* 主 CTA：emerald 渐变（Design Spec F.8）*/}
+                <a href="/teams/create" className="block mb-3">
+                  <button className="w-full px-6 py-3.5 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-medium text-sm shadow-brand-glow hover:shadow-brand-glow-lg transition-all duration-200 active:scale-[0.97]">
+                    {copy.locations.detailCreateTeam}
+                  </button>
+                </a>
+
+                {/* 次要 CTA */}
+                <a href="/teams" className="block">
+                  <button className="w-full border border-stone-200 hover:bg-stone-50 text-stone-700 py-3 rounded-full text-sm font-medium transition-colors duration-150">
+                    {copy.locations.detailBrowseTeams}
+                  </button>
+                </a>
+
+                {/* 地址 */}
+                {location.address && (
+                  <div className="mt-4 pt-4 border-t border-stone-50 flex items-start gap-2 text-sm text-stone-400">
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span className="leading-relaxed">{location.address}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 其他推荐地点 */}
+              {relatedLocations.length > 0 && (
+                <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm p-5">
+                  <h3 className="text-sm font-semibold text-stone-900 mb-4">{copy.locations.relatedTitle}</h3>
+                  <div className="space-y-3">
+                    {relatedLocations.map((loc) => {
+                      const relDiff = loc.difficulty ? difficultyConfig[loc.difficulty] : null;
+                      return (
+                        <a
+                          key={loc.id}
+                          href={`/locations/${loc.id}`}
+                          className="flex items-center gap-3 group"
+                        >
+                          {/* 缩略图（升至 w-16 h-16 比原来 w-14 更醒目）*/}
+                          <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-stone-100">
+                            {loc.coverImage ? (
+                              <img
+                                src={loc.coverImage}
+                                alt={loc.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Mountain className="h-6 w-6 text-stone-300" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-stone-900 group-hover:text-emerald-700 transition-colors text-sm truncate">
+                              {loc.name}
+                            </h4>
+                            {relDiff && (
+                              <p className={cn("text-xs mt-0.5", relDiff.text)}>
+                                {relDiff.label}
+                              </p>
+                            )}
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
               )}
             </div>
-
-            {/* Related Locations */}
-            {relatedLocations.length > 0 && (
-              <div className="bg-white rounded-2xl border border-stone-200 p-6">
-                <h3 className="font-semibold text-stone-900 mb-4">其他推荐地点</h3>
-                <div className="space-y-3">
-                  {relatedLocations.map((loc) => (
-                    <a
-                      key={loc.id}
-                      href={`/locations/${loc.id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 transition-colors group"
-                    >
-                      {loc.coverImage && (
-                        <div
-                          className="w-14 h-14 rounded-lg bg-cover bg-center flex-shrink-0"
-                          style={{ backgroundImage: `url(${loc.coverImage})` }}
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-stone-900 group-hover:text-stone-700 transition-colors truncate text-sm">
-                          {loc.name}
-                        </h4>
-                        <p className="text-xs text-stone-400 mt-0.5">
-                          {difficultyLabels[loc.difficulty]?.label || loc.difficulty}
-                        </p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

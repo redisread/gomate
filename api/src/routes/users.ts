@@ -5,6 +5,11 @@ import { createDb } from "../db";
 import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 
+/** 返回安全的用户对象（users 表不含密码字段，直接返回即可） */
+function sanitizeUser(user: typeof schema.users.$inferSelect) {
+  return user;
+}
+
 const users = new Hono<{ Bindings: Env }>();
 
 /** 校验 UserExtra 字段格式 */
@@ -55,10 +60,14 @@ users.get("/", async (c) => {
 
 /**
  * PATCH /users/update
- * 更新用户信息（通过 userId 指定，支持 email 或 id 查找）
+ * 更新用户信息（需登录，只能修改自己的资料）
  */
 users.patch("/update", async (c) => {
   try {
+    const authInstance = createAuth(c.env);
+    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    if (!session) return c.json({ error: "请先登录" }, 401);
+
     const db = createDb(c.env.DB);
     const body = await c.req.json<{
       userId?: string; name?: string; nickname?: string; bio?: string;
@@ -95,6 +104,18 @@ users.patch("/update", async (c) => {
       .limit(1);
     if (byEmail.length > 0) targetUserId = byEmail[0].id;
 
+    // 鉴权：只允许修改自己的资料（管理员除外）
+    if (targetUserId !== session.user.id) {
+      const sessionUser = await db
+        .select({ role: schema.users.role })
+        .from(schema.users)
+        .where(eq(schema.users.id, session.user.id))
+        .limit(1);
+      if (!sessionUser.length || sessionUser[0].role !== "admin") {
+        return c.json({ error: "无权限修改他人资料" }, 403);
+      }
+    }
+
     const existing = await db
       .select({ id: schema.users.id })
       .from(schema.users)
@@ -104,22 +125,15 @@ users.patch("/update", async (c) => {
 
     await db.update(schema.users).set(updateData).where(eq(schema.users.id, targetUserId));
 
-    // 清除 KV 缓存
-    if (c.env.GOMATE_KV) {
-      try {
-        await c.env.GOMATE_KV.delete(`user:${targetUserId}`);
-      } catch (err) {
-        console.warn("[KV] Failed to delete user cache:", err);
-      }
-    }
-
-    const updated = await db
+    // 读取更新后的完整用户数据
+    const updatedRows = await db
       .select()
       .from(schema.users)
       .where(eq(schema.users.id, targetUserId))
       .limit(1);
+    const updatedUser = updatedRows[0];
 
-    return c.json({ success: true, user: updated[0] });
+    return c.json({ success: true, user: sanitizeUser(updatedUser) });
   } catch (error) {
     console.error("User update error:", error);
     return c.json({ error: "Failed to update user" }, 500);
@@ -284,9 +298,11 @@ users.get("/teams/joined", async (c) => {
         icon: schema.teams.icon, status: schema.teams.status, createdAt: schema.teams.createdAt,
         updatedAt: schema.teams.updatedAt, currentMembers: currentMembersSubquery,
         leaderImage: schema.users.image, leaderName: schema.users.name, leaderLevel: schema.users.level,
+        locationName: schema.locations.name, locationCoverImage: schema.locations.coverImage,
       })
       .from(schema.teams)
       .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
+      .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
       .where(and(inArray(schema.teams.id, teamIds), ne(schema.teams.leaderId, session.user.id)))
       .orderBy(desc(schema.teams.createdAt));
 
@@ -303,6 +319,7 @@ users.get("/teams/joined", async (c) => {
         durationMin: row.durationMin || durationHours * 60, maxMembers: row.maxMembers,
         currentMembers: row.currentMembers, icon: row.icon || "⛰️", requirements,
         status: row.status, createdAt: row.createdAt,
+        location: row.locationName ? { name: row.locationName, coverImage: row.locationCoverImage || "" } : undefined,
         leader: { id: row.leaderId, name: row.leaderName, avatar: row.leaderImage || "", level: row.leaderLevel || "beginner", completedHikes: 0, bio: "" },
       };
     });
@@ -342,9 +359,11 @@ users.get("/created-teams", async (c) => {
         icon: schema.teams.icon, status: schema.teams.status, createdAt: schema.teams.createdAt,
         updatedAt: schema.teams.updatedAt, currentMembers: currentMembersSubquery,
         leaderImage: schema.users.image, leaderName: schema.users.name, leaderLevel: schema.users.level,
+        locationName: schema.locations.name, locationCoverImage: schema.locations.coverImage,
       })
       .from(schema.teams)
       .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
+      .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
       .where(eq(schema.teams.leaderId, session.user.id))
       .orderBy(desc(schema.teams.createdAt));
 
@@ -361,6 +380,7 @@ users.get("/created-teams", async (c) => {
         durationMin: row.durationMin || durationHours * 60, maxMembers: row.maxMembers,
         currentMembers: row.currentMembers, icon: row.icon || "⛰️", requirements,
         status: row.status, createdAt: row.createdAt,
+        location: row.locationName ? { name: row.locationName, coverImage: row.locationCoverImage || "" } : undefined,
         leader: { id: row.leaderId, name: row.leaderName, avatar: row.leaderImage || "", level: row.leaderLevel || "beginner", completedHikes: 0, bio: "" },
       };
     });

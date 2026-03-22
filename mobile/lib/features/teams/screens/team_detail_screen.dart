@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/teams_api.dart';
 import '../../../core/models/team.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 /// 队伍详情页面
 class TeamDetailScreen extends ConsumerStatefulWidget {
@@ -115,7 +115,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('确定', style: TextStyle(color: AppColors.error)),
+            child: const Text('确定', style: TextStyle(color: AppTokens.semanticError)),
           ),
         ],
       ),
@@ -178,7 +178,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: AppColors.brandMuted,
+                    color: AppTokens.brandPrimaryLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -203,13 +203,13 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.brandMuted,
+                          color: AppTokens.brandPrimaryLight,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           team.status.label,
                           style: const TextStyle(
-                            color: AppColors.brand,
+                            color: AppTokens.brandPrimary,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -282,7 +282,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                     children: [
                       const Text('• ',
                           style: TextStyle(
-                              color: AppColors.brand,
+                              color: AppTokens.brandPrimary,
                               fontWeight: FontWeight.bold)),
                       Expanded(
                         child: Text(req,
@@ -340,7 +340,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 14),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          borderRadius: BorderRadius.circular(AppTokens.radiusM),
         ),
       ),
       child: const Text('管理队伍', style: TextStyle(fontSize: 16)),
@@ -371,13 +371,13 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     return ElevatedButton(
       onPressed: canJoin && !_isActioning ? _handleJoin : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.success,
+        backgroundColor: AppTokens.semanticSuccess,
         foregroundColor: Colors.white,
-        disabledBackgroundColor: AppColors.border,
-        disabledForegroundColor: AppColors.textSecondary,
+        disabledBackgroundColor: AppTokens.borderDefault,
+        disabledForegroundColor: AppTokens.textSecondary,
         padding: const EdgeInsets.symmetric(vertical: 14),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          borderRadius: BorderRadius.circular(AppTokens.radiusM),
         ),
       ),
       child: _isActioning
@@ -424,7 +424,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFFEF3C7),
                 borderRadius:
-                    BorderRadius.circular(AppTheme.radiusMedium),
+                    BorderRadius.circular(AppTokens.radiusM),
                 border: Border.all(color: const Color(0xFFF59E0B)),
               ),
               child: const Center(
@@ -442,7 +442,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               onPressed: _isActioning ? null : _handleCancelJoin,
               child: const Text(
                 '取消申请',
-                style: TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: AppTokens.textSecondary),
               ),
             ),
           ],
@@ -459,14 +459,14 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFDCFCE7),
                 borderRadius:
-                    BorderRadius.circular(AppTheme.radiusMedium),
-                border: Border.all(color: AppColors.success),
+                    BorderRadius.circular(AppTokens.radiusM),
+                border: Border.all(color: AppTokens.semanticSuccess),
               ),
               child: const Center(
                 child: Text(
                   '已加入 ✓',
                   style: TextStyle(
-                    color: AppColors.success,
+                    color: AppTokens.semanticSuccess,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -477,7 +477,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               onPressed: _isActioning ? null : _handleLeave,
               child: const Text(
                 '申请退出',
-                style: TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: AppTokens.textSecondary),
               ),
             ),
           ],
@@ -494,14 +494,14 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFFEE2E2),
                 borderRadius:
-                    BorderRadius.circular(AppTheme.radiusMedium),
-                border: Border.all(color: AppColors.error),
+                    BorderRadius.circular(AppTokens.radiusM),
+                border: Border.all(color: AppTokens.semanticError),
               ),
               child: const Center(
                 child: Text(
                   '申请被拒绝',
                   style: TextStyle(
-                    color: AppColors.error,
+                    color: AppTokens.semanticError,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -514,12 +514,12 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               child: ElevatedButton(
                 onPressed: _isActioning ? null : _handleJoin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
+                  backgroundColor: AppTokens.semanticSuccess,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius:
-                        BorderRadius.circular(AppTheme.radiusMedium),
+                        BorderRadius.circular(AppTokens.radiusM),
                   ),
                 ),
                 child: const Text('重新申请', style: TextStyle(fontSize: 16)),
@@ -534,7 +534,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             color: const Color(0xFFFEF3C7),
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+            borderRadius: BorderRadius.circular(AppTokens.radiusM),
             border: Border.all(color: const Color(0xFFF59E0B)),
           ),
           child: const Center(
@@ -573,7 +573,7 @@ class _MemberAvatarItem extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor: AppColors.brandMuted,
+                backgroundColor: AppTokens.brandPrimaryLight,
                 backgroundImage:
                     user.image != null ? NetworkImage(user.image!) : null,
                 child: user.image == null
@@ -582,7 +582,7 @@ class _MemberAvatarItem extends StatelessWidget {
                             ? user.displayName[0]
                             : '?',
                         style: const TextStyle(
-                          color: AppColors.brand,
+                          color: AppTokens.brandPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       )
@@ -597,7 +597,7 @@ class _MemberAvatarItem extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                     decoration: BoxDecoration(
-                      color: AppColors.brand,
+                      color: AppTokens.brandPrimary,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text(
@@ -617,7 +617,7 @@ class _MemberAvatarItem extends StatelessWidget {
             user.displayName,
             style: const TextStyle(
               fontSize: 14,
-              color: AppColors.textPrimary,
+              color: AppTokens.textPrimary,
             ),
           ),
         ],
@@ -644,11 +644,11 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.textSecondary),
+          Icon(icon, size: 18, color: AppTokens.textSecondary),
           const SizedBox(width: 8),
           Text(
             '$label：',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: const TextStyle(color: AppTokens.textSecondary, fontSize: 14),
           ),
           Text(value, style: const TextStyle(fontSize: 14)),
         ],

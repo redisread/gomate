@@ -22,16 +22,34 @@ function getPublicUrl(env: Env, key: string): string {
 
 /**
  * POST /upload/avatar
- * 上传用户头像到 R2
+ * 上传用户头像到 R2（需登录，只能上传自己的头像）
  */
 upload.post("/avatar", async (c) => {
   try {
+    const authInstance = createAuth(c.env);
+    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    if (!session) return c.json({ error: "请先登录" }, 401);
+
     const formData = await c.req.formData();
     const file = formData.get("file") as File | null;
     const userId = formData.get("userId") as string | null;
 
     if (!file) return c.json({ error: "No file provided" }, 400);
     if (!userId) return c.json({ error: "User ID is required" }, 400);
+
+    // 鉴权：只允许上传自己的头像（管理员除外）
+    if (userId !== session.user.id) {
+      const db = createDb(c.env.DB);
+      const userRecord = await db
+        .select({ role: schema.users.role })
+        .from(schema.users)
+        .where(eq(schema.users.id, session.user.id))
+        .then((rows) => rows[0]);
+      if (!userRecord || userRecord.role !== "admin") {
+        return c.json({ error: "无权上传他人头像" }, 403);
+      }
+    }
+
     if (!ALLOWED_IMAGE_TYPES.includes(file.type))
       return c.json({ error: "Invalid file type. Allowed: JPEG, PNG, GIF, WebP" }, 400);
     if (file.size > MAX_FILE_SIZE)

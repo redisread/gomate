@@ -42,7 +42,7 @@ export const copy = {
     unknown: "未知",
     person: "人",
     current: "当前",
-    searchPlaceholder: "搜索地点、路线或队伍...",
+    searchPlaceholder: "搜索地点、活动或队伍...",
   },
 
   // ─── 导航栏 ───────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ export const copy = {
 
   // ─── 页脚 ─────────────────────────────────────────────────────────────────
   footer: {
-    tagline: "极简「地点组队」平台，让每一次探索都有志同道合的伙伴同行。",
+    tagline: "极简「找搭子」平台，让每一次出行都有志同道合的伙伴同行。",
     product: "产品",
     productLocations: "探索地点",
     productTeams: "找队伍",
@@ -87,7 +87,7 @@ export const copy = {
 
   // ─── Hero 首屏 ────────────────────────────────────────────────────────────
   hero: {
-    badge: "探索自然 · 连接伙伴",
+    badge: "探索城市 · 连接伙伴",
     titleLine1: "发现趣处",
     titleLine2: "组队同行",
     description:
@@ -96,8 +96,8 @@ export const copy = {
     findTeamBtn: "找队伍",
     createTeamBtn: "发布队伍",
     loginRegisterBtn: "登录 / 注册",
-    statRoutes: "林间小径",
-    statPlayers: "山野相逢",
+    statRoutes: "精选地点",
+    statPlayers: "相遇同行",
     statSafety: "尽兴而归",
   },
 
@@ -120,7 +120,7 @@ export const copy = {
 
     // 登录页
     loginTitle: "欢迎回来",
-    loginSubtitle: "登录 GoMate，开始你的户外之旅",
+    loginSubtitle: "登录 GoMate，找到志同道合的伙伴",
     loginBtn: "登录",
     loginBtnLoading: "登录中...",
     forgotPassword: "忘记密码？",
@@ -132,7 +132,7 @@ export const copy = {
 
     // 注册页
     registerTitle: "创建账号",
-    registerSubtitle: "加入 GoMate，发现更多户外伙伴",
+    registerSubtitle: "加入 GoMate，发现更多有趣的伙伴",
     registerBtn: "注册",
     registerBtnLoading: "注册中...",
     hasAccount: "已有账号？",
@@ -178,9 +178,9 @@ export const copy = {
   locations: {
     pageTitle: "探索地点",
     pageSubtitle:
-      "从城市公园到山野海岸，找到适合你的户外目的地",
+      "咖啡馆、公园、山野、海岸，找到适合你的下一个目的地",
     locationIntro: "地点介绍",
-    defaultCity: "深圳",
+    defaultCity: "全部",
     viewDetail: "查看详情",
 
     // 路线信息卡片
@@ -198,7 +198,7 @@ export const copy = {
 
     // CTA section
     ctaTitle: "没找到心仪的地点？",
-    ctaDesc: "联系我们推荐新的徒步路线，或者创建自己的队伍",
+    ctaDesc: "联系我们推荐新的地点，或者创建自己的队伍",
     ctaBtn: "联系我们",
 
     // 路线指南
@@ -219,26 +219,39 @@ export const copy = {
     cityFilter: "按城市筛选",
 
     // 视觉升级文案
-    heroTagline: "每一片山野，都在等待有缘人",
-    searchPlaceholder: "梧桐山？七娘山？输入你心仪的目的地...",
+    heroTagline: "每一个地方，都在等待有缘人",
+    searchPlaceholder: "咖啡馆？公园？山野？输入你心仪的目的地...",
     tagsLabel: "探索标签",
     resultCount: "个目的地等你探索",
     clearFilter: "清除筛选",
-    emptyTitle: "这片山野暂时没有结果",
+    emptyTitle: "暂时没有找到相关地点",
     emptyDesc: "试试放宽条件，也许有更多意想不到的好地方等着你",
     emptyBtn: "重新探索",
-    ctaHeroBadge: "深圳周边 · 精选目的地",
+    ctaHeroBadge: "全国各地 · 精选目的地",
+
+    // 地点详情页
+    detailWaiting: "有人在等你同行",
+    detailNoTeamsDesc: "还没有队伍出发，要不要你来召集第一批伙伴？",
+    detailNoTeamsBtn: "我来召集伙伴",
+    detailParticipate: "我要去这里",
+    detailCreateTeam: "召集伙伴出发",
+    detailBrowseTeams: "看看有没有合适的队伍",
+    detailSeasonsLabel: "最适合去的时节",
+    detailShareBtn: "分享给好友",
+    difficultyLabel: "难度",
+    teamsWaitingDesc: "支队伍正在等待伙伴", // 「N 支队伍正在等待伙伴」，N 在组件内拼接
+    relatedTitle: "其他推荐地点",
   },
 
   // ─── 队伍 ─────────────────────────────────────────────────────────────────
   teams: {
     // 列表页
-    pageTitle: "找到你的山野伙伴",
-    pageSubtitle: "山野不孤独，总有人和你走同一条路",
-    pageBadge: "等你一起出发",
-    searchPlaceholder: "梧桐山？七娘山？或者输入任意关键词",
+    pageTitle: "找到你的同行伙伴",
+    pageSubtitle: "不孤单，总有人和你去同一个地方",
+    pageBadge: "等你一起",
+    searchPlaceholder: "咖啡馆？公园？山野？或者输入任意关键词",
     totalCount: "支队伍向你敞开，随时可以出发", // 「N 支队伍向你敞开，随时可以出发」，N 在组件内拼接
-    noResults: "这条路还没人走，要不要你来开头？",
+    noResults: "还没有人发起这类活动，要不要你来开头？",
     noResultsTip: "改变筛选条件，或者干脆自己发起一支",
     clearFilters: "清除筛选",
     otherTeamsAtLocation: "该地点的其他队伍",
@@ -266,6 +279,14 @@ export const copy = {
     copyWechatHint: "复制微信号，添加领队为好友",
     contactLeader: "联系领队",
 
+    // 路线相关
+    freeRouteTitle: "路线灵活，边走边定",
+    freeRouteDesc: "这支队伍的路线还没确定，大家可以在组建后一起商量最合适的走法",
+
+    // 成员与领队章节标题
+    membersSectionTitle: "一起出发的伙伴",
+    leaderSectionTitle: "这次的领队",
+
     // 成员列表组件
     teamMembersTitle: "队伍成员",
     requestingLeaveBadge: "申请退出",
@@ -276,7 +297,7 @@ export const copy = {
     // 创建页
     createTitle: "发布队伍",
     createSubtitle:
-      "创建一个新的徒步队伍，邀请志同道合的伙伴一起探索山野",
+      "创建一个新的队伍，邀请志同道合的伙伴一起出发",
     createBtn: "发布队伍",
     createBtnLoading: "发布中...",
     createTip:
@@ -302,8 +323,8 @@ export const copy = {
       requirements: "加入要求",
     },
     formPlaceholder: {
-      name: "例如：七娘山挑战队 - 周六登顶看海",
-      location: "请选择徒步地点",
+      name: "例如：周六下午茶探店 · 五道口打卡",
+      location: "请选择目的地",
       duration: "请输入预计小时数，如 6",
       maxSize: "例如：6",
       description: "描述一下这次行程的具体安排、难度、风景特色等...",
@@ -311,14 +332,19 @@ export const copy = {
     },
 
     // 详情页
+    introTitle: "队伍介绍",
+    progressLabel: "进度",
+    dateLabel: "日期",
+    meetTimeLabel: "集合",
+    membersCountLabel: "人数",
     detailTitle: "队伍信息",
     notFound: "队伍不存在",
     loadFailed: "获取队伍详情失败",
-    safetyTips: "安全提示",
-    safetyTip1: "请评估自身体能，量力而行",
-    safetyTip2: "建议购买户外保险",
-    safetyTip3: "遵守领队安排，不擅自离队",
-    safetyTip4: "注意天气变化，做好防护",
+    safetyTips: "出行提示",
+    safetyTip1: "提前确认集合地点和时间，准时出现是对伙伴的尊重",
+    safetyTip2: "有任何临时变动请提前告知队长，保持沟通畅通",
+    safetyTip3: "尊重他人，保持友好，共同维护良好的队伍氛围",
+    safetyTip4: "如有户外活动，关注天气并做好相应准备",
 
     // 申请审核
     reviewTitle: "待审核申请",
@@ -354,6 +380,8 @@ export const copy = {
     spotsRemaining: "还差 {remaining} 个伙伴",
     spotsRemainingOne: "就差你一个了",
     teamFull: "满员，准备出发",
+    spotsDesc: "还差 {remaining} 位伙伴就可以出发",
+    spotsOneLeft: "就差你一个，出发！",
 
     // 组建队伍
     formTeam: "组建队伍",
@@ -375,6 +403,8 @@ export const copy = {
     rejectLeaveRequest: "拒绝申请",
     cannotLeaveDirectly: "队伍已组建，需向队长申请退出",
 
+    pendingDesc: "申请已发出，队长确认后会通知你",
+
     // 申请状态
     statusPending: "申请审核中",
     statusApproved: "已加入队伍",
@@ -395,8 +425,13 @@ export const copy = {
     leaveTeamSuccess: "已退出队伍",
     leaveTeamFailed: "退出队伍失败",
 
+    // 申请留言占位符
+    joinPlaceholder: "和队长打个招呼，介绍一下自己...",
+    joinPlaceholderDesktop: "向队长介绍一下自己（可选）",
+
     // 队长相关
     youAreLeader: "你是队长",
+    youAreLeaderDesc: "你发起了这支队伍，带领大家出发吧",
     manageTeam: "管理队伍",
     wechatRequiredBtn: "请先填写微信号",
     fillWechatBtn: "去填写",
@@ -424,7 +459,7 @@ export const copy = {
 
     // CTA 区域
     ctaTitle: "找不到合适的，那就自己组一支",
-    ctaDesc: "发布你的计划，让和你一样热爱山野的人找到你",
+    ctaDesc: "发布你的计划，让和你一样有趣的人找到你",
     ctaBtn: "我来发布队伍",
 
     // 删除队伍
@@ -439,10 +474,10 @@ export const copy = {
   profile: {
     title: "个人资料",
     editTitle: "编辑个人资料",
-    editSubtitle: "更新你的个人信息和户外经验",
+    editSubtitle: "更新你的个人信息和兴趣偏好",
     editProfileBtn: "编辑资料",
     logoutBtn: "退出",
-    defaultBio: "新人户外爱好者，期待与你一起探索山野。",
+    defaultBio: "热爱探索，期待与你一起发现有趣的地方。",
     backProfile: "返回个人资料",
 
     // 字段
@@ -454,8 +489,8 @@ export const copy = {
     nicknameHint: "用于展示的昵称，可以随时修改",
     bio: "个人简介",
     bioPlaceholder: "介绍一下你自己，让更多人了解你...",
-    bioHint: "简短介绍你的户外经历和兴趣",
-    levelLabel: "徒步经验等级",
+    bioHint: "简短介绍你的兴趣爱好和玩法偏好",
+    levelLabel: "活跃等级",
     levelCurrent: "当前",
     emailLabel: "邮箱",
     emailReadonly: "邮箱暂不支持修改",
@@ -473,11 +508,11 @@ export const copy = {
     avatarTooLarge: "图片大小不能超过 5MB",
     avatarUploadFailed: "头像上传失败，请重试",
     saveSuccess: "保存成功！",
-    experiencePlaceholder: "例如：有3年徒步经验，完成过梧桐山、七娘山等路线",
-    experienceHint: "简单描述你的徒步经历",
+    experiencePlaceholder: "例如：喜欢探店、爬山、城市骑行，周末常出没",
+    experienceHint: "简单描述你的兴趣和活动偏好",
 
     // 统计
-    hikesCompleted: "次徒步", // 「已完成 N 次徒步」，N 在组件内拼接
+    hikesCompleted: "次活动", // 「已完成 N 次活动」，N 在组件内拼接
     ageSuffix: "岁", // 年龄后缀，如「25岁」
     registeredAt: "注册时间",
 
@@ -489,21 +524,21 @@ export const copy = {
     joinedTeamsDesc: "你作为成员参与的队伍",
     recentJoinedTeams: "最近加入的队伍",
     noTeamsYet: "还没有队伍",
-    noTeamsTip: "创建或加入一个队伍，开始你的户外之旅",
+    noTeamsTip: "创建或加入一个队伍，开始你的探索之旅",
     createTeamBtn: "创建队伍",
 
     // 其他
-    levelTitleSuffix: "徒步者",
+    levelTitleSuffix: "探索者",
     member: "成员",
     equipment: "常用装备",
-    experience: "徒步经验",
+    experience: "活动经历",
 
     // 重构新增文案
     loadingHint: "正在加载你的足迹...",
     bannerAlt: "个人主页封面",
     statsTitle: "我的足迹",
-    noTeamsTitle: "山野等待你的第一步",
-    noTeamsDesc: "创建或加入一支队伍，开始记录属于你的户外故事",
+    noTeamsTitle: "还没有参与过活动",
+    noTeamsDesc: "创建或加入一支队伍，开始记录属于你的精彩故事",
     memberCount: "人",
     createdTeamsSectionTitle: "我发起的队伍",
     joinedTeamsSectionTitle: "我加入的队伍",
@@ -513,10 +548,24 @@ export const copy = {
     // 等级标题（LEVEL_CONFIG.title）
     levelTitle: {
       beginner: "新手探索者",
-      intermediate: "进阶徒步者",
-      advanced: "资深山友",
+      intermediate: "进阶探索者",
+      advanced: "资深玩家",
       expert: "专家级探险家",
     },
+
+    // 编辑页新增
+    editWarmSubtitle: "完善你的信息，让伙伴更了解你",
+    sectionAvatar: "我的头像",
+    sectionBasicInfo: "基本信息",
+    sectionOutdoorInfo: "活动偏好",
+    sectionContact: "联系方式",
+    sectionAccount: "账号信息",
+    avatarSupportHint: "点击更换头像 · 支持 JPG、PNG、WebP，最大 5MB",
+    avatarCancelFile: "取消选择",
+    wechatFieldHint: "填写微信号，队友可以联系你",
+    experienceLabel: "活动经历",
+    savedSuccess: "已保存",
+    bioCountWarning: "字数即将达到上限",
   },
 
   // ─── 我的队伍页 ───────────────────────────────────────────────────────────
@@ -593,7 +642,7 @@ export const copy = {
 
     // 空状态
     emptyCreated: "还没有创建队伍",
-    emptyCreatedDesc: "作为队长创建队伍，带领伙伴探索山野",
+    emptyCreatedDesc: "作为队长创建队伍，带领伙伴一起出发",
     emptyCreatedBtn: "创建队伍",
     emptyJoined: "还没有加入队伍",
     emptyJoinedDesc: "浏览地点，加入感兴趣的队伍",
@@ -605,8 +654,8 @@ export const copy = {
     emptyPendingDesc: "作为队长，有人申请加入你的队伍时会显示在这里",
     emptyPendingBtn: "查看队伍",
     emptyHistory: "没有历史记录",
-    emptyHistoryDesc: "完成的徒步活动会显示在这里",
-    emptyHistoryBtn: "去徒步",
+    emptyHistoryDesc: "完成的活动会显示在这里",
+    emptyHistoryBtn: "去探索",
   },
 
   // ─── 筛选面板 ─────────────────────────────────────────────────────────────
@@ -680,9 +729,9 @@ export const copy = {
     // 欢迎邮件
     welcomeSubject: "欢迎加入！",
     welcomeBody: "感谢您注册！我们很高兴您能加入我们的户外社区。",
-    welcomeFeature1: "发现深圳周边最佳徒步路线",
+    welcomeFeature1: "发现各地精选目的地，探店、山野、公园一网打尽",
     welcomeFeature2: "与志同道合的伙伴组队同行",
-    welcomeFeature3: "记录每一次精彩的户外之旅",
+    welcomeFeature3: "记录每一次精彩的出行故事",
     welcomeBtn: "开始探索",
 
     // 验证邮件
@@ -829,8 +878,8 @@ export const copy = {
     linkCopied: "链接已复制到剪贴板",
     copyLink: "复制链接",
     shareVia: "通过应用分享",
-    inviteText: "邀请你加入徒步队伍",
-    locationInviteText: "推荐你一个徒步好去处",
+    inviteText: "邀请你加入这支队伍",
+    locationInviteText: "推荐你一个好去处",
     tabLink: "链接",
     tabQRCode: "二维码",
     shareLinkLabel: "分享链接",
@@ -853,7 +902,7 @@ export const copy = {
 
     // 地点管理页面
     locationsTitle: "地点管理",
-    locationsDesc: "管理所有徒步地点信息",
+    locationsDesc: "管理所有地点信息",
     addLocation: "新增地点",
     editLocation: "编辑地点",
     createLocation: "新增地点",
@@ -1000,28 +1049,28 @@ export const copy = {
       leave_pending: "退出申请中",
     },
     level: {
-      beginner: "新芽",
-      intermediate: "破风者",
-      advanced: "巅峰行者",
-      expert: "传奇徒步家",
+      beginner: "新人",
+      intermediate: "探索者",
+      advanced: "资深玩家",
+      expert: "传奇达人",
     },
     leaderLevel: {
-      beginner: "新芽领队",
-      intermediate: "破风者领队",
-      advanced: "巅峰行者领队",
-      expert: "传奇徒步家领队",
+      beginner: "新人领队",
+      intermediate: "探索者领队",
+      advanced: "资深玩家领队",
+      expert: "传奇达人领队",
     },
     levelDesc: {
-      beginner: "刚开始徒步之旅",
-      intermediate: "有一定徒步经验",
-      advanced: "经验丰富的徒步者",
-      expert: "资深户外专家",
+      beginner: "刚开始探索之旅",
+      intermediate: "有一定活动经验",
+      advanced: "经验丰富的玩家",
+      expert: "资深活动达人",
     },
     levelTitle: {
-      beginner: "新芽",
-      intermediate: "破风者",
-      advanced: "巅峰行者",
-      expert: "传奇徒步家",
+      beginner: "新人",
+      intermediate: "探索者",
+      advanced: "资深玩家",
+      expert: "传奇达人",
     },
     gender: {
       male: "男",

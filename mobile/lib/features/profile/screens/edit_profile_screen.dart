@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/providers/auth_provider.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 /// 编辑个人资料页面
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -174,7 +174,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: AppColors.brand,
+                            color: AppTokens.brandPrimary,
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                           ),
@@ -315,7 +315,7 @@ class _LevelSelector extends StatelessWidget {
         return ChoiceChip(
           label: Text(item.$2),
           selected: selected,
-          selectedColor: AppColors.brand,
+          selectedColor: AppTokens.brandPrimary,
           labelStyle: TextStyle(
             color: selected ? Colors.white : Colors.black87,
           ),
@@ -349,7 +349,7 @@ class _GenderSelector extends StatelessWidget {
         return ChoiceChip(
           label: Text(item.$2),
           selected: selected,
-          selectedColor: AppColors.brand,
+          selectedColor: AppTokens.brandPrimary,
           labelStyle: TextStyle(
             color: selected ? Colors.white : Colors.black87,
           ),

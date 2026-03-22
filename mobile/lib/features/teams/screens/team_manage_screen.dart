@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/teams_api.dart';
 import '../../../core/models/team.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 // ============================================================
 // 主页面
@@ -152,7 +152,7 @@ class _TeamManageScreenState extends ConsumerState<TeamManageScreen>
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppTokens.bgBase,
       appBar: AppBar(
         title: const Text('管理队伍'),
         bottom: TabBar(
@@ -228,7 +228,7 @@ class _PendingJoinTab extends StatelessWidget {
       return const Center(
         child: Text(
           '暂无待审批申请',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppTokens.textSecondary),
         ),
       );
     }
@@ -247,8 +247,8 @@ class _PendingJoinTab extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () => onReject(member),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
+                    foregroundColor: AppTokens.semanticError,
+                    side: const BorderSide(color: AppTokens.semanticError),
                   ),
                   child: const Text('拒绝'),
                 ),
@@ -258,7 +258,7 @@ class _PendingJoinTab extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () => onApprove(member),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
+                    backgroundColor: AppTokens.semanticSuccess,
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('批准'),
@@ -290,7 +290,7 @@ class _PendingLeaveTab extends StatelessWidget {
       return const Center(
         child: Text(
           '暂无退出申请',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppTokens.textSecondary),
         ),
       );
     }
@@ -345,7 +345,7 @@ class _ApprovedMembersTab extends StatelessWidget {
       return const Center(
         child: Text(
           '暂无成员',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppTokens.textSecondary),
         ),
       );
     }
@@ -360,11 +360,11 @@ class _ApprovedMembersTab extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(vertical: 8),
           leading: CircleAvatar(
             radius: 22,
-            backgroundColor: AppColors.brandMuted,
+            backgroundColor: AppTokens.brandPrimaryLight,
             child: Text(
               member.userName.isNotEmpty ? member.userName[0] : '?',
               style: const TextStyle(
-                color: AppColors.brand,
+                color: AppTokens.brandPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -372,14 +372,14 @@ class _ApprovedMembersTab extends StatelessWidget {
           title: Text(
             member.userName,
             style: const TextStyle(
-              color: AppColors.textPrimary,
+              color: AppTokens.textPrimary,
               fontWeight: FontWeight.w500,
             ),
           ),
           subtitle: Text(
             '加入于 ${_formatDate(member.createdAt)}',
             style: const TextStyle(
-              color: AppColors.textPlaceholder,
+              color: AppTokens.textTertiary,
               fontSize: 12,
             ),
           ),
@@ -392,7 +392,7 @@ class _ApprovedMembersTab extends StatelessWidget {
             child: const Text(
               '已加入',
               style: TextStyle(
-                color: AppColors.success,
+                color: AppTokens.semanticSuccess,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -433,8 +433,8 @@ class _ApplicantCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        border: Border.all(color: AppColors.border),
+        color: AppTokens.bgSurface,
+        border: Border.all(color: AppTokens.borderDefault),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -445,11 +445,11 @@ class _ApplicantCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: AppColors.brandMuted,
+                backgroundColor: AppTokens.brandPrimaryLight,
                 child: Text(
                   member.userName.isNotEmpty ? member.userName[0] : '?',
                   style: const TextStyle(
-                    color: AppColors.brand,
+                    color: AppTokens.brandPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
@@ -463,7 +463,7 @@ class _ApplicantCard extends StatelessWidget {
                     Text(
                       member.userName,
                       style: const TextStyle(
-                        color: AppColors.textPrimary,
+                        color: AppTokens.textPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -473,7 +473,7 @@ class _ApplicantCard extends StatelessWidget {
                       Text(
                         '微信: ${member.wechat}',
                         style: const TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppTokens.textSecondary,
                           fontSize: 13,
                         ),
                       ),
@@ -486,13 +486,13 @@ class _ApplicantCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusBgColor ?? AppColors.brandMuted,
+                    color: statusBgColor ?? AppTokens.brandPrimaryLight,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     statusLabel!,
                     style: TextStyle(
-                      color: statusColor ?? AppColors.brand,
+                      color: statusColor ?? AppTokens.brandPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -505,7 +505,7 @@ class _ApplicantCard extends StatelessWidget {
           Text(
             '申请时间：${_formatDateTime(member.createdAt)}',
             style: const TextStyle(
-              color: AppColors.textPlaceholder,
+              color: AppTokens.textTertiary,
               fontSize: 12,
             ),
           ),
@@ -533,8 +533,8 @@ class _BadgeCount extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.error,
-        borderRadius: BorderRadius.circular(10),
+        color: AppTokens.semanticError,
+        borderRadius: BorderRadius.circular(AppTokens.radiusS),
       ),
       child: Text(
         count > 99 ? '99+' : '$count',

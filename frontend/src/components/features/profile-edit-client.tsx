@@ -1,19 +1,67 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Save, Loader2, Camera, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Camera,
+  X,
+  Check,
+  MessageCircle,
+  User,
+  FileText,
+  MapPin,
+  Mail,
+  Info,
+} from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import type { SessionUser } from "@/lib/types";
 
-const levelOptions = [
-  { value: "beginner", label: copy.enums.level.beginner, description: copy.enums.levelDesc.beginner },
-  { value: "intermediate", label: copy.enums.level.intermediate, description: copy.enums.levelDesc.intermediate },
-  { value: "advanced", label: copy.enums.level.advanced, description: copy.enums.levelDesc.advanced },
-  { value: "expert", label: copy.enums.level.expert, description: copy.enums.levelDesc.expert },
-];
+const LEVEL_OPTIONS = [
+  { value: "beginner", emoji: "🌱", label: copy.enums.level.beginner, description: copy.enums.levelDesc.beginner },
+  { value: "intermediate", emoji: "⛰️", label: copy.enums.level.intermediate, description: copy.enums.levelDesc.intermediate },
+  { value: "advanced", emoji: "🏔️", label: copy.enums.level.advanced, description: copy.enums.levelDesc.advanced },
+  { value: "expert", emoji: "🦅", label: copy.enums.level.expert, description: copy.enums.levelDesc.expert },
+] as const;
+
+/** 字段 Label 组件 */
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <label className="text-sm font-semibold text-stone-700 flex items-center gap-1">
+      {children}
+      {required && <span className="text-red-400">*</span>}
+    </label>
+  );
+}
+
+/** 卡片容器 */
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`bg-white rounded-2xl border border-stone-100 shadow-sm p-6 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+/** 卡片标题行 */
+function CardSection({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+  return (
+    <div className="flex items-center gap-2 mb-5 pb-4 border-b border-stone-50">
+      <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+        <Icon className="h-4 w-4 text-emerald-600" />
+      </div>
+      <span className="text-sm font-semibold text-stone-700">{title}</span>
+    </div>
+  );
+}
+
+/** 通用 Input 样式 */
+const inputCls =
+  "w-full px-4 py-3 border border-stone-200 rounded-xl text-stone-900 placeholder:text-stone-300 " +
+  "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all";
 
 /**
  * 编辑个人资料页客户端组件 - React Island
@@ -23,6 +71,7 @@ export function ProfileEditClient() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [savedDone, setSavedDone] = React.useState(false);
   const [message, setMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
   const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -38,6 +87,8 @@ export function ProfileEditClient() {
     birthday: "",
     experience: "",
   });
+  // 保留已有的 equipment 数据，避免保存时被清空
+  const existingEquipmentRef = React.useRef<string[] | undefined>(undefined);
 
   React.useEffect(() => {
     fetchAPI("/auth/get-session")
@@ -52,12 +103,22 @@ export function ProfileEditClient() {
         setAvatarPreview(u.image || null);
         let experience = "";
         if (u.extra) {
-          try { experience = JSON.parse(u.extra).experience || ""; } catch {}
+          try {
+            const parsed = JSON.parse(u.extra);
+            experience = parsed.experience || "";
+            existingEquipmentRef.current = parsed.equipment;
+          } catch {
+            // intentionally ignored: extra 字段解析失败时使用默认空值
+          }
         }
         let birthdayStr = "";
         if (u.birthday) {
+          // 使用 UTC 日期避免时区偏移导致日期显示错误
           const d = new Date(u.birthday);
-          birthdayStr = d.toISOString().split("T")[0];
+          const y = d.getUTCFullYear();
+          const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+          const day = String(d.getUTCDate()).padStart(2, "0");
+          birthdayStr = `${y}-${m}-${day}`;
         }
         setFormData({
           name: u.name || "",
@@ -128,12 +189,15 @@ export function ProfileEditClient() {
         if (uploaded) avatarUrl = uploaded;
       }
 
-      const extra = { experience: formData.experience || undefined };
+      // 保留已有的 equipment 数据，只更新 experience
+      const extra: { experience?: string; equipment?: string[] } = {};
+      if (formData.experience) extra.experience = formData.experience;
+      if (existingEquipmentRef.current?.length) extra.equipment = existingEquipmentRef.current;
 
       const res = await fetchAPI("/api/user/update", {
         method: "PATCH",
         body: JSON.stringify({
-          userId: user.id,
+          userId: user!.id,
           name: formData.name,
           nickname: formData.nickname || null,
           image: avatarUrl,
@@ -147,8 +211,10 @@ export function ProfileEditClient() {
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || copy.common.save);
+      setSavedDone(true);
       setMessage({ type: "success", text: copy.profile.saveSuccess });
-      setTimeout(() => { window.location.href = "/profile"; }, 1000);
+      // 使用 replace 强制刷新，确保 profile 页从服务端重新获取最新数据
+      setTimeout(() => { window.location.replace("/profile"); }, 1000);
     } catch (err) {
       setMessage({ type: "error", text: (err as Error).message || copy.common.save });
     } finally {
@@ -161,177 +227,359 @@ export function ProfileEditClient() {
       <main className="min-h-screen bg-stone-50">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-stone-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
         </div>
       </main>
     );
   }
 
+  const bioLength = formData.bio.length;
+  const bioNearLimit = bioLength >= 160;
+  const bioAtLimit = bioLength >= 200;
+
   return (
     <main className="min-h-screen bg-stone-50">
       <Navbar />
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-        {/* Back */}
-        <a href="/profile" className="inline-flex items-center text-stone-600 hover:text-stone-900 transition-colors mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-24 pb-16">
+        {/* 面包屑返回 */}
+        <a
+          href="/profile"
+          className="inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-800 transition-colors text-sm mb-8"
+        >
+          <ArrowLeft className="h-4 w-4" />
           {copy.profile.backProfile}
         </a>
 
-        <div className="mb-8">
-          <div className="border-l-4 border-stone-900 pl-4">
-            <h1 className="text-3xl font-bold text-stone-900">{copy.profile.editTitle}</h1>
-            <p className="text-stone-600 mt-2">{copy.profile.editSubtitle}</p>
+        {/* 页面标题区 */}
+        <div className="mb-8 flex items-start gap-4">
+          <div className="w-1 h-12 rounded-full bg-emerald-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <h1 className="text-2xl font-bold text-stone-900">{copy.profile.editTitle}</h1>
+            <p className="text-stone-500 mt-1 text-sm">{copy.profile.editWarmSubtitle}</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Avatar */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* ── 头像卡片 ── */}
+          <Card>
+            <CardSection icon={User} title={copy.profile.sectionAvatar} />
             <div className="flex flex-col items-center gap-4">
-              <div className="relative">
-                <div className="h-24 w-24 rounded-full border-4 border-white shadow-lg bg-stone-200 flex items-center justify-center overflow-hidden cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}>
+              {/* 头像主体 */}
+              <div
+                className="relative group cursor-pointer"
+                onClick={() => !isUploading && fileInputRef.current?.click()}
+              >
+                <div className="w-28 h-28 rounded-full ring-4 ring-white shadow-xl overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="头像" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-2xl font-bold text-stone-600">{user?.name?.[0] || "?"}</span>
+                    <span className="text-4xl font-bold text-white select-none">
+                      {user?.name?.[0]?.toUpperCase() || "?"}
+                    </span>
                   )}
                 </div>
-                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading}
-                  className="absolute bottom-0 right-0 h-8 w-8 bg-stone-900 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-stone-800 transition-colors disabled:opacity-50">
-                  {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                </button>
-                {selectedFile && (
-                  <button type="button" onClick={() => { setSelectedFile(null); setAvatarPreview(user?.image || null); }}
-                    className="absolute -top-1 -right-1 h-6 w-6 bg-red-500 text-white rounded-full flex items-center justify-center">
+                {/* 悬停遮罩 */}
+                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {isUploading ? (
+                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-6 w-6 text-white" />
+                  )}
+                </div>
+                {/* 取消已选文件按钮 */}
+                {selectedFile && !isUploading && (
+                  <button
+                    type="button"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      setSelectedFile(null);
+                      setAvatarPreview(user?.image || null);
+                    }}
+                    className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow transition-colors"
+                  >
                     <X className="h-3 w-3" />
                   </button>
                 )}
               </div>
-              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp"
-                onChange={handleFileChange} className="hidden" />
-              <p className="text-sm text-stone-500">{selectedFile ? `已选择: ${selectedFile.name}` : copy.profile.changeAvatar}</p>
-            </div>
 
-            {/* Name */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-stone-700">{copy.profile.usernameLabel} <span className="text-red-500">*</span></label>
-              <input name="name" type="text" value={formData.name} onChange={handleChange} required minLength={2} maxLength={20}
-                placeholder={copy.profile.usernamePlaceholder}
-                className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-stone-900 text-stone-900" />
-            </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleFileChange}
+                className="hidden"
+              />
 
-            {/* Nickname */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-stone-700">{copy.profile.nicknameLabel}</label>
-              <input name="nickname" type="text" value={formData.nickname} onChange={handleChange} maxLength={20}
-                placeholder={copy.profile.nicknamePlaceholder}
-                className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-stone-900 text-stone-900" />
-              <p className="text-xs text-stone-500">{copy.profile.nicknameHint}</p>
+              {/* 已选文件提示条 */}
+              {selectedFile ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs text-emerald-700">
+                  <Check className="h-3 w-3" />
+                  <span>{copy.profile.avatarSelected} {selectedFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedFile(null); setAvatarPreview(user?.image || null); }}
+                    className="text-emerald-500 hover:text-emerald-700 transition-colors ml-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-stone-400">{copy.profile.avatarSupportHint}</p>
+              )}
             </div>
+          </Card>
 
-            {/* Bio */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-stone-700">{copy.profile.bio}</label>
-              <textarea name="bio" value={formData.bio} onChange={handleChange} rows={4} maxLength={200}
-                placeholder={copy.profile.bioPlaceholder}
-                className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-stone-900 text-stone-900 resize-none" />
-              <div className="flex justify-between text-xs text-stone-500">
-                <span>{copy.profile.bioHint}</span>
-                <span>{formData.bio.length}/200</span>
+          {/* ── 基本信息卡片 ── */}
+          <Card>
+            <CardSection icon={FileText} title={copy.profile.sectionBasicInfo} />
+            <div className="space-y-5">
+              {/* 用户名 */}
+              <div className="space-y-1.5">
+                <FieldLabel required>{copy.profile.usernameLabel}</FieldLabel>
+                <input
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  minLength={2}
+                  maxLength={20}
+                  placeholder={copy.profile.usernamePlaceholder}
+                  className={inputCls}
+                />
+                <p className="text-xs text-stone-400 flex items-center gap-1">
+                  <Info className="h-3 w-3" />
+                  {copy.profile.usernameHint}
+                </p>
+              </div>
+
+              {/* 昵称 */}
+              <div className="space-y-1.5">
+                <FieldLabel>{copy.profile.nicknameLabel}</FieldLabel>
+                <input
+                  name="nickname"
+                  type="text"
+                  value={formData.nickname}
+                  onChange={handleChange}
+                  maxLength={20}
+                  placeholder={copy.profile.nicknamePlaceholder}
+                  className={inputCls}
+                />
+                <p className="text-xs text-stone-400">{copy.profile.nicknameHint}</p>
+              </div>
+
+              {/* 个人简介 */}
+              <div className="space-y-1.5">
+                <FieldLabel>{copy.profile.bio}</FieldLabel>
+                <textarea
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleChange}
+                  rows={4}
+                  maxLength={200}
+                  placeholder={copy.profile.bioPlaceholder}
+                  className={`${inputCls} resize-none`}
+                />
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-stone-400">{copy.profile.bioHint}</span>
+                  <span className={
+                    bioAtLimit ? "text-red-500 font-medium" :
+                    bioNearLimit ? "text-amber-500" :
+                    "text-stone-400"
+                  }>
+                    {bioLength}/200
+                  </span>
+                </div>
               </div>
             </div>
+          </Card>
 
-            {/* Level */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-stone-700">{copy.profile.levelLabel}</label>
-              <div className="grid grid-cols-2 gap-3">
-                {levelOptions.map((opt) => (
-                  <label key={opt.value} className={`relative flex flex-col p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                    formData.level === opt.value ? "border-stone-900 bg-stone-900" : "border-stone-200 hover:border-stone-300"
-                  }`}>
-                    <input type="radio" name="level" value={opt.value} checked={formData.level === opt.value}
-                      onChange={handleChange} className="sr-only" />
-                    <span className={`font-medium ${formData.level === opt.value ? "text-white" : "text-stone-900"}`}>{opt.label}</span>
-                    <span className={`text-xs mt-1 ${formData.level === opt.value ? "text-stone-300" : "text-stone-500"}`}>{opt.description}</span>
-                    {formData.level === opt.value && (
-                      <span className="absolute top-2 right-2 bg-white text-stone-900 text-xs px-1.5 py-0.5 rounded">{copy.profile.levelCurrent}</span>
-                    )}
-                  </label>
-                ))}
+          {/* ── 户外信息卡片 ── */}
+          <Card>
+            <CardSection icon={MapPin} title={copy.profile.sectionOutdoorInfo} />
+            <div className="space-y-5">
+              {/* 徒步等级 */}
+              <div className="space-y-2">
+                <FieldLabel>{copy.profile.levelLabel}</FieldLabel>
+                <div className="grid grid-cols-2 gap-3">
+                  {LEVEL_OPTIONS.map((opt) => {
+                    const isSelected = formData.level === opt.value;
+                    return (
+                      <label
+                        key={opt.value}
+                        className={`relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-md shadow-emerald-100"
+                            : "border-stone-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/30"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="level"
+                          value={opt.value}
+                          checked={isSelected}
+                          onChange={handleChange}
+                          className="sr-only"
+                        />
+                        <span className="text-2xl mb-1.5">{opt.emoji}</span>
+                        <span className={`text-sm font-bold ${isSelected ? "text-emerald-700" : "text-stone-800"}`}>
+                          {opt.label}
+                        </span>
+                        <span className={`text-xs mt-0.5 ${isSelected ? "text-emerald-600" : "text-stone-400"}`}>
+                          {opt.description}
+                        </span>
+                        {isSelected && (
+                          <span className="absolute top-2.5 right-2.5 w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 徒步经历 */}
+              <div className="space-y-1.5">
+                <FieldLabel>{copy.profile.experienceLabel}</FieldLabel>
+                <textarea
+                  name="experience"
+                  value={formData.experience}
+                  onChange={handleChange}
+                  rows={3}
+                  maxLength={200}
+                  placeholder={copy.profile.experiencePlaceholder}
+                  className={`${inputCls} resize-none`}
+                />
+                <p className="text-xs text-stone-400">{copy.profile.experienceHint}</p>
               </div>
             </div>
+          </Card>
 
-            {/* WeChat */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-stone-700">{copy.profile.wechat}</label>
-              <input name="wechat" type="text" value={formData.wechat} onChange={handleChange} maxLength={50}
-                placeholder={copy.profile.wechatPlaceholder}
-                className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-stone-900 text-stone-900" />
-              <p className="text-xs text-stone-500">{copy.profile.wechatHint}</p>
-            </div>
-
-            {/* Gender */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-stone-700">{copy.profile.genderLabel}</label>
-              <select name="gender" value={formData.gender} onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-stone-900 text-stone-900 bg-white">
-                <option value="">{copy.common.unknown}</option>
-                <option value="male">{copy.enums.gender.male}</option>
-                <option value="female">{copy.enums.gender.female}</option>
-                <option value="other">{copy.enums.gender.other}</option>
-              </select>
-            </div>
-
-            {/* Birthday */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-stone-700">{copy.profile.birthdayLabel}</label>
-              <input name="birthday" type="date" value={formData.birthday} onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-stone-900 text-stone-900" />
-            </div>
-
-            {/* Experience */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-stone-700">{copy.profile.experience}</label>
-              <textarea name="experience" value={formData.experience} onChange={handleChange} rows={3} maxLength={200}
-                placeholder={copy.profile.experiencePlaceholder}
-                className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-stone-900 text-stone-900 resize-none" />
-            </div>
-
-            {/* Email (readonly) */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-stone-700">{copy.profile.emailLabel}</label>
-              <input value={user?.email || ""} disabled
-                className="w-full px-4 py-2.5 border border-stone-200 rounded-lg bg-stone-50 text-stone-500 cursor-not-allowed" />
-              <p className="text-xs text-stone-500">{copy.profile.emailReadonly}</p>
-            </div>
-
-            {/* Message */}
-            {message && (
-              <div className={`p-4 rounded-lg ${message.type === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
-                {message.text}
+          {/* ── 联系方式卡片 ── */}
+          <Card>
+            <CardSection icon={MessageCircle} title={copy.profile.sectionContact} />
+            <div className="space-y-5">
+              {/* 微信号 */}
+              <div className="space-y-1.5">
+                <FieldLabel>{copy.profile.wechat}</FieldLabel>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md bg-[#07C160] flex items-center justify-center flex-shrink-0">
+                    <MessageCircle className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  <input
+                    name="wechat"
+                    type="text"
+                    value={formData.wechat}
+                    onChange={handleChange}
+                    maxLength={50}
+                    placeholder={copy.profile.wechatPlaceholder}
+                    className={`${inputCls} pl-12 focus:ring-[#07C160] focus:border-[#07C160]`}
+                  />
+                </div>
+                <p className="text-xs text-stone-400">{copy.profile.wechatFieldHint}</p>
               </div>
-            )}
 
-            {/* Buttons */}
-            <div className="flex gap-4 pt-4">
-              <a href="/profile" className="flex-1">
-                <button type="button" className="w-full border border-stone-200 text-stone-900 py-2.5 rounded-lg font-medium hover:bg-stone-50 transition-colors">
-                  {copy.common.cancel}
-                </button>
-              </a>
-              <button type="submit" disabled={isSaving || isUploading || formData.name.length < 2}
-                className="flex-1 bg-stone-900 hover:bg-stone-800 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                {(isSaving || isUploading) ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" />{isUploading ? copy.common.uploadingImg : copy.common.saving}</>
-                ) : (
-                  <><Save className="h-4 w-4" />{copy.common.save}</>
-                )}
+              {/* 性别 */}
+              <div className="space-y-1.5">
+                <FieldLabel>{copy.profile.genderLabel}</FieldLabel>
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  className={`${inputCls} bg-white appearance-none`}
+                >
+                  <option value="">{copy.common.unknown}</option>
+                  <option value="male">{copy.enums.gender.male}</option>
+                  <option value="female">{copy.enums.gender.female}</option>
+                  <option value="other">{copy.enums.gender.other}</option>
+                </select>
+                <p className="text-xs text-stone-400">{copy.profile.genderHint}</p>
+              </div>
+
+              {/* 生日 */}
+              <div className="space-y-1.5">
+                <FieldLabel>{copy.profile.birthdayLabel}</FieldLabel>
+                <input
+                  name="birthday"
+                  type="date"
+                  value={formData.birthday}
+                  onChange={handleChange}
+                  className={inputCls}
+                />
+                <p className="text-xs text-stone-400">{copy.profile.birthdayHint}</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* ── 账号信息卡片 ── */}
+          <Card>
+            <CardSection icon={Mail} title={copy.profile.sectionAccount} />
+            <div className="space-y-1.5">
+              <FieldLabel>{copy.profile.emailLabel}</FieldLabel>
+              <input
+                value={user?.email || ""}
+                disabled
+                className={`${inputCls} bg-stone-50 text-stone-400 cursor-not-allowed`}
+              />
+              <p className="text-xs text-stone-400">{copy.profile.emailReadonly}</p>
+            </div>
+          </Card>
+
+          {/* 消息提示 */}
+          {message && (
+            <div
+              className={`flex items-center gap-3 p-4 rounded-xl border ${
+                message.type === "success"
+                  ? "bg-gradient-to-r from-emerald-50 to-emerald-100/60 border-emerald-200 text-emerald-700"
+                  : "bg-red-50 border-red-200 text-red-700"
+              }`}
+            >
+              {message.type === "success" ? (
+                <Check className="h-4 w-4 flex-shrink-0" />
+              ) : (
+                <X className="h-4 w-4 flex-shrink-0" />
+              )}
+              <span className="text-sm">{message.text}</span>
+            </div>
+          )}
+
+          {/* 底部操作区 */}
+          <div className="flex gap-3 pt-2">
+            <a href="/profile" className="flex-1">
+              <button
+                type="button"
+                className="w-full border border-stone-200 text-stone-600 hover:bg-stone-50 py-3 rounded-xl font-medium text-sm transition-colors"
+              >
+                {copy.common.cancel}
               </button>
-            </div>
-          </form>
-        </div>
+            </a>
+            <button
+              type="submit"
+              disabled={isSaving || isUploading || formData.name.length < 2}
+              className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
+                savedDone
+                  ? "bg-emerald-500 text-white shadow-md shadow-emerald-100"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 disabled:opacity-50"
+              }`}
+            >
+              {(isSaving || isUploading) ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {isUploading ? copy.common.uploadingImg : copy.common.saving}
+                </>
+              ) : savedDone ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  {copy.profile.savedSuccess}
+                </>
+              ) : (
+                copy.common.save
+              )}
+            </button>
+          </div>
+        </form>
       </div>
 
       <Footer />

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/teams_api.dart';
 import '../../../core/models/team.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 // ============================================================
 // 主页面
@@ -114,7 +114,7 @@ class _MyTeamsScreenState extends ConsumerState<MyTeamsScreen>
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppTokens.bgBase,
       appBar: AppBar(
         title: const Text('我的队伍'),
         bottom: TabBar(
@@ -171,7 +171,7 @@ class _CreatedTeamsTab extends StatelessWidget {
       return const Center(
         child: Text(
           '你还没有创建过队伍',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppTokens.textSecondary),
         ),
       );
     }
@@ -190,7 +190,7 @@ class _CreatedTeamsTab extends StatelessWidget {
   Widget _buildManageButton(BuildContext context, TeamModel team) {
     return TextButton(
       onPressed: () => context.push('/teams/${team.id}/manage'),
-      child: const Text('管理', style: TextStyle(color: AppColors.brand)),
+      child: const Text('管理', style: TextStyle(color: AppTokens.brandPrimary)),
     );
   }
 }
@@ -207,7 +207,7 @@ class _JoinedTeamsTab extends StatelessWidget {
       return const Center(
         child: Text(
           '你还没有加入任何队伍',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppTokens.textSecondary),
         ),
       );
     }
@@ -239,7 +239,7 @@ class _ApplicationsTab extends StatelessWidget {
       return const Center(
         child: Text(
           '暂无申请记录',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppTokens.textSecondary),
         ),
       );
     }
@@ -289,9 +289,9 @@ class _TeamCardItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(14),
+          color: AppTokens.bgSurface,
+          border: Border.all(color: AppTokens.borderDefault),
+          borderRadius: BorderRadius.circular(AppTokens.radiusM),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,8 +301,8 @@ class _TeamCardItem extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.brandMuted,
-                borderRadius: BorderRadius.circular(10),
+                color: AppTokens.brandPrimaryLight,
+                borderRadius: BorderRadius.circular(AppTokens.radiusS),
               ),
               child: Center(
                 child: Text(
@@ -320,7 +320,7 @@ class _TeamCardItem extends StatelessWidget {
                   Text(
                     team.title,
                     style: const TextStyle(
-                      color: AppColors.textPrimary,
+                      color: AppTokens.textPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -331,23 +331,23 @@ class _TeamCardItem extends StatelessWidget {
                   Row(
                     children: [
                       const Icon(Icons.calendar_today_outlined,
-                          size: 12, color: AppColors.textPlaceholder),
+                          size: 12, color: AppTokens.textTertiary),
                       const SizedBox(width: 4),
                       Text(
                         '${team.date} ${team.time}',
                         style: const TextStyle(
-                          color: AppColors.textPlaceholder,
+                          color: AppTokens.textTertiary,
                           fontSize: 12,
                         ),
                       ),
                       const SizedBox(width: 10),
                       const Icon(Icons.people_outlined,
-                          size: 12, color: AppColors.textPlaceholder),
+                          size: 12, color: AppTokens.textTertiary),
                       const SizedBox(width: 4),
                       Text(
                         '${team.approvedMemberCount}/${team.maxMembers}',
                         style: const TextStyle(
-                          color: AppColors.textPlaceholder,
+                          color: AppTokens.textTertiary,
                           fontSize: 12,
                         ),
                       ),
@@ -358,7 +358,7 @@ class _TeamCardItem extends StatelessWidget {
                     Text(
                       subtitle!,
                       style: const TextStyle(
-                        color: AppColors.textPlaceholder,
+                        color: AppTokens.textTertiary,
                         fontSize: 11,
                       ),
                     ),
@@ -388,7 +388,7 @@ class _MemberStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, color, bgColor) = switch (status) {
       TeamMemberStatus.approved =>
-        ('已加入', AppColors.success, const Color(0xFFDCFCE7)),
+        ('已加入', AppTokens.semanticSuccess, const Color(0xFFDCFCE7)),
       TeamMemberStatus.leavePending => (
           '退出审核中',
           const Color(0xFFD97706),
@@ -400,7 +400,7 @@ class _MemberStatusBadge extends StatelessWidget {
           const Color(0xFFFEF3C7)
         ),
       TeamMemberStatus.rejected =>
-        ('已拒绝', AppColors.error, const Color(0xFFFEE2E2)),
+        ('已拒绝', AppTokens.semanticError, const Color(0xFFFEE2E2)),
     };
 
     return Container(
@@ -436,9 +436,9 @@ class _ApplicationStatusBadge extends StatelessWidget {
           const Color(0xFFFEF3C7)
         ),
       TeamMemberStatus.approved =>
-        ('已通过', AppColors.success, const Color(0xFFDCFCE7)),
+        ('已通过', AppTokens.semanticSuccess, const Color(0xFFDCFCE7)),
       TeamMemberStatus.rejected =>
-        ('已拒绝', AppColors.error, const Color(0xFFFEE2E2)),
+        ('已拒绝', AppTokens.semanticError, const Color(0xFFFEE2E2)),
       TeamMemberStatus.leavePending => (
           '退出审核中',
           const Color(0xFFD97706),

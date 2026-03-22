@@ -56,6 +56,7 @@ function getDaysUntil(dateStr: string): number | null {
     const diff = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     return diff >= 0 ? diff : null;
   } catch {
+    // intentionally ignored: 日期格式无效时返回 null 作为默认值
     return null;
   }
 }
@@ -426,7 +427,9 @@ export function HomeClient() {
       const res = await fetchAPI("/api/teams?status=recruiting&pageSize=4");
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
-    } catch {}
+    } catch (error) {
+      console.error("[HomeClient] 获取队伍列表失败:", error);
+    }
   }, []);
 
   React.useEffect(() => {

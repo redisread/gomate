@@ -19,7 +19,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
-import type { SessionUser } from "@/lib/types";
+import type { SessionUser, Team } from "@/lib/types";
 
 /**
  * 等级配置 — 含 emoji、标题、色系
@@ -116,8 +116,10 @@ function StatCard({
 export function ProfileClient() {
   const [user, setUser] = React.useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [createdTeams, setCreatedTeams] = React.useState<any[]>([]);
-  const [joinedTeams, setJoinedTeams] = React.useState<any[]>([]);
+  const [createdTeams, setCreatedTeams] = React.useState<Team[]>([]);
+  const [joinedTeams, setJoinedTeams] = React.useState<Team[]>([]);
+  const [createdTotal, setCreatedTotal] = React.useState(0);
+  const [joinedTotal, setJoinedTotal] = React.useState(0);
 
   React.useEffect(() => {
     loadProfile();
@@ -141,17 +143,28 @@ export function ProfileClient() {
     }
   };
 
-  const loadTeams = async (userId: string) => {
+  const loadTeams = async (_userId: string) => {
     try {
       const [createdRes, joinedRes] = await Promise.all([
-        fetchAPI(`/api/teams?leaderId=${userId}&pageSize=3`),
-        fetchAPI("/api/user/teams/joined?pageSize=3"),
+        fetchAPI("/api/user/created-teams"),
+        fetchAPI("/api/user/teams/joined"),
       ]);
       const createdData = await createdRes.json();
       const joinedData = await joinedRes.json();
-      if (createdData.success) setCreatedTeams(createdData.teams || []);
-      if (joinedData.success) setJoinedTeams(joinedData.teams || []);
-    } catch {}
+      if (createdData.success) {
+        const all: Team[] =createdData.teams || [];
+        setCreatedTotal(all.length);
+        setCreatedTeams(all.slice(0, 3));
+      }
+      if (joinedData.success) {
+        const all: Team[] =joinedData.teams || [];
+        setJoinedTotal(all.length);
+        setJoinedTeams(all.slice(0, 3));
+      }
+    } catch (error) {
+      // 队伍加载失败不阻断页面渲染，保持空数组
+      console.warn("[ProfileClient] 队伍加载失败:", error);
+    }
   };
 
   const handleLogout = async () => {
@@ -195,7 +208,7 @@ export function ProfileClient() {
 
   if (!user) return null;
 
-  const levelConfig = LEVEL_CONFIG[user.level] || LEVEL_CONFIG.beginner;
+  const levelConfig = LEVEL_CONFIG[user.level ?? ""] || LEVEL_CONFIG.beginner;
   const displayName = user.nickname || user.name;
 
   return (
@@ -308,6 +321,27 @@ export function ProfileClient() {
                     已完成 {user.completedHikes} {copy.profile.hikesCompleted}
                   </span>
                 )}
+
+                {/* 性别 */}
+                {user.gender && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 text-stone-600 border border-stone-200">
+                    {user.gender === "male" ? "♂ 男" : user.gender === "female" ? "♀ 女" : copy.common.unknown}
+                  </span>
+                )}
+
+                {/* 生日 / 年龄 */}
+                {user.birthday && (() => {
+                  const d = new Date(user.birthday as string | number);
+                  const age = new Date().getFullYear() - d.getUTCFullYear();
+                  const y = d.getUTCFullYear();
+                  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+                  const day = String(d.getUTCDate()).padStart(2, "0");
+                  return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 text-stone-600 border border-stone-200">
+                      🎂 {y}-{m}-{day}（{age}{copy.profile.ageSuffix}）
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* 个人简介 */}
@@ -324,7 +358,7 @@ export function ProfileClient() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <StatCard
             label={copy.profile.createdTeams}
-            value={createdTeams.length}
+            value={createdTotal}
             icon={Users}
             href="/my-teams?tab=created"
             accent
@@ -332,7 +366,7 @@ export function ProfileClient() {
           />
           <StatCard
             label={copy.profile.joinedTeams}
-            value={joinedTeams.length}
+            value={joinedTotal}
             icon={User}
             href="/my-teams?tab=joined"
             accent
@@ -360,7 +394,7 @@ export function ProfileClient() {
             </div>
 
             <div className="space-y-3">
-              {createdTeams.map((team: any) => (
+              {createdTeams.map((team: Team) => (
                 <a key={team.id} href={`/teams/${team.id}`} className="block group">
                   <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-100/40 hover:border-emerald-200/60 transition-all duration-200">
                     <div className="flex items-center gap-4">
@@ -428,7 +462,7 @@ export function ProfileClient() {
             </div>
 
             <div className="space-y-3">
-              {joinedTeams.map((team: any) => (
+              {joinedTeams.map((team: Team) => (
                 <a key={team.id} href={`/teams/${team.id}`} className="block group">
                   <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-100/40 hover:border-emerald-200/60 transition-all duration-200">
                     <div className="flex items-center gap-4">
@@ -482,7 +516,7 @@ export function ProfileClient() {
         )}
 
         {/* ── 空状态 ── */}
-        {createdTeams.length === 0 && joinedTeams.length === 0 && (
+        {createdTotal === 0 && joinedTotal === 0 && (
           <div className="bg-white rounded-3xl border border-dashed border-stone-200 p-16 text-center">
             {/* 多层圆形装饰 */}
             <div className="relative inline-flex items-center justify-center mb-8">

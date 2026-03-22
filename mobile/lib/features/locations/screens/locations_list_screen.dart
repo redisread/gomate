@@ -6,7 +6,7 @@ import '../../../core/api/cities_api.dart';
 import '../../../core/api/locations_api.dart';
 import '../../../core/api/tags_api.dart';
 import '../../../core/models/location.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 /// 地点列表页面
 class LocationsListScreen extends ConsumerStatefulWidget {
@@ -96,7 +96,7 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.cardBackground,
+      backgroundColor: AppTokens.bgSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -119,24 +119,24 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppTokens.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppTokens.bgBase,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textSecondary),
+          icon: const Icon(Icons.arrow_back, color: AppTokens.textSecondary),
           onPressed: () => context.go('/'),
         ),
         title: const Text(
           '探索地点',
-          style: TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: AppTokens.textPrimary),
         ),
         actions: [
           Stack(
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.tune, color: AppColors.textSecondary),
+                icon: const Icon(Icons.tune, color: AppTokens.textSecondary),
                 onPressed: _showFilterSheet,
               ),
               if (_hasActiveFilter)
@@ -147,7 +147,7 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
                     width: 8,
                     height: 8,
                     decoration: const BoxDecoration(
-                      color: AppColors.brand,
+                      color: AppTokens.brandPrimary,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -158,7 +158,7 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: AppColors.brand),
+              child: CircularProgressIndicator(color: AppTokens.brandPrimary),
             )
           : _errorMessage != null
               ? Center(
@@ -168,20 +168,20 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(Icons.error_outline,
-                            size: 48, color: AppColors.error),
+                            size: 48, color: AppTokens.semanticError),
                         const SizedBox(height: 12),
                         Text(
                           '加载失败',
                           style: Theme.of(context)
                               .textTheme
                               .titleMedium
-                              ?.copyWith(color: AppColors.textPrimary),
+                              ?.copyWith(color: AppTokens.textPrimary),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _errorMessage!,
                           style: const TextStyle(
-                              color: AppColors.textSecondary, fontSize: 12),
+                              color: AppTokens.textSecondary, fontSize: 12),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
@@ -197,12 +197,12 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
                   ? const Center(
                       child: Text(
                         '暂无地点数据',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: AppTokens.textSecondary),
                       ),
                     )
                   : RefreshIndicator(
                       onRefresh: _loadLocations,
-                      color: AppColors.brand,
+                      color: AppTokens.brandPrimary,
                       child: GridView.builder(
                         padding: const EdgeInsets.all(16),
                         gridDelegate:
@@ -269,7 +269,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.cardBackground,
+      color: AppTokens.bgSurface,
       child: Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -285,7 +285,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: AppTokens.borderDefault,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -296,13 +296,13 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: Text(
                 '筛选',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: AppTokens.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            const Divider(height: 1, color: AppColors.border),
+            const Divider(height: 1, color: AppTokens.borderDefault),
             // 城市筛选
             if (widget.cities.isNotEmpty) ...[
               const Padding(
@@ -310,7 +310,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 child: Text(
                   '城市',
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: AppTokens.textSecondary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -329,17 +329,17 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                         label: const Text('全部'),
                         selected: _cityId == null,
                         onSelected: (_) => setState(() => _cityId = null),
-                        backgroundColor: AppColors.background,
-                        selectedColor: AppColors.brand,
+                        backgroundColor: AppTokens.bgBase,
+                        selectedColor: AppTokens.brandPrimary,
                         side: BorderSide(
                           color: _cityId == null
-                              ? AppColors.brand
-                              : AppColors.border,
+                              ? AppTokens.brandPrimary
+                              : AppTokens.borderDefault,
                         ),
                         labelStyle: TextStyle(
                           color: _cityId == null
                               ? Colors.white
-                              : AppColors.textSecondary,
+                              : AppTokens.textSecondary,
                           fontSize: 13,
                         ),
                         checkmarkColor: Colors.white,
@@ -355,17 +355,17 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                             selected: isSelected,
                             onSelected: (_) =>
                                 setState(() => _cityId = city.id),
-                            backgroundColor: AppColors.background,
-                            selectedColor: AppColors.brand,
+                            backgroundColor: AppTokens.bgBase,
+                            selectedColor: AppTokens.brandPrimary,
                             side: BorderSide(
                               color: isSelected
-                                  ? AppColors.brand
-                                  : AppColors.border,
+                                  ? AppTokens.brandPrimary
+                                  : AppTokens.borderDefault,
                             ),
                             labelStyle: TextStyle(
                               color: isSelected
                                   ? Colors.white
-                                  : AppColors.textSecondary,
+                                  : AppTokens.textSecondary,
                               fontSize: 13,
                             ),
                             checkmarkColor: Colors.white,
@@ -384,7 +384,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 child: Text(
                   '标签',
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: AppTokens.textSecondary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -410,14 +410,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           }
                         });
                       },
-                      backgroundColor: AppColors.background,
-                      selectedColor: AppColors.brand,
+                      backgroundColor: AppTokens.bgBase,
+                      selectedColor: AppTokens.brandPrimary,
                       side: BorderSide(
-                        color: selected ? AppColors.brand : AppColors.border,
+                        color: selected ? AppTokens.brandPrimary : AppTokens.borderDefault,
                       ),
                       labelStyle: TextStyle(
                         color:
-                            selected ? Colors.white : AppColors.textSecondary,
+                            selected ? Colors.white : AppTokens.textSecondary,
                         fontSize: 13,
                       ),
                       checkmarkColor: Colors.white,
@@ -436,8 +436,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                     child: OutlinedButton(
                       onPressed: _reset,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
-                        side: const BorderSide(color: AppColors.border),
+                        foregroundColor: AppTokens.textSecondary,
+                        side: const BorderSide(color: AppTokens.borderDefault),
                       ),
                       child: const Text('重置'),
                     ),
@@ -449,7 +449,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                       width: double.infinity,
                       height: 48,
                       decoration: BoxDecoration(
-                        gradient: AppGradients.brand,
+                        gradient: AppTokens.gradientBrand,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Material(
@@ -493,11 +493,11 @@ class _LocationGridCard extends StatelessWidget {
       onTap: () => context.push('/locations/${location.id}'),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(AppTokens.radiusL),
+          color: AppTokens.bgSurface,
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppTokens.radiusL),
           child: Stack(
             children: [
               Positioned.fill(
@@ -505,9 +505,9 @@ class _LocationGridCard extends StatelessWidget {
                   location.coverImage,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                    color: AppColors.cardBackground,
+                    color: AppTokens.bgSurface,
                     child: const Icon(Icons.landscape,
-                        color: AppColors.textPlaceholder, size: 48),
+                        color: AppTokens.textTertiary, size: 48),
                   ),
                 ),
               ),

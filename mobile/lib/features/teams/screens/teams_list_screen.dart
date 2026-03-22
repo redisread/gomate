@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api/teams_api.dart';
 import '../../../core/models/team.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 /// 队伍列表页面
 class TeamsListScreen extends ConsumerStatefulWidget {
@@ -44,17 +44,17 @@ class _TeamsListScreenState extends ConsumerState<TeamsListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppTokens.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppTokens.bgBase,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textSecondary),
+          icon: const Icon(Icons.arrow_back, color: AppTokens.textSecondary),
           onPressed: () => context.go('/'),
         ),
         title: const Text(
           '找队伍',
-          style: TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: AppTokens.textPrimary),
         ),
       ),
       body: Column(
@@ -80,18 +80,18 @@ class _TeamsListScreenState extends ConsumerState<TeamsListScreen> {
                       setState(() => _selectedStatus = item['value']!);
                       _loadTeams();
                     },
-                    backgroundColor: AppColors.cardBackground,
-                    selectedColor: AppColors.brandMuted,
+                    backgroundColor: AppTokens.bgSurface,
+                    selectedColor: AppTokens.brandPrimaryLight,
                     side: BorderSide(
-                      color: isSelected ? AppColors.brand : AppColors.border,
+                      color: isSelected ? AppTokens.brandPrimary : AppTokens.borderDefault,
                     ),
                     labelStyle: TextStyle(
                       color: isSelected
-                          ? AppColors.brand
-                          : AppColors.textSecondary,
+                          ? AppTokens.brandPrimary
+                          : AppTokens.textSecondary,
                       fontSize: 13,
                     ),
-                    checkmarkColor: AppColors.brand,
+                    checkmarkColor: AppTokens.brandPrimary,
                     showCheckmark: true,
                   ),
                 );
@@ -103,17 +103,17 @@ class _TeamsListScreenState extends ConsumerState<TeamsListScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.brand),
+                    child: CircularProgressIndicator(color: AppTokens.brandPrimary),
                   )
                 : RefreshIndicator(
                     onRefresh: _loadTeams,
-                    color: AppColors.brand,
+                    color: AppTokens.brandPrimary,
                     child: _teams.isEmpty
                         ? const Center(
                             child: Text(
                               '暂无队伍',
                               style:
-                                  TextStyle(color: AppColors.textSecondary),
+                                  TextStyle(color: AppTokens.textSecondary),
                             ),
                           )
                         : ListView.separated(
@@ -132,7 +132,7 @@ class _TeamsListScreenState extends ConsumerState<TeamsListScreen> {
 
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/teams/create'),
-        backgroundColor: AppColors.brand,
+        backgroundColor: AppTokens.brandPrimary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('发布队伍'),
@@ -155,9 +155,9 @@ class _TeamCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(14),
+          color: AppTokens.bgSurface,
+          border: Border.all(color: AppTokens.borderDefault),
+          borderRadius: BorderRadius.circular(AppTokens.radiusM),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,8 +167,8 @@ class _TeamCard extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: AppColors.brandMuted,
-                borderRadius: BorderRadius.circular(10),
+                color: AppTokens.brandPrimaryLight,
+                borderRadius: BorderRadius.circular(AppTokens.radiusS),
               ),
               child: Center(
                 child: Text(
@@ -186,7 +186,7 @@ class _TeamCard extends StatelessWidget {
                   Text(
                     team.title,
                     style: const TextStyle(
-                      color: AppColors.textPrimary,
+                      color: AppTokens.textPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -198,7 +198,7 @@ class _TeamCard extends StatelessWidget {
                     Text(
                       team.description!,
                       style: const TextStyle(
-                        color: AppColors.textSecondary,
+                        color: AppTokens.textSecondary,
                         fontSize: 13,
                       ),
                       maxLines: 2,
@@ -209,23 +209,23 @@ class _TeamCard extends StatelessWidget {
                   Row(
                     children: [
                       const Icon(Icons.people_outlined,
-                          size: 14, color: AppColors.textPlaceholder),
+                          size: 14, color: AppTokens.textTertiary),
                       const SizedBox(width: 4),
                       Text(
                         '${team.approvedMemberCount}/${team.maxMembers} 人',
                         style: const TextStyle(
-                            color: AppColors.textPlaceholder, fontSize: 12),
+                            color: AppTokens.textTertiary, fontSize: 12),
                       ),
                       const SizedBox(width: 12),
                       const Icon(Icons.calendar_today_outlined,
-                          size: 14, color: AppColors.textPlaceholder),
+                          size: 14, color: AppTokens.textTertiary),
                       const SizedBox(width: 4),
                       Text(
                         team.date.length >= 10
                             ? '${team.date.substring(5, 7)}/${team.date.substring(8, 10)}'
                             : team.date,
                         style: const TextStyle(
-                            color: AppColors.textPlaceholder, fontSize: 12),
+                            color: AppTokens.textTertiary, fontSize: 12),
                       ),
                     ],
                   ),
@@ -237,19 +237,19 @@ class _TeamCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: isRecruiting
-                    ? AppColors.brandMuted
-                    : AppColors.background,
+                    ? AppTokens.brandPrimaryLight
+                    : AppTokens.bgBase,
                 borderRadius: BorderRadius.circular(4),
                 border: isRecruiting
                     ? null
-                    : Border.all(color: AppColors.border),
+                    : Border.all(color: AppTokens.borderDefault),
               ),
               child: Text(
                 team.status.label,
                 style: TextStyle(
                   color: isRecruiting
-                      ? AppColors.brand
-                      : AppColors.textPlaceholder,
+                      ? AppTokens.brandPrimary
+                      : AppTokens.textTertiary,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),

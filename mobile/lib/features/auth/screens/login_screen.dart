@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/auth_provider.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 /// 登录页面
 class LoginScreen extends ConsumerStatefulWidget {
@@ -63,7 +63,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authProvider).isLoading;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppTokens.bgBase,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -78,7 +78,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     alignment: Alignment.centerLeft,
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back,
-                          color: AppColors.textPrimary),
+                          color: AppTokens.textPrimary),
                       onPressed: () => context.pop(),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -89,7 +89,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Logo 区：品牌渐变文字
                 ShaderMask(
                   shaderCallback: (bounds) =>
-                      AppGradients.brand.createShader(bounds),
+                      AppTokens.gradientBrand.createShader(bounds),
                   blendMode: BlendMode.srcIn,
                   child: const Text(
                     'GoMate',
@@ -108,7 +108,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.textSecondary,
+                    color: AppTokens.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -117,42 +117,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: const TextStyle(color: AppTokens.textPrimary),
                   decoration: InputDecoration(
                     labelText: '邮箱',
                     labelStyle:
-                        const TextStyle(color: AppColors.textSecondary),
+                        const TextStyle(color: AppTokens.textSecondary),
                     hintText: 'your@email.com',
                     hintStyle:
-                        const TextStyle(color: AppColors.textPlaceholder),
+                        const TextStyle(color: AppTokens.textTertiary),
                     prefixIcon: const Icon(Icons.email_outlined,
-                        color: AppColors.textPlaceholder),
+                        color: AppTokens.textTertiary),
                     filled: true,
-                    fillColor: AppColors.surface,
+                    fillColor: AppTokens.bgSurface,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       borderSide:
-                          const BorderSide(color: AppColors.border, width: 1),
+                          const BorderSide(color: AppTokens.borderDefault, width: 1),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       borderSide:
-                          const BorderSide(color: AppColors.border, width: 1),
+                          const BorderSide(color: AppTokens.borderDefault, width: 1),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       borderSide: const BorderSide(
-                          color: AppColors.brand, width: 1.5),
+                          color: AppTokens.brandPrimary, width: 1.5),
                     ),
                     errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       borderSide: const BorderSide(
-                          color: AppColors.error, width: 1),
+                          color: AppTokens.semanticError, width: 1),
                     ),
                     focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       borderSide: const BorderSide(
-                          color: AppColors.error, width: 1.5),
+                          color: AppTokens.semanticError, width: 1.5),
                     ),
                   ),
                   validator: (value) {
@@ -172,46 +172,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: const TextStyle(color: AppTokens.textPrimary),
                   decoration: InputDecoration(
                     labelText: '密码',
                     labelStyle:
-                        const TextStyle(color: AppColors.textSecondary),
+                        const TextStyle(color: AppTokens.textSecondary),
                     prefixIcon: const Icon(Icons.lock_outlined,
-                        color: AppColors.textPlaceholder),
+                        color: AppTokens.textTertiary),
                     filled: true,
-                    fillColor: AppColors.surface,
+                    fillColor: AppTokens.bgSurface,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       borderSide:
-                          const BorderSide(color: AppColors.border, width: 1),
+                          const BorderSide(color: AppTokens.borderDefault, width: 1),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       borderSide:
-                          const BorderSide(color: AppColors.border, width: 1),
+                          const BorderSide(color: AppTokens.borderDefault, width: 1),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       borderSide: const BorderSide(
-                          color: AppColors.brand, width: 1.5),
+                          color: AppTokens.brandPrimary, width: 1.5),
                     ),
                     errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       borderSide: const BorderSide(
-                          color: AppColors.error, width: 1),
+                          color: AppTokens.semanticError, width: 1),
                     ),
                     focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       borderSide: const BorderSide(
-                          color: AppColors.error, width: 1.5),
+                          color: AppTokens.semanticError, width: 1.5),
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: AppColors.textPlaceholder,
+                        color: AppTokens.textTertiary,
                       ),
                       onPressed: () {
                         setState(() {
@@ -236,7 +236,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Text(
                       _errorMessage!,
                       style: const TextStyle(
-                          color: AppColors.error, fontSize: 14),
+                          color: AppTokens.semanticError, fontSize: 14),
                     ),
                   ),
 
@@ -247,13 +247,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   width: double.infinity,
                   height: 52,
                   decoration: BoxDecoration(
-                    gradient: AppGradients.brand,
-                    borderRadius: BorderRadius.circular(14),
+                    gradient: AppTokens.gradientBrand,
+                    borderRadius: BorderRadius.circular(AppTokens.radiusM),
                   ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       onTap: isLoading ? null : _handleLogin,
                       child: Center(
                         child: isLoading
@@ -286,13 +286,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     const Text(
                       '还没有账号？',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: AppTokens.textSecondary),
                     ),
                     TextButton(
                       onPressed: () => context.push('/register'),
                       child: const Text(
                         '立即注册',
-                        style: TextStyle(color: AppColors.brand),
+                        style: TextStyle(color: AppTokens.brandPrimary),
                       ),
                     ),
                   ],

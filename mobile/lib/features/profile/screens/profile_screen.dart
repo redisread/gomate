@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/auth_provider.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 /// 个人资料页面
 class ProfileScreen extends ConsumerWidget {
@@ -23,7 +23,8 @@ class ProfileScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('确认', style: TextStyle(color: AppColors.error)),
+            child: const Text('确认',
+                style: TextStyle(color: AppTokens.semanticError)),
           ),
         ],
       ),
@@ -53,18 +54,16 @@ class ProfileScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.person_outlined, size: 80, color: AppColors.textSecondary),
-              const SizedBox(height: 16),
-              const Text('请先登录', style: TextStyle(fontSize: 16)),
-              const SizedBox(height: 24),
+              const Icon(Icons.person_outline_rounded,
+                  size: 80, color: AppTokens.textTertiary),
+              const SizedBox(height: AppTokens.space4),
+              const Text('请先登录',
+                  style: TextStyle(
+                      fontSize: AppTokens.fontSizeL,
+                      color: AppTokens.textPrimary)),
+              const SizedBox(height: AppTokens.space6),
               ElevatedButton(
                 onPressed: () => context.push('/login'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 32, vertical: 12),
-                ),
                 child: const Text('去登录'),
               ),
             ],
@@ -78,26 +77,23 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('个人资料'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () => context.go('/'),
-        ),
+        // Tab 页面无需返回按钮，移除 leading
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => context.push('/profile/edit'),
+            onPressed: () => context.go('/profile/edit'),
           ),
         ],
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 头部用户信息
+            // 头部用户信息（蓝绿渐变）
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppTokens.space6),
               decoration: const BoxDecoration(
-                gradient: AppGradients.brand,
+                gradient: AppTokens.gradientBrand,
               ),
               child: Column(
                 children: [
@@ -107,25 +103,26 @@ class ProfileScreen extends ConsumerWidget {
                     displayName: user.displayName,
                     radius: 40,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppTokens.space3),
                   Text(
                     user.displayName,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: AppTokens.fontSizeXXL,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   if (user.bio != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppTokens.space1),
                     Text(
                       user.bio!,
                       style: const TextStyle(
-                          color: Colors.white70, fontSize: 14),
+                          color: Colors.white70,
+                          fontSize: AppTokens.fontSizeBase),
                       textAlign: TextAlign.center,
                     ),
                   ],
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppTokens.space3),
                   // 统计数据
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -152,7 +149,7 @@ class ProfileScreen extends ConsumerWidget {
 
             // 菜单列表
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppTokens.space4),
               child: Column(
                 children: [
                   _MenuTile(
@@ -179,7 +176,7 @@ class ProfileScreen extends ConsumerWidget {
                   _MenuTile(
                     icon: Icons.logout,
                     title: '退出登录',
-                    textColor: AppColors.error,
+                    textColor: AppTokens.semanticError,
                     onTap: () => _handleLogout(context, ref),
                   ),
                 ],
@@ -303,12 +300,13 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: textColor ?? AppColors.textPrimary),
+      leading: Icon(icon, color: textColor ?? AppTokens.textPrimary),
       title: Text(
         title,
-        style: TextStyle(color: textColor ?? AppColors.textPrimary),
+        style: TextStyle(color: textColor ?? AppTokens.textPrimary),
       ),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+      trailing:
+          const Icon(Icons.chevron_right, color: AppTokens.textSecondary),
       onTap: onTap,
     );
   }

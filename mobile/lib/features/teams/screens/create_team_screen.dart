@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/locations_api.dart';
 import '../../../core/api/teams_api.dart';
 import '../../../core/models/location.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 /// 创建队伍页面
 class CreateTeamScreen extends ConsumerStatefulWidget {
@@ -164,7 +164,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                 // 选择地点
                 const Text(
                   '活动地点',
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 14, color: AppTokens.textSecondary),
                 ),
                 const SizedBox(height: 8),
                 _isLoadingLocations
@@ -189,7 +189,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                 // 活动时间
                 const Text(
                   '活动时间',
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 14, color: AppTokens.textSecondary),
                 ),
                 const SizedBox(height: 8),
                 GestureDetector(
@@ -198,13 +198,13 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 14),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: AppTokens.borderDefault),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.calendar_today_outlined,
-                            color: AppColors.textSecondary),
+                            color: AppTokens.textSecondary),
                         const SizedBox(width: 8),
                         Text(
                           '${_startTime.year}/${_startTime.month}/${_startTime.day} '
@@ -254,7 +254,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleCreate,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brand,
+                      backgroundColor: AppTokens.brandPrimary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(

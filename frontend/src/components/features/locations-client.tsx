@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
-import type { Location } from "@/lib/types";
+import type { Location, Tag } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -175,7 +175,7 @@ function LocationCard({
           {/* 标签 */}
           {location.tags && location.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-5">
-              {location.tags.slice(0, 3).map((tag: any, i: number) => (
+              {location.tags.slice(0, 3).map((tag: Tag, i: number) => (
                 <span
                   key={tag?.id ?? i}
                   className="px-2.5 py-1 bg-emerald-50/80 text-emerald-700 rounded-full text-xs border border-emerald-100"

@@ -217,6 +217,51 @@
     from { opacity: 0; transform: translateY(24px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+  /* 状态切换：fade + scale 入场 */
+  @keyframes fadeScaleIn {
+    from { opacity: 0; transform: scale(0.97) translateY(4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* Toast 从底部滑入（移动端带 -50% 偏移）*/
+  @keyframes slide-up-toast {
+    from { opacity: 0; transform: translateY(16px) translateX(-50%); }
+    to   { opacity: 1; transform: translateY(0) translateX(-50%); }
+  }
+
+  /* Toast 滑出 */
+  @keyframes slide-down-toast {
+    from { opacity: 1; transform: translateY(0) translateX(-50%); }
+    to   { opacity: 0; transform: translateY(12px) translateX(-50%); }
+  }
+
+  /* Toast 桌面端（无 -50% 偏移）*/
+  @keyframes slide-up-toast-lg {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 加入成功弹跳 */
+  @keyframes joinBounce {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.05); }
+    70%  { transform: scale(0.98); }
+    100% { transform: scale(1); }
+  }
+
+  /* 加入成功勾号渐入 */
+  @keyframes checkFadeIn {
+    from { opacity: 0; transform: translateX(8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Toast 退出淡出（fade-out） */
+  --animate-fade-out: fade-out 0.2s ease-in both;
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
 }
 
 /* ============================================================
@@ -399,7 +444,12 @@
 
   /* 卡片 hover：上浮 4px + 品牌绿光晕阴影，250ms */
   .card-interactive {
-    @apply card-base;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     transition: transform 250ms ease, box-shadow 250ms ease;
     cursor: pointer;
   }
@@ -459,25 +509,23 @@
 
   /* 主色按钮 */
   .btn-primary {
-    @apply btn-base;
+    @apply inline-flex items-center justify-center font-medium rounded-md transition-all;
+    transition-duration: var(--duration-fast);
     background: var(--primary);
     color: var(--primary-foreground);
     box-shadow: 0 4px 14px rgba(36, 154, 135, 0.30);
   }
-  .btn-primary:hover {
-    background: #1f8874;
-    box-shadow: var(--shadow-glow);
-  }
+  .btn-primary:hover  { transform: scale(1.02); background: #1f8874; box-shadow: var(--shadow-glow); }
+  .btn-primary:active { transform: scale(0.97); transition-duration: var(--duration-instant); }
 
   /* 幽灵按钮 */
   .btn-ghost {
-    @apply btn-base;
+    @apply inline-flex items-center justify-center font-medium rounded-md transition-all;
+    transition-duration: var(--duration-fast);
     color: var(--muted-foreground);
   }
-  .btn-ghost:hover {
-    background: var(--accent);
-    color: var(--accent-foreground);
-  }
+  .btn-ghost:hover  { transform: scale(1.02); background: var(--accent); color: var(--accent-foreground); }
+  .btn-ghost:active { transform: scale(0.97); transition-duration: var(--duration-instant); }
 
   /* ---- 状态徽章基础 ---- */
   .badge-base {
@@ -520,6 +568,9 @@
   .shadow-card-hover { box-shadow: var(--shadow-card-hover); }
   .shadow-glow       { box-shadow: var(--shadow-glow); }
   .shadow-warm-sm    { box-shadow: var(--shadow-warm-sm); }
+  .shadow-warm       { box-shadow: 0 4px 16px rgba(30, 24, 18, 0.10), 0 1px 4px rgba(30, 24, 18, 0.06); }
+  .shadow-warm-md    { box-shadow: 0 8px 24px rgba(30, 24, 18, 0.12), 0 3px 8px rgba(30, 24, 18, 0.07); }
+  .shadow-warm-xl    { box-shadow: 0 20px 48px rgba(30, 24, 18, 0.20), 0 8px 16px rgba(30, 24, 18, 0.10); }
   .shadow-brand-glow { box-shadow: 0 4px 15px rgba(36, 154, 135, 0.35); }
   .shadow-brand-glow-lg { box-shadow: 0 8px 25px rgba(36, 154, 135, 0.40); }
 

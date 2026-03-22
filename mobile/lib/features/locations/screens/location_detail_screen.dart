@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api/locations_api.dart';
 import '../../../core/models/location.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 /// 地点详情页面
 class LocationDetailScreen extends ConsumerStatefulWidget {
@@ -151,13 +151,13 @@ class _LocationDetailScreenState extends ConsumerState<LocationDetailScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.brandMuted,
+                            color: AppTokens.brandPrimaryLight,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             tag,
                             style: const TextStyle(
-                              color: AppColors.brand,
+                              color: AppTokens.brandPrimary,
                               fontSize: 12,
                             ),
                           ),
@@ -219,7 +219,7 @@ class _LocationDetailScreenState extends ConsumerState<LocationDetailScreen> {
             onPressed: () =>
                 context.go('/teams?locationId=${location.id}'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brand,
+              backgroundColor: AppTokens.brandPrimary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
@@ -271,13 +271,13 @@ class _RouteCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.brandMuted,
+                  color: AppTokens.brandPrimaryLight,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   route.difficulty.label,
                   style: const TextStyle(
-                    color: AppColors.brand,
+                    color: AppTokens.brandPrimary,
                     fontSize: 12,
                   ),
                 ),
