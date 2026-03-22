@@ -9,8 +9,8 @@ export const corsMiddleware = cors({
       "http://localhost:3000",
       "http://localhost:4321",
       "http://localhost:5432",
-      "https://gomate.jiahongw.com",
-      "https://gomate-api-production.wujiahong2013.workers.dev",
+      "https://gomate.live",
+      "https://api.gomate.live",
     ];
     if (allowed.includes(origin)) return origin;
     // 允许局域网 IP（移动端调试）

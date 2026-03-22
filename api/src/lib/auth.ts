@@ -99,8 +99,8 @@ export function createAuth(env: Env) {
     trustedOrigins: [
       "http://localhost:8799",
       "http://localhost:5432",
-      "https://gomate.jiahongw.com",
-      "https://gomate-api-production.wujiahong2013.workers.dev",
+      "https://gomate.live",
+      "https://api.gomate.live",
     ],
   });
 }

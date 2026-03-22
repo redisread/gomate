@@ -17,7 +17,7 @@ export async function sendPasswordResetEmail(
 
   try {
     const resend = new Resend(apiKey);
-    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.jiahongw.com>";
+    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
 
     await resend.emails.send({
       from: fromEmail,
@@ -55,7 +55,7 @@ export async function sendWelcomeEmail(
 
   try {
     const resend = new Resend(apiKey);
-    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.jiahongw.com>";
+    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
 
     await resend.emails.send({
       from: fromEmail,
@@ -97,11 +97,11 @@ export async function sendContactFormEmail(
 
   try {
     const resend = new Resend(apiKey);
-    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.jiahongw.com>";
+    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
 
     await resend.emails.send({
       from: fromEmail,
-      to: "support@gomate.jiahongw.com",
+      to: "support@gomate.live",
       replyTo: data.email,
       subject: `[GoMate 用户反馈] ${data.subject}`,
       html: `

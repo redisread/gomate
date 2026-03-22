@@ -34,7 +34,7 @@ mode = "smart"
 # 环境变量（本地开发）
 [vars]
 R2_PUBLIC_URL = "https://gomate.cos.jiahongw.com"
-RESEND_FROM_EMAIL = "GoMate <noreply@gomate.jiahongw.com>"
+RESEND_FROM_EMAIL = "GoMate <noreply@gomate.live>"
 APP_URL = "http://localhost:8799"
 FRONTEND_URL = "http://localhost:5432"
 # BETTER_AUTH_SECRET 通过 wrangler secret put 设置，不在此处明文存储
@@ -46,9 +46,9 @@ compatibility_flags = ["nodejs_compat"]
 
 [env.production.vars]
 R2_PUBLIC_URL = "https://gomate.cos.jiahongw.com"
-RESEND_FROM_EMAIL = "GoMate <noreply@gomate.jiahongw.com>"
-APP_URL = "https://gomate-api-production.wujiahong2013.workers.dev"
-FRONTEND_URL = "https://gomate.jiahongw.com"
+RESEND_FROM_EMAIL = "GoMate <noreply@gomate.live>"
+APP_URL = "https://api.gomate.live"
+FRONTEND_URL = "https://gomate.live"
 
 [[env.production.r2_buckets]]
 binding = "R2"
