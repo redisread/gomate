@@ -113,27 +113,23 @@ export function Navbar({ className }: NavbarProps) {
             {/* ---- 桌面端操作区 ---- */}
             <div className="hidden md:flex items-center gap-2">
               {session?.isAdmin && (
-                <a href="/admin/locations">
-                  <button
-                    type="button"
-                    className="flex items-center gap-1.5 text-sm text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
-                  >
-                    <Settings className="h-4 w-4" />
-                    {copy.nav.admin}
-                  </button>
+                <a
+                  href="/admin/locations"
+                  className="flex items-center gap-1.5 text-sm text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
+                >
+                  <Settings className="h-4 w-4" />
+                  {copy.nav.admin}
                 </a>
               )}
 
               {session?.user ? (
                 <>
-                  <a href="/profile">
-                    <button
-                      type="button"
-                      className="flex items-center gap-1.5 text-sm text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
-                    >
-                      <User className="h-4 w-4" />
-                      {session.user.name}
-                    </button>
+                  <a
+                    href="/profile"
+                    className="flex items-center gap-1.5 text-sm text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
+                  >
+                    <User className="h-4 w-4" />
+                    {session.user.name}
                   </a>
                   <button
                     type="button"
@@ -147,13 +143,11 @@ export function Navbar({ className }: NavbarProps) {
                 </>
               ) : (
                 <>
-                  <a href="/login">
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
-                    >
-                      {copy.nav.login}
-                    </button>
+                  <a
+                    href="/login"
+                    className="text-sm font-medium text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
+                  >
+                    {copy.nav.login}
                   </a>
                   <CtaButton href="/locations" label={copy.nav.explore} />
                 </>
@@ -233,24 +227,22 @@ export function Navbar({ className }: NavbarProps) {
             <div className="mt-auto flex flex-col gap-3 px-4 pb-8">
               {session?.user ? (
                 <>
-                  <a href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-center gap-2 border border-[#e8e0d7] text-[#1e1812] px-4 py-2.5 rounded-xl hover:bg-[#f0faf8] transition-colors font-medium"
-                    >
-                      <User className="h-4 w-4" />
-                      {copy.nav.profile}
-                    </button>
+                  <a
+                    href="/profile"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 border border-[#e8e0d7] text-[#1e1812] px-4 py-2.5 rounded-xl hover:bg-[#f0faf8] transition-colors font-medium"
+                  >
+                    <User className="h-4 w-4" />
+                    {copy.nav.profile}
                   </a>
-                  <a href="/teams/create" onClick={() => setIsMobileMenuOpen(false)}>
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium"
-                      style={{ background: "#249a87", color: "#f0faf8", boxShadow: "0 4px 14px rgba(36,154,135,0.30)" }}
-                    >
-                      <Plus className="h-4 w-4" />
-                      {copy.nav.createTeam}
-                    </button>
+                  <a
+                    href="/teams/create"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium"
+                    style={{ background: "#249a87", color: "#f0faf8", boxShadow: "0 4px 14px rgba(36,154,135,0.30)" }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    {copy.nav.createTeam}
                   </a>
                   <button
                     type="button"
@@ -262,23 +254,21 @@ export function Navbar({ className }: NavbarProps) {
                 </>
               ) : (
                 <>
-                  <a href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-center gap-2 border border-[#e8e0d7] text-[#1e1812] px-4 py-2.5 rounded-xl hover:bg-[#f0faf8] transition-colors font-medium"
-                    >
-                      <User className="h-4 w-4" />
-                      {copy.nav.login}
-                    </button>
+                  <a
+                    href="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 border border-[#e8e0d7] text-[#1e1812] px-4 py-2.5 rounded-xl hover:bg-[#f0faf8] transition-colors font-medium"
+                  >
+                    <User className="h-4 w-4" />
+                    {copy.nav.login}
                   </a>
-                  <a href="/locations" onClick={() => setIsMobileMenuOpen(false)}>
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl font-medium"
-                      style={{ background: "#249a87", color: "#f0faf8", boxShadow: "0 4px 14px rgba(36,154,135,0.30)" }}
-                    >
-                      {copy.nav.explore}
-                    </button>
+                  <a
+                    href="/locations"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl font-medium"
+                    style={{ background: "#249a87", color: "#f0faf8", boxShadow: "0 4px 14px rgba(36,154,135,0.30)" }}
+                  >
+                    {copy.nav.explore}
                   </a>
                 </>
               )}
@@ -301,20 +291,18 @@ function CtaButton({
   icon?: React.ReactNode;
 }) {
   return (
-    <a href={href}>
-      <button
-        type="button"
-        className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.97]"
-        style={{
-          background:        "#249a87",
-          color:             "#f0faf8",
-          boxShadow:         "0 4px 14px rgba(36,154,135,0.30)",
-          transitionDuration:"150ms",
-        }}
-      >
-        {icon}
-        {label}
-      </button>
+    <a
+      href={href}
+      className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.97]"
+      style={{
+        background:        "#249a87",
+        color:             "#f0faf8",
+        boxShadow:         "0 4px 14px rgba(36,154,135,0.30)",
+        transitionDuration:"150ms",
+      }}
+    >
+      {icon}
+      {label}
     </a>
   );
 }

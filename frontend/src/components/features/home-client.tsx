@@ -15,7 +15,6 @@ import {
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
 import type { Location, Team } from "@/lib/types";
-import { Navbar } from "@/components/layout/navbar";
 import {
   useInView,
   useCountUp,
@@ -447,7 +446,6 @@ export function HomeClient() {
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
 
       {/* ================================================================
           Hero Section — 多层装饰背景 + 超大标题 + 统计数字
@@ -599,34 +597,32 @@ export function HomeClient() {
 
           {/* CTA 按钮组 */}
           <div className={`flex flex-col sm:flex-row gap-3 justify-center mb-14 ${animate.cta}`}>
-            <a href="/locations">
-              <button
-                className="px-8 py-3.5 text-white font-semibold rounded-full text-base transition-all duration-150"
-                style={{
-                  background: "linear-gradient(135deg, #249a87 0%, #3fb5a0 100%)",
-                  boxShadow: "0 4px 18px rgba(36,154,135,0.35)",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.transform = "translateY(-2px)";
-                  el.style.boxShadow = "0 8px 28px rgba(36,154,135,0.45)";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.transform = "translateY(0)";
-                  el.style.boxShadow = "0 4px 18px rgba(36,154,135,0.35)";
-                }}
-              >
-                {copy.hero.exploreBtn}
-              </button>
+            <a
+              href="/locations"
+              className="inline-block px-8 py-3.5 text-white font-semibold rounded-full text-base transition-all duration-150"
+              style={{
+                background: "linear-gradient(135deg, #249a87 0%, #3fb5a0 100%)",
+                boxShadow: "0 4px 18px rgba(36,154,135,0.35)",
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLAnchorElement;
+                el.style.transform = "translateY(-2px)";
+                el.style.boxShadow = "0 8px 28px rgba(36,154,135,0.45)";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLAnchorElement;
+                el.style.transform = "translateY(0)";
+                el.style.boxShadow = "0 4px 18px rgba(36,154,135,0.35)";
+              }}
+            >
+              {copy.hero.exploreBtn}
             </a>
-            <a href="/teams">
-              <button
-                className="px-8 py-3.5 font-semibold rounded-full border-2 text-base transition-all duration-150 hover:bg-brand/5"
-                style={{ borderColor: "rgba(36,154,135,0.35)", color: "#1a6459" }}
-              >
-                {copy.hero.findTeamBtn}
-              </button>
+            <a
+              href="/teams"
+              className="inline-block px-8 py-3.5 font-semibold rounded-full border-2 text-base transition-all duration-150 hover:bg-brand/5"
+              style={{ borderColor: "rgba(36,154,135,0.35)", color: "#1a6459" }}
+            >
+              {copy.hero.findTeamBtn}
             </a>
           </div>
 
@@ -954,43 +950,41 @@ export function HomeClient() {
 
           {/* 按钮组 */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/teams/create">
-              <button
-                className="px-8 py-3.5 font-semibold rounded-full text-white text-base transition-all duration-150"
-                style={{
-                  background: "#ff7a65",
-                  boxShadow: "0 4px 18px rgba(255,122,101,0.38)",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.transform = "translateY(-2px)";
-                  el.style.boxShadow = "0 8px 26px rgba(255,122,101,0.50)";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.transform = "translateY(0)";
-                  el.style.boxShadow = "0 4px 18px rgba(255,122,101,0.38)";
-                }}
-              >
-                发布队伍
-              </button>
+            <a
+              href="/teams/create"
+              className="inline-block px-8 py-3.5 font-semibold rounded-full text-white text-base transition-all duration-150"
+              style={{
+                background: "#ff7a65",
+                boxShadow: "0 4px 18px rgba(255,122,101,0.38)",
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLAnchorElement;
+                el.style.transform = "translateY(-2px)";
+                el.style.boxShadow = "0 8px 26px rgba(255,122,101,0.50)";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLAnchorElement;
+                el.style.transform = "translateY(0)";
+                el.style.boxShadow = "0 4px 18px rgba(255,122,101,0.38)";
+              }}
+            >
+              发布队伍
             </a>
-            <a href="/locations">
-              <button
-                className="px-8 py-3.5 font-semibold rounded-full text-base transition-all duration-150 border-2"
-                style={{
-                  borderColor: "rgba(36,154,135,0.35)",
-                  color: "#1a6459",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(36,154,135,0.06)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                }}
-              >
-                探索地点
-              </button>
+            <a
+              href="/locations"
+              className="inline-block px-8 py-3.5 font-semibold rounded-full text-base transition-all duration-150 border-2"
+              style={{
+                borderColor: "rgba(36,154,135,0.35)",
+                color: "#1a6459",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "rgba(36,154,135,0.06)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+              }}
+            >
+              探索地点
             </a>
           </div>
         </div>
