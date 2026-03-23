@@ -450,7 +450,7 @@ export function HomeClient() {
       {/* ================================================================
           Hero Section — 多层装饰背景 + 超大标题 + 统计数字
           ================================================================ */}
-      <section className="relative min-h-[780px] flex items-center justify-center overflow-hidden pt-16">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
 
         {/* 背景渐变 */}
         <div
@@ -516,7 +516,7 @@ export function HomeClient() {
         </svg>
 
         {/* 主内容区 */}
-        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto py-20">
+        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto pt-24 pb-16">
 
           {/* 徽章 */}
           <span
