@@ -1,0 +1,11 @@
+---
+/**
+ * 关于我们页
+ */
+import Layout from "../layouts/Layout.astro";
+import { AboutClient } from "../components/features/about-client";
+---
+
+<Layout title="关于我们 - GoMate">
+  <AboutClient client:load />
+</Layout>

@@ -222,23 +222,25 @@ export const copy = {
     cityFilter: "按城市筛选",
 
     // 视觉升级文案
-    heroTagline: "每一个地方，都在等待有缘人",
-    searchPlaceholder: "咖啡馆？公园？山野？输入你心仪的目的地...",
+    heroTagline: "咖啡馆、citywalk、短途旅行……找个人一起去",
+    searchPlaceholder: "咖啡馆、展览、桌游吧、山野……你想去哪？",
     tagsLabel: "探索标签",
-    resultCount: "个目的地等你探索",
+    resultCount: "个地方等你探索",
     clearFilter: "清除筛选",
     emptyTitle: "暂时没有找到相关地点",
     emptyDesc: "试试放宽条件，也许有更多意想不到的好地方等着你",
     emptyBtn: "重新探索",
-    ctaHeroBadge: "全国各地 · 精选目的地",
+    ctaHeroBadge: "咖啡 · 探店 · 户外 · 更多",
 
     // 角色快速入口
-    roleExplorer: "探险者",
-    roleExplorerDesc: "挑战高难度线路",
-    roleWeekend: "周末徒步",
-    roleWeekendDesc: "轻松愉快，适合全家",
-    roleVeteran: "资深驴友",
-    roleVeteranDesc: "专业路线 · 详细数据",
+    roleCafe: "咖啡探店",
+    roleCafeDesc: "精品咖啡馆 · 下午茶打卡",
+    roleCitywalk: "City Walk",
+    roleCitywalkDesc: "街头漫游 · 市集展览",
+    roleOutdoor: "户外出行",
+    roleOutdoorDesc: "短途旅行 · 山野徒步",
+    roleNight: "夜间活动",
+    roleNightDesc: "桌游 · 夜市 · 酒吧",
 
     // 难度快筛
     difficultyFilter: "难度",

@@ -14,10 +14,10 @@ import {
   Clock,
   TrendingUp,
   Sparkles,
-  Zap,
-  Sun,
-  Award,
-  SlidersHorizontal,
+  Coffee,
+  Map,
+  Tent,
+  Moon,
   ChevronDown,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
@@ -26,17 +26,6 @@ import type { Location, Tag } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-
-// ─── 难度配置 ─────────────────────────────────────────────────────────────────
-const difficultyConfig: Record<
-  string,
-  { label: string; color: string; bg: string; dot: string }
-> = {
-  easy:     { label: "轻松", color: "#059669", bg: "rgba(5,150,105,0.12)",  dot: "#059669" },
-  moderate: { label: "适中", color: "#d97706", bg: "rgba(217,119,6,0.12)",  dot: "#d97706" },
-  hard:     { label: "挑战", color: "#ea580c", bg: "rgba(234,88,12,0.12)",  dot: "#ea580c" },
-  expert:   { label: "专家", color: "#dc2626", bg: "rgba(220,38,38,0.12)",  dot: "#dc2626" },
-};
 
 // ─── 标签颜色配置 ─────────────────────────────────────────────────────────────
 const tagColorClasses = [
@@ -68,7 +57,6 @@ function ShimmerCard() {
 
 // ─── 地点卡片 ─────────────────────────────────────────────────────────────────
 function LocationCard({ location, index }: { location: Location; index: number }) {
-  const diff = location.difficulty ? difficultyConfig[location.difficulty] : null;
   const route = location.routes?.[0];
   const delayMs = Math.min(index, 5) * 60;
 
@@ -95,19 +83,6 @@ function LocationCard({ location, index }: { location: Location; index: number }
 
           {/* 渐变遮罩 */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-
-          {/* 难度标签 */}
-          {diff && (
-            <div className="absolute top-3 left-3">
-              <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-sm"
-                style={{ background: "rgba(255,255,255,0.92)", color: diff.color }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: diff.dot }} />
-                {diff.label}
-              </span>
-            </div>
-          )}
 
           {/* 城市标签 */}
           {location.cityName && (
@@ -211,40 +186,64 @@ function EmptyState({ onClear }: { onClear: () => void }) {
 }
 
 // ─── 角色配置 ─────────────────────────────────────────────────────────────
-type RoleKey = "explorer" | "weekend" | "veteran" | "";
-const roleConfig: Record<
-  Exclude<RoleKey, "">,
-  { icon: React.ElementType; label: string; desc: string; difficulty: string; gradientFrom: string; gradientTo: string; iconColor: string; activeColor: string }
-> = {
-  explorer: {
-    icon: Zap,
-    label: copy.locations.roleExplorer,
-    desc: copy.locations.roleExplorerDesc,
-    difficulty: "hard",
-    gradientFrom: "rgba(249,115,22,0.10)",
-    gradientTo: "rgba(239,68,68,0.08)",
-    iconColor: "#ea580c",
-    activeColor: "#ea580c",
+type RoleKey = "cafe" | "citywalk" | "outdoor" | "night" | "";
+
+interface RoleCfg {
+  icon: React.ElementType;
+  label: string;
+  desc: string;
+  emoji: string;
+  gradientFrom: string;
+  gradientTo: string;
+  iconColor: string;
+  activeColor: string;
+  activeBg: string;
+}
+
+const roleConfig: Record<Exclude<RoleKey, "">, RoleCfg> = {
+  cafe: {
+    icon: Coffee,
+    label: copy.locations.roleCafe,
+    desc: copy.locations.roleCafeDesc,
+    emoji: "☕",
+    gradientFrom: "rgba(180,83,9,0.07)",
+    gradientTo: "rgba(217,119,6,0.05)",
+    iconColor: "#b45309",
+    activeColor: "#92400e",
+    activeBg: "linear-gradient(135deg, #b45309, #d97706)",
   },
-  weekend: {
-    icon: Sun,
-    label: copy.locations.roleWeekend,
-    desc: copy.locations.roleWeekendDesc,
-    difficulty: "easy",
-    gradientFrom: "rgba(16,185,129,0.10)",
-    gradientTo: "rgba(20,184,166,0.08)",
-    iconColor: "#059669",
-    activeColor: "#059669",
+  citywalk: {
+    icon: Map,
+    label: copy.locations.roleCitywalk,
+    desc: copy.locations.roleCitywalkDesc,
+    emoji: "🗺️",
+    gradientFrom: "rgba(14,165,233,0.07)",
+    gradientTo: "rgba(99,102,241,0.05)",
+    iconColor: "#0284c7",
+    activeColor: "#0369a1",
+    activeBg: "linear-gradient(135deg, #0284c7, #6366f1)",
   },
-  veteran: {
-    icon: Award,
-    label: copy.locations.roleVeteran,
-    desc: copy.locations.roleVeteranDesc,
-    difficulty: "expert",
-    gradientFrom: "rgba(139,92,246,0.10)",
-    gradientTo: "rgba(99,102,241,0.08)",
+  outdoor: {
+    icon: Tent,
+    label: copy.locations.roleOutdoor,
+    desc: copy.locations.roleOutdoorDesc,
+    emoji: "⛺",
+    gradientFrom: "rgba(22,163,74,0.07)",
+    gradientTo: "rgba(16,185,129,0.05)",
+    iconColor: "#16a34a",
+    activeColor: "#15803d",
+    activeBg: "linear-gradient(135deg, #16a34a, #059669)",
+  },
+  night: {
+    icon: Moon,
+    label: copy.locations.roleNight,
+    desc: copy.locations.roleNightDesc,
+    emoji: "🌙",
+    gradientFrom: "rgba(139,92,246,0.07)",
+    gradientTo: "rgba(236,72,153,0.05)",
     iconColor: "#7c3aed",
-    activeColor: "#7c3aed",
+    activeColor: "#6d28d9",
+    activeBg: "linear-gradient(135deg, #7c3aed, #db2777)",
   },
 };
 
@@ -260,13 +259,12 @@ export function LocationsClient() {
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
   const [cities, setCities] = React.useState<{ id: string; name: string }[]>([]);
   const [selectedCityId, setSelectedCityId] = React.useState("");
-  const [selectedDifficulty, setSelectedDifficulty] = React.useState("");
   const [activeRole, setActiveRole] = React.useState<RoleKey>("");
-  const [showFilters, setShowFilters] = React.useState(false);
-  const [showDifficultyDropdown, setShowDifficultyDropdown] = React.useState(false);
+  const [showCityDropdown, setShowCityDropdown] = React.useState(false);
+  const [cityDropdownPos, setCityDropdownPos] = React.useState({ top: 0, left: 0 });
   const [gridFading, setGridFading] = React.useState(false);
+  const cityBtnRef = React.useRef<HTMLButtonElement>(null);
   const cityDropdownRef = React.useRef<HTMLDivElement>(null);
-  const difficultyDropdownRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   // URL 参数初始化
@@ -276,13 +274,11 @@ export function LocationsClient() {
     const tags = params.get("tags")?.split(",").filter(Boolean) || [];
     const page = parseInt(params.get("page") || "1", 10);
     const cityId = params.get("cityId") || "";
-    const difficulty = params.get("difficulty") || "";
     setSearchQuery(q);
     setSelectedTags(tags);
     setCurrentPage(page);
     setSelectedCityId(cityId);
-    setSelectedDifficulty(difficulty);
-    loadLocations({ page, search: q, tagIds: tags, cityId, difficulty });
+    loadLocations({ page, search: q, tagIds: tags, cityId });
   }, []);
 
   // 加载标签
@@ -301,14 +297,14 @@ export function LocationsClient() {
       .catch(() => {});
   }, []);
 
-  // 点击外部关闭
+  // 点击外部关闭城市下拉
   React.useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target as Node)) {
-        setShowFilters(false);
-      }
-      if (difficultyDropdownRef.current && !difficultyDropdownRef.current.contains(e.target as Node)) {
-        setShowDifficultyDropdown(false);
+      const target = e.target as Node;
+      const clickedBtn = cityBtnRef.current?.contains(target);
+      const clickedDropdown = cityDropdownRef.current?.contains(target);
+      if (!clickedBtn && !clickedDropdown) {
+        setShowCityDropdown(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -316,7 +312,7 @@ export function LocationsClient() {
   }, []);
 
   const loadLocations = React.useCallback(
-    async (params: { page?: number; search?: string; tagIds?: string[]; cityId?: string; difficulty?: string }) => {
+    async (params: { page?: number; search?: string; tagIds?: string[]; cityId?: string }) => {
       setIsLoading(true);
       try {
         const query = new URLSearchParams();
@@ -325,7 +321,6 @@ export function LocationsClient() {
         if (params.search) query.set("search", params.search);
         if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
         if (params.cityId) query.set("cityId", params.cityId);
-        if (params.difficulty) query.set("difficulty", params.difficulty);
         const res = await fetchAPI(`/locations?${query}`);
         const data = await res.json();
         if (data.success) {
@@ -344,10 +339,10 @@ export function LocationsClient() {
   // 搜索防抖
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      loadLocations({ page: 1, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId, difficulty: selectedDifficulty });
+      loadLocations({ page: 1, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId });
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedTags, selectedCityId, selectedDifficulty, loadLocations]);
+  }, [searchQuery, selectedTags, selectedCityId, loadLocations]);
 
   const handleTagToggle = (tagId: string) => {
     const newTags = selectedTags.includes(tagId)
@@ -360,25 +355,14 @@ export function LocationsClient() {
   const handleCitySelect = (cityId: string) => {
     setSelectedCityId(cityId);
     setCurrentPage(1);
-    setShowFilters(false);
-  };
-
-  const handleDifficultySelect = (difficulty: string) => {
-    setSelectedDifficulty(difficulty);
-    setCurrentPage(1);
-    setShowDifficultyDropdown(false);
-    setActiveRole("");
+    setShowCityDropdown(false);
   };
 
   const handleRoleSelect = (role: RoleKey) => {
     if (role === activeRole) {
       setActiveRole("");
-      setSelectedDifficulty("");
     } else {
       setActiveRole(role);
-      if (role !== "") {
-        setSelectedDifficulty(roleConfig[role].difficulty);
-      }
     }
     setCurrentPage(1);
   };
@@ -386,7 +370,7 @@ export function LocationsClient() {
   const handlePageChange = (page: number) => {
     setGridFading(true);
     setCurrentPage(page);
-    loadLocations({ page, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId, difficulty: selectedDifficulty });
+    loadLocations({ page, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -394,15 +378,12 @@ export function LocationsClient() {
     setSearchQuery("");
     setSelectedTags([]);
     setSelectedCityId("");
-    setSelectedDifficulty("");
     setActiveRole("");
     setCurrentPage(1);
   };
 
   const selectedCityName = cities.find((c) => c.id === selectedCityId)?.name;
-  const selectedDifficultyLabel = selectedDifficulty ? difficultyConfig[selectedDifficulty]?.label : "";
-  const hasActiveFilters = searchQuery || selectedTags.length > 0 || selectedCityId || selectedDifficulty;
-  const activeFilterCount = selectedTags.length + (selectedCityId ? 1 : 0) + (selectedDifficulty ? 1 : 0);
+  const hasActiveFilters = searchQuery || selectedTags.length > 0 || selectedCityId;
 
   const getPageNumbers = () => {
     const total = pagination.totalPages;
@@ -460,57 +441,87 @@ export function LocationsClient() {
             {copy.locations.heroTagline}
           </p>
 
-          {/* ── 角色快速入口 ── */}
+          {/* ── 场景角色入口 ── */}
           <div
-            className="grid grid-cols-3 gap-3 mb-6"
+            className="mb-6"
             style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 190ms both" }}
           >
-            {(Object.entries(roleConfig) as [Exclude<RoleKey, "">, typeof roleConfig[keyof typeof roleConfig]][]).map(([key, cfg]) => {
-              const Icon = cfg.icon;
-              const isActive = activeRole === key;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => handleRoleSelect(key)}
-                  className="relative flex flex-col items-start gap-1 px-4 py-3 rounded-2xl border text-left transition-all duration-200 active:scale-[0.98] overflow-hidden"
-                  style={
-                    isActive
-                      ? { background: cfg.activeColor, borderColor: cfg.activeColor, boxShadow: `0 4px 14px ${cfg.activeColor}40` }
-                      : { background: `linear-gradient(135deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`, borderColor: "rgba(231,229,228,1)" }
-                  }
-                >
-                  <div className="relative flex items-center gap-2 w-full">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {(Object.entries(roleConfig) as [Exclude<RoleKey, "">, RoleCfg][]).map(([key, cfg]) => {
+                const Icon = cfg.icon;
+                const isActive = activeRole === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleRoleSelect(key)}
+                    className="relative group flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-all duration-250 active:scale-[0.97] overflow-hidden"
+                    style={
+                      isActive
+                        ? {
+                            background: cfg.activeBg,
+                            borderColor: "transparent",
+                            boxShadow: `0 6px 20px ${cfg.iconColor}35`,
+                          }
+                        : {
+                            background: `linear-gradient(135deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`,
+                            borderColor: "rgba(231,229,228,0.8)",
+                          }
+                    }
+                  >
+                    {/* 激活时背景光晕 */}
+                    {isActive && (
+                      <div
+                        className="absolute inset-0 opacity-20"
+                        style={{
+                          backgroundImage: `radial-gradient(circle at 80% 20%, rgba(255,255,255,0.6) 0%, transparent 60%)`,
+                        }}
+                      />
+                    )}
+
+                    {/* 图标容器 */}
                     <div
-                      className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: isActive ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.7)" }}
+                      className="relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
+                      style={{
+                        background: isActive ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.75)",
+                        boxShadow: isActive ? "0 2px 8px rgba(0,0,0,0.12)" : "none",
+                      }}
                     >
                       <Icon
-                        className="h-3.5 w-3.5"
+                        className="h-4 w-4"
                         style={{ color: isActive ? "#fff" : cfg.iconColor }}
                       />
                     </div>
-                    <span
-                      className="text-sm font-semibold"
-                      style={{ color: isActive ? "#fff" : "#1c1917" }}
-                    >
-                      {cfg.label}
-                    </span>
-                    {isActive && (
-                      <span className="ml-auto w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.25)" }}>
-                        <X className="h-2.5 w-2.5 text-white" />
-                      </span>
-                    )}
-                  </div>
-                  <p
-                    className="relative text-xs leading-tight pl-9"
-                    style={{ color: isActive ? "rgba(255,255,255,0.8)" : "#a8a29e" }}
-                  >
-                    {cfg.desc}
-                  </p>
-                </button>
-              );
-            })}
+
+                    {/* 文字 */}
+                    <div className="relative flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="text-sm font-semibold leading-tight"
+                          style={{ color: isActive ? "#fff" : "#1c1917" }}
+                        >
+                          {cfg.label}
+                        </span>
+                        {isActive && (
+                          <span
+                            className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{ background: "rgba(255,255,255,0.25)" }}
+                          >
+                            <X className="h-2.5 w-2.5 text-white" />
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        className="text-[11px] leading-tight mt-0.5 truncate"
+                        style={{ color: isActive ? "rgba(255,255,255,0.75)" : "#a8a29e" }}
+                      >
+                        {cfg.desc}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* ── 搜索框 ── */}
@@ -546,112 +557,33 @@ export function LocationsClient() {
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
               {/* 城市筛选 */}
               {cities.length > 0 && (
-                <div className="relative flex-shrink-0" ref={cityDropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => { setShowFilters((v) => !v); setShowDifficultyDropdown(false); }}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
-                      selectedCityId
-                        ? "bg-amber-500 text-white border-amber-500 shadow-sm"
-                        : "bg-white text-stone-500 border-stone-200 hover:border-stone-300 hover:text-stone-700"
-                    )}
-                  >
-                    <MapPin className="w-3 h-3" />
-                    {selectedCityName || copy.locations.allCities}
-                    <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", showFilters && "rotate-180")} />
-                  </button>
-
-                  {showFilters && (
-                    <div
-                      className="absolute top-full mt-1.5 left-0 bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden z-[200] min-w-[140px] max-h-60 overflow-y-auto py-1 origin-top"
-                      style={{ animation: "scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both" }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleCitySelect("")}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
-                          !selectedCityId ? "text-amber-600 bg-amber-50" : "text-stone-500 hover:bg-stone-50 hover:text-stone-700"
-                        )}
-                      >
-                        <MapPin className="w-3 h-3 flex-shrink-0" />
-                        {copy.locations.allCities}
-                      </button>
-                      {cities.map((city) => (
-                        <button
-                          key={city.id}
-                          type="button"
-                          onClick={() => handleCitySelect(city.id)}
-                          className={cn(
-                            "w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
-                            selectedCityId === city.id ? "text-amber-600 bg-amber-50" : "text-stone-500 hover:bg-stone-50 hover:text-stone-700"
-                          )}
-                        >
-                          <MapPin className="w-3 h-3 flex-shrink-0" />
-                          {city.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 难度筛选 */}
-              <div className="relative flex-shrink-0" ref={difficultyDropdownRef}>
                 <button
+                  ref={cityBtnRef}
                   type="button"
-                  onClick={() => { setShowDifficultyDropdown((v) => !v); setShowFilters(false); }}
+                  onClick={() => {
+                    if (cityBtnRef.current) {
+                      const rect = cityBtnRef.current.getBoundingClientRect();
+                      setCityDropdownPos({ top: rect.bottom + 6, left: rect.left });
+                    }
+                    setShowCityDropdown((v) => !v);
+                  }}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
-                    selectedDifficulty
-                      ? "text-white border-transparent shadow-sm"
+                    "flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
+                    selectedCityId
+                      ? "bg-amber-500 text-white border-amber-500 shadow-sm"
                       : "bg-white text-stone-500 border-stone-200 hover:border-stone-300 hover:text-stone-700"
                   )}
-                  style={selectedDifficulty ? { background: difficultyConfig[selectedDifficulty]?.dot, borderColor: difficultyConfig[selectedDifficulty]?.dot } : {}}
                 >
-                  <SlidersHorizontal className="w-3 h-3" />
-                  {selectedDifficultyLabel || copy.locations.difficultyFilter}
-                  <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", showDifficultyDropdown && "rotate-180")} />
+                  <MapPin className="w-3 h-3" />
+                  {selectedCityName || copy.locations.allCities}
+                  <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", showCityDropdown && "rotate-180")} />
                 </button>
-
-                {showDifficultyDropdown && (
-                  <div
-                    className="absolute top-full mt-1.5 left-0 bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden z-[200] min-w-[130px] py-1 origin-top"
-                    style={{ animation: "scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both" }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleDifficultySelect("")}
-                      className={cn(
-                        "w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
-                        !selectedDifficulty ? "text-amber-600 bg-amber-50" : "text-stone-500 hover:bg-stone-50 hover:text-stone-700"
-                      )}
-                    >
-                      {copy.locations.allDifficulty}
-                    </button>
-                    {Object.entries(difficultyConfig).map(([key, cfg]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => handleDifficultySelect(key)}
-                        className={cn(
-                          "w-full flex items-center gap-2.5 px-3.5 py-2 text-xs transition-colors",
-                          selectedDifficulty === key ? "bg-stone-50" : "hover:bg-stone-50"
-                        )}
-                      >
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cfg.dot }} />
-                        <span style={{ color: selectedDifficulty === key ? cfg.color : undefined }} className={selectedDifficulty === key ? "font-medium" : "text-stone-600"}>
-                          {cfg.label}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* 分隔线 */}
-              <div className="flex-shrink-0 w-px h-4 bg-stone-200" />
+              {cities.length > 0 && popularTags.length > 0 && (
+                <div className="flex-shrink-0 w-px h-4 bg-stone-200" />
+              )}
 
               {/* 标签 */}
               {popularTags.slice(0, 8).map((tag) => (
@@ -685,6 +617,45 @@ export function LocationsClient() {
             {/* 右侧渐变遮罩 */}
             <div className="absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-l from-white to-transparent pointer-events-none" />
           </div>
+
+          {/* 城市下拉（fixed 定位，不受任何祖先 overflow 裁剪） */}
+          {showCityDropdown && (
+            <div
+              ref={cityDropdownRef}
+              className="fixed bg-white border border-stone-200 rounded-xl shadow-lg z-[9999] min-w-[140px] max-h-60 overflow-y-auto py-1 origin-top"
+              style={{
+                top: cityDropdownPos.top,
+                left: cityDropdownPos.left,
+                animation: "scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => handleCitySelect("")}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
+                  !selectedCityId ? "text-amber-600 bg-amber-50" : "text-stone-500 hover:bg-stone-50 hover:text-stone-700"
+                )}
+              >
+                <MapPin className="w-3 h-3 flex-shrink-0" />
+                {copy.locations.allCities}
+              </button>
+              {cities.map((city) => (
+                <button
+                  key={city.id}
+                  type="button"
+                  onClick={() => handleCitySelect(city.id)}
+                  className={cn(
+                    "w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
+                    selectedCityId === city.id ? "text-amber-600 bg-amber-50" : "text-stone-500 hover:bg-stone-50 hover:text-stone-700"
+                  )}
+                >
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  {city.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -708,29 +679,13 @@ export function LocationsClient() {
               )}
 
               {/* 活跃筛选 badges */}
-              {!isLoading && (selectedCityId || selectedTags.length > 0 || selectedDifficulty) && (
+              {!isLoading && (selectedCityId || selectedTags.length > 0) && (
                 <div className="flex items-center gap-2 flex-wrap">
                   {selectedCityId && selectedCityName && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-amber-50 text-amber-700 border border-amber-100">
                       <MapPin className="w-3 h-3" />
                       {selectedCityName}
                       <button onClick={() => handleCitySelect("")} className="hover:text-amber-900 transition-colors ml-0.5">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  )}
-                  {selectedDifficulty && selectedDifficultyLabel && (
-                    <span
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border"
-                      style={{
-                        background: difficultyConfig[selectedDifficulty]?.bg,
-                        color: difficultyConfig[selectedDifficulty]?.color,
-                        borderColor: `${difficultyConfig[selectedDifficulty]?.dot}30`,
-                      }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: difficultyConfig[selectedDifficulty]?.dot }} />
-                      {selectedDifficultyLabel}
-                      <button onClick={() => handleDifficultySelect("")} className="hover:opacity-70 transition-opacity ml-0.5">
                         <X className="w-3 h-3" />
                       </button>
                     </span>

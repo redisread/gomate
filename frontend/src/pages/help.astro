@@ -1,0 +1,11 @@
+---
+/**
+ * 帮助中心页
+ */
+import Layout from "../layouts/Layout.astro";
+import { HelpClient } from "../components/features/help-client";
+---
+
+<Layout title="帮助中心 - GoMate">
+  <HelpClient client:load />
+</Layout>

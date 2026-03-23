@@ -1,11 +1,10 @@
 import * as React from "react";
-import { Mountain, Heart, Mail, ArrowRight } from "lucide-react";
+import { Mountain, Heart, Mail } from "lucide-react";
 import { copy } from "@/lib/copy";
 
 /**
- * 页脚组件 — 干净收尾版
- * 结构：品牌小行 + 精简四列导航 + 版权栏
- * 注：情感召唤 CTA 已由首页 CTA Section 承担，Footer 不重复
+ * 页脚组件
+ * 结构：品牌区（左）+ 两列链接（右）+ 版权栏
  */
 export function Footer() {
   return (
@@ -30,11 +29,11 @@ export function Footer() {
 
       <div className="relative max-w-5xl mx-auto px-6 sm:px-8">
 
-        {/* ── 品牌行 + 四列导航 ── */}
-        <div className="pt-12 pb-10 grid grid-cols-1 md:grid-cols-12 gap-8">
+        {/* ── 主体区：品牌 + 导航 ── */}
+        <div className="pt-10 pb-8 flex flex-col md:flex-row md:items-start gap-10 md:gap-0">
 
-          {/* 品牌区（占 3 列） */}
-          <div className="md:col-span-3">
+          {/* 品牌区 */}
+          <div className="md:flex-1">
             <div className="flex items-center gap-2 mb-3">
               <div
                 className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -46,77 +45,12 @@ export function Footer() {
                 GoMate
               </span>
             </div>
-            <p className="text-xs leading-relaxed" style={{ color: "#D4C4B8" }}>
+            <p className="text-xs leading-relaxed mb-4" style={{ color: "#D4C4B8" }}>
               发现有趣的地方，<br />找到同行的人。
             </p>
-          </div>
-
-          {/* 间距占位 */}
-          <div className="hidden md:block md:col-span-1" />
-
-          {/* 探索（占 2 列） */}
-          <div className="md:col-span-2">
-            <h3 className="text-xs font-semibold mb-4 tracking-widest uppercase" style={{ color: "#C4A898" }}>
-              探索
-            </h3>
-            <ul className="space-y-2.5">
-              {[
-                { href: "/locations",    label: "探索地点" },
-                { href: "/teams",        label: "找队伍" },
-                { href: "/teams/create", label: "发布队伍" },
-              ].map(({ href, label }) => (
-                <li key={href}>
-                  <a href={href} className="footer-link text-sm" style={{ color: "#8B6F5E" }}>
-                    {label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* 关于（占 2 列） */}
-          <div className="md:col-span-2">
-            <h3 className="text-xs font-semibold mb-4 tracking-widest uppercase" style={{ color: "#C4A898" }}>
-              关于
-            </h3>
-            <ul className="space-y-2.5">
-              {[
-                { href: "/about",   label: "关于我们" },
-                { href: "/contact", label: "联系我们" },
-                { href: "/careers", label: "加入团队" },
-              ].map(({ href, label }) => (
-                <li key={href}>
-                  <a href={href} className="footer-link text-sm" style={{ color: "#8B6F5E" }}>
-                    {label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* 支持 + 联系（占 2 列） */}
-          <div className="md:col-span-2">
-            <h3 className="text-xs font-semibold mb-4 tracking-widest uppercase" style={{ color: "#C4A898" }}>
-              支持
-            </h3>
-            <ul className="space-y-2.5 mb-6">
-              {[
-                { href: "/help",       label: "帮助中心" },
-                { href: "/privacy",    label: copy.footer.supportPrivacy },
-                { href: "/terms",      label: copy.footer.terms },
-              ].map(({ href, label }) => (
-                <li key={href}>
-                  <a href={href} className="footer-link text-sm" style={{ color: "#8B6F5E" }}>
-                    {label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-
-            {/* 联系邮件 */}
             <a
               href="mailto:hi@gomate.live"
-              className="inline-flex items-center gap-2 group"
+              className="inline-flex items-center gap-1.5"
               style={{ color: "#C4A898" }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#E8845A"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#C4A898"; }}
@@ -126,6 +60,51 @@ export function Footer() {
             </a>
           </div>
 
+          {/* 导航链接区：两列 */}
+          <div className="flex gap-12 md:gap-16">
+
+            {/* 探索 */}
+            <div>
+              <h3 className="text-xs font-semibold mb-3 tracking-widest uppercase" style={{ color: "#C4A898" }}>
+                探索
+              </h3>
+              <ul className="space-y-2.5">
+                {[
+                  { href: "/locations",    label: "探索地点" },
+                  { href: "/teams",        label: "找队伍" },
+                  { href: "/teams/create", label: "发布队伍" },
+                ].map(({ href, label }) => (
+                  <li key={href}>
+                    <a href={href} className="footer-link text-sm" style={{ color: "#8B6F5E" }}>
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* 支持 */}
+            <div>
+              <h3 className="text-xs font-semibold mb-3 tracking-widest uppercase" style={{ color: "#C4A898" }}>
+                支持
+              </h3>
+              <ul className="space-y-2.5">
+                {[
+                  { href: "/about",   label: "关于我们" },
+                  { href: "/help",    label: "帮助中心" },
+                  { href: "/privacy", label: copy.footer.supportPrivacy },
+                  { href: "/terms",   label: copy.footer.terms },
+                ].map(({ href, label }) => (
+                  <li key={href}>
+                    <a href={href} className="footer-link text-sm" style={{ color: "#8B6F5E" }}>
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+          </div>
         </div>
 
         {/* ── 版权栏 ── */}
@@ -136,13 +115,9 @@ export function Footer() {
           <p className="text-xs" style={{ color: "#C4A898" }}>
             © {new Date().getFullYear()} {copy.footer.copyright}
           </p>
-
           <p className="text-xs flex items-center gap-1" style={{ color: "#C4A898" }}>
             Made with{" "}
-            <Heart
-              className="h-3 w-3"
-              style={{ color: "#E8845A", fill: "#E8845A" }}
-            />
+            <Heart className="h-3 w-3" style={{ color: "#E8845A", fill: "#E8845A" }} />
             {" "}for 每一个想找搭子的你
           </p>
         </div>
