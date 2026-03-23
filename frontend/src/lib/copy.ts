@@ -1039,6 +1039,73 @@ export const copy = {
     operationFailedRetry: "操作失败，请重试",
     deleteFailed: "删除失败:",
     deleteFailedRetry: "删除失败，请重试",
+
+    // 封面图上传
+    coverImageDrag: "拖拽图片到此处",
+    coverImageOr: "或",
+    coverImageClickUpload: "点击上传",
+    coverImagePasteUrl: "粘贴图片 URL",
+    coverImageUrlPlaceholder: "https://...",
+    coverImageConfirmUrl: "确认",
+    coverImageUploading: "上传中...",
+    coverImageTooLarge: "图片不能超过 5MB",
+    coverImageInvalidType: "请选择图片格式文件",
+    coverImageUploadFailed: "上传失败，请重试",
+    coverImageReplaceBtn: "更换封面",
+    coverImageDeleteBtn: "删除",
+    coverImageAiHint: "建议使用 16:9 比例的高清图片",
+
+    // 季节选择
+    seasonSpring: "春季",
+    seasonSummer: "夏季",
+    seasonAutumn: "秋季",
+    seasonWinter: "冬季",
+    seasonSpringMonths: "3-5月",
+    seasonSummerMonths: "6-8月",
+    seasonAutumnMonths: "9-11月",
+    seasonWinterMonths: "12-2月",
+    seasonSelectHint: "可多选，选择最适合游览的季节",
+
+    // 进度指示
+    progressStep1: "基本信息",
+    progressStep2: "位置信息",
+    progressStep3: "封面与季节",
+    progressStep4: "完成",
+    progressComplete: "已完成",
+    progressIncomplete: "未完成",
+
+    // 草稿与保存
+    draftSaved: "草稿已自动保存",
+    draftSavedAgo: "前",
+    draftRestorePrompt: "检测到未完成的草稿，是否恢复？",
+    draftRestoreBtn: "恢复草稿",
+    draftDiscardBtn: "放弃草稿",
+    unsavedChanges: "有未保存的更改",
+    discardChanges: "放弃更改",
+    saveChanges: "保存更改",
+    justNow: "刚刚",
+    minutesAgo: "分钟前",
+    hoursAgo: "小时前",
+
+    // 城市搜索
+    citySearchPlaceholder: "搜索城市...",
+    cityHotCities: "热门城市",
+    cityNoResults: "未找到匹配城市",
+
+    // 字段校验
+    validationNameRequired: "地点名称不能为空",
+    validationNameTooLong: "地点名称不能超过 50 字",
+    validationDescRequired: "详细描述不能为空",
+    validationDescTooShort: "描述至少需要 10 个字",
+    validationCityRequired: "请选择所在城市",
+    validationCoverRequired: "请上传封面图片",
+    validationLatInvalid: "纬度范围为 -90 到 90",
+    validationLngInvalid: "经度范围为 -180 到 180",
+
+    // 坐标帮助
+    coordinatesHelp: "不知道坐标？可在高德地图/百度地图右键复制坐标",
+    latLabel: "纬度 (Lat)",
+    lngLabel: "经度 (Lng)",
   },
 
   // ─── UI 组件 ──────────────────────────────────────────────────────────────
