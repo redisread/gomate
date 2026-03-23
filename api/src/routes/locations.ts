@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, like, and, sql, inArray } from "drizzle-orm";
+import { eq, like, and, sql, inArray, asc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
@@ -271,6 +271,57 @@ locations.get("/:id", async (c) => {
   } catch (error) {
     console.error("Get location error:", error);
     return c.json({ error: "获取地点详情失败" }, 500);
+  }
+});
+
+/**
+ * GET /locations/:id/pois
+ * 获取地点关联的打卡点（POI）列表
+ */
+locations.get("/:id/pois", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const db = createDb(c.env.DB);
+
+    // 验证地点存在
+    const location = await db.query.locations.findFirst({
+      where: eq(schema.locations.id, id),
+      columns: { id: true },
+    });
+    if (!location) return c.json({ error: "地点不存在" }, 404);
+
+    // 查询地点关联的 POI（entityType = "location"）
+    const locationPois = await db
+      .select({ poi: schema.pois, role: schema.entityToPois })
+      .from(schema.entityToPois)
+      .innerJoin(schema.pois, eq(schema.entityToPois.poiId, schema.pois.id))
+      .where(
+        and(
+          eq(schema.entityToPois.entityType, "location"),
+          eq(schema.entityToPois.entityId, id)
+        )
+      )
+      .orderBy(asc(schema.entityToPois.order));
+
+    const pois = locationPois.map(({ poi, role }) => ({
+      id: poi.id,
+      name: poi.name,
+      description: poi.description,
+      category: poi.category,
+      coordinates: poi.coordinates ? JSON.parse(poi.coordinates) : null,
+      images: poi.images ? JSON.parse(poi.images) : [],
+      extra: poi.extra ? JSON.parse(poi.extra) : null,
+      order: role.order,
+      roleType: role.roleType,
+      roleSpecificData: role.roleSpecificData
+        ? JSON.parse(role.roleSpecificData)
+        : null,
+    }));
+
+    return c.json({ success: true, pois });
+  } catch (error) {
+    console.error("Get location pois error:", error);
+    return c.json({ error: "获取打卡点失败" }, 500);
   }
 });
 

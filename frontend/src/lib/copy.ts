@@ -258,6 +258,18 @@ export const copy = {
     difficultyLabel: "难度",
     teamsWaitingDesc: "支队伍正在等待伙伴", // 「N 支队伍正在等待伙伴」，N 在组件内拼接
     relatedTitle: "其他推荐地点",
+
+    // 打卡点（POI）
+    poiSection: "打卡点",
+    poiEmpty: "暂无打卡点信息",
+    poiLoading: "加载打卡点中...",
+    poiRoleTypes: {
+      waypoint: "途经点",
+      checkpoint: "打卡点",
+      viewpoint: "观景点",
+      facility: "设施",
+      poi: "兴趣点",
+    },
   },
 
   // ─── 队伍 ─────────────────────────────────────────────────────────────────
@@ -485,6 +497,12 @@ export const copy = {
     deleteTeamSuccess: "队伍已删除",
     deleteTeamFailed: "删除队伍失败",
     onlyLeaderCanDelete: "只有队长可以删除队伍",
+
+    // 取消队伍
+    cancelTeam: "取消队伍",
+    cancelTeamConfirm: "确定要取消该队伍吗？取消后无法恢复，已申请的成员将无法加入。",
+    cancelTeamSuccess: "队伍已取消",
+    cancelTeamFailed: "取消队伍失败",
   },
 
   // ─── 个人资料 ─────────────────────────────────────────────────────────────

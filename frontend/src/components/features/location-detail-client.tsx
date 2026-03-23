@@ -29,6 +29,7 @@ import {
   RouteInfoCard,
   TeamListSection,
   AddressRow,
+  PoiSection,
 } from "@/components/features/location-detail-main-content";
 
 // ─── 难度配置（与列表页保持一致）────────────────────────────────────────────
@@ -906,6 +907,9 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
             {/* 路线信息：大数字数据展示 + 难度进度条 + 装备/注意事项 */}
             <RouteInfoCard location={location} />
+
+            {/* 打卡点：异步加载，无数据时不渲染 */}
+            <PoiSection locationId={location.id} />
 
             {/* 地址行 */}
             {location.address && <AddressRow address={location.address} />}

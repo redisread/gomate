@@ -328,7 +328,7 @@ teams.get("/:id", async (c) => {
 
     const teamWithRelations = await db.query.teams.findFirst({
       where: eq(schema.teams.id, teamId),
-      with: { leader: true, members: { with: { user: true } }, route: true },
+      with: { leader: true, members: { with: { user: true } }, route: true, location: true },
     });
 
     if (!teamWithRelations) return c.json({ error: "队伍不存在" }, 404);
@@ -400,6 +400,11 @@ teams.get("/:id", async (c) => {
         requirements: teamWithRelations.requirements ? JSON.parse(teamWithRelations.requirements) : [],
         status: teamWithRelations.status, createdAt: teamWithRelations.createdAt,
         route: teamWithRelations.route || undefined,
+        location: teamWithRelations.location ? {
+          id: teamWithRelations.location.id,
+          name: teamWithRelations.location.name,
+          coverImage: teamWithRelations.location.coverImage,
+        } : undefined,
         leader: leader ? {
           id: leader.id, name: leader.name, nickname: leader.nickname || null,
           avatar: leader.image || "", level: leader.level || "beginner",

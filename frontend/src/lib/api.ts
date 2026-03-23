@@ -78,6 +78,22 @@ export async function apiDelete<T>(path: string): Promise<T> {
 }
 
 /**
+ * 获取地点关联的打卡点（POI）列表
+ */
+export async function getLocationPois(
+  locationId: string
+): Promise<import("./types").RoutePoi[]> {
+  try {
+    const res = await fetchAPI(`/api/locations/${locationId}/pois`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.pois ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * 两步加载当前登录用户的最新数据，绕过 Cloudflare KV 会话缓存。
  * 1. /auth/get-session → 验证登录状态，取 userId
  * 2. /api/users?id=xxx → 直接读数据库，取最新字段

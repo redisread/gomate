@@ -28,7 +28,8 @@ import {
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
-import type { Location, Team, Tag } from "@/lib/types";
+import type { Location, Team, Tag, RoutePoi } from "@/lib/types";
+import { getLocationPois } from "@/lib/api";
 
 // ─── 难度配置（与 location-detail-client.tsx 保持一致）──────────────────────
 const DIFFICULTY_CONFIG: Record<
@@ -714,6 +715,85 @@ export function AddressRow({ address }: AddressRowProps) {
     <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm px-5 py-4 flex items-start gap-3">
       <MapPin className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
       <span className="text-sm text-stone-500 leading-relaxed">{address}</span>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PoiSection
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface PoiSectionProps {
+  locationId: string;
+}
+
+/**
+ * 打卡点区块
+ * - 异步加载地点关联的 POI 数据
+ * - 按序号展示打卡点名称、类型标签、描述
+ * - 无数据时不渲染
+ */
+export function PoiSection({ locationId }: PoiSectionProps) {
+  const [pois, setPois] = React.useState<RoutePoi[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    getLocationPois(locationId)
+      .then(setPois)
+      .finally(() => setLoading(false));
+  }, [locationId]);
+
+  if (loading || pois.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm p-6">
+      {/* 标题行 */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+          <MapPin className="h-4 w-4 text-amber-600" />
+        </div>
+        <h2 className="text-lg font-semibold text-stone-900">
+          {copy.locations.poiSection}
+        </h2>
+        <span className="ml-auto text-xs text-stone-400">{pois.length} 个</span>
+      </div>
+
+      {/* POI 列表 */}
+      <div className="space-y-3">
+        {pois.map((poi, index) => (
+          <div
+            key={poi.id}
+            className="flex items-start gap-3 p-3 rounded-xl bg-stone-50/60"
+          >
+            {/* 序号气泡 */}
+            <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-[10px] font-bold text-amber-700">
+                {index + 1}
+              </span>
+            </div>
+
+            {/* 内容 */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium text-stone-800">
+                  {poi.name}
+                </span>
+                {/* 角色类型标签 */}
+                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-[10px] font-medium border border-amber-100">
+                  {copy.locations.poiRoleTypes[
+                    poi.roleType as keyof typeof copy.locations.poiRoleTypes
+                  ] ?? poi.roleType}
+                </span>
+              </div>
+              {poi.description && (
+                <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                  {poi.description}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

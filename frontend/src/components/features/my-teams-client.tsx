@@ -129,6 +129,9 @@ export function MyTeamsClient() {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [actionMessage, setActionMessage] = React.useState("");
 
+  const [cancelTarget, setCancelTarget] = React.useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = React.useState(false);
+
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab") || "created";
@@ -231,6 +234,29 @@ export function MyTeamsClient() {
       setActionMessage("操作失败，请重试");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleCancelTeam = async () => {
+    if (!cancelTarget) return;
+    setIsCancelling(true);
+    try {
+      const r = await fetchAPI(`/api/teams/${cancelTarget}/cancel`, { method: "POST" });
+      const data = await r.json();
+      if (data.success) {
+        setCreatedTeams((prev) =>
+          prev.map((t) => (t.id === cancelTarget ? { ...t, status: "cancelled" } : t))
+        );
+        setActionMessage(copy.teams.cancelTeamSuccess);
+        setCancelTarget(null);
+      } else {
+        setActionMessage(data.error || copy.teams.cancelTeamFailed);
+      }
+    } catch {
+      setActionMessage(copy.teams.cancelTeamFailed);
+    } finally {
+      setIsCancelling(false);
+      setTimeout(() => setActionMessage(""), 3000);
     }
   };
 
@@ -350,7 +376,7 @@ export function MyTeamsClient() {
                 {activeCreated.length > 0 && (
                   <CollapsibleSection title={c.activeTeams} count={activeCreated.length}>
                     {activeCreated.map((team) => (
-                      <TeamCard key={team.id} team={team} isLeader />
+                      <TeamCard key={team.id} team={team} isLeader onCancel={(id) => setCancelTarget(id)} />
                     ))}
                   </CollapsibleSection>
                 )}
@@ -616,6 +642,40 @@ export function MyTeamsClient() {
           </div>
         </div>
       )}
+
+      {/* 取消队伍确认 Modal */}
+      {cancelTarget && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both] motion-reduce:animate-none">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+                <XCircle className="h-5 w-5 text-red-500" />
+              </div>
+              <h3 className="text-base font-bold text-stone-900">{copy.teams.cancelTeam}</h3>
+            </div>
+            <p className="text-sm text-stone-500 leading-relaxed mb-5">
+              {copy.teams.cancelTeamConfirm}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCancelTarget(null)}
+                disabled={isCancelling}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition-colors disabled:opacity-50"
+              >
+                {copy.common.cancel}
+              </button>
+              <button
+                onClick={handleCancelTeam}
+                disabled={isCancelling}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isCancelling && <Loader2 className="h-4 w-4 animate-spin" />}
+                {copy.teams.cancelTeam}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -731,9 +791,14 @@ function CollapsibleSection({
   );
 }
 
-function TeamCard({ team, isLeader = false }: { team: TeamItem; isLeader?: boolean }) {
+function TeamCard({ team, isLeader = false, onCancel }: {
+  team: TeamItem;
+  isLeader?: boolean;
+  onCancel?: (id: string) => void;
+}) {
   const status = statusLabels[team.status] || { label: team.status, color: "bg-stone-100 text-stone-600 border border-stone-200", dot: "bg-stone-400" };
   const isFull = team.currentMembers >= team.maxMembers;
+  const canCancel = isLeader && onCancel && (team.status === "recruiting" || team.status === "full");
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
@@ -806,6 +871,17 @@ function TeamCard({ team, isLeader = false }: { team: TeamItem; isLeader?: boole
 
           <ChevronRight className="h-5 w-5 text-stone-300 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
         </div>
+        {canCancel && (
+          <div className="mt-3 pt-3 border-t border-stone-100 flex justify-end">
+            <button
+              onClick={(e) => { e.preventDefault(); onCancel!(team.id); }}
+              className="text-xs text-red-500 hover:text-red-600 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-red-50"
+            >
+              <XCircle className="h-3.5 w-3.5" />
+              {copy.teams.cancelTeam}
+            </button>
+          </div>
+        )}
       </div>
     </a>
   );
