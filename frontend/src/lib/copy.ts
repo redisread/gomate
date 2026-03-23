@@ -63,7 +63,7 @@ export const copy = {
 
   // ─── 页脚 ─────────────────────────────────────────────────────────────────
   footer: {
-    tagline: "极简「找搭子」平台，让每一次出行都有志同道合的伙伴同行。",
+    tagline: "找到同行的人。",
     product: "产品",
     productLocations: "探索地点",
     productTeams: "找队伍",
