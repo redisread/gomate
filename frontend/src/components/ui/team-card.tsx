@@ -89,7 +89,7 @@ export function TeamCard({
         "animate-fade-up opacity-0",
         staggerClass,
         // 焦点可访问性
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#249a87]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97706]",
         className
       )}
     >
@@ -139,7 +139,7 @@ export function TeamCard({
 
         {/* 队伍标题 */}
         <div>
-          <h3 className="text-base font-semibold text-[#1e1812] leading-snug line-clamp-2 group-hover:text-[#249a87] transition-colors duration-150">
+          <h3 className="text-base font-semibold text-[#1e1812] leading-snug line-clamp-2 group-hover:text-[#D97706] transition-colors duration-150">
             {team.title}
           </h3>
           {locationName && (
@@ -170,7 +170,7 @@ export function TeamCard({
             className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${fillRatio * 100}%`,
-              background: isFull ? "#d97706" : "#249a87",
+              background: isFull ? "#d97706" : "#D97706",
             }}
           />
         </div>
@@ -206,7 +206,7 @@ export function TeamCard({
                 )}
               </div>
             )}
-            <ChevronRight className="h-4 w-4 text-[#8f7f6e]/50 group-hover:text-[#249a87] group-hover:translate-x-0.5 transition-all duration-150" />
+            <ChevronRight className="h-4 w-4 text-[#8f7f6e]/50 group-hover:text-[#D97706] group-hover:translate-x-0.5 transition-all duration-150" />
           </div>
         </div>
       </div>
@@ -230,7 +230,7 @@ function CoverImage({ src, alt, status }: CoverImageProps) {
         style={{
           background: status === "completed" || status === "cancelled"
             ? "linear-gradient(160deg, #f2ede7 0%, #e8e0d7 100%)"
-            : "linear-gradient(160deg, #1a6459 0%, #249a87 40%, #3fb5a0 70%, #74d0bf 100%)",
+            : "linear-gradient(160deg, #92400E 0%, #D97706 40%, #F59E0B 70%, #FCD34D 100%)",
         }}
         aria-hidden="true"
       />

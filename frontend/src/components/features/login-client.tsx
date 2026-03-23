@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mountain, ArrowRight } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { signIn } from "@/lib/auth-client";
 
 /**
- * 登录页客户端组件 - React Island
+ * 登录页 — 温暖品牌双栏布局
+ * 左侧：品牌故事 + 山脉装饰（桌面端可见）
+ * 右侧：表单区
  */
 export function LoginClient() {
   const [isLoading, setIsLoading] = React.useState(false);
@@ -47,31 +49,126 @@ export function LoginClient() {
   };
 
   return (
-    <main className="min-h-screen bg-stone-50 flex flex-col">
-      {/* Header */}
-      <div className="px-4 sm:px-6 lg:px-8 py-4">
-        <a
-          href="/"
-          className="inline-flex items-center text-stone-600 hover:text-stone-900 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {copy.common.backHome}
+    <div className="min-h-screen flex">
+      {/* ── 左侧：品牌区（桌面端） ── */}
+      <div
+        className="hidden lg:flex lg:w-[480px] xl:w-[560px] flex-col justify-between p-12 relative overflow-hidden flex-shrink-0"
+        style={{
+          background: "linear-gradient(160deg, #92400E 0%, #D97706 45%, #F59E0B 100%)",
+        }}
+      >
+        {/* 背景装饰光斑 */}
+        <div
+          className="absolute -top-32 -right-32 w-96 h-96 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)" }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(255,122,101,0.15) 0%, transparent 70%)" }}
+          aria-hidden="true"
+        />
+
+        {/* Logo */}
+        <a href="/" className="flex items-center gap-2.5 relative z-10 group">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: "rgba(255,255,255,0.20)" }}
+          >
+            <Mountain className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-xl font-bold text-white tracking-tight">GoMate</span>
         </a>
+
+        {/* 中部情感文案 */}
+        <div className="relative z-10 space-y-6">
+          <div>
+            <p className="text-white/60 text-sm font-medium uppercase tracking-widest mb-3">
+              欢迎回来
+            </p>
+            <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
+              每一次出发，<br />
+              都有人在等你
+            </h2>
+          </div>
+          <p className="text-white/75 text-lg leading-relaxed max-w-sm">
+            找到志同道合的伙伴，一起探索城市里那些值得去的地方。
+          </p>
+
+          {/* 用户见证小卡片 */}
+          <div
+            className="rounded-2xl p-4 space-y-3"
+            style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
+          >
+            {[
+              { avatar: "🧗", name: "小明", text: "在这里认识了一起爬山的好友" },
+              { avatar: "☕", name: "晓雯", text: "每周末都能找到探店的搭子" },
+            ].map((item) => (
+              <div key={item.name} className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0"
+                  style={{ background: "rgba(255,255,255,0.20)" }}
+                >
+                  {item.avatar}
+                </div>
+                <div>
+                  <p className="text-white/90 text-sm font-medium">{item.name}</p>
+                  <p className="text-white/60 text-xs">{item.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 底部 SVG 山脉装饰 */}
+        <svg
+          className="absolute bottom-0 left-0 right-0 w-full pointer-events-none"
+          viewBox="0 0 560 120"
+          fill="none"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M0 120L80 80L160 100L240 55L320 75L400 30L480 55L560 20V120H0Z"
+            fill="rgba(255,255,255,0.06)"
+          />
+          <path
+            d="M0 120L100 90L200 110L300 65L420 85L520 45L560 60V120H0Z"
+            fill="rgba(255,255,255,0.04)"
+          />
+        </svg>
       </div>
 
-      {/* Login Form */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="bg-white border border-stone-200 rounded-2xl p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-stone-900">{t.loginTitle}</h1>
-              <p className="text-sm text-stone-500 mt-2">{t.loginSubtitle}</p>
+      {/* ── 右侧：表单区 ── */}
+      <div
+        className="flex-1 flex flex-col"
+        style={{ background: "#FDFAF6" }}
+      >
+        {/* 移动端顶部 Logo */}
+        <div className="lg:hidden px-6 pt-6">
+          <a href="/" className="flex items-center gap-2 group">
+            <Mountain className="h-6 w-6" style={{ color: "#D97706" }} />
+            <span className="text-lg font-bold" style={{ color: "#1e1812" }}>GoMate</span>
+          </a>
+        </div>
+
+        {/* 表单主体 */}
+        <div className="flex-1 flex items-center justify-center px-6 py-12">
+          <div className="w-full max-w-sm">
+            {/* 标题 */}
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold mb-1.5" style={{ color: "#1e1812" }}>
+                {t.loginTitle}
+              </h1>
+              <p className="text-sm" style={{ color: "#8f7f6e" }}>
+                {t.loginSubtitle}
+              </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {/* 邮箱 */}
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium text-stone-700">
+              <div className="space-y-1.5">
+                <label htmlFor="email" className="text-sm font-medium" style={{ color: "#4a3f35" }}>
                   {t.email}
                 </label>
                 <input
@@ -82,19 +179,35 @@ export function LoginClient() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
+                  className="w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
+                  style={{
+                    background: "#fff",
+                    borderColor: "#e8e0d7",
+                    color: "#1e1812",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "#D97706";
+                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "#e8e0d7";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                 />
               </div>
 
               {/* 密码 */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="text-sm font-medium text-stone-700">
+                  <label htmlFor="password" className="text-sm font-medium" style={{ color: "#4a3f35" }}>
                     {t.password}
                   </label>
                   <a
                     href="/forgot-password"
-                    className="text-xs text-stone-500 hover:text-stone-900"
+                    className="text-xs transition-colors duration-150"
+                    style={{ color: "#D97706" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#92400E"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D97706"; }}
                   >
                     {t.forgotPassword}
                   </a>
@@ -108,12 +221,28 @@ export function LoginClient() {
                     value={formData.password}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2.5 pr-10 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
+                    className="w-full px-4 py-3 pr-11 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
+                    style={{
+                      background: "#fff",
+                      borderColor: "#e8e0d7",
+                      color: "#1e1812",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#D97706";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "#e8e0d7";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors duration-150"
+                    style={{ color: "#8f7f6e" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#D97706"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#8f7f6e"; }}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -122,8 +251,12 @@ export function LoginClient() {
 
               {/* 错误提示 */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-600">{error}</p>
+                <div
+                  className="rounded-xl px-4 py-3 text-sm flex items-center gap-2"
+                  style={{ background: "rgba(255,122,101,0.08)", color: "#c0392b", border: "1px solid rgba(255,122,101,0.20)" }}
+                >
+                  <span className="text-base">⚠️</span>
+                  {error}
                 </div>
               )}
 
@@ -131,7 +264,23 @@ export function LoginClient() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-stone-900 hover:bg-stone-800 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{
+                  background: isLoading ? "#D97706" : "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+                  boxShadow: isLoading ? "none" : "0 4px 18px rgba(217,119,6,0.35)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isLoading) {
+                    const el = e.currentTarget as HTMLButtonElement;
+                    el.style.transform = "translateY(-1px)";
+                    el.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLButtonElement;
+                  el.style.transform = "translateY(0)";
+                  el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
+                }}
               >
                 {isLoading ? (
                   <>
@@ -139,21 +288,37 @@ export function LoginClient() {
                     {t.loginBtnLoading}
                   </>
                 ) : (
-                  t.loginBtn
+                  <>
+                    {t.loginBtn}
+                    <ArrowRight className="h-4 w-4" />
+                  </>
                 )}
               </button>
 
               {/* 注册链接 */}
-              <p className="text-center text-sm text-stone-500">
+              <p className="text-center text-sm" style={{ color: "#8f7f6e" }}>
                 {t.noAccount}{" "}
-                <a href="/register" className="text-stone-900 font-medium hover:underline">
-                  {t.registerNow}
+                <a
+                  href="/register"
+                  className="font-semibold transition-colors duration-150"
+                  style={{ color: "#D97706" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#92400E"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D97706"; }}
+                >
+                  {t.registerNow} →
                 </a>
               </p>
             </form>
           </div>
         </div>
+
+        {/* 底部版权 */}
+        <div className="px-6 pb-6 text-center">
+          <p className="text-xs" style={{ color: "#c4b5a8" }}>
+            © {new Date().getFullYear()} GoMate · 找到同行的人
+          </p>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }

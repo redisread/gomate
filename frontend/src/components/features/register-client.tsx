@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Eye, EyeOff, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mountain, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { signUp } from "@/lib/auth-client";
 
 /**
- * 注册页客户端组件 - React Island
+ * 注册页 — 温暖品牌双栏布局
+ * 左侧：品牌故事 + 功能亮点（桌面端可见）
+ * 右侧：注册表单
  */
 export function RegisterClient() {
   const [isLoading, setIsLoading] = React.useState(false);
@@ -72,79 +74,172 @@ export function RegisterClient() {
     }
   };
 
+  // 注册成功状态
   if (isSuccess) {
     return (
-      <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ background: "#FDFAF6" }}
+      >
+        <div className="text-center space-y-4">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: "linear-gradient(135deg, rgba(217,119,6,0.15) 0%, rgba(252,211,77,0.20) 100%)" }}
+          >
+            <CheckCircle2 className="h-10 w-10" style={{ color: "#D97706" }} />
           </div>
-          <h2 className="text-2xl font-bold text-stone-900 mb-2">{t.registerSuccess}</h2>
-          <p className="text-stone-500">{t.registerSuccessRedirect}</p>
+          <h2 className="text-2xl font-bold" style={{ color: "#1e1812" }}>
+            {t.registerSuccess}
+          </h2>
+          <p style={{ color: "#8f7f6e" }}>{t.registerSuccessRedirect}</p>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 flex flex-col">
-      {/* Header */}
-      <div className="px-4 sm:px-6 lg:px-8 py-4">
-        <a
-          href="/"
-          className="inline-flex items-center text-stone-600 hover:text-stone-900 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {copy.common.backHome}
+    <div className="min-h-screen flex">
+      {/* ── 左侧：品牌区（桌面端） ── */}
+      <div
+        className="hidden lg:flex lg:w-[480px] xl:w-[560px] flex-col justify-between p-12 relative overflow-hidden flex-shrink-0"
+        style={{
+          background: "linear-gradient(160deg, #92400E 0%, #D97706 45%, #F59E0B 100%)",
+        }}
+      >
+        {/* 背景装饰 */}
+        <div
+          className="absolute -top-32 -right-32 w-96 h-96 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)" }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute bottom-20 -left-16 w-64 h-64 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(255,122,101,0.12) 0%, transparent 70%)" }}
+          aria-hidden="true"
+        />
+
+        {/* Logo */}
+        <a href="/" className="flex items-center gap-2.5 relative z-10">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: "rgba(255,255,255,0.20)" }}
+          >
+            <Mountain className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-xl font-bold text-white tracking-tight">GoMate</span>
         </a>
+
+        {/* 中部主文案 */}
+        <div className="relative z-10 space-y-8">
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="h-4 w-4 text-white/70" />
+              <span className="text-white/60 text-sm font-medium uppercase tracking-widest">
+                加入我们
+              </span>
+            </div>
+            <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
+              你的第一次探索，<br />
+              从这里开始
+            </h2>
+          </div>
+
+          <p className="text-white/75 text-lg leading-relaxed max-w-sm">
+            注册 GoMate，发现身边有趣的地方，找到愿意一起出发的人。
+          </p>
+
+          {/* 功能亮点 */}
+          <div className="space-y-3">
+            {[
+              { icon: "🗺️", text: "探索城市精选地点" },
+              { icon: "👥", text: "与有趣的人组队同行" },
+              { icon: "📅", text: "轻松发布和管理活动" },
+            ].map((item) => (
+              <div key={item.text} className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0"
+                  style={{ background: "rgba(255,255,255,0.15)" }}
+                >
+                  {item.icon}
+                </div>
+                <span className="text-white/85 text-sm">{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 底部 SVG 山脉装饰 */}
+        <svg
+          className="absolute bottom-0 left-0 right-0 w-full pointer-events-none"
+          viewBox="0 0 560 120"
+          fill="none"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M0 120L80 80L160 100L240 55L320 75L400 30L480 55L560 20V120H0Z"
+            fill="rgba(255,255,255,0.06)"
+          />
+          <path
+            d="M0 120L100 90L200 110L300 65L420 85L520 45L560 60V120H0Z"
+            fill="rgba(255,255,255,0.04)"
+          />
+        </svg>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="bg-white border border-stone-200 rounded-2xl p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-stone-900">{t.registerTitle}</h1>
-              <p className="text-sm text-stone-500 mt-2">{t.registerSubtitle}</p>
+      {/* ── 右侧：表单区 ── */}
+      <div
+        className="flex-1 flex flex-col"
+        style={{ background: "#FDFAF6" }}
+      >
+        {/* 移动端顶部 Logo */}
+        <div className="lg:hidden px-6 pt-6">
+          <a href="/" className="flex items-center gap-2">
+            <Mountain className="h-6 w-6" style={{ color: "#D97706" }} />
+            <span className="text-lg font-bold" style={{ color: "#1e1812" }}>GoMate</span>
+          </a>
+        </div>
+
+        {/* 表单主体 */}
+        <div className="flex-1 flex items-center justify-center px-6 py-10">
+          <div className="w-full max-w-sm">
+            {/* 标题 */}
+            <div className="mb-7">
+              <h1 className="text-2xl font-bold mb-1.5" style={{ color: "#1e1812" }}>
+                {t.registerTitle}
+              </h1>
+              <p className="text-sm" style={{ color: "#8f7f6e" }}>
+                {t.registerSubtitle}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* 昵称 */}
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium text-stone-700">
-                  {t.nickname}
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  placeholder={t.nicknamePlaceholder}
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
-                />
-              </div>
+              <FormField
+                id="name"
+                label={t.nickname}
+                type="text"
+                placeholder={t.nicknamePlaceholder}
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+                hint={t.nicknameRange}
+              />
 
               {/* 邮箱 */}
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium text-stone-700">
-                  {t.email}
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder={t.emailPlaceholder}
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
-                />
-              </div>
+              <FormField
+                id="email"
+                label={t.email}
+                type="email"
+                placeholder={t.emailPlaceholder}
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+              />
 
               {/* 密码 */}
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-stone-700">
+              <div className="space-y-1.5">
+                <label htmlFor="password" className="text-sm font-medium" style={{ color: "#4a3f35" }}>
                   {t.password}
                 </label>
                 <div className="relative">
@@ -152,44 +247,59 @@ export function RegisterClient() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder={t.passwordTooShort}
+                    placeholder="至少 6 位"
                     value={formData.password}
                     onChange={handleInputChange}
                     required
                     minLength={6}
-                    className="w-full px-4 py-2.5 pr-10 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
+                    className="w-full px-4 py-3 pr-11 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
+                    style={{ background: "#fff", borderColor: "#e8e0d7", color: "#1e1812" }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#D97706";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "#e8e0d7";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors duration-150"
+                    style={{ color: "#8f7f6e" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#D97706"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#8f7f6e"; }}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                {/* 密码强度指示 */}
+                {formData.password && (
+                  <PasswordStrength password={formData.password} />
+                )}
               </div>
 
               {/* 确认密码 */}
-              <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="text-sm font-medium text-stone-700">
-                  {t.confirmPassword}
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder={t.reenterPassword}
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
-                />
-              </div>
+              <FormField
+                id="confirmPassword"
+                label={t.confirmPassword}
+                type="password"
+                placeholder={t.reenterPassword}
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                required
+                hasError={!!(formData.confirmPassword && formData.password !== formData.confirmPassword)}
+              />
 
               {/* 错误提示 */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-600">{error}</p>
+                <div
+                  className="rounded-xl px-4 py-3 text-sm flex items-center gap-2"
+                  style={{ background: "rgba(255,122,101,0.08)", color: "#c0392b", border: "1px solid rgba(255,122,101,0.20)" }}
+                >
+                  <span className="text-base">⚠️</span>
+                  {error}
                 </div>
               )}
 
@@ -197,7 +307,23 @@ export function RegisterClient() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-stone-900 hover:bg-stone-800 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{
+                  background: isLoading ? "#D97706" : "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+                  boxShadow: isLoading ? "none" : "0 4px 18px rgba(217,119,6,0.35)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isLoading) {
+                    const el = e.currentTarget as HTMLButtonElement;
+                    el.style.transform = "translateY(-1px)";
+                    el.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLButtonElement;
+                  el.style.transform = "translateY(0)";
+                  el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
+                }}
               >
                 {isLoading ? (
                   <>
@@ -205,21 +331,132 @@ export function RegisterClient() {
                     {t.registerBtnLoading}
                   </>
                 ) : (
-                  t.registerBtn
+                  <>
+                    {t.registerBtn}
+                    <ArrowRight className="h-4 w-4" />
+                  </>
                 )}
               </button>
 
               {/* 登录链接 */}
-              <p className="text-center text-sm text-stone-500">
+              <p className="text-center text-sm" style={{ color: "#8f7f6e" }}>
                 {t.hasAccount}{" "}
-                <a href="/login" className="text-stone-900 font-medium hover:underline">
-                  {t.loginNow}
+                <a
+                  href="/login"
+                  className="font-semibold transition-colors duration-150"
+                  style={{ color: "#D97706" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#92400E"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D97706"; }}
+                >
+                  {t.loginNow} →
                 </a>
               </p>
             </form>
           </div>
         </div>
+
+        {/* 底部版权 */}
+        <div className="px-6 pb-6 text-center">
+          <p className="text-xs" style={{ color: "#c4b5a8" }}>
+            © {new Date().getFullYear()} GoMate · 找到同行的人
+          </p>
+        </div>
       </div>
-    </main>
+    </div>
+  );
+}
+
+/* ── 通用表单字段 ── */
+function FormField({
+  id,
+  label,
+  type,
+  placeholder,
+  value,
+  onChange,
+  required,
+  hint,
+  hasError,
+}: {
+  id: string;
+  label: string;
+  type: string;
+  placeholder?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  required?: boolean;
+  hint?: string;
+  hasError?: boolean;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="text-sm font-medium" style={{ color: "#4a3f35" }}>
+        {label}
+      </label>
+      <input
+        id={id}
+        name={id}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        required={required}
+        className="w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
+        style={{
+          background: "#fff",
+          borderColor: hasError ? "#ff7a65" : "#e8e0d7",
+          color: "#1e1812",
+          boxShadow: hasError ? "0 0 0 3px rgba(255,122,101,0.10)" : "none",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = hasError ? "#ff7a65" : "#D97706";
+          e.currentTarget.style.boxShadow = hasError
+            ? "0 0 0 3px rgba(255,122,101,0.10)"
+            : "0 0 0 3px rgba(217,119,6,0.10)";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = hasError ? "#ff7a65" : "#e8e0d7";
+          e.currentTarget.style.boxShadow = hasError ? "0 0 0 3px rgba(255,122,101,0.10)" : "none";
+        }}
+      />
+      {hint && (
+        <p className="text-xs" style={{ color: "#c4b5a8" }}>{hint}</p>
+      )}
+    </div>
+  );
+}
+
+/* ── 密码强度指示器 ── */
+function PasswordStrength({ password }: { password: string }) {
+  const getStrength = (pwd: string): { level: number; label: string; color: string } => {
+    let score = 0;
+    if (pwd.length >= 6) score++;
+    if (pwd.length >= 10) score++;
+    if (/[A-Z]/.test(pwd) || /[0-9]/.test(pwd)) score++;
+    if (/[^a-zA-Z0-9]/.test(pwd)) score++;
+
+    if (score <= 1) return { level: 1, label: "弱", color: "#ff7a65" };
+    if (score === 2) return { level: 2, label: "一般", color: "#fbbf24" };
+    if (score === 3) return { level: 3, label: "较强", color: "#D97706" };
+    return { level: 4, label: "强", color: "#92400E" };
+  };
+
+  const { level, label, color } = getStrength(password);
+
+  return (
+    <div className="flex items-center gap-2 mt-1.5">
+      <div className="flex gap-1 flex-1">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="h-1 flex-1 rounded-full transition-all duration-300"
+            style={{ background: i <= level ? color : "#e8e0d7" }}
+          />
+        ))}
+      </div>
+      <span className="text-xs font-medium flex-shrink-0" style={{ color }}>
+        {label}
+      </span>
+    </div>
   );
 }

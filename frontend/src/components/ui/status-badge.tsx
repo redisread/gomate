@@ -16,10 +16,10 @@ const STATUS_STYLES: Record<TeamStatus, {
   ping: boolean;  // recruiting 时圆点闪烁
 }> = {
   recruiting: {
-    bg:       "rgba(36, 154, 135, 0.10)",
-    text:     "#1a6459",
-    border:   "rgba(36, 154, 135, 0.25)",
-    dotColor: "#249a87",
+    bg:       "rgba(217, 119, 6, 0.10)",
+    text:     "#92400E",
+    border:   "rgba(217, 119, 6, 0.25)",
+    dotColor: "#D97706",
     ping:     true,
   },
   full: {
@@ -30,10 +30,10 @@ const STATUS_STYLES: Record<TeamStatus, {
     ping:     false,
   },
   formed: {
-    bg:       "rgba(63, 181, 160, 0.12)",
-    text:     "#249a87",
-    border:   "rgba(63, 181, 160, 0.30)",
-    dotColor: "#3fb5a0",
+    bg:       "rgba(252, 211, 77, 0.12)",
+    text:     "#D97706",
+    border:   "rgba(252, 211, 77, 0.30)",
+    dotColor: "#F59E0B",
     ping:     false,
   },
   completed: {
@@ -54,7 +54,7 @@ const STATUS_STYLES: Record<TeamStatus, {
 
 /* 难度颜色方案 */
 const DIFFICULTY_STYLES: Record<Difficulty, { bg: string; text: string }> = {
-  easy:     { bg: "rgba(36, 154, 135, 0.10)",  text: "#1a6459" },
+  easy:     { bg: "rgba(217, 119, 6, 0.10)",  text: "#92400E" },
   moderate: { bg: "rgba(217, 119, 6, 0.10)",   text: "#92400e" },
   hard:     { bg: "rgba(255, 122, 101, 0.12)", text: "#c2410c" },
   expert:   { bg: "rgba(229, 62, 62, 0.10)",   text: "#9b1c1c" },

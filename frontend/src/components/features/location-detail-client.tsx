@@ -27,7 +27,7 @@ const difficultyConfig: Record<
   string,
   { label: string; dot: string; text: string }
 > = {
-  easy: { label: copy.enums.difficulty.easy, dot: "bg-emerald-500", text: "text-emerald-700" },
+  easy: { label: copy.enums.difficulty.easy, dot: "bg-amber-500", text: "text-amber-700" },
   moderate: { label: copy.enums.difficulty.moderate, dot: "bg-amber-500", text: "text-amber-700" },
   hard: { label: copy.enums.difficulty.hard, dot: "bg-orange-500", text: "text-orange-700" },
   expert: { label: copy.enums.difficulty.expert, dot: "bg-red-500", text: "text-red-700" },
@@ -49,7 +49,7 @@ function TeamProgress({ current, max }: { current: number; max: number }) {
       <div
         className={cn(
           "h-full rounded-full transition-[width] duration-300 ease-out motion-reduce:transition-none",
-          isFull ? "bg-warm" : "bg-gradient-to-r from-emerald-600 to-emerald-500"
+          isFull ? "bg-warm" : "bg-gradient-to-r from-amber-600 to-amber-500"
         )}
         style={{ width: `${width}%` }}
       />
@@ -180,7 +180,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             </h1>
             <a
               href="/locations"
-              className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2 transition-colors"
+              className="text-amber-600 hover:text-amber-700 underline underline-offset-2 transition-colors"
             >
               {copy.common.back}
             </a>
@@ -324,7 +324,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                   {location.tags.map((tag: Tag, i: number) => (
                     <span
                       key={tag?.id ?? i}
-                      className="px-2.5 py-1 bg-emerald-50/80 text-emerald-700 rounded-full text-xs border border-emerald-100"
+                      className="px-2.5 py-1 bg-amber-50/80 text-amber-700 rounded-full text-xs border border-amber-100"
                     >
                       {typeof tag === "string" ? tag : tag?.name}
                     </span>
@@ -341,8 +341,8 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {/* 难度 */}
                 <div className="flex flex-col items-center text-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <Mountain className="h-5 w-5 text-emerald-600" />
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                    <Mountain className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
                     <p className="text-xs text-stone-400 mb-0.5">{copy.locations.difficultyLabel}</p>
@@ -436,7 +436,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                 </div>
                 <a
                   href="/teams/create"
-                  className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors flex items-center gap-1"
+                  className="text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors flex items-center gap-1"
                 >
                   {copy.locations.detailCreateTeam}
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -447,22 +447,22 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                 // 空状态：温暖情感化设计
                 <div className="flex flex-col items-center py-10">
                   <div className="relative mb-5">
-                    <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center">
-                      <div className="w-11 h-11 rounded-full bg-emerald-100/80 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-full bg-amber-100/80 flex items-center justify-center">
                         <Users
-                          className="h-6 w-6 text-emerald-400 motion-reduce:animate-none"
+                          className="h-6 w-6 text-amber-400 motion-reduce:animate-none"
                           style={{ animation: "float 3s ease-in-out infinite" }}
                         />
                       </div>
                     </div>
                     <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-200" />
-                    <div className="absolute -bottom-1.5 -left-1.5 w-2.5 h-2.5 rounded-full bg-emerald-200" />
+                    <div className="absolute -bottom-1.5 -left-1.5 w-2.5 h-2.5 rounded-full bg-amber-200" />
                   </div>
                   <p className="text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-5">
                     {copy.locations.detailNoTeamsDesc}
                   </p>
                   <a href="/teams/create">
-                    <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-full text-sm font-medium transition-all duration-200 shadow-brand-glow hover:shadow-brand-glow-lg active:scale-[0.97]">
+                    <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-full text-sm font-medium transition-all duration-200 shadow-brand-glow hover:shadow-brand-glow-lg active:scale-[0.97]">
                       <Users className="h-4 w-4" />
                       {copy.locations.detailNoTeamsBtn}
                     </button>
@@ -480,7 +480,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                       <div className="p-4 rounded-xl bg-white border border-stone-100 hover:shadow-warm-md hover:-translate-y-0.5 transition-all duration-200">
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-stone-900 group-hover:text-emerald-700 transition-colors text-sm leading-snug truncate">
+                            <h3 className="font-medium text-stone-900 group-hover:text-amber-700 transition-colors text-sm leading-snug truncate">
                               {team.title}
                             </h3>
                             <p className="text-xs text-stone-400 mt-1 flex items-center gap-2">
@@ -488,13 +488,13 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                               <span>·</span>
                               <span className={cn(
                                 "font-medium",
-                                team.currentMembers >= team.maxMembers ? "text-warm" : "text-emerald-600"
+                                team.currentMembers >= team.maxMembers ? "text-warm" : "text-amber-600"
                               )}>
                                 {team.currentMembers}/{team.maxMembers} 人
                               </span>
                             </p>
                           </div>
-                          <ArrowRight className="h-4 w-4 text-stone-300 group-hover:text-emerald-500 transition-colors flex-shrink-0 mt-0.5" />
+                          <ArrowRight className="h-4 w-4 text-stone-300 group-hover:text-amber-500 transition-colors flex-shrink-0 mt-0.5" />
                         </div>
                         {/* 进度条 */}
                         <TeamProgress current={team.currentMembers} max={team.maxMembers} />
@@ -510,30 +510,69 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-5">
 
-              {/* 主操作卡（情感化 sticky 卡）*/}
-              <div className="bg-white rounded-2xl border border-stone-100 shadow-warm p-6">
-                <p className="text-sm font-semibold text-stone-900 mb-4">
+              {/* 主操作卡 — 温暖品牌渐变背景 */}
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "linear-gradient(160deg, #FFFBEB 0%, #faf8f5 100%)",
+                  border: "1px solid rgba(217,119,6,0.18)",
+                }}
+              >
+                <p className="text-sm font-semibold mb-1" style={{ color: "#92400E" }}>
                   {copy.locations.detailParticipate}
                 </p>
+                <p className="text-xs mb-4" style={{ color: "#8f7f6e" }}>
+                  {teams.length > 0
+                    ? `已有 ${teams.length} 支队伍等你一起`
+                    : "你来发起第一支队伍吧"}
+                </p>
 
-                {/* 主 CTA：emerald 渐变（Design Spec F.8）*/}
-                <a href="/teams/create" className="block mb-3">
-                  <button className="w-full px-6 py-3.5 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-medium text-sm shadow-brand-glow hover:shadow-brand-glow-lg transition-all duration-200 active:scale-[0.97]">
+                {/* 主 CTA */}
+                <a
+                  href={`/teams/create?locationId=${location.id}`}
+                  className="block mb-3"
+                >
+                  <button
+                    className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 active:scale-[0.97]"
+                    style={{
+                      background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+                      boxShadow: "0 4px 18px rgba(217,119,6,0.35)",
+                    }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget as HTMLButtonElement;
+                      el.style.transform = "translateY(-1px)";
+                      el.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget as HTMLButtonElement;
+                      el.style.transform = "translateY(0)";
+                      el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
+                    }}
+                  >
                     {copy.locations.detailCreateTeam}
                   </button>
                 </a>
 
                 {/* 次要 CTA */}
-                <a href="/teams" className="block">
-                  <button className="w-full border border-stone-200 hover:bg-stone-50 text-stone-700 py-3 rounded-full text-sm font-medium transition-colors duration-150">
+                <a href={`/teams?locationId=${location.id}`} className="block">
+                  <button
+                    className="w-full py-3 rounded-xl text-sm font-medium transition-all duration-150"
+                    style={{ border: "1px solid rgba(217,119,6,0.25)", color: "#92400E" }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = "rgba(217,119,6,0.06)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                    }}
+                  >
                     {copy.locations.detailBrowseTeams}
                   </button>
                 </a>
 
                 {/* 地址 */}
                 {location.address && (
-                  <div className="mt-4 pt-4 border-t border-stone-50 flex items-start gap-2 text-sm text-stone-400">
-                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div className="mt-4 pt-4 flex items-start gap-2 text-sm" style={{ borderTop: "1px solid rgba(217,119,6,0.10)", color: "#8f7f6e" }}>
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: "#D97706" }} />
                     <span className="leading-relaxed">{location.address}</span>
                   </div>
                 )}
@@ -567,7 +606,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-stone-900 group-hover:text-emerald-700 transition-colors text-sm truncate">
+                            <h4 className="font-medium text-stone-900 group-hover:text-amber-700 transition-colors text-sm truncate">
                               {loc.name}
                             </h4>
                             {relDiff && (
@@ -576,7 +615,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                               </p>
                             )}
                           </div>
-                          <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
+                          <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-amber-500 transition-colors flex-shrink-0" />
                         </a>
                       );
                     })}

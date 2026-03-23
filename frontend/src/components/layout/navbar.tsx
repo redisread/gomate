@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Mountain, Menu, X, User, Settings, Plus } from "lucide-react";
+import { Mountain, Menu, X, User, Settings, Plus, LogOut, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
 
@@ -16,19 +16,28 @@ interface NavbarProps {
 }
 
 /**
- * 响应式导航栏（Design System v2.0）
- * - 滚动前透明；滚动后毛玻璃（沙米暖白 + blur）
+ * 响应式导航栏（Design System v3.0）
+ * - 滚动前透明；滚动后毛玻璃（暖白 + blur）
+ * - 活跃链接：品牌绿下划线 + 高亮文字
  * - Logo：Mountain 图标 + 品牌绿渐变文字
  * - 主 CTA：品牌绿按钮 + 绿色光晕
  * - 移动端：从右侧 slide-in 抽屉
+ * - 用户菜单：hover 展开下拉
  */
 export function Navbar({ className }: NavbarProps) {
   const [isScrolled,        setIsScrolled]        = React.useState(false);
   const [isMobileMenuOpen,  setIsMobileMenuOpen]  = React.useState(false);
+  const [showUserMenu,      setShowUserMenu]      = React.useState(false);
+  const [currentPath,       setCurrentPath]       = React.useState("");
   const [session,           setSession]           = React.useState<{
     user?: { name: string; email: string; image?: string };
     isAdmin?: boolean;
   } | null>(null);
+
+  // 获取当前路径
+  React.useEffect(() => {
+    setCurrentPath(window.location.pathname);
+  }, []);
 
   // 滚动监听
   React.useEffect(() => {
@@ -54,6 +63,19 @@ export function Navbar({ className }: NavbarProps) {
     return () => { document.body.style.overflow = ""; };
   }, [isMobileMenuOpen]);
 
+  // 点击外部关闭用户菜单
+  React.useEffect(() => {
+    if (!showUserMenu) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-user-menu]")) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [showUserMenu]);
+
   const handleLogout = async () => {
     await fetch(
       `${import.meta.env.PUBLIC_API_URL || "http://localhost:8799"}/auth/sign-out`,
@@ -61,6 +83,12 @@ export function Navbar({ className }: NavbarProps) {
     );
     setSession(null);
     window.location.href = "/";
+  };
+
+  /** 判断链接是否活跃 */
+  const isActive = (href: string) => {
+    if (href === "/") return currentPath === "/";
+    return currentPath.startsWith(href);
   };
 
   return (
@@ -84,9 +112,8 @@ export function Navbar({ className }: NavbarProps) {
             >
               <Mountain
                 className="h-7 w-7 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
-                style={{ color: "#249a87" }}
+                style={{ color: "#D97706" }}
               />
-              {/* 品牌绿渐变文字 */}
               <span className="text-xl font-bold tracking-tight text-gradient-brand">
                 GoMate
               </span>
@@ -94,20 +121,31 @@ export function Navbar({ className }: NavbarProps) {
 
             {/* ---- 桌面端导航 ---- */}
             <nav className="hidden md:flex items-center gap-1" aria-label="主导航">
-              {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "px-3.5 py-2 text-sm font-medium rounded-lg",
-                    "text-[#8f7f6e] hover:text-[#1e1812] hover:bg-[#f0faf8]",
-                    "transition-colors duration-150",
-                    "[&.active]:text-[#249a87] [&.active]:bg-[#f0faf8]"
-                  )}
-                >
-                  {link.label}
-                </a>
-              ))}
+              {navLinks.map((link) => {
+                const active = isActive(link.href);
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "relative px-3.5 py-2 text-sm font-medium rounded-lg transition-colors duration-150",
+                      active
+                        ? "text-[#D97706] bg-[#FFFBEB]"
+                        : "text-[#8f7f6e] hover:text-[#1e1812] hover:bg-[#FFFBEB]"
+                    )}
+                  >
+                    {link.label}
+                    {/* 活跃下划线 */}
+                    {active && (
+                      <span
+                        className="absolute bottom-0.5 left-3.5 right-3.5 h-0.5 rounded-full"
+                        style={{ background: "#D97706" }}
+                      />
+                    )}
+                  </a>
+                );
+              })}
             </nav>
 
             {/* ---- 桌面端操作区 ---- */}
@@ -115,7 +153,7 @@ export function Navbar({ className }: NavbarProps) {
               {session?.isAdmin && (
                 <a
                   href="/admin/locations"
-                  className="flex items-center gap-1.5 text-sm text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
+                  className="flex items-center gap-1.5 text-sm text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#FFFBEB] hover:text-[#1e1812] transition-colors duration-150"
                 >
                   <Settings className="h-4 w-4" />
                   {copy.nav.admin}
@@ -124,32 +162,78 @@ export function Navbar({ className }: NavbarProps) {
 
               {session?.user ? (
                 <>
-                  <a
-                    href="/profile"
-                    className="flex items-center gap-1.5 text-sm text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
-                  >
-                    <User className="h-4 w-4" />
-                    {session.user.name}
-                  </a>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="text-sm text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
-                  >
-                    {copy.nav.logout}
-                  </button>
-                  {/* 主 CTA：发布队伍 — 品牌绿 + 光晕 */}
+                  {/* 用户菜单 */}
+                  <div className="relative" data-user-menu>
+                    <button
+                      type="button"
+                      onClick={() => setShowUserMenu(!showUserMenu)}
+                      className="flex items-center gap-1.5 text-sm text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#FFFBEB] hover:text-[#1e1812] transition-colors duration-150"
+                    >
+                      {/* 用户头像或首字母 */}
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+                        style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)" }}
+                      >
+                        {session.user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="max-w-[80px] truncate">{session.user.name}</span>
+                      <ChevronDown
+                        className={cn("h-3.5 w-3.5 transition-transform duration-200", showUserMenu && "rotate-180")}
+                      />
+                    </button>
+
+                    {/* 下拉菜单 */}
+                    {showUserMenu && (
+                      <div
+                        className="absolute right-0 top-full mt-1.5 w-44 rounded-xl overflow-hidden"
+                        style={{
+                          background: "rgba(255,255,255,0.97)",
+                          backdropFilter: "blur(12px)",
+                          boxShadow: "0 8px 30px rgba(30,24,18,0.12), 0 0 0 1px rgba(30,24,18,0.06)",
+                          animation: "fade-up 0.15s cubic-bezier(0.16,1,0.3,1) both",
+                        }}
+                      >
+                        <a
+                          href="/profile"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#1e1812] hover:bg-[#FFFBEB] transition-colors"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          <User className="h-3.5 w-3.5 text-[#8f7f6e]" />
+                          {copy.nav.profile}
+                        </a>
+                        <a
+                          href="/my-teams"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#1e1812] hover:bg-[#FFFBEB] transition-colors"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          <Mountain className="h-3.5 w-3.5 text-[#8f7f6e]" />
+                          {copy.nav.myTeams}
+                        </a>
+                        <div className="border-t border-[#f0ebe3] my-1" />
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#8f7f6e] hover:bg-[#FFFBEB] hover:text-[#1e1812] transition-colors"
+                        >
+                          <LogOut className="h-3.5 w-3.5" />
+                          {copy.nav.logout}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 主 CTA：发布队伍 */}
                   <CtaButton href="/teams/create" label={copy.nav.createTeam} icon={<Plus className="h-4 w-4" />} />
                 </>
               ) : (
                 <>
                   <a
                     href="/login"
-                    className="text-sm font-medium text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
+                    className="text-sm font-medium text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#FFFBEB] hover:text-[#1e1812] transition-colors duration-150"
                   >
                     {copy.nav.login}
                   </a>
-                  <CtaButton href="/locations" label={copy.nav.explore} />
+                  <CtaButton href="/register" label={copy.nav.register} />
                 </>
               )}
             </div>
@@ -157,7 +241,7 @@ export function Navbar({ className }: NavbarProps) {
             {/* ---- 移动端汉堡按钮 ---- */}
             <button
               type="button"
-              className="md:hidden p-2 rounded-lg text-[#8f7f6e] hover:bg-[#f0faf8] hover:text-[#1e1812] transition-colors duration-150"
+              className="md:hidden p-2 rounded-lg text-[#8f7f6e] hover:bg-[#FFFBEB] hover:text-[#1e1812] transition-colors duration-150"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={isMobileMenuOpen ? "关闭菜单" : "打开菜单"}
               aria-expanded={isMobileMenuOpen}
@@ -185,61 +269,95 @@ export function Navbar({ className }: NavbarProps) {
           <div
             className="absolute right-0 top-0 bottom-0 w-72 flex flex-col"
             style={{
-              background:     "rgba(255,255,255,0.96)",
+              background:     "rgba(255,255,255,0.97)",
               backdropFilter: "blur(16px)",
               boxShadow:      "-4px 0 30px rgba(30,24,18,0.12)",
               animation:      "slide-in-right 0.35s cubic-bezier(0.16,1,0.3,1) forwards",
             }}
           >
-            {/* 关闭按钮 */}
-            <div className="flex justify-end p-4">
+            {/* 顶部：Logo + 关闭 */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0ebe3]">
+              <a href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                <Mountain className="h-5 w-5" style={{ color: "#D97706" }} />
+                <span className="font-bold text-[#1e1812]">GoMate</span>
+              </a>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 rounded-lg text-[#8f7f6e] hover:bg-[#f0faf8] transition-colors"
+                className="p-1.5 rounded-lg text-[#8f7f6e] hover:bg-[#FFFBEB] transition-colors"
                 aria-label="关闭菜单"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* 导航链接（stagger 出现） */}
-            <nav className="flex flex-col px-4 gap-1" aria-label="移动端导航">
-              {navLinks.map((link, i) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={cn(
-                    "block px-4 py-3 text-base font-medium rounded-xl",
-                    "text-[#1e1812] hover:bg-[#f0faf8] hover:text-[#249a87]",
-                    "transition-colors duration-150",
-                    "animate-[fade-up_0.35s_cubic-bezier(0.16,1,0.3,1)_forwards] opacity-0",
-                    `stagger-${i + 1}`
-                  )}
-                >
-                  {link.label}
-                </a>
-              ))}
+            {/* 用户信息（已登录时显示） */}
+            {session?.user && (
+              <div className="px-5 py-4 border-b border-[#f0ebe3]">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                    style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)" }}
+                  >
+                    {session.user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#1e1812] text-sm truncate">{session.user.name}</p>
+                    <p className="text-xs text-[#8f7f6e] truncate">{session.user.email}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 导航链接 */}
+            <nav className="flex flex-col px-3 py-3 gap-0.5" aria-label="移动端导航">
+              {navLinks.map((link, i) => {
+                const active = isActive(link.href);
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={cn(
+                      "block px-4 py-3 text-base font-medium rounded-xl transition-colors duration-150",
+                      "animate-[fade-up_0.35s_cubic-bezier(0.16,1,0.3,1)_forwards] opacity-0",
+                      active
+                        ? "text-[#D97706] bg-[#FFFBEB]"
+                        : "text-[#1e1812] hover:bg-[#FFFBEB] hover:text-[#D97706]",
+                      `stagger-${i + 1}`
+                    )}
+                  >
+                    {link.label}
+                  </a>
+                );
+              })}
             </nav>
 
             {/* 底部操作按钮 */}
-            <div className="mt-auto flex flex-col gap-3 px-4 pb-8">
+            <div className="mt-auto flex flex-col gap-3 px-4 pb-8 pt-4 border-t border-[#f0ebe3]">
               {session?.user ? (
                 <>
                   <a
                     href="/profile"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 border border-[#e8e0d7] text-[#1e1812] px-4 py-2.5 rounded-xl hover:bg-[#f0faf8] transition-colors font-medium"
+                    className="w-full flex items-center justify-center gap-2 border border-[#e8e0d7] text-[#1e1812] px-4 py-2.5 rounded-xl hover:bg-[#FFFBEB] transition-colors font-medium text-sm"
                   >
-                    <User className="h-4 w-4" />
+                    <User className="h-4 w-4 text-[#8f7f6e]" />
                     {copy.nav.profile}
+                  </a>
+                  <a
+                    href="/my-teams"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 border border-[#e8e0d7] text-[#1e1812] px-4 py-2.5 rounded-xl hover:bg-[#FFFBEB] transition-colors font-medium text-sm"
+                  >
+                    <Mountain className="h-4 w-4 text-[#8f7f6e]" />
+                    {copy.nav.myTeams}
                   </a>
                   <a
                     href="/teams/create"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium"
-                    style={{ background: "#249a87", color: "#f0faf8", boxShadow: "0 4px 14px rgba(36,154,135,0.30)" }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm"
+                    style={{ background: "#D97706", color: "#FFFBEB", boxShadow: "0 4px 14px rgba(217,119,6,0.30)" }}
                   >
                     <Plus className="h-4 w-4" />
                     {copy.nav.createTeam}
@@ -247,8 +365,9 @@ export function Navbar({ className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="w-full text-sm text-[#8f7f6e] hover:text-[#1e1812] py-2 transition-colors"
+                    className="w-full flex items-center justify-center gap-1.5 text-sm text-[#8f7f6e] hover:text-[#1e1812] py-2 transition-colors"
                   >
+                    <LogOut className="h-3.5 w-3.5" />
                     {copy.nav.logout}
                   </button>
                 </>
@@ -257,18 +376,18 @@ export function Navbar({ className }: NavbarProps) {
                   <a
                     href="/login"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 border border-[#e8e0d7] text-[#1e1812] px-4 py-2.5 rounded-xl hover:bg-[#f0faf8] transition-colors font-medium"
+                    className="w-full flex items-center justify-center gap-2 border border-[#e8e0d7] text-[#1e1812] px-4 py-2.5 rounded-xl hover:bg-[#FFFBEB] transition-colors font-medium text-sm"
                   >
                     <User className="h-4 w-4" />
                     {copy.nav.login}
                   </a>
                   <a
-                    href="/locations"
+                    href="/register"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl font-medium"
-                    style={{ background: "#249a87", color: "#f0faf8", boxShadow: "0 4px 14px rgba(36,154,135,0.30)" }}
+                    className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl font-medium text-sm"
+                    style={{ background: "#D97706", color: "#FFFBEB", boxShadow: "0 4px 14px rgba(217,119,6,0.30)" }}
                   >
-                    {copy.nav.explore}
+                    免费注册
                   </a>
                 </>
               )}
@@ -280,7 +399,7 @@ export function Navbar({ className }: NavbarProps) {
   );
 }
 
-/* ---- 品牌绿主 CTA 按钮（内部复用，避免重复） ---- */
+/* ---- 品牌绿主 CTA 按钮 ---- */
 function CtaButton({
   href,
   label,
@@ -295,9 +414,9 @@ function CtaButton({
       href={href}
       className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.97]"
       style={{
-        background:        "#249a87",
-        color:             "#f0faf8",
-        boxShadow:         "0 4px 14px rgba(36,154,135,0.30)",
+        background:        "#D97706",
+        color:             "#FFFBEB",
+        boxShadow:         "0 4px 14px rgba(217,119,6,0.30)",
         transitionDuration:"150ms",
       }}
     >

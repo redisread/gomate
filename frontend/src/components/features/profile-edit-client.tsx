@@ -50,8 +50,8 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 function CardSection({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-5 pb-4 border-b border-stone-50">
-      <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-        <Icon className="h-4 w-4 text-emerald-600" />
+      <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
+        <Icon className="h-4 w-4 text-amber-600" />
       </div>
       <span className="text-sm font-semibold text-stone-700">{title}</span>
     </div>
@@ -61,7 +61,7 @@ function CardSection({ icon: Icon, title }: { icon: React.ElementType; title: st
 /** 通用 Input 样式 */
 const inputCls =
   "w-full px-4 py-3 border border-stone-200 rounded-xl text-stone-900 placeholder:text-stone-300 " +
-  "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all";
+  "focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all";
 
 /**
  * 编辑个人资料页客户端组件 - React Island
@@ -227,7 +227,7 @@ export function ProfileEditClient() {
       <main className="min-h-screen bg-stone-50">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
         </div>
       </main>
     );
@@ -253,7 +253,7 @@ export function ProfileEditClient() {
 
         {/* 页面标题区 */}
         <div className="mb-8 flex items-start gap-4">
-          <div className="w-1 h-12 rounded-full bg-emerald-500 mt-0.5 flex-shrink-0" />
+          <div className="w-1 h-12 rounded-full bg-amber-500 mt-0.5 flex-shrink-0" />
           <div>
             <h1 className="text-2xl font-bold text-stone-900">{copy.profile.editTitle}</h1>
             <p className="text-stone-500 mt-1 text-sm">{copy.profile.editWarmSubtitle}</p>
@@ -270,7 +270,7 @@ export function ProfileEditClient() {
                 className="relative group cursor-pointer"
                 onClick={() => !isUploading && fileInputRef.current?.click()}
               >
-                <div className="w-28 h-28 rounded-full ring-4 ring-white shadow-xl overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                <div className="w-28 h-28 rounded-full ring-4 ring-white shadow-xl overflow-hidden bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="头像" className="w-full h-full object-cover" />
                   ) : (
@@ -313,13 +313,13 @@ export function ProfileEditClient() {
 
               {/* 已选文件提示条 */}
               {selectedFile ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs text-emerald-700">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-xs text-amber-700">
                   <Check className="h-3 w-3" />
                   <span>{copy.profile.avatarSelected} {selectedFile.name}</span>
                   <button
                     type="button"
                     onClick={() => { setSelectedFile(null); setAvatarPreview(user?.image || null); }}
-                    className="text-emerald-500 hover:text-emerald-700 transition-colors ml-0.5"
+                    className="text-amber-500 hover:text-amber-700 transition-colors ml-0.5"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -410,8 +410,8 @@ export function ProfileEditClient() {
                         key={opt.value}
                         className={`relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all ${
                           isSelected
-                            ? "border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-md shadow-emerald-100"
-                            : "border-stone-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/30"
+                            ? "border-amber-500 bg-gradient-to-br from-amber-50 to-amber-100/50 shadow-md shadow-amber-100"
+                            : "border-stone-100 bg-white hover:border-amber-200 hover:bg-amber-50/30"
                         }`}
                       >
                         <input
@@ -423,14 +423,14 @@ export function ProfileEditClient() {
                           className="sr-only"
                         />
                         <span className="text-2xl mb-1.5">{opt.emoji}</span>
-                        <span className={`text-sm font-bold ${isSelected ? "text-emerald-700" : "text-stone-800"}`}>
+                        <span className={`text-sm font-bold ${isSelected ? "text-amber-700" : "text-stone-800"}`}>
                           {opt.label}
                         </span>
-                        <span className={`text-xs mt-0.5 ${isSelected ? "text-emerald-600" : "text-stone-400"}`}>
+                        <span className={`text-xs mt-0.5 ${isSelected ? "text-amber-600" : "text-stone-400"}`}>
                           {opt.description}
                         </span>
                         {isSelected && (
-                          <span className="absolute top-2.5 right-2.5 w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center">
+                          <span className="absolute top-2.5 right-2.5 w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center">
                             <Check className="h-3 w-3" />
                           </span>
                         )}
@@ -532,7 +532,7 @@ export function ProfileEditClient() {
             <div
               className={`flex items-center gap-3 p-4 rounded-xl border ${
                 message.type === "success"
-                  ? "bg-gradient-to-r from-emerald-50 to-emerald-100/60 border-emerald-200 text-emerald-700"
+                  ? "bg-gradient-to-r from-amber-50 to-amber-100/60 border-amber-200 text-amber-700"
                   : "bg-red-50 border-red-200 text-red-700"
               }`}
             >
@@ -560,8 +560,8 @@ export function ProfileEditClient() {
               disabled={isSaving || isUploading || formData.name.length < 2}
               className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
                 savedDone
-                  ? "bg-emerald-500 text-white shadow-md shadow-emerald-100"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 disabled:opacity-50"
+                  ? "bg-amber-500 text-white shadow-md shadow-amber-100"
+                  : "bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 disabled:opacity-50"
               }`}
             >
               {(isSaving || isUploading) ? (

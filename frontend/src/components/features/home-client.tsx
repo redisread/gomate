@@ -27,7 +27,7 @@ import {
    难度标签配置
    ============================================================ */
 const DIFFICULTY_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  easy:     { label: "简单",  bg: "rgba(36,154,135,0.85)",  color: "#fff" },
+  easy:     { label: "简单",  bg: "rgba(217,119,6,0.85)",  color: "#fff" },
   moderate: { label: "中等",  bg: "rgba(217,119,6,0.88)",   color: "#fff" },
   hard:     { label: "困难",  bg: "rgba(255,122,101,0.90)", color: "#fff" },
   expert:   { label: "专家",  bg: "rgba(109,40,217,0.85)",  color: "#fff" },
@@ -38,9 +38,9 @@ const DIFFICULTY_MAP: Record<string, { label: string; bg: string; color: string 
    ============================================================ */
 function getStatusGradient(status: Team["status"]): string {
   switch (status) {
-    case "recruiting": return "linear-gradient(90deg, #249a87 0%, #74d0bf 100%)";
+    case "recruiting": return "linear-gradient(90deg, #D97706 0%, #FCD34D 100%)";
     case "full":       return "linear-gradient(90deg, #ff7a65 0%, #ffb347 100%)";
-    case "formed":     return "linear-gradient(90deg, #1a6459 0%, #249a87 100%)";
+    case "formed":     return "linear-gradient(90deg, #92400E 0%, #D97706 100%)";
     default:           return "linear-gradient(90deg, #9ca3af 0%, #d1d5db 100%)";
   }
 }
@@ -79,7 +79,7 @@ function LocationCard({ location }: { location: Location }) {
         onMouseEnter={(e) => {
           const el = e.currentTarget as HTMLElement;
           el.style.transform = "translateY(-5px)";
-          el.style.boxShadow = "0 14px 40px rgba(36,154,135,0.18), 0 4px 16px rgba(30,24,18,0.08)";
+          el.style.boxShadow = "0 14px 40px rgba(217,119,6,0.18), 0 4px 16px rgba(30,24,18,0.08)";
         }}
         onMouseLeave={(e) => {
           const el = e.currentTarget as HTMLElement;
@@ -105,9 +105,9 @@ function LocationCard({ location }: { location: Location }) {
           ) : (
             <div
               className="w-full h-full flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #e8f7f4 0%, #d0f0ea 100%)" }}
+              style={{ background: "linear-gradient(135deg, #FEF3C7 0%, #d0f0ea 100%)" }}
             >
-              <Mountain className="h-14 w-14" style={{ color: "rgba(36,154,135,0.3)" }} />
+              <Mountain className="h-14 w-14" style={{ color: "rgba(217,119,6,0.3)" }} />
             </div>
           )}
 
@@ -123,7 +123,7 @@ function LocationCard({ location }: { location: Location }) {
           <div
             className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100"
             style={{
-              background: "linear-gradient(to top, rgba(26,100,89,0.90) 0%, rgba(26,100,89,0.55) 55%, transparent 100%)",
+              background: "linear-gradient(to top, rgba(146,64,14,0.90) 0%, rgba(146,64,14,0.55) 55%, transparent 100%)",
               transition: "opacity 0.3s ease",
             }}
           >
@@ -154,7 +154,7 @@ function LocationCard({ location }: { location: Location }) {
             {firstTag && (
               <span
                 className="px-2.5 py-1 rounded-full text-xs font-medium"
-                style={{ background: "rgba(255,255,255,0.90)", color: "#1a6459", backdropFilter: "blur(4px)" }}
+                style={{ background: "rgba(255,255,255,0.90)", color: "#92400E", backdropFilter: "blur(4px)" }}
               >
                 {firstTag.name}
               </span>
@@ -189,7 +189,7 @@ function LocationCard({ location }: { location: Location }) {
           </div>
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ml-3 transition-all duration-150 group-hover:bg-brand group-hover:text-white"
-            style={{ background: "rgba(36,154,135,0.10)", color: "#249a87" }}
+            style={{ background: "rgba(217,119,6,0.10)", color: "#D97706" }}
           >
             <ArrowRight className="h-3.5 w-3.5" />
           </div>
@@ -226,7 +226,7 @@ function TeamCard({ team }: { team: Team }) {
         onMouseEnter={(e) => {
           const el = e.currentTarget as HTMLElement;
           el.style.transform = "translateY(-4px)";
-          el.style.boxShadow = "0 12px 36px rgba(36,154,135,0.16), 0 4px 14px rgba(30,24,18,0.08)";
+          el.style.boxShadow = "0 12px 36px rgba(217,119,6,0.16), 0 4px 14px rgba(30,24,18,0.08)";
         }}
         onMouseLeave={(e) => {
           const el = e.currentTarget as HTMLElement;
@@ -242,9 +242,9 @@ function TeamCard({ team }: { team: Team }) {
           <div className="flex items-start gap-3 mb-4">
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "linear-gradient(135deg, rgba(36,154,135,0.12) 0%, rgba(116,208,191,0.18) 100%)" }}
+              style={{ background: "linear-gradient(135deg, rgba(217,119,6,0.12) 0%, rgba(252,211,77,0.18) 100%)" }}
             >
-              <Mountain className="h-5 w-5" style={{ color: "#249a87" }} />
+              <Mountain className="h-5 w-5" style={{ color: "#D97706" }} />
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-foreground group-hover:text-brand transition-colors duration-150 line-clamp-1 text-base leading-snug">
@@ -260,8 +260,8 @@ function TeamCard({ team }: { team: Team }) {
             <span
               className="flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap"
               style={{
-                background: isFull ? "rgba(255,122,101,0.10)" : "rgba(36,154,135,0.10)",
-                color: isFull ? "#d04a30" : "#1a6459",
+                background: isFull ? "rgba(255,122,101,0.10)" : "rgba(217,119,6,0.10)",
+                color: isFull ? "#d04a30" : "#92400E",
               }}
             >
               {copy.enums.teamStatus[team.status] ?? team.status}
@@ -288,7 +288,7 @@ function TeamCard({ team }: { team: Team }) {
                       ) : (
                         <div
                           className="w-full h-full flex items-center justify-center text-xs font-semibold text-white"
-                          style={{ background: "linear-gradient(135deg, #249a87, #74d0bf)" }}
+                          style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)" }}
                         >
                           {(member.nickname ?? member.name).charAt(0).toUpperCase()}
                         </div>
@@ -307,7 +307,7 @@ function TeamCard({ team }: { team: Team }) {
                     ) : (
                       <div
                         className="w-full h-full flex items-center justify-center text-xs font-semibold text-white"
-                        style={{ background: "linear-gradient(135deg, #249a87, #74d0bf)" }}
+                        style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)" }}
                       >
                         {(team.leader.nickname ?? team.leader.name).charAt(0).toUpperCase()}
                       </div>
@@ -317,7 +317,7 @@ function TeamCard({ team }: { team: Team }) {
               </div>
               <span className="text-sm text-muted-foreground">
                 已有{" "}
-                <span className="font-semibold" style={{ color: "#249a87" }}>
+                <span className="font-semibold" style={{ color: "#D97706" }}>
                   {team.currentMembers}
                 </span>{" "}
                 人
@@ -344,13 +344,13 @@ function TeamCard({ team }: { team: Team }) {
                     width: `${fillRatio}%`,
                     background: isFull
                       ? "linear-gradient(90deg, #ff7a65, #ffb347)"
-                      : "linear-gradient(90deg, #249a87, #74d0bf)",
+                      : "linear-gradient(90deg, #D97706, #FCD34D)",
                   }}
                 />
               </div>
               <span
                 className="text-xs font-semibold flex-shrink-0 tabular-nums"
-                style={{ color: isFull ? "#d04a30" : "#1a6459" }}
+                style={{ color: isFull ? "#d04a30" : "#92400E" }}
               >
                 {team.currentMembers}/{team.maxMembers} 人
               </span>
@@ -362,8 +362,8 @@ function TeamCard({ team }: { team: Team }) {
                 <span
                   className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md"
                   style={{
-                    background: daysUntil <= 3 ? "rgba(255,122,101,0.10)" : "rgba(36,154,135,0.08)",
-                    color: daysUntil <= 3 ? "#d04a30" : "#249a87",
+                    background: daysUntil <= 3 ? "rgba(255,122,101,0.10)" : "rgba(217,119,6,0.08)",
+                    color: daysUntil <= 3 ? "#d04a30" : "#D97706",
                   }}
                 >
                   {daysUntil === 0
@@ -457,7 +457,7 @@ export function HomeClient() {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(160deg, #e8f7f4 0%, rgba(255,122,101,0.06) 38%, #faf8f5 65%, #f5f0e8 100%)",
+              "linear-gradient(160deg, #FEF3C7 0%, rgba(255,122,101,0.06) 38%, #faf8f5 65%, #f5f0e8 100%)",
           }}
         />
 
@@ -465,7 +465,7 @@ export function HomeClient() {
         <div
           className="absolute -top-40 -left-40 w-[640px] h-[640px] rounded-full pointer-events-none"
           style={{
-            background: "radial-gradient(circle, rgba(36,154,135,0.13) 0%, transparent 68%)",
+            background: "radial-gradient(circle, rgba(217,119,6,0.13) 0%, transparent 68%)",
             transform: `translateY(${parallaxY * 0.8}px)`,
           }}
           aria-hidden="true"
@@ -485,7 +485,7 @@ export function HomeClient() {
         <div
           className="absolute top-1/3 right-1/4 w-[220px] h-[220px] rounded-full pointer-events-none"
           style={{
-            background: "radial-gradient(circle, rgba(116,208,191,0.16) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(252,211,77,0.16) 0%, transparent 70%)",
             transform: `translateY(${parallaxY * 1.2}px)`,
           }}
           aria-hidden="true"
@@ -506,11 +506,11 @@ export function HomeClient() {
         >
           <path
             d="M0 260L100 200L200 230L320 160L440 210L560 130L680 185L800 95L920 150L1040 55L1160 110L1280 35L1440 90V260H0Z"
-            fill="#249a87"
+            fill="#D97706"
           />
           <path
             d="M0 260L160 220L300 250L460 190L600 240L760 165L900 215L1060 145L1200 195L1360 130L1440 170V260H0Z"
-            fill="#1a6459"
+            fill="#92400E"
             opacity="0.65"
           />
         </svg>
@@ -522,9 +522,9 @@ export function HomeClient() {
           <span
             className={`inline-flex items-center gap-1.5 mb-7 px-4 py-1.5 text-sm font-medium rounded-full border ${animate.badge}`}
             style={{
-              background: "rgba(36,154,135,0.08)",
-              borderColor: "rgba(36,154,135,0.22)",
-              color: "#1a6459",
+              background: "rgba(217,119,6,0.08)",
+              borderColor: "rgba(217,119,6,0.22)",
+              color: "#92400E",
             }}
           >
             <Mountain className="h-3.5 w-3.5" />
@@ -533,8 +533,8 @@ export function HomeClient() {
 
           {/* 超大主标题 */}
           <h1
-            className={`font-bold leading-[1.1] mb-5 ${animate.title}`}
-            style={{ fontSize: "clamp(3rem, 8vw, 5.5rem)" }}
+            className={`font-bold leading-[1.08] mb-6 ${animate.title}`}
+            style={{ fontSize: "clamp(2.8rem, 7.5vw, 5.2rem)" }}
           >
             <span className="text-foreground block">{copy.hero.titleLine1}</span>
             <span className="block text-gradient-brand">{copy.hero.titleLine2}</span>
@@ -542,7 +542,7 @@ export function HomeClient() {
 
           {/* 副标题 */}
           <p
-            className={`text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed ${animate.subtitle}`}
+            className={`text-lg md:text-xl text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed ${animate.subtitle}`}
           >
             {copy.hero.description}
           </p>
@@ -551,7 +551,7 @@ export function HomeClient() {
           <div className={`relative max-w-2xl mx-auto mb-8 group ${animate.search}`}>
             <Search
               className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 pointer-events-none transition-colors duration-200"
-              style={{ color: search.isFocused ? "#249a87" : "#8f7f6e" }}
+              style={{ color: search.isFocused ? "#D97706" : "#8f7f6e" }}
             />
             <input
               type="text"
@@ -566,7 +566,7 @@ export function HomeClient() {
               className="w-full pl-14 pr-32 py-4 bg-white/95 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground text-base transition-all duration-250 focus:outline-none"
               style={{
                 boxShadow: search.isFocused
-                  ? "0 6px 28px rgba(36,154,135,0.20), 0 0 0 3px rgba(36,154,135,0.12)"
+                  ? "0 6px 28px rgba(217,119,6,0.20), 0 0 0 3px rgba(217,119,6,0.12)"
                   : "0 4px 20px rgba(30,24,18,0.08)",
                 backdropFilter: "blur(8px)",
               }}
@@ -587,8 +587,8 @@ export function HomeClient() {
               onClick={() => handleSearch(search.value)}
               className={`absolute right-3 top-1/2 -translate-y-1/2 px-5 py-2 text-sm font-semibold rounded-xl text-white transition-colors duration-150 ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}
               style={{
-                background: "linear-gradient(135deg, #249a87 0%, #3fb5a0 100%)",
-                boxShadow: "0 2px 10px rgba(36,154,135,0.30)",
+                background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+                boxShadow: "0 2px 10px rgba(217,119,6,0.30)",
               }}
             >
               搜索
@@ -601,18 +601,18 @@ export function HomeClient() {
               href="/locations"
               className="inline-block px-8 py-3.5 text-white font-semibold rounded-full text-base transition-all duration-150"
               style={{
-                background: "linear-gradient(135deg, #249a87 0%, #3fb5a0 100%)",
-                boxShadow: "0 4px 18px rgba(36,154,135,0.35)",
+                background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+                boxShadow: "0 4px 18px rgba(217,119,6,0.35)",
               }}
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLAnchorElement;
                 el.style.transform = "translateY(-2px)";
-                el.style.boxShadow = "0 8px 28px rgba(36,154,135,0.45)";
+                el.style.boxShadow = "0 8px 28px rgba(217,119,6,0.45)";
               }}
               onMouseLeave={(e) => {
                 const el = e.currentTarget as HTMLAnchorElement;
                 el.style.transform = "translateY(0)";
-                el.style.boxShadow = "0 4px 18px rgba(36,154,135,0.35)";
+                el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
               }}
             >
               {copy.hero.exploreBtn}
@@ -620,7 +620,7 @@ export function HomeClient() {
             <a
               href="/teams"
               className="inline-block px-8 py-3.5 font-semibold rounded-full border-2 text-base transition-all duration-150 hover:bg-brand/5"
-              style={{ borderColor: "rgba(36,154,135,0.35)", color: "#1a6459" }}
+              style={{ borderColor: "rgba(217,119,6,0.35)", color: "#92400E" }}
             >
               {copy.hero.findTeamBtn}
             </a>
@@ -629,13 +629,16 @@ export function HomeClient() {
           {/* 数字统计 */}
           <div className={`flex flex-wrap justify-center gap-10 ${animate.stats}`}>
             {[
-              { value: "50+", label: copy.hero.statRoutes },
-              { value: "200+", label: copy.hero.statPlayers },
-              { value: "1000+", label: copy.hero.statSafety },
+              { value: "50+", label: copy.hero.statRoutes, icon: "🗺️" },
+              { value: "200+", label: copy.hero.statPlayers, icon: "👥" },
+              { value: "1000+", label: copy.hero.statSafety, icon: "✨" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-3xl md:text-4xl font-black mb-0.5 text-gradient-brand">
-                  {stat.value}
+                <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                  <span className="text-xl">{stat.icon}</span>
+                  <div className="text-3xl md:text-4xl font-black text-gradient-brand">
+                    {stat.value}
+                  </div>
                 </div>
                 <div className="text-sm text-muted-foreground">{stat.label}</div>
               </div>
@@ -696,7 +699,7 @@ export function HomeClient() {
           <div className="text-center mb-12">
             <span
               className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest"
-              style={{ background: "rgba(36,154,135,0.08)", color: "#1a6459" }}
+              style={{ background: "rgba(217,119,6,0.08)", color: "#92400E" }}
             >
               精选地点
             </span>
@@ -766,7 +769,7 @@ export function HomeClient() {
           <div className="text-center mb-14">
             <span
               className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest"
-              style={{ background: "rgba(36,154,135,0.08)", color: "#1a6459" }}
+              style={{ background: "rgba(217,119,6,0.08)", color: "#92400E" }}
             >
               使用流程
             </span>
@@ -783,32 +786,35 @@ export function HomeClient() {
               {
                 step: "01",
                 icon: <Search className="h-7 w-7" />,
-                title: "发现地点",
-                desc: "浏览深圳周边精选徒步地点，查看难度、路线信息和最佳季节，找到心仪目的地",
-                color: "#249a87",
-                bg: "rgba(36,154,135,0.08)",
+                emoji: "🗺️",
+                title: "发现心仪地点",
+                desc: "浏览精选目的地，咖啡馆、公园、山野、海岸一网打尽。查看路线信息和最佳季节，找到下一个想去的地方",
+                color: "#D97706",
+                bg: "rgba(217,119,6,0.08)",
                 href: "/locations",
-                cta: "浏览地点",
+                cta: "浏览地点 →",
               },
               {
                 step: "02",
                 icon: <Users className="h-7 w-7" />,
-                title: "找到队伍",
-                desc: "按地点筛选招募中的队伍，查看领队信息和成员构成，申请加入志同道合的小队",
+                emoji: "👥",
+                title: "找到同行伙伴",
+                desc: "按地点筛选招募中的队伍，看看谁在等你。查看领队信息和成员构成，申请加入志同道合的小队",
                 color: "#ff7a65",
                 bg: "rgba(255,122,101,0.08)",
                 href: "/teams",
-                cta: "找队伍",
+                cta: "找队伍 →",
               },
               {
                 step: "03",
                 icon: <Compass className="h-7 w-7" />,
-                title: "出发探索",
-                desc: "加入审批通过后，与队友约定集合时间，背起背包，一起出发探索山野",
-                color: "#1a6459",
-                bg: "rgba(26,100,89,0.08)",
+                emoji: "🎒",
+                title: "一起出发",
+                desc: "加入审批通过后，与队友约定集合时间，背起背包出发。或者自己发起一支，带领伙伴去你想去的地方",
+                color: "#92400E",
+                bg: "rgba(146,64,14,0.08)",
                 href: "/teams/create",
-                cta: "创建队伍",
+                cta: "发起队伍 →",
               },
             ].map((item) => (
               <div
@@ -832,14 +838,14 @@ export function HomeClient() {
               >
                 <div className="flex items-start justify-between mb-5">
                   <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: item.bg, color: item.color }}
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-2xl"
+                    style={{ background: item.bg }}
                   >
-                    {item.icon}
+                    {item.emoji}
                   </div>
                   <span
                     className="text-5xl font-black leading-none select-none"
-                    style={{ color: item.bg.replace("0.08", "0.20") }}
+                    style={{ color: item.bg.replace("0.08", "0.18") }}
                   >
                     {item.step}
                   </span>
@@ -886,7 +892,7 @@ export function HomeClient() {
           <div className="text-center mb-12">
             <span
               className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest"
-              style={{ background: "rgba(36,154,135,0.08)", color: "#1a6459" }}
+              style={{ background: "rgba(217,119,6,0.08)", color: "#92400E" }}
             >
               近期队伍
             </span>
@@ -921,13 +927,13 @@ export function HomeClient() {
       <section
         ref={ctaRef}
         className={`py-24 section-hidden ${ctaInView ? "section-visible" : ""}`}
-        style={{ background: "linear-gradient(160deg, #f0faf8 0%, #faf8f5 50%, #f5f0e8 100%)" }}
+        style={{ background: "linear-gradient(160deg, #FFFBEB 0%, #faf8f5 50%, #f5f0e8 100%)" }}
       >
         <div className="max-w-4xl mx-auto px-4 text-center">
           {/* eyebrow */}
           <p
             className="text-xs font-semibold uppercase tracking-widest mb-4"
-            style={{ color: "#249a87" }}
+            style={{ color: "#D97706" }}
           >
             准备好了吗
           </p>
@@ -943,48 +949,48 @@ export function HomeClient() {
 
           {/* 副文案 */}
           <p className="text-muted-foreground text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            加入 GoMate，已有{" "}
-            <span className="font-semibold" style={{ color: "#249a87" }}>200+</span>
-            {" "}户外爱好者在这里找到同行伙伴
+            已有{" "}
+            <span className="font-semibold" style={{ color: "#D97706" }}>200+</span>
+            {" "}伙伴在这里找到了同行的人，你也可以
           </p>
 
           {/* 按钮组 */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="/teams/create"
+              href="/register"
               className="inline-block px-8 py-3.5 font-semibold rounded-full text-white text-base transition-all duration-150"
               style={{
-                background: "#ff7a65",
-                boxShadow: "0 4px 18px rgba(255,122,101,0.38)",
+                background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+                boxShadow: "0 4px 18px rgba(217,119,6,0.38)",
               }}
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLAnchorElement;
                 el.style.transform = "translateY(-2px)";
-                el.style.boxShadow = "0 8px 26px rgba(255,122,101,0.50)";
+                el.style.boxShadow = "0 8px 26px rgba(217,119,6,0.50)";
               }}
               onMouseLeave={(e) => {
                 const el = e.currentTarget as HTMLAnchorElement;
                 el.style.transform = "translateY(0)";
-                el.style.boxShadow = "0 4px 18px rgba(255,122,101,0.38)";
+                el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.38)";
               }}
             >
-              发布队伍
+              免费加入 GoMate
             </a>
             <a
-              href="/locations"
+              href="/teams"
               className="inline-block px-8 py-3.5 font-semibold rounded-full text-base transition-all duration-150 border-2"
               style={{
-                borderColor: "rgba(36,154,135,0.35)",
-                color: "#1a6459",
+                borderColor: "rgba(217,119,6,0.35)",
+                color: "#92400E",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background = "rgba(36,154,135,0.06)";
+                (e.currentTarget as HTMLAnchorElement).style.background = "rgba(217,119,6,0.06)";
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
               }}
             >
-              探索地点
+              先看看有哪些队伍
             </a>
           </div>
         </div>

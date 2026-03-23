@@ -62,12 +62,12 @@ function ToastDisplay({ toast, exiting }: { toast: { type: string; message: stri
         className={cn(
           "flex items-center gap-3 px-5 py-4 rounded-2xl shadow-lg text-sm font-medium text-stone-800",
           isSuccess
-            ? "bg-white border border-emerald-200 shadow-emerald-900/10"
+            ? "bg-white border border-amber-200 shadow-amber-900/10"
             : "bg-white border border-red-200 shadow-red-900/10"
         )}
       >
         {isSuccess ? (
-          <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+          <CheckCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
         ) : (
           <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
         )}
@@ -91,7 +91,7 @@ function AnimatedProgress({ ratio, isFull }: { ratio: number; isFull: boolean })
       <div
         className={cn(
           "h-full rounded-full transition-[width] duration-300 ease-out motion-reduce:transition-none",
-          isFull ? "bg-warm" : "bg-gradient-to-r from-emerald-600 to-emerald-500"
+          isFull ? "bg-warm" : "bg-gradient-to-r from-amber-600 to-amber-500"
         )}
         style={{ width: `${width}%` }}
       />
@@ -113,7 +113,7 @@ function MemberRow({
       className={cn(
         "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors",
         isTeamLeader
-          ? "bg-emerald-50/60 border border-emerald-100"
+          ? "bg-amber-50/60 border border-amber-100"
           : "hover:bg-stone-50"
       )}
     >
@@ -135,7 +135,7 @@ function MemberRow({
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <p className="font-medium text-stone-900 text-sm truncate">{displayName}</p>
         {isTeamLeader && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700 font-medium flex-shrink-0">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium flex-shrink-0">
             {copy.teams.leader}
           </span>
         )}
@@ -149,7 +149,7 @@ function getStatusInfo(status: string, current: number, max: number) {
   if (status === "recruiting" && current < max) {
     return {
       label: copy.enums.teamStatus.recruiting,
-      className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      className: "bg-amber-50 text-amber-700 border border-amber-200",
     };
   }
   if (status === "full" || (status === "recruiting" && current >= max)) {
@@ -178,7 +178,7 @@ function getStatusInfo(status: string, current: number, max: number) {
   }
   return {
     label: copy.enums.teamStatus.recruiting,
-    className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    className: "bg-amber-50 text-amber-700 border border-amber-200",
   };
 }
 
@@ -347,7 +347,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
       <main className="min-h-screen bg-stone-50">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
         </div>
       </main>
     );
@@ -365,7 +365,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
             </h1>
             <a
               href="/teams"
-              className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2 transition-colors"
+              className="text-amber-600 hover:text-amber-700 underline underline-offset-2 transition-colors"
             >
               {copy.nav.teams}
             </a>
@@ -532,7 +532,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   <p
                     className={cn(
                       "font-semibold text-sm",
-                      isFull ? "text-warm" : "text-emerald-600"
+                      isFull ? "text-warm" : "text-amber-600"
                     )}
                   >
                     {team.currentMembers}/{team.maxMembers}
@@ -542,7 +542,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   <p className="text-xs text-stone-400 mb-2">{copy.teams.progressLabel}</p>
                   <div className="px-2">
                     <AnimatedProgress ratio={fillRatio} isFull={isFull} />
-                    <p className={cn("text-xs font-medium mt-1", isFull ? "text-warm" : "text-emerald-600")}>
+                    <p className={cn("text-xs font-medium mt-1", isFull ? "text-warm" : "text-amber-600")}>
                       {fillRatio}%
                     </p>
                   </div>
@@ -623,7 +623,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 {shouldCollapse && (
                   <button
                     onClick={() => setMembersExpanded(!membersExpanded)}
-                    className="mt-3 w-full flex items-center justify-center gap-1.5 text-sm text-emerald-600 font-medium py-2 hover:text-emerald-700 transition-colors duration-150"
+                    className="mt-3 w-full flex items-center justify-center gap-1.5 text-sm text-amber-600 font-medium py-2 hover:text-amber-700 transition-colors duration-150"
                   >
                     <span>
                       {membersExpanded
@@ -656,10 +656,10 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-stone-400 mb-1">活动地点</p>
-                    <h3 className="font-semibold text-stone-900 group-hover:text-emerald-700 transition-colors text-sm mb-2">
+                    <h3 className="font-semibold text-stone-900 group-hover:text-amber-700 transition-colors text-sm mb-2">
                       {(team as any).location.name}
                     </h3>
-                    <span className="inline-flex items-center text-sm font-medium text-emerald-600">
+                    <span className="inline-flex items-center text-sm font-medium text-amber-600">
                       {copy.teams.viewLocationDetail}
                       <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform duration-150" />
                     </span>
@@ -681,7 +681,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                       <a key={t.id} href={`/teams/${t.id}`}>
                         <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm p-4 group hover:shadow-warm-md hover:-translate-y-0.5 transition-all duration-200">
                           <div className="flex items-center justify-between gap-2 mb-2">
-                            <h4 className="font-semibold text-stone-900 text-sm group-hover:text-emerald-700 transition-colors">
+                            <h4 className="font-semibold text-stone-900 text-sm group-hover:text-amber-700 transition-colors">
                               {t.title}
                             </h4>
                             <span
@@ -719,12 +719,18 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
 
               {/* 队长信息卡 */}
               {team.leader && (
-                <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm p-5">
-                  <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-4">
+                <div
+                  className="rounded-2xl p-5"
+                  style={{ background: "#fff", border: "1px solid #f0ebe3", boxShadow: "0 2px 12px rgba(30,24,18,0.06)" }}
+                >
+                  <h3 className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: "#c4b5a8" }}>
                     {copy.teams.leaderSectionTitle}
                   </h3>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-emerald-200">
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
+                      style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)", boxShadow: "0 0 0 3px rgba(217,119,6,0.15)" }}
+                    >
                       {team.leader.avatar ? (
                         <img
                           src={team.leader.avatar}
@@ -732,16 +738,17 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-stone-500 font-medium text-lg">
+                        <span className="text-white font-bold text-lg">
                           {(team.leader.nickname || team.leader.name || "?")[0]}
                         </span>
                       )}
                     </div>
                     <div>
-                      <p className="font-semibold text-stone-900">
+                      <p className="font-semibold" style={{ color: "#1e1812" }}>
                         {team.leader.nickname || team.leader.name}
                       </p>
-                      <p className="text-xs text-stone-400 mt-0.5">
+                      <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: "#D97706" }}>
+                        <span>👑</span>
                         {copy.teams.leaderInfoTitle}
                       </p>
                     </div>
@@ -755,16 +762,26 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 className="animate-[fadeScaleIn_0.2s_ease_both] motion-reduce:animate-none"
               >
                 {canJoin && (
-                  <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-md p-5">
+                  <div
+                    className="rounded-2xl p-5"
+                    style={{
+                      background: "linear-gradient(160deg, #FFFBEB 0%, #faf8f5 100%)",
+                      border: "1px solid rgba(217,119,6,0.18)",
+                    }}
+                  >
+                    {/* 邀请文案 */}
+                    <p className="text-sm font-medium mb-3" style={{ color: "#92400E" }}>
+                      👋 {remaining === 1 ? "就差你一个了，快来！" : `还差 ${remaining} 位伙伴，一起出发`}
+                    </p>
+
                     {/* 进度条 */}
                     <div className="mb-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-stone-800">名额进度</p>
-                        <span className={cn(
-                          "text-xs font-medium",
-                          isFull ? "text-warm" : "text-emerald-600"
-                        )}>
-                          {spotsText}
+                        <span className="text-xs text-stone-400">
+                          已有 {team.currentMembers} / {team.maxMembers} 人
+                        </span>
+                        <span className="text-xs font-medium" style={{ color: "#D97706" }}>
+                          {fillRatio}%
                         </span>
                       </div>
                       <AnimatedProgress ratio={fillRatio} isFull={isFull} />
@@ -776,14 +793,39 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                       value={joinMessage}
                       onChange={(e) => setJoinMessage(e.target.value)}
                       rows={2}
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-stone-800 text-sm placeholder:text-stone-400 focus:outline-none focus:border-emerald-400 resize-none mb-3 bg-white transition-colors"
+                      className="w-full px-4 py-2.5 rounded-xl text-stone-800 text-sm placeholder:text-stone-400 focus:outline-none resize-none mb-3 bg-white transition-all duration-200"
+                      style={{ border: "1px solid #e8e0d7" }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = "#D97706";
+                        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.08)";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = "#e8e0d7";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
                     />
 
                     {/* 申请按钮 */}
                     <button
                       onClick={handleJoin}
                       disabled={isJoining}
-                      className="w-full py-3 font-medium text-white rounded-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-brand-glow hover:shadow-brand-glow-lg transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.97]"
+                      className="w-full py-3 font-semibold text-white rounded-xl transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.97]"
+                      style={{
+                        background: isJoining ? "#D97706" : "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+                        boxShadow: isJoining ? "none" : "0 4px 18px rgba(217,119,6,0.35)",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isJoining) {
+                          const el = e.currentTarget as HTMLButtonElement;
+                          el.style.transform = "translateY(-1px)";
+                          el.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        const el = e.currentTarget as HTMLButtonElement;
+                        el.style.transform = "translateY(0)";
+                        el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
+                      }}
                     >
                       {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
                       {copy.teams.joinTeam}
@@ -806,8 +848,8 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 )}
 
                 {isMember && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-stone-900 text-sm">
                         {copy.teams.statusApproved}
@@ -823,8 +865,8 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 )}
 
                 {isLeader && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-stone-900 text-sm">
                         {copy.teams.youAreLeader}
@@ -834,7 +876,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                       </p>
                       <a
                         href={`/my-teams`}
-                        className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                        className="mt-2 inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
                       >
                         {copy.teams.manageTeam}
                         <ArrowRight className="h-3.5 w-3.5" />
@@ -844,21 +886,25 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 )}
               </div>
 
-              {/* 安全提示卡（Tailwind token，Design Spec F.6）*/}
-              <div className="bg-warm/6 border border-warm/20 rounded-2xl p-5">
-                <h4 className="font-medium text-stone-900 mb-2.5 text-sm">
+              {/* 出行提示卡 — 温暖友好风格 */}
+              <div
+                className="rounded-2xl p-5"
+                style={{ background: "rgba(255,122,101,0.05)", border: "1px solid rgba(255,122,101,0.15)" }}
+              >
+                <h4 className="font-medium mb-3 text-sm flex items-center gap-1.5" style={{ color: "#c0392b" }}>
+                  <span>💛</span>
                   {copy.teams.safetyTips}
                 </h4>
-                <ul className="text-sm text-stone-500 space-y-2 leading-relaxed">
+                <ul className="text-sm space-y-2.5 leading-relaxed" style={{ color: "#8f7f6e" }}>
                   {[
-                    copy.teams.safetyTip1,
-                    copy.teams.safetyTip2,
-                    copy.teams.safetyTip3,
-                    copy.teams.safetyTip4,
+                    { icon: "⏰", text: copy.teams.safetyTip1 },
+                    { icon: "💬", text: copy.teams.safetyTip2 },
+                    { icon: "🤝", text: copy.teams.safetyTip3 },
+                    { icon: "🌤", text: copy.teams.safetyTip4 },
                   ].map((tip, i) => (
-                    <li key={i} className="flex items-start gap-1.5">
-                      <span className="text-warm mt-0.5 flex-shrink-0">•</span>
-                      {tip}
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="flex-shrink-0 text-base leading-5">{tip.icon}</span>
+                      <span>{tip.text}</span>
                     </li>
                   ))}
                 </ul>
@@ -882,12 +928,12 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
           >
             {isLeader ? (
               <div className="flex items-center justify-center gap-2 text-stone-500 text-sm py-1 min-h-[44px]">
-                <CheckCircle className="h-5 w-5 text-emerald-600" />
+                <CheckCircle className="h-5 w-5 text-amber-600" />
                 {copy.teams.youAreLeader}
               </div>
             ) : isMember ? (
               <div className="flex items-center justify-between min-h-[44px]">
-                <div className="flex items-center gap-2 text-emerald-600 text-sm">
+                <div className="flex items-center gap-2 text-amber-600 text-sm">
                   <CheckCircle className="h-5 w-5" />
                   {copy.teams.statusApproved}
                 </div>
@@ -905,10 +951,10 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
               </div>
             ) : joinSuccess ? (
               <div
-                className="flex items-center justify-center gap-2 py-3 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 min-h-[44px] animate-[joinBounce_0.4s_ease_both] motion-reduce:animate-none"
+                className="flex items-center justify-center gap-2 py-3 rounded-full bg-amber-50 border border-amber-200 text-amber-700 min-h-[44px] animate-[joinBounce_0.4s_ease_both] motion-reduce:animate-none"
               >
                 <CheckCircle
-                  className="h-5 w-5 text-emerald-600 animate-[checkFadeIn_0.3s_0.1s_ease_both] motion-reduce:animate-none"
+                  className="h-5 w-5 text-amber-600 animate-[checkFadeIn_0.3s_0.1s_ease_both] motion-reduce:animate-none"
                 />
                 <span className="text-sm font-medium">{copy.success.applied}</span>
               </div>
@@ -919,12 +965,12 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   placeholder={copy.teams.joinPlaceholder}
                   value={joinMessage}
                   onChange={(e) => setJoinMessage(e.target.value)}
-                  className="flex-1 px-4 py-2.5 border border-stone-200 rounded-full focus:outline-none focus:border-emerald-400 text-stone-800 text-sm bg-stone-50 min-h-[44px]"
+                  className="flex-1 px-4 py-2.5 border border-stone-200 rounded-full focus:outline-none focus:border-amber-400 text-stone-800 text-sm bg-stone-50 min-h-[44px]"
                 />
                 <button
                   onClick={handleJoin}
                   disabled={isJoining}
-                  className="px-6 py-2.5 rounded-full font-medium text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-brand-glow transition-all duration-150 disabled:opacity-60 flex items-center gap-2 min-h-[44px] active:scale-[0.97]"
+                  className="px-6 py-2.5 rounded-full font-medium text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow transition-all duration-150 disabled:opacity-60 flex items-center gap-2 min-h-[44px] active:scale-[0.97]"
                 >
                   {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
                   {copy.teams.joinTeam}

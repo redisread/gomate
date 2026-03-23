@@ -31,9 +31,9 @@ const LEVEL_CONFIG: Record<string, {
   emoji: string;
 }> = {
   beginner: {
-    badge: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-    glow: "shadow-emerald-100",
-    icon: "text-emerald-500",
+    badge: "bg-amber-50 text-amber-700 border border-amber-200",
+    glow: "shadow-amber-100",
+    icon: "text-amber-500",
     emoji: "🌱",
   },
   intermediate: {
@@ -77,19 +77,19 @@ function StatCard({
   const inner = (
     <div className={cn(
       "bg-white rounded-2xl border border-stone-100 p-5 transition-all duration-200 group",
-      href && "hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-100/60 hover:border-emerald-200/60 cursor-pointer"
+      href && "hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-100/60 hover:border-amber-200/60 cursor-pointer"
     )}>
       <div className="flex items-start justify-between mb-3">
         <div className={cn(
           "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200",
           accent
-            ? "bg-emerald-50 group-hover:bg-emerald-100"
+            ? "bg-amber-50 group-hover:bg-amber-100"
             : "bg-stone-50 group-hover:bg-stone-100"
         )}>
-          <Icon className={cn("h-5 w-5", accent ? "text-emerald-600" : "text-stone-400")} />
+          <Icon className={cn("h-5 w-5", accent ? "text-amber-600" : "text-stone-400")} />
         </div>
         {href && (
-          <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all duration-150" />
+          <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
         )}
       </div>
       <p className={cn(
@@ -224,12 +224,12 @@ export function ProfileClient() {
           <div
             className="relative h-40 overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, #0d4f3c 0%, #1a6459 30%, #249a87 65%, #5bbfac 90%, #8dd5c8 100%)",
+              background: "linear-gradient(135deg, #78350F 0%, #92400E 30%, #D97706 65%, #5bbfac 90%, #8dd5c8 100%)",
             }}
           >
             {/* 光晕装饰 */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-            <div className="absolute -bottom-10 left-1/4 w-48 h-48 bg-emerald-300/10 rounded-full blur-2xl" />
+            <div className="absolute -bottom-10 left-1/4 w-48 h-48 bg-amber-300/10 rounded-full blur-2xl" />
 
             {/* 点阵纹理 */}
             <div className="absolute inset-0 opacity-[0.06]" style={{
@@ -258,7 +258,7 @@ export function ProfileClient() {
             {/* 头像 */}
             <div className="absolute -top-16 left-6">
               <div className="relative">
-                <div className="h-32 w-32 rounded-full ring-4 ring-white shadow-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center overflow-hidden">
+                <div className="h-32 w-32 rounded-full ring-4 ring-white shadow-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center overflow-hidden">
                   {user.image ? (
                     <img src={user.image} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
@@ -288,7 +288,7 @@ export function ProfileClient() {
                 {/* 操作按钮 */}
                 <div className="flex gap-2 shrink-0">
                   <a href="/profile/edit">
-                    <button className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150 shadow-md shadow-emerald-200 hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-px active:scale-95">
+                    <button className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150 shadow-md shadow-amber-200 hover:shadow-lg hover:shadow-amber-200 hover:-translate-y-px active:scale-95">
                       <Edit3 className="h-3.5 w-3.5" />
                       {copy.profile.editProfileBtn}
                     </button>
@@ -357,23 +357,23 @@ export function ProfileClient() {
         {/* ── 统计卡片 ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <StatCard
-            label={copy.profile.createdTeams}
+            label="我发起的队伍"
             value={createdTotal}
             icon={Users}
             href="/my-teams?tab=created"
             accent
-            sublabel={copy.profile.statSublabelTeams}
+            sublabel="作为领队带领伙伴出发"
           />
           <StatCard
-            label={copy.profile.joinedTeams}
+            label="我加入的队伍"
             value={joinedTotal}
             icon={User}
             href="/my-teams?tab=joined"
             accent
-            sublabel={copy.profile.statSublabelTeams}
+            sublabel="与伙伴一起出发的次数"
           />
           <StatCard
-            label={copy.profile.registeredAt}
+            label="加入时间"
             value={user.createdAt ? new Date(user.createdAt).toLocaleDateString("zh-CN", { year: "numeric", month: "short" }) : "—"}
             icon={Calendar}
           />
@@ -387,7 +387,7 @@ export function ProfileClient() {
                 <h2 className="text-base font-bold text-stone-900">{copy.profile.createdTeamsSectionTitle}</h2>
                 <p className="text-xs text-stone-400 mt-0.5">{copy.profile.createdTeamsDesc}</p>
               </div>
-              <a href="/my-teams" className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
+              <a href="/my-teams" className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors">
                 {copy.profile.viewMyTeams}
                 <ChevronRight className="h-4 w-4" />
               </a>
@@ -396,10 +396,10 @@ export function ProfileClient() {
             <div className="space-y-3">
               {createdTeams.map((team: Team) => (
                 <a key={team.id} href={`/teams/${team.id}`} className="block group">
-                  <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-100/40 hover:border-emerald-200/60 transition-all duration-200">
+                  <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/60 transition-all duration-200">
                     <div className="flex items-center gap-4">
                       {/* 封面图 */}
-                      <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-emerald-100 to-emerald-50">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-amber-100 to-amber-50">
                         {team.location?.coverImage ? (
                           <img
                             src={team.location.coverImage}
@@ -408,14 +408,14 @@ export function ProfileClient() {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <Mountain className="h-7 w-7 text-emerald-300" />
+                            <Mountain className="h-7 w-7 text-amber-300" />
                           </div>
                         )}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5">
-                          <h3 className="font-semibold text-stone-900 truncate group-hover:text-emerald-700 transition-colors duration-150 text-sm">
+                          <h3 className="font-semibold text-stone-900 truncate group-hover:text-amber-700 transition-colors duration-150 text-sm">
                             {team.title}
                           </h3>
                           <StatusBadge status={team.status} size="sm" />
@@ -438,7 +438,7 @@ export function ProfileClient() {
                         </div>
                       </div>
 
-                      <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all duration-150 flex-shrink-0" />
+                      <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150 flex-shrink-0" />
                     </div>
                   </div>
                 </a>
@@ -455,7 +455,7 @@ export function ProfileClient() {
                 <h2 className="text-base font-bold text-stone-900">{copy.profile.joinedTeamsSectionTitle}</h2>
                 <p className="text-xs text-stone-400 mt-0.5">{copy.profile.joinedTeamsDesc}</p>
               </div>
-              <a href="/my-teams?tab=joined" className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
+              <a href="/my-teams?tab=joined" className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors">
                 {copy.profile.viewMyTeams}
                 <ChevronRight className="h-4 w-4" />
               </a>
@@ -464,7 +464,7 @@ export function ProfileClient() {
             <div className="space-y-3">
               {joinedTeams.map((team: Team) => (
                 <a key={team.id} href={`/teams/${team.id}`} className="block group">
-                  <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-100/40 hover:border-emerald-200/60 transition-all duration-200">
+                  <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/60 transition-all duration-200">
                     <div className="flex items-center gap-4">
                       {/* 封面图 */}
                       <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-sky-100 to-sky-50">
@@ -483,7 +483,7 @@ export function ProfileClient() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5">
-                          <h3 className="font-semibold text-stone-900 truncate group-hover:text-emerald-700 transition-colors duration-150 text-sm">
+                          <h3 className="font-semibold text-stone-900 truncate group-hover:text-amber-700 transition-colors duration-150 text-sm">
                             {team.title}
                           </h3>
                           <StatusBadge status={team.status} size="sm" />
@@ -506,7 +506,7 @@ export function ProfileClient() {
                         </div>
                       </div>
 
-                      <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all duration-150 flex-shrink-0" />
+                      <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150 flex-shrink-0" />
                     </div>
                   </div>
                 </a>
@@ -520,9 +520,9 @@ export function ProfileClient() {
           <div className="bg-white rounded-3xl border border-dashed border-stone-200 p-16 text-center">
             {/* 多层圆形装饰 */}
             <div className="relative inline-flex items-center justify-center mb-8">
-              <div className="w-24 h-24 rounded-full bg-emerald-50 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <Mountain className="h-8 w-8 text-emerald-400" />
+              <div className="w-24 h-24 rounded-full bg-amber-50 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Mountain className="h-8 w-8 text-amber-400" />
                 </div>
               </div>
               <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-xs">✨</div>
@@ -530,7 +530,7 @@ export function ProfileClient() {
             <h3 className="text-lg font-bold text-stone-800 mb-2">{copy.profile.noTeamsTitle}</h3>
             <p className="text-sm text-stone-400 mb-8 max-w-xs mx-auto leading-relaxed">{copy.profile.noTeamsDesc}</p>
             <a href="/teams/create">
-              <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3 rounded-full font-medium transition-all duration-150 shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-200 hover:-translate-y-0.5 active:scale-95 text-sm">
+              <button className="bg-amber-600 hover:bg-amber-700 text-white px-7 py-3 rounded-full font-medium transition-all duration-150 shadow-lg shadow-amber-200 hover:shadow-xl hover:shadow-amber-200 hover:-translate-y-0.5 active:scale-95 text-sm">
                 {copy.profile.createTeamBtn}
               </button>
             </a>

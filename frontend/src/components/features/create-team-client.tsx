@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Clock, Users, Calendar, MapPin, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, Users, Calendar, MapPin, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
 import type { Location } from "@/lib/types";
@@ -9,7 +9,8 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
 /**
- * 创建队伍页客户端组件 - React Island
+ * 创建队伍页 — 温暖引导风格
+ * 分步感知 + 情感化文案 + 品牌色 focus 状态
  */
 export function CreateTeamClient() {
   const [locations, setLocations] = React.useState<Location[]>([]);
@@ -35,7 +36,6 @@ export function CreateTeamClient() {
   });
 
   React.useEffect(() => {
-    // Check auth
     fetchAPI("/auth/get-session")
       .then((r) => r.json())
       .then((data) => {
@@ -51,7 +51,6 @@ export function CreateTeamClient() {
         window.location.href = "/login?redirect=/teams/create";
       });
 
-    // Load locations
     fetchAPI("/api/locations?pageSize=100")
       .then((r) => r.json())
       .then((data) => {
@@ -59,7 +58,6 @@ export function CreateTeamClient() {
       })
       .catch(() => {});
 
-    // Pre-fill locationId from URL
     const params = new URLSearchParams(window.location.search);
     const locId = params.get("locationId");
     if (locId) setFormData((prev) => ({ ...prev, locationId: locId }));
@@ -102,58 +100,79 @@ export function CreateTeamClient() {
 
   if (isAuthenticated === null) {
     return (
-      <main className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-stone-400" />
+      <main className="min-h-screen flex items-center justify-center" style={{ background: "#FDFAF6" }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#D97706" }} />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen" style={{ background: "#FDFAF6" }}>
       <Navbar />
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-        {/* Back */}
-        <a href="/" className="inline-flex items-center text-stone-600 hover:text-stone-900 transition-colors mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+        {/* 返回链接 */}
+        <a
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm mb-8 transition-colors duration-150"
+          style={{ color: "#8f7f6e" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D97706"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#8f7f6e"; }}
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
           {copy.common.back}
         </a>
 
-        {/* Header */}
+        {/* 页面标题 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-stone-900">{copy.teams.createTitle}</h1>
-          <p className="text-stone-600 mt-2">{copy.teams.createSubtitle}</p>
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-5 w-5" style={{ color: "#D97706" }} />
+            <h1 className="text-2xl font-bold" style={{ color: "#1e1812" }}>
+              {copy.teams.createTitle}
+            </h1>
+          </div>
+          <p className="text-sm" style={{ color: "#8f7f6e" }}>
+            {copy.teams.createSubtitle}
+          </p>
         </div>
 
-        {/* WeChat Warning */}
+        {/* 微信号提醒 */}
         {!hasWechat && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div
+            className="mb-6 rounded-2xl p-4"
+            style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)" }}
+          >
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: "#d97706" }} />
               <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-800">{copy.teams.wechatRequiredTitle}</p>
-                <p className="text-sm text-amber-700 mt-1">{copy.teams.wechatRequiredDesc}</p>
-                <div className="mt-3">
-                  <a href="/profile">
-                    <button className="bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
-                      去填写微信号
-                    </button>
-                  </a>
-                </div>
+                <p className="text-sm font-semibold mb-1" style={{ color: "#92400e" }}>
+                  {copy.teams.wechatRequiredTitle}
+                </p>
+                <p className="text-sm mb-3" style={{ color: "#b45309" }}>
+                  {copy.teams.wechatRequiredDesc}
+                </p>
+                <a href="/profile/edit">
+                  <button
+                    className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150"
+                    style={{ background: "#fff", border: "1px solid rgba(251,191,36,0.40)", color: "#92400e" }}
+                  >
+                    {copy.teams.fillWechatBtn}
+                  </button>
+                </a>
               </div>
             </div>
           </div>
         )}
 
-        {/* Form Card */}
-        <div className={`bg-white rounded-2xl border border-stone-200 p-6 ${!hasWechat ? "opacity-50 pointer-events-none" : ""}`}>
-          <h2 className="text-lg font-semibold text-stone-900 mb-6">队伍信息</h2>
+        {/* 表单卡片 */}
+        <div
+          className={`rounded-2xl p-6 sm:p-8 ${!hasWechat ? "opacity-50 pointer-events-none" : ""}`}
+          style={{ background: "#fff", border: "1px solid #f0ebe3", boxShadow: "0 2px 16px rgba(30,24,18,0.06)" }}
+        >
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
-            <div className="space-y-2">
-              <label htmlFor="title" className="text-sm font-medium text-stone-700">
-                {copy.teams.formLabel.name} <span className="text-red-500">*</span>
-              </label>
+
+            {/* 队伍标题 */}
+            <FormSection icon="✏️" label={copy.teams.formLabel.name} required>
               <input
                 id="title"
                 name="title"
@@ -162,43 +181,57 @@ export function CreateTeamClient() {
                 value={formData.title}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
+                className="w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
+                style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "#D97706";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                  e.currentTarget.style.background = "#fff";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "#e8e0d7";
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.background = "#fdfaf6";
+                }}
               />
-            </div>
+            </FormSection>
 
-            {/* Location */}
-            <div className="space-y-2">
-              <label htmlFor="locationId" className="text-sm font-medium text-stone-700">
-                {copy.teams.formLabel.location} <span className="text-red-500">*</span>
-              </label>
+            {/* 目的地 */}
+            <FormSection icon="📍" label={copy.teams.formLabel.location} required>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
                 <select
                   id="locationId"
                   name="locationId"
                   value={formData.locationId}
                   onChange={handleChange}
                   required
-                  className="w-full pl-10 pr-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900 bg-white"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none appearance-none"
+                  style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: formData.locationId ? "#1e1812" : "#8f7f6e" }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "#D97706";
+                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                    e.currentTarget.style.background = "#fff";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "#e8e0d7";
+                    e.currentTarget.style.boxShadow = "none";
+                    e.currentTarget.style.background = "#fdfaf6";
+                  }}
                 >
                   <option value="">{copy.teams.formPlaceholder.location}</option>
                   {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>
-                      {loc.name}
-                    </option>
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
                   ))}
                 </select>
               </div>
-            </div>
+            </FormSection>
 
-            {/* Date + Time */}
+            {/* 日期 + 时间 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="date" className="text-sm font-medium text-stone-700">
-                  {copy.teams.formLabel.date} <span className="text-red-500">*</span>
-                </label>
+              <FormSection icon="📅" label={copy.teams.formLabel.date} required>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
                   <input
                     id="date"
                     name="date"
@@ -207,16 +240,25 @@ export function CreateTeamClient() {
                     onChange={handleChange}
                     min={defaultDate}
                     required
-                    className="w-full pl-10 pr-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
+                    style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#D97706";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                      e.currentTarget.style.background = "#fff";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "#e8e0d7";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "#fdfaf6";
+                    }}
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="time" className="text-sm font-medium text-stone-700">
-                  {copy.teams.formLabel.meetTime} <span className="text-red-500">*</span>
-                </label>
+              </FormSection>
+
+              <FormSection icon="⏰" label={copy.teams.formLabel.meetTime} required>
                 <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
                   <input
                     id="time"
                     name="time"
@@ -224,44 +266,63 @@ export function CreateTeamClient() {
                     value={formData.time}
                     onChange={handleChange}
                     required
-                    className="w-full pl-10 pr-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
+                    style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#D97706";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                      e.currentTarget.style.background = "#fff";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "#e8e0d7";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "#fdfaf6";
+                    }}
                   />
                 </div>
-              </div>
+              </FormSection>
             </div>
-            <p className="text-xs text-amber-600 flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" />
+
+            {/* 日期不可修改提示 */}
+            <p className="text-xs flex items-center gap-1.5 -mt-2" style={{ color: "#d97706" }}>
+              <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
               {copy.teams.dateImmutableTip}
             </p>
 
-            {/* Duration + Max Members */}
+            {/* 时长 + 最大人数 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="durationMin" className="text-sm font-medium text-stone-700">
-                  {copy.teams.formLabel.duration} <span className="text-red-500">*</span>
-                </label>
+              <FormSection icon="⌛" label={copy.teams.formLabel.duration} required>
                 <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
                   <select
                     id="durationMin"
                     name="durationMin"
                     value={formData.durationMin}
                     onChange={handleChange}
                     required
-                    className="w-full pl-10 pr-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900 bg-white"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none appearance-none"
+                    style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#D97706";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                      e.currentTarget.style.background = "#fff";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "#e8e0d7";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "#fdfaf6";
+                    }}
                   >
-                    {[120,180,240,300,360,420,480,540,600,720].map((m) => (
-                      <option key={m} value={m}>{m/60}小时</option>
+                    {[120, 180, 240, 300, 360, 420, 480, 540, 600, 720].map((m) => (
+                      <option key={m} value={m}>{m / 60} 小时</option>
                     ))}
                   </select>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="maxMembers" className="text-sm font-medium text-stone-700">
-                  {copy.teams.formLabel.maxSize} <span className="text-red-500">*</span>
-                </label>
+              </FormSection>
+
+              <FormSection icon="👥" label={copy.teams.formLabel.maxSize} required hint="2~50 人">
                 <div className="relative">
-                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                  <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
                   <input
                     id="maxMembers"
                     name="maxMembers"
@@ -272,17 +333,25 @@ export function CreateTeamClient() {
                     value={formData.maxMembers}
                     onChange={handleChange}
                     required
-                    className="w-full pl-10 pr-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
+                    style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#D97706";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                      e.currentTarget.style.background = "#fff";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "#e8e0d7";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "#fdfaf6";
+                    }}
                   />
                 </div>
-              </div>
+              </FormSection>
             </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-medium text-stone-700">
-                {copy.teams.formLabel.description} <span className="text-red-500">*</span>
-              </label>
+            {/* 队伍描述 */}
+            <FormSection icon="📝" label={copy.teams.formLabel.description} required hint="让伙伴们了解这次活动的安排和特色">
               <textarea
                 id="description"
                 name="description"
@@ -291,41 +360,81 @@ export function CreateTeamClient() {
                 onChange={handleChange}
                 required
                 rows={4}
-                className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-400 text-stone-900 resize-none"
+                className="w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none resize-none"
+                style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "#D97706";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                  e.currentTarget.style.background = "#fff";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "#e8e0d7";
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.background = "#fdfaf6";
+                }}
               />
+            </FormSection>
+
+            {/* 温馨提示 */}
+            <div
+              className="rounded-xl px-4 py-3.5 text-sm flex items-start gap-2.5"
+              style={{ background: "rgba(217,119,6,0.06)", border: "1px solid rgba(217,119,6,0.15)" }}
+            >
+              <span className="text-base flex-shrink-0 mt-0.5">💡</span>
+              <p style={{ color: "#92400E" }}>{copy.teams.createTip}</p>
             </div>
 
-            {/* Tip */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <p className="text-sm text-amber-800">
-                <strong>{copy.common.confirm}：</strong>
-                {copy.teams.createTip}
-              </p>
-            </div>
-
-            {/* Error */}
+            {/* 错误提示 */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-600">{error}</p>
+              <div
+                className="rounded-xl px-4 py-3 text-sm flex items-center gap-2"
+                style={{ background: "rgba(255,122,101,0.08)", color: "#c0392b", border: "1px solid rgba(255,122,101,0.20)" }}
+              >
+                <span className="text-base">⚠️</span>
+                {error}
               </div>
             )}
 
-            {/* Buttons */}
-            <div className="flex gap-4 pt-4">
+            {/* 操作按钮 */}
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => window.history.back()}
-                className="flex-1 border border-stone-200 text-stone-900 py-2.5 rounded-lg font-medium transition-colors hover:bg-stone-50"
+                className="flex-1 py-3 rounded-xl border text-sm font-medium transition-all duration-150"
+                style={{ borderColor: "#e8e0d7", color: "#4a3f35" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#f5f0e8"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
               >
                 {copy.common.cancel}
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !hasWechat}
-                className="flex-1 bg-stone-900 hover:bg-stone-800 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-2 flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{
+                  background: isSubmitting || !hasWechat ? "#D97706" : "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+                  boxShadow: isSubmitting || !hasWechat ? "none" : "0 4px 18px rgba(217,119,6,0.35)",
+                  flex: "2",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSubmitting && hasWechat) {
+                    const el = e.currentTarget as HTMLButtonElement;
+                    el.style.transform = "translateY(-1px)";
+                    el.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLButtonElement;
+                  el.style.transform = "translateY(0)";
+                  el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
+                }}
               >
                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {!hasWechat ? "请先填写微信号" : (isSubmitting ? copy.teams.createBtnLoading : copy.teams.createBtn)}
+                {!hasWechat
+                  ? copy.teams.wechatRequiredBtn
+                  : isSubmitting
+                  ? copy.teams.createBtnLoading
+                  : copy.teams.createBtn}
               </button>
             </div>
           </form>
@@ -334,5 +443,36 @@ export function CreateTeamClient() {
 
       <Footer />
     </main>
+  );
+}
+
+/* ── 表单字段区块 ── */
+function FormSection({
+  icon,
+  label,
+  required,
+  hint,
+  children,
+}: {
+  icon: string;
+  label: string;
+  required?: boolean;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <span className="text-base">{icon}</span>
+        <label className="text-sm font-medium" style={{ color: "#4a3f35" }}>
+          {label}
+          {required && <span className="ml-0.5" style={{ color: "#ff7a65" }}>*</span>}
+        </label>
+        {hint && (
+          <span className="text-xs ml-auto" style={{ color: "#c4b5a8" }}>{hint}</span>
+        )}
+      </div>
+      {children}
+    </div>
   );
 }

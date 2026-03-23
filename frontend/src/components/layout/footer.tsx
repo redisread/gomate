@@ -38,7 +38,7 @@ export function Footer() {
             <div className="flex items-center gap-2 mb-3">
               <div
                 className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #E8845A 0%, #D4694A 100%)" }}
+                style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)" }}
               >
                 <Mountain className="h-4 w-4 text-white" />
               </div>
@@ -46,8 +46,11 @@ export function Footer() {
                 GoMate
               </span>
             </div>
-            <p className="text-xs leading-relaxed" style={{ color: "#C4A898" }}>
+            <p className="text-xs leading-relaxed mb-3" style={{ color: "#C4A898" }}>
               {copy.footer.tagline}
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: "#D4C4B8" }}>
+              发现有趣的地方，<br />找到同行的人。
             </p>
           </div>
 

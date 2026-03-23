@@ -17,7 +17,7 @@ const c = copy.myTeams;
 
 // 状态标签
 const statusLabels: Record<string, { label: string; color: string; dot: string }> = {
-  recruiting: { label: c.statusRecruiting, color: "bg-emerald-50 text-emerald-700 border border-emerald-200", dot: "bg-emerald-500" },
+  recruiting: { label: c.statusRecruiting, color: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-500" },
   full: { label: c.statusFull, color: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-500" },
   formed: { label: c.statusFormed, color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
   ongoing: { label: "进行中", color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
@@ -28,7 +28,7 @@ const statusLabels: Record<string, { label: string; color: string; dot: string }
 // 申请状态标签
 const applicationStatusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: { label: c.appStatusPending, color: "bg-amber-50 text-amber-700 border border-amber-200", icon: Hourglass },
-  approved: { label: c.appStatusApproved, color: "bg-emerald-50 text-emerald-700 border border-emerald-200", icon: CheckCircle },
+  approved: { label: c.appStatusApproved, color: "bg-amber-50 text-amber-700 border border-amber-200", icon: CheckCircle },
   rejected: { label: c.appStatusRejected, color: "bg-stone-100 text-stone-500 border border-stone-200", icon: XCircle },
 };
 
@@ -268,9 +268,9 @@ export function MyTeamsClient() {
       <Navbar />
 
       {/* Hero Header */}
-      <div className="relative bg-gradient-to-r from-stone-900 via-stone-800 to-emerald-900 h-40 overflow-hidden pt-16">
+      <div className="relative bg-gradient-to-r from-stone-900 via-stone-800 to-amber-900 h-40 overflow-hidden pt-16">
         {/* 装饰性背景圆 */}
-        <div className="absolute -top-8 -right-8 w-48 h-48 rounded-full bg-emerald-700/20" />
+        <div className="absolute -top-8 -right-8 w-48 h-48 rounded-full bg-amber-700/20" />
         <div className="absolute -bottom-12 -left-4 w-40 h-40 rounded-full bg-stone-700/30" />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
@@ -309,12 +309,12 @@ export function MyTeamsClient() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         {/* Toast message */}
         {actionMessage && (
-          <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700 flex items-center justify-between">
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700 flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-emerald-500" />
+              <CheckCircle className="h-4 w-4 text-amber-500" />
               {actionMessage}
             </span>
-            <button onClick={() => setActionMessage("")} className="text-emerald-400 hover:text-emerald-600 transition-colors ml-4">
+            <button onClick={() => setActionMessage("")} className="text-amber-400 hover:text-amber-600 transition-colors ml-4">
               <XCircle className="h-4 w-4" />
             </button>
           </div>
@@ -336,7 +336,7 @@ export function MyTeamsClient() {
                 className={cn(
                   "flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-all duration-200 whitespace-nowrap relative",
                   activeTab === id
-                    ? "text-emerald-700 border-b-2 border-emerald-500"
+                    ? "text-amber-700 border-b-2 border-amber-500"
                     : "text-stone-500 hover:text-stone-700 border-b-2 border-transparent"
                 )}
               >
@@ -345,7 +345,7 @@ export function MyTeamsClient() {
                 {count > 0 && (
                   <span className={cn(
                     "w-2 h-2 rounded-full absolute top-2 right-1.5",
-                    id === "pending" ? "bg-amber-500" : "bg-emerald-500"
+                    id === "pending" ? "bg-amber-500" : "bg-amber-500"
                   )} />
                 )}
               </button>
@@ -488,14 +488,14 @@ export function MyTeamsClient() {
         >
           <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
             {/* 弹窗顶部装饰 */}
-            <div className="h-2 bg-gradient-to-r from-emerald-400 to-emerald-600" />
+            <div className="h-2 bg-gradient-to-r from-amber-400 to-amber-600" />
 
             <div className="p-6">
               {selectedApproval.applicant && (
                 <>
                   {/* 申请人头像居中 */}
                   <div className="flex flex-col items-center mb-5">
-                    <div className="w-20 h-20 rounded-full bg-stone-200 flex items-center justify-center overflow-hidden mb-3 ring-4 ring-emerald-50">
+                    <div className="w-20 h-20 rounded-full bg-stone-200 flex items-center justify-center overflow-hidden mb-3 ring-4 ring-amber-50">
                       {selectedApproval.applicant.avatar ? (
                         <img
                           src={selectedApproval.applicant.avatar}
@@ -525,7 +525,7 @@ export function MyTeamsClient() {
 
                   {/* 个人简介 */}
                   {selectedApproval.applicant.bio ? (
-                    <div className="mb-4 pl-4 border-l-4 border-emerald-300 py-1">
+                    <div className="mb-4 pl-4 border-l-4 border-amber-300 py-1">
                       <p className="text-sm text-stone-600 italic leading-relaxed">{selectedApproval.applicant.bio}</p>
                     </div>
                   ) : (
@@ -585,7 +585,7 @@ export function MyTeamsClient() {
                 <button
                   onClick={handleApprove}
                   disabled={isProcessing}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-2xl font-semibold transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
+                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-2xl font-semibold transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-amber-200"
                 >
                   {isProcessing ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -699,16 +699,16 @@ function EmptyState({
     <div className="py-14 flex flex-col items-center text-center">
       {/* 多层圆形装饰 */}
       <div className="relative mb-6">
-        <div className="absolute inset-0 w-24 h-24 rounded-full bg-emerald-50 scale-150 opacity-60" />
-        <div className="absolute inset-0 w-24 h-24 rounded-full bg-emerald-50 scale-125 opacity-80" />
+        <div className="absolute inset-0 w-24 h-24 rounded-full bg-amber-50 scale-150 opacity-60" />
+        <div className="absolute inset-0 w-24 h-24 rounded-full bg-amber-50 scale-125 opacity-80" />
         <div className="relative w-24 h-24 bg-white border-2 border-stone-100 rounded-full flex items-center justify-center shadow-sm">
-          <Icon className="h-10 w-10 text-emerald-500" />
+          <Icon className="h-10 w-10 text-amber-500" />
         </div>
       </div>
       <h3 className="text-lg font-semibold text-stone-800 mb-2">{title}</h3>
       <p className="text-sm text-stone-500 mb-6 max-w-xs leading-relaxed">{desc}</p>
       <a href={href}>
-        <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors text-sm shadow-md shadow-emerald-100">
+        <button className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors text-sm shadow-md shadow-amber-100">
           {btnLabel}
         </button>
       </a>
@@ -758,7 +758,7 @@ function TeamCard({ team, isLeader = false }: { team: TeamItem; isLeader?: boole
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-100/40 hover:border-emerald-200/50 transition-all duration-200">
+      <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-all duration-200">
         <div className="flex items-start gap-4">
           {/* 封面图 */}
           <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden bg-stone-100 flex items-center justify-center">
@@ -778,7 +778,7 @@ function TeamCard({ team, isLeader = false }: { team: TeamItem; isLeader?: boole
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold text-stone-900 group-hover:text-emerald-700 transition-colors truncate">
+                  <h3 className="font-semibold text-stone-900 group-hover:text-amber-700 transition-colors truncate">
                     {team.title}
                   </h3>
                   {isLeader && (
@@ -817,7 +817,7 @@ function TeamCard({ team, isLeader = false }: { team: TeamItem; isLeader?: boole
               )}
               <span className={cn(
                 "flex items-center gap-1 font-medium",
-                isFull ? "text-amber-600" : "text-emerald-600"
+                isFull ? "text-amber-600" : "text-amber-600"
               )}>
                 <Users className="h-3.5 w-3.5" />
                 {team.currentMembers}/{team.maxMembers}人
@@ -825,7 +825,7 @@ function TeamCard({ team, isLeader = false }: { team: TeamItem; isLeader?: boole
             </div>
           </div>
 
-          <ChevronRight className="h-5 w-5 text-stone-300 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
+          <ChevronRight className="h-5 w-5 text-stone-300 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
         </div>
       </div>
     </a>
@@ -843,7 +843,7 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-100/40 hover:border-emerald-200/50 transition-all duration-200">
+      <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-all duration-200">
         <div className="flex items-start gap-4">
           <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden bg-stone-100 flex items-center justify-center">
             {team.location?.coverImage ? (
@@ -860,7 +860,7 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="font-semibold text-stone-900 group-hover:text-emerald-700 transition-colors truncate">
+                <h3 className="font-semibold text-stone-900 group-hover:text-amber-700 transition-colors truncate">
                   {team.title}
                 </h3>
                 {team.location?.name && (
@@ -892,7 +892,7 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
               )}
               <span className={cn(
                 "flex items-center gap-1 font-medium",
-                isFull ? "text-amber-600" : "text-emerald-600"
+                isFull ? "text-amber-600" : "text-amber-600"
               )}>
                 <Users className="h-3.5 w-3.5" />
                 {team.currentMembers}/{team.maxMembers}人
@@ -909,7 +909,7 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
             </div>
           </div>
 
-          <ChevronRight className="h-5 w-5 text-stone-300 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
+          <ChevronRight className="h-5 w-5 text-stone-300 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
         </div>
       </div>
     </a>
@@ -998,7 +998,7 @@ function PendingApprovalCard({
       </div>
 
       <div className="mt-3 flex items-center justify-end">
-        <span className="text-sm text-emerald-600 font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+        <span className="text-sm text-amber-600 font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
           查看详情
           <ChevronRight className="h-4 w-4" />
         </span>
