@@ -56,6 +56,7 @@ export const copy = {
     register: "注册",
     profile: "个人资料",
     myTeams: "我的队伍",
+    myFavorites: "我的收藏",
     logout: "退出登录",
     admin: "管理后台",
     explore: "开始探索",
@@ -691,6 +692,22 @@ export const copy = {
     emptyHistory: "没有历史记录",
     emptyHistoryDesc: "完成的活动会显示在这里",
     emptyHistoryBtn: "去探索",
+  },
+
+  // ─── 收藏 ─────────────────────────────────────────────────────────────────
+  favorites: {
+    pageTitle: "我的收藏",
+    pageSubtitle: "你收藏的地点",
+    addSuccess: "已收藏",
+    removeSuccess: "已取消收藏",
+    addFailed: "收藏失败，请重试",
+    removeFailed: "取消收藏失败，请重试",
+    loginRequired: "登录后才能收藏",
+    emptyTitle: "还没有收藏",
+    emptyDesc: "探索地点，收藏你感兴趣的地方",
+    emptyBtn: "探索地点",
+    locationCount: "个地点",
+    backBtn: "返回",
   },
 
   // ─── 筛选面板 ─────────────────────────────────────────────────────────────

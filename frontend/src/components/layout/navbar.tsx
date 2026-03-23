@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Mountain, Menu, X, User, Settings, Plus, LogOut, ChevronDown } from "lucide-react";
+import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
 import { fetchCurrentUser } from "@/lib/api";
@@ -208,6 +208,14 @@ export function Navbar({ className }: NavbarProps) {
                           <Mountain className="h-3.5 w-3.5 text-[#8f7f6e]" />
                           {copy.nav.myTeams}
                         </a>
+                        <a
+                          href="/favorites"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#1e1812] hover:bg-[#FFFBEB] transition-colors"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          <Heart className="h-3.5 w-3.5 text-[#8f7f6e]" />
+                          {copy.nav.myFavorites}
+                        </a>
                         <div className="border-t border-[#f0ebe3] my-1" />
                         <button
                           type="button"
@@ -351,6 +359,14 @@ export function Navbar({ className }: NavbarProps) {
                   >
                     <Mountain className="h-4 w-4 text-[#8f7f6e]" />
                     {copy.nav.myTeams}
+                  </a>
+                  <a
+                    href="/favorites"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 border border-[#e8e0d7] text-[#1e1812] px-4 py-2.5 rounded-xl hover:bg-[#FFFBEB] transition-colors font-medium text-sm"
+                  >
+                    <Heart className="h-4 w-4 text-[#8f7f6e]" />
+                    {copy.nav.myFavorites}
                   </a>
                   <a
                     href="/teams/create"

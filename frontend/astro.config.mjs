@@ -7,6 +7,9 @@ export default defineConfig({
   output: "server",
   adapter: cloudflare(),
   integrations: [react()],
+  image: {
+    service: { entrypoint: "astro/assets/services/noop" },
+  },
   server: {
     port: 5432,
   },

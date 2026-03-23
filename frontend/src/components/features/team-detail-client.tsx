@@ -16,6 +16,7 @@ import {
   XCircle,
   Crown,
   X,
+  Pencil,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
@@ -23,6 +24,7 @@ import type { Team, TeamMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { SharePosterModal } from "./share-poster-modal";
 
 // ─── Toast Hook ────────────────────────────────────────────────────────────────
 interface ToastOptions {
@@ -391,6 +393,203 @@ function LeaveConfirmDialog({
   );
 }
 
+// ─── 编辑队伍 Modal ────────────────────────────────────────────────────────────
+interface EditTeamModalProps {
+  open: boolean;
+  team: Team;
+  onClose: () => void;
+  onSuccess: (updated: Partial<Team>) => void;
+}
+
+function EditTeamModal({ open, team, onClose, onSuccess }: EditTeamModalProps) {
+  const [title, setTitle] = React.useState(team.title);
+  const [description, setDescription] = React.useState(team.description || "");
+  const [maxMembers, setMaxMembers] = React.useState(String(team.maxMembers));
+  const [time, setTime] = React.useState(team.time);
+  const [durationMin, setDurationMin] = React.useState(String(team.durationMin || 240));
+  const [requirements, setRequirements] = React.useState(
+    Array.isArray(team.requirements) ? team.requirements.join("\n") : ""
+  );
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [fieldError, setFieldError] = React.useState<string | null>(null);
+
+  // 重置表单（每次打开时同步最新数据）
+  React.useEffect(() => {
+    if (open) {
+      setTitle(team.title);
+      setDescription(team.description || "");
+      setMaxMembers(String(team.maxMembers));
+      setTime(team.time);
+      setDurationMin(String(team.durationMin || 240));
+      setRequirements(Array.isArray(team.requirements) ? team.requirements.join("\n") : "");
+      setFieldError(null);
+    }
+  }, [open, team]);
+
+  const handleSubmit = async () => {
+    if (!title.trim()) { setFieldError("队伍名称不能为空"); return; }
+    const maxMembersNum = parseInt(maxMembers, 10);
+    if (isNaN(maxMembersNum) || maxMembersNum < 2 || maxMembersNum > 50) {
+      setFieldError("人数限制需在 2-50 之间");
+      return;
+    }
+    setFieldError(null);
+    setIsSaving(true);
+    try {
+      const reqList = requirements.split("\n").map((s) => s.trim()).filter(Boolean);
+      const res = await fetchAPI(`/api/teams/${team.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || null,
+          maxMembers: maxMembersNum,
+          time,
+          durationMin: parseInt(durationMin, 10) || 240,
+          requirements: reqList,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        onSuccess({
+          title: title.trim(),
+          description: description.trim() || null,
+          maxMembers: maxMembersNum,
+          time,
+          durationMin: parseInt(durationMin, 10) || 240,
+          requirements: reqList,
+        });
+        onClose();
+      } else {
+        setFieldError(data.error || copy.teams.editFailed);
+      }
+    } catch {
+      setFieldError(copy.teams.editFailed);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white rounded-3xl max-w-lg w-full shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both] max-h-[90vh] overflow-y-auto">
+        {/* 标题栏 */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-stone-100">
+          <h2 className="text-lg font-bold text-stone-900">{copy.teams.editTitle}</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-stone-200 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          {/* 队伍名称 */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 mb-1.5">队伍名称 *</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={60}
+              className="w-full px-4 py-2.5 rounded-2xl text-stone-800 text-sm bg-stone-50 border border-stone-200 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all"
+            />
+          </div>
+
+          {/* 队伍描述 */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 mb-1.5">队伍描述</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-2.5 rounded-2xl text-stone-800 text-sm bg-stone-50 border border-stone-200 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all resize-none"
+            />
+          </div>
+
+          {/* 人数 + 时间 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1.5">人数上限 *</label>
+              <input
+                type="number"
+                min={2}
+                max={50}
+                value={maxMembers}
+                onChange={(e) => setMaxMembers(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-2xl text-stone-800 text-sm bg-stone-50 border border-stone-200 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1.5">出发时间</label>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-2xl text-stone-800 text-sm bg-stone-50 border border-stone-200 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all"
+              />
+            </div>
+          </div>
+
+          {/* 活动时长 */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 mb-1.5">活动时长（分钟）</label>
+            <input
+              type="number"
+              min={30}
+              max={1440}
+              value={durationMin}
+              onChange={(e) => setDurationMin(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-2xl text-stone-800 text-sm bg-stone-50 border border-stone-200 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all"
+            />
+          </div>
+
+          {/* 参与要求（每行一条） */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 mb-1.5">参与要求（每行一条）</label>
+            <textarea
+              value={requirements}
+              onChange={(e) => setRequirements(e.target.value)}
+              rows={3}
+              placeholder="例如：需要有徒步经验&#10;自备充足饮用水"
+              className="w-full px-4 py-2.5 rounded-2xl text-stone-800 text-sm bg-stone-50 border border-stone-200 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all resize-none"
+            />
+          </div>
+
+          {/* 错误提示 */}
+          {fieldError && (
+            <p className="text-xs text-red-500 flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              {fieldError}
+            </p>
+          )}
+        </div>
+
+        {/* 底部按钮 */}
+        <div className="px-6 pb-6 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-2xl text-stone-600 text-sm font-medium bg-stone-100 hover:bg-stone-200 transition-colors"
+          >
+            {copy.common.cancel}
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isSaving}
+            className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isSaving ? copy.teams.editBtnLoading : copy.common.save}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface TeamDetailClientProps {
   teamId: string;
 }
@@ -411,6 +610,8 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const [otherTeams, setOtherTeams] = React.useState<Team[]>([]);
   const [showLeaveConfirm, setShowLeaveConfirm] = React.useState(false);
   const [showJoinSheet, setShowJoinSheet] = React.useState(false);
+  const [showShareModal, setShowShareModal] = React.useState(false);
+  const [showEditModal, setShowEditModal] = React.useState(false);
 
   const { toast, exiting, show: showToast } = useToast();
 
@@ -518,6 +719,11 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
     }
   };
 
+  const handleEditSuccess = (updated: Partial<Team>) => {
+    setTeam((prev) => prev ? { ...prev, ...updated } : prev);
+    showToast({ type: "success", message: copy.teams.editSuccess });
+  };
+
   /* ---- 加载态：骨架屏 ---- */
   if (isLoading) return <TeamDetailSkeleton />;
 
@@ -582,24 +788,6 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
         {/* 底部渐变：加深以衬托文字 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-        {/* 右上角：分享按钮（纯图标，更融合） */}
-        <div className="absolute top-5 right-5">
-          <button
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({ title: team.title, url: window.location.href }).catch(() => {});
-              } else {
-                navigator.clipboard.writeText(window.location.href);
-                showToast({ type: "success", message: copy.share.linkCopied });
-              }
-            }}
-            className="w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white flex items-center justify-center transition-all duration-150 active:scale-95"
-            aria-label={copy.teams.shareLabel}
-          >
-            <Share2 className="h-4 w-4" />
-          </button>
-        </div>
-
         {/* 底部信息：地点药丸 + 标题 */}
         <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-7">
           <div className="max-w-7xl mx-auto">
@@ -631,17 +819,28 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
             {/* ── 核心信息卡（-mt-12 breakout）── */}
             <div className="bg-white rounded-2xl p-5 -mt-12 relative z-10 shadow-warm-md border border-stone-100">
               {/* 状态徽章行 */}
-              <div className="flex items-center gap-2 mb-4 flex-wrap">
-                <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full", statusInfo.className)}>
-                  {statusInfo.label}
-                </span>
-                {/* 路线未定内联标签 */}
-                {!(team as any).routeId && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-stone-100 text-stone-500">
-                    <AlertCircle className="h-3 w-3" />
-                    路线待定
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full", statusInfo.className)}>
+                    {statusInfo.label}
                   </span>
-                )}
+                  {/* 路线未定内联标签 */}
+                  {!(team as any).routeId && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-stone-100 text-stone-500">
+                      <AlertCircle className="h-3 w-3" />
+                      路线待定
+                    </span>
+                  )}
+                </div>
+                {/* 分享按钮 */}
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-stone-500 hover:text-amber-600 hover:bg-amber-50 border border-stone-200 hover:border-amber-200 transition-all duration-150 active:scale-95 flex-shrink-0"
+                  aria-label={copy.teams.shareLabel}
+                >
+                  <Share2 className="h-3.5 w-3.5" />
+                  {copy.teams.shareLabel}
+                </button>
               </div>
 
               {/* 3 列数据网格（移除重复进度条） */}
@@ -868,12 +1067,22 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.youAreLeader}</p>
                     </div>
                     <p className="text-xs text-stone-500 leading-relaxed pl-6 mb-3">{copy.teams.youAreLeaderDesc}</p>
-                    <a
-                      href="/my-teams"
-                      className="pl-6 inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
-                    >
-                      {copy.teams.manageTeam} <ArrowRight className="h-3 w-3" />
-                    </a>
+                    <div className="pl-6 flex items-center gap-3">
+                      <a
+                        href="/my-teams"
+                        className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
+                      >
+                        {copy.teams.manageTeam} <ArrowRight className="h-3 w-3" />
+                      </a>
+                      <span className="text-stone-300">·</span>
+                      <button
+                        onClick={() => setShowEditModal(true)}
+                        className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        {copy.teams.editBtn}
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -957,9 +1166,18 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   <Crown className="h-4 w-4" />
                   <span className="font-medium">{copy.teams.youAreLeader}</span>
                 </div>
-                <a href="/my-teams" className="text-xs text-amber-600 font-medium flex items-center gap-1">
-                  {copy.teams.manageTeam} <ArrowRight className="h-3 w-3" />
-                </a>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-amber-50 hover:text-amber-600 transition-colors active:scale-95"
+                    aria-label={copy.teams.shareLabel}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                  <a href="/my-teams" className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                    {copy.teams.manageTeam} <ArrowRight className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
 
             ) : isMember ? (
@@ -968,12 +1186,21 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   <CheckCircle className="h-4 w-4" />
                   <span className="font-medium">{copy.teams.statusApproved}</span>
                 </div>
-                <button
-                  onClick={() => setShowLeaveConfirm(true)}
-                  className="text-xs text-stone-400 hover:text-red-500 transition-colors"
-                >
-                  {copy.teams.leaveTeam}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-amber-50 hover:text-amber-600 transition-colors active:scale-95"
+                    aria-label={copy.teams.shareLabel}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setShowLeaveConfirm(true)}
+                    className="text-xs text-stone-400 hover:text-red-500 transition-colors"
+                  >
+                    {copy.teams.leaveTeam}
+                  </button>
+                </div>
               </div>
 
             ) : isPending ? (
@@ -982,9 +1209,18 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   <Clock className="h-4 w-4" />
                   <span className="font-medium">{copy.teams.statusPending}</span>
                 </div>
-                <a href="/my-teams" className="text-xs text-amber-600 flex items-center gap-1">
-                  查看 <ArrowRight className="h-3 w-3" />
-                </a>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-amber-50 hover:text-amber-600 transition-colors active:scale-95"
+                    aria-label={copy.teams.shareLabel}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                  <a href="/my-teams" className="text-xs text-amber-600 flex items-center gap-1">
+                    查看 <ArrowRight className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
 
             ) : joinSuccess ? (
@@ -993,22 +1229,49 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   <CheckCircle className="h-4 w-4 animate-[checkFadeIn_0.3s_ease_both]" />
                   <span className="font-medium">{copy.success.applied}</span>
                 </div>
-                <a href="/my-teams" className="text-xs text-amber-600 font-medium flex items-center gap-1">
-                  查看我的队伍 <ArrowRight className="h-3 w-3" />
-                </a>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-amber-50 hover:text-amber-600 transition-colors active:scale-95"
+                    aria-label={copy.teams.shareLabel}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                  <a href="/my-teams" className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                    查看我的队伍 <ArrowRight className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
 
             ) : canJoin ? (
-              <button
-                onClick={() => setShowJoinSheet(true)}
-                className="w-full py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow transition-all duration-150 flex items-center justify-center gap-2 min-h-[44px] active:scale-[0.98] text-base"
-              >
-                {copy.teams.joinTeam}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="w-11 h-11 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-500 hover:bg-amber-50 hover:text-amber-600 border border-stone-200 hover:border-amber-200 transition-all flex-shrink-0 active:scale-95"
+                  aria-label={copy.teams.shareLabel}
+                >
+                  <Share2 className="h-4.5 w-4.5" />
+                </button>
+                <button
+                  onClick={() => setShowJoinSheet(true)}
+                  className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow transition-all duration-150 flex items-center justify-center gap-2 min-h-[44px] active:scale-[0.98] text-base"
+                >
+                  {copy.teams.joinTeam}
+                </button>
+              </div>
 
             ) : (
-              <div className="text-center text-stone-400 text-sm py-1 min-h-[44px] flex items-center justify-center">
-                {getClosedMessage(team)}
+              <div className="flex items-center justify-between min-h-[44px]">
+                <div className="text-stone-400 text-sm">
+                  {getClosedMessage(team)}
+                </div>
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-amber-50 hover:text-amber-600 transition-colors active:scale-95"
+                  aria-label={copy.teams.shareLabel}
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
               </div>
             )}
           </div>
@@ -1036,8 +1299,31 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
         onConfirm={handleLeave}
       />
 
+      {/* 编辑队伍 Modal（仅队长可见） */}
+      {showEditModal && team && (
+        <EditTeamModal
+          open={showEditModal}
+          team={team}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
+
       {/* Toast */}
       <ToastDisplay toast={toast} exiting={exiting} />
+
+      {/* 分享海报弹窗 */}
+      {showShareModal && team && (
+        <SharePosterModal
+          type="team"
+          title={team.title}
+          subtitle={team.date}
+          url={typeof window !== "undefined" ? window.location.href : ""}
+          meta={`${team.currentMembers}/${team.maxMembers} 人`}
+          onClose={() => setShowShareModal(false)}
+          onToast={showToast}
+        />
+      )}
 
       <Footer />
     </main>

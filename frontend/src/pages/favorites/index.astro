@@ -1,0 +1,11 @@
+---
+/**
+ * 我的收藏页
+ */
+import Layout from "../../layouts/Layout.astro";
+import { FavoritesClient } from "../../components/features/favorites-client";
+---
+
+<Layout title="我的收藏 - GoMate" showNavbar={false} showFooter={false}>
+  <FavoritesClient client:load />
+</Layout>

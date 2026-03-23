@@ -1,0 +1,11 @@
+---
+/**
+ * 联系我们页
+ */
+import Layout from "../layouts/Layout.astro";
+import { ContactClient } from "../components/features/contact-client";
+---
+
+<Layout title="联系我们 - GoMate">
+  <ContactClient client:load />
+</Layout>
