@@ -1,14 +1,25 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// API 端点常量定义
 class ApiConstants {
   ApiConstants._();
 
-  /// API 基础 URL，从环境变量读取，默认指向本地开发服务
-  /// iOS 模拟器中 localhost/127.0.0.1 均指向宿主机（与 Android 不同）
-  /// Android 模拟器需使用 10.0.2.2 访问宿主机
-  static String get baseUrl =>
-      dotenv.env['API_BASE_URL'] ?? 'http://localhost:8799';
+  /// API 基础 URL
+  /// 优先级：.env 中的 API_BASE_URL > 平台自动判断 > 默认 localhost
+  /// - Android 模拟器：http://10.0.2.2:8799（宿主机地址）
+  /// - iOS 模拟器 / 真机：http://localhost:8799
+  static String get baseUrl {
+    final envUrl = dotenv.env['API_BASE_URL'];
+    if (envUrl != null && envUrl.isNotEmpty) {
+      return envUrl;
+    }
+    if (kDebugMode && Platform.isAndroid) {
+      return 'http://10.0.2.2:8799';
+    }
+    return 'http://localhost:8799';
+  }
 
   // ─── 认证端点（Hono 后端挂载在 /auth）──────────────────────────────────────
   static const String signIn = '/auth/sign-in/email';

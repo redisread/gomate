@@ -14,6 +14,7 @@
     "web:build": "pnpm --filter @gomate/frontend build",
     "mobile:dev": "cd mobile && flutter run",
     "mobile:ios": "xcrun simctl boot 8019EA08-4BD7-4254-97D6-0E31292A9DC5 2>/dev/null; open -a Simulator && cd mobile && flutter run -d 8019EA08-4BD7-4254-97D6-0E31292A9DC5",
+    "mobile:android": "bash scripts/android-dev.sh",
     "mobile:test": "NO_PROXY=* HTTP_PROXY= HTTPS_PROXY= flutter test",
     "api:test": "pnpm --filter @gomate/api test",
     "api:test:coverage": "pnpm --filter @gomate/api test:coverage",
