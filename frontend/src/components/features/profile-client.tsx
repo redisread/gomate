@@ -13,7 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { signOut } from "@/lib/auth-client";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -128,16 +128,10 @@ export function ProfileClient() {
   const loadProfile = async () => {
     setIsLoading(true);
     try {
-      const res = await fetchAPI("/auth/get-session");
-      const data = await res.json();
-      if (!data?.user?.id) {
-        window.location.href = "/login?redirect=/profile";
-        return;
-      }
-      setUser(data.user);
-      loadTeams(data.user.id);
-    } catch {
-      window.location.href = "/login?redirect=/profile";
+      const u = await fetchCurrentUser("/login?redirect=/profile");
+      if (!u) return;
+      setUser(u as SessionUser);
+      loadTeams(u.id as string);
     } finally {
       setIsLoading(false);
     }

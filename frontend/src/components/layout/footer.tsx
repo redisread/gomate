@@ -46,9 +46,6 @@ export function Footer() {
                 GoMate
               </span>
             </div>
-            <p className="text-xs leading-relaxed mb-3" style={{ color: "#C4A898" }}>
-              {copy.footer.tagline}
-            </p>
             <p className="text-xs leading-relaxed" style={{ color: "#D4C4B8" }}>
               发现有趣的地方，<br />找到同行的人。
             </p>
@@ -118,14 +115,14 @@ export function Footer() {
 
             {/* 联系邮件 */}
             <a
-              href="mailto:hi@gomate.app"
+              href="mailto:hi@gomate.live"
               className="inline-flex items-center gap-2 group"
               style={{ color: "#C4A898" }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#E8845A"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#C4A898"; }}
             >
               <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-xs font-medium transition-colors duration-150">hi@gomate.app</span>
+              <span className="text-xs font-medium transition-colors duration-150">hi@gomate.live</span>
             </a>
           </div>
 

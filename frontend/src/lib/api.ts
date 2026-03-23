@@ -76,3 +76,30 @@ export async function apiDelete<T>(path: string): Promise<T> {
   }
   return res.json();
 }
+
+/**
+ * 两步加载当前登录用户的最新数据，绕过 Cloudflare KV 会话缓存。
+ * 1. /auth/get-session → 验证登录状态，取 userId
+ * 2. /api/users?id=xxx → 直接读数据库，取最新字段
+ *
+ * @param redirectOnFail 未登录或出错时跳转的 URL，不传则静默返回 null
+ */
+export async function fetchCurrentUser(redirectOnFail?: string): Promise<Record<string, unknown> | null> {
+  try {
+    const sessionRes = await fetchAPI("/auth/get-session");
+    const sessionData = await sessionRes.json();
+    if (!sessionData?.user?.id) throw new Error("no session");
+
+    const userRes = await fetchAPI(`/api/users?id=${sessionData.user.id}`);
+    const userData = await userRes.json();
+
+    return {
+      ...sessionData.user,
+      ...userData.user,
+      image: userData.user?.avatar ?? sessionData.user.image,
+    };
+  } catch {
+    if (redirectOnFail) window.location.href = redirectOnFail;
+    return null;
+  }
+}

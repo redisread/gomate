@@ -14,6 +14,7 @@ import {
   Sparkles,
   CalendarDays,
   ChevronRight,
+  Pencil,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
@@ -97,10 +98,21 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   const [heartAnimating, setHeartAnimating] = React.useState(false);
   // 分享提示
   const [shareCopied, setShareCopied] = React.useState(false);
+  // 管理员权限
+  const [isAdmin, setIsAdmin] = React.useState(false);
 
   React.useEffect(() => {
     loadLocation();
   }, [locationId]);
+
+  React.useEffect(() => {
+    fetchAPI("/auth/get-session")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.user?.role === "admin") setIsAdmin(true);
+      })
+      .catch(() => {});
+  }, []);
 
   const loadLocation = async () => {
     setIsLoading(true);
@@ -223,8 +235,17 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-transparent" />
 
-        {/* 封面右上角：收藏 + 分享按钮 */}
+        {/* 封面右上角：编辑（admin）+ 分享 + 收藏按钮 */}
         <div className="absolute top-5 right-5 flex items-center gap-2">
+          {/* 管理员编辑按钮 */}
+          {isAdmin && (
+            <a href={`/admin/locations/${locationId}/edit`}>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white text-xs font-medium transition-all duration-150 active:scale-95">
+                <Pencil className="h-3.5 w-3.5" />
+                {copy.admin.editLocation}
+              </button>
+            </a>
+          )}
           {/* 分享按钮 */}
           <button
             onClick={handleShare}

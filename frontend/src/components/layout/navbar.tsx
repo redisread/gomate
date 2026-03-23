@@ -4,6 +4,7 @@ import * as React from "react";
 import { Mountain, Menu, X, User, Settings, Plus, LogOut, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
+import { fetchCurrentUser } from "@/lib/api";
 
 const navLinks = [
   { href: "/",          label: copy.nav.home },
@@ -30,7 +31,7 @@ export function Navbar({ className }: NavbarProps) {
   const [showUserMenu,      setShowUserMenu]      = React.useState(false);
   const [currentPath,       setCurrentPath]       = React.useState("");
   const [session,           setSession]           = React.useState<{
-    user?: { name: string; email: string; image?: string };
+    user?: { id: string; name: string; nickname?: string; email: string; image?: string };
     isAdmin?: boolean;
   } | null>(null);
 
@@ -46,15 +47,13 @@ export function Navbar({ className }: NavbarProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // 获取登录会话
+  // 获取登录会话（两步加载，绕过 KV 缓存）
   React.useEffect(() => {
-    fetch(
-      `${import.meta.env.PUBLIC_API_URL || "http://localhost:8799"}/auth/get-session`,
-      { credentials: "include" }
-    )
-      .then((r) => r.json())
-      .then((data) => { if (data?.user) setSession(data); })
-      .catch(() => {});
+    (async () => {
+      const u = await fetchCurrentUser(); // 静默失败，不跳转
+      if (!u) return;
+      setSession({ user: u as { id: string; name: string; nickname?: string; email: string; image?: string } });
+    })();
   }, []);
 
   // 移动菜单打开时锁定滚动
@@ -174,9 +173,9 @@ export function Navbar({ className }: NavbarProps) {
                         className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
                         style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)" }}
                       >
-                        {session.user.name.charAt(0).toUpperCase()}
+                        {(session.user.nickname || session.user.name).charAt(0).toUpperCase()}
                       </div>
-                      <span className="max-w-[80px] truncate">{session.user.name}</span>
+                      <span className="max-w-[80px] truncate">{session.user.nickname || session.user.name}</span>
                       <ChevronDown
                         className={cn("h-3.5 w-3.5 transition-transform duration-200", showUserMenu && "rotate-180")}
                       />
@@ -299,10 +298,10 @@ export function Navbar({ className }: NavbarProps) {
                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
                     style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)" }}
                   >
-                    {session.user.name.charAt(0).toUpperCase()}
+                    {(session.user.nickname || session.user.name).charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-[#1e1812] text-sm truncate">{session.user.name}</p>
+                    <p className="font-semibold text-[#1e1812] text-sm truncate">{session.user.nickname || session.user.name}</p>
                     <p className="text-xs text-[#8f7f6e] truncate">{session.user.email}</p>
                   </div>
                 </div>

@@ -97,8 +97,11 @@ export const copy = {
     createTeamBtn: "发布队伍",
     loginRegisterBtn: "登录 / 注册",
     statRoutes: "精选地点",
-    statPlayers: "相遇同行",
-    statSafety: "尽兴而归",
+    statRoutesDesc: "吃饭、喝咖啡、旅行，都有好去处",
+    statPlayers: "结构化组队",
+    statPlayersDesc: "组队从未如此简单",
+    statSafety: "极简体验",
+    statSafetyDesc: "找到人，出发就不远",
   },
 
   // ─── 认证（登录 / 注册 / 忘记密码 / 重置密码）────────────────────────────
@@ -228,6 +231,18 @@ export const copy = {
     emptyDesc: "试试放宽条件，也许有更多意想不到的好地方等着你",
     emptyBtn: "重新探索",
     ctaHeroBadge: "全国各地 · 精选目的地",
+
+    // 角色快速入口
+    roleExplorer: "探险者",
+    roleExplorerDesc: "挑战高难度线路",
+    roleWeekend: "周末徒步",
+    roleWeekendDesc: "轻松愉快，适合全家",
+    roleVeteran: "资深驴友",
+    roleVeteranDesc: "专业路线 · 详细数据",
+
+    // 难度快筛
+    difficultyFilter: "难度",
+    allDifficulty: "全部难度",
 
     // 地点详情页
     detailWaiting: "有人在等你同行",

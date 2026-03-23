@@ -15,7 +15,7 @@ import {
   Info,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import type { SessionUser } from "@/lib/types";
@@ -78,7 +78,6 @@ export function ProfileEditClient() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = React.useState({
-    name: "",
     nickname: "",
     bio: "",
     level: "beginner",
@@ -91,20 +90,17 @@ export function ProfileEditClient() {
   const existingEquipmentRef = React.useRef<string[] | undefined>(undefined);
 
   React.useEffect(() => {
-    fetchAPI("/auth/get-session")
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data?.user?.id) {
-          window.location.href = "/login?redirect=/profile/edit";
-          return;
-        }
-        const u = data.user;
-        setUser(u);
-        setAvatarPreview(u.image || null);
+    (async () => {
+      try {
+        const u = await fetchCurrentUser("/login?redirect=/profile/edit");
+        if (!u) return;
+        const user = u as SessionUser;
+        setUser(user);
+        setAvatarPreview(user.image || null);
         let experience = "";
-        if (u.extra) {
+        if (user.extra) {
           try {
-            const parsed = JSON.parse(u.extra);
+            const parsed = JSON.parse(user.extra);
             experience = parsed.experience || "";
             existingEquipmentRef.current = parsed.equipment;
           } catch {
@@ -112,27 +108,29 @@ export function ProfileEditClient() {
           }
         }
         let birthdayStr = "";
-        if (u.birthday) {
+        if (user.birthday) {
           // 使用 UTC 日期避免时区偏移导致日期显示错误
-          const d = new Date(u.birthday);
+          const d = new Date(user.birthday);
           const y = d.getUTCFullYear();
           const m = String(d.getUTCMonth() + 1).padStart(2, "0");
           const day = String(d.getUTCDate()).padStart(2, "0");
           birthdayStr = `${y}-${m}-${day}`;
         }
         setFormData({
-          name: u.name || "",
-          nickname: u.nickname || "",
-          bio: u.bio || "",
-          level: u.level || "beginner",
-          wechat: u.wechat || "",
-          gender: u.gender || "",
+          nickname: user.nickname || "",
+          bio: user.bio || "",
+          level: user.level || "beginner",
+          wechat: user.wechat || "",
+          gender: user.gender || "",
           birthday: birthdayStr,
           experience,
         });
-      })
-      .catch(() => { window.location.href = "/login?redirect=/profile/edit"; })
-      .finally(() => setIsLoading(false));
+      } catch {
+        window.location.href = "/login?redirect=/profile/edit";
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -198,7 +196,6 @@ export function ProfileEditClient() {
         method: "PATCH",
         body: JSON.stringify({
           userId: user!.id,
-          name: formData.name,
           nickname: formData.nickname || null,
           image: avatarUrl,
           bio: formData.bio,
@@ -334,19 +331,13 @@ export function ProfileEditClient() {
           <Card>
             <CardSection icon={FileText} title={copy.profile.sectionBasicInfo} />
             <div className="space-y-5">
-              {/* 用户名 */}
+              {/* 用户名（只读） */}
               <div className="space-y-1.5">
-                <FieldLabel required>{copy.profile.usernameLabel}</FieldLabel>
+                <FieldLabel>{copy.profile.usernameLabel}</FieldLabel>
                 <input
-                  name="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  minLength={2}
-                  maxLength={20}
-                  placeholder={copy.profile.usernamePlaceholder}
-                  className={inputCls}
+                  value={user?.name || ""}
+                  disabled
+                  className={`${inputCls} bg-stone-50 text-stone-400 cursor-not-allowed`}
                 />
                 <p className="text-xs text-stone-400 flex items-center gap-1">
                   <Info className="h-3 w-3" />
@@ -557,7 +548,7 @@ export function ProfileEditClient() {
             </a>
             <button
               type="submit"
-              disabled={isSaving || isUploading || formData.name.length < 2}
+              disabled={isSaving || isUploading}
               className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
                 savedDone
                   ? "bg-amber-500 text-white shadow-md shadow-amber-100"

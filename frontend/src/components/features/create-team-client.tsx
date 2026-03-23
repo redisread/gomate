@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ArrowLeft, Clock, Users, Calendar, MapPin, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { copy } from "@/lib/copy";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import type { Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -36,20 +36,12 @@ export function CreateTeamClient() {
   });
 
   React.useEffect(() => {
-    fetchAPI("/auth/get-session")
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data?.user?.id) {
-          const redirect = encodeURIComponent("/teams/create");
-          window.location.href = `/login?redirect=${redirect}`;
-        } else {
-          setIsAuthenticated(true);
-          setHasWechat(!!data.user.wechat);
-        }
-      })
-      .catch(() => {
-        window.location.href = "/login?redirect=/teams/create";
-      });
+    (async () => {
+      const u = await fetchCurrentUser(`/login?redirect=${encodeURIComponent("/teams/create")}`);
+      if (!u) return;
+      setIsAuthenticated(true);
+      setHasWechat(!!(u.wechat));
+    })();
 
     fetchAPI("/api/locations?pageSize=100")
       .then((r) => r.json())

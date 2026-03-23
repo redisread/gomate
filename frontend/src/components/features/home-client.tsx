@@ -626,21 +626,19 @@ export function HomeClient() {
             </a>
           </div>
 
-          {/* 数字统计 */}
-          <div className={`flex flex-wrap justify-center gap-10 ${animate.stats}`}>
+          {/* 价值主张卡片 */}
+          <div className={`flex flex-wrap justify-center gap-6 ${animate.stats}`}>
             {[
-              { value: "50+", label: copy.hero.statRoutes, icon: "🗺️" },
-              { value: "200+", label: copy.hero.statPlayers, icon: "👥" },
-              { value: "1000+", label: copy.hero.statSafety, icon: "✨" },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="flex items-center justify-center gap-1.5 mb-0.5">
-                  <span className="text-xl">{stat.icon}</span>
-                  <div className="text-3xl md:text-4xl font-black text-gradient-brand">
-                    {stat.value}
-                  </div>
+              { icon: "🗺️", title: copy.hero.statRoutes, desc: copy.hero.statRoutesDesc },
+              { icon: "👥", title: copy.hero.statPlayers, desc: copy.hero.statPlayersDesc },
+              { icon: "✨", title: copy.hero.statSafety, desc: copy.hero.statSafetyDesc },
+            ].map((item) => (
+              <div key={item.title} className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-gradient-to-br from-white/80 to-amber-50/60 border border-amber-200/40" style={{ backdropFilter: "blur(8px)" }}>
+                <span className="text-2xl">{item.icon}</span>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">{item.title}</div>
+                  <div className="text-xs text-muted-foreground">{item.desc}</div>
                 </div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
               </div>
             ))}
           </div>

@@ -268,19 +268,13 @@ export function MyTeamsClient() {
       <Navbar />
 
       {/* Hero Header */}
-      <div className="relative bg-gradient-to-r from-stone-900 via-stone-800 to-amber-900 h-40 overflow-hidden pt-16">
-        {/* 装饰性背景圆 */}
-        <div className="absolute -top-8 -right-8 w-48 h-48 rounded-full bg-amber-700/20" />
-        <div className="absolute -bottom-12 -left-4 w-40 h-40 rounded-full bg-stone-700/30" />
-
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+      <div className="bg-white border-b border-stone-100 pt-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white leading-tight">
-              你好，{currentUser.name} 👋
+            <p className="text-xs text-stone-400 mb-1">欢迎回来</p>
+            <h1 className="text-2xl font-bold text-stone-900 leading-tight">
+              {currentUser.name}
             </h1>
-            <p className="text-stone-300 text-sm mt-1">管理你的山野冒险</p>
-
-            {/* 统计数字行 */}
             <div className="flex items-center gap-4 mt-3">
               <StatBadge label="已创建" count={createdTeams.length} />
               <StatBadge label="已加入" count={joinedTeams.length} />
@@ -290,19 +284,12 @@ export function MyTeamsClient() {
             </div>
           </div>
 
-          <a href="/teams/create">
-            <button className="flex items-center gap-2 border border-white/50 text-white hover:bg-white hover:text-stone-900 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm whitespace-nowrap backdrop-blur-sm">
+          <a href="/teams/create" className="flex-shrink-0">
+            <button className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm active:scale-95">
               <Plus className="h-4 w-4" />
               发起组队
             </button>
           </a>
-        </div>
-
-        {/* 底部白色波浪 SVG */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full" preserveAspectRatio="none">
-            <path d="M0 32L60 26.7C120 21.3 240 10.7 360 8C480 5.3 600 10.7 720 16C840 21.3 960 26.7 1080 26.7C1200 26.7 1320 21.3 1380 18.7L1440 16V32H0Z" fill="#f5f5f4" />
-          </svg>
         </div>
       </div>
 
@@ -648,7 +635,7 @@ function StatBadge({ label, count, highlight = false }: { label: string; count: 
     <div className="flex items-center gap-1.5">
       <span className={cn(
         "text-lg font-bold leading-none",
-        highlight ? "text-amber-300" : "text-white"
+        highlight ? "text-amber-500" : "text-stone-900"
       )}>
         {count}
       </span>
