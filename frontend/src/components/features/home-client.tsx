@@ -648,38 +648,46 @@ export function HomeClient() {
 
         {/* 浮动装饰卡片（大屏） */}
         <div
-          className="absolute left-8 top-1/3 hidden lg:flex flex-col gap-3 animate-float-up"
+          className="absolute left-8 top-1/3 hidden lg:flex flex-col gap-3"
           aria-hidden="true"
         >
           {[
-            { icon: "🏔️", label: "七娘山" },
-            { icon: "🌊", label: "大鹏湾" },
+            { icon: "🏔️", label: "七娘山", delay: "0s" },
+            { icon: "🌊", label: "东西冲", delay: "-2s" },
           ].map((item) => (
             <div
               key={item.label}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/90 border border-white/60"
-              style={{ boxShadow: "0 4px 16px rgba(30,24,18,0.10)", backdropFilter: "blur(8px)" }}
+              className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-gradient-to-br from-white/95 to-amber-50/80 border border-amber-200/50 animate-float-up"
+              style={{
+                boxShadow: "0 8px 24px rgba(217,119,6,0.12), 0 2px 8px rgba(30,24,18,0.06)",
+                backdropFilter: "blur(12px)",
+                animationDelay: item.delay,
+              }}
             >
-              <span className="text-xl">{item.icon}</span>
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 text-base">{item.icon}</span>
               <span className="text-sm font-medium text-foreground whitespace-nowrap">{item.label}</span>
             </div>
           ))}
         </div>
 
         <div
-          className="absolute right-8 top-1/3 hidden lg:flex flex-col gap-3 animate-float-down"
+          className="absolute right-8 top-1/3 hidden lg:flex flex-col gap-3"
           aria-hidden="true"
         >
           {[
-            { icon: "👥", label: "3人已组队" },
-            { icon: "🎒", label: "周六出发" },
+            { icon: "👥", label: "3人已组队", delay: "-1s" },
+            { icon: "🎒", label: "周六出发", delay: "-3.5s" },
           ].map((item) => (
             <div
               key={item.label}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/90 border border-white/60"
-              style={{ boxShadow: "0 4px 16px rgba(30,24,18,0.10)", backdropFilter: "blur(8px)" }}
+              className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-gradient-to-br from-white/95 to-amber-50/80 border border-amber-200/50 animate-float-down"
+              style={{
+                boxShadow: "0 8px 24px rgba(217,119,6,0.12), 0 2px 8px rgba(30,24,18,0.06)",
+                backdropFilter: "blur(12px)",
+                animationDelay: item.delay,
+              }}
             >
-              <span className="text-xl">{item.icon}</span>
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 text-base">{item.icon}</span>
               <span className="text-sm font-medium text-foreground whitespace-nowrap">{item.label}</span>
             </div>
           ))}

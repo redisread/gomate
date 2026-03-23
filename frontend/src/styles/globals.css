@@ -148,11 +148,11 @@
   /* 浮动卡片上下漂浮 */
   @keyframes float-up {
     0%, 100% { transform: translateY(0px); }
-    50%       { transform: translateY(-12px); }
+    50%       { transform: translateY(-10px); }
   }
   @keyframes float-down {
     0%, 100% { transform: translateY(0px); }
-    50%       { transform: translateY(12px); }
+    50%       { transform: translateY(8px); }
   }
 
   /* 搜索按钮输入弹跳 */
@@ -589,8 +589,8 @@
   .duration-slow    { transition-duration: var(--duration-slow); }
 
   /* ---- 新增动画工具类 ---- */
-  .animate-float-up   { animation: float-up 6s ease-in-out infinite; }
-  .animate-float-down { animation: float-down 7s ease-in-out infinite; }
+  .animate-float-up   { animation: float-up 5.5s ease-in-out infinite; }
+  .animate-float-down { animation: float-down 7.5s ease-in-out infinite; }
   .animate-bounce-in  { animation: bounce-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
   .animate-spin-in    { animation: spin-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   .animate-section-in { animation: section-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
