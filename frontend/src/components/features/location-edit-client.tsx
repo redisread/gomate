@@ -32,6 +32,7 @@ import { fetchAPI, apiPut } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { CoverImageUpload } from "@/components/ui/cover-image-upload";
+import { MultiImageUpload } from "@/components/ui/multi-image-upload";
 import { SeasonPicker, EditProgressBar } from "@/components/ui/season-picker";
 import { StickyActionBar } from "@/components/ui/sticky-action-bar";
 import { CitySelect } from "@/components/ui/city-select";
@@ -56,6 +57,7 @@ interface FormData {
   cityId: string;
   bestSeason: string[];
   coverImage: string;
+  images: string[];
   lat: number | string;
   lng: number | string;
 }
@@ -68,6 +70,7 @@ const DEFAULT_FORM: FormData = {
   cityId: "",
   bestSeason: [],
   coverImage: "",
+  images: [],
   lat: "",
   lng: "",
 };
@@ -369,6 +372,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
             cityId: loc.cityId,
             bestSeason: loc.bestSeason ?? [],
             coverImage: loc.coverImage,
+            images: loc.images ?? [],
             lat: loc.coordinates?.lat ?? "",
             lng: loc.coordinates?.lng ?? "",
           };
@@ -429,6 +433,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
         cityId: formData.cityId,
         bestSeason: formData.bestSeason,
         coverImage: formData.coverImage,
+        images: formData.images,
         coordinates: {
           lat: parseFloat(String(formData.lat)) || 0,
           lng: parseFloat(String(formData.lng)) || 0,
@@ -459,6 +464,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
       cityId: location.cityId,
       bestSeason: location.bestSeason ?? [],
       coverImage: location.coverImage,
+      images: location.images ?? [],
       lat: location.coordinates?.lat ?? "",
       lng: location.coordinates?.lng ?? "",
     });
@@ -742,6 +748,18 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                 <CoverImageUpload
                   value={formData.coverImage}
                   onChange={(url) => updateField("coverImage", url)}
+                  disabled={isSaving}
+                />
+              </Field>
+
+              <Field
+                label="相册图片"
+                hint="最多上传 9 张，展示在地点详情页图片画廊"
+              >
+                <MultiImageUpload
+                  values={formData.images}
+                  onChange={(urls) => updateField("images", urls)}
+                  max={9}
                   disabled={isSaving}
                 />
               </Field>
