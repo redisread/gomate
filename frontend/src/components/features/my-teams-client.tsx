@@ -7,7 +7,7 @@ import {
   XCircle, ClipboardCheck, Loader2, Mountain,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -138,55 +138,47 @@ export function MyTeamsClient() {
   }, []);
 
   React.useEffect(() => {
-    fetchAPI("/auth/get-session")
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data?.user) {
-          window.location.href = `/login?redirect=/my-teams`;
-        } else {
-          setCurrentUser(data.user);
-        }
-      })
-      .catch(() => {
-        window.location.href = `/login?redirect=/my-teams`;
+    fetchCurrentUser(`/login?redirect=/my-teams`)
+      .then((user) => {
+        if (user) setCurrentUser(user as SessionUser);
       });
   }, []);
 
   React.useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser?.id) return;
     setCreatedLoading(true);
     fetchAPI(`/api/teams?leaderId=${currentUser.id}&pageSize=50`)
       .then((r) => r.json())
       .then((data) => { if (data.success) setCreatedTeams(data.teams || []); })
       .finally(() => setCreatedLoading(false));
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   React.useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser?.id) return;
     setJoinedLoading(true);
     fetchAPI("/api/user/teams/joined?pageSize=50")
       .then((r) => r.json())
       .then((data) => { if (data.success) setJoinedTeams(data.teams || []); })
       .finally(() => setJoinedLoading(false));
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   React.useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser?.id) return;
     setApplicationsLoading(true);
     fetchAPI("/api/user/applications")
       .then((r) => r.json())
       .then((data) => { if (data.success) setApplications(data.applications || []); })
       .finally(() => setApplicationsLoading(false));
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   React.useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser?.id) return;
     setPendingLoading(true);
     fetchAPI("/api/user/pending-approvals")
       .then((r) => r.json())
       .then((data) => { if (data.success) setPendingApprovals(data.approvals || []); })
       .finally(() => setPendingLoading(false));
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   const refreshPendingApprovals = async () => {
     const r = await fetchAPI("/api/user/pending-approvals");
@@ -273,11 +265,11 @@ export function MyTeamsClient() {
           <div>
             <p className="text-xs text-stone-400 mb-1">欢迎回来</p>
             <h1 className="text-2xl font-bold text-stone-900 leading-tight">
-              {currentUser.name}
+              {currentUser.nickname || currentUser.name}
             </h1>
             <div className="flex items-center gap-4 mt-3">
-              <StatBadge label="已创建" count={createdTeams.length} />
-              <StatBadge label="已加入" count={joinedTeams.length} />
+              <StatBadge label="已创建" count={activeCreated.length} />
+              <StatBadge label="已加入" count={activeJoined.length} />
               {pendingApprovals.length > 0 && (
                 <StatBadge label="待审批" count={pendingApprovals.length} highlight />
               )}

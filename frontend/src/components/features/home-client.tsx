@@ -200,181 +200,435 @@ function LocationCard({ location }: { location: Location }) {
 }
 
 /* ============================================================
-   TeamCard — 温暖人情味卡片
+   getStatusConfig — 状态配置（颜色/文案/渐变）
+   ============================================================ */
+function getStatusConfig(status: Team["status"], isFull: boolean) {
+  if (isFull || status === "full") {
+    return {
+      label: copy.enums.teamStatus[status] ?? status,
+      dot: "#ef4444",
+      pill: { bg: "rgba(239,68,68,0.10)", color: "#b91c1c" },
+      bar: "linear-gradient(90deg, #ef4444 0%, #f97316 100%)",
+      glow: "rgba(239,68,68,0.18)",
+    };
+  }
+  if (status === "formed") {
+    return {
+      label: copy.enums.teamStatus[status] ?? status,
+      dot: "#92400E",
+      pill: { bg: "rgba(146,64,14,0.10)", color: "#92400E" },
+      bar: "linear-gradient(90deg, #92400E 0%, #D97706 100%)",
+      glow: "rgba(146,64,14,0.15)",
+    };
+  }
+  // recruiting（默认）
+  return {
+    label: copy.enums.teamStatus[status] ?? status,
+    dot: "#16a34a",
+    pill: { bg: "rgba(22,163,74,0.10)", color: "#15803d" },
+    bar: "linear-gradient(90deg, #D97706 0%, #FCD34D 100%)",
+    glow: "rgba(217,119,6,0.18)",
+  };
+}
+
+/* ============================================================
+   getDepartureLabel — 出发日期标签
+   ============================================================ */
+function getDepartureLabel(daysUntil: number | null): {
+  text: string;
+  urgent: boolean;
+} | null {
+  if (daysUntil === null) return null;
+  if (daysUntil === 0) return { text: "今天出发", urgent: true };
+  if (daysUntil === 1) return { text: "明天出发", urgent: true };
+  if (daysUntil <= 3) return { text: `${daysUntil} 天后出发`, urgent: true };
+  if (daysUntil <= 7) return { text: `${daysUntil} 天后出发`, urgent: false };
+  return null;
+}
+
+/* ============================================================
+   AvatarStack — 成员头像叠加组
+   ============================================================ */
+function AvatarStack({
+  members,
+  extra = 0,
+}: {
+  members: { name: string; avatar: string | null }[];
+  extra?: number;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex -space-x-2">
+        {members.map((m, idx) => {
+          const initial = (m.name || "?").charAt(0).toUpperCase();
+          return (
+            <div
+              key={idx}
+              className="w-7 h-7 rounded-full border-2 border-white overflow-hidden flex-shrink-0"
+              style={{ zIndex: 10 - idx, boxShadow: "0 1px 4px rgba(0,0,0,0.12)" }}
+            >
+              {m.avatar ? (
+                <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white"
+                  style={{ background: "linear-gradient(135deg, #D97706 0%, #FCD34D 100%)" }}
+                >
+                  {initial}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {extra > 0 && (
+          <div
+            className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+            style={{
+              zIndex: 1,
+              background: "rgba(217,119,6,0.12)",
+              color: "#92400E",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+            }}
+          >
+            +{extra}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   CapacityRing — 圆形容量环（右侧装饰）
+   ============================================================ */
+function CapacityRing({
+  current,
+  max,
+  isFull,
+}: {
+  current: number;
+  max: number;
+  isFull: boolean;
+}) {
+  const ratio = max > 0 ? Math.min(current / max, 1) : 0;
+  const r = 16;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * ratio;
+  const strokeColor = isFull ? "#ef4444" : "#D97706";
+  const textColor = isFull ? "#b91c1c" : "#92400E";
+
+  return (
+    <div className="relative w-10 h-10 flex items-center justify-center flex-shrink-0">
+      {/* -rotate-90 让弧从顶部开始 */}
+      <svg width="40" height="40" viewBox="0 0 40 40" className="absolute inset-0 -rotate-90">
+        {/* 底轨 */}
+        <circle cx="20" cy="20" r={r} fill="none" stroke="rgba(30,24,18,0.07)" strokeWidth="3" />
+        {/* 进度弧 */}
+        <circle
+          cx="20" cy="20" r={r}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circ}`}
+          style={{ transition: "stroke-dasharray 0.8s cubic-bezier(0.34,1.56,0.64,1)" }}
+        />
+      </svg>
+      {/* 中心文字 */}
+      <div className="relative z-10 text-center leading-none">
+        <div className="text-[11px] font-bold" style={{ color: textColor }}>{current}</div>
+        <div className="text-[8px] text-muted-foreground leading-none">/{max}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   LeaderChip — 领队信息胶囊
+   ============================================================ */
+function LeaderChip({
+  leader,
+}: {
+  leader: Team["leader"];
+}) {
+  const name = leader.nickname ?? leader.name;
+  const levelLabel = copy.enums.leaderLevel?.[leader.level] ?? copy.enums.level?.[leader.level] ?? leader.level;
+  const initial = name.charAt(0).toUpperCase();
+  return (
+    <div className="flex items-center gap-2">
+      {/* 头像 */}
+      <div
+        className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2"
+        style={{ borderColor: "rgba(217,119,6,0.25)", boxShadow: "0 2px 8px rgba(217,119,6,0.15)" }}
+      >
+        {leader.avatar ? (
+          <img src={leader.avatar} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center text-xs font-bold text-white"
+            style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)" }}
+          >
+            {initial}
+          </div>
+        )}
+      </div>
+      {/* 文字 */}
+      <div className="min-w-0">
+        <div className="text-xs font-semibold text-foreground truncate leading-tight">{name}</div>
+        <div className="text-[10px] text-muted-foreground leading-tight truncate">{levelLabel}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   TeamCard — 极致优化版（含地点封面 + 交互动效）
    ============================================================ */
 function TeamCard({ team }: { team: Team }) {
-  const fillRatio = team.maxMembers > 0
-    ? Math.min(Math.round((team.currentMembers / team.maxMembers) * 100), 100)
-    : 0;
+  const [hovered, setHovered] = React.useState(false);
   const isFull = team.currentMembers >= team.maxMembers;
   const daysUntil = getDaysUntil(team.date);
-  const statusGradient = getStatusGradient(team.status);
+  const statusCfg = getStatusConfig(team.status, isFull);
+  const departureLabel = getDepartureLabel(daysUntil);
+  const hasCover = Boolean(team.location?.coverImage);
 
-  // 取前 3 位已批准成员
+  // 取前 3 位已批准成员（不含领队）
   const approvedMembers = (team.members ?? [])
     .filter((m) => m.status === "approved")
-    .slice(0, 3);
+    .slice(0, 3)
+    .map((m) => ({ name: m.nickname ?? m.name, avatar: m.avatar }));
+
+  // 剩余人数（超出 3 个显示 +N）
+  const totalApproved = (team.members ?? []).filter((m) => m.status === "approved").length;
+  const extraCount = Math.max(0, totalApproved - 3);
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
       <article
-        className="overflow-hidden rounded-2xl cursor-pointer bg-white"
+        className="overflow-hidden rounded-2xl cursor-pointer bg-white relative"
         style={{
-          boxShadow: "0 2px 12px rgba(30,24,18,0.07)",
-          transition: "box-shadow 0.25s ease, transform 0.25s ease",
+          boxShadow: hovered
+            ? `0 20px 48px ${statusCfg.glow}, 0 6px 18px rgba(30,24,18,0.10)`
+            : "0 2px 14px rgba(30,24,18,0.07)",
+          transform: hovered ? "translateY(-5px) scale(1.005)" : "translateY(0) scale(1)",
+          transition: "box-shadow 0.30s ease, transform 0.30s cubic-bezier(0.34,1.56,0.64,1)",
         }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.transform = "translateY(-4px)";
-          el.style.boxShadow = "0 12px 36px rgba(217,119,6,0.16), 0 4px 14px rgba(30,24,18,0.08)";
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.transform = "translateY(0)";
-          el.style.boxShadow = "0 2px 12px rgba(30,24,18,0.07)";
-        }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
       >
-        {/* 顶部彩色渐变条 */}
-        <div className="h-1.5 w-full" style={{ background: statusGradient }} />
-
-        <div className="p-5">
-          {/* 标题行 */}
-          <div className="flex items-start gap-3 mb-4">
-            <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "linear-gradient(135deg, rgba(217,119,6,0.12) 0%, rgba(252,211,77,0.18) 100%)" }}
-            >
-              <Mountain className="h-5 w-5" style={{ color: "#D97706" }} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-foreground group-hover:text-brand transition-colors duration-150 line-clamp-1 text-base leading-snug">
-                {team.title}
-              </h3>
-              <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                {team.date}
-                {team.time && <span className="ml-1">{team.time}</span>}
-              </p>
-            </div>
-            {/* 状态标签 */}
-            <span
-              className="flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+        {/* ── 封面图区域 ── */}
+        {hasCover ? (
+          <div className="relative h-36 overflow-hidden">
+            {/* 图片（hover 时微缩放） */}
+            <img
+              src={team.location!.coverImage}
+              alt={team.location!.name ?? ""}
+              className="w-full h-full object-cover"
               style={{
-                background: isFull ? "rgba(255,122,101,0.10)" : "rgba(217,119,6,0.10)",
-                color: isFull ? "#d04a30" : "#92400E",
+                transform: hovered ? "scale(1.07)" : "scale(1)",
+                transition: "transform 0.55s cubic-bezier(0.25,0.46,0.45,0.94)",
               }}
-            >
-              {copy.enums.teamStatus[team.status] ?? team.status}
-            </span>
-          </div>
+            />
 
-          {/* 成员头像叠加 + 时长 */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
-                {approvedMembers.length > 0 ? (
-                  approvedMembers.map((member, idx) => (
-                    <div
-                      key={member.id}
-                      className="w-7 h-7 rounded-full border-2 border-white overflow-hidden bg-muted flex-shrink-0"
-                      style={{ zIndex: 10 - idx }}
-                    >
-                      {member.avatar ? (
-                        <img
-                          src={member.avatar}
-                          alt={member.nickname ?? member.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-center justify-center text-xs font-semibold text-white"
-                          style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)" }}
-                        >
-                          {(member.nickname ?? member.name).charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  /* 无成员时显示领队头像 */
-                  <div className="w-7 h-7 rounded-full border-2 border-white overflow-hidden bg-muted flex-shrink-0">
-                    {team.leader.avatar ? (
-                      <img
-                        src={team.leader.avatar}
-                        alt={team.leader.nickname ?? team.leader.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center text-xs font-semibold text-white"
-                        style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)" }}
-                      >
-                        {(team.leader.nickname ?? team.leader.name).charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <span className="text-sm text-muted-foreground">
-                已有{" "}
-                <span className="font-semibold" style={{ color: "#D97706" }}>
-                  {team.currentMembers}
-                </span>{" "}
-                人
-              </span>
-            </div>
-            {team.duration && (
-              <span className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-                约 {team.duration}
-              </span>
-            )}
-          </div>
+            {/* 常驻底部遮罩 */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(to top, rgba(10,8,5,0.72) 0%, rgba(10,8,5,0.12) 50%, transparent 100%)",
+              }}
+            />
 
-          {/* 进度条 + 倒计时 */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div
-                className="flex-1 h-2 rounded-full overflow-hidden"
-                style={{ background: "rgba(30,24,18,0.06)" }}
+            {/* hover 时顶部微遮罩（增强沉浸感） */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 40%)",
+                opacity: hovered ? 1 : 0,
+                transition: "opacity 0.3s ease",
+              }}
+            />
+
+            {/* 左上：状态 Pill */}
+            <div className="absolute top-3 left-3">
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                style={{
+                  background: "rgba(10,8,5,0.55)",
+                  color: "#fff",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                }}
               >
-                <div
-                  className="h-full rounded-full transition-all duration-700"
+                {/* 动态呼吸点 */}
+                <span
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                   style={{
-                    width: `${fillRatio}%`,
-                    background: isFull
-                      ? "linear-gradient(90deg, #ff7a65, #ffb347)"
-                      : "linear-gradient(90deg, #D97706, #FCD34D)",
+                    background: statusCfg.dot,
+                    boxShadow: `0 0 0 2px ${statusCfg.dot}44`,
+                    animation: team.status === "recruiting" && !isFull
+                      ? "pulse-soft 2s ease-in-out infinite"
+                      : "none",
                   }}
                 />
-              </div>
-              <span
-                className="text-xs font-semibold flex-shrink-0 tabular-nums"
-                style={{ color: isFull ? "#d04a30" : "#92400E" }}
-              >
-                {team.currentMembers}/{team.maxMembers} 人
+                {statusCfg.label}
               </span>
             </div>
 
-            {/* 倒计时提示 */}
-            {daysUntil !== null && team.status === "recruiting" && (
-              <div>
+            {/* 右上：出发倒计时 */}
+            {departureLabel && (
+              <div className="absolute top-3 right-3">
                 <span
-                  className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold"
                   style={{
-                    background: daysUntil <= 3 ? "rgba(255,122,101,0.10)" : "rgba(217,119,6,0.08)",
-                    color: daysUntil <= 3 ? "#d04a30" : "#D97706",
+                    background: departureLabel.urgent
+                      ? "rgba(239,68,68,0.80)"
+                      : "rgba(217,119,6,0.80)",
+                    color: "#fff",
+                    backdropFilter: "blur(8px)",
                   }}
                 >
-                  {daysUntil === 0
-                    ? "⚡ 今天出发"
-                    : daysUntil === 1
-                    ? "🔥 明天出发"
-                    : `⏱ 距出发 ${daysUntil} 天`}
+                  {departureLabel.urgent ? "🔥" : "⏱"} {departureLabel.text}
                 </span>
               </div>
             )}
+
+            {/* 底部：地点名 + 进度条 */}
+            <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-3 pt-6">
+              <div className="flex items-end justify-between mb-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <MapPin className="h-3.5 w-3.5 text-white/70 flex-shrink-0" />
+                  <span className="text-white text-sm font-semibold drop-shadow-sm truncate">
+                    {team.location!.name}
+                  </span>
+                </div>
+                <span className="text-white/70 text-xs tabular-nums flex-shrink-0 ml-2">
+                  {team.currentMembers}/{team.maxMembers} 人
+                </span>
+              </div>
+              {/* 薄进度条 */}
+              <div
+                className="h-1 rounded-full overflow-hidden"
+                style={{ background: "rgba(255,255,255,0.20)" }}
+              >
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.min((team.currentMembers / team.maxMembers) * 100, 100)}%`,
+                    background: statusCfg.bar,
+                    transition: "width 0.8s cubic-bezier(0.34,1.56,0.64,1)",
+                  }}
+                />
+              </div>
+            </div>
           </div>
+        ) : (
+          /* ── 无封面：顶部渐变色块 ── */
+          <div
+            className="h-2 w-full"
+            style={{ background: statusCfg.bar }}
+          />
+        )}
+
+        {/* ── 卡片主体 ── */}
+        <div className="p-4">
+
+          {/* 无封面时展示地点徽章 */}
+          {!hasCover && team.location && (
+            <div className="flex items-center gap-1.5 mb-2.5">
+              <MapPin className="h-3 w-3 flex-shrink-0" style={{ color: "#D97706" }} />
+              <span className="text-xs font-medium truncate" style={{ color: "#92400E" }}>
+                {team.location.name}
+              </span>
+              {/* 无封面时也显示状态 */}
+              <span
+                className="ml-auto flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                style={statusCfg.pill}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: statusCfg.dot }}
+                />
+                {statusCfg.label}
+              </span>
+            </div>
+          )}
+
+          {/* 标题 */}
+          <h3
+            className="font-bold text-foreground line-clamp-1 mb-2 leading-snug"
+            style={{
+              fontSize: "15px",
+              color: hovered ? "#D97706" : undefined,
+              transition: "color 0.2s ease",
+            }}
+          >
+            {team.title}
+          </h3>
+
+          {/* 时间 + 时长 */}
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Calendar className="h-3 w-3 flex-shrink-0" style={{ color: "#D97706" }} />
+              {team.date}
+              {team.time && <span className="ml-0.5 font-medium">{team.time}</span>}
+            </span>
+            {team.duration && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3 flex-shrink-0" style={{ color: "#D97706" }} />
+                约 {team.duration}
+              </span>
+            )}
+            {/* 无封面时的倒计时 */}
+            {!hasCover && departureLabel && (
+              <span
+                className="ml-auto flex-shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full"
+                style={{
+                  background: departureLabel.urgent ? "rgba(239,68,68,0.10)" : "rgba(217,119,6,0.08)",
+                  color: departureLabel.urgent ? "#b91c1c" : "#D97706",
+                }}
+              >
+                {departureLabel.urgent ? "🔥" : "⏱"} {departureLabel.text}
+              </span>
+            )}
+          </div>
+
+          {/* 分隔线 */}
+          <div
+            className="h-px mb-3"
+            style={{ background: "rgba(30,24,18,0.06)" }}
+          />
+
+          {/* 底部：领队 + 成员头像 + 容量环 */}
+          <div className="flex items-center gap-3">
+            {/* 领队 */}
+            <LeaderChip leader={team.leader} />
+
+            {/* 右侧：成员头像 + 容量环 */}
+            <div className="ml-auto flex items-center gap-2.5 flex-shrink-0">
+              {approvedMembers.length > 0 && (
+                <AvatarStack members={approvedMembers} extra={extraCount} />
+              )}
+              <CapacityRing
+                current={team.currentMembers}
+                max={team.maxMembers}
+                isFull={isFull}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── hover 时底部「查看详情」浮出条 ── */}
+        <div
+          className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-white"
+          style={{
+            background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+            transform: hovered ? "translateY(0)" : "translateY(100%)",
+            transition: "transform 0.28s cubic-bezier(0.34,1.56,0.64,1)",
+          }}
+        >
+          <span>查看详情</span>
+          <ArrowRight className="h-3.5 w-3.5" />
         </div>
       </article>
     </a>
