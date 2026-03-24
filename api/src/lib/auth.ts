@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
+import { sendPasswordResetEmail, sendWelcomeEmail } from "./email";
 
 /** KV TTL 最小值（Cloudflare KV 限制） */
 const KV_MIN_TTL = 60;
@@ -74,6 +75,27 @@ export function createAuth(env: Env) {
       maxPasswordLength: 128,
       requireEmailVerification: false,
       resetPasswordTokenExpiresIn: 3600,
+      // 自定义邮件发送回调 - 使用正确的函数名
+      sendResetPassword: async ({ user, url, token }) => {
+        console.log("[Auth] 发送密码重置邮件:", user.email, "URL:", url);
+        const result = await sendPasswordResetEmail(
+          user.email,
+          url,
+          user.nickname || user.email,
+          env
+        );
+        if (!result.success) {
+          console.error("[Auth] 密码重置邮件发送失败:", result.error);
+        }
+      },
+      // 用户注册成功发送欢迎邮件
+      sendVerifyEmail: async ({ user, url }) => {
+        console.log("[Auth] 发送欢迎邮件:", user.email);
+        const result = await sendWelcomeEmail(user.email, user.nickname || user.email, env);
+        if (!result.success) {
+          console.error("[Auth] 欢迎邮件发送失败:", result.error);
+        }
+      },
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7,

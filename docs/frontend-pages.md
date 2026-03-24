@@ -1,15 +1,15 @@
 # GoMate 前端页面功能文档
 
-> 最后更新：2026-03-24
+> 最后更新：2026-03-25
 > 架构：Astro 4 SSR 壳 + React Islands（client:load）
 
 ## 概览
 
-前端共 20 个页面，按功能分为 7 个模块：
+前端共 21 个页面，按功能分为 7 个模块：
 
 | 模块 | 页面数 | 是否需登录 |
 |------|--------|-----------|
-| 认证 | 3 | 否 |
+| 认证 | 4 | 否 |
 | 地点 | 2 | 否 |
 | 队伍 | 3 | 部分 |
 | 用户 | 4 | 部分 |
@@ -296,10 +296,38 @@
 - 邮箱输入表单
 - 发送重置链接按钮
 - 「返回登录」链接
+- 成功状态：邮件已发送提示 + 检查垃圾邮件提示
 
 ---
 
-### 15. 关于我们页 `/about`
+### 15. 重置密码页 `/reset-password`
+
+**组件：** `components/features/reset-password-client.tsx`
+**认证要求：** 否
+
+**功能点：**
+- 从 URL query 参数获取 `token`
+- 新密码输入框（至少 6 位）
+- 确认密码输入框
+- 重置密码按钮
+- 返回登录链接
+- 表单验证：
+  - 密码长度至少 6 位
+  - 两次输入密码必须一致
+  - token 有效性检查
+- 状态展示：
+  - token 加载中
+  - token 无效（显示错误图标 + 重新发送链接按钮）
+  - 重置成功（显示成功图标 + 跳转登录按钮）
+  - 错误提示（红色警告框）
+
+**关键交互：**
+- 调用 Better Auth 客户端 `authClient.resetPassword()` 方法
+- 成功后自动跳转到登录页
+
+---
+
+### 16. 关于我们页 `/about`
 
 **组件：** `components/features/about-client.tsx`
 **认证要求：** 否
@@ -312,7 +340,7 @@
 
 ---
 
-### 16. 帮助中心页 `/help`
+### 17. 帮助中心页 `/help`
 
 **组件：** `components/features/help-client.tsx`
 **认证要求：** 否
@@ -333,7 +361,7 @@
 
 ---
 
-### 17. 联系我们页 `/contact`
+### 18. 联系我们页 `/contact`
 
 **组件：** `components/features/contact-client.tsx`
 **认证要求：** 否
@@ -351,7 +379,7 @@
 
 ---
 
-### 18. 隐私政策页 `/privacy`
+### 19. 隐私政策页 `/privacy`
 
 **组件：** `components/features/privacy-client.tsx`
 **认证要求：** 否
@@ -363,7 +391,7 @@
 
 ---
 
-### 19. 服务条款页 `/terms`
+### 20. 服务条款页 `/terms`
 
 **组件：** `components/features/terms-client.tsx`
 **认证要求：** 否
@@ -375,7 +403,7 @@
 
 ---
 
-### 20. 地点编辑页（管理员）`/admin/locations/[id]/edit`
+### 21. 地点编辑页（管理员）`/admin/locations/[id]/edit`
 
 **组件：** `components/features/location-edit-client.tsx`
 **认证要求：** 是（Admin 角色，非 admin 重定向首页）
@@ -417,6 +445,7 @@
 | 登录 | `/login` | 否 | 邮箱/密码登录、密码可见性切换 |
 | 注册 | `/register` | 否 | 表单注册、密码强度指示 |
 | 忘记密码 | `/forgot-password` | 否 | 邮箱重置链接发送 |
+| 重置密码 | `/reset-password` | 否 | URL token 验证、新密码输入、密码重置 |
 | 关于我们 | `/about` | 否 | 品牌介绍、核心特色 |
 | 帮助中心 | `/help` | 否 | FAQ 手风琴、常见问题解答 |
 | 联系我们 | `/contact` | 否 | 联系表单提交 |
