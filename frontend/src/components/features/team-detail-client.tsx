@@ -17,6 +17,10 @@ import {
   Crown,
   X,
   Pencil,
+  LogOut,
+  MessageCircle,
+  Handshake,
+  Cloud,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
@@ -86,7 +90,14 @@ function AnimatedProgress({ ratio, isFull }: { ratio: number; isFull: boolean })
     return () => clearTimeout(t);
   }, [ratio]);
   return (
-    <div className="h-1.5 rounded-full bg-stone-100 overflow-hidden">
+    <div
+      role="progressbar"
+      aria-valuenow={ratio}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`队伍招募进度 ${ratio}%`}
+      className="h-1.5 rounded-full bg-stone-100 overflow-hidden"
+    >
       <div
         className={cn(
           "h-full rounded-full transition-[width] duration-500 ease-out",
@@ -148,7 +159,7 @@ function MemberAvatarGrid({
                 </span>
               )}
               {/* 名字 */}
-              <p className="text-[10px] text-stone-400 max-w-[44px] truncate text-center leading-tight">
+              <p className="text-xs text-stone-400 max-w-[44px] truncate text-center leading-tight">
                 {name}
               </p>
             </div>
@@ -302,6 +313,9 @@ function JoinBottomSheet({
       />
       {/* Sheet */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="join-sheet-title"
         className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-warm-xl animate-[slide-up-toast_0.3s_cubic-bezier(0.16,1,0.3,1)_both]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
@@ -314,7 +328,7 @@ function JoinBottomSheet({
           {/* 头部 */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-stone-900 text-lg">申请加入</h3>
+              <h3 id="join-sheet-title" className="font-bold text-stone-900 text-lg">申请加入</h3>
               <p className="text-sm text-stone-400 mt-0.5">
                 {remaining === 1 ? "就差你一个了，快来！" : `还差 ${remaining} 位伙伴`}
               </p>
@@ -373,9 +387,15 @@ function LeaveConfirmDialog({
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both]">
-        <h3 className="text-lg font-bold text-stone-900 mb-2">{copy.teams.leaveTeamConfirm}</h3>
-        <p className="text-sm text-stone-500 leading-relaxed mb-6">{copy.teams.leaveTeamWarning}</p>
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="leave-dialog-title"
+        aria-describedby="leave-dialog-desc"
+        className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
+        <h3 id="leave-dialog-title" className="text-lg font-bold text-stone-900 mb-2">{copy.teams.leaveTeamConfirm}</h3>
+        <p id="leave-dialog-desc" className="text-sm text-stone-500 leading-relaxed mb-6">{copy.teams.leaveTeamWarning}</p>
         <button
           onClick={onConfirm}
           className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors mb-2"
@@ -431,6 +451,10 @@ function EditTeamModal({ open, team, onClose, onSuccess }: EditTeamModalProps) {
     const maxMembersNum = parseInt(maxMembers, 10);
     if (isNaN(maxMembersNum) || maxMembersNum < 2 || maxMembersNum > 50) {
       setFieldError("人数限制需在 2-50 之间");
+      return;
+    }
+    if (maxMembersNum < team.currentMembers) {
+      setFieldError(`人数上限不能低于当前成员数（${team.currentMembers} 人）`);
       return;
     }
     setFieldError(null);
@@ -788,7 +812,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
         {/* 底部渐变：加深以衬托文字 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-        {/* 底部信息：地点药丸 + 标题 */}
+        {/* 底部信息：地点药丸 + 标题 + 关键决策信息 */}
         <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-7">
           <div className="max-w-7xl mx-auto">
             {location && (
@@ -800,9 +824,33 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 {location.name}
               </a>
             )}
-            <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight tracking-tight">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight tracking-tight mt-1 mb-3">
               {team.title}
             </h1>
+            {/* 关键决策信息药丸行 */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={cn(
+                "px-2.5 py-1 text-xs font-semibold rounded-full backdrop-blur-sm",
+                statusInfo.className
+              )}>
+                {statusInfo.label}
+              </span>
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs">
+                <Calendar className="h-3 w-3" /> {team.date}
+              </span>
+              {team.time && (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs">
+                  <Clock className="h-3 w-3" /> {team.time}
+                </span>
+              )}
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs">
+                <Users className="h-3 w-3" />
+                {team.currentMembers}/{team.maxMembers} 人
+                {!isFull && remaining <= 3 && remaining > 0 && (
+                  <span className="text-amber-300 font-semibold">· 仅剩 {remaining} 名额</span>
+                )}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -893,6 +941,26 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
               </div>
             )}
 
+            {/* ── 参与要求 ── */}
+            {Array.isArray(team.requirements) && team.requirements.length > 0 && (
+              <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm p-5">
+                <h2 className="text-base font-semibold text-stone-900 mb-3 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                  参与要求
+                </h2>
+                <ul className="space-y-2">
+                  {team.requirements.map((req: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-stone-600">
+                      <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      {req}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* ── 地点简介卡（上移！提升决策效率）── */}
             {location && (
               <a href={`/locations/${location.id}`}>
@@ -936,11 +1004,13 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
             {/* ── 同地点其他队伍 ── */}
             {otherTeams.length > 0 && (
               <div className="pt-2">
-                <h3 className="text-sm font-semibold text-stone-500 mb-3 flex items-center gap-2">
-                  <span className="w-4 h-px bg-stone-200" />
-                  换一支队伍？
-                  <span className="flex-1 h-px bg-stone-200" />
-                </h3>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex-1 h-px bg-gradient-to-r from-transparent to-stone-200" />
+                  <span className="text-xs font-medium text-stone-400 px-2 py-1 bg-stone-100 rounded-full whitespace-nowrap">
+                    同地点其他队伍
+                  </span>
+                  <div className="flex-1 h-px bg-gradient-to-l from-transparent to-stone-200" />
+                </div>
                 <div className="space-y-2.5">
                   {otherTeams.map((t) => {
                     const s = getStatusInfo(t.status, t.currentMembers, t.maxMembers);
@@ -988,39 +1058,50 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
               <div key={currentState} className="animate-[fadeScaleIn_0.2s_ease_both]">
 
                 {canJoin && (
-                  <div className="rounded-2xl p-5 bg-gradient-to-b from-amber-50 to-amber-50/30 border border-amber-200/60 shadow-warm-md">
-                    {/* 邀请文案 */}
-                    <p className="text-sm font-semibold text-amber-800 mb-4">
-                      {remaining === 1 ? "👋 就差你一个了，快来！" : `👋 还差 ${remaining} 位伙伴，一起出发`}
-                    </p>
-
-                    {/* 进度条 */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs text-stone-400">已有 {team.currentMembers} / {team.maxMembers} 人</span>
-                        <span className="text-xs font-semibold text-amber-600">{fillRatio}%</span>
+                  <div className="rounded-2xl overflow-hidden border border-amber-300/60 shadow-warm-md">
+                    {/* 顶部渐变 header：邀请文案 + 进度条 */}
+                    <div className="bg-gradient-to-r from-amber-600 to-amber-500 px-5 py-4">
+                      <p className="text-sm font-semibold text-white mb-3">
+                        {remaining === 1 ? "🔥 就差你一个了，快来！" : `👋 还差 ${remaining} 位伙伴，一起出发`}
+                      </p>
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-amber-100">已有 {team.currentMembers} / {team.maxMembers} 人</span>
+                          <span className="text-xs font-bold text-white">{fillRatio}%</span>
+                        </div>
+                        <div
+                          role="progressbar"
+                          aria-valuenow={fillRatio}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-label={`队伍招募进度 ${fillRatio}%`}
+                          className="h-1.5 rounded-full bg-white/30 overflow-hidden"
+                        >
+                          <div
+                            className="h-full rounded-full bg-white transition-[width] duration-500 ease-out"
+                            style={{ width: `${fillRatio}%` }}
+                          />
+                        </div>
                       </div>
-                      <AnimatedProgress ratio={fillRatio} isFull={isFull} />
                     </div>
-
-                    {/* 留言框 */}
-                    <textarea
-                      placeholder={copy.teams.joinPlaceholderDesktop}
-                      value={joinMessage}
-                      onChange={(e) => setJoinMessage(e.target.value)}
-                      rows={2}
-                      className="w-full px-3.5 py-2.5 rounded-xl text-stone-800 text-sm placeholder:text-stone-400 focus:outline-none resize-none mb-3 bg-white border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all"
-                    />
-
-                    {/* 申请按钮 */}
-                    <button
-                      onClick={handleJoin}
-                      disabled={isJoining}
-                      className="w-full py-3 font-semibold text-white rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow hover:shadow-[0_6px_24px_rgba(217,119,6,0.45)] hover:-translate-y-0.5 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2 active:scale-[0.97]"
-                    >
-                      {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {copy.teams.joinTeam}
-                    </button>
+                    {/* 白色底部：留言框 + 按钮 */}
+                    <div className="bg-white px-5 py-4">
+                      <textarea
+                        placeholder={copy.teams.joinPlaceholderDesktop}
+                        value={joinMessage}
+                        onChange={(e) => setJoinMessage(e.target.value)}
+                        rows={2}
+                        className="w-full px-3.5 py-2.5 rounded-xl text-stone-800 text-sm placeholder:text-stone-400 focus:outline-none resize-none mb-3 bg-stone-50 border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all"
+                      />
+                      <button
+                        onClick={handleJoin}
+                        disabled={isJoining}
+                        className="w-full py-3 font-semibold text-white rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow hover:shadow-[0_6px_24px_rgba(217,119,6,0.45)] hover:-translate-y-0.5 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2 active:scale-[0.97]"
+                      >
+                        {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {copy.teams.joinTeam}
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -1096,7 +1177,8 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
               {/* ── 队长信息卡（置于加入卡下方）── */}
               {team.leader && (
                 <div className="bg-white rounded-2xl border border-stone-100 p-5 shadow-warm-sm">
-                  <h3 className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-4">
+                  <h3 className="text-sm font-semibold text-stone-700 mb-4 flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-amber-500" />
                     {copy.teams.leaderSectionTitle}
                   </h3>
                   <div className="flex items-center gap-3">
@@ -1127,19 +1209,19 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
               {/* ── 出行提示卡（统一琥珀色调）── */}
               <div className="bg-amber-50/50 border border-amber-200/60 rounded-2xl p-5">
                 <h4 className="font-semibold text-stone-700 text-sm mb-3 flex items-center gap-2">
-                  <span className="text-base">⛰</span>
+                  <Mountain className="h-4 w-4 text-amber-500" />
                   {copy.teams.safetyTips}
                 </h4>
-                <ul className="text-xs text-stone-500 space-y-2.5 leading-relaxed">
+                <ul className="space-y-2.5">
                   {[
-                    { icon: "⏰", text: copy.teams.safetyTip1 },
-                    { icon: "💬", text: copy.teams.safetyTip2 },
-                    { icon: "🤝", text: copy.teams.safetyTip3 },
-                    { icon: "🌤", text: copy.teams.safetyTip4 },
-                  ].map((tip, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="flex-shrink-0 text-sm leading-4">{tip.icon}</span>
-                      <span>{tip.text}</span>
+                    { Icon: Clock,          text: copy.teams.safetyTip1 },
+                    { Icon: MessageCircle,  text: copy.teams.safetyTip2 },
+                    { Icon: Handshake,      text: copy.teams.safetyTip3 },
+                    { Icon: Cloud,          text: copy.teams.safetyTip4 },
+                  ].map(({ Icon, text }, i) => (
+                    <li key={i} className="flex items-start gap-2.5">
+                      <Icon className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-xs text-stone-500 leading-relaxed">{text}</span>
                     </li>
                   ))}
                 </ul>
@@ -1196,8 +1278,9 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   </button>
                   <button
                     onClick={() => setShowLeaveConfirm(true)}
-                    className="text-xs text-stone-400 hover:text-red-500 transition-colors"
+                    className="flex items-center gap-1 text-xs text-stone-500 border border-stone-200 rounded-full px-3 py-1.5 hover:border-red-300 hover:text-red-500 transition-colors"
                   >
+                    <LogOut className="h-3 w-3" />
                     {copy.teams.leaveTeam}
                   </button>
                 </div>
