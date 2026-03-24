@@ -1,6 +1,6 @@
 # GoMate 移动端模块文档
 
-> 最后更新：2026-03-22
+> 最后更新：2026-03-24
 > 框架：Flutter 3.24 + Riverpod 2.6 + GoRouter 14 + Dio 5.7
 
 ## 项目结构总览
@@ -21,7 +21,8 @@ mobile/lib/
 │   ├── home/                    # 首页模块
 │   ├── locations/               # 地点模块
 │   ├── teams/                   # 队伍模块
-│   └── profile/                 # 个人资料模块
+│   ├── profile/                 # 个人资料模块
+│   └── info/                    # 信息页模块（关于/帮助/联系/隐私/条款）
 ├── shared/
 │   ├── theme/                   # Design Tokens + Material 3 主题
 │   └── widgets/                 # 共享组件库
@@ -45,7 +46,7 @@ mobile/lib/
 - 差异化页面转场动画（Tab 淡入、详情页缩放、创建页底部弹出）
 
 **路由守卫规则：**
-- **受保护路由**（需登录）：`/teams/create`、`/my-teams`、`/profile`、`/profile/edit`
+- **受保护路由**（需登录）：`/teams/create`、`/my-teams`、`/profile`、`/profile/edit`、`/favorites`
 - **仅限未登录**（已登录重定向到首页）：`/login`、`/register`
 
 ---
@@ -59,15 +60,23 @@ mobile/lib/
 | `/` | 首页 | 否 | ShellRoute 内，含底部导航 |
 | `/login` | 登录页 | 否（已登录重定向） | 独立路由 |
 | `/register` | 注册页 | 否（已登录重定向） | 独立路由 |
+| `/forgot-password` | 忘记密码 | 否 | 独立路由 |
 | `/locations` | 地点列表 | 否 | ShellRoute 内 |
-| `/locations/:id` | 地点详情 | 否 | 独立路由 |
+| `/locations/:id` | 地点详情 | 否 | 独立路由，缩放淡入转场 |
 | `/teams` | 队伍列表 | 否 | ShellRoute 内 |
 | `/teams/create` | 创建队伍 | **是** | 底部弹出转场 |
 | `/teams/:id` | 队伍详情 | 否 | 缩放淡入转场 |
 | `/teams/:id/manage` | 队伍管理 | **是**（仅队长） | 独立路由 |
 | `/my-teams` | 我的队伍 | **是** | ShellRoute 内 |
+| `/favorites` | 我的收藏 | **是** | 独立路由 |
 | `/profile` | 个人资料 | **是** | ShellRoute 内 |
 | `/profile/edit` | 编辑资料 | **是** | 独立路由 |
+| `/users/:id` | 用户公开资料 | 否 | 独立路由 |
+| `/about` | 关于我们 | 否 | 独立路由 |
+| `/help` | 帮助中心 | 否 | 独立路由 |
+| `/contact` | 联系我们 | 否 | 独立路由 |
+| `/privacy` | 隐私政策 | 否 | 独立路由 |
+| `/terms` | 服务条款 | 否 | 独立路由 |
 
 ### 底部导航（`shared/widgets/app_nav_shell.dart`）
 
@@ -82,7 +91,7 @@ mobile/lib/
 ### 页面转场动画（`core/navigation/transitions.dart`）
 
 | 类型 | 效果 | 应用场景 |
-|------|------|---------|
+|------|------|----|
 | `heroFade` | 纯淡入 | Tab 切换 |
 | `slideFromRight` | 右→中（含视差） | 二级页面导航 |
 | `fadeScale` | 淡入 + 缩放（0.94→1.0） | 详情页、模态页 |
@@ -100,12 +109,22 @@ mobile/lib/
 - 密码可见性切换（Eye/EyeOff 图标）
 - 错误提示（邮箱/密码错误、网络超时、连接失败）
 - 注册入口链接
+- 「忘记密码」链接 → `/forgot-password`
 - 调用：`authProvider.notifier.login(email, password)`
 
 #### 注册页 `register_screen.dart`
 - 邮箱 + 密码 + 昵称表单
 - 密码长度校验（≥8 位）
+- 同意服务条款勾选框（链接跳转 `/terms`）
+- 「已有账户，登录」链接
 - 调用：`authProvider.notifier.register(email, password, name)`
+
+#### 忘记密码页 `forgot_password_screen.dart` ⭐ 待实现
+- 邮箱输入表单
+- 发送重置链接按钮（loading 态）
+- 发送成功提示
+- 「返回登录」链接
+- 调用：`POST /auth/forget-password`
 
 ---
 
@@ -114,9 +133,11 @@ mobile/lib/
 #### 首页 `home_screen.dart`
 - 顶部品牌 Logo（渐变文字）+ 个人资料入口按钮
 - 假搜索栏（点击跳转到地点列表）
-- **热门地点** 横向卡片滑动列表（6 个地点）
-- **招募中队伍** 纵向列表（5 个队伍）
+- **热门地点** 横向卡片滑动列表（6 个地点，含封面图 + 城市名）
+- **招募中队伍** 纵向列表（5 个队伍，含人数 + 状态标签）
 - 下拉刷新
+- 骨架屏（shimmer 扫光）
+- 错误态（重试按钮）
 - `Future.wait()` 并行加载地点和队伍数据
 
 ---
@@ -125,26 +146,35 @@ mobile/lib/
 
 #### 地点列表 `locations_list_screen.dart`
 - 网格布局（2 列，宽高比 0.8）
+- 搜索框（关键词模糊匹配，防抖 300ms）⭐ 待实现
 - 筛选底部弹窗（`_FilterBottomSheet`）：
   - 城市单选（含「全部」选项）
   - 标签多选（Wrap 布局）
   - 重置 / 确认按钮
 - 筛选状态指示器（活跃筛选时显示蓝点）
 - 下拉刷新
+- 骨架屏（加载中）
 - 错误/空状态处理
+- 分页加载（上拉加载更多）⭐ 待实现
 
 #### 地点详情 `location_detail_screen.dart`
 - 封面图 + SliverAppBar（可折叠）
-- 收藏按钮（需登录）
+- 收藏按钮（需登录，心形图标，heartbeat 动效）
+- 收藏状态从 `/favorites?entityType=location` 初始化 ⭐ 待实现
 - 地点基本信息（名称、描述、地址、坐标）
-- 关联路线列表（难度、时长、距离、高程）
+- 路线信息网格（4 列：难度、时长、距离、高程）
 - 最佳季节标签
 - 图片画廊
+- 正在招募的队伍列表（含「创建队伍」入口）⭐ 待实现
+- 分享按钮（系统 Share Sheet）⭐ 待实现
+- 「创建队伍」快捷按钮（预填 `locationId`）
 
 **API 调用：**
-- `LocationsApi().getLocations(cityId, tagIds)` — 地点列表
+- `LocationsApi().getLocations(cityId, tagIds, q)` — 地点列表（含关键词搜索）
 - `LocationsApi().getLocation(id)` — 地点详情
 - `LocationsApi().favoriteLocation(id)` — 切换收藏
+- `GET /favorites?entityType=location` — 获取收藏列表（初始化收藏状态）
+- `GET /teams?locationId=xxx&status=recruiting` — 该地点招募中队伍 ⭐ 待实现
 
 ---
 
@@ -152,15 +182,24 @@ mobile/lib/
 
 #### 队伍列表 `teams_list_screen.dart`
 - 状态 Tab 筛选（FilterChip）：招募中 / 已满 / 已组建 / 已完成
-- 队伍卡片纵向列表（图标、标题、人数、日期、状态标签）
+- 难度多选筛选 ⭐ 待实现
+- 搜索框（关键词模糊匹配，防抖 300ms）⭐ 待实现
+- 队伍卡片纵向列表（封面图、标题、人数进度条、日期、状态标签）
 - 底部 FAB（「发布队伍」快捷入口）
 - 下拉刷新
+- 骨架屏（加载中）
+- 空状态（含「创建队伍」入口）
 
 #### 队伍详情 `team_detail_screen.dart`
 基本信息区：
-- 队伍图标 + 标题 + 状态
-- 人数 / 活动时间 / 时长 / 领队信息
-- 活动描述 + 入队要求
+- 封面图 + SliverAppBar（可折叠）
+- 队伍标题 + 状态徽章
+- 4 列数据网格（日期、时间、人数、时长）
+- 地点面包屑（可跳转地点详情）
+- 队伍描述 + 入队要求
+- 成员列表（超 6 人折叠，展开/收起）⭐ 待实现
+- 地点简介卡（缩略图 + 名称 + 跳转链接）⭐ 待实现
+- 同地点其他队伍列表 ⭐ 待实现
 
 底部操作栏（差异化显示）：
 
@@ -174,9 +213,13 @@ mobile/lib/
 | 成员 | leave_pending | 「退出申请审核中」提示 |
 | 队长 | 任何 | 「管理队伍」按钮 → `/teams/:id/manage` |
 
+分享功能：
+- 分享按钮（AppBar 右上角）⭐ 待实现
+- 触发系统 Share Sheet（分享链接）
+
 用户操作：
-- `joinTeam(teamId)` — 申请加入
-- `leaveTeam(teamId)` — 取消申请 / 退出
+- `joinTeam(teamId)` — 申请加入（含留言输入）⭐ 留言功能待实现
+- `leaveTeam(teamId)` — 取消申请 / 退出（二次确认 AlertDialog）
 - `requestLeave(teamId)` — 申请退出（已组建队伍）
 
 #### 创建队伍 `create_team_screen.dart`
@@ -187,6 +230,7 @@ mobile/lib/
 - 最大成员数
 - 队伍描述
 - 入队要求（可添加多条）
+- URL 参数预填（`locationId`）⭐ 待实现
 
 #### 队伍管理 `team_manage_screen.dart`（队长专用）
 - **申请列表 Tab**：待审核申请（头像 + 昵称 + 微信 + 批准/拒绝按钮）
@@ -195,12 +239,12 @@ mobile/lib/
 
 #### 我的队伍 `my_teams_screen.dart`
 - Tab 1「我创建的」：按 `leaderId == currentUserId` 过滤
-- Tab 2「我加入的」：按 `MyTeamRole.member` 过滤
+- Tab 2「我加入的」：按 `MyTeamRole.member` 过滤（含申请状态标签）
 - Tab 3「我的申请」：按 `memberStatus == 'pending'` 过滤
 - 支持下拉刷新
 
 **API 调用：**
-- `TeamsApi().getTeams(status, locationId)` — 队伍列表
+- `TeamsApi().getTeams(status, locationId, q, difficulty)` — 队伍列表
 - `TeamsApi().getTeam(id)` — 队伍详情
 - `TeamsApi().getMyStatus(teamId)` — 当前用户状态
 - `TeamsApi().createTeam(data)` — 创建队伍
@@ -223,18 +267,97 @@ mobile/lib/
 菜单列表：
 - 我的队伍 → `/my-teams`
 - 发布队伍 → `/teams/create`
-- 我的收藏（TODO）
+- 我的收藏 → `/favorites` ⭐ 待接入（当前为空回调）
 - 账号设置（TODO）
 - 退出登录（红色，含确认弹窗）
+
+统计卡片扩展 ⭐ 待实现：
+- 创建队伍数、加入队伍数、完成队伍数（对齐 Web 端）
 
 #### 编辑资料 `edit_profile_screen.dart`
 - 头像上传（拍照/选择相册）
 - 昵称、个人简介、等级、性别、微信号编辑
+- 出生日期选择 ⭐ 待实现
+- 户外经验描述 ⭐ 待实现
+- 装备清单（多项）⭐ 待实现
 - 保存流程：先上传头像（如有修改）→ 调用 `updateUser()` → 更新 `authProvider`
 
 **API 调用：**
 - `AuthApi().updateUser()` — 更新用户信息
 - `AuthApi().uploadAvatar(file)` — 上传头像，返回 URL
+
+---
+
+### 3.6 我的收藏模块（`features/profile/` 或独立模块）⭐ 待实现
+
+#### 收藏页 `favorites_screen.dart`
+- 收藏地点列表（封面图 + 名称 + 地址 + 城市）
+- 取消收藏按钮（实时移除列表项）
+- 骨架屏（加载中）
+- 空状态（无收藏时展示引导）
+- 未登录时重定向到 `/login`
+
+**API 调用：**
+- `GET /favorites?entityType=location` — 获取收藏列表
+- `DELETE /favorites?entityType=location&entityId=xxx` — 取消收藏
+
+---
+
+### 3.7 用户公开资料模块 ⭐ 待实现
+
+#### 用户详情页 `user_detail_screen.dart`
+- 用户卡片：头像 + 名称 + 等级徽章 + 年龄 + 性别 + Bio
+- 统计区：创建队伍数、参加队伍数、完成队伍数、加入日期
+- 额外信息：户外经验、装备清单
+
+**路由：** `/users/:id`
+
+**API 调用：**
+- `GET /users/:id` — 获取用户公开信息
+
+---
+
+### 3.8 信息页模块（`features/info/`）⭐ 待实现
+
+所有信息页使用统一布局（面包屑 + 标题 + 内容区）。
+
+#### 关于我们 `about_screen.dart`
+- 品牌介绍（GoMate 定位与使命）
+- 核心特色三栏（发现地点、组建队伍、收藏路线）
+- 联系信息（邮箱）
+
+#### 帮助中心 `help_screen.dart`
+- FAQ 手风琴列表（6 个常见问题，含展开/收起动画）
+  - 如何加入队伍
+  - 如何创建队伍
+  - 如何联系队长
+  - 队伍状态说明
+  - 如何修改个人资料
+  - 忘记密码处理
+- 底部联系入口（跳转联系我们）
+
+#### 联系我们 `contact_screen.dart`
+- 联系表单：姓名、邮箱、主题、留言（4 字段）
+- 提交按钮（loading 态）
+- 提交成功态（图标 + 成功提示 + 重置按钮）
+- 错误提示
+
+**API 调用：**
+- `POST /contact` — 提交联系表单
+
+#### 隐私政策 `privacy_screen.dart`
+- 7 个章节：信息收集、信息使用、信息保护、Cookie 使用、第三方服务、用户权利、联系我们
+
+#### 服务条款 `terms_screen.dart`
+- 多章节条款：接受条款、服务描述、用户账号、行为准则、内容所有权等
+- 最后更新日期展示
+
+**信息页入口（从个人资料页菜单追加）：**
+- 关于我们 → `/about`
+- 帮助中心 → `/help`
+- 服务条款 → `/terms`
+- 隐私政策 → `/privacy`
+- 联系我们 → `/contact`
 
 ---
 
@@ -294,7 +417,7 @@ await ref.read(authProvider.notifier).login(email, password);
 |------|------|------|
 | `id` | String | 队伍 ID |
 | `title` | String | 队伍标题 |
-| `date` / `time` | String | 出发日期 / 时间（\"2026-03-30\" / \"09:00\"） |
+| `date` / `time` | String | 出发日期 / 时间（"2026-03-30" / "09:00"） |
 | `durationMin` | int | 活动时长（分钟） |
 | `maxMembers` / `currentMembers` | int | 最大 / 当前人数 |
 | `status` | TeamStatus | 队伍状态枚举 |
@@ -332,11 +455,15 @@ await ref.read(authProvider.notifier).login(email, password);
 
 | 类 | 主要方法 |
 |----|---------|
-| `AuthApi` | `login()`, `register()`, `updateUser()`, `uploadAvatar()`, `logout()` |
-| `LocationsApi` | `getLocations()`, `getLocation()`, `favoriteLocation()` |
-| `TeamsApi` | `getTeams()`, `getTeam()`, `createTeam()`, `joinTeam()`, `leaveTeam()`, `requestLeave()`, `getMyStatus()`, `getApplications()`, `approveApplication()`, `rejectApplication()`, `approveLeave()`, `rejectLeave()` |
+| `AuthApi` | `login()`, `register()`, `forgotPassword()` ⭐, `updateUser()`, `uploadAvatar()`, `logout()` |
+| `LocationsApi` | `getLocations(q, cityId, tagIds)`, `getLocation()`, `favoriteLocation()`, `getFavorites()` ⭐ |
+| `TeamsApi` | `getTeams(q, status, difficulty, locationId)`, `getTeam()`, `createTeam()`, `joinTeam()`, `leaveTeam()`, `requestLeave()`, `getMyStatus()`, `getApplications()`, `approveApplication()`, `rejectApplication()`, `approveLeave()`, `rejectLeave()` |
 | `CitiesApi` | `getCities()` |
 | `TagsApi` | `getLocationTags()`, `getTeamTags()` |
+| `UsersApi` ⭐ | `getUser(id)` |
+| `ContactApi` ⭐ | `submitContact(name, email, subject, message)` |
+
+> ⭐ 标注为待实现的新增方法
 
 **基础 URL：** 读取 `.env` 中的 `API_BASE_URL`，默认 `http://localhost:8799`
 
@@ -378,6 +505,7 @@ await ref.read(authProvider.notifier).login(email, password);
 | `AppStatusBadge` | 状态徽章 |
 | `AppEmptyState` | 空状态提示（插图 + 文案） |
 | `AppSectionHeader` | 章节标题（含「查看全部」链接） |
+| `AppShimmer` | 骨架屏扫光组件 |
 
 ---
 
@@ -409,3 +537,37 @@ await ref.read(authProvider.notifier).login(email, password);
 2. 填写表单 → 点击「发布」
 3. `TeamsApi().createTeam(data)` → 后端创建队伍
 4. 导航至新队伍详情页 `/teams/:id`
+
+### 收藏地点流程
+1. 用户进入地点详情，点击心形收藏按钮（需登录）
+2. 调用 `LocationsApi().favoriteLocation(locationId)`
+3. 后端切换收藏状态（toggle）
+4. 前端更新心形图标状态（heartbeat 动效）
+
+---
+
+## 9. 功能对齐进度（对比 Web 端）
+
+| 功能 | Web | 移动端 | 状态 |
+|------|-----|--------|------|
+| 首页（地点 + 队伍展示） | ✅ | ✅ | 已实现 |
+| 地点列表（搜索 + 筛选） | ✅ | 部分 | 搜索待实现 |
+| 地点详情（完整信息） | ✅ | 部分 | 招募队伍列表、分享待实现 |
+| 收藏功能（切换 + 列表） | ✅ | 部分 | 收藏列表页待实现 |
+| 队伍列表（搜索 + 难度筛选） | ✅ | 部分 | 搜索/难度筛选待实现 |
+| 队伍详情（5 状态操作卡） | ✅ | ✅ | 已实现 |
+| 队伍详情（分享） | ✅ | ⭐ | 待实现 |
+| 创建队伍（locationId 预填） | ✅ | ⭐ | 待实现 |
+| 队伍管理（审批 + 成员） | ✅ | ✅ | 已实现 |
+| 我的队伍（3 Tab） | ✅ | ✅ | 已实现 |
+| 个人资料（完整统计） | ✅ | 部分 | 统计数据待扩展 |
+| 编辑资料（完整字段） | ✅ | 部分 | 出生日期/装备待实现 |
+| 用户公开资料页 | ✅ | ⭐ | 待实现 |
+| 登录 | ✅ | ✅ | 已实现 |
+| 注册 | ✅ | ✅ | 已实现 |
+| 忘记密码 | ✅ | ⭐ | 待实现 |
+| 关于我们 | ✅ | ⭐ | 待实现 |
+| 帮助中心 | ✅ | ⭐ | 待实现 |
+| 联系我们 | ✅ | ⭐ | 待实现 |
+| 隐私政策 | ✅ | ⭐ | 待实现 |
+| 服务条款 | ✅ | ⭐ | 待实现 |

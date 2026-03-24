@@ -350,4 +350,123 @@ locations.delete("/:id", async (c) => {
   }
 });
 
+/**
+ * GET /locations/:id/tags
+ * 获取地点当前关联的标签列表
+ */
+locations.get("/:id/tags", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const db = createDb(c.env.DB);
+
+    const rows = await db
+      .select({ tag: schema.tags })
+      .from(schema.entityToTags)
+      .innerJoin(schema.tags, eq(schema.entityToTags.tagId, schema.tags.id))
+      .where(
+        and(
+          eq(schema.entityToTags.entityId, id),
+          eq(schema.entityToTags.entityType, "location")
+        )
+      );
+
+    return c.json({ success: true, tags: rows.map((r) => r.tag) });
+  } catch (error) {
+    console.error("Get location tags error:", error);
+    return c.json({ error: "获取标签失败" }, 500);
+  }
+});
+
+/**
+ * PUT /locations/:id/tags
+ * 全量替换地点关联的标签（需要管理员权限）
+ * body: { tagIds: string[] }
+ */
+locations.put("/:id/tags", async (c) => {
+  try {
+    await requireAdmin(c);
+    const id = c.req.param("id");
+    const { tagIds } = await c.req.json<{ tagIds: string[] }>();
+    const db = createDb(c.env.DB);
+
+    // 删除旧关联
+    await db
+      .delete(schema.entityToTags)
+      .where(
+        and(
+          eq(schema.entityToTags.entityId, id),
+          eq(schema.entityToTags.entityType, "location")
+        )
+      );
+
+    // 批量插入新关联
+    if (tagIds && tagIds.length > 0) {
+      await db.insert(schema.entityToTags).values(
+        tagIds.map((tagId) => ({
+          id: nanoid(),
+          entityId: id,
+          entityType: "location" as const,
+          tagId,
+        }))
+      );
+    }
+
+    return c.json({ success: true });
+  } catch (error) {
+    const message = (error as Error).message;
+    if (message === "未登录") return c.json({ error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    console.error("Update location tags error:", error);
+    return c.json({ error: "更新标签失败" }, 500);
+  }
+});
+
+/**
+ * PUT /locations/:id/pois
+ * 全量替换地点关联的打卡点（需要管理员权限）
+ * body: { pois: Array<{ poiId: string; roleType: string; order: number }> }
+ */
+locations.put("/:id/pois", async (c) => {
+  try {
+    await requireAdmin(c);
+    const id = c.req.param("id");
+    const { pois: poiLinks } = await c.req.json<{
+      pois: Array<{ poiId: string; roleType: string; order: number }>;
+    }>();
+    const db = createDb(c.env.DB);
+
+    // 删除旧关联
+    await db
+      .delete(schema.entityToPois)
+      .where(
+        and(
+          eq(schema.entityToPois.entityId, id),
+          eq(schema.entityToPois.entityType, "location")
+        )
+      );
+
+    // 批量插入新关联
+    if (poiLinks && poiLinks.length > 0) {
+      await db.insert(schema.entityToPois).values(
+        poiLinks.map((link) => ({
+          id: nanoid(),
+          entityId: id,
+          entityType: "location" as const,
+          poiId: link.poiId,
+          roleType: link.roleType as schema.PoiRoleType,
+          order: link.order,
+        }))
+      );
+    }
+
+    return c.json({ success: true });
+  } catch (error) {
+    const message = (error as Error).message;
+    if (message === "未登录") return c.json({ error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    console.error("Update location pois error:", error);
+    return c.json({ error: "更新打卡点失败" }, 500);
+  }
+});
+
 export { locations as locationsRoute };

@@ -11,6 +11,8 @@ import { contactRoute } from "./routes/contact";
 import { favoritesRoute } from "./routes/favorites";
 import { hikingRoutesRoute } from "./routes/hiking-routes";
 import { adminRoute } from "./routes/admin";
+import { amapRoute } from "./routes/amap";
+import { poisRoute } from "./routes/pois";
 import type { Env } from "./lib/auth";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -34,6 +36,8 @@ app.route("/contact", contactRoute);
 app.route("/favorites", favoritesRoute);
 app.route("/routes", hikingRoutesRoute);
 app.route("/admin", adminRoute);
+app.route("/amap", amapRoute);
+app.route("/pois", poisRoute);
 
 // R2 本地代理（挂在顶层，对齐原 Next.js /api/r2/* 路径）
 app.get("/r2/*", async (c) => {

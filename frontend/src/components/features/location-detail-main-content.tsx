@@ -40,6 +40,14 @@ import { cn } from "@/lib/utils";
 import type { Location, Team, Tag, RoutePoi } from "@/lib/types";
 import { getLocationPois } from "@/lib/api";
 
+// ─── 季节映射 ─────────────────────────────────────────────────────────────────
+const SEASON_LABEL: Record<string, string> = {
+  spring: "春季",
+  summer: "夏季",
+  autumn: "秋季",
+  winter: "冬季",
+};
+
 // ─── 难度配置 ─────────────────────────────────────────────────────────────────
 const DIFFICULTY_CONFIG: Record<
   string,
@@ -398,7 +406,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
                 key={i}
                 className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold border border-amber-100"
               >
-                {season}
+                {SEASON_LABEL[season] ?? season}
               </span>
             ))}
           </div>
@@ -752,13 +760,16 @@ function EmptyTeamsState({ locationId }: { locationId: string }) {
 
 interface AddressRowProps {
   address: string;
+  coordinates?: { lat: number; lng: number };
+  locationName?: string;
 }
 
 /**
  * 地址展示行（优化版）
  * - 图标 + 文字，样式与左栏卡片一致
+ * - 支持复制地址和高德地图导航
  */
-export function AddressRow({ address }: AddressRowProps) {
+export function AddressRow({ address, coordinates, locationName }: AddressRowProps) {
   const [copied, setCopied] = React.useState(false);
 
   const handleCopy = async () => {
@@ -771,22 +782,46 @@ export function AddressRow({ address }: AddressRowProps) {
     }
   };
 
+  /** 在新标签页打开高德地图导航 */
+  const handleNavigate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const dest = encodeURIComponent(locationName || address);
+    const url = `https://uri.amap.com/navigation?to=${coordinates!.lng},${coordinates!.lat},${dest}&callnative=0`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <button
-      onClick={handleCopy}
-      className="w-full bg-white rounded-2xl border border-stone-100 px-5 py-4 flex items-start gap-3 text-left group hover:border-amber-100 transition-all duration-150"
+    <div
+      className="w-full bg-white rounded-2xl border border-stone-100 px-5 py-4 flex items-start gap-3"
       style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
     >
       <MapPin className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
       <span className="text-sm text-stone-500 leading-relaxed flex-1">{address}</span>
-      <span className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        {copied ? (
-          <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-        ) : (
-          <svg className="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+      <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+        {/* 导航按钮：仅在坐标存在时显示 */}
+        {coordinates && (
+          <button
+            onClick={handleNavigate}
+            title={copy.locations.navigateTooltip}
+            className="text-amber-400 hover:text-amber-600 transition-colors"
+          >
+            <Navigation className="h-4 w-4" />
+          </button>
         )}
-      </span>
-    </button>
+        {/* 复制地址按钮 */}
+        <button
+          onClick={handleCopy}
+          title="复制地址"
+          className="opacity-60 hover:opacity-100 transition-opacity"
+        >
+          {copied ? (
+            <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+          ) : (
+            <svg className="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+          )}
+        </button>
+      </div>
+    </div>
   );
 }
 

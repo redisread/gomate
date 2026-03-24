@@ -260,6 +260,10 @@ export const copy = {
     teamsWaitingDesc: "支队伍正在等待伙伴", // 「N 支队伍正在等待伙伴」，N 在组件内拼接
     relatedTitle: "其他推荐地点",
 
+    // 导航
+    navigateTooltip: "在高德地图中导航",
+    navigateBtn: "导航",
+
     // 打卡点（POI）
     poiSection: "打卡点",
     poiEmpty: "暂无打卡点信息",

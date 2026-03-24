@@ -26,6 +26,10 @@ import {
   Eye,
   EyeOff,
   Navigation,
+  Map,
+  Search,
+  X,
+  Check,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI, apiPut } from "@/lib/api";
@@ -45,6 +49,19 @@ import type { Location, City } from "@/lib/types";
    类型与常量
    ================================================================ */
 
+/** 中文季节名 → 英文 key 映射（兼容旧数据） */
+const SEASON_ZH_TO_KEY: Record<string, string> = {
+  春季: "spring",
+  夏季: "summer",
+  秋季: "autumn",
+  冬季: "winter",
+};
+
+/** 规范化季节数组：将中文值转换为英文 key */
+function normalizeSeasons(seasons: string[]): string[] {
+  return seasons.map((s) => SEASON_ZH_TO_KEY[s] ?? s);
+}
+
 interface LocationEditClientProps {
   locationId: string;
 }
@@ -60,6 +77,9 @@ interface FormData {
   images: string[];
   lat: number | string;
   lng: number | string;
+  extra: { facilities: string[]; tips: string; warnings: string[] };
+  tagIds: string[];
+  poiLinks: Array<{ poiId: string; roleType: string; order: number }>;
 }
 
 const DEFAULT_FORM: FormData = {
@@ -73,7 +93,27 @@ const DEFAULT_FORM: FormData = {
   images: [],
   lat: "",
   lng: "",
+  extra: { facilities: [], tips: "", warnings: [] },
+  tagIds: [],
+  poiLinks: [],
 };
+
+/** 配套设施选项 */
+const FACILITY_OPTIONS = [
+  { value: "parking", label: "🅿️ 停车场" },
+  { value: "restroom", label: "🚻 卫生间" },
+  { value: "water", label: "💧 补给水源" },
+  { value: "food", label: "🍱 餐饮" },
+];
+
+/** 打卡点角色类型选项 */
+const POI_ROLE_OPTIONS = [
+  { value: "waypoint", label: "途经点" },
+  { value: "checkpoint", label: "打卡点" },
+  { value: "viewpoint", label: "观景点" },
+  { value: "facility", label: "设施" },
+  { value: "poi", label: "兴趣点" },
+];
 
 /** 字段校验规则 */
 const VALIDATION_RULES: Record<string, (v: string) => string | undefined> = {
@@ -230,6 +270,560 @@ function styledInput(hasError?: boolean) {
 }
 
 /* ================================================================
+   高德地图工具函数
+   ================================================================ */
+
+const AMAP_KEY = (import.meta.env.PUBLIC_AMAP_KEY as string | undefined) ?? "YOUR_AMAP_KEY";
+
+/** 动态加载高德地图 JS SDK（幂等，重复调用安全） */
+function loadAmapScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).AMap) { resolve(); return; }
+    const existing = document.getElementById("amap-script");
+    if (existing) {
+      // 脚本已存在但 AMap 尚未挂载（正在加载中），等待 load 事件
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("高德地图加载失败")));
+      // 如果脚本已加载完成但 AMap 尚未挂载（极少数情况），轮询等待
+      const poll = setInterval(() => {
+        if ((window as any).AMap) { clearInterval(poll); resolve(); }
+      }, 100);
+      setTimeout(() => clearInterval(poll), 5000);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "amap-script";
+    script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}&plugin=AMap.AutoComplete,AMap.Geocoder`;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("高德地图加载失败"));
+    document.head.appendChild(script);
+  });
+}
+
+/* ================================================================
+   MapSearchInput – 高德地图地址搜索输入框
+   ================================================================ */
+
+interface MapSearchInputProps {
+  /** 选中候选项后的回调，提供地址文本和坐标 */
+  onSelect: (address: string, lat: number, lng: number) => void;
+}
+
+function MapSearchInput({ onSelect }: MapSearchInputProps) {
+  const [query, setQuery] = React.useState("");
+  const [suggestions, setSuggestions] = React.useState<any[]>([]);
+  const [open, setOpen] = React.useState(false);
+  const [selected, setSelected] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const debounceTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 点击外部关闭下拉
+  React.useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setQuery(value);
+    setSelected("");
+
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+    if (!value.trim()) {
+      setSuggestions([]);
+      setOpen(false);
+      return;
+    }
+
+    debounceTimer.current = setTimeout(() => {
+      setLoading(true);
+      // 通过后端代理调用高德地图输入提示（避免浏览器 CORS 限制）
+      fetchAPI(
+        `/amap/inputtips?keywords=${encodeURIComponent(value)}&city=全国`
+      )
+        .then((r) => r.json())
+        .then((data) => {
+          setLoading(false);
+          if (data.status === "1" && data.tips?.length > 0) {
+            const valid = data.tips
+              .filter((t: any) => t.location && t.location !== "[]")
+              .slice(0, 8);
+            setSuggestions(valid);
+            setOpen(valid.length > 0);
+          } else {
+            setSuggestions([]);
+            setOpen(false);
+          }
+        })
+        .catch(() => {
+          setLoading(false);
+          setSuggestions([]);
+          setOpen(false);
+        });
+    }, 350);
+  }
+
+  function handleSelect(tip: any) {
+    const addressText = [tip.district, tip.name].filter(Boolean).join("");
+
+    if (tip.location && tip.location !== "[]") {
+      // REST API 返回的 location 格式为 "lng,lat"
+      const parts = tip.location.split(",");
+      if (parts.length === 2) {
+        const lng = parseFloat(parts[0]);
+        const lat = parseFloat(parts[1]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          onSelect(addressText, lat, lng);
+          setSelected(tip.name);
+          setQuery(tip.name);
+          setOpen(false);
+          setSuggestions([]);
+          return;
+        }
+      }
+    }
+
+    // 降级：通过后端代理查询坐标
+    fetchAPI(
+      `/amap/geocode?address=${encodeURIComponent(addressText)}`
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === "1" && data.geocodes?.length > 0) {
+          const loc = data.geocodes[0].location;
+          const parts = loc.split(",");
+          if (parts.length === 2) {
+            const lng = parseFloat(parts[0]);
+            const lat = parseFloat(parts[1]);
+            onSelect(addressText, lat, lng);
+          }
+        }
+      })
+      .catch(() => {});
+    setSelected(tip.name);
+    setQuery(tip.name);
+    setOpen(false);
+    setSuggestions([]);
+  }
+
+  function handleClear() {
+    setQuery("");
+    setSelected("");
+    setSuggestions([]);
+    setOpen(false);
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
+        <input
+          type="text"
+          value={query}
+          onChange={handleInputChange}
+          onFocus={() => suggestions.length > 0 && setOpen(true)}
+          placeholder="搜索地点名称或地址..."
+          className={cn(
+            styledInput(),
+            "pl-9 pr-9 text-stone-900"
+          )}
+          style={{ background: "#FAF7F4", color: "#1e1812" }}
+        />
+        {/* 加载中图标 或 清除按钮 */}
+        {loading && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-500 animate-spin" />
+        )}
+        {!loading && (query || selected) && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 hover:text-stone-600 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* 候选下拉列表 */}
+      {open && suggestions.length > 0 && (
+        <div
+          className="absolute z-30 left-0 right-0 mt-1 rounded-xl bg-white border border-stone-100 overflow-hidden"
+          style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.10)" }}
+        >
+          {suggestions.map((tip, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault(); // 防止 input onBlur 先触发
+                handleSelect(tip);
+              }}
+              className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-amber-50 transition-colors border-b border-stone-50 last:border-b-0"
+            >
+              <MapPin className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm text-stone-800 font-medium truncate">{tip.name}</p>
+                {tip.district && (
+                  <p className="text-xs text-stone-400 truncate">{tip.district}</p>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ================================================================
+   MapPickerModal – 高德地图选点弹窗
+   ================================================================ */
+
+interface MapPickerModalProps {
+  initialLat?: number | string;
+  initialLng?: number | string;
+  onConfirm: (address: string, lat: number, lng: number) => void;
+  onClose: () => void;
+}
+
+function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPickerModalProps) {
+  const mapContainerRef = React.useRef<HTMLDivElement>(null);
+  const mapRef = React.useRef<any>(null);
+  const markerRef = React.useRef<any>(null);
+  const [pickedAddress, setPickedAddress] = React.useState("");
+  const [pickedLat, setPickedLat] = React.useState<number | null>(null);
+  const [pickedLng, setPickedLng] = React.useState<number | null>(null);
+  const [mapError, setMapError] = React.useState("");
+  const [isLoadingMap, setIsLoadingMap] = React.useState(true);
+
+  // 弹窗内搜索状态
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchSuggestions, setSearchSuggestions] = React.useState<any[]>([]);
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [searchLoading, setSearchLoading] = React.useState(false);
+  const searchDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // 点击弹窗外部关闭搜索下拉
+  React.useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!value.trim()) { setSearchSuggestions([]); setSearchOpen(false); return; }
+    searchDebounceRef.current = setTimeout(() => {
+      setSearchLoading(true);
+      fetchAPI(`/amap/inputtips?keywords=${encodeURIComponent(value)}&city=全国`)
+        .then((r) => r.json())
+        .then((data) => {
+          setSearchLoading(false);
+          if (data.status === "1" && data.tips?.length > 0) {
+            const valid = data.tips.filter((t: any) => t.location && t.location !== "[]").slice(0, 8);
+            setSearchSuggestions(valid);
+            setSearchOpen(valid.length > 0);
+          } else { setSearchSuggestions([]); setSearchOpen(false); }
+        })
+        .catch(() => { setSearchLoading(false); setSearchSuggestions([]); setSearchOpen(false); });
+    }, 350);
+  }
+
+  function handleSearchSelect(tip: any) {
+    setSearchQuery(tip.name);
+    setSearchOpen(false);
+    setSearchSuggestions([]);
+    if (!tip.location || tip.location === "[]") return;
+    const parts = tip.location.split(",");
+    if (parts.length !== 2) return;
+    const lng = parseFloat(parts[0]);
+    const lat = parseFloat(parts[1]);
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    const map = mapRef.current;
+    if (!map) return;
+    const AMap = (window as any).AMap;
+
+    // 地图跳转并放置标记
+    map.setCenter([lng, lat]);
+    map.setZoom(15);
+    if (markerRef.current) {
+      markerRef.current.setPosition([lng, lat]);
+    } else {
+      const marker = new AMap.Marker({ position: [lng, lat] });
+      marker.setMap(map);
+      markerRef.current = marker;
+    }
+    setPickedLat(lat);
+    setPickedLng(lng);
+    setPickedAddress("");
+    reverseGeocode(AMap, lng, lat, (addr) => setPickedAddress(addr));
+  }
+
+  // 初始化地图
+  React.useEffect(() => {
+    let destroyed = false;
+
+    loadAmapScript()
+      .then(() => {
+        if (destroyed || !mapContainerRef.current) return;
+        const AMap = (window as any).AMap;
+
+        const parsedLat = parseFloat(String(initialLat));
+        const parsedLng = parseFloat(String(initialLng));
+        const hasCoords = !isNaN(parsedLat) && !isNaN(parsedLng);
+
+        const map = new AMap.Map(mapContainerRef.current, {
+          zoom: hasCoords ? 15 : 12,
+          center: hasCoords
+            ? [parsedLng, parsedLat]
+            : [114.05, 22.55], // 默认深圳市中心
+          mapStyle: "amap://styles/light",
+        });
+        mapRef.current = map;
+        setIsLoadingMap(false);
+
+        // 若有初始坐标则放置标记
+        if (hasCoords) {
+          const marker = new AMap.Marker({ position: [parsedLng, parsedLat] });
+          marker.setMap(map);
+          markerRef.current = marker;
+          setPickedLat(parsedLat);
+          setPickedLng(parsedLng);
+          // 逆地理编码获取地址
+          reverseGeocode(AMap, parsedLng, parsedLat, (addr) => {
+            if (!destroyed) setPickedAddress(addr);
+          });
+        }
+
+        // 点击地图选点
+        map.on("click", (e: any) => {
+          if (destroyed) return;
+          const AMapInner = (window as any).AMap;
+          const { lng, lat } = e.lnglat;
+
+          // 更新或创建标记
+          if (markerRef.current) {
+            markerRef.current.setPosition([lng, lat]);
+          } else {
+            const marker = new AMapInner.Marker({ position: [lng, lat] });
+            marker.setMap(map);
+            markerRef.current = marker;
+          }
+
+          setPickedLat(lat);
+          setPickedLng(lng);
+          setPickedAddress("");
+
+          reverseGeocode(AMapInner, lng, lat, (addr) => {
+            if (!destroyed) setPickedAddress(addr);
+          });
+        });
+      })
+      .catch(() => {
+        if (!destroyed) setMapError("高德地图加载失败，请检查网络或 API Key 配置");
+        setIsLoadingMap(false);
+      });
+
+    return () => {
+      destroyed = true;
+      if (mapRef.current) {
+        mapRef.current.destroy();
+        mapRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** 逆地理编码辅助函数（通过后端代理） */
+  function reverseGeocode(_AMap: any, lng: number, lat: number, callback: (addr: string) => void) {
+    fetchAPI(
+      `/amap/regeo?location=${lng},${lat}`
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === "1" && data.regeocode?.formatted_address) {
+          callback(data.regeocode.formatted_address);
+        } else {
+          callback(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        }
+      })
+      .catch(() => callback(`${lat.toFixed(5)}, ${lng.toFixed(5)}`));
+  }
+
+  function handleConfirm() {
+    if (pickedLat == null || pickedLng == null) return;
+    onConfirm(pickedAddress, pickedLat, pickedLng);
+  }
+
+  // 阻止弹窗内部滚动穿透到 body
+  function handleModalWheel(e: React.WheelEvent) {
+    e.stopPropagation();
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.5)" }}
+      onWheel={handleModalWheel}
+    >
+      <div
+        className="w-full max-w-xl rounded-2xl bg-white overflow-hidden flex flex-col"
+        style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.25)", maxHeight: "90vh" }}
+      >
+        {/* 弹窗头部 */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 shrink-0">
+          <div className="flex items-center gap-2">
+            <span
+              className="w-7 h-7 rounded-lg flex items-center justify-center"
+              style={{ background: "rgba(217,119,6,0.1)" }}
+            >
+              <Map className="h-4 w-4" style={{ color: "#D97706" }} />
+            </span>
+            <span className="text-sm font-semibold text-stone-800">地图选点</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* 弹窗内搜索框 */}
+        <div ref={searchContainerRef} className="relative px-5 pt-3 pb-2 shrink-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onFocus={() => searchSuggestions.length > 0 && setSearchOpen(true)}
+              placeholder="搜索地点跳转到地图位置..."
+              className={cn(styledInput(), "pl-9 pr-9 text-stone-900 text-sm")}
+              style={{ background: "#FAF7F4", color: "#1e1812" }}
+            />
+            {searchLoading && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-500 animate-spin" />
+            )}
+            {!searchLoading && searchQuery && (
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(""); setSearchSuggestions([]); setSearchOpen(false); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {searchOpen && searchSuggestions.length > 0 && (
+            <div
+              className="absolute z-50 left-5 right-5 mt-1 rounded-xl bg-white border border-stone-100 overflow-hidden"
+              style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}
+            >
+              {searchSuggestions.map((tip, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); handleSearchSelect(tip); }}
+                  className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-amber-50 transition-colors border-b border-stone-50 last:border-b-0"
+                >
+                  <MapPin className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm text-stone-800 font-medium truncate">{tip.name}</p>
+                    {tip.district && <p className="text-xs text-stone-400 truncate">{tip.district}</p>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-stone-400 mt-2">搜索后跳转，或直接点击地图选点</p>
+        </div>
+
+        {/* 地图容器 */}
+        <div className="relative mx-5 rounded-xl overflow-hidden shrink-0" style={{ height: 380 }}>
+          {isLoadingMap && (
+            <div className="absolute inset-0 flex items-center justify-center bg-stone-100 z-10">
+              <Loader2 className="h-6 w-6 text-amber-500 animate-spin" />
+            </div>
+          )}
+          {mapError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-50 z-10 gap-2 p-4">
+              <Map className="h-8 w-8 text-stone-300" />
+              <p className="text-sm text-stone-500 text-center">{mapError}</p>
+            </div>
+          )}
+          <div ref={mapContainerRef} className="w-full h-full" />
+        </div>
+
+        {/* 已选地址展示 */}
+        <div className="px-5 py-3 shrink-0">
+          {pickedLat != null && pickedLng != null ? (
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-100">
+              <MapPin className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                {pickedAddress ? (
+                  <p className="text-sm text-stone-700 leading-snug">{pickedAddress}</p>
+                ) : (
+                  <p className="text-sm text-stone-400 flex items-center gap-1.5">
+                    <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
+                    正在获取地址...
+                  </p>
+                )}
+                <p className="text-xs text-stone-400 mt-0.5 tabular-nums">
+                  {pickedLat.toFixed(6)}, {pickedLng.toFixed(6)}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-stone-50 border border-stone-100">
+              <MapPin className="h-4 w-4 text-stone-300 shrink-0" />
+              <p className="text-sm text-stone-400">点击地图以选择位置</p>
+            </div>
+          )}
+        </div>
+
+        {/* 底部按钮 */}
+        <div className="px-5 pb-5 flex gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium text-stone-600 border border-stone-200 hover:bg-stone-50 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={pickedLat == null || pickedLng == null}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-40"
+            style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)" }}
+          >
+            <Check className="h-4 w-4" />
+            确认选点
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================
    实时预览组件（桌面端右栏）
    ================================================================ */
 
@@ -326,6 +920,10 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
 export function LocationEditClient({ locationId }: LocationEditClientProps) {
   const [location, setLocation] = React.useState<Location | null>(null);
   const [cities, setCities] = React.useState<City[]>([]);
+  const [allTags, setAllTags] = React.useState<Array<{ id: string; name: string; type: string }>>([]);
+  const [allPois, setAllPois] = React.useState<Array<{ id: string; name: string; description?: string | null; category?: string | null }>>([]);
+  const [poiSearch, setPoiSearch] = React.useState("");
+  const [poiSearchResults, setPoiSearchResults] = React.useState<typeof allPois>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDirty, setIsDirty] = React.useState(false);
@@ -333,6 +931,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
   const [showDraftBanner, setShowDraftBanner] = React.useState(false);
   const [pendingDraft, setPendingDraft] = React.useState<FormData | null>(null);
   const [showPreview, setShowPreview] = React.useState(false);
+  const [showMapPicker, setShowMapPicker] = React.useState(false);
 
   const [formData, setFormData] = React.useState<FormData>(DEFAULT_FORM);
 
@@ -358,11 +957,28 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
     Promise.all([
       fetchAPI(`/api/locations/${locationId}`).then((r) => r.json()),
       fetchAPI("/api/cities").then((r) => r.json()),
+      fetchAPI(`/api/locations/${locationId}/tags`).then((r) => r.json()).catch(() => ({ tags: [] })),
+      fetchAPI(`/api/locations/${locationId}/pois`).then((r) => r.json()).catch(() => ({ pois: [] })),
+      fetchAPI("/api/tags?type=location&limit=200").then((r) => r.json()).catch(() => ({ tags: [] })),
+      fetchAPI("/pois?limit=200").then((r) => r.json()).catch(() => ({ pois: [] })),
     ])
-      .then(([locData, cityData]) => {
+      .then(([locData, cityData, locTagsData, locPoisData, allTagsData, allPoisData]) => {
         if (locData.location) {
           const loc: Location = locData.location;
           setLocation(loc);
+
+          // 填充标签和 POI 状态
+          setAllTags(allTagsData.tags ?? []);
+          setAllPois(allPoisData.pois ?? []);
+
+          const currentTagIds: string[] = (locTagsData.tags ?? []).map((t: { id: string }) => t.id);
+          const currentPoiLinks: FormData["poiLinks"] = (locPoisData.pois ?? []).map(
+            (p: { id: string; roleType: string; order?: number }, idx: number) => ({
+              poiId: p.id,
+              roleType: p.roleType ?? "poi",
+              order: p.order ?? idx,
+            })
+          );
 
           const serverData: FormData = {
             name: loc.name,
@@ -370,11 +986,18 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
             description: loc.description,
             address: loc.address ?? "",
             cityId: loc.cityId,
-            bestSeason: loc.bestSeason ?? [],
+            bestSeason: normalizeSeasons(loc.bestSeason ?? []),
             coverImage: loc.coverImage,
             images: loc.images ?? [],
             lat: loc.coordinates?.lat ?? "",
             lng: loc.coordinates?.lng ?? "",
+            extra: {
+              facilities: (loc.extra as any)?.facilities ?? [],
+              tips: (loc.extra as any)?.tips ?? "",
+              warnings: (loc.extra as any)?.warnings ?? [],
+            },
+            tagIds: currentTagIds,
+            poiLinks: currentPoiLinks,
           };
 
           // 检查是否有未过期草稿
@@ -424,27 +1047,41 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
     setSaveMessage(null);
 
     try {
-      await apiPut("/api/locations", {
-        id: location.id,
-        name: formData.name,
-        subtitle: formData.subtitle || undefined,
-        description: formData.description,
-        address: formData.address || undefined,
-        cityId: formData.cityId,
-        bestSeason: formData.bestSeason,
-        coverImage: formData.coverImage,
-        images: formData.images,
-        coordinates: {
-          lat: parseFloat(String(formData.lat)) || 0,
-          lng: parseFloat(String(formData.lng)) || 0,
-        },
-      });
+      const extraPayload = {
+        facilities: formData.extra.facilities.length > 0 ? formData.extra.facilities : undefined,
+        tips: formData.extra.tips.trim() || undefined,
+        warnings: (() => { const w = formData.extra.warnings.filter(s => s.trim()); return w.length > 0 ? w : undefined; })(),
+      };
+      const hasExtra = extraPayload.facilities || extraPayload.tips || extraPayload.warnings;
+
+      await Promise.all([
+        apiPut("/api/locations", {
+          id: location.id,
+          name: formData.name,
+          subtitle: formData.subtitle || undefined,
+          description: formData.description,
+          address: formData.address || undefined,
+          cityId: formData.cityId,
+          bestSeason: formData.bestSeason,
+          coverImage: formData.coverImage,
+          images: formData.images,
+          coordinates: {
+            lat: parseFloat(String(formData.lat)) || 0,
+            lng: parseFloat(String(formData.lng)) || 0,
+          },
+          extra: hasExtra ? extraPayload : null,
+        }),
+        apiPut(`/api/locations/${location.id}/tags`, { tagIds: formData.tagIds }),
+        apiPut(`/api/locations/${location.id}/pois`, { pois: formData.poiLinks }),
+      ]);
 
       clearDraft();
       setIsDirty(false);
       resetValidation();
-      setSaveMessage({ type: "success", text: "保存成功！" });
-      setTimeout(() => setSaveMessage(null), 3000);
+      setSaveMessage({ type: "success", text: "保存成功！正在跳转..." });
+      setTimeout(() => {
+        window.location.href = `/locations/${locationId}`;
+      }, 800);
     } catch (err) {
       setSaveMessage({ type: "error", text: (err as Error).message || "保存失败，请重试" });
     } finally {
@@ -462,11 +1099,18 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
       description: location.description,
       address: location.address ?? "",
       cityId: location.cityId,
-      bestSeason: location.bestSeason ?? [],
+      bestSeason: normalizeSeasons(location.bestSeason ?? []),
       coverImage: location.coverImage,
       images: location.images ?? [],
       lat: location.coordinates?.lat ?? "",
       lng: location.coordinates?.lng ?? "",
+      extra: {
+        facilities: (location.extra as any)?.facilities ?? [],
+        tips: (location.extra as any)?.tips ?? "",
+        warnings: (location.extra as any)?.warnings ?? [],
+      },
+      tagIds: formData.tagIds,
+      poiLinks: formData.poiLinks,
     });
     clearDraft();
     setIsDirty(false);
@@ -706,38 +1350,71 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                 label={copy.admin.formCoordinates}
                 hint={copy.admin.coordinatesHelp}
               >
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] text-stone-400 mb-1">{copy.admin.latLabel}</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={formData.lat}
-                      onChange={(e) => updateField("lat", e.target.value)}
-                      onBlur={(e) => touch("lat", e.target.value)}
-                      placeholder="22.5619"
-                      className={cn(styledInput(!!errors.lat), "text-stone-900")}
-                      style={{ background: "#FAF7F4", color: "#1e1812" }}
-                    />
-                    {errors.lat && <p className="text-xs text-red-500 mt-1">{errors.lat}</p>}
+                <div className="flex items-end gap-2">
+                  <div className="flex-1 grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-stone-400 mb-1">{copy.admin.latLabel}</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={formData.lat}
+                        onChange={(e) => updateField("lat", e.target.value)}
+                        onBlur={(e) => touch("lat", e.target.value)}
+                        placeholder="22.5619"
+                        className={cn(styledInput(!!errors.lat), "text-stone-900")}
+                        style={{ background: "#FAF7F4", color: "#1e1812" }}
+                      />
+                      {errors.lat && <p className="text-xs text-red-500 mt-1">{errors.lat}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-stone-400 mb-1">{copy.admin.lngLabel}</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={formData.lng}
+                        onChange={(e) => updateField("lng", e.target.value)}
+                        onBlur={(e) => touch("lng", e.target.value)}
+                        placeholder="114.1985"
+                        className={cn(styledInput(!!errors.lng), "text-stone-900")}
+                        style={{ background: "#FAF7F4", color: "#1e1812" }}
+                      />
+                      {errors.lng && <p className="text-xs text-red-500 mt-1">{errors.lng}</p>}
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[11px] text-stone-400 mb-1">{copy.admin.lngLabel}</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={formData.lng}
-                      onChange={(e) => updateField("lng", e.target.value)}
-                      onBlur={(e) => touch("lng", e.target.value)}
-                      placeholder="114.1985"
-                      className={cn(styledInput(!!errors.lng), "text-stone-900")}
-                      style={{ background: "#FAF7F4", color: "#1e1812" }}
-                    />
-                    {errors.lng && <p className="text-xs text-red-500 mt-1">{errors.lng}</p>}
-                  </div>
+
+                  {/* 地图选点按钮 */}
+                  <button
+                    type="button"
+                    onClick={() => setShowMapPicker(true)}
+                    title="地图选点"
+                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium border transition-colors"
+                    style={{
+                      borderColor: "#D97706",
+                      color: "#D97706",
+                      background: "rgba(217,119,6,0.05)",
+                    }}
+                  >
+                    <Map className="h-4 w-4" />
+                    <span className="hidden sm:inline">地图选点</span>
+                  </button>
                 </div>
               </Field>
             </SectionCard>
+
+            {/* 地图选点弹窗 */}
+            {showMapPicker && (
+              <MapPickerModal
+                initialLat={formData.lat}
+                initialLng={formData.lng}
+                onConfirm={(address, lat, lng) => {
+                  updateField("address", address);
+                  updateField("lat", lat);
+                  updateField("lng", lng);
+                  setShowMapPicker(false);
+                }}
+                onClose={() => setShowMapPicker(false)}
+              />
+            )}
 
             {/* 封面与季节 */}
             <SectionCard
@@ -783,7 +1460,220 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                 <span className="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">可选</span>
               }
             >
-              <p className="text-xs text-stone-400">更多字段（如标签、路线信息）请通过管理后台配置。</p>
+              {/* ── 配套设施 ── */}
+              <Field label="配套设施">
+                <div className="flex flex-wrap gap-2">
+                  {FACILITY_OPTIONS.map((f) => {
+                    const selected = formData.extra.facilities.includes(f.value);
+                    return (
+                      <button
+                        key={f.value}
+                        type="button"
+                        onClick={() => {
+                          const next = selected
+                            ? formData.extra.facilities.filter((v) => v !== f.value)
+                            : [...formData.extra.facilities, f.value];
+                          updateField("extra", { ...formData.extra, facilities: next });
+                        }}
+                        className={cn(
+                          "px-3 py-1.5 rounded-xl text-xs font-medium border transition-all",
+                          selected
+                            ? "bg-amber-500 text-white border-amber-500"
+                            : "bg-white text-stone-600 border-stone-200 hover:border-amber-300"
+                        )}
+                      >
+                        {f.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+
+              {/* ── 徒步贴士 ── */}
+              <Field label="徒步贴士" hint={`${formData.extra.tips.length} 字`}>
+                <textarea
+                  rows={3}
+                  value={formData.extra.tips}
+                  onChange={(e) => updateField("extra", { ...formData.extra, tips: e.target.value })}
+                  placeholder="如：建议早上 6 点前出发，避开人流高峰；携带足够饮用水..."
+                  className={cn(styledInput(), "resize-none leading-relaxed")}
+                  style={{ background: "#FAF7F4", color: "#1e1812" }}
+                />
+              </Field>
+
+              {/* ── 安全警告 ── */}
+              <Field label="安全警告">
+                <div className="space-y-2">
+                  {formData.extra.warnings.map((w, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={w}
+                        onChange={(e) => {
+                          const next = [...formData.extra.warnings];
+                          next[idx] = e.target.value;
+                          updateField("extra", { ...formData.extra, warnings: next });
+                        }}
+                        placeholder="如：悬崖路段注意安全，勿靠近边缘"
+                        className={cn(styledInput(), "flex-1")}
+                        style={{ background: "#FAF7F4", color: "#1e1812" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = formData.extra.warnings.filter((_, i) => i !== idx);
+                          updateField("extra", { ...formData.extra, warnings: next });
+                        }}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {formData.extra.warnings.length < 10 && (
+                    <button
+                      type="button"
+                      onClick={() => updateField("extra", { ...formData.extra, warnings: [...formData.extra.warnings, ""] })}
+                      className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 transition-colors"
+                    >
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      添加警告
+                    </button>
+                  )}
+                </div>
+              </Field>
+
+              {/* ── 关联标签 ── */}
+              <Field label="关联标签" hint="选择与该地点相关的标签">
+                {allTags.length === 0 ? (
+                  <p className="text-xs text-stone-400">暂无可用标签</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {allTags.map((tag) => {
+                      const selected = formData.tagIds.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => {
+                            const next = selected
+                              ? formData.tagIds.filter((id) => id !== tag.id)
+                              : [...formData.tagIds, tag.id];
+                            updateField("tagIds", next);
+                          }}
+                          className={cn(
+                            "px-3 py-1 rounded-full text-xs font-medium border transition-all",
+                            selected
+                              ? "bg-amber-500 text-white border-amber-500"
+                              : "bg-white text-stone-600 border-stone-200 hover:border-amber-300"
+                          )}
+                        >
+                          {tag.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </Field>
+
+              {/* ── 关联打卡点 ── */}
+              <Field label="关联打卡点" hint="搜索并添加该地点的打卡点">
+                {/* 搜索框 */}
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={poiSearch}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setPoiSearch(v);
+                      if (!v.trim()) { setPoiSearchResults([]); return; }
+                      const q = v.toLowerCase();
+                      setPoiSearchResults(
+                        allPois
+                          .filter((p) => p.name.toLowerCase().includes(q) || (p.category ?? "").toLowerCase().includes(q))
+                          .slice(0, 8)
+                      );
+                    }}
+                    placeholder="搜索打卡点名称..."
+                    className={cn(styledInput(), "pl-9")}
+                    style={{ background: "#FAF7F4", color: "#1e1812" }}
+                  />
+                </div>
+                {/* 搜索结果 */}
+                {poiSearchResults.length > 0 && (
+                  <div className="mb-2 rounded-xl border border-stone-100 overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+                    {poiSearchResults.map((poi) => {
+                      const already = formData.poiLinks.some((l) => l.poiId === poi.id);
+                      return (
+                        <button
+                          key={poi.id}
+                          type="button"
+                          disabled={already}
+                          onClick={() => {
+                            if (already) return;
+                            updateField("poiLinks", [
+                              ...formData.poiLinks,
+                              { poiId: poi.id, roleType: "poi", order: formData.poiLinks.length },
+                            ]);
+                            setPoiSearch("");
+                            setPoiSearchResults([]);
+                          }}
+                          className={cn(
+                            "w-full flex items-center gap-2.5 px-3 py-2 text-left border-b border-stone-50 last:border-b-0 transition-colors",
+                            already ? "opacity-40 cursor-not-allowed" : "hover:bg-amber-50"
+                          )}
+                        >
+                          <MapPin className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm text-stone-800 font-medium truncate">{poi.name}</p>
+                            {poi.category && <p className="text-xs text-stone-400 truncate">{poi.category}</p>}
+                          </div>
+                          {already && <span className="ml-auto text-xs text-stone-400 shrink-0">已添加</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {/* 已关联列表 */}
+                {formData.poiLinks.length === 0 ? (
+                  <p className="text-xs text-stone-400">暂未关联打卡点，搜索后点击添加</p>
+                ) : (
+                  <div className="space-y-2">
+                    {formData.poiLinks.map((link, idx) => {
+                      const poi = allPois.find((p) => p.id === link.poiId);
+                      return (
+                        <div key={link.poiId} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-stone-50 border border-stone-100">
+                          <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className="flex-1 text-sm text-stone-700 truncate">{poi?.name ?? link.poiId}</span>
+                          <select
+                            value={link.roleType}
+                            onChange={(e) => {
+                              const next = [...formData.poiLinks];
+                              next[idx] = { ...next[idx], roleType: e.target.value };
+                              updateField("poiLinks", next);
+                            }}
+                            className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-white text-stone-600 outline-none focus:border-amber-400 shrink-0"
+                          >
+                            {POI_ROLE_OPTIONS.map((r) => (
+                              <option key={r.value} value={r.value}>{r.label}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => updateField("poiLinks", formData.poiLinks.filter((_, i) => i !== idx))}
+                            className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Field>
             </SectionCard>
 
             {/* 移动端保存按钮（粘性栏未展示时的备选） */}

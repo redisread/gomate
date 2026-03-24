@@ -2,6 +2,9 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import cloudflare from "@astrojs/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
+import { loadEnv } from "vite";
+
+const env = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
 
 export default defineConfig({
   output: "server",
@@ -17,7 +20,10 @@ export default defineConfig({
     plugins: [tailwindcss()],
     define: {
       "import.meta.env.PUBLIC_API_URL": JSON.stringify(
-        process.env.PUBLIC_API_URL || "http://localhost:8799"
+        env.PUBLIC_API_URL || "http://localhost:8799"
+      ),
+      "import.meta.env.PUBLIC_AMAP_KEY": JSON.stringify(
+        env.PUBLIC_AMAP_KEY || ""
       ),
     },
   },

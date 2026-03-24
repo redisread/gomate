@@ -34,6 +34,14 @@ import {
   PoiSection,
 } from "@/components/features/location-detail-main-content";
 
+// ─── 季节映射 ─────────────────────────────────────────────────────────────────
+const SEASON_LABEL: Record<string, string> = {
+  spring: "春季",
+  summer: "夏季",
+  autumn: "秋季",
+  winter: "冬季",
+};
+
 // ─── 难度配置 ─────────────────────────────────────────────────────────────────
 const difficultyConfig: Record<
   string,
@@ -396,7 +404,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
                         border: "1px solid rgba(217,119,6,0.18)",
                       }}
                     >
-                      {s}
+                      {SEASON_LABEL[s] ?? s}
                     </span>
                   ))}
                 </div>
@@ -905,7 +913,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               {location.bestSeason && location.bestSeason.length > 0 && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/15 text-white backdrop-blur-sm border border-white/20">
                   <Sparkles className="w-3 h-3" />
-                  {location.bestSeason[0]}
+                  {SEASON_LABEL[location.bestSeason[0]] ?? location.bestSeason[0]}
                 </span>
               )}
             </div>
@@ -1016,7 +1024,13 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             />
             <RouteInfoCard location={location} />
             <PoiSection locationId={location.id} />
-            {location.address && <AddressRow address={location.address} />}
+            {location.address && (
+              <AddressRow
+                address={location.address}
+                coordinates={location.coordinates}
+                locationName={location.name}
+              />
+            )}
             <TeamListSection teams={teams} locationId={location.id} />
           </div>
 
