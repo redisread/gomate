@@ -1,6 +1,6 @@
 # GoMate 后端 API 文档
 
-> 最后更新：2026-03-22
+> 最后更新：2026-03-26
 > 框架：Hono 4 + Cloudflare Workers + Drizzle ORM
 
 ## 基础信息
@@ -208,6 +208,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 | `search` | string | 搜索地点名称 |
 | `cityId` | string | 城市 ID |
 | `tagIds` | string | 逗号分隔的标签 ID |
+| `type` | string | 地点类型筛选（hiking\|explore\|leisure\|travel） |
 | `tags=true` | — | 返回热门标签（15 条） |
 | `allTags=true` | — | 返回所有标签（按类型分组） |
 
@@ -225,6 +226,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
       "address": "...",
       "cityId": "city-xxx",
       "cityName": "深圳",
+      "type": "hiking",
       "coverImage": "url",
       "images": ["url1", "url2"],
       "bestSeason": ["春", "秋"],
@@ -242,14 +244,14 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 创建地点
 
 - **认证：** 是（仅管理员）
-- **Body：** `{ "name", "slug", "subtitle", "description", "address", "cityId", "coverImage", "images", "bestSeason", "coordinates" }`
+- **Body：** `{ "name", "slug", "subtitle", "description", "address", "cityId", "type", "coverImage", "images", "bestSeason", "coordinates" }`
 - **响应：** `{ "success": true, "location": { "id", "slug" } }`
 
 ### PUT `/locations`
 更新地点
 
 - **认证：** 是（仅管理员）
-- **Body：** 与创建相同，需包含 `id` 字段
+- **Body：** 与创建相同，需包含 `id` 字段（`type` 可选，nullable）
 
 ### GET `/locations/:id`
 获取地点详情

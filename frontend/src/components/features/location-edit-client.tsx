@@ -68,6 +68,7 @@ interface LocationEditClientProps {
 
 interface FormData {
   name: string;
+  type: string;
   subtitle: string;
   description: string;
   address: string;
@@ -82,8 +83,16 @@ interface FormData {
   poiLinks: Array<{ poiId: string; roleType: string; order: number }>;
 }
 
+const LOCATION_TYPE_OPTIONS = [
+  { value: "hiking", label: "户外徒步" },
+  { value: "explore", label: "城市探索" },
+  { value: "leisure", label: "休闲探店" },
+  { value: "travel", label: "旅行" },
+] as const;
+
 const DEFAULT_FORM: FormData = {
   name: "",
+  type: "",
   subtitle: "",
   description: "",
   address: "",
@@ -982,6 +991,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
 
           const serverData: FormData = {
             name: loc.name,
+            type: loc.type ?? "",
             subtitle: loc.subtitle ?? "",
             description: loc.description,
             address: loc.address ?? "",
@@ -1058,6 +1068,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
         apiPut("/api/locations", {
           id: location.id,
           name: formData.name,
+          type: formData.type || null,
           subtitle: formData.subtitle || undefined,
           description: formData.description,
           address: formData.address || undefined,
@@ -1095,6 +1106,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
     if (!window.confirm("确定放弃所有未保存的更改？")) return;
     setFormData({
       name: location.name,
+      type: location.type ?? "",
       subtitle: location.subtitle ?? "",
       description: location.description,
       address: location.address ?? "",
@@ -1274,6 +1286,26 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                   className={cn(styledInput(), "bg-stone-50 text-stone-900")}
                   style={{ background: "#FAF7F4", color: "#1e1812" }}
                 />
+              </Field>
+
+              <Field label="地点类型">
+                <div className="flex flex-wrap gap-2">
+                  {LOCATION_TYPE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => updateField("type", formData.type === opt.value ? "" : opt.value)}
+                      className={cn(
+                        "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all",
+                        formData.type === opt.value
+                          ? "bg-stone-800 text-white"
+                          : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </Field>
 
               <Field

@@ -24,6 +24,7 @@ export interface Location {
   id: string;
   name: string;
   slug: string;
+  type?: "hiking" | "explore" | "leisure" | "travel" | null;
   subtitle?: string;
   description: string;
   address?: string;

@@ -75,11 +75,13 @@ locations.get("/", async (c) => {
     const cityId = c.req.query("cityId") || "";
     const tagIdsParam = c.req.query("tagIds");
     const tagIds = tagIdsParam ? tagIdsParam.split(",").filter(Boolean) : [];
+    const type = c.req.query("type") || "";
 
     // 构建过滤条件
     const conditions = [];
     if (search) conditions.push(like(schema.locations.name, `%${search}%`));
     if (cityId) conditions.push(eq(schema.locations.cityId, cityId));
+    if (type) conditions.push(eq(schema.locations.type, type));
 
     // 如果有标签筛选，先查出符合标签的 locationIds
     let tagLocationIds: string[] | null = null;
@@ -140,6 +142,7 @@ locations.get("/", async (c) => {
       const firstRoute = location.routes?.[0];
       return {
         id: location.id, name: location.name, slug: location.slug,
+        type: location.type,
         subtitle: location.subtitle, description: location.description,
         address: location.address, cityId: location.cityId,
         cityName: location.city?.name || location.cityName,
@@ -183,7 +186,7 @@ locations.post("/", async (c) => {
     const slug = body.slug || body.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
     await db.insert(schema.locations).values({
-      id, name: body.name, slug, subtitle: body.subtitle || null,
+      id, name: body.name, slug, type: body.type || null, subtitle: body.subtitle || null,
       description: body.description, address: body.address || null,
       cityId: body.cityId, cityName: body.cityName || null,
       bestSeason: JSON.stringify(body.bestSeason || []),
@@ -220,6 +223,7 @@ locations.put("/", async (c) => {
     const dataToUpdate: Record<string, unknown> = { updatedAt: new Date() };
     if (updateData.name !== undefined) dataToUpdate.name = updateData.name;
     if (updateData.slug !== undefined) dataToUpdate.slug = updateData.slug;
+    if (updateData.type !== undefined) dataToUpdate.type = updateData.type || null;
     if (updateData.subtitle !== undefined) dataToUpdate.subtitle = updateData.subtitle || null;
     if (updateData.description !== undefined) dataToUpdate.description = updateData.description;
     if (updateData.address !== undefined) dataToUpdate.address = updateData.address || null;

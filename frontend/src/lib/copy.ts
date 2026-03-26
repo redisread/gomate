@@ -234,14 +234,14 @@ export const copy = {
     ctaHeroBadge: "咖啡 · 探店 · 户外 · 更多",
 
     // 角色快速入口
-    roleCafe: "咖啡探店",
-    roleCafeDesc: "精品咖啡馆 · 下午茶打卡",
-    roleCitywalk: "City Walk",
-    roleCitywalkDesc: "街头漫游 · 市集展览",
-    roleOutdoor: "户外出行",
-    roleOutdoorDesc: "短途旅行 · 山野徒步",
-    roleNight: "夜间活动",
-    roleNightDesc: "桌游 · 夜市 · 酒吧",
+    roleHiking: "户外徒步",
+    roleHikingDesc: "山野步道 · 登山穿越",
+    roleExplore: "城市探索",
+    roleExploreDesc: "街头漫游 · 市集展览",
+    roleLeisure: "休闲探店",
+    roleLeisureDesc: "精品咖啡馆 · 下午茶打卡",
+    roleTravel: "旅行",
+    roleTravelDesc: "周边游 · 短途出行",
 
     // 难度快筛
     difficultyFilter: "难度",
@@ -1155,6 +1155,12 @@ export const copy = {
       hard: "🧗 挑战",
       expert: "🏔 专家",
     },
+    locationType: {
+      hiking: "户外徒步",
+      explore: "城市探索",
+      leisure: "休闲探店",
+      travel: "旅行",
+    },
     teamStatus: {
       recruiting: "等你一起",
       full: "名额告急，可关注",
@@ -1199,6 +1205,12 @@ export const copy = {
       male: "男",
       female: "女",
       other: "其他",
+    },
+    locationType: {
+      hiking: "户外徒步",
+      explore: "城市探索",
+      leisure: "休闲探店",
+      travel: "旅行",
     },
   },
 } as const;

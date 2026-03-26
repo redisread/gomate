@@ -127,6 +127,7 @@ export const locations = sqliteTable(
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
+    type: text("type"),
     subtitle: text("subtitle"),
     description: text("description").notNull(),
     address: text("address"),
@@ -143,6 +144,7 @@ export const locations = sqliteTable(
   (table) => ({
     slugIdx: uniqueIndex("locations_slug_idx").on(table.slug),
     cityIdx: index("locations_city_idx").on(table.cityId),
+    typeIdx: index("locations_type_idx").on(table.type),
   })
 );
 

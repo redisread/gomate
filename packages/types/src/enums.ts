@@ -42,6 +42,9 @@ export type TagType = "location" | "route" | "activity";
 /** 实体类型 */
 export type EntityType = "location" | "route" | "activity";
 
+/** 地点类型 */
+export type LocationType = "hiking" | "explore" | "leisure" | "travel";
+
 /** POI 角色类型 */
 export type PoiRoleType =
   | "waypoint"

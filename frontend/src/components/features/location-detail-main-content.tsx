@@ -197,11 +197,18 @@ export function LocationIntroCard({ location, actions }: LocationIntroCardProps)
       )}
 
       <div className="p-5">
-        {/* 标题 */}
-        <h2 className="text-base font-bold text-stone-900 mb-3 flex items-center gap-2">
-          <span className="w-1 h-4 rounded-full bg-amber-400 flex-shrink-0" />
-          {copy.locations.locationIntro}
-        </h2>
+        {/* 标题 + 类型标签 */}
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
+            <span className="w-1 h-4 rounded-full bg-amber-400 flex-shrink-0" />
+            {copy.locations.locationIntro}
+          </h2>
+          {location.type && copy.enums.locationType[location.type as keyof typeof copy.enums.locationType] && (
+            <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs font-medium border border-amber-100">
+              {copy.enums.locationType[location.type as keyof typeof copy.enums.locationType]}
+            </span>
+          )}
+        </div>
 
         {/* 描述（展开/收起）*/}
         <div className="relative">

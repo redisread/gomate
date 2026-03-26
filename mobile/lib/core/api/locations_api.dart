@@ -11,12 +11,14 @@ class LocationsApi {
   /// 获取地点列表
   /// [cityId] 按城市筛选
   /// [difficulty] 难度筛选（easy/moderate/hard/expert）
+  /// [type] 地点类型筛选（hiking/explore/leisure/travel）
   /// [tagIds] 标签 ID 列表，多个标签用逗号拼接传递
   /// [page] 页码
   /// [limit] 每页数量
   Future<List<LocationModel>> getLocations({
     String? cityId,
     String? difficulty,
+    String? type,
     List<String>? tagIds,
     int page = 1,
     int limit = 20,
@@ -26,6 +28,7 @@ class LocationsApi {
       'pageSize': limit,
       if (cityId != null) 'cityId': cityId,
       if (difficulty != null) 'difficulty': difficulty,
+      if (type != null) 'type': type,
       if (tagIds != null && tagIds.isNotEmpty) 'tagIds': tagIds.join(','),
     };
 

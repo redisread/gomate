@@ -1,6 +1,6 @@
 # GoMate 移动端模块文档
 
-> 最后更新：2026-03-25
+> 最后更新：2026-03-26
 > 框架：Flutter 3.24 + Riverpod 2.6 + GoRouter 14 + Dio 5.7
 > UI 设计系统：Design System v2.0（温暖琥珀色调 #D97706）
 
@@ -172,7 +172,7 @@ mobile/lib/
 - 「在此地找队伍」底部按钮（品牌渐变色）→ `/teams?locationId=xxx`
 
 **API 调用：**
-- `LocationsApi().getLocations(cityId, tagIds, q)` — 地点列表（含关键词搜索）
+- `LocationsApi().getLocations(cityId, tagIds, q, type)` — 地点列表（含关键词搜索、类型筛选）
 - `LocationsApi().getLocation(id)` — 地点详情
 - `LocationsApi().favoriteLocation(id)` — 切换收藏
 - `GET /favorites?entityType=location` — 获取收藏列表（初始化收藏状态）
@@ -446,6 +446,7 @@ await ref.read(authProvider.notifier).login(email, password);
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `id` / `name` / `slug` | String | 基础标识 |
+| `type` | String? | 地点类型（hiking\|explore\|leisure\|travel，nullable） |
 | `coverImage` | String | 封面图 URL |
 | `bestSeason` | List\<String\> | 最佳季节 |
 | `coordinates` | Coordinates | 经纬度 |
@@ -468,7 +469,7 @@ await ref.read(authProvider.notifier).login(email, password);
 | 类 | 主要方法 |
 |----|---------|
 | `AuthApi` | `login()`, `register()`, `forgotPassword()` ⭐, `updateUser()`, `uploadAvatar()`, `logout()` |
-| `LocationsApi` | `getLocations(q, cityId, tagIds)`, `getLocation()`, `favoriteLocation()`, `getFavorites()` ⭐ |
+| `LocationsApi` | `getLocations(q, cityId, tagIds, type)`, `getLocation()`, `favoriteLocation()`, `getFavorites()` ⭐ |
 | `TeamsApi` | `getTeams(q, status, difficulty, locationId)`, `getTeam()`, `createTeam()`, `joinTeam()`, `leaveTeam()`, `requestLeave()`, `getMyStatus()`, `getApplications()`, `approveApplication()`, `rejectApplication()`, `approveLeave()`, `rejectLeave()` |
 | `CitiesApi` | `getCities()` |
 | `TagsApi` | `getLocationTags()`, `getTeamTags()` |

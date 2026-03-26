@@ -14,10 +14,9 @@ import {
   Clock,
   TrendingUp,
   Sparkles,
+  Footprints,
   Coffee,
-  Map,
-  Tent,
-  Moon,
+  Plane,
   ChevronDown,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
@@ -186,7 +185,7 @@ function EmptyState({ onClear }: { onClear: () => void }) {
 }
 
 // ─── 角色配置 ─────────────────────────────────────────────────────────────
-type RoleKey = "cafe" | "citywalk" | "outdoor" | "night" | "";
+type RoleKey = "hiking" | "explore" | "leisure" | "travel" | "";
 
 interface RoleCfg {
   icon: React.ElementType;
@@ -201,21 +200,21 @@ interface RoleCfg {
 }
 
 const roleConfig: Record<Exclude<RoleKey, "">, RoleCfg> = {
-  cafe: {
-    icon: Coffee,
-    label: copy.locations.roleCafe,
-    desc: copy.locations.roleCafeDesc,
-    emoji: "☕",
-    gradientFrom: "rgba(180,83,9,0.07)",
-    gradientTo: "rgba(217,119,6,0.05)",
-    iconColor: "#b45309",
-    activeColor: "#92400e",
-    activeBg: "linear-gradient(135deg, #b45309, #d97706)",
+  hiking: {
+    icon: Footprints,
+    label: copy.locations.roleHiking,
+    desc: copy.locations.roleHikingDesc,
+    emoji: "🥾",
+    gradientFrom: "rgba(22,163,74,0.07)",
+    gradientTo: "rgba(16,185,129,0.05)",
+    iconColor: "#16a34a",
+    activeColor: "#15803d",
+    activeBg: "linear-gradient(135deg, #16a34a, #059669)",
   },
-  citywalk: {
-    icon: Map,
-    label: copy.locations.roleCitywalk,
-    desc: copy.locations.roleCitywalkDesc,
+  explore: {
+    icon: Compass,
+    label: copy.locations.roleExplore,
+    desc: copy.locations.roleExploreDesc,
     emoji: "🗺️",
     gradientFrom: "rgba(14,165,233,0.07)",
     gradientTo: "rgba(99,102,241,0.05)",
@@ -223,22 +222,22 @@ const roleConfig: Record<Exclude<RoleKey, "">, RoleCfg> = {
     activeColor: "#0369a1",
     activeBg: "linear-gradient(135deg, #0284c7, #6366f1)",
   },
-  outdoor: {
-    icon: Tent,
-    label: copy.locations.roleOutdoor,
-    desc: copy.locations.roleOutdoorDesc,
-    emoji: "⛺",
-    gradientFrom: "rgba(22,163,74,0.07)",
-    gradientTo: "rgba(16,185,129,0.05)",
-    iconColor: "#16a34a",
-    activeColor: "#15803d",
-    activeBg: "linear-gradient(135deg, #16a34a, #059669)",
+  leisure: {
+    icon: Coffee,
+    label: copy.locations.roleLeisure,
+    desc: copy.locations.roleLeisureDesc,
+    emoji: "☕",
+    gradientFrom: "rgba(180,83,9,0.07)",
+    gradientTo: "rgba(217,119,6,0.05)",
+    iconColor: "#b45309",
+    activeColor: "#92400e",
+    activeBg: "linear-gradient(135deg, #b45309, #d97706)",
   },
-  night: {
-    icon: Moon,
-    label: copy.locations.roleNight,
-    desc: copy.locations.roleNightDesc,
-    emoji: "🌙",
+  travel: {
+    icon: Plane,
+    label: copy.locations.roleTravel,
+    desc: copy.locations.roleTravelDesc,
+    emoji: "✈️",
     gradientFrom: "rgba(139,92,246,0.07)",
     gradientTo: "rgba(236,72,153,0.05)",
     iconColor: "#7c3aed",
@@ -274,11 +273,13 @@ export function LocationsClient() {
     const tags = params.get("tags")?.split(",").filter(Boolean) || [];
     const page = parseInt(params.get("page") || "1", 10);
     const cityId = params.get("cityId") || "";
+    const type = (params.get("type") || "") as RoleKey;
     setSearchQuery(q);
     setSelectedTags(tags);
     setCurrentPage(page);
     setSelectedCityId(cityId);
-    loadLocations({ page, search: q, tagIds: tags, cityId });
+    setActiveRole(type);
+    loadLocations({ page, search: q, tagIds: tags, cityId, type });
   }, []);
 
   // 加载标签
@@ -312,7 +313,7 @@ export function LocationsClient() {
   }, []);
 
   const loadLocations = React.useCallback(
-    async (params: { page?: number; search?: string; tagIds?: string[]; cityId?: string }) => {
+    async (params: { page?: number; search?: string; tagIds?: string[]; cityId?: string; type?: string }) => {
       setIsLoading(true);
       try {
         const query = new URLSearchParams();
@@ -321,6 +322,7 @@ export function LocationsClient() {
         if (params.search) query.set("search", params.search);
         if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
         if (params.cityId) query.set("cityId", params.cityId);
+        if (params.type) query.set("type", params.type);
         const res = await fetchAPI(`/locations?${query}`);
         const data = await res.json();
         if (data.success) {
@@ -339,10 +341,10 @@ export function LocationsClient() {
   // 搜索防抖
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      loadLocations({ page: 1, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId });
+      loadLocations({ page: 1, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId, type: activeRole });
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedTags, selectedCityId, loadLocations]);
+  }, [searchQuery, selectedTags, selectedCityId, activeRole, loadLocations]);
 
   const handleTagToggle = (tagId: string) => {
     const newTags = selectedTags.includes(tagId)
@@ -359,18 +361,15 @@ export function LocationsClient() {
   };
 
   const handleRoleSelect = (role: RoleKey) => {
-    if (role === activeRole) {
-      setActiveRole("");
-    } else {
-      setActiveRole(role);
-    }
+    const newRole = role === activeRole ? "" : role;
+    setActiveRole(newRole);
     setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
     setGridFading(true);
     setCurrentPage(page);
-    loadLocations({ page, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId });
+    loadLocations({ page, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId, type: activeRole });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -383,7 +382,7 @@ export function LocationsClient() {
   };
 
   const selectedCityName = cities.find((c) => c.id === selectedCityId)?.name;
-  const hasActiveFilters = searchQuery || selectedTags.length > 0 || selectedCityId;
+  const hasActiveFilters = searchQuery || selectedTags.length > 0 || selectedCityId || activeRole;
 
   const getPageNumbers = () => {
     const total = pagination.totalPages;
@@ -679,8 +678,18 @@ export function LocationsClient() {
               )}
 
               {/* 活跃筛选 badges */}
-              {!isLoading && (selectedCityId || selectedTags.length > 0) && (
+              {!isLoading && (selectedCityId || selectedTags.length > 0 || activeRole) && (
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* 类型筛选 badge */}
+                  {activeRole && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                      <span>{roleConfig[activeRole].emoji}</span>
+                      {roleConfig[activeRole].label}
+                      <button onClick={() => handleRoleSelect("")} className="hover:text-emerald-900 transition-colors ml-0.5">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
                   {selectedCityId && selectedCityName && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-amber-50 text-amber-700 border border-amber-100">
                       <MapPin className="w-3 h-3" />

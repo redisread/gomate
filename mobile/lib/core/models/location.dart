@@ -20,6 +20,7 @@ class LocationModel {
   final String id;
   final String name;
   final String slug; // URL 友好标识
+  final String? type; // 地点类型：hiking/explore/leisure/travel
   final String? subtitle; // 副标题
   final String description;
   final String? address;
@@ -37,6 +38,7 @@ class LocationModel {
     required this.id,
     required this.name,
     required this.slug,
+    this.type,
     this.subtitle,
     required this.description,
     this.address,
@@ -97,6 +99,7 @@ class LocationModel {
       id: json['id'] as String,
       name: json['name'] as String,
       slug: json['slug'] as String,
+      type: json['type'] as String?,
       subtitle: json['subtitle'] as String?,
       description: json['description'] as String,
       address: json['address'] as String?,
