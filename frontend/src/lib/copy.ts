@@ -770,6 +770,38 @@ export const copy = {
     submitError: "提交失败，请稍后重试",
   },
 
+  // ─── 反馈建议 ───────────────────────────────────────────────────────────
+  feedback: {
+    pageTitle: "反馈建议",
+    pageSubtitle: "帮助我们做得更好",
+    tabSuggestion: "功能建议",
+    tabBug: "问题反馈",
+
+    nameLabel: "您的姓名",
+    namePlaceholder: "请输入姓名",
+    emailLabel: "联系邮箱",
+    emailPlaceholder: "your@email.com",
+    contentLabel: "详细描述",
+    contentPlaceholderSuggestion: "请详细描述您的建议，我们非常重视每一条反馈...",
+    contentPlaceholderBug: "请描述您遇到的问题，越详细越好...",
+
+    deviceLabel: "设备类型",
+    devicePlaceholder: "例如：iPhone 15 Pro / Windows PC",
+    browserLabel: "浏览器",
+    browserPlaceholder: "例如：Chrome 120 / Safari 17",
+    stepsLabel: "复现步骤",
+    stepsPlaceholder: "请描述如何重现这个问题，方便我们定位和修复...",
+    pageUrlLabel: "问题页面",
+    pageUrlPlaceholder: "出现问题的页面链接（可选）",
+
+    submitBtn: "提交反馈",
+    submitting: "提交中...",
+
+    successTitle: "感谢您的反馈！",
+    successDesc: "我们会认真查看每一条反馈，持续改进产品。",
+    submitError: "提交失败，请稍后重试",
+  },
+
   // ─── 邮件模板 ─────────────────────────────────────────────────────────────
   email: {
     // 重置密码邮件

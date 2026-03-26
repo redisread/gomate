@@ -23,6 +23,7 @@ import '../../features/info/screens/help_screen.dart';
 import '../../features/info/screens/contact_screen.dart';
 import '../../features/info/screens/privacy_screen.dart';
 import '../../features/info/screens/terms_screen.dart';
+import '../../features/feedback/screens/feedback_screen.dart';
 
 /// GoMate 路由路径常量
 abstract class AppRoutes {
@@ -48,6 +49,7 @@ abstract class AppRoutes {
   static const String contact = '/contact';
   static const String privacy = '/privacy';
   static const String terms = '/terms';
+  static const String feedback = '/feedback';
 
   /// 构建地点详情路径
   static String locationDetailPath(String id) => '/locations/$id';
@@ -287,6 +289,16 @@ GoRouter buildAppRouter({
         pageBuilder: (context, state) => _buildPage(
           state: state,
           child: const TermsScreen(),
+          transitionType: _TransitionType.slideRight,
+        ),
+      ),
+
+      // ── 反馈建议 ───────────────────────────────
+      GoRoute(
+        path: AppRoutes.feedback,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const FeedbackScreen(),
           transitionType: _TransitionType.slideRight,
         ),
       ),

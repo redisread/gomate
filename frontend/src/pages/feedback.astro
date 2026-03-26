@@ -1,0 +1,11 @@
+---
+/**
+ * 反馈建议页
+ */
+import Layout from "../layouts/Layout.astro";
+import { FeedbackClient } from "../components/features/feedback-client";
+---
+
+<Layout title="反馈建议 - GoMate">
+  <FeedbackClient client:load />
+</Layout>

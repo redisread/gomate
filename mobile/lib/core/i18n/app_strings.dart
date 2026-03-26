@@ -400,4 +400,50 @@ abstract class AppStrings {
   static const String confirmDeleteBtn = '删除';
 
   static const String confirmCancelBtn = '取消';
+
+  // ─────────────────────────────────────────────
+  // 反馈建议
+  // ─────────────────────────────────────────────
+
+  static const String feedbackTitle = '反馈建议';
+
+  static const String feedbackSubtitle = '帮助我们做得更好';
+
+  static const String feedbackTabSuggestion = '功能建议';
+
+  static const String feedbackTabBug = '问题反馈';
+
+  static const String feedbackNameLabel = '您的姓名';
+
+  static const String feedbackEmailLabel = '联系邮箱';
+
+  static const String feedbackContentLabel = '详细描述';
+
+  static const String feedbackContentPlaceholderSuggestion = '请详细描述您的建议...';
+
+  static const String feedbackContentPlaceholderBug = '请描述您遇到的问题...';
+
+  static const String feedbackDeviceLabel = '设备类型';
+
+  static const String feedbackDevicePlaceholder = '例如：iPhone 15 Pro';
+
+  static const String feedbackBrowserLabel = '浏览器';
+
+  static const String feedbackBrowserPlaceholder = '例如：Chrome 120';
+
+  static const String feedbackStepsLabel = '复现步骤';
+
+  static const String feedbackStepsPlaceholder = '请描述如何重现这个问题...';
+
+  static const String feedbackPageUrlLabel = '问题页面';
+
+  static const String feedbackSubmitBtn = '提交反馈';
+
+  static const String feedbackSubmitting = '提交中...';
+
+  static const String feedbackSuccessTitle = '感谢您的反馈！';
+
+  static const String feedbackSuccessDesc = '我们会认真查看每一条反馈';
+
+  static const String feedbackError = '提交失败，请稍后重试';
 }

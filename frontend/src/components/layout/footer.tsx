@@ -91,6 +91,7 @@ export function Footer() {
               <ul className="space-y-2.5">
                 {[
                   { href: "/about",   label: "关于我们" },
+                  { href: "/feedback", label: "反馈建议" },
                   { href: "/help",    label: "帮助中心" },
                   { href: "/privacy", label: copy.footer.supportPrivacy },
                   { href: "/terms",   label: copy.footer.terms },

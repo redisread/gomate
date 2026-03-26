@@ -197,6 +197,16 @@ class ProfileScreen extends ConsumerWidget {
                     title: '隐私政策',
                     onTap: () => context.push('/privacy'),
                   ),
+                  _MenuTile(
+                    icon: Icons.feedback_outlined,
+                    title: '反馈建议',
+                    onTap: () => context.push('/feedback'),
+                  ),
+                  _MenuTile(
+                    icon: Icons.settings_outlined,
+                    title: '账号设置',
+                    onTap: () {},
+                  ),
                   const Divider(height: 24),
                   _MenuTile(
                     icon: Icons.logout,
