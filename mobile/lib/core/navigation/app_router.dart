@@ -15,6 +15,7 @@ import '../../features/teams/screens/team_manage_screen.dart';
 import '../../features/teams/screens/my_teams_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
+import '../../features/feedback/screens/feedback_screen.dart';
 
 /// GoMate 路由路径常量
 abstract class AppRoutes {
@@ -32,6 +33,7 @@ abstract class AppRoutes {
   static const String myTeams = '/my-teams';
   static const String profile = '/profile';
   static const String profileEdit = '/profile/edit';
+  static const String feedback = '/feedback';
 
   /// 构建地点详情路径
   static String locationDetailPath(String id) => '/locations/$id';
@@ -198,6 +200,16 @@ GoRouter buildAppRouter({
             ),
           ),
         ],
+      ),
+
+      // ── 反馈建议 ───────────────────────────────
+      GoRoute(
+        path: AppRoutes.feedback,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const FeedbackScreen(),
+          transitionType: _TransitionType.slideRight,
+        ),
       ),
     ],
   );

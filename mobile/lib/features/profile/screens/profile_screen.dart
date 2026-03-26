@@ -168,6 +168,11 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () {},
                   ),
                   _MenuTile(
+                    icon: Icons.feedback_outlined,
+                    title: '反馈建议',
+                    onTap: () => context.push('/feedback'),
+                  ),
+                  _MenuTile(
                     icon: Icons.settings_outlined,
                     title: '账号设置',
                     onTap: () {},

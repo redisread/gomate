@@ -122,3 +122,78 @@ export async function sendContactFormEmail(
     return { success: false, error: (error as Error).message };
   }
 }
+
+/**
+ * 发送用户反馈邮件（功能建议 / Bug 反馈）
+ */
+export async function sendFeedbackEmail(
+  data: {
+    type: "suggestion" | "bug";
+    name: string;
+    email: string;
+    content: string;
+    device?: string;
+    browser?: string;
+    steps?: string;
+    pageUrl?: string;
+  },
+  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string }
+): Promise<{ success: boolean; error?: string }> {
+  const apiKey = env.RESEND_API_KEY;
+  if (!apiKey) return { success: false, error: "Email service not configured" };
+
+  try {
+    const resend = new Resend(apiKey);
+    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
+    const typeLabel = data.type === "suggestion" ? "建议" : "Bug";
+    const subject = `[GoMate ${typeLabel}反馈] 来自 ${data.name}`;
+
+    // 构建邮件内容
+    let htmlContent = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: ${data.type === "bug" ? "#dc2626" : "#059669"};">
+          ${data.type === "bug" ? "🐛 Bug 反馈" : "💡 功能建议"}
+        </h2>
+        <p><strong>姓名：</strong>${data.name}</p>
+        <p><strong>邮箱：</strong>${data.email}</p>
+    `;
+
+    if (data.type === "bug") {
+      htmlContent += `
+        <hr style="margin: 16px 0; border: none; border-top: 1px solid #e5e7eb;" />
+        <h3>问题详情</h3>
+        ${data.device ? `<p><strong>设备类型：</strong>${data.device}</p>` : ""}
+        ${data.browser ? `<p><strong>浏览器：</strong>${data.browser}</p>` : ""}
+        ${data.pageUrl ? `<p><strong>问题页面：</strong><a href="${data.pageUrl}">${data.pageUrl}</a></p>` : ""}
+      `;
+    }
+
+    htmlContent += `
+      <hr style="margin: 16px 0; border: none; border-top: 1px solid #e5e7eb;" />
+      <h3>${data.type === "bug" ? "问题描述" : "建议内容"}</h3>
+      <p style="white-space: pre-wrap; background: #f9fafb; padding: 12px; border-radius: 6px;">${data.content}</p>
+    `;
+
+    if (data.steps) {
+      htmlContent += `
+        <h3>复现步骤</h3>
+        <p style="white-space: pre-wrap; background: #fef3c7; padding: 12px; border-radius: 6px;">${data.steps}</p>
+      `;
+    }
+
+    htmlContent += `</div>`;
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: "support@gomate.live",
+      replyTo: data.email,
+      subject,
+      html: htmlContent,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[Email] Failed to send feedback email:", error);
+    return { success: false, error: (error as Error).message };
+  }
+}
