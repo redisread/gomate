@@ -59,4 +59,24 @@ class LocationsApi {
     );
     return response.data['favorited'] as bool;
   }
+
+  /// 获取当前用户的收藏地点列表
+  Future<List<LocationModel>> getFavorites() async {
+    final response = await _client.get(
+      ApiConstants.favorites,
+      queryParameters: {'entityType': 'location'},
+    );
+    final list = response.data['favorites'] as List<dynamic>;
+    return list
+        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 取消收藏
+  /// [locationId] 地点 ID
+  Future<void> removeFavorite(String locationId) async {
+    await _client.delete(
+      '${ApiConstants.favorites}?entityType=location&entityId=$locationId',
+    );
+  }
 }

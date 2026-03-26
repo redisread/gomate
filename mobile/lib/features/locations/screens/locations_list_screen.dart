@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,20 +29,51 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
   List<TagModel> _tags = [];
 
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
   String? _errorMessage;
+  int _currentPage = 1;
 
-  // 筛选状态
+  // 搜索和筛选状态
+  final _searchController = TextEditingController();
+  Timer? _debounceTimer;
+  String? _searchQuery;
   String? _selectedCityId;
   List<String> _selectedTagIds = [];
+  String? _selectedType; // hiking, explore, leisure, travel
 
   bool get _hasActiveFilter =>
-      _selectedCityId != null || _selectedTagIds.isNotEmpty;
+      _selectedCityId != null || _selectedTagIds.isNotEmpty || _selectedType != null;
 
   @override
   void initState() {
     super.initState();
     _loadFilterOptions();
     _loadLocations();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  /// 搜索防抖
+  void _onSearchChanged() {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      final query = _searchController.text.trim();
+      if (query != _searchQuery) {
+        setState(() {
+          _searchQuery = query.isEmpty ? null : query;
+          _currentPage = 1;
+          _hasMore = true;
+        });
+        _loadLocations();
+      }
+    });
   }
 
   /// 并行加载城市和标签数据
@@ -64,28 +97,48 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
     }
   }
 
-  Future<void> _loadLocations() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  Future<void> _loadLocations({bool loadMore = false}) async {
+    if (loadMore) {
+      if (_isLoadingMore || !_hasMore) return;
+      setState(() => _isLoadingMore = true);
+    } else {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+        _currentPage = 1;
+      });
+    }
+
     try {
       final data = await _locationsApi.getLocations(
         cityId: _selectedCityId,
         tagIds: _selectedTagIds.isEmpty ? null : _selectedTagIds,
-        limit: 50,
+        type: _selectedType,
+        q: _searchQuery,
+        page: loadMore ? _currentPage + 1 : 1,
+        limit: 20,
       );
       if (mounted) {
         setState(() {
-          _locations = data;
+          if (loadMore) {
+            _locations.addAll(data);
+            _currentPage++;
+          } else {
+            _locations = data;
+          }
+          _hasMore = data.length >= 20;
           _isLoading = false;
+          _isLoadingMore = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
+          if (!loadMore) {
+            _errorMessage = e.toString();
+          }
           _isLoading = false;
-          _errorMessage = e.toString();
+          _isLoadingMore = false;
         });
       }
     }
@@ -105,10 +158,12 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
         tags: _tags,
         selectedCityId: _selectedCityId,
         selectedTagIds: _selectedTagIds,
-        onApply: (cityId, tagIds) {
+        selectedType: _selectedType,
+        onApply: (cityId, tagIds, type) {
           setState(() {
             _selectedCityId = cityId;
             _selectedTagIds = tagIds;
+            _selectedType = type;
           });
           _loadLocations();
         },
@@ -156,69 +211,128 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTokens.brandPrimary),
-            )
-          : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline,
-                            size: 48, color: AppTokens.semanticError),
-                        const SizedBox(height: 12),
-                        Text(
-                          '加载失败',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(color: AppTokens.textPrimary),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _errorMessage!,
-                          style: const TextStyle(
-                              color: AppTokens.textSecondary, fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadLocations,
-                          child: const Text('重试'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : _locations.isEmpty
-                  ? const Center(
-                      child: Text(
-                        '暂无地点数据',
-                        style: TextStyle(color: AppTokens.textSecondary),
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadLocations,
-                      color: AppTokens.brandPrimary,
-                      child: GridView.builder(
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.8,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                        ),
-                        itemCount: _locations.length,
-                        itemBuilder: (context, index) {
-                          final location = _locations[index];
-                          return _LocationGridCard(location: location);
+      body: Column(
+        children: [
+          // 搜索栏
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: '搜索地点...',
+                hintStyle: const TextStyle(color: AppTokens.textTertiary),
+                prefixIcon: const Icon(Icons.search, color: AppTokens.textTertiary),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: AppTokens.textTertiary),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = null;
+                            _currentPage = 1;
+                            _hasMore = true;
+                          });
+                          _loadLocations();
                         },
-                      ),
-                    ),
+                      )
+                    : null,
+                filled: true,
+                fillColor: AppTokens.bgSurface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+          ),
+          // 内容区
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppTokens.brandPrimary),
+                  )
+                : _errorMessage != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error_outline,
+                                  size: 48, color: AppTokens.semanticError),
+                              const SizedBox(height: 12),
+                              Text(
+                                '加载失败',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(color: AppTokens.textPrimary),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                    color: AppTokens.textSecondary, fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _loadLocations,
+                                child: const Text('重试'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : _locations.isEmpty
+                        ? const Center(
+                            child: Text(
+                              '暂无地点数据',
+                              style: TextStyle(color: AppTokens.textSecondary),
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () => _loadLocations(),
+                            color: AppTokens.brandPrimary,
+                            child: NotificationListener<ScrollNotification>(
+                              onNotification: (scrollInfo) {
+                                if (scrollInfo.metrics.pixels >=
+                                    scrollInfo.metrics.maxScrollExtent - 100) {
+                                  _loadLocations(loadMore: true);
+                                }
+                                return false;
+                              },
+                              child: GridView.builder(
+                                padding: const EdgeInsets.all(16),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 0.8,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                ),
+                                itemCount: _locations.length + (_hasMore ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (index >= _locations.length) {
+                                    return const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  final location = _locations[index];
+                                  return _LocationGridCard(location: location);
+                                },
+                              ),
+                            ),
+                          ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -229,13 +343,15 @@ class _FilterBottomSheet extends StatefulWidget {
   final List<TagModel> tags;
   final String? selectedCityId;
   final List<String> selectedTagIds;
-  final void Function(String? cityId, List<String> tagIds) onApply;
+  final String? selectedType;
+  final void Function(String? cityId, List<String> tagIds, String? type) onApply;
 
   const _FilterBottomSheet({
     required this.cities,
     required this.tags,
     required this.selectedCityId,
     required this.selectedTagIds,
+    required this.selectedType,
     required this.onApply,
   });
 
@@ -246,23 +362,34 @@ class _FilterBottomSheet extends StatefulWidget {
 class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   String? _cityId;
   late List<String> _tagIds;
+  String? _type;
+
+  // 地点类型选项
+  static const _locationTypes = [
+    ('hiking', '户外徒步', Icons.hiking),
+    ('explore', '城市探索', Icons.explore),
+    ('leisure', '休闲探店', Icons.coffee),
+    ('travel', '旅行', Icons.flight),
+  ];
 
   @override
   void initState() {
     super.initState();
     _cityId = widget.selectedCityId;
     _tagIds = List<String>.from(widget.selectedTagIds);
+    _type = widget.selectedType;
   }
 
   void _reset() {
     setState(() {
       _cityId = null;
       _tagIds = [];
+      _type = null;
     });
   }
 
   void _apply() {
-    widget.onApply(_cityId, _tagIds);
+    widget.onApply(_cityId, _tagIds, _type);
     Navigator.of(context).pop();
   }
 
@@ -303,6 +430,66 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               ),
             ),
             const Divider(height: 1, color: AppTokens.borderDefault),
+            // 地点类型筛选
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Text(
+                '地点类型',
+                style: TextStyle(
+                  color: AppTokens.textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  // "全部" 选项
+                  FilterChip(
+                    label: const Text('全部'),
+                    selected: _type == null,
+                    onSelected: (_) => setState(() => _type = null),
+                    backgroundColor: AppTokens.bgBase,
+                    selectedColor: AppTokens.brandPrimary,
+                    side: BorderSide(
+                      color: _type == null
+                          ? AppTokens.brandPrimary
+                          : AppTokens.borderDefault,
+                    ),
+                    labelStyle: TextStyle(
+                      color: _type == null ? Colors.white : AppTokens.textSecondary,
+                      fontSize: 13,
+                    ),
+                    checkmarkColor: Colors.white,
+                  ),
+                  ..._locationTypes.map((type) {
+                    final isSelected = _type == type.$1;
+                    return FilterChip(
+                      avatar: Icon(type.$3, size: 16, color: isSelected ? Colors.white : AppTokens.textSecondary),
+                      label: Text(type.$2),
+                      selected: isSelected,
+                      onSelected: (_) => setState(() => _type = type.$1),
+                      backgroundColor: AppTokens.bgBase,
+                      selectedColor: AppTokens.brandPrimary,
+                      side: BorderSide(
+                        color: isSelected
+                            ? AppTokens.brandPrimary
+                            : AppTokens.borderDefault,
+                      ),
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : AppTokens.textSecondary,
+                        fontSize: 13,
+                      ),
+                      checkmarkColor: Colors.white,
+                    );
+                  }),
+                ],
+              ),
+            ),
             // 城市筛选
             if (widget.cities.isNotEmpty) ...[
               const Padding(

@@ -11,11 +11,15 @@ class TeamsApi {
   /// 获取队伍列表
   /// [status] 队伍状态筛选（recruiting/full/formed/completed/cancelled）
   /// [locationId] 按地点筛选
+  /// [difficulty] 难度筛选（多选用逗号分隔）
+  /// [q] 关键词搜索
   /// [page] 页码（从 1 开始）
   /// [limit] 每页数量
   Future<List<TeamModel>> getTeams({
     String? status,
     String? locationId,
+    String? difficulty,
+    String? q,
     int page = 1,
     int limit = 20,
   }) async {
@@ -24,6 +28,8 @@ class TeamsApi {
       'pageSize': limit,
       if (status != null) 'status': status,
       if (locationId != null) 'locationId': locationId,
+      if (difficulty != null) 'difficulty': difficulty,
+      if (q != null && q.isNotEmpty) 'q': q,
     };
 
     final response = await _client.get(
@@ -55,8 +61,12 @@ class TeamsApi {
 
   /// 申请加入队伍
   /// [id] 队伍 ID
-  Future<void> joinTeam(String id) async {
-    await _client.post(ApiConstants.joinTeam(id));
+  /// [message] 留言（可选）
+  Future<void> joinTeam(String id, {String? message}) async {
+    await _client.post(
+      ApiConstants.joinTeam(id),
+      data: message != null && message.isNotEmpty ? {'message': message} : null,
+    );
   }
 
   /// 退出/取消申请队伍

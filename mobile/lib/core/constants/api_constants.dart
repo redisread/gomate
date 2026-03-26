@@ -26,6 +26,7 @@ class ApiConstants {
   static const String signUp = '/auth/sign-up/email';
   static const String signOut = '/auth/sign-out';
   static const String session = '/auth/get-session';
+  static const String forgotPassword = '/auth/forget-password';
 
   // ─── 地点端点 ──────────────────────────────────────────────────────────────
   static const String locations = '/locations';
@@ -68,4 +69,7 @@ class ApiConstants {
 
   // ─── 上传端点 ──────────────────────────────────────────────────────────────
   static const String upload = '/upload';
+
+  // ─── 联系表单端点 ──────────────────────────────────────────────────────────
+  static const String contact = '/contact';
 }

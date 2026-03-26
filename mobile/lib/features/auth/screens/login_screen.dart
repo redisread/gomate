@@ -240,7 +240,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
 
-                const SizedBox(height: 24),
+                // 忘记密码链接
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => context.push('/forgot-password'),
+                    child: const Text(
+                      '忘记密码？',
+                      style: TextStyle(color: AppTokens.textSecondary),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
 
                 // 登录按钮（渐变背景）
                 Container(

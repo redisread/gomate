@@ -5,6 +5,7 @@ import 'transitions.dart';
 // ── 页面导入（维持现有结构）────────────────────────────────────────
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
+import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/locations/screens/locations_list_screen.dart';
 import '../../features/locations/screens/location_detail_screen.dart';
@@ -15,6 +16,13 @@ import '../../features/teams/screens/team_manage_screen.dart';
 import '../../features/teams/screens/my_teams_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
+import '../../features/profile/screens/favorites_screen.dart';
+import '../../features/profile/screens/user_detail_screen.dart';
+import '../../features/info/screens/about_screen.dart';
+import '../../features/info/screens/help_screen.dart';
+import '../../features/info/screens/contact_screen.dart';
+import '../../features/info/screens/privacy_screen.dart';
+import '../../features/info/screens/terms_screen.dart';
 
 /// GoMate 路由路径常量
 abstract class AppRoutes {
@@ -23,6 +31,7 @@ abstract class AppRoutes {
   static const String home = '/';
   static const String login = '/login';
   static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
   static const String locations = '/locations';
   static const String locationDetail = '/locations/:id';
   static const String teams = '/teams';
@@ -30,8 +39,15 @@ abstract class AppRoutes {
   static const String teamDetail = '/teams/:id';
   static const String teamManage = '/teams/:id/manage';
   static const String myTeams = '/my-teams';
+  static const String favorites = '/favorites';
   static const String profile = '/profile';
   static const String profileEdit = '/profile/edit';
+  static const String userDetail = '/users/:id';
+  static const String about = '/about';
+  static const String help = '/help';
+  static const String contact = '/contact';
+  static const String privacy = '/privacy';
+  static const String terms = '/terms';
 
   /// 构建地点详情路径
   static String locationDetailPath(String id) => '/locations/$id';
@@ -45,16 +61,17 @@ abstract class AppRoutes {
 
 /// 需要登录才能访问的路由集合
 const _protectedRoutes = {
-  AppRoutes.teamCreate,
-  AppRoutes.myTeams,
-  AppRoutes.profile,
-  AppRoutes.profileEdit,
+  '/teams/create',
+  '/my-teams',
+  '/favorites',
+  '/profile',
+  '/profile/edit',
 };
 
 /// 已登录用户不应访问的路由
 const _authOnlyRoutes = {
-  AppRoutes.login,
-  AppRoutes.register,
+  '/login',
+  '/register',
 };
 
 /// 构建应用 GoRouter 实例
@@ -108,6 +125,14 @@ GoRouter buildAppRouter({
           transitionType: _TransitionType.slideRight,
         ),
       ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const ForgotPasswordScreen(),
+          transitionType: _TransitionType.slideRight,
+        ),
+      ),
 
       // ── 地点 ────────────────────────────────────
       GoRoute(
@@ -142,7 +167,9 @@ GoRouter buildAppRouter({
         path: AppRoutes.teamCreate,
         pageBuilder: (context, state) => _buildPage(
           state: state,
-          child: const CreateTeamScreen(),
+          child: CreateTeamScreen(
+            locationId: state.uri.queryParameters['locationId'],
+          ),
           // 创建页使用底部弹出
           transitionType: _TransitionType.slideUp,
         ),
@@ -180,6 +207,16 @@ GoRouter buildAppRouter({
         ),
       ),
 
+      // ── 我的收藏 ─────────────────────────────────
+      GoRoute(
+        path: AppRoutes.favorites,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const FavoritesScreen(),
+          transitionType: _TransitionType.slideRight,
+        ),
+      ),
+
       // ── 个人资料 ─────────────────────────────────
       GoRoute(
         path: AppRoutes.profile,
@@ -198,6 +235,60 @@ GoRouter buildAppRouter({
             ),
           ),
         ],
+      ),
+
+      // ── 用户公开资料 ─────────────────────────────
+      GoRoute(
+        path: AppRoutes.userDetail,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: UserDetailScreen(
+            userId: state.pathParameters['id']!,
+          ),
+          transitionType: _TransitionType.fadeScale,
+        ),
+      ),
+
+      // ── 信息页 ─────────────────────────────────
+      GoRoute(
+        path: AppRoutes.about,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const AboutScreen(),
+          transitionType: _TransitionType.slideRight,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.help,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const HelpScreen(),
+          transitionType: _TransitionType.slideRight,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.contact,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const ContactScreen(),
+          transitionType: _TransitionType.slideRight,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.privacy,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const PrivacyScreen(),
+          transitionType: _TransitionType.slideRight,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.terms,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const TermsScreen(),
+          transitionType: _TransitionType.slideRight,
+        ),
       ),
     ],
   );

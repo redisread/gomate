@@ -9,7 +9,12 @@ import '../../../shared/theme/app_tokens.dart';
 
 /// 创建队伍页面
 class CreateTeamScreen extends ConsumerStatefulWidget {
-  const CreateTeamScreen({super.key});
+  final String? locationId;
+
+  const CreateTeamScreen({
+    super.key,
+    this.locationId,
+  });
 
   @override
   ConsumerState<CreateTeamScreen> createState() => _CreateTeamScreenState();
@@ -32,6 +37,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedLocationId = widget.locationId;
     _loadLocations();
   }
 

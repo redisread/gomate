@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,16 +23,54 @@ class _TeamsListScreenState extends ConsumerState<TeamsListScreen> {
   bool _isLoading = true;
   String _selectedStatus = 'recruiting';
 
+  // 搜索
+  final _searchController = TextEditingController();
+  Timer? _debounceTimer;
+  String? _searchQuery;
+
+  // 难度筛选
+  final List<String> _selectedDifficulties = [];
+  static const _difficultyOptions = [
+    ('easy', '简单', Colors.green),
+    ('moderate', '中等', Colors.orange),
+    ('hard', '困难', Colors.red),
+    ('expert', '专家', Colors.purple),
+  ];
+
   @override
   void initState() {
     super.initState();
     _loadTeams();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      final query = _searchController.text.trim();
+      if (query != _searchQuery) {
+        setState(() => _searchQuery = query.isEmpty ? null : query);
+        _loadTeams();
+      }
+    });
   }
 
   Future<void> _loadTeams() async {
     setState(() => _isLoading = true);
     try {
-      final data = await _teamsApi.getTeams(status: _selectedStatus, limit: 50);
+      final data = await _teamsApi.getTeams(
+        status: _selectedStatus,
+        difficulty: _selectedDifficulties.isEmpty ? null : _selectedDifficulties.join(','),
+        q: _searchQuery,
+        limit: 50,
+      );
       if (mounted) {
         setState(() {
           _teams = data;
@@ -60,6 +100,82 @@ class _TeamsListScreenState extends ConsumerState<TeamsListScreen> {
       ),
       body: Column(
         children: [
+          // 搜索栏
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: '搜索队伍...',
+                hintStyle: const TextStyle(color: AppTokens.textTertiary),
+                prefixIcon: const Icon(Icons.search, color: AppTokens.textTertiary),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: AppTokens.textTertiary),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = null);
+                          _loadTeams();
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: AppTokens.bgSurface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+          ),
+          // 难度筛选
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                const Text(
+                  '难度：',
+                  style: TextStyle(
+                    color: AppTokens.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+                ..._difficultyOptions.map((item) {
+                  final isSelected = _selectedDifficulties.contains(item.$1);
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      label: Text(item.$2),
+                      selected: isSelected,
+                      onSelected: (_) {
+                        setState(() {
+                          if (isSelected) {
+                            _selectedDifficulties.remove(item.$1);
+                          } else {
+                            _selectedDifficulties.add(item.$1);
+                          }
+                        });
+                        _loadTeams();
+                      },
+                      backgroundColor: AppTokens.bgSurface,
+                      selectedColor: item.$3.withOpacity(0.2),
+                      side: BorderSide(
+                        color: isSelected ? item.$3 : AppTokens.borderDefault,
+                      ),
+                      labelStyle: TextStyle(
+                        color: isSelected ? item.$3 : AppTokens.textSecondary,
+                        fontSize: 12,
+                      ),
+                      checkmarkColor: item.$3,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
           // 状态筛选 Tab
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,

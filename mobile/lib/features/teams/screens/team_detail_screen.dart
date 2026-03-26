@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -60,11 +61,37 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     }
   }
 
-  /// 申请加入
+  /// 分享队伍
+  Future<void> _shareTeam(TeamModel team) async {
+    final url = 'https://gomate.live/teams/${team.id}';
+    final text = '''🏔️ ${team.title}
+📅 ${team.date} ${team.time}
+👥 ${team.approvedMemberCount}/${team.maxMembers} 人
+
+$url''';
+
+    // 复制到剪贴板
+    await Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('队伍信息已复制到剪贴板')),
+      );
+    }
+  }
+
+  /// 申请加入（带留言输入）
   Future<void> _handleJoin() async {
+    // 显示留言输入对话框
+    final message = await showDialog<String>(
+      context: context,
+      builder: (ctx) => _JoinMessageDialog(),
+    );
+
+    if (message == null) return; // 用户取消
+
     setState(() => _isActioning = true);
     try {
-      await _teamsApi.joinTeam(widget.teamId);
+      await _teamsApi.joinTeam(widget.teamId, message: message);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('申请已提交，等待领队审核')),
@@ -167,6 +194,13 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(team.title),
+        actions: [
+          // 分享按钮
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            onPressed: () => _shareTeam(team),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -625,6 +659,80 @@ class _InfoRow extends StatelessWidget {
           Text(value, style: const TextStyle(fontSize: 14)),
         ],
       ),
+    );
+  }
+}
+
+/// 申请加入留言对话框
+class _JoinMessageDialog extends StatefulWidget {
+  @override
+  State<_JoinMessageDialog> createState() => _JoinMessageDialogState();
+}
+
+class _JoinMessageDialogState extends State<_JoinMessageDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('申请加入'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '给队长留言（可选）',
+            style: TextStyle(
+              color: AppTokens.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            maxLines: 3,
+            maxLength: 100,
+            decoration: InputDecoration(
+              hintText: '例如：我有3年徒步经验，装备齐全...',
+              hintStyle: TextStyle(color: AppTokens.textTertiary, fontSize: 14),
+              filled: true,
+              fillColor: AppTokens.bgSurface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppTokens.borderDefault),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppTokens.borderDefault),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppTokens.brandPrimary),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTokens.brandPrimary,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('提交申请'),
+        ),
+      ],
     );
   }
 }

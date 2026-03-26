@@ -22,12 +22,29 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _nicknameCtrl;
   late TextEditingController _bioCtrl;
   late TextEditingController _wechatCtrl;
+  late TextEditingController _experienceCtrl;
 
   String _level = 'beginner';
   String _gender = '';
+  DateTime? _birthDate;
+  final List<String> _equipment = [];
 
   File? _pendingAvatar; // 待上传的本地头像文件
   bool _isSaving = false;
+
+  // 装备选项
+  static const _equipmentOptions = [
+    '登山鞋',
+    '登山杖',
+    '背包',
+    '头盔',
+    '护膝',
+    '防晒霜',
+    '急救包',
+    'GPS设备',
+    '帐篷',
+    '睡袋',
+  ];
 
   @override
   void initState() {
@@ -36,8 +53,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _nicknameCtrl = TextEditingController(text: user?.nickname ?? user?.name ?? '');
     _bioCtrl = TextEditingController(text: user?.bio ?? '');
     _wechatCtrl = TextEditingController(text: user?.wechat ?? '');
+    _experienceCtrl = TextEditingController(); // TODO: 从 user 读取
     _level = user?.level ?? 'beginner';
     _gender = user?.gender ?? '';
+    // TODO: 从 user 读取 birthDate 和 equipment
   }
 
   @override
@@ -45,6 +64,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _nicknameCtrl.dispose();
     _bioCtrl.dispose();
     _wechatCtrl.dispose();
+    _experienceCtrl.dispose();
     super.dispose();
   }
 
@@ -247,6 +267,45 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 maxLength: 30,
               ),
+              const SizedBox(height: 16),
+
+              // ─── 出生日期 ────────────────────────────────────────────
+              _SectionLabel('出生日期'),
+              _BirthDatePicker(
+                value: _birthDate,
+                onChanged: (date) => setState(() => _birthDate = date),
+              ),
+              const SizedBox(height: 16),
+
+              // ─── 户外经验描述 ─────────────────────────────────────────
+              _SectionLabel('户外经验'),
+              TextFormField(
+                controller: _experienceCtrl,
+                decoration: const InputDecoration(
+                  hintText: '描述一下你的户外经验（可选）',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                maxLength: 200,
+              ),
+              const SizedBox(height: 16),
+
+              // ─── 装备清单 ─────────────────────────────────────────────
+              _SectionLabel('装备清单'),
+              _EquipmentSelector(
+                selected: _equipment,
+                options: _equipmentOptions,
+                onToggle: (item) {
+                  setState(() {
+                    if (_equipment.contains(item)) {
+                      _equipment.remove(item);
+                    } else {
+                      _equipment.add(item);
+                    }
+                  });
+                },
+              ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -374,6 +433,123 @@ class _SectionLabel extends StatelessWidget {
         text,
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
       ),
+    );
+  }
+}
+
+// ─── 出生日期选择器 ────────────────────────────────────────────────────────────
+
+class _BirthDatePicker extends StatelessWidget {
+  final DateTime? value;
+  final ValueChanged<DateTime?> onChanged;
+
+  const _BirthDatePicker({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        final now = DateTime.now();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: value ?? DateTime(now.year - 25),
+          firstDate: DateTime(1950),
+          lastDate: DateTime(now.year - 13),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.light(
+                  primary: AppTokens.brandPrimary,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+        if (picked != null) {
+          onChanged(picked);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 20,
+              color: value != null ? AppTokens.textPrimary : AppTokens.textTertiary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                value != null
+                    ? '${value!.year}年${value!.month}月${value!.day}日'
+                    : '选择出生日期（可选）',
+                style: TextStyle(
+                  color: value != null ? AppTokens.textPrimary : AppTokens.textTertiary,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            if (value != null)
+              IconButton(
+                icon: const Icon(Icons.clear, size: 20),
+                onPressed: () => onChanged(null),
+                color: AppTokens.textTertiary,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 装备选择器 ────────────────────────────────────────────────────────────────
+
+class _EquipmentSelector extends StatelessWidget {
+  final List<String> selected;
+  final List<String> options;
+  final ValueChanged<String> onToggle;
+
+  const _EquipmentSelector({
+    required this.selected,
+    required this.options,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: options.map((item) {
+        final isSelected = selected.contains(item);
+        return FilterChip(
+          label: Text(item),
+          selected: isSelected,
+          selectedColor: AppTokens.brandPrimaryLight,
+          checkmarkColor: AppTokens.brandPrimary,
+          labelStyle: TextStyle(
+            color: isSelected ? AppTokens.brandPrimary : AppTokens.textPrimary,
+            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: isSelected ? AppTokens.brandPrimary : AppTokens.borderDefault,
+            ),
+          ),
+          backgroundColor: AppTokens.bgSurface,
+          onSelected: (_) => onToggle(item),
+        );
+      }).toList(),
     );
   }
 }

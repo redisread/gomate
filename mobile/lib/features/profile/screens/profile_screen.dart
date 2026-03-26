@@ -137,6 +137,16 @@ class ProfileScreen extends ConsumerWidget {
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                       ),
                       _StatItem(
+                        label: '创建队伍',
+                        value: '0', // TODO: 从 API 获取
+                      ),
+                      Container(
+                        width: 1,
+                        height: 24,
+                        color: Colors.white30,
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                      _StatItem(
                         label: '等级',
                         value: _getLevelLabel(user.level),
                       ),
@@ -164,12 +174,28 @@ class ProfileScreen extends ConsumerWidget {
                   _MenuTile(
                     icon: Icons.favorite_border,
                     title: '我的收藏',
-                    onTap: () {},
+                    onTap: () => context.push('/favorites'),
+                  ),
+                  const Divider(height: 24),
+                  _MenuTile(
+                    icon: Icons.help_outline,
+                    title: '帮助中心',
+                    onTap: () => context.push('/help'),
                   ),
                   _MenuTile(
-                    icon: Icons.settings_outlined,
-                    title: '账号设置',
-                    onTap: () {},
+                    icon: Icons.info_outline,
+                    title: '关于我们',
+                    onTap: () => context.push('/about'),
+                  ),
+                  _MenuTile(
+                    icon: Icons.description_outlined,
+                    title: '服务条款',
+                    onTap: () => context.push('/terms'),
+                  ),
+                  _MenuTile(
+                    icon: Icons.privacy_tip_outlined,
+                    title: '隐私政策',
+                    onTap: () => context.push('/privacy'),
                   ),
                   const Divider(height: 24),
                   _MenuTile(

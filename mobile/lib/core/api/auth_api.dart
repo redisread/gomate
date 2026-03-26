@@ -103,6 +103,17 @@ class AuthApi {
     return data['url'] as String;
   }
 
+  /// 忘记密码 - 发送重置链接
+  /// [email] 邮箱地址
+  Future<void> forgotPassword({
+    required String email,
+  }) async {
+    await _client.post(
+      ApiConstants.forgotPassword,
+      data: {'email': email},
+    );
+  }
+
   /// 退出登录（清除服务端 session）
   Future<void> logout() async {
     await _client.post(ApiConstants.signOut);
