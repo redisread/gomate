@@ -1206,11 +1206,5 @@ export const copy = {
       female: "女",
       other: "其他",
     },
-    locationType: {
-      hiking: "户外徒步",
-      explore: "城市探索",
-      leisure: "休闲探店",
-      travel: "旅行",
-    },
   },
 } as const;
