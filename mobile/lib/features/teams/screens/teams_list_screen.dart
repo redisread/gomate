@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/teams_api.dart';
 import '../../../core/models/team.dart';
 import '../../../shared/theme/app_tokens.dart';
+import '../../../shared/widgets/app_status_badge.dart';
 
 /// 队伍列表页面
 class TeamsListScreen extends ConsumerStatefulWidget {
@@ -149,7 +150,6 @@ class _TeamCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isRecruiting = team.status == TeamStatus.recruiting;
     return GestureDetector(
       onTap: () => context.push('/teams/${team.id}'),
       child: Container(
@@ -158,11 +158,18 @@ class _TeamCard extends StatelessWidget {
           color: AppTokens.bgSurface,
           border: Border.all(color: AppTokens.borderDefault),
           borderRadius: BorderRadius.circular(AppTokens.radiusM),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0x0A1A2332),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 图标容器
+            // 图标容器：温暖琥珀浅色背景
             Container(
               width: 52,
               height: 52,
@@ -187,7 +194,7 @@ class _TeamCard extends StatelessWidget {
                     team.title,
                     style: const TextStyle(
                       color: AppTokens.textPrimary,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
                     maxLines: 2,
@@ -200,6 +207,7 @@ class _TeamCard extends StatelessWidget {
                       style: const TextStyle(
                         color: AppTokens.textSecondary,
                         fontSize: 13,
+                        height: 1.4,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -232,28 +240,11 @@ class _TeamCard extends StatelessWidget {
                 ],
               ),
             ),
-            // 状态标签
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isRecruiting
-                    ? AppTokens.brandPrimaryLight
-                    : AppTokens.bgBase,
-                borderRadius: BorderRadius.circular(4),
-                border: isRecruiting
-                    ? null
-                    : Border.all(color: AppTokens.borderDefault),
-              ),
-              child: Text(
-                team.status.label,
-                style: TextStyle(
-                  color: isRecruiting
-                      ? AppTokens.brandPrimary
-                      : AppTokens.textTertiary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+            // 状态徽章（使用新组件）
+            AppStatusBadge(
+              status: team.status.name,
+              showDot: team.status == TeamStatus.recruiting,
+              size: 0.85,
             ),
           ],
         ),

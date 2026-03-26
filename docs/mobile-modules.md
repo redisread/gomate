@@ -1,7 +1,8 @@
 # GoMate 移动端模块文档
 
-> 最后更新：2026-03-24
+> 最后更新：2026-03-25
 > 框架：Flutter 3.24 + Riverpod 2.6 + GoRouter 14 + Dio 5.7
+> UI 设计系统：Design System v2.0（温暖琥珀色调 #D97706）
 
 ## 项目结构总览
 
@@ -159,15 +160,16 @@ mobile/lib/
 
 #### 地点详情 `location_detail_screen.dart`
 - 封面图 + SliverAppBar（可折叠）
-- 收藏按钮（需登录，心形图标，heartbeat 动效）
+- 收藏按钮（需登录，心形图标）
 - 收藏状态从 `/favorites?entityType=location` 初始化 ⭐ 待实现
-- 地点基本信息（名称、描述、地址、坐标）
-- 路线信息网格（4 列：难度、时长、距离、高程）
-- 最佳季节标签
-- 图片画廊
-- 正在招募的队伍列表（含「创建队伍」入口）⭐ 待实现
+- 地点基本信息（名称、副标题、城市、标签）
+- 地点描述（温暖琥珀色调文字）
+- 路线信息卡片列表：
+  - 路线名称 + `AppDifficultyBadge` 难度徽章
+  - 路线详情（距离、时长、高程）
+  - 卡片阴影效果增强层次感
 - 分享按钮（系统 Share Sheet）⭐ 待实现
-- 「创建队伍」快捷按钮（预填 `locationId`）
+- 「在此地找队伍」底部按钮（品牌渐变色）→ `/teams?locationId=xxx`
 
 **API 调用：**
 - `LocationsApi().getLocations(cityId, tagIds, q)` — 地点列表（含关键词搜索）
@@ -175,6 +177,12 @@ mobile/lib/
 - `LocationsApi().favoriteLocation(id)` — 切换收藏
 - `GET /favorites?entityType=location` — 获取收藏列表（初始化收藏状态）
 - `GET /teams?locationId=xxx&status=recruiting` — 该地点招募中队伍 ⭐ 待实现
+
+**UI 更新（2026-03-25）：**
+- 导入 `AppStatusBadge` 组件
+- 路线卡片使用 `AppDifficultyBadge` 展示难度
+- 文字颜色统一使用新的 Design Tokens
+- 卡片添加阴影效果
 
 ---
 
@@ -192,26 +200,24 @@ mobile/lib/
 
 #### 队伍详情 `team_detail_screen.dart`
 基本信息区：
-- 封面图 + SliverAppBar（可折叠）
-- 队伍标题 + 状态徽章
+- 队伍图标容器（琥珀色浅色背景）+ `AppStatusBadge` 状态徽章
+- 队伍标题（w600 字重）
 - 4 列数据网格（日期、时间、人数、时长）
-- 地点面包屑（可跳转地点详情）
-- 队伍描述 + 入队要求
-- 成员列表（超 6 人折叠，展开/收起）⭐ 待实现
-- 地点简介卡（缩略图 + 名称 + 跳转链接）⭐ 待实现
-- 同地点其他队伍列表 ⭐ 待实现
+- 领队信息（使用 `AppAvatar.sm` 头像）
+- 队伍描述 + 入队要求（琥珀色项目符号）
+- 成员列表（使用 `AppAvatar` 组件 + 队长角标）
 
 底部操作栏（差异化显示）：
 
 | 用户角色 | 状态条件 | 显示内容 |
 |---------|---------|---------|
-| 访客 | 招募中 + 有空位 | 「申请加入」按钮（绿色） |
+| 访客 | 招募中 + 有空位 | 「申请加入」按钮（品牌渐变） |
 | 访客 | 已满/已组建/已完成 | 灰化按钮 + 原因文案 |
-| 申请者 | pending | 「申请审核中」+ 「取消申请」链接 |
-| 成员 | approved | 「已加入 ✓」+ 「申请退出」链接 |
+| 申请者 | pending | 「申请审核中」+ 「取消申请」链接（琥珀色边框） |
+| 成员 | approved | 「已加入 ✓」+ 「申请退出」链接（绿色边框） |
 | 申请者 | rejected | 「申请被拒绝」+ 「重新申请」按钮 |
-| 成员 | leave_pending | 「退出申请审核中」提示 |
-| 队长 | 任何 | 「管理队伍」按钮 → `/teams/:id/manage` |
+| 成员 | leave_pending | 「退出申请审核中」提示（琥珀色边框） |
+| 队长 | 任何 | 「管理队伍」按钮（品牌渐变）→ `/teams/:id/manage` |
 
 分享功能：
 - 分享按钮（AppBar 右上角）⭐ 待实现
@@ -221,6 +227,12 @@ mobile/lib/
 - `joinTeam(teamId)` — 申请加入（含留言输入）⭐ 留言功能待实现
 - `leaveTeam(teamId)` — 取消申请 / 退出（二次确认 AlertDialog）
 - `requestLeave(teamId)` — 申请退出（已组建队伍）
+
+**UI 更新（2026-03-25）：**
+- 使用 `AppStatusBadge` 替换旧状态标签
+- 使用 `AppAvatar.sm` 展示领队头像
+- 底部操作栏统一使用品牌渐变色
+- 所有状态提示边框色更新为 Design Tokens
 
 #### 创建队伍 `create_team_screen.dart`
 表单字段：
@@ -473,26 +485,34 @@ await ref.read(authProvider.notifier).login(email, password);
 
 ### Design Tokens（`shared/theme/app_tokens.dart`）
 
-**品牌色：**
-- 主色：`#2EC4B6`（清新蓝绿）
-- 深色：`#1A9E92`
-- 浅色：`#D6F5F2`
+**品牌色（温暖琥珀调）：**
+- 主色：`#D97706`（温暖琥珀）
+- 深色：`#B45309`（深琥珀）
+- 浅色：`#FFFBEB`（浅琥珀）
+
+**中性色（沙米调）：**
+- 背景基色：`#faf8f5`（温暖沙米）
+- 表面色：`#f2ede7`（沙米）
+- 边框色：`#e8e0d7`（暖灰）
+
+**文字颜色：**
+- 主文字：`#1e1812`（深棕黑）
+- 次文字：`#8f7f6e`（暖灰棕）
+- 占位符：`#a89b8c`（暖灰）
 
 **语义色：**
 - 成功：苔绿 `#52C41A`
 - 错误：珊瑚红 `#FF6B6B`
 
-**文字层级：**
-- 主文字：`#1A2332`
-- 次文字：`#5A6A7A`
-- 占位符：`#9AAAB8`
+**渐变色：**
+- `gradientBrand`：`#D97706 → #B45309`（品牌主渐变）
+- `gradientBrandAccent`：`#D97706 → #FF7a65`（品牌强调渐变）
+- `gradientCard`：`#FFFFFF → #FFFBEB`（卡片背景渐变）
+- `gradientHero`：`#FFFBEB → #faf8f5`（Hero 区背景渐变）
 
-**背景：**
-- 主背景：`#F7F9FC`
-- Surface：`#FFFFFF`
-- Elevated：`#F0F4F8`
+**圆角：** `8px / 12px / 16px / 24px / 9999px`
 
-**圆角：** `8px / 12px / 16px / 24px`
+**阴影：** `0x0A1A2332`（柔和阴影）、`0x40D97706`（品牌色阴影）
 
 ### 共享组件库（`shared/widgets/`）
 
@@ -502,10 +522,21 @@ await ref.read(authProvider.notifier).login(email, password);
 | `AppButton` | 按钮（支持渐变、禁用态） |
 | `AppCard` | 卡片容器（圆角 + 阴影） |
 | `AppFilterChip` | 筛选芯片（单/多选） |
-| `AppStatusBadge` | 状态徽章 |
+| `AppStatusBadge` | 状态徽章（5 状态 + 扩散动画） |
+| `AppDifficultyBadge` | 难度徽章（4 难度等级） |
+| `AppAvatar` | 用户头像（5 尺寸 + 字母占位） |
+| `AppAvatarStack` | 头像叠加组件（+N 显示） |
+| `AppTeamCard` | 队伍卡片（完整信息展示） |
 | `AppEmptyState` | 空状态提示（插图 + 文案） |
 | `AppSectionHeader` | 章节标题（含「查看全部」链接） |
 | `AppShimmer` | 骨架屏扫光组件 |
+
+**已更新页面使用新组件：**
+- 首页：使用 `AppStatusBadge` 展示队伍状态
+- 队伍列表页：使用 `AppStatusBadge`，添加卡片阴影
+- 队伍详情页：使用 `AppStatusBadge`、`AppAvatar`，更新底部操作栏为品牌渐变
+- 地点详情页：使用 `AppDifficultyBadge` 展示路线难度，更新卡片样式
+- 个人中心页：使用 `AppAvatar.large` 展示用户头像
 
 ---
 

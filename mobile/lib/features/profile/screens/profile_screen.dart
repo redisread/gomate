@@ -1,10 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/auth_provider.dart';
 import '../../../shared/theme/app_tokens.dart';
+import '../../../shared/widgets/app_avatar.dart';
 
 /// 个人资料页面
 class ProfileScreen extends ConsumerWidget {
@@ -97,11 +97,10 @@ class ProfileScreen extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  // 头像
-                  _UserAvatar(
+                  // 头像（使用新组件）
+                  AppAvatar.large(
+                    name: user.displayName,
                     imageUrl: user.image,
-                    displayName: user.displayName,
-                    radius: 40,
                   ),
                   const SizedBox(height: AppTokens.space3),
                   Text(
@@ -230,55 +229,6 @@ class _StatItem extends StatelessWidget {
               const TextStyle(color: Colors.white70, fontSize: 12),
         ),
       ],
-    );
-  }
-}
-
-/// 用户头像（支持网络图片 + 加载失败回退首字母）
-class _UserAvatar extends StatelessWidget {
-  final String? imageUrl;
-  final String displayName;
-  final double radius;
-
-  const _UserAvatar({
-    required this.imageUrl,
-    required this.displayName,
-    required this.radius,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final placeholder = CircleAvatar(
-      radius: radius,
-      backgroundColor: Colors.white24,
-      child: Text(
-        displayName.isNotEmpty ? displayName.substring(0, 1) : '?',
-        style: TextStyle(
-          fontSize: radius * 0.8,
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-
-    if (imageUrl == null || imageUrl!.isEmpty) {
-      debugPrint('[_UserAvatar] imageUrl is null/empty, showing placeholder');
-      return placeholder;
-    }
-
-    debugPrint('[_UserAvatar] loading imageUrl: $imageUrl');
-
-    return CachedNetworkImage(
-      imageUrl: imageUrl!,
-      imageBuilder: (context, imageProvider) => CircleAvatar(
-        radius: radius,
-        backgroundImage: imageProvider,
-      ),
-      placeholder: (context, url) => placeholder,
-      errorWidget: (context, url, error) {
-        debugPrint('[_UserAvatar] load FAILED: $url, error: $error');
-        return placeholder;
-      },
     );
   }
 }

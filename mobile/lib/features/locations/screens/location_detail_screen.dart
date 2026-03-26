@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/locations_api.dart';
 import '../../../core/models/location.dart';
 import '../../../shared/theme/app_tokens.dart';
+import '../../../shared/widgets/app_status_badge.dart';
 
 /// 地点详情页面
 class LocationDetailScreen extends ConsumerStatefulWidget {
@@ -159,6 +160,7 @@ class _LocationDetailScreenState extends ConsumerState<LocationDetailScreen> {
                             style: const TextStyle(
                               color: AppTokens.brandPrimary,
                               fontSize: 12,
+                              fontWeight: AppTokens.weightMedium,
                             ),
                           ),
                         );
@@ -174,7 +176,8 @@ class _LocationDetailScreenState extends ConsumerState<LocationDetailScreen> {
                     '地点介绍',
                     style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
+                      color: AppTokens.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -183,7 +186,7 @@ class _LocationDetailScreenState extends ConsumerState<LocationDetailScreen> {
                     style: const TextStyle(
                       fontSize: 15,
                       height: 1.6,
-                      color: Colors.black87,
+                      color: AppTokens.textSecondary,
                     ),
                   ),
 
@@ -196,7 +199,8 @@ class _LocationDetailScreenState extends ConsumerState<LocationDetailScreen> {
                       '路线选择',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
+                        color: AppTokens.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -249,8 +253,16 @@ class _RouteCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[200]!),
-        borderRadius: BorderRadius.circular(12),
+        color: AppTokens.bgSurface,
+        border: Border.all(color: AppTokens.borderDefault),
+        borderRadius: BorderRadius.circular(AppTokens.radiusM),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0x0A1A2332),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,51 +274,39 @@ class _RouteCard extends StatelessWidget {
                 child: Text(
                   route.name,
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     fontSize: 15,
+                    color: AppTokens.textPrimary,
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTokens.brandPrimaryLight,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  route.difficulty.label,
-                  style: const TextStyle(
-                    color: AppTokens.brandPrimary,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
+              // 难度徽章（使用新组件）
+              AppDifficultyBadge(difficulty: route.difficulty.label, size: 0.9),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.straighten, size: 14, color: Colors.grey),
+              const Icon(Icons.straighten, size: 14, color: AppTokens.textTertiary),
               const SizedBox(width: 4),
               Text(
                 '${route.distance.toStringAsFixed(1)} 公里',
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
+                style: const TextStyle(color: AppTokens.textTertiary, fontSize: 13),
               ),
               const SizedBox(width: 16),
-              const Icon(Icons.schedule, size: 14, color: Colors.grey),
+              const Icon(Icons.schedule, size: 14, color: AppTokens.textTertiary),
               const SizedBox(width: 4),
               Text(
                 '${route.durationMin}~${route.durationMax} 分钟',
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
+                style: const TextStyle(color: AppTokens.textTertiary, fontSize: 13),
               ),
               if (route.elevation != null) ...[
                 const SizedBox(width: 16),
-                const Icon(Icons.terrain, size: 14, color: Colors.grey),
+                const Icon(Icons.terrain, size: 14, color: AppTokens.textTertiary),
                 const SizedBox(width: 4),
                 Text(
                   '↑${route.elevation} 米',
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  style: const TextStyle(color: AppTokens.textTertiary, fontSize: 13),
                 ),
               ],
             ],
@@ -315,7 +315,7 @@ class _RouteCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               route.description!,
-              style: const TextStyle(color: Colors.black87, fontSize: 13),
+              style: const TextStyle(color: AppTokens.textSecondary, fontSize: 13),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),

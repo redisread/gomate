@@ -165,7 +165,7 @@ class AppGradientCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(r),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x402EC4B6),
+            color: Color(0x40D97706),
             blurRadius: 16,
             offset: Offset(0, 4),
           ),

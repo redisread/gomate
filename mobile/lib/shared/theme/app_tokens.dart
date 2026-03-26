@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 // ============================================================
-// GoMate Design Tokens
+// GoMate Design Tokens v2.0
 // 视觉语言：「有温度的随身户外助手」
-// 参考方向：柔和蓝绿调 + 自然质感（参考 slock.ai）
-// 适配 Material 3 + Flutter 渲染特性
+// 色调：温暖琥珀色 + 沙米中性色 + 珊瑚强调色
+// 对齐 Web 端 Design System v2.0
 // ============================================================
 
 /// 全量 Design Tokens —— 颜色、字体、间距、圆角、阴影
@@ -12,58 +12,71 @@ abstract class AppTokens {
   AppTokens._();
 
   // ----------------------------------------------------------
-  // COLORS · 品牌主色（柔和蓝绿 · Teal Family）
+  // COLORS · 品牌主色（温暖琥珀 · Amber/Warm Family）
+  // 对齐 Web 端 globals.css 中的 --primary-500 等
   // ----------------------------------------------------------
 
-  /// 主品牌色：清新蓝绿
-  static const Color brandPrimary = Color(0xFF2EC4B6);
+  /// 主品牌色：温暖琥珀（#D97706）
+  static const Color brandPrimary = Color(0xFFD97706);
 
   /// 主品牌深色（按压态 / 文字用）
-  static const Color brandPrimaryDark = Color(0xFF1A9E92);
+  static const Color brandPrimaryDark = Color(0xFFB45309);
 
-  /// 主品牌浅色（容器背景 / Chip 背景）
-  static const Color brandPrimaryLight = Color(0xFFD6F5F2);
+  /// 主品牌浅色（容器背景 / Chip 背景）#FFFBEB
+  static const Color brandPrimaryLight = Color(0xFFFFFBEB);
 
-  /// 辅助强调色：温暖珊瑚（点缀用）
-  static const Color brandAccent = Color(0xFFFF6B6B);
+  /// 辅助强调色：珊瑚红（#ff7a65）
+  static const Color brandAccent = Color(0xFFff7a65);
 
   /// 辅助强调色浅版（Tag 背景等）
   static const Color brandAccentLight = Color(0xFFFFEEEE);
 
-  /// 第三品牌色：自然苔绿（难度标签等）
+  /// 第三品牌色：自然绿（成功状态）
   static const Color brandNature = Color(0xFF52C41A);
 
   /// 第三品牌色浅版
   static const Color brandNatureLight = Color(0xFFEAF7E0);
 
+  // 中性沙米色阶（对齐 Web 端 neutral-xxx）
+  /// 中性 50 - 极浅沙米
+  static const Color neutral50 = Color(0xFFfaf8f5);
+  /// 中性 100 - 浅沙米
+  static const Color neutral100 = Color(0xFFf2ede7);
+  /// 中性 200 - 沙米色
+  static const Color neutral200 = Color(0xFFe8e0d7);
+  /// 中性 500 - 中性灰棕
+  static const Color neutral500 = Color(0xFF8f7f6e);
+  /// 中性 900 - 深棕黑
+  static const Color neutral900 = Color(0xFF1e1812);
+
   // ----------------------------------------------------------
-  // COLORS · 背景层级
+  // COLORS · 背景层级（温暖沙米调）
   // ----------------------------------------------------------
 
-  /// 应用主背景（极浅灰白，干净不刺眼）
-  static const Color bgBase = Color(0xFFF7F9FC);
+  /// 应用主背景（极浅灰白，干净不刺眼）#faf8f5
+  static const Color bgBase = Color(0xFFfaf8f5);
 
-  /// 卡片 / Surface 背景
+  /// 卡片 / Surface 背景（白）
   static const Color bgSurface = Color(0xFFFFFFFF);
 
-  /// 稍深 Surface（输入框填充 / 列表项 hover）
-  static const Color bgSurfaceElevated = Color(0xFFF0F4F8);
+  /// 稍深 Surface（输入框填充 / 列表项 hover）#f2ede7
+  static const Color bgSurfaceElevated = Color(0xFFf2ede7);
 
-  /// 分隔线 / 细边框底色
-  static const Color bgDivider = Color(0xFFE8EDF3);
+  /// 分隔线 / 细边框底色 #e8e0d7
+  static const Color bgDivider = Color(0xFFe8e0d7);
 
   // ----------------------------------------------------------
-  // COLORS · 文字层级
+  // COLORS · 文字层级（温暖棕调）
   // ----------------------------------------------------------
 
-  /// 主文字（标题 / 重要内容）
-  static const Color textPrimary = Color(0xFF1A2332);
+  /// 主文字（标题 / 重要内容）#1e1812
+  static const Color textPrimary = Color(0xFF1e1812);
 
-  /// 次要文字（说明 / 副标题）
-  static const Color textSecondary = Color(0xFF5A6A7A);
+  /// 次要文字（说明 / 副标题）#5A6A7A -> #8f7f6e
+  static const Color textSecondary = Color(0xFF8f7f6e);
 
-  /// 弱文字（占位符 / 时间戳 / 元数据）
-  static const Color textTertiary = Color(0xFF9AAAB8);
+  /// 弱文字（占位符 / 时间戳 / 元数据）#9AAAB8 -> #a89b8c
+  static const Color textTertiary = Color(0xFFa89b8c);
 
   /// 禁用文字
   static const Color textDisabled = Color(0xFFC5D0DA);
@@ -72,41 +85,41 @@ abstract class AppTokens {
   static const Color textInverse = Color(0xFFFFFFFF);
 
   // ----------------------------------------------------------
-  // COLORS · 边框
+  // COLORS · 边框（温暖棕调）
   // ----------------------------------------------------------
 
-  /// 默认边框（卡片 / 输入框）
-  static const Color borderDefault = Color(0xFFE2EAF0);
+  /// 默认边框（卡片 / 输入框）#e8e0d7
+  static const Color borderDefault = Color(0xFFe8e0d7);
 
-  /// 强边框（focus 态 / 分割线）
-  static const Color borderStrong = Color(0xFFBDCCDA);
+  /// 强边框（focus 态 / 分割线）#BDCCDA -> #d4c9bc
+  static const Color borderStrong = Color(0xFFd4c9bc);
 
   /// 品牌边框（选中态）
-  static const Color borderBrand = Color(0xFF2EC4B6);
+  static const Color borderBrand = Color(0xFFD97706);
 
   // ----------------------------------------------------------
   // COLORS · 语义色
   // ----------------------------------------------------------
 
-  /// 成功
+  /// 成功（绿色）
   static const Color semanticSuccess = Color(0xFF52C41A);
 
-  /// 警告
+  /// 警告（橙色）
   static const Color semanticWarning = Color(0xFFFAAD14);
 
-  /// 错误
+  /// 错误（红色）
   static const Color semanticError = Color(0xFFFF4D4F);
 
-  /// 信息
+  /// 信息（蓝色）
   static const Color semanticInfo = Color(0xFF1677FF);
 
   // ----------------------------------------------------------
-  // COLORS · 状态色（队伍状态对应）
+  // COLORS · 状态色（队伍状态对应）· 温暖琥珀调
   // ----------------------------------------------------------
 
-  /// 招募中（蓝绿）
-  static const Color statusRecruiting = Color(0xFF2EC4B6);
-  static const Color statusRecruitingBg = Color(0xFFD6F5F2);
+  /// 招募中（琥珀色）
+  static const Color statusRecruiting = Color(0xFFD97706);
+  static const Color statusRecruitingBg = Color(0xFFFFFBEB);
 
   /// 已满（橙色）
   static const Color statusFull = Color(0xFFFA8C16);
@@ -125,22 +138,22 @@ abstract class AppTokens {
   static const Color statusCancelledBg = Color(0xFFFFEEEE);
 
   // ----------------------------------------------------------
-  // COLORS · 难度色（路线 / 地点难度）
+  // COLORS · 难度色（路线 / 地点难度）· 温暖调
   // ----------------------------------------------------------
 
-  /// 简单
+  /// 简单（绿色）
   static const Color difficultyEasy = Color(0xFF52C41A);
   static const Color difficultyEasyBg = Color(0xFFEAF7E0);
 
-  /// 普通
+  /// 普通（蓝色）
   static const Color difficultyModerate = Color(0xFF1677FF);
   static const Color difficultyModerateBg = Color(0xFFE6F0FF);
 
-  /// 困难
+  /// 困难（橙色）
   static const Color difficultyHard = Color(0xFFFA8C16);
   static const Color difficultyHardBg = Color(0xFFFFF3E0);
 
-  /// 专家
+  /// 专家（红色）
   static const Color difficultyExpert = Color(0xFFFF4D4F);
   static const Color difficultyExpertBg = Color(0xFFFFEEEE);
 
@@ -278,28 +291,28 @@ abstract class AppTokens {
   ];
 
   // ----------------------------------------------------------
-  // GRADIENTS · 渐变系统
+  // GRADIENTS · 渐变系统（温暖琥珀调）
   // ----------------------------------------------------------
 
-  /// 品牌主渐变（蓝绿 → 深蓝绿）
+  /// 品牌主渐变（琥珀色 → 深琥珀）
   static const LinearGradient gradientBrand = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF2EC4B6), Color(0xFF1A8E8A)],
+    colors: [Color(0xFFD97706), Color(0xFFB45309)],
   );
 
-  /// 品牌强调渐变（蓝绿 → 珊瑚）
+  /// 品牌强调渐变（琥珀 → 珊瑚）
   static const LinearGradient gradientBrandAccent = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [Color(0xFF2EC4B6), Color(0xFFFF6B6B)],
+    colors: [Color(0xFFD97706), Color(0xFFff7a65)],
   );
 
-  /// 卡片背景渐变（白 → 极浅蓝绿）
+  /// 卡片背景渐变（白 → 极浅琥珀）
   static const LinearGradient gradientCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFFFFFF), Color(0xFFF0F9F8)],
+    colors: [Color(0xFFFFFFFF), Color(0xFFFFFBEB)],
   );
 
   /// 图片遮罩渐变（透明 → 深黑，用于图片卡片底部文字）
@@ -309,11 +322,11 @@ abstract class AppTokens {
     colors: [Color(0x00000000), Color(0xB3000000)],
   );
 
-  /// 首页 Hero 区背景渐变（浅蓝绿 → 白）
+  /// 首页 Hero 区背景渐变（浅琥珀 → 白）
   static const LinearGradient gradientHero = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFE8F9F8), Color(0xFFF7F9FC)],
+    colors: [Color(0xFFFFFBEB), Color(0xFFfaf8f5)],
   );
 
   // ----------------------------------------------------------

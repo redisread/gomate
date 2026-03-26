@@ -6,6 +6,8 @@ import '../../../core/api/teams_api.dart';
 import '../../../core/models/team.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../shared/theme/app_tokens.dart';
+import '../../../shared/widgets/app_status_badge.dart';
+import '../../../shared/widgets/app_avatar.dart';
 
 /// 队伍详情页面
 class TeamDetailScreen extends ConsumerStatefulWidget {
@@ -179,7 +181,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                   height: 64,
                   decoration: BoxDecoration(
                     color: AppTokens.brandPrimaryLight,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusM),
                   ),
                   child: Center(
                     child: Text(team.icon,
@@ -195,25 +197,16 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                         team.title,
                         style: const TextStyle(
                           fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
+                          color: AppTokens.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppTokens.brandPrimaryLight,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          team.status.label,
-                          style: const TextStyle(
-                            color: AppTokens.brandPrimary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                      // 使用新的状态徽章组件
+                      AppStatusBadge(
+                        status: team.status.name,
+                        showDot: team.status == TeamStatus.recruiting,
+                        size: 1.0,
                       ),
                     ],
                   ),
@@ -257,12 +250,12 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               const SizedBox(height: 16),
               const Text(
                 '活动介绍',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppTokens.textPrimary),
               ),
               const SizedBox(height: 10),
               Text(
                 team.description!,
-                style: const TextStyle(fontSize: 15, height: 1.6),
+                style: const TextStyle(fontSize: 15, height: 1.6, color: AppTokens.textSecondary),
               ),
             ],
 
@@ -271,7 +264,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               const SizedBox(height: 20),
               const Text(
                 '入队要求',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppTokens.textPrimary),
               ),
               const SizedBox(height: 10),
               ...team.requirements.map(
@@ -286,7 +279,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                               fontWeight: FontWeight.bold)),
                       Expanded(
                         child: Text(req,
-                            style: const TextStyle(fontSize: 14)),
+                            style: const TextStyle(fontSize: 14, color: AppTokens.textSecondary)),
                       ),
                     ],
                   ),
@@ -302,16 +295,47 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               Text(
                 '队伍成员（${team.approvedMemberCount} 人）',
                 style: const TextStyle(
-                    fontSize: 17, fontWeight: FontWeight.bold),
+                    fontSize: 17, fontWeight: FontWeight.w600, color: AppTokens.textPrimary),
               ),
               const SizedBox(height: 12),
-              // TODO(Agent-C): 接入真实成员列表数据，替换此 mock
               // 领队信息展示（含「队长」角标）
               if (team.leader != null)
-                _MemberAvatarItem(
-                  user: team.leader!,
-                  isLeader: true,
+                AppAvatar.small(
+                  name: team.leader!.displayName,
+                  imageUrl: team.leader!.image,
                 ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 54),
+                child: Row(
+                  children: [
+                    Text(
+                      team.leader!.displayName,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppTokens.textPrimary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTokens.brandPrimary,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        '队长',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
 
             const SizedBox(height: 80),
@@ -333,17 +357,30 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
 
   /// 队长底部操作栏：「管理队伍」蓝色按钮
   Widget _buildLeaderBottomBar(BuildContext context, TeamModel team) {
-    return ElevatedButton(
-      onPressed: () => context.push('/teams/${team.id}/manage'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(
+    return Container(
+      width: double.infinity,
+      height: 48,
+      decoration: BoxDecoration(
+        gradient: AppTokens.gradientBrand,
+        borderRadius: BorderRadius.circular(AppTokens.radiusM),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           borderRadius: BorderRadius.circular(AppTokens.radiusM),
+          onTap: () => context.push('/teams/${team.id}/manage'),
+          child: const Center(
+            child: Text(
+              '管理队伍',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ),
       ),
-      child: const Text('管理队伍', style: TextStyle(fontSize: 16)),
     );
   }
 
@@ -368,29 +405,38 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     final canJoin = team.status == TeamStatus.recruiting && team.hasVacancy;
     final disabledText = _getDisabledJoinText(team);
 
-    return ElevatedButton(
-      onPressed: canJoin && !_isActioning ? _handleJoin : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTokens.semanticSuccess,
-        foregroundColor: Colors.white,
-        disabledBackgroundColor: AppTokens.borderDefault,
-        disabledForegroundColor: AppTokens.textSecondary,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(
+    return Container(
+      width: double.infinity,
+      height: 48,
+      decoration: BoxDecoration(
+        gradient: canJoin ? AppTokens.gradientBrand : null,
+        color: canJoin ? null : AppTokens.borderDefault,
+        borderRadius: BorderRadius.circular(AppTokens.radiusM),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           borderRadius: BorderRadius.circular(AppTokens.radiusM),
+          onTap: canJoin && !_isActioning ? _handleJoin : null,
+          child: Center(
+            child: _isActioning
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : Text(
+                    canJoin ? '申请加入' : disabledText,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: canJoin ? Colors.white : AppTokens.textTertiary,
+                    ),
+                  ),
+          ),
         ),
       ),
-      child: _isActioning
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: Colors.white),
-            )
-          : Text(
-              canJoin ? '申请加入' : disabledText,
-              style: const TextStyle(fontSize: 16),
-            ),
     );
   }
 
@@ -422,16 +468,16 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
+                color: AppTokens.brandPrimaryLight,
                 borderRadius:
                     BorderRadius.circular(AppTokens.radiusM),
-                border: Border.all(color: const Color(0xFFF59E0B)),
+                border: Border.all(color: AppTokens.brandPrimary),
               ),
               child: const Center(
                 child: Text(
                   '申请审核中',
                   style: TextStyle(
-                    color: Color(0xFFD97706),
+                    color: AppTokens.brandPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -457,7 +503,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFDCFCE7),
+                color: AppTokens.brandPrimaryLight,
                 borderRadius:
                     BorderRadius.circular(AppTokens.radiusM),
                 border: Border.all(color: AppTokens.semanticSuccess),
@@ -492,7 +538,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEE2E2),
+                color: AppTokens.brandPrimaryLight,
                 borderRadius:
                     BorderRadius.circular(AppTokens.radiusM),
                 border: Border.all(color: AppTokens.semanticError),
@@ -533,15 +579,15 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFFFEF3C7),
+            color: AppTokens.brandPrimaryLight,
             borderRadius: BorderRadius.circular(AppTokens.radiusM),
-            border: Border.all(color: const Color(0xFFF59E0B)),
+            border: Border.all(color: AppTokens.brandPrimary),
           ),
           child: const Center(
             child: Text(
               '退出申请审核中',
               style: TextStyle(
-                color: Color(0xFFD97706),
+                color: AppTokens.brandPrimary,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
@@ -549,80 +595,6 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
           ),
         );
     }
-  }
-}
-
-/// 成员头像条目（显示头像 + 昵称，队长带角标）
-class _MemberAvatarItem extends StatelessWidget {
-  final dynamic user; // UserModel
-  final bool isLeader;
-
-  const _MemberAvatarItem({
-    required this.user,
-    this.isLeader = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          // 头像
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: AppTokens.brandPrimaryLight,
-                backgroundImage:
-                    user.image != null ? NetworkImage(user.image!) : null,
-                child: user.image == null
-                    ? Text(
-                        user.displayName.isNotEmpty
-                            ? user.displayName[0]
-                            : '?',
-                        style: const TextStyle(
-                          color: AppTokens.brandPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
-              ),
-              // 队长角标
-              if (isLeader)
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: AppTokens.brandPrimary,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      '队长',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 10),
-          Text(
-            user.displayName,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppTokens.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

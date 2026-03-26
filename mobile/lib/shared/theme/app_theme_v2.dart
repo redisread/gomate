@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'app_tokens.dart';
 
 // ============================================================
-// GoMate App Theme V2
+// GoMate App Theme V2.0
 // 视觉方向：「有温度的随身户外助手」
-// 色调：柔和蓝绿（Soft Teal）+ 自然白底
-// 参考：slock.ai 简洁 UI 语言
+// 色调：温暖琥珀色 + 沙米白底
+// 对齐 Web 端 Design System v2.0
 // ============================================================
 
 /// Material 3 主题构建器
