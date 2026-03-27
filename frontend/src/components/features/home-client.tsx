@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import type { Location, Team } from "@/lib/types";
 import {
   useInView,
@@ -649,6 +649,15 @@ export function HomeClient() {
     totalPages: 0,
     pageSize: 6,
   });
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  // 获取登录状态
+  React.useEffect(() => {
+    (async () => {
+      const user = await fetchCurrentUser();
+      setIsLoggedIn(!!user);
+    })();
+  }, []);
 
   // 动效 Hooks
   const animate = useAnimateIn();
@@ -1214,28 +1223,30 @@ export function HomeClient() {
             {" "}伙伴在这里找到了同行的人，你也可以
           </p>
 
-          {/* 按钮组 */}
+          {/* 按钮组 - 未登录显示注册按钮，已登录隐藏 */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="/register"
-              className="inline-block px-8 py-3.5 font-semibold rounded-full text-white text-base transition-all duration-150"
-              style={{
-                background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
-                boxShadow: "0 4px 18px rgba(217,119,6,0.38)",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLAnchorElement;
-                el.style.transform = "translateY(-2px)";
-                el.style.boxShadow = "0 8px 26px rgba(217,119,6,0.50)";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLAnchorElement;
-                el.style.transform = "translateY(0)";
-                el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.38)";
-              }}
-            >
-              免费加入 GoMate
-            </a>
+            {!isLoggedIn && (
+              <a
+                href="/register"
+                className="inline-block px-8 py-3.5 font-semibold rounded-full text-white text-base transition-all duration-150"
+                style={{
+                  background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+                  boxShadow: "0 4px 18px rgba(217,119,6,0.38)",
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLAnchorElement;
+                  el.style.transform = "translateY(-2px)";
+                  el.style.boxShadow = "0 8px 26px rgba(217,119,6,0.50)";
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLAnchorElement;
+                  el.style.transform = "translateY(0)";
+                  el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.38)";
+                }}
+              >
+                免费加入 GoMate
+              </a>
+            )}
             <a
               href="/teams"
               className="inline-block px-8 py-3.5 font-semibold rounded-full text-base transition-all duration-150 border-2"
