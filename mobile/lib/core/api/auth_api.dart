@@ -65,6 +65,9 @@ class AuthApi {
     String? image,
     String? wechat,
     String? gender,
+    DateTime? birthday,
+    String? experience,
+    List<String>? equipment,
   }) async {
     final body = <String, dynamic>{'userId': userId};
     if (name != null) body['name'] = name;
@@ -74,6 +77,14 @@ class AuthApi {
     if (image != null) body['image'] = image;
     if (wechat != null) body['wechat'] = wechat;
     if (gender != null) body['gender'] = gender;
+    if (birthday != null) {
+      body['birthday'] = birthday.millisecondsSinceEpoch ~/ 1000;
+    }
+    // extra 字段包含 experience 和 equipment
+    final extra = <String, dynamic>{};
+    if (experience != null) extra['experience'] = experience;
+    if (equipment != null) extra['equipment'] = equipment;
+    if (extra.isNotEmpty) body['extra'] = extra;
 
     final response = await _client.patch(ApiConstants.userUpdate, data: body);
     final data = response.data as Map<String, dynamic>;

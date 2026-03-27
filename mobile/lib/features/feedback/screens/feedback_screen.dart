@@ -71,7 +71,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
       _errorMessage = null;
     });
 
-    final success = await _feedbackApi.submitFeedback(
+    final result = await _feedbackApi.submitFeedback(
       type: _currentType == FeedbackType.suggestion ? 'suggestion' : 'bug',
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
@@ -93,10 +93,12 @@ class _FeedbackScreenState extends State<FeedbackScreen>
     if (mounted) {
       setState(() {
         _isSubmitting = false;
-        if (success) {
+        if (result.success) {
           _isSubmitted = true;
+          _errorMessage = null;
         } else {
-          _errorMessage = AppStrings.feedbackError;
+          // 显示后端返回的具体错误信息
+          _errorMessage = result.message;
         }
       });
     }

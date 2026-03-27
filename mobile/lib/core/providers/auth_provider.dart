@@ -60,7 +60,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     });
   }
 
-  /// 更新用户信息（昵称、简介、等级、性别、微信等）
+  /// 更新用户信息（昵称、简介、等级、性别、微信、生日、户外经验、装备等）
   /// 成功后刷新 state 中的用户数据
   Future<void> updateUser({
     String? name,
@@ -70,6 +70,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     String? image,
     String? wechat,
     String? gender,
+    DateTime? birthday,
+    String? experience,
+    List<String>? equipment,
   }) async {
     final current = state.valueOrNull;
     if (current?.user == null) throw Exception('未登录');
@@ -83,6 +86,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       image: image,
       wechat: wechat,
       gender: gender,
+      birthday: birthday,
+      experience: experience,
+      equipment: equipment,
     );
     state = AsyncValue.data(current.copyWith(user: updated));
   }

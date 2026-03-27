@@ -138,7 +138,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       _StatItem(
                         label: '创建队伍',
-                        value: '0', // TODO: 从 API 获取
+                        value: '${user.stats?.createdTeams ?? 0}',
                       ),
                       Container(
                         width: 1,

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// 用户数据模型（对应 db/schema.ts users 表）
 class UserModel {
   final String id;
@@ -13,7 +15,11 @@ class UserModel {
   final String? wechat; // 微信号
   final String role; // user | admin
   final String status; // active | suspended | banned | deleted
-  final DateTime? createdAt;
+  final DateTime? createdAt; // 注册时间
+  final UserStats? stats; // 用户统计
+  final DateTime? birthday; // 出生日期
+  final String? experience; // 户外经验
+  final List<String> equipment; // 装备清单
 
   const UserModel({
     required this.id,
@@ -30,12 +36,41 @@ class UserModel {
     required this.role,
     required this.status,
     this.createdAt,
+    this.stats,
+    this.birthday,
+    this.experience,
+    this.equipment = const [],
   });
 
   /// 展示名称：优先使用 nickname，回退到 name
   String get displayName => nickname?.isNotEmpty == true ? nickname! : name;
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // 解析 extra 字段
+    Map<String, dynamic> extra = {};
+    if (json['extra'] != null) {
+      try {
+        if (json['extra'] is String) {
+          extra = Map<String, dynamic>.from(
+            jsonDecode(json['extra'] as String) as Map,
+          );
+        } else if (json['extra'] is Map) {
+          extra = Map<String, dynamic>.from(json['extra'] as Map);
+        }
+      } catch (_) {
+        extra = {};
+      }
+    }
+
+    // 解析 birthday
+    DateTime? birthday;
+    if (json['birthday'] != null) {
+      birthday = json['birthday'] is String
+          ? DateTime.tryParse(json['birthday'] as String)
+          : DateTime.fromMillisecondsSinceEpoch(
+              ((json['birthday'] as num).toDouble() * 1000).round());
+    }
+
     return UserModel(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -58,6 +93,15 @@ class UserModel {
               : DateTime.fromMillisecondsSinceEpoch(
                   ((json['createdAt'] as num).toDouble() * 1000).round()))
           : null,
+      stats: json['stats'] != null
+          ? UserStats.fromJson(json['stats'] as Map<String, dynamic>)
+          : null,
+      birthday: birthday,
+      experience: extra['experience'] as String?,
+      equipment: (extra['equipment'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
     );
   }
 
@@ -76,6 +120,36 @@ class UserModel {
       'wechat': wechat,
       'role': role,
       'status': status,
+      'stats': stats?.toJson(),
+    };
+  }
+}
+
+/// 用户统计数据模型
+class UserStats {
+  final int createdTeams; // 创建的队伍数
+  final int joinedTeams; // 加入的队伍数
+  final int completedTeams; // 完成的队伍数
+
+  const UserStats({
+    required this.createdTeams,
+    required this.joinedTeams,
+    required this.completedTeams,
+  });
+
+  factory UserStats.fromJson(Map<String, dynamic> json) {
+    return UserStats(
+      createdTeams: json['createdTeams'] as int? ?? 0,
+      joinedTeams: json['joinedTeams'] as int? ?? 0,
+      completedTeams: json['completedTeams'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'createdTeams': createdTeams,
+      'joinedTeams': joinedTeams,
+      'completedTeams': completedTeams,
     };
   }
 }

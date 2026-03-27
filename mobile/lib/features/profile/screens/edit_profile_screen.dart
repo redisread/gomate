@@ -53,10 +53,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _nicknameCtrl = TextEditingController(text: user?.nickname ?? user?.name ?? '');
     _bioCtrl = TextEditingController(text: user?.bio ?? '');
     _wechatCtrl = TextEditingController(text: user?.wechat ?? '');
-    _experienceCtrl = TextEditingController(); // TODO: 从 user 读取
+    _experienceCtrl = TextEditingController(text: user?.experience ?? '');
     _level = user?.level ?? 'beginner';
     _gender = user?.gender ?? '';
-    // TODO: 从 user 读取 birthDate 和 equipment
+    _birthDate = user?.birthday;
+    _equipment.addAll(user?.equipment ?? []);
   }
 
   @override
@@ -133,6 +134,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         level: _level,
         gender: _gender.isEmpty ? null : _gender,
         image: avatarUrl,
+        birthday: _birthDate,
+        experience: _experienceCtrl.text.trim().isEmpty ? null : _experienceCtrl.text.trim(),
+        equipment: _equipment.isEmpty ? null : List<String>.from(_equipment),
       );
 
       if (!mounted) return;
