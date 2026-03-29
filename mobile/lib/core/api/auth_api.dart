@@ -125,6 +125,22 @@ class AuthApi {
     );
   }
 
+  /// 重置密码 - 使用 token 设置新密码
+  /// [token] 重置密码 token（从邮件链接获取）
+  /// [newPassword] 新密码
+  Future<void> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    await _client.post(
+      ApiConstants.resetPassword,
+      data: {
+        'token': token,
+        'newPassword': newPassword,
+      },
+    );
+  }
+
   /// 退出登录（清除服务端 session）
   Future<void> logout() async {
     await _client.post(ApiConstants.signOut);
@@ -147,7 +163,8 @@ class AuthApi {
       if (userId == null) return null;
 
       // 用 userId 获取实时完整用户数据（session 缓存可能缺少 image 等字段）
-      final profileResponse = await _client.get(ApiConstants.userProfile(userId));
+      final profileResponse =
+          await _client.get(ApiConstants.userProfile(userId));
       final profileData = profileResponse.data as Map<String, dynamic>;
       if (profileData['user'] != null) {
         return UserModel.fromJson(profileData['user'] as Map<String, dynamic>);

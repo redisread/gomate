@@ -7,10 +7,15 @@ import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/widgets/app_avatar.dart';
 
 /// 个人资料页面
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
-  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  Future<void> _handleLogout() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -33,11 +38,25 @@ class ProfileScreen extends ConsumerWidget {
     if (confirmed != true) return;
 
     await ref.read(authProvider.notifier).logout();
-    // 退出登录后路由守卫会自动重定向到登录页
+  }
+
+  String _getLevelLabel(String level) {
+    switch (level) {
+      case 'beginner':
+        return '新手';
+      case 'intermediate':
+        return '进阶';
+      case 'advanced':
+        return '资深';
+      case 'expert':
+        return '专家';
+      default:
+        return '新手';
+    }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
     if (authState.isLoading) {
@@ -46,7 +65,6 @@ class ProfileScreen extends ConsumerWidget {
 
     final currentUser = authState.valueOrNull?.user;
 
-    // 未登录时显示登录入口（路由守卫会重定向，此处作为兜底）
     if (currentUser == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('个人资料')),
@@ -73,11 +91,11 @@ class ProfileScreen extends ConsumerWidget {
     }
 
     final user = currentUser;
+    final stats = user.stats;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('个人资料'),
-        // Tab 页面无需返回按钮，移除 leading
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -88,7 +106,6 @@ class ProfileScreen extends ConsumerWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 头部用户信息（蓝绿渐变）
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(AppTokens.space6),
@@ -97,7 +114,6 @@ class ProfileScreen extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  // 头像（使用新组件）
                   AppAvatar.large(
                     name: user.displayName,
                     imageUrl: user.image,
@@ -122,7 +138,6 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ],
                   const SizedBox(height: AppTokens.space3),
-                  // 统计数据
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -138,7 +153,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       _StatItem(
                         label: '创建队伍',
-                        value: '${user.stats?.createdTeams ?? 0}',
+                        value: '${stats?.createdTeams ?? 0}',
                       ),
                       Container(
                         width: 1,
@@ -156,9 +171,47 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
 
-            // 菜单列表
+            // 统计卡片区域（对齐 Web 端）
             Padding(
               padding: const EdgeInsets.all(AppTokens.space4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(
+                      label: '我发起的队伍',
+                      value: stats?.createdTeams ?? 0,
+                      icon: Icons.group_outlined,
+                      color: AppTokens.brandPrimary,
+                      onTap: () => context.push('/my-teams?tab=created'),
+                    ),
+                  ),
+                  const SizedBox(width: AppTokens.space3),
+                  Expanded(
+                    child: _StatCard(
+                      label: '我加入的队伍',
+                      value: stats?.joinedTeams ?? 0,
+                      icon: Icons.person_outline,
+                      color: AppTokens.semanticInfo,
+                      onTap: () => context.push('/my-teams?tab=joined'),
+                    ),
+                  ),
+                  const SizedBox(width: AppTokens.space3),
+                  Expanded(
+                    child: _StatCard(
+                      label: '已完成',
+                      value: stats?.completedTeams ?? 0,
+                      icon: Icons.check_circle_outline,
+                      color: AppTokens.semanticSuccess,
+                      onTap: () => context.push('/my-teams?tab=history'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 菜单列表
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppTokens.space4),
               child: Column(
                 children: [
                   _MenuTile(
@@ -212,7 +265,7 @@ class ProfileScreen extends ConsumerWidget {
                     icon: Icons.logout,
                     title: '退出登录',
                     textColor: AppTokens.semanticError,
-                    onTap: () => _handleLogout(context, ref),
+                    onTap: _handleLogout,
                   ),
                 ],
               ),
@@ -222,25 +275,9 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
-
-  /// 等级中文映射
-  String _getLevelLabel(String level) {
-    switch (level) {
-      case 'beginner':
-        return '新手';
-      case 'intermediate':
-        return '进阶';
-      case 'advanced':
-        return '资深';
-      case 'expert':
-        return '专家';
-      default:
-        return '新手';
-    }
-  }
 }
 
-/// 统计数据项
+/// 统计数据项（头部简版）
 class _StatItem extends StatelessWidget {
   final String label;
   final String value;
@@ -261,10 +298,72 @@ class _StatItem extends StatelessWidget {
         ),
         Text(
           label,
-          style:
-              const TextStyle(color: Colors.white70, fontSize: 12),
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
       ],
+    );
+  }
+}
+
+/// 统计卡片（对齐 Web 端）
+class _StatCard extends StatelessWidget {
+  final String label;
+  final int value;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _StatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppTokens.space3),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppTokens.radiusL),
+          border: Border.all(color: AppTokens.borderDefault),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppTokens.radiusM),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(height: AppTokens.space2),
+            Text(
+              '$value',
+              style: TextStyle(
+                fontSize: AppTokens.fontSizeXXL,
+                fontWeight: FontWeight.bold,
+                color: AppTokens.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppTokens.space1),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: AppTokens.fontSizeS,
+                color: AppTokens.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -291,8 +390,7 @@ class _MenuTile extends StatelessWidget {
         title,
         style: TextStyle(color: textColor ?? AppTokens.textPrimary),
       ),
-      trailing:
-          const Icon(Icons.chevron_right, color: AppTokens.textSecondary),
+      trailing: const Icon(Icons.chevron_right, color: AppTokens.textSecondary),
       onTap: onTap,
     );
   }

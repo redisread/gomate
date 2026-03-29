@@ -1,16 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'dart:io';
 
-import '../../core/api/feedback_api.dart';
-import '../../core/i18n/app_strings.dart';
-import '../../shared/theme/app_tokens.dart';
+import 'package:flutter/material.dart';
+
+import '../../../core/api/feedback_api.dart';
+import '../../../core/i18n/app_strings.dart';
+import '../../../shared/theme/app_tokens.dart';
 
 /// 反馈类型
 enum FeedbackType { suggestion, bug }
 
+/// 设备类型选项
+enum DeviceType { ios, android }
+
 /// 反馈建议页面
 class FeedbackScreen extends StatefulWidget {
-  const FeedbackScreen({super.key});
+  final String? initialPageUrl;
+
+  const FeedbackScreen({super.key, this.initialPageUrl});
 
   @override
   State<FeedbackScreen> createState() => _FeedbackScreenState();
@@ -26,10 +32,11 @@ class _FeedbackScreenState extends State<FeedbackScreen>
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _contentController = TextEditingController();
-  final _deviceController = TextEditingController();
-  final _browserController = TextEditingController();
   final _stepsController = TextEditingController();
   final _pageUrlController = TextEditingController();
+
+  // 设备类型选择
+  DeviceType? _selectedDeviceType;
 
   bool _isSubmitting = false;
   bool _isSubmitted = false;
@@ -43,6 +50,18 @@ class _FeedbackScreenState extends State<FeedbackScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabChanged);
+
+    // 自动填充设备类型
+    if (Platform.isIOS) {
+      _selectedDeviceType = DeviceType.ios;
+    } else if (Platform.isAndroid) {
+      _selectedDeviceType = DeviceType.android;
+    }
+
+    // 自动填充问题页面路径（如果从外部传入）
+    if (widget.initialPageUrl != null) {
+      _pageUrlController.text = widget.initialPageUrl!;
+    }
   }
 
   @override
@@ -52,8 +71,6 @@ class _FeedbackScreenState extends State<FeedbackScreen>
     _nameController.dispose();
     _emailController.dispose();
     _contentController.dispose();
-    _deviceController.dispose();
-    _browserController.dispose();
     _stepsController.dispose();
     _pageUrlController.dispose();
     super.dispose();
@@ -77,10 +94,9 @@ class _FeedbackScreenState extends State<FeedbackScreen>
       email: _emailController.text.trim(),
       content: _contentController.text.trim(),
       device: _currentType == FeedbackType.bug
-          ? _deviceController.text.trim()
-          : null,
-      browser: _currentType == FeedbackType.bug
-          ? _browserController.text.trim()
+          ? _selectedDeviceType == DeviceType.ios
+              ? 'iOS'
+              : 'Android'
           : null,
       steps: _currentType == FeedbackType.bug
           ? _stepsController.text.trim()
@@ -97,7 +113,6 @@ class _FeedbackScreenState extends State<FeedbackScreen>
           _isSubmitted = true;
           _errorMessage = null;
         } else {
-          // 显示后端返回的具体错误信息
           _errorMessage = result.message;
         }
       });
@@ -108,8 +123,6 @@ class _FeedbackScreenState extends State<FeedbackScreen>
     _nameController.clear();
     _emailController.clear();
     _contentController.clear();
-    _deviceController.clear();
-    _browserController.clear();
     _stepsController.clear();
     _pageUrlController.clear();
     setState(() {
@@ -239,8 +252,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                         child: _buildTextField(
                           controller: _nameController,
                           label: AppStrings.feedbackNameLabel,
-                          validator: (v) =>
-                              v?.isEmpty == true ? '请输入姓名' : null,
+                          validator: (v) => v?.isEmpty == true ? '请输入姓名' : null,
                         ),
                       ),
                       const SizedBox(width: AppTokens.space3),
@@ -269,11 +281,9 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                       padding: const EdgeInsets.all(AppTokens.space3),
                       decoration: BoxDecoration(
                         color: AppTokens.semanticError.withValues(alpha: 0.05),
-                        borderRadius:
-                            BorderRadius.circular(AppTokens.radiusL),
+                        borderRadius: BorderRadius.circular(AppTokens.radiusL),
                         border: Border.all(
-                          color:
-                              AppTokens.semanticError.withValues(alpha: 0.2),
+                          color: AppTokens.semanticError.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Column(
@@ -288,32 +298,13 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                             ),
                           ),
                           const SizedBox(height: AppTokens.space3),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                  controller: _deviceController,
-                                  label: AppStrings.feedbackDeviceLabel,
-                                  placeholder:
-                                      AppStrings.feedbackDevicePlaceholder,
-                                ),
-                              ),
-                              const SizedBox(width: AppTokens.space3),
-                              Expanded(
-                                child: _buildTextField(
-                                  controller: _browserController,
-                                  label: AppStrings.feedbackBrowserLabel,
-                                  placeholder:
-                                      AppStrings.feedbackBrowserPlaceholder,
-                                ),
-                              ),
-                            ],
-                          ),
+                          // 设备类型下拉选择
+                          _buildDeviceDropdown(),
                           const SizedBox(height: AppTokens.space3),
                           _buildTextField(
                             controller: _pageUrlController,
                             label: AppStrings.feedbackPageUrlLabel,
-                            placeholder: 'https://...',
+                            placeholder: 'gomate://...',
                           ),
                           const SizedBox(height: AppTokens.space3),
                           _buildTextField(
@@ -337,8 +328,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                         ? AppStrings.feedbackContentPlaceholderSuggestion
                         : AppStrings.feedbackContentPlaceholderBug,
                     maxLines: 6,
-                    validator: (v) =>
-                        v?.isEmpty == true ? '请输入内容' : null,
+                    validator: (v) => v?.isEmpty == true ? '请输入内容' : null,
                   ),
 
                   // 错误提示
@@ -348,8 +338,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                       padding: const EdgeInsets.all(AppTokens.space3),
                       decoration: BoxDecoration(
                         color: AppTokens.semanticError.withValues(alpha: 0.1),
-                        borderRadius:
-                            BorderRadius.circular(AppTokens.radiusM),
+                        borderRadius: BorderRadius.circular(AppTokens.radiusM),
                       ),
                       child: Text(
                         _errorMessage!,
@@ -454,6 +443,60 @@ class _FeedbackScreenState extends State<FeedbackScreen>
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppTokens.space3,
               vertical: AppTokens.space2,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 设备类型下拉选择
+  Widget _buildDeviceDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppStrings.feedbackDeviceLabel,
+          style: const TextStyle(
+            fontSize: AppTokens.fontSizeS,
+            fontWeight: FontWeight.w500,
+            color: AppTokens.textPrimary,
+          ),
+        ),
+        const SizedBox(height: AppTokens.space1),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppTokens.radiusM),
+            border: Border.all(color: AppTokens.borderDefault),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<DeviceType>(
+              value: _selectedDeviceType,
+              isExpanded: true,
+              hint: const Text(
+                '选择设备类型',
+                style: TextStyle(color: AppTokens.textTertiary),
+              ),
+              icon: const Icon(Icons.keyboard_arrow_down,
+                  color: AppTokens.textSecondary),
+              padding: const EdgeInsets.symmetric(horizontal: AppTokens.space3),
+              borderRadius: BorderRadius.circular(AppTokens.radiusM),
+              items: const [
+                DropdownMenuItem(
+                  value: DeviceType.ios,
+                  child: Text('iOS'),
+                ),
+                DropdownMenuItem(
+                  value: DeviceType.android,
+                  child: Text('Android'),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedDeviceType = value;
+                });
+              },
             ),
           ),
         ),

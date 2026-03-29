@@ -1,4 +1,5 @@
 import '../constants/api_constants.dart';
+import '../models/location.dart';
 import '../models/team.dart';
 import 'api_client.dart';
 
@@ -121,5 +122,30 @@ class TeamsApi {
   /// [teamId] 队伍 ID
   Future<void> requestLeave(String teamId) async {
     await _client.post(ApiConstants.leaveTeamRequest(teamId));
+  }
+
+  /// 更新队伍信息（仅队长可操作）
+  /// [teamId] 队伍 ID
+  /// [data] 更新数据（title, description, maxMembers, requirements, time, durationMin）
+  /// 返回更新后的队伍详情
+  Future<TeamModel> updateTeam(String teamId, Map<String, dynamic> data) async {
+    await _client.put(
+      ApiConstants.teamDetail(teamId),
+      data: data,
+    );
+    return getTeam(teamId);
+  }
+
+  /// 获取地点关联的路线列表（用于创建队伍时选择路线）
+  /// [locationId] 地点 ID
+  Future<List<RouteModel>> getTeamRoutes(String locationId) async {
+    final response = await _client.get(
+      ApiConstants.routes,
+      queryParameters: {'locationId': locationId},
+    );
+    final list = response.data['routes'] as List<dynamic>;
+    return list
+        .map((item) => RouteModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 }

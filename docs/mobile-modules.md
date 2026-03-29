@@ -1,6 +1,6 @@
 # GoMate 移动端模块文档
 
-> 最后更新：2026-03-29
+> 最后更新：2026-03-30
 > 框架：Flutter 3.24 + Riverpod 2.6 + GoRouter 14 + Dio 5.7
 > UI 设计系统：Design System v2.0（温暖琥珀色调 #D97706）
 
@@ -24,7 +24,7 @@ mobile/lib/
 │   ├── locations/               # 地点模块
 │   ├── teams/                   # 队伍模块
 │   ├── profile/                 # 个人资料模块
-│   ├── feedback/                # 反馈建议模块 ⭐ 待实现
+│   ├── feedback/                # 反馈建议模块 ✅ 已实现
 │   └── info/                    # 信息页模块（关于/帮助/联系/隐私/条款）
 ├── shared/
 │   ├── theme/                   # Design Tokens + Material 3 主题
@@ -64,7 +64,7 @@ mobile/lib/
 | `/login` | 登录页 | 否（已登录重定向） | 独立路由 |
 | `/register` | 注册页 | 否（已登录重定向） | 独立路由 |
 | `/forgot-password` | 忘记密码 | 否 | 独立路由 |
-| `/reset-password` | 重置密码 ⭐ | 否 | 独立路由，待实现 |
+| `/reset-password?token=xxx` | 重置密码 | 否 | 独立路由，从邮件链接跳转 |
 | `/locations` | 地点列表 | 否 | ShellRoute 内 |
 | `/locations/:id` | 地点详情 | 否 | 独立路由，缩放淡入转场 |
 | `/teams` | 队伍列表 | 否 | ShellRoute 内 |
@@ -77,7 +77,7 @@ mobile/lib/
 | `/profile` | 个人资料 | **是** | ShellRoute 内 |
 | `/profile/edit` | 编辑资料 | **是** | 独立路由 |
 | `/users/:id` | 用户公开资料 | 否 | 独立路由 |
-| `/feedback` | 反馈建议 ⭐ | 否 | 独立路由，待实现 |
+| `/feedback` | 反馈建议 | 否 | 独立路由，已实现 |
 | `/about` | 关于我们 | 否 | 独立路由 |
 | `/help` | 帮助中心 | 否 | 独立路由 |
 | `/contact` | 联系我们 | 否 | 独立路由 |
@@ -132,13 +132,15 @@ mobile/lib/
 - 「返回登录」链接
 - 调用：`POST /auth/forgot-password`
 
-#### 重置密码页 `reset_password_screen.dart` ⭐ 待实现
-- Token 验证（从 URL 参数读取）
-- 新密码 + 确认密码表单
-- 密码强度指示
+#### 重置密码页 `reset_password_screen.dart`
+- Token 验证（从 URL query 参数读取）
+- 新密码 + 确认密码表单（密码可见性切换）
+- 密码长度校验（≥6 位）
+- 密码一致性验证
 - 重置按钮（loading 态）
 - 重置成功后跳转登录页
-- 错误提示（token 无效/过期）
+- Token 无效/过期提示（引导重新申请）
+- 错误提示（网络超时、连接失败）
 - 调用：`POST /auth/reset-password`
 
 ---
@@ -161,41 +163,49 @@ mobile/lib/
 
 #### 地点列表 `locations_list_screen.dart`
 - 网格布局（2 列，宽高比 0.8）
-- 搜索框（关键词模糊匹配，防抖 300ms）⭐ 待实现
+- 搜索框（关键词模糊匹配，防抖 300ms）✅ 已实现
 - 筛选底部弹窗（`_FilterBottomSheet`）：
   - 城市单选（含「全部」选项）
   - 标签多选（Wrap 布局）
+  - 地点类型单选（户外徒步/城市探索/休闲探店/旅行）
   - 重置 / 确认按钮
 - 筛选状态指示器（活跃筛选时显示蓝点）
 - 下拉刷新
 - 骨架屏（加载中）
 - 错误/空状态处理
-- 分页加载（上拉加载更多）⭐ 待实现
+- 分页加载（上拉加载更多，scroll controller 监听）✅ 已实现
+- 底部 loading indicator（加载更多时显示）
 
 #### 地点详情 `location_detail_screen.dart`
 - 封面图 + SliverAppBar（可折叠）
 - 收藏按钮（需登录，心形图标）
+- 分享按钮 → 分享海报底部弹窗 ✅ 已实现
 - 地点基本信息（名称、副标题、城市、标签）
 - 地点描述（温暖琥珀色调文字）
 - 路线信息卡片列表：
   - 路线名称 + `AppDifficultyBadge` 难度徽章
   - 路线详情（距离、时长、高程）
   - 卡片阴影效果增强层次感
-- **POI 打卡点列表** ⭐ 待实现
-  - POI 名称 + 描述 + 图片
-  - 图片点击全屏预览（Lightbox）
-  - POI 角色类型标签
+- **POI 打卡点列表** ✅ 已实现
+  - POI 名称 + 描述 + 图片（横向滚动）
+  - 图片点击全屏预览（使用 photo_view）
+  - POI 角色类型标签 + 序号徽章
+  - 图片画廊支持左右滑动 + 缩放
 - **正在招募的队伍列表**（实时加载）
-- **分享按钮**（系统 Share Sheet + 海报生成 ⭐ 待实现）
+- **分享海报生成** ✅ 已实现
+  - Canvas 绘制海报（RepaintBoundary + toImage）
+  - QR Code 生成（使用 qr_flutter）
+  - 支持保存到相册（使用 image_gallery_saver）
+  - 复制链接功能（使用 share_plus）
 - 「在此地找队伍」底部按钮（品牌渐变色）→ `/teams?locationId=xxx`
 
 **API 调用：**
-- `LocationsApi().getLocations(cityId, tagIds, q, type)` — 地点列表（含关键词搜索、类型筛选）
+- `LocationsApi().getLocations(cityId, tagIds, q, type, page, limit)` — 地点列表（含关键词搜索、类型筛选、分页）
 - `LocationsApi().getLocation(id)` — 地点详情
+- `LocationsApi().getLocationPois(locationId)` — 获取地点关联 POI ✅ 已实现
 - `LocationsApi().favoriteLocation(id)` — 切换收藏
 - `GET /favorites?entityType=location` — 获取收藏列表（初始化收藏状态）
 - `GET /teams?locationId=xxx&status=recruiting` — 该地点招募中队伍
-- `GET /api/locations/:id/pois` — 获取地点关联 POI ⭐ 待实现
 
 **UI 更新（2026-03-25）：**
 - 导入 `AppStatusBadge` 组件
@@ -311,17 +321,24 @@ mobile/lib/
 - 用户头像（网络图片 + 首字母回退）
 - 展示名称（优先 nickname，回退 name）
 - 个人简介（bio）
-- 统计数据：已完成徒步次数 | 等级
+- 统计数据：已完成徒步次数 | 创建队伍数 | 等级
+
+统计卡片区域（对齐 Web 端）✅ 已实现：
+- 我发起的队伍（卡片，可点击跳转）
+- 我加入的队伍（卡片，可点击跳转）
+- 已完成队伍（卡片，可点击跳转）
 
 菜单列表：
 - 我的队伍 → `/my-teams`
 - 发布队伍 → `/teams/create`
-- 我的收藏 → `/favorites` ⭐ 待接入（当前为空回调）
+- 我的收藏 → `/favorites`
+- 帮助中心 → `/help`
+- 关于我们 → `/about`
+- 服务条款 → `/terms`
+- 隐私政策 → `/privacy`
+- 反馈建议 → `/feedback`
 - 账号设置（TODO）
 - 退出登录（红色，含确认弹窗）
-
-统计卡片扩展 ⭐ 待实现：
-- 创建队伍数、加入队伍数、完成队伍数（对齐 Web 端）
 
 #### 编辑资料 `edit_profile_screen.dart`
 - 头像上传（拍照/选择相册）
@@ -410,24 +427,24 @@ mobile/lib/
 
 ---
 
-### 3.9 反馈建议模块 `features/feedback/` ⭐ 待实现
+### 3.9 反馈建议模块 `features/feedback/` ✅ 已实现
 
 #### 反馈页 `feedback_screen.dart`
 - Tab 切换：「功能建议」/「BUG 反馈」
 - 功能建议表单：姓名、邮箱、反馈内容
 - BUG 反馈表单（额外字段）：
   - 问题描述
-  - 出现设备（下拉选择：iOS/Android）
+  - 出现设备（下拉选择：iOS/Android，自动检测当前设备）
   - 重现步骤（多行文本）
-  - 问题页面路径（自动获取）
+  - 问题页面路径（可从外部传入 `initialPageUrl`）
 - 提交按钮（loading 态）
-- 提交成功态（图标 + 成功提示）
+- 提交成功态（图标 + 成功提示 + 继续提交按钮）
 - 错误提示
 
 **路由：** `/feedback`
 
 **API 调用：**
-- `POST /api/feedback` — 提交反馈
+- `FeedbackApi().submitFeedback(type, name, email, content, device, steps, pageUrl)` — 提交反馈
 
 ---
 
@@ -512,6 +529,20 @@ await ref.read(authProvider.notifier).login(email, password);
 
 **`RouteModel` 字段：** `difficulty`（Difficulty 枚举）、`durationMin/Max`、`distance`（km）、`elevation`（m）
 
+### `PoiModel`（`core/models/poi.dart`）✅ 新增
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | String | POI ID |
+| `name` | String | 打卡点名称 |
+| `description` | String? | 描述 |
+| `coordinates` | Coordinates? | 经纬度 |
+| `images` | List\<String\> | 图片列表 |
+| `order` | int? | 排序序号 |
+| `roleType` | PoiRoleType | 角色 类型枚举 |
+
+**`PoiRoleType` 枚举：** `waypoint` \| `checkpoint` \| `viewpoint` \| `facility` \| `poi`
+
 ---
 
 ## 6. API 层
@@ -526,8 +557,8 @@ await ref.read(authProvider.notifier).login(email, password);
 
 | 类 | 主要方法 |
 |----|---------|
-| `AuthApi` | `login()`, `register()`, `forgotPassword()`, `resetPassword()` ⭐, `updateUser()`, `uploadAvatar()`, `logout()` |
-| `LocationsApi` | `getLocations(q, cityId, tagIds, type)`, `getLocation()`, `favoriteLocation()`, `getFavorites()`, `getLocationPois()` ⭐ |
+| `AuthApi` | `login()`, `register()`, `forgotPassword()`, `resetPassword()`, `updateUser()`, `uploadAvatar()`, `logout()` |
+| `LocationsApi` | `getLocations(q, cityId, tagIds, type, page, limit)`, `getLocation()`, `getLocationPois()` ✅, `favoriteLocation()`, `getFavorites()` |
 | `TeamsApi` | `getTeams(q, status, difficulty, locationId)`, `getTeam()`, `createTeam()`, `joinTeam()`, `leaveTeam()`, `requestLeave()`, `getMyStatus()`, `getApplications()`, `approveApplication()`, `rejectApplication()`, `approveLeave()`, `rejectLeave()`, `updateTeam()` ⭐ |
 | `CitiesApi` | `getCities()` |
 | `TagsApi` | `getLocationTags()`, `getTeamTags()` |
@@ -644,9 +675,10 @@ await ref.read(authProvider.notifier).login(email, password);
 |------|-----|--------|------|
 | 首页（地点 + 队伍展示） | ✅ | ✅ | 已实现 |
 | 地点列表（搜索 + 筛选） | ✅ | ✅ | 已实现 |
+| 地点列表（分页加载） | ✅ | ✅ | 已实现 |
 | 地点详情（完整信息） | ✅ | ✅ | 已实现（含招募队伍、分享） |
-| 地点详情（POI 打卡点） | ✅ | ⭐ | 待实现 |
-| 地点详情（分享海报） | ✅ | ⭐ | 待实现 |
+| 地点详情（POI 打卡点） | ✅ | ✅ | 已实现（含图片画廊预览） |
+| 地点详情（分享海报） | ✅ | ✅ | 已实现（QR Code + 保存相册） |
 | 收藏功能（切换 + 列表） | ✅ | ✅ | 已实现 |
 | 队伍列表（搜索 + 难度筛选） | ✅ | ✅ | 已实现 |
 | 队伍详情（6 状态操作卡） | ✅ | ⭐ | 已实现 5 状态，待增加「编辑队伍」入口 |
@@ -658,14 +690,14 @@ await ref.read(authProvider.notifier).login(email, password);
 | 创建队伍（参与要求） | ✅ | ⭐ | 待实现 |
 | 队伍管理（审批 + 成员） | ✅ | ✅ | 已实现 |
 | 我的队伍（3 Tab） | ✅ | ✅ | 已实现 |
-| 个人资料（完整统计） | ✅ | ✅ | 已实现 |
+| 个人资料（完整统计） | ✅ | ✅ | 已实现（含 3 项统计卡片） |
 | 编辑资料（完整字段） | ✅ | ✅ | 已实现 |
 | 用户公开资料页 | ✅ | ✅ | 已实现 |
 | 登录 | ✅ | ✅ | 已实现 |
 | 注册 | ✅ | ✅ | 已实现 |
 | 忘记密码 | ✅ | ✅ | 已实现 |
-| 重置密码 | ✅ | ⭐ | 待实现 |
-| 反馈建议 | ✅ | ⭐ | 待实现 |
+| 重置密码 | ✅ | ✅ | 已实现 |
+| 反馈建议 | ✅ | ✅ | 已实现 |
 | 关于我们 | ✅ | ✅ | 已实现 |
 | 帮助中心 | ✅ | ✅ | 已实现 |
 | 联系我们 | ✅ | ✅ | 已实现 |
