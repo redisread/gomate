@@ -9,6 +9,7 @@ import {
 import { copy } from "@/lib/copy";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { formatTimeAgo } from "@/lib/date-utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import type { SessionUser } from "@/lib/types";
@@ -92,21 +93,6 @@ interface TeamItem {
   location: { id: string; name: string; coverImage: string } | null;
 }
 
-function formatTimeAgo(dateStr: string): string {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diff = now.getTime() - d.getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (minutes < 60) return `${minutes}${c.minutesAgo}`;
-  if (hours < 24) return `${hours}${c.hoursAgo}`;
-  return `${days}${c.daysAgo}`;
-}
-
-/**
- * 我的队伍页客户端组件 - React Island
- */
 export function MyTeamsClient() {
   const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(null);
   const [activeTab, setActiveTab] = React.useState("created");

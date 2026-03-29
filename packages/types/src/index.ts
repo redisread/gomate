@@ -5,6 +5,9 @@
 
 export * from "./enums";
 
+/** ISO 格式时间戳 */
+export type Timestamp = string;
+
 /** 地理坐标 */
 export interface Coordinates {
   lat: number;
@@ -21,8 +24,8 @@ export interface City {
   level: "city" | "district";
   isHot: boolean;
   parentId?: string;
-  createdAt?: string | number;
-  updatedAt?: string | number;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 /** 标签 */
@@ -53,8 +56,8 @@ export interface Location {
   };
   routes?: Route[];
   tags?: Tag[];
-  createdAt: string | number;
-  updatedAt: string | number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 /** 路线 POI */
@@ -78,8 +81,8 @@ export interface PoiDetail {
   coordinates: Coordinates;
   images?: string[];
   extra?: Record<string, unknown> | null;
-  createdAt: string | number;
-  updatedAt: string | number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 /** POI 创建输入 */
@@ -126,8 +129,8 @@ export interface Route {
   tags?: Tag[];
   location?: Location;
   pois?: RoutePoi[];
-  createdAt: string | number;
-  updatedAt: string | number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 /** 队伍成员 */
@@ -140,10 +143,10 @@ export interface TeamMember {
   bio: string | null;
   level: string;
   status?: "pending" | "approved" | "rejected" | "leave_pending";
-  joinedAt: Date | string | null;
+  joinedAt: Timestamp | null;
   wechat?: string;
   gender?: string | null;
-  birthday?: Date | number | string | null;
+  birthday?: Timestamp | null;
   extra?: string | null;
 }
 
@@ -172,11 +175,11 @@ export interface Team {
     bio: string;
     wechat?: string;
     gender?: string | null;
-    birthday?: Date | number | string | null;
+    birthday?: Timestamp | null;
     extra?: string | null;
   };
   status: "recruiting" | "full" | "formed" | "cancelled" | "completed";
-  createdAt: string | number;
+  createdAt: Timestamp;
   members?: TeamMember[];
   route?: Route;
   location?: Location;
@@ -190,11 +193,11 @@ export interface UserPublicProfile {
   image: string | null;
   bio: string | null;
   gender: string | null;
-  birthday: number | null;
+  birthday: Timestamp | null;
   level: string;
   completedHikes: number;
   extra: string | null;
-  createdAt: number;
+  createdAt: Timestamp;
   stats: {
     createdTeams: number;
     joinedTeams: number;

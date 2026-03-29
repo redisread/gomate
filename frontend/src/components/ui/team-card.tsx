@@ -2,6 +2,7 @@ import * as React from "react";
 import { Calendar, Clock, Users, MapPin, Heart, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
+import { formatDate } from "@/lib/date-utils";
 import type { Team } from "@/lib/types";
 import { StatusBadge, DifficultyBadge } from "@/components/ui/status-badge";
 
@@ -51,17 +52,10 @@ export function TeamCard({
   const isFull          = team.currentMembers >= team.maxMembers;
 
   // 格式化日期
-  const formattedDate = React.useMemo(() => {
-    try {
-      return new Date(team.date).toLocaleDateString("zh-CN", {
-        month: "short",
-        day:   "numeric",
-        weekday: "short",
-      });
-    } catch {
-      return team.date;
-    }
-  }, [team.date]);
+  const formattedDate = React.useMemo(
+    () => formatDate(team.date, { month: "short", day: "numeric", weekday: "short" }),
+    [team.date]
+  );
 
   /** 收藏点击：先触发 heartbeat 动画，再更新状态 */
   const handleFavorite = (e: React.MouseEvent) => {

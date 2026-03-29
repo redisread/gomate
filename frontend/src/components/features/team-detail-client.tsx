@@ -630,8 +630,6 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
     }
   };
 
-  const canDeleteTeam = isLeader && (team?.status === "recruiting" || team?.status === "cancelled");
-
   /* ---- 加载态：骨架屏 ---- */
   if (isLoading) return <TeamDetailSkeleton />;
 
@@ -660,6 +658,8 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const canJoin =
     !isLeader && !isMember && !isPending &&
     team.status === "recruiting" && team.currentMembers < team.maxMembers;
+
+  const canDeleteTeam = isLeader && (team.status === "recruiting" || team.status === "cancelled");
 
   const fillRatio = team.maxMembers > 0 ? Math.round((team.currentMembers / team.maxMembers) * 100) : 0;
   const isFull = team.currentMembers >= team.maxMembers;

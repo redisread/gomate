@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
+import { getDaysUntil } from "@/lib/date-utils";
 import type { Location, Team } from "@/lib/types";
 import {
   useInView,
@@ -42,21 +43,6 @@ function getStatusGradient(status: Team["status"]): string {
     case "full":       return "linear-gradient(90deg, #ff7a65 0%, #ffb347 100%)";
     case "formed":     return "linear-gradient(90deg, #92400E 0%, #D97706 100%)";
     default:           return "linear-gradient(90deg, #9ca3af 0%, #d1d5db 100%)";
-  }
-}
-
-/* ============================================================
-   计算距出发天数
-   ============================================================ */
-function getDaysUntil(dateStr: string): number | null {
-  try {
-    const target = new Date(dateStr);
-    const now = new Date();
-    const diff = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    return diff >= 0 ? diff : null;
-  } catch {
-    // intentionally ignored: 日期格式无效时返回 null 作为默认值
-    return null;
   }
 }
 

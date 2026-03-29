@@ -8,6 +8,7 @@ import {
 import { fetchAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
+import { formatJoinDate } from "@/lib/date-utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { LEVEL_CONFIG, StatCard, ProfileSkeleton } from "@/components/shared/profile-shared";
@@ -118,9 +119,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
   const genderText = getGenderText(user.gender);
   const levelConfig = LEVEL_CONFIG[user.level] || LEVEL_CONFIG.beginner;
 
-  const joinDate = user.createdAt
-    ? new Date(user.createdAt).toLocaleDateString("zh-CN", { year: "numeric", month: "long" })
-    : null;
+  const joinDate = user.createdAt ? formatJoinDate(user.createdAt) : null;
 
   return (
     <main className="min-h-screen bg-stone-50">

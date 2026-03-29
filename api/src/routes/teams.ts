@@ -252,8 +252,10 @@ function formatTeams(result: {
   return result.map((row) => {
     const startDate = new Date(row.startTime);
     const endDate = new Date(row.endTime);
-    const date = startDate.toISOString().split("T")[0];
-    const time = startDate.toTimeString().slice(0, 5);
+    // 使用北京时间（UTC+8）格式化日期和时间
+    const beijingDate = new Date(startDate.getTime() + 8 * 60 * 60 * 1000);
+    const date = beijingDate.toISOString().split("T")[0];
+    const time = beijingDate.toISOString().slice(11, 16);
     const durationHours = Math.round(
       (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
     );
@@ -395,8 +397,10 @@ teams.get("/:id", async (c) => {
       : false;
 
     const startDate = new Date(teamWithRelations.startTime);
-    const date = startDate.toISOString().split("T")[0];
-    const time = startDate.toTimeString().slice(0, 5);
+    // 使用北京时间（UTC+8）格式化日期和时间
+    const beijingDate = new Date(startDate.getTime() + 8 * 60 * 60 * 1000);
+    const date = beijingDate.toISOString().split("T")[0];
+    const time = beijingDate.toISOString().slice(11, 16);
     const durationMinutes = teamWithRelations.durationMin ||
       Math.round((new Date(teamWithRelations.endTime).getTime() - startDate.getTime()) / 60000);
     const durationHours = Math.round(durationMinutes / 60);

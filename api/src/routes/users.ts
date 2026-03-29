@@ -5,6 +5,16 @@ import { createDb } from "../db";
 import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 
+/** 格式化日期为北京时间（UTC+8）的 date 和 time 字符串 */
+function formatBeijingDateTime(date: Date | null): { date: string | null; time: string | null } {
+  if (!date) return { date: null, time: null };
+  const beijingDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+  return {
+    date: beijingDate.toISOString().split("T")[0],
+    time: beijingDate.toISOString().slice(11, 16),
+  };
+}
+
 /** 返回安全的用户对象（时间戳格式） */
 function sanitizeUser(user: typeof schema.users.$inferSelect) {
   return {
@@ -15,15 +25,15 @@ function sanitizeUser(user: typeof schema.users.$inferSelect) {
     avatar: user.image,
     bio: user.bio,
     gender: user.gender,
-    birthday: user.birthday ? (user.birthday as Date).getTime() : null,
+    birthday: user.birthday,
     level: user.level || "beginner",
     completedHikes: user.completedHikes ?? 0,
     wechat: user.wechat,
     extra: user.extra,
     role: user.role || "user",
     status: user.status,
-    createdAt: user.createdAt ? (user.createdAt as Date).getTime() : null,
-    updatedAt: user.updatedAt ? (user.updatedAt as Date).getTime() : null,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 
@@ -61,13 +71,13 @@ users.get("/", async (c) => {
       user: {
         id: user.id, name: user.name, nickname: user.nickname,
         email: user.email, avatar: user.image, bio: user.bio,
-        gender: user.gender, birthday: user.birthday ? (user.birthday as Date).getTime() : null,
+        gender: user.gender, birthday: user.birthday,
         level: user.level || "beginner",
         completedHikes: user.completedHikes ?? 0,
         wechat: user.wechat, extra: user.extra,
         role: user.role || "user", status: user.status,
-        createdAt: user.createdAt ? (user.createdAt as Date).getTime() : null,
-        updatedAt: user.updatedAt ? (user.updatedAt as Date).getTime() : null,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
     });
   } catch (error) {
@@ -197,12 +207,12 @@ users.get("/pending-approvals", async (c) => {
 
     const formattedApprovals = applications.map((app) => {
       const startDate = app.team?.startTime ? new Date(app.team.startTime) : null;
+      const { date, time } = formatBeijingDateTime(startDate);
       return {
         id: app.id, teamId: app.teamId, userId: app.userId, createdAt: app.createdAt,
         team: app.team ? {
           id: app.team.id, title: app.team.title,
-          date: startDate ? startDate.toISOString().split("T")[0] : null,
-          time: startDate ? startDate.toTimeString().slice(0, 5) : null,
+          date, time,
           maxMembers: app.team.maxMembers,
           location: app.team.location || null,
         } : null,
@@ -248,12 +258,12 @@ users.get("/applications", async (c) => {
     const formattedApplications = applications.map((app) => {
       const team = app.team;
       const startDate = team ? new Date(team.startTime) : null;
+      const { date, time } = formatBeijingDateTime(startDate);
       return {
         id: app.id, status: app.status, createdAt: app.createdAt, joinedAt: app.joinedAt,
         team: team ? {
           id: team.id, title: team.title,
-          date: startDate ? startDate.toISOString().split("T")[0] : null,
-          time: startDate ? startDate.toTimeString().slice(0, 5) : null,
+          date, time,
           maxMembers: team.maxMembers, status: team.status,
           location: team.location || null,
           leader: team.leader ? { id: team.leader.id, name: team.leader.name, nickname: team.leader.nickname, avatar: team.leader.image } : null,
@@ -328,12 +338,12 @@ users.get("/teams/joined", async (c) => {
       const startDate = new Date(row.startTime);
       const endDate = new Date(row.endTime);
       const durationHours = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60));
+      const { date, time } = formatBeijingDateTime(startDate);
       let requirements: string[] = [];
       try { if (row.requirements) requirements = JSON.parse(row.requirements); } catch { /* ignore */ }
       return {
         id: row.id, locationId: row.locationId, routeId: row.routeId, title: row.title,
-        description: row.description || "", date: startDate.toISOString().split("T")[0],
-        time: startDate.toTimeString().slice(0, 5), duration: `${durationHours}小时`,
+        description: row.description || "", date, time, duration: `${durationHours}小时`,
         durationMin: row.durationMin || durationHours * 60, maxMembers: row.maxMembers,
         currentMembers: row.currentMembers, icon: row.icon || "⛰️", requirements,
         status: row.status, createdAt: row.createdAt,
@@ -389,12 +399,12 @@ users.get("/created-teams", async (c) => {
       const startDate = new Date(row.startTime);
       const endDate = new Date(row.endTime);
       const durationHours = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60));
+      const { date, time } = formatBeijingDateTime(startDate);
       let requirements: string[] = [];
       try { if (row.requirements) requirements = JSON.parse(row.requirements); } catch { /* ignore */ }
       return {
         id: row.id, locationId: row.locationId, routeId: row.routeId, title: row.title,
-        description: row.description || "", date: startDate.toISOString().split("T")[0],
-        time: startDate.toTimeString().slice(0, 5), duration: `${durationHours}小时`,
+        description: row.description || "", date, time, duration: `${durationHours}小时`,
         durationMin: row.durationMin || durationHours * 60, maxMembers: row.maxMembers,
         currentMembers: row.currentMembers, icon: row.icon || "⛰️", requirements,
         status: row.status, createdAt: row.createdAt,
@@ -541,11 +551,12 @@ users.get("/:id", async (c) => {
 
     const ongoingTeams = allOngoingTeams.map((row) => {
       const startDate = new Date(row.startTime);
+      const { date, time } = formatBeijingDateTime(startDate);
       return {
         id: row.id,
         title: row.title,
-        date: startDate.toISOString().split("T")[0],
-        time: startDate.toTimeString().slice(0, 5),
+        date,
+        time,
         status: row.status,
         currentMembers: row.currentMembers ?? 0,
         maxMembers: row.maxMembers,
@@ -561,11 +572,11 @@ users.get("/:id", async (c) => {
       user: {
         id: user.id, name: user.name, nickname: user.nickname,
         avatar: user.image, bio: user.bio, gender: user.gender,
-        birthday: user.birthday ? (user.birthday as Date).getTime() : null,
+        birthday: user.birthday,
         level: user.level || "beginner",
         completedHikes: user.completedHikes ?? 0,
         extra: user.extra,
-        createdAt: user.createdAt ? (user.createdAt as Date).getTime() : 0,
+        createdAt: user.createdAt,
         stats,
         // 仅自己可见的字段
         ...(isSelf ? { email: user.email, wechat: user.wechat, role: user.role, status: user.status } : {}),

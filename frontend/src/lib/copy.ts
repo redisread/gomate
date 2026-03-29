@@ -43,6 +43,9 @@ export const copy = {
     person: "人",
     current: "当前",
     searchPlaceholder: "搜索地点、活动或队伍...",
+    minutesAgo: "分钟前",
+    hoursAgo: "小时前",
+    daysAgo: "天前",
   },
 
   // ─── 导航栏 ───────────────────────────────────────────────────────────────

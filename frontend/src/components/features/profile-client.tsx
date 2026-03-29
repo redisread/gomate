@@ -21,6 +21,7 @@ import { Footer } from "@/components/layout/footer";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import { formatBirthday, getAgeNumber } from "@/lib/user-utils";
+import { formatJoinDate } from "@/lib/date-utils";
 import type { SessionUser, Team } from "@/lib/types";
 
 /**
@@ -408,7 +409,7 @@ export function ProfileClient() {
           />
           <StatCard
             label="加入时间"
-            value={user.createdAt ? new Date(user.createdAt).toLocaleDateString("zh-CN", { year: "numeric", month: "short" }) : "—"}
+            value={user.createdAt ? formatJoinDate(user.createdAt) : "—"}
             icon={Calendar}
           />
         </div>
