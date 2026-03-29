@@ -1,0 +1,13 @@
+---
+/**
+ * 编辑队伍页 - 动态路由
+ */
+import Layout from "../../../layouts/Layout.astro";
+import { EditTeamClient } from "../../../components/features/edit-team-client";
+
+const { id } = Astro.params;
+---
+
+<Layout title="编辑队伍 - GoMate" showNavbar={false} showFooter={false}>
+  <EditTeamClient teamId={id!} client:load />
+</Layout>

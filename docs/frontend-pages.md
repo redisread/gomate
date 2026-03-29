@@ -1,17 +1,17 @@
 # GoMate 前端页面功能文档
 
-> 最后更新：2026-03-26
+> 最后更新：2026-03-29
 > 架构：Astro 4 SSR 壳 + React Islands（client:load）
 
 ## 概览
 
-前端共 21 个页面，按功能分为 7 个模块：
+前端共 22 个页面，按功能分为 7 个模块：
 
 | 模块 | 页面数 | 是否需登录 |
 |------|--------|-----------|
 | 认证 | 4 | 否 |
 | 地点 | 2 | 否 |
-| 队伍 | 3 | 部分 |
+| 队伍 | 4 | 部分 |
 | 用户 | 4 | 部分 |
 | 首页 | 1 | 否 |
 | 信息页 | 5 | 否 |
@@ -186,7 +186,30 @@
 
 ---
 
-### 7. 我的队伍页 `/my-teams`
+### 7. 编辑队伍页 `/teams/[id]/edit`
+
+**组件：** `components/features/edit-team-client.tsx`
+**认证要求：** 是（仅队长可编辑）
+
+**功能点：**
+- 权限验证：加载时检查当前用户是否为队长，非队长显示错误提示
+- 表单字段（可编辑）：
+  - 队伍标题（必填）
+  - 出发时间（time picker）
+  - 活动时长（下拉选择：2-12 小时）
+  - 人数上限（必填，不能低于当前成员数）
+  - 队伍描述（可选）
+  - 参与要求（每行一条）
+- 不可编辑字段（只读展示 + 提示）：
+  - 目的地（显示名称 + 跳转链接）
+  - 日期（显示日期文本）
+- 表单样式：复用创建队伍页的 `FormSection` 组件，温暖引导风格
+- 表单验证：人数上限 ≥ 当前成员数、标题非空
+- 提交成功后跳转回队伍详情页
+
+---
+
+### 8. 我的队伍页 `/my-teams`
 
 **组件：** `components/features/my-teams-client.tsx`
 **认证要求：** 是
@@ -199,7 +222,7 @@
 
 ---
 
-### 8. 个人资料页 `/profile`
+### 9. 个人资料页 `/profile`
 
 **组件：** `components/features/profile-client.tsx`
 **认证要求：** 是
@@ -212,7 +235,7 @@
 
 ---
 
-### 9. 编辑个人资料页 `/profile/edit`
+### 10. 编辑个人资料页 `/profile/edit`
 
 **组件：** `components/features/profile-edit-client.tsx`
 **认证要求：** 是
@@ -234,7 +257,7 @@
 
 ---
 
-### 10. 用户公开资料页 `/users/[id]`
+### 11. 用户公开资料页 `/users/[id]``
 
 **组件：** `components/features/user-detail-client.tsx`
 **认证要求：** 否
@@ -246,7 +269,7 @@
 
 ---
 
-### 11. 我的收藏页 `/favorites`
+### 12. 我的收藏页 `/favorites`
 
 **组件：** `components/features/favorites-client.tsx`
 **认证要求：** 是（未登录跳转 `/login`）
@@ -262,7 +285,7 @@
 
 ---
 
-### 12. 登录页 `/login`
+### 13. 登录页 `/login`
 
 **组件：** `components/features/login-client.tsx`
 **认证要求：** 否（已登录用户重定向）
@@ -276,7 +299,7 @@
 
 ---
 
-### 13. 注册页 `/register`
+### 14. 注册页 `/register`
 
 **组件：** `components/features/register-client.tsx`
 **认证要求：** 否
@@ -290,7 +313,7 @@
 
 ---
 
-### 14. 忘记密码页 `/forgot-password`
+### 15. 忘记密码页 `/forgot-password`
 
 **组件：** `components/features/forgot-password-client.tsx`
 **认证要求：** 否
@@ -303,7 +326,7 @@
 
 ---
 
-### 15. 重置密码页 `/reset-password`
+### 16. 重置密码页 `/reset-password`
 
 **组件：** `components/features/reset-password-client.tsx`
 **认证要求：** 否
@@ -330,7 +353,7 @@
 
 ---
 
-### 16. 关于我们页 `/about`
+### 17. 关于我们页 `/about`
 
 **组件：** `components/features/about-client.tsx`
 **认证要求：** 否
@@ -343,7 +366,7 @@
 
 ---
 
-### 17. 帮助中心页 `/help`
+### 18. 帮助中心页 `/help`
 
 **组件：** `components/features/help-client.tsx`
 **认证要求：** 否
@@ -364,7 +387,7 @@
 
 ---
 
-### 18. 联系我们页 `/contact`
+### 19. 联系我们页 `/contact`
 
 **组件：** `components/features/contact-client.tsx`
 **认证要求：** 否
@@ -382,7 +405,7 @@
 
 ---
 
-### 19. 隐私政策页 `/privacy`
+### 20. 隐私政策页 `/privacy`
 
 **组件：** `components/features/privacy-client.tsx`
 **认证要求：** 否
@@ -394,7 +417,7 @@
 
 ---
 
-### 20. 服务条款页 `/terms`
+### 21. 服务条款页 `/terms`
 
 **组件：** `components/features/terms-client.tsx`
 **认证要求：** 否
@@ -406,7 +429,7 @@
 
 ---
 
-### 21. 地点编辑页（管理员）`/admin/locations/[id]/edit`
+### 22. 地点编辑页（管理员）`/admin/locations/[id]/edit`
 
 **组件：** `components/features/location-edit-client.tsx`
 **认证要求：** 是（Admin 角色，非 admin 重定向首页）
@@ -446,7 +469,8 @@
 | 地点列表 | `/locations` | 否 | 搜索 + 城市/类型/标签筛选、分页、URL 参数持久化 |
 | 地点详情 | `/locations/[id]` | 否 | 路线信息、类型徽章、招募队伍展示、分享、收藏、地址导航跳转 |
 | 队伍列表 | `/teams` | 否 | 搜索 + 难度筛选、分页 |
-| 队伍详情 | `/teams/[id]` | 是 | 加入/退出队伍、成员列表、5 状态操作卡、分享海报、Toast 反馈 |
+| 队伍详情 | `/teams/[id]` | 是 | 加入/退出队伍、成员列表、编辑跳转、分享海报、Toast 反馈 |
+| 编辑队伍 | `/teams/[id]/edit` | 是（队长） | 修改队伍信息、地点/日期只读、表单验证 |
 | 创建队伍 | `/teams/create` | 是 | 7 字段表单、地点预填、提交跳转 |
 | 我的队伍 | `/my-teams` | 是 | 3 Tab（创建/加入/审批）、审批管理 |
 | 个人资料 | `/profile` | 是 | 信息展示、统计数据、登出 |
