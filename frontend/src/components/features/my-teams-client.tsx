@@ -111,6 +111,25 @@ export function MyTeamsClient() {
   const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(null);
   const [activeTab, setActiveTab] = React.useState("created");
 
+  // 分页状态
+  const [createdPage, setCreatedPage] = React.useState(1);
+  const [createdHasMore, setCreatedHasMore] = React.useState(false);
+  const [createdLoadingMore, setCreatedLoadingMore] = React.useState(false);
+
+  const [joinedPage, setJoinedPage] = React.useState(1);
+  const [joinedHasMore, setJoinedHasMore] = React.useState(false);
+  const [joinedLoadingMore, setJoinedLoadingMore] = React.useState(false);
+
+  const [applicationsPage, setApplicationsPage] = React.useState(1);
+  const [applicationsHasMore, setApplicationsHasMore] = React.useState(false);
+  const [applicationsLoadingMore, setApplicationsLoadingMore] = React.useState(false);
+
+  const [pendingPage, setPendingPage] = React.useState(1);
+  const [pendingHasMore, setPendingHasMore] = React.useState(false);
+  const [pendingLoadingMore, setPendingLoadingMore] = React.useState(false);
+
+  const [historyPage, setHistoryPage] = React.useState(1);
+
   const [createdTeams, setCreatedTeams] = React.useState<TeamItem[]>([]);
   const [createdLoading, setCreatedLoading] = React.useState(true);
 
@@ -147,50 +166,123 @@ export function MyTeamsClient() {
       });
   }, []);
 
-  React.useEffect(() => {
+  const loadCreatedTeams = React.useCallback(async (page: number, append = false) => {
     if (!currentUser?.id) return;
-    setCreatedLoading(true);
-    fetchAPI(`/api/teams?leaderId=${currentUser.id}&pageSize=50`)
-      .then((r) => r.json())
-      .then((data) => { if (data.success) setCreatedTeams(data.teams || []); })
-      .finally(() => setCreatedLoading(false));
+    if (append) setCreatedLoadingMore(true);
+    else setCreatedLoading(true);
+    try {
+      const r = await fetchAPI(`/api/user/created-teams?page=${page}&pageSize=10`);
+      const data = await r.json();
+      if (data.success) {
+        if (append) setCreatedTeams((prev) => [...prev, ...data.teams]);
+        else setCreatedTeams(data.teams || []);
+        setCreatedHasMore(data.pagination?.hasMore || false);
+      }
+    } finally {
+      setCreatedLoading(false);
+      setCreatedLoadingMore(false);
+    }
   }, [currentUser?.id]);
 
   React.useEffect(() => {
+    if (currentUser?.id && createdPage === 1) loadCreatedTeams(1);
+  }, [currentUser?.id, loadCreatedTeams]);
+
+  React.useEffect(() => {
+    if (createdPage > 1) loadCreatedTeams(createdPage, true);
+  }, [createdPage, loadCreatedTeams]);
+
+  const loadJoinedTeams = React.useCallback(async (page: number, append = false) => {
     if (!currentUser?.id) return;
-    setJoinedLoading(true);
-    fetchAPI("/api/user/teams/joined?pageSize=50")
-      .then((r) => r.json())
-      .then((data) => { if (data.success) setJoinedTeams(data.teams || []); })
-      .finally(() => setJoinedLoading(false));
+    if (append) setJoinedLoadingMore(true);
+    else setJoinedLoading(true);
+    try {
+      const r = await fetchAPI(`/api/user/teams/joined?page=${page}&pageSize=10`);
+      const data = await r.json();
+      if (data.success) {
+        if (append) setJoinedTeams((prev) => [...prev, ...data.teams]);
+        else setJoinedTeams(data.teams || []);
+        setJoinedHasMore(data.pagination?.hasMore || false);
+      }
+    } finally {
+      setJoinedLoading(false);
+      setJoinedLoadingMore(false);
+    }
   }, [currentUser?.id]);
 
   React.useEffect(() => {
+    if (currentUser?.id && joinedPage === 1) loadJoinedTeams(1);
+  }, [currentUser?.id, loadJoinedTeams]);
+
+  React.useEffect(() => {
+    if (joinedPage > 1) loadJoinedTeams(joinedPage, true);
+  }, [joinedPage, loadJoinedTeams]);
+
+  const loadApplications = React.useCallback(async (page: number, append = false) => {
     if (!currentUser?.id) return;
-    setApplicationsLoading(true);
-    fetchAPI("/api/user/applications")
-      .then((r) => r.json())
-      .then((data) => { if (data.success) setApplications(data.applications || []); })
-      .finally(() => setApplicationsLoading(false));
+    if (append) setApplicationsLoadingMore(true);
+    else setApplicationsLoading(true);
+    try {
+      const r = await fetchAPI(`/api/user/applications?page=${page}&pageSize=10`);
+      const data = await r.json();
+      if (data.success) {
+        if (append) setApplications((prev) => [...prev, ...data.applications]);
+        else setApplications(data.applications || []);
+        setApplicationsHasMore(data.pagination?.hasMore || false);
+      }
+    } finally {
+      setApplicationsLoading(false);
+      setApplicationsLoadingMore(false);
+    }
   }, [currentUser?.id]);
 
   React.useEffect(() => {
+    if (currentUser?.id && applicationsPage === 1) loadApplications(1);
+  }, [currentUser?.id, loadApplications]);
+
+  React.useEffect(() => {
+    if (applicationsPage > 1) loadApplications(applicationsPage, true);
+  }, [applicationsPage, loadApplications]);
+
+  const loadPendingApprovals = React.useCallback(async (page: number, append = false) => {
     if (!currentUser?.id) return;
-    setPendingLoading(true);
-    fetchAPI("/api/user/pending-approvals")
-      .then((r) => r.json())
-      .then((data) => { if (data.success) setPendingApprovals(data.approvals || []); })
-      .finally(() => setPendingLoading(false));
+    if (append) setPendingLoadingMore(true);
+    else setPendingLoading(true);
+    try {
+      const r = await fetchAPI(`/api/user/pending-approvals?page=${page}&pageSize=10`);
+      const data = await r.json();
+      if (data.success) {
+        if (append) setPendingApprovals((prev) => [...prev, ...data.approvals]);
+        else setPendingApprovals(data.approvals || []);
+        setPendingHasMore(data.pagination?.hasMore || false);
+      }
+    } finally {
+      setPendingLoading(false);
+      setPendingLoadingMore(false);
+    }
   }, [currentUser?.id]);
+
+  React.useEffect(() => {
+    if (currentUser?.id && pendingPage === 1) loadPendingApprovals(1);
+  }, [currentUser?.id, loadPendingApprovals]);
+
+  React.useEffect(() => {
+    if (pendingPage > 1) loadPendingApprovals(pendingPage, true);
+  }, [pendingPage, loadPendingApprovals]);
 
   const refreshPendingApprovals = async () => {
-    const r = await fetchAPI("/api/user/pending-approvals");
-    const data = await r.json();
-    if (data.success) setPendingApprovals(data.approvals || []);
+    setPendingPage(1);
+    loadPendingApprovals(1);
   };
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
+    // 重置对应 tab 的分页状态
+    if (tab === "created") { setCreatedPage(1); }
+    else if (tab === "joined") { setJoinedPage(1); }
+    else if (tab === "applications") { setApplicationsPage(1); }
+    else if (tab === "pending") { setPendingPage(1); }
+    else if (tab === "history") { setHistoryPage(1); }
     const params = new URLSearchParams(window.location.search);
     params.set("tab", tab);
     window.history.replaceState(null, "", `/my-teams?${params.toString()}`);
@@ -267,6 +359,8 @@ export function MyTeamsClient() {
   const allHistory = [...archivedCreated, ...archivedJoined].sort(
     (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
   );
+  const displayedHistory = allHistory.slice(0, historyPage * 10);
+  const historyHasMore = displayedHistory.length < allHistory.length;
 
   const pendingApplicationsCount = applications.filter((a) => a.status === "pending").length;
 
@@ -389,6 +483,11 @@ export function MyTeamsClient() {
                 )}
               </>
             )}
+            <LoadMoreButton
+              hasMore={createdHasMore}
+              loading={createdLoadingMore}
+              onClick={() => setCreatedPage((p) => p + 1)}
+            />
           </div>
         )}
 
@@ -412,6 +511,11 @@ export function MyTeamsClient() {
                 ))}
               </div>
             )}
+            <LoadMoreButton
+              hasMore={joinedHasMore}
+              loading={joinedLoadingMore}
+              onClick={() => setJoinedPage((p) => p + 1)}
+            />
           </div>
         )}
 
@@ -433,6 +537,11 @@ export function MyTeamsClient() {
                 <ApplicationCard key={app.id} application={app} />
               ))
             )}
+            <LoadMoreButton
+              hasMore={applicationsHasMore}
+              loading={applicationsLoadingMore}
+              onClick={() => setApplicationsPage((p) => p + 1)}
+            />
           </div>
         )}
 
@@ -458,6 +567,11 @@ export function MyTeamsClient() {
                 />
               ))
             )}
+            <LoadMoreButton
+              hasMore={pendingHasMore}
+              loading={pendingLoadingMore}
+              onClick={() => setPendingPage((p) => p + 1)}
+            />
           </div>
         )}
 
@@ -475,10 +589,15 @@ export function MyTeamsClient() {
                 href="/locations"
               />
             ) : (
-              allHistory.map((team) => (
+              displayedHistory.map((team) => (
                 <TeamCard key={team.id + "-hist"} team={team} />
               ))
             )}
+            <LoadMoreButton
+              hasMore={historyHasMore}
+              loading={false}
+              onClick={() => setHistoryPage((p) => p + 1)}
+            />
           </div>
         )}
       </div>
@@ -1058,6 +1177,19 @@ function PendingApprovalCard({
           <ChevronRight className="h-4 w-4" />
         </span>
       </div>
+    </button>
+  );
+}
+
+function LoadMoreButton({ hasMore, loading, onClick }: { hasMore: boolean; loading: boolean; onClick: () => void }) {
+  if (!hasMore) return null;
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className="w-full py-3 mt-2 text-amber-600 hover:text-amber-700 font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+    >
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "加载更多"}
     </button>
   );
 }

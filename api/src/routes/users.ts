@@ -142,7 +142,7 @@ users.patch("/update", async (c) => {
 
 /**
  * GET /users/pending-approvals
- * 获取当前用户作为队长需要审批的所有申请
+ * 获取当前用户作为队长需要审批的所有申请（支持分页）
  */
 users.get("/pending-approvals", async (c) => {
   try {
@@ -151,16 +151,30 @@ users.get("/pending-approvals", async (c) => {
     if (!session) return c.json({ error: "请先登录" }, 401);
 
     const db = createDb(c.env.DB);
-    const { and, desc, inArray } = await import("drizzle-orm");
+    const { and, desc, inArray, sql } = await import("drizzle-orm");
+
+    const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
+    const pageSize = Math.min(100, parseInt(c.req.query("pageSize") || "10", 10));
 
     const leaderTeams = await db.query.teams.findMany({
       where: eq(schema.teams.leaderId, session.user.id),
       columns: { id: true, title: true, startTime: true, maxMembers: true, status: true },
     });
 
-    if (!leaderTeams.length) return c.json({ success: true, approvals: [], total: 0 });
+    if (!leaderTeams.length) return c.json({ success: true, approvals: [], pagination: { page, pageSize, total: 0, totalPages: 0, hasMore: false } });
 
     const teamIds = leaderTeams.map((t) => t.id);
+
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(schema.teamMembers)
+      .where(and(
+        eq(schema.teamMembers.status, "pending"),
+        inArray(schema.teamMembers.teamId, teamIds)
+      ));
+
+    const totalPages = Math.ceil(total / pageSize);
+    const hasMore = page < totalPages;
 
     const applications = await db.query.teamMembers.findMany({
       where: and(
@@ -175,6 +189,8 @@ users.get("/pending-approvals", async (c) => {
         user: { columns: { id: true, name: true, nickname: true, image: true, bio: true, level: true } },
       },
       orderBy: [desc(schema.teamMembers.createdAt)],
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
     });
 
     const formattedApprovals = applications.map((app) => {
@@ -192,7 +208,7 @@ users.get("/pending-approvals", async (c) => {
       };
     });
 
-    return c.json({ success: true, approvals: formattedApprovals, total: formattedApprovals.length });
+    return c.json({ success: true, approvals: formattedApprovals, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
     console.error("Get pending approvals error:", error);
     return c.json({ error: "获取待审批列表失败" }, 500);
@@ -201,7 +217,7 @@ users.get("/pending-approvals", async (c) => {
 
 /**
  * GET /users/applications
- * 获取当前用户的所有申请记录（以成员身份申请的，不含自己作为队长的）
+ * 获取当前用户的所有申请记录（以成员身份申请的，不含自己作为队长的）（支持分页）
  */
 users.get("/applications", async (c) => {
   try {
@@ -210,46 +226,119 @@ users.get("/applications", async (c) => {
     if (!session) return c.json({ error: "请先登录" }, 401);
 
     const db = createDb(c.env.DB);
-    const { desc } = await import("drizzle-orm");
+    const { desc, sql, ne } = await import("drizzle-orm");
 
-    const allApplications = await db.query.teamMembers.findMany({
-      where: eq(schema.teamMembers.userId, session.user.id),
-      with: {
-        team: {
-          with: {
-            location: { columns: { id: true, name: true, slug: true, coverImage: true } },
-            leader: { columns: { id: true, name: true, nickname: true, image: true } },
-          },
-        },
-      },
-      orderBy: [desc(schema.teamMembers.createdAt)],
-    });
+    const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
+    const pageSize = Math.min(100, parseInt(c.req.query("pageSize") || "10", 10));
 
-    const applications = allApplications.filter((app) => app.team?.leaderId !== session.user.id);
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(schema.teamMembers)
+      .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
+      .where(and(
+        eq(schema.teamMembers.userId, session.user.id),
+        ne(schema.teams.leaderId, session.user.id)
+      ));
 
-    const formattedApplications = applications.map((app) => {
-      const team = app.team;
-      const startDate = team ? new Date(team.startTime) : null;
+    const totalPages = Math.ceil(total / pageSize);
+    const hasMore = page < totalPages;
+
+    const result = await db
+      .select({
+        id: schema.teamMembers.id,
+        status: schema.teamMembers.status,
+        createdAt: schema.teamMembers.createdAt,
+        joinedAt: schema.teamMembers.joinedAt,
+        teamId: schema.teams.id,
+        teamTitle: schema.teams.title,
+        teamStartTime: schema.teams.startTime,
+        teamMaxMembers: schema.teams.maxMembers,
+        teamStatus: schema.teams.status,
+        teamLeaderId: schema.teams.leaderId,
+        locationId: schema.locations.id,
+        locationName: schema.locations.name,
+        locationSlug: schema.locations.slug,
+        locationCoverImage: schema.locations.coverImage,
+        leaderId: schema.users.id,
+        leaderName: schema.users.name,
+        leaderNickname: schema.users.nickname,
+        leaderImage: schema.users.image,
+      })
+      .from(schema.teamMembers)
+      .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
+      .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+      .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
+      .where(and(
+        eq(schema.teamMembers.userId, session.user.id),
+        ne(schema.teams.leaderId, session.user.id)
+      ))
+      .orderBy(desc(schema.teamMembers.createdAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
+
+    const applications = result.map((row) => {
+      const startDate = row.teamStartTime ? new Date(row.teamStartTime) : null;
       return {
-        id: app.id, status: app.status, createdAt: app.createdAt, joinedAt: app.joinedAt,
-        team: team ? {
-          id: team.id, title: team.title,
+        id: row.id,
+        status: row.status,
+        createdAt: row.createdAt,
+        joinedAt: row.joinedAt,
+        team: {
+          id: row.teamId,
+          title: row.teamTitle,
           date: startDate ? startDate.toISOString().split("T")[0] : null,
           time: startDate ? startDate.toTimeString().slice(0, 5) : null,
-          maxMembers: team.maxMembers, status: team.status,
-          location: team.location || null,
-          leader: team.leader ? { id: team.leader.id, name: team.leader.name, nickname: team.leader.nickname, avatar: team.leader.image } : null,
-        } : null,
+          maxMembers: row.teamMaxMembers,
+          status: row.teamStatus,
+          location: row.locationId ? {
+            id: row.locationId,
+            name: row.locationName,
+            slug: row.locationSlug,
+            coverImage: row.locationCoverImage,
+          } : null,
+          leader: row.leaderId ? {
+            id: row.leaderId,
+            name: row.leaderName,
+            nickname: row.leaderNickname,
+            avatar: row.leaderImage,
+          } : null,
+        },
       };
     });
 
-    const stats = {
-      pending: applications.filter((a) => a.status === "pending").length,
-      approved: applications.filter((a) => a.status === "approved").length,
-      rejected: applications.filter((a) => a.status === "rejected").length,
-    };
+    const [{ pending }] = await db
+      .select({ pending: sql<number>`count(*)` })
+      .from(schema.teamMembers)
+      .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
+      .where(and(
+        eq(schema.teamMembers.userId, session.user.id),
+        ne(schema.teams.leaderId, session.user.id),
+        eq(schema.teamMembers.status, "pending")
+      ));
 
-    return c.json({ success: true, applications: formattedApplications, stats });
+    const [{ approved }] = await db
+      .select({ approved: sql<number>`count(*)` })
+      .from(schema.teamMembers)
+      .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
+      .where(and(
+        eq(schema.teamMembers.userId, session.user.id),
+        ne(schema.teams.leaderId, session.user.id),
+        eq(schema.teamMembers.status, "approved")
+      ));
+
+    const [{ rejected }] = await db
+      .select({ rejected: sql<number>`count(*)` })
+      .from(schema.teamMembers)
+      .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
+      .where(and(
+        eq(schema.teamMembers.userId, session.user.id),
+        ne(schema.teams.leaderId, session.user.id),
+        eq(schema.teamMembers.status, "rejected")
+      ));
+
+    const stats = { pending, approved, rejected };
+
+    return c.json({ success: true, applications, stats, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
     console.error("Get user applications error:", error);
     return c.json({ error: "获取申请列表失败" }, 500);
@@ -258,7 +347,7 @@ users.get("/applications", async (c) => {
 
 /**
  * GET /users/teams/joined
- * 获取当前用户以成员身份加入（已审批通过）的所有队伍
+ * 获取当前用户以成员身份加入（已审批通过）的所有队伍（支持分页）
  */
 users.get("/teams/joined", async (c) => {
   try {
@@ -267,7 +356,10 @@ users.get("/teams/joined", async (c) => {
     if (!session) return c.json({ error: "请先登录" }, 401);
 
     const db = createDb(c.env.DB);
-    const { desc, sql } = await import("drizzle-orm");
+    const { desc, sql, inArray, ne } = await import("drizzle-orm");
+
+    const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
+    const pageSize = Math.min(100, parseInt(c.req.query("pageSize") || "10", 10));
 
     const currentMembersSubquery = sql<number>`(
       SELECT COUNT(*) FROM team_members
@@ -275,7 +367,6 @@ users.get("/teams/joined", async (c) => {
       AND team_members.status = 'approved'
     )`;
 
-    // 查找用户已审批加入的队伍（排除自己作为队长的队伍）
     const memberships = await db.query.teamMembers.findMany({
       where: (tm, { and }) =>
         and(
@@ -286,9 +377,16 @@ users.get("/teams/joined", async (c) => {
     });
 
     const teamIds = memberships.map((m) => m.teamId);
-    if (!teamIds.length) return c.json({ success: true, teams: [] });
+    if (!teamIds.length) return c.json({ success: true, teams: [], pagination: { page, pageSize, total: 0, totalPages: 0, hasMore: false } });
 
-    const { inArray, ne } = await import("drizzle-orm");
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(schema.teams)
+      .where(and(inArray(schema.teams.id, teamIds), ne(schema.teams.leaderId, session.user.id)));
+
+    const totalPages = Math.ceil(total / pageSize);
+    const hasMore = page < totalPages;
+
     const result = await db
       .select({
         id: schema.teams.id, locationId: schema.teams.locationId, routeId: schema.teams.routeId,
@@ -304,7 +402,9 @@ users.get("/teams/joined", async (c) => {
       .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
       .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
       .where(and(inArray(schema.teams.id, teamIds), ne(schema.teams.leaderId, session.user.id)))
-      .orderBy(desc(schema.teams.createdAt));
+      .orderBy(desc(schema.teams.createdAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
 
     const teams = result.map((row) => {
       const startDate = new Date(row.startTime);
@@ -324,7 +424,7 @@ users.get("/teams/joined", async (c) => {
       };
     });
 
-    return c.json({ success: true, teams });
+    return c.json({ success: true, teams, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
     console.error("Get joined teams error:", error);
     return c.json({ error: "获取加入的队伍失败" }, 500);
@@ -333,7 +433,7 @@ users.get("/teams/joined", async (c) => {
 
 /**
  * GET /users/created-teams
- * 获取当前用户创建的所有队伍
+ * 获取当前用户创建的所有队伍（支持分页）
  */
 users.get("/created-teams", async (c) => {
   try {
@@ -344,11 +444,22 @@ users.get("/created-teams", async (c) => {
     const db = createDb(c.env.DB);
     const { desc, sql } = await import("drizzle-orm");
 
+    const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
+    const pageSize = Math.min(100, parseInt(c.req.query("pageSize") || "10", 10));
+
     const currentMembersSubquery = sql<number>`(
       SELECT COUNT(*) FROM team_members
       WHERE team_members.team_id = ${schema.teams.id}
       AND team_members.status = 'approved'
     )`;
+
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(schema.teams)
+      .where(eq(schema.teams.leaderId, session.user.id));
+
+    const totalPages = Math.ceil(total / pageSize);
+    const hasMore = page < totalPages;
 
     const result = await db
       .select({
@@ -365,7 +476,9 @@ users.get("/created-teams", async (c) => {
       .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
       .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
       .where(eq(schema.teams.leaderId, session.user.id))
-      .orderBy(desc(schema.teams.createdAt));
+      .orderBy(desc(schema.teams.createdAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
 
     const teams = result.map((row) => {
       const startDate = new Date(row.startTime);
@@ -385,7 +498,7 @@ users.get("/created-teams", async (c) => {
       };
     });
 
-    return c.json({ success: true, teams });
+    return c.json({ success: true, teams, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
     console.error("Get created teams error:", error);
     return c.json({ error: "获取创建的队伍失败" }, 500);
