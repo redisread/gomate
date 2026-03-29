@@ -647,34 +647,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
             )}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)] mt-1 mb-4">
               {team.title}
-            </h1>
-            
-            {/* 状态药丸行 */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full backdrop-blur-sm",
-                statusInfo.className
-              )}>
-                <span className="text-sm">{statusInfo.icon}</span>
-                {statusInfo.label}
-              </span>
-              <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs font-medium">
-                <Calendar className="h-3 w-3" /> {team.date}
-              </span>
-              {team.time && (
-                <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs font-medium">
-                  <Clock className="h-3 w-3" /> {team.time}
-                </span>
-              )}
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs font-medium">
-                <Users className="h-3 w-3" />
-                {team.currentMembers}/{team.maxMembers} 人
-                {!isFull && remaining <= 3 && remaining > 0 && (
-                  <span className="text-amber-300 font-bold">· 仅剩 {remaining} 名额</span>
-                )}
-              </span>
-            </div>
-            
+</h1>
             
           </div>
         </div>
