@@ -471,6 +471,54 @@ function ApprovalConfirmDialog({
   );
 }
 
+// ─── 组建队伍确认对话框 ────────────────────────────────────────────────────────────
+function FormTeamConfirmDialog({
+  open,
+  isFull,
+  isLoading,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  isFull: boolean;
+  isLoading: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
+<h3 className="text-lg font-bold text-stone-900 mb-2">
+          {isFull ? copy.teams.formTeamConfirm : copy.teams.formTeamUnderfilledConfirm}
+        </h3>
+        <p className="text-sm text-stone-500 leading-relaxed mb-6">
+          {copy.teams.formTeamWarning}
+        </p>
+        <button
+          onClick={onConfirm}
+          disabled={isLoading}
+          className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white text-sm font-semibold transition-colors mb-2 flex items-center justify-center gap-2"
+        >
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isFull ? copy.teams.formTeam : copy.teams.formTeamUnderfilled}
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={isLoading}
+          className="w-full py-3 rounded-2xl text-stone-500 text-sm font-medium hover:bg-stone-50 transition-colors"
+        >
+          {copy.common.cancel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── 申请人卡片 ────────────────────────────────────────────────────────────────
 function ApplicantCard({
   application,
@@ -771,6 +819,8 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const [showJoinSheet, setShowJoinSheet] = React.useState(false);
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
+  const [showFormConfirm, setShowFormConfirm] = React.useState(false);
+  const [isForming, setIsForming] = React.useState(false);
 
   // 审批相关状态
   const [applications, setApplications] = React.useState<Application[]>([]);
@@ -954,6 +1004,29 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const handleEditSuccess = (updated: Partial<Team>) => {
     setTeam((prev) => prev ? { ...prev, ...updated } : prev);
     showToast({ type: "success", message: copy.teams.editSuccess });
+  };
+
+  const handleFormTeam = async () => {
+    setIsForming(true);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/form`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isUnderfilled: !isFull }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast({ type: "success", message: copy.teams.formTeamSuccess });
+        loadTeam();
+      } else {
+        showToast({ type: "error", message: data.error || copy.teams.formTeamFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.teams.formTeamFailed });
+    } finally {
+      setIsForming(false);
+      setShowFormConfirm(false);
+    }
   };
 
   /* ---- 加载态：骨架屏 ---- */
@@ -1371,6 +1444,19 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                         <Pencil className="h-3 w-3" />
                         {copy.teams.editBtn}
                       </button>
+                      {(team.status === "recruiting" || team.status === "full") && (
+                        <>
+                          <span className="text-stone-300">·</span>
+                          <button
+                            onClick={() => setShowFormConfirm(true)}
+                            disabled={isForming}
+                            className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors disabled:opacity-50"
+                          >
+                            {isForming && <Loader2 className="h-3 w-3 animate-spin" />}
+                            {isFull ? copy.teams.formTeam : copy.teams.formTeamUnderfilled}
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1695,6 +1781,15 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
           }
         />
       )}
+
+      {/* 组建队伍确认对话框 */}
+      <FormTeamConfirmDialog
+        open={showFormConfirm}
+        isFull={isFull}
+        isLoading={isForming}
+        onCancel={() => setShowFormConfirm(false)}
+        onConfirm={handleFormTeam}
+      />
 
       <Footer />
     </main>
