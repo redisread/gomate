@@ -1066,7 +1066,7 @@ teams.post("/:id/cancel", async (c) => {
 
 /**
  * DELETE /teams/:id
- * 删除队伍（仅队长可操作，物理删除）
+ * 删除队伍（仅队长，仅 recruiting/cancelled 状态）
  */
 teams.delete("/:id", async (c) => {
   try {
@@ -1075,14 +1075,17 @@ teams.delete("/:id", async (c) => {
     if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const teamId = c.req.param("id");
+    const userId = session.user.id;
     const db = createDb(c.env.DB);
 
     const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
     if (!team) return c.json({ success: false, error: "队伍不存在" }, 404);
-    if (team.leaderId !== session.user.id)
+
+    if (team.leaderId !== userId)
       return c.json({ success: false, error: "只有队长可以删除队伍" }, 403);
-    if (team.status === "formed" || team.status === "completed")
-      return c.json({ success: false, error: "已组建或已完成的队伍无法删除" }, 400);
+
+    if (team.status !== "recruiting" && team.status !== "cancelled")
+      return c.json({ success: false, error: "只有招募中或已取消的队伍可以删除" }, 400);
 
     await db.delete(schema.teamMembers).where(eq(schema.teamMembers.teamId, teamId));
     await db.delete(schema.teams).where(eq(schema.teams.id, teamId));

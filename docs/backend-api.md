@@ -191,6 +191,19 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 - **Body：** `{ "isUnderfilled": boolean }`
 - **响应：** `{ "success": true, "message": "队伍已组建", "isUnderfilled": boolean }`
 
+### DELETE `/teams/:id`
+删除队伍
+
+- **认证：** 是（仅队长）
+- **条件：** 仅 `recruiting` 或 `cancelled` 状态可删除
+- **响应：** `{ "success": true, "message": "队伍已删除" }`
+- **错误响应：**
+  - 401：未登录
+  - 403：非队长
+  - 400：状态不允许删除（已组建/已完成的队伍）
+  - 404：队伍不存在
+- **说明：** 删除操作会先清除所有成员记录，再删除队伍记录，不可恢复
+
 ---
 
 ## 3. 地点管理 `/locations`
