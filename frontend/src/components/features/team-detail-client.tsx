@@ -1441,7 +1441,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                         className="w-full px-3.5 py-2.5 rounded-xl text-stone-800 text-sm placeholder:text-stone-400 focus:outline-none resize-none mb-3 bg-stone-50 border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all"
                       />
                       <button
-                        onClick={handleJoin}
+                        onClick={handleJoinClick}
                         disabled={isJoining}
                         className="w-full py-3 font-semibold text-white rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow hover:shadow-[0_6px_24px_rgba(217,119,6,0.45)] hover:-translate-y-0.5 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2 active:scale-[0.97]"
                       >
@@ -1758,7 +1758,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   <Share2 className="h-4.5 w-4.5" />
                 </button>
                 <button
-                  onClick={() => setShowJoinSheet(true)}
+                  onClick={handleJoinClick}
                   className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow transition-all duration-150 flex items-center justify-center gap-2 min-h-[44px] active:scale-[0.98] text-base"
                 >
                   {copy.teams.joinTeam}
