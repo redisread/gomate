@@ -57,6 +57,12 @@ pnpm api:dev        # API: localhost:8799
 pnpm web:dev        # Frontend: localhost:5432
 cd mobile && flutter run
 
+# 本地调试检查
+# 启动本地调试前先检查是否已启动：
+#   lsof -ti:8799    # 检查 API 端口 (8799)
+#   lsof -ti:5432    # 检查前端端口 (5432)
+# 如果端口已被占用，说明调试已启动，无需重复启动
+
 # 构建
 pnpm api:deploy     # 部署 API 到 Cloudflare Workers
 pnpm web:build      # 构建前端

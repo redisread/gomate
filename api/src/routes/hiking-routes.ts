@@ -217,7 +217,6 @@ hikingRoutes.get("/:id", async (c) => {
       id: poi.id,
       name: poi.name,
       description: poi.description,
-      category: poi.category,
       coordinates: poi.coordinates ? JSON.parse(poi.coordinates) : null,
       images: poi.images ? JSON.parse(poi.images) : [],
       extra: poi.extra ? JSON.parse(poi.extra) : null,

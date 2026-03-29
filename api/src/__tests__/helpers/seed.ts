@@ -18,18 +18,19 @@ export async function seedUser(
 ): Promise<schema.User> {
   const id = genId("user");
   const ts = new Date();
+  // 排除 id，避免对象字面量重复属性
+  const { id: _omitId, ...restOverrides } = overrides;
   const user: schema.NewUser = {
     id,
-    name: overrides.name ?? `TestUser_${id}`,
-    email: overrides.email ?? `${id}@test.com`,
-    emailVerified: overrides.emailVerified ?? false,
-    level: overrides.level ?? "beginner",
-    role: overrides.role ?? "user",
-    status: overrides.status ?? "active",
-    createdAt: overrides.createdAt ?? ts,
-    updatedAt: overrides.updatedAt ?? ts,
-    ...overrides,
-    id, // 确保 id 不被覆盖
+    name: restOverrides.name ?? `TestUser_${id}`,
+    email: restOverrides.email ?? `${id}@test.com`,
+    emailVerified: restOverrides.emailVerified ?? false,
+    level: restOverrides.level ?? "beginner",
+    role: restOverrides.role ?? "user",
+    status: restOverrides.status ?? "active",
+    createdAt: restOverrides.createdAt ?? ts,
+    updatedAt: restOverrides.updatedAt ?? ts,
+    ...restOverrides,
   };
   await db.insert(schema.users).values(user);
   const [inserted] = await db.select().from(schema.users).where(eq(schema.users.id, id));
@@ -45,15 +46,16 @@ export async function seedCity(
 ): Promise<schema.City> {
   const id = genId("city");
   const ts = new Date();
+  // 排除 id，避免对象字面量重复属性
+  const { id: _omitId, ...restOverrides } = overrides;
   const city: schema.NewCity = {
     id,
-    adcode: overrides.adcode ?? `44030${idCounter}`,
-    name: overrides.name ?? `TestCity_${id}`,
-    isHot: overrides.isHot ?? false,
-    createdAt: overrides.createdAt ?? ts,
-    updatedAt: overrides.updatedAt ?? ts,
-    ...overrides,
-    id,
+    adcode: restOverrides.adcode ?? `44030${idCounter}`,
+    name: restOverrides.name ?? `TestCity_${id}`,
+    isHot: restOverrides.isHot ?? false,
+    createdAt: restOverrides.createdAt ?? ts,
+    updatedAt: restOverrides.updatedAt ?? ts,
+    ...restOverrides,
   };
   await db.insert(schema.cities).values(city);
   const [inserted] = await db.select().from(schema.cities).where(eq(schema.cities.id, id));
@@ -70,20 +72,21 @@ export async function seedLocation(
 ): Promise<schema.Location> {
   const id = genId("loc");
   const ts = new Date();
+  // 排除 id，避免对象字面量重复属性
+  const { id: _omitId, ...restOverrides } = overrides;
   const location: schema.NewLocation = {
     id,
-    name: overrides.name ?? `TestLocation_${id}`,
-    slug: overrides.slug ?? `test-location-${id}`,
-    description: overrides.description ?? "测试地点描述",
+    name: restOverrides.name ?? `TestLocation_${id}`,
+    slug: restOverrides.slug ?? `test-location-${id}`,
+    description: restOverrides.description ?? "测试地点描述",
     cityId,
-    bestSeason: overrides.bestSeason ?? JSON.stringify(["spring", "autumn"]),
-    coverImage: overrides.coverImage ?? "https://example.com/cover.jpg",
-    images: overrides.images ?? JSON.stringify([]),
-    coordinates: overrides.coordinates ?? JSON.stringify({ lat: 22.5, lng: 114.0 }),
-    createdAt: overrides.createdAt ?? ts,
-    updatedAt: overrides.updatedAt ?? ts,
-    ...overrides,
-    id,
+    bestSeason: restOverrides.bestSeason ?? JSON.stringify(["spring", "autumn"]),
+    coverImage: restOverrides.coverImage ?? "https://example.com/cover.jpg",
+    images: restOverrides.images ?? JSON.stringify([]),
+    coordinates: restOverrides.coordinates ?? JSON.stringify({ lat: 22.5, lng: 114.0 }),
+    createdAt: restOverrides.createdAt ?? ts,
+    updatedAt: restOverrides.updatedAt ?? ts,
+    ...restOverrides,
   };
   await db.insert(schema.locations).values(location);
   const [inserted] = await db.select().from(schema.locations).where(eq(schema.locations.id, id));
@@ -102,21 +105,22 @@ export async function seedTeam(
   const id = genId("team");
   const ts = new Date();
   const futureTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // 排除 id，避免对象字面量重复属性
+  const { id: _omitId, ...restOverrides } = overrides;
   const team: schema.NewTeam = {
     id,
     locationId,
     leaderId,
-    title: overrides.title ?? `TestTeam_${id}`,
-    startTime: overrides.startTime ?? futureTime,
-    endTime: overrides.endTime ?? new Date(futureTime.getTime() + 4 * 60 * 60 * 1000),
-    durationMin: overrides.durationMin ?? 240,
-    maxMembers: overrides.maxMembers ?? 5,
-    icon: overrides.icon ?? "⛰️",
-    status: overrides.status ?? "recruiting",
-    createdAt: overrides.createdAt ?? ts,
-    updatedAt: overrides.updatedAt ?? ts,
-    ...overrides,
-    id,
+    title: restOverrides.title ?? `TestTeam_${id}`,
+    startTime: restOverrides.startTime ?? futureTime,
+    endTime: restOverrides.endTime ?? new Date(futureTime.getTime() + 4 * 60 * 60 * 1000),
+    durationMin: restOverrides.durationMin ?? 240,
+    maxMembers: restOverrides.maxMembers ?? 5,
+    icon: restOverrides.icon ?? "⛰️",
+    status: restOverrides.status ?? "recruiting",
+    createdAt: restOverrides.createdAt ?? ts,
+    updatedAt: restOverrides.updatedAt ?? ts,
+    ...restOverrides,
   };
   await db.insert(schema.teams).values(team);
   const [inserted] = await db.select().from(schema.teams).where(eq(schema.teams.id, id));

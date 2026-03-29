@@ -62,13 +62,40 @@ export interface RoutePoi {
   id: string;
   name: string;
   description?: string | null;
-  category?: string | null;
   coordinates: Coordinates;
   images?: string[];
   extra?: Record<string, unknown> | null;
   order?: number | null;
   roleType: "waypoint" | "checkpoint" | "viewpoint" | "facility" | "poi";
   roleSpecificData?: Record<string, unknown> | null;
+}
+
+/** POI 详情（完整实体） */
+export interface PoiDetail {
+  id: string;
+  name: string;
+  description?: string | null;
+  coordinates: Coordinates;
+  images?: string[];
+  extra?: Record<string, unknown> | null;
+  createdAt: string | number;
+  updatedAt: string | number;
+}
+
+/** POI 创建输入 */
+export interface PoiCreateInput {
+  name: string;
+  coordinates: Coordinates;
+  description?: string;
+  images?: string[];
+}
+
+/** POI 更新输入 */
+export interface PoiUpdateInput {
+  name?: string;
+  coordinates?: Coordinates;
+  description?: string;
+  images?: string[];
 }
 
 /** 路线信息 */

@@ -90,6 +90,7 @@ export function createTestDb() {
       subtitle TEXT,
       description TEXT NOT NULL,
       address TEXT,
+      type TEXT,
       city_id TEXT NOT NULL REFERENCES cities(id) ON DELETE RESTRICT,
       city_name TEXT,
       best_season TEXT NOT NULL,

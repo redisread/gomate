@@ -135,3 +135,39 @@ export async function submitFeedback(data: {
 }): Promise<{ success: boolean; message: string }> {
   return apiPost("/api/feedback", data);
 }
+
+/**
+ * 创建打卡点（POI）
+ */
+export async function createPoi(data: import("./types").PoiCreateInput): Promise<{ success: boolean; poiId: string }> {
+  return apiPost("/api/pois", data);
+}
+
+/**
+ * 获取单个打卡点详情
+ */
+export async function getPoi(id: string): Promise<{ success: boolean; poi: import("./types").PoiDetail }> {
+  return apiGet(`/api/pois/${id}`);
+}
+
+/**
+ * 更新打卡点
+ */
+export async function updatePoi(id: string, data: import("./types").PoiUpdateInput): Promise<{ success: boolean }> {
+  return apiPut(`/api/pois/${id}`, data);
+}
+
+/**
+ * 删除打卡点
+ */
+export async function deletePoi(id: string): Promise<{ success: boolean; removedAssociations: number }> {
+  return apiDelete(`/api/pois/${id}`);
+}
+
+/**
+ * 搜索打卡点列表
+ */
+export async function searchPois(search: string, limit = 50): Promise<{ success: boolean; pois: import("./types").RoutePoi[] }> {
+  const params = new URLSearchParams({ search, limit: String(limit) });
+  return apiGet(`/api/pois?${params}`);
+}

@@ -276,6 +276,8 @@ export const passwordResets = sqliteTable(
 );
 
 // POI 表
+// POI（Point of Interest）用于标记地点/路线上的关键节点
+// 通过 entityToPois 关联表与地点或路线建立关系，每次关联可指定不同的角色类型
 export const pois = sqliteTable(
   "pois",
   {
@@ -283,7 +285,10 @@ export const pois = sqliteTable(
     name: text("name").notNull(),
     description: text("description"),
     coordinates: text("coordinates").notNull(),
-    category: text("category"),
+    // POI 内部分类标识，不对外暴露
+    // 默认值为 "poi"，用于未来扩展或内部统计分析
+    // 用户无需关心此字段，系统自动填充
+    category: text("category").default("poi"),
     images: text("images"),
     extra: text("extra"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
@@ -291,7 +296,6 @@ export const pois = sqliteTable(
   },
   (table) => ({
     nameIdx: index("pois_name_idx").on(table.name),
-    categoryIdx: index("pois_category_idx").on(table.category),
   })
 );
 
@@ -440,6 +444,7 @@ export type UserGender = "male" | "female" | "other";
 export type CityLevel = "city" | "district";
 export type TagType = "location" | "route" | "activity";
 export type EntityType = "location" | "route" | "activity";
-export type PoiCategory = string;
+// POI 内部分类标识，不对外暴露，默认值为 "poi"
+export type PoiCategory = "poi";
 export type PoiEntityType = "route" | "location" | "city";
 export type PoiRoleType = "waypoint" | "checkpoint" | "viewpoint" | "facility" | "poi";

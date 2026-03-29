@@ -34,6 +34,9 @@ import {
   Eye,
   Building2,
   Star,
+  Check,
+  Copy,
+  Sparkles,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
@@ -118,6 +121,8 @@ const POI_COLOR_MAP: Record<string, { bg: string; text: string; border: string }
 interface LocationIntroCardProps {
   location: Location;
   actions?: React.ReactNode;
+  address?: string;
+  coordinates?: { lat: number; lng: number };
 }
 
 /**
@@ -126,12 +131,34 @@ interface LocationIntroCardProps {
  * - 图片缩略图画廊行（可点击放大）
  * - 标签胶囊（分类色彩）
  */
-export function LocationIntroCard({ location, actions }: LocationIntroCardProps) {
+export function LocationIntroCard({ location, actions, address, coordinates }: LocationIntroCardProps) {
   const [expanded, setExpanded] = React.useState(false);
   const [isOverflow, setIsOverflow] = React.useState(false);
   const descRef = React.useRef<HTMLParagraphElement>(null);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const [lightboxActive, setLightboxActive] = React.useState(0);
+  const [copied, setCopied] = React.useState(false);
+
+  // 复制地址
+  const handleCopy = async () => {
+    if (!address) return;
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // 静默失败
+    }
+  };
+
+  // 高德地图导航
+  const handleNavigate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!coordinates) return;
+    const dest = encodeURIComponent(location.name || address || "");
+    const url = `https://uri.amap.com/navigation?to=${coordinates.lng},${coordinates.lat},${dest}&callnative=0`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   React.useEffect(() => {
     const el = descRef.current;
@@ -254,6 +281,56 @@ export function LocationIntroCard({ location, actions }: LocationIntroCardProps)
             ))}
           </div>
         )}
+
+        {/* 地点信息元数据区块：地址 + 最佳季节 */}
+        {(address || (location.bestSeason && location.bestSeason.length > 0)) && (
+          <div className="mt-4 pt-4 border-t border-stone-100">
+            {/* 地址行 */}
+            {address && (
+              <div className="flex items-start gap-2.5 mb-3">
+                <MapPin className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                <span className="text-sm text-stone-500 leading-relaxed flex-1">{address}</span>
+                <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+                  {coordinates && (
+                    <button
+                      onClick={handleNavigate}
+                      title={copy.locations.navigateTooltip}
+                      className="text-amber-400 hover:text-amber-600 transition-colors"
+                    >
+                      <Navigation className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={handleCopy}
+                    title="复制地址"
+                    className="opacity-60 hover:opacity-100 transition-opacity"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-amber-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+            {/* 最佳季节 */}
+            {location.bestSeason && location.bestSeason.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-xs text-stone-400">{copy.locations.detailSeasonsLabel}：</span>
+                {location.bestSeason.map((s) => (
+                  <span
+                    key={s}
+                    className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs font-medium"
+                  >
+                    {SEASON_LABEL[s] ?? s}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 内联 Lightbox */}
@@ -299,6 +376,7 @@ export function LocationIntroCard({ location, actions }: LocationIntroCardProps)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RouteInfoCard
+// TODO: 路线信息模块 - 暂时不在地点详情页展示，后续实现
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface RouteInfoCardProps {

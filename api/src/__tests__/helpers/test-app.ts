@@ -3,6 +3,30 @@ import { eq, and, sql, desc, ne } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import type { TestDb } from "./db";
 
+/** 队伍查询结果行类型 */
+type TeamRow = {
+  id: string;
+  locationId: string;
+  routeId: string | null;
+  leaderId: string;
+  title: string;
+  description: string | null;
+  startTime: Date;
+  endTime: Date;
+  durationMin: number;
+  maxMembers: number;
+  requirements: string | null;
+  icon: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  currentMembers: number;
+  leaderImage: string | null;
+  leaderName: string;
+  leaderNickname: string | null;
+  leaderLevel: string | null;
+};
+
 /**
  * 模拟 session 的用户信息
  */
@@ -80,7 +104,7 @@ export function createTeamsTestApp(db: TestDb, mockSession?: MockSession) {
         leaderNickname: schema.users.nickname, leaderLevel: schema.users.level,
       };
 
-      let result: Awaited<ReturnType<typeof db.select>>[];
+      let result: TeamRow[];
 
       if (userId && includeJoined) {
         const conditions = [eq(schema.teamMembers.userId, userId), ne(schema.teams.leaderId, userId), eq(schema.teamMembers.status, "approved")];
@@ -88,16 +112,16 @@ export function createTeamsTestApp(db: TestDb, mockSession?: MockSession) {
         result = await db.select(teamColumns).from(schema.teams)
           .innerJoin(schema.teamMembers, eq(schema.teamMembers.teamId, schema.teams.id))
           .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
-          .where(and(...conditions)).orderBy(desc(schema.teams.createdAt)) as Awaited<ReturnType<typeof db.select>>[];
+          .where(and(...conditions)).orderBy(desc(schema.teams.createdAt)) as TeamRow[];
       } else if (locationId) {
         result = await db.select(teamColumns).from(schema.teams)
           .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
           .where(eq(schema.teams.locationId, locationId))
-          .orderBy(desc(schema.teams.createdAt)) as Awaited<ReturnType<typeof db.select>>[];
+          .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
       } else {
         result = await db.select(teamColumns).from(schema.teams)
           .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
-          .orderBy(desc(schema.teams.createdAt)) as Awaited<ReturnType<typeof db.select>>[];
+          .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
       }
 
       const formattedTeams = result.map((row: unknown) => {

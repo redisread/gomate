@@ -262,6 +262,20 @@ locations.get("/:id", async (c) => {
 
     if (!location) return c.json({ error: "地点不存在" }, 404);
 
+    // 查询地点关联的标签
+    const tagRelations = await db
+      .select({ tagId: schema.entityToTags.tagId, tagName: schema.tags.name, tagType: schema.tags.type })
+      .from(schema.entityToTags)
+      .innerJoin(schema.tags, eq(schema.tags.id, schema.entityToTags.tagId))
+      .where(
+        and(
+          eq(schema.entityToTags.entityType, "location"),
+          eq(schema.entityToTags.entityId, id)
+        )
+      );
+
+    const tags = tagRelations.map((r) => ({ id: r.tagId, name: r.tagName, type: r.tagType }));
+
     return c.json({
       success: true,
       location: {
@@ -270,6 +284,7 @@ locations.get("/:id", async (c) => {
         bestSeason: safeJsonParse(location.bestSeason, [] as string[]),
         coordinates: safeJsonParse(location.coordinates, { lat: 0, lng: 0 }),
         extra: safeJsonParse(location.extra, undefined),
+        tags,
       },
     });
   } catch (error) {
@@ -311,7 +326,6 @@ locations.get("/:id/pois", async (c) => {
       id: poi.id,
       name: poi.name,
       description: poi.description,
-      category: poi.category,
       coordinates: poi.coordinates ? JSON.parse(poi.coordinates) : null,
       images: poi.images ? JSON.parse(poi.images) : [],
       extra: poi.extra ? JSON.parse(poi.extra) : null,

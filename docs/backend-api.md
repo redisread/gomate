@@ -482,7 +482,89 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 10. 联系表单 `/contact`
+## 10. 打卡点管理 `/pois`
+
+### GET `/pois`
+获取打卡点列表（支持搜索）
+
+- **认证：** 否
+- **Query：** `search`（关键词，模糊匹配名称和分类）、`limit`（默认 50，最大 200）
+- **响应：**
+```json
+{
+  "success": true,
+  "pois": [
+    {
+      "id": "poi-xxx",
+      "name": "山顶观景台",
+      "description": "可俯瞰整个海湾",
+      "category": "观景点",
+      "coordinates": { "lat": 22.5431, "lng": 114.0579 }
+    }
+  ]
+}
+```
+
+### GET `/pois/:id`
+获取单个打卡点详情
+
+- **认证：** 否
+- **响应：**
+```json
+{
+  "success": true,
+  "poi": {
+    "id": "poi-xxx",
+    "name": "山顶观景台",
+    "description": "可俯瞰整个海湾",
+    "category": "观景点",
+    "coordinates": { "lat": 22.5431, "lng": 114.0579 },
+    "images": [],
+    "extra": null,
+    "createdAt": "2026-03-28T10:00:00Z",
+    "updatedAt": "2026-03-28T10:00:00Z"
+  }
+}
+```
+
+### POST `/pois`
+创建打卡点
+
+- **认证：** 是（仅管理员）
+- **Body：**
+```json
+{
+  "name": "山顶观景台",
+  "coordinates": { "lat": 22.5431, "lng": 114.0579 },
+  "description": "可俯瞰整个海湾",
+  "category": "观景点",
+  "images": []
+}
+```
+- **验证：**
+  - `name`: 必填，最大 50 字符
+  - `coordinates`: 必填，格式 `{ lat: number, lng: number }`，纬度 -90~90，经度 -180~180
+  - `description`: 可选，最大 500 字符
+  - `category`: 可选，最大 30 字符
+- **响应：** `{ "success": true, "poiId": "poi-xxx" }`
+
+### PUT `/pois/:id`
+更新打卡点
+
+- **认证：** 是（仅管理员）
+- **Body：** `{ "name", "coordinates", "description", "category", "images" }`（所有字段可选）
+- **响应：** `{ "success": true }`
+
+### DELETE `/pois/:id`
+删除打卡点
+
+- **认证：** 是（仅管理员）
+- **行为：** 级联删除 `entityToPois` 表中所有关联记录
+- **响应：** `{ "success": true, "removedAssociations": 3 }`
+
+---
+
+## 11. 联系表单 `/contact`
 
 ### POST `/contact`
 提交联系表单
@@ -494,7 +576,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 11. 管理工具 `/admin`
+## 12. 管理工具 `/admin`
 
 ### POST `/admin/clear-rate-limit`
 清除速率限制
@@ -504,7 +586,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 12. 健康检查
+## 13. 健康检查
 
 ### GET `/health`
 - **认证：** 否

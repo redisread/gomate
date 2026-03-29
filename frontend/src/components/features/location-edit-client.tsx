@@ -30,6 +30,9 @@ import {
   Search,
   X,
   Check,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI, apiPut } from "@/lib/api";
@@ -40,10 +43,11 @@ import { MultiImageUpload } from "@/components/ui/multi-image-upload";
 import { SeasonPicker, EditProgressBar } from "@/components/ui/season-picker";
 import { StickyActionBar } from "@/components/ui/sticky-action-bar";
 import { CitySelect } from "@/components/ui/city-select";
+import { PoiEditModal, PoiDeleteConfirm } from "@/components/ui/poi-edit-modal";
 import { useAutoDraft } from "@/hooks/useAutoDraft";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { cn } from "@/lib/utils";
-import type { Location, City } from "@/lib/types";
+import type { Location, City, PoiDetail } from "@/lib/types";
 
 /* ================================================================
    类型与常量
@@ -930,7 +934,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
   const [location, setLocation] = React.useState<Location | null>(null);
   const [cities, setCities] = React.useState<City[]>([]);
   const [allTags, setAllTags] = React.useState<Array<{ id: string; name: string; type: string }>>([]);
-  const [allPois, setAllPois] = React.useState<Array<{ id: string; name: string; description?: string | null; category?: string | null }>>([]);
+  const [allPois, setAllPois] = React.useState<Array<{ id: string; name: string; description?: string | null }>>([]);
   const [poiSearch, setPoiSearch] = React.useState("");
   const [poiSearchResults, setPoiSearchResults] = React.useState<typeof allPois>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -941,6 +945,15 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
   const [pendingDraft, setPendingDraft] = React.useState<FormData | null>(null);
   const [showPreview, setShowPreview] = React.useState(false);
   const [showMapPicker, setShowMapPicker] = React.useState(false);
+
+  // POI 弹窗状态
+  const [poiModalOpen, setPoiModalOpen] = React.useState(false);
+  const [poiModalMode, setPoiModalMode] = React.useState<"create" | "edit">("create");
+  const [editingPoi, setEditingPoi] = React.useState<PoiDetail | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [deletingPoi, setDeletingPoi] = React.useState<{ id: string; name: string } | null>(null);
+  const [deletingPoiAssociations, setDeletingPoiAssociations] = React.useState(0);
+  const [isDeletingPoi, setIsDeletingPoi] = React.useState(false);
 
   const [formData, setFormData] = React.useState<FormData>(DEFAULT_FORM);
 
@@ -1037,6 +1050,86 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
     // 触发实时校验（字符串字段）
     if (typeof value === "string" && VALIDATION_RULES[key]) {
       touch(key, value);
+    }
+  };
+
+  // POI 相关处理函数
+  const handleOpenCreatePoi = () => {
+    setPoiModalMode("create");
+    setEditingPoi(null);
+    setPoiModalOpen(true);
+  };
+
+  const handleOpenEditPoi = async (poiId: string) => {
+    try {
+      const res = await fetchAPI(`/api/pois/${poiId}`);
+      const data = await res.json();
+      if (data.success && data.poi) {
+        setEditingPoi(data.poi);
+        setPoiModalMode("edit");
+        setPoiModalOpen(true);
+      }
+    } catch (err) {
+      console.error("获取 POI 详情失败:", err);
+    }
+  };
+
+  const handlePoiModalSuccess = (poi: { id: string; name: string; coordinates: { lat: number; lng: number } }) => {
+    // 更新 allPois 列表
+    setAllPois((prev) => {
+      const exists = prev.find((p) => p.id === poi.id);
+      if (exists) {
+        return prev.map((p) => (p.id === poi.id ? { ...p, name: poi.name } : p));
+      }
+      return [...prev, { id: poi.id, name: poi.name }];
+    });
+
+    // 如果是新建，自动添加到关联列表
+    if (poiModalMode === "create") {
+      updateField("poiLinks", [
+        ...formData.poiLinks,
+        { poiId: poi.id, roleType: "poi", order: formData.poiLinks.length },
+      ]);
+    }
+
+    setPoiModalOpen(false);
+    setEditingPoi(null);
+  };
+
+  const handleOpenDeletePoi = async (poiId: string, poiName: string) => {
+    // 查询关联数量
+    try {
+      const res = await fetchAPI(`/api/locations/${locationId}/pois`);
+      const data = await res.json();
+      const count = (data.pois ?? []).filter((p: { id: string }) => p.id === poiId).length;
+      setDeletingPoiAssociations(count);
+    } catch {
+      setDeletingPoiAssociations(0);
+    }
+    setDeletingPoi({ id: poiId, name: poiName });
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDeletePoi = async () => {
+    if (!deletingPoi) return;
+    setIsDeletingPoi(true);
+    try {
+      const res = await fetchAPI(`/api/pois/${deletingPoi.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        // 从 allPois 中移除
+        setAllPois((prev) => prev.filter((p) => p.id !== deletingPoi.id));
+        // 从关联列表中移除
+        updateField("poiLinks", formData.poiLinks.filter((l) => l.poiId !== deletingPoi.id));
+        setDeleteConfirmOpen(false);
+        setDeletingPoi(null);
+      } else {
+        throw new Error(data.error || "删除失败");
+      }
+    } catch (err) {
+      console.error("删除 POI 失败:", err);
+    } finally {
+      setIsDeletingPoi(false);
     }
   };
 
@@ -1610,27 +1703,37 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
 
               {/* ── 关联打卡点 ── */}
               <Field label="关联打卡点" hint="搜索并添加该地点的打卡点">
-                {/* 搜索框 */}
-                <div className="relative mb-2">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={poiSearch}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setPoiSearch(v);
-                      if (!v.trim()) { setPoiSearchResults([]); return; }
-                      const q = v.toLowerCase();
-                      setPoiSearchResults(
-                        allPois
-                          .filter((p) => p.name.toLowerCase().includes(q) || (p.category ?? "").toLowerCase().includes(q))
-                          .slice(0, 8)
-                      );
-                    }}
-                    placeholder="搜索打卡点名称..."
-                    className={cn(styledInput(), "pl-9")}
-                    style={{ background: "#FAF7F4", color: "#1e1812" }}
-                  />
+                {/* 搜索框 + 新建按钮 */}
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={poiSearch}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setPoiSearch(v);
+                        if (!v.trim()) { setPoiSearchResults([]); return; }
+                        const q = v.toLowerCase();
+                        setPoiSearchResults(
+                          allPois
+                            .filter((p) => p.name.toLowerCase().includes(q))
+                            .slice(0, 8)
+                        );
+                      }}
+                      placeholder={copy.pois.searchPlaceholder}
+                      className={cn(styledInput(), "pl-9")}
+                      style={{ background: "#FAF7F4", color: "#1e1812" }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenCreatePoi}
+                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 transition-opacity shrink-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">{copy.pois.createBtn}</span>
+                  </button>
                 </div>
                 {/* 搜索结果 */}
                 {poiSearchResults.length > 0 && (
@@ -1657,11 +1760,8 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                           )}
                         >
                           <MapPin className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-sm text-stone-800 font-medium truncate">{poi.name}</p>
-                            {poi.category && <p className="text-xs text-stone-400 truncate">{poi.category}</p>}
-                          </div>
-                          {already && <span className="ml-auto text-xs text-stone-400 shrink-0">已添加</span>}
+                          <p className="text-sm text-stone-800 font-medium truncate">{poi.name}</p>
+                          {already && <span className="ml-auto text-xs text-stone-400 shrink-0">{copy.pois.alreadyAdded}</span>}
                         </button>
                       );
                     })}
@@ -1669,37 +1769,60 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                 )}
                 {/* 已关联列表 */}
                 {formData.poiLinks.length === 0 ? (
-                  <p className="text-xs text-stone-400">暂未关联打卡点，搜索后点击添加</p>
+                  <p className="text-xs text-stone-400">{copy.pois.noResults}</p>
                 ) : (
                   <div className="space-y-2">
                     {formData.poiLinks.map((link, idx) => {
                       const poi = allPois.find((p) => p.id === link.poiId);
                       return (
-                        <div key={link.poiId} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-stone-50 border border-stone-100">
-                          <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold flex items-center justify-center shrink-0">
-                            {idx + 1}
-                          </span>
-                          <span className="flex-1 text-sm text-stone-700 truncate">{poi?.name ?? link.poiId}</span>
-                          <select
-                            value={link.roleType}
-                            onChange={(e) => {
-                              const next = [...formData.poiLinks];
-                              next[idx] = { ...next[idx], roleType: e.target.value };
-                              updateField("poiLinks", next);
-                            }}
-                            className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-white text-stone-600 outline-none focus:border-amber-400 shrink-0"
-                          >
-                            {POI_ROLE_OPTIONS.map((r) => (
-                              <option key={r.value} value={r.value}>{r.label}</option>
-                            ))}
-                          </select>
-                          <button
-                            type="button"
-                            onClick={() => updateField("poiLinks", formData.poiLinks.filter((_, i) => i !== idx))}
-                            className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
+                        <div key={link.poiId} className="px-3 py-2 rounded-xl bg-stone-50 border border-stone-100">
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </span>
+                            <span className="flex-1 text-sm text-stone-700 truncate">{poi?.name ?? link.poiId}</span>
+                            {/* 编辑按钮 */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditPoi(link.poiId)}
+                              className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-amber-500 hover:bg-amber-50 transition-colors shrink-0"
+                              title={copy.pois.editBtn}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            {/* 删除按钮 */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDeletePoi(link.poiId, poi?.name ?? link.poiId)}
+                              className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                              title={copy.pois.deleteBtn}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                            {/* 角色选择 */}
+                            <select
+                              value={link.roleType}
+                              onChange={(e) => {
+                                const next = [...formData.poiLinks];
+                                next[idx] = { ...next[idx], roleType: e.target.value };
+                                updateField("poiLinks", next);
+                              }}
+                              className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-white text-stone-600 outline-none focus:border-amber-400 shrink-0"
+                            >
+                              {POI_ROLE_OPTIONS.map((r) => (
+                                <option key={r.value} value={r.value}>{r.label}</option>
+                              ))}
+                            </select>
+                            {/* 解除关联按钮 */}
+                            <button
+                              type="button"
+                              onClick={() => updateField("poiLinks", formData.poiLinks.filter((_, i) => i !== idx))}
+                              className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                              title={copy.pois.unlinkBtn}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -1742,6 +1865,25 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
         lastSaved={lastSaved}
         onSave={handleSave}
         onDiscard={handleDiscard}
+      />
+
+      {/* ── POI 编辑弹窗 ── */}
+      <PoiEditModal
+        mode={poiModalMode}
+        open={poiModalOpen}
+        onClose={() => { setPoiModalOpen(false); setEditingPoi(null); }}
+        onSuccess={handlePoiModalSuccess}
+        initialData={editingPoi}
+      />
+
+      {/* ── POI 删除确认弹窗 ── */}
+      <PoiDeleteConfirm
+        open={deleteConfirmOpen}
+        onClose={() => { setDeleteConfirmOpen(false); setDeletingPoi(null); }}
+        onConfirm={handleConfirmDeletePoi}
+        poiName={deletingPoi?.name ?? ""}
+        associationCount={deletingPoiAssociations}
+        isDeleting={isDeletingPoi}
       />
     </div>
   );

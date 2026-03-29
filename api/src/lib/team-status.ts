@@ -1,15 +1,23 @@
 import { eq, and, lt } from "drizzle-orm";
-import type { Db } from "../db";
+import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import * as schema from "../db/schema";
 import { teams } from "../db/schema";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+// 兼容 D1 和 better-sqlite3 的数据库类型
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyDb = BetterSQLite3Database<typeof schema> | any;
+
+// 查询结果类型
+type TeamIdRow = { id: string };
 
 /**
  * 检查并更新已过期的队伍状态
  * - recruiting + 过期 -> cancelled
  * - formed + 过期 -> completed
  */
-export async function updateExpiredTeams(db: Db, teamId?: string): Promise<string[]> {
+export async function updateExpiredTeams(db: AnyDb, teamId?: string): Promise<string[]> {
   const now = new Date();
   const updatedIds: string[] = [];
 
@@ -42,7 +50,7 @@ export async function updateExpiredTeams(db: Db, teamId?: string): Promise<strin
   const threshold = new Date(now.getTime() - ONE_DAY_MS);
 
   // recruiting -> cancelled
-  const recruitingExpired = await db
+  const recruitingExpired: TeamIdRow[] = await db
     .select({ id: teams.id })
     .from(teams)
     .where(and(eq(teams.status, "recruiting"), lt(teams.endTime, now), lt(teams.createdAt, threshold)));
@@ -52,11 +60,11 @@ export async function updateExpiredTeams(db: Db, teamId?: string): Promise<strin
       .update(teams)
       .set({ status: "cancelled", updatedAt: now })
       .where(and(eq(teams.status, "recruiting"), lt(teams.endTime, now), lt(teams.createdAt, threshold)));
-    updatedIds.push(...recruitingExpired.map((t) => t.id));
+    updatedIds.push(...recruitingExpired.map((t: TeamIdRow) => t.id));
   }
 
   // formed -> completed
-  const formedExpired = await db
+  const formedExpired: TeamIdRow[] = await db
     .select({ id: teams.id })
     .from(teams)
     .where(and(eq(teams.status, "formed"), lt(teams.endTime, now), lt(teams.createdAt, threshold)));
@@ -66,7 +74,7 @@ export async function updateExpiredTeams(db: Db, teamId?: string): Promise<strin
       .update(teams)
       .set({ status: "completed", updatedAt: now })
       .where(and(eq(teams.status, "formed"), lt(teams.endTime, now), lt(teams.createdAt, threshold)));
-    updatedIds.push(...formedExpired.map((t) => t.id));
+    updatedIds.push(...formedExpired.map((t: TeamIdRow) => t.id));
   }
 
   return updatedIds;

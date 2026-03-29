@@ -71,7 +71,6 @@ export interface RoutePoi {
   id: string;
   name: string;
   description?: string | null;
-  category?: string | null;
   coordinates: { lat: number; lng: number };
   images?: string[];
   extra?: Record<string, any> | null;
@@ -79,6 +78,9 @@ export interface RoutePoi {
   roleType: 'waypoint' | 'checkpoint' | 'viewpoint' | 'facility' | 'poi';
   roleSpecificData?: Record<string, any> | null;
 }
+
+// POI 类型从共享包导入
+export type { PoiDetail, PoiCreateInput, PoiUpdateInput } from "@gomate/types";
 
 // 路线信息
 export interface Route {

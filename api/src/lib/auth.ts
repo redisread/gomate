@@ -4,6 +4,27 @@ import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { sendPasswordResetEmail, sendWelcomeEmail } from "./email";
 
+/** Better Auth 用户类型（包含扩展字段） */
+interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  nickname?: string | null;
+}
+
+/** 密码重置回调参数 */
+interface ResetPasswordParams {
+  user: AuthUser;
+  url: string;
+  token: string;
+}
+
+/** 验证邮件回调参数 */
+interface VerifyEmailParams {
+  user: AuthUser;
+  url: string;
+}
+
 /** KV TTL 最小值（Cloudflare KV 限制） */
 const KV_MIN_TTL = 60;
 
@@ -76,7 +97,7 @@ export function createAuth(env: Env) {
       requireEmailVerification: false,
       resetPasswordTokenExpiresIn: 3600,
       // 自定义邮件发送回调 - 使用正确的函数名
-      sendResetPassword: async ({ user, url, token }) => {
+      sendResetPassword: async ({ user, url, token }: ResetPasswordParams) => {
         console.log("[Auth] 发送密码重置邮件:", user.email, "URL:", url);
         const result = await sendPasswordResetEmail(
           user.email,
@@ -89,7 +110,7 @@ export function createAuth(env: Env) {
         }
       },
       // 用户注册成功发送欢迎邮件
-      sendVerifyEmail: async ({ user, url }) => {
+      sendVerifyEmail: async ({ user, url }: VerifyEmailParams) => {
         console.log("[Auth] 发送欢迎邮件:", user.email);
         const result = await sendWelcomeEmail(user.email, user.nickname || user.email, env);
         if (!result.success) {
