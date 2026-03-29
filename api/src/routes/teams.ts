@@ -116,12 +116,24 @@ teams.get("/", async (c) => {
 
     // 特殊模式：某地点的队伍
     if (locationId) {
+      const conditions = [eq(schema.teams.locationId, locationId)];
+
+      // 添加 status 过滤
+      if (statusParam) {
+        const statuses = statusParam.split(",").filter(Boolean);
+        if (statuses.length === 1) {
+          conditions.push(eq(schema.teams.status, statuses[0]));
+        } else if (statuses.length > 1) {
+          conditions.push(inArray(schema.teams.status, statuses));
+        }
+      }
+
       result = await db
         .select(teamColumns)
         .from(schema.teams)
         .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
         .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-        .where(eq(schema.teams.locationId, locationId))
+        .where(and(...conditions))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
       return c.json({ success: true, teams: formatTeams(result) });
     }
