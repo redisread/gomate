@@ -430,6 +430,9 @@ export const copy = {
     statusCancelled: "已取消",
     statusExpiredNotFormed: "活动已过期，队伍未组建成功",
 
+    // 成员状态描述
+    memberJoinedDesc: "他们正在等待和你一起出发",
+
     // 操作
     joinTeam: "申请加入",
     viewLocationDetail: "查看地点详情",

@@ -921,36 +921,31 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 {isPending && (
                   <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/60 rounded-2xl p-5 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-2">
-                      <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                      <Clock className="h-4 w-4 text-amber-600 flex-shrink-0" />
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.statusPending}</p>
                     </div>
                     <p className="text-xs text-stone-600 leading-relaxed pl-6">{copy.teams.pendingDesc}</p>
-                    <a
-                      href="/my-teams"
-                      className="mt-3 pl-6 inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800 font-semibold transition-colors"
-                    >
-                      查看我的队伍 <ArrowRight className="h-3 w-3" />
-                    </a>
+                    <div className="pl-6 mt-3">
+                      <a href="/my-teams" className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800 font-semibold transition-colors">
+                        查看我的队伍 <ArrowRight className="h-3 w-3" />
+                      </a>
+                    </div>
                   </div>
                 )}
 
                 {isMember && (
-                  <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/60 rounded-2xl p-5 backdrop-blur-sm">
+                  <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/60 rounded-2xl p-5 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                      <CheckCircle className="h-4 w-4 text-amber-600 flex-shrink-0" />
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.statusApproved}</p>
                     </div>
-                    <p className="text-xs text-emerald-700 leading-relaxed pl-6">
-                      {copy.teams.storyNarrative.waitingForYou}
-                    </p>
-                    <a href="/my-teams" className="mt-3 pl-6 inline-flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-800 font-semibold transition-colors">
-                      查看我的队伍 <ArrowRight className="h-3 w-3" />
-                    </a>
-                    <div className="pl-6 mt-3 pt-3 border-t border-emerald-200/50">
-                      <button
-                        onClick={() => setShowLeaveConfirm(true)}
-                        className="text-xs text-stone-400 hover:text-red-500 transition-colors"
-                      >
+                    <p className="text-xs text-stone-600 leading-relaxed pl-6">{copy.teams.memberJoinedDesc}</p>
+                    <div className="pl-6 mt-3 flex items-center gap-3">
+                      <a href="/my-teams" className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800 font-semibold transition-colors">
+                        查看我的队伍 <ArrowRight className="h-3 w-3" />
+                      </a>
+                      <span className="text-stone-300">·</span>
+                      <button onClick={() => setShowLeaveConfirm(true)} className="text-xs text-stone-400 hover:text-red-500 transition-colors">
                         {copy.teams.leaveTeam}
                       </button>
                     </div>
@@ -963,19 +958,13 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                       <Crown className="h-4 w-4 text-amber-600 flex-shrink-0" />
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.youAreLeader}</p>
                     </div>
-                    <p className="text-xs text-stone-600 leading-relaxed pl-6 mb-3">{copy.teams.youAreLeaderDesc}</p>
-                    <div className="pl-6 flex items-center gap-3">
-                      <a
-                        href="/my-teams"
-                        className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800 font-semibold transition-colors"
-                      >
+                    <p className="text-xs text-stone-600 leading-relaxed pl-6">{copy.teams.youAreLeaderDesc}</p>
+                    <div className="pl-6 mt-3 flex items-center gap-3">
+                      <a href="/my-teams" className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800 font-semibold transition-colors">
                         {copy.teams.manageTeam} <ArrowRight className="h-3 w-3" />
                       </a>
                       <span className="text-stone-300">·</span>
-                      <button
-                        onClick={() => setShowEditModal(true)}
-                        className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800 font-medium transition-colors"
-                      >
+                      <button onClick={() => setShowEditModal(true)} className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800 font-medium transition-colors">
                         <Pencil className="h-3 w-3" />
                         {copy.teams.editBtn}
                       </button>
