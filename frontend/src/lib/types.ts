@@ -121,10 +121,10 @@ export interface SessionUser {
   bio?: string | null;
   level?: UserLevel | null;
   completedHikes?: number | null;
-  createdAt?: number | null;
+  createdAt?: string | null;
   wechat?: string | null;
   gender?: string | null;
-  birthday?: number | null;
+  birthday?: string | null;
   extra?: string | null;
 }
 
@@ -155,15 +155,15 @@ export interface UserPublicProfile {
   avatar: string | null;
   bio: string | null;
   gender: string | null;
-  birthday: number | null;
+  birthday: string | null;
   level: UserLevel;
   completedHikes: number;
-  extra: string | null; // JSON字符串: { equipment: string[], experience: string }
-  createdAt: number;
+  extra: string | null;
+  createdAt: string;
   stats: {
-    createdTeams: number;    // 创建的队伍数
-    joinedTeams: number;     // 参加的队伍数（不包括自己创建的）
-    completedTeams: number;  // 完成的队伍数
+    createdTeams: number;
+    joinedTeams: number;
+    completedTeams: number;
   };
 }
 

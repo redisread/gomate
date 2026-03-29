@@ -23,11 +23,11 @@ export function parseExtra(extra: string | null | undefined): UserExtra {
 }
 
 /**
- * 将生日时间戳转为日期显示字符串 (YYYY-MM-DD)
- * @param birthday 时间戳 (ms) 或 null
+ * 将生日转为日期显示字符串 (YYYY-MM-DD)
+ * @param birthday ISO 字符串、时间戳或 null
  * @returns 日期字符串或空字符串
  */
-export function formatBirthday(birthday: number | null | undefined): string {
+export function formatBirthday(birthday: string | number | null | undefined): string {
   if (!birthday) return "";
   const d = new Date(birthday);
   const y = d.getUTCFullYear();
@@ -37,28 +37,34 @@ export function formatBirthday(birthday: number | null | undefined): string {
 }
 
 /**
- * 根据生日时间戳计算年龄
- * @param birthday 时间戳 (ms) 或 null
- * @returns 年龄字符串（如 "25岁"）或空字符串
- */
-export function getAgeFromBirthday(birthday: number | null | undefined): string {
-  if (!birthday) return "";
-  const birth = new Date(birthday);
-  const now = new Date();
-  const age = now.getFullYear() - birth.getFullYear();
-  return `${age}岁`;
-}
-
-/**
- * 将生日时间戳转为年龄数值
- * @param birthday 时间戳 (ms) 或 null
+ * 将生日转为年龄数值（正确计算，考虑月份和日期）
+ * @param birthday ISO 字符串、时间戳或 null
  * @returns 年龄数值或 null
  */
-export function getAgeNumber(birthday: number | null | undefined): number | null {
+export function getAgeNumber(birthday: string | number | null | undefined): number | null {
   if (!birthday) return null;
   const birth = new Date(birthday);
   const now = new Date();
-  return now.getFullYear() - birth.getFullYear();
+  
+  let age = now.getUTCFullYear() - birth.getUTCFullYear();
+  const monthDiff = now.getUTCMonth() - birth.getUTCMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && now.getUTCDate() < birth.getUTCDate())) {
+    age--;
+  }
+  
+  return age < 0 ? null : age;
+}
+
+/**
+ * 根据生日计算年龄字符串
+ * @param birthday ISO 字符串、时间戳或 null
+ * @returns 年龄字符串（如 "25岁"）或空字符串
+ */
+export function getAgeFromBirthday(birthday: string | number | null | undefined): string {
+  const age = getAgeNumber(birthday);
+  if (age === null) return "";
+  return `${age}岁`;
 }
 
 /**

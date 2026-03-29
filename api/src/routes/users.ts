@@ -115,7 +115,7 @@ users.patch("/update", async (c) => {
     if (wechat !== undefined) updateData.wechat = wechat;
     if (gender !== undefined) updateData.gender = gender;
     if (birthday !== undefined) {
-      updateData.birthday = typeof birthday === "string" ? new Date(birthday) : new Date(birthday as number);
+      updateData.birthday = birthday === null ? null : new Date(birthday as number);
     }
     if (extra !== undefined) {
       if (!validateUserExtra(extra)) return c.json({ error: "Invalid extra field format" }, 400);

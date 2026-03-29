@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import {
   ArrowLeft, User, Mountain, Award, Calendar, Users,
@@ -9,6 +7,7 @@ import { fetchAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
 import { formatJoinDate } from "@/lib/date-utils";
+import { getAgeFromBirthday } from "@/lib/user-utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { LEVEL_CONFIG, StatCard, ProfileSkeleton } from "@/components/shared/profile-shared";
@@ -49,14 +48,6 @@ function getGenderText(gender?: string | null): string {
   if (gender === "male") return copy.enums.gender.male;
   if (gender === "female") return copy.enums.gender.female;
   return "";
-}
-
-function getAgeText(birthday?: string | null): string {
-  if (!birthday) return "";
-  const birth = new Date(birthday);
-  const now = new Date();
-  const age = now.getUTCFullYear() - birth.getUTCFullYear();
-  return `${age}${copy.profile.ageSuffix}`;
 }
 
 /**
@@ -115,7 +106,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
 
   const displayName = user.nickname || user.name;
   const extra = parseExtra(user.extra);
-  const age = getAgeText(user.birthday);
+  const age = getAgeFromBirthday(user.birthday);
   const genderText = getGenderText(user.gender);
   const levelConfig = LEVEL_CONFIG[user.level] || LEVEL_CONFIG.beginner;
 

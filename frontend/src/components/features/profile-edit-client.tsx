@@ -101,7 +101,7 @@ export function ProfileEditClient() {
       try {
         const u = await fetchCurrentUser("/login?redirect=/profile/edit");
         if (!u) return;
-        const user = u as SessionUser;
+        const user = u as unknown as SessionUser;
         setUser(user);
         setAvatarPreview(user.image || null);
 const { experience, equipment } = parseExtra(user.extra);
@@ -231,7 +231,7 @@ const { experience, equipment } = parseExtra(user.extra);
           level: formData.level,
           wechat: formData.wechat,
           gender: formData.gender || null,
-          birthday: formData.birthday || null,
+          birthday: birthdayToTimestamp(formData.birthday),
           extra,
         }),
       });
