@@ -498,9 +498,10 @@ export const copy = {
 
     // 删除队伍
     deleteTeam: "删除队伍",
-    deleteTeamConfirm: "确定要删除该队伍吗？删除后队伍将标记为已取消，无法恢复。",
+    deleteTeamConfirm: "确定删除队伍？",
+    deleteTeamWarning: "删除后队伍将无法恢复，成员申请也会被清除。",
     deleteTeamSuccess: "队伍已删除",
-    deleteTeamFailed: "删除队伍失败",
+    deleteTeamFailed: "删除失败，请稍后重试",
     onlyLeaderCanDelete: "只有队长可以删除队伍",
 
     // 取消队伍

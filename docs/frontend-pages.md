@@ -142,25 +142,27 @@
 - 地点简介卡（缩略图 + 名称 + 跳转链接）
 - 同地点其他队伍列表
 - 桌面端侧边栏（sticky）
-  - 队长信息卡
-  - 加入操作卡（5 种状态）：
-    - `canJoin`：进度条 + 留言 textarea + 申请按钮
-    - `isPending`：待审批提示
-    - `isMember`：已加入徽章 + 退出按钮
-    - `isLeader`：已加入徽章 + 「管理队伍」链接
-    - `isClosed`：关闭提示
-  - 安全提示卡（4 条）
-- 移动端底部固定栏（44px，safe-area-inset-bottom）
-- 退出确认对话框（AlertDialog）
-- Toast 消息提示（替代 alert()）
-- 分享海报弹窗（Canvas 生成 + QR Code，支持保存图片）
+   - 队长信息卡
+   - 加入操作卡（5 种状态）：
+     - `canJoin`：进度条 + 留言 textarea + 申请按钮
+     - `isPending`：待审批提示
+     - `isMember`：已加入徽章 + 退出按钮
+     - `isLeader`：已加入徽章 + 「管理队伍」链接 + 「编辑队伍」按钮 + 「删除队伍」按钮（仅 recruiting/cancelled 状态）
+     - `isClosed`：关闭提示
+   - 安全提示卡（4 条）
+ - 移动端底部固定栏（44px，safe-area-inset-bottom）
+ - 退出确认对话框（AlertDialog）
+ - 删除队伍确认对话框（AlertDialog，仅队长可见，仅 recruiting/cancelled 状态）
+ - Toast 消息提示（替代 alert()）
+ - 分享海报弹窗（Canvas 生成 + QR Code，支持保存图片）
 
-**关键交互：**
-- 加入队伍（提交申请 + 留言）
-- 退出队伍（二次确认）
-- 成员列表折叠/展开
-- 分享（触发 SharePosterModal，Canvas 绘制海报 + 二维码）
-- Toast 成功/错误反馈
+ **关键交互：**
+ - 加入队伍（提交申请 + 留言）
+ - 退出队伍（二次确认）
+ - 删除队伍（队长专属，二次确认，成功后跳转到 /teams）
+ - 成员列表折叠/展开
+ - 分享（触发 SharePosterModal，Canvas 绘制海报 + 二维码）
+ - Toast 成功/错误反馈
 
 ---
 
