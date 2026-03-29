@@ -1108,16 +1108,15 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 {isPending && (
                   <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
                     <div className="flex items-center gap-2 mb-2">
-                      <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                      <Clock className="h-4 w-4 text-amber-600 flex-shrink-0" />
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.statusPending}</p>
                     </div>
                     <p className="text-xs text-stone-500 leading-relaxed pl-6">{copy.teams.pendingDesc}</p>
-                    <a
-                      href="/my-teams"
-                      className="mt-3 pl-6 inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
-                    >
-                      查看我的队伍 <ArrowRight className="h-3 w-3" />
-                    </a>
+                    <div className="pl-6 mt-3">
+                      <a href="/my-teams" className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors">
+                        查看我的队伍 <ArrowRight className="h-3 w-3" />
+                      </a>
+                    </div>
                   </div>
                 )}
 
@@ -1127,14 +1126,13 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                       <CheckCircle className="h-4 w-4 text-amber-600 flex-shrink-0" />
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.statusApproved}</p>
                     </div>
-                    <a href="/my-teams" className="pl-6 inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors">
-                      查看我的队伍 <ArrowRight className="h-3 w-3" />
-                    </a>
-                    <div className="pl-6 mt-2">
-                      <button
-                        onClick={() => setShowLeaveConfirm(true)}
-                        className="text-xs text-stone-400 hover:text-red-500 transition-colors underline underline-offset-2"
-                      >
+                    <p className="text-xs text-stone-500 leading-relaxed pl-6">{copy.teams.memberJoinedDesc}</p>
+                    <div className="pl-6 mt-3 flex items-center gap-3">
+                      <a href="/my-teams" className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors">
+                        查看我的队伍 <ArrowRight className="h-3 w-3" />
+                      </a>
+                      <span className="text-stone-300">·</span>
+                      <button onClick={() => setShowLeaveConfirm(true)} className="text-xs text-stone-400 hover:text-red-500 transition-colors">
                         {copy.teams.leaveTeam}
                       </button>
                     </div>
@@ -1147,19 +1145,13 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                       <Crown className="h-4 w-4 text-amber-600 flex-shrink-0" />
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.youAreLeader}</p>
                     </div>
-                    <p className="text-xs text-stone-500 leading-relaxed pl-6 mb-3">{copy.teams.youAreLeaderDesc}</p>
-                    <div className="pl-6 flex items-center gap-3">
-                      <a
-                        href="/my-teams"
-                        className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
-                      >
+                    <p className="text-xs text-stone-500 leading-relaxed pl-6">{copy.teams.youAreLeaderDesc}</p>
+                    <div className="pl-6 mt-3 flex items-center gap-3">
+                      <a href="/my-teams" className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors">
                         {copy.teams.manageTeam} <ArrowRight className="h-3 w-3" />
                       </a>
                       <span className="text-stone-300">·</span>
-                      <button
-                        onClick={() => setShowEditModal(true)}
-                        className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
-                      >
+                      <button onClick={() => setShowEditModal(true)} className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors">
                         <Pencil className="h-3 w-3" />
                         {copy.teams.editBtn}
                       </button>
