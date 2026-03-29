@@ -27,7 +27,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
     durationMin: "240",
     maxMembers: "",
     description: "",
-    requirements: "",
+    requirements: [] as string[],
   });
 
   React.useEffect(() => {
@@ -64,7 +64,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             durationMin: String(t.durationMin || 240),
             maxMembers: String(t.maxMembers || ""),
             description: t.description || "",
-            requirements: Array.isArray(t.requirements) ? t.requirements.join("\n") : "",
+            requirements: Array.isArray(t.requirements) ? t.requirements : [],
           });
         } else {
           setError("获取队伍信息失败");
@@ -81,6 +81,26 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const addRequirement = () => {
+    if (formData.requirements.length < 10) {
+      setFormData((prev) => ({ ...prev, requirements: [...prev.requirements, ""] }));
+    }
+  };
+
+  const removeRequirement = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      requirements: prev.requirements.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateRequirement = (index: number, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      requirements: prev.requirements.map((r, i) => (i === index ? value : r)),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,7 +128,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
     }
 
     try {
-      const reqList = formData.requirements.split("\n").map((s) => s.trim()).filter(Boolean);
+      const reqList = formData.requirements.map((s) => s.trim()).filter(Boolean);
       const res = await fetchAPI(`/api/teams/${teamId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -363,27 +383,80 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               />
             </FormSection>
 
-            <FormSection icon="📋" label="参与要求" hint="每行一条，将展示给申请者">
-              <textarea
-                id="requirements"
-                name="requirements"
-                placeholder="例如：需要有徒步经验&#10;自备充足饮用水&#10;穿着合适的徒步鞋"
-                value={formData.requirements}
-                onChange={handleChange}
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none resize-none"
-                style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#D97706";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
-                  e.currentTarget.style.background = "#fff";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#e8e0d7";
-                  e.currentTarget.style.boxShadow = "none";
-                  e.currentTarget.style.background = "#fdfaf6";
-                }}
-              />
+            <FormSection icon="📋" label="参与要求" hint="最多 10 条，将展示给申请者">
+              <ul className="space-y-2">
+                {formData.requirements.map((req, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span
+                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                      style={{ background: "#fef3c7", color: "#b45309" }}
+                    >
+                      {i + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={req}
+                      onChange={(e) => updateRequirement(i, e.target.value)}
+                      placeholder="例如：需要有徒步经验"
+                      maxLength={100}
+                      className="flex-1 px-3 py-2 rounded-lg border text-sm transition-all duration-200 focus:outline-none"
+                      style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = "#D97706";
+                        e.currentTarget.style.boxShadow = "0 0 0 2px rgba(217,119,6,0.10)";
+                        e.currentTarget.style.background = "#fff";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = "#e8e0d7";
+                        e.currentTarget.style.boxShadow = "none";
+                        e.currentTarget.style.background = "#fdfaf6";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeRequirement(i)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-150"
+                      style={{ color: "#9ca3af" }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2";
+                        (e.currentTarget as HTMLButtonElement).style.color = "#dc2626";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                        (e.currentTarget as HTMLButtonElement).style.color = "#9ca3af";
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {formData.requirements.length < 10 && (
+                <button
+                  type="button"
+                  onClick={addRequirement}
+                  className="w-full mt-2 py-2.5 rounded-lg border text-sm font-medium transition-all duration-150 flex items-center justify-center gap-1.5"
+                  style={{ borderColor: "#e8e0d7", color: "#8f7f6e" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "#f5f0e8";
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = "#D97706";
+                    (e.currentTarget as HTMLButtonElement).style.color = "#D97706";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = "#e8e0d7";
+                    (e.currentTarget as HTMLButtonElement).style.color = "#8f7f6e";
+                  }}
+                >
+                  <span>+ 添加一条</span>
+                </button>
+              )}
+              {formData.requirements.length === 0 && (
+                <p className="text-xs text-stone-400 mt-2 flex items-center gap-1.5">
+                  <AlertCircle className="h-3 w-3" />
+                  点击「添加一条」开始设置参与要求
+                </p>
+              )}
             </FormSection>
 
             <div
