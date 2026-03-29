@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
-import type { Team, TeamMember } from "@/lib/types";
+import type { Team, TeamMember, Application } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -413,6 +413,141 @@ function LeaveConfirmDialog({
   );
 }
 
+// ─── 审批确认对话框 ────────────────────────────────────────────────────────────
+function ApprovalConfirmDialog({
+  open,
+  type,
+  userName,
+  isLoading,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  type: "approve" | "reject";
+  userName: string;
+  isLoading: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  if (!open) return null;
+  const isApprove = type === "approve";
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
+        <h3 className="text-lg font-bold text-stone-900 mb-2">
+          {isApprove ? copy.teams.approveConfirm : copy.teams.rejectConfirm}
+        </h3>
+        <p className="text-sm text-stone-500 leading-relaxed mb-6">
+          {isApprove
+            ? `${userName} 将正式加入队伍`
+            : `拒绝后，${userName} 将不能加入此队伍。此操作不可撤销。`}
+        </p>
+        <button
+          onClick={onConfirm}
+          disabled={isLoading}
+          className={cn(
+            "w-full py-3 rounded-2xl text-white text-sm font-semibold transition-colors mb-2 flex items-center justify-center gap-2",
+            isApprove
+              ? "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600"
+              : "bg-red-500 hover:bg-red-600"
+          )}
+        >
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isApprove ? copy.teams.approveBtn : copy.teams.rejectBtn}
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={isLoading}
+          className="w-full py-3 rounded-2xl text-stone-500 text-sm font-medium hover:bg-stone-50 transition-colors"
+        >
+          {copy.common.cancel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── 申请人卡片 ────────────────────────────────────────────────────────────────
+function ApplicantCard({
+  application,
+  isTeamFull,
+  onApprove,
+  onReject,
+  approving,
+  rejecting,
+}: {
+  application: Application;
+  isTeamFull: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+  approving: boolean;
+  rejecting: boolean;
+}) {
+  const name = application.user.nickname || application.user.name;
+  const appliedAt = application.createdAt
+    ? formatRelativeTime(new Date(application.createdAt))
+    : "";
+
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-stone-50/80">
+      <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-amber-400 to-amber-300 flex-shrink-0 flex items-center justify-center">
+        {application.user.avatar ? (
+          <img src={application.user.avatar} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-white font-semibold text-sm">{name?.[0] || "?"}</span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-stone-800 text-sm truncate">{name}</p>
+        <p className="text-xs text-stone-400">{appliedAt}</p>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {isTeamFull ? (
+          <span className="text-xs text-stone-400 bg-stone-100 px-2 py-1 rounded-full">
+            {copy.teams.teamFullAlert}
+          </span>
+        ) : (
+          <>
+            <button
+              onClick={onApprove}
+              disabled={approving || rejecting}
+              className="px-3 py-1.5 rounded-full text-xs font-medium bg-gradient-to-r from-amber-600 to-amber-500 text-white hover:from-amber-700 hover:to-amber-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              {approving && <Loader2 className="h-3 w-3 animate-spin" />}
+              {copy.teams.approveBtn}
+            </button>
+            <button
+              onClick={onReject}
+              disabled={approving || rejecting}
+              className="px-3 py-1.5 rounded-full text-xs font-medium border border-stone-200 text-stone-500 hover:border-red-300 hover:text-red-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              {rejecting && <Loader2 className="h-3 w-3 animate-spin" />}
+              {copy.teams.rejectBtn}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return copy.myTeams.minutesAgoTemplate.replace("{count}", String(minutes));
+  if (hours < 24) return copy.myTeams.hoursAgoTemplate.replace("{count}", String(hours));
+  return copy.myTeams.daysAgoTemplate.replace("{count}", String(days));
+}
+
 // ─── 编辑队伍 Modal ────────────────────────────────────────────────────────────
 interface EditTeamModalProps {
   open: boolean;
@@ -477,7 +612,7 @@ function EditTeamModal({ open, team, onClose, onSuccess }: EditTeamModalProps) {
       if (data.success) {
         onSuccess({
           title: title.trim(),
-          description: description.trim() || null,
+          description: description.trim() || undefined,
           maxMembers: maxMembersNum,
           time,
           durationMin: parseInt(durationMin, 10) || 240,
@@ -637,12 +772,78 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
 
+  // 审批相关状态
+  const [applications, setApplications] = React.useState<Application[]>([]);
+  const [isLoadingApps, setIsLoadingApps] = React.useState(false);
+  const [confirmDialog, setConfirmDialog] = React.useState<{
+    open: boolean;
+    type: "approve" | "reject";
+    userId: string;
+    userName: string;
+  } | null>(null);
+  const [actioningUserId, setActioningUserId] = React.useState<string | null>(null);
+
   const { toast, exiting, show: showToast } = useToast();
 
   React.useEffect(() => {
     loadTeam();
     checkCurrentUser();
   }, [teamId]);
+
+  const fetchApplications = async () => {
+    if (!teamId) return;
+    setIsLoadingApps(true);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/applications`);
+      const data = await res.json();
+      if (data.success) {
+        setApplications(data.applications || []);
+      }
+    } catch (err) {
+      console.error("[TeamDetail] 获取申请列表失败:", err);
+    } finally {
+      setIsLoadingApps(false);
+    }
+  };
+
+  const handleApprove = async (userId: string) => {
+    setActioningUserId(userId);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/members/${userId}/approve`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        showToast({ type: "success", message: copy.success.approved });
+        setApplications((prev) => prev.filter((a) => a.userId !== userId));
+        loadTeam();
+      } else {
+        showToast({ type: "error", message: data.error || copy.errors.reviewFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.errors.reviewFailed });
+    } finally {
+      setActioningUserId(null);
+      setConfirmDialog(null);
+    }
+  };
+
+  const handleReject = async (userId: string) => {
+    setActioningUserId(userId);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/members/${userId}/reject`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        showToast({ type: "success", message: copy.success.rejected });
+        setApplications((prev) => prev.filter((a) => a.userId !== userId));
+      } else {
+        showToast({ type: "error", message: data.error || copy.errors.reviewFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.errors.reviewFailed });
+    } finally {
+      setActioningUserId(null);
+      setConfirmDialog(null);
+    }
+  };
 
   const checkCurrentUser = async () => {
     try {
@@ -651,6 +852,10 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
       if (data?.user?.id) {
         setCurrentUserId(data.user.id);
         fetchUserMemberStatus();
+        // 如果队伍已加载且当前用户是队长，获取申请列表
+        if (team && team.leader?.id === data.user.id) {
+          fetchApplications();
+        }
       }
     } catch (err) {
       console.error("[TeamDetail] 获取当前用户会话失败:", err);
@@ -676,6 +881,10 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
       if (data.success && data.team) {
         setTeam(data.team);
         fetchOtherTeams(data.team.locationId, teamId);
+        // 如果当前用户是队长，获取申请列表
+        if (currentUserId && data.team.leader?.id === currentUserId) {
+          fetchApplications();
+        }
       } else {
         setError(copy.teams.notFound);
       }
@@ -1167,6 +1376,70 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   </div>
                 )}
 
+                {/* ── 待审核申请模块（仅队长可见）── */}
+                {isLeader && (
+                  <div className="bg-white rounded-2xl border border-stone-100 p-5 shadow-warm-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-semibold text-stone-700 flex items-center gap-2">
+                        <Users className="h-4 w-4 text-amber-500" />
+                        {copy.teams.reviewTitle}
+                      </h3>
+                      {applications.length > 0 && (
+                        <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                          {applications.length} {copy.teams.applicationCount}
+                        </span>
+                      )}
+                    </div>
+
+                    {isLoadingApps ? (
+                      <div className="space-y-3">
+                        {[1, 2].map((i) => (
+                          <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-stone-50 animate-pulse">
+                            <div className="w-10 h-10 rounded-full bg-stone-200" />
+                            <div className="flex-1">
+                              <div className="h-4 w-20 bg-stone-200 rounded mb-1" />
+                              <div className="h-3 w-16 bg-stone-100 rounded" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : applications.length > 0 ? (
+                      <div className="space-y-2">
+                        {applications.map((app) => (
+                          <ApplicantCard
+                            key={app.id}
+                            application={app}
+                            isTeamFull={isFull}
+                            onApprove={() =>
+                              setConfirmDialog({
+                                open: true,
+                                type: "approve",
+                                userId: app.userId,
+                                userName: app.user.nickname || app.user.name || "申请人",
+                              })
+                            }
+                            onReject={() =>
+                              setConfirmDialog({
+                                open: true,
+                                type: "reject",
+                                userId: app.userId,
+                                userName: app.user.nickname || app.user.name || "申请人",
+                              })
+                            }
+                            approving={actioningUserId === app.userId && confirmDialog?.type === "approve"}
+                            rejecting={actioningUserId === app.userId && confirmDialog?.type === "reject"}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-sm text-stone-400">{copy.teams.reviewEmpty}</p>
+                        <p className="text-xs text-stone-300 mt-1">{copy.teams.reviewEmptyDesc}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {!canJoin && !isLeader && !isMember && !isPending && (
                   <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 text-center">
                     <p className="text-sm text-stone-400">{getClosedMessage(team)}</p>
@@ -1405,6 +1678,22 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
           meta={`${team.currentMembers}/${team.maxMembers} 人`}
           onClose={() => setShowShareModal(false)}
           onToast={showToast}
+        />
+      )}
+
+      {/* 审批确认对话框 */}
+      {confirmDialog && (
+        <ApprovalConfirmDialog
+          open={confirmDialog.open}
+          type={confirmDialog.type}
+          userName={confirmDialog.userName}
+          isLoading={actioningUserId === confirmDialog.userId}
+          onCancel={() => setConfirmDialog(null)}
+          onConfirm={() =>
+            confirmDialog.type === "approve"
+              ? handleApprove(confirmDialog.userId)
+              : handleReject(confirmDialog.userId)
+          }
         />
       )}
 

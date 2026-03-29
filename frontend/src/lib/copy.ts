@@ -391,10 +391,14 @@ export const copy = {
     approving: "批准中...",
     rejecting: "拒绝中...",
     approveConfirm: "确定批准该成员加入队伍？",
+    approveConfirmDesc: "批准后，该成员将正式加入队伍",
     rejectConfirm: "确定拒绝该成员的申请？",
+    rejectConfirmDesc: "拒绝后，该申请人将不能加入此队伍。此操作不可撤销。",
     applicationCount: "个待审核申请",
     appliedAt: "申请时间",
     noBio: "暂无简介",
+    teamFullAlert: "队伍已满",
+    teamFullAlertDesc: "当前队伍人数已达上限，无法批准新成员",
 
     // 状态标签（UI 展示用，枚举值映射请用 copy.enums.teamStatus）
     statusRecruiting: "招募中",

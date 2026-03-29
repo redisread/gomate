@@ -197,3 +197,18 @@ export interface Team {
   route?: Route; // 关联的路线信息
   location?: Location; // 关联的地点信息
 }
+
+// 入队申请
+export interface Application {
+  id: string;
+  userId: string;
+  createdAt: Date | string;
+  user: {
+    id: string;
+    name: string;
+    nickname: string | null;
+    avatar: string | null;
+    bio: string | null;
+    level: string;
+  };
+}
