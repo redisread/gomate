@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { SharePosterModal } from "./share-poster-modal";
+import { Tooltip } from "@/components/ui/tooltip";
 
 // ─── Toast Hook ────────────────────────────────────────────────────────────────
 interface ToastOptions {
@@ -128,9 +129,9 @@ function MemberAvatarGrid({
         {visible.map((m) => {
           const name = m.nickname || m.name;
           const isLeader = m.userId === leaderId;
-          return (
+          
+          const memberLink = (
             <a
-              key={m.id}
               href={`/users/${m.userId}`}
               className="relative group flex flex-col items-center gap-1.5 cursor-pointer"
             >
@@ -167,6 +168,15 @@ function MemberAvatarGrid({
                 {name}
               </p>
             </a>
+          );
+
+          // 有微信号时包裹 Tooltip（仅队友可见）
+          return m.wechat ? (
+            <Tooltip key={m.id} content={m.wechat} side="bottom">
+              {memberLink}
+            </Tooltip>
+          ) : (
+            <React.Fragment key={m.id}>{memberLink}</React.Fragment>
           );
         })}
 
