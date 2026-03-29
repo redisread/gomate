@@ -413,91 +413,6 @@ function LeaveConfirmDialog({
   );
 }
 
-// ─── 删除队伍确认对话框 ────────────────────────────────────────────────────────
-function DeleteTeamDialog({
-  open,
-  onCancel,
-  onConfirm,
-  isDeleting,
-}: {
-  open: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-  isDeleting: boolean;
-}) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="delete-dialog-title"
-        aria-describedby="delete-dialog-desc"
-        className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both]"
-      >
-        <h3 id="delete-dialog-title" className="text-lg font-bold text-stone-900 mb-2">{copy.teams.deleteTeamConfirm}</h3>
-        <p id="delete-dialog-desc" className="text-sm text-stone-500 leading-relaxed mb-6">{copy.teams.deleteTeamWarning}</p>
-        <button
-          onClick={onConfirm}
-          disabled={isDeleting}
-          className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors mb-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
-          {copy.teams.deleteTeam}
-        </button>
-        <button
-          onClick={onCancel}
-          disabled={isDeleting}
-          className="w-full py-3 rounded-2xl text-stone-500 text-sm font-medium hover:bg-stone-50 transition-colors disabled:opacity-60"
-        >
-          {copy.common.cancel}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── 微信号引导弹窗 ────────────────────────────────────────────────────────────
-function WechatRequiredModal({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="wechat-required-title"
-        aria-describedby="wechat-required-desc"
-        className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both]"
-      >
-        <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
-        <h3 id="wechat-required-title" className="text-lg font-bold text-stone-900 mb-2 text-center">
-          {copy.teams.wechatRequiredJoinTitle}
-        </h3>
-        <p id="wechat-required-desc" className="text-sm text-stone-500 mb-6 text-center leading-relaxed">
-          {copy.teams.wechatRequiredJoinDesc}
-        </p>
-        <a href="/profile/edit" className="block">
-          <button className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 text-white text-sm font-semibold shadow-brand-glow hover:from-amber-700 hover:to-amber-600 transition-all">
-            {copy.teams.goToFillWechat}
-          </button>
-        </a>
-        <button
-          onClick={onClose}
-          className="w-full mt-2 py-3 rounded-2xl text-stone-500 text-sm font-medium hover:bg-stone-50 transition-colors"
-        >
-          {copy.common.cancel}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ─── 审批确认对话框 ────────────────────────────────────────────────────────────
 function ApprovalConfirmDialog({
   open,
@@ -543,6 +458,54 @@ function ApprovalConfirmDialog({
         >
           {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
           {isApprove ? copy.teams.approveBtn : copy.teams.rejectBtn}
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={isLoading}
+          className="w-full py-3 rounded-2xl text-stone-500 text-sm font-medium hover:bg-stone-50 transition-colors"
+        >
+          {copy.common.cancel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── 组建队伍确认对话框 ────────────────────────────────────────────────────────────
+function FormTeamConfirmDialog({
+  open,
+  isFull,
+  isLoading,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  isFull: boolean;
+  isLoading: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
+<h3 className="text-lg font-bold text-stone-900 mb-2">
+          {isFull ? copy.teams.formTeamConfirm : copy.teams.formTeamUnderfilledConfirm}
+        </h3>
+        <p className="text-sm text-stone-500 leading-relaxed mb-6">
+          {copy.teams.formTeamWarning}
+        </p>
+        <button
+          onClick={onConfirm}
+          disabled={isLoading}
+          className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white text-sm font-semibold transition-colors mb-2 flex items-center justify-center gap-2"
+        >
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isFull ? copy.teams.formTeam : copy.teams.formTeamUnderfilled}
         </button>
         <button
           onClick={onCancel}
@@ -856,6 +819,8 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const [showJoinSheet, setShowJoinSheet] = React.useState(false);
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
+  const [showFormConfirm, setShowFormConfirm] = React.useState(false);
+  const [isForming, setIsForming] = React.useState(false);
 
   // 审批相关状态
   const [applications, setApplications] = React.useState<Application[]>([]);
@@ -867,14 +832,6 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
     userName: string;
   } | null>(null);
   const [actioningUserId, setActioningUserId] = React.useState<string | null>(null);
-
-  // 删除队伍相关状态
-  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
-  const [isDeleting, setIsDeleting] = React.useState(false);
-
-  // 微信验证相关状态
-  const [showWechatRequiredModal, setShowWechatRequiredModal] = React.useState(false);
-  const [userHasWechat, setUserHasWechat] = React.useState<boolean | null>(null);
 
   const { toast, exiting, show: showToast } = useToast();
 
@@ -945,58 +902,12 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
     }
   };
 
-  const handleDeleteTeam = async () => {
-    setIsDeleting(true);
-    try {
-      const res = await fetchAPI(`/api/teams/${teamId}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        showToast({ type: "success", message: copy.teams.deleteTeamSuccess });
-        window.location.href = "/my-teams";
-      } else {
-        showToast({ type: "error", message: data.error || copy.teams.deleteTeamFailed });
-      }
-    } catch {
-      showToast({ type: "error", message: copy.teams.deleteTeamFailed });
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
-    }
-  };
-
-  const handleJoinClick = async () => {
-    if (!currentUserId) {
-      window.location.href = `/login?redirect=/teams/${teamId}`;
-      return;
-    }
-    if (userHasWechat === null) {
-      try {
-        const res = await fetchAPI("/auth/get-session");
-        const data = await res.json();
-        const hasWechat = !!data?.user?.wechat;
-        setUserHasWechat(hasWechat);
-        if (!hasWechat) {
-          setShowWechatRequiredModal(true);
-          return;
-        }
-      } catch {
-        showToast({ type: "error", message: copy.errors.loginRequired });
-        return;
-      }
-    } else if (!userHasWechat) {
-      setShowWechatRequiredModal(true);
-      return;
-    }
-    setShowJoinSheet(true);
-  };
-
   const checkCurrentUser = async () => {
     try {
       const res = await fetchAPI("/auth/get-session");
       const data = await res.json();
       if (data?.user?.id) {
         setCurrentUserId(data.user.id);
-        setUserHasWechat(!!data.user.wechat);
         fetchUserMemberStatus();
       }
     } catch (err) {
@@ -1093,6 +1004,29 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const handleEditSuccess = (updated: Partial<Team>) => {
     setTeam((prev) => prev ? { ...prev, ...updated } : prev);
     showToast({ type: "success", message: copy.teams.editSuccess });
+  };
+
+  const handleFormTeam = async () => {
+    setIsForming(true);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/form`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isUnderfilled: !isFull }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast({ type: "success", message: copy.teams.formTeamSuccess });
+        loadTeam();
+      } else {
+        showToast({ type: "error", message: data.error || copy.teams.formTeamFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.teams.formTeamFailed });
+    } finally {
+      setIsForming(false);
+      setShowFormConfirm(false);
+    }
   };
 
   /* ---- 加载态：骨架屏 ---- */
@@ -1441,7 +1375,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                         className="w-full px-3.5 py-2.5 rounded-xl text-stone-800 text-sm placeholder:text-stone-400 focus:outline-none resize-none mb-3 bg-stone-50 border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all"
                       />
                       <button
-                        onClick={handleJoinClick}
+                        onClick={handleJoin}
                         disabled={isJoining}
                         className="w-full py-3 font-semibold text-white rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow hover:shadow-[0_6px_24px_rgba(217,119,6,0.45)] hover:-translate-y-0.5 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2 active:scale-[0.97]"
                       >
@@ -1495,7 +1429,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.youAreLeader}</p>
                     </div>
                     <p className="text-xs text-stone-500 leading-relaxed pl-6 mb-3">{copy.teams.youAreLeaderDesc}</p>
-                    <div className="pl-6 flex items-center gap-3 flex-wrap">
+                    <div className="pl-6 flex items-center gap-3">
                       <a
                         href="/my-teams"
                         className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
@@ -1514,10 +1448,12 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                         <>
                           <span className="text-stone-300">·</span>
                           <button
-                            onClick={() => setShowDeleteConfirm(true)}
-                            className="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-600 font-medium transition-colors"
+                            onClick={() => setShowFormConfirm(true)}
+                            disabled={isForming}
+                            className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors disabled:opacity-50"
                           >
-                            {copy.teams.deleteTeam}
+                            {isForming && <Loader2 className="h-3 w-3 animate-spin" />}
+                            {isFull ? copy.teams.formTeam : copy.teams.formTeamUnderfilled}
                           </button>
                         </>
                       )}
@@ -1758,7 +1694,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   <Share2 className="h-4.5 w-4.5" />
                 </button>
                 <button
-                  onClick={handleJoinClick}
+                  onClick={() => setShowJoinSheet(true)}
                   className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow transition-all duration-150 flex items-center justify-center gap-2 min-h-[44px] active:scale-[0.98] text-base"
                 >
                   {copy.teams.joinTeam}
@@ -1846,18 +1782,13 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
         />
       )}
 
-      {/* 删除队伍确认对话框 */}
-      <DeleteTeamDialog
-        open={showDeleteConfirm}
-        onCancel={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDeleteTeam}
-        isDeleting={isDeleting}
-      />
-
-      {/* 微信号引导弹窗 */}
-      <WechatRequiredModal
-        open={showWechatRequiredModal}
-        onClose={() => setShowWechatRequiredModal(false)}
+      {/* 组建队伍确认对话框 */}
+      <FormTeamConfirmDialog
+        open={showFormConfirm}
+        isFull={isFull}
+        isLoading={isForming}
+        onCancel={() => setShowFormConfirm(false)}
+        onConfirm={handleFormTeam}
       />
 
       <Footer />
