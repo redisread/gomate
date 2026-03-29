@@ -718,16 +718,18 @@ export const copy = {
   myTeams: {
     pageTitle: "我的队伍",
     createBtn: "创建队伍",
-    tabCreated: "我创建的",
-    tabCreatedShort: "创建的",
-    tabJoined: "我加入的",
-    tabJoinedShort: "加入的",
-    tabApplications: "申请记录",
-    tabApplicationsShort: "申请",
-    tabPending: "待审批",
-    tabPendingShort: "审批",
-    tabHistory: "历史",
+    // 主 Tab
+    tabParticipated: "我的队伍",
+    tabApplications: "申请管理",
+    // 角色筛选标签
+    roleFilterAll: "全部",
+    roleFilterLeader: "我发起的",
+    roleFilterMember: "我加入的",
+    // 申请管理子 Tab
+    subTabMyApplications: "我的申请",
+    subTabPendingApprovals: "待审批",
     roleLeader: "队长",
+    roleMember: "队员",
     backBtn: "返回",
 
     // 状态标签
@@ -802,6 +804,9 @@ export const copy = {
     emptyHistory: "没有历史记录",
     emptyHistoryDesc: "完成的活动会显示在这里",
     emptyHistoryBtn: "去探索",
+    emptyFormed: "暂无已组建的队伍",
+    emptyFormedDesc: "队伍组建成功后会显示在这里",
+    emptyFormedBtn: "查看我创建的",
   },
 
   // ─── 收藏 ─────────────────────────────────────────────────────────────────

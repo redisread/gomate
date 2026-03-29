@@ -95,7 +95,9 @@ interface TeamItem {
 
 export function MyTeamsClient() {
   const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(null);
-  const [activeTab, setActiveTab] = React.useState("created");
+  const [activeTab, setActiveTab] = React.useState("participated");
+  const [applicationSubTab, setApplicationSubTab] = React.useState<"my" | "pending">("my");
+  const [roleFilter, setRoleFilter] = React.useState<"all" | "leader" | "member">("all");
 
   // 分页状态
   const [createdPage, setCreatedPage] = React.useState(1);
@@ -113,8 +115,6 @@ export function MyTeamsClient() {
   const [pendingPage, setPendingPage] = React.useState(1);
   const [pendingHasMore, setPendingHasMore] = React.useState(false);
   const [pendingLoadingMore, setPendingLoadingMore] = React.useState(false);
-
-  const [historyPage, setHistoryPage] = React.useState(1);
 
   const [createdTeams, setCreatedTeams] = React.useState<TeamItem[]>([]);
   const [createdLoading, setCreatedLoading] = React.useState(true);
@@ -142,16 +142,39 @@ export function MyTeamsClient() {
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const tab = params.get("tab") || "created";
-    if (["created", "joined", "applications", "pending", "history"].includes(tab)) {
-      setActiveTab(tab);
+    const tab = params.get("tab") || "participated";
+    // 兼容旧参数映射
+    const tabMap: Record<string, string> = {
+      created: "participated",
+      joined: "participated",
+      formed: "participated",
+      history: "participated",
+      initiated: "participated",
+      pending: "applications",
+    };
+    const mappedTab = tabMap[tab] || tab;
+    if (["participated", "applications"].includes(mappedTab)) {
+      setActiveTab(mappedTab);
+      // 如果是 participated tab，根据旧参数设置角色筛选
+      if (mappedTab === "participated") {
+        const role = params.get("role");
+        if (role === "leader") setRoleFilter("leader");
+        else if (role === "member") setRoleFilter("member");
+        else setRoleFilter("all");
+      }
+      // 如果是 applications tab，根据 sub 参数决定子 tab
+      if (mappedTab === "applications") {
+        const sub = params.get("sub");
+        if (sub === "pending") setApplicationSubTab("pending");
+        else setApplicationSubTab("my");
+      }
     }
   }, []);
 
   React.useEffect(() => {
     fetchCurrentUser(`/login?redirect=/my-teams`)
       .then((user) => {
-        if (user) setCurrentUser(user as SessionUser);
+        if (user) setCurrentUser(user as unknown as SessionUser);
       });
   }, []);
 
@@ -266,14 +289,29 @@ export function MyTeamsClient() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    // 重置对应 tab 的分页状态
-    if (tab === "created") { setCreatedPage(1); }
-    else if (tab === "joined") { setJoinedPage(1); }
-    else if (tab === "applications") { setApplicationsPage(1); }
-    else if (tab === "pending") { setPendingPage(1); }
-    else if (tab === "history") { setHistoryPage(1); }
+    setApplicationSubTab("my");
+    setRoleFilter("all");
     const params = new URLSearchParams(window.location.search);
     params.set("tab", tab);
+    params.delete("sub");
+    params.delete("role");
+    window.history.replaceState(null, "", `/my-teams?${params.toString()}`);
+  };
+
+  const handleSubTabChange = (subTab: "my" | "pending") => {
+    setApplicationSubTab(subTab);
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", "applications");
+    params.set("sub", subTab);
+    window.history.replaceState(null, "", `/my-teams?${params.toString()}`);
+  };
+
+  const handleRoleFilterChange = (filter: "all" | "leader" | "member") => {
+    setRoleFilter(filter);
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", "participated");
+    if (filter === "all") params.delete("role");
+    else params.set("role", filter);
     window.history.replaceState(null, "", `/my-teams?${params.toString()}`);
   };
 
@@ -375,11 +413,6 @@ export function MyTeamsClient() {
   const archivedCreated = createdTeams.filter((t) => ["completed", "cancelled"].includes(t.status));
   const activeJoined = joinedTeams.filter((t) => ["recruiting", "full", "formed", "ongoing"].includes(t.status));
   const archivedJoined = joinedTeams.filter((t) => ["completed", "cancelled"].includes(t.status));
-  const allHistory = [...archivedCreated, ...archivedJoined].sort(
-    (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
-  );
-  const displayedHistory = allHistory.slice(0, historyPage * 10);
-  const historyHasMore = displayedHistory.length < allHistory.length;
 
   const pendingApplicationsCount = applications.filter((a) => a.status === "pending").length;
 
@@ -442,11 +475,8 @@ export function MyTeamsClient() {
         <div className="border-b border-stone-100 mt-2 overflow-x-auto">
           <div className="flex min-w-max">
             {[
-              { id: "created", label: c.tabCreated, icon: Crown, count: activeCreated.length },
-              { id: "joined", label: c.tabJoined, icon: User, count: activeJoined.length },
-              { id: "applications", label: c.tabApplications, icon: ClipboardCheck, count: pendingApplicationsCount },
-              { id: "pending", label: c.tabPending, icon: Hourglass, count: pendingApprovals.length },
-              { id: "history", label: c.tabHistory, icon: Clock, count: 0 },
+              { id: "participated", label: c.tabParticipated, icon: Users, count: createdTeams.length + joinedTeams.length },
+              { id: "applications", label: c.tabApplications, icon: ClipboardCheck, count: pendingApplicationsCount + pendingApprovals.length },
             ].map(({ id, label, icon: Icon, count }) => (
               <button
                 key={id}
@@ -461,22 +491,55 @@ export function MyTeamsClient() {
                 <Icon className="h-4 w-4" />
                 {label}
                 {count > 0 && (
-                  <span className={cn(
-                    "w-2 h-2 rounded-full absolute top-2 right-1.5",
-                    id === "pending" ? "bg-amber-500" : "bg-amber-500"
-                  )} />
+                  <span className="w-2 h-2 rounded-full absolute top-2 right-1.5 bg-amber-500" />
                 )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Tab Content: 我创建的 */}
-        {activeTab === "created" && (
+        {/* Tab Content: 我的队伍 */}
+        {activeTab === "participated" && (
           <div className="mt-6 space-y-4">
-            {createdLoading ? (
+            {/* 角色筛选标签 */}
+            <div className="flex gap-2">
+              {[
+                { id: "all", label: c.roleFilterAll, count: createdTeams.length + joinedTeams.length },
+                { id: "leader", label: c.roleFilterLeader, count: createdTeams.length },
+                { id: "member", label: c.roleFilterMember, count: joinedTeams.length },
+              ].map(({ id, label, count }) => (
+                <button
+                  key={id}
+                  onClick={() => handleRoleFilterChange(id as "all" | "leader" | "member")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                    roleFilter === id
+                      ? "bg-amber-500 text-white"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                  )}
+                >
+                  {label}
+                  <span className={cn(
+                    "text-xs",
+                    roleFilter === id ? "text-amber-100" : "text-stone-400"
+                  )}>
+                    {count}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {createdLoading || joinedLoading ? (
               <LoadingState />
-            ) : activeCreated.length === 0 && archivedCreated.length === 0 ? (
+            ) : createdTeams.length === 0 && joinedTeams.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="还没有参与任何队伍"
+                desc="创建或加入一支队伍，开始你的探索之旅"
+                btnLabel="探索地点"
+                href="/locations"
+              />
+            ) : roleFilter === "leader" && createdTeams.length === 0 ? (
               <EmptyState
                 icon={Crown}
                 title="还没有创建队伍，要不要带队出发？"
@@ -484,38 +547,7 @@ export function MyTeamsClient() {
                 btnLabel={c.emptyCreatedBtn}
                 href="/teams/create"
               />
-            ) : (
-              <>
-                {activeCreated.length > 0 && (
-                  <CollapsibleSection title={c.activeTeams} count={activeCreated.length}>
-                    {activeCreated.map((team) => (
-                      <TeamCard key={team.id} team={team} isLeader onCancel={(id) => setCancelTarget(id)} onForm={(id) => setFormTarget(id)} />
-                    ))}
-                  </CollapsibleSection>
-                )}
-                {archivedCreated.length > 0 && (
-                  <CollapsibleSection title={c.archivedTeams} count={archivedCreated.length} defaultExpanded={false}>
-                    {archivedCreated.map((team) => (
-                      <TeamCard key={team.id} team={team} isLeader />
-                    ))}
-                  </CollapsibleSection>
-                )}
-              </>
-            )}
-            <LoadMoreButton
-              hasMore={createdHasMore}
-              loading={createdLoadingMore}
-              onClick={() => setCreatedPage((p) => p + 1)}
-            />
-          </div>
-        )}
-
-        {/* Tab Content: 已加入 */}
-        {activeTab === "joined" && (
-          <div className="mt-6 space-y-4">
-            {joinedLoading ? (
-              <LoadingState />
-            ) : activeJoined.length === 0 ? (
+            ) : roleFilter === "member" && joinedTeams.length === 0 ? (
               <EmptyState
                 icon={Mountain}
                 title="还没有加入队伍，去找找伙伴吧"
@@ -524,99 +556,157 @@ export function MyTeamsClient() {
                 href="/locations"
               />
             ) : (
+              <>
+                {/* 我发起的 */}
+                {(roleFilter === "all" || roleFilter === "leader") && (
+                  <>
+                    {activeCreated.length > 0 && (
+                      <CollapsibleSection title={`${c.roleFilterLeader} · ${c.activeTeams}`} count={activeCreated.length}>
+                        {activeCreated.map((team) => (
+                          <TeamCard key={team.id} team={team} isLeader onCancel={(id) => setCancelTarget(id)} onForm={(id) => setFormTarget(id)} />
+                        ))}
+                      </CollapsibleSection>
+                    )}
+                    {archivedCreated.length > 0 && (
+                      <CollapsibleSection title={`${c.roleFilterLeader} · ${c.archivedTeams}`} count={archivedCreated.length} defaultExpanded={false}>
+                        {archivedCreated.map((team) => (
+                          <TeamCard key={team.id} team={team} isLeader />
+                        ))}
+                      </CollapsibleSection>
+                    )}
+                  </>
+                )}
+
+                {/* 我加入的 */}
+                {(roleFilter === "all" || roleFilter === "member") && (
+                  <>
+                    {activeJoined.length > 0 && (
+                      <CollapsibleSection title={`${c.roleFilterMember} · ${c.activeTeams}`} count={activeJoined.length}>
+                        {activeJoined.map((team) => (
+                          <TeamCard key={team.id} team={team} />
+                        ))}
+                      </CollapsibleSection>
+                    )}
+                    {archivedJoined.length > 0 && (
+                      <CollapsibleSection title={`${c.roleFilterMember} · ${c.archivedTeams}`} count={archivedJoined.length} defaultExpanded={false}>
+                        {archivedJoined.map((team) => (
+                          <TeamCard key={team.id} team={team} />
+                        ))}
+                      </CollapsibleSection>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+            <LoadMoreButton
+              hasMore={roleFilter === "leader" ? createdHasMore : roleFilter === "member" ? joinedHasMore : createdHasMore || joinedHasMore}
+              loading={roleFilter === "leader" ? createdLoadingMore : roleFilter === "member" ? joinedLoadingMore : createdLoadingMore || joinedLoadingMore}
+              onClick={() => {
+                if (roleFilter === "leader") setCreatedPage((p) => p + 1);
+                else if (roleFilter === "member") setJoinedPage((p) => p + 1);
+                else {
+                  if (createdHasMore) setCreatedPage((p) => p + 1);
+                  if (joinedHasMore) setJoinedPage((p) => p + 1);
+                }
+              }}
+            />
+          </div>
+        )}
+
+        {/* Tab Content: 申请管理 */}
+        {activeTab === "applications" && (
+          <div className="mt-6 space-y-4">
+            {/* 子 Tab */}
+            <div className="flex gap-2 bg-stone-100 rounded-xl p-1">
+              <button
+                onClick={() => handleSubTabChange("my")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
+                  applicationSubTab === "my"
+                    ? "bg-white text-stone-800 shadow-sm"
+                    : "text-stone-500 hover:text-stone-700"
+                )}
+              >
+                <ClipboardCheck className="h-4 w-4" />
+                {c.subTabMyApplications}
+                {pendingApplicationsCount > 0 && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                )}
+              </button>
+              <button
+                onClick={() => handleSubTabChange("pending")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
+                  applicationSubTab === "pending"
+                    ? "bg-white text-stone-800 shadow-sm"
+                    : "text-stone-500 hover:text-stone-700"
+                )}
+              >
+                <Hourglass className="h-4 w-4" />
+                {c.subTabPendingApprovals}
+                {pendingApprovals.length > 0 && (
+                  <span className="px-1.5 py-0.5 text-xs bg-amber-500 text-white rounded-full">
+                    {pendingApprovals.length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* 我的申请内容 */}
+            {applicationSubTab === "my" && (
               <div className="space-y-3">
-                {activeJoined.map((team) => (
-                  <TeamCard key={team.id} team={team} />
-                ))}
+                {applicationsLoading ? (
+                  <LoadingState />
+                ) : applications.length === 0 ? (
+                  <EmptyState
+                    icon={ClipboardCheck}
+                    title="还没有申请记录"
+                    desc={c.emptyApplicationsDesc}
+                    btnLabel={c.emptyApplicationsBtn}
+                    href="/teams"
+                  />
+                ) : (
+                  applications.map((app) => (
+                    <ApplicationCard key={app.id} application={app} />
+                  ))
+                )}
+                <LoadMoreButton
+                  hasMore={applicationsHasMore}
+                  loading={applicationsLoadingMore}
+                  onClick={() => setApplicationsPage((p) => p + 1)}
+                />
               </div>
             )}
-            <LoadMoreButton
-              hasMore={joinedHasMore}
-              loading={joinedLoadingMore}
-              onClick={() => setJoinedPage((p) => p + 1)}
-            />
-          </div>
-        )}
 
-        {/* Tab Content: 申请记录 */}
-        {activeTab === "applications" && (
-          <div className="mt-6 space-y-3">
-            {applicationsLoading ? (
-              <LoadingState />
-            ) : applications.length === 0 ? (
-              <EmptyState
-                icon={ClipboardCheck}
-                title="还没有申请记录"
-                desc={c.emptyApplicationsDesc}
-                btnLabel={c.emptyApplicationsBtn}
-                href="/teams"
-              />
-            ) : (
-              applications.map((app) => (
-                <ApplicationCard key={app.id} application={app} />
-              ))
-            )}
-            <LoadMoreButton
-              hasMore={applicationsHasMore}
-              loading={applicationsLoadingMore}
-              onClick={() => setApplicationsPage((p) => p + 1)}
-            />
-          </div>
-        )}
-
-        {/* Tab Content: 待审批 */}
-        {activeTab === "pending" && (
-          <div className="mt-6 space-y-3">
-            {pendingLoading ? (
-              <LoadingState />
-            ) : pendingApprovals.length === 0 ? (
-              <EmptyState
-                icon={Hourglass}
-                title="暂无待审批申请"
-                desc={c.emptyPendingDesc}
-                btnLabel={c.emptyPendingBtn}
-                href="/my-teams?tab=created"
-              />
-            ) : (
-              pendingApprovals.map((approval) => (
-                <PendingApprovalCard
-                  key={approval.id}
-                  approval={approval}
-                  onClick={(a) => { setSelectedApproval(a); setIsDetailOpen(true); }}
+            {/* 待审批内容 */}
+            {applicationSubTab === "pending" && (
+              <div className="space-y-3">
+                {pendingLoading ? (
+                  <LoadingState />
+                ) : pendingApprovals.length === 0 ? (
+                  <EmptyState
+                    icon={Hourglass}
+                    title="暂无待审批申请"
+                    desc={c.emptyPendingDesc}
+                    btnLabel={c.emptyPendingBtn}
+                    href="/my-teams?tab=initiated"
+                  />
+                ) : (
+                  pendingApprovals.map((approval) => (
+                    <PendingApprovalCard
+                      key={approval.id}
+                      approval={approval}
+                      onClick={(a) => { setSelectedApproval(a); setIsDetailOpen(true); }}
+                    />
+                  ))
+                )}
+                <LoadMoreButton
+                  hasMore={pendingHasMore}
+                  loading={pendingLoadingMore}
+                  onClick={() => setPendingPage((p) => p + 1)}
                 />
-              ))
+              </div>
             )}
-            <LoadMoreButton
-              hasMore={pendingHasMore}
-              loading={pendingLoadingMore}
-              onClick={() => setPendingPage((p) => p + 1)}
-            />
-          </div>
-        )}
-
-        {/* Tab Content: 历史 */}
-        {activeTab === "history" && (
-          <div className="mt-6 space-y-3">
-            {createdLoading || joinedLoading ? (
-              <LoadingState />
-            ) : allHistory.length === 0 ? (
-              <EmptyState
-                icon={Clock}
-                title="还没有历史记录"
-                desc={c.emptyHistoryDesc}
-                btnLabel={c.emptyHistoryBtn}
-                href="/locations"
-              />
-            ) : (
-              displayedHistory.map((team) => (
-                <TeamCard key={team.id + "-hist"} team={team} />
-              ))
-            )}
-            <LoadMoreButton
-              hasMore={historyHasMore}
-              loading={false}
-              onClick={() => setHistoryPage((p) => p + 1)}
-            />
           </div>
         )}
       </div>

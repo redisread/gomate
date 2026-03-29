@@ -1097,7 +1097,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
         {/* 底部渐变：加深以衬托文字 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-        {/* 底部信息：地点药丸 + 标题 + 关键决策信息 */}
+        {/* 底部信息：地点药丸 + 标题 */}
         <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-7">
           <div className="max-w-7xl mx-auto">
             {location && (
@@ -1109,33 +1109,9 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 {location.name}
               </a>
             )}
-            <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight tracking-tight mt-1 mb-3">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight tracking-tight mt-1">
               {team.title}
             </h1>
-            {/* 关键决策信息药丸行 */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={cn(
-                "px-2.5 py-1 text-xs font-semibold rounded-full backdrop-blur-sm",
-                statusInfo.className
-              )}>
-                {statusInfo.label}
-              </span>
-              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs">
-                <Calendar className="h-3 w-3" /> {team.date}
-              </span>
-              {team.time && (
-                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs">
-                  <Clock className="h-3 w-3" /> {team.time}
-                </span>
-              )}
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs">
-                <Users className="h-3 w-3" />
-                {team.currentMembers}/{team.maxMembers} 人
-                {!isFull && remaining <= 3 && remaining > 0 && (
-                  <span className="text-amber-300 font-semibold">· 仅剩 {remaining} 名额</span>
-                )}
-              </span>
-            </div>
           </div>
         </div>
       </div>
