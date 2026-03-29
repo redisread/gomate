@@ -918,10 +918,10 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   </div>
                 )}
 
-                {currentState === "pending" && (
-                  <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/60 rounded-2xl p-5 backdrop-blur-sm">
+{currentState === "pending" && (
+                  <div className="bg-amber-50/40 border border-amber-100/60 rounded-2xl p-5">
                     <div className="flex items-center gap-2 mb-2">
-                      <Clock className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                      <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" />
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.statusPending}</p>
                     </div>
                     <p className="text-xs text-stone-600 leading-relaxed pl-6">{copy.teams.pendingDesc}</p>
@@ -934,9 +934,9 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 )}
 
                 {currentState === "member" && (
-                  <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/60 rounded-2xl p-5 backdrop-blur-sm">
+                  <div className="bg-amber-50/40 border border-amber-100/60 rounded-2xl p-5">
                     <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                      <CheckCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.statusApproved}</p>
                     </div>
                     <p className="text-xs text-stone-600 leading-relaxed pl-6">{copy.teams.memberJoinedDesc}</p>
@@ -953,9 +953,9 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                 )}
 
                 {currentState === "leader" && (
-                  <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/60 rounded-2xl p-5 backdrop-blur-sm">
+                  <div className="bg-amber-50/40 border border-amber-100/60 rounded-2xl p-5">
                     <div className="flex items-center gap-2 mb-2">
-                      <Crown className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                      <Crown className="h-4 w-4 text-amber-500 flex-shrink-0" />
                       <p className="font-semibold text-stone-900 text-sm">{copy.teams.youAreLeader}</p>
                     </div>
                     <p className="text-xs text-stone-600 leading-relaxed pl-6">{copy.teams.youAreLeaderDesc}</p>
