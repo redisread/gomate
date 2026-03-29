@@ -13,6 +13,31 @@ function getRandomTeamIcon() {
   return TEAM_ICONS[Math.floor(Math.random() * TEAM_ICONS.length)];
 }
 
+/** 获取单个路线的标签 */
+async function getRouteTags(
+  db: ReturnType<typeof createDb>,
+  routeId: string
+): Promise<{ id: string; name: string; type: string }[]> {
+  const tagResults = await db
+    .select({ tag: schema.tags })
+    .from(schema.entityToTags)
+    .leftJoin(schema.tags, eq(schema.entityToTags.tagId, schema.tags.id))
+    .where(
+      and(
+        eq(schema.entityToTags.entityId, routeId),
+        eq(schema.entityToTags.entityType, "route")
+      )
+    );
+
+  return tagResults
+    .filter((result) => result.tag)
+    .map((result) => ({
+      id: result.tag!.id,
+      name: result.tag!.name,
+      type: result.tag!.type,
+    }));
+}
+
 /** 将 endTime 已过期的 formed 队伍更新为 completed */
 async function updateExpiredTeams(db: ReturnType<typeof createDb>, teamId?: string) {
   const now = new Date();
@@ -345,6 +370,11 @@ teams.get("/:id", async (c) => {
 
     if (!teamWithRelations) return c.json({ error: "队伍不存在" }, 404);
 
+    let routeTags: { id: string; name: string; type: string }[] = [];
+    if (teamWithRelations.routeId) {
+      routeTags = await getRouteTags(db, teamWithRelations.routeId);
+    }
+
     // 获取当前登录用户（可选）
     let currentUserId: string | null = null;
     try {
@@ -411,7 +441,18 @@ teams.get("/:id", async (c) => {
         maxMembers: teamWithRelations.maxMembers, currentMembers,
         requirements: teamWithRelations.requirements ? JSON.parse(teamWithRelations.requirements) : [],
         status: teamWithRelations.status, createdAt: teamWithRelations.createdAt,
-        route: teamWithRelations.route || undefined,
+        route: teamWithRelations.route
+          ? {
+              id: teamWithRelations.route.id,
+              name: teamWithRelations.route.name,
+              difficulty: teamWithRelations.route.difficulty,
+              durationMin: teamWithRelations.route.durationMin,
+              durationMax: teamWithRelations.route.durationMax,
+              distance: teamWithRelations.route.distance,
+              elevation: teamWithRelations.route.elevation,
+              tags: routeTags,
+            }
+          : undefined,
         location: teamWithRelations.location ? {
           id: teamWithRelations.location.id,
           name: teamWithRelations.location.name,
