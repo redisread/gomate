@@ -413,6 +413,46 @@ function LeaveConfirmDialog({
   );
 }
 
+function WechatRequiredModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="wechat-required-title"
+        aria-describedby="wechat-required-desc"
+        className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
+        <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
+        <h3 id="wechat-required-title" className="text-lg font-bold text-stone-900 mb-2 text-center">
+          {copy.teams.wechatRequiredJoinTitle}
+        </h3>
+        <p id="wechat-required-desc" className="text-sm text-stone-500 mb-6 text-center leading-relaxed">
+          {copy.teams.wechatRequiredJoinDesc}
+        </p>
+        <a href="/profile/edit" className="block">
+          <button className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 text-white text-sm font-semibold shadow-brand-glow hover:from-amber-700 hover:to-amber-600 transition-all">
+            {copy.teams.goToFillWechat}
+          </button>
+        </a>
+        <button
+          onClick={onClose}
+          className="w-full mt-2 py-3 rounded-2xl text-stone-500 text-sm font-medium hover:bg-stone-50 transition-colors"
+        >
+          {copy.common.cancel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── 编辑队伍 Modal ────────────────────────────────────────────────────────────
 interface EditTeamModalProps {
   open: boolean;
@@ -636,6 +676,8 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const [showJoinSheet, setShowJoinSheet] = React.useState(false);
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
+  const [showWechatRequiredModal, setShowWechatRequiredModal] = React.useState(false);
+  const [userHasWechat, setUserHasWechat] = React.useState<boolean | null>(null);
 
   const { toast, exiting, show: showToast } = useToast();
 
@@ -650,6 +692,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
       const data = await res.json();
       if (data?.user?.id) {
         setCurrentUserId(data.user.id);
+        setUserHasWechat(!!data.user.wechat);
         fetchUserMemberStatus();
       }
     } catch (err) {
@@ -696,6 +739,18 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
     } catch (err) {
       console.error("[TeamDetail] 获取同地点其他队伍失败:", err);
     }
+  };
+
+  const handleJoinClick = () => {
+    if (!currentUserId) {
+      window.location.href = `/login?redirect=/teams/${teamId}`;
+      return;
+    }
+    if (!userHasWechat) {
+      setShowWechatRequiredModal(true);
+      return;
+    }
+    setShowJoinSheet(true);
   };
 
   const handleJoin = async () => {
@@ -1094,7 +1149,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                         className="w-full px-3.5 py-2.5 rounded-xl text-stone-800 text-sm placeholder:text-stone-400 focus:outline-none resize-none mb-3 bg-stone-50 border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all"
                       />
                       <button
-                        onClick={handleJoin}
+                        onClick={handleJoinClick}
                         disabled={isJoining}
                         className="w-full py-3 font-semibold text-white rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow hover:shadow-[0_6px_24px_rgba(217,119,6,0.45)] hover:-translate-y-0.5 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2 active:scale-[0.97]"
                       >
@@ -1336,9 +1391,11 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   <Share2 className="h-4.5 w-4.5" />
                 </button>
                 <button
-                  onClick={() => setShowJoinSheet(true)}
-                  className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow transition-all duration-150 flex items-center justify-center gap-2 min-h-[44px] active:scale-[0.98] text-base"
+                  onClick={handleJoinClick}
+                  disabled={isJoining}
+                  className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow transition-all duration-150 flex items-center justify-center gap-2 min-h-[44px] active:scale-[0.98] text-base disabled:opacity-60 disabled:cursor-not-allowed"
                 >
+                  {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
                   {copy.teams.joinTeam}
                 </button>
               </div>
@@ -1380,6 +1437,12 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
         open={showLeaveConfirm}
         onCancel={() => setShowLeaveConfirm(false)}
         onConfirm={handleLeave}
+      />
+
+      {/* 微信号引导弹窗 */}
+      <WechatRequiredModal
+        open={showWechatRequiredModal}
+        onClose={() => setShowWechatRequiredModal(false)}
       />
 
       {/* 编辑队伍 Modal（仅队长可见） */}
