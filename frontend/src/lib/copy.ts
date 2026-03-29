@@ -508,6 +508,35 @@ export const copy = {
     cancelTeamConfirm: "确定要取消该队伍吗？取消后无法恢复，已申请的成员将无法加入。",
     cancelTeamSuccess: "队伍已取消",
     cancelTeamFailed: "取消队伍失败",
+
+    // ─── 教化设计：数据故事化文案 ─────────────────────────────────
+    storyNarrative: {
+      early: "这支队伍刚刚启航，队长正在等待第一批志同道合的伙伴",
+      growing: "队伍正在成型中，{current} 位伙伴已经确认参加",
+      ready: "队伍已经准备好了！{current} 位伙伴都在等你",
+      full: "队伍已集结完毕，即将开启这段旅程",
+      waitingForYou: "他们正在等待和你一起出发",
+    },
+    emotionalHooks: {
+      yourPresenceMatters: "你的参与能让这支队伍成行",
+      dontMissOut: "错过这次，下次可能就没这么合适的时间了",
+    },
+    leaderStory: {
+      newLeader: "这是队长第一次带队，一起创造美好的回忆吧",
+      experienced: "队长已带队 {count} 次，经验丰富值得信赖",
+    },
+    progressStory: {
+      milestone25: "队伍初具规模，正在吸引更多伙伴",
+      milestone50: "已经过半，离出发越来越近了",
+      milestone75: "即将满员，抓紧最后的机会",
+      milestone100: "队伍集结完毕，准备出发！",
+    },
+    guidanceTooltips: {
+      joinButton: "点击后队长会收到通知，通常 24 小时内回复",
+      messageInput: "简短介绍自己，让队长更快了解你",
+      shareButton: "分享给朋友，让他们也来加入",
+      leaderAvatar: "点击查看队长详细信息和带队经验",
+    },
   },
 
   // ─── 个人资料 ─────────────────────────────────────────────────────────────
