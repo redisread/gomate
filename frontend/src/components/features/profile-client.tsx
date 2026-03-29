@@ -383,7 +383,7 @@ export function ProfileClient() {
         </div>
 
         {/* ── 统计卡片 ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           <StatCard
             label="我发起的队伍"
             value={createdTotal}
@@ -406,11 +406,6 @@ export function ProfileClient() {
             icon={CheckCircle}
             href="/my-teams?tab=history"
             sublabel="圆满完成的活动"
-          />
-          <StatCard
-            label="加入时间"
-            value={user.createdAt ? formatJoinDate(user.createdAt) : "—"}
-            icon={Calendar}
           />
         </div>
 
