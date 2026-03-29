@@ -28,6 +28,12 @@ const LEVEL_OPTIONS = [
   { value: "expert", emoji: "🦅", label: copy.enums.level.expert, description: copy.enums.levelDesc.expert },
 ] as const;
 
+const PRESET_EQUIPMENT = [
+  "登山杖", "冲锋衣", "登山包", "徒步鞋", "护膝",
+  "头灯", "睡袋", "帐篷", "防潮垫", "水壶",
+  "防晒霜", "墨镜", "雨衣", "帽子", "手套",
+] as const;
+
 /** 字段 Label 组件 */
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
@@ -148,6 +154,18 @@ const { experience, equipment } = parseExtra(user.extra);
       ...prev,
       equipment: prev.equipment.filter((_, i) => i !== index),
     }));
+  };
+
+  const handleAddPresetEquipment = (item: string) => {
+    if (formData.equipment.length >= 10) {
+      setMessage({ type: "error", text: copy.profile.equipmentMaxReached });
+      return;
+    }
+    if (formData.equipment.includes(item)) {
+      return;
+    }
+    setFormData((prev) => ({ ...prev, equipment: [...prev.equipment, item] }));
+    setMessage(null);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -460,6 +478,30 @@ const { experience, equipment } = parseExtra(user.extra);
               {/* 常用装备 */}
               <div className="space-y-1.5">
                 <FieldLabel>{copy.profile.equipment}</FieldLabel>
+                
+                {/* 快捷选择 */}
+                <div className="flex flex-wrap gap-1.5">
+                  {PRESET_EQUIPMENT.map((item) => {
+                    const isSelected = formData.equipment.includes(item);
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => handleAddPresetEquipment(item)}
+                        disabled={isSelected}
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                          isSelected
+                            ? "bg-amber-100 text-amber-400 cursor-not-allowed"
+                            : "bg-stone-100 text-stone-600 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 border border-transparent"
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                {/* 自定义输入 */}
                 <input
                   type="text"
                   value={equipmentInput}
