@@ -918,7 +918,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   </div>
                 )}
 
-                {isPending && (
+                {currentState === "pending" && (
                   <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/60 rounded-2xl p-5 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-2">
                       <Clock className="h-4 w-4 text-amber-600 flex-shrink-0" />
@@ -933,7 +933,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   </div>
                 )}
 
-                {isMember && (
+                {currentState === "member" && (
                   <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/60 rounded-2xl p-5 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle className="h-4 w-4 text-amber-600 flex-shrink-0" />
@@ -952,7 +952,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   </div>
                 )}
 
-                {isLeader && (
+                {currentState === "leader" && (
                   <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/60 rounded-2xl p-5 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-2">
                       <Crown className="h-4 w-4 text-amber-600 flex-shrink-0" />
@@ -972,7 +972,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   </div>
                 )}
 
-                {!canJoin && !isLeader && !isMember && !isPending && (
+                {currentState === "closed" && (
                   <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 text-center">
                     <p className="text-sm text-stone-500">{getClosedMessage(team)}</p>
                   </div>
