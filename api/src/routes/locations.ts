@@ -258,6 +258,9 @@ locations.get("/:id", async (c) => {
 
     const location = await db.query.locations.findFirst({
       where: eq(schema.locations.id, id),
+      with: {
+        routes: true,
+      },
     });
 
     if (!location) return c.json({ error: "地点不存在" }, 404);
@@ -276,6 +279,16 @@ locations.get("/:id", async (c) => {
 
     const tags = tagRelations.map((r) => ({ id: r.tagId, name: r.tagName, type: r.tagType }));
 
+    // 格式化路线数据
+    const formattedRoutes = (location.routes || []).map((route: any) => ({
+      ...route,
+      coordinates: route.coordinates ? safeJsonParse(route.coordinates, { lat: 0, lng: 0 }) : undefined,
+      waypoints: route.waypoints ? safeJsonParse(route.waypoints, []) : undefined,
+      equipmentNeeded: route.equipmentNeeded ? safeJsonParse(route.equipmentNeeded, []) : undefined,
+      warnings: route.warnings ? safeJsonParse(route.warnings, []) : undefined,
+      tags: route.tags ? safeJsonParse(route.tags, []) : undefined,
+    }));
+
     return c.json({
       success: true,
       location: {
@@ -285,6 +298,7 @@ locations.get("/:id", async (c) => {
         coordinates: safeJsonParse(location.coordinates, { lat: 0, lng: 0 }),
         extra: safeJsonParse(location.extra, undefined),
         tags,
+        routes: formattedRoutes,
       },
     });
   } catch (error) {

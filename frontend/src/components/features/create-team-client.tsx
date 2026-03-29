@@ -1,10 +1,20 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Clock, Users, Calendar, MapPin, AlertCircle, Loader2, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock,
+  Users,
+  Calendar,
+  MapPin,
+  AlertCircle,
+  Loader2,
+  Sparkles,
+  CheckCircle2,
+} from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
-import type { Location } from "@/lib/types";
+import type { Location, Route } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
@@ -14,20 +24,27 @@ import { Footer } from "@/components/layout/footer";
  */
 export function CreateTeamClient() {
   const [locations, setLocations] = React.useState<Location[]>([]);
+  const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
+  const [routes, setRoutes] = React.useState<Route[]>([]);
+  const [selectedRoute, setSelectedRoute] = React.useState<Route | null>(null);
+  const [recommendedDuration, setRecommendedDuration] = React.useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
   const [hasWechat, setHasWechat] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState("");
+  const durationManuallyEditedRef = React.useRef(false);
 
   // 获取默认日期/时间
   const now = new Date();
   const defaultDate = now.toISOString().split("T")[0];
   const futureTime = new Date(now.getTime() + 4 * 60 * 60 * 1000);
   const defaultTime = `${String(futureTime.getHours()).padStart(2, "0")}:${String(futureTime.getMinutes()).padStart(2, "0")}`;
+  const defaultDuration = 240; // 4 小时默认值
 
   const [formData, setFormData] = React.useState({
     title: "",
     locationId: "",
+    routeId: "",
     date: defaultDate,
     time: defaultTime,
     durationMin: "240",
@@ -55,6 +72,112 @@ export function CreateTeamClient() {
     if (locId) setFormData((prev) => ({ ...prev, locationId: locId }));
   }, []);
 
+  // 当地点变化时，获取地点详情和路线列表
+  React.useEffect(() => {
+    if (!formData.locationId) {
+      setSelectedLocation(null);
+      setRoutes([]);
+      setSelectedRoute(null);
+      setRecommendedDuration(null);
+      durationManuallyEditedRef.current = false;
+      return;
+    }
+
+    // 获取地点详情（包含 routes）
+    fetchAPI(`/api/locations/${formData.locationId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.location) {
+          const loc = data.location;
+          setSelectedLocation(loc);
+          setRoutes(loc.routes || []);
+          durationManuallyEditedRef.current = false; // 新地点，重置手动编辑标记
+
+          // 如果有路线，根据路线难度推荐时长
+          if (loc.routes && loc.routes.length > 0) {
+            // 默认选择第一条路线
+            const firstRoute = loc.routes[0];
+            setSelectedRoute(firstRoute);
+            setFormData((prev) => ({ ...prev, routeId: firstRoute.id }));
+
+            // 计算推荐时长
+            const recommended = calculateRecommendedDuration(firstRoute);
+            setRecommendedDuration(recommended);
+            setFormData((prev) => ({ ...prev, durationMin: String(recommended) }));
+          } else {
+            // 无路线时，重置为默认值
+            setRecommendedDuration(null);
+            setFormData((prev) => ({ ...prev, durationMin: String(defaultDuration), routeId: "" }));
+            setSelectedRoute(null);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [formData.locationId]);
+
+  // 当路线变化时，重新计算推荐时长
+  React.useEffect(() => {
+    if (!selectedRoute) {
+      durationManuallyEditedRef.current = false;
+      return;
+    }
+
+    const recommended = calculateRecommendedDuration(selectedRoute);
+    setRecommendedDuration(recommended);
+
+    // 如果用户没有手动修改时长，则自动更新为推荐值
+    if (!durationManuallyEditedRef.current) {
+      setFormData((prev) => ({ ...prev, durationMin: String(recommended) }));
+    }
+  }, [selectedRoute?.id]);
+
+  // 当用户手动修改时长时，标记为已手动编辑
+  const handleDurationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    durationManuallyEditedRef.current = true;
+    handleChange(e);
+  };
+
+  /**
+   * 根据路线难度和时长推荐合适的活动时长（分钟）
+   */
+  const calculateRecommendedDuration = (route: Route): number => {
+    // 优先使用 durationMin/durationMax（如果有）
+    const routeWithDuration = route as Route & { durationMin?: number; durationMax?: number };
+    if (routeWithDuration.durationMin && routeWithDuration.durationMax) {
+      // 取平均值
+      return Math.round((routeWithDuration.durationMin + routeWithDuration.durationMax) / 2);
+    }
+    if (routeWithDuration.durationMin) {
+      return routeWithDuration.durationMin;
+    }
+
+    // 从 route.duration 解析（格式如 "2-3 小时" 或 "4 小时"）
+    const durationStr = route.duration;
+    if (durationStr) {
+      const match = durationStr.match(/(\d+(?:\.\d+)?)\s*(-|~|至)\s*(\d+(?:\.\d+)?)\s*小时/);
+      if (match) {
+        const minHours = parseFloat(match[1]);
+        const maxHours = parseFloat(match[3]);
+        // 取平均值，转换为分钟
+        return Math.round(((minHours + maxHours) / 2) * 60);
+      }
+      // 单一值格式
+      const singleMatch = durationStr.match(/(\d+(?:\.\d+)?)\s*小时/);
+      if (singleMatch) {
+        return Math.round(parseFloat(singleMatch[1]) * 60);
+      }
+    }
+
+    // 根据难度推荐
+    const difficultyDuration: Record<string, number> = {
+      easy: 180,      // 简单：3 小时
+      moderate: 300,  // 中等：5 小时
+      hard: 420,      // 困难：7 小时
+      expert: 600,    // 专家：10 小时
+    };
+    return difficultyDuration[route.difficulty] || 240;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -70,6 +193,7 @@ export function CreateTeamClient() {
         body: JSON.stringify({
           title: formData.title,
           locationId: formData.locationId,
+          routeId: formData.routeId || undefined,
           date: formData.date,
           time: formData.time,
           durationMin: parseInt(formData.durationMin, 10),
@@ -219,6 +343,39 @@ export function CreateTeamClient() {
               </div>
             </FormSection>
 
+            {/* 路线选择（当地点有路线时显示） */}
+            {routes.length > 0 && (
+              <FormSection icon="🗺️" label="徒步路线" hint="选择路线后可自动推荐时长">
+                <div className="relative">
+                  <select
+                    id="routeId"
+                    name="routeId"
+                    value={formData.routeId}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none appearance-none"
+                    style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: formData.routeId ? "#1e1812" : "#8f7f6e" }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#D97706";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
+                      e.currentTarget.style.background = "#fff";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "#e8e0d7";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "#fdfaf6";
+                    }}
+                  >
+                    <option value="">选择一条路线（可选）</option>
+                    {routes.map((route) => (
+                      <option key={route.id} value={route.id}>
+                        {route.name} - {route.difficulty === "easy" ? "简单" : route.difficulty === "moderate" ? "中等" : route.difficulty === "hard" ? "困难" : "专家"} | {route.duration}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </FormSection>
+            )}
+
             {/* 日期 + 时间 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormSection icon="📅" label={copy.teams.formLabel.date} required>
@@ -283,14 +440,25 @@ export function CreateTeamClient() {
 
             {/* 时长 + 最大人数 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormSection icon="⌛" label={copy.teams.formLabel.duration} required>
+              <FormSection
+                icon="⌛"
+                label={copy.teams.formLabel.duration}
+                required
+                hint={recommendedDuration ? `推荐${Math.round(recommendedDuration / 60)}小时` : "2 小时~20 小时+"}
+              >
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
+                  {recommendedDuration && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium" style={{ color: "#D97706" }}>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>智能推荐</span>
+                    </div>
+                  )}
                   <select
                     id="durationMin"
                     name="durationMin"
                     value={formData.durationMin}
-                    onChange={handleChange}
+                    onChange={handleDurationChange}
                     required
                     className="w-full pl-11 pr-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none appearance-none"
                     style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
@@ -305,8 +473,10 @@ export function CreateTeamClient() {
                       e.currentTarget.style.background = "#fdfaf6";
                     }}
                   >
-                    {[120, 180, 240, 300, 360, 420, 480, 540, 600, 720].map((m) => (
-                      <option key={m} value={m}>{m / 60} 小时</option>
+                    {copy.teams.durationOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label} {recommendedDuration === opt.value ? "（推荐）" : ""}
+                      </option>
                     ))}
                   </select>
                 </div>

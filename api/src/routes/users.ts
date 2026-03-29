@@ -1,13 +1,30 @@
 import { Hono } from "hono";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, or, gt, inArray } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 
-/** 返回安全的用户对象（users 表不含密码字段，直接返回即可） */
+/** 返回安全的用户对象（时间戳格式） */
 function sanitizeUser(user: typeof schema.users.$inferSelect) {
-  return user;
+  return {
+    id: user.id,
+    name: user.name,
+    nickname: user.nickname,
+    email: user.email,
+    avatar: user.image,
+    bio: user.bio,
+    gender: user.gender,
+    birthday: user.birthday ? (user.birthday as Date).getTime() : null,
+    level: user.level || "beginner",
+    completedHikes: user.completedHikes ?? 0,
+    wechat: user.wechat,
+    extra: user.extra,
+    role: user.role || "user",
+    status: user.status,
+    createdAt: user.createdAt ? (user.createdAt as Date).getTime() : null,
+    updatedAt: user.updatedAt ? (user.updatedAt as Date).getTime() : null,
+  };
 }
 
 const users = new Hono<{ Bindings: Env }>();
@@ -44,12 +61,13 @@ users.get("/", async (c) => {
       user: {
         id: user.id, name: user.name, nickname: user.nickname,
         email: user.email, avatar: user.image, bio: user.bio,
-        gender: user.gender, birthday: user.birthday,
+        gender: user.gender, birthday: user.birthday ? (user.birthday as Date).getTime() : null,
         level: user.level || "beginner",
         completedHikes: user.completedHikes ?? 0,
         wechat: user.wechat, extra: user.extra,
         role: user.role || "user", status: user.status,
-        createdAt: user.createdAt, updatedAt: user.updatedAt,
+        createdAt: user.createdAt ? (user.createdAt as Date).getTime() : null,
+        updatedAt: user.updatedAt ? (user.updatedAt as Date).getTime() : null,
       },
     });
   } catch (error) {
@@ -467,6 +485,77 @@ users.get("/:id", async (c) => {
       completedTeams: completedAsLeaderCount.length + completedAsMemberCount.length,
     };
 
+    // 查询正在进行中的队伍（作为队长或已批准成员）
+    const now = new Date();
+    const activeStatuses = ["recruiting", "full", "formed"];
+
+    // 获取用户参与的所有队伍ID（作为队长或已批准成员）
+    const { sql } = await import("drizzle-orm");
+    const currentMembersSubquery = sql<number>`(SELECT COUNT(*) FROM team_members WHERE team_members.team_id = ${schema.teams.id} AND team_members.status = 'approved')`;
+
+    // 查询作为队长的正在进行中的队伍
+    const createdOngoingTeams = await db
+      .select({
+        id: schema.teams.id, title: schema.teams.title, startTime: schema.teams.startTime,
+        endTime: schema.teams.endTime, maxMembers: schema.teams.maxMembers, status: schema.teams.status,
+        locationName: schema.locations.name, locationCoverImage: schema.locations.coverImage,
+        currentMembers: currentMembersSubquery,
+      })
+      .from(schema.teams)
+      .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+      .where(
+        and(
+          eq(schema.teams.leaderId, id),
+          inArray(schema.teams.status, activeStatuses),
+          gt(schema.teams.endTime, now)
+        )
+      )
+      .limit(5);
+
+    // 查询作为成员加入的正在进行中的队伍
+    const joinedOngoingTeams = await db
+      .select({
+        id: schema.teams.id, title: schema.teams.title, startTime: schema.teams.startTime,
+        endTime: schema.teams.endTime, maxMembers: schema.teams.maxMembers, status: schema.teams.status,
+        locationName: schema.locations.name, locationCoverImage: schema.locations.coverImage,
+        currentMembers: currentMembersSubquery,
+      })
+      .from(schema.teams)
+      .innerJoin(schema.teamMembers, eq(schema.teamMembers.teamId, schema.teams.id))
+      .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+      .where(
+        and(
+          eq(schema.teamMembers.userId, id),
+          eq(schema.teamMembers.status, "approved"),
+          ne(schema.teams.leaderId, id), // 排除自己作为队长的
+          inArray(schema.teams.status, activeStatuses),
+          gt(schema.teams.endTime, now)
+        )
+      )
+      .limit(5);
+
+    // 合并并格式化正在进行中的队伍
+    const allOngoingTeams = [...createdOngoingTeams, ...joinedOngoingTeams]
+      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+      .slice(0, 8);
+
+    const ongoingTeams = allOngoingTeams.map((row) => {
+      const startDate = new Date(row.startTime);
+      return {
+        id: row.id,
+        title: row.title,
+        date: startDate.toISOString().split("T")[0],
+        time: startDate.toTimeString().slice(0, 5),
+        status: row.status,
+        currentMembers: row.currentMembers ?? 0,
+        maxMembers: row.maxMembers,
+        location: row.locationName ? {
+          name: row.locationName,
+          coverImage: row.locationCoverImage || "",
+        } : null,
+      };
+    });
+
     return c.json({
       success: true,
       user: {
@@ -481,6 +570,7 @@ users.get("/:id", async (c) => {
         // 仅自己可见的字段
         ...(isSelf ? { email: user.email, wechat: user.wechat, role: user.role, status: user.status } : {}),
       },
+      ongoingTeams,
     });
   } catch (error) {
     console.error("Get user profile error:", error);

@@ -368,6 +368,28 @@ export const copy = {
       description: "描述一下这次行程的具体安排、难度、风景特色等...",
       requirements: "例如：有徒步经验",
     },
+    // 时长选项（按小时）
+    durationOptions: [
+      { value: 30, label: "0.5 小时" },
+      { value: 60, label: "1 小时" },
+      { value: 90, label: "1.5 小时" },
+      { value: 120, label: "2 小时" },
+      { value: 180, label: "3 小时" },
+      { value: 240, label: "4 小时" },
+      { value: 300, label: "5 小时" },
+      { value: 360, label: "6 小时" },
+      { value: 420, label: "7 小时" },
+      { value: 480, label: "8 小时" },
+      { value: 540, label: "9 小时" },
+      { value: 600, label: "10 小时" },
+      { value: 660, label: "11 小时" },
+      { value: 720, label: "12 小时" },
+      { value: 900, label: "15 小时" },
+      { value: 1200, label: "20 小时+" },
+    ],
+    // 智能推荐文案
+    durationRecommend: "根据地点/路线推荐",
+    durationRecommendTip: "已根据你选择的地点和路线难度，推荐合适的活动时长",
 
     // 详情页
     introTitle: "队伍介绍",
@@ -525,9 +547,9 @@ export const copy = {
     backProfile: "返回个人资料",
 
     // 字段
-    usernameLabel: "用户名",
-    usernamePlaceholder: "请输入用户名",
-    usernameHint: "用于认证和系统标识",
+    nameLabel: "用户名",
+    namePlaceholder: "请输入用户名",
+    nameHint: "用于认证和系统标识",
     nicknameLabel: "昵称",
     nicknamePlaceholder: "请输入昵称（为空则显示用户名）",
     nicknameHint: "用于展示的昵称，可以随时修改",
@@ -610,6 +632,30 @@ export const copy = {
     experienceLabel: "活动经历",
     savedSuccess: "已保存",
     bioCountWarning: "字数即将达到上限",
+  },
+
+  // ─── 用户公开资料页 ─────────────────────────────────────────────────────────
+  userDetail: {
+    // Tab 标签
+    ongoingTab: "正在进行中",
+    historyTab: "历史活动",
+
+    // 空状态
+    emptyOngoing: "暂无进行中的活动",
+    emptyOngoingDesc: "该用户暂时没有正在参与的活动",
+    emptyHistory: "暂无历史活动",
+    emptyHistoryDesc: "该用户还没有活动记录",
+
+    // 队伍卡片
+    viewTeamBtn: "查看队伍",
+    memberCount: "人",
+    teamDateLabel: "出发日期",
+    teamMembersLabel: "队伍人数",
+
+    // 统计卡片
+    statCreated: "发起活动",
+    statJoined: "参加活动",
+    statCompleted: "已完成",
   },
 
   // ─── 我的队伍页 ───────────────────────────────────────────────────────────

@@ -18,6 +18,7 @@ import { copy } from "@/lib/copy";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { parseExtra, formatBirthday, birthdayToTimestamp } from "@/lib/user-utils";
 import type { SessionUser } from "@/lib/types";
 
 const LEVEL_OPTIONS = [
@@ -97,25 +98,9 @@ export function ProfileEditClient() {
         const user = u as SessionUser;
         setUser(user);
         setAvatarPreview(user.image || null);
-        let experience = "";
-        if (user.extra) {
-          try {
-            const parsed = JSON.parse(user.extra);
-            experience = parsed.experience || "";
-            existingEquipmentRef.current = parsed.equipment;
-          } catch {
-            // intentionally ignored: extra 字段解析失败时使用默认空值
-          }
-        }
-        let birthdayStr = "";
-        if (user.birthday) {
-          // 使用 UTC 日期避免时区偏移导致日期显示错误
-          const d = new Date(user.birthday);
-          const y = d.getUTCFullYear();
-          const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-          const day = String(d.getUTCDate()).padStart(2, "0");
-          birthdayStr = `${y}-${m}-${day}`;
-        }
+        const { experience, equipment } = parseExtra(user.extra);
+        existingEquipmentRef.current = equipment;
+        const birthdayStr = formatBirthday(user.birthday);
         setFormData({
           nickname: user.nickname || "",
           bio: user.bio || "",
@@ -123,7 +108,7 @@ export function ProfileEditClient() {
           wechat: user.wechat || "",
           gender: user.gender || "",
           birthday: birthdayStr,
-          experience,
+          experience: experience || "",
         });
       } catch {
         window.location.href = "/login?redirect=/profile/edit";
@@ -333,7 +318,7 @@ export function ProfileEditClient() {
             <div className="space-y-5">
               {/* 用户名（只读） */}
               <div className="space-y-1.5">
-                <FieldLabel>{copy.profile.usernameLabel}</FieldLabel>
+                <FieldLabel>{copy.profile.nameLabel}</FieldLabel>
                 <input
                   value={user?.name || ""}
                   disabled
@@ -341,7 +326,7 @@ export function ProfileEditClient() {
                 />
                 <p className="text-xs text-stone-400 flex items-center gap-1">
                   <Info className="h-3 w-3" />
-                  {copy.profile.usernameHint}
+                  {copy.profile.nameHint}
                 </p>
               </div>
 

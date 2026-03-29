@@ -765,9 +765,13 @@ interface TeamListSectionProps {
  * 队伍列表区块（极致优化版）
  * - 标题 + CTA 链接
  * - 空状态：温暖情感化设计
- * - 有队伍：渲染 TeamCard 列表
+ * - 有队伍：渲染 TeamCard 列表（最多展示 3 个，增加「查看全部」按钮）
  */
 export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
+  const MAX_DISPLAY_TEAMS = 3;
+  const displayedTeams = teams.slice(0, MAX_DISPLAY_TEAMS);
+  const hasMore = teams.length > MAX_DISPLAY_TEAMS;
+
   return (
     <div className="bg-white rounded-2xl border border-stone-100 p-5"
       style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
@@ -797,11 +801,26 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
       {teams.length === 0 ? (
         <EmptyTeamsState locationId={locationId} />
       ) : (
-        <div className="space-y-3">
-          {teams.map((team: Team) => (
-            <TeamCard key={team.id} team={team} />
-          ))}
-        </div>
+        <>
+          {/* 增加间距：space-y-3 → space-y-4 */}
+          <div className="space-y-4">
+            {displayedTeams.map((team: Team) => (
+              <TeamCard key={team.id} team={team} />
+            ))}
+          </div>
+
+          {/* 当队伍数量超过 3 个时，显示查看全部按钮 */}
+          {hasMore && (
+            <div className="mt-4 pt-4 border-t border-stone-100">
+              <a href={`/teams?locationId=${locationId}`} className="block">
+                <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-1.5 border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 hover:border-amber-300">
+                  查看全部 {teams.length} 支队伍
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </a>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

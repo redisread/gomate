@@ -48,6 +48,7 @@ export function RegisterClient() {
     }
 
     try {
+      // 注册成功后，用户昵称默认等于用户名（通过后端钩子或在 profile 页面设置）
       const result = await signUp.email({
         email: formData.email,
         password: formData.password,

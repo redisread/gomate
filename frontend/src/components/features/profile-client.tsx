@@ -19,6 +19,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
+import { formatBirthday, getAgeNumber } from "@/lib/user-utils";
 import type { SessionUser, Team } from "@/lib/types";
 
 /**
@@ -325,14 +326,11 @@ export function ProfileClient() {
 
                 {/* 生日 / 年龄 */}
                 {user.birthday && (() => {
-                  const d = new Date(user.birthday as string | number);
-                  const age = new Date().getFullYear() - d.getUTCFullYear();
-                  const y = d.getUTCFullYear();
-                  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-                  const day = String(d.getUTCDate()).padStart(2, "0");
+                  const age = getAgeNumber(user.birthday);
+                  const formatted = formatBirthday(user.birthday);
                   return (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 text-stone-600 border border-stone-200">
-                      🎂 {y}-{m}-{day}（{age}{copy.profile.ageSuffix}）
+                      🎂 {formatted}（{age}{copy.profile.ageSuffix}）
                     </span>
                   );
                 })()}

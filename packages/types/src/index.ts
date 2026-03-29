@@ -107,6 +107,8 @@ export interface Route {
   description?: string;
   difficulty: "easy" | "moderate" | "hard" | "expert";
   duration: string;
+  durationMin?: number;
+  durationMax?: number;
   distance: string;
   elevation?: string;
   routeGuide?: {

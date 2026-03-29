@@ -3,18 +3,24 @@
 import * as React from "react";
 import {
   ArrowLeft, User, Mountain, Award, Calendar, Users,
-  Briefcase, CheckCircle, Tent,
+  Briefcase, CheckCircle, Tent, MapPin, ChevronRight,
 } from "lucide-react";
 import { fetchAPI } from "@/lib/api";
+import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { parseExtra, getAgeFromBirthday, formatBirthday } from "@/lib/user-utils";
+import type { TeamStatus } from "@gomate/types";
+
+const c = copy.userDetail;
 
 // 等级标签
 const levelLabels: Record<string, string> = {
   beginner: "新手",
   intermediate: "进阶",
-  advanced: "高级",
+  advanced: "资深",
   expert: "专家",
 };
 
@@ -33,9 +39,9 @@ interface UserProfile {
   bio?: string | null;
   level: string;
   gender?: string | null;
-  birthday?: string | null;
+  birthday?: number | null;
   completedHikes?: number;
-  createdAt?: string;
+  createdAt?: number;
   extra?: string | null;
   stats: {
     createdTeams: number;
@@ -44,17 +50,22 @@ interface UserProfile {
   };
 }
 
-interface UserDetailClientProps {
-  userId: string;
+interface OngoingTeam {
+  id: string;
+  title: string;
+  date: string | null;
+  time: string | null;
+  status: TeamStatus;
+  currentMembers: number;
+  maxMembers: number;
+  location: {
+    name: string;
+    coverImage: string;
+  } | null;
 }
 
-function parseExtra(extra: string | null | undefined): { equipment?: string[]; experience?: string } {
-  if (!extra) return {};
-  try {
-    return JSON.parse(extra);
-  } catch {
-    return {};
-  }
+interface UserDetailClientProps {
+  userId: string;
 }
 
 function getGenderText(gender?: string | null): string {
@@ -63,12 +74,76 @@ function getGenderText(gender?: string | null): string {
   return "";
 }
 
-function getAgeText(birthday?: string | null): string {
-  if (!birthday) return "";
-  const birth = new Date(birthday);
-  const now = new Date();
-  const age = now.getFullYear() - birth.getFullYear();
-  return `${age}岁`;
+/**
+ * 队伍卡片组件
+ */
+function TeamCard({ team }: { team: OngoingTeam }) {
+  return (
+    <a href={`/teams/${team.id}`} className="block group">
+      <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/60 transition-all duration-200">
+        <div className="flex items-center gap-4">
+          {/* 封面图 */}
+          <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-amber-100 to-amber-50">
+            {team.location?.coverImage ? (
+              <img
+                src={team.location.coverImage}
+                alt={team.location.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Mountain className="h-7 w-7 text-amber-300" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1.5">
+              <h3 className="font-semibold text-stone-900 truncate group-hover:text-amber-700 transition-colors duration-150 text-sm">
+                {team.title}
+              </h3>
+              <StatusBadge status={team.status} size="sm" />
+            </div>
+            <div className="flex items-center gap-3 text-xs text-stone-400 flex-wrap">
+              {team.location?.name && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {team.location.name}
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {team.date}
+              </span>
+              <span className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {team.currentMembers}/{team.maxMembers}{c.memberCount}
+              </span>
+            </div>
+          </div>
+
+          <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150 flex-shrink-0" />
+        </div>
+      </div>
+    </a>
+  );
+}
+
+/**
+ * 空状态组件
+ */
+function EmptyState({ icon: Icon, title, desc }: { icon: typeof Mountain; title: string; desc: string }) {
+  return (
+    <div className="bg-white rounded-2xl border border-dashed border-stone-200 p-10 text-center">
+      <div className="relative inline-flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center">
+          <Icon className="h-7 w-7 text-amber-300" />
+        </div>
+      </div>
+      <h3 className="text-base font-semibold text-stone-800 mb-1">{title}</h3>
+      <p className="text-sm text-stone-400">{desc}</p>
+    </div>
+  );
 }
 
 /**
@@ -76,6 +151,8 @@ function getAgeText(birthday?: string | null): string {
  */
 export function UserDetailClient({ userId }: UserDetailClientProps) {
   const [user, setUser] = React.useState<UserProfile | null>(null);
+  const [ongoingTeams, setOngoingTeams] = React.useState<OngoingTeam[]>([]);
+  const [activeTab, setActiveTab] = React.useState<"ongoing" | "history">("ongoing");
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -86,6 +163,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
       .then((data) => {
         if (data.success && data.user) {
           setUser(data.user);
+          setOngoingTeams(data.ongoingTeams || []);
         } else {
           setError("用户不存在");
         }
@@ -93,6 +171,12 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
       .catch(() => setError("加载失败，请稍后重试"))
       .finally(() => setIsLoading(false));
   }, [userId]);
+
+  // 过滤进行中 vs 历史队伍（这里简化处理，实际历史需要额外查询）
+  // 当前 API 只返回了进行中的队伍，历史队伍可以后续扩展
+  const ongoingList = ongoingTeams.filter((t) =>
+    ["recruiting", "full", "formed"].includes(t.status)
+  );
 
   if (isLoading) {
     return (
@@ -133,7 +217,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
 
   const displayName = user.nickname || user.name;
   const extra = parseExtra(user.extra);
-  const age = getAgeText(user.birthday);
+  const age = getAgeFromBirthday(user.birthday);
   const genderText = getGenderText(user.gender);
 
   const joinDate = user.createdAt
@@ -213,7 +297,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
               <Briefcase className="h-4 w-4 text-stone-400" />
             </div>
             <div className="text-2xl font-bold text-stone-900">{user.stats.createdTeams}</div>
-            <div className="text-xs text-stone-500">发起队伍</div>
+            <div className="text-xs text-stone-500">{c.statCreated}</div>
           </div>
 
           <div className="bg-white border border-stone-200 rounded-2xl p-4 text-center">
@@ -221,7 +305,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
               <Users className="h-4 w-4 text-stone-400" />
             </div>
             <div className="text-2xl font-bold text-stone-900">{user.stats.joinedTeams}</div>
-            <div className="text-xs text-stone-500">参加活动</div>
+            <div className="text-xs text-stone-500">{c.statJoined}</div>
           </div>
 
           <div className="bg-white border border-stone-200 rounded-2xl p-4 text-center">
@@ -229,7 +313,61 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
               <CheckCircle className="h-4 w-4 text-stone-400" />
             </div>
             <div className="text-2xl font-bold text-stone-900">{user.stats.completedTeams}</div>
-            <div className="text-xs text-stone-500">已完成</div>
+            <div className="text-xs text-stone-500">{c.statCompleted}</div>
+          </div>
+        </div>
+
+        {/* Tab 导航 + 队伍列表 */}
+        <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden mb-6">
+          {/* Tab 导航 */}
+          <div className="border-b border-stone-100">
+            <div className="flex">
+              {[
+                { id: "ongoing", label: c.ongoingTab },
+                { id: "history", label: c.historyTab },
+              ].map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as "ongoing" | "history")}
+                  className={cn(
+                    "flex-1 px-4 py-3 text-sm font-medium transition-all duration-200 relative",
+                    activeTab === id
+                      ? "text-amber-700"
+                      : "text-stone-500 hover:text-stone-700"
+                  )}
+                >
+                  {label}
+                  {activeTab === id && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tab 内容 */}
+          <div className="p-4">
+            {activeTab === "ongoing" && (
+              <div className="space-y-3">
+                {ongoingList.length === 0 ? (
+                  <EmptyState
+                    icon={Mountain}
+                    title={c.emptyOngoing}
+                    desc={c.emptyOngoingDesc}
+                  />
+                ) : (
+                  ongoingList.map((team) => <TeamCard key={team.id} team={team} />)
+                )}
+              </div>
+            )}
+
+            {activeTab === "history" && (
+              <EmptyState
+                icon={CheckCircle}
+                title={c.emptyHistory}
+                desc={c.emptyHistoryDesc}
+              />
+            )}
           </div>
         </div>
 

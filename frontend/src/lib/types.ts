@@ -121,10 +121,10 @@ export interface SessionUser {
   bio?: string | null;
   level?: UserLevel | null;
   completedHikes?: number | null;
-  createdAt?: string | number | null;
+  createdAt?: number | null;
   wechat?: string | null;
   gender?: string | null;
-  birthday?: Date | number | string | null;
+  birthday?: number | null;
   extra?: string | null;
 }
 
