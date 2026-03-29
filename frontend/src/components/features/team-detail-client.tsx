@@ -790,6 +790,13 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
     checkCurrentUser();
   }, [teamId]);
 
+  // 当 team 和 currentUserId 都就绪后，检查是否需要加载申请列表
+  React.useEffect(() => {
+    if (team && currentUserId && team.leader?.id === currentUserId) {
+      fetchApplications();
+    }
+  }, [team?.id, currentUserId]);
+
   const fetchApplications = async () => {
     if (!teamId) return;
     setIsLoadingApps(true);
@@ -852,10 +859,6 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
       if (data?.user?.id) {
         setCurrentUserId(data.user.id);
         fetchUserMemberStatus();
-        // 如果队伍已加载且当前用户是队长，获取申请列表
-        if (team && team.leader?.id === data.user.id) {
-          fetchApplications();
-        }
       }
     } catch (err) {
       console.error("[TeamDetail] 获取当前用户会话失败:", err);
@@ -881,10 +884,6 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
       if (data.success && data.team) {
         setTeam(data.team);
         fetchOtherTeams(data.team.locationId, teamId);
-        // 如果当前用户是队长，获取申请列表
-        if (currentUserId && data.team.leader?.id === currentUserId) {
-          fetchApplications();
-        }
       } else {
         setError(copy.teams.notFound);
       }
