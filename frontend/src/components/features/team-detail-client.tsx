@@ -21,6 +21,7 @@ import {
   MessageCircle,
   Handshake,
   Cloud,
+  Trash2,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
@@ -413,6 +414,49 @@ function LeaveConfirmDialog({
   );
 }
 
+// ─── 删除确认对话框 ────────────────────────────────────────────────────────────
+function DeleteConfirmDialog({
+  open,
+  onCancel,
+  onConfirm,
+  isDeleting,
+}: {
+  open: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+  isDeleting: boolean;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-desc"
+        className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
+        <h3 id="delete-dialog-title" className="text-lg font-bold text-stone-900 mb-2">{copy.teams.deleteTeam}</h3>
+        <p id="delete-dialog-desc" className="text-sm text-stone-500 leading-relaxed mb-6">{copy.teams.deleteTeamConfirm}</p>
+        <button
+          onClick={onConfirm}
+          disabled={isDeleting}
+          className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors mb-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+          {copy.teams.deleteTeam}
+        </button>
+        <button
+          onClick={onCancel}
+          className="w-full py-3 rounded-2xl text-stone-500 text-sm font-medium hover:bg-stone-50 transition-colors"
+        >
+          {copy.common.cancel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── 编辑队伍 Modal ────────────────────────────────────────────────────────────
 interface EditTeamModalProps {
   open: boolean;
@@ -636,6 +680,8 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const [showJoinSheet, setShowJoinSheet] = React.useState(false);
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   const { toast, exiting, show: showToast } = useToast();
 
@@ -746,6 +792,25 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const handleEditSuccess = (updated: Partial<Team>) => {
     setTeam((prev) => prev ? { ...prev, ...updated } : prev);
     showToast({ type: "success", message: copy.teams.editSuccess });
+  };
+
+  const handleDelete = async () => {
+    setShowDeleteConfirm(false);
+    setIsDeleting(true);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        showToast({ type: "success", message: copy.teams.deleteTeamSuccess });
+        window.location.href = "/teams";
+      } else {
+        showToast({ type: "error", message: data.error || copy.teams.deleteTeamFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.teams.deleteTeamFailed });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   /* ---- 加载态：骨架屏 ---- */
@@ -1163,6 +1228,14 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                         <Pencil className="h-3 w-3" />
                         {copy.teams.editBtn}
                       </button>
+                      <span className="text-stone-300">·</span>
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="inline-flex items-center gap-1 text-xs text-stone-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        {copy.teams.deleteTeam}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1255,6 +1328,13 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                     aria-label={copy.teams.shareLabel}
                   >
                     <Share2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex items-center gap-1 text-xs text-stone-500 border border-stone-200 rounded-full px-3 py-1.5 hover:border-red-300 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    {copy.teams.deleteTeam}
                   </button>
                   <a href="/my-teams" className="text-xs text-amber-600 font-medium flex items-center gap-1">
                     {copy.teams.manageTeam} <ArrowRight className="h-3 w-3" />
@@ -1380,6 +1460,14 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
         open={showLeaveConfirm}
         onCancel={() => setShowLeaveConfirm(false)}
         onConfirm={handleLeave}
+      />
+
+      {/* 删除确认对话框 */}
+      <DeleteConfirmDialog
+        open={showDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
       />
 
       {/* 编辑队伍 Modal（仅队长可见） */}
