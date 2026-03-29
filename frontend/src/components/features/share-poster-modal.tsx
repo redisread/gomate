@@ -10,18 +10,21 @@ interface SharePosterModalProps {
   subtitle?: string;
   url: string;
   imageUrl?: string;
+  locationName?: string;
+  description?: string;
+  leaderName?: string;
+  membersInfo?: string;
+  tags?: string[];
   meta?: string;
   onClose: () => void;
-  /** 可选：注入外部 toast 函数；未提供时使用内置简单提示 */
   onToast?: (opts: { type: "success" | "error"; message: string }) => void;
 }
 
 const CANVAS_WIDTH = 375;
-const CANVAS_HEIGHT = 580;
-const HEADER_HEIGHT = 200;
-const QR_SIZE = 120;
+const CANVAS_HEIGHT = 520;
+const COVER_HEIGHT = 160;
+const QR_SIZE = 100;
 
-/** 绘制多行文字，超出最大行数时末尾加省略号 */
 function drawMultilineText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -41,7 +44,6 @@ function drawMultilineText(
     const metrics = ctx.measureText(testLine);
     if (metrics.width > maxWidth && line !== "") {
       if (lineCount === maxLines - 1) {
-        // 最后一行，截断加省略号
         let truncated = line;
         while (ctx.measureText(truncated + "…").width > maxWidth && truncated.length > 0) {
           truncated = truncated.slice(0, -1);
@@ -69,6 +71,12 @@ export function SharePosterModal({
   title,
   subtitle,
   url,
+  imageUrl,
+  locationName,
+  description,
+  leaderName,
+  membersInfo,
+  tags,
   meta,
   onClose,
   onToast,
@@ -76,12 +84,10 @@ export function SharePosterModal({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  /** 统一 toast 调用 */
   function showToast(opts: { type: "success" | "error"; message: string }) {
     if (onToast) {
       onToast(opts);
     } else {
-      // 内置降级：简单 alert
       if (opts.type === "error") console.error(opts.message);
     }
   }
@@ -100,65 +106,121 @@ export function SharePosterModal({
       setIsDrawing(true);
 
       try {
-        // ── 背景白色 ──────────────────────────────────────
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        // ── 顶部渐变色块 ──────────────────────────────────
-        const gradient = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, HEADER_HEIGHT);
-        if (type === "team") {
-          gradient.addColorStop(0, "#f59e0b");
-          gradient.addColorStop(1, "#d97706");
-        } else {
-          gradient.addColorStop(0, "#78716c");
-          gradient.addColorStop(1, "#57534e");
+        const coverImg = imageUrl ? new Image() : null;
+        if (coverImg && imageUrl) {
+          coverImg.crossOrigin = "anonymous";
+          try {
+            await new Promise<void>((resolve, reject) => {
+              coverImg.onload = () => resolve();
+              coverImg.onerror = () => reject();
+              coverImg.src = imageUrl;
+            });
+          } catch {
+            coverImg = null;
+          }
         }
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, CANVAS_WIDTH, HEADER_HEIGHT);
 
-        // ── logo 文字（右上角）────────────────────────────
+        if (cancelled) return;
+
+        if (coverImg) {
+          ctx.drawImage(coverImg, 0, 0, CANVAS_WIDTH, COVER_HEIGHT);
+          const gradient = ctx.createLinearGradient(0, COVER_HEIGHT - 60, 0, COVER_HEIGHT);
+          gradient.addColorStop(0, "rgba(0,0,0,0)");
+          gradient.addColorStop(1, "rgba(0,0,0,0.6)");
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, CANVAS_WIDTH, COVER_HEIGHT);
+        } else {
+          const gradient = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, COVER_HEIGHT);
+          if (type === "team") {
+            gradient.addColorStop(0, "#f59e0b");
+            gradient.addColorStop(1, "#d97706");
+          } else {
+            gradient.addColorStop(0, "#78716c");
+            gradient.addColorStop(1, "#57534e");
+          }
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, CANVAS_WIDTH, COVER_HEIGHT);
+        }
+
         ctx.fillStyle = "rgba(255,255,255,0.85)";
         ctx.font = "bold 12px sans-serif";
         ctx.textAlign = "right";
         ctx.fillText("GoMate", CANVAS_WIDTH - 16, 24);
 
-        // ── 标题（白色，24px bold，最多2行）──────────────
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 24px sans-serif";
-        ctx.textAlign = "left";
-        const titleY = drawMultilineText(ctx, title, 20, 60, CANVAS_WIDTH - 40, 34, 2);
+        let infoY = COVER_HEIGHT + 24;
 
-        // ── 副标题 ────────────────────────────────────────
-        if (subtitle) {
-          ctx.fillStyle = "rgba(255,255,255,0.85)";
-          ctx.font = "14px sans-serif";
-          ctx.textAlign = "left";
-          ctx.fillText(subtitle, 20, Math.max(titleY + 4, 130));
-        }
-
-        // ── meta 信息区 ───────────────────────────────────
-        if (meta) {
+        if (locationName) {
           ctx.fillStyle = "#78716c";
           ctx.font = "13px sans-serif";
           ctx.textAlign = "left";
-          ctx.fillText(meta, 20, HEADER_HEIGHT + 36);
+          ctx.fillText("📍 " + locationName, 20, infoY);
+          infoY += 24;
         }
 
-        // ── 分割线 ────────────────────────────────────────
+        ctx.fillStyle = "#1c1917";
+        ctx.font = "bold 20px sans-serif";
+        ctx.textAlign = "left";
+        const titleEndY = drawMultilineText(ctx, title, 20, infoY, CANVAS_WIDTH - 40, 28, 2);
+        infoY = titleEndY + 8;
+
+        if (description) {
+          ctx.fillStyle = "#78716c";
+          ctx.font = "13px sans-serif";
+          ctx.textAlign = "left";
+          const descEndY = drawMultilineText(ctx, description, 20, infoY, CANVAS_WIDTH - 40, 18, 2);
+          infoY = descEndY + 6;
+        }
+
+        const infoLineY = infoY;
+        ctx.fillStyle = "#57534e";
+        ctx.font = "13px sans-serif";
+        ctx.textAlign = "left";
+
+        let infoParts: string[] = [];
+        if (leaderName) infoParts.push("👤 " + leaderName);
+        if (membersInfo) infoParts.push("👥 " + membersInfo);
+        if (infoParts.length > 0) {
+          ctx.fillText(infoParts.join("  ·  "), 20, infoLineY);
+          infoY = infoLineY + 20;
+        }
+
+        if (tags && tags.length > 0) {
+          const tagsText = tags.slice(0, 4).join(" | ");
+          ctx.fillStyle = "#a8a29e";
+          ctx.font = "12px sans-serif";
+          ctx.fillText("🏷️ " + tagsText, 20, infoY);
+          infoY += 16;
+        }
+
+        if (subtitle) {
+          ctx.fillStyle = "#a8a29e";
+          ctx.font = "12px sans-serif";
+          ctx.fillText(subtitle, 20, infoY);
+          infoY += 16;
+        }
+
+        if (meta) {
+          ctx.fillStyle = "#a8a29e";
+          ctx.font = "12px sans-serif";
+          ctx.fillText(meta, 20, infoY);
+          infoY += 16;
+        }
+
         ctx.strokeStyle = "#e7e5e4";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(20, CANVAS_HEIGHT - 60);
-        ctx.lineTo(CANVAS_WIDTH - 20, CANVAS_HEIGHT - 60);
+        ctx.moveTo(20, CANVAS_HEIGHT - 56);
+        ctx.lineTo(CANVAS_WIDTH - 20, CANVAS_HEIGHT - 56);
         ctx.stroke();
 
-        // ── 底部网址小字 ──────────────────────────────────
         ctx.fillStyle = "#a8a29e";
         ctx.font = "11px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("gomate.live", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 40);
+        ctx.fillText("gomate.live", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 38);
 
-        // ── 二维码（居中，距底部留空）────────────────────
         const qrDataUrl = await QRCode.toDataURL(url, {
           width: QR_SIZE,
           margin: 1,
@@ -176,10 +238,10 @@ export function SharePosterModal({
 
         if (cancelled) return;
 
+        const availableHeight = CANVAS_HEIGHT - infoY - 16 - QR_SIZE - 24 - 56;
+        const qrY = infoY + 16 + Math.max(0, availableHeight / 2);
         const qrX = (CANVAS_WIDTH - QR_SIZE) / 2;
-        const qrY = HEADER_HEIGHT + (CANVAS_HEIGHT - HEADER_HEIGHT - 60 - QR_SIZE - 40) / 2 + 20;
 
-        // 二维码背景白色圆角框
         ctx.fillStyle = "#ffffff";
         ctx.shadowColor = "rgba(0,0,0,0.08)";
         ctx.shadowBlur = 12;
@@ -205,13 +267,11 @@ export function SharePosterModal({
 
         ctx.drawImage(qrImg, qrX, qrY, QR_SIZE, QR_SIZE);
 
-        // 二维码下方提示文字
-        const scanText =
-          type === "team" ? copy.share.scanToJoin : copy.share.scanToViewLocation;
+        const scanText = type === "team" ? copy.share.scanToJoin : copy.share.scanToViewLocation;
         ctx.fillStyle = "#78716c";
         ctx.font = "12px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(scanText, CANVAS_WIDTH / 2, qrY + QR_SIZE + 20);
+        ctx.fillText(scanText, CANVAS_WIDTH / 2, qrY + QR_SIZE + 18);
       } catch {
         showToast({ type: "error", message: copy.share.generatePosterFailed });
       } finally {
@@ -224,9 +284,8 @@ export function SharePosterModal({
     return () => {
       cancelled = true;
     };
-  }, [type, title, subtitle, url, meta]);
+  }, [type, title, subtitle, url, imageUrl, locationName, description, leaderName, membersInfo, tags, meta]);
 
-  /** 下载海报 PNG */
   function handleDownload() {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -245,7 +304,6 @@ export function SharePosterModal({
     }, "image/png");
   }
 
-  /** 复制链接 */
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(url);
@@ -265,7 +323,6 @@ export function SharePosterModal({
         className="bg-white rounded-2xl max-w-sm w-full mx-4 mt-8 mb-8"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 标题栏 */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <span className="font-semibold text-stone-800 text-sm">
             {type === "team" ? copy.share.title : copy.share.locationTitle}
@@ -279,8 +336,7 @@ export function SharePosterModal({
           </button>
         </div>
 
-        {/* 海报预览 */}
-        <div className="px-4 pt-2">
+        <div className="px-4 pt-2 relative">
           <canvas
             ref={canvasRef}
             width={CANVAS_WIDTH}
@@ -295,7 +351,6 @@ export function SharePosterModal({
           )}
         </div>
 
-        {/* 按钮区 */}
         <div className="flex gap-3 mt-4 px-4 pb-4">
           <button
             onClick={handleDownload}

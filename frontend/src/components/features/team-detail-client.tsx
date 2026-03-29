@@ -1402,7 +1402,12 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
           title={team.title}
           subtitle={team.date}
           url={typeof window !== "undefined" ? window.location.href : ""}
-          meta={`${team.currentMembers}/${team.maxMembers} 人`}
+          imageUrl={location?.coverImage}
+          locationName={location?.name}
+          description={team.description}
+          leaderName={team.leader?.nickname || team.leader?.name}
+          membersInfo={`${team.currentMembers}/${team.maxMembers} 人`}
+          tags={(team.route?.tags as { name: string }[] | undefined)?.map((t) => t.name)}
           onClose={() => setShowShareModal(false)}
           onToast={showToast}
         />
