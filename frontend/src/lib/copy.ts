@@ -597,6 +597,9 @@ export const copy = {
     levelTitleSuffix: "探索者",
     member: "成员",
     equipment: "常用装备",
+    equipmentPlaceholder: "输入装备名称，回车添加",
+    equipmentHint: "添加你常用的户外装备，最多 10 个",
+    equipmentMaxReached: "最多添加 10 个装备",
     experience: "活动经历",
 
     // 重构新增文案

@@ -86,9 +86,9 @@ export function ProfileEditClient() {
     gender: "",
     birthday: "",
     experience: "",
+    equipment: [] as string[],
   });
-  // 保留已有的 equipment 数据，避免保存时被清空
-  const existingEquipmentRef = React.useRef<string[] | undefined>(undefined);
+  const [equipmentInput, setEquipmentInput] = React.useState("");
 
   React.useEffect(() => {
     (async () => {
@@ -98,8 +98,7 @@ export function ProfileEditClient() {
         const user = u as SessionUser;
         setUser(user);
         setAvatarPreview(user.image || null);
-        const { experience, equipment } = parseExtra(user.extra);
-        existingEquipmentRef.current = equipment;
+const { experience, equipment } = parseExtra(user.extra);
         const birthdayStr = formatBirthday(user.birthday);
         setFormData({
           nickname: user.nickname || "",
@@ -109,6 +108,7 @@ export function ProfileEditClient() {
           gender: user.gender || "",
           birthday: birthdayStr,
           experience: experience || "",
+          equipment: equipment || [],
         });
       } catch {
         window.location.href = "/login?redirect=/profile/edit";
@@ -122,6 +122,32 @@ export function ProfileEditClient() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setMessage(null);
+  };
+
+  const handleEquipmentKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const value = equipmentInput.trim();
+      if (!value) return;
+      if (formData.equipment.length >= 10) {
+        setMessage({ type: "error", text: copy.profile.equipmentMaxReached });
+        return;
+      }
+      if (formData.equipment.includes(value)) {
+        setEquipmentInput("");
+        return;
+      }
+      setFormData((prev) => ({ ...prev, equipment: [...prev.equipment, value] }));
+      setEquipmentInput("");
+      setMessage(null);
+    }
+  };
+
+  const handleRemoveEquipment = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      equipment: prev.equipment.filter((_, i) => i !== index),
+    }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,10 +198,10 @@ export function ProfileEditClient() {
         if (uploaded) avatarUrl = uploaded;
       }
 
-      // 保留已有的 equipment 数据，只更新 experience
+      // 构建 extra 数据
       const extra: { experience?: string; equipment?: string[] } = {};
       if (formData.experience) extra.experience = formData.experience;
-      if (existingEquipmentRef.current?.length) extra.equipment = existingEquipmentRef.current;
+      if (formData.equipment.length > 0) extra.equipment = formData.equipment;
 
       const res = await fetchAPI("/api/user/update", {
         method: "PATCH",
@@ -429,6 +455,41 @@ export function ProfileEditClient() {
                   className={`${inputCls} resize-none`}
                 />
                 <p className="text-xs text-stone-400">{copy.profile.experienceHint}</p>
+              </div>
+
+              {/* 常用装备 */}
+              <div className="space-y-1.5">
+                <FieldLabel>{copy.profile.equipment}</FieldLabel>
+                <input
+                  type="text"
+                  value={equipmentInput}
+                  onChange={(e) => setEquipmentInput(e.target.value)}
+                  onKeyDown={handleEquipmentKeyDown}
+                  placeholder={copy.profile.equipmentPlaceholder}
+                  className={inputCls}
+                />
+                <p className="text-xs text-stone-400">{copy.profile.equipmentHint}</p>
+                
+                {/* 已添加的装备标签 */}
+                {formData.equipment.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.equipment.map((item, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full text-sm border border-amber-200"
+                      >
+                        {item}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEquipment(index)}
+                          className="text-amber-400 hover:text-amber-600 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </Card>
