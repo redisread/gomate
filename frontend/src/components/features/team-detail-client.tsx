@@ -163,21 +163,16 @@ function MemberAvatarGrid({
                   <Crown className="w-2.5 h-2.5 text-white" />
                 </span>
               )}
-              {/* 名字 */}
-              <p className="text-xs text-stone-400 max-w-[44px] truncate text-center leading-tight group-hover:text-stone-600 transition-colors">
-                {name}
-              </p>
+              {/* 微信号（队友可见） */}
+              {m.wechat && (
+                <p className="text-xs text-stone-500 max-w-[60px] truncate text-center leading-tight">
+                  {m.wechat}
+                </p>
+              )}
             </a>
           );
 
-          // 有微信号时包裹 Tooltip（仅队友可见）
-          return m.wechat ? (
-            <Tooltip key={m.id} content={m.wechat} side="bottom">
-              {memberLink}
-            </Tooltip>
-          ) : (
-            <React.Fragment key={m.id}>{memberLink}</React.Fragment>
-          );
+          return <React.Fragment key={m.id}>{memberLink}</React.Fragment>;
         })}
 
         {/* 展开/更多 */}
