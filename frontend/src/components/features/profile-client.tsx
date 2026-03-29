@@ -11,6 +11,7 @@ import {
   Calendar,
   Users,
   ChevronRight,
+  CheckCircle,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
@@ -122,6 +123,8 @@ export function ProfileClient() {
   const [createdTotal, setCreatedTotal] = React.useState(0);
   const [joinedTotal, setJoinedTotal] = React.useState(0);
 
+  const [completedTotal, setCompletedTotal] = React.useState(0);
+
   React.useEffect(() => {
     loadProfile();
   }, []);
@@ -147,17 +150,24 @@ export function ProfileClient() {
       const createdData = await createdRes.json();
       const joinedData = await joinedRes.json();
       if (createdData.success) {
-        const all: Team[] =createdData.teams || [];
+        const all: Team[] = createdData.teams || [];
         setCreatedTotal(all.length);
         setCreatedTeams(all.slice(0, 3));
       }
       if (joinedData.success) {
-        const all: Team[] =joinedData.teams || [];
+        const all: Team[] = joinedData.teams || [];
         setJoinedTotal(all.length);
         setJoinedTeams(all.slice(0, 3));
       }
+      if (createdData.success && joinedData.success) {
+        const createdList: Team[] = createdData.teams || [];
+        const joinedList: Team[] = joinedData.teams || [];
+        const completedCount = [...createdList, ...joinedList].filter(
+          (t) => t.status === "completed"
+        ).length;
+        setCompletedTotal(completedCount);
+      }
     } catch (error) {
-      // 队伍加载失败不阻断页面渲染，保持空数组
       console.warn("[ProfileClient] 队伍加载失败:", error);
     }
   };
@@ -188,8 +198,8 @@ export function ProfileClient() {
             </div>
           </div>
           {/* 统计卡骨架 */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            {[1, 2, 3].map(i => (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            {[1, 2, 3, 4].map(i => (
               <div key={i} className="bg-white rounded-2xl border border-stone-100 p-5">
                 <div className="h-3 bg-stone-100 rounded-full w-16 animate-pulse mb-3" />
                 <div className="h-8 bg-stone-100 rounded-full w-12 animate-pulse" />
@@ -342,12 +352,37 @@ export function ProfileClient() {
                   {user.bio}
                 </p>
               )}
+
+              {/* 装备清单 */}
+              {user.extra && (() => {
+                try {
+                  const extra = JSON.parse(user.extra as string);
+                  if (extra.equipment?.length) {
+                    return (
+                      <div className="mt-4 border-t border-stone-100 pt-4">
+                        <div className="text-xs text-stone-500 mb-2 flex items-center gap-1">
+                          <Mountain className="h-3.5 w-3.5" />
+                          {copy.profile.equipmentLabel}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {extra.equipment.map((item: string, i: number) => (
+                            <span key={i} className="px-2.5 py-1 bg-stone-100 text-stone-700 rounded-full text-xs">
+                              {item}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                } catch {}
+                return null;
+              })()}
             </div>
           </div>
         </div>
 
         {/* ── 统计卡片 ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <StatCard
             label="我发起的队伍"
             value={createdTotal}
@@ -363,6 +398,13 @@ export function ProfileClient() {
             href="/my-teams?tab=joined"
             accent
             sublabel="与伙伴一起出发的次数"
+          />
+          <StatCard
+            label="已完成"
+            value={completedTotal}
+            icon={CheckCircle}
+            href="/my-teams?tab=history"
+            sublabel="圆满完成的活动"
           />
           <StatCard
             label="加入时间"

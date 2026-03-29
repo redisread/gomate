@@ -1,0 +1,102 @@
+"use client";
+
+import * as React from "react";
+import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
+
+export const LEVEL_CONFIG: Record<string, {
+  badge: string;
+  glow: string;
+  icon: string;
+  emoji: string;
+}> = {
+  beginner: {
+    badge: "bg-amber-50 text-amber-700 border border-amber-200",
+    glow: "shadow-amber-100",
+    icon: "text-amber-500",
+    emoji: "🌱",
+  },
+  intermediate: {
+    badge: "bg-sky-50 text-sky-700 border border-sky-200",
+    glow: "shadow-sky-100",
+    icon: "text-sky-500",
+    emoji: "⛰️",
+  },
+  advanced: {
+    badge: "bg-violet-50 text-violet-700 border border-violet-200",
+    glow: "shadow-violet-100",
+    icon: "text-violet-500",
+    emoji: "🏔️",
+  },
+  expert: {
+    badge: "bg-amber-50 text-amber-700 border border-amber-200",
+    glow: "shadow-amber-100",
+    icon: "text-amber-500",
+    emoji: "🦅",
+  },
+};
+
+export function StatCard({
+  label,
+  value,
+  icon: Icon,
+  href,
+  accent = false,
+  sublabel,
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ElementType;
+  href?: string;
+  accent?: boolean;
+  sublabel?: string;
+}) {
+  const inner = (
+    <div className={cn(
+      "bg-white rounded-2xl border border-stone-100 p-5 transition-all duration-200 group",
+      href && "hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-100/60 hover:border-amber-200/60 cursor-pointer"
+    )}>
+      <div className="flex items-start justify-between mb-3">
+        <div className={cn(
+          "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200",
+          accent
+            ? "bg-amber-50 group-hover:bg-amber-100"
+            : "bg-stone-50 group-hover:bg-stone-100"
+        )}>
+          <Icon className={cn("h-5 w-5", accent ? "text-amber-600" : "text-stone-400")} />
+        </div>
+        {href && (
+          <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
+        )}
+      </div>
+      <p className={cn(
+        "text-3xl font-bold mb-1",
+        accent ? "text-stone-900" : "text-stone-700"
+      )}>{value}</p>
+      <p className="text-xs text-stone-400 font-medium">{label}</p>
+      {sublabel && <p className="text-xs text-stone-300 mt-0.5">{sublabel}</p>}
+    </div>
+  );
+  return href ? <a href={href}>{inner}</a> : inner;
+}
+
+export function ProfileSkeleton({ variant = "amber" }: { variant?: "amber" | "sky" }) {
+  const bgColor = variant === "amber" ? "amber" : "sky";
+  
+  return (
+    <div className="bg-white rounded-2xl border border-stone-100 overflow-hidden mb-6">
+      <div className={`h-36 bg-gradient-to-r from-${bgColor}-100 via-${bgColor}-50 to-${bgColor}-100 animate-pulse`} />
+      <div className="px-6 pb-6 pt-20">
+        <div className="space-y-3">
+          <div className={`h-6 bg-${bgColor}-100 rounded-full w-40 animate-pulse`} />
+          <div className={`h-4 bg-${bgColor}-100 rounded-full w-56 animate-pulse`} />
+          <div className="flex gap-2 mt-4">
+            <div className={`h-6 w-24 bg-${bgColor}-100 rounded-full animate-pulse`} />
+            <div className={`h-6 w-32 bg-${bgColor}-100 rounded-full animate-pulse`} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

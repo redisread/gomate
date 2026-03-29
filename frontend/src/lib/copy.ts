@@ -619,6 +619,16 @@ export const copy = {
       expert: "专家级探险家",
     },
 
+    // 个人信息详情页
+    statsCreatedTeams: "发起队伍",
+    statsJoinedTeams: "参加活动",
+    statsCompletedTeams: "已完成",
+    statsJoinDate: "加入时间",
+    equipmentLabel: "装备清单",
+    experienceShareLabel: "经验分享",
+    sectionBasicInfoTitle: "基础信息",
+    sectionOutdoorInfoTitle: "户外经验",
+
     // 编辑页新增
     editWarmSubtitle: "完善你的信息，让伙伴更了解你",
     sectionAvatar: "我的头像",
@@ -977,6 +987,10 @@ export const copy = {
     teamDescTooLong: "描述最多1000个字符",
     teamReqsTooLong: "要求最多500个字符",
     wechatRequired: "请先在个人资料中填写微信号，以便队友联系您",
+
+    // 用户详情页
+    userNotFound: "用户不存在",
+    loadFailed: "加载失败，请稍后重试",
   },
 
   // ─── 操作成功消息 ─────────────────────────────────────────────────────────
