@@ -11,8 +11,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Pencil,
-  Copy,
-  Check,
   Flame,
   Clock,
   Ruler,
@@ -21,18 +19,17 @@ import {
   ZoomIn,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
-import { fetchAPI } from "@/lib/api";
-import type { Location, Team } from "@/lib/types";
+import { fetchAPI, getLocationPois } from "@/lib/api";
+import type { Location, Team, RoutePoi } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import {
   LocationIntroCard,
-  RouteInfoCard,
   TeamListSection,
-  AddressRow,
   PoiSection,
 } from "@/components/features/location-detail-main-content";
+import { SharePosterModal } from "./share-poster-modal";
 
 // ─── 季节映射 ─────────────────────────────────────────────────────────────────
 const SEASON_LABEL: Record<string, string> = {
@@ -222,19 +219,6 @@ interface ActionCardProps {
  * 角色：转化率优化师 + 视觉总监
  */
 function ActionCard({ location, teams }: ActionCardProps) {
-  const [addressCopied, setAddressCopied] = React.useState(false);
-
-  const handleCopyAddress = async () => {
-    if (!location.address) return;
-    try {
-      await navigator.clipboard.writeText(location.address);
-      setAddressCopied(true);
-      setTimeout(() => setAddressCopied(false), 2000);
-    } catch {
-      // 降级静默失败
-    }
-  };
-
   const totalParticipants = teams.reduce((sum, t) => sum + (t.currentMembers || 0), 0);
   const avatarLeaders = teams.filter((t) => t.leader?.avatar).slice(0, 5);
   const socialProofText =
@@ -251,23 +235,6 @@ function ActionCard({ location, teams }: ActionCardProps) {
         boxShadow: "0 4px 24px rgba(217,119,6,0.10), 0 1px 4px rgba(0,0,0,0.04)",
       }}
     >
-      {/* 封面缩略图 */}
-      {location.coverImage && (
-        <div className="relative h-32 overflow-hidden">
-          <img
-            src={location.coverImage}
-            alt={location.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-amber-950/65 via-amber-900/15 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-6">
-            <p className="text-white font-bold text-sm leading-tight drop-shadow truncate">
-              {location.name}
-            </p>
-          </div>
-        </div>
-      )}
-
       <div className="p-5">
         {/* 情感标题 */}
         <p className="text-[13px] font-bold mb-1" style={{ color: "#78350F" }}>
@@ -362,56 +329,6 @@ function ActionCard({ location, teams }: ActionCardProps) {
             {copy.locations.detailBrowseTeams}
           </button>
         </a>
-
-        {/* 分隔线 */}
-        <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(217,119,6,0.10)" }}>
-          {/* 地址（可点击复制）*/}
-          {location.address && (
-            <button
-              onClick={handleCopyAddress}
-              className="w-full flex items-start gap-2.5 text-left group transition-all hover:bg-amber-50/50 rounded-xl px-2 py-1.5 -mx-2 mb-3"
-            >
-              <MapPin className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-amber-500" />
-              <span className="text-xs leading-relaxed flex-1" style={{ color: "#78716c" }}>
-                {location.address}
-              </span>
-              <span className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                {addressCopied ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5 text-amber-400" />
-                )}
-              </span>
-            </button>
-          )}
-
-          {/* 最佳季节 */}
-          {location.bestSeason && location.bestSeason.length > 0 && (
-            <div className="flex items-start gap-2.5">
-              <Sparkles className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-amber-500" />
-              <div>
-                <p className="text-[11px] font-medium mb-1.5" style={{ color: "#78716c" }}>
-                  {copy.locations.detailSeasonsLabel}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {location.bestSeason.map((s, i) => (
-                    <span
-                      key={i}
-                      className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
-                      style={{
-                        background: "rgba(217,119,6,0.09)",
-                        color: "#92400E",
-                        border: "1px solid rgba(217,119,6,0.18)",
-                      }}
-                    >
-                      {SEASON_LABEL[s] ?? s}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -608,9 +525,10 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   const [relatedLocations, setRelatedLocations] = React.useState<Location[]>([]);
   const [isFavorited, setIsFavorited] = React.useState(false);
   const [heartAnimating, setHeartAnimating] = React.useState(false);
-  const [shareCopied, setShareCopied] = React.useState(false);
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [userId, setUserId] = React.useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = React.useState(false);
+  const [pois, setPois] = React.useState<RoutePoi[]>([]);
 
   // 图片画廊
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
@@ -674,6 +592,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
         setLocation(data.location);
         loadTeams(data.location.id);
         loadRelatedLocations();
+        loadPois(data.location.id);
       } else {
         setError(copy.api.locationNotFound);
       }
@@ -705,6 +624,15 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       }
     } catch (err) {
       console.error("[LocationDetail] 获取相关地点失败:", err);
+    }
+  };
+
+  const loadPois = async (locId: string) => {
+    try {
+      const data = await getLocationPois(locId);
+      setPois(data || []);
+    } catch (err) {
+      console.error("[LocationDetail] 获取打卡点失败:", err);
     }
   };
 
@@ -746,17 +674,8 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
   /** 分享 */
   const handleShare = async () => {
-    if (navigator.share && location) {
-      try {
-        await navigator.share({ title: location.name, url: window.location.href });
-        return;
-      } catch {
-        // 用户取消
-      }
-    }
-    await navigator.clipboard.writeText(window.location.href);
-    setShareCopied(true);
-    setTimeout(() => setShareCopied(false), 2000);
+    if (!location) return;
+    setShowShareModal(true);
   };
 
   if (isLoading) return <LoadingSkeleton />;
@@ -985,6 +904,8 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
           <div className="lg:col-span-2 space-y-5 pt-6">
             <LocationIntroCard
               location={location}
+              address={location.address}
+              coordinates={location.coordinates}
               actions={
                 <>
                   {isAdmin && (
@@ -1000,7 +921,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium transition-all duration-150 active:scale-95 border border-stone-200"
                   >
                     <Share2 className="h-3.5 w-3.5" />
-                    {shareCopied ? copy.share.linkCopied : copy.locations.detailShareBtn}
+                    {copy.locations.detailShareBtn}
                   </button>
                   <button
                     onClick={handleFavorite}
@@ -1022,15 +943,9 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                 </>
               }
             />
-            <RouteInfoCard location={location} />
+            {/* TODO: 路线信息模块 - 后续实现 */}
+            {/* <RouteInfoCard location={location} /> */}
             <PoiSection locationId={location.id} />
-            {location.address && (
-              <AddressRow
-                address={location.address}
-                coordinates={location.coordinates}
-                locationName={location.name}
-              />
-            )}
             <TeamListSection teams={teams} locationId={location.id} />
           </div>
 
@@ -1055,6 +970,22 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
           onClose={() => setLightboxIndex(null)}
           onPrev={() => setLightboxIndex((i) => (i! - 1 + galleryImages.length) % galleryImages.length)}
           onNext={() => setLightboxIndex((i) => (i! + 1) % galleryImages.length)}
+        />
+      )}
+
+      {/* 分享海报弹窗 */}
+      {showShareModal && location && (
+        <SharePosterModal
+          type="location"
+          title={location.name}
+          subtitle={location.subtitle}
+          url={typeof window !== "undefined" ? window.location.href : ""}
+          imageUrl={location.coverImage}
+          meta={location.address}
+          tags={location.tags?.map((t) => t.name)}
+          pois={pois.map((p) => ({ name: p.name, roleType: p.roleType }))}
+          description={location.description}
+          onClose={() => setShowShareModal(false)}
         />
       )}
 
