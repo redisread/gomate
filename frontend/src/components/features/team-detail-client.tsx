@@ -129,14 +129,18 @@ function MemberAvatarGrid({
           const name = m.nickname || m.name;
           const isLeader = m.userId === leaderId;
           return (
-            <div key={m.id} className="relative group flex flex-col items-center gap-1.5">
+            <a
+              key={m.id}
+              href={`/users/${m.userId}`}
+              className="relative group flex flex-col items-center gap-1.5 cursor-pointer"
+            >
               {/* 头像 */}
               <div
                 className={cn(
-                  "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 transition-transform duration-150 group-hover:scale-105",
+                  "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-150",
                   isLeader
-                    ? "ring-2 ring-amber-400 ring-offset-1 bg-gradient-to-br from-amber-500 to-amber-300"
-                    : "bg-stone-100 ring-1 ring-stone-200"
+                    ? "ring-2 ring-amber-400 ring-offset-1 bg-gradient-to-br from-amber-500 to-amber-300 group-hover:ring-amber-300"
+                    : "bg-stone-100 ring-1 ring-stone-200 group-hover:scale-105 group-hover:ring-amber-300"
                 )}
               >
                 {m.avatar ? (
@@ -159,10 +163,10 @@ function MemberAvatarGrid({
                 </span>
               )}
               {/* 名字 */}
-              <p className="text-xs text-stone-400 max-w-[44px] truncate text-center leading-tight">
+              <p className="text-xs text-stone-400 max-w-[44px] truncate text-center leading-tight group-hover:text-stone-600 transition-colors">
                 {name}
               </p>
-            </div>
+            </a>
           );
         })}
 
