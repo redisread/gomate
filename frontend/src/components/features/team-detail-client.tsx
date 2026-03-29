@@ -675,12 +675,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
               </span>
             </div>
             
-            {/* 教化设计：队伍故事文案 */}
-            {!isFull && team.status === "recruiting" && (
-              <p className="mt-4 text-sm text-white/70 max-w-xl leading-relaxed">
-                {getTeamStory(team.currentMembers, team.maxMembers)}
-              </p>
-            )}
+            
           </div>
         </div>
       </div>
