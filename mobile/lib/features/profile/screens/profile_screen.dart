@@ -60,31 +60,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final authState = ref.watch(authProvider);
 
     if (authState.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return PopScope(
+        canPop: true,
+        child: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
     }
 
     final currentUser = authState.valueOrNull?.user;
 
     if (currentUser == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('个人资料')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.person_outline_rounded,
-                  size: 80, color: AppTokens.textTertiary),
-              const SizedBox(height: AppTokens.space4),
-              const Text('请先登录',
-                  style: TextStyle(
-                      fontSize: AppTokens.fontSizeL,
-                      color: AppTokens.textPrimary)),
-              const SizedBox(height: AppTokens.space6),
-              ElevatedButton(
-                onPressed: () => context.push('/login'),
-                child: const Text('去登录'),
-              ),
-            ],
+      return PopScope(
+        canPop: true,
+        child: Scaffold(
+          appBar: AppBar(title: const Text('个人资料')),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.person_outline_rounded,
+                    size: 80, color: AppTokens.textTertiary),
+                const SizedBox(height: AppTokens.space4),
+                const Text('请先登录',
+                    style: TextStyle(
+                        fontSize: AppTokens.fontSizeL,
+                        color: AppTokens.textPrimary)),
+                const SizedBox(height: AppTokens.space6),
+                ElevatedButton(
+                  onPressed: () => context.push('/login'),
+                  child: const Text('去登录'),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -93,7 +99,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = currentUser;
     final stats = user.stats;
 
-    return Scaffold(
+    return PopScope(
+      canPop: true,
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('个人资料'),
         actions: [
@@ -273,6 +281,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }

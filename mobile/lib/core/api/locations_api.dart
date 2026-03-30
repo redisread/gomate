@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart' as dio;
+
 import '../constants/api_constants.dart';
 import '../models/location.dart';
 import '../models/poi.dart';
@@ -67,10 +69,22 @@ class LocationsApi {
   /// [locationId] 地点 ID
   /// 收藏则添加，已收藏则取消
   Future<bool> favoriteLocation(String locationId) async {
-    final response = await _client.post(
-      ApiConstants.favoriteToggle('location', locationId),
-    );
-    return response.data['favorited'] as bool;
+    try {
+      await _client.post(
+        ApiConstants.favorites,
+        data: {'entityType': 'location', 'entityId': locationId},
+      );
+      return true; // 收藏成功
+    } on dio.DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        // 已收藏，取消收藏
+        await _client.delete(
+          '${ApiConstants.favorites}?entityType=location&entityId=$locationId',
+        );
+        return false;
+      }
+      rethrow;
+    }
   }
 
   /// 获取当前用户的收藏地点列表

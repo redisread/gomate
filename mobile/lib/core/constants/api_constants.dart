@@ -49,6 +49,8 @@ class ApiConstants {
       '/teams/$teamId/members/$userId/approve';
   static String rejectMember(String teamId, String userId) =>
       '/teams/$teamId/members/$userId/reject';
+  static String removeMember(String teamId, String userId) =>
+      '/teams/$teamId/members/$userId';
   static String approveLeave(String teamId, String userId) =>
       '/teams/$teamId/members/$userId/approve-leave';
   static String rejectLeave(String teamId, String userId) =>

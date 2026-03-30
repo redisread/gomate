@@ -165,7 +165,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
             const SizedBox(height: AppTokens.space4),
             const Text(
               AppStrings.feedbackSuccessTitle,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: AppTokens.fontSizeXXL,
                 fontWeight: FontWeight.bold,
                 color: AppTokens.textPrimary,
@@ -174,7 +174,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
             const SizedBox(height: AppTokens.space2),
             const Text(
               AppStrings.feedbackSuccessDesc,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: AppTokens.fontSizeBase,
                 color: AppTokens.textSecondary,
               ),

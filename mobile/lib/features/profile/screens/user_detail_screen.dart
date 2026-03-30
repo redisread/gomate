@@ -141,6 +141,22 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             content: _formatDate(_user!.createdAt),
           ),
           const SizedBox(height: AppTokens.space4),
+
+          // 户外经验（如果有）
+          if (_user!.experience != null && _user!.experience!.isNotEmpty) ...[
+            _buildInfoCard(
+              title: '户外经验',
+              icon: Icons.hiking_outlined,
+              content: _user!.experience!,
+            ),
+            const SizedBox(height: AppTokens.space4),
+          ],
+
+          // 装备清单（如果有）
+          if (_user!.equipment.isNotEmpty) ...[
+            _buildEquipmentCard(_user!.equipment),
+            const SizedBox(height: AppTokens.space4),
+          ],
         ],
       ),
     );
@@ -446,6 +462,66 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   String _formatDate(DateTime? date) {
     if (date == null) return '未知';
     return '${date.year}年${date.month}月${date.day}日';
+  }
+
+  Widget _buildEquipmentCard(List<String> equipment) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppTokens.space4),
+      decoration: BoxDecoration(
+        color: AppTokens.bgSurface,
+        borderRadius: BorderRadius.circular(AppTokens.radiusL),
+        border: Border.all(color: AppTokens.borderDefault, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.backpack_outlined,
+                size: AppTokens.iconS,
+                color: AppTokens.textTertiary,
+              ),
+              const SizedBox(width: AppTokens.space2),
+              Text(
+                '装备清单',
+                style: const TextStyle(
+                  fontSize: AppTokens.fontSizeBase,
+                  fontWeight: FontWeight.w600,
+                  color: AppTokens.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTokens.space3),
+          Wrap(
+            spacing: AppTokens.space2,
+            runSpacing: AppTokens.space2,
+            children: equipment.map((item) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTokens.space3,
+                  vertical: AppTokens.space1,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTokens.brandPrimaryLight,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusS),
+                ),
+                child: Text(
+                  item,
+                  style: TextStyle(
+                    fontSize: AppTokens.fontSizeS,
+                    color: AppTokens.brandPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
   }
 }
 

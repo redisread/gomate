@@ -174,7 +174,9 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: true,
+      child: Scaffold(
       backgroundColor: AppTokens.bgBase,
       appBar: AppBar(
         backgroundColor: AppTokens.bgBase,
@@ -334,6 +336,7 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }

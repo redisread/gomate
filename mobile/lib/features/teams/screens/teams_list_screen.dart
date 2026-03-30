@@ -84,7 +84,9 @@ class _TeamsListScreenState extends ConsumerState<TeamsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: true,
+      child: Scaffold(
       backgroundColor: AppTokens.bgBase,
       appBar: AppBar(
         backgroundColor: AppTokens.bgBase,
@@ -254,6 +256,7 @@ class _TeamsListScreenState extends ConsumerState<TeamsListScreen> {
         icon: const Icon(Icons.add),
         label: const Text('发布队伍'),
       ),
+    ),
     );
   }
 }

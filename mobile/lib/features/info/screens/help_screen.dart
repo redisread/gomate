@@ -68,12 +68,13 @@ class _HelpScreenState extends State<HelpScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 标题
-            Text(
+            const Text(
               '常见问题',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppTokens.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: TextStyle(
+                color: AppTokens.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
             ),
             const SizedBox(height: AppTokens.space2),
             Text(

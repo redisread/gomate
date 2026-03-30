@@ -118,8 +118,20 @@ class _LocationDetailScreenState extends ConsumerState<LocationDetailScreen> {
     try {
       final result = await _locationsApi.favoriteLocation(widget.locationId);
       setState(() => _isFavorited = result);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result ? '已收藏' : '已取消收藏'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
     } catch (e) {
-      if (mounted) context.go('/login');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('操作失败，请重试')),
+        );
+      }
     }
   }
 
