@@ -32,7 +32,7 @@ class LocationsApi {
       if (difficulty != null) 'difficulty': difficulty,
       if (type != null) 'type': type,
       if (tagIds != null && tagIds.isNotEmpty) 'tagIds': tagIds.join(','),
-      if (q != null && q.isNotEmpty) 'search': q,
+      if (q != null && q.isNotEmpty) 'q': q,
     };
 
     final response = await _client.get(

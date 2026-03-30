@@ -115,7 +115,6 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
   Future<void> _handleCancelJoin() async {
     setState(() => _isActioning = true);
     try {
-      // TODO(Agent-C): 接入取消申请 API
       await _teamsApi.leaveTeam(widget.teamId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

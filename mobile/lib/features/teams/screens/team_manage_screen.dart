@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/api/teams_api.dart';
 import '../../../core/models/team.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../shared/theme/app_tokens.dart';
 
 // ============================================================
@@ -35,12 +37,13 @@ class _TeamManageScreenState extends ConsumerState<TeamManageScreen>
   List<TeamMemberApplication> _approvedMembers = [];
 
   bool _isLoading = true;
+  bool _isLeader = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadMembers();
+    _checkPermissionAndLoad();
   }
 
   @override
@@ -49,8 +52,54 @@ class _TeamManageScreenState extends ConsumerState<TeamManageScreen>
     super.dispose();
   }
 
+  /// 检查权限并加载数据
+  Future<void> _checkPermissionAndLoad() async {
+    try {
+      // 获取当前用户ID
+      final authState = ref.read(authProvider).valueOrNull;
+      final currentUserId = authState?.user?.id;
+      
+      if (currentUserId == null) {
+        // 未登录用户重定向到登录页
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('请先登录')),
+          );
+          context.go('/login');
+        }
+        return;
+      }
+      
+      // 获取队伍详情以验证是否为队长
+      final team = await _teamsApi.getTeam(widget.teamId);
+      _isLeader = currentUserId == team.leaderId;
+      
+      if (!_isLeader) {
+        // 非队长用户显示错误并返回
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('只有队长可以管理队伍')),
+          );
+          context.pop();
+        }
+        return;
+      }
+      
+      // 是队长，加载成员申请数据
+      await _loadMembersData();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('加载失败，请重试')),
+        );
+        context.pop();
+      }
+    }
+  }
+
   /// 加载所有成员申请数据
-  Future<void> _loadMembers() async {
+  Future<void> _loadMembersData() async {
     try {
       final all = await _teamsApi.getApplications(widget.teamId);
       if (mounted) {
@@ -77,7 +126,7 @@ class _TeamManageScreenState extends ConsumerState<TeamManageScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('已批准加入')),
         );
-        _loadMembers();
+        _loadMembersData();
       }
     } catch (e) {
       if (mounted) {
@@ -96,7 +145,7 @@ class _TeamManageScreenState extends ConsumerState<TeamManageScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('已拒绝申请')),
         );
-        _loadMembers();
+        _loadMembersData();
       }
     } catch (e) {
       if (mounted) {
@@ -115,7 +164,7 @@ class _TeamManageScreenState extends ConsumerState<TeamManageScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('已批准退出')),
         );
-        _loadMembers();
+        _loadMembersData();
       }
     } catch (e) {
       if (mounted) {
@@ -134,7 +183,7 @@ class _TeamManageScreenState extends ConsumerState<TeamManageScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('已拒绝退出申请')),
         );
-        _loadMembers();
+        _loadMembersData();
       }
     } catch (e) {
       if (mounted) {

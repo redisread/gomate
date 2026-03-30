@@ -6,6 +6,7 @@ import '../../../core/api/locations_api.dart';
 import '../../../core/api/teams_api.dart';
 import '../../../core/models/location.dart';
 import '../../../shared/theme/app_tokens.dart';
+import '../../../core/providers/auth_provider.dart';
 
 class CreateTeamScreen extends ConsumerStatefulWidget {
   final String? locationId;
@@ -27,19 +28,14 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
   final _locationsApi = LocationsApi();
 
   List<LocationModel> _locations = [];
-  List<RouteModel> _routes = [];
-  String? selectedRouteId;
-  int recommendedDuration = 120; // 分钟
   List<String> requirements = [];
   
-  LocationModel? _selectedLocation;
   String? _selectedLocationId;
   DateTime _startTime = DateTime.now().add(const Duration(days: 3));
   int _maxMembers = 10;
   int _durationMin = 120;
   bool _isLoading = false;
   bool _isLoadingLocations = true;
-  bool _durationManuallyEdited = false;
   final _newRequirementController = TextEditingController();
 
   static const _durationOptions = [
@@ -91,98 +87,9 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
     }
   }
 
-  Future<void> _onLocationChanged(String locationId) async {
+  void _onLocationChanged(String locationId) {
     setState(() {
       _selectedLocationId = locationId;
-      _routes = [];
-      selectedRouteId = null;
-      _durationManuallyEdited = false;
-    });
-    
-    try {
-      // 调用 LocationsApi().getLocation(locationId) 获取地点关联的路线
-      final location = await _locationsApi.getLocation(locationId);
-      if (mounted) {
-        setState(() {
-          _selectedLocation = location;
-          _routes = location.routes;
-          if (_routes.isNotEmpty) {
-            // 默认选择第一条路线
-            selectedRouteId = _routes.first.id;
-            _updateRecommendedDuration(_routes.first);
-            if (!_durationManuallyEdited) {
-              _durationMin = recommendedDuration;
-            }
-          } else {
-            recommendedDuration = 120;
-            if (!_durationManuallyEdited) {
-              _durationMin = 120;
-            }
-          }
-        });
-      }
-    } catch (e) {
-      // 如果获取详细信息失败，使用缓存的地点信息
-      final cachedLocation = _locations.firstWhere(
-        (l) => l.id == locationId,
-        orElse: () => _locations.first,
-      );
-      if (mounted) {
-        setState(() {
-          _selectedLocation = cachedLocation;
-          _routes = cachedLocation.routes;
-          if (_routes.isNotEmpty) {
-            selectedRouteId = _routes.first.id;
-            _updateRecommendedDuration(_routes.first);
-            if (!_durationManuallyEdited) {
-              _durationMin = recommendedDuration;
-            }
-          } else {
-            recommendedDuration = 120;
-            if (!_durationManuallyEdited) {
-              _durationMin = 120;
-            }
-          }
-        });
-      }
-    }
-  }
-
-  void _updateRecommendedDuration(RouteModel route) {
-    if (route.durationMin > 0 && route.durationMax > 0) {
-      recommendedDuration = (route.durationMin + route.durationMax) ~/ 2;
-    } else if (route.durationMin > 0) {
-      recommendedDuration = route.durationMin;
-    } else {
-      final difficultyDuration = {
-        Difficulty.easy: 120,
-        Difficulty.moderate: 180,
-        Difficulty.hard: 240,
-        Difficulty.expert: 360,
-      };
-      recommendedDuration = difficultyDuration[route.difficulty] ?? 120;
-    }
-  }
-
-  void _onRouteChanged(String? routeId) {
-    if (routeId == null) {
-      setState(() {
-        selectedRouteId = null;
-        recommendedDuration = 120;
-        if (!_durationManuallyEdited) {
-          _durationMin = 120;
-        }
-      });
-      return;
-    }
-    
-    final route = _routes.firstWhere((r) => r.id == routeId);
-    setState(() {
-      selectedRouteId = routeId;
-      _updateRecommendedDuration(route);
-      if (!_durationManuallyEdited) {
-        _durationMin = recommendedDuration;
-      }
     });
   }
 
@@ -229,6 +136,13 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
   }
 
   Future<void> _handleCreate() async {
+    // 检查登录状态
+    final authState = ref.read(authProvider).valueOrNull;
+    if (authState == null || !authState.isLoggedIn) {
+      context.go('/login');
+      return;
+    }
+    
     if (!_formKey.currentState!.validate()) return;
     if (_selectedLocationId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -243,7 +157,6 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'locationId': _selectedLocationId,
-        'routeId': selectedRouteId,
         'startTime': _startTime.millisecondsSinceEpoch ~/ 1000,
         'endTime': _startTime
                 .add(Duration(minutes: _durationMin))
@@ -298,7 +211,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) return '请输入队伍名称';
-                    if (value.length < 4) return '名称至少 4 个字符';
+                    if (value.length < 3) return '名称至少 3 个字符';
                     return null;
                   },
                 ),
@@ -331,32 +244,6 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                         },
                       ),
                 const SizedBox(height: 16),
-                if (_routes.isNotEmpty) ...[
-                  _buildSectionTitle('徒步路线', Icons.route_outlined,
-                      hint: '选择路线后可自动推荐时长'),
-                  DropdownButtonFormField<String>(
-                    value: selectedRouteId,
-                    hint: const Text('选择一条路线（可选）'),
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: AppTokens.bgSurface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            const BorderSide(color: AppTokens.borderDefault),
-                      ),
-                    ),
-                    items: _routes.map((route) {
-                      return DropdownMenuItem(
-                        value: route.id,
-                        child: Text(
-                            '${route.name} - ${route.difficulty.label} | ${route.durationMin ~/ 60}-${route.durationMax ~/ 60}小时'),
-                      );
-                    }).toList(),
-                    onChanged: _onRouteChanged,
-                  ),
-                  const SizedBox(height: 16),
-                ],
                 _buildSectionTitle('活动时间', Icons.calendar_today_outlined,
                     isRequired: true),
                 GestureDetector(
@@ -403,9 +290,6 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                             '活动时长',
                             Icons.timelapse_outlined,
                             isRequired: true,
-                            hint: _routes.isNotEmpty && selectedRouteId != null
-                                ? '推荐时长：${recommendedDuration ~/ 60}-${(recommendedDuration ~/ 60) + 1} 小时'
-                                : null,
                           ),
                           DropdownButtonFormField<int>(
                             value: _durationMin,
@@ -419,25 +303,16 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                               ),
                             ),
                             items: _durationOptions.map((m) {
-                              final isRecommended = m == recommendedDuration;
                               return DropdownMenuItem(
                                 value: m,
                                 child: Text(
-                                  '${m ~/ 60}小时${isRecommended ? '（推荐）' : ''}',
-                                  style: TextStyle(
-                                    color: isRecommended
-                                        ? AppTokens.brandPrimary
-                                        : null,
-                                    fontWeight:
-                                        isRecommended ? FontWeight.w600 : null,
-                                  ),
+                                  '${m ~/ 60}小时',
                                 ),
                               );
                             }).toList(),
                             onChanged: (value) {
                               setState(() {
                                 _durationMin = value ?? 120;
-                                _durationManuallyEdited = true;
                               });
                             },
                           ),

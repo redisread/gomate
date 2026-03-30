@@ -110,19 +110,20 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
     }
 
     try {
+      final targetPage = loadMore ? _currentPage + 1 : 1;
       final data = await _locationsApi.getLocations(
         cityId: _selectedCityId,
         tagIds: _selectedTagIds.isEmpty ? null : _selectedTagIds,
         type: _selectedType,
         q: _searchQuery,
-        page: loadMore ? _currentPage + 1 : 1,
+        page: targetPage,
         limit: 20,
       );
       if (mounted) {
         setState(() {
           if (loadMore) {
             _locations.addAll(data);
-            _currentPage++;
+            _currentPage = targetPage;
           } else {
             _locations = data;
           }

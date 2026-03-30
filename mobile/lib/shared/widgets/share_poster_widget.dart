@@ -71,14 +71,17 @@ class _SharePosterWidgetState extends State<SharePosterWidget> {
     setState(() => _isSaving = true);
 
     try {
-      final status = await Permission.photos.request();
+      var status = await Permission.photos.status;
       if (!status.isGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('需要相册权限才能保存海报')),
-          );
+        status = await Permission.photos.request();
+        if (!status.isGranted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('需要相册权限才能保存海报')),
+            );
+          }
+          return;
         }
-        return;
       }
 
       final boundary = _repaintBoundaryKey.currentContext?.findRenderObject()

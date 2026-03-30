@@ -136,6 +136,38 @@ class TeamsApi {
     return getTeam(teamId);
   }
 
+  /// 获取队伍成员列表（仅队长可查看）
+  /// [teamId] 队伍 ID
+  Future<List<TeamMemberModel>> getTeamMembers(String teamId) async {
+    final response = await _client.get(ApiConstants.teamMembers(teamId));
+    final list = response.data['members'] as List<dynamic>;
+    return list
+        .map((item) => TeamMemberModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 移除队伍成员（仅队长可操作）
+  /// [teamId] 队伍 ID，[userId] 要移除的成员用户 ID
+  Future<void> removeMember(String teamId, String userId) async {
+    await _client.delete(ApiConstants.removeMember(teamId, userId));
+  }
+
+  /// 解散队伍（仅队长可操作）
+  /// [teamId] 队伍 ID
+  Future<void> deleteTeam(String teamId) async {
+    await _client.delete(ApiConstants.teamDetail(teamId));
+  }
+
+  /// 更新队伍状态（仅队长可操作）
+  /// [teamId] 队伍 ID，[status] 新状态（recruiting/full/formed/completed）
+  Future<TeamModel> updateTeamStatus(String teamId, String status) async {
+    await _client.put(
+      ApiConstants.teamDetail(teamId),
+      data: {'status': status},
+    );
+    return getTeam(teamId);
+  }
+
   /// 获取地点关联的路线列表（用于创建队伍时选择路线）
   /// [locationId] 地点 ID
   Future<List<RouteModel>> getTeamRoutes(String locationId) async {

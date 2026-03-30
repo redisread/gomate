@@ -13,6 +13,7 @@ import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+
 import '../../../core/api/locations_api.dart';
 import '../../../core/api/teams_api.dart';
 import '../../../core/models/location.dart';
