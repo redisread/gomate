@@ -32,6 +32,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
   int recommendedDuration = 120; // 分钟
   List<String> requirements = [];
   
+  LocationModel? _selectedLocation;
   String? _selectedLocationId;
   DateTime _startTime = DateTime.now().add(const Duration(days: 3));
   int _maxMembers = 10;
