@@ -73,9 +73,18 @@ class _MyTeamsScreenState extends ConsumerState<MyTeamsScreen>
       // 获取所有队伍，客户端分类
       final allTeams = await _teamsApi.getTeams(limit: 100);
 
+      // DEBUG: 打印数据
+      debugPrint('[MyTeams] currentUserId: $currentUserId');
+      debugPrint('[MyTeams] allTeams count: ${allTeams.length}');
+      for (final t in allTeams) {
+        debugPrint('[MyTeams] team: ${t.id} leaderId: ${t.leaderId} title: ${t.title}');
+      }
+
       // 我创建的：leaderId == currentUserId
       final created =
           allTeams.where((t) => t.leaderId == currentUserId).toList();
+      
+      debugPrint('[MyTeams] created teams: ${created.length}');
 
       // 我加入的 / 我的申请：并行调用 getMyStatus
       // 只对非我创建的队伍查询状态，降低请求量

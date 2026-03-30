@@ -266,7 +266,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   _MenuTile(
                     icon: Icons.settings_outlined,
                     title: '账号设置',
-                    onTap: () {},
+                    onTap: () => context.push('/account-settings'),
                   ),
                   const Divider(height: 24),
                   _MenuTile(

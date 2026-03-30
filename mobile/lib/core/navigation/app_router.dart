@@ -20,6 +20,7 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/favorites_screen.dart';
 import '../../features/profile/screens/user_detail_screen.dart';
+import '../../features/profile/screens/account_settings_screen.dart';
 import '../../features/info/screens/about_screen.dart';
 import '../../features/info/screens/help_screen.dart';
 import '../../features/info/screens/contact_screen.dart';
@@ -47,6 +48,7 @@ abstract class AppRoutes {
   static const String profile = '/profile';
   static const String profileEdit = '/profile/edit';
   static const String userDetail = '/users/:id';
+  static const String accountSettings = '/account-settings';
   static const String about = '/about';
   static const String help = '/help';
   static const String contact = '/contact';
@@ -271,6 +273,16 @@ GoRouter buildAppRouter({
             userId: state.pathParameters['id']!,
           ),
           transitionType: _TransitionType.fadeScale,
+        ),
+      ),
+
+      // ── 账号设置 ───────────────────────────────
+      GoRoute(
+        path: AppRoutes.accountSettings,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const AccountSettingsScreen(),
+          transitionType: _TransitionType.slideRight,
         ),
       ),
 

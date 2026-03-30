@@ -237,7 +237,9 @@ class TeamModel {
       id: json['id'] as String,
       locationId: json['locationId'] as String,
       routeId: json['routeId'] as String?,
-      leaderId: json['leaderId'] as String? ?? '',
+      // leaderId 可能在顶层，也可能在 leader.id 中
+      leaderId: json['leaderId'] as String? ?? 
+          (json['leader'] as Map<String, dynamic>?)?['id'] as String? ?? '',
       title: json['title'] as String,
       description: json['description'] as String?,
       date: json['date'] as String? ?? '',

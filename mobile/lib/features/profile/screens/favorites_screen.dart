@@ -232,8 +232,9 @@ class _FavoriteCard extends StatelessWidget {
         ),
       ),
       onDismissed: (_) => onRemove(),
-      child: GestureDetector(
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTokens.radiusL),
         child: Container(
           margin: const EdgeInsets.only(bottom: AppTokens.space3),
           padding: const EdgeInsets.all(AppTokens.space3),
