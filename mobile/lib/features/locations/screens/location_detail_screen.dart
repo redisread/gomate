@@ -56,16 +56,27 @@ class _LocationDetailScreenState extends ConsumerState<LocationDetailScreen> {
         _locationsApi.getLocation(widget.locationId),
         _loadRecruitingTeams(),
         _loadPois(),
+        _checkIfFavorited(),
       ]);
 
       if (mounted) {
         setState(() {
           _location = results[0] as LocationModel;
+          _isFavorited = results[3] as bool;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<bool> _checkIfFavorited() async {
+    try {
+      final favorites = await _locationsApi.getFavorites();
+      return favorites.any((location) => location.id == widget.locationId);
+    } catch (e) {
+      return false;
     }
   }
 

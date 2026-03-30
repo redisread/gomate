@@ -199,7 +199,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Expanded(
                     child: _StatCard(
                       label: '已完成',
-                      value: stats?.completedTeams ?? 0,
+                      value: user.completedHikes,
                       icon: Icons.check_circle_outline,
                       color: AppTokens.semanticSuccess,
                       onTap: () => context.push('/my-teams?tab=history'),
