@@ -78,8 +78,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     // 未登录时重定向到登录页
-    final authState = ref.watch(authProvider);
-    if (!authState.isLoggedIn) {
+    final authAsync = ref.watch(authProvider);
+    final authState = authAsync.valueOrNull;
+    if (authState == null || !authState.isLoggedIn) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.go('/login');
       });
@@ -242,7 +243,7 @@ class _FavoriteCard extends StatelessWidget {
             border: Border.all(color: AppTokens.borderDefault, width: 1),
             boxShadow: [
               BoxShadow(
-                color: AppTokens.shadowColor,
+                color: const Color(0x0A1A2332),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),

@@ -2,8 +2,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:clipboard/clipboard.dart';
 
 import '../../../shared/theme/app_tokens.dart';
 
@@ -88,23 +89,13 @@ class _SharePosterWidgetState extends State<SharePosterWidget> {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
 
-      final result = await ImageGallerySaver.saveImage(
-        byteData.buffer.asUint8List(),
-        quality: 100,
-        name: 'gomate_${DateTime.now().millisecondsSinceEpoch}',
-      );
+      await Gal.putImageBytes(byteData.buffer.asUint8List(),
+          album: 'GoMate');
 
       if (mounted) {
-        if (result['isSuccess'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('海报已保存到相册')),
-          );
-          Navigator.pop(context);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('保存失败，请重试')),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('海报已保存到相册')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -114,6 +105,15 @@ class _SharePosterWidgetState extends State<SharePosterWidget> {
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _copyLink() async {
+    await FlutterClipboard.copy(widget.url);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('链接已复制到剪贴板')),
+      );
     }
   }
 
@@ -195,6 +195,17 @@ class _SharePosterWidgetState extends State<SharePosterWidget> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (widget.leaderName != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '领队：${widget.leaderName!}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppTokens.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   if (widget.locationName != null)
                     Padding(
@@ -252,6 +263,27 @@ class _SharePosterWidgetState extends State<SharePosterWidget> {
                         ],
                       ),
                     ),
+                  if (widget.description != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTokens.bgSurface,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        widget.description!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppTokens.textSecondary,
+                          height: 1.4,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -269,10 +301,18 @@ class _SharePosterWidgetState extends State<SharePosterWidget> {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    '扫码加入队伍',
+                    '扫码查看队伍详情',
                     style: TextStyle(
                       color: AppTokens.textSecondary,
                       fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'gomate.live',
+                    style: TextStyle(
+                      color: AppTokens.textTertiary,
+                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -284,9 +324,25 @@ class _SharePosterWidgetState extends State<SharePosterWidget> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
+                  onPressed: _copyLink,
+                  icon: const Icon(Icons.link),
+                  label: const Text('复制链接'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTokens.textSecondary,
+                    side: const BorderSide(color: AppTokens.borderDefault),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
                   onPressed: _isSaving ? null : _saveToGallery,
                   icon: const Icon(Icons.save_alt),
-                  label: const Text('保存到相册'),
+                  label: const Text('保存海报'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTokens.brandPrimary,
                     side: const BorderSide(color: AppTokens.brandPrimary),

@@ -7,6 +7,7 @@ import '../../../core/models/team.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../shared/theme/app_tokens.dart';
 
+/// 编辑队伍页面
 class EditTeamScreen extends ConsumerStatefulWidget {
   final String teamId;
 
@@ -22,29 +23,13 @@ class _EditTeamScreenState extends ConsumerState<EditTeamScreen> {
   final _descriptionController = TextEditingController();
   final _teamsApi = TeamsApi();
 
-  TeamModel? _team;
-  bool _isLoading = true;
-  bool _isSubmitting = false;
-  String? _error;
-  bool _isLeader = false;
-
-  int _maxMembers = 10;
-  String _time = '09:00';
-  int _durationMin = 240;
   List<TextEditingController> _requirementControllers = [];
-
-  static const _durationOptions = [
-    120,
-    180,
-    240,
-    300,
-    360,
-    420,
-    480,
-    540,
-    600,
-    720
-  ];
+  
+  TeamModel? _team;
+  int _maxMembers = 10; // 本地状态跟踪最大人数
+  bool _isLoading = true;
+  bool _isSaving = false;
+  bool _isLeader = false;
 
   @override
   void initState() {
@@ -63,90 +48,42 @@ class _EditTeamScreenState extends ConsumerState<EditTeamScreen> {
   }
 
   Future<void> _loadTeam() async {
-    final authState = ref.read(authProvider).valueOrNull;
-    final currentUserId = authState?.user?.id;
-
-    if (currentUserId == null) {
-      if (mounted) context.go('/login');
-      return;
-    }
-
     try {
       final team = await _teamsApi.getTeam(widget.teamId);
-      if (team.leaderId != currentUserId) {
+      final authState = ref.read(authProvider).valueOrNull;
+      final currentUserId = authState?.user?.id;
+      
+      // 检查是否为队长
+      final isLeader = currentUserId != null && currentUserId == team.leaderId;
+      
+      if (!isLeader) {
+        // 非队长重定向到详情页
         if (mounted) {
-          setState(() {
-            _isLoading = false;
-            _isLeader = false;
-            _error = '只有队长可以编辑队伍';
-          });
+          context.go('/teams/${widget.teamId}');
         }
         return;
       }
 
-      _requirementControllers =
-          team.requirements.map((r) => TextEditingController(text: r)).toList();
-
       if (mounted) {
         setState(() {
           _team = team;
+          _maxMembers = team.maxMembers; // 初始化本地状态
           _isLeader = true;
           _titleController.text = team.title;
           _descriptionController.text = team.description ?? '';
-          _maxMembers = team.maxMembers;
-          _time = team.time;
-          _durationMin = team.durationMin;
+          
+          // 初始化参与要求控制器
           _requirementControllers = team.requirements
-              .map((r) => TextEditingController(text: r))
+              .map((req) => TextEditingController(text: req))
               .toList();
+          
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _error = '获取队伍信息失败';
-        });
-      }
-    }
-  }
-
-  Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isSubmitting = true;
-      _error = null;
-    });
-
-    try {
-      final cleanedRequirements = _requirementControllers
-          .map((c) => c.text.trim())
-          .where((r) => r.isNotEmpty)
-          .toList();
-
-      await _teamsApi.updateTeam(widget.teamId, {
-        'title': _titleController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'maxMembers': _maxMembers,
-        'time': _time,
-        'durationMin': _durationMin,
-        'requirements': cleanedRequirements,
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('队伍信息已更新')),
-        );
+        // 加载失败，返回详情页
         context.go('/teams/${widget.teamId}');
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-          _error = e.toString().contains('只有队长') ? '只有队长可以修改队伍' : '保存失败，请重试';
-        });
       }
     }
   }
@@ -166,423 +103,284 @@ class _EditTeamScreenState extends ConsumerState<EditTeamScreen> {
     });
   }
 
+  Future<void> _handleSave() async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    setState(() => _isSaving = true);
+    try {
+      final requirements = _requirementControllers
+          .map((c) => c.text.trim())
+          .where((r) => r.isNotEmpty)
+          .toList();
+
+      final updatedTeam = await _teamsApi.updateTeam(widget.teamId, {
+        'title': _titleController.text.trim(),
+        'maxMembers': _maxMembers,
+        'description': _descriptionController.text.trim(),
+        'requirements': requirements,
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('队伍信息已更新')),
+        );
+        // 返回详情页
+        context.go('/teams/${updatedTeam.id}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('保存失败，请重试')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppTokens.bgBase,
-        body: const Center(
-          child: CircularProgressIndicator(color: AppTokens.brandPrimary),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (!_isLeader || _team == null) {
+      // 非队长或团队不存在，显示错误页面
       return Scaffold(
-        backgroundColor: AppTokens.bgBase,
-        appBar: AppBar(
-          backgroundColor: AppTokens.bgBase,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppTokens.textSecondary),
-            onPressed: () => context.go('/teams/${widget.teamId}'),
-          ),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline,
-                  size: 48, color: AppTokens.semanticError),
-              const SizedBox(height: 16),
-              Text(
-                _error ?? '无权限编辑此队伍',
-                style: const TextStyle(color: AppTokens.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => context.go('/teams/${widget.teamId}'),
-                child: const Text('返回队伍详情'),
-              ),
-            ],
-          ),
-        ),
+        appBar: AppBar(),
+        body: const Center(child: Text('无权限编辑')),
       );
     }
 
     final team = _team!;
 
     return Scaffold(
-      backgroundColor: AppTokens.bgBase,
       appBar: AppBar(
-        backgroundColor: AppTokens.bgBase,
-        elevation: 0,
+        title: const Text('编辑队伍'),
+        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTokens.textSecondary),
-          onPressed: () => context.go('/teams/${widget.teamId}'),
-        ),
-        title: const Text(
-          '编辑队伍',
-          style: TextStyle(
-              color: AppTokens.textPrimary, fontWeight: FontWeight.w600),
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionTitle('队伍名称', Icons.edit_outlined, isRequired: true),
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: '例如：梧桐山赏秋徒步',
-                  filled: true,
-                  fillColor: AppTokens.bgSurface,
-                  border: OutlineInputBorder(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 队伍标题
+                _buildSectionTitle('队伍名称', Icons.edit_outlined, isRequired: true),
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText: '例如：梧桐山赏秋徒步',
+                    filled: true,
+                    fillColor: AppTokens.bgSurface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTokens.borderDefault),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return '请输入队伍名称';
+                    if (value.length < 3) return '名称至少 3 个字符';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // 最大人数
+                _buildSectionTitle('最大人数', Icons.people_outlined, hint: '2-50人'),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTokens.borderDefault),
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: AppTokens.borderDefault),
+                    color: AppTokens.bgSurface,
                   ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) return '请输入队伍名称';
-                  if (value.trim().length < 4) return '名称至少 4 个字符';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildSectionTitle('活动地点', Icons.location_on_outlined),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                decoration: BoxDecoration(
-                  color: AppTokens.bgSurface,
-                  border: Border.all(color: AppTokens.borderDefault),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        '地点已设定',
-                        style: TextStyle(color: AppTokens.textPrimary),
-                      ),
-                    ),
-                    const Icon(Icons.lock_outline,
-                        size: 16, color: AppTokens.textTertiary),
-                  ],
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Text(
-                  '队伍创建后地点不可修改',
-                  style: TextStyle(color: AppTokens.textTertiary, fontSize: 12),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildSectionTitle('活动日期', Icons.calendar_today_outlined),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                decoration: BoxDecoration(
-                  color: AppTokens.bgSurface,
-                  border: Border.all(color: AppTokens.borderDefault),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(team.date,
-                        style: const TextStyle(color: AppTokens.textPrimary)),
-                    const Icon(Icons.lock_outline,
-                        size: 16, color: AppTokens.textTertiary),
-                  ],
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Text(
-                  '队伍创建后日期不可修改',
-                  style: TextStyle(color: AppTokens.textTertiary, fontSize: 12),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSectionTitle('集合时间', Icons.schedule_outlined),
-                        DropdownButtonFormField<String>(
-                          value: _time,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: AppTokens.bgSurface,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: AppTokens.borderDefault),
-                            ),
-                          ),
-                          items: List.generate(24, (i) {
-                            final hour = i.toString().padLeft(2, '0');
-                            return DropdownMenuItem(
-                              value: '$hour:00',
-                              child: Text('$hour:00'),
-                            );
-                          }),
-                          onChanged: (v) => setState(() => _time = v ?? _time),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSectionTitle('活动时长', Icons.timelapse_outlined),
-                        DropdownButtonFormField<int>(
-                          value: _durationMin,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: AppTokens.bgSurface,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: AppTokens.borderDefault),
-                            ),
-                          ),
-                          items: _durationOptions.map((m) {
-                            return DropdownMenuItem(
-                              value: m,
-                              child: Text('${m ~/ 60} 小时'),
-                            );
-                          }).toList(),
-                          onChanged: (v) =>
-                              setState(() => _durationMin = v ?? _durationMin),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildSectionTitle(
-                '最大人数',
-                Icons.people_outlined,
-                isRequired: true,
-                hint: '至少 ${team.currentMembers} 人',
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.remove),
-                    onPressed: _maxMembers > team.currentMembers
-                        ? () => setState(() => _maxMembers--)
-                        : null,
-                  ),
-                  Text(
-                    '$_maxMembers 人',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: _maxMembers < 50
-                        ? () => setState(() => _maxMembers++)
-                        : null,
-                  ),
-                ],
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Text(
-                  '当前已有成员，人数上限不能低于此数',
-                  style: TextStyle(color: AppTokens.textTertiary, fontSize: 12),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildSectionTitle('活动介绍', Icons.notes_outlined),
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: '描述这次活动的特点、路线、注意事项等',
-                  filled: true,
-                  fillColor: AppTokens.bgSurface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: AppTokens.borderDefault),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildSectionTitle('参与要求', Icons.list_alt_outlined,
-                  hint: '最多 10 条'),
-              ..._requirementControllers.asMap().entries.map((entry) {
-                final idx = entry.key;
-                final controller = entry.value;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: AppTokens.brandPrimaryLight,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${idx + 1}',
-                            style: const TextStyle(
-                              color: AppTokens.brandPrimary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
+                      Text(
+                        '$_maxMembers 人',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: controller,
-                          decoration: InputDecoration(
-                            hintText: '例如：需要有徒步经验',
-                            filled: true,
-                            fillColor: AppTokens.bgSurface,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                  color: AppTokens.borderDefault),
-                            ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove),
+                            onPressed: _maxMembers > 2
+                                ? () => setState(() => _maxMembers--)
+                                : null,
                           ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close,
-                            color: AppTokens.semanticError),
-                        onPressed: () => _removeRequirement(idx),
+                          IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: _maxMembers < 50
+                                ? () => setState(() => _maxMembers++)
+                                : null,
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                );
-              }),
-              if (_requirementControllers.length < 10)
-                GestureDetector(
-                  onTap: _addRequirement,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppTokens.borderDefault),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '+ 添加一条',
-                        style: TextStyle(color: AppTokens.textSecondary),
-                      ),
+                ),
+                const SizedBox(height: 16),
+
+                // 队伍描述
+                _buildSectionTitle('活动介绍', Icons.notes_outlined),
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    hintText: '描述这次活动的特点、路线、注意事项等',
+                    filled: true,
+                    fillColor: AppTokens.bgSurface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTokens.borderDefault),
                     ),
                   ),
                 ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTokens.brandPrimaryLight.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: AppTokens.brandPrimary.withOpacity(0.2)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.lightbulb_outline,
-                        color: AppTokens.brandPrimary),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        '修改后的信息会立即生效，已申请的成员会看到更新后的内容',
-                        style: TextStyle(color: AppTokens.brandPrimaryDark),
+                const SizedBox(height: 16),
+
+                // 参与要求
+                _buildSectionTitle('参与要求', Icons.list_alt_outlined, hint: '最多 10 条'),
+                ..._requirementControllers.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final controller = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: AppTokens.brandPrimaryLight,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${idx + 1}',
+                              style: const TextStyle(
+                                color: AppTokens.brandPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            decoration: InputDecoration(
+                              hintText: '例如：需要有徒步经验',
+                              filled: true,
+                              fillColor: AppTokens.bgSurface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppTokens.borderDefault),
+                              ),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: AppTokens.semanticError),
+                          onPressed: () => _removeRequirement(idx),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                if (_requirementControllers.length < 10)
+                  GestureDetector(
+                    onTap: _addRequirement,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppTokens.borderDefault),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '+ 添加一条',
+                          style: TextStyle(color: AppTokens.textSecondary),
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (_error != null)
+                  ),
+                const SizedBox(height: 16),
+
+                // 只读信息提示
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTokens.semanticError.withOpacity(0.1),
+                    color: AppTokens.bgSurface,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTokens.borderDefault),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.error_outline,
-                          color: AppTokens.semanticError),
-                      const SizedBox(width: 8),
-                      Text(_error!,
-                          style:
-                              const TextStyle(color: AppTokens.semanticError)),
+                      const Text(
+                        '核心信息不可修改',
+                        style: TextStyle(
+                          color: AppTokens.textTertiary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _InfoRow(
+                        icon: Icons.calendar_today_outlined,
+                        label: '活动日期',
+                        value: team.date,
+                      ),
+                      _InfoRow(
+                        icon: Icons.access_time_outlined,
+                        label: '活动时间',
+                        value: team.time,
+                      ),
+                      _InfoRow(
+                        icon: Icons.location_on_outlined,
+                        label: '活动地点',
+                        value: team.locationId,
+                      ),
                     ],
                   ),
                 ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => context.go('/teams/${widget.teamId}'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: const BorderSide(color: AppTokens.borderDefault),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                const SizedBox(height: 24),
+
+                // 保存按钮
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : _handleSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTokens.brandPrimary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text('取消',
-                          style: TextStyle(color: AppTokens.textSecondary)),
                     ),
+                    child: _isSaving
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('保存修改', style: TextStyle(fontSize: 16)),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: _isSubmitting ? null : _handleSubmit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTokens.brandPrimary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('保存修改', style: TextStyle(fontSize: 16)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -612,10 +410,40 @@ class _EditTeamScreenState extends ConsumerState<EditTeamScreen> {
               padding: const EdgeInsets.only(left: 8),
               child: Text(
                 hint,
-                style: const TextStyle(
-                    color: AppTokens.textTertiary, fontSize: 12),
+                style: const TextStyle(color: AppTokens.textTertiary, fontSize: 12),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 信息行组件
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: AppTokens.textSecondary),
+          const SizedBox(width: 8),
+          Text(
+            '$label：',
+            style: const TextStyle(color: AppTokens.textSecondary, fontSize: 13),
+          ),
+          Text(value, style: const TextStyle(fontSize: 13)),
         ],
       ),
     );

@@ -27,23 +27,27 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
   final _locationsApi = LocationsApi();
 
   List<LocationModel> _locations = [];
-  LocationModel? _selectedLocation;
   List<RouteModel> _routes = [];
-  RouteModel? _selectedRoute;
+  String? selectedRouteId;
+  int recommendedDuration = 120; // 分钟
+  List<String> requirements = [];
+  
   String? _selectedLocationId;
   DateTime _startTime = DateTime.now().add(const Duration(days: 3));
   int _maxMembers = 10;
-  int _durationMin = 240;
+  int _durationMin = 120;
   bool _isLoading = false;
   bool _isLoadingLocations = true;
   bool _durationManuallyEdited = false;
-  int? _recommendedDuration;
-
-  List<TextEditingController> _requirementControllers = [];
+  final _newRequirementController = TextEditingController();
 
   static const _durationOptions = [
+    60,
+    90,
     120,
+    150,
     180,
+    210,
     240,
     300,
     360,
@@ -65,9 +69,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    for (final c in _requirementControllers) {
-      c.dispose();
-    }
+    _newRequirementController.dispose();
     super.dispose();
   }
 
@@ -88,77 +90,114 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
     }
   }
 
-  void _onLocationChanged(String locationId) {
-    final location = _locations.firstWhere(
-      (l) => l.id == locationId,
-      orElse: () => _locations.first,
-    );
+  Future<void> _onLocationChanged(String locationId) async {
     setState(() {
-      _selectedLocation = location;
-      _routes = location.routes;
-      _selectedRoute = null;
+      _selectedLocationId = locationId;
+      _routes = [];
+      selectedRouteId = null;
       _durationManuallyEdited = false;
     });
-
-    if (_routes.isNotEmpty) {
-      final firstRoute = _routes.first;
-      setState(() {
-        _selectedRoute = firstRoute;
-        _recommendedDuration = _calculateRecommendedDuration(firstRoute);
-        if (!_durationManuallyEdited) {
-          _durationMin = _recommendedDuration ?? 240;
-        }
-      });
-    } else {
-      setState(() {
-        _recommendedDuration = null;
-        if (!_durationManuallyEdited) {
-          _durationMin = 240;
-        }
-      });
+    
+    try {
+      // 调用 LocationsApi().getLocation(locationId) 获取地点关联的路线
+      final location = await _locationsApi.getLocation(locationId);
+      if (mounted) {
+        setState(() {
+          _selectedLocation = location;
+          _routes = location.routes;
+          if (_routes.isNotEmpty) {
+            // 默认选择第一条路线
+            selectedRouteId = _routes.first.id;
+            _updateRecommendedDuration(_routes.first);
+            if (!_durationManuallyEdited) {
+              _durationMin = recommendedDuration;
+            }
+          } else {
+            recommendedDuration = 120;
+            if (!_durationManuallyEdited) {
+              _durationMin = 120;
+            }
+          }
+        });
+      }
+    } catch (e) {
+      // 如果获取详细信息失败，使用缓存的地点信息
+      final cachedLocation = _locations.firstWhere(
+        (l) => l.id == locationId,
+        orElse: () => _locations.first,
+      );
+      if (mounted) {
+        setState(() {
+          _selectedLocation = cachedLocation;
+          _routes = cachedLocation.routes;
+          if (_routes.isNotEmpty) {
+            selectedRouteId = _routes.first.id;
+            _updateRecommendedDuration(_routes.first);
+            if (!_durationManuallyEdited) {
+              _durationMin = recommendedDuration;
+            }
+          } else {
+            recommendedDuration = 120;
+            if (!_durationManuallyEdited) {
+              _durationMin = 120;
+            }
+          }
+        });
+      }
     }
   }
 
-  int _calculateRecommendedDuration(RouteModel route) {
+  void _updateRecommendedDuration(RouteModel route) {
     if (route.durationMin > 0 && route.durationMax > 0) {
-      return (route.durationMin + route.durationMax) ~/ 2;
+      recommendedDuration = (route.durationMin + route.durationMax) ~/ 2;
+    } else if (route.durationMin > 0) {
+      recommendedDuration = route.durationMin;
+    } else {
+      final difficultyDuration = {
+        Difficulty.easy: 120,
+        Difficulty.moderate: 180,
+        Difficulty.hard: 240,
+        Difficulty.expert: 360,
+      };
+      recommendedDuration = difficultyDuration[route.difficulty] ?? 120;
     }
-    if (route.durationMin > 0) {
-      return route.durationMin;
-    }
-    final difficultyDuration = {
-      Difficulty.easy: 180,
-      Difficulty.moderate: 300,
-      Difficulty.hard: 420,
-      Difficulty.expert: 600,
-    };
-    return difficultyDuration[route.difficulty] ?? 240;
   }
 
-  void _onRouteChanged(RouteModel? route) {
-    setState(() {
-      _selectedRoute = route;
-      if (route != null) {
-        _recommendedDuration = _calculateRecommendedDuration(route);
+  void _onRouteChanged(String? routeId) {
+    if (routeId == null) {
+      setState(() {
+        selectedRouteId = null;
+        recommendedDuration = 120;
         if (!_durationManuallyEdited) {
-          _durationMin = _recommendedDuration ?? 240;
+          _durationMin = 120;
         }
+      });
+      return;
+    }
+    
+    final route = _routes.firstWhere((r) => r.id == routeId);
+    setState(() {
+      selectedRouteId = routeId;
+      _updateRecommendedDuration(route);
+      if (!_durationManuallyEdited) {
+        _durationMin = recommendedDuration;
       }
     });
   }
 
   void _addRequirement() {
-    if (_requirementControllers.length < 10) {
+    final newReq = _newRequirementController.text.trim();
+    if (newReq.isNotEmpty && requirements.length < 10) {
       setState(() {
-        _requirementControllers.add(TextEditingController());
+        requirements.add(newReq);
+        _newRequirementController.clear();
       });
     }
   }
 
-  void _removeRequirement(int index) {
+  void _removeRequirement(String requirement) {
     setState(() {
-      _requirementControllers[index].dispose();
-      _requirementControllers.removeAt(index);
+      requirements.remove(requirement);
     });
   }
 
@@ -199,16 +238,11 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final requirements = _requirementControllers
-          .map((c) => c.text.trim())
-          .where((r) => r.isNotEmpty)
-          .toList();
-
       final team = await _teamsApi.createTeam({
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'locationId': _selectedLocationId,
-        'routeId': _selectedRoute?.id,
+        'routeId': selectedRouteId,
         'startTime': _startTime.millisecondsSinceEpoch ~/ 1000,
         'endTime': _startTime
                 .add(Duration(minutes: _durationMin))
@@ -223,7 +257,9 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
       }
     } catch (e) {
       if (mounted) {
-        context.go('/login');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('创建队伍失败，请重试')),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -290,7 +326,6 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                           );
                         }).toList(),
                         onChanged: (value) {
-                          setState(() => _selectedLocationId = value);
                           if (value != null) _onLocationChanged(value);
                         },
                       ),
@@ -299,7 +334,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                   _buildSectionTitle('徒步路线', Icons.route_outlined,
                       hint: '选择路线后可自动推荐时长'),
                   DropdownButtonFormField<String>(
-                    value: _selectedRoute?.id,
+                    value: selectedRouteId,
                     hint: const Text('选择一条路线（可选）'),
                     decoration: InputDecoration(
                       filled: true,
@@ -317,13 +352,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                             '${route.name} - ${route.difficulty.label} | ${route.durationMin ~/ 60}-${route.durationMax ~/ 60}小时'),
                       );
                     }).toList(),
-                    onChanged: (value) {
-                      final route = _routes.firstWhere(
-                        (r) => r.id == value,
-                        orElse: () => _routes.first,
-                      );
-                      _onRouteChanged(value == null ? null : route);
-                    },
+                    onChanged: _onRouteChanged,
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -373,8 +402,8 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                             '活动时长',
                             Icons.timelapse_outlined,
                             isRequired: true,
-                            hint: _recommendedDuration != null
-                                ? '推荐${_recommendedDuration! ~/ 60}小时'
+                            hint: _routes.isNotEmpty && selectedRouteId != null
+                                ? '推荐时长：${recommendedDuration ~/ 60}-${(recommendedDuration ~/ 60) + 1} 小时'
                                 : null,
                           ),
                           DropdownButtonFormField<int>(
@@ -389,7 +418,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                               ),
                             ),
                             items: _durationOptions.map((m) {
-                              final isRecommended = m == _recommendedDuration;
+                              final isRecommended = m == recommendedDuration;
                               return DropdownMenuItem(
                                 value: m,
                                 child: Text(
@@ -406,7 +435,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                             }).toList(),
                             onChanged: (value) {
                               setState(() {
-                                _durationMin = value ?? 240;
+                                _durationMin = value ?? 120;
                                 _durationManuallyEdited = true;
                               });
                             },
@@ -467,73 +496,45 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                 const SizedBox(height: 16),
                 _buildSectionTitle('参与要求', Icons.list_alt_outlined,
                     hint: '最多 10 条'),
-                ..._requirementControllers.asMap().entries.map((entry) {
-                  final idx = entry.key;
-                  final controller = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: AppTokens.brandPrimaryLight,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${idx + 1}',
-                              style: const TextStyle(
-                                color: AppTokens.brandPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ...requirements.map((req) {
+                      return FilterChip(
+                        label: Text(req),
+                        onSelected: (_) => _removeRequirement(req),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () => _removeRequirement(req),
+                        backgroundColor: AppTokens.brandPrimaryLight,
+                        selectedColor: AppTokens.brandPrimary,
+                        checkmarkColor: Colors.white,
+                      );
+                    }),
+                    if (requirements.length < 10)
+                      SizedBox(
+                        width: 200,
+                        child: TextField(
+                          controller: _newRequirementController,
+                          decoration: InputDecoration(
+                            hintText: '输入要求并回车',
+                            filled: true,
+                            fillColor: AppTokens.bgSurface,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                  color: AppTokens.borderDefault),
+                            ),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: _addRequirement,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: controller,
-                            decoration: InputDecoration(
-                              hintText: '例如：需要有徒步经验',
-                              filled: true,
-                              fillColor: AppTokens.bgSurface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                    color: AppTokens.borderDefault),
-                              ),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close,
-                              color: AppTokens.semanticError),
-                          onPressed: () => _removeRequirement(idx),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-                if (_requirementControllers.length < 10)
-                  GestureDetector(
-                    onTap: _addRequirement,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppTokens.borderDefault),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '+ 添加一条',
-                          style: TextStyle(color: AppTokens.textSecondary),
+                          onSubmitted: (_) => _addRequirement(),
                         ),
                       ),
-                    ),
-                  ),
+                  ],
+                ),
                 const SizedBox(height: 24),
                 Container(
                   padding: const EdgeInsets.all(12),

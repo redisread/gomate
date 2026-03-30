@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/users_api.dart';
@@ -154,7 +155,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         borderRadius: BorderRadius.circular(AppTokens.radiusL),
         boxShadow: [
           BoxShadow(
-            color: AppTokens.brandPrimary.withOpacity(0.3),
+            color: AppTokens.brandPrimary.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -185,7 +186,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
               vertical: AppTokens.space1,
             ),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(AppTokens.radiusS),
             ),
             child: Row(
@@ -266,21 +267,21 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 child: _StatItem(
                   icon: Icons.flag_outlined,
                   label: '创建队伍',
-                  value: '0', // TODO: 从 API 获取实际数据
+                  value: '${user.stats?.createdTeams ?? 0}',
                 ),
               ),
               Expanded(
                 child: _StatItem(
                   icon: Icons.hiking_outlined,
                   label: '参加活动',
-                  value: '${user.completedHikes}',
+                  value: '${user.stats?.joinedTeams ?? 0}',
                 ),
               ),
               Expanded(
                 child: _StatItem(
                   icon: Icons.check_circle_outline,
                   label: '完成活动',
-                  value: '${user.completedHikes}',
+                  value: '${user.stats?.completedTeams ?? 0}',
                 ),
               ),
             ],
@@ -344,8 +345,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                     size: 20,
                     color: AppTokens.textTertiary,
                   ),
-                  onPressed: () {
-                    // TODO: 复制到剪贴板
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: content));
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('已复制'),
@@ -429,15 +431,15 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   IconData _getLevelIcon(String level) {
     switch (level) {
       case 'beginner':
-        return Icons.seedling;
+        return Icons.eco;
       case 'intermediate':
         return Icons.terrain;
       case 'advanced':
         return Icons.landscape;
       case 'expert':
-        return Icons.mountain;
+        return Icons.filter_hdr;
       default:
-        return Icons.seedling;
+        return Icons.eco;
     }
   }
 

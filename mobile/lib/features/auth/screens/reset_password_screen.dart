@@ -49,8 +49,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     if (value == null || value.isEmpty) {
       return '请输入新密码';
     }
-    if (value.length < 6) {
-      return '密码至少需要 6 位';
+    if (value.length < 8) {
+      return '密码至少 8 个字符';
     }
     return null;
   }

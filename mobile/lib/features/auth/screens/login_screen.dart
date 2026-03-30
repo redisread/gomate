@@ -224,6 +224,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     if (value == null || value.isEmpty) {
                       return '请输入密码';
                     }
+                    if (value.length < 8) {
+                      return '密码至少 8 个字符';
+                    }
                     return null;
                   },
                 ),

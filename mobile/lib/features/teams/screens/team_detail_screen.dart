@@ -9,6 +9,7 @@ import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/widgets/app_status_badge.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../../shared/widgets/share_poster_widget.dart';
+import 'join_team_bottom_sheet.dart';
 
 /// 队伍详情页面
 class TeamDetailScreen extends ConsumerStatefulWidget {
@@ -63,10 +64,12 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
 
   /// 分享队伍
   Future<void> _shareTeam(TeamModel team) async {
+    // locationId 用于显示，地点名称需要从 API 获取或直接显示 ID
+    final locationDisplay = team.locationId;
     await SharePosterWidget.show(
       context,
       title: team.title,
-      locationName: null,
+      locationName: locationDisplay,
       description: team.description,
       leaderName: team.leader?.displayName,
       membersInfo: '${team.approvedMemberCount}/${team.maxMembers} 人',
@@ -78,30 +81,34 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
 
   /// 申请加入（带留言输入）
   Future<void> _handleJoin() async {
-    // 显示留言输入对话框
-    final message = await showDialog<String>(
+    // 显示留言输入 Bottom Sheet
+    await showModalBottomSheet<String>(
       context: context,
-      builder: (ctx) => _JoinMessageDialog(),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => JoinTeamBottomSheet(
+        onJoin: (message) async {
+          setState(() => _isActioning = true);
+          try {
+            await _teamsApi.joinTeam(widget.teamId, message: message);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('申请已提交，等待领队审核')),
+              );
+              _loadTeam();
+            }
+            return 'success';
+          } catch (e) {
+            if (mounted) {
+              context.go('/login');
+            }
+            return null;
+          } finally {
+            if (mounted) setState(() => _isActioning = false);
+          }
+        },
+      ),
     );
-
-    if (message == null) return; // 用户取消
-
-    setState(() => _isActioning = true);
-    try {
-      await _teamsApi.joinTeam(widget.teamId, message: message);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('申请已提交，等待领队审核')),
-        );
-        _loadTeam();
-      }
-    } catch (e) {
-      if (mounted) {
-        context.go('/login');
-      }
-    } finally {
-      if (mounted) setState(() => _isActioning = false);
-    }
   }
 
   /// 取消申请

@@ -9,7 +9,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -109,19 +109,6 @@ class _LocationDetailScreenState extends ConsumerState<LocationDetailScreen> {
     } catch (e) {
       if (mounted) context.go('/login');
     }
-  }
-
-  Future<void> _shareLocation() async {
-    if (_location == null) return;
-    final location = _location!;
-    final url = 'https://gomate.live/locations/${location.id}';
-    final text = '''🏔️ ${location.name}
-${location.subtitle ?? ''}
-
-📍 ${location.cityName ?? '深圳'}
-
-$url''';
-    await Share.share(text, subject: location.name);
   }
 
   void _showSharePoster() {
@@ -671,13 +658,11 @@ class _SharePosterSheetState extends State<_SharePosterSheet> {
       final file = File('${tempDir.path}/gomate_share.png');
       await file.writeAsBytes(buffer);
 
-      final result = await ImageGallerySaver.saveImage(buffer,
-          quality: 100, name: 'gomate_share');
+      await Gal.putImageBytes(buffer, album: 'GoMate');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(result['isSuccess'] == true ? '海报已保存到相册' : '保存失败')),
+          const SnackBar(content: Text('海报已保存到相册')),
         );
       }
     } catch (e) {
