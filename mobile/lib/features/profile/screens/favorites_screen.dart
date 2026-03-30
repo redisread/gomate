@@ -235,22 +235,23 @@ class _FavoriteCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppTokens.radiusL),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: AppTokens.space3),
-          padding: const EdgeInsets.all(AppTokens.space3),
-          decoration: BoxDecoration(
-            color: AppTokens.bgSurface,
-            borderRadius: BorderRadius.circular(AppTokens.radiusL),
-            border: Border.all(color: AppTokens.borderDefault, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0x0A1A2332),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AppTokens.space3),
+          child: Container(
+            padding: const EdgeInsets.all(AppTokens.space3),
+            decoration: BoxDecoration(
+              color: AppTokens.bgSurface,
+              borderRadius: BorderRadius.circular(AppTokens.radiusL),
+              border: Border.all(color: AppTokens.borderDefault, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0x0A1A2332),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
             children: [
               // 封面图
               ClipRRect(
@@ -332,6 +333,7 @@ class _FavoriteCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
