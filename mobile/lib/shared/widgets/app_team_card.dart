@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_tokens.dart';
@@ -217,10 +218,19 @@ class _AppTeamCardState extends State<AppTeamCard>
         width: double.infinity,
         color: AppTokens.bgSurfaceElevated,
         child: hasImage
-            ? Image.network(
-                widget.team.coverImage!,
+            ? CachedNetworkImage(
+                imageUrl: widget.team.coverImage!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                placeholder: (context, url) => Container(
+                  color: AppTokens.bgSurfaceElevated,
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppTokens.brandPrimary,
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => _buildPlaceholder(),
               )
             : _buildPlaceholder(),
       ),

@@ -9,6 +9,7 @@ import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/widgets/app_status_badge.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../../shared/widgets/share_poster_widget.dart';
+import '../../../shared/widgets/app_shimmer.dart';
 import 'join_team_bottom_sheet.dart';
 
 /// 队伍详情页面
@@ -178,7 +179,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: TeamDetailShimmer(),
+      );
     }
 
     if (_team == null) {

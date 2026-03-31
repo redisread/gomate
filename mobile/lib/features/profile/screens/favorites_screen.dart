@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/api/locations_api.dart';
 import '../../../core/models/location.dart';
@@ -256,12 +257,26 @@ class _FavoriteCard extends StatelessWidget {
               // 封面图
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppTokens.radiusM),
-                child: Image.network(
-                  location.coverImage,
+                child: CachedNetworkImage(
+                  imageUrl: location.coverImage,
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  cacheKey: location.id,
+                  maxWidthDiskCache: 100,
+                  maxHeightDiskCache: 100,
+                  placeholder: (context, url) => Container(
+                    width: 80,
+                    height: 80,
+                    color: AppTokens.bgDivider,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTokens.brandPrimary,
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     width: 80,
                     height: 80,
                     color: AppTokens.bgDivider,

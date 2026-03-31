@@ -22,6 +22,7 @@ import '../../../core/models/team.dart';
 import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_status_badge.dart';
+import '../../../shared/widgets/app_shimmer.dart';
 
 class LocationDetailScreen extends ConsumerStatefulWidget {
   final String locationId;
@@ -163,9 +164,7 @@ class _LocationDetailScreenState extends ConsumerState<LocationDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(color: AppTokens.brandPrimary),
-        ),
+        body: LocationDetailShimmer(),
       );
     }
 
