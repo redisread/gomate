@@ -1,6 +1,5 @@
 import 'dart:io' show Platform, File;
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -85,20 +84,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         return;
       }
     } else {
-      PermissionStatus storageStatus;
-      if (Platform.isAndroid) {
-        // Android 13+ (API 33+) 使用 photos 权限，旧版本使用 storage 权限
-        final deviceInfo = DeviceInfoPlugin();
-        final androidInfo = await deviceInfo.androidInfo;
-        if (androidInfo.version.sdkInt >= 33) {
-          storageStatus = await Permission.photos.request();
-        } else {
-          storageStatus = await Permission.storage.request();
-        }
-      } else {
-        // iOS 和其他平台
-        storageStatus = await Permission.photos.request();
-      }
+      // 使用 permission_handler 的自动版本适配
+      // Android 13+ 会自动使用 photos 权限，旧版本使用 storage
+      final storageStatus = await Permission.photos.request();
       if (!storageStatus.isGranted) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
