@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/api/locations_api.dart';
 import '../../../core/api/teams_api.dart';
@@ -478,10 +479,22 @@ class _LocationCardState extends State<_LocationCard>
               children: [
                 // 封面图
                 Positioned.fill(
-                  child: Image.network(
-                    widget.location.coverImage,
+                  child: CachedNetworkImage(
+                    imageUrl: widget.location.coverImage,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    cacheKey: widget.location.id,
+                    maxWidthDiskCache: 300,
+                    maxHeightDiskCache: 220,
+                    placeholder: (context, url) => Container(
+                      color: AppTokens.bgSurface,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTokens.brandPrimary,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
                       decoration: const BoxDecoration(
                         gradient: AppTokens.gradientBrand,
                       ),

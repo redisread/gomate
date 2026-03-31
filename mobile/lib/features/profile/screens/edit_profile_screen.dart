@@ -1,5 +1,6 @@
 import 'dart:io' show Platform, File;
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -86,9 +87,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     } else {
       PermissionStatus storageStatus;
       if (Platform.isAndroid) {
-        // Android 13+ 使用 photos 权限，旧版本使用 storage 权限
-        final version = int.tryParse(Platform.operatingSystemVersion.split(' ')[0]) ?? 0;
-        if (version >= 33) {
+        // Android 13+ (API 33+) 使用 photos 权限，旧版本使用 storage 权限
+        final deviceInfo = DeviceInfoPlugin();
+        final androidInfo = await deviceInfo.androidInfo;
+        if (androidInfo.version.sdkInt >= 33) {
           storageStatus = await Permission.photos.request();
         } else {
           storageStatus = await Permission.storage.request();
