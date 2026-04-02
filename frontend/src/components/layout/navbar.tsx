@@ -5,6 +5,7 @@ import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown } f
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
 import { fetchCurrentUser } from "@/lib/api";
+import { Avatar } from "@/components/ui/team-card";
 
 const navLinks = [
   { href: "/",          label: copy.nav.home },
@@ -168,13 +169,12 @@ export function Navbar({ className }: NavbarProps) {
                       onClick={() => setShowUserMenu(!showUserMenu)}
                       className="flex items-center gap-1.5 text-sm text-[#8f7f6e] px-3 py-1.5 rounded-lg hover:bg-[#FFFBEB] hover:text-[#1e1812] transition-colors duration-150"
                     >
-                      {/* 用户头像或首字母 */}
-                      <div
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
-                        style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)" }}
-                      >
-                        {(session.user.nickname || session.user.name).charAt(0).toUpperCase()}
-                      </div>
+                      {/* 用户头像 */}
+                      <Avatar
+                        src={session.user.image}
+                        name={session.user.nickname || session.user.name}
+                        size="xs"
+                      />
                       <span className="max-w-[80px] truncate">{session.user.nickname || session.user.name}</span>
                       <ChevronDown
                         className={cn("h-3.5 w-3.5 transition-transform duration-200", showUserMenu && "rotate-180")}
@@ -302,12 +302,11 @@ export function Navbar({ className }: NavbarProps) {
             {session?.user && (
               <div className="px-5 py-4 border-b border-[#f0ebe3]">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg, #D97706, #FCD34D)" }}
-                  >
-                    {(session.user.nickname || session.user.name).charAt(0).toUpperCase()}
-                  </div>
+                  <Avatar
+                    src={session.user.image}
+                    name={session.user.nickname || session.user.name}
+                    size="md"
+                  />
                   <div className="min-w-0">
                     <p className="font-semibold text-[#1e1812] text-sm truncate">{session.user.nickname || session.user.name}</p>
                     <p className="text-xs text-[#8f7f6e] truncate">{session.user.email}</p>
