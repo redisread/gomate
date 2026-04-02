@@ -847,6 +847,21 @@ export const copy = {
     luohu: "罗湖区",
     dapeng: "大鹏新区",
     pingshan: "坪山区",
+
+    // 日期筛选
+    dateRange: "出发日期",
+    dateFrom: "开始日期",
+    dateTo: "结束日期",
+    datePlaceholder: "选择日期",
+    dateQuickToday: "今天",
+    dateQuickTomorrow: "明天",
+    dateQuickWeekend: "本周末",
+    dateQuick7Days: "未来7天",
+    dateQuick30Days: "未来30天",
+
+    // 标签筛选
+    tags: "标签",
+    tagsPlaceholder: "选择标签",
   },
 
   // ─── 联系我们 ─────────────────────────────────────────────────────────────
