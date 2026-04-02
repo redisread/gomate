@@ -21,10 +21,11 @@ import {
   MessageCircle,
   Handshake,
   Cloud,
+  TrendingUp,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
-import type { Team, TeamMember, Application } from "@/lib/types";
+import type { Team, TeamMember, Application, Tag } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -1199,6 +1200,112 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
               )}
             </div>
 
+            {/* ── 地点简介卡（迷你版地点卡片）── */}
+            {location && (() => {
+              const route = location.routes?.[0];
+              const tagColorClasses = [
+                "bg-emerald-50 text-emerald-700 border-emerald-100",
+                "bg-amber-50 text-amber-700 border-amber-100",
+                "bg-sky-50 text-sky-700 border-sky-100",
+              ];
+              return (
+                <a
+                  href={`/locations/${location.id}`}
+                  className="group block"
+                >
+                  <article className="bg-white rounded-2xl overflow-hidden border border-stone-100 hover:border-amber-200/50 hover:shadow-xl hover:shadow-amber-100/40 hover:ring-1 hover:ring-amber-200/40 transition-all duration-300 hover:-translate-y-1">
+                    {/* 封面图区 */}
+                    <div className="relative h-40 overflow-hidden bg-stone-100">
+                      {location.coverImage ? (
+                        <img
+                          src={location.coverImage}
+                          alt={location.name}
+                          className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500 ease-out"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-800 to-stone-900">
+                          <Mountain className="h-12 w-12 text-amber-400/60" />
+                        </div>
+                      )}
+
+                      {/* 渐变遮罩 */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+
+                      {/* 城市标签 */}
+                      {location.cityName && (
+                        <div className="absolute top-3 right-3">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-black/35 text-white backdrop-blur-sm">
+                            <MapPin className="w-3 h-3" />
+                            {location.cityName}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 底部信息 */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <p className="text-xs text-white/60 mb-1">活动地点</p>
+                        <h3 className="font-bold text-white text-base leading-tight drop-shadow-sm">
+                          {location.name}
+                        </h3>
+                        {route && (
+                          <div className="flex items-center gap-3 mt-1.5 text-white/75 text-xs">
+                            {route.duration && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {route.duration}
+                              </span>
+                            )}
+                            {route.distance && (
+                              <span className="flex items-center gap-1">
+                                <TrendingUp className="w-3 h-3" />
+                                {route.distance}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 内容区 */}
+                    <div className="p-4">
+                      {/* 描述 */}
+                      {location.description && (
+                        <p className="text-stone-500 text-sm line-clamp-2 leading-relaxed mb-3">
+                          {location.description}
+                        </p>
+                      )}
+
+                      {/* 标签 */}
+                      {location.tags && location.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {location.tags.slice(0, 3).map((tag: Tag, i: number) => (
+                            <span
+                              key={tag?.id ?? i}
+                              className={cn("px-2 py-0.5 rounded-full text-xs border", tagColorClasses[i % tagColorClasses.length])}
+                            >
+                              {typeof tag === "string" ? tag : tag?.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 底部 CTA */}
+                      <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
+                        <span className="text-xs text-stone-400 flex items-center gap-1 truncate max-w-[60%]">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          {location.address || location.cityName || "深圳"}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 group-hover:text-amber-500 transition-colors flex-shrink-0">
+                          {copy.teams.viewLocationDetail}
+                          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1" />
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                </a>
+              );
+            })()}
+
             {/* ── 队伍描述 ── */}
             {team.description && (
               <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm p-5">
@@ -1225,33 +1332,6 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
                   ))}
                 </ul>
               </div>
-            )}
-
-            {/* ── 地点简介卡（上移！提升决策效率）── */}
-            {location && (
-              <a href={`/locations/${location.id}`}>
-                <div className="bg-white rounded-2xl border border-stone-100 shadow-warm-sm p-4 group hover:shadow-warm-md hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-4">
-                  {location.coverImage && (
-                    <div className="w-18 h-18 rounded-xl overflow-hidden flex-shrink-0">
-                      <img
-                        src={location.coverImage}
-                        alt={location.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-stone-400 mb-1">活动地点</p>
-                    <h3 className="font-semibold text-stone-900 group-hover:text-amber-700 transition-colors text-sm mb-2 truncate">
-                      {location.name}
-                    </h3>
-                    <span className="inline-flex items-center text-xs font-medium text-amber-600">
-                      {copy.teams.viewLocationDetail}
-                      <ArrowRight className="ml-1 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-150" />
-                    </span>
-                  </div>
-                </div>
-              </a>
             )}
 
             {/* ── 成员列表（头像网格）── */}

@@ -1,13 +1,13 @@
 ---
 /**
- * 队伍详情页 - 动态路由
+ * 队伍详情页 - Partiful 风格
  */
 import Layout from "../../layouts/Layout.astro";
-import { TeamDetailClient } from "../../components/features/team-detail-client";
+import { TeamDetailPartiful } from "../../components/features/team-detail-partiful";
 
 const { id } = Astro.params;
 ---
 
 <Layout title="队伍详情 - GoMate" showNavbar={false} showFooter={false}>
-  <TeamDetailClient teamId={id!} client:load />
+  <TeamDetailPartiful teamId={id!} client:load />
 </Layout>

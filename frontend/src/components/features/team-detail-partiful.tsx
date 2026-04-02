@@ -1,0 +1,970 @@
+"use client";
+
+import * as React from "react";
+import {
+  MapPin,
+  ArrowRight,
+  Users,
+  Calendar,
+  Clock,
+  AlertCircle,
+  Loader2,
+  CheckCircle,
+  Crown,
+  X,
+  Pencil,
+  Share2,
+  Mountain,
+  TrendingUp,
+  UserCheck,
+} from "lucide-react";
+import { copy } from "@/lib/copy";
+import { fetchAPI } from "@/lib/api";
+import type { Team, TeamMember, Application, Tag } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
+import { SharePosterModal } from "./share-poster-modal";
+
+interface ToastOptions {
+  type: "success" | "error";
+  message: string;
+}
+
+function useToast() {
+  const [toast, setToast] = React.useState<ToastOptions | null>(null);
+  const [exiting, setExiting] = React.useState(false);
+  const show = (opts: ToastOptions) => {
+    setExiting(false);
+    setToast(opts);
+    setTimeout(() => {
+      setExiting(true);
+      setTimeout(() => setToast(null), 200);
+    }, 2500);
+  };
+  return { toast, exiting, show };
+}
+
+function ToastDisplay({ toast, exiting }: { toast: ToastOptions | null; exiting: boolean }) {
+  if (!toast) return null;
+  const isSuccess = toast.type === "success";
+  return (
+    <div
+      className={cn(
+        "fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]",
+        exiting ? "animate-[fade-out_0.2s_ease-in_both]" : "animate-[fade-up_0.25s_ease_both]"
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center gap-2 px-5 py-3 rounded-full text-sm font-medium",
+          isSuccess ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+        )}
+      >
+        {isSuccess ? <CheckCircle className="h-4 w-4" /> : <X className="h-4 w-4" />}
+        <span>{toast.message}</span>
+      </div>
+    </div>
+  );
+}
+
+function Avatar({ name, avatar, isLeader, size = "md" }: { name?: string; avatar?: string | null; isLeader?: boolean; size?: "sm" | "md" | "lg" }) {
+  const displayChar = name?.[0] || "?";
+  const kaomoji = ["◡‿◡", "˘◡˘", "◠‿◠", "◕‿◕", "◉‿◉"];
+  const randomKaomoji = kaomoji[Math.floor(Math.random() * kaomoji.length)];
+  
+  const sizeClasses = {
+    sm: "w-10 h-10 text-base",
+    md: "w-12 h-12 text-lg",
+    lg: "w-16 h-16 text-xl",
+  };
+
+  return (
+    <div
+      className={cn(
+        "rounded-full flex items-center justify-center font-medium relative",
+        sizeClasses[size],
+        isLeader ? "bg-amber-200 text-amber-800 ring-2 ring-amber-400 ring-offset-2" : "bg-stone-100 text-stone-600"
+      )}
+    >
+      {avatar ? (
+        <img src={avatar} alt={name} className="w-full h-full object-cover rounded-full" />
+      ) : (
+        <span className="text-sm">{randomKaomoji}</span>
+      )}
+      {isLeader && (
+        <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
+          <Crown className="w-3 h-3 text-white" />
+        </span>
+      )}
+    </div>
+  );
+}
+
+function MemberRow({ members, leaderId }: { members: TeamMember[]; leaderId?: string }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const displayMembers = expanded ? members : members.slice(0, 6);
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {displayMembers.map((m) => (
+        <a
+          key={m.id}
+          href={`/users/${m.userId}`}
+          className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-amber-50 transition-colors"
+        >
+          <Avatar name={m.nickname || m.name || undefined} avatar={m.avatar} isLeader={m.userId === leaderId} size="sm" />
+          <span className="text-xs text-stone-600">{m.nickname || m.name}</span>
+        </a>
+      ))}
+      {!expanded && members.length > 6 && (
+        <button
+          onClick={() => setExpanded(true)}
+          className="flex items-center gap-1 text-sm text-stone-500 hover:text-amber-600 transition-colors px-4 py-2"
+        >
+          View all
+          <ArrowRight className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return `${minutes}分钟前`;
+  if (hours < 24) return `${hours}小时前`;
+  if (days < 7) return `${days}天前`;
+  return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+}
+
+function ApplicationCard({
+  application,
+  onApprove,
+  onReject,
+  isTeamFull,
+}: {
+  application: Application;
+  onApprove: () => void;
+  onReject: () => void;
+  isTeamFull: boolean;
+}) {
+  const [approving, setApproving] = React.useState(false);
+  const [rejecting, setRejecting] = React.useState(false);
+
+  const handleApprove = async () => {
+    setApproving(true);
+    await onApprove();
+    setApproving(false);
+  };
+
+  const handleReject = async () => {
+    setRejecting(true);
+    await onReject();
+    setRejecting(false);
+  };
+
+  const name = application.user.nickname || application.user.name || "用户";
+  const timeAgo = application.createdAt ? formatRelativeTime(new Date(application.createdAt)) : "";
+
+  return (
+    <div className="p-3 bg-white rounded-xl hover:shadow-sm transition-shadow">
+      <div className="flex items-center gap-2.5 mb-2">
+        <a
+          href={`/users/${application.user.id}`}
+          className="flex items-center gap-2.5 flex-1 min-w-0 hover:text-amber-700 transition-colors"
+        >
+          <Avatar name={name} avatar={application.user.avatar} size="sm" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-stone-800 truncate">{name}</p>
+            {timeAgo && <p className="text-xs text-stone-400">{timeAgo} 申请</p>}
+          </div>
+        </a>
+      </div>
+      {isTeamFull ? (
+        <div className="text-center text-xs text-stone-400 bg-stone-50 py-2 rounded-lg">
+          名额已满
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <button
+            onClick={handleApprove}
+            disabled={approving || rejecting}
+            className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
+          >
+            {approving && <Loader2 className="w-3 h-3 animate-spin" />}
+            {approving ? "处理中" : "批准"}
+          </button>
+          <button
+            onClick={handleReject}
+            disabled={approving || rejecting}
+            className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-stone-200 text-stone-500 hover:border-red-300 hover:text-red-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
+          >
+            {rejecting && <Loader2 className="w-3 h-3 animate-spin" />}
+            {rejecting ? "处理中" : "拒绝"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getStatusInfo(status: string) {
+  const map: Record<string, { label: string; color: string }> = {
+    recruiting: { label: copy.enums.teamStatus.recruiting, color: "bg-amber-50 text-amber-700" },
+    full: { label: copy.enums.teamStatus.full, color: "bg-stone-100 text-stone-600" },
+    formed: { label: copy.enums.teamStatus.formed, color: "bg-sky-50 text-sky-700" },
+    completed: { label: copy.enums.teamStatus.completed, color: "bg-stone-100 text-stone-500" },
+    cancelled: { label: copy.enums.teamStatus.cancelled, color: "bg-red-50 text-red-600" },
+  };
+  return map[status] || map.recruiting;
+}
+
+interface TeamDetailPartifulProps {
+  teamId: string;
+}
+
+export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
+  const [team, setTeam] = React.useState<Team | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [userId, setUserId] = React.useState<string | null>(null);
+  const [memberStatus, setMemberStatus] = React.useState<string | null>(null);
+  const [joining, setJoining] = React.useState(false);
+  const [joinMsg, setJoinMsg] = React.useState("");
+  const [showJoinModal, setShowJoinModal] = React.useState(false);
+  const [showShare, setShowShare] = React.useState(false);
+  const [showEdit, setShowEdit] = React.useState(false);
+  const [showLeave, setShowLeave] = React.useState(false);
+  const [showFormConfirm, setShowFormConfirm] = React.useState(false);
+  const [isForming, setIsForming] = React.useState(false);
+  const [applications, setApplications] = React.useState<Application[]>([]);
+  const { toast, exiting, show: showToast } = useToast();
+
+  React.useEffect(() => {
+    loadTeam();
+    checkUser();
+  }, [teamId]);
+
+  React.useEffect(() => {
+    if (team && userId && team.leader?.id === userId) fetchApplications();
+  }, [team?.id, userId]);
+
+  const fetchApplications = async () => {
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/applications`);
+      const data = await res.json();
+      if (data.success) setApplications(data.applications || []);
+    } catch {}
+  };
+
+  const checkUser = async () => {
+    try {
+      const res = await fetchAPI("/auth/get-session");
+      const data = await res.json();
+      if (data?.user?.id) {
+        setUserId(data.user.id);
+        const statusRes = await fetchAPI(`/api/teams/${teamId}/my-status`);
+        const statusData = await statusRes.json();
+        if (statusData.success) setMemberStatus(statusData.status);
+      }
+    } catch {}
+  };
+
+  const loadTeam = async () => {
+    setLoading(true);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}`);
+      if (res.status === 404) {
+        setError(copy.teams.notFound);
+        return;
+      }
+      const data = await res.json();
+      if (data.success && data.team) setTeam(data.team);
+      else setError(copy.teams.notFound);
+    } catch {
+      setError(copy.teams.loadFailed);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleJoin = async () => {
+    if (!userId) {
+      window.location.href = `/login?redirect=/teams/${teamId}`;
+      return;
+    }
+    setJoining(true);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/join`, {
+        method: "POST",
+        body: JSON.stringify({ message: joinMsg }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMemberStatus("pending");
+        setShowJoinModal(false);
+        showToast({ type: "success", message: copy.success.applied });
+        loadTeam();
+      } else {
+        showToast({ type: "error", message: data.error || copy.errors.joinFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.errors.joinFailed });
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const handleLeave = async () => {
+    setShowLeave(false);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/leave`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setMemberStatus(null);
+        showToast({ type: "success", message: copy.success.leftTeam });
+        loadTeam();
+      } else {
+        showToast({ type: "error", message: data.error || copy.errors.leaveFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.errors.leaveFailed });
+    }
+  };
+
+  const handleApprove = async (uid: string) => {
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/members/${uid}/approve`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        showToast({ type: "success", message: copy.success.approved });
+        setApplications((prev) => prev.filter((a) => a.userId !== uid));
+        loadTeam();
+      } else {
+        showToast({ type: "error", message: data.error || copy.errors.reviewFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.errors.reviewFailed });
+    }
+  };
+
+  const handleReject = async (uid: string) => {
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/members/${uid}/reject`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        showToast({ type: "success", message: copy.success.rejected });
+        setApplications((prev) => prev.filter((a) => a.userId !== uid));
+      } else {
+        showToast({ type: "error", message: data.error || copy.errors.reviewFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.errors.reviewFailed });
+    }
+  };
+
+  const handleEditSuccess = (updated: Partial<Team>) => {
+    setTeam((prev) => (prev ? { ...prev, ...updated } : prev));
+    showToast({ type: "success", message: copy.teams.editSuccess });
+  };
+
+  const handleFormTeam = async () => {
+    setIsForming(true);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}/form`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isUnderfilled: !isFull }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast({ type: "success", message: copy.teams.formTeamSuccess });
+        loadTeam();
+      } else {
+        showToast({ type: "error", message: data.error || copy.teams.formTeamFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.teams.formTeamFailed });
+    } finally {
+      setIsForming(false);
+      setShowFormConfirm(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-white">
+        <Navbar />
+        <div className="max-w-6xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+            <div className="h-48 bg-stone-100 rounded-2xl animate-pulse" />
+            <div className="space-y-4">
+              <div className="h-10 w-3/4 bg-stone-100 rounded animate-pulse" />
+              <div className="h-5 w-1/2 bg-stone-100 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
+  if (error || !team) {
+    return (
+      <main className="min-h-screen bg-white flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <p className="text-stone-400">{error || copy.teams.notFound}</p>
+            <a href="/teams" className="text-amber-600 hover:text-amber-700 underline underline-offset-2">
+              返回队伍列表
+            </a>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
+  const statusInfo = getStatusInfo(team.status);
+  const isLeader = userId && team.leader?.id === userId;
+  const isMember = memberStatus === "approved";
+  const isPending = memberStatus === "pending";
+  const canJoin = !isLeader && !isMember && !isPending && team.status === "recruiting" && team.currentMembers < team.maxMembers;
+  const isFull = team.currentMembers >= team.maxMembers;
+  const location = (team as any).location;
+  const members = team.members || [];
+  const remaining = team.maxMembers - team.currentMembers;
+
+  return (
+    <main className="min-h-screen bg-white flex flex-col">
+      <Navbar />
+
+      {/* 主内容区 - 左右分栏 */}
+      <div className="flex-1 max-w-7xl mx-auto px-6 py-8 lg:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 lg:gap-12">
+          
+          {/* 左侧栏 - 核心信息 */}
+          <aside className="lg:sticky lg:top-24 lg:self-start space-y-6">
+            {/* 队伍标题 */}
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-stone-900 leading-tight">{team.title}</h1>
+            </div>
+
+            {/* 时间 */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-base text-stone-700">
+                <Calendar className="w-4 h-4 text-amber-500" />
+                <span className="font-medium">{team.date}</span>
+              </div>
+              {team.time && (
+                <div className="flex items-center gap-2 text-sm text-stone-500">
+                  <Clock className="w-4 h-4" />
+                  <span>{team.time}</span>
+                </div>
+              )}
+            </div>
+
+            {/* 地点（移动端显示） */}
+            {location && (
+              <div className="lg:hidden">
+                <a
+                  href={`/locations/${location.id}`}
+                  className="flex items-center gap-2 px-3 py-2 bg-stone-50 rounded-lg text-stone-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span className="font-medium text-sm">{location.name}</span>
+                  <ArrowRight className="w-3 h-3 ml-auto" />
+                </a>
+              </div>
+            )}
+
+            {/* 简介 */}
+            {team.description && (
+              <div className="border-t border-stone-100 pt-4">
+                <p className="text-sm text-stone-600 leading-relaxed">{team.description}</p>
+              </div>
+            )}
+
+{/* 名额信息 */}
+            <div className="bg-amber-50 rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-amber-600 mb-1">
+                {team.currentMembers}<span className="text-stone-400 text-lg">/{team.maxMembers}</span>
+              </p>
+              <p className="text-xs text-stone-500">人已加入</p>
+              {canJoin && remaining > 0 && (
+                <p className="text-xs text-amber-600 mt-2 font-medium">
+                  {remaining === 1 ? "仅剩 1 个名额" : `还剩 ${remaining} 个名额`}
+                </p>
+              )}
+            </div>
+
+            {/* 创建人卡片 */}
+            {team.leader && (
+              <div className="border-t border-stone-100 pt-4">
+                <div className="flex items-center gap-2 text-xs text-stone-500 mb-3">
+                  <Crown className="w-3.5 h-3.5" />
+                  <span className="font-medium">创建人</span>
+                </div>
+                <a
+                  href={`/users/${team.leader.id}`}
+                  className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl hover:bg-amber-50 transition-colors"
+                >
+                  <Avatar name={team.leader.nickname || team.leader.name || undefined} avatar={team.leader.avatar} isLeader size="md" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-stone-900 text-sm">{team.leader.nickname || team.leader.name}</p>
+                    <p className="text-xs text-stone-500">队伍队长</p>
+                  </div>
+                </a>
+              </div>
+            )}
+
+            {/* 队长操作（队长可见） */}
+            {isLeader && (
+              <div className="bg-amber-50 rounded-xl p-3 space-y-1.5">
+                <button
+                  onClick={() => setShowEdit(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-white rounded-lg transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                  编辑队伍
+                </button>
+                <button
+                  onClick={() => setShowShare(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-white rounded-lg transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  分享队伍
+                </button>
+                {(team.status === "recruiting" || team.status === "full") && (
+                  <button
+                    onClick={() => setShowFormConfirm(true)}
+                    disabled={isForming}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-700 hover:bg-white rounded-lg transition-colors disabled:opacity-50 font-medium"
+                  >
+                    {isForming && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <Users className="w-4 h-4" />
+                    {isFull ? copy.teams.formTeam : copy.teams.formTeamUnderfilled}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 成员状态（已加入/待审核） */}
+            {isMember && (
+              <div className="bg-amber-50 rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-2 text-amber-700">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="font-medium text-sm">已加入队伍</span>
+                </div>
+                <button
+                  onClick={() => setShowLeave(true)}
+                  className="w-full text-xs text-stone-400 hover:text-red-600 py-1 transition-colors"
+                >
+                  退出队伍
+                </button>
+              </div>
+            )}
+
+            {isPending && (
+              <div className="bg-stone-50 rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-2 text-stone-500">
+                  <Clock className="w-4 h-4" />
+                  <span className="font-medium text-sm">申请待审核</span>
+                </div>
+                <a href="/my-teams" className="block text-center text-xs text-amber-600 hover:text-amber-700">
+                  查看我的队伍 →
+                </a>
+              </div>
+            )}
+
+            {/* 待审核申请模块（仅队长可见） */}
+            {isLeader && applications.length > 0 && (
+              <div className="border-t border-stone-100 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-xs text-stone-500">
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span className="font-medium">待审核申请</span>
+                  </div>
+                  <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium">
+                    {applications.length} 人
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {applications.map((app) => (
+                    <ApplicationCard
+                      key={app.id}
+                      application={app}
+                      onApprove={() => handleApprove(app.userId)}
+                      onReject={() => handleReject(app.userId)}
+                      isTeamFull={isFull}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </aside>
+
+          {/* 右侧主内容 */}
+          <div className="space-y-6">
+            {/* ── 地点封面图（大尺寸，可点击）── */}
+            {location && (
+              <a
+                href={`/locations/${location.id}`}
+                className="group block"
+              >
+                <div className="relative h-[300px] lg:h-[400px] rounded-2xl overflow-hidden bg-stone-100 hover:shadow-xl hover:shadow-amber-100/30 transition-all duration-300">
+                  {location.coverImage ? (
+                    <img
+                      src={location.coverImage}
+                      alt={location.name}
+                      className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-800 to-stone-900">
+                      <Mountain className="h-16 w-16 text-amber-400/60" />
+                    </div>
+                  )}
+                  
+                  {/* 渐变遮罩 */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  
+                  {/* 状态徽章（左上角） */}
+                  <div className="absolute top-4 left-4">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-amber-500/90 text-white backdrop-blur-sm shadow-lg">
+                      {statusInfo.label}
+                    </span>
+                  </div>
+                  
+                  {/* 城市标签（右上角） */}
+                  {location.cityName && (
+                    <div className="absolute top-4 right-4">
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-black/40 text-white backdrop-blur-sm">
+                        <MapPin className="w-3.5 h-3.5" />
+                        {location.cityName}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* 底部信息 */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>活动地点</span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">{location.name}</h2>
+                    
+                    {/* 路线信息（可选） */}
+                    {(() => {
+                      const route = location.routes?.[0];
+                      if (!route) return null;
+                      return (
+                        <div className="flex items-center gap-4 text-white/70 text-sm mb-3">
+                          {route.duration && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              {route.duration}
+                            </span>
+                          )}
+                          {route.distance && (
+                            <span className="flex items-center gap-1">
+                              <TrendingUp className="w-4 h-4" />
+                              {route.distance}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                    
+                    {/* 点击提示 */}
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur-sm border border-amber-400/30 text-amber-200 hover:text-white text-sm font-medium transition-all duration-150">
+                      <span>{copy.teams.viewLocationDetail}</span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+                    </div>
+                  </div>
+                </div>
+              </a>
+            )}
+
+            {/* 参与要求 */}
+            {Array.isArray(team.requirements) && team.requirements.length > 0 && (
+              <div className="bg-stone-50 rounded-2xl p-6 space-y-4">
+                <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-500" />
+                  参与要求
+                </h3>
+                <ul className="space-y-3">
+                  {team.requirements.map((req, i) => (
+                    <li key={i} className="flex items-start gap-3 text-base text-stone-600">
+                      <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-sm font-medium flex items-center justify-center mt-0.5 flex-shrink-0">
+                        {i + 1}
+                      </span>
+                      {req}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Guest List */}
+            {members.length > 0 && (
+              <div className="bg-stone-50 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold text-stone-900">Guest List</h3>
+                  <span className="text-sm text-stone-500 bg-white px-3 py-1 rounded-full">
+                    {members.length} Going
+                  </span>
+                </div>
+                <MemberRow members={members} leaderId={team.leader?.id} />
+              </div>
+            )}
+
+            {/* 主操作按钮 */}
+            {canJoin && (
+              <button
+                onClick={() => setShowJoinModal(true)}
+                className="w-full py-4 bg-amber-600 text-white text-lg font-medium rounded-xl hover:bg-amber-700 transition-colors"
+              >
+                申请加入
+              </button>
+            )}
+
+            {/* 名额满提示 */}
+            {!canJoin && !isLeader && !isMember && !isPending && team.status === "recruiting" && isFull && (
+              <div className="bg-stone-50 rounded-2xl p-6 text-center">
+                <p className="text-base text-stone-400">名额已满，无法加入</p>
+              </div>
+            )}
+
+            {/* 已结束/已取消提示 */}
+            {!canJoin && !isLeader && !isMember && !isPending && team.status !== "recruiting" && (
+              <div className="bg-stone-50 rounded-2xl p-6 text-center">
+                <p className="text-base text-stone-400">
+                  {team.status === "completed" ? copy.teams.statusEnded : copy.teams.statusCancelled}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 加入弹窗 */}
+      {showJoinModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-stone-900">申请加入</h2>
+              <button onClick={() => setShowJoinModal(false)} className="text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <textarea
+              value={joinMsg}
+              onChange={(e) => setJoinMsg(e.target.value)}
+              placeholder={copy.teams.joinPlaceholder}
+              rows={3}
+              className="w-full px-4 py-3 bg-stone-50 rounded-xl text-sm mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-amber-200"
+            />
+            <button
+              onClick={handleJoin}
+              disabled={joining}
+              className="w-full py-3 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
+            >
+              {joining ? "提交中..." : "提交申请"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 退出确认 */}
+      {showLeave && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
+            <h3 className="text-lg font-bold text-stone-900 mb-2">{copy.teams.leaveTeamConfirm}</h3>
+            <p className="text-sm text-stone-500 mb-4">{copy.teams.leaveTeamWarning}</p>
+            <button onClick={handleLeave} className="w-full py-3 bg-red-500 text-white rounded-xl mb-2 hover:bg-red-600 transition-colors">
+              {copy.teams.leaveTeam}
+            </button>
+            <button onClick={() => setShowLeave(false)} className="w-full py-3 text-stone-500 hover:bg-stone-50 rounded-xl transition-colors">
+              {copy.common.cancel}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 组建队伍确认 */}
+      {showFormConfirm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
+            <h3 className="text-lg font-bold text-stone-900 mb-2">
+              {isFull ? copy.teams.formTeamConfirm : copy.teams.formTeamUnderfilledConfirm}
+            </h3>
+            <p className="text-sm text-stone-500 mb-4">{copy.teams.formTeamWarning}</p>
+            <button
+              onClick={handleFormTeam}
+              disabled={isForming}
+              className="w-full py-3 bg-amber-600 text-white rounded-xl mb-2 hover:bg-amber-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isForming && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isFull ? copy.teams.formTeam : copy.teams.formTeamUnderfilled}
+            </button>
+            <button
+              onClick={() => setShowFormConfirm(false)}
+              disabled={isForming}
+              className="w-full py-3 text-stone-500 hover:bg-stone-50 rounded-xl transition-colors"
+            >
+              {copy.common.cancel}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 编辑弹窗 */}
+      {showEdit && team && (
+        <EditTeamModal open={showEdit} team={team} onClose={() => setShowEdit(false)} onSuccess={handleEditSuccess} />
+      )}
+
+      {/* 分享弹窗 */}
+      {showShare && (
+        <SharePosterModal
+          type="team"
+          title={team.title}
+          subtitle={team.date}
+          url={window.location.href}
+          meta={`${team.currentMembers}/${team.maxMembers} 人`}
+          onClose={() => setShowShare(false)}
+          onToast={showToast}
+        />
+      )}
+
+      {/* Toast */}
+      <ToastDisplay toast={toast} exiting={exiting} />
+
+      <Footer />
+    </main>
+  );
+}
+
+function EditTeamModal({
+  open,
+  team,
+  onClose,
+  onSuccess,
+}: {
+  open: boolean;
+  team: Team;
+  onClose: () => void;
+  onSuccess: (updated: Partial<Team>) => void;
+}) {
+  const [title, setTitle] = React.useState(team.title);
+  const [desc, setDesc] = React.useState(team.description || "");
+  const [max, setMax] = React.useState(String(team.maxMembers));
+  const [time, setTime] = React.useState(team.time);
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (open) {
+      setTitle(team.title);
+      setDesc(team.description || "");
+      setMax(String(team.maxMembers));
+      setTime(team.time);
+    }
+  }, [open, team]);
+
+  const submit = async () => {
+    if (!title.trim()) return;
+    const maxNum = parseInt(max, 10);
+    if (maxNum < 2 || maxNum > 50 || maxNum < team.currentMembers) return;
+    setSaving(true);
+    try {
+      const res = await fetchAPI(`/api/teams/${team.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: desc.trim() || null,
+          maxMembers: maxNum,
+          time,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        onSuccess({ title: title.trim(), description: desc.trim() || undefined, maxMembers: maxNum, time });
+        onClose();
+      }
+    } catch {
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-stone-900">{copy.teams.editTitle}</h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-stone-600 mb-1 block">队伍名称</label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-4 py-2.5 bg-stone-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-stone-600 mb-1 block">队伍描述</label>
+            <textarea
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              rows={2}
+              className="w-full px-4 py-2.5 bg-stone-50 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-200"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-stone-600 mb-1 block">人数上限</label>
+              <input
+                type="number"
+                min={2}
+                max={50}
+                value={max}
+                onChange={(e) => setMax(e.target.value)}
+                className="w-full px-4 py-2.5 bg-stone-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-stone-600 mb-1 block">出发时间</label>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full px-4 py-2.5 bg-stone-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+              />
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={submit}
+          disabled={saving}
+          className="mt-5 w-full py-3 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
+        >
+          {saving ? "保存中..." : copy.common.save}
+        </button>
+      </div>
+    </div>
+  );
+}

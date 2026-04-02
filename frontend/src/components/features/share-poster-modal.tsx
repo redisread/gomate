@@ -109,14 +109,14 @@ export function SharePosterModal({
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        const coverImg = imageUrl ? new Image() : null;
+        let coverImg = imageUrl ? new Image() : null;
         if (coverImg && imageUrl) {
           coverImg.crossOrigin = "anonymous";
           try {
             await new Promise<void>((resolve, reject) => {
-              coverImg.onload = () => resolve();
-              coverImg.onerror = () => reject();
-              coverImg.src = imageUrl;
+              coverImg!.onload = () => resolve();
+              coverImg!.onerror = () => reject();
+              coverImg!.src = imageUrl;
             });
           } catch {
             coverImg = null;
