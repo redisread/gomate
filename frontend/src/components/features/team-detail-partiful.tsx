@@ -554,7 +554,6 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                   <Avatar name={team.leader.nickname || team.leader.name || undefined} avatar={team.leader.avatar} isLeader size="md" />
                   <div className="flex-1">
                     <p className="font-semibold text-stone-900 text-sm">{team.leader.nickname || team.leader.name}</p>
-                    <p className="text-xs text-stone-500">队伍队长</p>
                   </div>
                 </a>
               </div>

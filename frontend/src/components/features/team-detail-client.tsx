@@ -384,6 +384,98 @@ function JoinBottomSheet({
   );
 }
 
+// ─── 微信号编辑弹窗（移动端抽屉 + 桌面端居中弹窗）────────────────────────────────
+function WechatEditSheet({
+  open,
+  onClose,
+  onSave,
+  isSavingWechat,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSave: (wechat: string) => void;
+  isSavingWechat: boolean;
+}) {
+  const [wechatInput, setWechatInput] = React.useState("");
+
+  React.useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+      setWechatInput("");
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end lg:items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* 移动端：底部抽屉 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wechat-sheet-title"
+        className="relative bg-white rounded-t-3xl lg:rounded-3xl shadow-warm-xl w-full max-w-sm animate-[slide-up-toast_0.3s_cubic-bezier(0.16,1,0.3,1)_both] lg:animate-[fadeScaleIn_0.2s_ease_both]"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="flex justify-center pt-3 pb-1 lg:hidden">
+          <div className="w-10 h-1 bg-stone-200 rounded-full" />
+        </div>
+
+        <div className="px-5 pb-5 pt-3">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 id="wechat-sheet-title" className="font-bold text-stone-900 text-lg">
+                {copy.profile.wechat}
+              </h3>
+              <p className="text-sm text-stone-400 mt-0.5">
+                {copy.profile.wechatHint}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-stone-200 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <input
+            type="text"
+            value={wechatInput}
+            onChange={(e) => setWechatInput(e.target.value)}
+            placeholder={copy.profile.wechatPlaceholder}
+            className="w-full px-4 py-3 rounded-2xl text-stone-800 text-sm placeholder:text-stone-400 focus:outline-none mb-4 bg-stone-50 border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 transition-all"
+          />
+
+          <button
+            onClick={() => onSave(wechatInput)}
+            disabled={isSavingWechat || !wechatInput.trim()}
+            className="w-full py-3.5 font-semibold text-white rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-brand-glow transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98] text-base"
+          >
+            {isSavingWechat && <Loader2 className="h-4 w-4 animate-spin" />}
+            {copy.common.save}
+          </button>
+
+          <button
+            onClick={onClose}
+            disabled={isSavingWechat}
+            className="w-full py-3 rounded-2xl text-stone-500 text-sm font-medium hover:bg-stone-50 transition-colors mt-2"
+          >
+            {copy.common.cancel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── 退出确认对话框 ────────────────────────────────────────────────────────────
 function LeaveConfirmDialog({
   open,
@@ -411,6 +503,49 @@ function LeaveConfirmDialog({
           className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors mb-2"
         >
           {copy.teams.leaveTeam}
+        </button>
+        <button
+          onClick={onCancel}
+          className="w-full py-3 rounded-2xl text-stone-500 text-sm font-medium hover:bg-stone-50 transition-colors"
+        >
+          {copy.common.cancel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── 微信号确认对话框 ────────────────────────────────────────────────────────────
+function WechatRequiredConfirmDialog({
+  open,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-4">
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="wechat-confirm-title"
+        aria-describedby="wechat-confirm-desc"
+        className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-warm-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
+        <h3 id="wechat-confirm-title" className="text-lg font-bold text-stone-900 mb-2">
+          {copy.teams.wechatRequiredJoinTitle}
+        </h3>
+        <p id="wechat-confirm-desc" className="text-sm text-stone-500 leading-relaxed mb-6">
+          {copy.teams.wechatRequiredJoinDesc}
+        </p>
+        <button
+          onClick={onConfirm}
+          className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white text-sm font-semibold transition-colors mb-2"
+        >
+          去填写
         </button>
         <button
           onClick={onCancel}
@@ -832,6 +967,11 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
   const [showFormConfirm, setShowFormConfirm] = React.useState(false);
   const [isForming, setIsForming] = React.useState(false);
 
+  // 微信号编辑相关状态
+  const [showWechatConfirm, setShowWechatConfirm] = React.useState(false);
+  const [showWechatSheet, setShowWechatSheet] = React.useState(false);
+  const [isSavingWechat, setIsSavingWechat] = React.useState(false);
+
   // 审批相关状态
   const [applications, setApplications] = React.useState<Application[]>([]);
   const [isLoadingApps, setIsLoadingApps] = React.useState(false);
@@ -978,6 +1118,7 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
         body: JSON.stringify({ message: joinMessage }),
       });
       const data = await res.json();
+      
       if (data.success) {
         setJoinSuccess(true);
         setUserMemberStatus("pending");
@@ -985,12 +1126,57 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
         showToast({ type: "success", message: copy.success.applied });
         loadTeam();
       } else {
-        showToast({ type: "error", message: data.error || copy.errors.joinFailed });
+        const errorMsg = data.error || copy.errors.joinFailed;
+        
+        if (errorMsg.includes("微信") || errorMsg.includes("wechat")) {
+          console.log("[DEBUG] 进入微信分支，errorMsg:", errorMsg);
+          console.log("[DEBUG] showJoinSheet:", showJoinSheet);
+          // 桌面端：showJoinSheet 本来就是 false，不需要等待
+          // 移动端：需要等待 JoinBottomSheet 关闭后再显示确认对话框
+          if (showJoinSheet) {
+            console.log("[DEBUG] 移动端分支");
+            setShowJoinSheet(false);
+            setTimeout(() => setShowWechatConfirm(true), 350);
+          } else {
+            console.log("[DEBUG] 桌面端分支，准备显示确认对话框");
+            setShowWechatConfirm(true);
+            console.log("[DEBUG] setShowWechatConfirm(true) 已执行，当前 showWechatConfirm:", true);
+          }
+        } else {
+          showToast({ type: "error", message: errorMsg });
+        }
       }
-    } catch {
+    } catch (err) {
       showToast({ type: "error", message: copy.errors.joinFailed });
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const handleSaveWechat = async (wechat: string) => {
+    if (!wechat.trim()) {
+      showToast({ type: "error", message: "微信号不能为空" });
+      return;
+    }
+    
+    setIsSavingWechat(true);
+    try {
+      const updateRes = await fetchAPI("/api/user/update", {
+        method: "PATCH",
+        body: JSON.stringify({ userId: currentUserId, wechat: wechat.trim() }),
+      });
+      const updateData = await updateRes.json();
+      
+      if (updateData.success || updateData.user) {
+        setShowWechatSheet(false);
+        showToast({ type: "success", message: "微信号已保存" });
+      } else {
+        showToast({ type: "error", message: "保存微信号失败" });
+      }
+    } catch {
+      showToast({ type: "error", message: "保存微信号失败" });
+    } finally {
+      setIsSavingWechat(false);
     }
   };
 
@@ -1796,6 +1982,24 @@ export function TeamDetailClient({ teamId }: TeamDetailClientProps) {
         fillRatio={fillRatio}
         currentMembers={team.currentMembers}
         maxMembers={team.maxMembers}
+      />
+
+      {/* 微号确认对话框 */}
+      <WechatRequiredConfirmDialog
+        open={showWechatConfirm}
+        onCancel={() => setShowWechatConfirm(false)}
+        onConfirm={() => {
+          setShowWechatConfirm(false);
+          setShowWechatSheet(true);
+        }}
+      />
+
+      {/* 微信号编辑抽屉 */}
+      <WechatEditSheet
+        open={showWechatSheet}
+        onClose={() => setShowWechatSheet(false)}
+        onSave={handleSaveWechat}
+        isSavingWechat={isSavingWechat}
       />
 
       {/* 退出确认对话框 */}
