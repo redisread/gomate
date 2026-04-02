@@ -245,6 +245,9 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
   const [showFormConfirm, setShowFormConfirm] = React.useState(false);
   const [isForming, setIsForming] = React.useState(false);
   const [applications, setApplications] = React.useState<Application[]>([]);
+  const [showWechatConfirm, setShowWechatConfirm] = React.useState(false);
+  const [showWechatSheet, setShowWechatSheet] = React.useState(false);
+  const [isSavingWechat, setIsSavingWechat] = React.useState(false);
   const { toast, exiting, show: showToast } = useToast();
 
   React.useEffect(() => {
@@ -313,12 +316,43 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
         showToast({ type: "success", message: copy.success.applied });
         loadTeam();
       } else {
-        showToast({ type: "error", message: data.error || copy.errors.joinFailed });
+        const errorMsg = data.error || copy.errors.joinFailed;
+        if (errorMsg.includes("微信") || errorMsg.includes("wechat")) {
+          setShowJoinModal(false);
+          setTimeout(() => setShowWechatConfirm(true), 300);
+        } else {
+          showToast({ type: "error", message: errorMsg });
+        }
       }
     } catch {
       showToast({ type: "error", message: copy.errors.joinFailed });
     } finally {
       setJoining(false);
+    }
+  };
+
+  const handleSaveWechat = async (wechat: string) => {
+    if (!wechat.trim()) {
+      showToast({ type: "error", message: "微信号不能为空" });
+      return;
+    }
+    setIsSavingWechat(true);
+    try {
+      const res = await fetchAPI("/api/user/update", {
+        method: "PATCH",
+        body: JSON.stringify({ userId, wechat: wechat.trim() }),
+      });
+      const data = await res.json();
+      if (data.success || data.user) {
+        setShowWechatSheet(false);
+        showToast({ type: "success", message: "微信号已保存，请重新申请加入" });
+      } else {
+        showToast({ type: "error", message: "保存微信号失败" });
+      }
+    } catch {
+      showToast({ type: "error", message: "保存微信号失败" });
+    } finally {
+      setIsSavingWechat(false);
     }
   };
 
@@ -844,11 +878,104 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
         />
       )}
 
+      {/* 微信号确认对话框 */}
+      {showWechatConfirm && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+          >
+            <h3 className="text-lg font-bold text-stone-900 mb-2">
+              {copy.teams.wechatRequiredJoinTitle}
+            </h3>
+            <p className="text-sm text-stone-500 leading-relaxed mb-6">
+              {copy.teams.wechatRequiredJoinDesc}
+            </p>
+            <button
+              onClick={() => { setShowWechatConfirm(false); setShowWechatSheet(true); }}
+              className="w-full py-3 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 transition-colors mb-2"
+            >
+              {copy.teams.fillWechatBtn || "去填写"}
+            </button>
+            <button
+              onClick={() => setShowWechatConfirm(false)}
+              className="w-full py-3 text-stone-500 text-sm font-medium hover:bg-stone-50 rounded-xl transition-colors"
+            >
+              {copy.common.cancel}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 微信号编辑弹窗 */}
+      {showWechatSheet && (
+        <WechatEditModal
+          onClose={() => setShowWechatSheet(false)}
+          onSave={handleSaveWechat}
+          isSaving={isSavingWechat}
+        />
+      )}
+
       {/* Toast */}
       <ToastDisplay toast={toast} exiting={exiting} />
 
       <Footer />
     </main>
+  );
+}
+
+function WechatEditModal({
+  onClose,
+  onSave,
+  isSaving,
+}: {
+  onClose: () => void;
+  onSave: (wechat: string) => void;
+  isSaving: boolean;
+}) {
+  const [wechatInput, setWechatInput] = React.useState("");
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-stone-900">{copy.profile.wechat}</h3>
+            <p className="text-xs text-stone-400 mt-0.5">{copy.profile.wechatHint}</p>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={isSaving}
+            className="text-stone-400 hover:text-stone-600"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <input
+          type="text"
+          value={wechatInput}
+          onChange={(e) => setWechatInput(e.target.value)}
+          placeholder={copy.profile.wechatPlaceholder}
+          className="w-full px-4 py-3 bg-stone-50 rounded-xl text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-amber-200 border border-stone-200"
+        />
+        <button
+          onClick={() => onSave(wechatInput)}
+          disabled={isSaving || !wechatInput.trim()}
+          className="w-full py-3 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 mb-2"
+        >
+          {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+          保存
+        </button>
+        <button
+          onClick={onClose}
+          disabled={isSaving}
+          className="w-full py-3 text-stone-500 text-sm hover:bg-stone-50 rounded-xl transition-colors"
+        >
+          {copy.common.cancel}
+        </button>
+      </div>
+    </div>
   );
 }
 
