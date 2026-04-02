@@ -16,6 +16,8 @@ import {
   Lock,
   Flag,
   CheckCircle2,
+  Tag,
+  CalendarDays,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
@@ -433,32 +435,79 @@ export function TeamsClient() {
     pageSize: 12,
   });
   const [showFilters, setShowFilters] = React.useState(false);
-  const [selectedDifficulty, setSelectedDifficulty] = React.useState<string[]>(
-    []
-  );
+  const [selectedDifficulty, setSelectedDifficulty] = React.useState<string[]>([]);
+  
+  // 日期范围筛选
+  const [startDate, setStartDate] = React.useState<string>("");
+  const [endDate, setEndDate] = React.useState<string>("");
+  
+  // 标签筛选
+  const [availableTags, setAvailableTags] = React.useState<{ id: string; name: string }[]>([]);
+  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
 
+  // 初始化：从 URL 读取筛选条件
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q") || "";
     const page = parseInt(params.get("page") || "1", 10);
+    const difficulty = params.get("difficulty")?.split(",").filter(Boolean) || [];
+    const start = params.get("startDate") || "";
+    const end = params.get("endDate") || "";
+    const tags = params.get("tags")?.split(",").filter(Boolean) || [];
+    
     setSearchQuery(q);
     setCurrentPage(page);
-    loadTeams({ page, search: q });
+    setSelectedDifficulty(difficulty);
+    setStartDate(start);
+    setEndDate(end);
+    setSelectedTags(tags);
+    
+    loadTeams({ 
+      page, 
+      search: q, 
+      difficulty,
+      startDateFrom: start,
+      startDateTo: end,
+      tagIds: tags,
+    });
+  }, []);
+  
+  // 加载可用标签（type=activity）
+  React.useEffect(() => {
+    fetchAPI("/tags?type=activity")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.tags) {
+          setAvailableTags(data.tags);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // 搜索防抖
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      loadTeams({ page: 1, search: searchQuery, difficulty: selectedDifficulty });
+      loadTeams({ 
+        page: 1, 
+        search: searchQuery, 
+        difficulty: selectedDifficulty,
+        startDateFrom: startDate,
+        startDateTo: endDate,
+        tagIds: selectedTags,
+      });
+      updateURL();
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedDifficulty]);
+  }, [searchQuery, selectedDifficulty, startDate, endDate, selectedTags]);
 
   const loadTeams = React.useCallback(
     async (params: {
       page?: number;
       search?: string;
       difficulty?: string[];
+      startDateFrom?: string;
+      startDateTo?: string;
+      tagIds?: string[];
     }) => {
       setIsLoading(true);
       try {
@@ -469,6 +518,9 @@ export function TeamsClient() {
         if (params.search) query.set("search", params.search);
         if (params.difficulty?.length)
           query.set("difficulty", params.difficulty.join(","));
+        if (params.startDateFrom) query.set("startDateFrom", params.startDateFrom);
+        if (params.startDateTo) query.set("startDateTo", params.startDateTo);
+        if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
 
         const res = await fetchAPI(`/teams?${query}`);
         const data = await res.json();
@@ -484,6 +536,20 @@ export function TeamsClient() {
     },
     []
   );
+  
+  // 更新 URL 参数
+  const updateURL = () => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("q", searchQuery);
+    if (currentPage > 1) params.set("page", currentPage.toString());
+    if (selectedDifficulty.length) params.set("difficulty", selectedDifficulty.join(","));
+    if (startDate) params.set("startDate", startDate);
+    if (endDate) params.set("endDate", endDate);
+    if (selectedTags.length) params.set("tags", selectedTags.join(","));
+    
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+    window.history.replaceState({}, "", newUrl);
+  };
 
   const handleDifficultyToggle = (id: string) => {
     const next = selectedDifficulty.includes(id)
@@ -492,20 +558,88 @@ export function TeamsClient() {
     setSelectedDifficulty(next);
     setCurrentPage(1);
   };
+  
+  const handleTagToggle = (tagId: string) => {
+    const next = selectedTags.includes(tagId)
+      ? selectedTags.filter((t) => t !== tagId)
+      : [...selectedTags, tagId];
+    setSelectedTags(next);
+    setCurrentPage(1);
+  };
+  
+  // 日期快捷选择
+  const handleDateQuickSelect = (type: string) => {
+    const today = new Date();
+    const formatDate = (d: Date) => d.toISOString().split("T")[0];
+    
+    switch (type) {
+      case "today":
+        setStartDate(formatDate(today));
+        setEndDate(formatDate(today));
+        break;
+      case "tomorrow":
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        setStartDate(formatDate(tomorrow));
+        setEndDate(formatDate(tomorrow));
+        break;
+      case "weekend": {
+        const day = today.getDay();
+        const daysUntilSaturday = day === 0 ? 6 : 6 - day; // 0=周日
+        const saturday = new Date(today);
+        saturday.setDate(today.getDate() + daysUntilSaturday);
+        const sunday = new Date(saturday);
+        sunday.setDate(saturday.getDate() + 1);
+        setStartDate(formatDate(saturday));
+        setEndDate(formatDate(sunday));
+        break;
+      }
+      case "7days": {
+        const next7Days = new Date(today);
+        next7Days.setDate(today.getDate() + 7);
+        setStartDate(formatDate(today));
+        setEndDate(formatDate(next7Days));
+        break;
+      }
+      case "30days": {
+        const next30Days = new Date(today);
+        next30Days.setDate(today.getDate() + 30);
+        setStartDate(formatDate(today));
+        setEndDate(formatDate(next30Days));
+        break;
+      }
+      case "clear":
+        setStartDate("");
+        setEndDate("");
+        break;
+    }
+    setCurrentPage(1);
+  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    loadTeams({ page, search: searchQuery, difficulty: selectedDifficulty });
+    loadTeams({ 
+      page, 
+      search: searchQuery, 
+      difficulty: selectedDifficulty,
+      startDateFrom: startDate,
+      startDateTo: endDate,
+      tagIds: selectedTags,
+    });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const clearFilters = () => {
     setSelectedDifficulty([]);
     setSearchQuery("");
+    setStartDate("");
+    setEndDate("");
+    setSelectedTags([]);
     setCurrentPage(1);
+    setShowFilters(false);
   };
 
-  const activeFiltersCount = selectedDifficulty.length;
+  const activeFiltersCount = selectedDifficulty.length + (startDate ? 1 : 0) + (endDate ? 1 : 0) + selectedTags.length;
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -568,7 +702,7 @@ export function TeamsClient() {
             </h1>
             {/* TODO: 添加到 copy.ts: teams.pageTagline */}
             <p className="text-stone-500 text-base">
-              山野不孤独，总有人和你走同一条路
+              有趣的地点，同频的伙伴
             </p>
           </div>
 
@@ -622,7 +756,69 @@ export function TeamsClient() {
 
           {/* 筛选面板（展开动画）*/}
           {showFilters && (
-            <div className="mt-4 pt-5 pb-1 border-t border-stone-100/80 space-y-4 animate-in slide-in-from-top-2 duration-200">
+            <div className="mt-4 pt-5 pb-1 border-t border-stone-100/80 space-y-5 animate-in slide-in-from-top-2 duration-200">
+              {/* 日期范围筛选 */}
+              <div>
+                <span className="text-sm font-semibold text-stone-600 mb-3 block flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4" />
+                  {copy.filter.dateRange}
+                </span>
+                {/* 快捷选项 */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {[
+                    { key: "today", label: copy.filter.dateQuickToday },
+                    { key: "tomorrow", label: copy.filter.dateQuickTomorrow },
+                    { key: "weekend", label: copy.filter.dateQuickWeekend },
+                    { key: "7days", label: copy.filter.dateQuick7Days },
+                    { key: "30days", label: copy.filter.dateQuick30Days },
+                  ].map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => handleDateQuickSelect(opt.key)}
+                      className="px-3 py-1.5 text-xs rounded-full border border-stone-200 bg-white text-stone-600 hover:border-amber-300 hover:text-amber-700 transition-colors"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                  {(startDate || endDate) && (
+                    <button
+                      onClick={() => handleDateQuickSelect("clear")}
+                      className="px-3 py-1.5 text-xs rounded-full border border-stone-200 text-stone-400 hover:text-stone-600 transition-colors"
+                    >
+                      清除
+                    </button>
+                  )}
+                </div>
+                {/* 日期输入 */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 text-stone-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                    />
+                  </div>
+                  <span className="text-stone-400 text-sm">至</span>
+                  <div className="flex-1">
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      min={startDate}
+                      className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 text-stone-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 难度筛选 */}
               <div>
                 <span className="text-sm font-semibold text-stone-600 mb-3 block">
                   {copy.filter.difficulty}
@@ -648,6 +844,36 @@ export function TeamsClient() {
                   })}
                 </div>
               </div>
+
+              {/* 标签筛选 */}
+              {availableTags.length > 0 && (
+                <div>
+                  <span className="text-sm font-semibold text-stone-600 mb-3 block flex items-center gap-2">
+                    <Tag className="h-4 w-4" />
+                    {copy.filter.tags}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {availableTags.map((tag) => {
+                      const isSelected = selectedTags.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          onClick={() => handleTagToggle(tag.id)}
+                          className={cn(
+                            "px-3 py-1.5 text-sm rounded-full border transition-all duration-200",
+                            isSelected
+                              ? "bg-amber-100 border-amber-400 text-amber-800"
+                              : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                          )}
+                        >
+                          {tag.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {activeFiltersCount > 0 && (
                 <button
                   onClick={clearFilters}
