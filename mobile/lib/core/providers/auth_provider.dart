@@ -106,7 +106,12 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   /// 退出登录
   Future<void> logout() async {
-    await _authApi.logout();
+    try {
+      await _authApi.logout();
+    } catch (_) {
+      // 即使服务端退出失败，也清除本地 session
+      await _authApi.clearSession();
+    }
     state = const AsyncValue.data(AuthState());
   }
 }

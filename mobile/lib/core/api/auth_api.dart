@@ -147,6 +147,11 @@ class AuthApi {
     await _client.clearSession();
   }
 
+  /// 清除本地 session（不请求服务端）
+  Future<void> clearSession() async {
+    await _client.clearSession();
+  }
+
   /// 获取当前登录用户信息（通过 session cookie 鉴权）
   /// 返回 null 表示未登录或 session 已过期
   /// 获取当前登录用户完整信息

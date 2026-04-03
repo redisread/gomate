@@ -682,6 +682,7 @@ class _LocationGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => context.push('/locations/${location.id}'),
       child: Container(
         decoration: BoxDecoration(
