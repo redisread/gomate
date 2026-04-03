@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/api_client.dart';
 import '../api/auth_api.dart';
 import '../models/user.dart';
 
@@ -104,9 +105,14 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     );
   }
 
-  /// 退出登录
+  /// 退出登录（即使服务端请求失败也清除本地状态）
   Future<void> logout() async {
-    await _authApi.logout();
+    try {
+      await _authApi.logout();
+    } catch (_) {
+      // 服务端 sign-out 失败不阻塞退出，仍清除本地 session
+      await ApiClient().clearSession();
+    }
     state = const AsyncValue.data(AuthState());
   }
 }
