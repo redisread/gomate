@@ -67,13 +67,14 @@ export const copy = {
 
   // ─── 页脚 ─────────────────────────────────────────────────────────────────
   footer: {
-    tagline: "发现有趣的地方，找到同行的人。",
+    tagline: "发现有趣的地方,找到同行的人。",
     explore: "探索",
     exploreLocations: "探索地点",
     exploreTeams: "找队伍",
     exploreCreate: "发布队伍",
     support: "支持",
     supportAbout: "关于我们",
+    supportBlog: "博客",
     supportFeedback: "反馈建议",
     supportHelp: "帮助中心",
     legal: "法律",
@@ -83,7 +84,6 @@ export const copy = {
     contactEmail: "hi@gomate.live",
     backToTop: "回到顶部",
     copyright: "GoMate 版权所有",
-    // 社交媒体
     socials: {
       followUs: "关注我们",
       wechat: "微信",
@@ -91,6 +91,22 @@ export const copy = {
       telegram: "电报",
       xiaohongshu: "小红书",
     },
+  },
+
+  blog: {
+    pageTitle: "GoMate 博客",
+    pageSubtitle: "产品动态 · 用户故事 · 循步指南 · 活动回顾",
+    categoryProduct: "产品动态",
+    categoryStory: "用户故事",
+    categoryGuide: "循步指南",
+    categoryActivity: "活动回顾",
+    readMore: "阅读全文",
+    readingTime: "预计阅读 {time} 分钟",
+    publishDate: "发布于",
+    backToBlog: "返回博客",
+    shareArticle: "分享文章",
+    authorLabel: "作者",
+    rssSubscribe: "订阅 RSS",
   },
 
   // ─── Hero 首屏 ────────────────────────────────────────────────────────────
