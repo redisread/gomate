@@ -1,0 +1,10 @@
+[2026-04-03T11:39:48.963+08:00] Failed to start WDA: Error: WebDriverAgent is not running on localhost:8100. Please start WebDriverAgent manually:
+
+🔧 Setup Instructions:
+1. Install WebDriverAgent: npm install appium-webdriveragent
+2. Build and run WebDriverAgent:
+   - For simulators: Use Xcode to run WebDriverAgentRunner on your target simulator
+   - For real devices: Build WebDriverAgentRunner and install on your device
+3. Ensure WebDriverAgent is listening on localhost:8100
+
+💡 Alternative: You can also specify a different host/port where WebDriverAgent is running.
