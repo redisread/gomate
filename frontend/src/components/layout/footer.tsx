@@ -165,6 +165,7 @@ export function Footer() {
 
   const supportLinks = [
     { href: "/about", label: copy.footer.supportAbout },
+    { href: "/blog", label: copy.footer.supportBlog },
     { href: "/feedback", label: copy.footer.supportFeedback },
     { href: "/help", label: copy.footer.supportHelp },
   ];
