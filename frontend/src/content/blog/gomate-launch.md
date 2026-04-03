@@ -3,9 +3,7 @@ title: "GoMate 1.0 正式发布"
 description: "极简地点组队平台上线，深圳徒步爱好者的新选择"
 pubDate: 2026-04-03
 author: "GoMate Team"
-category: "product"
-heroImage: "/blog/gomate-launch.jpg"
-tags: ["产品发布", "新功能", "组队"]
+tags: ["产品动态", "新功能", "组队"]
 ---
 
 ## 为什么做 GoMate
@@ -18,11 +16,11 @@ tags: ["产品发布", "新功能", "组队"]
 
 ## 核心功能
 
-### 🗺️ 探索地点
+### 探索地点
 
 咖啡馆、公园、山野、海岸，我们精选深圳各地的徒步路线和城市探索点。每个地点都有详细的路线信息、配套设施、最佳季节建议。
 
-### 👥 结构化组队
+### 结构化组队
 
 不同于微信群那种"有人去XX吗？"的混乱消息，GoMate 提供了清晰的结构化组队方式：
 
@@ -30,15 +28,17 @@ tags: ["产品发布", "新功能", "组队"]
 - 成员申请加入，队长审核
 - 队伍组建成功后，所有人可以在队伍页面查看详细信息
 
-### 📝 极简体验
+### 极简体验
 
 没有复杂的社交功能，没有冗余的信息。打开 App，找到想去的地方，发起队伍或加入队伍，出发。
 
 ## 技术亮点
 
-- **后端**：Hono + Cloudflare Workers + D1 (SQLite)
-- **前端**：Astro + React + Tailwind CSS
-- **移动端**：Flutter + Riverpod
+| 层级 | 技术栈 |
+|------|--------|
+| 后端 | Hono + Cloudflare Workers + D1 (SQLite) |
+| 前端 | Astro + React + Tailwind CSS |
+| 移动端 | Flutter + Riverpod |
 
 全栈 Cloudflare 方案，全球 CDN 加速，加载速度快到飞起。
 

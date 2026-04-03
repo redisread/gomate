@@ -7,7 +7,6 @@ const blogCollection = defineCollection({
     description: z.string(),
     pubDate: z.coerce.date(),
     author: z.string().default('GoMate Team'),
-    category: z.enum(['product', 'story', 'guide', 'activity']),
     heroImage: z.string().optional(),
     tags: z.array(z.string()).default([]),
   }),
