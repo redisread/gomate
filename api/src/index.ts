@@ -14,6 +14,8 @@ import { hikingRoutesRoute } from "./routes/hiking-routes";
 import { adminRoute } from "./routes/admin";
 import { amapRoute } from "./routes/amap";
 import { poisRoute } from "./routes/pois";
+import { updateExpiredTeams } from "./lib/team-status";
+import { createDb } from "./db";
 import type { Env } from "./lib/auth";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -64,3 +66,15 @@ app.onError((err, c) => {
 });
 
 export default app;
+
+/**
+ * Cloudflare Workers 定时任务入口
+ * 每天执行一次，更新过期队伍状态：
+ * - recruiting + 过期 → cancelled
+ * - formed + 过期 → completed
+ */
+export const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+  const db = createDb(env.DB);
+  const updatedIds = await updateExpiredTeams(db);
+  console.log(`[Cron] 已更新 ${updatedIds.length} 个过期队伍:`, updatedIds);
+};

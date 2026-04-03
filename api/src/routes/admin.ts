@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
+import { updateExpiredTeams } from "../lib/team-status";
 
 const admin = new Hono<{ Bindings: Env }>();
 
@@ -46,6 +47,32 @@ admin.post("/clear-rate-limit", async (c) => {
     if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
     console.error("Clear rate limit error:", error);
     return c.json({ error: "清除失败" }, 500);
+  }
+});
+
+/**
+ * POST /admin/cron/update-expired-teams
+ * 手动触发过期队伍状态更新（仅管理员）
+ * 用于本地测试和紧急处理
+ */
+admin.post("/cron/update-expired-teams", async (c) => {
+  try {
+    await checkAdmin(c);
+    const db = createDb(c.env.DB);
+    const updatedIds = await updateExpiredTeams(db);
+    
+    return c.json({
+      success: true,
+      message: `已更新 ${updatedIds.length} 个过期队伍`,
+      updatedIds,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    const message = (error as Error).message;
+    if (message === "未登录") return c.json({ error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    console.error("Manual cron trigger error:", error);
+    return c.json({ error: "执行失败" }, 500);
   }
 });
 
