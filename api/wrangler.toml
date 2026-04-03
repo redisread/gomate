@@ -41,6 +41,7 @@ FRONTEND_URL = "http://localhost:5432"
 
 # 生产环境
 [env.production]
+name = "gomate-api"
 compatibility_date = "2026-02-26"
 compatibility_flags = ["nodejs_compat"]
 

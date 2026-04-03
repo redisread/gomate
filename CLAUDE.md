@@ -244,8 +244,17 @@ node db/seed.ts
 
 ```
 生产环境（Cloudflare）：
-  API Worker  → https://gomate-api-production.wujiahong2013.workers.dev
-  Frontend    → https://gomate.live
+  API Worker  → gomate-api @ https://api.gomate.live
+  Frontend    → gomate-frontend @ https://gomate.live
+  R2 公共 URL → https://gomate.cos.jiahongw.com
+
+本地开发：
+  API         → http://localhost:8799
+  Frontend    → http://localhost:5432
+```
+生产环境（Cloudflare）：
+  API Worker  → gomate-api @ https://api.gomate.live
+  Frontend    → gomate-frontend @ https://gomate.live
   R2 公共 URL → https://gomate.cos.jiahongw.com
 
 本地开发：
