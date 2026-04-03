@@ -1311,6 +1311,10 @@ export const copy = {
       uploadedCount: "已上传 {current}/{max} 张",
       dragToSort: "拖拽可排序，最大 {size}MB/张",
       imageAlt: "图片 {index}",
+      setAsCover: "设为封面",
+      currentCover: "封面",
+      coverHint: "点击图片可设为封面",
+      selectFromAlbum: "或从下方相册选择",
     },
     // 要求选择器
     requirementSelector: {
