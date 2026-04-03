@@ -1,3 +1,0 @@
-[2026-04-03T11:30:45.911+08:00] Action space from temporary device: Tap, DoubleClick, Input, Scroll, DragAndDrop, Swipe, KeyboardPress, CursorMove, LongPress, Pinch, ClearInput, RunWdaRequest, Launch, Terminate, IOSHomeButton, IOSAppSwitcher
-[2026-04-03T11:30:45.913+08:00] Total tools prepared: 20
-[2026-04-03T11:30:45.913+08:00] Registered 20 tools
