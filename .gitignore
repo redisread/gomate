@@ -58,3 +58,6 @@ cloudflare-env.d.ts
 .backup/
 .claude/worktrees/
 .env.local
+
+# test run logs
+midscene_run/
