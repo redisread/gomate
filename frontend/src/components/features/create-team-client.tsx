@@ -343,38 +343,7 @@ export function CreateTeamClient() {
               </div>
             </FormSection>
 
-            {/* 路线选择（当地点有路线时显示） */}
-            {routes.length > 0 && (
-              <FormSection icon="🗺️" label="徒步路线" hint="选择路线后可自动推荐时长">
-                <div className="relative">
-                  <select
-                    id="routeId"
-                    name="routeId"
-                    value={formData.routeId}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none appearance-none"
-                    style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: formData.routeId ? "#1e1812" : "#8f7f6e" }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "#D97706";
-                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
-                      e.currentTarget.style.background = "#fff";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "#e8e0d7";
-                      e.currentTarget.style.boxShadow = "none";
-                      e.currentTarget.style.background = "#fdfaf6";
-                    }}
-                  >
-                    <option value="">选择一条路线（可选）</option>
-                    {routes.map((route) => (
-                      <option key={route.id} value={route.id}>
-                        {route.name} - {route.difficulty === "easy" ? "简单" : route.difficulty === "moderate" ? "中等" : route.difficulty === "hard" ? "困难" : "专家"} | {route.duration}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </FormSection>
-            )}
+            {/* 路线选择（暂时隐藏） */}
 
             {/* 日期 + 时间 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
