@@ -555,6 +555,37 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
     }
   };
 
+  const members = team?.members || [];
+
+  // 合并队长和队员，队长排在第一位（必须在所有 early return 之前调用，保证 hooks 顺序一致）
+  const allMembers = React.useMemo(() => {
+    if (!team?.leader) return members;
+
+    // 检查队长是否已在 members 中
+    const leaderInMembers = members.find(m => m.userId === team.leader?.id);
+
+    // 如果队长已在成员列表中，直接返回（避免重复）
+    if (leaderInMembers) return members;
+
+    // 创建新的队长成员对象（深拷贝，避免修改原对象）
+    const leaderAsMember: TeamMember = {
+      id: `leader-${team.leader.id}`,
+      userId: team.leader.id,
+      name: String(team.leader.name),
+      nickname: team.leader.nickname ?? null,
+      avatar: team.leader.avatar ?? null,
+      bio: team.leader.bio ?? null,
+      level: String(team.leader.level || "beginner"),
+      joinedAt: team.createdAt,
+      wechat: team.leader.wechat ?? undefined,
+      gender: team.leader.gender ?? null,
+      birthday: team.leader.birthday ?? null,
+      extra: team.leader.extra ?? null,
+    };
+
+    return [leaderAsMember, ...members];
+  }, [members, team?.leader, team?.createdAt]);
+
   if (loading) {
     return <TeamDetailSkeleton />;
   }
@@ -583,37 +614,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
   const canJoin = !isLeader && !isMember && !isPending && team.status === "recruiting" && team.currentMembers < team.maxMembers;
   const isFull = team.currentMembers >= team.maxMembers;
   const location = (team as any).location;
-  const members = team.members || [];
   const remaining = team.maxMembers - team.currentMembers;
-
-  // 合并队长和队员，队长排在第一位
-  const allMembers = React.useMemo(() => {
-    if (!team.leader) return members;
-    
-    // 检查队长是否已在 members 中
-    const leaderInMembers = members.find(m => m.userId === team.leader?.id);
-    
-    // 如果队长已在成员列表中，直接返回（避免重复）
-    if (leaderInMembers) return members;
-    
-    // 创建新的队长成员对象（深拷贝，避免修改原对象）
-    const leaderAsMember: TeamMember = {
-      id: `leader-${team.leader.id}`,
-      userId: team.leader.id,
-      name: String(team.leader.name),
-      nickname: team.leader.nickname ?? null,
-      avatar: team.leader.avatar ?? null,
-      bio: team.leader.bio ?? null,
-      level: String(team.leader.level || "beginner"),
-      joinedAt: team.createdAt,
-      wechat: team.leader.wechat ?? undefined,
-      gender: team.leader.gender ?? null,
-      birthday: team.leader.birthday ?? null,
-      extra: team.leader.extra ?? null,
-    };
-    
-    return [leaderAsMember, ...members];
-  }, [members, team.leader, team.createdAt]);
 
   return (
     <main className="min-h-screen bg-white flex flex-col">
