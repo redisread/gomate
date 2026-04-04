@@ -84,16 +84,12 @@ app.onError((err, c) => {
   return c.json({ error: "Internal server error" }, 500);
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
 
-/**
- * Cloudflare Workers 定时任务入口
- * 每天执行一次，更新过期队伍状态：
- * - recruiting + 过期 → cancelled
- * - formed + 过期 → completed
- */
-export const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
-  const db = createDb(env.DB);
-  const updatedIds = await updateExpiredTeams(db);
-  console.log(`[Cron] 已更新 ${updatedIds.length} 个过期队伍:`, updatedIds);
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    const db = createDb(env.DB);
+    const updatedIds = await updateExpiredTeams(db);
+    console.log(`[Cron] 已更新 ${updatedIds.length} 个过期队伍:`, updatedIds);
+  },
 };
