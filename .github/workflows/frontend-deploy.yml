@@ -2,7 +2,7 @@ name: Deploy Frontend
 on:
   push:
     branches: [main]
-    paths: ['frontend/**', 'packages/**']
+    paths: ['frontend/**', 'packages/**', '.github/workflows/frontend-deploy.yml']
 jobs:
   deploy:
     runs-on: ubuntu-latest
