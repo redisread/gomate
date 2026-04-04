@@ -607,6 +607,9 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
       level: String(team.leader.level || "beginner"),
       joinedAt: team.createdAt,
       wechat: team.leader.wechat ?? undefined,
+      gender: team.leader.gender ?? null,
+      birthday: team.leader.birthday ?? null,
+      extra: team.leader.extra ?? null,
     };
     
     return [leaderAsMember, ...members];
