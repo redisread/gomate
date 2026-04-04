@@ -32,16 +32,6 @@ tags: ["产品动态", "新功能", "组队"]
 
 没有复杂的社交功能，没有冗余的信息。打开 App，找到想去的地方，发起队伍或加入队伍，出发。
 
-## 技术亮点
-
-| 层级 | 技术栈 |
-|------|--------|
-| 后端 | Hono + Cloudflare Workers + D1 (SQLite) |
-| 前端 | Astro + React + Tailwind CSS |
-| 移动端 | Flutter + Riverpod |
-
-全栈 Cloudflare 方案，全球 CDN 加速，加载速度快到飞起。
-
 ## 下一步计划
 
 接下来我们会陆续上线：
