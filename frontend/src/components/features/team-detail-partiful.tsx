@@ -346,6 +346,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
   const [isSavingWechat, setIsSavingWechat] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [statusLoadFailed, setStatusLoadFailed] = React.useState(false);
   const { toast, exiting, show: showToast } = useToast();
 
   React.useEffect(() => {
@@ -374,8 +375,14 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
         const statusRes = await fetchAPI(`/api/teams/${teamId}/my-status`);
         const statusData = await statusRes.json();
         if (statusData.success) setMemberStatus(statusData.status);
+        setStatusLoadFailed(false);
+      } else {
+        setStatusLoadFailed(false);
       }
-    } catch {}
+    } catch (e) {
+      console.error("Failed to check user status:", e);
+      setStatusLoadFailed(true);
+    }
   };
 
   const loadTeam = async () => {
@@ -398,7 +405,10 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
 
   const handleJoin = async () => {
     if (!userId) {
-      window.location.href = `/login?redirect=/teams/${teamId}`;
+      showToast({ type: "error", message: "请先登录后再加入队伍" });
+      setTimeout(() => {
+        window.location.href = `/login?redirect=/teams/${teamId}`;
+      }, 1000);
       return;
     }
     setJoining(true);
@@ -737,6 +747,22 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
               </div>
             )}
 
+            {statusLoadFailed && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center space-y-2">
+                <div className="flex items-center justify-center gap-2 text-amber-700">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="font-medium text-sm">无法加载您的状态</span>
+                </div>
+                <p className="text-xs text-amber-600">请刷新页面或重新尝试</p>
+                <button
+                  onClick={checkUser}
+                  className="w-full py-2 text-xs text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors font-medium"
+                >
+                  重新加载
+                </button>
+              </div>
+            )}
+
             {/* 待审核申请模块（仅队长可见） */}
             {isLeader && applications.length > 0 && (
               <div className="border-t border-stone-100 pt-4">
@@ -888,6 +914,20 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
               </button>
             )}
 
+            {/* 未登录提示 */}
+            {!userId && !isLeader && !isMember && !isPending && (
+              <div className="bg-stone-50 rounded-2xl p-6 text-center space-y-3">
+                <p className="text-sm text-stone-500">登录后即可申请加入队伍</p>
+                <a
+                  href={`/login?redirect=/teams/${teamId}`}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-stone-800 text-white rounded-xl text-sm font-medium hover:bg-stone-900 transition-colors"
+                >
+                  去登录
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+            )}
+
             {/* 名额满提示 */}
             {!canJoin && !isLeader && !isMember && !isPending && team.status === "recruiting" && isFull && (
               <div className="bg-stone-50 rounded-2xl p-6 text-center">
@@ -920,6 +960,22 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
         currentMembers={team.currentMembers}
         maxMembers={team.maxMembers}
       />
+
+      {/* 加入弹窗 - 桌面端 Modal */}
+      {showJoinModal && (
+        <JoinDesktopModal
+          open={showJoinModal}
+          onClose={() => setShowJoinModal(false)}
+          onJoin={handleJoin}
+          isJoining={joining}
+          joinMessage={joinMsg}
+          setJoinMessage={setJoinMsg}
+          remaining={remaining}
+          fillRatio={Math.round((team.currentMembers / team.maxMembers) * 100)}
+          currentMembers={team.currentMembers}
+          maxMembers={team.maxMembers}
+        />
+      )}
 
       {/* 退出确认 */}
       {showLeave && (
@@ -1113,6 +1169,16 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                   查看 <ArrowRight className="h-3 w-3" />
                 </a>
               </div>
+            </div>
+          ) : !userId ? (
+            <div className="flex items-center justify-between min-h-[44px]">
+              <span className="text-sm text-stone-500">登录后即可申请加入</span>
+              <a
+                href={`/login?redirect=/teams/${teamId}`}
+                className="px-4 py-2 bg-stone-800 text-white rounded-xl text-sm font-medium hover:bg-stone-900 transition-colors"
+              >
+                去登录
+              </a>
             </div>
           ) : canJoin ? (
             <div className="flex items-center gap-2">
@@ -1403,6 +1469,72 @@ function WechatEditModal({
           className="w-full py-3 text-stone-500 text-sm hover:bg-stone-50 rounded-xl transition-colors"
         >
           {copy.common.cancel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function JoinDesktopModal({
+  open,
+  onClose,
+  onJoin,
+  isJoining,
+  joinMessage,
+  setJoinMessage,
+  remaining,
+  fillRatio,
+  currentMembers,
+  maxMembers,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onJoin: () => void;
+  isJoining: boolean;
+  joinMessage: string;
+  setJoinMessage: (v: string) => void;
+  remaining: number;
+  fillRatio: number;
+  currentMembers: number;
+  maxMembers: number;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[55] hidden lg:flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-bold text-stone-900">申请加入</h3>
+            <p className="text-sm text-stone-400 mt-0.5">
+              {remaining === 1 ? "就差你一个了！" : `还差 ${remaining} 位伙伴`}
+            </p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-stone-200">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="mb-4 bg-amber-50/60 rounded-2xl p-3.5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-stone-500">已有 {currentMembers} / {maxMembers} 人</span>
+            <span className="text-xs font-semibold text-amber-600">{fillRatio}%</span>
+          </div>
+          <AnimatedProgress ratio={fillRatio} isFull={false} />
+        </div>
+        <textarea
+          placeholder={copy.teams.joinPlaceholder}
+          value={joinMessage}
+          onChange={(e) => setJoinMessage(e.target.value)}
+          rows={4}
+          className="w-full px-4 py-3 rounded-2xl text-stone-800 text-sm placeholder:text-stone-400 focus:outline-none resize-none mb-4 bg-stone-50 border border-stone-200 focus:border-amber-400 transition-all"
+        />
+        <button
+          onClick={onJoin}
+          disabled={isJoining}
+          className="w-full py-3.5 font-semibold text-white rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
+          {copy.teams.joinTeam}
         </button>
       </div>
     </div>
