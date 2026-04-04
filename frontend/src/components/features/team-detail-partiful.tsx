@@ -893,17 +893,39 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             )}
 
             {/* Guest List */}
-            {members.length > 0 && (
-              <div className="bg-stone-50 rounded-2xl p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-stone-900">Guest List</h3>
-                  <span className="text-sm text-stone-500 bg-white px-3 py-1 rounded-full">
-                    {members.length} Going
-                  </span>
+            {(() => {
+              // 合并队长和队员，队长排在第一位
+              const allMembers = React.useMemo(() => {
+                const leaderInMembers = members.some(m => m.userId === team.leader?.id);
+                if (leaderInMembers) return members;
+                
+                // 创建队长成员对象，添加到列表第一位
+                const leaderAsMember: TeamMember = {
+                  id: `leader-${team.leader.id}`,
+                  userId: team.leader.id,
+                  name: team.leader.name,
+                  nickname: team.leader.nickname,
+                  avatar: team.leader.avatar || "",
+                  bio: team.leader.bio || "",
+                  level: team.leader.level || "beginner",
+                  joinedAt: team.createdAt,
+                  wechat: team.leader.wechat,
+                };
+                return [leaderAsMember, ...members];
+              }, [members, team.leader, team.createdAt, team.leader]);
+
+              return allMembers.length > 0 && (
+                <div className="bg-stone-50 rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-stone-900">Guest List</h3>
+                    <span className="text-sm text-stone-500 bg-white px-3 py-1 rounded-full">
+                      {allMembers.length} Going
+                    </span>
+                  </div>
+                  <MemberAvatarGrid members={allMembers} leaderId={team.leader?.id} />
                 </div>
-                <MemberAvatarGrid members={members} leaderId={team.leader?.id} />
-              </div>
-            )}
+              );
+            })()}
 
             {/* 主操作按钮 */}
             {canJoin && (
