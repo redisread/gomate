@@ -626,7 +626,7 @@ teams.post("/:id/join", async (c) => {
       if (existing.status === "pending") return c.json({ error: "你已经提交了申请，请等待审核" }, 400);
       if (existing.status === "rejected") {
         await db.update(schema.teamMembers)
-          .set({ status: "pending", createdAt: new Date() })
+          .set({ status: "pending", createdAt: new Date(), statusUpdatedAt: new Date() })
           .where(eq(schema.teamMembers.id, existing.id));
         return c.json({ success: true, message: "重新申请已提交" });
       }
@@ -755,6 +755,9 @@ teams.post("/:id/members/:userId/reject", async (c) => {
     const targetUserId = c.req.param("userId");
     const db = createDb(c.env.DB);
 
+    const body = await c.req.json<{ reason?: string }>().catch(() => ({} as { reason?: string }));
+    const { reason } = body;
+
     const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
     if (!team) return c.json({ error: "队伍不存在" }, 404);
     if (team.leaderId !== session.user.id) return c.json({ error: "只有队长可以审核成员" }, 403);
@@ -766,9 +769,19 @@ teams.post("/:id/members/:userId/reject", async (c) => {
     const membership = members[0];
     if (!membership) return c.json({ error: "未找到该成员的申请" }, 404);
 
+    const now = new Date();
+    const extra = reason ? JSON.stringify({ rejectReason: reason }) : null;
+
     await db.update(schema.teamMembers)
-      .set({ status: "rejected" })
+      .set({ status: "rejected", statusUpdatedAt: now, extra })
       .where(eq(schema.teamMembers.id, membership.id));
+
+    // 检查并更新队伍状态：如果已满则恢复为招募中
+    if (team.status === "full") {
+      await db.update(schema.teams)
+        .set({ status: "recruiting", updatedAt: now })
+        .where(eq(schema.teams.id, teamId));
+    }
 
     return c.json({ success: true, message: "已拒绝申请" });
   } catch (error) {
@@ -842,7 +855,10 @@ teams.post("/:id/cancel-application", async (c) => {
     const membership = members[0];
     if (!membership) return c.json({ error: "未找到待审核的申请" }, 404);
 
-    await db.delete(schema.teamMembers).where(eq(schema.teamMembers.id, membership.id));
+    // 改为更新状态而不是删除，保留历史记录
+    await db.update(schema.teamMembers)
+      .set({ status: "cancelled", statusUpdatedAt: new Date() })
+      .where(eq(schema.teamMembers.id, membership.id));
 
     return c.json({ success: true, message: "申请已取消" });
   } catch (error) {

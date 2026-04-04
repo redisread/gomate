@@ -247,6 +247,7 @@ export const teamMembers = sqliteTable(
     status: text("status").notNull().default("pending"),
     joinedAt: integer("joined_at", { mode: "timestamp_ms" }),
     statusUpdatedAt: integer("status_updated_at", { mode: "timestamp_ms" }),
+    extra: text("extra"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
