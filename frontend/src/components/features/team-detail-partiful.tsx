@@ -20,6 +20,7 @@ import {
   UserCheck,
   ChevronDown,
   LogOut,
+  Trash2,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI } from "@/lib/api";
@@ -343,6 +344,8 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
   const [showWechatConfirm, setShowWechatConfirm] = React.useState(false);
   const [showWechatSheet, setShowWechatSheet] = React.useState(false);
   const [isSavingWechat, setIsSavingWechat] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const { toast, exiting, show: showToast } = useToast();
 
   React.useEffect(() => {
@@ -522,6 +525,25 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
     }
   };
 
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await fetchAPI(`/api/teams/${teamId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        showToast({ type: "success", message: copy.teams.deleteTeamSuccess });
+        setTimeout(() => window.location.href = "/my-teams", 1500);
+      } else {
+        showToast({ type: "error", message: data.error || copy.teams.deleteTeamFailed });
+      }
+    } catch {
+      showToast({ type: "error", message: copy.teams.deleteTeamFailed });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   if (loading) {
     return <TeamDetailSkeleton />;
   }
@@ -667,6 +689,17 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                     {isForming && <Loader2 className="w-4 h-4 animate-spin" />}
                     <Users className="w-4 h-4" />
                     {isFull ? copy.teams.formTeam : copy.teams.formTeamUnderfilled}
+                  </button>
+                )}
+                {(team.status === "recruiting" || team.status === "cancelled") && (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={isDeleting}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-white rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <Trash2 className="w-4 h-4" />
+                    {copy.teams.deleteTeam}
                   </button>
                 )}
               </div>
@@ -927,6 +960,33 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
         </div>
       )}
 
+      {/* 删除队伍确认 */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
+            <h3 className="text-lg font-bold text-stone-900 mb-2">
+              {copy.teams.deleteTeamConfirm}
+            </h3>
+            <p className="text-sm text-stone-500 mb-4">{copy.teams.deleteTeamWarning}</p>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="w-full py-3 bg-red-600 text-white rounded-xl mb-2 hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {copy.teams.deleteTeam}
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isDeleting}
+              className="w-full py-3 text-stone-500 hover:bg-stone-50 rounded-xl transition-colors"
+            >
+              {copy.common.cancel}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 分享弹窗 */}
       {showShare && (
         <SharePosterModal
@@ -998,6 +1058,15 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                 <button onClick={() => setShowShare(true)} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-amber-50 hover:text-amber-600 transition-colors">
                   <Share2 className="h-4 w-4" />
                 </button>
+                {(team.status === "recruiting" || team.status === "cancelled") && (
+                  <button 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors"
+                    title={copy.teams.deleteTeam}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
                 <a href={`/teams/${teamId}/edit`} className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
                   <Pencil className="h-3 w-3" />
                   {copy.teams.editBtn}
