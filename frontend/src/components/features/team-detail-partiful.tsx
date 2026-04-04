@@ -663,6 +663,17 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
               </div>
             )}
 
+            {/* 分享按钮（所有人可见） */}
+            <div className="border-t border-stone-100 pt-4">
+              <button
+                onClick={() => setShowShare(true)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg transition-colors"
+              >
+                <Share2 className="w-4 h-4" />
+                分享队伍
+              </button>
+            </div>
+
             {/* 队长操作（队长可见） */}
             {isLeader && (
               <div className="bg-amber-50 rounded-xl p-3 space-y-1.5">
@@ -673,13 +684,6 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                   <Pencil className="w-4 h-4" />
                   编辑队伍
                 </a>
-                <button
-                  onClick={() => setShowShare(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-white rounded-lg transition-colors"
-                >
-                  <Share2 className="w-4 h-4" />
-                  分享队伍
-                </button>
                 {(team.status === "recruiting" || team.status === "full") && (
                   <button
                     onClick={() => setShowFormConfirm(true)}
