@@ -12,6 +12,7 @@ import {
   Users,
   ChevronRight,
   CheckCircle,
+  FileText,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
@@ -372,6 +373,27 @@ export function ProfileClient() {
                             </span>
                           ))}
                         </div>
+                      </div>
+                    );
+                  }
+                } catch {}
+                return null;
+              })()}
+
+              {/* 活动经历 */}
+              {user.extra && (() => {
+                try {
+                  const extra = JSON.parse(user.extra as string);
+                  if (extra.experience?.trim()) {
+                    return (
+                      <div className="mt-4 border-t border-stone-100 pt-4">
+                        <div className="text-xs text-stone-500 mb-2 flex items-center gap-1">
+                          <FileText className="h-3.5 w-3.5" />
+                          {copy.profile.experienceLabel}
+                        </div>
+                        <p className="text-stone-600 text-sm leading-relaxed whitespace-pre-wrap">
+                          {extra.experience.trim()}
+                        </p>
                       </div>
                     );
                   }
