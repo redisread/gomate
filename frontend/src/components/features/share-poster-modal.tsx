@@ -4,6 +4,30 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { copy } from "@/lib/copy";
 
+const API_BASE =
+  (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8799";
+
+/** 通过 API 代理加载图片，绕过 Canvas CORS 污染 */
+async function loadImageForCanvas(url: string): Promise<HTMLImageElement> {
+  const proxyUrl = `${API_BASE}/proxy-image?url=${encodeURIComponent(url)}`;
+  const resp = await fetch(proxyUrl);
+  if (!resp.ok) throw new Error("proxy fetch failed");
+  const blob = await resp.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("image load failed"));
+    };
+    img.src = objectUrl;
+  });
+}
+
 interface SharePosterModalProps {
   type: "team" | "location";
   title: string;
@@ -83,12 +107,17 @@ export function SharePosterModal({
 }: SharePosterModalProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [internalToast, setInternalToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   function showToast(opts: { type: "success" | "error"; message: string }) {
     if (onToast) {
       onToast(opts);
     } else {
-      if (opts.type === "error") console.error(opts.message);
+      setInternalToast(opts);
+      setTimeout(() => setInternalToast(null), 2000);
     }
   }
 
@@ -109,15 +138,10 @@ export function SharePosterModal({
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        let coverImg = imageUrl ? new Image() : null;
-        if (coverImg && imageUrl) {
-          coverImg.crossOrigin = "anonymous";
+        let coverImg: HTMLImageElement | null = null;
+        if (imageUrl) {
           try {
-            await new Promise<void>((resolve, reject) => {
-              coverImg!.onload = () => resolve();
-              coverImg!.onerror = () => reject();
-              coverImg!.src = imageUrl;
-            });
+            coverImg = await loadImageForCanvas(imageUrl);
           } catch {
             coverImg = null;
           }
@@ -309,7 +333,7 @@ export function SharePosterModal({
       await navigator.clipboard.writeText(url);
       showToast({ type: "success", message: copy.share.linkCopied });
     } catch {
-      showToast({ type: "error", message: copy.share.linkCopied });
+      showToast({ type: "error", message: copy.share.copyFailed });
     }
   }
 
@@ -366,6 +390,18 @@ export function SharePosterModal({
             {copy.share.copyLink}
           </button>
         </div>
+
+        {internalToast && (
+          <div
+            className={`mx-4 mb-4 px-3 py-2 rounded-lg text-sm text-center transition-opacity ${
+              internalToast.type === "success"
+                ? "bg-green-50 text-green-700"
+                : "bg-red-50 text-red-700"
+            }`}
+          >
+            {internalToast.message}
+          </div>
+        )}
       </div>
     </div>
   );

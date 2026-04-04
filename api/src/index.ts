@@ -53,7 +53,26 @@ app.get("/r2/*", async (c) => {
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
+  headers.set("Access-Control-Allow-Origin", "*");
   return new Response(object.body, { headers });
+});
+
+/** 图片代理：供前端 Canvas 绘图使用，绕过跨域限制 */
+app.get("/proxy-image", async (c) => {
+  const url = c.req.query("url");
+  if (!url) return c.json({ error: "url is required" }, 400);
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return c.json({ error: "fetch failed" }, 502);
+    const headers = new Headers();
+    const contentType = resp.headers.get("content-type");
+    if (contentType) headers.set("Content-Type", contentType);
+    headers.set("Access-Control-Allow-Origin", "*");
+    headers.set("Cache-Control", "public, max-age=86400");
+    return new Response(resp.body, { headers });
+  } catch {
+    return c.json({ error: "proxy failed" }, 502);
+  }
 });
 
 // 404 兜底

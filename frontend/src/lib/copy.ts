@@ -1132,6 +1132,7 @@ export const copy = {
     downloadQRCode: "下载海报",
     posterDownloaded: "海报已生成并下载",
     generatePosterFailed: "生成海报失败，请重试",
+    copyFailed: "复制失败，请手动复制",
     noAddress: "暂无地址信息",
     themeLight: "明亮",
     themeDark: "深色",
