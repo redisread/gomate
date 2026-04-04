@@ -264,8 +264,8 @@ function TeamCard({ team }: { team: Team }) {
           "hover:-translate-y-1.5"
         )}
       >
-        {/* ── 顶部封面图（优化为 h-32，更紧凑）── */}
-        <div className="relative h-32 overflow-hidden">
+        {/* ── 顶部封面图（h-40 高度，视觉更舒适）── */}
+        <div className="relative h-40 overflow-hidden">
           {location?.coverImage ? (
             <img
               src={location.coverImage}
@@ -373,8 +373,8 @@ function TeamCard({ team }: { team: Team }) {
 function TeamSkeleton() {
   return (
     <div className="bg-white rounded-3xl border border-stone-100 overflow-hidden">
-      {/* 封面图骨架（h-32）*/}
-      <div className="skeleton h-32 rounded-none" />
+      {/* 封面图骨架（h-40）*/}
+      <div className="skeleton h-40 rounded-none" />
       {/* 内容区骨架 */}
       <div className="p-4 space-y-2.5">
         <div className="skeleton h-4 rounded-full w-3/4" />
@@ -870,9 +870,9 @@ export function TeamsClient() {
             ) : null}
           </div>
 
-          {/* 卡片网格（移动端单列，桌面双列）*/}
+          {/* 卡片网格（移动端单列，桌面三列）*/}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {Array.from({ length: 6 }).map((_, i) => (
                 <TeamSkeleton key={i} />
               ))}
@@ -880,7 +880,7 @@ export function TeamsClient() {
           ) : teams.length === 0 ? (
             <EmptyState onClear={clearFilters} />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {teams.map((team) => (
                 <TeamCard key={team.id} team={team} />
               ))}
