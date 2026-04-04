@@ -3,6 +3,11 @@ on:
   push:
     branches: [main]
     paths: ['frontend/**', 'packages/**', '.github/workflows/frontend-deploy.yml']
+
+permissions:
+  contents: read
+  deployments: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
