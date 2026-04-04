@@ -23,7 +23,7 @@ const app = new Hono<{ Bindings: Env }>();
 // 全局 CORS 中间件
 app.use("*", corsMiddleware);
 
-// 健康检查
+// 健康检查端点
 app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
 
 // 路由注册
