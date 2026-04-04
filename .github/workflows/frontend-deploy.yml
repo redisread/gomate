@@ -21,3 +21,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: gomate-frontend
           directory: frontend/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
