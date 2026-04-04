@@ -994,7 +994,13 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
           title={team.title}
           subtitle={team.date}
           url={window.location.href}
+          imageUrl={location?.coverImage}
+          locationName={location?.name}
+          description={team.description}
+          leaderName={team.leader?.nickname || team.leader?.name}
+          membersInfo={`${team.currentMembers}/${team.maxMembers}`}
           meta={`${team.currentMembers}/${team.maxMembers} 人`}
+          tags={team.requirements?.slice(0, 4)}
           onClose={() => setShowShare(false)}
           onToast={showToast}
         />
