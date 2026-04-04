@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-
 import { corsMiddleware } from "./middleware/cors";
 import { authRoute } from "./routes/auth";
 import { teamsRoute } from "./routes/teams";
