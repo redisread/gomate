@@ -356,7 +356,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
 
   const fetchApplications = async () => {
     try {
-      const res = await fetchAPI(`/api/teams/${teamId}/applications`);
+      const res = await fetchAPI(`/api/teams/${teamId}/applications?status=pending`);
       const data = await res.json();
       if (data.success) setApplications(data.applications || []);
     } catch {}
