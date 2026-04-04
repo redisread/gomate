@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-import '../api/api_client.dart';
+import 'api_client.dart';
 
 /// 反馈 API 客户端
 class FeedbackApi {
@@ -13,10 +13,9 @@ class FeedbackApi {
   /// [name] 用户姓名
   /// [email] 联系邮箱
   /// [content] 反馈内容
-  /// [device] 设备类型（Bug 反馈）
-  /// [browser] 浏览器信息（Bug 反馈）
+  /// [device] 设备类型: 'iOS' | 'Android'（Bug 反馈）
   /// [steps] 复现步骤（Bug 反馈）
-  /// [pageUrl] 问题页面 URL（Bug 反馈）
+  /// [pageUrl] 问题页面路径（Bug 反馈）
   /// 返回包含成功状态和消息的结果
   Future<FeedbackResult> submitFeedback({
     required String type,
@@ -24,7 +23,6 @@ class FeedbackApi {
     required String email,
     required String content,
     String? device,
-    String? browser,
     String? steps,
     String? pageUrl,
   }) async {
@@ -38,7 +36,6 @@ class FeedbackApi {
 
       // Bug 反馈的额外字段
       if (device != null && device.isNotEmpty) data['device'] = device;
-      if (browser != null && browser.isNotEmpty) data['browser'] = browser;
       if (steps != null && steps.isNotEmpty) data['steps'] = steps;
       if (pageUrl != null && pageUrl.isNotEmpty) data['pageUrl'] = pageUrl;
 

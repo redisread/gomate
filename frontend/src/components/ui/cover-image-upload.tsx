@@ -18,6 +18,7 @@ import * as React from "react";
 import { Upload, Image as ImageIcon, X, Link, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchAPI } from "@/lib/api";
+import { copy } from "@/lib/copy";
 
 /* ================================================================
    类型定义
@@ -510,6 +511,9 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               </p>
               <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                 支持 JPG、PNG、WebP · 最大 5 MB · 推荐 16:9
+              </p>
+              <p className="mt-1 text-xs text-gray-400">
+                {copy.ui.upload.selectFromAlbum}
               </p>
             </div>
           </div>

@@ -34,7 +34,7 @@ class _MyTeamsScreenState extends ConsumerState<MyTeamsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadData();
+    _checkAuthAndLoadData();
   }
 
   @override
@@ -43,13 +43,30 @@ class _MyTeamsScreenState extends ConsumerState<MyTeamsScreen>
     super.dispose();
   }
 
+  /// 检查认证状态并加载数据
+  Future<void> _checkAuthAndLoadData() async {
+    final authState = ref.read(authProvider);
+    final isLoggedIn = authState.valueOrNull?.isLoggedIn ?? false;
+    if (!isLoggedIn) {
+      // 未登录，重定向到登录页
+      if (mounted) {
+        context.go('/login');
+      }
+      return;
+    }
+    
+    await _loadData();
+  }
+
   /// 加载所有队伍数据：我创建的 / 我加入的 / 我的申请
   Future<void> _loadData() async {
     final currentUserId =
         ref.read(authProvider).valueOrNull?.user?.id;
     if (currentUserId == null) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
+      if (mounted) {
+        context.go('/login');
+        return;
+      }
     }
 
     try {
@@ -103,12 +120,28 @@ class _MyTeamsScreenState extends ConsumerState<MyTeamsScreen>
         });
       }
     } catch (e) {
+      // 错误处理，数据为空时 Tab 会显示空状态
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // 检查登录状态，未登录则重定向到登录页
+    final authState = ref.watch(authProvider);
+    if (authState.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    
+    final isLoggedIn = authState.valueOrNull?.isLoggedIn ?? false;
+    if (!isLoggedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go('/login');
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    
+    // 加载数据中
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -126,15 +159,23 @@ class _MyTeamsScreenState extends ConsumerState<MyTeamsScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _CreatedTeamsTab(teams: _createdTeams),
-          _JoinedTeamsTab(joinedTeams: _joinedTeams),
-          _ApplicationsTab(applications: _applications),
-        ],
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _CreatedTeamsTab(teams: _createdTeams),
+            _JoinedTeamsTab(joinedTeams: _joinedTeams),
+            _ApplicationsTab(applications: _applications),
+          ],
+        ),
       ),
     );
+  }
+
+  /// 下拉刷新数据
+  Future<void> _refreshData() async {
+    await _loadData();
   }
 }
 

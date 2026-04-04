@@ -22,6 +22,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _termsAccepted = false;
   String? _errorMessage;
 
   @override
@@ -108,10 +109,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authProvider).isLoading;
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: AppTokens.bgBase,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.only(
+            left: 24.0,
+            right: 24.0,
+            top: 24.0,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24.0,
+          ),
           child: Form(
             key: _formKey,
             child: Column(
@@ -273,6 +280,85 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
                       _errorMessage!,
+                      style: const TextStyle(
+                          color: AppTokens.semanticError, fontSize: 14),
+                    ),
+                  ),
+
+                const SizedBox(height: 16),
+
+                // 服务条款同意复选框
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _termsAccepted,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _termsAccepted = value ?? false;
+                        });
+                      },
+                      activeColor: AppTokens.brandPrimary,
+                    ),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          text: '我已阅读并同意 ',
+                          style: const TextStyle(
+                            color: AppTokens.textPrimary,
+                            fontSize: 14,
+                          ),
+                          children: [
+                            WidgetSpan(
+                              child: GestureDetector(
+                                onTap: () {
+                                  context.push('/terms');
+                                },
+                                child: Text(
+                                  '服务条款',
+                                  style: TextStyle(
+                                    color: AppTokens.brandPrimary,
+                                    fontSize: 14,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const TextSpan(
+                              text: ' 和 ',
+                              style: TextStyle(
+                                color: AppTokens.textPrimary,
+                                fontSize: 14,
+                              ),
+                            ),
+                            WidgetSpan(
+                              child: GestureDetector(
+                                onTap: () {
+                                  context.push('/privacy');
+                                },
+                                child: Text(
+                                  '隐私政策',
+                                  style: TextStyle(
+                                    color: AppTokens.brandPrimary,
+                                    fontSize: 14,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // 服务条款验证错误
+                if (!_termsAccepted && _formKey.currentState?.validate() == false)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '请同意服务条款和隐私政策',
                       style: const TextStyle(
                           color: AppTokens.semanticError, fontSize: 14),
                     ),

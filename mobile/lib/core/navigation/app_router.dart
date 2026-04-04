@@ -6,18 +6,21 @@ import 'transitions.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/locations/screens/locations_list_screen.dart';
 import '../../features/locations/screens/location_detail_screen.dart';
 import '../../features/teams/screens/teams_list_screen.dart';
 import '../../features/teams/screens/team_detail_screen.dart';
 import '../../features/teams/screens/create_team_screen.dart';
+import '../../features/teams/screens/edit_team_screen.dart';
 import '../../features/teams/screens/team_manage_screen.dart';
 import '../../features/teams/screens/my_teams_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/favorites_screen.dart';
 import '../../features/profile/screens/user_detail_screen.dart';
+import '../../features/profile/screens/account_settings_screen.dart';
 import '../../features/info/screens/about_screen.dart';
 import '../../features/info/screens/help_screen.dart';
 import '../../features/info/screens/contact_screen.dart';
@@ -33,6 +36,7 @@ abstract class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
+  static const String resetPassword = '/reset-password';
   static const String locations = '/locations';
   static const String locationDetail = '/locations/:id';
   static const String teams = '/teams';
@@ -44,6 +48,7 @@ abstract class AppRoutes {
   static const String profile = '/profile';
   static const String profileEdit = '/profile/edit';
   static const String userDetail = '/users/:id';
+  static const String accountSettings = '/account-settings';
   static const String about = '/about';
   static const String help = '/help';
   static const String contact = '/contact';
@@ -135,6 +140,16 @@ GoRouter buildAppRouter({
           transitionType: _TransitionType.slideRight,
         ),
       ),
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: ResetPasswordScreen(
+            token: state.uri.queryParameters['token'],
+          ),
+          transitionType: _TransitionType.slideRight,
+        ),
+      ),
 
       // ── 地点 ────────────────────────────────────
       GoRoute(
@@ -186,6 +201,16 @@ GoRouter buildAppRouter({
           transitionType: _TransitionType.fadeScale,
         ),
         routes: [
+          GoRoute(
+            path: 'edit',
+            pageBuilder: (context, state) => _buildPage(
+              state: state,
+              child: EditTeamScreen(
+                teamId: state.pathParameters['id']!,
+              ),
+              transitionType: _TransitionType.slideRight,
+            ),
+          ),
           GoRoute(
             path: 'manage',
             pageBuilder: (context, state) => _buildPage(
@@ -248,6 +273,16 @@ GoRouter buildAppRouter({
             userId: state.pathParameters['id']!,
           ),
           transitionType: _TransitionType.fadeScale,
+        ),
+      ),
+
+      // ── 账号设置 ───────────────────────────────
+      GoRoute(
+        path: AppRoutes.accountSettings,
+        pageBuilder: (context, state) => _buildPage(
+          state: state,
+          child: const AccountSettingsScreen(),
+          transitionType: _TransitionType.slideRight,
         ),
       ),
 

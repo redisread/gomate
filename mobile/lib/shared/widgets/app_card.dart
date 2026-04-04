@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_tokens.dart';
@@ -94,10 +95,19 @@ class AppImageCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               // 封面图
-              Image.network(
-                imageUrl,
+              CachedNetworkImage(
+                imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                placeholder: (context, url) => Container(
+                  color: AppTokens.bgSurfaceElevated,
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppTokens.brandPrimary,
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
                   color: AppTokens.bgSurfaceElevated,
                   child: const Icon(
                     Icons.landscape_outlined,

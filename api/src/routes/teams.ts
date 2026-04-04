@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, desc, and, ne, sql, like, inArray, lt } from "drizzle-orm";
+import { eq, desc, and, ne, sql, like, inArray, lt, gte, lte } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -71,6 +71,13 @@ teams.get("/", async (c) => {
     const search = c.req.query("search") || "";
     const statusParam = c.req.query("status") || "";
     const difficultyParam = c.req.query("difficulty") || "";
+    
+    // 日期范围筛选参数
+    const startDateFrom = c.req.query("startDateFrom"); // ISO 日期格式 YYYY-MM-DD
+    const startDateTo = c.req.query("startDateTo");     // ISO 日期格式 YYYY-MM-DD
+    
+    // 标签筛选参数
+    const tagIdsParam = c.req.query("tagIds") || "";
 
     await updateExpiredTeams(db);
 
@@ -163,7 +170,7 @@ teams.get("/", async (c) => {
       return c.json({ success: true, teams: formatTeams(result) });
     }
 
-    // 通用列表模式：支持搜索、status、difficulty、分页
+    // 通用列表模式：支持搜索、status、difficulty、日期范围、标签、分页
     const conditions = [];
 
     if (statusParam) {
@@ -179,54 +186,84 @@ teams.get("/", async (c) => {
       conditions.push(like(schema.teams.title, `%${search}%`));
     }
 
+    // 日期范围筛选
+    if (startDateFrom) {
+      const fromDate = new Date(startDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      conditions.push(gte(schema.teams.startTime, fromDate));
+    }
+    if (startDateTo) {
+      const toDate = new Date(startDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      conditions.push(lte(schema.teams.startTime, toDate));
+    }
+
     // difficulty 过滤需要 join routes 表
     const difficultyList = difficultyParam ? difficultyParam.split(",").filter(Boolean) : [];
+    
+    // 标签筛选
+    const tagIds = tagIdsParam ? tagIdsParam.split(",").filter(Boolean) : [];
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // 统计总数（difficulty 过滤时需要 join routes）
-    let total: number;
-    if (difficultyList.length > 0) {
-      const [{ cnt }] = await db
-        .select({ cnt: sql<number>`count(distinct ${schema.teams.id})` })
-        .from(schema.teams)
-        .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
-        .where(and(whereClause, inArray(schema.routes.difficulty, difficultyList)));
-      total = cnt;
-    } else {
-      const [{ cnt }] = await db
-        .select({ cnt: sql<number>`count(*)` })
-        .from(schema.teams)
-        .where(whereClause);
-      total = cnt;
+    // 如果有标签筛选，先查出符合条件的 teamIds
+    let filteredTeamIds: string[] | null = null;
+    if (tagIds.length > 0) {
+      const tagResults = await db
+        .select({ entityId: schema.entityToTags.entityId })
+        .from(schema.entityToTags)
+        .where(
+          and(
+            eq(schema.entityToTags.entityType, "activity"),
+            inArray(schema.entityToTags.tagId, tagIds)
+          )
+        );
+      filteredTeamIds = tagResults.map(r => r.entityId);
+      if (filteredTeamIds.length === 0) {
+        // 没有符合条件的队伍，直接返回空结果
+        return c.json({
+          success: true,
+          teams: [],
+          pagination: { page, pageSize, total: 0, totalPages: 0 },
+        });
+      }
     }
+
+    // 构建最终 where 条件
+    const finalWhereClause = (() => {
+      const allConditions = [];
+      if (whereClause) allConditions.push(whereClause);
+      if (difficultyList.length > 0) {
+        allConditions.push(inArray(schema.routes.difficulty, difficultyList));
+      }
+      if (filteredTeamIds) {
+        allConditions.push(inArray(schema.teams.id, filteredTeamIds));
+      }
+      return allConditions.length > 0 ? and(...allConditions) : undefined;
+    })();
+
+    // 统计总数
+    const [{ cnt }] = await db
+      .select({ cnt: sql<number>`count(distinct ${schema.teams.id})` })
+      .from(schema.teams)
+      .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
+      .where(finalWhereClause);
+    const total = cnt;
 
     const totalPages = Math.ceil(total / pageSize);
     const offset = (page - 1) * pageSize;
 
     // 查询列表
-    if (difficultyList.length > 0) {
-      result = await db
-        .select(teamColumns)
-        .from(schema.teams)
-        .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
-        .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-        .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
-        .where(and(whereClause, inArray(schema.routes.difficulty, difficultyList)))
-        .orderBy(desc(schema.teams.startTime))
-        .limit(pageSize)
-        .offset(offset) as TeamRow[];
-    } else {
-      result = await db
-        .select(teamColumns)
-        .from(schema.teams)
-        .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
-        .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-        .where(whereClause)
-        .orderBy(desc(schema.teams.startTime))
-        .limit(pageSize)
-        .offset(offset) as TeamRow[];
-    }
+    result = await db
+      .select(teamColumns)
+      .from(schema.teams)
+      .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
+      .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+      .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
+      .where(finalWhereClause)
+      .orderBy(desc(schema.teams.startTime))
+      .limit(pageSize)
+      .offset(offset) as TeamRow[];
 
     return c.json({
       success: true,
@@ -625,16 +662,24 @@ teams.get("/:id/applications", async (c) => {
     if (team.leaderId !== session.user.id)
       return c.json({ error: "只有队长可以查看申请列表" }, 403);
 
+    // 支持 status 查询参数过滤；不传则返回全部成员（管理页面需要）
+    const statusFilter = c.req.query("status");
+    const whereClause = statusFilter
+      ? and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, statusFilter))
+      : eq(schema.teamMembers.teamId, teamId);
+
     const applications = await db.query.teamMembers.findMany({
-      where: and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, "pending")),
-      with: { user: { columns: { id: true, name: true, nickname: true, image: true, bio: true, level: true } } },
+      where: whereClause,
+      with: { user: { columns: { id: true, name: true, nickname: true, image: true, bio: true, level: true, wechat: true } } },
       orderBy: [desc(schema.teamMembers.createdAt)],
     });
 
     return c.json({
       success: true,
       applications: applications.map((app) => ({
-        id: app.id, userId: app.userId, createdAt: app.createdAt,
+        id: app.id, userId: app.userId, status: app.status, createdAt: app.createdAt,
+        userName: app.user ? (app.user.nickname || app.user.name) : "",
+        wechat: app.user?.wechat || null,
         user: app.user ? { id: app.user.id, name: app.user.name, nickname: app.user.nickname || null, avatar: app.user.image || null, bio: app.user.bio || null, level: app.user.level || "beginner" } : null,
       })),
     });

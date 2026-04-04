@@ -53,9 +53,21 @@ cd mobile && flutter run
 
 ## 部署
 
-- 后端：Cloudflare Workers（通过 wrangler）
-- 前端：Cloudflare Pages
-- 移动端：App Store / Google Play
+### 后端
+
+- **Worker**: `gomate-api`
+- **生产地址**: https://api.gomate.live
+- **部署命令**: `cd api && wrangler deploy --env production`
+
+### 前端
+
+- **项目**: `gomate-frontend`
+- **生产地址**: https://gomate.live
+- **部署命令**: `pnpm web:build && cd frontend && wrangler pages deploy dist --project-name=gomate-frontend --branch=main`
+
+### 移动端
+
+- App Store / Google Play
 
 ## 共享包
 

@@ -48,8 +48,8 @@ class AboutScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: AppTokens.space2),
-                  const Text(
+                  SizedBox(height: AppTokens.space2),
+                  Text(
                     '地点组队平台',
                     style: TextStyle(
                       fontSize: AppTokens.fontSizeL,

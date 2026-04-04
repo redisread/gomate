@@ -82,7 +82,7 @@ interface FormData {
   images: string[];
   lat: number | string;
   lng: number | string;
-  extra: { facilities: string[]; tips: string; warnings: string[] };
+  extra: { facilities: string[]; tips: string[]; warnings: string[] };
   tagIds: string[];
   poiLinks: Array<{ poiId: string; roleType: string; order: number }>;
 }
@@ -106,7 +106,7 @@ const DEFAULT_FORM: FormData = {
   images: [],
   lat: "",
   lng: "",
-  extra: { facilities: [], tips: "", warnings: [] },
+  extra: { facilities: [], tips: [], warnings: [] },
   tagIds: [],
   poiLinks: [],
 };
@@ -1016,8 +1016,8 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
             lng: loc.coordinates?.lng ?? "",
             extra: {
               facilities: (loc.extra as any)?.facilities ?? [],
-              tips: (loc.extra as any)?.tips ?? "",
-              warnings: (loc.extra as any)?.warnings ?? [],
+              tips: Array.isArray((loc.extra as any)?.tips) ? (loc.extra as any)?.tips : [],
+              warnings: Array.isArray((loc.extra as any)?.warnings) ? (loc.extra as any)?.warnings : [],
             },
             tagIds: currentTagIds,
             poiLinks: currentPoiLinks,
@@ -1152,7 +1152,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
     try {
       const extraPayload = {
         facilities: formData.extra.facilities.length > 0 ? formData.extra.facilities : undefined,
-        tips: formData.extra.tips.trim() || undefined,
+        tips: (() => { const t = formData.extra.tips.filter(s => s.trim()); return t.length > 0 ? t : undefined; })(),
         warnings: (() => { const w = formData.extra.warnings.filter(s => s.trim()); return w.length > 0 ? w : undefined; })(),
       };
       const hasExtra = extraPayload.facilities || extraPayload.tips || extraPayload.warnings;
@@ -1211,8 +1211,8 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
       lng: location.coordinates?.lng ?? "",
       extra: {
         facilities: (location.extra as any)?.facilities ?? [],
-        tips: (location.extra as any)?.tips ?? "",
-        warnings: (location.extra as any)?.warnings ?? [],
+        tips: Array.isArray((location.extra as any)?.tips) ? (location.extra as any)?.tips : [],
+        warnings: Array.isArray((location.extra as any)?.warnings) ? (location.extra as any)?.warnings : [],
       },
       tagIds: formData.tagIds,
       poiLinks: formData.poiLinks,
@@ -1546,7 +1546,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
               icon={<ImageIcon className="h-4 w-4" />}
               title="封面与季节"
             >
-              <Field label={copy.admin.formCoverImageRequired} hint={copy.admin.coverImageAiHint}>
+              <Field label={copy.admin.formCoverImageRequired} hint="可上传新图，或从下方相册选择">
                 <CoverImageUpload
                   value={formData.coverImage}
                   onChange={(url) => updateField("coverImage", url)}
@@ -1556,13 +1556,15 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
 
               <Field
                 label="相册图片"
-                hint="最多上传 9 张，展示在地点详情页图片画廊"
+                hint="点击图片可设为封面"
               >
                 <MultiImageUpload
                   values={formData.images}
                   onChange={(urls) => updateField("images", urls)}
                   max={9}
                   disabled={isSaving}
+                  coverImage={formData.coverImage}
+                  onSetCover={(url) => updateField("coverImage", url)}
                 />
               </Field>
 
@@ -1615,15 +1617,45 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
               </Field>
 
               {/* ── 徒步贴士 ── */}
-              <Field label="徒步贴士" hint={`${formData.extra.tips.length} 字`}>
-                <textarea
-                  rows={3}
-                  value={formData.extra.tips}
-                  onChange={(e) => updateField("extra", { ...formData.extra, tips: e.target.value })}
-                  placeholder="如：建议早上 6 点前出发，避开人流高峰；携带足够饮用水..."
-                  className={cn(styledInput(), "resize-none leading-relaxed")}
-                  style={{ background: "#FAF7F4", color: "#1e1812" }}
-                />
+              <Field label="徒步贴士">
+                <div className="space-y-2">
+                  {formData.extra.tips.map((tip, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={tip}
+                        onChange={(e) => {
+                          const next = [...formData.extra.tips];
+                          next[idx] = e.target.value;
+                          updateField("extra", { ...formData.extra, tips: next });
+                        }}
+                        placeholder="如：建议早上登山，避开人流高峰"
+                        className={cn(styledInput(), "flex-1")}
+                        style={{ background: "#FAF7F4", color: "#1e1812" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = formData.extra.tips.filter((_, i) => i !== idx);
+                          updateField("extra", { ...formData.extra, tips: next });
+                        }}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {formData.extra.tips.length < 10 && (
+                    <button
+                      type="button"
+                      onClick={() => updateField("extra", { ...formData.extra, tips: [...formData.extra.tips, ""] })}
+                      className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 transition-colors"
+                    >
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      添加贴士
+                    </button>
+                  )}
+                </div>
               </Field>
 
               {/* ── 安全警告 ── */}

@@ -1,0 +1,107 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { getCollection, type CollectionEntry } from "astro:content";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+interface Props {
+  post?: CollectionEntry<"blog">;
+}
+
+const { slug } = Astro.params;
+let { post } = Astro.props;
+
+// SSR mode: fetch post if not provided by getStaticPaths
+if (!post && slug) {
+  const posts = await getCollection("blog");
+  post = posts.find((p) => p.slug === slug);
+}
+
+// Handle case where post is not found
+if (!post) {
+  return Astro.redirect("/blog");
+}
+
+const { Content } = await post.render();
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function estimateReadTime(content: string) {
+  const words = content.split(/\s+/).length;
+  const minutes = Math.ceil(words / 200);
+  return `${minutes} 分钟`;
+}
+---
+
+<Layout title={post.data.title}>
+  <div class="min-h-screen bg-[#FDFBF8]">
+    <article class="max-w-2xl mx-auto px-6 py-12">
+      <!-- Back Link -->
+      <a
+        href="/blog"
+        class="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-amber-700 transition-colors mb-8"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+        返回博客
+      </a>
+
+      <!-- Header -->
+      <header class="mb-10">
+        <h1 class="text-2xl font-medium text-stone-800 mb-4 leading-snug">
+          {post.data.title}
+        </h1>
+        
+        <div class="flex items-center gap-3 text-sm text-stone-400">
+          <span>{post.data.author}</span>
+          <span>·</span>
+          <time>{formatDate(post.data.pubDate)}</time>
+          <span>·</span>
+          <span>{estimateReadTime(post.body)}</span>
+        </div>
+      </header>
+
+      <!-- Hero Image -->
+      {post.data.heroImage && (
+        <div class="mb-10 rounded-lg overflow-hidden">
+          <img
+            src={post.data.heroImage}
+            alt={post.data.title}
+            class="w-full aspect-video object-cover"
+          />
+        </div>
+      )}
+
+      <!-- Content -->
+      <div class="prose prose-stone max-w-none">
+        <Content />
+      </div>
+
+      <!-- Tags -->
+      {post.data.tags && post.data.tags.length > 0 && (
+        <div class="mt-12 pt-8 border-t border-stone-200">
+          <div class="flex flex-wrap gap-2">
+            {post.data.tags.map((tag) => (
+              <span class="px-3 py-1 text-sm text-stone-600 bg-stone-100 rounded-full">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </article>
+  </div>
+</Layout>

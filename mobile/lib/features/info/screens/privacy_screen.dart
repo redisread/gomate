@@ -40,14 +40,14 @@ class PrivacyScreen extends StatelessWidget {
                 color: AppTokens.brandPrimaryLight,
                 borderRadius: BorderRadius.circular(AppTokens.radiusM),
               ),
-              child: Row(
+              child: const Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.info_outline,
                     color: AppTokens.brandPrimary,
                     size: 20,
                   ),
-                  const SizedBox(width: AppTokens.space2),
+                  SizedBox(width: AppTokens.space2),
                   Text(
                     '最后更新：2026年3月26日',
                     style: TextStyle(

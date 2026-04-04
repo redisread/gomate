@@ -9,16 +9,28 @@ import 'shared/theme/app_theme_v2.dart';
 import 'shared/widgets/app_nav_shell.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
+import 'features/auth/screens/forgot_password_screen.dart';
+import 'features/auth/screens/reset_password_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/locations/screens/locations_list_screen.dart';
 import 'features/locations/screens/location_detail_screen.dart';
 import 'features/teams/screens/teams_list_screen.dart';
 import 'features/teams/screens/team_detail_screen.dart';
 import 'features/teams/screens/create_team_screen.dart';
+import 'features/teams/screens/edit_team_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/profile/screens/edit_profile_screen.dart';
+import 'features/profile/screens/favorites_screen.dart';
+import 'features/profile/screens/user_detail_screen.dart';
+import 'features/profile/screens/account_settings_screen.dart';
 import 'features/teams/screens/team_manage_screen.dart';
 import 'features/teams/screens/my_teams_screen.dart';
+import 'features/info/screens/about_screen.dart';
+import 'features/info/screens/help_screen.dart';
+import 'features/info/screens/contact_screen.dart';
+import 'features/info/screens/privacy_screen.dart';
+import 'features/info/screens/terms_screen.dart';
+import 'features/feedback/screens/feedback_screen.dart';
 
 /// App 根组件：监听认证状态，刷新路由守卫
 class GomateApp extends ConsumerStatefulWidget {
@@ -162,6 +174,96 @@ class _GomateAppState extends ConsumerState<GomateApp> {
           pageBuilder: (context, state) => _buildSlidePage(
             state: state,
             child: const EditProfileScreen(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.favorites,
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: const FavoritesScreen(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.userDetail,
+          pageBuilder: (context, state) => _buildFadeScalePage(
+            state: state,
+            child: UserDetailScreen(
+              userId: state.pathParameters['id']!,
+            ),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.accountSettings,
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: const AccountSettingsScreen(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.forgotPassword,
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: const ForgotPasswordScreen(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.resetPassword,
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: ResetPasswordScreen(
+              token: state.uri.queryParameters['token'],
+            ),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.about,
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: const AboutScreen(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.help,
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: const HelpScreen(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.contact,
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: const ContactScreen(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.privacy,
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: const PrivacyScreen(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.terms,
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: const TermsScreen(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.feedback,
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: const FeedbackScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/teams/:id/edit',
+          pageBuilder: (context, state) => _buildSlidePage(
+            state: state,
+            child: EditTeamScreen(
+              teamId: state.pathParameters['id']!,
+            ),
           ),
         ),
       ],

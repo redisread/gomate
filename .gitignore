@@ -58,3 +58,4 @@ cloudflare-env.d.ts
 .backup/
 .claude/worktrees/
 .env.local
+midscene_run/

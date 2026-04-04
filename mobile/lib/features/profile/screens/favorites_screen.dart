@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/api/locations_api.dart';
 import '../../../core/models/location.dart';
@@ -36,14 +37,18 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         _errorMessage = null;
       });
 
+      debugPrint('[FavoritesScreen] 开始加载收藏列表...');
       final favorites = await LocationsApi().getFavorites();
+      debugPrint('[FavoritesScreen] 成功加载 ${favorites.length} 个收藏');
       setState(() {
         _favorites = favorites;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[FavoritesScreen] 加载收藏失败: $e');
+      debugPrint('[FavoritesScreen] 堆栈: $stackTrace');
       setState(() {
-        _errorMessage = '加载收藏失败，请稍后重试';
+        _errorMessage = '加载收藏失败: $e';
         _isLoading = false;
       });
     }
@@ -78,8 +83,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     // 未登录时重定向到登录页
-    final authState = ref.watch(authProvider);
-    if (!authState.isLoggedIn) {
+    final authAsync = ref.watch(authProvider);
+    final authState = authAsync.valueOrNull;
+    if (authState == null || !authState.isLoggedIn) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.go('/login');
       });
@@ -231,34 +237,50 @@ class _FavoriteCard extends StatelessWidget {
         ),
       ),
       onDismissed: (_) => onRemove(),
-      child: GestureDetector(
+      child: InkWell(
         onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: AppTokens.space3),
-          padding: const EdgeInsets.all(AppTokens.space3),
-          decoration: BoxDecoration(
-            color: AppTokens.bgSurface,
-            borderRadius: BorderRadius.circular(AppTokens.radiusL),
-            border: Border.all(color: AppTokens.borderDefault, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: AppTokens.shadowColor,
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
+        borderRadius: BorderRadius.circular(AppTokens.radiusL),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AppTokens.space3),
+          child: Container(
+            padding: const EdgeInsets.all(AppTokens.space3),
+            decoration: BoxDecoration(
+              color: AppTokens.bgSurface,
+              borderRadius: BorderRadius.circular(AppTokens.radiusL),
+              border: Border.all(color: AppTokens.borderDefault, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0x0A1A2332),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
             children: [
               // 封面图
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppTokens.radiusM),
-                child: Image.network(
-                  location.coverImage,
+                child: CachedNetworkImage(
+                  imageUrl: location.coverImage,
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  cacheKey: location.id,
+                  maxWidthDiskCache: 100,
+                  maxHeightDiskCache: 100,
+                  placeholder: (context, url) => Container(
+                    width: 80,
+                    height: 80,
+                    color: AppTokens.bgDivider,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTokens.brandPrimary,
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     width: 80,
                     height: 80,
                     color: AppTokens.bgDivider,
@@ -330,6 +352,7 @@ class _FavoriteCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }

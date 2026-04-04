@@ -48,7 +48,7 @@ class TermsScreen extends StatelessWidget {
                     size: 20,
                   ),
                   const SizedBox(width: AppTokens.space2),
-                  Text(
+                  const Text(
                     '最后更新：2026年3月26日',
                     style: TextStyle(
                       fontSize: AppTokens.fontSizeBase,

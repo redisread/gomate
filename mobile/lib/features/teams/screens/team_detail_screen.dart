@@ -1,5 +1,5 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,6 +9,9 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/widgets/app_status_badge.dart';
 import '../../../shared/widgets/app_avatar.dart';
+import '../../../shared/widgets/share_poster_widget.dart';
+import '../../../shared/widgets/app_shimmer.dart';
+import 'join_team_bottom_sheet.dart';
 
 /// 队伍详情页面
 class TeamDetailScreen extends ConsumerStatefulWidget {
@@ -63,56 +66,72 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
 
   /// 分享队伍
   Future<void> _shareTeam(TeamModel team) async {
-    final url = 'https://gomate.live/teams/${team.id}';
-    final text = '''🏔️ ${team.title}
-📅 ${team.date} ${team.time}
-👥 ${team.approvedMemberCount}/${team.maxMembers} 人
-
-$url''';
-
-    // 复制到剪贴板
-    await Clipboard.setData(ClipboardData(text: text));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('队伍信息已复制到剪贴板')),
-      );
-    }
+    // locationId 用于显示，地点名称需要从 API 获取或直接显示 ID
+    final locationDisplay = team.locationId;
+    await SharePosterWidget.show(
+      context,
+      title: team.title,
+      locationName: locationDisplay,
+      description: team.description,
+      leaderName: team.leader?.displayName,
+      membersInfo: '${team.approvedMemberCount}/${team.maxMembers} 人',
+      date: team.date,
+      time: team.time,
+      url: 'https://gomate.live/teams/${team.id}',
+    );
   }
 
   /// 申请加入（带留言输入）
   Future<void> _handleJoin() async {
-    // 显示留言输入对话框
-    final message = await showDialog<String>(
-      context: context,
-      builder: (ctx) => _JoinMessageDialog(),
-    );
-
-    if (message == null) return; // 用户取消
-
-    setState(() => _isActioning = true);
-    try {
-      await _teamsApi.joinTeam(widget.teamId, message: message);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('申请已提交，等待领队审核')),
-        );
-        _loadTeam();
-      }
-    } catch (e) {
-      if (mounted) {
-        context.go('/login');
-      }
-    } finally {
-      if (mounted) setState(() => _isActioning = false);
+    // 先检查登录状态，未登录则跳转登录页（push 保留当前页面）
+    final authState = ref.read(authProvider).valueOrNull;
+    if (authState == null || !authState.isLoggedIn) {
+      if (mounted) context.push('/login');
+      return;
     }
+
+    // 显示留言输入 Bottom Sheet
+    await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => JoinTeamBottomSheet(
+        onJoin: (message) async {
+          setState(() => _isActioning = true);
+          try {
+            await _teamsApi.joinTeam(widget.teamId, message: message);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('申请已提交，等待领队审核')),
+              );
+              _loadTeam();
+            }
+            return 'success';
+          } catch (e) {
+            if (mounted) {
+              if (e is DioException && e.response?.statusCode == 401) {
+                context.push('/login');
+              } else {
+                final msg = (e is DioException ? e.message : e.toString()) ?? '操作失败，请重试';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(msg)),
+                );
+              }
+            }
+            return null;
+          } finally {
+            if (mounted) setState(() => _isActioning = false);
+          }
+        },
+      ),
+    );
   }
 
   /// 取消申请
   Future<void> _handleCancelJoin() async {
     setState(() => _isActioning = true);
     try {
-      // TODO(Agent-C): 接入取消申请 API
-      await _teamsApi.leaveTeam(widget.teamId);
+      await _teamsApi.cancelApplication(widget.teamId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('已取消申请')),
@@ -144,7 +163,8 @@ $url''';
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('确定', style: TextStyle(color: AppTokens.semanticError)),
+            child: const Text('确定',
+                style: TextStyle(color: AppTokens.semanticError)),
           ),
         ],
       ),
@@ -174,7 +194,9 @@ $url''';
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: TeamDetailShimmer(),
+      );
     }
 
     if (_team == null) {
@@ -218,8 +240,8 @@ $url''';
                     borderRadius: BorderRadius.circular(AppTokens.radiusM),
                   ),
                   child: Center(
-                    child: Text(team.icon,
-                        style: const TextStyle(fontSize: 32)),
+                    child:
+                        Text(team.icon, style: const TextStyle(fontSize: 32)),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -284,12 +306,16 @@ $url''';
               const SizedBox(height: 16),
               const Text(
                 '活动介绍',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppTokens.textPrimary),
+                style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppTokens.textPrimary),
               ),
               const SizedBox(height: 10),
               Text(
                 team.description!,
-                style: const TextStyle(fontSize: 15, height: 1.6, color: AppTokens.textSecondary),
+                style: const TextStyle(
+                    fontSize: 15, height: 1.6, color: AppTokens.textSecondary),
               ),
             ],
 
@@ -298,7 +324,10 @@ $url''';
               const SizedBox(height: 20),
               const Text(
                 '入队要求',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppTokens.textPrimary),
+                style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppTokens.textPrimary),
               ),
               const SizedBox(height: 10),
               ...team.requirements.map(
@@ -313,7 +342,8 @@ $url''';
                               fontWeight: FontWeight.bold)),
                       Expanded(
                         child: Text(req,
-                            style: const TextStyle(fontSize: 14, color: AppTokens.textSecondary)),
+                            style: const TextStyle(
+                                fontSize: 14, color: AppTokens.textSecondary)),
                       ),
                     ],
                   ),
@@ -329,7 +359,9 @@ $url''';
               Text(
                 '队伍成员（${team.approvedMemberCount} 人）',
                 style: const TextStyle(
-                    fontSize: 17, fontWeight: FontWeight.w600, color: AppTokens.textPrimary),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppTokens.textPrimary),
               ),
               const SizedBox(height: 12),
               // 领队信息展示（含「队长」角标）
@@ -353,7 +385,8 @@ $url''';
                     ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppTokens.brandPrimary,
                         borderRadius: BorderRadius.circular(4),
@@ -389,32 +422,74 @@ $url''';
     );
   }
 
-  /// 队长底部操作栏：「管理队伍」蓝色按钮
+  /// 队长底部操作栏：「编辑队伍」+「管理队伍」按钮
   Widget _buildLeaderBottomBar(BuildContext context, TeamModel team) {
-    return Container(
-      width: double.infinity,
-      height: 48,
-      decoration: BoxDecoration(
-        gradient: AppTokens.gradientBrand,
-        borderRadius: BorderRadius.circular(AppTokens.radiusM),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppTokens.radiusM),
-          onTap: () => context.push('/teams/${team.id}/manage'),
-          child: const Center(
-            child: Text(
-              '管理队伍',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppTokens.bgSurface,
+              border: Border.all(color: AppTokens.brandPrimary),
+              borderRadius: BorderRadius.circular(AppTokens.radiusM),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppTokens.radiusM),
+                onTap: () => context.push('/teams/${team.id}/edit'),
+                child: const Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.edit_outlined,
+                          color: AppTokens.brandPrimary, size: 18),
+                      SizedBox(width: 6),
+                      Text(
+                        '编辑队伍',
+                        style: TextStyle(
+                          color: AppTokens.brandPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 2,
+          child: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: AppTokens.gradientBrand,
+              borderRadius: BorderRadius.circular(AppTokens.radiusM),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppTokens.radiusM),
+                onTap: () => context.push('/teams/${team.id}/manage'),
+                child: const Center(
+                  child: Text(
+                    '管理队伍',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -503,8 +578,7 @@ $url''';
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 color: AppTokens.brandPrimaryLight,
-                borderRadius:
-                    BorderRadius.circular(AppTokens.radiusM),
+                borderRadius: BorderRadius.circular(AppTokens.radiusM),
                 border: Border.all(color: AppTokens.brandPrimary),
               ),
               child: const Center(
@@ -538,8 +612,7 @@ $url''';
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 color: AppTokens.brandPrimaryLight,
-                borderRadius:
-                    BorderRadius.circular(AppTokens.radiusM),
+                borderRadius: BorderRadius.circular(AppTokens.radiusM),
                 border: Border.all(color: AppTokens.semanticSuccess),
               ),
               child: const Center(
@@ -573,8 +646,7 @@ $url''';
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 color: AppTokens.brandPrimaryLight,
-                borderRadius:
-                    BorderRadius.circular(AppTokens.radiusM),
+                borderRadius: BorderRadius.circular(AppTokens.radiusM),
                 border: Border.all(color: AppTokens.semanticError),
               ),
               child: const Center(
@@ -598,8 +670,7 @@ $url''';
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppTokens.radiusM),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusM),
                   ),
                 ),
                 child: const Text('重新申请', style: TextStyle(fontSize: 16)),
@@ -654,7 +725,8 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '$label：',
-            style: const TextStyle(color: AppTokens.textSecondary, fontSize: 14),
+            style:
+                const TextStyle(color: AppTokens.textSecondary, fontSize: 14),
           ),
           Text(value, style: const TextStyle(fontSize: 14)),
         ],

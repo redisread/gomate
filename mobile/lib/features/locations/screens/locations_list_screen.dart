@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/api/cities_api.dart';
 import '../../../core/api/locations_api.dart';
@@ -110,19 +111,20 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
     }
 
     try {
+      final targetPage = loadMore ? _currentPage + 1 : 1;
       final data = await _locationsApi.getLocations(
         cityId: _selectedCityId,
         tagIds: _selectedTagIds.isEmpty ? null : _selectedTagIds,
         type: _selectedType,
         q: _searchQuery,
-        page: loadMore ? _currentPage + 1 : 1,
+        page: targetPage,
         limit: 20,
       );
       if (mounted) {
         setState(() {
           if (loadMore) {
             _locations.addAll(data);
-            _currentPage++;
+            _currentPage = targetPage;
           } else {
             _locations = data;
           }
@@ -173,7 +175,9 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: true,
+      child: Scaffold(
       backgroundColor: AppTokens.bgBase,
       appBar: AppBar(
         backgroundColor: AppTokens.bgBase,
@@ -333,6 +337,7 @@ class _LocationsListScreenState extends ConsumerState<LocationsListScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -688,10 +693,22 @@ class _LocationGridCard extends StatelessWidget {
           child: Stack(
             children: [
               Positioned.fill(
-                child: Image.network(
-                  location.coverImage,
+                child: CachedNetworkImage(
+                  imageUrl: location.coverImage,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  cacheKey: location.id,
+                  maxWidthDiskCache: 300,
+                  maxHeightDiskCache: 300,
+                  placeholder: (context, url) => Container(
+                    color: AppTokens.bgSurface,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTokens.brandPrimary,
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     color: AppTokens.bgSurface,
                     child: const Icon(Icons.landscape,
                         color: AppTokens.textTertiary, size: 48),

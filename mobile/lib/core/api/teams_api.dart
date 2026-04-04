@@ -1,4 +1,5 @@
 import '../constants/api_constants.dart';
+import '../models/location.dart';
 import '../models/team.dart';
 import 'api_client.dart';
 
@@ -69,10 +70,16 @@ class TeamsApi {
     );
   }
 
-  /// 退出/取消申请队伍
+  /// 退出队伍（已通过的成员）
   /// [id] 队伍 ID
   Future<void> leaveTeam(String id) async {
     await _client.post(ApiConstants.leaveTeam(id));
+  }
+
+  /// 取消入队申请（待审核状态）
+  /// [id] 队伍 ID
+  Future<void> cancelApplication(String id) async {
+    await _client.post(ApiConstants.cancelApplication(id));
   }
 
   /// 获取当前用户在队伍中的状态
@@ -121,5 +128,62 @@ class TeamsApi {
   /// [teamId] 队伍 ID
   Future<void> requestLeave(String teamId) async {
     await _client.post(ApiConstants.leaveTeamRequest(teamId));
+  }
+
+  /// 更新队伍信息（仅队长可操作）
+  /// [teamId] 队伍 ID
+  /// [data] 更新数据（title, description, maxMembers, requirements, time, durationMin）
+  /// 返回更新后的队伍详情
+  Future<TeamModel> updateTeam(String teamId, Map<String, dynamic> data) async {
+    await _client.put(
+      ApiConstants.teamDetail(teamId),
+      data: data,
+    );
+    return getTeam(teamId);
+  }
+
+  /// 获取队伍成员列表（仅队长可查看）
+  /// [teamId] 队伍 ID
+  Future<List<TeamMemberModel>> getTeamMembers(String teamId) async {
+    final response = await _client.get(ApiConstants.teamMembers(teamId));
+    final list = response.data['members'] as List<dynamic>;
+    return list
+        .map((item) => TeamMemberModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 移除队伍成员（仅队长可操作）
+  /// [teamId] 队伍 ID，[userId] 要移除的成员用户 ID
+  Future<void> removeMember(String teamId, String userId) async {
+    await _client.delete(ApiConstants.removeMember(teamId, userId));
+  }
+
+  /// 解散队伍（仅队长可操作）
+  /// [teamId] 队伍 ID
+  Future<void> deleteTeam(String teamId) async {
+    await _client.delete(ApiConstants.teamDetail(teamId));
+  }
+
+  /// 更新队伍状态（仅队长可操作）
+  /// [teamId] 队伍 ID，[status] 新状态（recruiting/full/formed/completed）
+  Future<TeamModel> updateTeamStatus(String teamId, String status) async {
+    await _client.put(
+      ApiConstants.teamDetail(teamId),
+      data: {'status': status},
+    );
+    return getTeam(teamId);
+  }
+
+  /// 获取地点关联的路线列表（用于创建队伍时选择路线）
+  /// [locationId] 地点 ID
+  Future<List<RouteModel>> getTeamRoutes(String locationId) async {
+    final response = await _client.get(
+      ApiConstants.routes,
+      queryParameters: {'locationId': locationId},
+    );
+    final list = response.data['routes'] as List<dynamic>;
+    return list
+        .map((item) => RouteModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 }

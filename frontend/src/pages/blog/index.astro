@@ -1,0 +1,62 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { getCollection } from "astro:content";
+
+const allPosts = await getCollection("blog");
+const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+---
+
+<Layout title="博客" description="GoMate 博客 - 记录徒步路上的故事">
+  <div class="min-h-screen bg-[#FDFBF8]">
+    <!-- Header -->
+    <header class="py-16 px-6">
+      <div class="max-w-3xl mx-auto text-center">
+        <h1 class="text-3xl font-medium text-stone-800 mb-3">博客</h1>
+        <p class="text-stone-500">记录徒步路上的故事</p>
+      </div>
+    </header>
+
+    <!-- Blog Posts -->
+    <main class="px-6 pb-20">
+      <div class="max-w-2xl mx-auto">
+        <div class="space-y-12">
+          {sortedPosts.map((post) => (
+            <article class="group">
+              <a href={`/blog/${post.slug}`} class="block">
+                <!-- Title -->
+                <h2 class="text-xl font-medium text-stone-800 mb-2 group-hover:text-amber-700 transition-colors">
+                  {post.data.title}
+                </h2>
+                
+                <!-- Description -->
+                <p class="text-stone-500 mb-3 leading-relaxed">
+                  {post.data.description}
+                </p>
+                
+                <!-- Date -->
+                <time class="text-sm text-stone-400">
+                  {formatDate(post.data.pubDate)}
+                </time>
+              </a>
+            </article>
+          ))}
+        </div>
+
+        <!-- Empty State -->
+        {sortedPosts.length === 0 && (
+          <div class="text-center py-20 text-stone-400">
+            <p>暂无文章</p>
+          </div>
+        )}
+      </div>
+    </main>
+  </div>
+</Layout>

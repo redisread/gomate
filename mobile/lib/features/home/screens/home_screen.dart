@@ -1,8 +1,8 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/api/locations_api.dart';
 import '../../../core/api/teams_api.dart';
@@ -28,6 +28,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<TeamModel> _teams = [];
   bool _isLoading = true;
   String? _error;
+  DateTime? _lastPressedTime;
 
   @override
   void initState() {
@@ -42,8 +43,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
     try {
       final results = await Future.wait([
-        _locationsApi.getLocations(limit: 6),
-        _teamsApi.getTeams(status: 'recruiting', limit: 5),
+        _locationsApi.getLocations(page: 1, limit: 6),
+        _teamsApi.getTeams(page: 1, status: 'recruiting', limit: 5),
       ]);
       if (mounted) {
         setState(() {
@@ -115,143 +116,160 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTokens.bgBase,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          // 双击退出应用
+          final now = DateTime.now();
+          if (_lastPressedTime == null || now.difference(_lastPressedTime!) > const Duration(seconds: 2)) {
+            _lastPressedTime = now;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('再按一次退出应用')),
+            );
+            return;
+          }
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
         backgroundColor: AppTokens.bgBase,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        title: ShaderMask(
-          shaderCallback: (bounds) =>
-              AppTokens.gradientBrand.createShader(bounds),
-          blendMode: BlendMode.srcIn,
-          child: const Text(
-            'GoMate',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: AppTokens.fontSizeXXL,
+        appBar: AppBar(
+          backgroundColor: AppTokens.bgBase,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          title: ShaderMask(
+            shaderCallback: (bounds) =>
+                AppTokens.gradientBrand.createShader(bounds),
+            blendMode: BlendMode.srcIn,
+            child: const Text(
+              'GoMate',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: AppTokens.fontSizeXXL,
+              ),
             ),
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.person_outline_rounded,
+                  color: AppTokens.textSecondary),
+              onPressed: () => context.go('/profile'),
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_outline_rounded,
-                color: AppTokens.textSecondary),
-            onPressed: () => context.go('/profile'),
+        extendBodyBehindAppBar: true,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.center,
+              colors: [
+                AppTokens.brandPrimaryLight.withValues(alpha: 0.3),
+                AppTokens.bgBase,
+              ],
+              stops: const [0.0, 0.15],
+            ),
           ),
-        ],
-      ),
-      extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.center,
-            colors: [
-              AppTokens.brandPrimaryLight.withValues(alpha: 0.3),
-              AppTokens.bgBase,
-            ],
-            stops: const [0.0, 0.15],
-          ),
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? _buildLoadingSkeleton()
-              : _error != null
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppTokens.space6),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: AppTokens.semanticError.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
+          child: SafeArea(
+            child: _isLoading
+                ? _buildLoadingSkeleton()
+                : _error != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppTokens.space6),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: AppTokens.semanticError.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.cloud_off_outlined,
+                                  size: 48,
+                                  color: AppTokens.semanticError,
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.cloud_off_outlined,
-                                size: 48,
-                                color: AppTokens.semanticError,
+                              const SizedBox(height: AppTokens.space4),
+                              const Text(
+                                '加载失败',
+                                style: TextStyle(
+                                  fontSize: AppTokens.fontSizeL,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTokens.textPrimary,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: AppTokens.space4),
-                            const Text(
-                              '加载失败',
-                              style: TextStyle(
-                                fontSize: AppTokens.fontSizeL,
-                                fontWeight: FontWeight.w600,
-                                color: AppTokens.textPrimary,
+                              const SizedBox(height: AppTokens.space2),
+                              Text(
+                                _error!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: AppTokens.fontSizeS,
+                                  color: AppTokens.textSecondary,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            const SizedBox(height: AppTokens.space2),
-                            Text(
-                              _error!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: AppTokens.fontSizeS,
-                                color: AppTokens.textSecondary,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: AppTokens.space5),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: AppTokens.gradientBrand,
-                                borderRadius: BorderRadius.circular(AppTokens.radiusM),
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: _loadData,
+                              const SizedBox(height: AppTokens.space5),
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: AppTokens.gradientBrand,
                                   borderRadius: BorderRadius.circular(AppTokens.radiusM),
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 12,
-                                    ),
-                                    child: Text(
-                                      '重新加载',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: AppTokens.fontSizeM,
-                                        fontWeight: FontWeight.w600,
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: _loadData,
+                                    borderRadius: BorderRadius.circular(AppTokens.radiusM),
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 12,
+                                      ),
+                                      child: Text(
+                                        '重新加载',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: AppTokens.fontSizeM,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadData,
+                        color: AppTokens.brandPrimary,
+                        backgroundColor: AppTokens.bgSurface,
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 搜索栏（点击跳转地点页，语义化提示）
+                              _buildSearchBar(),
+
+                              // 热门地点区域
+                              _buildLocationsSection(),
+
+                              // 招募中队伍区域
+                              _buildTeamsSection(),
+
+                              const SizedBox(height: 80),
+                            ],
+                          ),
                         ),
                       ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadData,
-                      color: AppTokens.brandPrimary,
-                      backgroundColor: AppTokens.bgSurface,
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 搜索栏（点击跳转地点页，语义化提示）
-                            _buildSearchBar(),
-
-                            // 热门地点区域
-                            _buildLocationsSection(),
-
-                            // 招募中队伍区域
-                            _buildTeamsSection(),
-
-                            const SizedBox(height: 80),
-                          ],
-                        ),
-                      ),
-                    ),
+          ),
         ),
       ),
     );
@@ -461,10 +479,22 @@ class _LocationCardState extends State<_LocationCard>
               children: [
                 // 封面图
                 Positioned.fill(
-                  child: Image.network(
-                    widget.location.coverImage,
+                  child: CachedNetworkImage(
+                    imageUrl: widget.location.coverImage,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    cacheKey: widget.location.id,
+                    maxWidthDiskCache: 300,
+                    maxHeightDiskCache: 220,
+                    placeholder: (context, url) => Container(
+                      color: AppTokens.bgSurface,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTokens.brandPrimary,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
                       decoration: const BoxDecoration(
                         gradient: AppTokens.gradientBrand,
                       ),

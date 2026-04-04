@@ -4,6 +4,16 @@ import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
 
+/** 安全解析 JSON 字符串 */
+function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 const favorites = new Hono<{ Bindings: Env }>();
 
 /**
@@ -43,7 +53,22 @@ favorites.get("/", async (c) => {
       entityId: favorite.entityId,
       createdAt: favorite.createdAt,
       location: location
-        ? { id: location.id, name: location.name, coverImage: location.coverImage, address: location.address, cityName: location.cityName }
+        ? {
+            id: location.id,
+            name: location.name,
+            slug: location.slug,
+            type: location.type,
+            subtitle: location.subtitle,
+            description: location.description,
+            address: location.address,
+            cityId: location.cityId,
+            cityName: location.cityName,
+            bestSeason: safeJsonParse(location.bestSeason, [] as string[]),
+            coverImage: location.coverImage,
+            images: safeJsonParse(location.images, [] as string[]),
+            coordinates: safeJsonParse(location.coordinates, { lat: 0, lng: 0 }),
+            createdAt: location.createdAt,
+          }
         : undefined,
     }));
 

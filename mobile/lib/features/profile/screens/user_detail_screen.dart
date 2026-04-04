@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/users_api.dart';
@@ -140,6 +141,22 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             content: _formatDate(_user!.createdAt),
           ),
           const SizedBox(height: AppTokens.space4),
+
+          // 户外经验（如果有）
+          if (_user!.experience != null && _user!.experience!.isNotEmpty) ...[
+            _buildInfoCard(
+              title: '户外经验',
+              icon: Icons.hiking_outlined,
+              content: _user!.experience!,
+            ),
+            const SizedBox(height: AppTokens.space4),
+          ],
+
+          // 装备清单（如果有）
+          if (_user!.equipment.isNotEmpty) ...[
+            _buildEquipmentCard(_user!.equipment),
+            const SizedBox(height: AppTokens.space4),
+          ],
         ],
       ),
     );
@@ -154,7 +171,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         borderRadius: BorderRadius.circular(AppTokens.radiusL),
         boxShadow: [
           BoxShadow(
-            color: AppTokens.brandPrimary.withOpacity(0.3),
+            color: AppTokens.brandPrimary.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -185,7 +202,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
               vertical: AppTokens.space1,
             ),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(AppTokens.radiusS),
             ),
             child: Row(
@@ -266,21 +283,21 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 child: _StatItem(
                   icon: Icons.flag_outlined,
                   label: '创建队伍',
-                  value: '0', // TODO: 从 API 获取实际数据
+                  value: '${user.stats?.createdTeams ?? 0}',
                 ),
               ),
               Expanded(
                 child: _StatItem(
                   icon: Icons.hiking_outlined,
                   label: '参加活动',
-                  value: '${user.completedHikes}',
+                  value: '${user.stats?.joinedTeams ?? 0}',
                 ),
               ),
               Expanded(
                 child: _StatItem(
                   icon: Icons.check_circle_outline,
                   label: '完成活动',
-                  value: '${user.completedHikes}',
+                  value: '${user.stats?.completedTeams ?? 0}',
                 ),
               ),
             ],
@@ -344,8 +361,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                     size: 20,
                     color: AppTokens.textTertiary,
                   ),
-                  onPressed: () {
-                    // TODO: 复制到剪贴板
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: content));
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('已复制'),
@@ -429,21 +447,81 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   IconData _getLevelIcon(String level) {
     switch (level) {
       case 'beginner':
-        return Icons.seedling;
+        return Icons.eco;
       case 'intermediate':
         return Icons.terrain;
       case 'advanced':
         return Icons.landscape;
       case 'expert':
-        return Icons.mountain;
+        return Icons.filter_hdr;
       default:
-        return Icons.seedling;
+        return Icons.eco;
     }
   }
 
   String _formatDate(DateTime? date) {
     if (date == null) return '未知';
     return '${date.year}年${date.month}月${date.day}日';
+  }
+
+  Widget _buildEquipmentCard(List<String> equipment) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppTokens.space4),
+      decoration: BoxDecoration(
+        color: AppTokens.bgSurface,
+        borderRadius: BorderRadius.circular(AppTokens.radiusL),
+        border: Border.all(color: AppTokens.borderDefault, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.backpack_outlined,
+                size: AppTokens.iconS,
+                color: AppTokens.textTertiary,
+              ),
+              const SizedBox(width: AppTokens.space2),
+              Text(
+                '装备清单',
+                style: const TextStyle(
+                  fontSize: AppTokens.fontSizeBase,
+                  fontWeight: FontWeight.w600,
+                  color: AppTokens.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTokens.space3),
+          Wrap(
+            spacing: AppTokens.space2,
+            runSpacing: AppTokens.space2,
+            children: equipment.map((item) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTokens.space3,
+                  vertical: AppTokens.space1,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTokens.brandPrimaryLight,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusS),
+                ),
+                child: Text(
+                  item,
+                  style: TextStyle(
+                    fontSize: AppTokens.fontSizeS,
+                    color: AppTokens.brandPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
   }
 }
 

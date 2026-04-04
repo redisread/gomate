@@ -1,9 +1,10 @@
-import 'dart:io';
+import 'dart:io' show Platform, File;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/providers/auth_provider.dart';
 import '../../../shared/theme/app_tokens.dart';
@@ -71,6 +72,31 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   /// 选择头像（相册 / 拍照）
   Future<void> _pickAvatar(ImageSource source) async {
+    // 检查权限
+    if (source == ImageSource.camera) {
+      final cameraStatus = await Permission.camera.request();
+      if (!cameraStatus.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('需要相机权限才能拍照')),
+          );
+        }
+        return;
+      }
+    } else {
+      // 使用 permission_handler 的自动版本适配
+      // Android 13+ 会自动使用 photos 权限，旧版本使用 storage
+      final storageStatus = await Permission.photos.request();
+      if (!storageStatus.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('需要存储权限才能访问相册')),
+          );
+        }
+        return;
+      }
+    }
+    
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: source,
@@ -159,6 +185,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final user = ref.watch(authProvider).valueOrNull?.user;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('编辑资料'),
         actions: [
@@ -175,7 +202,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
         child: Form(
           key: _formKey,
           child: Column(

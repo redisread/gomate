@@ -1,5 +1,8 @@
+import 'package:dio/dio.dart' as dio;
+
 import '../constants/api_constants.dart';
 import '../models/location.dart';
+import '../models/poi.dart';
 import 'api_client.dart';
 
 /// 地点相关 API 封装
@@ -20,6 +23,7 @@ class LocationsApi {
     String? difficulty,
     String? type,
     List<String>? tagIds,
+    String? q,
     int page = 1,
     int limit = 20,
   }) async {
@@ -30,6 +34,7 @@ class LocationsApi {
       if (difficulty != null) 'difficulty': difficulty,
       if (type != null) 'type': type,
       if (tagIds != null && tagIds.isNotEmpty) 'tagIds': tagIds.join(','),
+      if (q != null && q.isNotEmpty) 'q': q,
     };
 
     final response = await _client.get(
@@ -42,7 +47,7 @@ class LocationsApi {
         .toList();
   }
 
-  /// 获取地点详情（含路线和 POI 数据）
+  /// 获取地点详情（含路线数据）
   /// [id] 地点 ID 或 slug
   Future<LocationModel> getLocation(String id) async {
     final response = await _client.get(ApiConstants.locationDetail(id));
@@ -50,14 +55,36 @@ class LocationsApi {
         response.data['location'] as Map<String, dynamic>);
   }
 
+  /// 获取地点关联的 POI（打卡点）列表
+  /// [locationId] 地点 ID
+  Future<List<PoiModel>> getLocationPois(String locationId) async {
+    final response = await _client.get(ApiConstants.locationPois(locationId));
+    final list = response.data['pois'] as List<dynamic>;
+    return list
+        .map((item) => PoiModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   /// 切换地点收藏状态
   /// [locationId] 地点 ID
   /// 收藏则添加，已收藏则取消
   Future<bool> favoriteLocation(String locationId) async {
-    final response = await _client.post(
-      ApiConstants.favoriteToggle('location', locationId),
-    );
-    return response.data['favorited'] as bool;
+    try {
+      await _client.post(
+        ApiConstants.favorites,
+        data: {'entityType': 'location', 'entityId': locationId},
+      );
+      return true; // 收藏成功
+    } on dio.DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        // 已收藏，取消收藏
+        await _client.delete(
+          '${ApiConstants.favorites}?entityType=location&entityId=$locationId',
+        );
+        return false;
+      }
+      rethrow;
+    }
   }
 
   /// 获取当前用户的收藏地点列表
@@ -68,7 +95,12 @@ class LocationsApi {
     );
     final list = response.data['favorites'] as List<dynamic>;
     return list
-        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .where((item) =>
+            item is Map<String, dynamic> &&
+            item['location'] != null &&
+            item['location'] is Map<String, dynamic>)
+        .map((item) => LocationModel.fromJson(
+            (item as Map<String, dynamic>)['location'] as Map<String, dynamic>))
         .toList();
   }
 
