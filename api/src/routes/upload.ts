@@ -159,29 +159,4 @@ upload.post("/location", async (c) => {
   }
 });
 
-/**
- * GET /r2/*
- * 本地开发代理：从 R2 读取文件返回
- */
-upload.get("/r2/*", async (c) => {
-  try {
-    if (!c.env.R2) return c.json({ error: "R2 not configured" }, 500);
-
-    const key = c.req.path.replace(/^\/r2\//, "");
-    if (!key) return c.json({ error: "Key is required" }, 400);
-
-    const object = await c.env.R2.get(key);
-    if (!object) return c.json({ error: "File not found" }, 404);
-
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set("etag", object.httpEtag);
-
-    return new Response(object.body, { headers });
-  } catch (error) {
-    console.error("R2 proxy error:", error);
-    return c.json({ error: "Failed to get file" }, 500);
-  }
-});
-
 export { upload as uploadRoute };
