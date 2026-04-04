@@ -17,6 +17,10 @@ import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { getDaysUntil } from "@/lib/date-utils";
 import type { Location, Team } from "@/lib/types";
 import {
+  DIFFICULTY_CONFIG,
+  STATUS_CONFIG,
+} from "@/lib/constants";
+import {
   useInView,
   useCountUp,
   useParallax,
@@ -25,33 +29,11 @@ import {
 } from "@/hooks/use-animations";
 
 /* ============================================================
-   难度标签配置
-   ============================================================ */
-const DIFFICULTY_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  easy:     { label: "简单",  bg: "rgba(217,119,6,0.85)",  color: "#fff" },
-  moderate: { label: "中等",  bg: "rgba(217,119,6,0.88)",   color: "#fff" },
-  hard:     { label: "困难",  bg: "rgba(255,122,101,0.90)", color: "#fff" },
-  expert:   { label: "专家",  bg: "rgba(109,40,217,0.85)",  color: "#fff" },
-};
-
-/* ============================================================
-   队伍状态渐变条
-   ============================================================ */
-function getStatusGradient(status: Team["status"]): string {
-  switch (status) {
-    case "recruiting": return "linear-gradient(90deg, #D97706 0%, #FCD34D 100%)";
-    case "full":       return "linear-gradient(90deg, #ff7a65 0%, #ffb347 100%)";
-    case "formed":     return "linear-gradient(90deg, #92400E 0%, #D97706 100%)";
-    default:           return "linear-gradient(90deg, #9ca3af 0%, #d1d5db 100%)";
-  }
-}
-
-/* ============================================================
    LocationCard — 大图 overlay 风格
    ============================================================ */
 function LocationCard({ location }: { location: Location }) {
   const difficulty = location.difficulty ?? location.routes?.[0]?.difficulty;
-  const diffStyle = difficulty ? DIFFICULTY_MAP[difficulty] : null;
+  const diffConfig = difficulty ? DIFFICULTY_CONFIG[difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const firstTag = location.tags?.[0];
 
   return (
@@ -129,12 +111,12 @@ function LocationCard({ location }: { location: Location }) {
 
           {/* 右上角徽章 */}
           <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
-            {diffStyle && (
+            {diffConfig && (
               <span
                 className="px-2.5 py-1 rounded-full text-xs font-semibold"
-                style={{ background: diffStyle.bg, color: diffStyle.color, backdropFilter: "blur(4px)" }}
+                style={{ background: diffConfig.bg, color: diffConfig.color, backdropFilter: "blur(4px)" }}
               >
-                {diffStyle.label}
+                {diffConfig.label}
               </span>
             )}
             {firstTag && (
@@ -183,38 +165,6 @@ function LocationCard({ location }: { location: Location }) {
       </article>
     </a>
   );
-}
-
-/* ============================================================
-   getStatusConfig — 状态配置（颜色/文案/渐变）
-   ============================================================ */
-function getStatusConfig(status: Team["status"], isFull: boolean) {
-  if (isFull || status === "full") {
-    return {
-      label: copy.enums.teamStatus[status] ?? status,
-      dot: "#ef4444",
-      pill: { bg: "rgba(239,68,68,0.10)", color: "#b91c1c" },
-      bar: "linear-gradient(90deg, #ef4444 0%, #f97316 100%)",
-      glow: "rgba(239,68,68,0.18)",
-    };
-  }
-  if (status === "formed") {
-    return {
-      label: copy.enums.teamStatus[status] ?? status,
-      dot: "#92400E",
-      pill: { bg: "rgba(146,64,14,0.10)", color: "#92400E" },
-      bar: "linear-gradient(90deg, #92400E 0%, #D97706 100%)",
-      glow: "rgba(146,64,14,0.15)",
-    };
-  }
-  // recruiting（默认）
-  return {
-    label: copy.enums.teamStatus[status] ?? status,
-    dot: "#16a34a",
-    pill: { bg: "rgba(22,163,74,0.10)", color: "#15803d" },
-    bar: "linear-gradient(90deg, #D97706 0%, #FCD34D 100%)",
-    glow: "rgba(217,119,6,0.18)",
-  };
 }
 
 /* ============================================================
@@ -374,7 +324,8 @@ function TeamCard({ team }: { team: Team }) {
   const [hovered, setHovered] = React.useState(false);
   const isFull = team.currentMembers >= team.maxMembers;
   const daysUntil = getDaysUntil(team.date);
-  const statusCfg = getStatusConfig(team.status, isFull);
+  const statusKey = isFull ? "full" : team.status;
+  const statusCfg = STATUS_CONFIG[statusKey];
   const departureLabel = getDepartureLabel(daysUntil);
   const hasCover = Boolean(team.location?.coverImage);
 

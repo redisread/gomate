@@ -5,7 +5,7 @@ import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown } f
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
 import { fetchCurrentUser } from "@/lib/api";
-import { Avatar } from "@/components/ui/team-card";
+import { Avatar } from "@/components/ui/avatar";
 
 const navLinks = [
   { href: "/",          label: copy.nav.home },

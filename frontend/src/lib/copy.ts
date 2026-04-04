@@ -472,6 +472,16 @@ export const copy = {
     spotsDesc: "还差 {remaining} 位伙伴就可以出发",
     spotsOneLeft: "就差你一个，出发！",
 
+    // 队伍列表页卡片文案
+    joinNow: "立即加入",
+    spotsLeft: "仅剩 {count} 个名额！",
+    almostFull: "🔥 即将满员",
+    daysLeft: "还有 {count} 天",
+    daysLeftUrgent: "仅剩 {count} 天！",
+    departureToday: "今天出发",
+    departureTomorrow: "明天出发",
+    viewDetailShort: "详情",
+
     // 组建队伍
     formTeam: "组建队伍",
     formTeamUnderfilled: "不满人数组建",

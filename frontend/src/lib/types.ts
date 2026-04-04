@@ -43,24 +43,9 @@ export interface Location {
     warnings?: string[];
   };
 
-  // 新增：关联的路线数组
+  // 关联的路线数组
   routes?: Route[];
   tags?: Tag[];
-
-  // 兼容层（临时，从 routes[0] 提取）
-  // 这些字段将在所有组件迁移完成后移除
-  difficulty?: 'easy' | 'moderate' | 'hard' | 'expert';
-  duration?: string;
-  distance?: string;
-  elevation?: string;
-  routeGuide?: {
-    overview: string;
-    waypoints: { name: string; description: string; distance: string }[];
-    tips: string[];
-    warnings: string[];
-  };
-  waypoints?: { name: string; lat: number; lng: number; description: string }[];
-  equipmentNeeded?: string[];
 
   createdAt: string;
   updatedAt: string;
