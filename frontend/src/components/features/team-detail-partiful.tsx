@@ -83,7 +83,8 @@ function ToastDisplay({ toast, exiting }: { toast: ToastOptions | null; exiting:
 function Avatar({ name, avatar, isLeader, size = "md" }: { name?: string; avatar?: string | null; isLeader?: boolean; size?: "sm" | "md" | "lg" }) {
   const displayChar = name?.[0] || "?";
   const kaomoji = ["◡‿◡", "˘◡˘", "◠‿◠", "◕‿◕", "◉‿◉"];
-  const randomKaomoji = kaomoji[Math.floor(Math.random() * kaomoji.length)];
+  // 基于名字的第一个字符选择 kaomoji，确保渲染一致性
+  const randomKaomoji = kaomoji[(name?.charCodeAt(0) || 0) % kaomoji.length];
   
   const sizeClasses = {
     sm: "w-10 h-10 text-base",
