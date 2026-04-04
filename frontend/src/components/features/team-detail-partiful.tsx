@@ -589,21 +589,26 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
   // 合并队长和队员，队长排在第一位
   const allMembers = React.useMemo(() => {
     if (!team.leader) return members;
-    const leaderInMembers = members.some(m => m.userId === team.leader?.id);
+    
+    // 检查队长是否已在 members 中
+    const leaderInMembers = members.find(m => m.userId === team.leader?.id);
+    
+    // 如果队长已在成员列表中，直接返回（避免重复）
     if (leaderInMembers) return members;
     
-    // 创建队长成员对象，添加到列表第一位
+    // 创建新的队长成员对象（深拷贝，避免修改原对象）
     const leaderAsMember: TeamMember = {
       id: `leader-${team.leader.id}`,
       userId: team.leader.id,
-      name: team.leader.name,
-      nickname: team.leader.nickname,
-      avatar: team.leader.avatar || "",
-      bio: team.leader.bio || "",
-      level: team.leader.level || "beginner",
+      name: String(team.leader.name),
+      nickname: team.leader.nickname ?? null,
+      avatar: team.leader.avatar ?? null,
+      bio: team.leader.bio ?? null,
+      level: String(team.leader.level || "beginner"),
       joinedAt: team.createdAt,
-      wechat: team.leader.wechat,
+      wechat: team.leader.wechat ?? undefined,
     };
+    
     return [leaderAsMember, ...members];
   }, [members, team.leader, team.createdAt]);
 
