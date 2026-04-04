@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/api/users_api.dart';
+import '../../../core/models/user.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/widgets/app_avatar.dart';
@@ -15,6 +17,29 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  final _usersApi = UsersApi();
+  UserStats? _stats;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  /// 从 /users/:id 接口加载统计数据（get-session 不含 stats）
+  Future<void> _loadStats() async {
+    try {
+      final authState = ref.read(authProvider).valueOrNull;
+      final userId = authState?.user?.id;
+      if (userId == null) return;
+
+      final user = await _usersApi.getUser(userId);
+      if (mounted) {
+        setState(() => _stats = user.stats);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _handleLogout() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -97,7 +122,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     final user = currentUser;
-    final stats = user.stats;
+    final stats = _stats;
 
     return PopScope(
       canPop: true,
@@ -196,7 +221,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(width: AppTokens.space3),
                   Expanded(
                     child: _StatCard(
-                      label: '我加入的队伍',
+                      label: '加入他人队伍',
                       value: stats?.joinedTeams ?? 0,
                       icon: Icons.person_outline,
                       color: AppTokens.semanticInfo,

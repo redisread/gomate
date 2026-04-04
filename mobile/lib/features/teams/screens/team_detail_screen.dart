@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -82,6 +83,13 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
 
   /// 申请加入（带留言输入）
   Future<void> _handleJoin() async {
+    // 先检查登录状态，未登录则跳转登录页（push 保留当前页面）
+    final authState = ref.read(authProvider).valueOrNull;
+    if (authState == null || !authState.isLoggedIn) {
+      if (mounted) context.push('/login');
+      return;
+    }
+
     // 显示留言输入 Bottom Sheet
     await showModalBottomSheet<String>(
       context: context,
@@ -101,7 +109,14 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
             return 'success';
           } catch (e) {
             if (mounted) {
-              context.go('/login');
+              if (e is DioException && e.response?.statusCode == 401) {
+                context.push('/login');
+              } else {
+                final msg = (e is DioException ? e.message : e.toString()) ?? '操作失败，请重试';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(msg)),
+                );
+              }
             }
             return null;
           } finally {
@@ -116,7 +131,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
   Future<void> _handleCancelJoin() async {
     setState(() => _isActioning = true);
     try {
-      await _teamsApi.leaveTeam(widget.teamId);
+      await _teamsApi.cancelApplication(widget.teamId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('已取消申请')),

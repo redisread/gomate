@@ -662,16 +662,24 @@ teams.get("/:id/applications", async (c) => {
     if (team.leaderId !== session.user.id)
       return c.json({ error: "只有队长可以查看申请列表" }, 403);
 
+    // 支持 status 查询参数过滤；不传则返回全部成员（管理页面需要）
+    const statusFilter = c.req.query("status");
+    const whereClause = statusFilter
+      ? and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, statusFilter))
+      : eq(schema.teamMembers.teamId, teamId);
+
     const applications = await db.query.teamMembers.findMany({
-      where: and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, "pending")),
-      with: { user: { columns: { id: true, name: true, nickname: true, image: true, bio: true, level: true } } },
+      where: whereClause,
+      with: { user: { columns: { id: true, name: true, nickname: true, image: true, bio: true, level: true, wechat: true } } },
       orderBy: [desc(schema.teamMembers.createdAt)],
     });
 
     return c.json({
       success: true,
       applications: applications.map((app) => ({
-        id: app.id, userId: app.userId, createdAt: app.createdAt,
+        id: app.id, userId: app.userId, status: app.status, createdAt: app.createdAt,
+        userName: app.user ? (app.user.nickname || app.user.name) : "",
+        wechat: app.user?.wechat || null,
         user: app.user ? { id: app.user.id, name: app.user.name, nickname: app.user.nickname || null, avatar: app.user.image || null, bio: app.user.bio || null, level: app.user.level || "beginner" } : null,
       })),
     });

@@ -95,7 +95,12 @@ class LocationsApi {
     );
     final list = response.data['favorites'] as List<dynamic>;
     return list
-        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .where((item) =>
+            item is Map<String, dynamic> &&
+            item['location'] != null &&
+            item['location'] is Map<String, dynamic>)
+        .map((item) => LocationModel.fromJson(
+            (item as Map<String, dynamic>)['location'] as Map<String, dynamic>))
         .toList();
   }
 

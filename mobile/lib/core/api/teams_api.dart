@@ -70,10 +70,16 @@ class TeamsApi {
     );
   }
 
-  /// 退出/取消申请队伍
+  /// 退出队伍（已通过的成员）
   /// [id] 队伍 ID
   Future<void> leaveTeam(String id) async {
     await _client.post(ApiConstants.leaveTeam(id));
+  }
+
+  /// 取消入队申请（待审核状态）
+  /// [id] 队伍 ID
+  Future<void> cancelApplication(String id) async {
+    await _client.post(ApiConstants.cancelApplication(id));
   }
 
   /// 获取当前用户在队伍中的状态

@@ -37,14 +37,18 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         _errorMessage = null;
       });
 
+      debugPrint('[FavoritesScreen] 开始加载收藏列表...');
       final favorites = await LocationsApi().getFavorites();
+      debugPrint('[FavoritesScreen] 成功加载 ${favorites.length} 个收藏');
       setState(() {
         _favorites = favorites;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[FavoritesScreen] 加载收藏失败: $e');
+      debugPrint('[FavoritesScreen] 堆栈: $stackTrace');
       setState(() {
-        _errorMessage = '加载收藏失败，请稍后重试';
+        _errorMessage = '加载收藏失败: $e';
         _isLoading = false;
       });
     }

@@ -27,10 +27,11 @@ class MyTeamStatus {
   const MyTeamStatus({required this.role, this.memberStatus});
 
   factory MyTeamStatus.fromJson(Map<String, dynamic> json) {
-    final roleStr = json['role'] as String? ?? 'visitor';
     final statusStr = json['status'] as String?;
+    // 后端仅返回 status 字段：有 status 说明用户是成员，否则为访客
+    final role = statusStr != null ? MyTeamRole.member : MyTeamRole.visitor;
     return MyTeamStatus(
-      role: MyTeamRole.fromString(roleStr),
+      role: role,
       memberStatus: statusStr,
     );
   }
@@ -55,13 +56,20 @@ class TeamMemberApplication {
   });
 
   factory TeamMemberApplication.fromJson(Map<String, dynamic> json) {
+    // createdAt 可能是 ISO 字符串或 Unix 时间戳（秒）
+    DateTime parseCreatedAt(dynamic raw) {
+      if (raw == null) return DateTime.now();
+      if (raw is int) return DateTime.fromMillisecondsSinceEpoch(raw * 1000);
+      if (raw is String) return DateTime.tryParse(raw) ?? DateTime.now();
+      return DateTime.now();
+    }
+
     return TeamMemberApplication(
       id: json['id'] as String,
       userId: json['userId'] as String,
       userName: json['userName'] as String? ?? '',
       wechat: json['wechat'] as String?,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(
-          (json['createdAt'] as int) * 1000),
+      createdAt: parseCreatedAt(json['createdAt']),
       status: json['status'] as String? ?? 'pending',
     );
   }

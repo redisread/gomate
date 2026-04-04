@@ -38,7 +38,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
-      // 登录成功后路由守卫会自动重定向到首页
+      // 如果是从其他页面 push 来的（如队伍详情的"申请加入"），pop 回去
+      // 否则路由守卫会自动重定向到首页
+      if (mounted && context.canPop()) {
+        context.pop();
+        return;
+      }
     } on DioException catch (e) {
       setState(() {
         if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
