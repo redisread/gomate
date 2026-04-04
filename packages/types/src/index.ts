@@ -45,6 +45,11 @@ export interface Location {
   address?: string;
   cityId: string;
   cityName?: string;
+  difficulty?: "easy" | "moderate" | "hard" | "expert";
+  duration?: string;
+  distance?: string;
+  elevation?: string;
+  equipmentNeeded?: string[];
   bestSeason: string[];
   coverImage: string;
   images: string[];

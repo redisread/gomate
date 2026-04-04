@@ -29,12 +29,12 @@ export function ForgotPasswordClient() {
       const result = await res.json();
 
       if (!res.ok) {
-        throw new Error(result.error || result.message || copy.auth.sendEmailFailed);
+        throw new Error(result.error || result.message || copy.auth.sendFailed);
       }
 
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : copy.auth.sendEmailFailed);
+      setError(err instanceof Error ? err.message : copy.auth.sendFailed);
     } finally {
       setIsLoading(false);
     }

@@ -983,7 +983,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
           imageUrl={location.coverImage}
           meta={location.address}
           tags={location.tags?.map((t) => t.name)}
-          pois={pois.map((p) => ({ name: p.name, roleType: p.roleType }))}
           description={location.description}
           onClose={() => setShowShareModal(false)}
         />

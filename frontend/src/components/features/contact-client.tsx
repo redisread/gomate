@@ -44,7 +44,7 @@ export function ContactClient() {
         body: JSON.stringify(form),
       });
       if (!res.ok) {
-        const data = await res.json<{ error?: string }>();
+        const data = await res.json() as { error?: string };
         setError(data.error ?? copy.contact.submitError);
       } else {
         setSubmitted(true);

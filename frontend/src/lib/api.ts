@@ -100,7 +100,7 @@ export async function getLocationPois(
  *
  * @param redirectOnFail 未登录或出错时跳转的 URL，不传则静默返回 null
  */
-export async function fetchCurrentUser(redirectOnFail?: string): Promise<Record<string, unknown> | null> {
+export async function fetchCurrentUser(redirectOnFail?: string): Promise<import("./types").SessionUser | null> {
   try {
     const sessionRes = await fetchAPI("/auth/get-session");
     const sessionData = await sessionRes.json();

@@ -135,7 +135,7 @@ export function ProfileClient() {
     try {
       const u = await fetchCurrentUser("/login?redirect=/profile");
       if (!u) return;
-      setUser(u as SessionUser);
+      setUser((u as unknown) as SessionUser);
       loadTeams(u.id as string);
     } finally {
       setIsLoading(false);
