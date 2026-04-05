@@ -221,11 +221,7 @@ export function SharePosterModal({
           <button
             onClick={handleDownload}
             disabled={isLoading || isGenerating}
-            className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50 ${
-              type === "location"
-                ? "bg-cyan-600 hover:bg-cyan-700"
-                : "bg-amber-500 hover:bg-amber-600"
-            }`}
+            className="flex-1 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
           >
             {copy.share.downloadQRCode}
           </button>

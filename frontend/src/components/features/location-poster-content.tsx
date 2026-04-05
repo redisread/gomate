@@ -29,7 +29,7 @@ export function LocationPosterContent({
     QRCode.toDataURL(url, {
       width: 200,
       margin: 1,
-      color: { dark: "#ffffff", light: "#00000000" },
+      color: { dark: "#1e1812", light: "#ffffff" },
     }).then(setQrDataUrl);
   }, [url]);
 
@@ -38,22 +38,12 @@ export function LocationPosterContent({
       className="relative flex w-full flex-col overflow-hidden"
       style={{
         fontFamily: "'Zpix', monospace",
-        background:
-          "linear-gradient(145deg, #0a0a1a 0%, #1a0a2e 40%, #0d1530 70%, #0a0a1a 100%)",
+        background: "#faf8f5",
       }}
     >
-      {/* ── Top neon gradient line ── */}
-      <div
-        className="h-[2px]"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, #06b6d4 20%, #a855f7 50%, #ec4899 80%, transparent 100%)",
-        }}
-      />
-
-      {/* ── Cover image (clean, no overlay) ── */}
+      {/* ── Cover image ── */}
       {coverImageDataUrl && (
-        <div className="mx-4 mt-4 overflow-hidden rounded-lg">
+        <div className="mx-4 mt-4 overflow-hidden rounded-xl">
           <img
             src={coverImageDataUrl}
             alt=""
@@ -62,37 +52,30 @@ export function LocationPosterContent({
         </div>
       )}
 
-      {/* ── Content area ── */}
+      {/* ── Content card ── */}
       <div className="flex flex-1 flex-col px-4 pt-4 pb-4">
-        {/* Glass card */}
         <div
           className="flex flex-1 flex-col rounded-xl px-5 pt-5 pb-5"
           style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.1)",
+            background: "rgba(255, 255, 255, 0.85)",
+            border: "1px solid #e8e0d7",
             boxShadow:
-              "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)",
+              "0 2px 8px rgba(30, 24, 18, 0.06), 0 1px 2px rgba(30, 24, 18, 0.04)",
           }}
         >
           {/* Title */}
-          <h2
-            className="text-[16px] leading-[24px] text-white line-clamp-2"
-            style={{
-              textShadow:
-                "0 0 20px rgba(6,182,212,0.5), 0 0 40px rgba(168,85,247,0.2)",
-            }}
-          >
+          <h2 className="text-[16px] leading-[24px] text-[#1e1812] line-clamp-2">
             {title}
           </h2>
 
           {subtitle && (
-            <p className="mt-1.5 text-[12px] leading-[18px] text-white/50">
+            <p className="mt-1.5 text-[12px] leading-[18px] text-[#8f7f6e]">
               {subtitle}
             </p>
           )}
 
           {description && (
-            <p className="mt-3 text-[12px] leading-[18px] text-white/60 line-clamp-2">
+            <p className="mt-3 text-[12px] leading-[18px] text-[#8f7f6e] line-clamp-2">
               {description}
             </p>
           )}
@@ -103,10 +86,10 @@ export function LocationPosterContent({
               {tags.slice(0, 4).map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full px-2.5 py-0.5 text-[10px] leading-[16px] text-cyan-300/90"
+                  className="rounded-full px-2.5 py-0.5 text-[10px] leading-[16px] text-[#92400E]"
                   style={{
-                    background: "rgba(6,182,212,0.1)",
-                    border: "1px solid rgba(6,182,212,0.25)",
+                    background: "#FFFBEB",
+                    border: "1px solid #FCD34D",
                   }}
                 >
                   {tag}
@@ -117,7 +100,7 @@ export function LocationPosterContent({
 
           {/* Address */}
           {meta && (
-            <p className="mt-3 text-[12px] leading-[16px] text-white/40">
+            <p className="mt-3 text-[12px] leading-[16px] text-[#8f7f6e]">
               📍 {meta}
             </p>
           )}
@@ -127,7 +110,7 @@ export function LocationPosterContent({
             className="mt-4 h-px"
             style={{
               background:
-                "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
+                "linear-gradient(90deg, transparent, #e8e0d7, transparent)",
             }}
           />
 
@@ -137,8 +120,9 @@ export function LocationPosterContent({
               <div
                 className="shrink-0 rounded-lg p-2"
                 style={{
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "#ffffff",
+                  border: "1px solid #e8e0d7",
+                  boxShadow: "0 2px 8px rgba(30, 24, 18, 0.06)",
                 }}
               >
                 <img
@@ -149,26 +133,26 @@ export function LocationPosterContent({
               </div>
             )}
             <div className="flex flex-col gap-1">
-              <span
-                className="text-[12px] leading-[16px] text-white/50"
-                style={{ textShadow: "0 0 8px rgba(6,182,212,0.3)" }}
-              >
+              <span className="text-[12px] leading-[16px] text-[#1e1812]">
                 {copy.share.scanToViewLocation}
               </span>
-              <span className="text-[10px] text-white/25">gomate.live</span>
+              <span
+                className="text-[10px]"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #D97706, #F59E0B, #FCD34D)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                gomate.live
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Bottom neon gradient line ── */}
-      <div
-        className="h-[2px]"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, #ec4899 20%, #a855f7 50%, #06b6d4 80%, transparent 100%)",
-        }}
-      />
     </div>
   );
 }
