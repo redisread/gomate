@@ -422,11 +422,10 @@ teams.get("/:id", async (c) => {
       currentUserId = session?.user?.id || null;
     } catch { /* 用户未登录 */ }
 
-    // 计算已加入人数：approved 成员 + 队长（队长不算在 members 表中）
-    const approvedMembersCount = teamWithRelations.members?.filter(
+    // 计算已加入人数：approved 成员（队长创建时已加入 members 表，无需额外 +1）
+    const currentMembers = teamWithRelations.members?.filter(
       (m: { status: string }) => m.status === "approved"
     ).length || 0;
-    const currentMembers = approvedMembersCount + 1; // +1 为队长
 
     const isTeamMember = currentUserId
       ? !!teamWithRelations.members?.find(
