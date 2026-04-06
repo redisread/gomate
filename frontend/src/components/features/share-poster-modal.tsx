@@ -75,7 +75,7 @@ export function SharePosterModal({
 
   const [fontReady, setFontReady] = useState(false);
 
-  // Load Zpix pixel font
+  // Load Zpix pixel font with timeout
   useEffect(() => {
     const ZPIX_URL =
       "https://cdn.jsdelivr.net/gh/SolidZORO/zpix-pixel-font@master/website/zpix.woff2";
@@ -83,38 +83,69 @@ export function SharePosterModal({
       style: "normal",
       weight: "normal",
     });
+
+    // 设置超时，防止字体加载卡住
+    const timeoutId = setTimeout(() => {
+      setFontReady(true);
+    }, 3000);
+
     font
       .load()
       .then((loaded) => {
+        clearTimeout(timeoutId);
         document.fonts.add(loaded);
         setFontReady(true);
       })
-      .catch(() => setFontReady(true)); // fallback to monospace if font fails
+      .catch(() => {
+        clearTimeout(timeoutId);
+        setFontReady(true);
+      });
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Pre-load cover image as data URL to avoid CORS in html-to-image
   useEffect(() => {
-    // 方案三：改进状态管理 - 使用 undefined 表示"尚未开始加载"，null 表示"已加载但无图片"
     if (!imageUrl) {
-      // 没有图片URL，直接标记为 null（已确定无图片）
       setCoverDataUrl(null);
       return;
     }
-    // 有图片URL，设置为 undefined 表示正在加载
     setCoverDataUrl(undefined);
     loadImageAsDataUrl(imageUrl)
       .then(setCoverDataUrl)
-      .catch(() => setCoverDataUrl(null)); // 加载失败也标记为 null
+      .catch(() => setCoverDataUrl(null));
   }, [imageUrl]);
 
   const generateImage = useCallback(async (): Promise<Blob | null> => {
     const node = posterRef.current;
     if (!node) return null;
 
+    // 等待所有图片加载完成
+    const images = node.querySelectorAll('img');
+    await Promise.all(
+      Array.from(images).map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            if (img.complete && img.naturalHeight !== 0) {
+              resolve();
+            } else {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+              setTimeout(() => resolve(), 1000);
+            }
+          })
+      )
+    );
+
     try {
+      // 额外延迟，确保图片完全渲染到 canvas
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       const dataUrl = await toPng(node, {
         pixelRatio: 2,
         cacheBust: true,
+        skipFonts: true,
+        backgroundColor: '#faf8f5',
       });
       const res = await fetch(dataUrl);
       return res.blob();
@@ -153,7 +184,6 @@ export function SharePosterModal({
   }
 
   // 方案三：改进加载状态判断 - undefined 表示"正在加载"，null 表示"已加载但无图片"
-  // 只有当 coverDataUrl 既不是 undefined 也不是 null 时，才表示图片加载完成
   const isImageLoading = coverDataUrl === undefined;
   const hasCoverImage = coverDataUrl !== undefined && coverDataUrl !== null;
 
