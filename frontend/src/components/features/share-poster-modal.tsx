@@ -94,13 +94,17 @@ export function SharePosterModal({
 
   // Pre-load cover image as data URL to avoid CORS in html-to-image
   useEffect(() => {
+    // 方案三：改进状态管理 - 使用 undefined 表示"尚未开始加载"，null 表示"已加载但无图片"
     if (!imageUrl) {
+      // 没有图片URL，直接标记为 null（已确定无图片）
       setCoverDataUrl(null);
       return;
     }
+    // 有图片URL，设置为 undefined 表示正在加载
+    setCoverDataUrl(undefined);
     loadImageAsDataUrl(imageUrl)
       .then(setCoverDataUrl)
-      .catch(() => setCoverDataUrl(null));
+      .catch(() => setCoverDataUrl(null)); // 加载失败也标记为 null
   }, [imageUrl]);
 
   const generateImage = useCallback(async (): Promise<Blob | null> => {
@@ -148,8 +152,13 @@ export function SharePosterModal({
     }
   }
 
-  // Wait for cover image + font to load before showing poster
-  const isLoading = coverDataUrl === undefined || !fontReady;
+  // 方案三：改进加载状态判断 - undefined 表示"正在加载"，null 表示"已加载但无图片"
+  // 只有当 coverDataUrl 既不是 undefined 也不是 null 时，才表示图片加载完成
+  const isImageLoading = coverDataUrl === undefined;
+  const hasCoverImage = coverDataUrl !== undefined && coverDataUrl !== null;
+
+  // 整体加载状态：图片未加载完成 或 字体未准备好的
+  const isLoading = isImageLoading || !fontReady;
 
   return (
     <div
@@ -187,7 +196,7 @@ export function SharePosterModal({
                   title={title}
                   subtitle={subtitle}
                   url={url}
-                  coverImageDataUrl={coverDataUrl}
+                  coverImageDataUrl={hasCoverImage ? coverDataUrl : undefined}
                   description={description}
                   tags={tags}
                   meta={meta}
@@ -198,7 +207,7 @@ export function SharePosterModal({
                   title={title}
                   subtitle={subtitle}
                   url={url}
-                  coverImageDataUrl={coverDataUrl}
+                  coverImageDataUrl={hasCoverImage ? coverDataUrl : undefined}
                   locationName={locationName}
                   description={description}
                   leaderName={leaderName}
