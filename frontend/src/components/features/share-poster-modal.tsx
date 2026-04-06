@@ -113,7 +113,10 @@ export function SharePosterModal({
     setCoverDataUrl(undefined);
     loadImageAsDataUrl(imageUrl)
       .then(setCoverDataUrl)
-      .catch(() => setCoverDataUrl(null));
+      .catch((err) => {
+        console.error('[SharePoster] 封面图加载失败:', imageUrl, err);
+        setCoverDataUrl(null);
+      });
   }, [imageUrl]);
 
   const generateImage = useCallback(async (): Promise<Blob | null> => {
@@ -141,12 +144,16 @@ export function SharePosterModal({
       // 额外延迟，确保图片完全渲染到 canvas
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      const dataUrl = await toPng(node, {
+      const toPngOptions = {
         pixelRatio: 2,
         cacheBust: true,
         skipFonts: true,
         backgroundColor: '#faf8f5',
-      });
+      };
+      // html-to-image 已知问题：第一次调用 toPng 时 SVG foreignObject 渲染管线
+      // 可能未完整捕获 <img> 内容，第二次调用可确保图片正确嵌入
+      await toPng(node, toPngOptions);
+      const dataUrl = await toPng(node, toPngOptions);
       const res = await fetch(dataUrl);
       return res.blob();
     } catch {
