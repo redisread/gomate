@@ -125,6 +125,8 @@ export function MultiImageUpload({
 }: MultiImageUploadProps) {
   /** 正在上传中的任务列表（上传完成后移除） */
   const [uploadingItems, setUploadingItems] = React.useState<UploadItem[]>([]);
+  /** 移动端 tap 激活的图片索引（用于显示操作层） */
+  const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const dragCounterRef = React.useRef(0);
@@ -271,14 +273,20 @@ export function MultiImageUpload({
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        onClick={() => setActiveIndex(null)}
       >
         {/* 已上传图片 */}
         {values.map((url, index) => {
           const isCurrentCover = coverImage === url;
+          const isActive = activeIndex === index;
           return (
             <div
               key={url + index}
-              className="relative group aspect-square rounded-xl overflow-hidden bg-stone-100"
+              className="relative group aspect-square rounded-xl overflow-hidden bg-stone-100 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!disabled) setActiveIndex(isActive ? null : index);
+              }}
             >
               <img
                 src={url}
@@ -287,25 +295,29 @@ export function MultiImageUpload({
                 draggable={false}
               />
               {/* 封面角标（左上角） */}
-              {isCurrentCover && (
+              {isCurrentCover && !isActive && (
                 <div className="absolute top-1 left-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-xs font-medium shadow-sm">
                   {copy.ui.upload.currentCover}
                 </div>
               )}
-              {/* hover 操作层 */}
+              {/* 操作层：桌面 hover 或移动端 tap 激活时显示 */}
               {!disabled && (
                 <div
                   className={cn(
                     "absolute inset-0 bg-black/30 transition-opacity duration-150",
                     "flex items-center justify-center",
-                    isCurrentCover ? "opacity-0" : "opacity-0 group-hover:opacity-100"
+                    isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                   )}
                 >
                   {/* 设为封面按钮 */}
                   {!isCurrentCover && onSetCover && (
                     <button
                       type="button"
-                      onClick={() => onSetCover(url)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSetCover(url);
+                        setActiveIndex(null);
+                      }}
                       aria-label={copy.ui.upload.setAsCover}
                       className={cn(
                         "absolute top-1 left-1 w-6 h-6 rounded-full",
@@ -320,7 +332,11 @@ export function MultiImageUpload({
                   {/* 删除按钮（右上） */}
                   <button
                     type="button"
-                    onClick={() => handleDelete(index)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveIndex(null);
+                      handleDelete(index);
+                    }}
                     aria-label="删除图片"
                     className={cn(
                       "absolute top-1 right-1 w-6 h-6 rounded-full",
