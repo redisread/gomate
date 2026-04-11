@@ -28,7 +28,7 @@ interface NavbarProps {
  * - 用户菜单：hover 展开下拉
  */
 export function Navbar({ className }: NavbarProps) {
-  const [isScrolled,        setIsScrolled]        = React.useState(false);
+  const [isScrolled,        setIsScrolled]        = React.useState(() => typeof window !== "undefined" && window.scrollY > 20);
   const [isMobileMenuOpen,  setIsMobileMenuOpen]  = React.useState(false);
   const [showUserMenu,      setShowUserMenu]      = React.useState(false);
   const [currentPath,       setCurrentPath]       = React.useState("");

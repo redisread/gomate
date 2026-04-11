@@ -35,25 +35,25 @@ const LEVEL_CONFIG: Record<string, {
   emoji: string;
 }> = {
   beginner: {
-    badge: "bg-amber-50 text-amber-700 border border-amber-200",
+    badge: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50",
     glow: "shadow-amber-100",
     icon: "text-amber-500",
     emoji: "🌱",
   },
   intermediate: {
-    badge: "bg-sky-50 text-sky-700 border border-sky-200",
+    badge: "bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-900/50",
     glow: "shadow-sky-100",
     icon: "text-sky-500",
     emoji: "⛰️",
   },
   advanced: {
-    badge: "bg-violet-50 text-violet-700 border border-violet-200",
+    badge: "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-900/50",
     glow: "shadow-violet-100",
     icon: "text-violet-500",
     emoji: "🏔️",
   },
   expert: {
-    badge: "bg-amber-50 text-amber-700 border border-amber-200",
+    badge: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50",
     glow: "shadow-amber-100",
     icon: "text-amber-500",
     emoji: "🦅",
@@ -87,10 +87,10 @@ function StatCard({
         <div className={cn(
           "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200",
           accent
-            ? "bg-amber-50 group-hover:bg-amber-100"
-            : "bg-stone-50 dark:bg-stone-900 dark:bg-stone-100 group-hover:bg-stone-100 dark:bg-stone-800 dark:bg-stone-300"
+            ? "bg-amber-50 group-hover:bg-amber-100 dark:bg-amber-950/30 group-hover:dark:bg-amber-900/30"
+            : "bg-stone-50 dark:bg-stone-800 group-hover:bg-stone-100 dark:group-hover:bg-stone-700"
         )}>
-          <Icon className={cn("h-5 w-5", accent ? "text-amber-600" : "text-stone-400 dark:text-stone-500")} />
+          <Icon className={cn("h-5 w-5", accent ? "text-amber-600 dark:text-amber-400" : "text-stone-400 dark:text-stone-500")} />
         </div>
         {href && (
           <ChevronRight className="h-4 w-4 text-stone-300 dark:text-stone-600 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
@@ -98,10 +98,10 @@ function StatCard({
       </div>
       <p className={cn(
         "text-3xl font-bold mb-1",
-        accent ? "text-foreground" : "text-stone-700 dark:text-stone-300 dark:text-stone-600"
+        accent ? "text-foreground" : "text-stone-700 dark:text-stone-300"
       )}>{value}</p>
       <p className="text-xs text-stone-400 dark:text-stone-500 font-medium">{label}</p>
-      {sublabel && <p className="text-xs text-stone-300 dark:text-stone-600 mt-0.5">{sublabel}</p>}
+      {sublabel && <p className="text-xs text-stone-400 dark:text-stone-600 mt-0.5">{sublabel}</p>}
     </div>
   );
   return href ? <a href={href}>{inner}</a> : inner;
@@ -190,11 +190,11 @@ export function ProfileClient() {
             <div className="h-36 bg-gradient-to-r from-stone-100 dark:from-stone-800 via-stone-50 dark:via-stone-900 to-stone-100 dark:to-stone-800 animate-pulse" />
             <div className="px-6 pb-6 pt-20">
               <div className="space-y-3">
-                <div className="h-6 bg-stone-100 dark:bg-stone-800 dark:bg-stone-300 rounded-full w-40 animate-pulse" />
-                <div className="h-4 bg-stone-100 dark:bg-stone-800 dark:bg-stone-300 rounded-full w-56 animate-pulse" />
+                <div className="h-6 bg-stone-100 dark:bg-stone-800 rounded-full w-40 animate-pulse" />
+                <div className="h-4 bg-stone-100 dark:bg-stone-800 rounded-full w-56 animate-pulse" />
                 <div className="flex gap-2 mt-4">
-                  <div className="h-6 w-24 bg-stone-100 dark:bg-stone-800 dark:bg-stone-300 rounded-full animate-pulse" />
-                  <div className="h-6 w-32 bg-stone-100 dark:bg-stone-800 dark:bg-stone-300 rounded-full animate-pulse" />
+                  <div className="h-6 w-24 bg-stone-100 dark:bg-stone-800 rounded-full animate-pulse" />
+                  <div className="h-6 w-32 bg-stone-100 dark:bg-stone-800 rounded-full animate-pulse" />
                 </div>
               </div>
             </div>
@@ -203,8 +203,8 @@ export function ProfileClient() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-5">
-                <div className="h-3 bg-stone-100 dark:bg-stone-800 dark:bg-stone-300 rounded-full w-16 animate-pulse mb-3" />
-                <div className="h-8 bg-stone-100 dark:bg-stone-800 dark:bg-stone-300 rounded-full w-12 animate-pulse" />
+                <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded-full w-16 animate-pulse mb-3" />
+                <div className="h-8 bg-stone-100 dark:bg-stone-800 rounded-full w-12 animate-pulse" />
               </div>
             ))}
           </div>
@@ -302,7 +302,7 @@ export function ProfileClient() {
                   </a>
                   <button
                     onClick={handleLogout}
-                    className="inline-flex items-center gap-1.5 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 dark:text-stone-500 px-4 py-2 rounded-xl text-sm font-medium hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-all duration-150 active:scale-95"
+                    className="inline-flex items-center gap-1.5 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 px-4 py-2 rounded-xl text-sm font-medium hover:border-red-200 dark:hover:border-red-800 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-150 active:scale-95"
                   >
                     <LogOut className="h-3.5 w-3.5" />
                     {copy.profile.logoutBtn}
@@ -323,7 +323,7 @@ export function ProfileClient() {
 
                 {/* 徒步次数 */}
                 {(user.completedHikes ?? 0) > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-900 dark:bg-stone-100 text-stone-600 dark:text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
                     <Mountain className="h-3 w-3" />
                     已完成 {user.completedHikes} {copy.profile.hikesCompleted}
                   </span>
@@ -331,7 +331,7 @@ export function ProfileClient() {
 
                 {/* 性别 */}
                 {user.gender && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-900 dark:bg-stone-100 text-stone-600 dark:text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
                     {user.gender === "male" ? "♂ 男" : user.gender === "female" ? "♀ 女" : copy.common.unknown}
                   </span>
                 )}
@@ -341,7 +341,7 @@ export function ProfileClient() {
                   const age = getAgeNumber(user.birthday);
                   const formatted = formatBirthday(user.birthday);
                   return (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-900 dark:bg-stone-100 text-stone-600 dark:text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
                       🎂 {formatted}（{age}{copy.profile.ageSuffix}）
                     </span>
                   );
@@ -350,7 +350,7 @@ export function ProfileClient() {
 
               {/* 个人简介 */}
               {user.bio && (
-                <p className="mt-4 text-stone-500 dark:text-stone-400 dark:text-stone-500 text-sm leading-relaxed border-t border-stone-100 dark:border-stone-800 pt-4">
+                <p className="mt-4 text-stone-500 dark:text-stone-400 text-sm leading-relaxed border-t border-stone-100 dark:border-stone-800 pt-4">
                   {user.bio}
                 </p>
               )}
@@ -362,13 +362,13 @@ export function ProfileClient() {
                   if (extra.equipment?.length) {
                     return (
                       <div className="mt-4 border-t border-stone-100 dark:border-stone-800 pt-4">
-                        <div className="text-xs text-stone-500 dark:text-stone-400 dark:text-stone-500 mb-2 flex items-center gap-1">
+                        <div className="text-xs text-stone-500 dark:text-stone-400 mb-2 flex items-center gap-1">
                           <Mountain className="h-3.5 w-3.5" />
                           {copy.profile.equipmentLabel}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {extra.equipment.map((item: string, i: number) => (
-                            <span key={i} className="px-2.5 py-1 bg-stone-100 dark:bg-stone-800 dark:bg-stone-300 text-stone-700 dark:text-stone-300 dark:text-stone-600 rounded-full text-xs">
+                            <span key={i} className="px-2.5 py-1 bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-full text-xs">
                               {item}
                             </span>
                           ))}
@@ -387,11 +387,11 @@ export function ProfileClient() {
                   if (extra.experience?.trim()) {
                     return (
                       <div className="mt-4 border-t border-stone-100 dark:border-stone-800 pt-4">
-                        <div className="text-xs text-stone-500 dark:text-stone-400 dark:text-stone-500 mb-2 flex items-center gap-1">
+                        <div className="text-xs text-stone-500 dark:text-stone-400 mb-2 flex items-center gap-1">
                           <FileText className="h-3.5 w-3.5" />
                           {copy.profile.experienceLabel}
                         </div>
-                        <p className="text-stone-600 dark:text-stone-400 dark:text-stone-500 text-sm leading-relaxed whitespace-pre-wrap">
+                        <p className="text-stone-600 dark:text-stone-400 text-sm leading-relaxed whitespace-pre-wrap">
                           {extra.experience.trim()}
                         </p>
                       </div>
@@ -572,12 +572,12 @@ export function ProfileClient() {
           <div className="bg-card rounded-3xl border border-dashed border-stone-200 dark:border-stone-700 p-16 text-center">
             {/* 多层圆形装饰 */}
             <div className="relative inline-flex items-center justify-center mb-8">
-              <div className="w-24 h-24 rounded-full bg-amber-50 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
-                  <Mountain className="h-8 w-8 text-amber-400" />
+              <div className="w-24 h-24 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <Mountain className="h-8 w-8 text-amber-400 dark:text-amber-500" />
                 </div>
               </div>
-              <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-xs">✨</div>
+              <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs">✨</div>
             </div>
             <h3 className="text-lg font-bold text-foreground mb-2">{copy.profile.noTeamsTitle}</h3>
             <p className="text-sm text-stone-400 dark:text-stone-500 mb-8 max-w-xs mx-auto leading-relaxed">{copy.profile.noTeamsDesc}</p>

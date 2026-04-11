@@ -22,7 +22,7 @@ const statusLabels: Record<string, { label: string; color: string; dot: string }
   full: { label: c.statusFull, color: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-500" },
   formed: { label: c.statusFormed, color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
   ongoing: { label: "进行中", color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
-  completed: { label: c.statusCompleted, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" },
+  completed: { label: c.statusCompleted, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" },
   cancelled: { label: c.statusCancelled, color: "bg-red-50 text-red-600 border border-red-200", dot: "bg-red-400" },
 };
 
@@ -30,7 +30,7 @@ const statusLabels: Record<string, { label: string; color: string; dot: string }
 const applicationStatusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: { label: c.appStatusPending, color: "bg-amber-50 text-amber-700 border border-amber-200", icon: Hourglass },
   approved: { label: c.appStatusApproved, color: "bg-amber-50 text-amber-700 border border-amber-200", icon: CheckCircle },
-  rejected: { label: c.appStatusRejected, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700", icon: XCircle },
+  rejected: { label: c.appStatusRejected, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", icon: XCircle },
 };
 
 // 等级标签
@@ -432,7 +432,7 @@ export function MyTeamsClient() {
       <Navbar />
 
       {/* Hero Header */}
-      <div className="bg-white border-b border-stone-100 dark:border-stone-800 pt-16">
+      <div className="bg-stone-50 dark:bg-stone-900 border-b border-stone-100 dark:border-stone-800 pt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-between gap-4">
           <div>
             <p className="text-xs text-stone-400 dark:text-stone-500 mb-1">欢迎回来</p>
@@ -460,7 +460,7 @@ export function MyTeamsClient() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         {/* Toast message */}
         {actionMessage && (
-          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700 flex items-center justify-between">
+          <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-sm text-amber-700 dark:text-amber-400 flex items-center justify-between">
             <span className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-amber-500" />
               {actionMessage}
@@ -485,7 +485,7 @@ export function MyTeamsClient() {
                   "flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-all duration-200 whitespace-nowrap relative",
                   activeTab === id
                     ? "text-amber-700 border-b-2 border-amber-500"
-                    : "text-stone-500 dark:text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:text-stone-300 dark:text-stone-600 border-b-2 border-transparent"
+                    : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 border-b-2 border-transparent"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -515,7 +515,7 @@ export function MyTeamsClient() {
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
                     roleFilter === id
                       ? "bg-amber-500 text-white"
-                      : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 dark:text-stone-500 hover:bg-stone-200 dark:bg-stone-700"
+                      : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
                   )}
                 >
                   {label}
@@ -624,7 +624,7 @@ export function MyTeamsClient() {
                   "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
                   applicationSubTab === "my"
                     ? "bg-white text-stone-800 shadow-sm"
-                    : "text-stone-500 dark:text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:text-stone-300 dark:text-stone-600"
+                    : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300"
                 )}
               >
                 <ClipboardCheck className="h-4 w-4" />
@@ -639,7 +639,7 @@ export function MyTeamsClient() {
                   "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
                   applicationSubTab === "pending"
                     ? "bg-white text-stone-800 shadow-sm"
-                    : "text-stone-500 dark:text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:text-stone-300 dark:text-stone-600"
+                    : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300"
                 )}
               >
                 <Hourglass className="h-4 w-4" />
@@ -736,7 +736,7 @@ export function MyTeamsClient() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-2xl font-semibold text-stone-500 dark:text-stone-400 dark:text-stone-500">
+                        <span className="text-2xl font-semibold text-stone-500 dark:text-stone-500">
                           {selectedApproval.applicant.name?.charAt(0) || "?"}
                         </span>
                       )}
@@ -749,7 +749,7 @@ export function MyTeamsClient() {
                           {lv.emoji} {lv.label}
                         </span>
                       ) : (
-                        <span className="mt-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 dark:text-stone-500">
+                        <span className="mt-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-500">
                           {selectedApproval.applicant.level}
                         </span>
                       );
@@ -759,7 +759,7 @@ export function MyTeamsClient() {
                   {/* 个人简介 */}
                   {selectedApproval.applicant.bio ? (
                     <div className="mb-4 pl-4 border-l-4 border-amber-300 py-1">
-                      <p className="text-sm text-stone-600 dark:text-stone-400 dark:text-stone-500 italic leading-relaxed">{selectedApproval.applicant.bio}</p>
+                      <p className="text-sm text-stone-600 dark:text-stone-500 italic leading-relaxed">{selectedApproval.applicant.bio}</p>
                     </div>
                   ) : (
                     <p className="mb-4 text-sm text-stone-400 dark:text-stone-500 text-center">{c.noBio}</p>
@@ -767,9 +767,9 @@ export function MyTeamsClient() {
 
                   {/* 微信号 */}
                   {selectedApproval.applicant.wechat && (
-                    <div className="mb-4 flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400 dark:text-stone-500 bg-stone-50 dark:bg-stone-900 rounded-xl px-4 py-2.5">
-                      <span className="font-medium text-stone-700 dark:text-stone-300 dark:text-stone-600">微信：</span>
-                      <span className="text-stone-600 dark:text-stone-400 dark:text-stone-500">{selectedApproval.applicant.wechat}</span>
+                    <div className="mb-4 flex items-center gap-2 text-sm text-stone-600 dark:text-stone-500 bg-stone-50 dark:bg-stone-900 rounded-xl px-4 py-2.5">
+                      <span className="font-medium text-stone-700 dark:text-stone-300">微信：</span>
+                      <span className="text-stone-600 dark:text-stone-500">{selectedApproval.applicant.wechat}</span>
                     </div>
                   )}
 
@@ -778,7 +778,7 @@ export function MyTeamsClient() {
                     <div className="mb-4 bg-stone-50 dark:bg-stone-900 rounded-2xl p-4">
                       <p className="text-xs text-stone-400 dark:text-stone-500 mb-2 font-medium uppercase tracking-wide">申请加入的队伍</p>
                       <p className="font-semibold text-stone-800 mb-2">{selectedApproval.team.title}</p>
-                      <div className="flex flex-wrap gap-3 text-xs text-stone-500 dark:text-stone-400 dark:text-stone-500">
+                      <div className="flex flex-wrap gap-3 text-xs text-stone-500 dark:text-stone-500">
                         {selectedApproval.team.date && (
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />
@@ -831,7 +831,7 @@ export function MyTeamsClient() {
 
               <button
                 onClick={() => setIsDetailOpen(false)}
-                className="mt-3 w-full text-sm text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:text-stone-400 dark:text-stone-500 py-2 transition-colors"
+                className="mt-3 w-full text-sm text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:text-stone-500 py-2 transition-colors"
               >
                 暂不处理
               </button>
@@ -851,11 +851,11 @@ export function MyTeamsClient() {
               <XCircle className="h-6 w-6 text-red-500" />
             </div>
             <h2 className="text-lg font-bold text-foreground mb-2 text-center">{c.rejectConfirmTitle}</h2>
-            <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mb-6 text-center">{c.rejectConfirmDesc}</p>
+            <p className="text-sm text-stone-500 dark:text-stone-500 mb-6 text-center">{c.rejectConfirmDesc}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setIsRejectConfirmOpen(false)}
-                className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 dark:text-stone-600 hover:bg-stone-50 dark:bg-stone-900 py-3 rounded-2xl font-semibold transition-colors"
+                className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:bg-stone-900 py-3 rounded-2xl font-semibold transition-colors"
               >
                 {c.cancelBtn}
               </button>
@@ -881,14 +881,14 @@ export function MyTeamsClient() {
               </div>
               <h3 className="text-base font-bold text-foreground">{copy.teams.cancelTeam}</h3>
             </div>
-            <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 leading-relaxed mb-5">
+            <p className="text-sm text-stone-500 dark:text-stone-500 leading-relaxed mb-5">
               {copy.teams.cancelTeamConfirm}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setCancelTarget(null)}
                 disabled={isCancelling}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 dark:text-stone-500 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-500 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors disabled:opacity-50"
               >
                 {copy.common.cancel}
               </button>
@@ -921,14 +921,14 @@ export function MyTeamsClient() {
                   {isFull ? copy.teams.formTeamConfirm : copy.teams.formTeamUnderfilledConfirm}
                 </h3>
               </div>
-              <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 leading-relaxed mb-5">
+              <p className="text-sm text-stone-500 dark:text-stone-500 leading-relaxed mb-5">
                 {copy.teams.formTeamWarning}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setFormTarget(null)}
                   disabled={isForming}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 dark:text-stone-500 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-500 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors disabled:opacity-50"
                 >
                   {copy.common.cancel}
                 </button>
@@ -1014,7 +1014,7 @@ function EmptyState({
         </div>
       </div>
       <h3 className="text-lg font-semibold text-stone-800 mb-2">{title}</h3>
-      <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mb-6 max-w-xs leading-relaxed">{desc}</p>
+      <p className="text-sm text-stone-500 dark:text-stone-500 mb-6 max-w-xs leading-relaxed">{desc}</p>
       <a href={href}>
         <button className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors text-sm shadow-md shadow-amber-100">
           {btnLabel}
@@ -1045,7 +1045,7 @@ function CollapsibleSection({
       >
         <div className="flex items-center gap-2.5">
           <h3 className="font-semibold text-stone-800">{title}</h3>
-          <span className="text-xs px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 dark:text-stone-500 rounded-full">{count}</span>
+          <span className="text-xs px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-500 rounded-full">{count}</span>
         </div>
         <ChevronDown
           className={cn("h-4 w-4 text-stone-400 dark:text-stone-500 transition-transform duration-200", isExpanded ? "" : "-rotate-90")}
@@ -1066,7 +1066,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
   onCancel?: (id: string) => void;
   onForm?: (id: string) => void;
 }) {
-  const status = statusLabels[team.status] || { label: team.status, color: "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" };
+  const status = statusLabels[team.status] || { label: team.status, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" };
   const isFull = team.currentMembers >= team.maxMembers;
   const canCancel = isLeader && onCancel && (team.status === "recruiting" || team.status === "full");
   const canForm = isLeader && onForm && (team.status === "recruiting" || team.status === "full");
@@ -1104,7 +1104,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
                   )}
                 </div>
                 {team.location?.name && (
-                  <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mt-1 flex items-center gap-1">
+                  <p className="text-sm text-stone-500 dark:text-stone-500 mt-1 flex items-center gap-1">
                     <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
                     <span className="truncate">{team.location.name}</span>
                   </p>
@@ -1119,13 +1119,13 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
 
             <div className="flex flex-wrap items-center gap-3 mt-3 text-sm">
               {team.date && (
-                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-400 dark:text-stone-500">
+                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-500">
                   <Calendar className="h-3.5 w-3.5" />
                   {team.date}
                 </span>
               )}
               {team.time && (
-                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-400 dark:text-stone-500">
+                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-500">
                   <Clock className="h-3.5 w-3.5" />
                   {team.time}
                 </span>
@@ -1200,7 +1200,7 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
                   {team.title}
                 </h3>
                 {team.location?.name && (
-                  <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mt-1 flex items-center gap-1">
+                  <p className="text-sm text-stone-500 dark:text-stone-500 mt-1 flex items-center gap-1">
                     <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
                     <span className="truncate">{team.location.name}</span>
                   </p>
@@ -1215,13 +1215,13 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
 
             <div className="flex flex-wrap items-center gap-3 mt-3 text-sm">
               {team.date && (
-                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-400 dark:text-stone-500">
+                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-500">
                   <Calendar className="h-3.5 w-3.5" />
                   {team.date}
                 </span>
               )}
               {team.time && (
-                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-400 dark:text-stone-500">
+                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-500">
                   <Clock className="h-3.5 w-3.5" />
                   {team.time}
                 </span>
@@ -1238,7 +1238,7 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
             <div className="flex items-center justify-between mt-2">
               {team.leader && (
                 <p className="text-xs text-stone-400 dark:text-stone-500">
-                  队长：<span className="text-stone-600 dark:text-stone-400 dark:text-stone-500">{team.leader.name}</span>
+                  队长：<span className="text-stone-600 dark:text-stone-500">{team.leader.name}</span>
                 </p>
               )}
               <p className="text-xs text-stone-400 dark:text-stone-500 ml-auto">{formatTimeAgo(application.createdAt)}</p>
@@ -1285,7 +1285,7 @@ function PendingApprovalCard({
           {applicant.avatar ? (
             <img src={applicant.avatar} alt={applicant.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-xl font-semibold text-stone-500 dark:text-stone-400 dark:text-stone-500">{applicant.name?.charAt(0) || "?"}</span>
+            <span className="text-xl font-semibold text-stone-500 dark:text-stone-500">{applicant.name?.charAt(0) || "?"}</span>
           )}
         </div>
 
@@ -1297,13 +1297,13 @@ function PendingApprovalCard({
                 {lv.emoji} {lv.label}
               </span>
             ) : (
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 dark:text-stone-500">
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-500">
                 {applicant.level}
               </span>
             )}
           </div>
           {applicant.bio ? (
-            <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mt-1 line-clamp-1 leading-relaxed">{applicant.bio}</p>
+            <p className="text-sm text-stone-500 dark:text-stone-500 mt-1 line-clamp-1 leading-relaxed">{applicant.bio}</p>
           ) : (
             <p className="text-sm text-stone-400 dark:text-stone-500 mt-1 italic">{c.noBio}</p>
           )}
@@ -1312,8 +1312,8 @@ function PendingApprovalCard({
 
       {/* 队伍信息简卡 */}
       <div className="mt-3 bg-stone-50 dark:bg-stone-900 rounded-xl px-4 py-3 text-sm">
-        <p className="font-medium text-stone-700 dark:text-stone-300 dark:text-stone-600 mb-1.5 truncate">{c.applyToJoin}：{team.title}</p>
-        <div className="flex flex-wrap gap-3 text-stone-500 dark:text-stone-400 dark:text-stone-500 text-xs">
+        <p className="font-medium text-stone-700 dark:text-stone-300 mb-1.5 truncate">{c.applyToJoin}：{team.title}</p>
+        <div className="flex flex-wrap gap-3 text-stone-500 dark:text-stone-500 text-xs">
           {team.date && (
             <span className="flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
