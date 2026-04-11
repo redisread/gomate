@@ -1,18 +1,20 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "next-themes";
+import { useStore } from "@nanostores/react";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
+import { themeStore, type Theme, initThemeSystemListener } from "@/stores/theme";
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const theme = useStore(themeStore);
   const [mounted, setMounted] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
 
-  // 防止 hydration mismatch
+  // Initialize system preference listener on client
   React.useEffect(() => {
+    initThemeSystemListener();
     setMounted(true);
   }, []);
 
@@ -51,8 +53,8 @@ export function ThemeToggle() {
     }
   };
 
-  const handleSelect = (newTheme: string) => {
-    setTheme(newTheme);
+  const handleSelect = (newTheme: Theme) => {
+    themeStore.set(newTheme);
     setIsOpen(false);
   };
 

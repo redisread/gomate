@@ -55,17 +55,17 @@ function FaqAccordionItem({
   onToggle: () => void;
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+    <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-700 overflow-hidden">
       <button
-        className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-stone-50 transition-colors"
+        className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
         onClick={onToggle}
         aria-expanded={isOpen}
       >
-        <span className="font-medium text-stone-800">{item.question}</span>
+        <span className="font-medium text-stone-800 dark:text-stone-200">{item.question}</span>
         {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-amber-600 flex-shrink-0" />
+          <ChevronUp className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-stone-400 flex-shrink-0" />
+          <ChevronDown className="w-5 h-5 text-stone-400 dark:text-stone-500 flex-shrink-0" />
         )}
       </button>
 
@@ -74,7 +74,7 @@ function FaqAccordionItem({
         className="overflow-hidden transition-all duration-300 ease-in-out"
         style={{ maxHeight: isOpen ? "300px" : "0px" }}
       >
-        <p className="px-6 pb-5 pt-1 text-stone-600 leading-relaxed border-t border-stone-100">
+        <p className="px-6 pb-5 pt-1 text-stone-600 dark:text-stone-400 leading-relaxed border-t border-stone-100 dark:border-stone-800">
           {item.answer}
         </p>
       </div>
@@ -91,15 +91,15 @@ export function HelpClient() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex flex-col">
       <Navbar />
 
       <main className="flex-1">
         {/* Hero 区域 */}
-        <div className="bg-stone-50 border-b border-stone-200">
+        <div className="bg-stone-50 dark:bg-stone-900 border-b border-stone-200 dark:border-stone-700">
           <div className="max-w-3xl mx-auto px-6 py-10">
             {/* 面包屑 */}
-            <nav className="flex items-center gap-1 text-sm text-stone-500 mb-4">
+            <nav className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 mb-4">
               <a
                 href="/"
                 className="flex items-center gap-1 hover:text-amber-600 transition-colors"
@@ -108,11 +108,11 @@ export function HelpClient() {
                 <span>首页</span>
               </a>
               <ChevronRight className="w-4 h-4" />
-              <span className="text-stone-700 font-medium">帮助中心</span>
+              <span className="text-stone-700 dark:text-stone-300 font-medium">帮助中心</span>
             </nav>
 
-            <h1 className="text-3xl font-bold text-stone-900">帮助中心</h1>
-            <p className="mt-2 text-stone-500 text-base">找到你需要的答案</p>
+            <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100">帮助中心</h1>
+            <p className="mt-2 text-stone-500 dark:text-stone-400 text-base">找到你需要的答案</p>
           </div>
         </div>
 
@@ -130,9 +130,9 @@ export function HelpClient() {
           </div>
 
           {/* 底部 CTA */}
-          <div className="mt-12 text-center bg-white rounded-2xl border border-stone-200 shadow-sm px-8 py-10">
-            <h2 className="text-xl font-semibold text-stone-900">还有其他问题？</h2>
-            <p className="mt-2 text-stone-500">
+          <div className="mt-12 text-center bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm px-8 py-10">
+            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100">还有其他问题？</h2>
+            <p className="mt-2 text-stone-500 dark:text-stone-400">
               发送邮件给我们，我们会在 24 小时内回复
             </p>
             <a

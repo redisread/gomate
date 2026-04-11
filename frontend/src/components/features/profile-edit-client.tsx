@@ -37,7 +37,7 @@ const PRESET_EQUIPMENT = [
 /** 字段 Label 组件 */
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="text-sm font-semibold text-stone-700 flex items-center gap-1">
+    <label className="text-sm font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1">
       {children}
       {required && <span className="text-red-400">*</span>}
     </label>
@@ -47,7 +47,7 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
 /** 卡片容器 */
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white rounded-2xl border border-stone-100 shadow-sm p-6 ${className}`}>
+    <div className={`bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 shadow-sm p-6 ${className}`}>
       {children}
     </div>
   );
@@ -56,18 +56,18 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 /** 卡片标题行 */
 function CardSection({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
-    <div className="flex items-center gap-2 mb-5 pb-4 border-b border-stone-50">
-      <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
-        <Icon className="h-4 w-4 text-amber-600" />
+    <div className="flex items-center gap-2 mb-5 pb-4 border-b border-stone-50 dark:border-stone-800">
+      <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center">
+        <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
       </div>
-      <span className="text-sm font-semibold text-stone-700">{title}</span>
+      <span className="text-sm font-semibold text-stone-700 dark:text-stone-300">{title}</span>
     </div>
   );
 }
 
 /** 通用 Input 样式 */
 const inputCls =
-  "w-full px-4 py-3 border border-stone-200 rounded-xl text-stone-900 placeholder:text-stone-300 " +
+  "w-full px-4 py-3 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-600 " +
   "focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all";
 
 /**
@@ -250,10 +250,10 @@ const { experience, equipment } = parseExtra(user.extra);
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-stone-50">
+      <main className="min-h-screen bg-stone-50 dark:bg-stone-950">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-amber-400 dark:text-amber-500" />
         </div>
       </main>
     );
@@ -264,14 +264,14 @@ const { experience, equipment } = parseExtra(user.extra);
   const bioAtLimit = bioLength >= 200;
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <Navbar />
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-24 pb-16">
         {/* 面包屑返回 */}
         <a
           href="/profile"
-          className="inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-800 transition-colors text-sm mb-8"
+          className="inline-flex items-center gap-1.5 text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 transition-colors text-sm mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
           {copy.profile.backProfile}
@@ -281,8 +281,8 @@ const { experience, equipment } = parseExtra(user.extra);
         <div className="mb-8 flex items-start gap-4">
           <div className="w-1 h-12 rounded-full bg-amber-500 mt-0.5 flex-shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-stone-900">{copy.profile.editTitle}</h1>
-            <p className="text-stone-500 mt-1 text-sm">{copy.profile.editWarmSubtitle}</p>
+            <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">{copy.profile.editTitle}</h1>
+            <p className="text-stone-500 dark:text-stone-400 mt-1 text-sm">{copy.profile.editWarmSubtitle}</p>
           </div>
         </div>
 
@@ -296,7 +296,7 @@ const { experience, equipment } = parseExtra(user.extra);
                 className="relative group cursor-pointer"
                 onClick={() => !isUploading && fileInputRef.current?.click()}
               >
-                <div className="w-28 h-28 rounded-full ring-4 ring-white shadow-xl overflow-hidden bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <div className="w-28 h-28 rounded-full ring-4 ring-white dark:ring-stone-800 shadow-xl overflow-hidden bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="头像" className="w-full h-full object-cover" />
                   ) : (
@@ -339,7 +339,7 @@ const { experience, equipment } = parseExtra(user.extra);
 
               {/* 已选文件提示条 */}
               {selectedFile ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-xs text-amber-700">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-full text-xs text-amber-700 dark:text-amber-400">
                   <Check className="h-3 w-3" />
                   <span>{copy.profile.avatarSelected} {selectedFile.name}</span>
                   <button
@@ -366,7 +366,7 @@ const { experience, equipment } = parseExtra(user.extra);
                 <input
                   value={user?.name || ""}
                   disabled
-                  className={`${inputCls} bg-stone-50 text-stone-400 cursor-not-allowed`}
+                  className={`${inputCls} bg-stone-50 dark:bg-stone-800 text-stone-400 dark:text-stone-600 cursor-not-allowed`}
                 />
                 <p className="text-xs text-stone-400 flex items-center gap-1">
                   <Info className="h-3 w-3" />
@@ -430,8 +430,8 @@ const { experience, equipment } = parseExtra(user.extra);
                         key={opt.value}
                         className={`relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all ${
                           isSelected
-                            ? "border-amber-500 bg-gradient-to-br from-amber-50 to-amber-100/50 shadow-md shadow-amber-100"
-                            : "border-stone-100 bg-white hover:border-amber-200 hover:bg-amber-50/30"
+                            ? "border-amber-500 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/50 dark:to-amber-900/30 shadow-md shadow-amber-100 dark:shadow-amber-950/30"
+                            : "border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-amber-200 dark:hover:border-amber-900 hover:bg-amber-50/30 dark:hover:bg-amber-950/20"
                         }`}
                       >
                         <input
@@ -443,10 +443,10 @@ const { experience, equipment } = parseExtra(user.extra);
                           className="sr-only"
                         />
                         <span className="text-2xl mb-1.5">{opt.emoji}</span>
-                        <span className={`text-sm font-bold ${isSelected ? "text-amber-700" : "text-stone-800"}`}>
+                        <span className={`text-sm font-bold ${isSelected ? "text-amber-700 dark:text-amber-400" : "text-stone-800 dark:text-stone-200"}`}>
                           {opt.label}
                         </span>
-                        <span className={`text-xs mt-0.5 ${isSelected ? "text-amber-600" : "text-stone-400"}`}>
+                        <span className={`text-xs mt-0.5 ${isSelected ? "text-amber-600 dark:text-amber-500" : "text-stone-400 dark:text-stone-500"}`}>
                           {opt.description}
                         </span>
                         {isSelected && (
@@ -491,8 +491,8 @@ const { experience, equipment } = parseExtra(user.extra);
                         disabled={isSelected}
                         className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
                           isSelected
-                            ? "bg-amber-100 text-amber-400 cursor-not-allowed"
-                            : "bg-stone-100 text-stone-600 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 border border-transparent"
+                            ? "bg-amber-100 dark:bg-amber-900/40 text-amber-400 dark:text-amber-600 cursor-not-allowed"
+                            : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-200 dark:hover:border-amber-900 border border-transparent"
                         }`}
                       >
                         {item}
@@ -518,7 +518,7 @@ const { experience, equipment } = parseExtra(user.extra);
                     {formData.equipment.map((item, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full text-sm border border-amber-200"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-sm border border-amber-200 dark:border-amber-900/50"
                       >
                         {item}
                         <button
@@ -567,7 +567,7 @@ const { experience, equipment } = parseExtra(user.extra);
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className={`${inputCls} bg-white appearance-none`}
+                  className={`${inputCls} bg-white dark:bg-stone-800 appearance-none`}
                 >
                   <option value="">{copy.common.unknown}</option>
                   <option value="male">{copy.enums.gender.male}</option>
@@ -600,9 +600,9 @@ const { experience, equipment } = parseExtra(user.extra);
               <input
                 value={user?.email || ""}
                 disabled
-                className={`${inputCls} bg-stone-50 text-stone-400 cursor-not-allowed`}
+                className={`${inputCls} bg-stone-50 dark:bg-stone-800 text-stone-400 dark:text-stone-600 cursor-not-allowed`}
               />
-              <p className="text-xs text-stone-400">{copy.profile.emailReadonly}</p>
+              <p className="text-xs text-stone-400 dark:text-stone-500">{copy.profile.emailReadonly}</p>
             </div>
           </Card>
 
@@ -611,8 +611,8 @@ const { experience, equipment } = parseExtra(user.extra);
             <div
               className={`flex items-center gap-3 p-4 rounded-xl border ${
                 message.type === "success"
-                  ? "bg-gradient-to-r from-amber-50 to-amber-100/60 border-amber-200 text-amber-700"
-                  : "bg-red-50 border-red-200 text-red-700"
+                  ? "bg-gradient-to-r from-amber-50 to-amber-100/60 dark:from-amber-950/30 dark:to-amber-900/20 border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400"
+                  : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400"
               }`}
             >
               {message.type === "success" ? (
@@ -629,7 +629,7 @@ const { experience, equipment } = parseExtra(user.extra);
             <a href="/profile" className="flex-1">
               <button
                 type="button"
-                className="w-full border border-stone-200 text-stone-600 hover:bg-stone-50 py-3 rounded-xl font-medium text-sm transition-colors"
+                className="w-full border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 py-3 rounded-xl font-medium text-sm transition-colors"
               >
                 {copy.common.cancel}
               </button>
@@ -639,8 +639,8 @@ const { experience, equipment } = parseExtra(user.extra);
               disabled={isSaving || isUploading}
               className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
                 savedDone
-                  ? "bg-amber-500 text-white shadow-md shadow-amber-100"
-                  : "bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 disabled:opacity-50"
+                  ? "bg-amber-500 text-white shadow-md shadow-amber-100 dark:shadow-amber-950/30"
+                  : "bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 dark:shadow-amber-900/30 disabled:opacity-50"
               }`}
             >
               {(isSaving || isUploading) ? (

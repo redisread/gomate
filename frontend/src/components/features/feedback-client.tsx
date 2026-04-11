@@ -83,15 +83,15 @@ export function FeedbackClient() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex flex-col">
       <Navbar />
 
       <main className="flex-1">
         {/* Hero 区域 */}
-        <div className="bg-stone-50 border-b border-stone-200">
+        <div className="bg-stone-50 dark:bg-stone-900 border-b border-stone-200 dark:border-stone-700">
           <div className="max-w-3xl mx-auto px-6 py-10">
             {/* 面包屑 */}
-            <nav className="flex items-center gap-1 text-sm text-stone-500 mb-4">
+            <nav className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 mb-4">
               <a
                 href="/"
                 className="flex items-center gap-1 hover:text-amber-600 transition-colors"
@@ -100,15 +100,15 @@ export function FeedbackClient() {
                 <span>首页</span>
               </a>
               <ChevronRight className="w-4 h-4" />
-              <span className="text-stone-700 font-medium">
+              <span className="text-stone-700 dark:text-stone-300 font-medium">
                 {copy.feedback.pageTitle}
               </span>
             </nav>
 
-            <h1 className="text-3xl font-bold text-stone-900">
+            <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100">
               {copy.feedback.pageSubtitle}
             </h1>
-            <p className="mt-2 text-stone-500 text-base">
+            <p className="mt-2 text-stone-500 dark:text-stone-400 text-base">
               {type === "suggestion"
                 ? "您的每一个想法，都能帮助我们变得更好"
                 : "遇到问题？告诉我们，我们会尽快修复"}
@@ -118,17 +118,17 @@ export function FeedbackClient() {
 
         {/* 正文内容 */}
         <div className="max-w-3xl mx-auto px-6 py-12">
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden">
             {submitted ? (
               /* 提交成功状态 */
               <div className="text-center py-12 px-8">
-                <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-5 border border-green-100">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                <div className="w-16 h-16 rounded-full bg-green-50 dark:bg-green-950/30 flex items-center justify-center mx-auto mb-5 border border-green-100 dark:border-green-900/50">
+                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-stone-900 mb-2">
+                <h3 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-2">
                   {copy.feedback.successTitle}
                 </h3>
-                <p className="text-stone-500 text-sm mb-6">
+                <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">
                   {copy.feedback.successDesc}
                 </p>
                 <button
@@ -141,13 +141,13 @@ export function FeedbackClient() {
             ) : (
               <>
                 {/* 类型切换 Tab */}
-                <div className="flex border-b border-stone-200">
+                <div className="flex border-b border-stone-200 dark:border-stone-700">
                   <button
                     onClick={() => setType("suggestion")}
                     className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-medium transition-colors ${
                       type === "suggestion"
-                        ? "text-amber-600 border-b-2 border-amber-600 bg-amber-50/50"
-                        : "text-stone-500 hover:text-stone-700 hover:bg-stone-50"
+                        ? "text-amber-600 dark:text-amber-400 border-b-2 border-amber-600 dark:border-amber-400 bg-amber-50/50 dark:bg-amber-950/20"
+                        : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
                     }`}
                   >
                     <Lightbulb className="w-4 h-4" />
@@ -157,8 +157,8 @@ export function FeedbackClient() {
                     onClick={() => setType("bug")}
                     className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-medium transition-colors ${
                       type === "bug"
-                        ? "text-red-600 border-b-2 border-red-600 bg-red-50/50"
-                        : "text-stone-500 hover:text-stone-700 hover:bg-stone-50"
+                        ? "text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50/50 dark:bg-red-950/20"
+                        : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
                     }`}
                   >
                     <Bug className="w-4 h-4" />
@@ -171,7 +171,7 @@ export function FeedbackClient() {
                   {/* 姓名 + 邮箱 */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                      <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                         {copy.feedback.nameLabel}
                       </label>
                       <input
@@ -181,11 +181,11 @@ export function FeedbackClient() {
                         onChange={handleChange}
                         placeholder={copy.feedback.namePlaceholder}
                         required
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors bg-white dark:bg-stone-800"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                      <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                         {copy.feedback.emailLabel}
                       </label>
                       <input
@@ -195,22 +195,22 @@ export function FeedbackClient() {
                         onChange={handleChange}
                         placeholder={copy.feedback.emailPlaceholder}
                         required
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors bg-white dark:bg-stone-800"
                       />
                     </div>
                   </div>
 
                   {/* Bug 专属字段 */}
                   {type === "bug" && (
-                    <div className="space-y-4 p-4 bg-red-50/50 rounded-xl border border-red-100">
-                      <p className="text-sm text-stone-600 font-medium">
+                    <div className="space-y-4 p-4 bg-red-50/50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/50">
+                      <p className="text-sm text-stone-600 dark:text-stone-400 font-medium">
                         问题详情（选填，但有助于我们更快定位问题）
                       </p>
 
                       {/* 设备 + 浏览器 */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="flex items-center gap-1.5 text-sm text-stone-600 mb-1.5">
+                          <label className="flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 mb-1.5">
                             <Monitor className="w-3.5 h-3.5" />
                             {copy.feedback.deviceLabel}
                           </label>
@@ -220,11 +220,11 @@ export function FeedbackClient() {
                             value={form.device}
                             onChange={handleChange}
                             placeholder={copy.feedback.devicePlaceholder}
-                            className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors bg-white"
+                            className="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors bg-white dark:bg-stone-800"
                           />
                         </div>
                         <div>
-                          <label className="flex items-center gap-1.5 text-sm text-stone-600 mb-1.5">
+                          <label className="flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 mb-1.5">
                             <Globe className="w-3.5 h-3.5" />
                             {copy.feedback.browserLabel}
                           </label>
@@ -234,14 +234,14 @@ export function FeedbackClient() {
                             value={form.browser}
                             onChange={handleChange}
                             placeholder={copy.feedback.browserPlaceholder}
-                            className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors bg-white"
+                            className="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors bg-white dark:bg-stone-800"
                           />
                         </div>
                       </div>
 
                       {/* 问题页面 URL */}
                       <div>
-                        <label className="flex items-center gap-1.5 text-sm text-stone-600 mb-1.5">
+                        <label className="flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 mb-1.5">
                           <Link className="w-3.5 h-3.5" />
                           {copy.feedback.pageUrlLabel}
                         </label>
@@ -251,13 +251,13 @@ export function FeedbackClient() {
                           value={form.pageUrl}
                           onChange={handleChange}
                           placeholder={copy.feedback.pageUrlPlaceholder}
-                          className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors bg-white"
+                          className="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors bg-white dark:bg-stone-800"
                         />
                       </div>
 
                       {/* 复现步骤 */}
                       <div>
-                        <label className="flex items-center gap-1.5 text-sm text-stone-600 mb-1.5">
+                        <label className="flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 mb-1.5">
                           <ListOrdered className="w-3.5 h-3.5" />
                           {copy.feedback.stepsLabel}
                         </label>
@@ -267,7 +267,7 @@ export function FeedbackClient() {
                           onChange={handleChange}
                           placeholder={copy.feedback.stepsPlaceholder}
                           rows={3}
-                          className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors resize-none bg-white"
+                          className="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors resize-none bg-white dark:bg-stone-800"
                         />
                       </div>
                     </div>
@@ -275,7 +275,7 @@ export function FeedbackClient() {
 
                   {/* 详细描述 */}
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                       {copy.feedback.contentLabel}
                     </label>
                     <textarea
@@ -289,13 +289,13 @@ export function FeedbackClient() {
                       }
                       required
                       rows={6}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors resize-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors resize-none bg-white dark:bg-stone-800"
                     />
                   </div>
 
                   {/* 错误提示 */}
                   {error && (
-                    <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">
+                    <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 rounded-lg px-3.5 py-2.5">
                       {error}
                     </p>
                   )}

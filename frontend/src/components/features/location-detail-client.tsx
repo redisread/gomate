@@ -47,25 +47,25 @@ const difficultyConfig: Record<
   easy: {
     label: copy.enums.difficulty.easy,
     dot: "bg-emerald-400",
-    text: "text-emerald-700",
+    text: "text-emerald-700 dark:text-emerald-400",
     pill: "bg-emerald-500/20 text-emerald-100 border-emerald-400/30",
   },
   moderate: {
     label: copy.enums.difficulty.moderate,
     dot: "bg-amber-400",
-    text: "text-amber-700",
+    text: "text-amber-700 dark:text-amber-400",
     pill: "bg-amber-500/20 text-amber-100 border-amber-400/30",
   },
   hard: {
     label: copy.enums.difficulty.hard,
     dot: "bg-orange-500",
-    text: "text-orange-700",
+    text: "text-orange-700 dark:text-orange-400",
     pill: "bg-orange-500/20 text-orange-100 border-orange-400/30",
   },
   expert: {
     label: copy.enums.difficulty.expert,
     dot: "bg-red-500",
-    text: "text-red-700",
+    text: "text-red-700 dark:text-red-400",
     pill: "bg-red-500/20 text-red-100 border-red-400/30",
   },
 };
@@ -73,26 +73,26 @@ const difficultyConfig: Record<
 // ─── 骨架屏 ───────────────────────────────────────────────────────────────────
 function LoadingSkeleton() {
   return (
-    <main className="min-h-screen bg-stone-50 pb-24 lg:pb-0">
+    <main className="min-h-screen bg-stone-50 dark:bg-stone-950 pb-24 lg:pb-0">
       <Navbar />
-      <div className="relative h-[480px] sm:h-[560px] lg:h-[640px] overflow-hidden bg-stone-200 skeleton">
+      <div className="relative h-[480px] sm:h-[560px] lg:h-[640px] overflow-hidden bg-stone-200 dark:bg-stone-800 skeleton">
         <div className="absolute top-5 right-5 flex items-center gap-2">
-          <div className="h-8 w-16 rounded-full bg-stone-300/60" />
-          <div className="h-9 w-9 rounded-full bg-stone-300/60" />
+          <div className="h-8 w-16 rounded-full bg-stone-300/60 dark:bg-stone-700/60" />
+          <div className="h-9 w-9 rounded-full bg-stone-300/60 dark:bg-stone-700/60" />
         </div>
         <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-8">
           <div className="max-w-7xl mx-auto space-y-3">
-            <div className="h-4 w-28 rounded bg-stone-300/50" />
+            <div className="h-4 w-28 rounded bg-stone-300/50 dark:bg-stone-700/50" />
             <div className="flex gap-2">
-              <div className="h-6 w-16 rounded-full bg-stone-300/60" />
-              <div className="h-6 w-20 rounded-full bg-stone-300/60" />
+              <div className="h-6 w-16 rounded-full bg-stone-300/60 dark:bg-stone-700/60" />
+              <div className="h-6 w-20 rounded-full bg-stone-300/60 dark:bg-stone-700/60" />
             </div>
-            <div className="h-10 w-64 rounded-lg bg-stone-300/60" />
-            <div className="h-4 w-48 rounded bg-stone-300/50" />
+            <div className="h-10 w-64 rounded-lg bg-stone-300/60 dark:bg-stone-700/60" />
+            <div className="h-4 w-48 rounded bg-stone-300/50 dark:bg-stone-700/50" />
             <div className="flex gap-3 pt-2">
-              <div className="h-8 w-20 rounded-full bg-stone-300/50" />
-              <div className="h-8 w-20 rounded-full bg-stone-300/50" />
-              <div className="h-8 w-20 rounded-full bg-stone-300/50" />
+              <div className="h-8 w-20 rounded-full bg-stone-300/50 dark:bg-stone-700/50" />
+              <div className="h-8 w-20 rounded-full bg-stone-300/50 dark:bg-stone-700/50" />
+              <div className="h-8 w-20 rounded-full bg-stone-300/50 dark:bg-stone-700/50" />
             </div>
           </div>
         </div>
@@ -100,11 +100,11 @@ function LoadingSkeleton() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-5">
-            <div className="h-44 skeleton rounded-2xl" />
-            <div className="h-32 skeleton rounded-2xl" />
-            <div className="h-56 skeleton rounded-2xl" />
+            <div className="h-44 skeleton rounded-2xl bg-stone-200 dark:bg-stone-800" />
+            <div className="h-32 skeleton rounded-2xl bg-stone-200 dark:bg-stone-800" />
+            <div className="h-56 skeleton rounded-2xl bg-stone-200 dark:bg-stone-800" />
           </div>
-          <div className="h-72 skeleton rounded-2xl" />
+          <div className="h-72 skeleton rounded-2xl bg-stone-200 dark:bg-stone-800" />
         </div>
       </div>
     </main>
@@ -228,16 +228,14 @@ function ActionCard({ location, teams }: ActionCardProps) {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
+      className="rounded-2xl overflow-hidden bg-gradient-to-br from-amber-50 to-amber-50/50 dark:from-amber-950/30 dark:to-amber-900/20 border border-amber-200/60 dark:border-amber-900/50"
       style={{
-        background: "linear-gradient(160deg, #FFFBEB 0%, #fefce8 50%, #faf8f5 100%)",
-        border: "1px solid rgba(217,119,6,0.15)",
         boxShadow: "0 4px 24px rgba(217,119,6,0.10), 0 1px 4px rgba(0,0,0,0.04)",
       }}
     >
       <div className="p-5">
         {/* 情感标题 */}
-        <p className="text-[13px] font-bold mb-1" style={{ color: "#78350F" }}>
+        <p className="text-[13px] font-bold mb-1 text-amber-900 dark:text-amber-300">
           {copy.locations.detailParticipate}
         </p>
 
@@ -256,7 +254,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
               ))}
             </div>
           )}
-          <p className="text-xs font-medium" style={{ color: "#92400E" }}>
+          <p className="text-xs font-medium text-amber-800 dark:text-amber-400">
             {socialProofText}
           </p>
         </div>
@@ -264,11 +262,10 @@ function ActionCard({ location, teams }: ActionCardProps) {
         {/* 活跃度指示 */}
         {teams.length > 0 && (
           <div
-            className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl"
-            style={{ background: "rgba(217,119,6,0.07)", border: "1px solid rgba(217,119,6,0.12)" }}
+            className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-200/60 dark:border-amber-900/50"
           >
             <Flame className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-            <span className="text-[11px] font-semibold" style={{ color: "#B45309" }}>
+            <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400">
               近期活跃 · 最新队伍招募中
             </span>
           </div>
@@ -278,19 +275,9 @@ function ActionCard({ location, teams }: ActionCardProps) {
         <a href={`/teams/create?locationId=${location.id}`} className="block mb-3">
           <button
             className="relative w-full py-3.5 rounded-xl text-sm font-bold text-white overflow-hidden
-              transition-all duration-200 active:scale-[0.97] hover:-translate-y-0.5"
-            style={{
-              background: "linear-gradient(135deg, #B45309 0%, #D97706 50%, #F59E0B 100%)",
-              boxShadow: "0 4px 20px rgba(180,83,9,0.40), 0 1px 4px rgba(0,0,0,0.12)",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                "0 8px 28px rgba(180,83,9,0.52), 0 2px 8px rgba(0,0,0,0.15)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                "0 4px 20px rgba(180,83,9,0.40), 0 1px 4px rgba(0,0,0,0.12)";
-            }}
+              bg-gradient-to-r from-amber-700 via-amber-600 to-amber-500
+              shadow-lg shadow-amber-700/40 hover:shadow-xl hover:shadow-amber-700/50 hover:-translate-y-0.5
+              transition-all duration-200 active:scale-[0.97]"
           >
             <span
               className="absolute inset-0 rounded-xl pointer-events-none motion-reduce:hidden"
@@ -311,20 +298,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
         {/* 次要 CTA */}
         <a href={`/teams?locationId=${location.id}`} className="block">
           <button
-            className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-[0.97]"
-            style={{
-              border: "1.5px solid rgba(217,119,6,0.25)",
-              color: "#92400E",
-              background: "transparent",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "rgba(217,119,6,0.06)";
-              (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(217,119,6,0.40)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(217,119,6,0.25)";
-            }}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold text-amber-800 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60 bg-transparent hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:border-amber-400/80 dark:hover:border-amber-600/80 transition-all duration-150 active:scale-[0.97]"
           >
             {copy.locations.detailBrowseTeams}
           </button>
@@ -347,24 +321,24 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
   if (locations.length === 0) return null;
 
   const diffBadgeConfig: Record<string, { bg: string; text: string; dot: string }> = {
-    easy: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-400" },
-    moderate: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-400" },
-    hard: { bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-500" },
-    expert: { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
+    easy: { bg: "bg-emerald-50 dark:bg-emerald-950/30", text: "text-emerald-700 dark:text-emerald-400", dot: "bg-emerald-400" },
+    moderate: { bg: "bg-amber-50 dark:bg-amber-950/30", text: "text-amber-700 dark:text-amber-400", dot: "bg-amber-400" },
+    hard: { bg: "bg-orange-50 dark:bg-orange-950/30", text: "text-orange-700 dark:text-orange-400", dot: "bg-orange-500" },
+    expert: { bg: "bg-red-50 dark:bg-red-950/30", text: "text-red-700 dark:text-red-400", dot: "bg-red-500" },
   };
 
   return (
     <div
-      className="bg-white rounded-2xl p-5"
-      style={{ border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
+      className="bg-white dark:bg-stone-900 rounded-2xl p-5 border border-stone-200 dark:border-stone-700"
+      style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-stone-900">
+        <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">
           {copy.locations.relatedTitle}
         </h3>
         <a
           href="/locations"
-          className="text-xs text-amber-600 hover:text-amber-700 font-semibold transition-colors flex items-center gap-0.5"
+          className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold transition-colors flex items-center gap-0.5"
         >
           {copy.common.viewAll}
           <ChevronRight className="h-3.5 w-3.5" />
@@ -380,9 +354,9 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
             <a
               key={loc.id}
               href={`/locations/${loc.id}`}
-              className="flex items-center gap-3 group rounded-xl p-2 -mx-2 transition-all duration-200 hover:bg-stone-50"
+              className="flex items-center gap-3 group rounded-xl p-2 -mx-2 transition-all duration-200 hover:bg-stone-50 dark:hover:bg-stone-800"
             >
-              <div className="w-[68px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-stone-100">
+              <div className="w-[68px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 dark:bg-stone-800">
                 {loc.coverImage ? (
                   <img
                     src={loc.coverImage}
@@ -397,7 +371,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
               </div>
 
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-stone-900 group-hover:text-amber-700 transition-colors text-[13px] truncate leading-snug">
+                <h4 className="font-semibold text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors text-[13px] truncate leading-snug">
                   {loc.name}
                 </h4>
                 {diff && diffLabel && (
@@ -408,7 +382,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
                 )}
               </div>
 
-              <ChevronRight className="h-3.5 w-3.5 text-stone-300 group-hover:text-amber-500 transition-colors flex-shrink-0" />
+              <ChevronRight className="h-3.5 w-3.5 text-stone-300 dark:text-stone-600 group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors flex-shrink-0" />
             </a>
           );
         })}
@@ -447,13 +421,10 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
   return (
     <div
       className={cn(
-        "lg:hidden fixed bottom-0 left-0 right-0 z-40 transition-all duration-300",
+        "lg:hidden fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 bg-white/96 dark:bg-stone-900/96 backdrop-blur-md",
         heroLeft ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
       )}
       style={{
-        background: "rgba(255,255,255,0.96)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
         borderTop: "1px solid rgba(217,119,6,0.12)",
         boxShadow: "0 -8px 32px rgba(0,0,0,0.12)",
       }}
@@ -461,18 +432,14 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
         {/* 地点信息 */}
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-stone-400 font-semibold uppercase tracking-wide">目的地</p>
-          <p className="text-sm font-bold text-stone-900 truncate leading-tight">{location.name}</p>
+          <p className="text-[10px] text-stone-400 dark:text-stone-500 font-semibold uppercase tracking-wide">目的地</p>
+          <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight">{location.name}</p>
         </div>
 
         {/* 浏览队伍 */}
         <a href={`/teams?locationId=${location.id}`} className="flex-shrink-0">
           <button
-            className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-[0.96]"
-            style={{
-              border: "1.5px solid rgba(217,119,6,0.30)",
-              color: "#92400E",
-            }}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold text-amber-800 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-all duration-150 active:scale-[0.96]"
           >
             浏览队伍
           </button>
@@ -481,11 +448,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
         {/* 主 CTA */}
         <a href={`/teams/create?locationId=${location.id}`} className="flex-shrink-0">
           <button
-            className="relative flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold text-white overflow-hidden active:scale-[0.96] transition-transform duration-150"
-            style={{
-              background: "linear-gradient(135deg, #B45309 0%, #D97706 100%)",
-              boxShadow: "0 3px 16px rgba(180,83,9,0.42)",
-            }}
+            className="relative flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold text-white overflow-hidden bg-gradient-to-r from-amber-700 to-amber-600 shadow-md shadow-amber-700/40 active:scale-[0.96] transition-transform duration-150"
           >
             <span
               className="absolute inset-0 rounded-xl pointer-events-none motion-reduce:hidden"
@@ -682,15 +645,15 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
   if (error || !location) {
     return (
-      <main className="min-h-screen bg-stone-50">
+      <main className="min-h-screen bg-stone-50 dark:bg-stone-950">
         <Navbar />
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center">
-            <Mountain className="h-16 w-16 text-stone-200 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-stone-700 mb-3">
+            <Mountain className="h-16 w-16 text-stone-200 dark:text-stone-700 mx-auto mb-4" />
+            <h1 className="text-xl font-bold text-stone-700 dark:text-stone-300 mb-3">
               {error || copy.api.locationNotFound}
             </h1>
-            <a href="/locations" className="text-amber-600 hover:text-amber-700 font-medium underline underline-offset-2 transition-colors">
+            <a href="/locations" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium underline underline-offset-2 transition-colors">
               {copy.common.back}
             </a>
           </div>
@@ -719,7 +682,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   const currentImage = galleryImages[activeImageIndex] ?? galleryImages[0];
 
   return (
-    <main className="min-h-screen bg-stone-50 pb-24 lg:pb-0">
+    <main className="min-h-screen bg-stone-50 dark:bg-stone-950 pb-24 lg:pb-0">
       <Navbar />
 
       {/* ================================================================
@@ -910,7 +873,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                 <>
                   {isAdmin && (
                     <a href={`/admin/locations/${locationId}/edit`}>
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium transition-all duration-150 active:scale-95 border border-stone-200">
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs font-medium transition-all duration-150 active:scale-95 border border-stone-200 dark:border-stone-700">
                         <Pencil className="h-3.5 w-3.5" />
                         {copy.admin.editLocation}
                       </button>
@@ -918,14 +881,14 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                   )}
                   <button
                     onClick={handleShare}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium transition-all duration-150 active:scale-95 border border-stone-200"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs font-medium transition-all duration-150 active:scale-95 border border-stone-200 dark:border-stone-700"
                   >
                     <Share2 className="h-3.5 w-3.5" />
                     {copy.locations.detailShareBtn}
                   </button>
                   <button
                     onClick={handleFavorite}
-                    className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center transition-all duration-150 active:scale-95 border border-stone-200"
+                    className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 flex items-center justify-center transition-all duration-150 active:scale-95 border border-stone-200 dark:border-stone-700"
                     aria-label={isFavorited ? "取消收藏" : "收藏"}
                   >
                     <Heart

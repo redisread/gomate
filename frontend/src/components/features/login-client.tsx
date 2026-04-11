@@ -141,14 +141,13 @@ export function LoginClient() {
 
       {/* ── 右侧：表单区 ── */}
       <div
-        className="flex-1 flex flex-col"
-        style={{ background: "#FDFAF6" }}
+        className="flex-1 flex flex-col bg-background"
       >
         {/* 移动端顶部 Logo */}
         <div className="lg:hidden px-6 pt-6">
           <a href="/" className="flex items-center gap-2 group">
             <Mountain className="h-6 w-6" style={{ color: "#D97706" }} />
-            <span className="text-lg font-bold" style={{ color: "#1e1812" }}>GoMate</span>
+            <span className="text-lg font-bold text-foreground">GoMate</span>
           </a>
         </div>
 
@@ -157,10 +156,10 @@ export function LoginClient() {
           <div className="w-full max-w-sm">
             {/* 标题 */}
             <div className="mb-8">
-              <h1 className="text-2xl font-bold mb-1.5" style={{ color: "#1e1812" }}>
+              <h1 className="text-2xl font-bold mb-1.5 text-foreground">
                 {t.loginTitle}
               </h1>
-              <p className="text-sm" style={{ color: "#8f7f6e" }}>
+              <p className="text-sm text-muted-foreground">
                 {t.loginSubtitle}
               </p>
             </div>
@@ -168,7 +167,7 @@ export function LoginClient() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* 邮箱 */}
               <div className="space-y-1.5">
-                <label htmlFor="email" className="text-sm font-medium" style={{ color: "#4a3f35" }}>
+                <label htmlFor="email" className="text-sm font-medium text-foreground">
                   {t.email}
                 </label>
                 <input
@@ -179,35 +178,19 @@ export function LoginClient() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
-                  style={{
-                    background: "#fff",
-                    borderColor: "#e8e0d7",
-                    color: "#1e1812",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#D97706";
-                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#e8e0d7";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
+                  className="w-full px-4 py-3 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
                 />
               </div>
 
               {/* 密码 */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="text-sm font-medium" style={{ color: "#4a3f35" }}>
+                  <label htmlFor="password" className="text-sm font-medium text-foreground">
                     {t.password}
                   </label>
                   <a
                     href="/forgot-password"
-                    className="text-xs transition-colors duration-150"
-                    style={{ color: "#D97706" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#92400E"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D97706"; }}
+                    className="text-xs text-primary hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-150"
                   >
                     {t.forgotPassword}
                   </a>
@@ -221,28 +204,12 @@ export function LoginClient() {
                     value={formData.password}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 pr-11 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
-                    style={{
-                      background: "#fff",
-                      borderColor: "#e8e0d7",
-                      color: "#1e1812",
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "#D97706";
-                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "#e8e0d7";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
+                    className="w-full px-4 py-3 pr-11 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors duration-150"
-                    style={{ color: "#8f7f6e" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#D97706"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#8f7f6e"; }}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors duration-150"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -252,8 +219,7 @@ export function LoginClient() {
               {/* 错误提示 */}
               {error && (
                 <div
-                  className="rounded-xl px-4 py-3 text-sm flex items-center gap-2"
-                  style={{ background: "rgba(255,122,101,0.08)", color: "#c0392b", border: "1px solid rgba(255,122,101,0.20)" }}
+                  className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-red-400 border border-destructive/20 dark:border-red-500/30"
                 >
                   <span className="text-base">⚠️</span>
                   {error}
@@ -296,14 +262,11 @@ export function LoginClient() {
               </button>
 
               {/* 注册链接 */}
-              <p className="text-center text-sm" style={{ color: "#8f7f6e" }}>
+              <p className="text-center text-sm text-muted-foreground">
                 {t.noAccount}{" "}
                 <a
                   href="/register"
-                  className="font-semibold transition-colors duration-150"
-                  style={{ color: "#D97706" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#92400E"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D97706"; }}
+                  className="font-semibold text-primary hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-150"
                 >
                   {t.registerNow} →
                 </a>

@@ -890,7 +890,7 @@ export function HomeClient() {
                 animationDelay: item.delay,
               }}
             >
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 text-base">{item.icon}</span>
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-base">{item.icon}</span>
               <span className="text-sm font-medium text-foreground whitespace-nowrap">{item.label}</span>
             </div>
           ))}
@@ -913,7 +913,7 @@ export function HomeClient() {
                 animationDelay: item.delay,
               }}
             >
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 text-base">{item.icon}</span>
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-base">{item.icon}</span>
               <span className="text-sm font-medium text-foreground whitespace-nowrap">{item.label}</span>
             </div>
           ))}

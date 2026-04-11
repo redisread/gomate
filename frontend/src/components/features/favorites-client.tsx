@@ -117,21 +117,15 @@ export function FavoritesClient() {
           {!isLoading && favorites.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <div
-                className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                style={{ background: "#FEF3C7" }}
+                className="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-amber-50 dark:bg-amber-950/30"
               >
-                <Heart className="h-8 w-8" style={{ color: "#D97706" }} />
+                <Heart className="h-8 w-8 text-amber-600 dark:text-amber-400" />
               </div>
-              <h2 className="text-lg font-semibold text-[#1e1812] mb-2">{c.emptyTitle}</h2>
-              <p className="text-sm text-[#8f7f6e] mb-6">{c.emptyDesc}</p>
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-2">{c.emptyTitle}</h2>
+              <p className="text-sm text-stone-500 dark:text-stone-400 mb-6">{c.emptyDesc}</p>
               <a
                 href="/locations"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium"
-                style={{
-                  background: "#D97706",
-                  color: "#FFFBEB",
-                  boxShadow: "0 4px 14px rgba(217,119,6,0.30)",
-                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
               >
                 <Mountain className="h-4 w-4" />
                 {c.emptyBtn}

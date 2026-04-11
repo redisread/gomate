@@ -99,8 +99,8 @@ export function ContactClient() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* 邮箱联系 */}
             <div className="bg-card rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm px-6 py-6 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0 border border-amber-100">
-                <Mail className="h-5 w-5 text-amber-600" />
+              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center flex-shrink-0 border border-amber-100 dark:border-amber-900/50">
+                <Mail className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-1">
@@ -117,8 +117,8 @@ export function ContactClient() {
 
             {/* 微信咨询 */}
             <div className="bg-card rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm px-6 py-6 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0 border border-amber-100">
-                <MessageSquare className="h-5 w-5 text-amber-600" />
+              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center flex-shrink-0 border border-amber-100 dark:border-amber-900/50">
+                <MessageSquare className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-1">
@@ -136,8 +136,8 @@ export function ContactClient() {
             {submitted ? (
               /* 提交成功状态 */
               <div className="text-center py-8">
-                <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4 border border-green-100">
-                  <CheckCircle className="h-7 w-7 text-green-600" />
+                <div className="w-14 h-14 rounded-full bg-green-50 dark:bg-green-950/30 flex items-center justify-center mx-auto mb-4 border border-green-100 dark:border-green-900/50">
+                  <CheckCircle className="h-7 w-7 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
                   {copy.contact.successTitle}

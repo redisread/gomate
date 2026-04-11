@@ -72,24 +72,24 @@ const sections = [
 
 export function PrivacyClient() {
   return (
-    <div className="bg-stone-50 min-h-screen">
+    <div className="bg-stone-50 dark:bg-stone-900 min-h-screen">
       {/* Hero 区域 */}
-      <div className="bg-stone-50 border-b border-stone-200">
+      <div className="bg-stone-50 dark:bg-stone-900 border-b border-stone-200 dark:border-stone-700">
         <div className="max-w-3xl mx-auto px-6 py-10">
           {/* 面包屑 */}
-          <nav className="text-sm text-stone-400 mb-4">
+          <nav className="text-sm text-stone-400 dark:text-stone-500 mb-4">
             <a href="/" className="hover:text-amber-600 transition-colors">
               首页
             </a>
             <span className="mx-2">/</span>
-            <span className="text-stone-600">隐私政策</span>
+            <span className="text-stone-600 dark:text-stone-400">隐私政策</span>
           </nav>
 
-          <h1 className="text-3xl font-bold text-stone-800 mb-2">隐私政策</h1>
-          <p className="text-stone-500 mb-1">
+          <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-200 mb-2">隐私政策</h1>
+          <p className="text-stone-500 dark:text-stone-400 mb-1">
             我们重视您的隐私，本政策说明我们如何收集和使用您的信息
           </p>
-          <p className="text-sm text-stone-400">最后更新：2025年1月1日</p>
+          <p className="text-sm text-stone-400 dark:text-stone-500">最后更新：2025年1月1日</p>
         </div>
       </div>
 
@@ -97,19 +97,19 @@ export function PrivacyClient() {
       <div className="max-w-3xl mx-auto px-6 py-12">
         {sections.map((section) => (
           <div key={section.title}>
-            <h2 className="text-lg font-semibold text-amber-700 mb-3 mt-8">
+            <h2 className="text-lg font-semibold text-amber-700 dark:text-amber-400 mb-3 mt-8">
               {section.title}
             </h2>
-            <p className="text-stone-600 leading-relaxed mb-2">
+            <p className="text-stone-600 dark:text-stone-400 leading-relaxed mb-2">
               {section.content}
             </p>
-            <ul className="list-disc list-inside space-y-1 text-stone-600">
+            <ul className="list-disc list-inside space-y-1 text-stone-600 dark:text-stone-400">
               {section.items.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
             {section.footer && (
-              <p className="text-stone-600 leading-relaxed mt-2">
+              <p className="text-stone-600 dark:text-stone-400 leading-relaxed mt-2">
                 {section.footer}
               </p>
             )}

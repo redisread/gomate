@@ -159,23 +159,23 @@ const VALIDATION_RULES: Record<string, (v: string) => string | undefined> = {
 
 function EditSkeleton() {
   return (
-    <div className="min-h-screen" style={{ background: "#FAF7F4" }}>
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-8 animate-pulse">
         {/* 返回 + 标题 */}
-        <div className="h-5 w-24 bg-stone-200 rounded mb-6" />
-        <div className="h-7 w-48 bg-stone-200 rounded mb-8" />
+        <div className="h-5 w-24 bg-stone-200 dark:bg-stone-800 rounded mb-6" />
+        <div className="h-7 w-48 bg-stone-200 dark:bg-stone-800 rounded mb-8" />
         {/* 进度条骨架 */}
-        <div className="h-10 bg-stone-100 rounded-2xl mb-8" />
+        <div className="h-10 bg-stone-100 dark:bg-stone-900 rounded-2xl mb-8" />
         {/* 内容骨架 */}
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
           <div className="space-y-4">
             {[180, 220, 160].map((h, i) => (
-              <div key={i} className="rounded-2xl bg-white border border-stone-100" style={{ height: h }} />
+              <div key={i} className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800" style={{ height: h }} />
             ))}
           </div>
           <div className="hidden lg:block">
-            <div className="rounded-2xl bg-white border border-stone-100 h-80" />
+            <div className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 h-80" />
           </div>
         </div>
       </div>
@@ -200,26 +200,26 @@ function SectionCard({ icon, title, badge, children, defaultOpen = true, collaps
   const [open, setOpen] = React.useState(defaultOpen);
 
   return (
-    <div className="rounded-2xl bg-white border border-stone-100 overflow-hidden"
+    <div className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 overflow-hidden"
       style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
       <button
         type="button"
         onClick={() => collapsible && setOpen((v) => !v)}
         className={cn(
           "w-full flex items-center gap-2.5 px-5 py-4 text-left",
-          collapsible && "hover:bg-stone-50/60 transition-colors cursor-pointer",
+          collapsible && "hover:bg-stone-50/60 dark:hover:bg-stone-800/60 transition-colors cursor-pointer",
           !collapsible && "cursor-default"
         )}
       >
         <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ background: "rgba(217,119,6,0.1)" }}>
-          <span style={{ color: "#D97706" }}>{icon}</span>
+          <span className="text-amber-600 dark:text-amber-400">{icon}</span>
         </span>
-        <span className="text-sm font-semibold text-stone-800 flex-1">{title}</span>
+        <span className="text-sm font-semibold text-stone-800 dark:text-stone-200 flex-1">{title}</span>
         {badge && <span>{badge}</span>}
         {collapsible && (
           <svg
-            className={cn("h-4 w-4 text-stone-400 transition-transform duration-200", open && "rotate-180")}
+            className={cn("h-4 w-4 text-stone-400 dark:text-stone-500 transition-transform duration-200", open && "rotate-180")}
             fill="none" viewBox="0 0 24 24" stroke="currentColor"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -228,7 +228,7 @@ function SectionCard({ icon, title, badge, children, defaultOpen = true, collaps
       </button>
 
       {open && (
-        <div className="px-5 pb-5 space-y-4 border-t border-stone-50">
+        <div className="px-5 pb-5 space-y-4 border-t border-stone-50 dark:border-stone-800">
           <div className="pt-4 space-y-4">{children}</div>
         </div>
       )}
@@ -251,7 +251,7 @@ interface FieldProps {
 function Field({ label, required, hint, error, children }: FieldProps) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-semibold" style={{ color: "#5C4033" }}>
+      <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
         {label}
         {required && <span className="ml-1 text-red-400">*</span>}
       </label>
@@ -276,9 +276,10 @@ function styledInput(hasError?: boolean) {
   return cn(
     "w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all duration-150",
     "border focus:ring-2",
+    "bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500",
     hasError
-      ? "border-red-300 focus:ring-red-200 focus:border-red-400"
-      : "border-stone-200 focus:ring-amber-200 focus:border-amber-400"
+      ? "border-red-300 dark:border-red-800 focus:ring-red-200 focus:border-red-400"
+      : "border-stone-200 dark:border-stone-700 focus:ring-amber-200 focus:border-amber-400"
   );
 }
 
@@ -443,11 +444,7 @@ function MapSearchInput({ onSelect }: MapSearchInputProps) {
           onChange={handleInputChange}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
           placeholder="搜索地点名称或地址..."
-          className={cn(
-            styledInput(),
-            "pl-9 pr-9 text-stone-900"
-          )}
-          style={{ background: "#FAF7F4", color: "#1e1812" }}
+          className={cn(styledInput(), "pl-9 pr-9")}
         />
         {/* 加载中图标 或 清除按钮 */}
         {loading && (
@@ -467,7 +464,7 @@ function MapSearchInput({ onSelect }: MapSearchInputProps) {
       {/* 候选下拉列表 */}
       {open && suggestions.length > 0 && (
         <div
-          className="absolute z-30 left-0 right-0 mt-1 rounded-xl bg-white border border-stone-100 overflow-hidden"
+          className="absolute z-30 left-0 right-0 mt-1 rounded-xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 overflow-hidden"
           style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.10)" }}
         >
           {suggestions.map((tip, idx) => (
@@ -478,11 +475,11 @@ function MapSearchInput({ onSelect }: MapSearchInputProps) {
                 e.preventDefault(); // 防止 input onBlur 先触发
                 handleSelect(tip);
               }}
-              className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-amber-50 transition-colors border-b border-stone-50 last:border-b-0"
+              className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors border-b border-stone-50 dark:border-stone-800 last:border-b-0"
             >
-              <MapPin className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+              <MapPin className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 mt-0.5 shrink-0" />
               <div className="min-w-0">
-                <p className="text-sm text-stone-800 font-medium truncate">{tip.name}</p>
+                <p className="text-sm text-stone-800 dark:text-stone-200 font-medium truncate">{tip.name}</p>
                 {tip.district && (
                   <p className="text-xs text-stone-400 truncate">{tip.district}</p>
                 )}
@@ -695,24 +692,24 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
       onWheel={handleModalWheel}
     >
       <div
-        className="w-full max-w-xl rounded-2xl bg-white overflow-hidden flex flex-col"
+        className="w-full max-w-xl rounded-2xl bg-white dark:bg-stone-900 overflow-hidden flex flex-col"
         style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.25)", maxHeight: "90vh" }}
       >
         {/* 弹窗头部 */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 dark:border-stone-800 shrink-0">
           <div className="flex items-center gap-2">
             <span
               className="w-7 h-7 rounded-lg flex items-center justify-center"
               style={{ background: "rgba(217,119,6,0.1)" }}
             >
-              <Map className="h-4 w-4" style={{ color: "#D97706" }} />
+              <Map className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             </span>
-            <span className="text-sm font-semibold text-stone-800">地图选点</span>
+            <span className="text-sm font-semibold text-stone-800 dark:text-stone-200">地图选点</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -728,8 +725,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
               onChange={handleSearchChange}
               onFocus={() => searchSuggestions.length > 0 && setSearchOpen(true)}
               placeholder="搜索地点跳转到地图位置..."
-              className={cn(styledInput(), "pl-9 pr-9 text-stone-900 text-sm")}
-              style={{ background: "#FAF7F4", color: "#1e1812" }}
+              className={cn(styledInput(), "pl-9 pr-9 text-sm")}
             />
             {searchLoading && (
               <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-500 animate-spin" />
@@ -746,7 +742,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
           </div>
           {searchOpen && searchSuggestions.length > 0 && (
             <div
-              className="absolute z-50 left-5 right-5 mt-1 rounded-xl bg-white border border-stone-100 overflow-hidden"
+              className="absolute z-50 left-5 right-5 mt-1 rounded-xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 overflow-hidden"
               style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}
             >
               {searchSuggestions.map((tip, idx) => (
@@ -754,11 +750,11 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
                   key={idx}
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); handleSearchSelect(tip); }}
-                  className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-amber-50 transition-colors border-b border-stone-50 last:border-b-0"
+                  className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors border-b border-stone-50 dark:border-stone-800 last:border-b-0"
                 >
-                  <MapPin className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+                  <MapPin className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 mt-0.5 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm text-stone-800 font-medium truncate">{tip.name}</p>
+                    <p className="text-sm text-stone-800 dark:text-stone-200 font-medium truncate">{tip.name}</p>
                     {tip.district && <p className="text-xs text-stone-400 truncate">{tip.district}</p>}
                   </div>
                 </button>
@@ -771,14 +767,14 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
         {/* 地图容器 */}
         <div className="relative mx-5 rounded-xl overflow-hidden shrink-0" style={{ height: 380 }}>
           {isLoadingMap && (
-            <div className="absolute inset-0 flex items-center justify-center bg-stone-100 z-10">
-              <Loader2 className="h-6 w-6 text-amber-500 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center bg-stone-100 dark:bg-stone-800 z-10">
+              <Loader2 className="h-6 w-6 text-amber-500 dark:text-amber-400 animate-spin" />
             </div>
           )}
           {mapError && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-50 z-10 gap-2 p-4">
-              <Map className="h-8 w-8 text-stone-300" />
-              <p className="text-sm text-stone-500 text-center">{mapError}</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-50 dark:bg-stone-900 z-10 gap-2 p-4">
+              <Map className="h-8 w-8 text-stone-300 dark:text-stone-600" />
+              <p className="text-sm text-stone-500 dark:text-stone-400 text-center">{mapError}</p>
             </div>
           )}
           <div ref={mapContainerRef} className="w-full h-full" />
@@ -787,11 +783,11 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
         {/* 已选地址展示 */}
         <div className="px-5 py-3 shrink-0">
           {pickedLat != null && pickedLng != null ? (
-            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-100">
-              <MapPin className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50">
+              <MapPin className="h-4 w-4 text-amber-500 dark:text-amber-400 mt-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
                 {pickedAddress ? (
-                  <p className="text-sm text-stone-700 leading-snug">{pickedAddress}</p>
+                  <p className="text-sm text-stone-700 dark:text-stone-300 leading-snug">{pickedAddress}</p>
                 ) : (
                   <p className="text-sm text-stone-400 flex items-center gap-1.5">
                     <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
@@ -804,8 +800,8 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-stone-50 border border-stone-100">
-              <MapPin className="h-4 w-4 text-stone-300 shrink-0" />
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700">
+              <MapPin className="h-4 w-4 text-stone-300 dark:text-stone-600 shrink-0" />
               <p className="text-sm text-stone-400">点击地图以选择位置</p>
             </div>
           )}
@@ -816,7 +812,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium text-stone-600 border border-stone-200 hover:bg-stone-50 transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
           >
             取消
           </button>
@@ -824,8 +820,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
             type="button"
             onClick={handleConfirm}
             disabled={pickedLat == null || pickedLng == null}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)" }}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 transition-opacity disabled:opacity-40"
           >
             <Check className="h-4 w-4" />
             确认选点
@@ -852,21 +847,21 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
 
   return (
     <div className="sticky top-20">
-      <div className="rounded-2xl bg-white border border-stone-100 overflow-hidden"
+      <div className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 overflow-hidden"
         style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
         {/* 预览标题 */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-stone-50">
-          <Eye className="h-4 w-4" style={{ color: "#D97706" }} />
-          <span className="text-xs font-semibold text-stone-600">实时预览</span>
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-stone-50 dark:border-stone-800">
+          <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <span className="text-xs font-semibold text-stone-600 dark:text-stone-400">实时预览</span>
         </div>
 
         {/* 封面图 */}
-        <div className="w-full bg-stone-100" style={{ aspectRatio: "16/9" }}>
+        <div className="w-full bg-stone-100 dark:bg-stone-800" style={{ aspectRatio: "16/9" }}>
           {data.coverImage ? (
             <img src={data.coverImage} alt="封面预览" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <ImageIcon className="h-8 w-8 text-stone-300" />
+              <ImageIcon className="h-8 w-8 text-stone-300 dark:text-stone-600" />
             </div>
           )}
         </div>
@@ -874,25 +869,25 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
         <div className="p-4 space-y-3">
           {/* 名称 */}
           <div>
-            <h3 className="font-bold text-stone-900 text-base leading-snug">
-              {data.name || <span className="text-stone-300">地点名称</span>}
+            <h3 className="font-bold text-stone-900 dark:text-stone-100 text-base leading-snug">
+              {data.name || <span className="text-stone-300 dark:text-stone-600">地点名称</span>}
             </h3>
             {data.subtitle && (
-              <p className="text-sm text-stone-500 mt-0.5">{data.subtitle}</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">{data.subtitle}</p>
             )}
           </div>
 
           {/* 城市 + 地址 */}
           {(cityName || data.address) && (
-            <div className="flex items-start gap-1.5 text-xs text-stone-500">
-              <MapPin className="h-3.5 w-3.5 mt-0.5 text-amber-500 shrink-0" />
+            <div className="flex items-start gap-1.5 text-xs text-stone-500 dark:text-stone-400">
+              <MapPin className="h-3.5 w-3.5 mt-0.5 text-amber-500 dark:text-amber-400 shrink-0" />
               <span>{[cityName, data.address].filter(Boolean).join(" · ")}</span>
             </div>
           )}
 
           {/* 描述 */}
           {data.description && (
-            <p className="text-xs text-stone-500 leading-relaxed line-clamp-3">
+            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed line-clamp-3">
               {data.description}
             </p>
           )}
@@ -901,7 +896,7 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
           {data.bestSeason.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {data.bestSeason.map((s) => (
-                <span key={s} className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs font-medium border border-amber-100">
+                <span key={s} className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50">
                   {seasonEmojis[s]} {copy.admin[`season${s.charAt(0).toUpperCase() + s.slice(1)}` as keyof typeof copy.admin] as string}
                 </span>
               ))}
@@ -910,7 +905,7 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
 
           {/* 坐标 */}
           {(data.lat || data.lng) && (
-            <div className="flex items-center gap-1.5 text-xs text-stone-400">
+            <div className="flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500">
               <Navigation className="h-3 w-3" />
               <span>{data.lat}, {data.lng}</span>
             </div>
@@ -919,7 +914,7 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
       </div>
 
       {/* 预览提示 */}
-      <p className="text-xs text-stone-400 text-center mt-2">
+      <p className="text-xs text-stone-400 dark:text-stone-500 text-center mt-2">
         编辑时自动同步预览
       </p>
     </div>
@@ -1258,7 +1253,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
   if (isLoading) return <EditSkeleton />;
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: "#FAF7F4" }}>
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 pb-24">
       <Navbar />
 
       <div className="max-w-5xl mx-auto px-4 py-8">
@@ -1266,8 +1261,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
         <div className="flex items-center justify-between mb-6">
           <a
             href={`/locations/${locationId}`}
-            className="inline-flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
-            style={{ color: "#8B6E5A" }}
+            className="inline-flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 hover:opacity-70 transition-opacity"
           >
             <ArrowLeft className="h-4 w-4" />
             {copy.common.back}
@@ -1286,8 +1280,8 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
 
         {/* ── 标题 ── */}
         <div className="flex items-center gap-2 mb-6">
-          <span className="w-1.5 h-6 rounded-full" style={{ background: "#D97706" }} />
-          <h1 className="text-xl font-bold" style={{ color: "#1e1812" }}>
+          <span className="w-1.5 h-6 rounded-full bg-amber-600" />
+          <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100">
             {copy.admin.editLocation}
           </h1>
         </div>
@@ -1299,24 +1293,22 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
 
         {/* ── 草稿恢复横幅 ── */}
         {showDraftBanner && (
-          <div className="mb-6 flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-            style={{ background: "#FFFBEB", border: "1px solid #FDE68A" }}>
-            <p className="text-sm text-amber-800">
+          <div className="mb-6 flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
+            <p className="text-sm text-amber-800 dark:text-amber-300">
               🗒 {copy.admin.draftRestorePrompt}
             </p>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={handleDiscardDraft}
-                className="text-xs text-amber-600 hover:text-amber-800 transition-colors"
+                className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
               >
                 {copy.admin.draftDiscardBtn}
               </button>
               <button
                 type="button"
                 onClick={handleRestoreDraft}
-                className="text-xs font-semibold px-3 py-1 rounded-lg text-white transition-colors"
-                style={{ background: "#D97706" }}
+                className="text-xs font-semibold px-3 py-1 rounded-lg text-white bg-amber-600 hover:bg-amber-700 transition-colors"
               >
                 {copy.admin.draftRestoreBtn}
               </button>
@@ -1327,12 +1319,12 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
         {/* ── 保存结果消息 ── */}
         {saveMessage && (
           <div
-            className="mb-6 px-4 py-3 rounded-xl text-sm flex items-center gap-2"
-            style={{
-              background: saveMessage.type === "success" ? "#F0FDF4" : "#FEF2F2",
-              color: saveMessage.type === "success" ? "#166534" : "#991B1B",
-              border: `1px solid ${saveMessage.type === "success" ? "#BBF7D0" : "#FECACA"}`,
-            }}
+            className={cn(
+              "mb-6 px-4 py-3 rounded-xl text-sm flex items-center gap-2",
+              saveMessage.type === "success"
+                ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-900/50"
+                : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50"
+            )}
           >
             {saveMessage.type === "success" ? (
               <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -1365,8 +1357,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                   onChange={(e) => updateField("name", e.target.value)}
                   onBlur={(e) => touch("name", e.target.value)}
                   placeholder="例如：梧桐山风景区"
-                  className={cn(styledInput(!!errors.name), "bg-stone-50 text-stone-900")}
-                  style={{ background: "#FAF7F4", color: "#1e1812" }}
+                  className={cn(styledInput(!!errors.name))}
                 />
               </Field>
 
@@ -1376,8 +1367,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                   value={formData.subtitle}
                   onChange={(e) => updateField("subtitle", e.target.value)}
                   placeholder={copy.admin.placeholderSubtitle}
-                  className={cn(styledInput(), "bg-stone-50 text-stone-900")}
-                  style={{ background: "#FAF7F4", color: "#1e1812" }}
+                  className={cn(styledInput())}
                 />
               </Field>
 
@@ -1391,8 +1381,8 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                       className={cn(
                         "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all",
                         formData.type === opt.value
-                          ? "bg-stone-800 text-white"
-                          : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                          ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900"
+                          : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
                       )}
                     >
                       {opt.label}
@@ -1417,7 +1407,6 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                       styledInput(!!errors.description),
                       "resize-none leading-relaxed"
                     )}
-                    style={{ background: "#FAF7F4", color: "#1e1812" }}
                   />
                   {/* 字数指示条 */}
                   <div className="absolute bottom-2.5 right-3 flex items-center gap-1.5">
@@ -1466,8 +1455,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                   value={formData.address}
                   onChange={(e) => updateField("address", e.target.value)}
                   placeholder="例如：广东省深圳市盐田区"
-                  className={cn(styledInput(), "text-stone-900")}
-                  style={{ background: "#FAF7F4", color: "#1e1812" }}
+                  className={cn(styledInput())}
                 />
               </Field>
 
@@ -1486,13 +1474,12 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                         onChange={(e) => updateField("lat", e.target.value)}
                         onBlur={(e) => touch("lat", e.target.value)}
                         placeholder="22.5619"
-                        className={cn(styledInput(!!errors.lat), "text-stone-900")}
-                        style={{ background: "#FAF7F4", color: "#1e1812" }}
+                        className={cn(styledInput(!!errors.lat))}
                       />
                       {errors.lat && <p className="text-xs text-red-500 mt-1">{errors.lat}</p>}
                     </div>
                     <div>
-                      <label className="block text-[11px] text-stone-400 mb-1">{copy.admin.lngLabel}</label>
+                      <label className="block text-[11px] text-stone-400 dark:text-stone-500 mb-1">{copy.admin.lngLabel}</label>
                       <input
                         type="number"
                         step="any"
@@ -1500,8 +1487,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                         onChange={(e) => updateField("lng", e.target.value)}
                         onBlur={(e) => touch("lng", e.target.value)}
                         placeholder="114.1985"
-                        className={cn(styledInput(!!errors.lng), "text-stone-900")}
-                        style={{ background: "#FAF7F4", color: "#1e1812" }}
+                        className={cn(styledInput(!!errors.lng))}
                       />
                       {errors.lng && <p className="text-xs text-red-500 mt-1">{errors.lng}</p>}
                     </div>
@@ -1584,7 +1570,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
               collapsible
               defaultOpen={false}
               badge={
-                <span className="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">可选</span>
+                <span className="text-[10px] text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">可选</span>
               }
             >
               {/* ── 配套设施 ── */}
@@ -1606,7 +1592,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                           "px-3 py-1.5 rounded-xl text-xs font-medium border transition-all",
                           selected
                             ? "bg-amber-500 text-white border-amber-500"
-                            : "bg-white text-stone-600 border-stone-200 hover:border-amber-300"
+                            : "bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-amber-300"
                         )}
                       >
                         {f.label}
@@ -1631,7 +1617,6 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                         }}
                         placeholder="如：建议早上登山，避开人流高峰"
                         className={cn(styledInput(), "flex-1")}
-                        style={{ background: "#FAF7F4", color: "#1e1812" }}
                       />
                       <button
                         type="button"
@@ -1673,7 +1658,6 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                         }}
                         placeholder="如：悬崖路段注意安全，勿靠近边缘"
                         className={cn(styledInput(), "flex-1")}
-                        style={{ background: "#FAF7F4", color: "#1e1812" }}
                       />
                       <button
                         type="button"
@@ -1755,7 +1739,6 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                       }}
                       placeholder={copy.pois.searchPlaceholder}
                       className={cn(styledInput(), "pl-9")}
-                      style={{ background: "#FAF7F4", color: "#1e1812" }}
                     />
                   </div>
                   <button
@@ -1769,7 +1752,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                 </div>
                 {/* 搜索结果 */}
                 {poiSearchResults.length > 0 && (
-                  <div className="mb-2 rounded-xl border border-stone-100 overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+                  <div className="mb-2 rounded-xl border border-stone-100 dark:border-stone-800 overflow-hidden bg-white dark:bg-stone-900" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
                     {poiSearchResults.map((poi) => {
                       const already = formData.poiLinks.some((l) => l.poiId === poi.id);
                       return (
@@ -1787,13 +1770,13 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                             setPoiSearchResults([]);
                           }}
                           className={cn(
-                            "w-full flex items-center gap-2.5 px-3 py-2 text-left border-b border-stone-50 last:border-b-0 transition-colors",
-                            already ? "opacity-40 cursor-not-allowed" : "hover:bg-amber-50"
+                            "w-full flex items-center gap-2.5 px-3 py-2 text-left border-b border-stone-50 dark:border-stone-800 last:border-b-0 transition-colors",
+                            already ? "opacity-40 cursor-not-allowed" : "hover:bg-amber-50 dark:hover:bg-amber-950/20"
                           )}
                         >
-                          <MapPin className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                          <p className="text-sm text-stone-800 font-medium truncate">{poi.name}</p>
-                          {already && <span className="ml-auto text-xs text-stone-400 shrink-0">{copy.pois.alreadyAdded}</span>}
+                          <MapPin className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
+                          <p className="text-sm text-stone-800 dark:text-stone-200 font-medium truncate">{poi.name}</p>
+                          {already && <span className="ml-auto text-xs text-stone-400 dark:text-stone-500 shrink-0">{copy.pois.alreadyAdded}</span>}
                         </button>
                       );
                     })}
@@ -1807,17 +1790,17 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                     {formData.poiLinks.map((link, idx) => {
                       const poi = allPois.find((p) => p.id === link.poiId);
                       return (
-                        <div key={link.poiId} className="px-3 py-2 rounded-xl bg-stone-50 border border-stone-100">
+                        <div key={link.poiId} className="px-3 py-2 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700">
                           <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                            <span className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 text-[10px] font-bold flex items-center justify-center shrink-0">
                               {idx + 1}
                             </span>
-                            <span className="flex-1 text-sm text-stone-700 truncate">{poi?.name ?? link.poiId}</span>
+                            <span className="flex-1 text-sm text-stone-700 dark:text-stone-300 truncate">{poi?.name ?? link.poiId}</span>
                             {/* 编辑按钮 */}
                             <button
                               type="button"
                               onClick={() => handleOpenEditPoi(link.poiId)}
-                              className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-amber-500 hover:bg-amber-50 transition-colors shrink-0"
+                              className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors shrink-0"
                               title={copy.pois.editBtn}
                             >
                               <Pencil className="h-3.5 w-3.5" />
@@ -1826,7 +1809,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                             <button
                               type="button"
                               onClick={() => handleOpenDeletePoi(link.poiId, poi?.name ?? link.poiId)}
-                              className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                              className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors shrink-0"
                               title={copy.pois.deleteBtn}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -1839,7 +1822,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                                 next[idx] = { ...next[idx], roleType: e.target.value };
                                 updateField("poiLinks", next);
                               }}
-                              className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-white text-stone-600 outline-none focus:border-amber-400 shrink-0"
+                              className="text-xs border border-stone-200 dark:border-stone-700 rounded-lg px-2 py-1 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 outline-none focus:border-amber-400 shrink-0"
                             >
                               {POI_ROLE_OPTIONS.map((r) => (
                                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -1849,7 +1832,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                             <button
                               type="button"
                               onClick={() => updateField("poiLinks", formData.poiLinks.filter((_, i) => i !== idx))}
-                              className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                              className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors shrink-0"
                               title={copy.pois.unlinkBtn}
                             >
                               <X className="h-3.5 w-3.5" />
@@ -1869,8 +1852,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
                 type="button"
                 onClick={handleSave}
                 disabled={isSaving}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold text-white transition-opacity disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)" }}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 transition-opacity disabled:opacity-60"
               >
                 {isSaving ? (
                   <><Loader2 className="h-4 w-4 animate-spin" /> {copy.admin.saving}</>
