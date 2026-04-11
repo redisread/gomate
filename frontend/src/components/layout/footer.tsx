@@ -209,13 +209,13 @@ export function Footer() {
                   >
                     <Mountain className="h-5 w-5 text-white" />
                   </div>
-                  <span className="font-bold text-lg tracking-tight" style={{ color: "#2C1810" }}>
+                  <span className="font-bold text-lg tracking-tight text-foreground">
                     GoMate
                   </span>
                 </div>
 
                 {/* 标语 */}
-                <p className="text-sm leading-relaxed mb-5" style={{ color: "#8B6F5E" }}>
+                <p className="text-sm leading-relaxed mb-5 text-muted-foreground">
                   {copy.footer.tagline}
                 </p>
 
@@ -311,8 +311,7 @@ export function Footer() {
                   <li key={href}>
                     <a
                       href={href}
-                      className="footer-link inline-flex items-center gap-2 text-sm group"
-                      style={{ color: "#8B6F5E" }}
+                      className="footer-link inline-flex items-center gap-2 text-sm text-muted-foreground group"
                     >
                       <Icon className="h-3.5 w-3.5 flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
                       {label}
@@ -335,8 +334,7 @@ export function Footer() {
                   <li key={href}>
                     <a
                       href={href}
-                      className="footer-link text-sm"
-                      style={{ color: "#8B6F5E" }}
+                      className="footer-link text-sm text-muted-foreground"
                     >
                       {label}
                     </a>
@@ -358,8 +356,7 @@ export function Footer() {
                   <li key={href}>
                     <a
                       href={href}
-                      className="footer-link text-sm"
-                      style={{ color: "#8B6F5E" }}
+                      className="footer-link text-sm text-muted-foreground"
                     >
                       {label}
                     </a>
@@ -370,14 +367,7 @@ export function Footer() {
               {/* 回到顶部按钮 */}
               <button
                 onClick={scrollToTop}
-                className="inline-flex items-center gap-1.5 text-xs font-medium transition-all duration-200 hover:scale-105"
-                style={{ color: "#C4A898" }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.color = "#E8845A";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.color = "#C4A898";
-                }}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:text-primary hover:scale-105"
               >
                 <ArrowUp className="h-3.5 w-3.5" />
                 {copy.footer.backToTop}

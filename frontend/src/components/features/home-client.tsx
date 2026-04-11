@@ -100,10 +100,9 @@ function LocationCard({ location }: { location: Location }) {
             />
           ) : (
             <div
-              className="w-full h-full flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #FEF3C7 0%, #d0f0ea 100%)" }}
+              className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-100 dark:from-amber-950/40 to-teal-100 dark:to-teal-950/40"
             >
-              <Mountain className="h-14 w-14" style={{ color: "rgba(217,119,6,0.3)" }} />
+              <Mountain className="h-14 w-14 text-primary/30" />
             </div>
           )}
 
@@ -228,7 +227,7 @@ function AvatarStack({
           return (
             <div
               key={idx}
-              className="w-7 h-7 rounded-full border-2 border-white overflow-hidden flex-shrink-0"
+              className="w-7 h-7 rounded-full border-2 border-border overflow-hidden flex-shrink-0"
               style={{ zIndex: 10 - idx, boxShadow: "0 1px 4px rgba(0,0,0,0.12)" }}
             >
               {m.avatar ? (
@@ -246,7 +245,7 @@ function AvatarStack({
         })}
         {extra > 0 && (
           <div
-            className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+            className="w-7 h-7 rounded-full border-2 border-border flex items-center justify-center text-[10px] font-bold flex-shrink-0"
             style={{
               zIndex: 1,
               background: "rgba(217,119,6,0.12)",
@@ -286,7 +285,7 @@ function CapacityRing({
       {/* -rotate-90 让弧从顶部开始 */}
       <svg width="40" height="40" viewBox="0 0 40 40" className="absolute inset-0 -rotate-90">
         {/* 底轨 */}
-        <circle cx="20" cy="20" r={r} fill="none" stroke="rgba(30,24,18,0.07)" strokeWidth="3" />
+        <circle cx="20" cy="20" r={r} fill="none" strokeWidth="3" className="stroke-muted/20" />
         {/* 进度弧 */}
         <circle
           cx="20" cy="20" r={r}
@@ -373,8 +372,8 @@ function TeamCard({ team }: { team: Team }) {
         className="overflow-hidden rounded-2xl cursor-pointer bg-card relative"
         style={{
           boxShadow: hovered
-            ? `0 20px 48px ${statusCfg.glow}, 0 6px 18px rgba(30,24,18,0.10)`
-            : "0 2px 14px rgba(30,24,18,0.07)",
+            ? `0 20px 48px ${statusCfg.glow}, 0 6px 18px rgba(0,0,0,0.10)`
+            : "0 2px 14px rgba(0,0,0,0.07)",
           transform: hovered ? "translateY(-5px) scale(1.005)" : "translateY(0) scale(1)",
           transition: "box-shadow 0.30s ease, transform 0.30s cubic-bezier(0.34,1.56,0.64,1)",
         }}
@@ -502,7 +501,7 @@ function TeamCard({ team }: { team: Team }) {
           {!hasCover && team.location && (
             <div className="flex items-center gap-1.5 mb-2.5">
               <MapPin className="h-3 w-3 flex-shrink-0" style={{ color: "#D97706" }} />
-              <span className="text-xs font-medium truncate" style={{ color: "#92400E" }}>
+              <span className="text-xs font-medium truncate text-amber-800 dark:text-amber-300">
                 {team.location.name}
               </span>
               {/* 无封面时也显示状态 */}
@@ -560,8 +559,7 @@ function TeamCard({ team }: { team: Team }) {
 
           {/* 分隔线 */}
           <div
-            className="h-px mb-3"
-            style={{ background: "rgba(30,24,18,0.06)" }}
+            className="h-px mb-3 bg-border/30"
           />
 
           {/* 底部：领队 + 成员头像 + 容量环 */}
@@ -780,8 +778,8 @@ export function HomeClient() {
           {/* 搜索栏 */}
           <div className={`relative max-w-2xl mx-auto mb-8 group ${animate.search}`}>
             <Search
-              className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 pointer-events-none transition-colors duration-200"
-              style={{ color: search.isFocused ? "#D97706" : "#8f7f6e" }}
+              className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 pointer-events-none transition-colors duration-200 text-muted-foreground"
+              style={{ color: search.isFocused ? "#D97706" : undefined }}
             />
             <input
               type="text"
@@ -849,8 +847,8 @@ export function HomeClient() {
             </a>
             <a
               href="/teams"
-              className="inline-block px-8 py-3.5 font-semibold rounded-full border-2 text-base transition-all duration-150 hover:bg-brand/5"
-              style={{ borderColor: "rgba(217,119,6,0.35)", color: "#92400E" }}
+              className="inline-block px-8 py-3.5 font-semibold rounded-full border-2 text-base text-foreground transition-all duration-150 hover:bg-brand/5"
+              style={{ borderColor: "rgba(217,119,6,0.35)" }}
             >
               {copy.hero.findTeamBtn}
             </a>
@@ -863,7 +861,7 @@ export function HomeClient() {
               { icon: "👥", title: copy.hero.statPlayers, desc: copy.hero.statPlayersDesc },
               { icon: "✨", title: copy.hero.statSafety, desc: copy.hero.statSafetyDesc },
             ].map((item) => (
-              <div key={item.title} className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-gradient-to-br from-white/80 to-amber-50/60 border border-amber-200/40" style={{ backdropFilter: "blur(8px)" }}>
+              <div key={item.title} className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-gradient-to-br from-card/80 to-amber-50/60 dark:to-amber-950/30 border border-amber-200/40 dark:border-amber-900/40" style={{ backdropFilter: "blur(8px)" }}>
                 <span className="text-2xl">{item.icon}</span>
                 <div>
                   <div className="text-sm font-semibold text-foreground">{item.title}</div>
@@ -885,9 +883,9 @@ export function HomeClient() {
           ].map((item) => (
             <div
               key={item.label}
-              className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-gradient-to-br from-white/95 to-amber-50/80 border border-amber-200/50 animate-float-up"
+              className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-up"
               style={{
-                boxShadow: "0 8px 24px rgba(217,119,6,0.12), 0 2px 8px rgba(30,24,18,0.06)",
+                boxShadow: "0 8px 24px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)",
                 backdropFilter: "blur(12px)",
                 animationDelay: item.delay,
               }}
@@ -908,9 +906,9 @@ export function HomeClient() {
           ].map((item) => (
             <div
               key={item.label}
-              className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-gradient-to-br from-white/95 to-amber-50/80 border border-amber-200/50 animate-float-down"
+              className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-down"
               style={{
-                boxShadow: "0 8px 24px rgba(217,119,6,0.12), 0 2px 8px rgba(30,24,18,0.06)",
+                boxShadow: "0 8px 24px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)",
                 backdropFilter: "blur(12px)",
                 animationDelay: item.delay,
               }}
@@ -934,8 +932,7 @@ export function HomeClient() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span
-              className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest"
-              style={{ background: "rgba(217,119,6,0.08)", color: "#92400E" }}
+              className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300"
             >
               精选地点
             </span>
@@ -998,14 +995,12 @@ export function HomeClient() {
           ================================================================ */}
       <section
         ref={howItWorksRef}
-        className={`py-20 section-hidden ${howItWorksInView ? "section-visible" : ""}`}
-        style={{ background: "#f2ede7" }}
+        className={`py-20 section-hidden bg-muted/30 dark:bg-muted/10 ${howItWorksInView ? "section-visible" : ""}`}
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <span
-              className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest"
-              style={{ background: "rgba(217,119,6,0.08)", color: "#92400E" }}
+              className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300"
             >
               使用流程
             </span>
@@ -1057,8 +1052,8 @@ export function HomeClient() {
                 key={item.step}
                 className="rounded-2xl p-7 bg-card flex flex-col"
                 style={{
-                  boxShadow: "0 2px 12px rgba(30,24,18,0.06)",
-                  border: "1px solid rgba(30,24,18,0.04)",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                  border: "1px solid rgba(0,0,0,0.04)",
                   transition: "transform 0.25s ease, box-shadow 0.25s ease",
                 }}
                 onMouseEnter={(e) => {
@@ -1069,7 +1064,7 @@ export function HomeClient() {
                 onMouseLeave={(e) => {
                   const el = e.currentTarget as HTMLElement;
                   el.style.transform = "translateY(0)";
-                  el.style.boxShadow = "0 2px 12px rgba(30,24,18,0.06)";
+                  el.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)";
                 }}
               >
                 <div className="flex items-start justify-between mb-5">
@@ -1127,8 +1122,7 @@ export function HomeClient() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span
-              className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest"
-              style={{ background: "rgba(217,119,6,0.08)", color: "#92400E" }}
+              className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300"
             >
               近期队伍
             </span>
@@ -1180,8 +1174,8 @@ export function HomeClient() {
 
           {/* 主标题 */}
           <h2
-            className="font-bold leading-tight mb-5"
-            style={{ fontSize: "clamp(2rem, 5vw, 3rem)", color: "#1e1812" }}
+            className="font-bold leading-tight mb-5 text-foreground"
+            style={{ fontSize: "clamp(2rem, 5vw, 3rem)" }}
           >
             找到同行的人，
             <span className="text-gradient-brand">出发就不远</span>
@@ -1220,10 +1214,9 @@ export function HomeClient() {
             )}
             <a
               href="/teams"
-              className="inline-block px-8 py-3.5 font-semibold rounded-full text-base transition-all duration-150 border-2"
+              className="inline-block px-8 py-3.5 font-semibold rounded-full text-base text-foreground transition-all duration-150 border-2"
               style={{
                 borderColor: "rgba(217,119,6,0.35)",
-                color: "#92400E",
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLAnchorElement).style.background = "rgba(217,119,6,0.06)";

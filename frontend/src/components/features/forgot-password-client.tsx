@@ -43,22 +43,16 @@ export function ForgotPasswordClient() {
   return (
     <div
       className="min-h-screen flex flex-col auth-forgot-gradient"
-      style={{
-        background: "linear-gradient(160deg, #FEF3C7 0%, rgba(255,122,101,0.04) 40%, #faf8f5 100%)",
-      }}
     >
       {/* 顶部 Logo 栏 */}
       <div className="px-6 pt-6 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2 group">
           <Mountain className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" style={{ color: "#D97706" }} />
-          <span className="text-lg font-bold" style={{ color: "#1e1812" }}>GoMate</span>
+          <span className="text-lg font-bold text-foreground">GoMate</span>
         </a>
         <a
           href="/login"
-          className="flex items-center gap-1.5 text-sm transition-colors duration-150"
-          style={{ color: "#8f7f6e" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D97706"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#8f7f6e"; }}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           {copy.common.backLogin}
@@ -79,20 +73,19 @@ export function ForgotPasswordClient() {
               </div>
 
               <div>
-                <h2 className="text-2xl font-bold mb-2" style={{ color: "#1e1812" }}>
+                <h2 className="text-2xl font-bold mb-2 text-foreground">
                   {copy.auth.emailSent}
                 </h2>
-                <p className="text-sm leading-relaxed" style={{ color: "#8f7f6e" }}>
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   {copy.auth.emailSentDesc}
                 </p>
               </div>
 
               {/* 提示框 */}
               <div
-                className="rounded-xl px-4 py-3 text-sm text-left"
-                style={{ background: "rgba(217,119,6,0.06)", border: "1px solid rgba(217,119,6,0.15)" }}
+                className="rounded-xl px-4 py-3 text-sm text-left bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/50"
               >
-                <p style={{ color: "#92400E" }}>
+                <p className="text-amber-800 dark:text-amber-300">
                   💡 {copy.auth.noEmailTip}
                 </p>
               </div>
@@ -129,10 +122,10 @@ export function ForgotPasswordClient() {
                 >
                   <Mail className="h-8 w-8" style={{ color: "#D97706" }} />
                 </div>
-                <h1 className="text-2xl font-bold mb-1.5" style={{ color: "#1e1812" }}>
+                <h1 className="text-2xl font-bold mb-1.5 text-foreground">
                   {copy.auth.forgotPasswordTitle}
                 </h1>
-                <p className="text-sm" style={{ color: "#8f7f6e" }}>
+                <p className="text-sm text-muted-foreground">
                   {copy.auth.forgotPasswordSubtitle}
                 </p>
               </div>
@@ -140,13 +133,12 @@ export function ForgotPasswordClient() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* 邮箱输入 */}
                 <div className="space-y-1.5">
-                  <label htmlFor="email" className="text-sm font-medium" style={{ color: "#4a3f35" }}>
+                  <label htmlFor="email" className="text-sm font-medium text-foreground">
                     {copy.auth.email}
                   </label>
                   <div className="relative">
                     <Mail
-                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
-                      style={{ color: "#8f7f6e" }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground"
                     />
                     <input
                       id="email"
@@ -158,20 +150,7 @@ export function ForgotPasswordClient() {
                         setError("");
                       }}
                       required
-                      className="w-full pl-11 pr-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
-                      style={{
-                        background: "#fff",
-                        borderColor: "#e8e0d7",
-                        color: "#1e1812",
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = "#D97706";
-                        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = "#e8e0d7";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
+                      className="w-full pl-11 pr-4 py-3 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                     />
                   </div>
                 </div>
@@ -179,8 +158,7 @@ export function ForgotPasswordClient() {
                 {/* 错误提示 */}
                 {error && (
                   <div
-                    className="rounded-xl px-4 py-3 text-sm flex items-center gap-2"
-                    style={{ background: "rgba(255,122,101,0.08)", color: "#c0392b", border: "1px solid rgba(255,122,101,0.20)" }}
+                    className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-red-400 border border-destructive/20 dark:border-red-500/30"
                   >
                     <span className="text-base">⚠️</span>
                     {error}
@@ -223,7 +201,7 @@ export function ForgotPasswordClient() {
                 </button>
 
                 {/* 提示文案 */}
-                <p className="text-center text-xs" style={{ color: "#c4b5a8" }}>
+                <p className="text-center text-xs text-muted-foreground">
                   {copy.email.checkJunkFolder}
                 </p>
               </form>

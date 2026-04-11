@@ -70,7 +70,7 @@ export function ContactClient() {
         <div className="bg-stone-50 dark:bg-stone-900 border-b border-stone-200 dark:border-stone-700">
           <div className="max-w-3xl mx-auto px-6 py-10">
             {/* 面包屑 */}
-            <nav className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mb-4">
+            <nav className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 mb-4">
               <a
                 href="/"
                 className="flex items-center gap-1 hover:text-amber-600 transition-colors"
@@ -87,7 +87,7 @@ export function ContactClient() {
             <h1 className="text-3xl font-bold text-foreground">
               {copy.contact.pageSubtitle}
             </h1>
-            <p className="mt-2 text-stone-500 dark:text-stone-400 dark:text-stone-500 text-base">
+            <p className="mt-2 text-stone-500 dark:text-stone-400 text-base">
               {copy.contact.pageDesc}
             </p>
           </div>
@@ -124,7 +124,7 @@ export function ContactClient() {
                 <h3 className="text-base font-semibold text-foreground mb-1">
                   {copy.contact.wechatContact}
                 </h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500">
+                <p className="text-sm text-stone-500 dark:text-stone-400">
                   {copy.contact.wechatScanHint}
                 </p>
               </div>
@@ -142,7 +142,7 @@ export function ContactClient() {
                 <h3 className="text-xl font-semibold text-foreground mb-2">
                   {copy.contact.successTitle}
                 </h3>
-                <p className="text-stone-500 dark:text-stone-400 dark:text-stone-500 text-sm mb-6">
+                <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">
                   {copy.contact.successDesc}
                 </p>
                 <button
@@ -169,7 +169,7 @@ export function ContactClient() {
                     <h2 className="text-xl font-semibold text-foreground">
                       {copy.contact.formTitle}
                     </h2>
-                    <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mt-0.5">
+                    <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
                       {copy.contact.formSubtitle}
                     </p>
                   </div>
@@ -242,7 +242,7 @@ export function ContactClient() {
 
                   {/* 错误提示 */}
                   {error && (
-                    <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">
+                    <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 rounded-lg px-3.5 py-2.5">
                       {error}
                     </p>
                   )}

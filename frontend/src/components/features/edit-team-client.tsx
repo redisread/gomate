@@ -156,7 +156,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: "#FDFAF6" }}>
+      <main className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#D97706" }} />
       </main>
     );
@@ -168,17 +168,16 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
 
   if (!isLeader || !team) {
     return (
-      <main className="min-h-screen" style={{ background: "#FDFAF6" }}>
+      <main className="min-h-screen bg-background">
         <Navbar />
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           <div
-            className="rounded-xl px-4 py-3 text-sm flex items-center gap-2"
-            style={{ background: "rgba(255,122,101,0.08)", color: "#c0392b", border: "1px solid rgba(255,122,101,0.20)" }}
+            className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-red-400 border border-destructive/20 dark:border-red-500/30"
           >
             <span className="text-base">⚠️</span>
             {error || "无权限编辑此队伍"}
           </div>
-          <a href={`/teams/${teamId}`} className="mt-4 inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700">
+          <a href={`/teams/${teamId}`} className="mt-4 inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400">
             <ArrowLeft className="h-3.5 w-3.5" />
             返回队伍详情
           </a>
@@ -189,16 +188,13 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
   }
 
   return (
-    <main className="min-h-screen" style={{ background: "#FDFAF6" }}>
+    <main className="min-h-screen bg-background">
       <Navbar />
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <a
           href={`/teams/${teamId}`}
-          className="inline-flex items-center gap-1.5 text-sm mb-8 transition-colors duration-150"
-          style={{ color: "#8f7f6e" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D97706"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#8f7f6e"; }}
+          className="inline-flex items-center gap-1.5 text-sm mb-8 text-muted-foreground hover:text-primary transition-colors duration-150"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           返回队伍详情
@@ -207,18 +203,17 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <Pencil className="h-5 w-5" style={{ color: "#D97706" }} />
-            <h1 className="text-2xl font-bold" style={{ color: "#1e1812" }}>
+            <h1 className="text-2xl font-bold text-foreground">
               编辑队伍
             </h1>
           </div>
-          <p className="text-sm" style={{ color: "#8f7f6e" }}>
+          <p className="text-sm text-muted-foreground">
             修改队伍信息，让更多伙伴了解这次活动
           </p>
         </div>
 
         <div
-          className="rounded-2xl p-6 sm:p-8"
-          style={{ background: "#fff", border: "1px solid #f0ebe3", boxShadow: "0 2px 16px rgba(30,24,18,0.06)" }}
+          className="rounded-2xl p-6 sm:p-8 card-base"
         >
           <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -232,41 +227,30 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 onChange={handleChange}
                 required
                 maxLength={60}
-                className="w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
-                style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#D97706";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
-                  e.currentTarget.style.background = "#fff";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#e8e0d7";
-                  e.currentTarget.style.boxShadow = "none";
-                  e.currentTarget.style.background = "#fdfaf6";
-                }}
+                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
             </FormSection>
 
             <FormSection icon="📍" label={copy.teams.formLabel.location}>
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-stone-100 border border-stone-200">
-                <span className="text-sm text-stone-800">{location?.name || team.date}</span>
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-muted border border-border">
+                <span className="text-sm text-foreground">{location?.name || team.date}</span>
                 {location && (
-                  <a href={`/locations/${location.id}`} className="text-xs text-amber-600 hover:text-amber-700 flex items-center gap-1">
+                  <a href={`/locations/${location.id}`} className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 flex items-center gap-1">
                     查看详情 <ArrowRight className="h-3 w-3" />
                   </a>
                 )}
               </div>
-              <p className="text-xs text-stone-400 mt-1.5 flex items-center gap-1.5">
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <AlertCircle className="h-3 w-3" />
                 队伍创建后地点不可修改
               </p>
             </FormSection>
 
             <FormSection icon="📅" label={copy.teams.formLabel.date}>
-              <div className="px-4 py-3 rounded-xl bg-stone-100 border border-stone-200">
-                <span className="text-sm text-stone-800">{team.date}</span>
+              <div className="px-4 py-3 rounded-xl bg-muted border border-border">
+                <span className="text-sm text-foreground">{team.date}</span>
               </div>
-              <p className="text-xs text-stone-400 mt-1.5 flex items-center gap-1.5">
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <AlertCircle className="h-3 w-3" />
                 队伍创建后日期不可修改
               </p>
@@ -275,49 +259,27 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormSection icon="⏰" label={copy.teams.formLabel.meetTime}>
                 <div className="relative">
-                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
                     id="time"
                     name="time"
                     type="time"
                     value={formData.time}
                     onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
-                    style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "#D97706";
-                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
-                      e.currentTarget.style.background = "#fff";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "#e8e0d7";
-                      e.currentTarget.style.boxShadow = "none";
-                      e.currentTarget.style.background = "#fdfaf6";
-                    }}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   />
                 </div>
               </FormSection>
 
               <FormSection icon="⌛" label={copy.teams.formLabel.duration}>
                 <div className="relative">
-                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <select
                     id="durationMin"
                     name="durationMin"
                     value={formData.durationMin}
                     onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none appearance-none"
-                    style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "#D97706";
-                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
-                      e.currentTarget.style.background = "#fff";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "#e8e0d7";
-                      e.currentTarget.style.boxShadow = "none";
-                      e.currentTarget.style.background = "#fdfaf6";
-                    }}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   >
                     {[120, 180, 240, 300, 360, 420, 480, 540, 600, 720].map((m) => (
                       <option key={m} value={m}>{m / 60} 小时</option>
@@ -340,21 +302,10 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                   value={formData.maxMembers}
                   onChange={handleChange}
                   required
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none"
-                  style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#D97706";
-                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
-                    e.currentTarget.style.background = "#fff";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#e8e0d7";
-                    e.currentTarget.style.boxShadow = "none";
-                    e.currentTarget.style.background = "#fdfaf6";
-                  }}
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                 />
               </div>
-              <p className="text-xs text-stone-400 mt-1.5 flex items-center gap-1.5">
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <AlertCircle className="h-3 w-3" />
                 当前已有 {team.currentMembers} 名成员，人数上限不能低于此数
               </p>
@@ -368,18 +319,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                className="w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 focus:outline-none resize-none"
-                style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#D97706";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(217,119,6,0.10)";
-                  e.currentTarget.style.background = "#fff";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#e8e0d7";
-                  e.currentTarget.style.boxShadow = "none";
-                  e.currentTarget.style.background = "#fdfaf6";
-                }}
+                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
             </FormSection>
 
@@ -388,8 +328,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 {formData.requirements.map((req, i) => (
                   <li key={i} className="flex items-center gap-2">
                     <span
-                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                      style={{ background: "#fef3c7", color: "#b45309" }}
+                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
                     >
                       {i + 1}
                     </span>
@@ -399,32 +338,12 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                       onChange={(e) => updateRequirement(i, e.target.value)}
                       placeholder="例如：需要有徒步经验"
                       maxLength={100}
-                      className="flex-1 px-3 py-2 rounded-lg border text-sm transition-all duration-200 focus:outline-none"
-                      style={{ background: "#fdfaf6", borderColor: "#e8e0d7", color: "#1e1812" }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = "#D97706";
-                        e.currentTarget.style.boxShadow = "0 0 0 2px rgba(217,119,6,0.10)";
-                        e.currentTarget.style.background = "#fff";
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = "#e8e0d7";
-                        e.currentTarget.style.boxShadow = "none";
-                        e.currentTarget.style.background = "#fdfaf6";
-                      }}
+                      className="flex-1 px-3 py-2 rounded-lg border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
                     />
                     <button
                       type="button"
                       onClick={() => removeRequirement(i)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-150"
-                      style={{ color: "#9ca3af" }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2";
-                        (e.currentTarget as HTMLButtonElement).style.color = "#dc2626";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                        (e.currentTarget as HTMLButtonElement).style.color = "#9ca3af";
-                      }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-150 text-stone-400 dark:text-stone-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400"
                     >
                       ✕
                     </button>
@@ -435,24 +354,13 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 <button
                   type="button"
                   onClick={addRequirement}
-                  className="w-full mt-2 py-2.5 rounded-lg border text-sm font-medium transition-all duration-150 flex items-center justify-center gap-1.5"
-                  style={{ borderColor: "#e8e0d7", color: "#8f7f6e" }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "#f5f0e8";
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "#D97706";
-                    (e.currentTarget as HTMLButtonElement).style.color = "#D97706";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "#e8e0d7";
-                    (e.currentTarget as HTMLButtonElement).style.color = "#8f7f6e";
-                  }}
+                  className="w-full mt-2 py-2.5 rounded-lg border text-sm font-medium transition-all duration-150 flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted hover:border-primary hover:text-primary"
                 >
                   <span>+ 添加一条</span>
                 </button>
               )}
               {formData.requirements.length === 0 && (
-                <p className="text-xs text-stone-400 mt-2 flex items-center gap-1.5">
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
                   <AlertCircle className="h-3 w-3" />
                   点击「添加一条」开始设置参与要求
                 </p>
@@ -460,19 +368,17 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             </FormSection>
 
             <div
-              className="rounded-xl px-4 py-3.5 text-sm flex items-start gap-2.5"
-              style={{ background: "rgba(217,119,6,0.06)", border: "1px solid rgba(217,119,6,0.15)" }}
+              className="rounded-xl px-4 py-3.5 text-sm flex items-start gap-2.5 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/40"
             >
               <span className="text-base flex-shrink-0 mt-0.5">💡</span>
-              <p style={{ color: "#92400E" }}>
+              <p className="text-amber-800 dark:text-amber-300">
                 修改后的信息会立即生效，已申请的成员会看到更新后的内容。
               </p>
             </div>
 
             {error && (
               <div
-                className="rounded-xl px-4 py-3 text-sm flex items-center gap-2"
-                style={{ background: "rgba(255,122,101,0.08)", color: "#c0392b", border: "1px solid rgba(255,122,101,0.20)" }}
+                className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-red-400 border border-destructive/20 dark:border-red-500/30"
               >
                 <span className="text-base">⚠️</span>
                 {error}
@@ -483,10 +389,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               <button
                 type="button"
                 onClick={() => window.location.href = `/teams/${teamId}`}
-                className="flex-1 py-3 rounded-xl border text-sm font-medium transition-all duration-150"
-                style={{ borderColor: "#e8e0d7", color: "#4a3f35" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#f5f0e8"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                className="flex-1 py-3 rounded-xl border text-sm font-medium transition-all duration-150 border-border text-muted-foreground hover:bg-muted"
               >
                 {copy.common.cancel}
               </button>
@@ -542,12 +445,12 @@ function FormSection({
     <div className="space-y-1.5">
       <div className="flex items-center gap-1.5">
         <span className="text-base">{icon}</span>
-        <label className="text-sm font-medium" style={{ color: "#4a3f35" }}>
+        <label className="text-sm font-medium text-foreground">
           {label}
-          {required && <span className="ml-0.5" style={{ color: "#ff7a65" }}>*</span>}
+          {required && <span className="ml-0.5 text-destructive">*</span>}
         </label>
         {hint && (
-          <span className="text-xs ml-auto" style={{ color: "#c4b5a8" }}>{hint}</span>
+          <span className="text-xs ml-auto text-muted-foreground">{hint}</span>
         )}
       </div>
       {children}
