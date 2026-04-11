@@ -60,6 +60,6 @@ cloudflare-env.d.ts
 .env.local
 midscene_run/
 
-.claude/
-.opencode/
-openspec/
+# .claude/
+# .opencode/
+# openspec/
