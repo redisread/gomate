@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
 import { fetchCurrentUser } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navLinks = [
   { href: "/",          label: copy.nav.home },
@@ -150,6 +151,9 @@ export function Navbar({ className }: NavbarProps) {
 
             {/* ---- 桌面端操作区 ---- */}
             <div className="hidden md:flex items-center gap-2">
+              {/* 主题切换 */}
+              <ThemeToggle />
+
               {session?.isAdmin && (
                 <a
                   href="/admin/locations"

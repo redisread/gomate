@@ -2,6 +2,7 @@ name = "gomate-api"
 main = "src/index.ts"
 compatibility_date = "2026-02-26"
 compatibility_flags = ["nodejs_compat"]
+account_id = "e3afbb613458022947cd9dc9f5bd6334"
 
 # 本地开发：监听所有网络接口，iOS 模拟器可通过宿主机 IP 访问
 [dev]
