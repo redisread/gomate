@@ -177,8 +177,7 @@ export function Footer() {
 
   return (
     <footer
-      className="relative overflow-hidden"
-      style={{ background: "#FDFAF6", borderTop: "1px solid #F0EBE3" }}
+      className="relative overflow-hidden bg-background border-t border-border"
     >
       {/* 背景装饰：极淡山形纹 */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
@@ -392,15 +391,14 @@ export function Footer() {
 
         {/* ── 版权栏 ── */}
         <div
-          className="border-t py-6 flex flex-col sm:flex-row items-center justify-between gap-3"
-          style={{ borderColor: "#F0EBE3" }}
+          className="border-t border-border py-6 flex flex-col sm:flex-row items-center justify-between gap-3"
         >
-          <p className="text-xs" style={{ color: "#C4A898" }}>
+          <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} {copy.footer.copyright}
           </p>
-          <p className="text-xs flex items-center gap-1.5" style={{ color: "#C4A898" }}>
+          <p className="text-xs flex items-center gap-1.5 text-muted-foreground">
             Made with
-            <Heart className="h-3 w-3" style={{ color: "#E8845A", fill: "#E8845A" }} />
+            <Heart className="h-3 w-3 text-primary" style={{ fill: "currentColor" }} />
             for 每一个想找搭子的你
           </p>
         </div>

@@ -32,7 +32,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="h-9 w-9 flex items-center justify-center rounded-lg text-[#8f7f6e] hover:bg-[#FFFBEB] hover:text-[#1e1812] transition-colors duration-150"
+        className="h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
         aria-label={copy.theme.toggleLabel}
       >
         <Sun className="h-4 w-4" />
@@ -60,7 +60,7 @@ export function ThemeToggle() {
     <div className="relative" data-theme-toggle>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="h-9 w-9 flex items-center justify-center rounded-lg text-[#8f7f6e] hover:bg-[#FFFBEB] hover:text-[#1e1812] transition-colors duration-150"
+        className="h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
         aria-label={copy.theme.toggleLabel}
       >
         {getCurrentIcon()}
@@ -68,11 +68,8 @@ export function ThemeToggle() {
 
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-1.5 w-36 rounded-xl overflow-hidden z-50"
+          className="absolute right-0 top-full mt-1.5 w-36 rounded-xl overflow-hidden z-50 bg-popover border border-border shadow-lg"
           style={{
-            background: "rgba(255,255,255,0.97)",
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 8px 30px rgba(30,24,18,0.12), 0 0 0 1px rgba(30,24,18,0.06)",
             animation: "fade-up 0.15s cubic-bezier(0.16,1,0.3,1) both",
           }}
         >
@@ -81,8 +78,8 @@ export function ThemeToggle() {
             className={cn(
               "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors",
               theme === "light"
-                ? "text-[#D97706] bg-[#FFFBEB]"
-                : "text-[#1e1812] hover:bg-[#FFFBEB]"
+                ? "text-primary bg-accent"
+                : "text-foreground hover:bg-accent"
             )}
           >
             <Sun className="h-4 w-4" />
@@ -93,8 +90,8 @@ export function ThemeToggle() {
             className={cn(
               "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors",
               theme === "dark"
-                ? "text-[#D97706] bg-[#FFFBEB]"
-                : "text-[#1e1812] hover:bg-[#FFFBEB]"
+                ? "text-primary bg-accent"
+                : "text-foreground hover:bg-accent"
             )}
           >
             <Moon className="h-4 w-4" />
@@ -105,8 +102,8 @@ export function ThemeToggle() {
             className={cn(
               "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors",
               theme === "system"
-                ? "text-[#D97706] bg-[#FFFBEB]"
-                : "text-[#1e1812] hover:bg-[#FFFBEB]"
+                ? "text-primary bg-accent"
+                : "text-foreground hover:bg-accent"
             )}
           >
             <Monitor className="h-4 w-4" />
