@@ -27,6 +27,34 @@ import {
   useAnimateIn,
   useSearchInteraction,
 } from "@/hooks/use-animations";
+// DOM-based theme detection to avoid Astro island module duplication issues
+function useIsDark() {
+  const [isDark, setIsDark] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    // Initial check after hydration is complete
+    const check = () => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    };
+    check();
+
+    // Watch for future theme changes
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.attributeName === "class") {
+          setIsDark(document.documentElement.classList.contains("dark"));
+          break;
+        }
+      }
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  return isDark;
+}
 
 /* ============================================================
    LocationCard — 大图 overlay 风格
@@ -577,6 +605,7 @@ function TeamCard({ team }: { team: Team }) {
    HomeClient — 首页主组件
    ============================================================ */
 export function HomeClient() {
+  const isDark = useIsDark();
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [teams, setTeams] = React.useState<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -654,10 +683,11 @@ export function HomeClient() {
 
         {/* 背景渐变 */}
         <div
-          className="absolute inset-0 home-hero-gradient"
+          className="absolute inset-0"
           style={{
-            background:
-              "linear-gradient(160deg, #FEF3C7 0%, rgba(255,122,101,0.06) 38%, #faf8f5 65%, #f5f0e8 100%)",
+            background: isDark
+              ? "linear-gradient(160deg, #1a1510 0%, rgba(217,119,6,0.04) 38%, #12100d 65%, #1a1510 100%)"
+              : "linear-gradient(160deg, #FEF3C7 0%, rgba(255,122,101,0.06) 38%, #faf8f5 65%, #f5f0e8 100%)",
           }}
         />
 
@@ -722,9 +752,9 @@ export function HomeClient() {
           <span
             className={`inline-flex items-center gap-1.5 mb-7 px-4 py-1.5 text-sm font-medium rounded-full border ${animate.badge}`}
             style={{
-              background: "rgba(217,119,6,0.08)",
-              borderColor: "rgba(217,119,6,0.22)",
-              color: "#92400E",
+              background: isDark ? "rgba(217,119,6,0.15)" : "rgba(217,119,6,0.08)",
+              borderColor: isDark ? "rgba(217,119,6,0.3)" : "rgba(217,119,6,0.22)",
+              color: isDark ? "#FCD34D" : "#92400E",
             }}
           >
             <Mountain className="h-3.5 w-3.5" />
@@ -1132,8 +1162,12 @@ export function HomeClient() {
           ================================================================ */}
       <section
         ref={ctaRef}
-        className={`py-24 section-hidden ${ctaInView ? "section-visible" : ""} home-cta-gradient`}
-        style={{ background: "linear-gradient(160deg, #FFFBEB 0%, #faf8f5 50%, #f5f0e8 100%)" }}
+        className={`py-24 section-hidden ${ctaInView ? "section-visible" : ""}`}
+        style={{
+          background: isDark
+            ? "linear-gradient(160deg, #1c1608 0%, #12100d 50%, #1a1510 100%)"
+            : "linear-gradient(160deg, #FFFBEB 0%, #faf8f5 50%, #f5f0e8 100%)",
+        }}
       >
         <div className="max-w-4xl mx-auto px-4 text-center">
           {/* eyebrow */}

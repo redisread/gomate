@@ -36,7 +36,7 @@ const tagColorClasses = [
 // ─── 骨架屏 ──────────────────────────────────────────────────────────────────
 function ShimmerCard() {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden border border-stone-100">
+    <div className="bg-card rounded-2xl overflow-hidden border border-border">
       <div className="h-52 skeleton" />
       <div className="p-5 space-y-3">
         <div className="h-5 skeleton rounded-full w-2/3" />
@@ -65,9 +65,9 @@ function LocationCard({ location, index }: { location: Location; index: number }
       className="group block"
       style={{ animation: `fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms both` }}
     >
-      <article className="bg-white rounded-2xl overflow-hidden border border-stone-100 hover:border-amber-200/50 hover:shadow-xl hover:shadow-amber-100/40 hover:ring-1 hover:ring-amber-200/40 transition-all duration-300 hover:-translate-y-1">
+      <article className="bg-card rounded-2xl overflow-hidden border border-border hover:border-amber-200/50 dark:hover:border-amber-800/50 hover:shadow-xl hover:shadow-amber-100/40 dark:hover:shadow-amber-900/20 hover:ring-1 hover:ring-amber-200/40 dark:hover:ring-amber-700/40 transition-all duration-300 hover:-translate-y-1">
         {/* 封面图 */}
-        <div className="relative h-52 overflow-hidden bg-stone-100">
+        <div className="relative h-52 overflow-hidden bg-stone-100 dark:bg-stone-800">
           {location.coverImage ? (
             <img
               src={location.coverImage}
@@ -120,7 +120,7 @@ function LocationCard({ location, index }: { location: Location; index: number }
         {/* 内容区 */}
         <div className="p-5">
           {/* 描述 */}
-          <p className="text-stone-500 text-sm line-clamp-2 leading-relaxed mb-4">
+          <p className="text-stone-500 dark:text-stone-400 text-sm line-clamp-2 leading-relaxed mb-4">
             {location.description}
           </p>
 
@@ -139,8 +139,8 @@ function LocationCard({ location, index }: { location: Location; index: number }
           )}
 
           {/* 底部 CTA */}
-          <div className="flex items-center justify-between pt-3 border-t border-stone-100">
-            <span className="text-xs text-stone-400 flex items-center gap-1">
+          <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-800">
+            <span className="text-xs text-stone-400 dark:text-stone-500 flex items-center gap-1">
               <MapPin className="w-3 h-3" />
               {location.address || location.cityName || copy.locations.defaultCity}
             </span>
@@ -160,17 +160,17 @@ function EmptyState({ onClear }: { onClear: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 px-4">
       <div className="relative mb-6">
-        <div className="w-20 h-20 rounded-full bg-stone-100 flex items-center justify-center">
+        <div className="w-20 h-20 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
           <TreePine
-            className="h-9 w-9 text-stone-400 motion-reduce:animate-none"
+            className="h-9 w-9 text-stone-400 dark:text-stone-500 motion-reduce:animate-none"
             style={{ animation: "float 3s ease-in-out infinite" }}
           />
         </div>
         <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-200" />
         <div className="absolute -bottom-1 -left-1 w-3 h-3 rounded-full bg-amber-200" />
       </div>
-      <h3 className="text-lg font-semibold text-stone-700 mb-2">{copy.locations.emptyTitle}</h3>
-      <p className="text-stone-400 text-sm text-center max-w-xs leading-relaxed mb-6">
+      <h3 className="text-lg font-semibold text-foreground dark:text-stone-300 mb-2">{copy.locations.emptyTitle}</h3>
+      <p className="text-stone-400 dark:text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-6">
         {copy.locations.emptyDesc}
       </p>
       <button
@@ -404,11 +404,11 @@ export function LocationsClient() {
       <Navbar />
 
       {/* ── Hero ── */}
-      <section className="relative pt-28 pb-10 bg-white border-b border-stone-100">
+      <section className="relative pt-28 pb-10 bg-card border-b border-border">
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-amber-50/60 blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-60 h-60 rounded-full bg-stone-50/80 blur-2xl" />
+          <div className="absolute -bottom-10 -left-10 w-60 h-60 rounded-full bg-stone-50/60 dark:bg-stone-900 blur-2xl" />
         </div>
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -428,13 +428,13 @@ export function LocationsClient() {
 
           {/* 标题 */}
           <h1
-            className="text-3xl sm:text-4xl font-bold text-stone-900 mb-2 leading-tight"
+            className="text-3xl sm:text-4xl font-bold text-foreground mb-2 leading-tight"
             style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 80ms both" }}
           >
             {copy.locations.pageTitle}
           </h1>
           <p
-            className="text-stone-400 text-sm sm:text-base mb-7 leading-relaxed max-w-xl"
+            className="text-stone-400 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed max-w-xl"
             style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}
           >
             {copy.locations.heroTagline}
@@ -528,22 +528,22 @@ export function LocationsClient() {
             className="relative"
             style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 220ms both" }}
           >
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 dark:text-stone-500 pointer-events-none" />
             <input
               ref={searchInputRef}
               type="text"
               placeholder={copy.locations.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-12 py-3.5 bg-stone-50 text-stone-800 placeholder-stone-400 border border-stone-200 rounded-2xl focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 transition-all duration-200 text-sm shadow-sm"
+              className="w-full pl-11 pr-12 py-3.5 bg-stone-50 dark:bg-stone-900 text-foreground placeholder-stone-400 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 transition-all duration-200 text-sm shadow-sm"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-stone-100 rounded-full transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-stone-100 dark:bg-stone-800 rounded-full transition-colors"
               >
-                <X className="h-3.5 w-3.5 text-stone-400" />
+                <X className="h-3.5 w-3.5 text-stone-400 dark:text-stone-500" />
               </button>
             )}
           </div>
@@ -570,7 +570,7 @@ export function LocationsClient() {
                     "flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
                     selectedCityId
                       ? "bg-amber-500 text-white border-amber-500 shadow-sm"
-                      : "bg-white text-stone-500 border-stone-200 hover:border-stone-300 hover:text-stone-700"
+                      : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                   )}
                 >
                   <MapPin className="w-3 h-3" />
@@ -581,7 +581,7 @@ export function LocationsClient() {
 
               {/* 分隔线 */}
               {cities.length > 0 && popularTags.length > 0 && (
-                <div className="flex-shrink-0 w-px h-4 bg-stone-200" />
+                <div className="flex-shrink-0 w-px h-4 bg-stone-200 dark:bg-stone-700" />
               )}
 
               {/* 标签 */}
@@ -594,7 +594,7 @@ export function LocationsClient() {
                     "flex-shrink-0 px-3 py-1.5 text-xs rounded-full border transition-all duration-200 active:scale-95",
                     selectedTags.includes(tag.id)
                       ? "bg-amber-500 text-white border-amber-500 shadow-sm"
-                      : "bg-white text-stone-500 border-stone-200 hover:border-stone-300 hover:text-stone-700"
+                      : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                   )}
                 >
                   {tag.name}
@@ -606,7 +606,7 @@ export function LocationsClient() {
                 <button
                   type="button"
                   onClick={handleClearAll}
-                  className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs text-stone-400 hover:text-stone-600 transition-colors rounded-full"
+                  className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors rounded-full"
                 >
                   <X className="w-3 h-3" />
                   清除
@@ -621,7 +621,7 @@ export function LocationsClient() {
           {showCityDropdown && (
             <div
               ref={cityDropdownRef}
-              className="fixed bg-white border border-stone-200 rounded-xl shadow-lg z-[9999] min-w-[140px] max-h-60 overflow-y-auto py-1 origin-top"
+              className="fixed bg-popover border border-stone-200 dark:border-stone-700 rounded-xl shadow-lg z-[9999] min-w-[140px] max-h-60 overflow-y-auto py-1 origin-top"
               style={{
                 top: cityDropdownPos.top,
                 left: cityDropdownPos.left,
@@ -633,7 +633,7 @@ export function LocationsClient() {
                 onClick={() => handleCitySelect("")}
                 className={cn(
                   "w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
-                  !selectedCityId ? "text-amber-600 bg-amber-50" : "text-stone-500 hover:bg-stone-50 hover:text-stone-700"
+                  !selectedCityId ? "text-amber-600 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
                 )}
               >
                 <MapPin className="w-3 h-3 flex-shrink-0" />
@@ -646,7 +646,7 @@ export function LocationsClient() {
                   onClick={() => handleCitySelect(city.id)}
                   className={cn(
                     "w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
-                    selectedCityId === city.id ? "text-amber-600 bg-amber-50" : "text-stone-500 hover:bg-stone-50 hover:text-stone-700"
+                    selectedCityId === city.id ? "text-amber-600 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
                   )}
                 >
                   <MapPin className="w-3 h-3 flex-shrink-0" />
@@ -666,11 +666,11 @@ export function LocationsClient() {
           <div className="flex items-center justify-between mb-7">
             <div className="flex items-center gap-3">
               {isLoading ? (
-                <div className="h-4 w-28 bg-stone-200 rounded-full animate-pulse" />
+                <div className="h-4 w-28 bg-stone-200 dark:bg-stone-700 rounded-full animate-pulse" />
               ) : (
-                <p className="text-sm text-stone-500">
+                <p className="text-sm text-stone-500 dark:text-stone-400">
                   共{" "}
-                  <span className="font-bold text-stone-800 text-base">
+                  <span className="font-bold text-foreground text-base">
                     {pagination.total}
                   </span>{" "}
                   {copy.locations.resultCount}
@@ -702,9 +702,9 @@ export function LocationsClient() {
                   {selectedTags.map((tagId) => {
                     const tag = popularTags.find((t) => t.id === tagId);
                     return (
-                      <span key={tagId} className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-stone-100 text-stone-600 border border-stone-200">
+                      <span key={tagId} className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
                         {tag?.name || tagId}
-                        <button onClick={() => handleTagToggle(tagId)} className="hover:text-stone-900 transition-colors ml-0.5">
+                        <button onClick={() => handleTagToggle(tagId)} className="hover:text-foreground transition-colors ml-0.5">
                           <X className="w-3 h-3" />
                         </button>
                       </span>
@@ -717,7 +717,7 @@ export function LocationsClient() {
             {hasActiveFilters && !isLoading && (
               <button
                 onClick={handleClearAll}
-                className="text-xs text-stone-400 hover:text-stone-600 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-stone-100"
+                className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800"
               >
                 <X className="h-3.5 w-3.5" />
                 {copy.locations.clearFilter}
@@ -751,14 +751,14 @@ export function LocationsClient() {
               <button
                 onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="w-9 h-9 rounded-xl flex items-center justify-center bg-white border border-stone-200 text-stone-400 hover:border-stone-300 hover:text-stone-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 text-stone-400 dark:text-stone-500 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
 
               {getPageNumbers().map((page, idx) =>
                 page === "..." ? (
-                  <span key={`e-${idx}`} className="w-9 h-9 flex items-center justify-center text-stone-400 text-sm">···</span>
+                  <span key={`e-${idx}`} className="w-9 h-9 flex items-center justify-center text-stone-400 dark:text-stone-500 text-sm">···</span>
                 ) : (
                   <button
                     key={page}
@@ -766,8 +766,8 @@ export function LocationsClient() {
                     className={cn(
                       "w-9 h-9 rounded-xl text-sm font-medium transition-all duration-200",
                       page === currentPage
-                        ? "bg-stone-900 text-white shadow-sm"
-                        : "bg-white text-stone-500 border border-stone-200 hover:border-stone-300 hover:text-stone-700"
+                        ? "bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white shadow-sm"
+                        : "bg-card text-stone-500 dark:text-stone-400 border border-border hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                     )}
                   >
                     {page}
@@ -778,7 +778,7 @@ export function LocationsClient() {
               <button
                 onClick={() => currentPage < pagination.totalPages && handlePageChange(currentPage + 1)}
                 disabled={currentPage === pagination.totalPages}
-                className="w-9 h-9 rounded-xl flex items-center justify-center bg-white border border-stone-200 text-stone-400 hover:border-stone-300 hover:text-stone-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 text-stone-400 dark:text-stone-500 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -788,7 +788,7 @@ export function LocationsClient() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="relative py-16 border-t border-stone-200 overflow-hidden">
+      <section className="relative py-16 border-t border-stone-200 dark:border-stone-700 overflow-hidden">
         {/* 背景 */}
         <div className="absolute inset-0 bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-50" />
         <div
@@ -800,18 +800,18 @@ export function LocationsClient() {
         />
         {/* 装饰图标 */}
         <div className="absolute left-8 top-1/2 -translate-y-1/2 opacity-[0.06]">
-          <Compass className="h-32 w-32 text-stone-600" />
+          <Compass className="h-32 w-32 text-stone-600 dark:text-stone-400" />
         </div>
         <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-[0.06]">
-          <TreePine className="h-32 w-32 text-stone-600" />
+          <TreePine className="h-32 w-32 text-stone-600 dark:text-stone-400" />
         </div>
 
         <div className="relative max-w-3xl mx-auto px-4 text-center">
           <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-5 border border-amber-100">
             <Mountain className="h-6 w-6 text-amber-600" />
           </div>
-          <h2 className="text-2xl font-bold text-stone-900 mb-3">{copy.locations.ctaTitle}</h2>
-          <p className="text-stone-500 text-sm mb-7 max-w-sm mx-auto leading-relaxed">{copy.locations.ctaDesc}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-3">{copy.locations.ctaTitle}</h2>
+          <p className="text-stone-500 dark:text-stone-400 text-sm mb-7 max-w-sm mx-auto leading-relaxed">{copy.locations.ctaDesc}</p>
           <a href="/contact">
             <button className="group inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-7 py-3 rounded-full text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-amber-200">
               {copy.locations.ctaBtn}
