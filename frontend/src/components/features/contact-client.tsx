@@ -62,15 +62,15 @@ export function ContactClient() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
       <main className="flex-1">
         {/* Hero 区域 */}
-        <div className="bg-stone-50 border-b border-stone-200">
+        <div className="bg-stone-50 dark:bg-stone-900 border-b border-stone-200 dark:border-stone-700">
           <div className="max-w-3xl mx-auto px-6 py-10">
             {/* 面包屑 */}
-            <nav className="flex items-center gap-1 text-sm text-stone-500 mb-4">
+            <nav className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mb-4">
               <a
                 href="/"
                 className="flex items-center gap-1 hover:text-amber-600 transition-colors"
@@ -79,15 +79,15 @@ export function ContactClient() {
                 <span>首页</span>
               </a>
               <ChevronRight className="w-4 h-4" />
-              <span className="text-stone-700 font-medium">
+              <span className="text-stone-700 dark:text-stone-300 font-medium">
                 {copy.contact.pageTitle}
               </span>
             </nav>
 
-            <h1 className="text-3xl font-bold text-stone-900">
+            <h1 className="text-3xl font-bold text-foreground">
               {copy.contact.pageSubtitle}
             </h1>
-            <p className="mt-2 text-stone-500 text-base">
+            <p className="mt-2 text-stone-500 dark:text-stone-400 dark:text-stone-500 text-base">
               {copy.contact.pageDesc}
             </p>
           </div>
@@ -98,12 +98,12 @@ export function ContactClient() {
           {/* 联系方式卡片 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* 邮箱联系 */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm px-6 py-6 flex items-start gap-4">
+            <div className="bg-card rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm px-6 py-6 flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0 border border-amber-100">
                 <Mail className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-stone-900 mb-1">
+                <h3 className="text-base font-semibold text-foreground mb-1">
                   {copy.contact.emailContact}
                 </h3>
                 <a
@@ -116,15 +116,15 @@ export function ContactClient() {
             </div>
 
             {/* 微信咨询 */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm px-6 py-6 flex items-start gap-4">
+            <div className="bg-card rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm px-6 py-6 flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0 border border-amber-100">
                 <MessageSquare className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-stone-900 mb-1">
+                <h3 className="text-base font-semibold text-foreground mb-1">
                   {copy.contact.wechatContact}
                 </h3>
-                <p className="text-sm text-stone-500">
+                <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500">
                   {copy.contact.wechatScanHint}
                 </p>
               </div>
@@ -132,17 +132,17 @@ export function ContactClient() {
           </div>
 
           {/* 联系表单 */}
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm px-8 py-8">
+          <div className="bg-card rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm px-8 py-8">
             {submitted ? (
               /* 提交成功状态 */
               <div className="text-center py-8">
                 <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4 border border-green-100">
                   <CheckCircle className="h-7 w-7 text-green-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-stone-900 mb-2">
+                <h3 className="text-xl font-semibold text-foreground mb-2">
                   {copy.contact.successTitle}
                 </h3>
-                <p className="text-stone-500 text-sm mb-6">
+                <p className="text-stone-500 dark:text-stone-400 dark:text-stone-500 text-sm mb-6">
                   {copy.contact.successDesc}
                 </p>
                 <button
@@ -166,10 +166,10 @@ export function ContactClient() {
                     <Mountain className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-stone-900">
+                    <h2 className="text-xl font-semibold text-foreground">
                       {copy.contact.formTitle}
                     </h2>
-                    <p className="text-sm text-stone-500 mt-0.5">
+                    <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mt-0.5">
                       {copy.contact.formSubtitle}
                     </p>
                   </div>
@@ -179,7 +179,7 @@ export function ContactClient() {
                   {/* 姓名 + 邮箱 */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                      <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                         {copy.contact.nameLabel}
                       </label>
                       <input
@@ -189,11 +189,11 @@ export function ContactClient() {
                         onChange={handleChange}
                         placeholder={copy.contact.namePlaceholder}
                         required
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                      <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                         {copy.contact.emailLabel}
                       </label>
                       <input
@@ -203,14 +203,14 @@ export function ContactClient() {
                         onChange={handleChange}
                         placeholder={copy.contact.emailPlaceholder}
                         required
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
                       />
                     </div>
                   </div>
 
                   {/* 主题 */}
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                       {copy.contact.subjectLabel}
                     </label>
                     <input
@@ -220,13 +220,13 @@ export function ContactClient() {
                       onChange={handleChange}
                       placeholder={copy.contact.subjectPlaceholder}
                       required
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
                     />
                   </div>
 
                   {/* 详细建议 */}
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                       {copy.contact.messageLabel}
                     </label>
                     <textarea
@@ -236,7 +236,7 @@ export function ContactClient() {
                       placeholder={copy.contact.messagePlaceholder}
                       required
                       rows={5}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors resize-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors resize-none"
                     />
                   </div>
 

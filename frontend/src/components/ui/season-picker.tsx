@@ -100,7 +100,7 @@ export function SeasonPicker({ value, onChange, disabled = false }: SeasonPicker
               "transition-all duration-150 select-none",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2",
               // 未选中
-              !isSelected && "border-gray-200 bg-white hover:scale-[1.03] hover:border-gray-300",
+              !isSelected && "border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:scale-[1.03] hover:border-gray-300",
               // 选中
               isSelected && [season.selected.border, season.selected.bg],
               // 点击缩放反馈
@@ -130,7 +130,7 @@ export function SeasonPicker({ value, onChange, disabled = false }: SeasonPicker
             <span className="text-sm font-semibold text-gray-800">{season.label}</span>
 
             {/* 月份 */}
-            <span className="text-xs text-gray-400">{season.months}</span>
+            <span className="text-xs text-gray-400 dark:text-stone-500">{season.months}</span>
           </button>
         );
       })}
@@ -184,8 +184,8 @@ export function EditProgressBar({ steps, className }: EditProgressBarProps) {
                 className={cn(
                   "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-300",
                   isDone && "border-amber-400 bg-amber-400 text-white",
-                  isCurrent && "border-amber-400 bg-white text-amber-500 animate-pulse",
-                  !isDone && !isCurrent && "border-gray-300 bg-white text-gray-400",
+                  isCurrent && "border-amber-400 bg-white dark:bg-stone-800 text-amber-500 animate-pulse",
+                  !isDone && !isCurrent && "border-gray-300 bg-white dark:bg-stone-800 text-gray-400 dark:text-stone-500",
                 )}
               >
                 {isDone ? (
@@ -212,7 +212,7 @@ export function EditProgressBar({ steps, className }: EditProgressBarProps) {
                 "mt-1.5 hidden text-center text-xs sm:block",
                 isDone && "font-medium text-amber-500",
                 isCurrent && "font-semibold text-amber-600",
-                !isDone && !isCurrent && "text-gray-400",
+                !isDone && !isCurrent && "text-gray-400 dark:text-stone-500",
               )}
             >
               {step.label}

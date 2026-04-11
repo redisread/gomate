@@ -208,12 +208,12 @@ export function SharePosterModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <span className="text-sm font-semibold text-stone-800">
+          <span className="text-sm font-semibold text-foreground">
             {type === "team" ? copy.share.title : copy.share.locationTitle}
           </span>
           <button
             onClick={onClose}
-            className="text-lg leading-none text-stone-400 transition-colors hover:text-stone-600"
+            className="text-lg leading-none text-stone-400 dark:text-stone-500 transition-colors hover:text-stone-600 dark:text-stone-400 dark:text-stone-500"
             aria-label="关闭"
           >
             ✕
@@ -224,7 +224,7 @@ export function SharePosterModal({
           <div
             ref={posterRef}
             className={`overflow-hidden rounded-xl shadow ${
-              type === "location" ? "" : "border border-stone-200"
+              type === "location" ? "" : "border border-stone-200 dark:border-stone-700"
             }`}
           >
             {!isLoading &&
@@ -255,8 +255,8 @@ export function SharePosterModal({
               ))}
           </div>
           {(isLoading || isGenerating) && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/60">
-              <span className="text-sm text-stone-400">
+            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-muted/60">
+              <span className="text-sm text-stone-400 dark:text-stone-500">
                 {copy.common.loading}
               </span>
             </div>
@@ -273,7 +273,7 @@ export function SharePosterModal({
           </button>
           <button
             onClick={handleCopyLink}
-            className="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:border-stone-400"
+            className="flex-1 rounded-lg border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 dark:text-stone-600 transition-colors hover:border-stone-400 dark:hover:border-stone-500"
           >
             {copy.share.copyLink}
           </button>

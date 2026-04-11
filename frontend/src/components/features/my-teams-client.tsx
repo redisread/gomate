@@ -22,7 +22,7 @@ const statusLabels: Record<string, { label: string; color: string; dot: string }
   full: { label: c.statusFull, color: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-500" },
   formed: { label: c.statusFormed, color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
   ongoing: { label: "进行中", color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
-  completed: { label: c.statusCompleted, color: "bg-stone-100 text-stone-500 border border-stone-200", dot: "bg-stone-400" },
+  completed: { label: c.statusCompleted, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" },
   cancelled: { label: c.statusCancelled, color: "bg-red-50 text-red-600 border border-red-200", dot: "bg-red-400" },
 };
 
@@ -30,7 +30,7 @@ const statusLabels: Record<string, { label: string; color: string; dot: string }
 const applicationStatusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: { label: c.appStatusPending, color: "bg-amber-50 text-amber-700 border border-amber-200", icon: Hourglass },
   approved: { label: c.appStatusApproved, color: "bg-amber-50 text-amber-700 border border-amber-200", icon: CheckCircle },
-  rejected: { label: c.appStatusRejected, color: "bg-stone-100 text-stone-500 border border-stone-200", icon: XCircle },
+  rejected: { label: c.appStatusRejected, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700", icon: XCircle },
 };
 
 // 等级标签
@@ -418,25 +418,25 @@ export function MyTeamsClient() {
 
   if (!currentUser) {
     return (
-      <main className="min-h-screen bg-stone-50">
+      <main className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-stone-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-stone-400 dark:text-stone-500" />
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-background">
       <Navbar />
 
       {/* Hero Header */}
-      <div className="bg-white border-b border-stone-100 pt-16">
+      <div className="bg-white border-b border-stone-100 dark:border-stone-800 pt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs text-stone-400 mb-1">欢迎回来</p>
-            <h1 className="text-2xl font-bold text-stone-900 leading-tight">
+            <p className="text-xs text-stone-400 dark:text-stone-500 mb-1">欢迎回来</p>
+            <h1 className="text-2xl font-bold text-foreground leading-tight">
               {currentUser.nickname || currentUser.name}
             </h1>
             <div className="flex items-center gap-4 mt-3">
@@ -472,7 +472,7 @@ export function MyTeamsClient() {
         )}
 
         {/* Tab 导航 */}
-        <div className="border-b border-stone-100 mt-2 overflow-x-auto">
+        <div className="border-b border-stone-100 dark:border-stone-800 mt-2 overflow-x-auto">
           <div className="flex min-w-max">
             {[
               { id: "participated", label: c.tabParticipated, icon: Users, count: createdTeams.length + joinedTeams.length },
@@ -485,7 +485,7 @@ export function MyTeamsClient() {
                   "flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-all duration-200 whitespace-nowrap relative",
                   activeTab === id
                     ? "text-amber-700 border-b-2 border-amber-500"
-                    : "text-stone-500 hover:text-stone-700 border-b-2 border-transparent"
+                    : "text-stone-500 dark:text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:text-stone-300 dark:text-stone-600 border-b-2 border-transparent"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -515,13 +515,13 @@ export function MyTeamsClient() {
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
                     roleFilter === id
                       ? "bg-amber-500 text-white"
-                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                      : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 dark:text-stone-500 hover:bg-stone-200 dark:bg-stone-700"
                   )}
                 >
                   {label}
                   <span className={cn(
                     "text-xs",
-                    roleFilter === id ? "text-amber-100" : "text-stone-400"
+                    roleFilter === id ? "text-amber-100" : "text-stone-400 dark:text-stone-500"
                   )}>
                     {count}
                   </span>
@@ -617,14 +617,14 @@ export function MyTeamsClient() {
         {activeTab === "applications" && (
           <div className="mt-6 space-y-4">
             {/* 子 Tab */}
-            <div className="flex gap-2 bg-stone-100 rounded-xl p-1">
+            <div className="flex gap-2 bg-stone-100 dark:bg-stone-800 rounded-xl p-1">
               <button
                 onClick={() => handleSubTabChange("my")}
                 className={cn(
                   "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
                   applicationSubTab === "my"
                     ? "bg-white text-stone-800 shadow-sm"
-                    : "text-stone-500 hover:text-stone-700"
+                    : "text-stone-500 dark:text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:text-stone-300 dark:text-stone-600"
                 )}
               >
                 <ClipboardCheck className="h-4 w-4" />
@@ -639,7 +639,7 @@ export function MyTeamsClient() {
                   "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
                   applicationSubTab === "pending"
                     ? "bg-white text-stone-800 shadow-sm"
-                    : "text-stone-500 hover:text-stone-700"
+                    : "text-stone-500 dark:text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:text-stone-300 dark:text-stone-600"
                 )}
               >
                 <Hourglass className="h-4 w-4" />
@@ -719,7 +719,7 @@ export function MyTeamsClient() {
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setIsDetailOpen(false); }}
         >
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
+          <div className="bg-card rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
             {/* 弹窗顶部装饰 */}
             <div className="h-2 bg-gradient-to-r from-amber-400 to-amber-600" />
 
@@ -728,7 +728,7 @@ export function MyTeamsClient() {
                 <>
                   {/* 申请人头像居中 */}
                   <div className="flex flex-col items-center mb-5">
-                    <div className="w-20 h-20 rounded-full bg-stone-200 flex items-center justify-center overflow-hidden mb-3 ring-4 ring-amber-50">
+                    <div className="w-20 h-20 rounded-full bg-stone-200 dark:bg-stone-700 flex items-center justify-center overflow-hidden mb-3 ring-4 ring-amber-50">
                       {selectedApproval.applicant.avatar ? (
                         <img
                           src={selectedApproval.applicant.avatar}
@@ -736,12 +736,12 @@ export function MyTeamsClient() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-2xl font-semibold text-stone-500">
+                        <span className="text-2xl font-semibold text-stone-500 dark:text-stone-400 dark:text-stone-500">
                           {selectedApproval.applicant.name?.charAt(0) || "?"}
                         </span>
                       )}
                     </div>
-                    <h3 className="text-xl font-bold text-stone-900">{selectedApproval.applicant.name}</h3>
+                    <h3 className="text-xl font-bold text-foreground">{selectedApproval.applicant.name}</h3>
                     {(() => {
                       const lv = levelConfig[selectedApproval.applicant.level];
                       return lv ? (
@@ -749,7 +749,7 @@ export function MyTeamsClient() {
                           {lv.emoji} {lv.label}
                         </span>
                       ) : (
-                        <span className="mt-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-stone-100 text-stone-600">
+                        <span className="mt-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 dark:text-stone-500">
                           {selectedApproval.applicant.level}
                         </span>
                       );
@@ -759,26 +759,26 @@ export function MyTeamsClient() {
                   {/* 个人简介 */}
                   {selectedApproval.applicant.bio ? (
                     <div className="mb-4 pl-4 border-l-4 border-amber-300 py-1">
-                      <p className="text-sm text-stone-600 italic leading-relaxed">{selectedApproval.applicant.bio}</p>
+                      <p className="text-sm text-stone-600 dark:text-stone-400 dark:text-stone-500 italic leading-relaxed">{selectedApproval.applicant.bio}</p>
                     </div>
                   ) : (
-                    <p className="mb-4 text-sm text-stone-400 text-center">{c.noBio}</p>
+                    <p className="mb-4 text-sm text-stone-400 dark:text-stone-500 text-center">{c.noBio}</p>
                   )}
 
                   {/* 微信号 */}
                   {selectedApproval.applicant.wechat && (
-                    <div className="mb-4 flex items-center gap-2 text-sm text-stone-600 bg-stone-50 rounded-xl px-4 py-2.5">
-                      <span className="font-medium text-stone-700">微信：</span>
-                      <span className="text-stone-600">{selectedApproval.applicant.wechat}</span>
+                    <div className="mb-4 flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400 dark:text-stone-500 bg-stone-50 dark:bg-stone-900 rounded-xl px-4 py-2.5">
+                      <span className="font-medium text-stone-700 dark:text-stone-300 dark:text-stone-600">微信：</span>
+                      <span className="text-stone-600 dark:text-stone-400 dark:text-stone-500">{selectedApproval.applicant.wechat}</span>
                     </div>
                   )}
 
                   {/* 队伍信息小卡片 */}
                   {selectedApproval.team && (
-                    <div className="mb-4 bg-stone-50 rounded-2xl p-4">
-                      <p className="text-xs text-stone-400 mb-2 font-medium uppercase tracking-wide">申请加入的队伍</p>
+                    <div className="mb-4 bg-stone-50 dark:bg-stone-900 rounded-2xl p-4">
+                      <p className="text-xs text-stone-400 dark:text-stone-500 mb-2 font-medium uppercase tracking-wide">申请加入的队伍</p>
                       <p className="font-semibold text-stone-800 mb-2">{selectedApproval.team.title}</p>
-                      <div className="flex flex-wrap gap-3 text-xs text-stone-500">
+                      <div className="flex flex-wrap gap-3 text-xs text-stone-500 dark:text-stone-400 dark:text-stone-500">
                         {selectedApproval.team.date && (
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />
@@ -799,7 +799,7 @@ export function MyTeamsClient() {
                     </div>
                   )}
 
-                  <p className="text-xs text-stone-400 text-center mb-5">
+                  <p className="text-xs text-stone-400 dark:text-stone-500 text-center mb-5">
                     {c.applyTime}：{formatTimeAgo(selectedApproval.createdAt)}
                   </p>
                 </>
@@ -831,7 +831,7 @@ export function MyTeamsClient() {
 
               <button
                 onClick={() => setIsDetailOpen(false)}
-                className="mt-3 w-full text-sm text-stone-400 hover:text-stone-600 py-2 transition-colors"
+                className="mt-3 w-full text-sm text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:text-stone-400 dark:text-stone-500 py-2 transition-colors"
               >
                 暂不处理
               </button>
@@ -846,16 +846,16 @@ export function MyTeamsClient() {
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setIsRejectConfirmOpen(false); }}
         >
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl">
+          <div className="bg-card rounded-3xl max-w-sm w-full p-6 shadow-2xl">
             <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <XCircle className="h-6 w-6 text-red-500" />
             </div>
-            <h2 className="text-lg font-bold text-stone-900 mb-2 text-center">{c.rejectConfirmTitle}</h2>
-            <p className="text-sm text-stone-500 mb-6 text-center">{c.rejectConfirmDesc}</p>
+            <h2 className="text-lg font-bold text-foreground mb-2 text-center">{c.rejectConfirmTitle}</h2>
+            <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mb-6 text-center">{c.rejectConfirmDesc}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setIsRejectConfirmOpen(false)}
-                className="flex-1 border border-stone-200 text-stone-700 hover:bg-stone-50 py-3 rounded-2xl font-semibold transition-colors"
+                className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 dark:text-stone-600 hover:bg-stone-50 dark:bg-stone-900 py-3 rounded-2xl font-semibold transition-colors"
               >
                 {c.cancelBtn}
               </button>
@@ -874,21 +874,21 @@ export function MyTeamsClient() {
       {/* 取消队伍确认 Modal */}
       {cancelTarget && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both] motion-reduce:animate-none">
+          <div className="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both] motion-reduce:animate-none">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
                 <XCircle className="h-5 w-5 text-red-500" />
               </div>
-              <h3 className="text-base font-bold text-stone-900">{copy.teams.cancelTeam}</h3>
+              <h3 className="text-base font-bold text-foreground">{copy.teams.cancelTeam}</h3>
             </div>
-            <p className="text-sm text-stone-500 leading-relaxed mb-5">
+            <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 leading-relaxed mb-5">
               {copy.teams.cancelTeamConfirm}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setCancelTarget(null)}
                 disabled={isCancelling}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 dark:text-stone-500 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors disabled:opacity-50"
               >
                 {copy.common.cancel}
               </button>
@@ -912,23 +912,23 @@ export function MyTeamsClient() {
         const isFull = targetTeam.currentMembers >= targetTeam.maxMembers;
         return (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both] motion-reduce:animate-none">
+            <div className="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both] motion-reduce:animate-none">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                   <CheckCircle className="h-5 w-5 text-amber-500" />
                 </div>
-                <h3 className="text-base font-bold text-stone-900">
+                <h3 className="text-base font-bold text-foreground">
                   {isFull ? copy.teams.formTeamConfirm : copy.teams.formTeamUnderfilledConfirm}
                 </h3>
               </div>
-              <p className="text-sm text-stone-500 leading-relaxed mb-5">
+              <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 leading-relaxed mb-5">
                 {copy.teams.formTeamWarning}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setFormTarget(null)}
                   disabled={isForming}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 dark:text-stone-500 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors disabled:opacity-50"
                 >
                   {copy.common.cancel}
                 </button>
@@ -956,11 +956,11 @@ function StatBadge({ label, count, highlight = false }: { label: string; count: 
     <div className="flex items-center gap-1.5">
       <span className={cn(
         "text-lg font-bold leading-none",
-        highlight ? "text-amber-500" : "text-stone-900"
+        highlight ? "text-amber-500" : "text-foreground"
       )}>
         {count}
       </span>
-      <span className="text-xs text-stone-400">{label}</span>
+      <span className="text-xs text-stone-400 dark:text-stone-500">{label}</span>
       {highlight && count > 0 && (
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
       )}
@@ -972,15 +972,15 @@ function LoadingState() {
   return (
     <div className="space-y-3 mt-2">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="bg-white rounded-2xl border border-stone-100 p-4 animate-pulse">
+        <div key={i} className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 animate-pulse">
           <div className="flex items-start gap-4">
-            <div className="w-20 h-20 rounded-xl bg-stone-100 flex-shrink-0" />
+            <div className="w-20 h-20 rounded-xl bg-stone-100 dark:bg-stone-800 flex-shrink-0" />
             <div className="flex-1 space-y-2.5 py-1">
-              <div className={cn("h-4 bg-stone-100 rounded-full", i === 1 ? "w-3/4" : i === 2 ? "w-2/3" : "w-1/2")} />
-              <div className="h-3 bg-stone-100 rounded-full w-1/3" />
+              <div className={cn("h-4 bg-stone-100 dark:bg-stone-800 rounded-full", i === 1 ? "w-3/4" : i === 2 ? "w-2/3" : "w-1/2")} />
+              <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded-full w-1/3" />
               <div className="flex gap-3 pt-1">
-                <div className="h-3 bg-stone-100 rounded-full w-20" />
-                <div className="h-3 bg-stone-100 rounded-full w-16" />
+                <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded-full w-20" />
+                <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded-full w-16" />
               </div>
             </div>
           </div>
@@ -1009,12 +1009,12 @@ function EmptyState({
       <div className="relative mb-6">
         <div className="absolute inset-0 w-24 h-24 rounded-full bg-amber-50 scale-150 opacity-60" />
         <div className="absolute inset-0 w-24 h-24 rounded-full bg-amber-50 scale-125 opacity-80" />
-        <div className="relative w-24 h-24 bg-white border-2 border-stone-100 rounded-full flex items-center justify-center shadow-sm">
+        <div className="relative w-24 h-24 bg-white border-2 border-stone-100 dark:border-stone-800 rounded-full flex items-center justify-center shadow-sm">
           <Icon className="h-10 w-10 text-amber-500" />
         </div>
       </div>
       <h3 className="text-lg font-semibold text-stone-800 mb-2">{title}</h3>
-      <p className="text-sm text-stone-500 mb-6 max-w-xs leading-relaxed">{desc}</p>
+      <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mb-6 max-w-xs leading-relaxed">{desc}</p>
       <a href={href}>
         <button className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors text-sm shadow-md shadow-amber-100">
           {btnLabel}
@@ -1038,17 +1038,17 @@ function CollapsibleSection({
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-100 overflow-hidden">
+    <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 overflow-hidden">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-stone-50/80 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-stone-50 dark:bg-stone-900/80 transition-colors"
       >
         <div className="flex items-center gap-2.5">
           <h3 className="font-semibold text-stone-800">{title}</h3>
-          <span className="text-xs px-2 py-0.5 bg-stone-100 text-stone-500 rounded-full">{count}</span>
+          <span className="text-xs px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 dark:text-stone-500 rounded-full">{count}</span>
         </div>
         <ChevronDown
-          className={cn("h-4 w-4 text-stone-400 transition-transform duration-200", isExpanded ? "" : "-rotate-90")}
+          className={cn("h-4 w-4 text-stone-400 dark:text-stone-500 transition-transform duration-200", isExpanded ? "" : "-rotate-90")}
         />
       </button>
       {isExpanded && (
@@ -1066,17 +1066,17 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
   onCancel?: (id: string) => void;
   onForm?: (id: string) => void;
 }) {
-  const status = statusLabels[team.status] || { label: team.status, color: "bg-stone-100 text-stone-600 border border-stone-200", dot: "bg-stone-400" };
+  const status = statusLabels[team.status] || { label: team.status, color: "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" };
   const isFull = team.currentMembers >= team.maxMembers;
   const canCancel = isLeader && onCancel && (team.status === "recruiting" || team.status === "full");
   const canForm = isLeader && onForm && (team.status === "recruiting" || team.status === "full");
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-all duration-200">
+      <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-all duration-200">
         <div className="flex items-start gap-4">
           {/* 封面图 */}
-          <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden bg-stone-100 flex items-center justify-center">
+          <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
             {team.location?.coverImage ? (
               <img
                 src={team.location.coverImage}
@@ -1084,7 +1084,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
-              <MapPin className="h-8 w-8 text-stone-300" />
+              <MapPin className="h-8 w-8 text-stone-300 dark:text-stone-600" />
             )}
           </div>
 
@@ -1093,7 +1093,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold text-stone-900 group-hover:text-amber-700 transition-colors truncate">
+                  <h3 className="font-semibold text-foreground group-hover:text-amber-700 transition-colors truncate">
                     {team.title}
                   </h3>
                   {isLeader && (
@@ -1104,7 +1104,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
                   )}
                 </div>
                 {team.location?.name && (
-                  <p className="text-sm text-stone-500 mt-1 flex items-center gap-1">
+                  <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mt-1 flex items-center gap-1">
                     <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
                     <span className="truncate">{team.location.name}</span>
                   </p>
@@ -1119,13 +1119,13 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
 
             <div className="flex flex-wrap items-center gap-3 mt-3 text-sm">
               {team.date && (
-                <span className="flex items-center gap-1 text-stone-500">
+                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-400 dark:text-stone-500">
                   <Calendar className="h-3.5 w-3.5" />
                   {team.date}
                 </span>
               )}
               {team.time && (
-                <span className="flex items-center gap-1 text-stone-500">
+                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-400 dark:text-stone-500">
                   <Clock className="h-3.5 w-3.5" />
                   {team.time}
                 </span>
@@ -1140,10 +1140,10 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
             </div>
           </div>
 
-          <ChevronRight className="h-5 w-5 text-stone-300 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
+          <ChevronRight className="h-5 w-5 text-stone-300 dark:text-stone-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
         </div>
         {(canCancel || canForm) && (
-          <div className="mt-3 pt-3 border-t border-stone-100 flex justify-end gap-2">
+          <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-end gap-2">
             {canForm && (
               <button
                 onClick={(e) => { e.preventDefault(); onForm!(team.id); }}
@@ -1179,9 +1179,9 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <div className="bg-white rounded-2xl border border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-all duration-200">
+      <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-all duration-200">
         <div className="flex items-start gap-4">
-          <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden bg-stone-100 flex items-center justify-center">
+          <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
             {team.location?.coverImage ? (
               <img
                 src={team.location.coverImage}
@@ -1189,18 +1189,18 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
-              <MapPin className="h-8 w-8 text-stone-300" />
+              <MapPin className="h-8 w-8 text-stone-300 dark:text-stone-600" />
             )}
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="font-semibold text-stone-900 group-hover:text-amber-700 transition-colors truncate">
+                <h3 className="font-semibold text-foreground group-hover:text-amber-700 transition-colors truncate">
                   {team.title}
                 </h3>
                 {team.location?.name && (
-                  <p className="text-sm text-stone-500 mt-1 flex items-center gap-1">
+                  <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mt-1 flex items-center gap-1">
                     <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
                     <span className="truncate">{team.location.name}</span>
                   </p>
@@ -1215,13 +1215,13 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
 
             <div className="flex flex-wrap items-center gap-3 mt-3 text-sm">
               {team.date && (
-                <span className="flex items-center gap-1 text-stone-500">
+                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-400 dark:text-stone-500">
                   <Calendar className="h-3.5 w-3.5" />
                   {team.date}
                 </span>
               )}
               {team.time && (
-                <span className="flex items-center gap-1 text-stone-500">
+                <span className="flex items-center gap-1 text-stone-500 dark:text-stone-400 dark:text-stone-500">
                   <Clock className="h-3.5 w-3.5" />
                   {team.time}
                 </span>
@@ -1237,15 +1237,15 @@ function ApplicationCard({ application }: { application: ApplicationRecord }) {
 
             <div className="flex items-center justify-between mt-2">
               {team.leader && (
-                <p className="text-xs text-stone-400">
-                  队长：<span className="text-stone-600">{team.leader.name}</span>
+                <p className="text-xs text-stone-400 dark:text-stone-500">
+                  队长：<span className="text-stone-600 dark:text-stone-400 dark:text-stone-500">{team.leader.name}</span>
                 </p>
               )}
-              <p className="text-xs text-stone-400 ml-auto">{formatTimeAgo(application.createdAt)}</p>
+              <p className="text-xs text-stone-400 dark:text-stone-500 ml-auto">{formatTimeAgo(application.createdAt)}</p>
             </div>
           </div>
 
-          <ChevronRight className="h-5 w-5 text-stone-300 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
+          <ChevronRight className="h-5 w-5 text-stone-300 dark:text-stone-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
         </div>
       </div>
     </a>
@@ -1268,7 +1268,7 @@ function PendingApprovalCard({
 
   return (
     <button
-      className="w-full text-left bg-white rounded-2xl border-l-4 border-l-amber-400 border-y border-r border-stone-100 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-50 transition-all duration-200 group"
+      className="w-full text-left bg-card rounded-2xl border-l-4 border-l-amber-400 border-y border-r border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-50 transition-all duration-200 group"
       onClick={() => onClick(approval)}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
@@ -1276,44 +1276,44 @@ function PendingApprovalCard({
           <Hourglass className="h-3 w-3" />
           {c.pendingReview}
         </span>
-        <span className="text-xs text-stone-400">{formatTimeAgo(approval.createdAt)}</span>
+        <span className="text-xs text-stone-400 dark:text-stone-500">{formatTimeAgo(approval.createdAt)}</span>
       </div>
 
       <div className="flex items-start gap-3">
         {/* 大头像 */}
-        <div className="w-14 h-14 rounded-full bg-stone-200 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-amber-100">
+        <div className="w-14 h-14 rounded-full bg-stone-200 dark:bg-stone-700 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-amber-100">
           {applicant.avatar ? (
             <img src={applicant.avatar} alt={applicant.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-xl font-semibold text-stone-500">{applicant.name?.charAt(0) || "?"}</span>
+            <span className="text-xl font-semibold text-stone-500 dark:text-stone-400 dark:text-stone-500">{applicant.name?.charAt(0) || "?"}</span>
           )}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-stone-900">{applicant.name}</h3>
+            <h3 className="font-semibold text-foreground">{applicant.name}</h3>
             {lv ? (
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${lv.color}`}>
                 {lv.emoji} {lv.label}
               </span>
             ) : (
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-stone-100 text-stone-600">
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 dark:text-stone-500">
                 {applicant.level}
               </span>
             )}
           </div>
           {applicant.bio ? (
-            <p className="text-sm text-stone-500 mt-1 line-clamp-1 leading-relaxed">{applicant.bio}</p>
+            <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 mt-1 line-clamp-1 leading-relaxed">{applicant.bio}</p>
           ) : (
-            <p className="text-sm text-stone-400 mt-1 italic">{c.noBio}</p>
+            <p className="text-sm text-stone-400 dark:text-stone-500 mt-1 italic">{c.noBio}</p>
           )}
         </div>
       </div>
 
       {/* 队伍信息简卡 */}
-      <div className="mt-3 bg-stone-50 rounded-xl px-4 py-3 text-sm">
-        <p className="font-medium text-stone-700 mb-1.5 truncate">{c.applyToJoin}：{team.title}</p>
-        <div className="flex flex-wrap gap-3 text-stone-500 text-xs">
+      <div className="mt-3 bg-stone-50 dark:bg-stone-900 rounded-xl px-4 py-3 text-sm">
+        <p className="font-medium text-stone-700 dark:text-stone-300 dark:text-stone-600 mb-1.5 truncate">{c.applyToJoin}：{team.title}</p>
+        <div className="flex flex-wrap gap-3 text-stone-500 dark:text-stone-400 dark:text-stone-500 text-xs">
           {team.date && (
             <span className="flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />

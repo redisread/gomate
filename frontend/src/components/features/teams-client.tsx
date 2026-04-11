@@ -73,8 +73,8 @@ const statusConfig: Record<string, StatusCfg> = {
   completed: {
     label: copy.enums.teamStatus.completed,
     dotColor: "bg-stone-400",
-    bgColor: "bg-stone-50 ring-1 ring-stone-200/60",
-    textColor: "text-stone-500",
+    bgColor: "bg-stone-100 dark:bg-stone-800 ring-1 ring-stone-200 dark:ring-stone-700",
+    textColor: "text-stone-500 dark:text-stone-400",
     pulse: false,
     icon: <CheckCircle2 className="h-3 w-3" />,
   },
@@ -98,7 +98,7 @@ function getDaysUntilStart(dateStr: string): { days: number; text: string; urgen
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
   if (diffDays < 0) {
-    return { days: diffDays, text: "已出发", urgent: false, color: "text-stone-400" };
+    return { days: diffDays, text: "已出发", urgent: false, color: "text-stone-400 dark:text-stone-500" };
   }
   if (diffDays === 0) {
     return { days: 0, text: "今天出发", urgent: true, color: "text-red-600" };
@@ -109,7 +109,7 @@ function getDaysUntilStart(dateStr: string): { days: number; text: string; urgen
   if (diffDays <= 3) {
     return { days: diffDays, text: `仅剩${diffDays}天`, urgent: true, color: "text-amber-600" };
   }
-  return { days: diffDays, text: `还有${diffDays}天`, urgent: false, color: "text-stone-500" };
+  return { days: diffDays, text: `还有${diffDays}天`, urgent: false, color: "text-muted-foreground" };
 }
 
 // ─── 人数进度条（紧迫感优化版）──────────────────────────────────────────────
@@ -131,8 +131,8 @@ function MemberProgress({
   // 根据紧急程度返回不同的颜色配置
   const getUrgencyStyle = () => {
     if (isFull) return {
-      text: "text-stone-400",
-      badge: "bg-stone-100 text-stone-500",
+      text: "text-stone-400 dark:text-stone-500",
+      badge: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400",
       label: "已满员"
     };
     if (isUrgent) return {
@@ -173,7 +173,7 @@ function MemberProgress({
             )}
           </span>
           {!isFull && (
-            <span className="text-xs text-stone-400">
+            <span className="text-xs text-stone-400 dark:text-stone-500">
               {current}/{max}
             </span>
           )}
@@ -182,7 +182,7 @@ function MemberProgress({
       
       {/* 进度条 - 根据紧急程度调整高度和颜色 */}
       <div className={cn(
-        "bg-stone-100 rounded-full overflow-hidden",
+        "bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden",
         isUrgent ? "h-2.5" : "h-2"
       )}>
         <div
@@ -206,8 +206,8 @@ function StatusBadge({ status }: { status: string }) {
   const cfg = statusConfig[status] ?? {
     label: status,
     dotColor: "bg-stone-400",
-    bgColor: "bg-stone-50",
-    textColor: "text-stone-500",
+    bgColor: "bg-stone-100 dark:bg-stone-800",
+    textColor: "text-stone-500 dark:text-stone-400",
     pulse: false,
   };
 
@@ -258,9 +258,9 @@ function TeamCard({ team }: { team: Team }) {
     <a href={`/teams/${team.id}`} className="group block">
       <article
         className={cn(
-          "bg-white rounded-3xl border border-stone-100 overflow-hidden",
+          "bg-card rounded-3xl border border-border overflow-hidden",
           "transition-all duration-300",
-          "hover:border-amber-200 hover:shadow-2xl hover:shadow-amber-100/40",
+          "hover:border-amber-200 hover:shadow-2xl hover:shadow-amber-100/40 dark:hover:border-amber-800 dark:hover:shadow-amber-900/20",
           "hover:-translate-y-1.5"
         )}
       >
@@ -285,7 +285,7 @@ function TeamCard({ team }: { team: Team }) {
           )}
 
           {/* 底部渐变遮罩 */}
-          <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
           {/* 浮层徽章：仅显示状态（删除难度徽章避免重复）*/}
           <div className="absolute bottom-3 right-3">
@@ -299,10 +299,10 @@ function TeamCard({ team }: { team: Team }) {
           {location?.name && (
             <div className="flex items-center gap-1.5 mb-1.5">
               <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-amber-500" />
-              <span className="text-sm font-semibold text-stone-900">
+              <span className="text-sm font-semibold text-foreground">
                 {location.name}
                 {diff && (
-                  <span className="text-stone-400 font-normal">
+                  <span className="text-muted-foreground font-normal">
                     <span className="mx-1">·</span>
                     {diff.emoji} {diff.label}
                   </span>
@@ -312,13 +312,13 @@ function TeamCard({ team }: { team: Team }) {
           )}
 
           {/* 队伍标题（第二层级）*/}
-          <h3 className="font-medium text-stone-700 group-hover:text-amber-700 transition-colors line-clamp-2 leading-snug text-sm mb-2">
+          <h3 className="font-medium text-stone-700 dark:text-stone-300 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors line-clamp-2 leading-snug text-sm mb-2">
             {team.title}
           </h3>
 
           {/* 日期 + 时间（第三层级：带紧迫感提示）*/}
-          <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 mb-3">
-            <span className="flex items-center gap-1 bg-stone-50 px-2 py-0.5 rounded-full">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mb-3">
+            <span className="flex items-center gap-1 bg-stone-50 dark:bg-stone-800 px-2 py-0.5 rounded-full">
               <Calendar className="h-3 w-3" />
               {team.date}
             </span>
@@ -336,20 +336,20 @@ function TeamCard({ team }: { team: Team }) {
           </div>
 
           {/* 底部操作区：领队信息 + 操作按钮 */}
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-100">
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
             <div className="flex items-center gap-1.5 min-w-0">
               {team.leader?.avatar ? (
                 <img
                   src={team.leader.avatar}
                   alt={leaderName}
-                  className="w-5 h-5 rounded-full object-cover ring-1 ring-stone-100"
+                  className="w-5 h-5 rounded-full object-cover ring-1 ring-stone-100 dark:ring-stone-700"
                 />
               ) : (
-                <div className="w-5 h-5 rounded-full bg-stone-100 flex items-center justify-center">
-                  <UserCircle className="h-4 w-4 text-stone-400" />
+                <div className="w-5 h-5 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
+                  <UserCircle className="h-4 w-4 text-stone-400 dark:text-stone-500" />
                 </div>
               )}
-              <span className="text-xs text-stone-400 truncate">
+              <span className="text-xs text-stone-400 dark:text-stone-500 truncate">
                 {leaderName}
               </span>
             </div>
@@ -357,7 +357,7 @@ function TeamCard({ team }: { team: Team }) {
             {/* 操作按钮组 */}
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {/* 查看详情按钮（次要）*/}
-              <span className="text-xs text-stone-400 group-hover:text-amber-600 transition-colors flex items-center gap-0.5">
+              <span className="text-xs text-stone-400 dark:text-stone-500 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors flex items-center gap-0.5">
                 详情
                 <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
               </span>
@@ -372,7 +372,7 @@ function TeamCard({ team }: { team: Team }) {
 // ─── 骨架屏（上图下文，与新卡片 h-32 对齐）──────────────────────────────────
 function TeamSkeleton() {
   return (
-    <div className="bg-white rounded-3xl border border-stone-100 overflow-hidden">
+    <div className="bg-card rounded-3xl border border-border overflow-hidden">
       {/* 封面图骨架（h-40）*/}
       <div className="skeleton h-40 rounded-none" />
       {/* 内容区骨架 */}
@@ -396,22 +396,22 @@ function EmptyState({ onClear }: { onClear: () => void }) {
     <div className="flex flex-col items-center justify-center py-24 px-4">
       {/* 三层叠圆 + Mountain 图标 */}
       <div className="relative w-28 h-28 mb-8 flex items-center justify-center">
-        <div className="absolute inset-0 rounded-full bg-stone-100/80" />
-        <div className="absolute inset-3 rounded-full bg-stone-100" />
-        <div className="absolute inset-6 rounded-full bg-stone-200/60" />
-        <Mountain className="relative h-10 w-10 text-stone-400 z-10" />
+        <div className="absolute inset-0 rounded-full bg-stone-100 dark:bg-stone-800/80" />
+        <div className="absolute inset-3 rounded-full bg-stone-100 dark:bg-stone-800" />
+        <div className="absolute inset-6 rounded-full bg-stone-200 dark:bg-stone-700/60" />
+        <Mountain className="relative h-10 w-10 text-stone-400 dark:text-stone-500 z-10" />
       </div>
 
-      <h3 className="text-lg font-semibold text-stone-700 mb-2">
+      <h3 className="text-lg font-semibold text-stone-700 dark:text-stone-300 mb-2">
         {copy.teams.noResults}
       </h3>
-      <p className="text-stone-400 text-sm text-center max-w-xs leading-relaxed mb-6">
+      <p className="text-stone-400 dark:text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-6">
         {copy.teams.noResultsTip}
       </p>
       <div className="flex items-center gap-3">
         <button
           onClick={onClear}
-          className="px-5 py-2.5 border border-stone-200 hover:border-stone-300 text-stone-600 rounded-full text-sm font-medium transition-colors"
+          className="px-5 py-2.5 border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 text-stone-600 dark:text-stone-400 rounded-full text-sm font-medium transition-colors"
         >
           {copy.teams.clearFilters}
         </button>
@@ -448,8 +448,8 @@ function Pagination({
           className={cn(
             "w-10 h-10 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105",
             page === current
-              ? "bg-amber-600 text-white shadow-md shadow-amber-200"
-              : "bg-white text-stone-500 border border-stone-200 hover:border-amber-300 hover:text-amber-700"
+              ? "bg-amber-600 text-white shadow-md shadow-amber-200 dark:shadow-amber-900/30"
+              : "bg-card text-stone-500 dark:text-stone-400 border border-border hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400"
           )}
         >
           {page}
@@ -683,16 +683,16 @@ export function TeamsClient() {
   const activeFiltersCount = selectedDifficulty.length + (startDate ? 1 : 0) + (endDate ? 1 : 0) + selectedTags.length;
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-background">
       <Navbar />
 
       {/* ── Header 区域（简化版）── */}
-      <section className="relative pt-20 pb-6 border-b border-stone-100 bg-white">
+      <section className="relative pt-20 pb-6 border-b border-border bg-card">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* 标题行 + 筛选按钮 */}
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-bold text-stone-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                 {copy.teams.pageTitle}
               </h1>
               {!isLoading && pagination.total > 0 && (
@@ -710,7 +710,7 @@ export function TeamsClient() {
                 "flex items-center justify-center w-10 h-10 border rounded-xl transition-all duration-200",
                 showFilters || activeFiltersCount > 0
                   ? "bg-amber-50 border-amber-300 text-amber-700 shadow-sm"
-                  : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
+                  : "bg-card border-border text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600"
               )}
             >
               <Filter className="h-4 w-4" />
@@ -724,7 +724,7 @@ export function TeamsClient() {
 
           {/* 搜索框（简化placeholder）*/}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400 pointer-events-none" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
             <input
               type="text"
               placeholder="搜索地点或关键词"
@@ -732,8 +732,8 @@ export function TeamsClient() {
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="搜索队伍"
               className={cn(
-                "w-full pl-12 pr-10 py-3 rounded-xl text-stone-900 placeholder-stone-400",
-                "bg-stone-50 border border-stone-200 transition-all duration-200",
+                "w-full pl-12 pr-10 py-3 rounded-xl text-foreground placeholder-muted-foreground",
+                "bg-muted border border-border transition-all duration-200",
                 "focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-400/15"
               )}
             />
@@ -741,19 +741,19 @@ export function TeamsClient() {
               <button
                 onClick={() => setSearchQuery("")}
                 aria-label="清除搜索"
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-0.5 hover:bg-stone-100 rounded-full transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-0.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full transition-colors"
               >
-                <X className="h-4 w-4 text-stone-400" />
+                <X className="h-4 w-4 text-stone-400 dark:text-stone-500" />
               </button>
             )}
           </div>
 
           {/* 筛选面板 */}
           {showFilters && (
-            <div className="mt-4 pt-4 pb-1 border-t border-stone-100 space-y-4 animate-in slide-in-from-top-2 duration-200">
+            <div className="mt-4 pt-4 pb-1 border-t border-border space-y-4 animate-in slide-in-from-top-2 duration-200">
               {/* 日期范围筛选 */}
               <div>
-                <span className="text-sm font-semibold text-stone-600 mb-2 block flex items-center gap-2">
+                <span className="text-sm font-semibold text-stone-600 dark:text-stone-300 mb-2 block flex items-center gap-2">
                   <CalendarDays className="h-4 w-4" />
                   {copy.filter.dateRange}
                 </span>
@@ -767,7 +767,7 @@ export function TeamsClient() {
                     <button
                       key={opt.key}
                       onClick={() => handleDateQuickSelect(opt.key)}
-                      className="px-3 py-1.5 text-xs rounded-full border border-stone-200 bg-white text-stone-600 hover:border-amber-300 hover:text-amber-700 transition-colors"
+                      className="px-3 py-1.5 text-xs rounded-full border border-border bg-card text-stone-600 dark:text-stone-400 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
                     >
                       {opt.label}
                     </button>
@@ -775,7 +775,7 @@ export function TeamsClient() {
                   {(startDate || endDate) && (
                     <button
                       onClick={() => handleDateQuickSelect("clear")}
-                      className="px-3 py-1.5 text-xs rounded-full border border-stone-200 text-stone-400 hover:text-stone-600 transition-colors"
+                      className="px-3 py-1.5 text-xs rounded-full border border-border text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
                     >
                       清除
                     </button>
@@ -785,7 +785,7 @@ export function TeamsClient() {
 
               {/* 难度筛选 */}
               <div>
-                <span className="text-sm font-semibold text-stone-600 mb-2 block">
+                <span className="text-sm font-semibold text-stone-600 dark:text-stone-300 mb-2 block">
                   {copy.filter.difficulty}
                 </span>
                 <div className="flex flex-wrap gap-2">
@@ -799,7 +799,7 @@ export function TeamsClient() {
                           "px-3 py-1.5 text-xs rounded-full border transition-all duration-200 active:scale-95",
                           isSelected
                             ? opt.activeColor
-                            : "bg-white text-stone-600 border-stone-200 hover:border-stone-300"
+                            : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
                         )}
                       >
                         {opt.emoji} {opt.label}
@@ -812,7 +812,7 @@ export function TeamsClient() {
               {/* 标签筛选 */}
               {availableTags.length > 0 && (
                 <div>
-                  <span className="text-sm font-semibold text-stone-600 mb-2 block flex items-center gap-2">
+                  <span className="text-sm font-semibold text-stone-600 dark:text-stone-300 mb-2 block flex items-center gap-2">
                     <Tag className="h-4 w-4" />
                     {copy.filter.tags}
                   </span>
@@ -826,8 +826,8 @@ export function TeamsClient() {
                           className={cn(
                             "px-3 py-1.5 text-xs rounded-full border transition-all duration-200",
                             isSelected
-                              ? "bg-amber-100 border-amber-400 text-amber-800"
-                              : "bg-white text-stone-600 border-stone-200 hover:border-stone-300"
+                              ? "bg-amber-100 dark:bg-amber-900/30 border-amber-400 dark:border-amber-700 text-amber-800 dark:text-amber-300"
+                              : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
                           )}
                         >
                           {tag.name}
@@ -841,7 +841,7 @@ export function TeamsClient() {
               {activeFiltersCount > 0 && (
                 <button
                   onClick={clearFilters}
-                  className="text-sm text-stone-400 hover:text-stone-600 transition-colors flex items-center gap-1.5"
+                  className="text-sm text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors flex items-center gap-1.5"
                 >
                   <X className="h-3.5 w-3.5" />
                   {copy.filter.clearAll}
@@ -856,12 +856,12 @@ export function TeamsClient() {
       <section className="py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* 结果计数（「N 支队伍向你敞开，随时可以出发」）*/}
-          <div className="mb-6 text-sm text-stone-400">
+          <div className="mb-6 text-sm text-stone-400 dark:text-stone-500">
             {isLoading ? (
-              <span className="inline-block w-40 h-4 bg-stone-200 rounded-full animate-pulse" />
+              <span className="inline-block w-40 h-4 bg-stone-200 dark:bg-stone-700 rounded-full animate-pulse" />
             ) : pagination.total > 0 ? (
               <>
-                <span className="font-semibold text-stone-700">
+                <span className="font-semibold text-stone-700 dark:text-stone-300">
                   {pagination.total}
                 </span>
                 {/* TODO: 添加到 copy.ts: teams.totalCountV2 */}
@@ -895,7 +895,7 @@ export function TeamsClient() {
           />
 
           {/* ── CTA 底部区域（渐变背景 + 内联山脉 SVG）── */}
-          <div className="relative mt-16 text-center rounded-3xl border border-stone-100/80 p-10 overflow-hidden bg-gradient-to-br from-amber-50/60 via-white to-amber-50/40">
+          <div className="relative mt-16 text-center rounded-3xl border border-border/80 p-10 overflow-hidden bg-gradient-to-br from-amber-50/60 dark:from-amber-950/20 via-card dark:via-card to-amber-50/40 dark:to-amber-950/10">
             {/* 背景山脉装饰 */}
             <svg
               className="absolute right-0 bottom-0 opacity-[0.06] w-64 h-32 pointer-events-none"
@@ -910,13 +910,13 @@ export function TeamsClient() {
             </svg>
 
             <div className="relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-5">
+              <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-5">
                 <Mountain className="h-7 w-7 text-amber-600" />
               </div>
-              <h2 className="text-2xl font-bold text-stone-900 mb-3">
+              <h2 className="text-2xl font-bold text-foreground mb-3">
                 {copy.teams.ctaTitle}
               </h2>
-              <p className="text-stone-500 mb-7 max-w-sm mx-auto leading-relaxed">
+              <p className="text-stone-500 dark:text-stone-400 mb-7 max-w-sm mx-auto leading-relaxed">
                 {copy.teams.ctaDesc}
               </p>
               <a href="/teams/create">

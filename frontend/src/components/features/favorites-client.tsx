@@ -72,7 +72,7 @@ export function FavoritesClient() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
       <main className="flex-1 pt-20 pb-16">
@@ -100,13 +100,13 @@ export function FavoritesClient() {
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-2xl overflow-hidden animate-pulse"
+                  className="bg-card rounded-2xl overflow-hidden animate-pulse"
                   style={{ boxShadow: "0 1px 4px rgba(30,24,18,0.06)" }}
                 >
-                  <div className="h-48 bg-stone-200" />
+                  <div className="h-48 bg-stone-200 dark:bg-stone-700" />
                   <div className="p-4 space-y-2">
-                    <div className="h-4 bg-stone-200 rounded w-3/4" />
-                    <div className="h-3 bg-stone-100 rounded w-1/2" />
+                    <div className="h-4 bg-stone-200 dark:bg-stone-700 rounded w-3/4" />
+                    <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded w-1/2" />
                   </div>
                 </div>
               ))}
@@ -148,7 +148,7 @@ export function FavoritesClient() {
                 return (
                   <div
                     key={fav.id}
-                    className="bg-white rounded-2xl overflow-hidden group transition-all duration-200 hover:-translate-y-0.5"
+                    className="bg-card rounded-2xl overflow-hidden group transition-all duration-200 hover:-translate-y-0.5"
                     style={{
                       boxShadow: "0 1px 4px rgba(30,24,18,0.06)",
                     }}
@@ -171,7 +171,7 @@ export function FavoritesClient() {
                         />
                       ) : (
                         <div
-                          className="w-full h-full flex items-center justify-center"
+                          className="w-full h-full flex items-center justify-center fav-placeholder-gradient"
                           style={{ background: "linear-gradient(135deg, #FEF3C7, #FDE68A)" }}
                         >
                           <Mountain className="h-12 w-12 text-amber-400" />

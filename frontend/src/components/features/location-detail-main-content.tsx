@@ -110,7 +110,7 @@ const POI_COLOR_MAP: Record<string, { bg: string; text: string; border: string }
   waypoint: { bg: "bg-sky-50", text: "text-sky-700", border: "border-sky-100" },
   checkpoint: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-100" },
   viewpoint: { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-100" },
-  facility: { bg: "bg-stone-50", text: "text-stone-600", border: "border-stone-100" },
+  facility: { bg: "bg-stone-50 dark:bg-stone-900", text: "text-stone-600 dark:text-stone-400 dark:text-stone-500", border: "border-stone-100 dark:border-stone-800" },
   poi: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-100" },
 };
 
@@ -184,7 +184,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-100 overflow-hidden"
+    <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 overflow-hidden"
       style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
 
       {/* 图片画廊预览行 + 操作按钮 */}
@@ -196,7 +196,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
               <button
                 key={idx}
                 onClick={() => openLightbox(idx)}
-                className="relative flex-shrink-0 w-[88px] h-[66px] rounded-xl overflow-hidden bg-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 group"
+                className="relative flex-shrink-0 w-[88px] h-[66px] rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 group"
                 aria-label={`查看图片 ${idx + 1}`}
               >
                 <img
@@ -226,7 +226,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
       <div className="p-5">
         {/* 标题 + 类型标签 */}
         <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-amber-400 flex-shrink-0" />
             {copy.locations.locationIntro}
           </h2>
@@ -242,7 +242,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
           <p
             ref={descRef}
             className={cn(
-              "text-sm text-stone-500 leading-[1.9] tracking-wide transition-all duration-300",
+              "text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 leading-[1.9] tracking-wide transition-all duration-300",
               !expanded && "line-clamp-4"
             )}
           >
@@ -250,7 +250,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
           </p>
           {/* 收起时底部渐变遮罩 */}
           {!expanded && isOverflow && (
-            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white/30 dark:from-transparent/50 to-transparent pointer-events-none" />
           )}
         </div>
 
@@ -270,11 +270,11 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
 
         {/* 标签区 */}
         {location.tags && location.tags.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-stone-50 flex flex-wrap gap-1.5">
+          <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800 flex flex-wrap gap-1.5">
             {location.tags.map((tag: Tag, i: number) => (
               <span
                 key={tag?.id ?? i}
-                className="px-3 py-1 bg-stone-50 text-stone-600 rounded-full text-xs font-medium border border-stone-100 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-100 transition-colors duration-150 cursor-default select-none"
+                className="px-3 py-1 bg-stone-50 dark:bg-stone-900 text-stone-600 dark:text-stone-400 dark:text-stone-500 rounded-full text-xs font-medium border border-stone-100 dark:border-stone-800 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-100 transition-colors duration-150 cursor-default select-none"
               >
                 {typeof tag === "string" ? tag : tag?.name}
               </span>
@@ -284,12 +284,12 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
 
         {/* 地点信息元数据区块：地址 + 最佳季节 */}
         {(address || (location.bestSeason && location.bestSeason.length > 0)) && (
-          <div className="mt-4 pt-4 border-t border-stone-100">
+          <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
             {/* 地址行 */}
             {address && (
               <div className="flex items-start gap-2.5 mb-3">
                 <MapPin className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-stone-500 leading-relaxed flex-1">{address}</span>
+                <span className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 leading-relaxed flex-1">{address}</span>
                 <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
                   {coordinates && (
                     <button
@@ -318,7 +318,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
             {location.bestSeason && location.bestSeason.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                <span className="text-xs text-stone-400">{copy.locations.detailSeasonsLabel}：</span>
+                <span className="text-xs text-stone-400 dark:text-stone-500">{copy.locations.detailSeasonsLabel}：</span>
                 {location.bestSeason.map((s) => (
                   <span
                     key={s}
@@ -347,7 +347,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
           {galleryImages.length > 1 && (
             <button
               onClick={(e) => { e.stopPropagation(); setLightboxActive((i) => (i - 1 + galleryImages.length) % galleryImages.length); }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 dark:bg-black/20 dark:hover:bg-black/30 flex items-center justify-center transition-colors"
             >
               <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </button>
@@ -362,7 +362,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
           {galleryImages.length > 1 && (
             <button
               onClick={(e) => { e.stopPropagation(); setLightboxActive((i) => (i + 1) % galleryImages.length); }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 dark:bg-black/20 dark:hover:bg-black/30 flex items-center justify-center transition-colors"
             >
               <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
@@ -421,10 +421,10 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
   if (!hasData) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-100 p-5"
+    <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-5"
       style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
       {/* 标题 */}
-      <h2 className="text-base font-bold text-stone-900 mb-4 flex items-center gap-2">
+      <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
         <span className="w-1 h-4 rounded-full bg-sky-400 flex-shrink-0" />
         {copy.locations.routeInfo}
       </h2>
@@ -442,7 +442,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
                 <span className={cn("font-bold text-sm", diffInfo.textColor)}>
                   {diffInfo.label}
                 </span>
-                <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
                   <DifficultyBar percent={diffInfo.percent} barColor={diffInfo.barColor} />
                 </div>
               </div>
@@ -470,8 +470,8 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
         {routeData.elevation && (
           <DataItem
             icon={<TrendingUp className="h-4.5 w-4.5" />}
-            iconBg="bg-stone-100"
-            iconColor="text-stone-500"
+            iconBg="bg-stone-100 dark:bg-stone-800"
+            iconColor="text-stone-500 dark:text-stone-400 dark:text-stone-500"
             label={copy.locations.totalElevation}
             valueNode={<BigNumber value={elevVal} unit={elevUnit} />}
           />
@@ -481,7 +481,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
       {/* 最佳季节 */}
       {location.bestSeason && location.bestSeason.length > 0 && (
         <div className="mt-5 pt-4 border-t border-stone-50">
-          <p className="text-[11px] text-stone-400 mb-2.5 flex items-center gap-1.5 font-semibold uppercase tracking-wide">
+          <p className="text-[11px] text-stone-400 dark:text-stone-500 mb-2.5 flex items-center gap-1.5 font-semibold uppercase tracking-wide">
             <CalendarDays className="h-3.5 w-3.5 text-amber-400" />
             {copy.locations.detailSeasonsLabel}
           </p>
@@ -501,7 +501,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
       {/* 装备建议 */}
       {routeData.equipmentNeeded && routeData.equipmentNeeded.length > 0 && (
         <div className="mt-4 pt-4 border-t border-stone-50">
-          <p className="text-[11px] text-stone-400 mb-2.5 flex items-center gap-1.5 font-semibold uppercase tracking-wide">
+          <p className="text-[11px] text-stone-400 dark:text-stone-500 mb-2.5 flex items-center gap-1.5 font-semibold uppercase tracking-wide">
             <Backpack className="h-3.5 w-3.5 text-amber-400" />
             推荐装备
           </p>
@@ -509,7 +509,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
             {routeData.equipmentNeeded.map((item: string, i: number) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 px-2.5 py-1 bg-stone-50 text-stone-600 rounded-lg text-xs font-medium border border-stone-100"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-stone-50 dark:bg-stone-900 text-stone-600 dark:text-stone-400 dark:text-stone-500 rounded-lg text-xs font-medium border border-stone-100 dark:border-stone-800"
               >
                 {item}
               </span>
@@ -527,7 +527,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
           </p>
           <ul className="space-y-2">
             {routeData.warnings.map((w: string, i: number) => (
-              <li key={i} className="flex items-start gap-2 text-xs text-stone-500 leading-relaxed">
+              <li key={i} className="flex items-start gap-2 text-xs text-stone-500 dark:text-stone-400 dark:text-stone-500 leading-relaxed">
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-300 flex-shrink-0" />
                 {w}
               </li>
@@ -569,12 +569,12 @@ function DataItem({
   valueNode: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2.5 p-3.5 rounded-xl bg-stone-50/70 border border-stone-50">
+    <div className="flex flex-col gap-2.5 p-3.5 rounded-xl bg-stone-50 dark:bg-stone-900/70 border border-stone-50">
       <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", iconBg)}>
         <span className={iconColor}>{icon}</span>
       </div>
       <div>
-        <p className="text-[10px] text-stone-400 mb-1 font-semibold uppercase tracking-wide">{label}</p>
+        <p className="text-[10px] text-stone-400 dark:text-stone-500 mb-1 font-semibold uppercase tracking-wide">{label}</p>
         {valueNode}
       </div>
     </div>
@@ -585,8 +585,8 @@ function DataItem({
 function BigNumber({ value, unit }: { value: string; unit: string }) {
   return (
     <span className="flex items-baseline gap-0.5">
-      <span className="text-xl font-black text-stone-800 leading-none">{value}</span>
-      {unit && <span className="text-xs text-stone-400 font-normal ml-0.5">{unit}</span>}
+      <span className="text-xl font-black text-foreground leading-none">{value}</span>
+      {unit && <span className="text-xs text-stone-400 dark:text-stone-500 font-normal ml-0.5">{unit}</span>}
     </span>
   );
 }
@@ -637,38 +637,38 @@ export function TeamCard({ team }: TeamCardProps) {
   const progressBarClass = isFull
     ? "bg-red-400"
     : isNearFull
-      ? "bg-gradient-to-r from-orange-400 to-red-400"
-      : "bg-gradient-to-r from-emerald-400 via-amber-400 to-amber-500";
+      ? "bg-gradient-to-r from-orange-400 to-red-400 dark:from-orange-600 dark:to-red-600"
+      : "bg-gradient-to-r from-emerald-400 via-amber-400 to-amber-500 dark:from-emerald-600 dark:via-amber-500 dark:to-amber-600";
 
   const leaderName = team.leader?.nickname || team.leader?.name || "";
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <div className="p-4 rounded-xl bg-white border border-stone-100 hover:border-amber-100 hover:shadow-[0_4px_20px_rgba(217,119,6,0.12)] hover:-translate-y-0.5 transition-all duration-200">
+      <div className="p-4 rounded-xl bg-card border border-stone-100 dark:border-stone-800 hover:border-amber-100 hover:shadow-[0_4px_20px_rgba(217,119,6,0.12)] hover:-translate-y-0.5 transition-all duration-200">
         <div className="flex items-start gap-3 mb-3">
           {/* 日历样式日期 */}
           {dateInfo ? (
-            <div className="flex-shrink-0 w-12 rounded-xl overflow-hidden border border-stone-100 shadow-sm group-hover:shadow-md group-hover:border-amber-100 transition-all duration-200">
+            <div className="flex-shrink-0 w-12 rounded-xl overflow-hidden border border-stone-100 dark:border-stone-800 shadow-sm group-hover:shadow-md group-hover:border-amber-100 transition-all duration-200">
               <div className="bg-amber-500 group-hover:bg-amber-600 py-0.5 text-center transition-colors">
                 <span className="text-[9px] font-bold text-white tracking-widest uppercase">
                   {dateInfo.month}
                 </span>
               </div>
-              <div className="bg-white py-1.5 text-center">
-                <span className="text-2xl font-black text-stone-900 leading-none">
+              <div className="bg-card py-1.5 text-center">
+                <span className="text-2xl font-black text-foreground leading-none">
                   {dateInfo.day}
                 </span>
               </div>
             </div>
           ) : (
-            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-stone-50 flex items-center justify-center border border-stone-100">
-              <CalendarDays className="h-5 w-5 text-stone-300" />
+            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-stone-50 dark:bg-stone-900 flex items-center justify-center border border-stone-100 dark:border-stone-800">
+              <CalendarDays className="h-5 w-5 text-stone-300 dark:text-stone-600" />
             </div>
           )}
 
           {/* 队伍标题 + 组织者 */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-stone-900 group-hover:text-amber-700 transition-colors text-sm leading-snug line-clamp-2 mb-1">
+            <h3 className="font-semibold text-foreground group-hover:text-amber-700 transition-colors text-sm leading-snug line-clamp-2 mb-1">
               {team.title}
             </h3>
             {leaderName && (
@@ -686,7 +686,7 @@ export function TeamCard({ team }: TeamCardProps) {
                     </span>
                   </div>
                 )}
-                <span className="text-[11px] text-stone-400 truncate">{leaderName}</span>
+                <span className="text-[11px] text-stone-400 dark:text-stone-500 truncate">{leaderName}</span>
               </div>
             )}
           </div>
@@ -694,12 +694,12 @@ export function TeamCard({ team }: TeamCardProps) {
           {/* 人数气泡 + 箭头 */}
           <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
             <MemberBubbles current={team.currentMembers} max={team.maxMembers} />
-            <ArrowRight className="h-3.5 w-3.5 text-stone-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
+            <ArrowRight className="h-3.5 w-3.5 text-stone-300 dark:text-stone-600 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
           </div>
         </div>
 
         {/* 渐变进度条 */}
-        <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
           <div
             className={cn(
               "h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none",
@@ -741,12 +741,12 @@ function MemberBubbles({ current, max }: { current: number; max: number }) {
             "w-2 h-2 rounded-full transition-colors",
             i < filledCount
               ? "bg-amber-400"
-              : "bg-stone-100 border border-stone-200"
+              : "bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700"
           )}
         />
       ))}
       {max > 8 && (
-        <span className="text-[10px] text-stone-400 ml-0.5">+{max - 8}</span>
+        <span className="text-[10px] text-stone-400 dark:text-stone-500 ml-0.5">+{max - 8}</span>
       )}
     </div>
   );
@@ -773,16 +773,16 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
   const hasMore = teams.length > MAX_DISPLAY_TEAMS;
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-100 p-5"
+    <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-5"
       style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
       {/* 头部 */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-emerald-400 flex-shrink-0" />
             {copy.locations.detailWaiting}
           </h2>
-          <p className="text-xs text-stone-400 mt-0.5 pl-3">
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5 pl-3">
             {teams.length > 0
               ? `${teams.length} ${copy.locations.teamsWaitingDesc}`
               : copy.locations.detailNoTeamsDesc}
@@ -811,7 +811,7 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
 
           {/* 当队伍数量超过 3 个时，显示查看全部按钮 */}
           {hasMore && (
-            <div className="mt-4 pt-4 border-t border-stone-100">
+            <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
               <a href={`/teams?locationId=${locationId}`} className="block">
                 <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-1.5 border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 hover:border-amber-300">
                   查看全部 {teams.length} 支队伍
@@ -844,7 +844,7 @@ function EmptyTeamsState({ locationId }: { locationId: string }) {
         <div className="absolute -bottom-1.5 -left-1.5 w-2.5 h-2.5 rounded-full bg-amber-200" />
       </div>
 
-      <p className="text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-5">
+      <p className="text-stone-500 dark:text-stone-400 dark:text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-5">
         {copy.locations.detailNoTeamsDesc}
       </p>
 
@@ -896,11 +896,11 @@ export function AddressRow({ address, coordinates, locationName }: AddressRowPro
 
   return (
     <div
-      className="w-full bg-white rounded-2xl border border-stone-100 px-5 py-4 flex items-start gap-3"
+      className="w-full bg-card rounded-2xl border border-stone-100 dark:border-stone-800 px-5 py-4 flex items-start gap-3"
       style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
     >
       <MapPin className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-      <span className="text-sm text-stone-500 leading-relaxed flex-1">{address}</span>
+      <span className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 leading-relaxed flex-1">{address}</span>
       <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
         {/* 导航按钮：仅在坐标存在时显示 */}
         {coordinates && (
@@ -957,13 +957,13 @@ export function PoiSection({ locationId }: PoiSectionProps) {
   if (loading || pois.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-100 p-5"
+    <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-5"
       style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
       {/* 标题行 */}
-      <h2 className="text-base font-bold text-stone-900 mb-4 flex items-center gap-2">
+      <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
         <span className="w-1 h-4 rounded-full bg-violet-400 flex-shrink-0" />
         {copy.locations.poiSection}
-        <span className="ml-auto text-xs font-normal text-stone-400 bg-stone-50 px-2 py-0.5 rounded-full border border-stone-100">
+        <span className="ml-auto text-xs font-normal text-stone-400 dark:text-stone-500 bg-stone-50 dark:bg-stone-900 px-2 py-0.5 rounded-full border border-stone-100 dark:border-stone-800">
           {pois.length} 个
         </span>
       </h2>
@@ -972,7 +972,7 @@ export function PoiSection({ locationId }: PoiSectionProps) {
       <div className="relative">
         {/* 连接线 */}
         {pois.length > 1 && (
-          <div className="absolute left-[19px] top-6 bottom-6 w-px bg-stone-100" />
+          <div className="absolute left-[19px] top-6 bottom-6 w-px bg-stone-100 dark:bg-stone-800" />
         )}
 
         <div className="space-y-3">
@@ -997,7 +997,7 @@ export function PoiSection({ locationId }: PoiSectionProps) {
                     <span className={colors.text}>{icon}</span>
                   </div>
                   {/* 序号小徽章 */}
-                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-stone-700 flex items-center justify-center z-20">
+                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-stone-700 dark:bg-stone-600 flex items-center justify-center z-20">
                     <span className="text-[8px] font-bold text-white">{index + 1}</span>
                   </div>
                 </div>
@@ -1005,7 +1005,7 @@ export function PoiSection({ locationId }: PoiSectionProps) {
                 {/* 内容 */}
                 <div className="flex-1 min-w-0 pb-1">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <span className="text-sm font-semibold text-stone-800">{poi.name}</span>
+                    <span className="text-sm font-semibold text-foreground">{poi.name}</span>
                     <span className={cn(
                       "px-2 py-0.5 rounded-full text-[10px] font-semibold border",
                       colors.bg, colors.text, colors.border
@@ -1014,7 +1014,7 @@ export function PoiSection({ locationId }: PoiSectionProps) {
                     </span>
                   </div>
                   {poi.description && (
-                    <p className="text-xs text-stone-500 leading-relaxed">{poi.description}</p>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 dark:text-stone-500 leading-relaxed">{poi.description}</p>
                   )}
                 </div>
               </div>

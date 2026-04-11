@@ -54,7 +54,7 @@ export function StatCard({
 }) {
   const inner = (
     <div className={cn(
-      "bg-white rounded-2xl border border-stone-100 p-5 transition-all duration-200 group",
+      "bg-card rounded-2xl border border-border p-5 transition-all duration-200 group",
       href && "hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-100/60 hover:border-amber-200/60 cursor-pointer"
     )}>
       <div className="flex items-start justify-between mb-3">
@@ -62,20 +62,20 @@ export function StatCard({
           "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200",
           accent
             ? "bg-amber-50 group-hover:bg-amber-100"
-            : "bg-stone-50 group-hover:bg-stone-100"
+            : "bg-stone-50 dark:bg-stone-800 group-hover:bg-stone-100 dark:group-hover:bg-stone-700"
         )}>
-          <Icon className={cn("h-5 w-5", accent ? "text-amber-600" : "text-stone-400")} />
+          <Icon className={cn("h-5 w-5", accent ? "text-amber-600" : "text-stone-400 dark:text-stone-500")} />
         </div>
         {href && (
-          <ChevronRight className="h-4 w-4 text-stone-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
+          <ChevronRight className="h-4 w-4 text-stone-300 dark:text-stone-600 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
         )}
       </div>
       <p className={cn(
         "text-3xl font-bold mb-1",
-        accent ? "text-stone-900" : "text-stone-700"
+        accent ? "text-foreground" : "text-stone-700 dark:text-stone-300"
       )}>{value}</p>
-      <p className="text-xs text-stone-400 font-medium">{label}</p>
-      {sublabel && <p className="text-xs text-stone-300 mt-0.5">{sublabel}</p>}
+      <p className="text-xs text-stone-400 dark:text-stone-500 font-medium">{label}</p>
+      {sublabel && <p className="text-xs text-stone-300 dark:text-stone-600 mt-0.5">{sublabel}</p>}
     </div>
   );
   return href ? <a href={href}>{inner}</a> : inner;
@@ -85,15 +85,15 @@ export function ProfileSkeleton({ variant = "amber" }: { variant?: "amber" | "sk
   const bgColor = variant === "amber" ? "amber" : "sky";
   
   return (
-    <div className="bg-white rounded-2xl border border-stone-100 overflow-hidden mb-6">
-      <div className={`h-36 bg-gradient-to-r from-${bgColor}-100 via-${bgColor}-50 to-${bgColor}-100 animate-pulse`} />
+    <div className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
+      <div className="h-36 bg-muted animate-pulse" />
       <div className="px-6 pb-6 pt-20">
         <div className="space-y-3">
-          <div className={`h-6 bg-${bgColor}-100 rounded-full w-40 animate-pulse`} />
-          <div className={`h-4 bg-${bgColor}-100 rounded-full w-56 animate-pulse`} />
+          <div className="h-6 bg-muted rounded-full w-40 animate-pulse" />
+          <div className="h-4 bg-muted rounded-full w-56 animate-pulse" />
           <div className="flex gap-2 mt-4">
-            <div className={`h-6 w-24 bg-${bgColor}-100 rounded-full animate-pulse`} />
-            <div className={`h-6 w-32 bg-${bgColor}-100 rounded-full animate-pulse`} />
+            <div className="h-6 w-24 bg-muted rounded-full animate-pulse" />
+            <div className="h-6 w-32 bg-muted rounded-full animate-pulse" />
           </div>
         </div>
       </div>

@@ -612,3 +612,22 @@
     border-color: var(--primary);
   }
 }
+
+/* ============================================================
+   Home Page — Dark Mode Overrides
+   ============================================================ */
+.dark .home-hero-gradient {
+  background: linear-gradient(160deg, #1a1510 0%, rgba(217,119,6,0.04) 38%, #12100d 65%, #1a1510 100%) !important;
+}
+
+.dark .home-cta-gradient {
+  background: linear-gradient(160deg, #1c1608 0%, #12100d 50%, #1a1510 100%) !important;
+}
+
+.dark .fav-placeholder-gradient {
+  background: linear-gradient(135deg, #3d2000, #5c3410) !important;
+}
+
+.dark .auth-forgot-gradient {
+  background: linear-gradient(160deg, #1a1510 0%, rgba(255,122,101,0.02) 40%, #12100d 100%) !important;
+}

@@ -42,7 +42,7 @@ export function ForgotPasswordClient() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col auth-forgot-gradient"
       style={{
         background: "linear-gradient(160deg, #FEF3C7 0%, rgba(255,122,101,0.04) 40%, #faf8f5 100%)",
       }}

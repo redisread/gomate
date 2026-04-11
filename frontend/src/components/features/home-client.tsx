@@ -39,7 +39,7 @@ function LocationCard({ location }: { location: Location }) {
   return (
     <a href={`/locations/${location.id}`} className="block group">
       <article
-        className="overflow-hidden rounded-2xl cursor-pointer bg-white"
+        className="overflow-hidden rounded-2xl cursor-pointer bg-card"
         style={{
           boxShadow: "0 2px 12px rgba(30,24,18,0.08)",
           transition: "box-shadow 0.25s ease, transform 0.25s ease",
@@ -342,7 +342,7 @@ function TeamCard({ team }: { team: Team }) {
   return (
     <a href={`/teams/${team.id}`} className="block group">
       <article
-        className="overflow-hidden rounded-2xl cursor-pointer bg-white relative"
+        className="overflow-hidden rounded-2xl cursor-pointer bg-card relative"
         style={{
           boxShadow: hovered
             ? `0 20px 48px ${statusCfg.glow}, 0 6px 18px rgba(30,24,18,0.10)`
@@ -654,7 +654,7 @@ export function HomeClient() {
 
         {/* 背景渐变 */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 home-hero-gradient"
           style={{
             background:
               "linear-gradient(160deg, #FEF3C7 0%, rgba(255,122,101,0.06) 38%, #faf8f5 65%, #f5f0e8 100%)",
@@ -763,7 +763,7 @@ export function HomeClient() {
               }}
               onFocus={() => search.setFocused(true)}
               onBlur={() => search.setFocused(false)}
-              className="w-full pl-14 pr-32 py-4 bg-white/95 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground text-base transition-all duration-250 focus:outline-none"
+              className="w-full pl-14 pr-32 py-4 bg-card/95 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground text-base transition-all duration-250 focus:outline-none"
               style={{
                 boxShadow: search.isFocused
                   ? "0 6px 28px rgba(217,119,6,0.20), 0 0 0 3px rgba(217,119,6,0.12)"
@@ -1025,7 +1025,7 @@ export function HomeClient() {
             ].map((item) => (
               <div
                 key={item.step}
-                className="rounded-2xl p-7 bg-white flex flex-col"
+                className="rounded-2xl p-7 bg-card flex flex-col"
                 style={{
                   boxShadow: "0 2px 12px rgba(30,24,18,0.06)",
                   border: "1px solid rgba(30,24,18,0.04)",
@@ -1132,7 +1132,7 @@ export function HomeClient() {
           ================================================================ */}
       <section
         ref={ctaRef}
-        className={`py-24 section-hidden ${ctaInView ? "section-visible" : ""}`}
+        className={`py-24 section-hidden ${ctaInView ? "section-visible" : ""} home-cta-gradient`}
         style={{ background: "linear-gradient(160deg, #FFFBEB 0%, #faf8f5 50%, #f5f0e8 100%)" }}
       >
         <div className="max-w-4xl mx-auto px-4 text-center">
