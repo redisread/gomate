@@ -400,14 +400,14 @@ export function LocationsClient() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f8f7f5]">
+    <main className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <Navbar />
 
       {/* ── Hero ── */}
       <section className="relative pt-28 pb-10 bg-card border-b border-border">
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-amber-50/60 blur-3xl" />
+          <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-amber-50/60 dark:bg-amber-900/20 blur-3xl" />
           <div className="absolute -bottom-10 -left-10 w-60 h-60 rounded-full bg-stone-50/60 dark:bg-stone-900 blur-2xl" />
         </div>
 
@@ -682,19 +682,19 @@ export function LocationsClient() {
                 <div className="flex items-center gap-2 flex-wrap">
                   {/* 类型筛选 badge */}
                   {activeRole && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
                       <span>{roleConfig[activeRole].emoji}</span>
                       {roleConfig[activeRole].label}
-                      <button onClick={() => handleRoleSelect("")} className="hover:text-emerald-900 transition-colors ml-0.5">
+                      <button onClick={() => handleRoleSelect("")} className="hover:text-emerald-900 dark:hover:text-emerald-300 transition-colors ml-0.5">
                         <X className="w-3 h-3" />
                       </button>
                     </span>
                   )}
                   {selectedCityId && selectedCityName && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-amber-50 text-amber-700 border border-amber-100">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50">
                       <MapPin className="w-3 h-3" />
                       {selectedCityName}
-                      <button onClick={() => handleCitySelect("")} className="hover:text-amber-900 transition-colors ml-0.5">
+                      <button onClick={() => handleCitySelect("")} className="hover:text-amber-900 dark:hover:text-amber-300 transition-colors ml-0.5">
                         <X className="w-3 h-3" />
                       </button>
                     </span>
@@ -788,11 +788,11 @@ export function LocationsClient() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="relative py-16 border-t border-stone-200 dark:border-stone-700 overflow-hidden">
+      <section className="relative py-16 border-t border-stone-200 dark:border-stone-800 overflow-hidden">
         {/* 背景 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-50" />
+        <div className="absolute inset-0 bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-50 dark:from-stone-900 dark:via-amber-950/20 dark:to-stone-900" />
         <div
-          className="absolute inset-0 opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.04] dark:opacity-[0.06]"
           style={{
             backgroundImage: `radial-gradient(circle at 1px 1px, #78716c 1px, transparent 0)`,
             backgroundSize: "24px 24px",
@@ -807,13 +807,13 @@ export function LocationsClient() {
         </div>
 
         <div className="relative max-w-3xl mx-auto px-4 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-5 border border-amber-100">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center mx-auto mb-5 border border-amber-100 dark:border-amber-900/50">
             <Mountain className="h-6 w-6 text-amber-600" />
           </div>
           <h2 className="text-2xl font-bold text-foreground mb-3">{copy.locations.ctaTitle}</h2>
           <p className="text-stone-500 dark:text-stone-400 text-sm mb-7 max-w-sm mx-auto leading-relaxed">{copy.locations.ctaDesc}</p>
           <a href="/contact">
-            <button className="group inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-7 py-3 rounded-full text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-amber-200">
+            <button className="group inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-7 py-3 rounded-full text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-amber-200 dark:shadow-amber-900/50">
               {copy.locations.ctaBtn}
               <ArrowRight className="h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1" />
             </button>
