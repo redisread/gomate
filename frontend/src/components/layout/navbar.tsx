@@ -4,7 +4,7 @@ import * as React from "react";
 import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/copy";
-import { fetchCurrentUser } from "@/lib/api";
+import { fetchCurrentUser, API_BASE } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -79,7 +79,7 @@ export function Navbar({ className }: NavbarProps) {
 
   const handleLogout = async () => {
     await fetch(
-      `${import.meta.env.PUBLIC_API_URL || "http://localhost:8799"}/auth/sign-out`,
+      `${API_BASE}/auth/sign-out`,
       { method: "POST", credentials: "include" }
     );
     setSession(null);

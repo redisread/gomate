@@ -3,10 +3,11 @@ import type { Env } from "../lib/auth";
 
 export const amapRoute = new Hono<{ Bindings: Env }>();
 
-const AMAP_KEY = "8125796b7ee94b6571ad5f6c03089ed3";
-
 /** 输入提示（地图搜索候选） */
 amapRoute.get("/inputtips", async (c) => {
+  const AMAP_KEY = c.env.AMAP_SERVER_KEY;
+  if (!AMAP_KEY) return c.json({ error: "AMAP_SERVER_KEY not configured" }, 500);
+
   const keywords = c.req.query("keywords") ?? "";
   const city = c.req.query("city") ?? "全国";
   if (!keywords.trim()) return c.json({ status: "0", tips: [] });
@@ -19,6 +20,9 @@ amapRoute.get("/inputtips", async (c) => {
 
 /** 正地理编码（地址 → 坐标） */
 amapRoute.get("/geocode", async (c) => {
+  const AMAP_KEY = c.env.AMAP_SERVER_KEY;
+  if (!AMAP_KEY) return c.json({ error: "AMAP_SERVER_KEY not configured" }, 500);
+
   const address = c.req.query("address") ?? "";
   if (!address.trim()) return c.json({ status: "0", geocodes: [] });
 
@@ -30,6 +34,9 @@ amapRoute.get("/geocode", async (c) => {
 
 /** 逆地理编码（坐标 → 地址） */
 amapRoute.get("/regeo", async (c) => {
+  const AMAP_KEY = c.env.AMAP_SERVER_KEY;
+  if (!AMAP_KEY) return c.json({ error: "AMAP_SERVER_KEY not configured" }, 500);
+
   const location = c.req.query("location") ?? "";
   if (!location) return c.json({ status: "0" });
 

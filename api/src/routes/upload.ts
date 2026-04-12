@@ -15,9 +15,12 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 /**
  * 生成 R2 对象公开 URL
  */
-function getPublicUrl(env: Env, key: string): string {
-  const base = env.R2_PUBLIC_URL || "https://gomate.cos.jiahongw.com";
-  return `${base}/${key}`;
+function getPublicUrl(env: Env, key: string): string | null {
+  if (!env.R2_PUBLIC_URL) {
+    console.error("[Upload] R2_PUBLIC_URL not configured");
+    return null;
+  }
+  return `${env.R2_PUBLIC_URL}/${key}`;
 }
 
 /**
@@ -67,7 +70,10 @@ upload.post("/avatar", async (c) => {
 
     const host = c.req.header("host") || "";
     const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
-    const publicUrl = isLocalDev ? `http://${host}/r2/${key}` : getPublicUrl(c.env, key);
+    const publicUrl = isLocalDev
+      ? `http://${host}/r2/${key}`
+      : getPublicUrl(c.env, key);
+    if (!publicUrl) return c.json({ error: "R2_PUBLIC_URL not configured" }, 500);
 
     return c.json({ success: true, key, url: publicUrl, size: file.size, type: file.type });
   } catch (error) {
@@ -150,7 +156,10 @@ upload.post("/location", async (c) => {
 
     const host = c.req.header("host") || "";
     const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
-    const publicUrl = isLocalDev ? `http://${host}/r2/${key}` : getPublicUrl(c.env, key);
+    const publicUrl = isLocalDev
+      ? `http://${host}/r2/${key}`
+      : getPublicUrl(c.env, key);
+    if (!publicUrl) return c.json({ error: "R2_PUBLIC_URL not configured" }, 500);
 
     return c.json({ success: true, key, url: publicUrl, size: file.size, type: file.type });
   } catch (error) {

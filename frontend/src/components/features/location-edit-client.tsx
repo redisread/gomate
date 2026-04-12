@@ -287,7 +287,7 @@ function styledInput(hasError?: boolean) {
    高德地图工具函数
    ================================================================ */
 
-const AMAP_KEY = (import.meta.env.PUBLIC_AMAP_KEY as string | undefined) ?? "YOUR_AMAP_KEY";
+const AMAP_KEY = (import.meta.env.PUBLIC_AMAP_KEY as string | undefined) || "";
 
 /** 动态加载高德地图 JS SDK（幂等，重复调用安全） */
 function loadAmapScript(): Promise<void> {

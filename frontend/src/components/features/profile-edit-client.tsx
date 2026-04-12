@@ -15,7 +15,7 @@ import {
   Info,
 } from "lucide-react";
 import { copy } from "@/lib/copy";
-import { fetchAPI, fetchCurrentUser } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser, API_BASE } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { parseExtra, formatBirthday, birthdayToTimestamp } from "@/lib/user-utils";
@@ -188,7 +188,7 @@ const { experience, equipment } = parseExtra(user.extra);
       const fd = new FormData();
       fd.append("file", selectedFile);
       fd.append("userId", user.id);
-      const apiBase = (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8799";
+      const apiBase = API_BASE;
       const res = await fetch(`${apiBase}/upload/avatar`, {
         method: "POST",
         body: fd,

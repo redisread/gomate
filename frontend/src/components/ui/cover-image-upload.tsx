@@ -17,7 +17,7 @@
 import * as React from "react";
 import { Upload, Image as ImageIcon, X, Link, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, API_BASE } from "@/lib/api";
 import { copy } from "@/lib/copy";
 
 /* ================================================================
@@ -181,11 +181,8 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
           xhr.addEventListener("error", () => reject(new Error("网络错误，请检查连接后重试")));
           xhr.addEventListener("abort", () => reject(new Error("上传已取消")));
 
-          // 构建请求地址（复用 fetchAPI 的 base 逻辑）
-          const apiBase =
-            typeof window !== "undefined"
-              ? (import.meta as unknown as { env: { PUBLIC_API_URL?: string } }).env.PUBLIC_API_URL || "http://localhost:8799"
-              : "http://localhost:8799";
+          // 构建请求地址（复用 API_BASE）
+          const apiBase = API_BASE;
 
           xhr.open("POST", `${apiBase}/upload/location`);
           xhr.withCredentials = true;

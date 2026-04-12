@@ -70,6 +70,8 @@ export interface Env {
   APP_URL?: string;
   FRONTEND_URL?: string;
   R2_PUBLIC_URL?: string;
+  CORS_ALLOWED_ORIGINS?: string;
+  AMAP_SERVER_KEY?: string;
 }
 
 /**
@@ -140,8 +142,14 @@ export function createAuth(env: Env) {
     baseURL: env.APP_URL || "http://localhost:8799",
     basePath: "/auth",
     trustedOrigins: [
-      "http://localhost:8799",
+      ...(env.CORS_ALLOWED_ORIGINS ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      "http://localhost:3000",
+      "http://localhost:4321",
       "http://localhost:5432",
+      "http://localhost:8799",
       "https://gomate.live",
       "https://api.gomate.live",
     ],

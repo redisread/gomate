@@ -2,12 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
+import { API_BASE } from "@/lib/api";
 import { copy } from "@/lib/copy";
 import { PosterContent } from "./poster-content";
 import { LocationPosterContent } from "./location-poster-content";
-
-const API_BASE =
-  (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8799";
 
 /** Load an image as base64 data URL via API proxy to avoid CORS issues */
 async function loadImageAsDataUrl(url: string): Promise<string> {

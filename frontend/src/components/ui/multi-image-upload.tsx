@@ -16,6 +16,7 @@
 import * as React from "react";
 import { Plus, X, AlertCircle, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { API_BASE } from "@/lib/api";
 import { copy } from "@/lib/copy";
 
 /* ================================================================
@@ -104,11 +105,7 @@ function genKey() {
 }
 
 function getApiBase(): string {
-  return (
-    (typeof window !== "undefined"
-      ? (import.meta as unknown as { env: { PUBLIC_API_URL?: string } }).env.PUBLIC_API_URL
-      : undefined) ?? "http://localhost:8799"
-  );
+  return API_BASE;
 }
 
 /* ================================================================
