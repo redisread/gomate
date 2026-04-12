@@ -15,15 +15,36 @@ const storageConfig = {
   },
 };
 
-// Persistent theme store with localStorage
-export const themeStore = persistentAtom<Theme>("theme", "system", storageConfig);
+// Synchronously read theme from cookie, sync to localStorage, and return it.
+// This ensures the cookie always takes priority over any stale localStorage value.
+const getInitialTheme = (): Theme => {
+  if (typeof document === "undefined") return "system";
+  const match = document.cookie.match(/theme=(light|dark|system)/);
+  const cookieTheme: Theme = match ? (match[1] as Theme) : "system";
+  // Always write cookie value to localStorage so persistentAtom picks it up
+  // and overrides any stale value from a previous session.
+  window.localStorage.setItem("theme", cookieTheme);
+  return cookieTheme;
+};
 
-// Track system preference
-const systemPreferenceStore = atom<EffectiveTheme>(
-  typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light"
-);
+// Persistent theme store with localStorage, initialized from cookie
+export const themeStore = persistentAtom<Theme>("theme", getInitialTheme(), storageConfig);
+
+// Track system preference — initialize at module load time
+const getInitialSystemPreference = (): EffectiveTheme => {
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+};
+
+const systemPreferenceStore = atom<EffectiveTheme>(getInitialSystemPreference());
+
+// Register system preference change listener at module load time
+if (typeof window !== "undefined") {
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  mediaQuery.addEventListener("change", (e: MediaQueryListEvent) => {
+    systemPreferenceStore.set(e.matches ? "dark" : "light");
+  });
+}
 
 // Derived store: effective theme (resolved system to actual light/dark)
 export const effectiveThemeStore = computed(
@@ -44,17 +65,9 @@ const setThemeCookie = (theme: Theme) => {
   document.cookie = `theme=${theme};path=/;expires=${expires.toUTCString()};SameSite=Lax`;
 };
 
-const getThemeCookie = (): Theme | null => {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(/theme=(light|dark|system)/);
-  return match ? (match[1] as Theme) : null;
-};
-
 // Subscribe to theme changes and sync to cookie
 // DOM class updates are handled by effectiveThemeStore.subscribe below
 themeStore.subscribe((theme) => {
-  // Only sync to cookie if localStorage has a value set (not the default "system")
-  // This prevents the default value from overwriting a server-set cookie on hydration
   if (typeof window !== "undefined" && window.localStorage.getItem("theme") !== null) {
     setThemeCookie(theme);
   }
@@ -71,20 +84,10 @@ effectiveThemeStore.subscribe((effective) => {
   }
 });
 
-// Initialize system preference listener (client-side only)
+// Deprecated: system preference listener is now registered at module load time.
+// Kept for backward compatibility — no longer does anything.
 export function initThemeSystemListener() {
-  if (typeof window === "undefined") return;
-
-  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-  const handleChange = (e: MediaQueryListEvent) => {
-    systemPreferenceStore.set(e.matches ? "dark" : "light");
-  };
-
-  mediaQuery.addEventListener("change", handleChange);
-
-  // Set initial value
-  systemPreferenceStore.set(mediaQuery.matches ? "dark" : "light");
+  // No-op: listener already registered at module load time
 }
 
 // Set theme function
@@ -100,13 +103,4 @@ export function getTheme(): Theme {
 // Get effective theme
 export function getEffectiveTheme(): EffectiveTheme {
   return effectiveThemeStore.get();
-}
-
-// Initialize from cookie (for SSR hydration consistency)
-export function initThemeFromCookie() {
-  if (typeof document === "undefined") return;
-  const cookieTheme = getThemeCookie();
-  if (cookieTheme) {
-    themeStore.set(cookieTheme);
-  }
 }

@@ -12,7 +12,6 @@ import {
   Compass,
   X,
 } from "lucide-react";
-import { useStore } from "@nanostores/react";
 import { effectiveThemeStore } from "@/stores/theme";
 import { copy } from "@/lib/copy";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
@@ -577,7 +576,21 @@ function TeamCard({ team }: { team: Team }) {
    HomeClient — 首页主组件
    ============================================================ */
 export function HomeClient() {
-  const isDark = useStore(effectiveThemeStore) === "dark";
+  // Start with false (SSR-safe), then correct in useEffect after hydration.
+  // SSR sets the correct .dark class on <html>, which controls the body bg.
+  // The inline style gradient will be set correctly in the first useEffect.
+  const [isDark, setIsDark] = React.useState(false);
+
+  // Read actual theme from DOM after hydration + subscribe to changes
+  React.useEffect(() => {
+    // First, sync from DOM (set by SSR inline script)
+    setIsDark(document.documentElement.classList.contains("dark"));
+    // Then subscribe to future theme changes
+    const unsubscribe = effectiveThemeStore.subscribe((effective) => {
+      setIsDark(effective === "dark");
+    });
+    return unsubscribe;
+  }, []);
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [teams, setTeams] = React.useState<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);

@@ -57,7 +57,7 @@ const isDark = themeCookie === "dark" || (!themeCookie && false); // 默认 ligh
       })();
     </script>
   </head>
-  <body class="min-h-screen">
+  <body class={["min-h-screen", isDark ? "dark bg-[#12100d]" : "bg-[#faf8f5]"].join(" ")}>
     {showNavbar && <Navbar client:load />}
     <slot />
     {showFooter && <Footer client:load />}
