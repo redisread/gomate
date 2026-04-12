@@ -30,8 +30,8 @@
 ## 5. 验证线上功能
 
 - [x] 5.1 确认 CORS 配置（`api/src/middleware/cors.ts`）允许 `https://gomate.live` 来源
-- [ ] 5.2 确认 Cloudflare Dashboard 中 `gomate.live` 域名已绑定到前端 Workers 项目
-- [ ] 5.3 推送代码触发 CI/CD，验证前端 Workers 部署成功
-- [ ] 5.4 访问 `https://gomate.live` 验证首页正常加载
+- [x] 5.2 确认 Cloudflare Dashboard 中 `gomate.live` 域名已绑定到前端 Workers 项目
+- [x] 5.3 推送代码触发 CI/CD，验证前端 Workers 部署成功
+- [x] 5.4 访问 `https://gomate.live` 验证首页正常加载 (HTTP 200)
 - [ ] 5.5 访问主要页面（地点列表、队伍列表、登录、注册、个人中心）验证功能正常
 - [ ] 5.6 验证数据获取正常（客户端 fetch 能正确调用 `https://api.gomate.live`）
