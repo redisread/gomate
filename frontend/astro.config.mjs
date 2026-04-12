@@ -1,14 +1,11 @@
 import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
-import cloudflare from "@astrojs/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
 import { loadEnv } from "vite";
 
 const env = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
 
 export default defineConfig({
-  output: "server",
-  adapter: cloudflare(),
   integrations: [react()],
   image: {
     service: { entrypoint: "astro/assets/services/noop" },

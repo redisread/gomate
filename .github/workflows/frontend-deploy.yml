@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  deployments: write
 
 jobs:
   deploy:
@@ -17,13 +16,16 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @gomate/frontend build
+      - name: Type Check
+        run: pnpm --filter @gomate/frontend type-check
+      - name: Build
+        run: pnpm --filter @gomate/frontend build
         env:
           PUBLIC_API_URL: https://api.gomate.live
-      - uses: cloudflare/pages-action@v1
+      - name: Deploy to Workers
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: gomate-frontend
-          directory: frontend/dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          workingDirectory: frontend
+          command: deploy --env production

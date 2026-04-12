@@ -5,6 +5,10 @@
 import Layout from "../../layouts/Layout.astro";
 import { TeamDetailPartiful } from "../../components/features/team-detail-partiful";
 
+export function getStaticPaths() {
+  return [{ params: { id: "fallback" } }];
+}
+
 const { id } = Astro.params;
 ---
 

@@ -5,6 +5,10 @@
 import Layout from "../../../layouts/Layout.astro";
 import { EditTeamClient } from "../../../components/features/edit-team-client";
 
+export function getStaticPaths() {
+  return [{ params: { id: "fallback" } }];
+}
+
 const { id } = Astro.params;
 ---
 

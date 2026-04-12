@@ -5,6 +5,10 @@
 import Layout from "../../../../layouts/Layout.astro";
 import { LocationEditClient } from "../../../../components/features/location-edit-client";
 
+export function getStaticPaths() {
+  return [{ params: { id: "fallback" } }];
+}
+
 const { id } = Astro.params;
 ---
 

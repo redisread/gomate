@@ -5,6 +5,10 @@
 import Layout from "../../layouts/Layout.astro";
 import { UserDetailClient } from "../../components/features/user-detail-client";
 
+export function getStaticPaths() {
+  return [{ params: { id: "fallback" } }];
+}
+
 const { id } = Astro.params;
 ---
 

@@ -1,0 +1,14 @@
+name = "gomate-frontend"
+compatibility_date = "2026-02-26"
+account_id = "e3afbb613458022947cd9dc9f5bd6334"
+
+# Workers Static Assets binding
+[assets]
+directory = "dist"
+
+# Production environment
+[env.production]
+name = "gomate-frontend"
+
+[env.production.assets]
+directory = "dist"
