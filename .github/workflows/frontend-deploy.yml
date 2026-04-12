@@ -18,6 +18,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Type Check
         run: pnpm --filter @gomate/frontend type-check
+      - name: Tests
+        run: pnpm --filter @gomate/frontend test
       - name: Build
         run: pnpm --filter @gomate/frontend build
         env:

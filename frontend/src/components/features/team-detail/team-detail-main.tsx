@@ -1,0 +1,51 @@
+"use client";
+
+import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
+import { useTeamDetail } from "./use-team-detail";
+import { TeamSidebar } from "./team-detail-sidebar";
+import { TeamMainContent } from "./team-detail-content";
+import { TeamModalsAndFooter } from "./team-detail-bottom-bar";
+import { TeamDetailSkeleton } from "./team-detail-skeleton";
+import { copy } from "@/lib/copy";
+
+interface TeamDetailPartifulProps {
+  teamId: string;
+}
+
+export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
+  const ctx = useTeamDetail(teamId);
+  const { team, loading, error } = ctx;
+
+  if (loading) return <TeamDetailSkeleton />;
+
+  if (error || !team) {
+    return (
+      <main className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <p className="text-muted-foreground/70">{error || copy.teams.notFound}</p>
+            <a href="/teams" className="text-amber-600 hover:text-amber-700 underline underline-offset-2">
+              返回队伍列表
+            </a>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-background flex flex-col">
+      <Navbar />
+      <div className="flex-1 max-w-7xl mx-auto px-6 py-8 lg:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 lg:gap-12">
+          <TeamSidebar ctx={ctx} />
+          <TeamMainContent ctx={ctx} />
+        </div>
+      </div>
+      <TeamModalsAndFooter ctx={ctx} />
+    </main>
+  );
+}
