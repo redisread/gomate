@@ -12,6 +12,8 @@ import {
   Compass,
   X,
 } from "lucide-react";
+import { useStore } from "@nanostores/react";
+import { effectiveThemeStore } from "@/stores/theme";
 import { copy } from "@/lib/copy";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { getDaysUntil } from "@/lib/date-utils";
@@ -27,34 +29,6 @@ import {
   useAnimateIn,
   useSearchInteraction,
 } from "@/hooks/use-animations";
-// DOM-based theme detection to avoid Astro island module duplication issues
-function useIsDark() {
-  const [isDark, setIsDark] = React.useState(false);
-
-  React.useEffect(() => {
-    if (typeof document === "undefined") return;
-
-    // Initial check after hydration is complete
-    const check = () => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    };
-    check();
-
-    // Watch for future theme changes
-    const observer = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        if (m.attributeName === "class") {
-          setIsDark(document.documentElement.classList.contains("dark"));
-          break;
-        }
-      }
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-
-  return isDark;
-}
 
 /* ============================================================
    LocationCard — 大图 overlay 风格
@@ -69,18 +43,18 @@ function LocationCard({ location }: { location: Location }) {
       <article
         className="overflow-hidden rounded-2xl cursor-pointer bg-card"
         style={{
-          boxShadow: "0 2px 12px rgba(30,24,18,0.08)",
+          boxShadow: "var(--shadow-card)",
           transition: "box-shadow 0.25s ease, transform 0.25s ease",
         }}
         onMouseEnter={(e) => {
           const el = e.currentTarget as HTMLElement;
           el.style.transform = "translateY(-5px)";
-          el.style.boxShadow = "0 14px 40px rgba(217,119,6,0.18), 0 4px 16px rgba(30,24,18,0.08)";
+          el.style.boxShadow = "var(--shadow-card-hover)";
         }}
         onMouseLeave={(e) => {
           const el = e.currentTarget as HTMLElement;
           el.style.transform = "translateY(0)";
-          el.style.boxShadow = "0 2px 12px rgba(30,24,18,0.08)";
+          el.style.boxShadow = "var(--shadow-card)";
         }}
       >
         {/* 图片区 */}
@@ -184,7 +158,7 @@ function LocationCard({ location }: { location: Location }) {
           </div>
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ml-3 transition-all duration-150 group-hover:bg-brand group-hover:text-white"
-            style={{ background: "rgba(217,119,6,0.10)", color: "#D97706" }}
+            style={{ background: "var(--brand-subtle)", color: "var(--brand)" }}
           >
             <ArrowRight className="h-3.5 w-3.5" />
           </div>
@@ -228,7 +202,7 @@ function AvatarStack({
             <div
               key={idx}
               className="w-7 h-7 rounded-full border-2 border-border overflow-hidden flex-shrink-0"
-              style={{ zIndex: 10 - idx, boxShadow: "0 1px 4px rgba(0,0,0,0.12)" }}
+              style={{ zIndex: 10 - idx, boxShadow: "var(--shadow-warm-sm)" }}
             >
               {m.avatar ? (
                 <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
@@ -248,9 +222,9 @@ function AvatarStack({
             className="w-7 h-7 rounded-full border-2 border-border flex items-center justify-center text-[10px] font-bold flex-shrink-0"
             style={{
               zIndex: 1,
-              background: "rgba(217,119,6,0.12)",
-              color: "#92400E",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+              background: "var(--brand-subtle)",
+              color: "var(--accent-foreground)",
+              boxShadow: "var(--shadow-warm-sm)",
             }}
           >
             +{extra}
@@ -603,7 +577,7 @@ function TeamCard({ team }: { team: Team }) {
    HomeClient — 首页主组件
    ============================================================ */
 export function HomeClient() {
-  const isDark = useIsDark();
+  const isDark = useStore(effectiveThemeStore) === "dark";
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [teams, setTeams] = React.useState<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);

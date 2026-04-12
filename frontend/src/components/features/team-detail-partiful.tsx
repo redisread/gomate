@@ -97,7 +97,7 @@ function Avatar({ name, avatar, isLeader, size = "md" }: { name?: string; avatar
       className={cn(
         "rounded-full flex items-center justify-center font-medium relative",
         sizeClasses[size],
-        isLeader ? "bg-amber-200 text-amber-800 ring-2 ring-amber-400 ring-offset-2" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 dark:text-stone-500 dark:text-stone-400"
+        isLeader ? "bg-amber-200 text-amber-800 ring-2 ring-amber-400 ring-offset-2" : "bg-secondary text-muted-foreground"
       )}
     >
       {avatar ? (
@@ -127,7 +127,7 @@ function AnimatedProgress({ ratio, isFull }: { ratio: number; isFull: boolean })
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={`队伍招募进度 ${ratio}%`}
-      className="h-1.5 rounded-full bg-stone-100 dark:bg-stone-800 overflow-hidden"
+      className="h-1.5 rounded-full bg-secondaryoverflow-hidden"
     >
       <div
         className={cn(
@@ -170,7 +170,7 @@ function MemberAvatarGrid({
                   "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-150",
                   isLeader
                     ? "ring-2 ring-amber-400 ring-offset-1 bg-gradient-to-br from-amber-500 to-amber-300 group-hover:ring-amber-300"
-                    : "bg-stone-100 dark:bg-stone-800 ring-1 ring-stone-200 dark:ring-stone-700 dark:ring-stone-700 group-hover:scale-105 group-hover:ring-amber-300"
+                    : "bg-secondary ring-1 ring-secondary/50 group-hover:scale-105 group-hover:ring-amber-300"
                 )}
               >
                 {m.avatar ? (
@@ -179,7 +179,7 @@ function MemberAvatarGrid({
                   <span
                     className={cn(
                       "font-semibold text-sm",
-                      isLeader ? "text-white" : "text-stone-500 dark:text-stone-400"
+                      isLeader ? "text-white" : "text-stone-500 text-muted-foreground/70"
                     )}
                   >
                     {name?.[0] || "?"}
@@ -192,7 +192,7 @@ function MemberAvatarGrid({
                 </span>
               )}
               {m.wechat && (
-                <p className="text-xs text-stone-500 dark:text-stone-400 max-w-[60px] truncate text-center leading-tight">
+                <p className="text-xs text-muted-foreground max-w-[60px] truncate text-center leading-tight">
                   {m.wechat}
                 </p>
               )}
@@ -205,12 +205,12 @@ function MemberAvatarGrid({
             onClick={() => setExpanded(true)}
             className="flex flex-col items-center gap-1.5 group"
           >
-            <div className="w-11 h-11 rounded-full bg-stone-100 dark:bg-stone-800 ring-1 ring-stone-200 dark:ring-stone-700 dark:ring-stone-700 flex items-center justify-center transition-colors group-hover:bg-amber-50 group-hover:ring-amber-200">
-              <span className="text-xs font-semibold text-stone-400 dark:text-stone-500 dark:text-stone-400 group-hover:text-amber-600">
+            <div className="w-11 h-11 rounded-full bg-secondary ring-1 ring-secondary/50 ring-secondary/50 flex items-center justify-center transition-colors group-hover:bg-amber-50 group-hover:ring-amber-200">
+              <span className="text-xs font-semibold text-muted-foreground/70 group-hover:text-amber-600">
                 +{hidden}
               </span>
             </div>
-            <p className="text-[10px] text-stone-300 dark:text-stone-600 dark:text-stone-400">查看全部</p>
+            <p className="text-[10px] text-muted-foreground/60">查看全部</p>
           </button>
         )}
       </div>
@@ -218,7 +218,7 @@ function MemberAvatarGrid({
       {expanded && members.length > GRID_THRESHOLD && (
         <button
           onClick={() => setExpanded(false)}
-          className="mt-3 flex items-center gap-1 text-xs text-stone-400 dark:text-stone-500 dark:text-stone-400 hover:text-amber-600 transition-colors"
+          className="mt-3 flex items-center gap-1 text-xs text-muted-foreground/70 hover:text-amber-600 transition-colors"
         >
           <ChevronDown className="w-3.5 h-3.5 rotate-180" />
           收起
@@ -281,12 +281,12 @@ function ApplicationCard({
           <Avatar name={name} avatar={application.user.avatar} size="sm" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{name}</p>
-            {timeAgo && <p className="text-xs text-stone-400 dark:text-stone-500 dark:text-stone-400">{timeAgo} 申请</p>}
+            {timeAgo && <p className="text-xs text-muted-foreground/70">{timeAgo} 申请</p>}
           </div>
         </a>
       </div>
       {isTeamFull ? (
-        <div className="text-center text-xs text-stone-400 dark:text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-900 py-2 rounded-lg">
+        <div className="text-center text-xs text-muted-foreground/70 bg-mutedpy-2 rounded-lg">
           名额已满
         </div>
       ) : (
@@ -302,7 +302,7 @@ function ApplicationCard({
           <button
             onClick={handleReject}
             disabled={approving || rejecting}
-            className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-stone-200 dark:border-stone-700 dark:border-stone-700 text-stone-500 dark:text-stone-400 dark:text-stone-400 hover:border-red-300 hover:text-red-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
+            className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:border-red-300 hover:text-red-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
           >
             {rejecting && <Loader2 className="w-3 h-3 animate-spin" />}
             {rejecting ? "处理中" : "拒绝"}
@@ -316,9 +316,9 @@ function ApplicationCard({
 function getStatusInfo(status: string) {
   const map: Record<string, { label: string; color: string }> = {
     recruiting: { label: copy.enums.teamStatus.recruiting, color: "bg-amber-50 text-amber-700" },
-    full: { label: copy.enums.teamStatus.full, color: "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 dark:text-stone-500 dark:text-stone-400" },
+    full: { label: copy.enums.teamStatus.full, color: "bg-secondary text-muted-foreground" },
     formed: { label: copy.enums.teamStatus.formed, color: "bg-sky-50 text-sky-700" },
-    completed: { label: copy.enums.teamStatus.completed, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 dark:text-stone-400" },
+    completed: { label: copy.enums.teamStatus.completed, color: "bg-secondary text-muted-foreground" },
     cancelled: { label: copy.enums.teamStatus.cancelled, color: "bg-red-50 text-red-600" },
   };
   return map[status] || map.recruiting;
@@ -596,7 +596,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
-            <p className="text-stone-400 dark:text-stone-500 dark:text-stone-400">{error || copy.teams.notFound}</p>
+            <p className="text-muted-foreground/70">{error || copy.teams.notFound}</p>
             <a href="/teams" className="text-amber-600 hover:text-amber-700 underline underline-offset-2">
               返回队伍列表
             </a>
@@ -628,23 +628,23 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
           <aside className="lg:sticky lg:top-24 lg:self-start space-y-6">
             {/* 队伍标题 */}
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100 leading-tight">{team.title}</h1>
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight">{team.title}</h1>
             </div>
 
             {/* 时间 */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-base text-stone-700 dark:text-stone-300">
+              <div className="flex items-center gap-2 text-base text-foreground/70">
                 <Calendar className="w-4 h-4 text-amber-500" />
                 <span className="font-medium">{team.date}</span>
               </div>
               {team.time && (
-                <div className="flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="w-4 h-4" />
                   <span>{team.time}</span>
                 </div>
               )}
               {team.durationMin && team.durationMin > 0 && (
-                <div className="flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Timer className="w-4 h-4" />
                   <span>约 {formatDuration(team.durationMin)}</span>
                 </div>
@@ -656,7 +656,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
               <div className="lg:hidden">
                 <a
                   href={`/locations/${location.id}`}
-                  className="flex items-center gap-2 px-3 py-2 bg-stone-50 dark:bg-stone-900 rounded-lg text-stone-700 dark:text-stone-300 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 bg-mutedrounded-lg text-foreground/70 hover:bg-amber-50 hover:text-amber-700 transition-colors"
                 >
                   <MapPin className="w-4 h-4" />
                   <span className="font-medium text-sm">{location.name}</span>
@@ -667,17 +667,17 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
 
             {/* 简介 */}
             {team.description && (
-              <div className="border-t border-stone-100 dark:border-stone-800 pt-4">
-                <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">{team.description}</p>
+              <div className="border-t border-border pt-4">
+                <p className="text-sm text-muted-foreground leading-relaxed">{team.description}</p>
               </div>
             )}
 
 {/* 名额信息 */}
             <div className="bg-amber-50 rounded-xl p-4 text-center">
               <p className="text-2xl font-bold text-amber-600 mb-1">
-                {team.currentMembers}<span className="text-stone-400 dark:text-stone-500 dark:text-stone-400 text-lg">/{team.maxMembers}</span>
+                {team.currentMembers}<span className="text-muted-foreground/70 text-lg">/{team.maxMembers}</span>
               </p>
-              <p className="text-xs text-stone-500 dark:text-stone-400">人已加入</p>
+              <p className="text-xs text-muted-foreground">人已加入</p>
               {canJoin && remaining > 0 && (
                 <p className="text-xs text-amber-600 mt-2 font-medium">
                   {remaining === 1 ? "仅剩 1 个名额" : `还剩 ${remaining} 个名额`}
@@ -687,28 +687,28 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
 
             {/* 创建人卡片 */}
             {team.leader && (
-              <div className="border-t border-stone-100 dark:border-stone-800 pt-4">
-                <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mb-3">
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                   <Crown className="w-3.5 h-3.5" />
                   <span className="font-medium">创建人</span>
                 </div>
                 <a
                   href={`/users/${team.leader.id}`}
-                  className="flex items-center gap-3 p-3 bg-stone-50 dark:bg-stone-900 rounded-xl hover:bg-amber-50 transition-colors"
+                  className="flex items-center gap-3 p-3 bg-mutedrounded-xl hover:bg-amber-50 transition-colors"
                 >
                   <Avatar name={team.leader.nickname || team.leader.name || undefined} avatar={team.leader.avatar} isLeader size="md" />
                   <div className="flex-1">
-                    <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">{team.leader.nickname || team.leader.name}</p>
+                    <p className="font-semibold text-foreground text-sm">{team.leader.nickname || team.leader.name}</p>
                   </div>
                 </a>
               </div>
             )}
 
             {/* 分享按钮（所有人可见） */}
-            <div className="border-t border-stone-100 dark:border-stone-800 pt-4">
+            <div className="border-t border-border pt-4">
               <button
                 onClick={() => setShowShare(true)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:bg-stone-900 rounded-lg transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground/70 hover:bg-accentrounded-lg transition-colors"
               >
                 <Share2 className="w-4 h-4" />
                 分享队伍
@@ -720,7 +720,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
               <div className="bg-amber-50 rounded-xl p-3 space-y-1.5">
                 <a
                   href={`/teams/${teamId}/edit`}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground/70 hover:bg-accentrounded-lg transition-colors"
                 >
                   <Pencil className="w-4 h-4" />
                   编辑队伍
@@ -729,7 +729,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                   <button
                     onClick={() => setShowFormConfirm(true)}
                     disabled={isForming}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-700 dark:text-amber-400 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors disabled:opacity-50 font-medium"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-400 hover:bg-accentrounded-lg transition-colors disabled:opacity-50 font-medium"
                   >
                     {isForming && <Loader2 className="w-4 h-4 animate-spin" />}
                     <Users className="w-4 h-4" />
@@ -740,7 +740,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
                     disabled={isDeleting}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors disabled:opacity-50"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-accentrounded-lg transition-colors disabled:opacity-50"
                   >
                     {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
                     <Trash2 className="w-4 h-4" />
@@ -759,7 +759,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                 </div>
                 <button
                   onClick={() => setShowLeave(true)}
-                  className="w-full text-xs text-stone-400 dark:text-stone-500 dark:text-stone-400 hover:text-red-600 py-1 transition-colors"
+                  className="w-full text-xs text-muted-foreground/70 hover:text-red-600 py-1 transition-colors"
                 >
                   退出队伍
                 </button>
@@ -767,8 +767,8 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             )}
 
             {isPending && (
-              <div className="bg-stone-50 dark:bg-stone-900 rounded-xl p-3 space-y-2">
-                <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
+              <div className="bg-muted rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="w-4 h-4" />
                   <span className="font-medium text-sm">申请待审核</span>
                 </div>
@@ -796,9 +796,9 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
 
             {/* 待审核申请模块（仅队长可见） */}
             {isLeader && applications.length > 0 && (
-              <div className="border-t border-stone-100 dark:border-stone-800 pt-4">
+              <div className="border-t border-border pt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <UserCheck className="w-3.5 h-3.5" />
                     <span className="font-medium">待审核申请</span>
                   </div>
@@ -829,7 +829,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                 href={`/locations/${location.id}`}
                 className="group block"
               >
-                <div className="relative h-[300px] lg:h-[400px] rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800 hover:shadow-xl hover:shadow-amber-100/30 transition-all duration-300">
+                <div className="relative h-[300px] lg:h-[400px] rounded-2xl overflow-hidden bg-secondaryhover:shadow-xl hover:shadow-amber-100/30 transition-all duration-300">
                   {location.coverImage ? (
                     <img
                       src={location.coverImage}
@@ -904,14 +904,14 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
 
             {/* 参与要求 */}
             {Array.isArray(team.requirements) && team.requirements.length > 0 && (
-              <div className="bg-stone-50 dark:bg-stone-900 rounded-2xl p-6 space-y-4">
-                <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+              <div className="bg-muted rounded-2xl p-6 space-y-4">
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                   <AlertCircle className="w-5 h-5 text-amber-500" />
                   参与要求
                 </h3>
                 <ul className="space-y-3">
                   {team.requirements.map((req, i) => (
-                    <li key={i} className="flex items-start gap-3 text-base text-stone-600 dark:text-stone-400">
+                    <li key={i} className="flex items-start gap-3 text-base text-muted-foreground">
                       <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-sm font-medium flex items-center justify-center mt-0.5 flex-shrink-0">
                         {i + 1}
                       </span>
@@ -924,10 +924,10 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
 
             {/* Guest List */}
             {allMembers.length > 0 && (
-              <div className="bg-stone-50 dark:bg-stone-900 rounded-2xl p-6 space-y-4">
+              <div className="bg-muted rounded-2xl p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">Guest List</h3>
-                  <span className="text-sm text-stone-500 dark:text-stone-400 bg-white px-3 py-1 rounded-full">
+                  <h3 className="text-base font-semibold text-foreground">Guest List</h3>
+                  <span className="text-sm text-muted-foreground bg-white px-3 py-1 rounded-full">
                     {allMembers.length} Going
                   </span>
                 </div>
@@ -947,8 +947,8 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
 
             {/* 未登录提示 */}
             {!userId && !isLeader && !isMember && !isPending && (
-              <div className="bg-stone-50 dark:bg-stone-900 rounded-2xl p-6 text-center space-y-3">
-                <p className="text-sm text-stone-500 dark:text-stone-400">登录后即可申请加入队伍</p>
+              <div className="bg-muted rounded-2xl p-6 text-center space-y-3">
+                <p className="text-sm text-muted-foreground">登录后即可申请加入队伍</p>
                 <a
                   href={`/login?redirect=/teams/${teamId}`}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-stone-800 text-white rounded-xl text-sm font-medium hover:bg-stone-900 transition-colors"
@@ -961,15 +961,15 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
 
             {/* 名额满提示 */}
             {!canJoin && !isLeader && !isMember && !isPending && team.status === "recruiting" && isFull && (
-              <div className="bg-stone-50 dark:bg-stone-900 rounded-2xl p-6 text-center">
-                <p className="text-base text-stone-400 dark:text-stone-500 dark:text-stone-400">名额已满，无法加入</p>
+              <div className="bg-muted rounded-2xl p-6 text-center">
+                <p className="text-base text-muted-foreground/70">名额已满，无法加入</p>
               </div>
             )}
 
             {/* 已结束/已取消提示 */}
             {!canJoin && !isLeader && !isMember && !isPending && team.status !== "recruiting" && (
-              <div className="bg-stone-50 dark:bg-stone-900 rounded-2xl p-6 text-center">
-                <p className="text-base text-stone-400 dark:text-stone-500 dark:text-stone-400">
+              <div className="bg-muted rounded-2xl p-6 text-center">
+                <p className="text-base text-muted-foreground/70">
                   {team.status === "completed" ? copy.teams.statusEnded : copy.teams.statusCancelled}
                 </p>
               </div>
@@ -1012,12 +1012,12 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
       {showLeave && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-card rounded-2xl max-w-sm w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
-            <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">{copy.teams.leaveTeamConfirm}</h3>
-            <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">{copy.teams.leaveTeamWarning}</p>
+            <h3 className="text-lg font-bold text-foreground mb-2">{copy.teams.leaveTeamConfirm}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{copy.teams.leaveTeamWarning}</p>
             <button onClick={handleLeave} className="w-full py-3 bg-red-500 text-white rounded-xl mb-2 hover:bg-red-600 transition-colors">
               {copy.teams.leaveTeam}
             </button>
-            <button onClick={() => setShowLeave(false)} className="w-full py-3 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:bg-stone-900 rounded-xl transition-colors">
+            <button onClick={() => setShowLeave(false)} className="w-full py-3 text-muted-foreground hover:bg-accentrounded-xl transition-colors">
               {copy.common.cancel}
             </button>
           </div>
@@ -1028,10 +1028,10 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
       {showFormConfirm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-card rounded-2xl max-w-sm w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
-            <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
+            <h3 className="text-lg font-bold text-foreground mb-2">
               {isFull ? copy.teams.formTeamConfirm : copy.teams.formTeamUnderfilledConfirm}
             </h3>
-            <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">{copy.teams.formTeamWarning}</p>
+            <p className="text-sm text-muted-foreground mb-4">{copy.teams.formTeamWarning}</p>
             <button
               onClick={handleFormTeam}
               disabled={isForming}
@@ -1043,7 +1043,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             <button
               onClick={() => setShowFormConfirm(false)}
               disabled={isForming}
-              className="w-full py-3 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:bg-stone-900 rounded-xl transition-colors"
+              className="w-full py-3 text-muted-foreground hover:bg-accentrounded-xl transition-colors"
             >
               {copy.common.cancel}
             </button>
@@ -1055,10 +1055,10 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-card rounded-2xl max-w-sm w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
-            <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
+            <h3 className="text-lg font-bold text-foreground mb-2">
               {copy.teams.deleteTeamConfirm}
             </h3>
-            <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">{copy.teams.deleteTeamWarning}</p>
+            <p className="text-sm text-muted-foreground mb-4">{copy.teams.deleteTeamWarning}</p>
             <button
               onClick={handleDelete}
               disabled={isDeleting}
@@ -1070,7 +1070,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             <button
               onClick={() => setShowDeleteConfirm(false)}
               disabled={isDeleting}
-              className="w-full py-3 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:bg-stone-900 rounded-xl transition-colors"
+              className="w-full py-3 text-muted-foreground hover:bg-accentrounded-xl transition-colors"
             >
               {copy.common.cancel}
             </button>
@@ -1105,10 +1105,10 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             aria-modal="true"
             className="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
           >
-            <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
+            <h3 className="text-lg font-bold text-foreground mb-2">
               {copy.teams.wechatRequiredJoinTitle}
             </h3>
-            <p className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed mb-6">
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
               {copy.teams.wechatRequiredJoinDesc}
             </p>
             <button
@@ -1119,7 +1119,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             </button>
             <button
               onClick={() => setShowWechatConfirm(false)}
-              className="w-full py-3 text-stone-500 dark:text-stone-400 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 rounded-xl transition-colors"
+              className="w-full py-3 text-muted-foreground text-sm font-medium hover:bg-accentrounded-xl transition-colors"
             >
               {copy.common.cancel}
             </button>
@@ -1141,7 +1141,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
 
       {/* 移动端底部固定操作栏 */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-stone-100 dark:border-stone-800 z-40 lg:hidden"
+        className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border z-40 lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -1152,7 +1152,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                 <span className="font-medium">{copy.teams.youAreLeader}</span>
               </div>
               <div className="flex items-center gap-3">
-                <button onClick={() => setShowShare(true)} className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400 dark:text-stone-500 dark:text-stone-400 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+                <button onClick={() => setShowShare(true)} className="w-8 h-8 rounded-full bg-secondaryflex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
                   <Share2 className="h-4 w-4" />
                 </button>
                 {(team.status === "recruiting" || team.status === "cancelled") && (
@@ -1177,10 +1177,10 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                 <span className="font-medium">{copy.teams.statusApproved}</span>
               </div>
               <div className="flex items-center gap-3">
-                <button onClick={() => setShowShare(true)} className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400 dark:text-stone-500 dark:text-stone-400 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+                <button onClick={() => setShowShare(true)} className="w-8 h-8 rounded-full bg-secondaryflex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
                   <Share2 className="h-4 w-4" />
                 </button>
-                <button onClick={() => setShowLeave(true)} className="flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700 rounded-full px-3 py-1.5 hover:border-red-300 hover:text-red-500 transition-colors">
+                <button onClick={() => setShowLeave(true)} className="flex items-center gap-1 text-xs text-muted-foreground border border-border rounded-full px-3 py-1.5 hover:border-red-300 hover:text-red-500 transition-colors">
                   <LogOut className="h-3 w-3" />
                   {copy.teams.leaveTeam}
                 </button>
@@ -1193,7 +1193,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
                 <span className="font-medium">{copy.teams.statusPending}</span>
               </div>
               <div className="flex items-center gap-3">
-                <button onClick={() => setShowShare(true)} className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400 dark:text-stone-500 dark:text-stone-400 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+                <button onClick={() => setShowShare(true)} className="w-8 h-8 rounded-full bg-secondaryflex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
                   <Share2 className="h-4 w-4" />
                 </button>
                 <a href="/my-teams" className="text-xs text-amber-600 flex items-center gap-1">
@@ -1203,7 +1203,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             </div>
           ) : !userId ? (
             <div className="flex items-center justify-between min-h-[44px]">
-              <span className="text-sm text-stone-500 dark:text-stone-400">登录后即可申请加入</span>
+              <span className="text-sm text-muted-foreground">登录后即可申请加入</span>
               <a
                 href={`/login?redirect=/teams/${teamId}`}
                 className="px-4 py-2 bg-stone-800 text-white rounded-xl text-sm font-medium hover:bg-stone-900 transition-colors"
@@ -1213,7 +1213,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             </div>
           ) : canJoin ? (
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowShare(true)} className="w-11 h-11 rounded-2xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:bg-amber-50 hover:text-amber-600 border border-stone-200 dark:border-stone-700 hover:border-amber-200 transition-all flex-shrink-0">
+              <button onClick={() => setShowShare(true)} className="w-11 h-11 rounded-2xl bg-secondaryflex items-center justify-center text-muted-foreground hover:bg-amber-50 hover:text-amber-600 border border-border hover:border-amber-200 transition-all flex-shrink-0">
                 <Share2 className="h-4 w-4" />
               </button>
               <button onClick={() => setShowJoinModal(true)} className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all min-h-[44px]">
@@ -1222,10 +1222,10 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             </div>
           ) : (
             <div className="flex items-center justify-between min-h-[44px]">
-              <div className="text-stone-400 dark:text-stone-500 dark:text-stone-400 text-sm">
+              <div className="text-muted-foreground/70 text-sm">
                 {team.status === "completed" ? copy.teams.statusEnded : team.status === "cancelled" ? copy.teams.statusCancelled : copy.teams.teamFull}
               </div>
-              <button onClick={() => setShowShare(true)} className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400 dark:text-stone-500 dark:text-stone-400 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+              <button onClick={() => setShowShare(true)} className="w-8 h-8 rounded-full bg-secondaryflex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
                 <Share2 className="h-4 w-4" />
               </button>
             </div>
@@ -1245,13 +1245,13 @@ function TeamDetailSkeleton() {
       <div className="flex-1 max-w-7xl mx-auto px-6 py-8 lg:py-12 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 lg:gap-12">
           <aside className="space-y-6">
-            <div className="h-8 w-3/4 bg-stone-100 dark:bg-stone-700 rounded-lg animate-pulse" />
-            <div className="h-20 bg-stone-100 dark:bg-stone-700 rounded-xl animate-pulse" />
-            <div className="h-32 bg-stone-100 dark:bg-stone-700 rounded-xl animate-pulse" />
+            <div className="h-8 w-3/4 bg-secondary/70rounded-lg animate-pulse" />
+            <div className="h-20 bg-secondary/70rounded-xl animate-pulse" />
+            <div className="h-32 bg-secondary/70rounded-xl animate-pulse" />
           </aside>
           <div className="space-y-6">
-            <div className="h-48 bg-stone-100 dark:bg-stone-700 rounded-2xl animate-pulse" />
-            <div className="h-64 bg-stone-100 dark:bg-stone-700 rounded-2xl animate-pulse" />
+            <div className="h-48 bg-secondary/70rounded-2xl animate-pulse" />
+            <div className="h-64 bg-secondary/70rounded-2xl animate-pulse" />
           </div>
         </div>
       </div>
@@ -1298,27 +1298,27 @@ function JoinBottomSheet({
     <div className="fixed inset-0 z-50 lg:hidden">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="absolute bottom-0 left-0 right-0 bg-popover dark:bg-stone-900 rounded-t-3xl shadow-xl animate-[slide-up_0.3s_ease_both]"
+        className="absolute bottom-0 left-0 right-0 bg-popover rounded-t-3xl shadow-xl animate-[slide-up_0.3s_ease_both]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 bg-stone-200 dark:bg-stone-700 rounded-full" />
+          <div className="w-10 h-1 bg-secondary rounded-full" />
         </div>
         <div className="px-5 pb-5 pt-3">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-stone-900 dark:text-stone-100 text-lg">申请加入</h3>
-              <p className="text-sm text-stone-400 dark:text-stone-500 dark:text-stone-400 mt-0.5">
+              <h3 className="font-bold text-foreground text-lg">申请加入</h3>
+              <p className="text-sm text-muted-foreground/70 mt-0.5">
                 {remaining === 1 ? "就差你一个了！" : `还差 ${remaining} 位伙伴`}
               </p>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400 dark:text-stone-500 dark:text-stone-400 hover:bg-stone-200">
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondaryflex items-center justify-center text-muted-foreground/70 hover:bg-stone-200">
               <X className="w-4 h-4" />
             </button>
           </div>
           <div className="mb-4 bg-amber-50/60 rounded-2xl p-3.5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-stone-500 dark:text-stone-400">已有 {currentMembers} / {maxMembers} 人</span>
+              <span className="text-xs text-muted-foreground">已有 {currentMembers} / {maxMembers} 人</span>
               <span className="text-xs font-semibold text-amber-600">{fillRatio}%</span>
             </div>
             <AnimatedProgress ratio={fillRatio} isFull={false} />
@@ -1328,7 +1328,7 @@ function JoinBottomSheet({
             value={joinMessage}
             onChange={(e) => setJoinMessage(e.target.value)}
             rows={3}
-            className="w-full px-4 py-3 rounded-2xl text-stone-800 text-sm placeholder:text-stone-400 dark:text-stone-500 dark:text-stone-400 focus:outline-none resize-none mb-4 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 focus:border-amber-400 transition-all"
+            className="w-full px-4 py-3 rounded-2xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none resize-none mb-4 bg-muted border border-border focus:border-amber-400 transition-all"
           />
           <button
             onClick={onJoin}
@@ -1356,13 +1356,13 @@ function LeaveConfirmDialog({
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-popover dark:bg-stone-900 rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
-        <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">{copy.teams.leaveTeamConfirm}</h3>
-        <p className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed mb-6">{copy.teams.leaveTeamWarning}</p>
+      <div className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
+        <h3 className="text-lg font-bold text-foreground mb-2">{copy.teams.leaveTeamConfirm}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-6">{copy.teams.leaveTeamWarning}</p>
         <button onClick={onConfirm} className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors mb-2">
           {copy.teams.leaveTeam}
         </button>
-        <button onClick={onCancel} className="w-full py-3 rounded-2xl text-stone-500 dark:text-stone-400 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors">
+        <button onClick={onCancel} className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accenttransition-colors">
           {copy.common.cancel}
         </button>
       </div>
@@ -1389,11 +1389,11 @@ function ApprovalConfirmDialog({
   const isApprove = type === "approve";
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-popover dark:bg-stone-900 rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
-        <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
+      <div className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
+        <h3 className="text-lg font-bold text-foreground mb-2">
           {isApprove ? copy.teams.approveConfirm : copy.teams.rejectConfirm}
         </h3>
-        <p className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed mb-6">
+        <p className="text-sm text-muted-foreground leading-relaxed mb-6">
           {isApprove ? `${userName} 将正式加入队伍` : `拒绝后，${userName} 将不能加入此队伍。`}
         </p>
         <button
@@ -1407,7 +1407,7 @@ function ApprovalConfirmDialog({
           {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
           {isApprove ? copy.teams.approveBtn : copy.teams.rejectBtn}
         </button>
-        <button onClick={onCancel} disabled={isLoading} className="w-full py-3 rounded-2xl text-stone-500 dark:text-stone-400 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors">
+        <button onClick={onCancel} disabled={isLoading} className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accenttransition-colors">
           {copy.common.cancel}
         </button>
       </div>
@@ -1431,11 +1431,11 @@ function FormTeamConfirmDialog({
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-popover dark:bg-stone-900 rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
-        <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
+      <div className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
+        <h3 className="text-lg font-bold text-foreground mb-2">
           {isFull ? copy.teams.formTeamConfirm : copy.teams.formTeamUnderfilledConfirm}
         </h3>
-        <p className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed mb-6">{copy.teams.formTeamWarning}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-6">{copy.teams.formTeamWarning}</p>
         <button
           onClick={onConfirm}
           disabled={isLoading}
@@ -1444,7 +1444,7 @@ function FormTeamConfirmDialog({
           {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
           确认组建
         </button>
-        <button onClick={onCancel} disabled={isLoading} className="w-full py-3 rounded-2xl text-stone-500 dark:text-stone-400 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors">
+        <button onClick={onCancel} disabled={isLoading} className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accenttransition-colors">
           {copy.common.cancel}
         </button>
       </div>
@@ -1468,13 +1468,13 @@ function WechatEditModal({
       <div className="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">{copy.profile.wechat}</h3>
-            <p className="text-xs text-stone-400 dark:text-stone-500 dark:text-stone-400 mt-0.5">{copy.profile.wechatHint}</p>
+            <h3 className="text-lg font-bold text-foreground">{copy.profile.wechat}</h3>
+            <p className="text-xs text-muted-foreground/70 mt-0.5">{copy.profile.wechatHint}</p>
           </div>
           <button
             onClick={onClose}
             disabled={isSaving}
-            className="text-stone-400 dark:text-stone-500 dark:text-stone-400 hover:text-stone-600 dark:text-stone-400"
+            className="text-muted-foreground/70 hover:text-foreground"
           >
             <X className="w-5 h-5" />
           </button>
@@ -1484,7 +1484,7 @@ function WechatEditModal({
           value={wechatInput}
           onChange={(e) => setWechatInput(e.target.value)}
           placeholder={copy.profile.wechatPlaceholder}
-          className="w-full px-4 py-3 bg-stone-50 dark:bg-stone-900 rounded-xl text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-amber-200 border border-stone-200 dark:border-stone-700"
+          className="w-full px-4 py-3 bg-mutedrounded-xl text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-amber-200 border border-border"
         />
         <button
           onClick={() => onSave(wechatInput)}
@@ -1497,7 +1497,7 @@ function WechatEditModal({
         <button
           onClick={onClose}
           disabled={isSaving}
-          className="w-full py-3 text-stone-500 dark:text-stone-400 text-sm hover:bg-stone-50 dark:bg-stone-900 rounded-xl transition-colors"
+          className="w-full py-3 text-muted-foreground text-sm hover:bg-accentrounded-xl transition-colors"
         >
           {copy.common.cancel}
         </button>
@@ -1533,21 +1533,21 @@ function JoinDesktopModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[55] hidden lg:flex items-center justify-center p-4">
-      <div className="bg-popover dark:bg-stone-900 rounded-3xl max-w-md w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
+      <div className="bg-popover rounded-3xl max-w-md w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100">申请加入</h3>
-            <p className="text-sm text-stone-400 dark:text-stone-500 dark:text-stone-400 mt-0.5">
+            <h3 className="text-xl font-bold text-foreground">申请加入</h3>
+            <p className="text-sm text-muted-foreground/70 mt-0.5">
               {remaining === 1 ? "就差你一个了！" : `还差 ${remaining} 位伙伴`}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400 dark:text-stone-500 dark:text-stone-400 hover:bg-stone-200">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondaryflex items-center justify-center text-muted-foreground/70 hover:bg-stone-200">
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="mb-4 bg-amber-50/60 rounded-2xl p-3.5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-stone-500 dark:text-stone-400">已有 {currentMembers} / {maxMembers} 人</span>
+            <span className="text-xs text-muted-foreground">已有 {currentMembers} / {maxMembers} 人</span>
             <span className="text-xs font-semibold text-amber-600">{fillRatio}%</span>
           </div>
           <AnimatedProgress ratio={fillRatio} isFull={false} />
@@ -1557,7 +1557,7 @@ function JoinDesktopModal({
           value={joinMessage}
           onChange={(e) => setJoinMessage(e.target.value)}
           rows={4}
-          className="w-full px-4 py-3 rounded-2xl text-stone-800 text-sm placeholder:text-stone-400 dark:text-stone-500 dark:text-stone-400 focus:outline-none resize-none mb-4 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 focus:border-amber-400 transition-all"
+          className="w-full px-4 py-3 rounded-2xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none resize-none mb-4 bg-muted border border-border focus:border-amber-400 transition-all"
         />
         <button
           onClick={onJoin}

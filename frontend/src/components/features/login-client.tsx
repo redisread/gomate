@@ -219,7 +219,7 @@ export function LoginClient() {
               {/* 错误提示 */}
               {error && (
                 <div
-                  className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-red-400 border border-destructive/20 dark:border-red-500/30"
+                  className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 bg-destructive/10 text-destructive border border-destructive/20"
                 >
                   <span className="text-base">⚠️</span>
                   {error}

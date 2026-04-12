@@ -62,20 +62,20 @@ export function StatCard({
           "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200",
           accent
             ? "bg-amber-50 group-hover:bg-amber-100"
-            : "bg-stone-50 dark:bg-stone-800 group-hover:bg-stone-100 dark:group-hover:bg-stone-700"
+            : "bg-muted group-hover:bg-secondary"
         )}>
-          <Icon className={cn("h-5 w-5", accent ? "text-amber-600" : "text-stone-400 dark:text-stone-500")} />
+          <Icon className={cn("h-5 w-5", accent ? "text-amber-600" : "text-muted-foreground")} />
         </div>
         {href && (
-          <ChevronRight className="h-4 w-4 text-stone-300 dark:text-stone-600 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
         )}
       </div>
       <p className={cn(
         "text-3xl font-bold mb-1",
-        accent ? "text-foreground" : "text-stone-700 dark:text-stone-300"
+        accent ? "text-foreground" : "text-foreground/70"
       )}>{value}</p>
-      <p className="text-xs text-stone-400 dark:text-stone-500 font-medium">{label}</p>
-      {sublabel && <p className="text-xs text-stone-300 dark:text-stone-600 mt-0.5">{sublabel}</p>}
+      <p className="text-xs text-muted-foreground font-medium">{label}</p>
+      {sublabel && <p className="text-xs text-muted-foreground/50 mt-0.5">{sublabel}</p>}
     </div>
   );
   return href ? <a href={href}>{inner}</a> : inner;

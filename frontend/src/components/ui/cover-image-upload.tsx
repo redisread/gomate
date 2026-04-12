@@ -359,7 +359,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               onClick={() => fileInputRef.current?.click()}
               className={cn(
                 "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium",
-                "bg-white/90 dark:bg-stone-800/90 text-gray-700 dark:text-stone-300 backdrop-blur-sm",
+                "bg-card/90 backdrop-blur-sm text-foreground/80",
                 "hover:bg-white hover:text-amber-700 transition-all duration-150",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "shadow-sm"
@@ -377,7 +377,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               aria-label="删除封面图"
               className={cn(
                 "flex items-center justify-center w-7 h-7 rounded-lg",
-                "bg-white/90 dark:bg-stone-800/90 text-gray-600 backdrop-blur-sm",
+                "bg-card/90 backdrop-blur-sm text-muted-foreground",
                 "hover:bg-red-50 hover:text-red-600 transition-all duration-150",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "shadow-sm"
@@ -439,7 +439,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
             ? "border-red-400 bg-red-50 dark:bg-red-950/20 dark:border-red-600"
             : isDraggingOver
             ? "border-amber-500 scale-[1.005]"
-            : "border-gray-300 dark:border-gray-600 hover:border-amber-400 dark:hover:border-amber-500",
+            : "border-border hover:border-amber-400 transition-colors",
           disabled && "opacity-50 cursor-not-allowed pointer-events-none"
         )}
         style={{
@@ -481,14 +481,14 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
           <div className="flex flex-col items-center gap-2 px-6 text-center">
             <AlertCircle className="h-8 w-8 text-red-500" />
             <p className="text-sm font-medium text-red-600 dark:text-red-400">上传失败</p>
-            <p className="text-xs text-red-500 dark:text-red-400">{uploadState.message}</p>
+            <p className="text-xs text-destructive/80">{uploadState.message}</p>
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setUploadState({ phase: "idle" });
               }}
-              className="mt-1 text-xs underline text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+              className="mt-1 text-xs underline text-destructive hover:text-destructive/80"
             >
               重试
             </button>
@@ -500,16 +500,16 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               className="flex h-12 w-12 items-center justify-center rounded-full"
               style={{ background: "rgba(217,119,6,0.10)" }}
             >
-              <ImageIcon className="h-6 w-6 text-gray-400 dark:text-gray-500 dark:text-stone-400" />
+              <ImageIcon className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-muted-foreground">
                 拖拽图片到此处，或{" "}
                 <span style={{ color: "#D97706" }} className="font-semibold">
                   点击选择
                 </span>
               </p>
-              <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500 dark:text-stone-400">
+              <p className="mt-0.5 text-xs text-muted-foreground/60">
                 支持 JPG、PNG、WebP · 最大 5 MB · 推荐 16:9
               </p>
               <p className="mt-1 text-xs text-gray-400">
@@ -538,8 +538,8 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               onClick={() => setShowUrlInput(true)}
               className={cn(
                 "flex items-center gap-1.5 text-xs",
-                "text-gray-400 dark:text-gray-500 dark:text-stone-400",
-                "hover:text-amber-600 dark:hover:text-amber-400",
+                "text-muted-foreground",
+                "hover:text-amber-500",
                 "transition-colors duration-150",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
@@ -558,10 +558,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 placeholder="https://example.com/image.jpg"
                 disabled={disabled}
                 className={cn(
-                  "flex-1 min-w-0 rounded-lg border border-gray-200 dark:border-stone-700 dark:border-gray-700",
-                  "bg-white dark:bg-stone-800",
-                  "px-3 py-1.5 text-xs text-gray-700 dark:text-stone-300 dark:text-gray-300",
-                  "placeholder:text-gray-300 dark:placeholder:text-gray-600",
+                  "flex-1 min-w-0 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-foreground/80 placeholder:text-muted-foreground/50",
                   "outline-none transition-all duration-150",
                   "focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20",
                   "disabled:opacity-50 disabled:cursor-not-allowed"
@@ -593,7 +590,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 aria-label="取消"
                 className={cn(
                   "flex items-center justify-center h-7 w-7 rounded-lg shrink-0",
-                  "border border-gray-200 dark:border-stone-700 dark:border-gray-700 text-gray-400",
+                  "border border-border text-muted-foreground",
                   "hover:border-red-300 hover:text-red-500 transition-colors duration-150",
                   "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}

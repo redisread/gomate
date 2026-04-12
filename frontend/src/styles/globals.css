@@ -247,6 +247,8 @@
    :root — Light Mode 色彩 Tokens
    ============================================================ */
 :root {
+  color-scheme: light;
+
   /* ==== Design System v2.0 原始色阶（精确 hex） ==== */
 
   /* 主色：柔和蓝绿 */
@@ -324,6 +326,8 @@
    .dark — Dark Mode 色彩 Tokens
    ============================================================ */
 .dark {
+  color-scheme: dark;
+
   --background:     #12100d;
   --foreground:     #f0ede8;
 
@@ -387,7 +391,7 @@
     text-rendering: optimizeLegibility;
     -webkit-text-size-adjust: 100%;
     scrollbar-width: thin;
-    scrollbar-color: #e8e0d7 transparent;
+    scrollbar-color: var(--border) transparent;
   }
 
   body {

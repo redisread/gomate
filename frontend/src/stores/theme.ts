@@ -50,25 +50,13 @@ const getThemeCookie = (): Theme | null => {
   return match ? (match[1] as Theme) : null;
 };
 
-// Subscribe to theme changes and sync to cookie + html class
+// Subscribe to theme changes and sync to cookie
+// DOM class updates are handled by effectiveThemeStore.subscribe below
 themeStore.subscribe((theme) => {
-  // Sync to cookie
-  setThemeCookie(theme);
-
-  // Update html class immediately
-  if (typeof document !== "undefined") {
-    const effective =
-      theme === "system"
-        ? window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light"
-        : theme;
-
-    if (effective === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+  // Only sync to cookie if localStorage has a value set (not the default "system")
+  // This prevents the default value from overwriting a server-set cookie on hydration
+  if (typeof window !== "undefined" && window.localStorage.getItem("theme") !== null) {
+    setThemeCookie(theme);
   }
 });
 

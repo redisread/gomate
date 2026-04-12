@@ -5,7 +5,7 @@ import { useStore } from "@nanostores/react";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
-import { themeStore, type Theme, initThemeSystemListener } from "@/stores/theme";
+import { themeStore, type Theme, initThemeSystemListener, initThemeFromCookie } from "@/stores/theme";
 
 export function ThemeToggle() {
   const theme = useStore(themeStore);
@@ -14,6 +14,7 @@ export function ThemeToggle() {
 
   // Initialize system preference listener on client
   React.useEffect(() => {
+    initThemeFromCookie();
     initThemeSystemListener();
     setMounted(true);
   }, []);

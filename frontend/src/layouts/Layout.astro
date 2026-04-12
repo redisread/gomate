@@ -35,6 +35,27 @@ const isDark = themeCookie === "dark" || (!themeCookie && false); // 默认 ligh
     <meta name="description" content={description} />
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+    <script is:inline>
+      (function () {
+        try {
+          var match = document.cookie.match(/theme=(light|dark|system)/);
+          var theme = match ? match[1] : 'system';
+          var isDark;
+          if (theme === 'dark') {
+            isDark = true;
+          } else if (theme === 'light') {
+            isDark = false;
+          } else {
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          }
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="min-h-screen">
     {showNavbar && <Navbar client:load />}
