@@ -5,6 +5,7 @@
 import "../styles/globals.css";
 import { Navbar } from "../components/layout/navbar";
 import { Footer } from "../components/layout/footer";
+import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, getSSRT } from "../i18n";
 
 interface Props {
   title?: string;
@@ -16,25 +17,89 @@ interface Props {
 }
 
 const {
-  title = "GoMate - 极简地点组队平台",
-  description = "GoMate 是一个极简的「地点组队」平台，帮助户外爱好者找到志同道合的徒步伙伴。",
+  title: propTitle = "GoMate - 发现趣处，组队同行",
+  description: propDesc = "GoMate 是一个极简的「地点组队」平台，帮助户外爱好者找到志同道合的徒步伙伴。",
   showNavbar = true,
   showFooter = true,
 } = Astro.props;
 
+// 从 middleware 设置的 locals 或 cookie 读取 locale
+const localsLocale = (Astro as any).locals?.locale as Locale | undefined;
+const cookieLocale = Astro.cookies.get("gomate_locale")?.value as Locale | undefined;
+const resolvedLocale = localsLocale || cookieLocale;
+const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale)) ? resolvedLocale : DEFAULT_LOCALE;
+const ssr = getSSRT(locale);
+
+// 页面级标题映射
+const titleMap: Record<string, string> = {
+  "GoMate - 发现趣处，组队同行": "seo.title",
+  "GoMate 是一个极简的「地点组队」平台，帮助户外爱好者找到志同道合的徒步伙伴。": "seo.description",
+  "探索地点 - GoMate": "seo.pages.locations",
+  "探索队伍 - GoMate": "seo.pages.teams",
+  "登录 - GoMate": "seo.pages.login",
+  "注册 - GoMate": "seo.pages.register",
+  "忘记密码 - GoMate": "seo.pages.forgotPassword",
+  "重置密码 - GoMate": "seo.pages.resetPassword",
+  "个人资料 - GoMate": "seo.pages.profile",
+  "编辑资料 - GoMate": "seo.pages.profileEdit",
+  "我的队伍 - GoMate": "seo.pages.myTeams",
+  "发布队伍 - GoMate": "seo.pages.createTeam",
+  "编辑队伍 - GoMate": "seo.pages.editTeam",
+  "地点详情 - GoMate": "seo.pages.locationDetail",
+  "队伍详情 - GoMate": "seo.pages.teamDetail",
+  "我的收藏 - GoMate": "seo.pages.favorites",
+  "用户主页 - GoMate": "seo.pages.userDetail",
+  "联系我们 - GoMate": "seo.pages.contact",
+  "意见反馈 - GoMate": "seo.pages.feedback",
+  "关于我们 - GoMate": "seo.pages.about",
+  "帮助中心 - GoMate": "seo.pages.help",
+  "隐私政策 - GoMate": "seo.pages.privacy",
+  "服务条款 - GoMate": "seo.pages.terms",
+  "管理地点 - GoMate": "seo.pages.adminLocations",
+};
+
+const titleKey = titleMap[propTitle];
+const descKey = titleMap[propDesc];
+
+// 标题逻辑：如果传入的是默认标题则翻译，否则拼接翻译后缀
+const title = titleKey ? ssr.t(titleKey as any) : `${propTitle}${ssr.t("seo.titleSuffix" as any)}`;
+const description = descKey ? ssr.t(descKey as any) : propDesc;
+
 // 读取主题 cookie，服务端设置 html class
 const themeCookie = Astro.cookies.get("theme")?.value;
 const isDark = themeCookie === "dark" || (!themeCookie && false); // 默认 light，客户端会校正
+
+// 获取当前路径（不含 locale 前缀）
+const url = new URL(Astro.request.url);
+const pathSegments = url.pathname.split("/").filter(Boolean);
+const hasLocalePrefix = SUPPORTED_LOCALES.includes(pathSegments[0] as Locale);
+const cleanSegments = hasLocalePrefix ? pathSegments.slice(1) : pathSegments;
+const cleanPath = "/" + cleanSegments.join("/");
+
+// 生成 hreflang 链接
+function getHreflangUrl(loc: Locale) {
+  if (loc === "zh-CN") {
+    return `https://gomate.live${cleanPath === "/" ? "/" : cleanPath}`;
+  }
+  return `https://gomate.live/${loc}${cleanPath === "/" ? "" : cleanPath}`;
+}
 ---
 
 <!doctype html>
-<html lang="zh-CN" class={isDark ? "dark" : ""}>
+<html lang={locale} class={isDark ? "dark" : ""}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+
+    {/* hreflang alternate links */}
+    {SUPPORTED_LOCALES.map((loc) => (
+      <link rel="alternate" hreflang={loc} href={getHreflangUrl(loc)} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={getHreflangUrl(DEFAULT_LOCALE)} />
+
     <script is:inline>
       (function () {
         try {

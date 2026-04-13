@@ -12,7 +12,7 @@ import {
   Sparkles,
   CheckCircle2,
 } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import type { Location, Route } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
@@ -23,6 +23,7 @@ import { Footer } from "@/components/layout/footer";
  * 分步感知 + 情感化文案 + 品牌色 focus 状态
  */
 export function CreateTeamClient() {
+  const { t } = useI18n();
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
   const [routes, setRoutes] = React.useState<Route[]>([]);
@@ -205,11 +206,11 @@ export function CreateTeamClient() {
       if (data.success && data.team?.id) {
         window.location.href = `/teams/${data.team.id}`;
       } else {
-        setError(data.error || "创建失败，请稍后重试");
+        setError(data.error || t("errors.createTeamFailed"));
         setIsSubmitting(false);
       }
     } catch {
-      setError("创建失败，请稍后重试");
+      setError(t("errors.createTeamFailed"));
       setIsSubmitting(false);
     }
   };
@@ -233,7 +234,7 @@ export function CreateTeamClient() {
           className="inline-flex items-center gap-1.5 text-sm mb-8 text-muted-foreground hover:text-primary transition-colors duration-150"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          {copy.common.back}
+          {t("common.back")}
         </a>
 
         {/* 页面标题 */}
@@ -241,11 +242,11 @@ export function CreateTeamClient() {
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="h-5 w-5" style={{ color: "#D97706" }} />
             <h1 className="text-2xl font-bold text-foreground">
-              {copy.teams.createTitle}
+              {t("teams.createTitle")}
             </h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            {copy.teams.createSubtitle}
+            {t("teams.createSubtitle")}
           </p>
         </div>
 
@@ -258,16 +259,16 @@ export function CreateTeamClient() {
               <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
               <div className="flex-1">
                 <p className="text-sm font-semibold mb-1 text-amber-800 dark:text-amber-300">
-                  {copy.teams.wechatRequiredTitle}
+                  {t("teams.wechatRequiredTitle")}
                 </p>
                 <p className="text-sm mb-3 text-amber-700 dark:text-amber-400">
-                  {copy.teams.wechatRequiredDesc}
+                  {t("teams.wechatRequiredDesc")}
                 </p>
                 <a href="/profile/edit">
                   <button
                     className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 bg-card border border-amber-300/50 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 hover:bg-accent"
                   >
-                    {copy.teams.fillWechatBtn}
+                    {t("teams.fillWechatBtn")}
                   </button>
                 </a>
               </div>
@@ -282,12 +283,12 @@ export function CreateTeamClient() {
           <form onSubmit={handleSubmit} className="space-y-6">
 
             {/* 队伍标题 */}
-            <FormSection icon="✏️" label={copy.teams.formLabel.name} required>
+            <FormSection icon="✏️" label={t("teams.formLabel.name")} required>
               <input
                 id="title"
                 name="title"
                 type="text"
-                placeholder={copy.teams.formPlaceholder.name}
+                placeholder={t("teams.formPlaceholder.name")}
                 value={formData.title}
                 onChange={handleChange}
                 required
@@ -296,7 +297,7 @@ export function CreateTeamClient() {
             </FormSection>
 
             {/* 目的地 */}
-            <FormSection icon="📍" label={copy.teams.formLabel.location} required>
+            <FormSection icon="📍" label={t("teams.formLabel.location")} required>
               <div className="relative">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                 <select
@@ -307,7 +308,7 @@ export function CreateTeamClient() {
                   required
                   className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                 >
-                  <option value="">{copy.teams.formPlaceholder.location}</option>
+                  <option value="">{t("teams.formPlaceholder.location")}</option>
                   {locations.map((loc) => (
                     <option key={loc.id} value={loc.id}>{loc.name}</option>
                   ))}
@@ -319,7 +320,7 @@ export function CreateTeamClient() {
 
             {/* 日期 + 时间 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormSection icon="📅" label={copy.teams.formLabel.date} required>
+              <FormSection icon="📅" label={t("teams.formLabel.date")} required>
                 <div className="relative">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
@@ -335,7 +336,7 @@ export function CreateTeamClient() {
                 </div>
               </FormSection>
 
-              <FormSection icon="⏰" label={copy.teams.formLabel.meetTime} required>
+              <FormSection icon="⏰" label={t("teams.formLabel.meetTime")} required>
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
@@ -354,23 +355,23 @@ export function CreateTeamClient() {
             {/* 日期不可修改提示 */}
             <p className="text-xs flex items-center gap-1.5 -mt-2 text-amber-600 dark:text-amber-500">
               <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-              {copy.teams.dateImmutableTip}
+              {t("teams.dateImmutableTip")}
             </p>
 
             {/* 时长 + 最大人数 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormSection
                 icon="⌛"
-                label={copy.teams.formLabel.duration}
+                label={t("teams.formLabel.duration")}
                 required
-                hint={recommendedDuration ? `推荐${Math.round(recommendedDuration / 60)}小时` : "2 小时~20 小时+"}
+                hint={recommendedDuration ? t("teams.durationRecommendHint", { hours: Math.round(recommendedDuration / 60) }) : t("teams.durationDefaultHint")}
               >
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   {recommendedDuration && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-primary">
                       <Sparkles className="h-3.5 w-3.5" />
-                      <span>智能推荐</span>
+                      <span>{t("teams.durationRecommendLabel")}</span>
                     </div>
                   )}
                   <select
@@ -381,16 +382,16 @@ export function CreateTeamClient() {
                     required
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   >
-                    {copy.teams.durationOptions.map((opt) => (
+                    {getDurationOptions(t).map((opt) => (
                       <option key={opt.value} value={opt.value}>
-                        {opt.label} {recommendedDuration === opt.value ? "（推荐）" : ""}
+                        {opt.label} {recommendedDuration === opt.value ? `（${t("teams.durationRecommended")}）` : ""}
                       </option>
                     ))}
                   </select>
                 </div>
               </FormSection>
 
-              <FormSection icon="👥" label={copy.teams.formLabel.maxSize} required hint="2~50 人">
+              <FormSection icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.maxSizeHint")}>
                 <div className="relative">
                   <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
@@ -399,7 +400,7 @@ export function CreateTeamClient() {
                     type="number"
                     min={2}
                     max={50}
-                    placeholder={copy.teams.formPlaceholder.maxSize}
+                    placeholder={t("teams.formPlaceholder.maxSize")}
                     value={formData.maxMembers}
                     onChange={handleChange}
                     required
@@ -410,11 +411,11 @@ export function CreateTeamClient() {
             </div>
 
             {/* 队伍描述 */}
-            <FormSection icon="📝" label={copy.teams.formLabel.description} required hint="让伙伴们了解这次活动的安排和特色">
+            <FormSection icon="📝" label={t("teams.formLabel.description")} required hint={t("teams.descriptionHint")}>
               <textarea
                 id="description"
                 name="description"
-                placeholder={copy.teams.formPlaceholder.description}
+                placeholder={t("teams.formPlaceholder.description")}
                 value={formData.description}
                 onChange={handleChange}
                 required
@@ -428,7 +429,7 @@ export function CreateTeamClient() {
               className="rounded-xl px-4 py-3.5 text-sm flex items-start gap-2.5 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/40"
             >
               <span className="text-base flex-shrink-0 mt-0.5">💡</span>
-              <p className="text-amber-800 dark:text-amber-300">{copy.teams.createTip}</p>
+              <p className="text-amber-800 dark:text-amber-300">{t("teams.createTip")}</p>
             </div>
 
             {/* 错误提示 */}
@@ -448,7 +449,7 @@ export function CreateTeamClient() {
                 onClick={() => window.history.back()}
                 className="flex-1 py-3 rounded-xl border text-sm font-medium transition-all duration-150 border-border text-muted-foreground hover:bg-muted"
               >
-                {copy.common.cancel}
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
@@ -474,10 +475,10 @@ export function CreateTeamClient() {
               >
                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {!hasWechat
-                  ? copy.teams.wechatRequiredBtn
+                  ? t("teams.wechatRequiredBtn")
                   : isSubmitting
-                  ? copy.teams.createBtnLoading
-                  : copy.teams.createBtn}
+                  ? t("teams.createBtnLoading")
+                  : t("teams.createBtn")}
               </button>
             </div>
           </form>
@@ -487,6 +488,28 @@ export function CreateTeamClient() {
       <Footer />
     </main>
   );
+}
+
+/**
+ * Build duration option labels with translation
+ */
+function getDurationOptions(t: (key: any, vars?: Record<string, string | number>) => string) {
+  return [
+    { value: 60, label: t("teams.duration1h") },
+    { value: 90, label: t("teams.duration1_5h") },
+    { value: 120, label: t("teams.duration2h") },
+    { value: 180, label: t("teams.duration3h") },
+    { value: 240, label: t("teams.duration4h") },
+    { value: 300, label: t("teams.duration5h") },
+    { value: 360, label: t("teams.duration6h") },
+    { value: 420, label: t("teams.duration7h") },
+    { value: 480, label: t("teams.duration8h") },
+    { value: 540, label: t("teams.duration9h") },
+    { value: 600, label: t("teams.duration10h") },
+    { value: 720, label: t("teams.duration12h") },
+    { value: 900, label: t("teams.duration15h") },
+    { value: 1200, label: t("teams.duration20h") },
+  ];
 }
 
 /* ── 表单字段区块 ── */

@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { fetchAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { formatJoinDate } from "@/lib/date-utils";
 import { getAgeFromBirthday } from "@/lib/user-utils";
 import { Navbar } from "@/components/layout/navbar";
@@ -44,16 +44,11 @@ function parseExtra(extra: string | null | undefined): { equipment?: string[]; e
   }
 }
 
-function getGenderText(gender?: string | null): string {
-  if (gender === "male") return copy.enums.gender.male;
-  if (gender === "female") return copy.enums.gender.female;
-  return "";
-}
-
 /**
  * 用户详情页客户端组件 - React Island
  */
 export function UserDetailClient({ userId }: UserDetailClientProps) {
+  const { t } = useI18n();
   const [user, setUser] = React.useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -66,12 +61,12 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
         if (data.success && data.user) {
           setUser(data.user);
         } else {
-          setError(copy.errors.userNotFound);
+          setError(t("errors.userNotFound"));
         }
       })
-      .catch(() => setError(copy.errors.loadFailed))
+      .catch(() => setError(t("errors.loadFailed")))
       .finally(() => setIsLoading(false));
-  }, [userId]);
+  }, [userId, t]);
 
   if (isLoading) {
     return (
@@ -90,12 +85,12 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
         <Navbar />
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-2">{error || copy.errors.userNotFound}</h1>
+            <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-2">{error || t("errors.userNotFound")}</h1>
             <button
               onClick={() => window.history.back()}
               className="text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 underline text-sm"
             >
-              {copy.common.back}
+              {t("common.back")}
             </button>
           </div>
         </div>
@@ -107,10 +102,11 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
   const displayName = user.nickname || user.name;
   const extra = parseExtra(user.extra);
   const age = getAgeFromBirthday(user.birthday);
-  const genderText = getGenderText(user.gender);
   const levelConfig = LEVEL_CONFIG[user.level] || LEVEL_CONFIG.beginner;
 
   const joinDate = user.createdAt ? formatJoinDate(user.createdAt) : null;
+
+  const levelLabel = t(`enums.level.${user.level}` as any) ?? t("enums.level.beginner");
 
   return (
     <main className="min-h-screen bg-stone-50 dark:bg-stone-900">
@@ -125,7 +121,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
             className="inline-flex items-center text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 transition-colors text-sm"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            {copy.common.back}
+            {t("common.back")}
           </button>
         </div>
 
@@ -189,13 +185,13 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
                   levelConfig.badge
                 )}>
                   <span>{levelConfig.emoji}</span>
-                  {copy.enums.level[user.level as keyof typeof copy.enums.level] ?? copy.enums.level.beginner}
+                  {levelLabel}
                 </span>
 
                 {/* 性别 */}
-                {genderText && (
+                {user.gender && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
-                    {user.gender === "male" ? "♂ " : "♀ "}{genderText}
+                    {user.gender === "male" ? "♂ " : "♀ "}{t(`enums.gender.${user.gender}` as any) ?? t("enums.gender.other")}
                   </span>
                 )}
 
@@ -210,7 +206,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
                 {joinDate && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
                     <Calendar className="h-3 w-3" />
-                    {joinDate} 加入
+                    {joinDate} {t("userDetail.joinDateSuffix")}
                   </span>
                 )}
               </div>
@@ -228,19 +224,19 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
         {/* 活动统计 */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <StatCard
-            label={copy.profile.statsCreatedTeams}
+            label={t("profile.statsCreatedTeams")}
             value={user.stats.createdTeams}
             icon={Briefcase}
             accent
           />
           <StatCard
-            label={copy.profile.statsJoinedTeams}
+            label={t("profile.statsJoinedTeams")}
             value={user.stats.joinedTeams}
             icon={Users}
             accent
           />
           <StatCard
-            label={copy.profile.statsCompletedTeams}
+            label={t("profile.statsCompletedTeams")}
             value={user.stats.completedTeams}
             icon={CheckCircle}
           />
@@ -250,23 +246,23 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-2xl p-6 mb-6">
           <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100 flex items-center gap-2 mb-4">
             <User className="h-5 w-5 text-stone-600 dark:text-stone-400" />
-            {copy.profile.sectionBasicInfoTitle}
+            {t("profile.sectionBasicInfoTitle")}
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex items-center gap-3 p-3 bg-stone-50 dark:bg-stone-800 rounded-xl">
               <Mountain className="h-5 w-5 text-stone-400 dark:text-stone-500" />
               <div>
-                <div className="text-sm text-stone-500 dark:text-stone-400">{copy.profile.hikesCompleted}</div>
-                <div className="font-medium text-stone-900 dark:text-stone-100">{user.completedHikes || 0} 次</div>
+                <div className="text-sm text-stone-500 dark:text-stone-400">{t("profile.hikesCompleted")}</div>
+                <div className="font-medium text-stone-900 dark:text-stone-100">{user.completedHikes || 0} {t("userDetail.timesSuffix")}</div>
               </div>
             </div>
 
             <div className="flex items-center gap-3 p-3 bg-stone-50 dark:bg-stone-800 rounded-xl">
               <Award className="h-5 w-5 text-stone-400 dark:text-stone-500" />
               <div>
-                <div className="text-sm text-stone-500 dark:text-stone-400">{copy.profile.levelLabel}</div>
-                <div className="font-medium text-stone-900 dark:text-stone-100">{copy.enums.level[user.level as keyof typeof copy.enums.level] ?? copy.enums.level.beginner}</div>
+                <div className="text-sm text-stone-500 dark:text-stone-400">{t("profile.levelLabel")}</div>
+                <div className="font-medium text-stone-900 dark:text-stone-100">{levelLabel}</div>
               </div>
             </div>
           </div>
@@ -277,7 +273,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-2xl p-6">
             <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100 flex items-center gap-2 mb-4">
               <Tent className="h-5 w-5 text-stone-600 dark:text-stone-400" />
-              {copy.profile.sectionOutdoorInfoTitle}
+              {t("profile.sectionOutdoorInfoTitle")}
             </h2>
 
             <div className="space-y-4">
@@ -285,7 +281,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
                 <div>
                   <div className="text-sm text-stone-500 dark:text-stone-400 mb-2 flex items-center gap-1">
                     <Mountain className="h-3.5 w-3.5" />
-                    {copy.profile.equipmentLabel}
+                    {t("profile.equipmentLabel")}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {extra.equipment.map((item, i) => (
@@ -301,7 +297,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
                 <div>
                   <div className="text-sm text-stone-500 dark:text-stone-400 mb-2 flex items-center gap-1">
                     <Award className="h-3.5 w-3.5" />
-                    {copy.profile.experienceShareLabel}
+                    {t("profile.experienceShareLabel")}
                   </div>
                   <p className="text-sm text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-800 p-3 rounded-xl leading-relaxed">
                     {extra.experience}

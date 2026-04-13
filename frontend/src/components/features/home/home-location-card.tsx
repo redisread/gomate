@@ -1,9 +1,10 @@
 import { MapPin, Mountain, ArrowRight } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { DIFFICULTY_CONFIG } from "@/lib/constants";
 import type { Location } from "@/lib/types";
 
 export function LocationCard({ location }: { location: Location }) {
+  const { t } = useI18n();
   const difficulty = location.difficulty ?? location.routes?.[0]?.difficulty;
   const diffConfig = difficulty ? DIFFICULTY_CONFIG[difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const firstTag = location.tags?.[0];
@@ -66,7 +67,7 @@ export function LocationCard({ location }: { location: Location }) {
           <div className="absolute bottom-0 left-0 right-0 p-4 group-hover:opacity-0" style={{ transition: "opacity 0.2s ease" }}>
             <h3 className="font-bold text-white text-lg leading-tight drop-shadow-sm">{location.name}</h3>
             <p className="text-white/75 text-sm flex items-center gap-1 mt-0.5">
-              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />{location.address || copy.locations.defaultCity}
+              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />{location.address || t("locations.defaultCity")}
             </p>
           </div>
         </div>
@@ -75,7 +76,7 @@ export function LocationCard({ location }: { location: Location }) {
           <div className="min-w-0">
             <h3 className="font-semibold text-foreground text-sm group-hover:text-brand transition-colors duration-150 truncate">{location.name}</h3>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-              <MapPin className="h-3 w-3 flex-shrink-0" />{location.address || copy.locations.defaultCity}
+              <MapPin className="h-3 w-3 flex-shrink-0" />{location.address || t("locations.defaultCity")}
             </p>
           </div>
           <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ml-3 transition-all duration-150 group-hover:bg-brand group-hover:text-white"

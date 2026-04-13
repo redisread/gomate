@@ -1,16 +1,17 @@
 import * as React from "react";
 import { MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
+import type { TranslationKey } from "@/i18n";
 import { getDaysUntil } from "@/lib/date-utils";
 import { STATUS_CONFIG } from "@/lib/constants";
 import type { Team } from "@/lib/types";
 
-function getDepartureLabel(daysUntil: number | null): { text: string; urgent: boolean } | null {
+function getDepartureLabel(daysUntil: number | null, t: (key: TranslationKey, vars?: Record<string, string | number>) => string): { text: string; urgent: boolean } | null {
   if (daysUntil === null) return null;
-  if (daysUntil === 0) return { text: "今天出发", urgent: true };
-  if (daysUntil === 1) return { text: "明天出发", urgent: true };
-  if (daysUntil <= 3) return { text: `${daysUntil} 天后出发`, urgent: true };
-  if (daysUntil <= 7) return { text: `${daysUntil} 天后出发`, urgent: false };
+  if (daysUntil === 0) return { text: t("home.teamCard.departingToday"), urgent: true };
+  if (daysUntil === 1) return { text: t("home.teamCard.departingTomorrow"), urgent: true };
+  if (daysUntil <= 3) return { text: t("home.teamCard.departingInDays", { days: daysUntil }), urgent: true };
+  if (daysUntil <= 7) return { text: t("home.teamCard.departingInDays", { days: daysUntil }), urgent: false };
   return null;
 }
 
@@ -66,8 +67,9 @@ function CapacityRing({ current, max, isFull }: { current: number; max: number; 
 }
 
 function LeaderChip({ leader }: { leader: Team["leader"] }) {
+  const { t } = useI18n();
   const name = leader.nickname ?? leader.name;
-  const levelLabel = copy.enums.leaderLevel?.[leader.level] ?? copy.enums.level?.[leader.level] ?? leader.level;
+  const levelLabel = t(`enums.leaderLevel.${leader.level}` as TranslationKey) || t(`enums.level.${leader.level}` as TranslationKey) || leader.level;
   const initial = name.charAt(0).toUpperCase();
   return (
     <div className="flex items-center gap-2">
@@ -89,12 +91,13 @@ function LeaderChip({ leader }: { leader: Team["leader"] }) {
 }
 
 export function TeamCard({ team }: { team: Team }) {
+  const { t } = useI18n();
   const [hovered, setHovered] = React.useState(false);
   const isFull = team.currentMembers >= team.maxMembers;
   const daysUntil = getDaysUntil(team.date);
   const statusKey = isFull ? "full" : team.status;
   const statusCfg = STATUS_CONFIG[statusKey];
-  const departureLabel = getDepartureLabel(daysUntil);
+  const departureLabel = getDepartureLabel(daysUntil, t);
   const hasCover = Boolean(team.location?.coverImage);
 
   const approvedMembers = (team.members ?? []).filter((m) => m.status === "approved").slice(0, 3).map((m) => ({ name: m.nickname ?? m.name, avatar: m.avatar }));
@@ -141,7 +144,7 @@ export function TeamCard({ team }: { team: Team }) {
                   <MapPin className="h-3.5 w-3.5 text-white/70 flex-shrink-0" />
                   <span className="text-white text-sm font-semibold drop-shadow-sm truncate">{team.location!.name}</span>
                 </div>
-                <span className="text-white/70 text-xs tabular-nums flex-shrink-0 ml-2">{team.currentMembers}/{team.maxMembers} 人</span>
+                <span className="text-white/70 text-xs tabular-nums flex-shrink-0 ml-2">{team.currentMembers}/{team.maxMembers} {t("common.person")}</span>
               </div>
               <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.20)" }}>
                 <div className="h-full rounded-full" style={{ width: `${Math.min((team.currentMembers / team.maxMembers) * 100, 100)}%`, background: statusCfg.bar, transition: "width 0.8s cubic-bezier(0.34,1.56,0.64,1)" }} />
@@ -172,7 +175,7 @@ export function TeamCard({ team }: { team: Team }) {
             </span>
             {team.duration && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3 flex-shrink-0" style={{ color: "#D97706" }} />约 {team.duration}
+                <Clock className="h-3 w-3 flex-shrink-0" style={{ color: "#D97706" }} />{t("common.approx")} {team.duration}
               </span>
             )}
             {!hasCover && departureLabel && (
@@ -195,7 +198,7 @@ export function TeamCard({ team }: { team: Team }) {
 
         <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-white"
           style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)", transform: hovered ? "translateY(0)" : "translateY(100%)", transition: "transform 0.28s cubic-bezier(0.34,1.56,0.64,1)" }}>
-          <span>查看详情</span><ArrowRight className="h-3.5 w-3.5" />
+          <span>{t("home.teamCard.viewDetails")}</span><ArrowRight className="h-3.5 w-3.5" />
         </div>
       </article>
     </a>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Users, ClipboardCheck, Hourglass } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -11,9 +11,8 @@ import { ApplicationCard, PendingApprovalCard } from "./my-teams-application-car
 import { ApprovalDetailModal, RejectConfirmModal, CancelTeamModal, FormTeamModal } from "./my-teams-modals";
 import { StatBadge, LoadingState, EmptyState, LoadMoreButton } from "./my-teams-ui";
 
-const c = copy.myTeams;
-
 export function MyTeamsClient() {
+  const { t } = useI18n();
   const ctx = useMyTeams();
 
   if (!ctx.currentUser) {
@@ -33,21 +32,21 @@ export function MyTeamsClient() {
       <div className="bg-stone-50 dark:bg-stone-900 border-b border-stone-100 dark:border-stone-800 pt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs text-stone-400 dark:text-stone-500 mb-1">欢迎回来</p>
+            <p className="text-xs text-stone-400 dark:text-stone-500 mb-1">{t("myTeams.welcomeBack")}</p>
             <h1 className="text-2xl font-bold text-foreground leading-tight">
               {ctx.currentUser.nickname || ctx.currentUser.name}
             </h1>
             <div className="flex items-center gap-4 mt-3">
-              <StatBadge label="已创建" count={ctx.activeCreated.length} />
-              <StatBadge label="已加入" count={ctx.activeJoined.length} />
+              <StatBadge label={t("myTeams.statCreated")} count={ctx.activeCreated.length} />
+              <StatBadge label={t("myTeams.statJoined")} count={ctx.activeJoined.length} />
               {ctx.pendingApprovals.length > 0 && (
-                <StatBadge label="待审批" count={ctx.pendingApprovals.length} highlight />
+                <StatBadge label={t("myTeams.statPendingApprovals")} count={ctx.pendingApprovals.length} highlight />
               )}
             </div>
           </div>
           <a href="/teams/create" className="flex-shrink-0">
             <button className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm active:scale-95">
-              <Plus className="h-4 w-4" />发起组队
+              <Plus className="h-4 w-4" />{t("myTeams.createTeamBtn")}
             </button>
           </a>
         </div>
@@ -69,8 +68,8 @@ export function MyTeamsClient() {
         <div className="border-b border-stone-100 dark:border-stone-800 mt-2 overflow-x-auto">
           <div className="flex min-w-max">
             {[
-              { id: "participated", label: c.tabParticipated, icon: Users, count: ctx.createdTeams.length + ctx.joinedTeams.length },
-              { id: "applications", label: c.tabApplications, icon: ClipboardCheck, count: ctx.pendingApplicationsCount + ctx.pendingApprovals.length },
+              { id: "participated", label: t("myTeams.tabParticipated"), icon: Users, count: ctx.createdTeams.length + ctx.joinedTeams.length },
+              { id: "applications", label: t("myTeams.tabApplications"), icon: ClipboardCheck, count: ctx.pendingApplicationsCount + ctx.pendingApprovals.length },
             ].map(({ id, label, icon: Icon, count }) => (
               <button key={id} onClick={() => ctx.handleTabChange(id)}
                 className={cn(
@@ -88,9 +87,9 @@ export function MyTeamsClient() {
           <div className="mt-6 space-y-4">
             <div className="flex gap-2">
               {[
-                { id: "all", label: c.roleFilterAll, count: ctx.createdTeams.length + ctx.joinedTeams.length },
-                { id: "leader", label: c.roleFilterLeader, count: ctx.createdTeams.length },
-                { id: "member", label: c.roleFilterMember, count: ctx.joinedTeams.length },
+                { id: "all", label: t("myTeams.roleFilterAll"), count: ctx.createdTeams.length + ctx.joinedTeams.length },
+                { id: "leader", label: t("myTeams.roleFilterLeader"), count: ctx.createdTeams.length },
+                { id: "member", label: t("myTeams.roleFilterMember"), count: ctx.joinedTeams.length },
               ].map(({ id, label, count }) => (
                 <button key={id} onClick={() => ctx.handleRoleFilterChange(id as "all" | "leader" | "member")}
                   className={cn(
@@ -106,11 +105,11 @@ export function MyTeamsClient() {
             {ctx.createdLoading || ctx.joinedLoading ? (
               <LoadingState />
             ) : ctx.createdTeams.length === 0 && ctx.joinedTeams.length === 0 ? (
-              <EmptyState icon="users" title="还没有参与任何队伍" desc="创建或加入一支队伍，开始你的探索之旅" btnLabel="探索地点" href="/locations" />
+              <EmptyState icon="users" title={t("myTeams.emptyParticipatedTitle")} desc={t("myTeams.emptyParticipatedDesc")} btnLabel={t("myTeams.emptyParticipatedBtn")} href="/locations" />
             ) : ctx.roleFilter === "leader" && ctx.createdTeams.length === 0 ? (
-              <EmptyState icon="crown" title="还没有创建队伍，要不要带队出发？" desc={c.emptyCreatedDesc} btnLabel={c.emptyCreatedBtn} href="/teams/create" />
+              <EmptyState icon="crown" title={t("myTeams.emptyCreatedTitle")} desc={t("myTeams.emptyCreatedDesc")} btnLabel={t("myTeams.emptyCreatedBtn")} href="/teams/create" />
             ) : ctx.roleFilter === "member" && ctx.joinedTeams.length === 0 ? (
-              <EmptyState icon="mountain" title="还没有加入队伍，去找找伙伴吧" desc={c.emptyJoinedDesc} btnLabel={c.emptyJoinedBtn} href="/locations" />
+              <EmptyState icon="mountain" title={t("myTeams.emptyJoinedTitle")} desc={t("myTeams.emptyJoinedDesc")} btnLabel={t("myTeams.emptyJoinedBtn")} href="/locations" />
             ) : (
               <>
                 {(ctx.roleFilter === "all" || ctx.roleFilter === "leader") && (
@@ -140,14 +139,14 @@ export function MyTeamsClient() {
                 className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
                   ctx.applicationSubTab === "my" ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
-                <ClipboardCheck className="h-4 w-4" />{c.subTabMyApplications}
+                <ClipboardCheck className="h-4 w-4" />{t("myTeams.subTabMyApplications")}
                 {ctx.pendingApplicationsCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
               </button>
               <button onClick={() => ctx.handleSubTabChange("pending")}
                 className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
                   ctx.applicationSubTab === "pending" ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
-                <Hourglass className="h-4 w-4" />{c.subTabPendingApprovals}
+                <Hourglass className="h-4 w-4" />{t("myTeams.subTabPendingApprovals")}
                 {ctx.pendingApprovals.length > 0 && (
                   <span className="px-1.5 py-0.5 text-xs bg-amber-500 text-white rounded-full">{ctx.pendingApprovals.length}</span>
                 )}
@@ -158,7 +157,7 @@ export function MyTeamsClient() {
               <div className="space-y-3">
                 {ctx.applicationsLoading ? <LoadingState />
                   : ctx.applications.length === 0 ? (
-                    <EmptyState icon="clipboard" title="还没有申请记录" desc={c.emptyApplicationsDesc} btnLabel={c.emptyApplicationsBtn} href="/teams" />
+                    <EmptyState icon="clipboard" title={t("myTeams.emptyApplications")} desc={t("myTeams.emptyApplicationsDesc")} btnLabel={t("myTeams.emptyApplicationsBtn")} href="/teams" />
                   ) : ctx.applications.map((app) => <ApplicationCard key={app.id} application={app} />)
                 }
                 <LoadMoreButton hasMore={ctx.applicationsHasMore} loading={ctx.applicationsLoadingMore} onClick={() => ctx.setApplicationsPage((p) => p + 1)} />
@@ -169,7 +168,7 @@ export function MyTeamsClient() {
               <div className="space-y-3">
                 {ctx.pendingLoading ? <LoadingState />
                   : ctx.pendingApprovals.length === 0 ? (
-                    <EmptyState icon="hourglass" title="暂无待审批申请" desc={c.emptyPendingDesc} btnLabel={c.emptyPendingBtn} href="/my-teams?tab=initiated" />
+                    <EmptyState icon="hourglass" title={t("myTeams.emptyPending")} desc={t("myTeams.emptyPendingDesc")} btnLabel={t("myTeams.emptyPendingBtn")} href="/my-teams?tab=initiated" />
                   ) : ctx.pendingApprovals.map((approval) => (
                     <PendingApprovalCard key={approval.id} approval={approval} onClick={(a) => { ctx.setSelectedApproval(a); ctx.setIsDetailOpen(true); }} />
                   ))
@@ -199,7 +198,7 @@ export function MyTeamsClient() {
         onConfirm={ctx.handleCancelTeam} onCancel={() => ctx.setCancelTarget(null)}
       />
       <FormTeamModal
-        teamId={ctx.formTarget} isFull={!!ctx.createdTeams.find((t) => t.id === ctx.formTarget)?.currentMembers && ctx.createdTeams.find((t) => t.id === ctx.formTarget)?.currentMembers! >= ctx.createdTeams.find((t) => t.id === ctx.formTarget)?.maxMembers!}
+        teamId={ctx.formTarget} isFull={!!ctx.createdTeams.find((t2) => t2.id === ctx.formTarget)?.currentMembers && ctx.createdTeams.find((t2) => t2.id === ctx.formTarget)?.currentMembers! >= ctx.createdTeams.find((t2) => t2.id === ctx.formTarget)?.maxMembers!}
         isForming={ctx.isForming} onConfirm={ctx.handleFormTeam} onCancel={() => ctx.setFormTarget(null)}
       />
     </main>

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Plus, Pencil, Trash2, X, MapPin, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import type { PoiDetail } from "@/lib/types";
 import type { FormData } from "./use-location-form";
 import { PoiEditModal, PoiDeleteConfirm } from "@/components/ui/poi-edit-modal";
@@ -63,10 +63,10 @@ function styledInput(hasError?: boolean) {
   );
 }
 
-const POI_ROLE_OPTIONS = [
-  { value: "waypoint", label: "途经点" }, { value: "checkpoint", label: "打卡点" },
-  { value: "viewpoint", label: "观景点" }, { value: "facility", label: "设施" },
-  { value: "poi", label: "兴趣点" },
+const POI_ROLE_OPTIONS = (t: (key: any) => string) => [
+  { value: "waypoint", label: t("admin.poiRoleWaypoint") }, { value: "checkpoint", label: t("admin.poiRoleCheckpoint") },
+  { value: "viewpoint", label: t("admin.poiRoleViewpoint") }, { value: "facility", label: t("admin.poiRoleFacility") },
+  { value: "poi", label: t("admin.poiRolePoi") },
 ];
 
 interface LocationFormRouteFieldsProps {
@@ -97,22 +97,24 @@ export function LocationFormRouteFields({
   handleOpenCreatePoi, handleOpenEditPoi, handlePoiModalSuccess,
   handleOpenDeletePoi, handleConfirmDeletePoi,
 }: LocationFormRouteFieldsProps) {
+  const { t } = useI18n();
+  const poiRoleOptions = POI_ROLE_OPTIONS(t);
   return (
     <SectionCard
       icon={<MapPin className="h-4 w-4" />}
-      title="关联打卡点"
-      badge={<span className="text-[10px] text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">可选</span>}
+      title={t("admin.formRouteTitle")}
+      badge={<span className="text-[10px] text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">{t("admin.optionalBadge")}</span>}
       collapsible defaultOpen={false}
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
           <input type="text" value={poiSearch} onChange={(e) => handlePoiSearch(e.target.value)}
-            placeholder={copy.pois.searchPlaceholder} className={cn(styledInput(), "pl-9")} />
+            placeholder={t("pois.searchPlaceholder")} className={cn(styledInput(), "pl-9")} />
         </div>
         <button type="button" onClick={handleOpenCreatePoi}
           className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 transition-opacity shrink-0">
-          <Plus className="h-4 w-4" /><span className="hidden sm:inline">{copy.pois.createBtn}</span>
+          <Plus className="h-4 w-4" /><span className="hidden sm:inline">{t("pois.createBtn")}</span>
         </button>
       </div>
 
@@ -131,7 +133,7 @@ export function LocationFormRouteFields({
                   already ? "opacity-40 cursor-not-allowed" : "hover:bg-amber-50 dark:hover:bg-amber-950/20")}>
                 <MapPin className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
                 <p className="text-sm text-stone-800 dark:text-stone-200 font-medium truncate">{poi.name}</p>
-                {already && <span className="ml-auto text-xs text-stone-400 dark:text-stone-500 shrink-0">{copy.pois.alreadyAdded}</span>}
+                {already && <span className="ml-auto text-xs text-stone-400 dark:text-stone-500 shrink-0">{t("pois.alreadyAdded")}</span>}
               </button>
             );
           })}
@@ -139,7 +141,7 @@ export function LocationFormRouteFields({
       )}
 
       {formData.poiLinks.length === 0 ? (
-        <p className="text-xs text-stone-400">{copy.pois.noResults}</p>
+        <p className="text-xs text-stone-400">{t("pois.noResults")}</p>
       ) : (
         <div className="space-y-2">
           {formData.poiLinks.map((link, idx) => {
@@ -150,11 +152,11 @@ export function LocationFormRouteFields({
                   <span className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 text-[10px] font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
                   <span className="flex-1 text-sm text-stone-700 dark:text-stone-300 truncate">{poi?.name ?? link.poiId}</span>
                   <button type="button" onClick={() => handleOpenEditPoi(link.poiId)}
-                    className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors shrink-0" title={copy.pois.editBtn}>
+                    className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors shrink-0" title={t("pois.editBtn")}>
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button type="button" onClick={() => handleOpenDeletePoi(link.poiId, poi?.name ?? link.poiId)}
-                    className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors shrink-0" title={copy.pois.deleteBtn}>
+                    className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors shrink-0" title={t("pois.deleteBtn")}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                   <select value={link.roleType}
@@ -164,10 +166,10 @@ export function LocationFormRouteFields({
                       updateField("poiLinks", next);
                     }}
                     className="text-xs border border-stone-200 dark:border-stone-700 rounded-lg px-2 py-1 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 outline-none focus:border-amber-400 shrink-0">
-                    {POI_ROLE_OPTIONS.map((r) => (<option key={r.value} value={r.value}>{r.label}</option>))}
+                    {poiRoleOptions.map((r) => (<option key={r.value} value={r.value}>{r.label}</option>))}
                   </select>
                   <button type="button" onClick={() => updateField("poiLinks", formData.poiLinks.filter((_, i) => i !== idx))}
-                    className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors shrink-0" title={copy.pois.unlinkBtn}>
+                    className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors shrink-0" title={t("pois.unlinkBtn")}>
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>

@@ -1,21 +1,23 @@
 import { Search, Users, Compass } from "lucide-react";
-
+import { useI18n } from "@/hooks/useI18n";
 import type { RefObject } from "react";
 
 export function HomeHowItWorksSection({ sectionRef, isInView }: { sectionRef: RefObject<HTMLDivElement>; isInView: boolean }) {
+  const { t } = useI18n();
+
   const steps = [
-    { step: "01", icon: <Search className="h-7 w-7" />, emoji: "🗺️", title: "发现心仪地点", desc: "浏览精选目的地，咖啡馆、公园、山野、海岸一网打尽。查看路线信息和最佳季节，找到下一个想去的地方", color: "#D97706", bg: "rgba(217,119,6,0.08)", href: "/locations", cta: "浏览地点 →" },
-    { step: "02", icon: <Users className="h-7 w-7" />, emoji: "👥", title: "找到同行伙伴", desc: "按地点筛选招募中的队伍，看看谁在等你。查看领队信息和成员构成，申请加入志同道合的小队", color: "#ff7a65", bg: "rgba(255,122,101,0.08)", href: "/teams", cta: "找队伍 →" },
-    { step: "03", icon: <Compass className="h-7 w-7" />, emoji: "🎒", title: "一起出发", desc: "加入审批通过后，与队友约定集合时间，背起背包出发。或者自己发起一支，带领伙伴去你想去的地方", color: "#92400E", bg: "rgba(146,64,14,0.08)", href: "/teams/create", cta: "发起队伍 →" },
+    { step: "01", icon: <Search className="h-7 w-7" />, emoji: "🗺️", title: t("home.howItWorks.discoverTitle"), desc: t("home.howItWorks.discoverDesc"), color: "#D97706", bg: "rgba(217,119,6,0.08)", href: "/locations", cta: t("home.howItWorks.discoverCta") },
+    { step: "02", icon: <Users className="h-7 w-7" />, emoji: "👥", title: t("home.howItWorks.findTeamTitle"), desc: t("home.howItWorks.findTeamDesc"), color: "#ff7a65", bg: "rgba(255,122,101,0.08)", href: "/teams", cta: t("home.howItWorks.findTeamCta") },
+    { step: "03", icon: <Compass className="h-7 w-7" />, emoji: "🎒", title: t("home.howItWorks.departTitle"), desc: t("home.howItWorks.departDesc"), color: "#92400E", bg: "rgba(146,64,14,0.08)", href: "/teams/create", cta: t("home.howItWorks.departCta") },
   ];
 
   return (
     <section ref={sectionRef} className={`py-20 section-hidden bg-muted/30 dark:bg-muted/10 ${isInView ? "section-visible" : ""}`}>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <span className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">使用流程</span>
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">三步开启户外之旅</h2>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto leading-relaxed">极简流程，从发现到出发，最快 5 分钟</p>
+          <span className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">{t("home.howItWorks.badge")}</span>
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">{t("home.howItWorks.title")}</h2>
+          <p className="text-muted-foreground text-lg max-w-xl mx-auto leading-relaxed">{t("home.howItWorks.subtitle")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -35,7 +37,7 @@ export function HomeHowItWorksSection({ sectionRef, isInView }: { sectionRef: Re
                   style={{ background: item.bg, color: item.color }}
                   onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = item.color; el.style.color = "#fff"; }}
                   onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = item.bg; el.style.color = item.color; }}>
-                  {item.cta} →
+                  {item.cta}
                 </button>
               </a>
             </div>

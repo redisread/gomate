@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import { Mountain, Mail, Heart, Users, MapPin, Home, ChevronRight } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
 /** 关于我们页主组件 */
 export function AboutClient() {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex flex-col">
       <Navbar />
@@ -22,15 +24,15 @@ export function AboutClient() {
                 className="flex items-center gap-1 hover:text-amber-600 transition-colors"
               >
                 <Home className="w-4 h-4" />
-                <span>首页</span>
+                <span>{t("nav.home")}</span>
               </a>
               <ChevronRight className="w-4 h-4" />
-              <span className="text-stone-700 dark:text-stone-300 font-medium">关于我们</span>
+              <span className="text-stone-700 dark:text-stone-300 font-medium">{t("nav.about")}</span>
             </nav>
 
-            <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100">关于 GoMate</h1>
+            <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100">{t("about.title")}</h1>
             <p className="mt-2 text-stone-500 dark:text-stone-400 text-base">
-              发现有趣的地方，找到同行的人
+              {t("about.subtitle")}
             </p>
           </div>
         </div>
@@ -47,7 +49,7 @@ export function AboutClient() {
               >
                 <Mountain className="h-5 w-5 text-white" />
               </div>
-              <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100">我们是谁</h2>
+              <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100">{t("about.whoWeAre")}</h2>
             </div>
             <p className="text-stone-600 dark:text-stone-400 leading-relaxed">
               GoMate 是一个极简的「地点组队」平台，专注于深圳徒步场景。
@@ -59,23 +61,23 @@ export function AboutClient() {
 
           {/* 核心特色 */}
           <section>
-            <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-4">我们在做什么</h2>
+            <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-4">{t("about.whatWeDo")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 {
                   icon: <MapPin className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
-                  title: "发现地点",
-                  desc: "精选深圳及周边徒步路线，附带难度、距离、最佳季节等实用信息",
+                  title: t("about.featureDiscoverTitle"),
+                  desc: t("about.featureDiscoverDesc"),
                 },
                 {
                   icon: <Users className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
-                  title: "组建队伍",
-                  desc: "发布或加入队伍，按时间、难度筛选，找到节奏相符的同行者",
+                  title: t("about.featureTeamTitle"),
+                  desc: t("about.featureTeamDesc"),
                 },
                 {
                   icon: <Heart className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
-                  title: "收藏路线",
-                  desc: "收藏心仪地点，随时回顾，规划下一次出行",
+                  title: t("about.featureFavTitle"),
+                  desc: t("about.featureFavDesc"),
                 },
               ].map(({ icon, title, desc }) => (
                 <div
@@ -92,9 +94,9 @@ export function AboutClient() {
 
           {/* 联系我们 */}
           <section className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm px-8 py-8 text-center">
-            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100">联系我们</h2>
+            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100">{t("about.contactUs")}</h2>
             <p className="mt-2 text-stone-500 dark:text-stone-400">
-              有任何建议、合作意向或问题，欢迎发邮件给我们
+              {t("about.contactDesc")}
             </p>
             <a
               href="mailto:hi@gomate.live"

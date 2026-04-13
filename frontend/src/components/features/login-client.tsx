@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Eye, EyeOff, Loader2, Mountain, ArrowRight } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { signIn } from "@/lib/auth-client";
 
 /**
@@ -11,12 +11,11 @@ import { signIn } from "@/lib/auth-client";
  * 右侧：表单区
  */
 export function LoginClient() {
+  const { t } = useI18n();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [formData, setFormData] = React.useState({ email: "", password: "" });
-
-  const t = copy.auth;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,13 +35,13 @@ export function LoginClient() {
       });
 
       if (result.error) {
-        setError(t.loginError);
+        setError(t("auth.loginError"));
         return;
       }
 
       window.location.href = "/";
     } catch {
-      setError(t.loginErrorRetry);
+      setError(t("auth.loginErrorRetry"));
     } finally {
       setIsLoading(false);
     }
@@ -84,15 +83,14 @@ export function LoginClient() {
         <div className="relative z-10 space-y-6">
           <div>
             <p className="text-white/60 text-sm font-medium uppercase tracking-widest mb-3">
-              欢迎回来
+              {t("auth.loginBrandTagline")}
             </p>
             <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
-              每一次出发，<br />
-              都有人在等你
+              {t("auth.loginBrandTitle")}
             </h2>
           </div>
           <p className="text-white/75 text-lg leading-relaxed max-w-sm">
-            找到志同道合的伙伴，一起探索城市里那些值得去的地方。
+            {t("auth.loginBrandDesc")}
           </p>
 
           {/* 用户见证小卡片 */}
@@ -101,8 +99,8 @@ export function LoginClient() {
             style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
           >
             {[
-              { avatar: "🧗", name: "小明", text: "在这里认识了一起爬山的好友" },
-              { avatar: "☕", name: "晓雯", text: "每周末都能找到探店的搭子" },
+              { avatar: "🧗", name: t("auth.testimonial1Name"), text: t("auth.testimonial1Text") },
+              { avatar: "☕", name: t("auth.testimonial2Name"), text: t("auth.testimonial2Text") },
             ].map((item) => (
               <div key={item.name} className="flex items-center gap-3">
                 <div
@@ -157,10 +155,10 @@ export function LoginClient() {
             {/* 标题 */}
             <div className="mb-8">
               <h1 className="text-2xl font-bold mb-1.5 text-foreground">
-                {t.loginTitle}
+                {t("auth.loginTitle")}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {t.loginSubtitle}
+                {t("auth.loginSubtitle")}
               </p>
             </div>
 
@@ -168,13 +166,13 @@ export function LoginClient() {
               {/* 邮箱 */}
               <div className="space-y-1.5">
                 <label htmlFor="email" className="text-sm font-medium text-foreground">
-                  {t.email}
+                  {t("auth.email")}
                 </label>
                 <input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder={t.emailPlaceholder}
+                  placeholder={t("auth.emailPlaceholder")}
                   value={formData.email}
                   onChange={handleInputChange}
                   required
@@ -186,13 +184,13 @@ export function LoginClient() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label htmlFor="password" className="text-sm font-medium text-foreground">
-                    {t.password}
+                    {t("auth.password")}
                   </label>
                   <a
                     href="/forgot-password"
                     className="text-xs text-primary hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-150"
                   >
-                    {t.forgotPassword}
+                    {t("auth.forgotPassword")}
                   </a>
                 </div>
                 <div className="relative">
@@ -200,7 +198,7 @@ export function LoginClient() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder={t.passwordPlaceholder}
+                    placeholder={t("auth.passwordPlaceholder")}
                     value={formData.password}
                     onChange={handleInputChange}
                     required
@@ -251,11 +249,11 @@ export function LoginClient() {
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    {t.loginBtnLoading}
+                    {t("auth.loginBtnLoading")}
                   </>
                 ) : (
                   <>
-                    {t.loginBtn}
+                    {t("auth.loginBtn")}
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -263,12 +261,12 @@ export function LoginClient() {
 
               {/* 注册链接 */}
               <p className="text-center text-sm text-muted-foreground">
-                {t.noAccount}{" "}
+                {t("auth.noAccount")}{" "}
                 <a
                   href="/register"
                   className="font-semibold text-primary hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-150"
                 >
-                  {t.registerNow} →
+                  {t("auth.loginNow")} →
                 </a>
               </p>
             </form>
@@ -278,7 +276,7 @@ export function LoginClient() {
         {/* 底部版权 */}
         <div className="px-6 pb-6 text-center">
           <p className="text-xs" style={{ color: "#c4b5a8" }}>
-            © {new Date().getFullYear()} GoMate · 找到同行的人
+            © {new Date().getFullYear()} GoMate · {t("auth.footerTagline")}
           </p>
         </div>
       </div>

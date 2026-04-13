@@ -1,19 +1,19 @@
 import * as React from "react";
 import { Crown, MapPin, Users, Calendar, Clock, ChevronRight, ChevronDown, XCircle } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { TeamItem } from "./my-teams-types";
 
-const c = copy.myTeams;
-
-const statusLabels: Record<string, { label: string; color: string; dot: string }> = {
-  recruiting: { label: c.statusRecruiting, color: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-500" },
-  full: { label: c.statusFull, color: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-500" },
-  formed: { label: c.statusFormed, color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
-  ongoing: { label: "进行中", color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
-  completed: { label: c.statusCompleted, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" },
-  cancelled: { label: c.statusCancelled, color: "bg-red-50 text-red-600 border border-red-200", dot: "bg-red-400" },
-};
+function getStatusLabels(t: (key: any, vars?: Record<string, string | number>) => string): Record<string, { label: string; color: string; dot: string }> {
+  return {
+    recruiting: { label: t("myTeams.statusRecruiting"), color: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-500" },
+    full: { label: t("myTeams.statusFull"), color: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-500" },
+    formed: { label: t("myTeams.statusFormed"), color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
+    ongoing: { label: t("myTeams.statusOngoing"), color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
+    completed: { label: t("myTeams.statusCompleted"), color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" },
+    cancelled: { label: t("myTeams.statusCancelled"), color: "bg-red-50 text-red-600 border border-red-200", dot: "bg-red-400" },
+  };
+}
 
 function TeamCard({ team, isLeader = false, onCancel, onForm }: {
   team: TeamItem;
@@ -21,6 +21,8 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
   onCancel?: (id: string) => void;
   onForm?: (id: string) => void;
 }) {
+  const { t } = useI18n();
+  const statusLabels = getStatusLabels(t);
   const status = statusLabels[team.status] || { label: team.status, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" };
   const isFull = team.currentMembers >= team.maxMembers;
   const canCancel = isLeader && onCancel && (team.status === "recruiting" || team.status === "full");
@@ -45,7 +47,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
                   <h3 className="font-semibold text-foreground group-hover:text-amber-700 transition-colors truncate">{team.title}</h3>
                   {isLeader && (
                     <span className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full flex items-center gap-1 flex-shrink-0">
-                      <Crown className="h-3 w-3" />{c.roleLeader}
+                      <Crown className="h-3 w-3" />{t("myTeams.roleLeader")}
                     </span>
                   )}
                 </div>
@@ -71,7 +73,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
                 </span>
               )}
               <span className="flex items-center gap-1 font-medium text-amber-600">
-                <Users className="h-3.5 w-3.5" />{team.currentMembers}/{team.maxMembers}人
+                <Users className="h-3.5 w-3.5" />{team.currentMembers}/{team.maxMembers}{t("myTeams.memberSuffix")}
               </span>
             </div>
           </div>
@@ -82,13 +84,13 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
             {canForm && (
               <button onClick={(e) => { e.preventDefault(); onForm!(team.id); }}
                 className="text-xs text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-amber-50">
-                {isFull ? copy.teams.formTeam : copy.teams.formTeamUnderfilled}
+                {isFull ? t("teams.formTeam") : t("teams.formTeamUnderfilled")}
               </button>
             )}
             {canCancel && (
               <button onClick={(e) => { e.preventDefault(); onCancel!(team.id); }}
                 className="text-xs text-red-500 hover:text-red-600 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-red-50">
-                <XCircle className="h-3.5 w-3.5" />{copy.teams.cancelTeam}
+                <XCircle className="h-3.5 w-3.5" />{t("teams.cancelTeam")}
               </button>
             )}
           </div>
@@ -117,26 +119,26 @@ export function CollapsibleSection({ title, count, children, defaultExpanded = t
   );
 }
 
-export function TeamListSection({ teams, isLeader, onCancel, onForm, loadingLabel }: {
+export function TeamListSection({ teams, isLeader, onCancel, onForm }: {
   teams: TeamItem[]; isLeader: boolean;
   onCancel?: (id: string) => void; onForm?: (id: string) => void;
-  loadingLabel?: string;
 }) {
-  const active = teams.filter((t) => ["recruiting", "full", "formed", "ongoing"].includes(t.status));
-  const archived = teams.filter((t) => ["completed", "cancelled"].includes(t.status));
+  const { t } = useI18n();
+  const active = teams.filter((t2) => ["recruiting", "full", "formed", "ongoing"].includes(t2.status));
+  const archived = teams.filter((t2) => ["completed", "cancelled"].includes(t2.status));
   if (teams.length === 0) return null;
-  const roleLabel = isLeader ? c.roleFilterLeader : c.roleFilterMember;
+  const roleLabel = isLeader ? t("myTeams.roleFilterLeader") : t("myTeams.roleFilterMember");
   return (
     <>
       {active.length > 0 && (
-        <CollapsibleSection title={`${roleLabel} · ${c.activeTeams}`} count={active.length}>
+        <CollapsibleSection title={`${roleLabel} · ${t("myTeams.activeTeams")}`} count={active.length}>
           {active.map((team) => (
             <TeamCard key={team.id} team={team} isLeader={isLeader} onCancel={onCancel} onForm={onForm} />
           ))}
         </CollapsibleSection>
       )}
       {archived.length > 0 && (
-        <CollapsibleSection title={`${roleLabel} · ${c.archivedTeams}`} count={archived.length} defaultExpanded={false}>
+        <CollapsibleSection title={`${roleLabel} · ${t("myTeams.archivedTeams")}`} count={archived.length} defaultExpanded={false}>
           {archived.map((team) => (
             <TeamCard key={team.id} team={team} isLeader={isLeader} />
           ))}

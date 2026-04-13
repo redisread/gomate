@@ -2,6 +2,7 @@
 
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { useI18n } from "@/hooks/useI18n";
 import { useTeams } from "./use-teams";
 import {
   TeamsHeader, FilterPanel, TeamsCtaSection,
@@ -9,6 +10,7 @@ import {
 } from "./teams-ui";
 
 export function TeamsClient() {
+  const { t } = useI18n();
   const ctx = useTeams();
 
   return (
@@ -44,8 +46,7 @@ export function TeamsClient() {
               <span className="inline-block w-40 h-4 bg-stone-200 dark:bg-stone-700 rounded-full animate-pulse" />
             ) : ctx.pagination.total > 0 ? (
               <>
-                <span className="font-semibold text-stone-700 dark:text-stone-300">{ctx.pagination.total}</span>
-                {" "}支队伍向你敞开，随时可以出发
+                {t("teams.totalTeamsPrefix", { count: ctx.pagination.total })}
               </>
             ) : null}
           </div>

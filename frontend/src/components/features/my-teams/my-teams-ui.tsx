@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Users, MapPin, Mountain, Crown, Hourglass, ClipboardCheck, XCircle, CheckCircle, Loader2 } from "lucide-react";
+import { Users, MapPin, Mountain, Crown, Hourglass, ClipboardCheck, Loader2 } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 
 export function StatBadge({ label, count, highlight = false }: { label: string; count: number; highlight?: boolean }) {
@@ -80,6 +81,7 @@ export function EmptyState({
 }
 
 export function LoadMoreButton({ hasMore, loading, onClick }: { hasMore: boolean; loading: boolean; onClick: () => void }) {
+  const { t } = useI18n();
   if (!hasMore) return null;
   return (
     <button
@@ -87,7 +89,7 @@ export function LoadMoreButton({ hasMore, loading, onClick }: { hasMore: boolean
       disabled={loading}
       className="w-full py-3 mt-2 text-amber-600 hover:text-amber-700 font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
     >
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "加载更多"}
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("myTeams.loadMore")}
     </button>
   );
 }

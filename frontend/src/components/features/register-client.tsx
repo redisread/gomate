@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Eye, EyeOff, Loader2, Mountain, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { signUp } from "@/lib/auth-client";
 
 /**
@@ -11,6 +11,7 @@ import { signUp } from "@/lib/auth-client";
  * 右侧：注册表单
  */
 export function RegisterClient() {
+  const { t } = useI18n();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
@@ -21,8 +22,6 @@ export function RegisterClient() {
     password: "",
     confirmPassword: "",
   });
-
-  const t = copy.auth;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,13 +35,13 @@ export function RegisterClient() {
     setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError(t.passwordMismatch);
+      setError(t("auth.passwordMismatch"));
       setIsLoading(false);
       return;
     }
 
     if (formData.name.length < 2) {
-      setError(t.nicknameTooShort);
+      setError(t("auth.nicknameTooShort"));
       setIsLoading(false);
       return;
     }
@@ -57,9 +56,9 @@ export function RegisterClient() {
 
       if (result.error) {
         if (result.error.message?.includes("already")) {
-          setError(t.emailTaken);
+          setError(t("auth.emailTaken"));
         } else {
-          setError(t.registerErrorRetry);
+          setError(t("auth.registerErrorRetry"));
         }
         return;
       }
@@ -69,7 +68,7 @@ export function RegisterClient() {
         window.location.href = "/";
       }, 1500);
     } catch {
-      setError(t.registerErrorRetry);
+      setError(t("auth.registerErrorRetry"));
     } finally {
       setIsLoading(false);
     }
@@ -89,9 +88,9 @@ export function RegisterClient() {
             <CheckCircle2 className="h-10 w-10" style={{ color: "#D97706" }} />
           </div>
           <h2 className="text-2xl font-bold text-foreground">
-            {t.registerSuccess}
+            {t("auth.registerSuccess")}
           </h2>
-          <p className="text-muted-foreground">{t.registerSuccessRedirect}</p>
+          <p className="text-muted-foreground">{t("auth.registerSuccessRedirect")}</p>
         </div>
       </div>
     );
@@ -135,27 +134,26 @@ export function RegisterClient() {
             <div className="flex items-center gap-2 mb-4">
               <Sparkles className="h-4 w-4 text-white/70" />
               <span className="text-white/60 text-sm font-medium uppercase tracking-widest">
-                加入我们
+                {t("auth.registerBrandTagline")}
               </span>
             </div>
             <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
-              你的第一次探索，<br />
-              从这里开始
+              {t("auth.registerBrandTitle")}
             </h2>
           </div>
 
           <p className="text-white/75 text-lg leading-relaxed max-w-sm">
-            注册 GoMate，发现身边有趣的地方，找到愿意一起出发的人。
+            {t("auth.registerBrandDesc")}
           </p>
 
           {/* 功能亮点 */}
           <div className="space-y-3">
             {[
-              { icon: "🗺️", text: "探索城市精选地点" },
-              { icon: "👥", text: "与有趣的人组队同行" },
-              { icon: "📅", text: "轻松发布和管理活动" },
-            ].map((item) => (
-              <div key={item.text} className="flex items-center gap-3">
+              { icon: "🗺️", text: t("auth.featureExplore") },
+              { icon: "👥", text: t("auth.featureTeam") },
+              { icon: "📅", text: t("auth.featureManage") },
+            ].map((item, index) => (
+              <div key={index} className="flex items-center gap-3">
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0"
                   style={{ background: "rgba(255,255,255,0.15)" }}
@@ -205,10 +203,10 @@ export function RegisterClient() {
             {/* 标题 */}
             <div className="mb-7">
               <h1 className="text-2xl font-bold mb-1.5 text-foreground">
-                {t.registerTitle}
+                {t("auth.registerTitle")}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {t.registerSubtitle}
+                {t("auth.registerSubtitle")}
               </p>
             </div>
 
@@ -216,21 +214,21 @@ export function RegisterClient() {
               {/* 昵称 */}
               <FormField
                 id="name"
-                label={t.nickname}
+                label={t("auth.nickname")}
                 type="text"
-                placeholder={t.nicknamePlaceholder}
+                placeholder={t("auth.nicknamePlaceholder")}
                 value={formData.name}
                 onChange={handleInputChange}
                 required
-                hint={t.nicknameRange}
+                hint={t("auth.nicknameRange")}
               />
 
               {/* 邮箱 */}
               <FormField
                 id="email"
-                label={t.email}
+                label={t("auth.email")}
                 type="email"
-                placeholder={t.emailPlaceholder}
+                placeholder={t("auth.emailPlaceholder")}
                 value={formData.email}
                 onChange={handleInputChange}
                 required
@@ -239,14 +237,14 @@ export function RegisterClient() {
               {/* 密码 */}
               <div className="space-y-1.5">
                 <label htmlFor="password" className="text-sm font-medium text-foreground">
-                  {t.password}
+                  {t("auth.password")}
                 </label>
                 <div className="relative">
                   <input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="至少 6 位"
+                    placeholder={t("auth.passwordMinHint")}
                     value={formData.password}
                     onChange={handleInputChange}
                     required
@@ -270,9 +268,9 @@ export function RegisterClient() {
               {/* 确认密码 */}
               <FormField
                 id="confirmPassword"
-                label={t.confirmPassword}
+                label={t("auth.confirmPassword")}
                 type="password"
-                placeholder={t.reenterPassword}
+                placeholder={t("auth.reenterPassword")}
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
                 required
@@ -314,11 +312,11 @@ export function RegisterClient() {
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    {t.registerBtnLoading}
+                    {t("auth.registerBtnLoading")}
                   </>
                 ) : (
                   <>
-                    {t.registerBtn}
+                    {t("auth.registerBtn")}
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -326,12 +324,12 @@ export function RegisterClient() {
 
               {/* 登录链接 */}
               <p className="text-center text-sm text-muted-foreground">
-                {t.hasAccount}{" "}
+                {t("auth.hasAccount")}{" "}
                 <a
                   href="/login"
                   className="font-semibold text-primary hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-150"
                 >
-                  {t.loginNow} →
+                  {t("auth.loginNow")} →
                 </a>
               </p>
             </form>
@@ -341,7 +339,7 @@ export function RegisterClient() {
         {/* 底部版权 */}
         <div className="px-6 pb-6 text-center">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} GoMate · 找到同行的人
+            © {new Date().getFullYear()} GoMate · {t("auth.footerTagline")}
           </p>
         </div>
       </div>
@@ -395,20 +393,21 @@ function FormField({
 
 /* ── 密码强度指示器 ── */
 function PasswordStrength({ password }: { password: string }) {
-  const getStrength = (pwd: string): { level: number; label: string; color: string } => {
+  const getStrength = (pwd: string, t: (key: any, vars?: Record<string, string | number>) => string): { level: number; label: string; color: string } => {
     let score = 0;
     if (pwd.length >= 6) score++;
     if (pwd.length >= 10) score++;
     if (/[A-Z]/.test(pwd) || /[0-9]/.test(pwd)) score++;
     if (/[^a-zA-Z0-9]/.test(pwd)) score++;
 
-    if (score <= 1) return { level: 1, label: "弱", color: "#ff7a65" };
-    if (score === 2) return { level: 2, label: "一般", color: "#fbbf24" };
-    if (score === 3) return { level: 3, label: "较强", color: "#D97706" };
-    return { level: 4, label: "强", color: "#92400E" };
+    if (score <= 1) return { level: 1, label: t("auth.passwordStrengthWeak"), color: "#ff7a65" };
+    if (score === 2) return { level: 2, label: t("auth.passwordStrengthFair"), color: "#fbbf24" };
+    if (score === 3) return { level: 3, label: t("auth.passwordStrengthGood"), color: "#D97706" };
+    return { level: 4, label: t("auth.passwordStrengthStrong"), color: "#92400E" };
   };
 
-  const { level, label, color } = getStrength(password);
+  const { t } = useI18n();
+  const { level, label, color } = getStrength(password, t);
 
   return (
     <div className="flex items-center gap-2 mt-1.5">

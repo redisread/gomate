@@ -8,7 +8,7 @@
 
 import * as React from "react";
 import { ArrowLeft, Eye, EyeOff, Map } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { StickyActionBar } from "@/components/ui/sticky-action-bar";
@@ -86,6 +86,7 @@ interface MapPickerModalProps {
 }
 
 function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPickerModalProps) {
+  const { t } = useI18n();
   const mapContainerRef = React.useRef<HTMLDivElement>(null);
   const mapRef = React.useRef<any>(null);
   const markerRef = React.useRef<any>(null);
@@ -199,7 +200,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
             <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(217,119,6,0.1)" }}>
               <Map className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             </span>
-            <span className="text-sm font-semibold text-stone-800 dark:text-stone-200">地图选点</span>
+            <span className="text-sm font-semibold text-stone-800 dark:text-stone-200">{t("admin.mapPickerTitle")}</span>
           </div>
           <button type="button" onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
@@ -213,7 +214,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="M21 21l-4.35-4.35" /></svg>
             <input type="text" value={searchQuery} onChange={handleSearchChange}
               onFocus={() => searchSuggestions.length > 0 && setSearchOpen(true)}
-              placeholder="搜索地点跳转到地图位置..."
+              placeholder={t("admin.mapPickerSearchPlaceholder")}
               className="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all duration-150 border bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 pl-9 pr-9" />
             {searchLoading && <svg className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
             {!searchLoading && searchQuery && (
@@ -238,7 +239,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
               ))}
             </div>
           )}
-          <p className="text-xs text-stone-400 mt-2">搜索后跳转，或直接点击地图选点</p>
+          <p className="text-xs text-stone-400 mt-2">{t("admin.mapPickerSearchHint")}</p>
         </div>
 
         {/* Map */}
@@ -268,14 +269,14 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
                 ) : (
                   <p className="text-sm text-stone-400 flex items-center gap-1.5">
                     <svg className="h-3 w-3 animate-spin text-amber-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                    正在获取地址...
+                    {t("admin.mapPickerFetchingAddress")}
                   </p>
                 )}
                 <p className="text-xs text-stone-400 mt-0.5 tabular-nums">{pickedLat.toFixed(6)}, {pickedLng.toFixed(6)}</p>
               </div>
             </div>
           ) : (
-            <p className="text-xs text-stone-400 text-center">点击地图放置标记选择坐标</p>
+            <p className="text-xs text-stone-400 text-center">{t("admin.mapPickerClickHint")}</p>
           )}
         </div>
 
@@ -283,11 +284,11 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
         <div className="flex items-center gap-3 px-5 py-4 border-t border-stone-100 dark:border-stone-800 shrink-0">
           <button type="button" onClick={onClose}
             className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
-            取消
+            {t("admin.mapPickerCancel")}
           </button>
           <button type="button" onClick={handleConfirm} disabled={pickedLat == null}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
-            确认选点
+            {t("admin.mapPickerConfirm")}
           </button>
         </div>
       </div>
@@ -305,22 +306,23 @@ import type { FormData } from "./location-form";
 interface PreviewPanelProps { data: FormData; cityName: string; }
 
 function PreviewPanel({ data, cityName }: PreviewPanelProps) {
+  const { t } = useI18n();
   const seasonEmojis: Record<string, string> = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: "❄️" };
   return (
     <div className="sticky top-20">
       <div className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
         <div className="flex items-center gap-2 px-4 py-3 border-b border-stone-50 dark:border-stone-800">
           <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <span className="text-xs font-semibold text-stone-600 dark:text-stone-400">实时预览</span>
+          <span className="text-xs font-semibold text-stone-600 dark:text-stone-400">{t("admin.previewEffect")}</span>
         </div>
         <div className="w-full bg-stone-100 dark:bg-stone-800" style={{ aspectRatio: "16/9" }}>
-          {data.coverImage ? <img src={data.coverImage} alt="封面预览" className="w-full h-full object-cover" />
+          {data.coverImage ? <img src={data.coverImage} alt={t("admin.coverImagePreview")} className="w-full h-full object-cover" />
             : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-8 w-8 text-stone-300 dark:text-stone-600" /></div>}
         </div>
         <div className="p-4 space-y-3">
           <div>
             <h3 className="font-bold text-stone-900 dark:text-stone-100 text-base leading-snug">
-              {data.name || <span className="text-stone-300 dark:text-stone-600">地点名称</span>}
+              {data.name || <span className="text-stone-300 dark:text-stone-600">{t("admin.locationNamePlaceholder")}</span>}
             </h3>
             {data.subtitle && <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">{data.subtitle}</p>}
           </div>
@@ -347,7 +349,7 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
           )}
         </div>
       </div>
-      <p className="text-xs text-stone-400 dark:text-stone-500 text-center mt-2">编辑时自动同步预览</p>
+      <p className="text-xs text-stone-400 dark:text-stone-500 text-center mt-2">{t("admin.previewAutoSync")}</p>
     </div>
   );
 }
@@ -359,6 +361,7 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
 interface LocationEditClientProps { locationId: string; }
 
 export function LocationEditClient({ locationId }: LocationEditClientProps) {
+  const { t } = useI18n();
   const form = useLocationForm(locationId);
   const [showPreview, setShowPreview] = React.useState(false);
   const [showMapPicker, setShowMapPicker] = React.useState(false);
@@ -369,10 +372,10 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
   );
 
   const progressSteps = [
-    { id: "core", label: copy.admin.progressStep1, done: !!form.formData.name && !!form.formData.description },
-    { id: "location", label: copy.admin.progressStep2, done: !!form.formData.cityId },
-    { id: "media", label: copy.admin.progressStep3, done: !!form.formData.coverImage },
-    { id: "finish", label: copy.admin.progressStep4, done: !!form.formData.name && !!form.formData.description && !!form.formData.cityId && !!form.formData.coverImage },
+    { id: "core", label: t("admin.progressStep1"), done: !!form.formData.name && !!form.formData.description },
+    { id: "location", label: t("admin.progressStep2"), done: !!form.formData.cityId },
+    { id: "media", label: t("admin.progressStep3"), done: !!form.formData.coverImage },
+    { id: "finish", label: t("admin.progressStep4"), done: !!form.formData.name && !!form.formData.description && !!form.formData.cityId && !!form.formData.coverImage },
   ];
 
   // Close POI modal/delete from parent
@@ -392,19 +395,19 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
         {/* Top nav */}
         <div className="flex items-center justify-between mb-6">
           <a href={`/locations/${locationId}`} className="inline-flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 hover:opacity-70 transition-opacity">
-            <ArrowLeft className="h-4 w-4" />{copy.common.back}
+            <ArrowLeft className="h-4 w-4" />{t("common.back")}
           </a>
           <button type="button" onClick={() => setShowPreview((v) => !v)}
             className="lg:hidden flex items-center gap-1.5 text-xs text-stone-500 hover:text-amber-600 transition-colors">
             {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showPreview ? "关闭预览" : "预览效果"}
+            {showPreview ? t("admin.closePreview") : t("admin.previewEffect")}
           </button>
         </div>
 
         {/* Title */}
         <div className="flex items-center gap-2 mb-6">
           <span className="w-1.5 h-6 rounded-full bg-amber-600" />
-          <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100">{copy.admin.editLocation}</h1>
+          <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100">{t("admin.editLocation")}</h1>
         </div>
 
         {/* Progress */}
@@ -413,10 +416,10 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
         {/* Draft banner */}
         {form.showDraftBanner && (
           <div className="mb-6 flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
-            <p className="text-sm text-amber-800 dark:text-amber-300">🗒 {copy.admin.draftRestorePrompt}</p>
+            <p className="text-sm text-amber-800 dark:text-amber-300">🗒 {t("admin.draftRestorePrompt")}</p>
             <div className="flex items-center gap-2 shrink-0">
-              <button type="button" onClick={form.handleDiscardDraft} className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors">{copy.admin.draftDiscardBtn}</button>
-              <button type="button" onClick={form.handleRestoreDraft} className="text-xs font-semibold px-3 py-1 rounded-lg text-white bg-amber-600 hover:bg-amber-700 transition-colors">{copy.admin.draftRestoreBtn}</button>
+              <button type="button" onClick={form.handleDiscardDraft} className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors">{t("admin.draftDiscardBtn")}</button>
+              <button type="button" onClick={form.handleRestoreDraft} className="text-xs font-semibold px-3 py-1 rounded-lg text-white bg-amber-600 hover:bg-amber-700 transition-colors">{t("admin.draftRestoreBtn")}</button>
             </div>
           </div>
         )}

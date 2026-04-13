@@ -4,17 +4,18 @@ import {
   Flag, CheckCircle2, MapPin, Calendar, Clock, Filter,
   CalendarDays, Tag, X, Search,
 } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Team } from "@/lib/types";
 import {
   DIFFICULTY_CONFIG, DIFFICULTY_OPTIONS,
   getCardGradient, getProgressGradient,
 } from "@/lib/constants";
-import { statusConfig } from "./constants";
+import { getStatusConfig, getDaysUntilStart } from "./constants";
 
 // ─── MemberProgress ────────────────────────────────────────────────
 export function MemberProgress({ current, max, showUrgency = true }: { current: number; max: number; showUrgency?: boolean }) {
+  const { t } = useI18n();
   const pct = Math.min((current / max) * 100, 100);
   const remaining = max - current;
   const isFull = current >= max;
@@ -22,10 +23,10 @@ export function MemberProgress({ current, max, showUrgency = true }: { current: 
   const isWarning = remaining <= 3 && !isFull;
 
   const getUrgencyStyle = () => {
-    if (isFull) return { text: "text-stone-400 dark:text-stone-500", badge: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400", label: "已满员" };
-    if (isUrgent) return { text: "text-red-600", badge: "bg-red-50 text-red-600 ring-1 ring-red-200", label: `🔥 即将满员 仅剩 ${remaining} 人！` };
-    if (isWarning) return { text: "text-amber-600", badge: "bg-amber-50 text-amber-700 ring-1 ring-amber-200", label: `仅剩 ${remaining} 个名额！` };
-    return { text: "text-amber-600", badge: "bg-amber-50/50 text-amber-700", label: `还剩 ${remaining} 个名额` };
+    if (isFull) return { text: "text-stone-400 dark:text-stone-500", badge: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400", label: t("teams.memberFull", { current, max }) };
+    if (isUrgent) return { text: "text-red-600", badge: "bg-red-50 text-red-600 ring-1 ring-red-200", label: t("teams.spotsOneLeft") };
+    if (isWarning) return { text: "text-amber-600", badge: "bg-amber-50 text-amber-700 ring-1 ring-amber-200", label: t("teams.spotsLeft", { count: remaining }) };
+    return { text: "text-amber-600", badge: "bg-amber-50/50 text-amber-700", label: t("teams.spotsLeft", { count: remaining }) };
   };
 
   const style = getUrgencyStyle();
@@ -36,7 +37,7 @@ export function MemberProgress({ current, max, showUrgency = true }: { current: 
         <div className="flex items-center justify-between">
           <span className={cn("text-xs font-semibold", style.text)}>
             {isFull ? (
-              <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{current}/{max} 人</span>
+              <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{style.label}</span>
             ) : (
               <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs", style.badge)}>
                 {isUrgent && <span className="animate-pulse">🔥</span>}
@@ -59,7 +60,9 @@ export function MemberProgress({ current, max, showUrgency = true }: { current: 
 
 // ─── StatusBadge ────────────────────────────────────────────────────
 export function StatusBadge({ status }: { status: string }) {
-  const cfg = statusConfig[status] ?? {
+  const { t } = useI18n();
+  const statusCfg = getStatusConfig(t);
+  const cfg = statusCfg[status] ?? {
     label: status, dotColor: "bg-stone-400", bgColor: "bg-stone-100 dark:bg-stone-800",
     textColor: "text-stone-500 dark:text-stone-400", pulse: false,
   };
@@ -79,10 +82,12 @@ export function StatusBadge({ status }: { status: string }) {
 
 // ─── TeamCard ───────────────────────────────────────────────────────
 export function TeamCard({ team }: { team: Team }) {
+  const { t } = useI18n();
   const location = (team as any).location;
   const diff = location?.difficulty ? DIFFICULTY_CONFIG[location.difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
-  const leaderName = team.leader?.nickname || team.leader?.name || "领队";
+  const leaderName = team.leader?.nickname || team.leader?.name || t("teams.defaultLeader");
   const gradient = getCardGradient(team.id);
+  const daysInfo = location?.startDate ? getDaysUntilStart(t, location.startDate) : null;
 
   return (
     <a href={`/teams/${team.id}`} className="group block">
@@ -124,7 +129,7 @@ export function TeamCard({ team }: { team: Team }) {
               <span className="text-xs text-stone-400 dark:text-stone-500 truncate">{leaderName}</span>
             </div>
             <span className="text-xs text-stone-400 dark:text-stone-500 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors flex items-center gap-0.5">
-              详情<ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+              {t("teams.viewDetailShort")}<ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
             </span>
           </div>
         </div>
@@ -154,6 +159,7 @@ export function TeamSkeleton() {
 
 // ─── EmptyState ─────────────────────────────────────────────────────
 export function EmptyState({ onClear }: { onClear: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center py-24 px-4">
       <div className="relative w-28 h-28 mb-8 flex items-center justify-center">
@@ -162,15 +168,15 @@ export function EmptyState({ onClear }: { onClear: () => void }) {
         <div className="absolute inset-6 rounded-full bg-stone-200 dark:bg-stone-700/60" />
         <Mountain className="relative h-10 w-10 text-stone-400 dark:text-stone-500 z-10" />
       </div>
-      <h3 className="text-lg font-semibold text-stone-700 dark:text-stone-300 mb-2">{copy.teams.noResults}</h3>
-      <p className="text-stone-400 dark:text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-6">{copy.teams.noResultsTip}</p>
+      <h3 className="text-lg font-semibold text-stone-700 dark:text-stone-300 mb-2">{t("teams.noResults")}</h3>
+      <p className="text-stone-400 dark:text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-6">{t("teams.noResultsTip")}</p>
       <div className="flex items-center gap-3">
         <button onClick={onClear} className="px-5 py-2.5 border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 text-stone-600 dark:text-stone-400 rounded-full text-sm font-medium transition-colors">
-          {copy.teams.clearFilters}
+          {t("teams.clearFilters")}
         </button>
         <a href="/teams/create">
           <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-sm font-medium transition-colors">
-            <Flame className="h-4 w-4" />{copy.teams.createBtn}
+            <Flame className="h-4 w-4" />{t("teams.createBtn")}
           </button>
         </a>
       </div>
@@ -213,16 +219,17 @@ export function FilterPanel({
   startDate, endDate, selectedDifficulty, availableTags, selectedTags, activeFiltersCount,
   onDateQuickSelect, onDifficultyToggle, onTagToggle, onClearAll,
 }: FilterPanelProps) {
+  const { t } = useI18n();
   return (
     <div className="mt-4 pt-4 pb-1 border-t border-border space-y-4 animate-in slide-in-from-top-2 duration-200">
       <div>
-        <span className="text-sm font-semibold text-stone-600 dark:text-stone-300 mb-2 block flex items-center gap-2"><CalendarDays className="h-4 w-4" />{copy.filter.dateRange}</span>
+        <span className="text-sm font-semibold text-stone-600 dark:text-stone-300 mb-2 block flex items-center gap-2"><CalendarDays className="h-4 w-4" />{t("filter.dateRange")}</span>
         <div className="flex flex-wrap gap-2">
           {[
-            { key: "today", label: copy.filter.dateQuickToday },
-            { key: "tomorrow", label: copy.filter.dateQuickTomorrow },
-            { key: "weekend", label: copy.filter.dateQuickWeekend },
-            { key: "7days", label: copy.filter.dateQuick7Days },
+            { key: "today", label: t("filter.dateQuickToday") },
+            { key: "tomorrow", label: t("filter.dateQuickTomorrow") },
+            { key: "weekend", label: t("filter.dateQuickWeekend") },
+            { key: "7days", label: t("filter.dateQuick7Days") },
           ].map((opt) => (
             <button key={opt.key} onClick={() => onDateQuickSelect(opt.key)}
               className="px-3 py-1.5 text-xs rounded-full border border-border bg-card text-stone-600 dark:text-stone-400 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 transition-colors">
@@ -232,13 +239,13 @@ export function FilterPanel({
           {(startDate || endDate) && (
             <button onClick={() => onDateQuickSelect("clear")}
               className="px-3 py-1.5 text-xs rounded-full border border-border text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
-              清除
+              {t("filter.clearBtn")}
             </button>
           )}
         </div>
       </div>
       <div>
-        <span className="text-sm font-semibold text-stone-600 dark:text-stone-300 mb-2 block">{copy.filter.difficulty}</span>
+        <span className="text-sm font-semibold text-stone-600 dark:text-stone-300 mb-2 block">{t("filter.difficulty")}</span>
         <div className="flex flex-wrap gap-2">
           {DIFFICULTY_OPTIONS.map((opt) => {
             const isSelected = selectedDifficulty.includes(opt.id);
@@ -255,7 +262,7 @@ export function FilterPanel({
       </div>
       {availableTags.length > 0 && (
         <div>
-          <span className="text-sm font-semibold text-stone-600 dark:text-stone-300 mb-2 block flex items-center gap-2"><Tag className="h-4 w-4" />{copy.filter.tags}</span>
+          <span className="text-sm font-semibold text-stone-600 dark:text-stone-300 mb-2 block flex items-center gap-2"><Tag className="h-4 w-4" />{t("filter.tags")}</span>
           <div className="flex flex-wrap gap-2">
             {availableTags.map((tag) => {
               const isSelected = selectedTags.includes(tag.id);
@@ -273,7 +280,7 @@ export function FilterPanel({
       )}
       {activeFiltersCount > 0 && (
         <button onClick={onClearAll} className="text-sm text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors flex items-center gap-1.5">
-          <X className="h-3.5 w-3.5" />{copy.filter.clearAll}
+          <X className="h-3.5 w-3.5" />{t("filter.clearAll")}
         </button>
       )}
     </div>
@@ -296,12 +303,13 @@ export function TeamsHeader({
   searchQuery, showFilters, activeFiltersCount, isLoading, pagination,
   onSearchChange, onToggleFilters, renderFilterPanel,
 }: TeamsHeaderProps) {
+  const { t } = useI18n();
   return (
     <section className="relative pt-20 pb-6 border-b border-border bg-card">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{copy.teams.pageTitle}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t("teams.pageTitle")}</h1>
             {!isLoading && pagination.total > 0 && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">{pagination.total}</span>
             )}
@@ -318,11 +326,11 @@ export function TeamsHeader({
         </div>
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-          <input type="text" placeholder="搜索地点或关键词" value={searchQuery} onChange={(e) => onSearchChange(e.target.value)} aria-label="搜索队伍"
+          <input type="text" placeholder={t("teams.searchPlaceholder")} value={searchQuery} onChange={(e) => onSearchChange(e.target.value)} aria-label={t("teams.searchAriaLabel")}
             className={cn("w-full pl-12 pr-10 py-3 rounded-xl text-foreground placeholder-muted-foreground bg-muted border border-border transition-all duration-200 focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-400/15")}
           />
           {searchQuery && (
-            <button onClick={() => onSearchChange("")} aria-label="清除搜索" className="absolute right-4 top-1/2 -translate-y-1/2 p-0.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full transition-colors">
+            <button onClick={() => onSearchChange("")} aria-label={t("teams.clearSearchAriaLabel")} className="absolute right-4 top-1/2 -translate-y-1/2 p-0.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full transition-colors">
               <X className="h-4 w-4 text-stone-400 dark:text-stone-500" />
             </button>
           )}
@@ -335,6 +343,7 @@ export function TeamsHeader({
 
 // ─── TeamsCtaSection ────────────────────────────────────────────────
 export function TeamsCtaSection() {
+  const { t } = useI18n();
   return (
     <div className="relative mt-16 text-center rounded-3xl border border-border/80 p-10 overflow-hidden bg-gradient-to-br from-amber-50/60 dark:from-amber-950/20 via-card dark:via-card to-amber-50/40 dark:to-amber-950/10">
       <svg className="absolute right-0 bottom-0 opacity-[0.06] w-64 h-32 pointer-events-none" viewBox="0 0 256 128" aria-hidden="true">
@@ -342,11 +351,11 @@ export function TeamsCtaSection() {
       </svg>
       <div className="relative z-10">
         <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-5"><Mountain className="h-7 w-7 text-amber-600" /></div>
-        <h2 className="text-2xl font-bold text-foreground mb-3">{copy.teams.ctaTitle}</h2>
-        <p className="text-stone-500 dark:text-stone-400 mb-7 max-w-sm mx-auto leading-relaxed">{copy.teams.ctaDesc}</p>
+        <h2 className="text-2xl font-bold text-foreground mb-3">{t("teams.ctaTitle")}</h2>
+        <p className="text-stone-500 dark:text-stone-400 mb-7 max-w-sm mx-auto leading-relaxed">{t("teams.ctaDesc")}</p>
         <a href="/teams/create">
           <button className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-8 py-3.5 rounded-full font-medium transition-all duration-200 hover:shadow-lg hover:shadow-amber-200/60">
-            <Flame className="h-4 w-4" />{copy.teams.createBtn}
+            <Flame className="h-4 w-4" />{t("teams.createBtn")}
           </button>
         </a>
       </div>

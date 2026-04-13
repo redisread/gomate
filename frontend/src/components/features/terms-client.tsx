@@ -1,4 +1,7 @@
+import { useI18n } from "@/hooks/useI18n";
+
 export function TermsClient() {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
       {/* Hero 区域 */}
@@ -6,13 +9,13 @@ export function TermsClient() {
         <div className="max-w-3xl mx-auto px-6 py-12">
           {/* 面包屑 */}
           <nav className="text-sm text-stone-400 dark:text-stone-500 mb-6">
-            <a href="/" className="hover:text-amber-600 transition-colors">首页</a>
+            <a href="/" className="hover:text-amber-600 transition-colors">{t("nav.home")}</a>
             <span className="mx-2">/</span>
-            <span className="text-stone-600 dark:text-stone-400">服务条款</span>
+            <span className="text-stone-600 dark:text-stone-400">{t("terms.pageTitle")}</span>
           </nav>
-          <h1 className="text-3xl font-bold text-foreground mb-3">服务条款</h1>
-          <p className="text-stone-500 dark:text-stone-400 mb-2">使用 GoMate 前，请仔细阅读以下条款</p>
-          <p className="text-sm text-stone-400 dark:text-stone-500">最后更新：2025年1月1日</p>
+          <h1 className="text-3xl font-bold text-foreground mb-3">{t("terms.pageTitle")}</h1>
+          <p className="text-stone-500 dark:text-stone-400 mb-2">{t("terms.pageSubtitle")}</p>
+          <p className="text-sm text-stone-400 dark:text-stone-500">{t("terms.lastUpdated")}</p>
         </div>
       </div>
 

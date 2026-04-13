@@ -1,9 +1,8 @@
 import * as React from "react";
 import { Search, MapPin, X, ChevronDown, Sparkles, Compass, TreePine, Mountain, ArrowRight } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import type { RoleKey, RoleCfg } from "./constants";
-import { roleConfig } from "./constants";
+import { getRoleConfig, type RoleKey, type RoleCfg } from "./constants";
 
 interface LocationsHeroProps {
   activeRole: RoleKey;
@@ -33,6 +32,8 @@ export function LocationsHero({
   isLoading, pagination, onRoleSelect, onSearchChange, onTagToggle,
   onCitySelect, onClearAll, onToggleCityDropdown, setCityDropdownPos,
 }: LocationsHeroProps) {
+  const { t } = useI18n();
+  const cfg = getRoleConfig(t);
   const cityBtnRef = React.useRef<HTMLButtonElement>(null);
   const cityDropdownRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
@@ -50,20 +51,20 @@ export function LocationsHero({
           style={{ background: "rgba(217,119,6,0.08)", border: "1px solid rgba(217,119,6,0.2)", color: "#b45309", animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both" }}
         >
           <Sparkles className="h-3 w-3" />
-          {copy.locations.ctaHeroBadge}
+          {t("locations.ctaHeroBadge")}
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 leading-tight" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 80ms both" }}>
-          {copy.locations.pageTitle}
+          {t("locations.pageTitle")}
         </h1>
         <p className="text-stone-400 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed max-w-xl" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}>
-          {copy.locations.heroTagline}
+          {t("locations.heroTagline")}
         </p>
 
         {/* 场景角色入口 */}
         <div className="mb-6" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 190ms both" }}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {(Object.entries(roleConfig) as [Exclude<RoleKey, "">, RoleCfg][]).map(([key, cfg]) => {
+            {(Object.entries(cfg) as [Exclude<RoleKey, "">, RoleCfg][]).map(([key, cfg]) => {
               const Icon = cfg.icon;
               const isActive = activeRole === key;
               return (
@@ -93,7 +94,7 @@ export function LocationsHero({
         <div className="relative" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 220ms both" }}>
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 dark:text-stone-500 pointer-events-none" />
           <input
-            ref={searchInputRef} type="text" placeholder={copy.locations.searchPlaceholder}
+            ref={searchInputRef} type="text" placeholder={t("locations.searchPlaceholder")}
             value={searchQuery} onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-11 pr-12 py-3.5 bg-stone-50 dark:bg-stone-900 text-foreground placeholder-stone-400 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 transition-all duration-200 text-sm shadow-sm"
           />
@@ -121,7 +122,7 @@ export function LocationsHero({
                   selectedCityId ? "bg-amber-500 text-white border-amber-500 shadow-sm" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
                 <MapPin className="w-3 h-3" />
-                {selectedCityName || copy.locations.allCities}
+                {selectedCityName || t("locations.allCities")}
                 <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", showCityDropdown && "rotate-180")} />
               </button>
             )}
@@ -139,7 +140,7 @@ export function LocationsHero({
             {hasActiveFilters && (
               <button type="button" onClick={onClearAll}
                 className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors rounded-full">
-                <X className="w-3 h-3" />清除
+                <X className="w-3 h-3" />{t("locations.clearBtn")}
               </button>
             )}
           </div>
@@ -154,7 +155,7 @@ export function LocationsHero({
               className={cn("w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
                 !selectedCityId ? "text-amber-600 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
               )}>
-              <MapPin className="w-3 h-3 flex-shrink-0" />{copy.locations.allCities}
+              <MapPin className="w-3 h-3 flex-shrink-0" />{t("locations.allCities")}
             </button>
             {cities.map((city) => (
               <button key={city.id} type="button" onClick={() => onCitySelect(city.id)}
@@ -180,6 +181,8 @@ export function LocationsResultBar({
   hasActiveFilters: boolean; onRoleSelect: (role: RoleKey) => void; onCitySelect: (cityId: string) => void;
   onTagToggle: (tagId: string) => void; onClearAll: () => void;
 }) {
+  const { t } = useI18n();
+  const cfg = getRoleConfig(t);
   return (
     <div className="flex items-center justify-between mb-7">
       <div className="flex items-center gap-3">
@@ -187,17 +190,15 @@ export function LocationsResultBar({
           <div className="h-4 w-28 bg-stone-200 dark:bg-stone-700 rounded-full animate-pulse" />
         ) : (
           <p className="text-sm text-stone-500 dark:text-stone-400">
-            共{" "}
-            <span className="font-bold text-foreground text-base">{pagination.total}</span>
-            {" "}{copy.locations.resultCount}
+            {t("locations.totalResultPrefix", { count: pagination.total })}
           </p>
         )}
         {!isLoading && (selectedCityId || selectedTags.length > 0 || activeRole) && (
           <div className="flex items-center gap-2 flex-wrap">
             {activeRole && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
-                <span>{roleConfig[activeRole].emoji}</span>
-                {roleConfig[activeRole].label}
+                <span>{cfg[activeRole].emoji}</span>
+                {cfg[activeRole].label}
                 <button onClick={() => onRoleSelect("")} className="hover:text-emerald-900 dark:hover:text-emerald-300 transition-colors ml-0.5"><X className="w-3 h-3" /></button>
               </span>
             )}
@@ -224,7 +225,7 @@ export function LocationsResultBar({
         <button onClick={onClearAll}
           className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800">
           <X className="h-3.5 w-3.5" />
-          {copy.locations.clearFilter}
+          {t("locations.clearFilter")}
         </button>
       )}
     </div>
@@ -232,6 +233,7 @@ export function LocationsResultBar({
 }
 
 export function LocationsCtaSection() {
+  const { t } = useI18n();
   return (
     <section className="relative py-16 border-t border-stone-200 dark:border-stone-800 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-50 dark:from-stone-900 dark:via-amber-950/20 dark:to-stone-900" />
@@ -244,11 +246,11 @@ export function LocationsCtaSection() {
         <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center mx-auto mb-5 border border-amber-100 dark:border-amber-900/50">
           <Mountain className="h-6 w-6 text-amber-600" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground mb-3">{copy.locations.ctaTitle}</h2>
-        <p className="text-stone-500 dark:text-stone-400 text-sm mb-7 max-w-sm mx-auto leading-relaxed">{copy.locations.ctaDesc}</p>
+        <h2 className="text-2xl font-bold text-foreground mb-3">{t("locations.ctaTitle")}</h2>
+        <p className="text-stone-500 dark:text-stone-400 text-sm mb-7 max-w-sm mx-auto leading-relaxed">{t("locations.ctaDesc")}</p>
         <a href="/contact">
           <button className="group inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-7 py-3 rounded-full text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-amber-200 dark:shadow-amber-900/50">
-            {copy.locations.ctaBtn}
+            {t("locations.ctaBtn")}
             <ArrowRight className="h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1" />
           </button>
         </a>

@@ -1,27 +1,31 @@
 import { Users, MapPin, Calendar, Clock, ChevronRight, Hourglass, CheckCircle, XCircle } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { formatTimeAgo } from "@/lib/date-utils";
 import type { ApplicationRecord, PendingApproval } from "./my-teams-types";
 
-const c = copy.myTeams;
+function getAppStatusConfig(t: (key: any, vars?: Record<string, string | number>) => string): Record<string, { label: string; color: string; icon: React.ElementType }> {
+  return {
+    pending: { label: t("myTeams.appStatusPending"), color: "bg-amber-50 text-amber-700 border border-amber-200", icon: Hourglass },
+    approved: { label: t("myTeams.appStatusApproved"), color: "bg-amber-50 text-amber-700 border border-amber-200", icon: CheckCircle },
+    rejected: { label: t("myTeams.appStatusRejected"), color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", icon: XCircle },
+  };
+}
 
-const appStatusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  pending: { label: c.appStatusPending, color: "bg-amber-50 text-amber-700 border border-amber-200", icon: Hourglass },
-  approved: { label: c.appStatusApproved, color: "bg-amber-50 text-amber-700 border border-amber-200", icon: CheckCircle },
-  rejected: { label: c.appStatusRejected, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", icon: XCircle },
-};
-
-const levelConfig: Record<string, { label: string; emoji: string; color: string }> = {
-  beginner: { label: c.levelBeginner, emoji: "🌱", color: "bg-green-50 text-green-700 border border-green-200" },
-  intermediate: { label: c.levelIntermediate, emoji: "🥾", color: "bg-blue-50 text-blue-700 border border-blue-200" },
-  advanced: { label: c.levelAdvanced, emoji: "⛰️", color: "bg-purple-50 text-purple-700 border border-purple-200" },
-  expert: { label: c.levelExpert, emoji: "🏔️", color: "bg-amber-50 text-amber-700 border border-amber-200" },
-};
+function getLevelConfig(t: (key: any, vars?: Record<string, string | number>) => string): Record<string, { label: string; emoji: string; color: string }> {
+  return {
+    beginner: { label: t("myTeams.levelBeginner"), emoji: "🌱", color: "bg-green-50 text-green-700 border border-green-200" },
+    intermediate: { label: t("myTeams.levelIntermediate"), emoji: "🥾", color: "bg-blue-50 text-blue-700 border border-blue-200" },
+    advanced: { label: t("myTeams.levelAdvanced"), emoji: "⛰️", color: "bg-purple-50 text-purple-700 border border-purple-200" },
+    expert: { label: t("myTeams.levelExpert"), emoji: "🏔️", color: "bg-amber-50 text-amber-700 border border-amber-200" },
+  };
+}
 
 export function ApplicationCard({ application }: { application: ApplicationRecord }) {
+  const { t } = useI18n();
   const team = application.team;
-  const appStatus = appStatusConfig[application.status] || appStatusConfig.pending;
+  const statusConfig = getAppStatusConfig(t);
+  const appStatus = statusConfig[application.status] || statusConfig.pending;
   const StatusIcon = appStatus.icon;
   if (!team) return null;
   const isFull = team.currentMembers >= team.maxMembers;
@@ -64,13 +68,13 @@ export function ApplicationCard({ application }: { application: ApplicationRecor
                 </span>
               )}
               <span className={cn("flex items-center gap-1 font-medium", isFull ? "text-amber-600" : "text-amber-600")}>
-                <Users className="h-3.5 w-3.5" />{team.currentMembers}/{team.maxMembers}人
+                <Users className="h-3.5 w-3.5" />{team.currentMembers}/{team.maxMembers}{t("myTeams.memberSuffix")}
               </span>
             </div>
             <div className="flex items-center justify-between mt-2">
               {team.leader && (
                 <p className="text-xs text-stone-400 dark:text-stone-500">
-                  队长：<span className="text-stone-600 dark:text-stone-500">{team.leader.name}</span>
+                  {t("myTeams.teamLeaderLabel")}<span className="text-stone-600 dark:text-stone-500">{team.leader.name}</span>
                 </p>
               )}
               <p className="text-xs text-stone-400 dark:text-stone-500 ml-auto">{formatTimeAgo(application.createdAt)}</p>
@@ -86,9 +90,11 @@ export function ApplicationCard({ application }: { application: ApplicationRecor
 export function PendingApprovalCard({ approval, onClick }: {
   approval: PendingApproval; onClick: (a: PendingApproval) => void;
 }) {
+  const { t } = useI18n();
   const applicant = approval.applicant;
   const team = approval.team;
   if (!applicant || !team) return null;
+  const levelConfig = getLevelConfig(t);
   const lv = levelConfig[applicant.level];
 
   return (
@@ -96,7 +102,7 @@ export function PendingApprovalCard({ approval, onClick }: {
       onClick={() => onClick(approval)}>
       <div className="flex items-start justify-between gap-2 mb-3">
         <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5">
-          <Hourglass className="h-3 w-3" />{c.pendingReview}
+          <Hourglass className="h-3 w-3" />{t("myTeams.pendingReview")}
         </span>
         <span className="text-xs text-stone-400 dark:text-stone-500">{formatTimeAgo(approval.createdAt)}</span>
       </div>
@@ -120,17 +126,17 @@ export function PendingApprovalCard({ approval, onClick }: {
           {applicant.bio ? (
             <p className="text-sm text-stone-500 dark:text-stone-500 mt-1 line-clamp-1 leading-relaxed">{applicant.bio}</p>
           ) : (
-            <p className="text-sm text-stone-400 dark:text-stone-500 mt-1 italic">{c.noBio}</p>
+            <p className="text-sm text-stone-400 dark:text-stone-500 mt-1 italic">{t("myTeams.noBio")}</p>
           )}
         </div>
       </div>
       <div className="mt-3 bg-stone-50 dark:bg-stone-900 rounded-xl px-4 py-3 text-sm">
-        <p className="font-medium text-stone-700 dark:text-stone-300 mb-1.5 truncate">{c.applyToJoin}：{team.title}</p>
+        <p className="font-medium text-stone-700 dark:text-stone-300 mb-1.5 truncate">{t("myTeams.applyTeamLabel")}：{team.title}</p>
         <div className="flex flex-wrap gap-3 text-stone-500 dark:text-stone-500 text-xs">
           {team.date && (
             <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{team.date}</span>
           )}
-          <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{team.currentMembers}/{team.maxMembers}人</span>
+          <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{team.currentMembers}/{team.maxMembers}{t("myTeams.memberSuffix")}</span>
           {team.location?.name && (
             <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{team.location.name}</span>
           )}
@@ -138,7 +144,7 @@ export function PendingApprovalCard({ approval, onClick }: {
       </div>
       <div className="mt-3 flex items-center justify-end">
         <span className="text-sm text-amber-600 font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-          查看详情<ChevronRight className="h-4 w-4" />
+          {t("myTeams.viewDetail")}<ChevronRight className="h-4 w-4" />
         </span>
       </div>
     </button>

@@ -1,16 +1,18 @@
 import * as React from "react";
 import { useState } from "react";
 import { Mountain, Heart, Mail, ArrowUp, MapPin, Users, Plus, ExternalLink, Copy, Check, X } from "lucide-react";
-import { copy } from "@/lib/copy";
+import type { TranslationKey } from "@/i18n";
+import { useI18n } from "@/hooks/useI18n";
 
 /**
  * 页脚组件 - 四列卡片式布局
  * 结构：品牌卡片（左）+ 三列链接（右）+ 版权栏
  */
+
 /**
  * 微信联系弹窗组件
  */
-function WechatContactModal({ onClose }: { onClose: () => void }) {
+function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: TranslationKey) => string }) {
   const [copied, setCopied] = useState(false);
   const WECHAT_ID = "VictorHong111"; // 微信客服号
 
@@ -40,7 +42,7 @@ function WechatContactModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="bg-popover rounded-2xl w-full max-w-xs overflow-hidden shadow-xl"
+        className="bg-popover rounded-2xl w-full max-w-xs overflow-hidden shadow-xl relative"
         onClick={(e) => e.stopPropagation()}
         style={{ animation: "modalSlideIn 0.2s ease-out" }}
       >
@@ -56,7 +58,7 @@ function WechatContactModal({ onClose }: { onClose: () => void }) {
         <button
           onClick={onClose}
           className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          aria-label="关闭"
+          aria-label={t("footer.close")}
         >
           <X className="w-4 h-4" />
         </button>
@@ -71,7 +73,7 @@ function WechatContactModal({ onClose }: { onClose: () => void }) {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-foreground">
-              {copy.footer.socials.wechat}
+              {t("footer.socials.wechat")}
             </h3>
           </div>
 
@@ -82,7 +84,7 @@ function WechatContactModal({ onClose }: { onClose: () => void }) {
           >
             <img
               src="/wechat-qr.png"
-              alt="微信二维码"
+              alt={t("footer.socials.wechat")}
               className="w-full aspect-square object-contain rounded-lg"
             />
           </div>
@@ -108,12 +110,12 @@ function WechatContactModal({ onClose }: { onClose: () => void }) {
               {copied ? (
                 <>
                   <Check className="w-4 h-4" />
-                  已复制
+                  {t("footer.wechatCopied")}
                 </>
               ) : (
                 <>
                   <Copy className="w-4 h-4" />
-                  复制微信号
+                  {t("footer.wechatCopy")}
                 </>
               )}
             </button>
@@ -126,7 +128,7 @@ function WechatContactModal({ onClose }: { onClose: () => void }) {
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              保存二维码
+              {t("footer.wechatSaveQR")}
             </button>
           </div>
         </div>
@@ -149,6 +151,7 @@ function WechatContactModal({ onClose }: { onClose: () => void }) {
 }
 
 export function Footer() {
+  const { t } = useI18n();
   const [showWechatQR, setShowWechatQR] = React.useState(false);
 
   const scrollToTop = () => {
@@ -156,21 +159,21 @@ export function Footer() {
   };
 
   const exploreLinks = [
-    { href: "/locations", label: copy.footer.exploreLocations, icon: MapPin },
-    { href: "/teams", label: copy.footer.exploreTeams, icon: Users },
-    { href: "/teams/create", label: copy.footer.exploreCreate, icon: Plus },
+    { href: "/locations", label: t("footer.exploreLocations"), icon: MapPin },
+    { href: "/teams", label: t("footer.exploreTeams"), icon: Users },
+    { href: "/teams/create", label: t("footer.exploreCreate"), icon: Plus },
   ];
 
   const supportLinks = [
-    { href: "/about", label: copy.footer.supportAbout },
-    { href: "/blog", label: copy.footer.supportBlog },
-    { href: "/feedback", label: copy.footer.supportFeedback },
-    { href: "/help", label: copy.footer.supportHelp },
+    { href: "/about", label: t("footer.supportAbout") },
+    { href: "/blog", label: t("footer.supportBlog") },
+    { href: "/feedback", label: t("footer.supportFeedback") },
+    { href: "/help", label: t("footer.supportHelp") },
   ];
 
   const legalLinks = [
-    { href: "/privacy", label: copy.footer.legalPrivacy },
-    { href: "/terms", label: copy.footer.legalTerms },
+    { href: "/privacy", label: t("footer.legalPrivacy") },
+    { href: "/terms", label: t("footer.legalTerms") },
   ];
 
   return (
@@ -216,12 +219,12 @@ export function Footer() {
 
                 {/* 标语 */}
                 <p className="text-sm leading-relaxed mb-5 text-muted-foreground">
-                  {copy.footer.tagline}
+                  {t("footer.tagline")}
                 </p>
 
                 {/* 邮箱按钮 */}
                 <a
-                  href={`mailto:${copy.footer.contactEmail}`}
+                  href={`mailto:${t("footer.contactEmail")}`}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] mt-auto"
                   style={{
                     background: "rgba(217, 119, 6, 0.08)",
@@ -235,7 +238,7 @@ export function Footer() {
                   }}
                 >
                   <Mail className="h-4 w-4 flex-shrink-0" />
-                  {copy.footer.contactEmail}
+                  {t("footer.contactEmail")}
                 </a>
 
                 {/* 社交媒体按钮 */}
@@ -245,7 +248,7 @@ export function Footer() {
                     onClick={() => setShowWechatQR(true)}
                     className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
                     style={{ background: "rgba(217, 119, 6, 0.08)", color: "#D97706" }}
-                    title={copy.footer.socials.wechat}
+                    title={t("footer.socials.wechat")}
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.045c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z"/>
@@ -259,7 +262,7 @@ export function Footer() {
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
                     style={{ background: "rgba(217, 119, 6, 0.08)", color: "#D97706" }}
-                    title={copy.footer.socials.jike}
+                    title={t("footer.socials.jike")}
                   >
                     <svg width="20" height="20" viewBox="0 0 38 37" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M29.0824 0H8.78504C4.20934 0 0.5 3.70934 0.5 8.28504V28.5824C0.5 33.1581 4.20934 36.8675 8.78504 36.8675H29.0824C33.6581 36.8675 37.3675 33.1581 37.3675 28.5824V8.28504C37.3675 3.70934 33.6581 0 29.0824 0Z" fill="#D97706"/>
@@ -274,7 +277,7 @@ export function Footer() {
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
                     style={{ background: "rgba(217, 119, 6, 0.08)", color: "#D97706" }}
-                    title={copy.footer.socials.telegram}
+                    title={t("footer.socials.telegram")}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                       <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.287 5.906q-1.168.486-4.666 2.01-.567.225-.595.442c-.03.243.275.339.69.47l.175.055c.408.133.958.288 1.243.294q.39.01.868-.32 3.269-2.206 3.374-2.23c.05-.012.12-.026.166.016s.042.12.037.141c-.03.129-1.227 1.241-1.846 1.817-.193.18-.33.307-.358.336a8 8 0 0 1-.188.186c-.38.366-.664.64.015 1.088.327.216.589.393.85.571.284.194.568.387.936.629q.14.092.27.187c.331.236.63.448.997.414.214-.02.435-.22.547-.82.265-1.417.786-4.486.906-5.751a1.4 1.4 0 0 0-.013-.315.34.34 0 0 0-.114-.217.53.53 0 0 0-.31-.093c-.3.005-.763.166-2.984 1.09"/>
@@ -288,7 +291,7 @@ export function Footer() {
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
                     style={{ background: "rgba(217, 119, 6, 0.08)", color: "#D97706" }}
-                    title={copy.footer.socials.xiaohongshu}
+                    title={t("footer.socials.xiaohongshu")}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M22.405 9.879c.002.016.01.02.07.019h.725a.797.797 0 0 0 .78-.972.794.794 0 0 0-.884-.618.795.795 0 0 0-.692.794c0 .101-.002.666.001.777zm-11.509 4.808c-.203.001-1.353.004-1.685.003a2.528 2.528 0 0 1-.766-.126.025.025 0 0 0-.03.014L7.7 16.127a.025.025 0 0 0 .01.032c.111.06.336.124.495.124.66.01 1.32.002 1.981 0 .01 0 .02-.006.023-.015l.712-1.545a.025.025 0 0 0-.024-.036zM.477 9.91c-.071 0-.076.002-.076.01a.834.834 0 0 0-.01.08c-.027.397-.038.495-.234 3.06-.012.24-.034.389-.135.607-.026.057-.033.042.003.112.046.092.681 1.523.787 1.74.008.015.011.02.017.02.008 0 .033-.026.047-.044.147-.187.268-.391.371-.606.306-.635.44-1.325.486-1.706.014-.11.021-.22.03-.33l.204-2.616.022-.293c.003-.029 0-.033-.03-.034zm7.203 3.757a1.427 1.427 0 0 1-.135-.607c-.004-.084-.031-.39-.235-3.06a.443.443 0 0 0-.01-.082c-.004-.011-.052-.008-.076-.008h-1.48c-.03.001-.034.005-.03.034l.021.293c.076.982.153 1.964.233 2.946.05.4.186 1.085.487 1.706.103.215.223.419.37.606.015.018.037.051.048.049.02-.003.742-1.642.804-1.765.036-.07.03-.055.003-.112zm3.861-.913h-.872a.126.126 0 0 1-.116-.178l1.178-2.625a.025.025 0 0 0-.023-.035l-1.318-.003a.148.148 0 0 1-.135-.21l.876-1.954a.025.025 0 0 0-.023-.035h-1.56c-.01 0-.02.006-.024.015l-.926 2.068c-.085.169-.314.634-.399.938a.534.534 0 0 0-.02.191.46.46 0 0 0 .23.378.981.981 0 0 0 .46.119h.59c.041 0-.688 1.482-.834 1.972a.53.53 0 0 0-.023.172.465.465 0 0 0 .23.398c.15.092.342.12.475.12l1.66-.001c.01 0 .02-.006.023-.015l.575-1.28a.025.025 0 0 0-.024-.035zm-6.93-4.937H3.1a.032.032 0 0 0-.034.033c0 1.048-.01 2.795-.01 6.829 0 .288-.269.262-.28.262h-.74c-.04.001-.044.004-.04.047.001.037.465 1.064.555 1.263.01.02.03.033.051.033.157.003.767.009.938-.014.153-.02.3-.06.438-.132.3-.156.49-.419.595-.765.052-.172.075-.353.075-.533.002-2.33 0-4.66-.007-6.991a.032.032 0 0 0-.032-.032zm11.784 6.896c0-.014-.01-.021-.024-.022h-1.465c-.048-.001-.049-.002-.05-.049v-4.66c0-.072-.005-.07.07-.07h.863c.08 0 .075.004.075-.074V8.393c0-.082.006-.076-.08-.076h-3.5c-.064 0-.075-.006-.075.073v1.445c0 .083-.006.077.08.077h.854c.075 0 .07-.004.07.07v4.624c0 .095.008.084-.085.084-.37 0-1.11-.002-1.304 0-.048.001-.06.03-.06.03l-.697 1.519s-.014.025-.008.036c.006.01.013.008.058.008 1.748.003 3.495.002 5.243.002.03-.001.034-.006.035-.033v-1.539zm4.177-3.43c0 .013-.007.023-.02.024-.346.006-.692.004-1.037.004-.014-.002-.022-.01-.022-.024-.005-.434-.007-.869-.01-1.303 0-.072-.006-.071.07-.07l.733-.003c.041 0 .081.002.12.015.093.025.16.107.165.204.006.431.002 1.153.001 1.153zm2.67.244a1.953 1.953 0 0 0-.883-.222h-.18c-.04-.001-.04-.003-.042-.04V10.21c0-.132-.007-.263-.025-.394a1.823 1.823 0 0 0-.153-.53 1.533 1.533 0 0 0-.677-.71 2.167 2.167 0 0 0-1-.258c-.153-.003-.567 0-.72 0-.07 0-.068.004-.068-.065V7.76c0-.031-.01-.041-.046-.039H17.93s-.016 0-.023.007c-.006.006-.008.012-.008.023v.546c-.008.036-.057.015-.082.022h-.95c-.022.002-.028.008-.03.032v1.481c0 .09-.004.082.082.082h.913c.082 0 .072.128.072.128V11.19s.003.117-.06.117h-1.482c-.068 0-.06.082-.06.082v1.445s-.01.068.064.068h1.457c.082 0 .076-.006.076.079v3.225c0 .088-.007.081.082.081h1.43c.09 0 .082.007.082-.08v-3.27c0-.029.006-.035.033-.035l2.323-.003c.098 0 .191.02.28.061a.46.46 0 0 1 .274.407c.008.395.003.79.003 1.185 0 .259-.107.367-.33.367h-1.218c-.023.002-.029.008-.028.033.184.437.374.871.57 1.303a.045.045 0 0 0 .04.026c.17.005.34.002.51.003.15-.002.517.004.666-.01a2.03 2.03 0 0 0 .408-.075c.59-.18.975-.698.976-1.313v-1.981c0-.128-.01-.254-.034-.38 0 .078-.029-.641-.724-.998z"/>
@@ -304,7 +307,7 @@ export function Footer() {
                 className="text-sm font-semibold mb-4 tracking-wide"
                 style={{ color: "#D97706" }}
               >
-                {copy.footer.explore}
+                {t("footer.explore")}
               </h3>
               <ul className="space-y-3">
                 {exploreLinks.map(({ href, label, icon: Icon }) => (
@@ -327,7 +330,7 @@ export function Footer() {
                 className="text-sm font-semibold mb-4 tracking-wide"
                 style={{ color: "#D97706" }}
               >
-                {copy.footer.support}
+                {t("footer.support")}
               </h3>
               <ul className="space-y-3">
                 {supportLinks.map(({ href, label }) => (
@@ -349,7 +352,7 @@ export function Footer() {
                 className="text-sm font-semibold mb-4 tracking-wide"
                 style={{ color: "#D97706" }}
               >
-                {copy.footer.legal}
+                {t("footer.legal")}
               </h3>
               <ul className="space-y-3 mb-6">
                 {legalLinks.map(({ href, label }) => (
@@ -370,7 +373,7 @@ export function Footer() {
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:text-primary hover:scale-105"
               >
                 <ArrowUp className="h-3.5 w-3.5" />
-                {copy.footer.backToTop}
+                {t("footer.backToTop")}
               </button>
             </div>
 
@@ -382,12 +385,12 @@ export function Footer() {
           className="border-t border-border py-6 flex flex-col sm:flex-row items-center justify-between gap-3"
         >
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} {copy.footer.copyright}
+            © {new Date().getFullYear()} {t("footer.copyright")}
           </p>
           <p className="text-xs flex items-center gap-1.5 text-muted-foreground">
             Made with
             <Heart className="h-3 w-3 text-primary" style={{ fill: "currentColor" }} />
-            for 每一个想找搭子的你
+            {t("footer.madeWithLove")}
           </p>
         </div>
 
@@ -395,7 +398,7 @@ export function Footer() {
 
       {/* 微信联系弹窗 */}
       {showWechatQR && (
-        <WechatContactModal onClose={() => setShowWechatQR(false)} />
+        <WechatContactModal onClose={() => setShowWechatQR(false)} t={t} />
       )}
 
     </footer>

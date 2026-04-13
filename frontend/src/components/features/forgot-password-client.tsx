@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import { Loader2, Mountain, Mail, CheckCircle2, ArrowLeft } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI } from "@/lib/api";
 
 /**
  * 忘记密码页 — 温暖品牌风格（居中卡片，品牌色调）
  */
 export function ForgotPasswordClient() {
+  const { t } = useI18n();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [success, setSuccess] = React.useState(false);
@@ -29,12 +30,12 @@ export function ForgotPasswordClient() {
       const result = await res.json();
 
       if (!res.ok) {
-        throw new Error(result.error || result.message || copy.auth.sendFailed);
+        throw new Error(result.error || result.message || t("auth.sendFailed"));
       }
 
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : copy.auth.sendFailed);
+      setError(err instanceof Error ? err.message : t("auth.sendFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +56,7 @@ export function ForgotPasswordClient() {
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          {copy.common.backLogin}
+          {t("common.backLogin")}
         </a>
       </div>
 
@@ -74,10 +75,10 @@ export function ForgotPasswordClient() {
 
               <div>
                 <h2 className="text-2xl font-bold mb-2 text-foreground">
-                  {copy.auth.emailSent}
+                  {t("auth.emailSent")}
                 </h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {copy.auth.emailSentDesc}
+                  {t("auth.emailSentDesc")}
                 </p>
               </div>
 
@@ -86,7 +87,7 @@ export function ForgotPasswordClient() {
                 className="rounded-xl px-4 py-3 text-sm text-left bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/50"
               >
                 <p className="text-amber-800 dark:text-amber-300">
-                  💡 {copy.auth.noEmailTip}
+                  {t("auth.noEmailTip")}
                 </p>
               </div>
 
@@ -108,7 +109,7 @@ export function ForgotPasswordClient() {
                   el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
                 }}
               >
-                {copy.common.backLogin}
+                {t("common.backLogin")}
               </a>
             </div>
           ) : (
@@ -123,10 +124,10 @@ export function ForgotPasswordClient() {
                   <Mail className="h-8 w-8" style={{ color: "#D97706" }} />
                 </div>
                 <h1 className="text-2xl font-bold mb-1.5 text-foreground">
-                  {copy.auth.forgotPasswordTitle}
+                  {t("auth.forgotPasswordTitle")}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  {copy.auth.forgotPasswordSubtitle}
+                  {t("auth.forgotPasswordSubtitle")}
                 </p>
               </div>
 
@@ -134,7 +135,7 @@ export function ForgotPasswordClient() {
                 {/* 邮箱输入 */}
                 <div className="space-y-1.5">
                   <label htmlFor="email" className="text-sm font-medium text-foreground">
-                    {copy.auth.email}
+                    {t("auth.email")}
                   </label>
                   <div className="relative">
                     <Mail
@@ -143,7 +144,7 @@ export function ForgotPasswordClient() {
                     <input
                       id="email"
                       type="email"
-                      placeholder={copy.auth.emailPlaceholder}
+                      placeholder={t("auth.emailPlaceholder")}
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
@@ -190,19 +191,19 @@ export function ForgotPasswordClient() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      {copy.auth.sendingResetLink}
+                      {t("auth.sendingResetLink")}
                     </>
                   ) : (
                     <>
                       <Mail className="h-4 w-4" />
-                      {copy.auth.sendResetLink}
+                      {t("auth.sendResetLink")}
                     </>
                   )}
                 </button>
 
                 {/* 提示文案 */}
                 <p className="text-center text-xs text-muted-foreground">
-                  {copy.email.checkJunkFolder}
+                  {t("auth.checkJunkFolder")}
                 </p>
               </form>
             </>

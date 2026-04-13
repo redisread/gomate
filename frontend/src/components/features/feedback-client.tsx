@@ -15,13 +15,14 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { submitFeedback } from "@/lib/api";
 
 type FeedbackType = "suggestion" | "bug";
 
 /** 反馈建议页主组件 */
 export function FeedbackClient() {
+  const { t } = useI18n();
   const [type, setType] = React.useState<FeedbackType>("suggestion");
   const [form, setForm] = React.useState({
     name: "",
@@ -62,7 +63,7 @@ export function FeedbackClient() {
       setSubmitted(true);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : copy.feedback.submitError
+        err instanceof Error ? err.message : t("feedback.submitError")
       );
     } finally {
       setSubmitting(false);
@@ -97,21 +98,21 @@ export function FeedbackClient() {
                 className="flex items-center gap-1 hover:text-amber-600 transition-colors"
               >
                 <Home className="w-4 h-4" />
-                <span>首页</span>
+                <span>{t("nav.home")}</span>
               </a>
               <ChevronRight className="w-4 h-4" />
               <span className="text-foreground/70 font-medium">
-                {copy.feedback.pageTitle}
+                {t("feedback.pageTitle")}
               </span>
             </nav>
 
             <h1 className="text-3xl font-bold text-foreground">
-              {copy.feedback.pageSubtitle}
+              {t("feedback.pageSubtitle")}
             </h1>
             <p className="mt-2 text-muted-foreground text-base">
               {type === "suggestion"
-                ? "您的每一个想法，都能帮助我们变得更好"
-                : "遇到问题？告诉我们，我们会尽快修复"}
+                ? t("feedback.suggestionDesc")
+                : t("feedback.bugDesc")}
             </p>
           </div>
         </div>
@@ -126,16 +127,16 @@ export function FeedbackClient() {
                   <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {copy.feedback.successTitle}
+                  {t("feedback.successTitle")}
                 </h3>
                 <p className="text-muted-foreground text-sm mb-6">
-                  {copy.feedback.successDesc}
+                  {t("feedback.successDesc")}
                 </p>
                 <button
                   onClick={handleReset}
                   className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors"
                 >
-                  继续提交
+                  {t("feedback.continueSubmitBtn")}
                 </button>
               </div>
             ) : (
@@ -151,7 +152,7 @@ export function FeedbackClient() {
                     }`}
                   >
                     <Lightbulb className="w-4 h-4" />
-                    {copy.feedback.tabSuggestion}
+                    {t("feedback.tabSuggestion")}
                   </button>
                   <button
                     onClick={() => setType("bug")}
@@ -162,7 +163,7 @@ export function FeedbackClient() {
                     }`}
                   >
                     <Bug className="w-4 h-4" />
-                    {copy.feedback.tabBug}
+                    {t("feedback.tabBug")}
                   </button>
                 </div>
 
@@ -172,28 +173,28 @@ export function FeedbackClient() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-foreground/70 mb-1.5">
-                        {copy.feedback.nameLabel}
+                        {t("feedback.nameLabel")}
                       </label>
                       <input
                         type="text"
                         name="name"
                         value={form.name}
                         onChange={handleChange}
-                        placeholder={copy.feedback.namePlaceholder}
+                        placeholder={t("feedback.namePlaceholder")}
                         required
                         className="w-full px-3.5 py-2.5 rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors bg-card"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-foreground/70 mb-1.5">
-                        {copy.feedback.emailLabel}
+                        {t("feedback.emailLabel")}
                       </label>
                       <input
                         type="email"
                         name="email"
                         value={form.email}
                         onChange={handleChange}
-                        placeholder={copy.feedback.emailPlaceholder}
+                        placeholder={t("feedback.emailPlaceholder")}
                         required
                         className="w-full px-3.5 py-2.5 rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors bg-card"
                       />
@@ -204,7 +205,7 @@ export function FeedbackClient() {
                   {type === "bug" && (
                     <div className="space-y-4 p-4 bg-red-50/50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/50">
                       <p className="text-sm text-muted-foreground font-medium">
-                        问题详情（选填，但有助于我们更快定位问题）
+                        {t("feedback.bugDetailHint")}
                       </p>
 
                       {/* 设备 + 浏览器 */}
@@ -212,28 +213,28 @@ export function FeedbackClient() {
                         <div>
                           <label className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1.5">
                             <Monitor className="w-3.5 h-3.5" />
-                            {copy.feedback.deviceLabel}
+                            {t("feedback.deviceLabel")}
                           </label>
                           <input
                             type="text"
                             name="device"
                             value={form.device}
                             onChange={handleChange}
-                            placeholder={copy.feedback.devicePlaceholder}
+                            placeholder={t("feedback.devicePlaceholder")}
                             className="w-full px-3 py-2 rounded-lg border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors bg-card"
                           />
                         </div>
                         <div>
                           <label className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1.5">
                             <Globe className="w-3.5 h-3.5" />
-                            {copy.feedback.browserLabel}
+                            {t("feedback.browserLabel")}
                           </label>
                           <input
                             type="text"
                             name="browser"
                             value={form.browser}
                             onChange={handleChange}
-                            placeholder={copy.feedback.browserPlaceholder}
+                            placeholder={t("feedback.browserPlaceholder")}
                             className="w-full px-3 py-2 rounded-lg border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors bg-card"
                           />
                         </div>
@@ -243,14 +244,14 @@ export function FeedbackClient() {
                       <div>
                         <label className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1.5">
                           <Link className="w-3.5 h-3.5" />
-                          {copy.feedback.pageUrlLabel}
+                          {t("feedback.pageUrlLabel")}
                         </label>
                         <input
                           type="url"
                           name="pageUrl"
                           value={form.pageUrl}
                           onChange={handleChange}
-                          placeholder={copy.feedback.pageUrlPlaceholder}
+                          placeholder={t("feedback.pageUrlPlaceholder")}
                           className="w-full px-3 py-2 rounded-lg border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors bg-card"
                         />
                       </div>
@@ -259,13 +260,13 @@ export function FeedbackClient() {
                       <div>
                         <label className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1.5">
                           <ListOrdered className="w-3.5 h-3.5" />
-                          {copy.feedback.stepsLabel}
+                          {t("feedback.stepsLabel")}
                         </label>
                         <textarea
                           name="steps"
                           value={form.steps}
                           onChange={handleChange}
-                          placeholder={copy.feedback.stepsPlaceholder}
+                          placeholder={t("feedback.stepsPlaceholder")}
                           rows={3}
                           className="w-full px-3 py-2 rounded-lg border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors resize-none bg-card"
                         />
@@ -276,7 +277,7 @@ export function FeedbackClient() {
                   {/* 详细描述 */}
                   <div>
                     <label className="block text-sm font-medium text-foreground/70 mb-1.5">
-                      {copy.feedback.contentLabel}
+                      {t("feedback.contentLabel")}
                     </label>
                     <textarea
                       name="content"
@@ -284,8 +285,8 @@ export function FeedbackClient() {
                       onChange={handleChange}
                       placeholder={
                         type === "suggestion"
-                          ? copy.feedback.contentPlaceholderSuggestion
-                          : copy.feedback.contentPlaceholderBug
+                          ? t("feedback.contentPlaceholderSuggestion")
+                          : t("feedback.contentPlaceholderBug")
                       }
                       required
                       rows={6}
@@ -312,9 +313,7 @@ export function FeedbackClient() {
                       } disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors`}
                     >
                       <Send className="h-4 w-4" />
-                      {submitting
-                        ? copy.feedback.submitting
-                        : copy.feedback.submitBtn}
+                      {submitting ? t("feedback.submitting") : t("feedback.submitBtn")}
                     </button>
                   </div>
                 </form>

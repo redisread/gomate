@@ -11,4 +11,4 @@ export {
   TeamsHeader,
   TeamsCtaSection,
 } from "./teams-ui";
-export { statusConfig, getDaysUntilStart } from "./constants";
+export { getStatusConfig, getDaysUntilStart } from "./constants";

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ImageIcon } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import type { FormData } from "./use-location-form";
 import { CoverImageUpload } from "@/components/ui/cover-image-upload";
 import { MultiImageUpload } from "@/components/ui/multi-image-upload";
@@ -61,16 +61,17 @@ interface LocationFormContentFieldsProps {
 }
 
 export function LocationFormContentFields({ formData, isSaving, updateField }: LocationFormContentFieldsProps) {
+  const { t } = useI18n();
   return (
-    <SectionCard icon={<ImageIcon className="h-4 w-4" />} title="封面与季节">
-      <Field label={copy.admin.formCoverImageRequired} hint="可上传新图，或从下方相册选择">
+    <SectionCard icon={<ImageIcon className="h-4 w-4" />} title={t("admin.formContentTitle")}>
+      <Field label={t("admin.formCoverImageRequired")} hint={t("ui.selectFromAlbum")}>
         <CoverImageUpload value={formData.coverImage} onChange={(url) => updateField("coverImage", url)} disabled={isSaving} />
       </Field>
-      <Field label="相册图片" hint="点击图片可设为封面">
+      <Field label={t("admin.formAlbumTitle")} hint={t("ui.coverHint")}>
         <MultiImageUpload values={formData.images} onChange={(urls) => updateField("images", urls)}
           max={9} disabled={isSaving} coverImage={formData.coverImage} onSetCover={(url) => updateField("coverImage", url)} />
       </Field>
-      <Field label={copy.admin.formBestSeason} hint={copy.admin.seasonSelectHint}>
+      <Field label={t("admin.formBestSeason")} hint={t("admin.seasonSelectHint")}>
         <SeasonPicker value={formData.bestSeason} onChange={(v) => updateField("bestSeason", v)} disabled={isSaving} />
       </Field>
     </SectionCard>

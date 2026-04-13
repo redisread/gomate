@@ -2,12 +2,10 @@
 
 import * as React from "react";
 import { Heart, MapPin, ArrowLeft, Mountain } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-
-const c = copy.favorites;
 
 interface FavoriteLocation {
   id: string;
@@ -27,6 +25,7 @@ interface FavoriteLocation {
  * 我的收藏页客户端组件
  */
 export function FavoritesClient() {
+  const { t } = useI18n();
   const [favorites, setFavorites] = React.useState<FavoriteLocation[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [removingId, setRemovingId] = React.useState<string | null>(null);
@@ -84,12 +83,12 @@ export function FavoritesClient() {
               className="inline-flex items-center gap-1.5 text-sm text-[#8f7f6e] hover:text-[#1e1812] transition-colors mb-4"
             >
               <ArrowLeft className="h-4 w-4" />
-              {c.backBtn}
+              {t("favorites.backBtn")}
             </a>
-            <h1 className="text-2xl font-bold text-[#1e1812]">{c.pageTitle}</h1>
+            <h1 className="text-2xl font-bold text-[#1e1812]">{t("favorites.pageTitle")}</h1>
             {!isLoading && favorites.length > 0 && (
               <p className="text-sm text-[#8f7f6e] mt-1">
-                {favorites.length} {c.locationCount}
+                {favorites.length} {t("favorites.locationCount")}
               </p>
             )}
           </div>
@@ -121,14 +120,14 @@ export function FavoritesClient() {
               >
                 <Heart className="h-8 w-8 text-amber-600 dark:text-amber-400" />
               </div>
-              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-2">{c.emptyTitle}</h2>
-              <p className="text-sm text-stone-500 dark:text-stone-400 mb-6">{c.emptyDesc}</p>
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-2">{t("favorites.emptyTitle")}</h2>
+              <p className="text-sm text-stone-500 dark:text-stone-400 mb-6">{t("favorites.emptyDesc")}</p>
               <a
                 href="/locations"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
               >
                 <Mountain className="h-4 w-4" />
-                {c.emptyBtn}
+                {t("favorites.emptyBtn")}
               </a>
             </div>
           )}
@@ -185,7 +184,7 @@ export function FavoritesClient() {
                           backdropFilter: "blur(4px)",
                           boxShadow: "0 2px 8px rgba(30,24,18,0.12)",
                         }}
-                        aria-label="取消收藏"
+                        aria-label={t("favorites.removeSuccess")}
                       >
                         <Heart
                           className="h-4 w-4 transition-colors"

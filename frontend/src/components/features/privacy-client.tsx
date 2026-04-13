@@ -2,6 +2,8 @@
  * 隐私政策页面组件
  */
 
+import { useI18n } from "@/hooks/useI18n";
+
 const sections = [
   {
     title: "1. 信息收集",
@@ -71,6 +73,7 @@ const sections = [
 ];
 
 export function PrivacyClient() {
+  const { t } = useI18n();
   return (
     <div className="bg-stone-50 dark:bg-stone-900 min-h-screen">
       {/* Hero 区域 */}
@@ -79,17 +82,17 @@ export function PrivacyClient() {
           {/* 面包屑 */}
           <nav className="text-sm text-stone-400 dark:text-stone-500 mb-4">
             <a href="/" className="hover:text-amber-600 transition-colors">
-              首页
+              {t("nav.home")}
             </a>
             <span className="mx-2">/</span>
-            <span className="text-stone-600 dark:text-stone-400">隐私政策</span>
+            <span className="text-stone-600 dark:text-stone-400">{t("privacy.pageTitle")}</span>
           </nav>
 
-          <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-200 mb-2">隐私政策</h1>
+          <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-200 mb-2">{t("privacy.pageTitle")}</h1>
           <p className="text-stone-500 dark:text-stone-400 mb-1">
-            我们重视您的隐私，本政策说明我们如何收集和使用您的信息
+            {t("privacy.pageSubtitle")}
           </p>
-          <p className="text-sm text-stone-400 dark:text-stone-500">最后更新：2025年1月1日</p>
+          <p className="text-sm text-stone-400 dark:text-stone-500">{t("privacy.lastUpdated")}</p>
         </div>
       </div>
 

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { MapPin, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import type { City } from "@/lib/types";
 import type { FormData } from "./use-location-form";
 import { CitySelect } from "@/components/ui/city-select";
@@ -84,9 +84,9 @@ function styledInput(hasError?: boolean) {
    LocationFormBasicFields
    ================================================================ */
 
-const LOCATION_TYPE_OPTIONS = [
-  { value: "hiking", label: "户外徒步" }, { value: "explore", label: "城市探索" },
-  { value: "leisure", label: "休闲探店" }, { value: "travel", label: "旅行" },
+const LOCATION_TYPE_OPTIONS = (t: (key: any) => string) => [
+  { value: "hiking", label: t("admin.locationTypeHiking") }, { value: "explore", label: t("admin.locationTypeExplore") },
+  { value: "leisure", label: t("admin.locationTypeLeisure") }, { value: "travel", label: t("admin.locationTypeTravel") },
 ] as const;
 
 interface LocationFormBasicFieldsProps {
@@ -99,21 +99,23 @@ interface LocationFormBasicFieldsProps {
 }
 
 export function LocationFormBasicFields({ formData, errors, cities, updateField, touch, onOpenMapPicker }: LocationFormBasicFieldsProps) {
+  const { t } = useI18n();
+  const locationTypeOptions = LOCATION_TYPE_OPTIONS(t);
   return (
     <div className="space-y-4">
       {/* 基本信息 */}
-      <SectionCard icon={<FileText className="h-4 w-4" />} title="基本信息">
-        <Field label={copy.admin.formNameRequired} required error={errors.name}>
+      <SectionCard icon={<FileText className="h-4 w-4" />} title={t("admin.formBasicTitle")}>
+        <Field label={t("admin.formNameRequired")} required error={errors.name}>
           <input type="text" value={formData.name} onChange={(e) => updateField("name", e.target.value)}
-            onBlur={(e) => touch("name", e.target.value)} placeholder="例如：梧桐山风景区" className={cn(styledInput(!!errors.name))} />
+            onBlur={(e) => touch("name", e.target.value)} className={cn(styledInput(!!errors.name))} />
         </Field>
-        <Field label={copy.admin.formSubtitle}>
+        <Field label={t("admin.formSubtitle")} hint={t("admin.formSubtitleHint")}>
           <input type="text" value={formData.subtitle} onChange={(e) => updateField("subtitle", e.target.value)}
-            placeholder={copy.admin.placeholderSubtitle} className={cn(styledInput())} />
+            className={cn(styledInput())} />
         </Field>
-        <Field label="地点类型">
+        <Field label={t("admin.formLocationType")}>
           <div className="flex flex-wrap gap-2">
-            {LOCATION_TYPE_OPTIONS.map((opt) => (
+            {locationTypeOptions.map((opt) => (
               <button key={opt.value} type="button"
                 onClick={() => updateField("type", formData.type === opt.value ? "" : opt.value)}
                 className={cn("px-3.5 py-1.5 rounded-full text-sm font-medium transition-all",
@@ -123,8 +125,8 @@ export function LocationFormBasicFields({ formData, errors, cities, updateField,
             ))}
           </div>
         </Field>
-        <Field label={copy.admin.formDescriptionRequired} required error={errors.description}
-          hint={`已写 ${formData.description.length} 字 · 建议 100-500 字`}>
+        <Field label={t("admin.formDescriptionRequired")} required error={errors.description}
+          hint={t("admin.charCountHint", { count: formData.description.length })}>
           <div className="relative">
             <textarea rows={6} value={formData.description} onChange={(e) => updateField("description", e.target.value)}
               onBlur={(e) => touch("description", e.target.value)}
@@ -144,35 +146,35 @@ export function LocationFormBasicFields({ formData, errors, cities, updateField,
       </SectionCard>
 
       {/* 位置信息 */}
-      <SectionCard icon={<MapPin className="h-4 w-4" />} title="位置信息">
-        <Field label={copy.admin.formCity} required error={errors.cityId}>
+      <SectionCard icon={<MapPin className="h-4 w-4" />} title={t("admin.formLocationTitle")}>
+        <Field label={t("admin.formCity")} required error={errors.cityId}>
           <CitySelect value={formData.cityId} onChange={(id) => { updateField("cityId", id); touch("cityId", id); }}
             cities={cities} error={errors.cityId} />
         </Field>
-        <Field label={copy.admin.formAddress}>
+        <Field label={t("admin.formAddress")}>
           <input type="text" value={formData.address} onChange={(e) => updateField("address", e.target.value)}
-            placeholder="例如：广东省深圳市盐田区" className={cn(styledInput())} />
+            className={cn(styledInput())} />
         </Field>
-        <Field label={copy.admin.formCoordinates} hint={copy.admin.coordinatesHelp}>
+        <Field label={t("admin.formCoordinates")} hint={t("admin.coordinatesHelp")}>
           <div className="flex items-end gap-2">
             <div className="flex-1 grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] text-stone-400 mb-1">{copy.admin.latLabel}</label>
+                <label className="block text-[11px] text-stone-400 mb-1">{t("admin.latLabel")}</label>
                 <input type="number" step="any" value={formData.lat} onChange={(e) => updateField("lat", e.target.value)}
                   onBlur={(e) => touch("lat", e.target.value)} placeholder="22.5619" className={cn(styledInput(!!errors.lat))} />
                 {errors.lat && <p className="text-xs text-red-500 mt-1">{errors.lat}</p>}
               </div>
               <div>
-                <label className="block text-[11px] text-stone-400 dark:text-stone-500 mb-1">{copy.admin.lngLabel}</label>
+                <label className="block text-[11px] text-stone-400 dark:text-stone-500 mb-1">{t("admin.lngLabel")}</label>
                 <input type="number" step="any" value={formData.lng} onChange={(e) => updateField("lng", e.target.value)}
                   onBlur={(e) => touch("lng", e.target.value)} placeholder="114.1985" className={cn(styledInput(!!errors.lng))} />
                 {errors.lng && <p className="text-xs text-red-500 mt-1">{errors.lng}</p>}
               </div>
             </div>
-            <button type="button" onClick={onOpenMapPicker} title="地图选点"
+            <button type="button" onClick={onOpenMapPicker} title={t("admin.formMapPicker")}
               className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium border transition-colors"
               style={{ borderColor: "#D97706", color: "#D97706", background: "rgba(217,119,6,0.05)" }}>
-              <MapPin className="h-4 w-4" /><span className="hidden sm:inline">地图选点</span>
+              <MapPin className="h-4 w-4" /><span className="hidden sm:inline">{t("admin.formMapPicker")}</span>
             </button>
           </div>
         </Field>

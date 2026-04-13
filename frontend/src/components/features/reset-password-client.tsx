@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import { Loader2, Mountain, Lock, CheckCircle2, KeyRound } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { authClient } from "@/lib/auth-client";
 
 /**
  * 重置密码页 — 温暖品牌风格（居中卡片，品牌色调）
  */
 export function ResetPasswordClient() {
+  const { t } = useI18n();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [success, setSuccess] = React.useState(false);
@@ -37,25 +38,25 @@ export function ResetPasswordClient() {
 
     // 验证
     if (!newPassword || !confirmPassword) {
-      setError(copy.auth.newPasswordPlaceholder);
+      setError(t("auth.newPasswordPlaceholder"));
       setIsLoading(false);
       return;
     }
 
     if (newPassword.length < 6) {
-      setError(copy.auth.passwordTooShort);
+      setError(t("auth.passwordTooShort"));
       setIsLoading(false);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError(copy.auth.passwordMismatch);
+      setError(t("auth.passwordMismatch"));
       setIsLoading(false);
       return;
     }
 
     if (!token) {
-      setError(copy.auth.invalidResetLink);
+      setError(t("auth.invalidResetLink"));
       setIsLoading(false);
       return;
     }
@@ -68,12 +69,12 @@ export function ResetPasswordClient() {
       });
 
       if (result.error) {
-        throw new Error(result.error.message || copy.auth.resetFailed);
+        throw new Error(result.error.message || t("auth.resetFailed"));
       }
 
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : copy.auth.resetFailed);
+      setError(err instanceof Error ? err.message : t("auth.resetFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +90,7 @@ export function ResetPasswordClient() {
         }}
       >
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#D97706" }} />
-        <p className="mt-4 text-sm" style={{ color: "#8f7f6e" }}>{copy.common.loading}</p>
+        <p className="mt-4 text-sm" style={{ color: "#8f7f6e" }}>{t("common.loading")}</p>
       </div>
     );
   }
@@ -123,10 +124,10 @@ export function ResetPasswordClient() {
 
             <div>
               <h2 className="text-2xl font-bold mb-2" style={{ color: "#1e1812" }}>
-                {copy.auth.invalidResetLink}
+                {t("auth.invalidResetLink")}
               </h2>
               <p className="text-sm leading-relaxed" style={{ color: "#8f7f6e" }}>
-                {copy.auth.resetFailed}
+                {t("auth.resetFailed")}
               </p>
             </div>
 
@@ -148,7 +149,7 @@ export function ResetPasswordClient() {
                 el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
               }}
             >
-              {copy.auth.sendResetLink}
+              {t("auth.sendResetLink")}
             </a>
           </div>
         </div>
@@ -177,7 +178,7 @@ export function ResetPasswordClient() {
           onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#8f7f6e"; }}
         >
           <Lock className="h-3.5 w-3.5" />
-          {copy.common.backLogin}
+          {t("common.backLogin")}
         </a>
       </div>
 
@@ -196,10 +197,10 @@ export function ResetPasswordClient() {
 
               <div>
                 <h2 className="text-2xl font-bold mb-2" style={{ color: "#1e1812" }}>
-                  {copy.auth.resetSuccess}
+                  {t("auth.resetSuccess")}
                 </h2>
                 <p className="text-sm leading-relaxed" style={{ color: "#8f7f6e" }}>
-                  {copy.auth.resetSuccessDesc}
+                  {t("auth.resetSuccessDesc")}
                 </p>
               </div>
 
@@ -221,7 +222,7 @@ export function ResetPasswordClient() {
                   el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
                 }}
               >
-                {copy.auth.goLogin}
+                {t("auth.goLogin")}
               </a>
             </div>
           ) : (
@@ -236,10 +237,10 @@ export function ResetPasswordClient() {
                   <Lock className="h-8 w-8" style={{ color: "#D97706" }} />
                 </div>
                 <h1 className="text-2xl font-bold mb-1.5" style={{ color: "#1e1812" }}>
-                  {copy.auth.resetPasswordTitle}
+                  {t("auth.resetPasswordTitle")}
                 </h1>
                 <p className="text-sm" style={{ color: "#8f7f6e" }}>
-                  {copy.auth.resetPasswordSubtitle}
+                  {t("auth.resetPasswordSubtitle")}
                 </p>
               </div>
 
@@ -247,7 +248,7 @@ export function ResetPasswordClient() {
                 {/* 新密码输入 */}
                 <div className="space-y-1.5">
                   <label htmlFor="newPassword" className="text-sm font-medium" style={{ color: "#4a3f35" }}>
-                    {copy.auth.newPassword}
+                    {t("auth.newPassword")}
                   </label>
                   <div className="relative">
                     <Lock
@@ -257,7 +258,7 @@ export function ResetPasswordClient() {
                     <input
                       id="newPassword"
                       type="password"
-                      placeholder={copy.auth.newPasswordPlaceholder}
+                      placeholder={t("auth.newPasswordPlaceholder")}
                       value={newPassword}
                       onChange={(e) => {
                         setNewPassword(e.target.value);
@@ -285,7 +286,7 @@ export function ResetPasswordClient() {
                 {/* 确认密码输入 */}
                 <div className="space-y-1.5">
                   <label htmlFor="confirmPassword" className="text-sm font-medium" style={{ color: "#4a3f35" }}>
-                    {copy.auth.confirmPassword}
+                    {t("auth.confirmPassword")}
                   </label>
                   <div className="relative">
                     <Lock
@@ -295,7 +296,7 @@ export function ResetPasswordClient() {
                     <input
                       id="confirmPassword"
                       type="password"
-                      placeholder={copy.auth.confirmPasswordPlaceholder}
+                      placeholder={t("auth.confirmPasswordPlaceholder")}
                       value={confirmPassword}
                       onChange={(e) => {
                         setConfirmPassword(e.target.value);
@@ -356,12 +357,12 @@ export function ResetPasswordClient() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      {copy.auth.resetPasswordBtnLoading}
+                      {t("auth.resetPasswordBtnLoading")}
                     </>
                   ) : (
                     <>
                       <Lock className="h-4 w-4" />
-                      {copy.auth.resetPasswordBtn}
+                      {t("auth.resetPasswordBtn")}
                     </>
                   )}
                 </button>

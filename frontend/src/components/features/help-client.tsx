@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ChevronDown, ChevronUp, Home, ChevronRight, Mail } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
@@ -85,6 +86,7 @@ function FaqAccordionItem({
 /** 帮助中心页主组件 */
 export function HelpClient() {
   const [openIndex, setOpenIndex] = React.useState<number | null>(null);
+  const { t } = useI18n();
 
   const handleToggle = (index: number) => {
     setOpenIndex((prev) => (prev === index ? null : index));
@@ -105,14 +107,14 @@ export function HelpClient() {
                 className="flex items-center gap-1 hover:text-amber-600 transition-colors"
               >
                 <Home className="w-4 h-4" />
-                <span>首页</span>
+                <span>{t("nav.home")}</span>
               </a>
               <ChevronRight className="w-4 h-4" />
-              <span className="text-foreground font-medium">帮助中心</span>
+              <span className="text-foreground font-medium">{t("help.pageTitle")}</span>
             </nav>
 
-            <h1 className="text-3xl font-bold text-foreground">帮助中心</h1>
-            <p className="mt-2 text-muted-foreground text-base">找到你需要的答案</p>
+            <h1 className="text-3xl font-bold text-foreground">{t("help.pageTitle")}</h1>
+            <p className="mt-2 text-muted-foreground text-base">{t("help.pageSubtitle")}</p>
           </div>
         </div>
 
@@ -131,16 +133,16 @@ export function HelpClient() {
 
           {/* 底部 CTA */}
           <div className="mt-12 text-center bg-card rounded-2xl border border-border shadow-sm px-8 py-10">
-            <h2 className="text-xl font-semibold text-foreground">还有其他问题？</h2>
+            <h2 className="text-xl font-semibold text-foreground">{t("help.contactTitle")}</h2>
             <p className="mt-2 text-muted-foreground">
-              发送邮件给我们，我们会在 24 小时内回复
+              {t("help.contactDesc")}
             </p>
             <a
               href="mailto:hello@gomate.live"
               className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors"
             >
               <Mail className="w-4 h-4" />
-              发送邮件
+              {t("help.contactBtn")}
             </a>
           </div>
         </div>

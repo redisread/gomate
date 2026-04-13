@@ -14,7 +14,7 @@ import {
   CheckCircle,
   FileText,
 } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { signOut } from "@/lib/auth-client";
 import { Navbar } from "@/components/layout/navbar";
@@ -22,7 +22,6 @@ import { Footer } from "@/components/layout/footer";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import { formatBirthday, getAgeNumber } from "@/lib/user-utils";
-import { formatJoinDate } from "@/lib/date-utils";
 import type { SessionUser, Team } from "@/lib/types";
 
 /**
@@ -109,22 +108,15 @@ function StatCard({
 
 /**
  * 个人资料页客户端组件 - React Island
- * 视觉规范：「可靠伙伴」情感体验
- *  - 骨架屏加载态
- *  - 多层渐变 Banner + SVG 山脉剪影
- *  - 等级 emoji 徽章
- *  - 统计卡 hover 品牌绿光晕 + sublabel
- *  - 队伍列表卡片式
- *  - 多层圆形空状态
  */
 export function ProfileClient() {
+  const { t } = useI18n();
   const [user, setUser] = React.useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [createdTeams, setCreatedTeams] = React.useState<Team[]>([]);
   const [joinedTeams, setJoinedTeams] = React.useState<Team[]>([]);
   const [createdTotal, setCreatedTotal] = React.useState(0);
   const [joinedTotal, setJoinedTotal] = React.useState(0);
-
   const [completedTotal, setCompletedTotal] = React.useState(0);
 
   React.useEffect(() => {
@@ -218,6 +210,12 @@ export function ProfileClient() {
   const levelConfig = LEVEL_CONFIG[user.level ?? ""] || LEVEL_CONFIG.beginner;
   const displayName = user.nickname || user.name;
 
+  const genderText = user.gender === "male"
+    ? t("profile.genderMale")
+    : user.gender === "female"
+      ? t("profile.genderFemale")
+      : t("common.unknown");
+
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
@@ -297,7 +295,7 @@ export function ProfileClient() {
                   <a href="/profile/edit">
                     <button className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150 shadow-md shadow-amber-200 hover:shadow-lg hover:shadow-amber-200 hover:-translate-y-px active:scale-95">
                       <Edit3 className="h-3.5 w-3.5" />
-                      {copy.profile.editProfileBtn}
+                      {t("profile.editProfileBtn")}
                     </button>
                   </a>
                   <button
@@ -305,7 +303,7 @@ export function ProfileClient() {
                     className="inline-flex items-center gap-1.5 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 px-4 py-2 rounded-xl text-sm font-medium hover:border-red-200 dark:hover:border-red-800 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-150 active:scale-95"
                   >
                     <LogOut className="h-3.5 w-3.5" />
-                    {copy.profile.logoutBtn}
+                    {t("profile.logoutBtn")}
                   </button>
                 </div>
               </div>
@@ -318,21 +316,21 @@ export function ProfileClient() {
                   levelConfig.badge
                 )}>
                   <span>{levelConfig.emoji}</span>
-                  {copy.profile.levelTitle[user.level as keyof typeof copy.profile.levelTitle] ?? copy.profile.levelTitle.beginner}
+                  {t(`profile.levelTitle.${user.level}` as any) ?? t("profile.levelTitle.beginner")}
                 </span>
 
                 {/* 徒步次数 */}
                 {(user.completedHikes ?? 0) > 0 && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
                     <Mountain className="h-3 w-3" />
-                    已完成 {user.completedHikes} {copy.profile.hikesCompleted}
+                    {t("profile.hikesCompleted")}
                   </span>
                 )}
 
                 {/* 性别 */}
                 {user.gender && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
-                    {user.gender === "male" ? "♂ 男" : user.gender === "female" ? "♀ 女" : copy.common.unknown}
+                    {genderText}
                   </span>
                 )}
 
@@ -342,7 +340,7 @@ export function ProfileClient() {
                   const formatted = formatBirthday(user.birthday);
                   return (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
-                      🎂 {formatted}（{age}{copy.profile.ageSuffix}）
+                      🎂 {formatted}（{age}{t("profile.ageSuffix")}）
                     </span>
                   );
                 })()}
@@ -364,7 +362,7 @@ export function ProfileClient() {
                       <div className="mt-4 border-t border-stone-100 dark:border-stone-800 pt-4">
                         <div className="text-xs text-stone-500 dark:text-stone-400 mb-2 flex items-center gap-1">
                           <Mountain className="h-3.5 w-3.5" />
-                          {copy.profile.equipmentLabel}
+                          {t("profile.equipmentLabel")}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {extra.equipment.map((item: string, i: number) => (
@@ -389,7 +387,7 @@ export function ProfileClient() {
                       <div className="mt-4 border-t border-stone-100 dark:border-stone-800 pt-4">
                         <div className="text-xs text-stone-500 dark:text-stone-400 mb-2 flex items-center gap-1">
                           <FileText className="h-3.5 w-3.5" />
-                          {copy.profile.experienceLabel}
+                          {t("profile.experienceLabel")}
                         </div>
                         <p className="text-stone-600 dark:text-stone-400 text-sm leading-relaxed whitespace-pre-wrap">
                           {extra.experience.trim()}
@@ -407,27 +405,27 @@ export function ProfileClient() {
         {/* ── 统计卡片 ── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           <StatCard
-            label="我发起的队伍"
+            label={t("profile.statCreatedLabel")}
             value={createdTotal}
             icon={Users}
             href="/my-teams?tab=created"
             accent
-            sublabel="作为领队带领伙伴出发"
+            sublabel={t("profile.statCreatedSublabel")}
           />
           <StatCard
-            label="我加入的队伍"
+            label={t("profile.statJoinedLabel")}
             value={joinedTotal}
             icon={User}
             href="/my-teams?tab=joined"
             accent
-            sublabel="与伙伴一起出发的次数"
+            sublabel={t("profile.statJoinedSublabel")}
           />
           <StatCard
-            label="已完成"
+            label={t("profile.statCompletedLabel")}
             value={completedTotal}
             icon={CheckCircle}
             href="/my-teams?tab=history"
-            sublabel="圆满完成的活动"
+            sublabel={t("profile.statCompletedSublabel")}
           />
         </div>
 
@@ -436,11 +434,11 @@ export function ProfileClient() {
           <section className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-bold text-foreground">{copy.profile.createdTeamsSectionTitle}</h2>
-                <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{copy.profile.createdTeamsDesc}</p>
+                <h2 className="text-base font-bold text-foreground">{t("profile.createdTeamsSectionTitle")}</h2>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{t("profile.createdTeamsDesc")}</p>
               </div>
               <a href="/my-teams" className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors">
-                {copy.profile.viewMyTeams}
+                {t("profile.viewMyTeams")}
                 <ChevronRight className="h-4 w-4" />
               </a>
             </div>
@@ -485,7 +483,7 @@ export function ProfileClient() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            {team.currentMembers}/{team.maxMembers}{copy.profile.memberCount}
+                            {team.currentMembers}/{team.maxMembers}{t("profile.memberCount")}
                           </span>
                         </div>
                       </div>
@@ -504,11 +502,11 @@ export function ProfileClient() {
           <section className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-bold text-foreground">{copy.profile.joinedTeamsSectionTitle}</h2>
-                <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{copy.profile.joinedTeamsDesc}</p>
+                <h2 className="text-base font-bold text-foreground">{t("profile.joinedTeamsSectionTitle")}</h2>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{t("profile.joinedTeamsDesc")}</p>
               </div>
               <a href="/my-teams?tab=joined" className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors">
-                {copy.profile.viewMyTeams}
+                {t("profile.viewMyTeams")}
                 <ChevronRight className="h-4 w-4" />
               </a>
             </div>
@@ -553,7 +551,7 @@ export function ProfileClient() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            {team.currentMembers}/{team.maxMembers}{copy.profile.memberCount}
+                            {team.currentMembers}/{team.maxMembers}{t("profile.memberCount")}
                           </span>
                         </div>
                       </div>
@@ -579,11 +577,11 @@ export function ProfileClient() {
               </div>
               <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs">✨</div>
             </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">{copy.profile.noTeamsTitle}</h3>
-            <p className="text-sm text-stone-400 dark:text-stone-500 mb-8 max-w-xs mx-auto leading-relaxed">{copy.profile.noTeamsDesc}</p>
+            <h3 className="text-lg font-bold text-foreground mb-2">{t("profile.noTeamsTitle")}</h3>
+            <p className="text-sm text-stone-400 dark:text-stone-500 mb-8 max-w-xs mx-auto leading-relaxed">{t("profile.noTeamsDesc")}</p>
             <a href="/teams/create">
               <button className="bg-amber-600 hover:bg-amber-700 text-white px-7 py-3 rounded-full font-medium transition-all duration-150 shadow-lg shadow-amber-200 hover:shadow-xl hover:shadow-amber-200 hover:-translate-y-0.5 active:scale-95 text-sm">
-                {copy.profile.createTeamBtn}
+                {t("profile.createTeamBtn")}
               </button>
             </a>
           </div>

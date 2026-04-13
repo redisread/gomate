@@ -1,11 +1,12 @@
 import { Mountain, Search, X } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeHero({ data }: { data: HomeData }) {
   const { isDark, animate, parallaxY, search, handleSearch } = data;
+  const { t } = useI18n();
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -32,20 +33,20 @@ export function HomeHero({ data }: { data: HomeData }) {
       <div className="relative z-10 text-center px-4 max-w-5xl mx-auto pt-24 pb-16">
         <span className={`inline-flex items-center gap-1.5 mb-7 px-4 py-1.5 text-sm font-medium rounded-full border ${animate.badge}`}
           style={{ background: isDark ? "rgba(217,119,6,0.15)" : "rgba(217,119,6,0.08)", borderColor: isDark ? "rgba(217,119,6,0.3)" : "rgba(217,119,6,0.22)", color: isDark ? "#FCD34D" : "#92400E" }}>
-          <Mountain className="h-3.5 w-3.5" />{copy.hero.badge}
+          <Mountain className="h-3.5 w-3.5" />{t("hero.badge")}
         </span>
 
         <h1 className={`font-bold leading-[1.08] mb-6 ${animate.title}`} style={{ fontSize: "clamp(2.8rem, 7.5vw, 5.2rem)" }}>
-          <span className="text-foreground block">{copy.hero.titleLine1}</span>
-          <span className="block text-gradient-brand">{copy.hero.titleLine2}</span>
+          <span className="text-foreground block">{t("hero.titleLine1")}</span>
+          <span className="block text-gradient-brand">{t("hero.titleLine2")}</span>
         </h1>
 
-        <p className={`text-lg md:text-xl text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed ${animate.subtitle}`}>{copy.hero.description}</p>
+        <p className={`text-lg md:text-xl text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed ${animate.subtitle}`}>{t("hero.description")}</p>
 
         <div className={`relative max-w-2xl mx-auto mb-8 group ${animate.search}`}>
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 pointer-events-none transition-colors duration-200 text-muted-foreground"
             style={{ color: search.isFocused ? "#D97706" : undefined }} />
-          <input type="text" placeholder={copy.common.searchPlaceholder} value={search.value}
+          <input type="text" placeholder={t("common.searchPlaceholder")} value={search.value}
             onChange={(e) => search.setValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleSearch(search.value); }}
             onFocus={() => search.setFocused(true)} onBlur={() => search.setFocused(false)}
@@ -59,7 +60,7 @@ export function HomeHero({ data }: { data: HomeData }) {
           <button onClick={() => handleSearch(search.value)}
             className={`absolute right-3 top-1/2 -translate-y-1/2 px-5 py-2 text-sm font-semibold rounded-xl text-white transition-colors duration-150 ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}
             style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)", boxShadow: "0 2px 10px rgba(217,119,6,0.30)" }}>
-            搜索
+            {t("common.search")}
           </button>
         </div>
 
@@ -69,20 +70,20 @@ export function HomeHero({ data }: { data: HomeData }) {
             style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)", boxShadow: "0 4px 18px rgba(217,119,6,0.35)" }}
             onMouseEnter={(e) => { const el = e.currentTarget as HTMLAnchorElement; el.style.transform = "translateY(-2px)"; el.style.boxShadow = "0 8px 28px rgba(217,119,6,0.45)"; }}
             onMouseLeave={(e) => { const el = e.currentTarget as HTMLAnchorElement; el.style.transform = "translateY(0)"; el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)"; }}>
-            {copy.hero.exploreBtn}
+            {t("hero.exploreBtn")}
           </a>
           <a href="/teams"
             className="inline-block px-8 py-3.5 font-semibold rounded-full border-2 text-base text-foreground transition-all duration-150 hover:bg-brand/5"
             style={{ borderColor: "rgba(217,119,6,0.35)" }}>
-            {copy.hero.findTeamBtn}
+            {t("hero.findTeamBtn")}
           </a>
         </div>
 
         <div className={`flex flex-wrap justify-center gap-6 ${animate.stats}`}>
           {[
-            { icon: "🗺️", title: copy.hero.statRoutes, desc: copy.hero.statRoutesDesc },
-            { icon: "👥", title: copy.hero.statPlayers, desc: copy.hero.statPlayersDesc },
-            { icon: "✨", title: copy.hero.statSafety, desc: copy.hero.statSafetyDesc },
+            { icon: "🗺️", title: t("hero.statRoutes"), desc: t("hero.statRoutesDesc") },
+            { icon: "👥", title: t("hero.statPlayers"), desc: t("hero.statPlayersDesc") },
+            { icon: "✨", title: t("hero.statSafety"), desc: t("hero.statSafetyDesc") },
           ].map((item) => (
             <div key={item.title} className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-gradient-to-br from-card/80 to-amber-50/60 dark:to-amber-950/30 border border-amber-200/40 dark:border-amber-900/40" style={{ backdropFilter: "blur(8px)" }}>
               <span className="text-2xl">{item.icon}</span>

@@ -18,7 +18,8 @@ import {
   X,
   ZoomIn,
 } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
+import type { TranslationKey } from "@/i18n";
 import { fetchAPI, getLocationPois } from "@/lib/api";
 import type { Location, Team, RoutePoi } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -32,43 +33,43 @@ import {
 import { SharePosterModal } from "./share-poster-modal";
 
 // ─── 季节映射 ─────────────────────────────────────────────────────────────────
-const SEASON_LABEL: Record<string, string> = {
-  spring: "春季",
-  summer: "夏季",
-  autumn: "秋季",
-  winter: "冬季",
-};
+function getSeasonLabel(t: (key: TranslationKey) => string) {
+  return {
+    spring: t("admin.seasons.spring"),
+    summer: t("admin.seasons.summer"),
+    autumn: t("admin.seasons.autumn"),
+    winter: t("admin.seasons.winter"),
+  };
+}
 
-// ─── 难度配置 ─────────────────────────────────────────────────────────────────
-const difficultyConfig: Record<
-  string,
-  { label: string; dot: string; text: string; pill: string }
-> = {
-  easy: {
-    label: copy.enums.difficulty.easy,
-    dot: "bg-emerald-400",
-    text: "text-emerald-700 dark:text-emerald-400",
-    pill: "bg-emerald-500/20 text-emerald-100 border-emerald-400/30",
-  },
-  moderate: {
-    label: copy.enums.difficulty.moderate,
-    dot: "bg-amber-400",
-    text: "text-amber-700 dark:text-amber-400",
-    pill: "bg-amber-500/20 text-amber-100 border-amber-400/30",
-  },
-  hard: {
-    label: copy.enums.difficulty.hard,
-    dot: "bg-orange-500",
-    text: "text-orange-700 dark:text-orange-400",
-    pill: "bg-orange-500/20 text-orange-100 border-orange-400/30",
-  },
-  expert: {
-    label: copy.enums.difficulty.expert,
-    dot: "bg-red-500",
-    text: "text-red-700 dark:text-red-400",
-    pill: "bg-red-500/20 text-red-100 border-red-400/30",
-  },
-};
+function getDifficultyInfo(t: (key: TranslationKey) => string) {
+  return {
+    easy: {
+      label: t("enums.difficulty.easy"),
+      dot: "bg-emerald-400",
+      text: "text-emerald-700 dark:text-emerald-400",
+      pill: "bg-emerald-500/20 text-emerald-100 border-emerald-400/30",
+    },
+    moderate: {
+      label: t("enums.difficulty.moderate"),
+      dot: "bg-amber-400",
+      text: "text-amber-700 dark:text-amber-400",
+      pill: "bg-amber-500/20 text-amber-100 border-amber-400/30",
+    },
+    hard: {
+      label: t("enums.difficulty.hard"),
+      dot: "bg-orange-500",
+      text: "text-orange-700 dark:text-orange-400",
+      pill: "bg-orange-500/20 text-orange-100 border-orange-400/30",
+    },
+    expert: {
+      label: t("enums.difficulty.expert"),
+      dot: "bg-red-500",
+      text: "text-red-700 dark:text-red-400",
+      pill: "bg-red-500/20 text-red-100 border-red-400/30",
+    },
+  };
+}
 
 // ─── 骨架屏 ───────────────────────────────────────────────────────────────────
 function LoadingSkeleton() {
@@ -121,6 +122,7 @@ interface LightboxProps {
 }
 
 function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
+  const { t } = useI18n();
   React.useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -140,7 +142,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
       <button
         onClick={onClose}
         className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors z-10"
-        aria-label="关闭"
+        aria-label={t("locationDetail.closeImage")}
       >
         <X className="h-5 w-5 text-white" />
       </button>
@@ -155,7 +157,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
         <button
           onClick={(e) => { e.stopPropagation(); onPrev(); }}
           className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors"
-          aria-label="上一张"
+          aria-label={t("locationDetail.prevImage")}
         >
           <ChevronLeft className="h-6 w-6 text-white" />
         </button>
@@ -164,7 +166,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
       {/* 图片 */}
       <img
         src={images[index]}
-        alt={`图片 ${index + 1}`}
+        alt={t("locationDetail.imageAlt", { index: String(index + 1) })}
         className="max-w-[90vw] max-h-[85vh] object-contain rounded-xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       />
@@ -174,7 +176,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
         <button
           onClick={(e) => { e.stopPropagation(); onNext(); }}
           className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors"
-          aria-label="下一张"
+          aria-label={t("locationDetail.nextImage")}
         >
           <ChevronRight className="h-6 w-6 text-white" />
         </button>
@@ -219,12 +221,13 @@ interface ActionCardProps {
  * 角色：转化率优化师 + 视觉总监
  */
 function ActionCard({ location, teams }: ActionCardProps) {
+  const { t } = useI18n();
   const totalParticipants = teams.reduce((sum, t) => sum + (t.currentMembers || 0), 0);
   const avatarLeaders = teams.filter((t) => t.leader?.avatar).slice(0, 5);
   const socialProofText =
     teams.length > 0
-      ? `已有 ${totalParticipants} 人报名 · ${teams.length} 支队伍`
-      : "成为第一个发起者";
+      ? t("locationDetail.socialProof", { participants: totalParticipants, teams: teams.length })
+      : t("locationDetail.firstCreator");
 
   return (
     <div
@@ -236,7 +239,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
       <div className="p-5">
         {/* 情感标题 */}
         <p className="text-[13px] font-bold mb-1 text-amber-900 dark:text-amber-300">
-          {copy.locations.detailParticipate}
+          {t("locations.detailParticipate")}
         </p>
 
         {/* 社交证明 */}
@@ -266,7 +269,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
           >
             <Flame className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
             <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400">
-              近期活跃 · 最新队伍招募中
+              {t("locationDetail.activeRecruiting")}
             </span>
           </div>
         )}
@@ -290,7 +293,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
             />
             <span className="relative flex items-center justify-center gap-2">
               <Users className="h-4 w-4" />
-              {copy.locations.detailCreateTeam}
+              {t("locations.detailCreateTeam")}
             </span>
           </button>
         </a>
@@ -300,7 +303,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
           <button
             className="w-full py-2.5 rounded-xl text-sm font-semibold text-amber-800 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60 bg-transparent hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:border-amber-400/80 dark:hover:border-amber-600/80 transition-all duration-150 active:scale-[0.97]"
           >
-            {copy.locations.detailBrowseTeams}
+              {t("locations.detailBrowseTeams")}
           </button>
         </a>
       </div>
@@ -318,6 +321,9 @@ interface RelatedLocationsProps {
  * 角色：视觉总监
  */
 function RelatedLocations({ locations }: RelatedLocationsProps) {
+  const { t } = useI18n();
+  const diffInfo = getDifficultyInfo(t);
+
   if (locations.length === 0) return null;
 
   const diffBadgeConfig: Record<string, { bg: string; text: string; dot: string }> = {
@@ -334,13 +340,13 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">
-          {copy.locations.relatedTitle}
+          {t("locations.relatedTitle")}
         </h3>
         <a
           href="/locations"
           className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold transition-colors flex items-center gap-0.5"
         >
-          {copy.common.viewAll}
+          {t("common.viewAll")}
           <ChevronRight className="h-3.5 w-3.5" />
         </a>
       </div>
@@ -348,7 +354,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
       <div className="space-y-2">
         {locations.map((loc) => {
           const diff = loc.difficulty ? diffBadgeConfig[loc.difficulty] : null;
-          const diffLabel = loc.difficulty ? difficultyConfig[loc.difficulty]?.label : null;
+          const diffLabel = loc.difficulty ? diffInfo[loc.difficulty]?.label : null;
 
           return (
             <a
@@ -405,6 +411,7 @@ interface MobileFloatingCTAProps {
  * - 双按钮：浏览队伍 + 发起组队
  */
 function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
+  const { t } = useI18n();
   const [heroLeft, setHeroLeft] = React.useState(false);
 
   React.useEffect(() => {
@@ -432,7 +439,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
         {/* 地点信息 */}
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-stone-400 dark:text-stone-500 font-semibold uppercase tracking-wide">目的地</p>
+          <p className="text-[10px] text-stone-400 dark:text-stone-500 font-semibold uppercase tracking-wide">{t("locationDetail.destination")}</p>
           <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight">{location.name}</p>
         </div>
 
@@ -441,7 +448,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
           <button
             className="px-4 py-2.5 rounded-xl text-sm font-semibold text-amber-800 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-all duration-150 active:scale-[0.96]"
           >
-            浏览队伍
+            {t("locationDetail.browseTeams")}
           </button>
         </a>
 
@@ -460,7 +467,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
             />
             <span className="relative flex items-center gap-1.5">
               <Users className="h-4 w-4" />
-              召集伙伴
+              {t("locationDetail.gatherPartners")}
             </span>
           </button>
         </a>
@@ -481,6 +488,7 @@ interface LocationDetailClientProps {
  * 角色：视觉总监 + 交互设计师 + 转化率优化师 三位一体
  */
 export function LocationDetailClient({ locationId }: LocationDetailClientProps) {
+  const { t } = useI18n();
   const [location, setLocation] = React.useState<Location | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -557,10 +565,10 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
         loadRelatedLocations();
         loadPois(data.location.id);
       } else {
-        setError(copy.api.locationNotFound);
+        setError(t("api.locationNotFound"));
       }
     } catch {
-      setError(copy.common.loading);
+      setError(t("common.loading"));
     } finally {
       setIsLoading(false);
     }
@@ -651,10 +659,10 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
           <div className="text-center">
             <Mountain className="h-16 w-16 text-stone-200 dark:text-stone-700 mx-auto mb-4" />
             <h1 className="text-xl font-bold text-stone-700 dark:text-stone-300 mb-3">
-              {error || copy.api.locationNotFound}
+              {error || t("api.locationNotFound")}
             </h1>
             <a href="/locations" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium underline underline-offset-2 transition-colors">
-              {copy.common.back}
+              {t("common.back")}
             </a>
           </div>
         </div>
@@ -663,7 +671,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     );
   }
 
-  const diffInfo = (location.difficulty ? difficultyConfig[location.difficulty] : null) ?? {
+  const diffInfo = getDifficultyInfo(t)[location.difficulty as keyof ReturnType<typeof getDifficultyInfo>] ?? {
     label: location.difficulty || "",
     dot: "bg-stone-400",
     text: "text-stone-700",
@@ -733,7 +741,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             )}
           >
             <ZoomIn className="h-3.5 w-3.5" />
-            {galleryImages.length > 1 ? `${galleryImages.length} 张图片` : "查看大图"}
+            {galleryImages.length > 1 ? `${galleryImages.length} ${t("locationDetail.imagesCount")}` : t("locationDetail.viewLargeImage")}
           </button>
         )}
 
@@ -748,7 +756,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                 "flex items-center justify-center transition-all duration-200 border border-white/10",
                 showArrows ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-3 pointer-events-none"
               )}
-              aria-label="上一张"
+              aria-label={t("locationDetail.prevImage")}
             >
               <ChevronLeft className="h-5 w-5 text-white" />
             </button>
@@ -760,7 +768,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                 "flex items-center justify-center transition-all duration-200 border border-white/10",
                 showArrows ? "opacity-100 translate-x-0" : "opacity-0 translate-x-3 pointer-events-none"
               )}
-              aria-label="下一张"
+              aria-label={t("locationDetail.nextImage")}
             >
               <ChevronRight className="h-5 w-5 text-white" />
             </button>
@@ -777,7 +785,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               className="inline-flex items-center gap-1 text-white/55 hover:text-white/85 text-xs mb-3 transition-colors duration-150 font-medium"
             >
               <MapPin className="h-3 w-3" />
-              {copy.nav.locations}
+              {t("nav.locations")}
               <ChevronRight className="h-3 w-3 opacity-60" />
             </a>
 
@@ -795,7 +803,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               {location.bestSeason && location.bestSeason.length > 0 && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/15 text-white backdrop-blur-sm border border-white/20">
                   <Sparkles className="w-3 h-3" />
-                  {SEASON_LABEL[location.bestSeason[0]] ?? location.bestSeason[0]}
+                  {getSeasonLabel(t)[location.bestSeason[0] as keyof ReturnType<typeof getSeasonLabel>] ?? location.bestSeason[0]}
                 </span>
               )}
             </div>
@@ -845,7 +853,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                         ? "w-6 h-2 bg-white shadow-sm"
                         : "w-2 h-2 bg-white/35 hover:bg-white/60"
                     )}
-                    aria-label={`切换到第 ${idx + 1} 张`}
+                    aria-label={t("locationDetail.switchImage", { index: String(idx + 1) })}
                   />
                 ))}
                 {galleryImages.length > 8 && (
@@ -875,7 +883,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                     <a href={`/admin/locations/${locationId}/edit`}>
                       <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs font-medium transition-all duration-150 active:scale-95 border border-stone-200 dark:border-stone-700">
                         <Pencil className="h-3.5 w-3.5" />
-                        {copy.admin.editLocation}
+                        {t("admin.editLocation")}
                       </button>
                     </a>
                   )}
@@ -884,12 +892,12 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs font-medium transition-all duration-150 active:scale-95 border border-stone-200 dark:border-stone-700"
                   >
                     <Share2 className="h-3.5 w-3.5" />
-                    {copy.locations.detailShareBtn}
+                    {t("locations.detailShareBtn")}
                   </button>
                   <button
                     onClick={handleFavorite}
                     className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 flex items-center justify-center transition-all duration-150 active:scale-95 border border-stone-200 dark:border-stone-700"
-                    aria-label={isFavorited ? "取消收藏" : "收藏"}
+                    aria-label={isFavorited ? t("locationDetail.unfavorite") : t("locationDetail.favorite")}
                   >
                     <Heart
                       className={cn(

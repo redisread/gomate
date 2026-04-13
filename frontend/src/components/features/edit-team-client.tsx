@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ArrowLeft, Clock, Users, AlertCircle, Loader2, ArrowRight, Pencil } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import type { Team, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
@@ -13,6 +13,7 @@ interface EditTeamClientProps {
 }
 
 export function EditTeamClient({ teamId }: EditTeamClientProps) {
+  const { t } = useI18n();
   const [team, setTeam] = React.useState<Team | null>(null);
   const [location, setLocation] = React.useState<Location | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -39,39 +40,39 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
       try {
         const res = await fetchAPI(`/api/teams/${teamId}`);
         if (res.status === 404) {
-          setError("队伍不存在");
+          setError(t("errors.teamNotFound"));
           setIsLoading(false);
           return;
         }
         const data = await res.json();
         if (data.success && data.team) {
-          const t = data.team as Team;
-          if (t.leader?.id !== u.id) {
-            setError("只有队长可以编辑队伍");
+          const t2 = data.team as Team;
+          if (t2.leader?.id !== u.id) {
+            setError(t("errors.noPermission"));
             setIsLoading(false);
             return;
           }
           setIsLeader(true);
-          setTeam(t);
-          setLocation((t as any).location || null);
+          setTeam(t2);
+          setLocation((t2 as any).location || null);
 
-          const startTime = new Date((t as any).startTime || t.date);
+          const startTime = new Date((t2 as any).startTime || t2.date);
           const timeStr = `${String(startTime.getHours()).padStart(2, "0")}:${String(startTime.getMinutes()).padStart(2, "0")}`;
 
           setFormData({
-            title: t.title || "",
-            time: t.time || timeStr,
-            durationMin: String(t.durationMin || 240),
-            maxMembers: String(t.maxMembers || ""),
-            description: t.description || "",
-            requirements: Array.isArray(t.requirements) ? t.requirements : [],
+            title: t2.title || "",
+            time: t2.time || timeStr,
+            durationMin: String(t2.durationMin || 240),
+            maxMembers: String(t2.maxMembers || ""),
+            description: t2.description || "",
+            requirements: Array.isArray(t2.requirements) ? t2.requirements : [],
           });
         } else {
-          setError("获取队伍信息失败");
+          setError(t("errors.editTeamInfoFailed"));
         }
       } catch (err) {
         console.error("[EditTeam] 获取队伍详情失败:", err);
-        setError("获取队伍信息失败");
+        setError(t("errors.editTeamInfoFailed"));
       } finally {
         setIsLoading(false);
       }
@@ -109,20 +110,20 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
     setError("");
 
     if (!formData.title.trim()) {
-      setError("队伍名称不能为空");
+      setError(t("errors.teamNameEmpty"));
       setIsSubmitting(false);
       return;
     }
 
     const maxMembersNum = parseInt(formData.maxMembers, 10);
     if (isNaN(maxMembersNum) || maxMembersNum < 2 || maxMembersNum > 50) {
-      setError("人数限制需在 2-50 之间");
+      setError(t("errors.maxMembersRange"));
       setIsSubmitting(false);
       return;
     }
 
     if (team && maxMembersNum < team.currentMembers) {
-      setError(`人数上限不能低于当前成员数（${team.currentMembers} 人）`);
+      setError(t("errors.maxMembersBelowCurrent", { current: team.currentMembers }));
       setIsSubmitting(false);
       return;
     }
@@ -145,11 +146,11 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
       if (data.success) {
         window.location.href = `/teams/${teamId}`;
       } else {
-        setError(data.error || "保存失败，请稍后重试");
+        setError(data.error || t("errors.editTeamSaveFailed"));
         setIsSubmitting(false);
       }
     } catch {
-      setError("保存失败，请稍后重试");
+      setError(t("errors.editTeamSaveFailed"));
       setIsSubmitting(false);
     }
   };
@@ -175,11 +176,11 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-red-400 border border-destructive/20 dark:border-red-500/30"
           >
             <span className="text-base">⚠️</span>
-            {error || "无权限编辑此队伍"}
+            {error || t("errors.editNoPermission")}
           </div>
           <a href={`/teams/${teamId}`} className="mt-4 inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400">
             <ArrowLeft className="h-3.5 w-3.5" />
-            返回队伍详情
+            {t("teams.backToTeamDetail")}
           </a>
         </div>
         <Footer />
@@ -197,18 +198,18 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
           className="inline-flex items-center gap-1.5 text-sm mb-8 text-muted-foreground hover:text-primary transition-colors duration-150"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          返回队伍详情
+          {t("teams.backToTeamDetail")}
         </a>
 
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <Pencil className="h-5 w-5" style={{ color: "#D97706" }} />
             <h1 className="text-2xl font-bold text-foreground">
-              编辑队伍
+              {t("teams.editTitle")}
             </h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            修改队伍信息，让更多伙伴了解这次活动
+            {t("teams.editSubtitle")}
           </p>
         </div>
 
@@ -217,12 +218,12 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
         >
           <form onSubmit={handleSubmit} className="space-y-6">
 
-            <FormSection icon="✏️" label={copy.teams.formLabel.name} required>
+            <FormSection icon="✏️" label={t("teams.formLabel.name")} required>
               <input
                 id="title"
                 name="title"
                 type="text"
-                placeholder={copy.teams.formPlaceholder.name}
+                placeholder={t("teams.formPlaceholder.name")}
                 value={formData.title}
                 onChange={handleChange}
                 required
@@ -231,33 +232,33 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               />
             </FormSection>
 
-            <FormSection icon="📍" label={copy.teams.formLabel.location}>
+            <FormSection icon="📍" label={t("teams.formLabel.location")}>
               <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-muted border border-border">
                 <span className="text-sm text-foreground">{location?.name || team.date}</span>
                 {location && (
                   <a href={`/locations/${location.id}`} className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 flex items-center gap-1">
-                    查看详情 <ArrowRight className="h-3 w-3" />
+                    {t("teams.viewDetailShort")} <ArrowRight className="h-3 w-3" />
                   </a>
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <AlertCircle className="h-3 w-3" />
-                队伍创建后地点不可修改
+                {t("teams.editLocationLocked")}
               </p>
             </FormSection>
 
-            <FormSection icon="📅" label={copy.teams.formLabel.date}>
+            <FormSection icon="📅" label={t("teams.formLabel.date")}>
               <div className="px-4 py-3 rounded-xl bg-muted border border-border">
                 <span className="text-sm text-foreground">{team.date}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <AlertCircle className="h-3 w-3" />
-                队伍创建后日期不可修改
+                {t("teams.editDateLocked")}
               </p>
             </FormSection>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormSection icon="⏰" label={copy.teams.formLabel.meetTime}>
+              <FormSection icon="⏰" label={t("teams.formLabel.meetTime")}>
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
@@ -271,7 +272,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 </div>
               </FormSection>
 
-              <FormSection icon="⌛" label={copy.teams.formLabel.duration}>
+              <FormSection icon="⌛" label={t("teams.formLabel.duration")}>
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <select
@@ -282,14 +283,14 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   >
                     {[120, 180, 240, 300, 360, 420, 480, 540, 600, 720].map((m) => (
-                      <option key={m} value={m}>{m / 60} 小时</option>
+                      <option key={m} value={m}>{t("teams.editDurationHours", { hours: m / 60 })}</option>
                     ))}
                   </select>
                 </div>
               </FormSection>
             </div>
 
-            <FormSection icon="👥" label={copy.teams.formLabel.maxSize} required hint={`至少 ${team.currentMembers} 人（当前成员）`}>
+            <FormSection icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.editMaxSizeHint", { current: team.currentMembers })}>
               <div className="relative">
                 <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
                 <input
@@ -298,7 +299,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                   type="number"
                   min={team.currentMembers}
                   max={50}
-                  placeholder={copy.teams.formPlaceholder.maxSize}
+                  placeholder={t("teams.formPlaceholder.maxSize")}
                   value={formData.maxMembers}
                   onChange={handleChange}
                   required
@@ -307,15 +308,15 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               </div>
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <AlertCircle className="h-3 w-3" />
-                当前已有 {team.currentMembers} 名成员，人数上限不能低于此数
+                {t("teams.editMaxMembersTip", { current: team.currentMembers })}
               </p>
             </FormSection>
 
-            <FormSection icon="📝" label={copy.teams.formLabel.description}>
+            <FormSection icon="📝" label={t("teams.formLabel.description")}>
               <textarea
                 id="description"
                 name="description"
-                placeholder={copy.teams.formPlaceholder.description}
+                placeholder={t("teams.formPlaceholder.description")}
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
@@ -323,7 +324,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               />
             </FormSection>
 
-            <FormSection icon="📋" label="参与要求" hint="最多 10 条，将展示给申请者">
+            <FormSection icon="📋" label={t("teams.editRequirementsLabel")} hint={t("teams.editRequirementsHint")}>
               <ul className="space-y-2">
                 {formData.requirements.map((req, i) => (
                   <li key={i} className="flex items-center gap-2">
@@ -336,7 +337,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                       type="text"
                       value={req}
                       onChange={(e) => updateRequirement(i, e.target.value)}
-                      placeholder="例如：需要有徒步经验"
+                      placeholder={t("teams.editRequirementPlaceholder")}
                       maxLength={100}
                       className="flex-1 px-3 py-2 rounded-lg border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
                     />
@@ -356,13 +357,13 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                   onClick={addRequirement}
                   className="w-full mt-2 py-2.5 rounded-lg border text-sm font-medium transition-all duration-150 flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted hover:border-primary hover:text-primary"
                 >
-                  <span>+ 添加一条</span>
+                  <span>{t("teams.editAddRequirement")}</span>
                 </button>
               )}
               {formData.requirements.length === 0 && (
                 <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
                   <AlertCircle className="h-3 w-3" />
-                  点击「添加一条」开始设置参与要求
+                  {t("teams.editRequirementsEmptyTip")}
                 </p>
               )}
             </FormSection>
@@ -372,7 +373,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             >
               <span className="text-base flex-shrink-0 mt-0.5">💡</span>
               <p className="text-amber-800 dark:text-amber-300">
-                修改后的信息会立即生效，已申请的成员会看到更新后的内容。
+                {t("teams.editSaveTip")}
               </p>
             </div>
 
@@ -391,7 +392,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 onClick={() => window.location.href = `/teams/${teamId}`}
                 className="flex-1 py-3 rounded-xl border text-sm font-medium transition-all duration-150 border-border text-muted-foreground hover:bg-muted"
               >
-                {copy.common.cancel}
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
@@ -416,7 +417,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 }}
               >
                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isSubmitting ? "保存中..." : "保存修改"}
+                {isSubmitting ? t("common.saving") : t("teams.editSaveBtn")}
               </button>
             </div>
           </form>

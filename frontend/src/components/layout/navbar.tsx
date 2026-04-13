@@ -3,15 +3,17 @@
 import * as React from "react";
 import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { copy } from "@/lib/copy";
 import { fetchCurrentUser, API_BASE } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { type Locale, SUPPORTED_LOCALES, getLocale, setLocale, getLocaleName } from "@/i18n";
+import { useI18n } from "@/hooks/useI18n";
 
-const navLinks = [
-  { href: "/",          label: copy.nav.home },
-  { href: "/locations", label: copy.nav.locations },
-  { href: "/teams",     label: copy.nav.teams },
+const navLinks = (t: (key: any) => string) => [
+  { href: "/",          label: t("nav.home") },
+  { href: "/locations", label: t("nav.locations") },
+  { href: "/teams",     label: t("nav.teams") },
 ];
 
 interface NavbarProps {
@@ -28,6 +30,7 @@ interface NavbarProps {
  * - 用户菜单：hover 展开下拉
  */
 export function Navbar({ className }: NavbarProps) {
+  const { t } = useI18n();
   const [isScrolled,        setIsScrolled]        = React.useState(() => typeof window !== "undefined" && window.scrollY > 20);
   const [isMobileMenuOpen,  setIsMobileMenuOpen]  = React.useState(false);
   const [showUserMenu,      setShowUserMenu]      = React.useState(false);
@@ -122,7 +125,7 @@ export function Navbar({ className }: NavbarProps) {
 
             {/* ---- 桌面端导航 ---- */}
             <nav className="hidden md:flex items-center gap-1" aria-label="主导航">
-              {navLinks.map((link) => {
+              {navLinks(t).map((link) => {
                 const active = isActive(link.href);
                 return (
                   <a
@@ -150,6 +153,9 @@ export function Navbar({ className }: NavbarProps) {
 
             {/* ---- 桌面端操作区 ---- */}
             <div className="hidden md:flex items-center gap-2">
+              {/* 语言切换 */}
+              <LanguageSwitcher />
+
               {/* 主题切换 */}
               <ThemeToggle />
 
@@ -159,7 +165,7 @@ export function Navbar({ className }: NavbarProps) {
                   className="flex items-center gap-1.5 text-sm text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
                 >
                   <Settings className="h-4 w-4" />
-                  {copy.nav.admin}
+                  {t("nav.admin")}
                 </a>
               )}
 
@@ -198,7 +204,7 @@ export function Navbar({ className }: NavbarProps) {
                           onClick={() => setShowUserMenu(false)}
                         >
                           <User className="h-3.5 w-3.5 text-muted-foreground" />
-                          {copy.nav.profile}
+                          {t("nav.profile")}
                         </a>
                         <a
                           href="/my-teams"
@@ -206,7 +212,7 @@ export function Navbar({ className }: NavbarProps) {
                           onClick={() => setShowUserMenu(false)}
                         >
                           <Mountain className="h-3.5 w-3.5 text-muted-foreground" />
-                          {copy.nav.myTeams}
+                          {t("nav.myTeams")}
                         </a>
                         <a
                           href="/favorites"
@@ -214,7 +220,7 @@ export function Navbar({ className }: NavbarProps) {
                           onClick={() => setShowUserMenu(false)}
                         >
                           <Heart className="h-3.5 w-3.5 text-muted-foreground" />
-                          {copy.nav.myFavorites}
+                          {t("nav.myFavorites")}
                         </a>
                         <div className="border-t border-border my-1" />
                         <button
@@ -223,14 +229,14 @@ export function Navbar({ className }: NavbarProps) {
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                         >
                           <LogOut className="h-3.5 w-3.5" />
-                          {copy.nav.logout}
+                          {t("nav.logout")}
                         </button>
                       </div>
                     )}
                   </div>
 
                   {/* 主 CTA：发布队伍 */}
-                  <CtaButton href="/teams/create" label={copy.nav.createTeam} icon={<Plus className="h-4 w-4" />} />
+                  <CtaButton href="/teams/create" label={t("nav.createTeam")} icon={<Plus className="h-4 w-4" />} />
                 </>
               ) : (
                 <>
@@ -238,9 +244,9 @@ export function Navbar({ className }: NavbarProps) {
                     href="/login"
                     className="text-sm font-medium text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
                   >
-                    {copy.nav.login}
+                    {t("nav.login")}
                   </a>
-                  <CtaButton href="/register" label={copy.nav.register} />
+                  <CtaButton href="/register" label={t("nav.register")} />
                 </>
               )}
             </div>
@@ -314,7 +320,7 @@ export function Navbar({ className }: NavbarProps) {
 
             {/* 导航链接 */}
             <nav className="flex flex-col px-3 py-3 gap-0.5" aria-label="移动端导航">
-              {navLinks.map((link, i) => {
+              {navLinks(t).map((link, i) => {
                 const active = isActive(link.href);
                 return (
                   <a
@@ -338,6 +344,12 @@ export function Navbar({ className }: NavbarProps) {
 
             {/* 底部操作按钮 */}
             <div className="mt-auto flex flex-col gap-3 px-4 pb-8 pt-4 border-t border-border">
+              {/* 语言切换（移动端） */}
+              <div className="flex items-center justify-center gap-3 py-2">
+                {SUPPORTED_LOCALES.map((locale) => (
+                  <MobileLangButton key={locale} locale={locale} />
+                ))}
+              </div>
               {session?.user ? (
                 <>
                   <a
@@ -346,7 +358,7 @@ export function Navbar({ className }: NavbarProps) {
                     className="w-full flex items-center justify-center gap-2 border border-border text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-colors font-medium text-sm"
                   >
                     <User className="h-4 w-4 text-muted-foreground" />
-                    {copy.nav.profile}
+                    {t("nav.profile")}
                   </a>
                   <a
                     href="/my-teams"
@@ -354,7 +366,7 @@ export function Navbar({ className }: NavbarProps) {
                     className="w-full flex items-center justify-center gap-2 border border-border text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-colors font-medium text-sm"
                   >
                     <Mountain className="h-4 w-4 text-muted-foreground" />
-                    {copy.nav.myTeams}
+                    {t("nav.myTeams")}
                   </a>
                   <a
                     href="/favorites"
@@ -362,7 +374,7 @@ export function Navbar({ className }: NavbarProps) {
                     className="w-full flex items-center justify-center gap-2 border border-border text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-colors font-medium text-sm"
                   >
                     <Heart className="h-4 w-4 text-muted-foreground" />
-                    {copy.nav.myFavorites}
+                    {t("nav.myFavorites")}
                   </a>
                   <a
                     href="/teams/create"
@@ -370,7 +382,7 @@ export function Navbar({ className }: NavbarProps) {
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
                   >
                     <Plus className="h-4 w-4" />
-                    {copy.nav.createTeam}
+                    {t("nav.createTeam")}
                   </a>
                   <button
                     type="button"
@@ -378,7 +390,7 @@ export function Navbar({ className }: NavbarProps) {
                     className="w-full flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground py-2 transition-colors"
                   >
                     <LogOut className="h-3.5 w-3.5" />
-                    {copy.nav.logout}
+                    {t("nav.logout")}
                   </button>
                 </>
               ) : (
@@ -389,14 +401,14 @@ export function Navbar({ className }: NavbarProps) {
                     className="w-full flex items-center justify-center gap-2 border border-border text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-colors font-medium text-sm"
                   >
                     <User className="h-4 w-4" />
-                    {copy.nav.login}
+                    {t("nav.login")}
                   </a>
                   <a
                     href="/register"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl font-medium text-sm bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
                   >
-                    免费注册
+                    {t("nav.register")}
                   </a>
                 </>
               )}
@@ -426,5 +438,46 @@ function CtaButton({
       {icon}
       {label}
     </a>
+  );
+}
+
+/** 移动端语言切换按钮 */
+function MobileLangButton({ locale }: { locale: Locale }) {
+  const isActive = locale === getLocale();
+  const handleClick = () => {
+    setLocale(locale);
+    const path = window.location.pathname;
+    const segments = path.split("/").filter(Boolean);
+    const firstSegment = segments[0] as Locale | undefined;
+    const hasPrefix = SUPPORTED_LOCALES.includes(firstSegment as Locale);
+
+    let newPath: string;
+    if (locale === "zh-CN") {
+      newPath = hasPrefix ? "/" + segments.slice(1).join("/") : path;
+      if (!newPath.startsWith("/")) newPath = "/" + newPath;
+    } else {
+      if (hasPrefix) {
+        segments[0] = locale;
+        newPath = "/" + segments.join("/");
+      } else {
+        newPath = "/" + locale + path;
+      }
+    }
+    if (!newPath || newPath === "/") newPath = locale === "zh-CN" ? "/" : "/" + locale;
+    window.location.href = newPath;
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${
+        isActive
+          ? "bg-primary text-primary-foreground"
+          : "bg-accent text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {getLocaleName(locale)}
+    </button>
   );
 }

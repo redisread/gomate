@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Settings, Plus } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { FormData } from "./use-location-form";
 
@@ -51,9 +52,9 @@ function Field({ label, required, hint, error, children }: FieldProps) {
   );
 }
 
-const FACILITY_OPTIONS = [
-  { value: "parking", label: "🅿️ 停车场" }, { value: "restroom", label: "🚻 卫生间" },
-  { value: "water", label: "💧 补给水源" }, { value: "food", label: "🍱 餐饮" },
+const FACILITY_OPTIONS = (t: (key: any) => string) => [
+  { value: "parking", label: `🅿️ ${t("admin.facilityParking")}` }, { value: "restroom", label: `🚻 ${t("admin.facilityRestroom")}` },
+  { value: "water", label: `💧 ${t("admin.facilityWater")}` }, { value: "food", label: `🍱 ${t("admin.facilityFood")}` },
 ];
 
 interface LocationFormSettingsFieldsProps {
@@ -63,13 +64,15 @@ interface LocationFormSettingsFieldsProps {
 }
 
 export function LocationFormSettingsFields({ formData, allTags, updateField }: LocationFormSettingsFieldsProps) {
+  const { t } = useI18n();
+  const facilityOptions = FACILITY_OPTIONS(t);
   return (
-    <SectionCard icon={<Settings className="h-4 w-4" />} title="高级设置" collapsible defaultOpen={false}
-      badge={<span className="text-[10px] text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">可选</span>}>
+    <SectionCard icon={<Settings className="h-4 w-4" />} title={t("admin.formSettingsTitle")} collapsible defaultOpen={false}
+      badge={<span className="text-[10px] text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">{t("admin.optionalBadge")}</span>}>
       {/* 配套设施 */}
-      <Field label="配套设施">
+      <Field label={t("admin.formFacilitiesTitle")}>
         <div className="flex flex-wrap gap-2">
-          {FACILITY_OPTIONS.map((f) => {
+          {facilityOptions.map((f) => {
             const selected = formData.extra.facilities.includes(f.value);
             return (
               <button key={f.value} type="button"
@@ -84,7 +87,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
       </Field>
 
       {/* 徒步贴士 */}
-      <Field label="徒步贴士">
+      <Field label={t("admin.formTipsTitle")}>
         <div className="space-y-2">
           {formData.extra.tips.map((tip, idx) => (
             <div key={idx} className="flex items-center gap-2">
@@ -93,7 +96,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
                   const next = [...formData.extra.tips]; next[idx] = e.target.value;
                   updateField("extra", { ...formData.extra, tips: next });
                 }}
-                placeholder="如：建议早上登山，避开人流高峰" className={cn("w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all duration-150 border bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
+                placeholder={t("admin.tipsPlaceholder")} className={cn("w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all duration-150 border bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
               <button type="button" onClick={() => updateField("extra", { ...formData.extra, tips: formData.extra.tips.filter((_, i) => i !== idx) })}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -103,14 +106,14 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
           {formData.extra.tips.length < 10 && (
             <button type="button" onClick={() => updateField("extra", { ...formData.extra, tips: [...formData.extra.tips, ""] })}
               className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 transition-colors">
-              <Plus className="h-3.5 w-3.5" />添加贴士
+              <Plus className="h-3.5 w-3.5" />{t("admin.formTipsAdd")}
             </button>
           )}
         </div>
       </Field>
 
       {/* 安全警告 */}
-      <Field label="安全警告">
+      <Field label={t("admin.formWarningsTitle")}>
         <div className="space-y-2">
           {formData.extra.warnings.map((w, idx) => (
             <div key={idx} className="flex items-center gap-2">
@@ -119,7 +122,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
                   const next = [...formData.extra.warnings]; next[idx] = e.target.value;
                   updateField("extra", { ...formData.extra, warnings: next });
                 }}
-                placeholder="如：悬崖路段注意安全，勿靠近边缘" className={cn("w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all duration-150 border bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
+                placeholder={t("admin.warningsPlaceholder")} className={cn("w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all duration-150 border bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
               <button type="button" onClick={() => updateField("extra", { ...formData.extra, warnings: formData.extra.warnings.filter((_, i) => i !== idx) })}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -129,16 +132,16 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
           {formData.extra.warnings.length < 10 && (
             <button type="button" onClick={() => updateField("extra", { ...formData.extra, warnings: [...formData.extra.warnings, ""] })}
               className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 transition-colors">
-              <Plus className="h-3.5 w-3.5" />添加警告
+              <Plus className="h-3.5 w-3.5" />{t("admin.formWarningsAdd")}
             </button>
           )}
         </div>
       </Field>
 
       {/* 关联标签 */}
-      <Field label="关联标签" hint="选择与该地点相关的标签">
+      <Field label={t("admin.formTagsTitle")} hint={t("admin.formTagsHint")}>
         {allTags.length === 0 ? (
-          <p className="text-xs text-stone-400">暂无可用标签</p>
+          <p className="text-xs text-stone-400">{t("admin.noTagsAvailable")}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {allTags.map((tag) => {

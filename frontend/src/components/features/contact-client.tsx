@@ -12,11 +12,12 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI } from "@/lib/api";
 
 /** 联系我们页主组件 */
 export function ContactClient() {
+  const { t } = useI18n();
   const [form, setForm] = React.useState({
     name: "",
     email: "",
@@ -44,13 +45,13 @@ export function ContactClient() {
         body: JSON.stringify(form),
       });
       if (!res.ok) {
-        const data = await res.json() as { error?: string };
-        setError(data.error ?? copy.contact.submitError);
+        const data = (await res.json()) as { error?: string };
+        setError(data.error ?? t("contact.submitError"));
       } else {
         setSubmitted(true);
       }
     } catch {
-      setError(copy.contact.submitError);
+      setError(t("contact.submitError"));
     } finally {
       setSubmitting(false);
     }
@@ -76,19 +77,19 @@ export function ContactClient() {
                 className="flex items-center gap-1 hover:text-amber-600 transition-colors"
               >
                 <Home className="w-4 h-4" />
-                <span>首页</span>
+                <span>{t("nav.home")}</span>
               </a>
               <ChevronRight className="w-4 h-4" />
               <span className="text-stone-700 dark:text-stone-300 font-medium">
-                {copy.contact.pageTitle}
+                {t("contact.pageTitle")}
               </span>
             </nav>
 
             <h1 className="text-3xl font-bold text-foreground">
-              {copy.contact.pageSubtitle}
+              {t("contact.pageSubtitle")}
             </h1>
             <p className="mt-2 text-stone-500 dark:text-stone-400 text-base">
-              {copy.contact.pageDesc}
+              {t("contact.pageDesc")}
             </p>
           </div>
         </div>
@@ -104,7 +105,7 @@ export function ContactClient() {
               </div>
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-1">
-                  {copy.contact.emailContact}
+                  {t("contact.emailContact")}
                 </h3>
                 <a
                   href="mailto:hi@gomate.live"
@@ -122,10 +123,10 @@ export function ContactClient() {
               </div>
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-1">
-                  {copy.contact.wechatContact}
+                  {t("contact.wechatContact")}
                 </h3>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
-                  {copy.contact.wechatScanHint}
+                  {t("contact.wechatScanHint")}
                 </p>
               </div>
             </div>
@@ -140,16 +141,16 @@ export function ContactClient() {
                   <CheckCircle className="h-7 w-7 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {copy.contact.successTitle}
+                  {t("contact.successTitle")}
                 </h3>
                 <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">
-                  {copy.contact.successDesc}
+                  {t("contact.successDesc")}
                 </p>
                 <button
                   onClick={handleReset}
                   className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors"
                 >
-                  {copy.contact.continueSubmitBtn}
+                  {t("contact.continueSubmitBtn")}
                 </button>
               </div>
             ) : (
@@ -167,10 +168,10 @@ export function ContactClient() {
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-foreground">
-                      {copy.contact.formTitle}
+                      {t("contact.formTitle")}
                     </h2>
                     <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-                      {copy.contact.formSubtitle}
+                      {t("contact.formSubtitle")}
                     </p>
                   </div>
                 </div>
@@ -180,28 +181,28 @@ export function ContactClient() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-                        {copy.contact.nameLabel}
+                        {t("contact.nameLabel")}
                       </label>
                       <input
                         type="text"
                         name="name"
                         value={form.name}
                         onChange={handleChange}
-                        placeholder={copy.contact.namePlaceholder}
+                        placeholder={t("contact.namePlaceholder")}
                         required
                         className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-                        {copy.contact.emailLabel}
+                        {t("contact.emailLabel")}
                       </label>
                       <input
                         type="email"
                         name="email"
                         value={form.email}
                         onChange={handleChange}
-                        placeholder={copy.contact.emailPlaceholder}
+                        placeholder={t("contact.emailPlaceholder")}
                         required
                         className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
                       />
@@ -211,14 +212,14 @@ export function ContactClient() {
                   {/* 主题 */}
                   <div>
                     <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-                      {copy.contact.subjectLabel}
+                      {t("contact.subjectLabel")}
                     </label>
                     <input
                       type="text"
                       name="subject"
                       value={form.subject}
                       onChange={handleChange}
-                      placeholder={copy.contact.subjectPlaceholder}
+                      placeholder={t("contact.subjectPlaceholder")}
                       required
                       className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
                     />
@@ -227,13 +228,13 @@ export function ContactClient() {
                   {/* 详细建议 */}
                   <div>
                     <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-                      {copy.contact.messageLabel}
+                      {t("contact.messageLabel")}
                     </label>
                     <textarea
                       name="message"
                       value={form.message}
                       onChange={handleChange}
-                      placeholder={copy.contact.messagePlaceholder}
+                      placeholder={t("contact.messagePlaceholder")}
                       required
                       rows={5}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors resize-none"
@@ -255,9 +256,7 @@ export function ContactClient() {
                       className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors"
                     >
                       <Send className="h-4 w-4" />
-                      {submitting
-                        ? copy.contact.submitting
-                        : copy.contact.submitBtn}
+                      {submitting ? t("contact.submitting") : t("contact.submitBtn")}
                     </button>
                   </div>
                 </form>
