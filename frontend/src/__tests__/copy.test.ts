@@ -26,10 +26,19 @@ beforeAll(async () => {
     gender: { male: "男", female: "女", other: "其他" },
     locationType: { hiking: "户外徒步", explore: "城市探索", leisure: "休闲探店", travel: "旅行" },
   };
+  const zhCommon = {
+    loading: "加载中...", back: "返回", cancel: "取消", save: "保存",
+    noData: "暂无数据", unknown: "未知", person: "人", current: "当前",
+    searchPlaceholder: "搜索地点、活动或队伍...", justNow: "刚刚",
+    minutesAgo: "{count}分钟前", hoursAgo: "{count}小时前", daysAgo: "{count}天前",
+  };
+  const zhTeams = { openTeamsSubtitle: "有 {count} 个队伍等你加入" };
+  const zhAuth = { loginBtn: "登录" };
+  const zhErrors = { locationNotFound: "未找到该地点" };
   const data: Record<Locale, Record<string, Record<string, unknown>>> = {
-    "zh-CN": { enums: zhEnums },
-    en: { enums: zhEnums },
-    ja: { enums: zhEnums },
+    "zh-CN": { enums: zhEnums, common: zhCommon, teams: zhTeams, auth: zhAuth, errors: zhErrors },
+    en: { enums: zhEnums, common: zhCommon, teams: zhTeams, auth: zhAuth, errors: zhErrors },
+    ja: { enums: zhEnums, common: zhCommon, teams: zhTeams, auth: zhAuth, errors: zhErrors },
   };
   hydrateSSRData(data);
 });
