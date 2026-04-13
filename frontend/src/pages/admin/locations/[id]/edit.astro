@@ -8,10 +8,6 @@ import { declareI18nNs } from "../../../../middleware";
 
 declareI18nNs(Astro.locals, ["admin", "pois", "ui"]);
 
-export function getStaticPaths() {
-  return [{ params: { id: "fallback" } }];
-}
-
 const { id } = Astro.params;
 ---
 
