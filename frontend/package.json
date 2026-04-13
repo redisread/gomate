@@ -12,8 +12,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src/",
-    "i18n:gen-types": "node scripts/gen-i18n-types.mjs",
-    "i18n:validate": "node scripts/validate-i18n-keys.mjs"
+    "i18n:gen-types": "node ../../scripts/gen-i18n-types.mjs",
+    "i18n:validate": "node ../../scripts/validate-i18n-keys.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "11",

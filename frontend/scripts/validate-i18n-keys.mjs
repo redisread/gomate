@@ -1,1 +1,0 @@
-../../scripts/validate-i18n-keys.mjs
