@@ -99,7 +99,7 @@ interface LocationFormBasicFieldsProps {
 }
 
 export function LocationFormBasicFields({ formData, errors, cities, updateField, touch, onOpenMapPicker }: LocationFormBasicFieldsProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["admin"]);
   const locationTypeOptions = LOCATION_TYPE_OPTIONS(t);
   return (
     <div className="space-y-4">

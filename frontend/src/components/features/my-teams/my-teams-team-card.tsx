@@ -21,7 +21,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
   onCancel?: (id: string) => void;
   onForm?: (id: string) => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["myTeams", "teams"]);
   const statusLabels = getStatusLabels(t);
   const status = statusLabels[team.status] || { label: team.status, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" };
   const isFull = team.currentMembers >= team.maxMembers;
@@ -123,7 +123,7 @@ export function TeamListSection({ teams, isLeader, onCancel, onForm }: {
   teams: TeamItem[]; isLeader: boolean;
   onCancel?: (id: string) => void; onForm?: (id: string) => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["myTeams", "teams"]);
   const active = teams.filter((t2) => ["recruiting", "full", "formed", "ongoing"].includes(t2.status));
   const archived = teams.filter((t2) => ["completed", "cancelled"].includes(t2.status));
   if (teams.length === 0) return null;

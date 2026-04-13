@@ -8,8 +8,28 @@
  * - 同时通过 cookie 设置 locale 供 React Islands 读取
  */
 
-import type { MiddlewareHandler } from "astro";
+import type { MiddlewareHandler, Locals } from "astro";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from "@/i18n";
+
+// ─── SSR i18n Helpers ──────────────────────────────────────────────────
+
+/**
+ * 在页面组件中声明当前页所需的 namespaces。
+ *
+ * @example
+ * // 在 Astro 页面的 frontmatter 中调用
+ * declareI18nNs(Astro.locals, ['common', 'teams']);
+ */
+export function declareI18nNs(locals: Locals, nsList: string[]): void {
+  locals.__i18n_namespaces = nsList;
+}
+
+/**
+ * 获取当前页面声明的 namespaces。
+ */
+export function getI18nNs(locals: Locals): string[] | undefined {
+  return locals.__i18n_namespaces;
+}
 
 /**
  * 从 Accept-Language 头匹配支持的语言

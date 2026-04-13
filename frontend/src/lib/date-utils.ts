@@ -1,4 +1,4 @@
-import { copy } from "./copy";
+import { t, getLocale } from "@/i18n";
 
 export function parseTimestamp(ts: string | number | null | undefined): Date | null {
   if (!ts) return null;
@@ -10,39 +10,39 @@ export function formatDate(
   options?: Intl.DateTimeFormatOptions
 ): string {
   const date = parseTimestamp(ts);
-  if (!date) return copy.common.unknown;
+  if (!date) return t("common.unknown");
   const defaultOptions: Intl.DateTimeFormatOptions = {
     year: "numeric",
     month: "long",
     day: "numeric",
   };
-  return date.toLocaleDateString("zh-CN", options ?? defaultOptions);
+  return date.toLocaleDateString(getLocale(), options ?? defaultOptions);
 }
 
 export function formatTimeAgo(ts: string | number | null | undefined): string {
   const date = parseTimestamp(ts);
-  if (!date) return copy.common.unknown;
+  if (!date) return t("common.unknown");
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   if (diffMinutes < 1) {
-    return "刚刚";
+    return t("common.justNow");
   }
   if (diffMinutes < 60) {
-    return `${diffMinutes}${copy.common.minutesAgo}`;
+    return t("common.minutesAgo", { vars: { count: diffMinutes } });
   }
   if (diffHours < 24) {
-    return `${diffHours}${copy.common.hoursAgo}`;
+    return t("common.hoursAgo", { vars: { count: diffHours } });
   }
-  return `${diffDays}${copy.common.daysAgo}`;
+  return t("common.daysAgo", { vars: { count: diffDays } });
 }
 
 export function formatJoinDate(ts: string | number | null | undefined): string {
   const date = parseTimestamp(ts);
-  if (!date) return copy.common.unknown;
-  return date.toLocaleDateString("zh-CN", {
+  if (!date) return t("common.unknown");
+  return date.toLocaleDateString(getLocale(), {
     year: "numeric",
     month: "long",
   });

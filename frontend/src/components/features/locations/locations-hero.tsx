@@ -32,7 +32,7 @@ export function LocationsHero({
   isLoading, pagination, onRoleSelect, onSearchChange, onTagToggle,
   onCitySelect, onClearAll, onToggleCityDropdown, setCityDropdownPos,
 }: LocationsHeroProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["locations"]);
   const cfg = getRoleConfig(t);
   const cityBtnRef = React.useRef<HTMLButtonElement>(null);
   const cityDropdownRef = React.useRef<HTMLDivElement>(null);
@@ -181,7 +181,7 @@ export function LocationsResultBar({
   hasActiveFilters: boolean; onRoleSelect: (role: RoleKey) => void; onCitySelect: (cityId: string) => void;
   onTagToggle: (tagId: string) => void; onClearAll: () => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["locations"]);
   const cfg = getRoleConfig(t);
   return (
     <div className="flex items-center justify-between mb-7">
@@ -233,7 +233,7 @@ export function LocationsResultBar({
 }
 
 export function LocationsCtaSection() {
-  const { t } = useI18n();
+  const { t } = useI18n(["locations"]);
   return (
     <section className="relative py-16 border-t border-stone-200 dark:border-stone-800 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-50 dark:from-stone-900 dark:via-amber-950/20 dark:to-stone-900" />

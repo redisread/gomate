@@ -1,12 +1,11 @@
 import * as React from "react";
 import { User, FileText, MapPin, MessageCircle, Mail, Loader2, Camera, X, Check, ArrowLeft } from "lucide-react";
-import { copy } from "@/lib/copy";
 
 export const LEVEL_OPTIONS = [
-  { value: "beginner", emoji: "🌱", label: copy.enums.level.beginner, description: copy.enums.levelDesc.beginner },
-  { value: "intermediate", emoji: "⛰️", label: copy.enums.level.intermediate, description: copy.enums.levelDesc.intermediate },
-  { value: "advanced", emoji: "🏔️", label: copy.enums.level.advanced, description: copy.enums.levelDesc.advanced },
-  { value: "expert", emoji: "🦅", label: copy.enums.level.expert, description: copy.enums.levelDesc.expert },
+  { value: "beginner", emoji: "🌱", label: "enums.level.beginner", description: "enums.levelDesc.beginner" },
+  { value: "intermediate", emoji: "⛰️", label: "enums.level.intermediate", description: "enums.levelDesc.intermediate" },
+  { value: "advanced", emoji: "🏔️", label: "enums.level.advanced", description: "enums.levelDesc.advanced" },
+  { value: "expert", emoji: "🦅", label: "enums.level.expert", description: "enums.levelDesc.expert" },
 ] as const;
 
 export const PRESET_EQUIPMENT = [

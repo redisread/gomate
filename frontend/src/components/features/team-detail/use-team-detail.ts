@@ -3,7 +3,7 @@
 import * as React from "react";
 import { fetchAPI } from "@/lib/api";
 import type { Team, TeamMember, Application } from "@/lib/types";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 
 interface ToastOptions {
   type: "success" | "error";
@@ -73,6 +73,7 @@ interface UseTeamDetailReturn {
 }
 
 export function useTeamDetail(teamId: string): UseTeamDetailReturn {
+  const { t } = useI18n(["teams", "success", "errors", "common"]);
   const [team, setTeam] = React.useState<Team | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -98,14 +99,14 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
     try {
       const res = await fetchAPI(`/api/teams/${teamId}`);
       if (res.status === 404) {
-        setError(copy.teams.notFound);
+        setError(t('teams.notFound'));
         return;
       }
       const data = await res.json();
       if (data.success && data.team) setTeam(data.team);
-      else setError(copy.teams.notFound);
+      else setError(t('teams.notFound'));
     } catch {
-      setError(copy.teams.loadFailed);
+      setError(t('teams.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -165,10 +166,10 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       if (data.success) {
         setMemberStatus("pending");
         setShowJoinModal(false);
-        showToast({ type: "success", message: copy.success.applied });
+        showToast({ type: "success", message: t('success.applied') });
         loadTeam();
       } else {
-        const errorMsg = data.error || copy.errors.joinFailed;
+        const errorMsg = data.error || t('errors.joinFailed');
         if (errorMsg.includes("微信") || errorMsg.includes("wechat")) {
           setShowJoinModal(false);
           setTimeout(() => setShowWechatConfirm(true), 300);
@@ -177,7 +178,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
         }
       }
     } catch {
-      showToast({ type: "error", message: copy.errors.joinFailed });
+      showToast({ type: "error", message: t('errors.joinFailed') });
     } finally {
       setJoining(false);
     }
@@ -212,13 +213,13 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       const data = await res.json();
       if (data.success) {
         setMemberStatus(null);
-        showToast({ type: "success", message: copy.success.leftTeam });
+        showToast({ type: "success", message: t('success.leftTeam') });
         loadTeam();
       } else {
-        showToast({ type: "error", message: data.error || copy.errors.leaveFailed });
+        showToast({ type: "error", message: data.error || t('errors.leaveFailed') });
       }
     } catch {
-      showToast({ type: "error", message: copy.errors.leaveFailed });
+      showToast({ type: "error", message: t('errors.leaveFailed') });
     }
   }, [teamId, showToast, loadTeam]);
 
@@ -227,14 +228,14 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       const res = await fetchAPI(`/api/teams/${teamId}/members/${uid}/approve`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
-        showToast({ type: "success", message: copy.success.approved });
+        showToast({ type: "success", message: t('success.approved') });
         setApplications((prev) => prev.filter((a) => a.userId !== uid));
         loadTeam();
       } else {
-        showToast({ type: "error", message: data.error || copy.errors.reviewFailed });
+        showToast({ type: "error", message: data.error || t('errors.reviewFailed') });
       }
     } catch {
-      showToast({ type: "error", message: copy.errors.reviewFailed });
+      showToast({ type: "error", message: t('errors.reviewFailed') });
     }
   }, [teamId, showToast, loadTeam]);
 
@@ -243,13 +244,13 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       const res = await fetchAPI(`/api/teams/${teamId}/members/${uid}/reject`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
-        showToast({ type: "success", message: copy.success.rejected });
+        showToast({ type: "success", message: t('success.rejected') });
         setApplications((prev) => prev.filter((a) => a.userId !== uid));
       } else {
-        showToast({ type: "error", message: data.error || copy.errors.reviewFailed });
+        showToast({ type: "error", message: data.error || t('errors.reviewFailed') });
       }
     } catch {
-      showToast({ type: "error", message: copy.errors.reviewFailed });
+      showToast({ type: "error", message: t('errors.reviewFailed') });
     }
   }, [teamId, showToast]);
 
@@ -264,13 +265,13 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       });
       const data = await res.json();
       if (data.success) {
-        showToast({ type: "success", message: copy.teams.formTeamSuccess });
+        showToast({ type: "success", message: t('teams.formTeamSuccess') });
         loadTeam();
       } else {
-        showToast({ type: "error", message: data.error || copy.teams.formTeamFailed });
+        showToast({ type: "error", message: data.error || t('teams.formTeamFailed') });
       }
     } catch {
-      showToast({ type: "error", message: copy.teams.formTeamFailed });
+      showToast({ type: "error", message: t('teams.formTeamFailed') });
     } finally {
       setIsForming(false);
       setShowFormConfirm(false);
@@ -283,13 +284,13 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       const res = await fetchAPI(`/api/teams/${teamId}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
-        showToast({ type: "success", message: copy.teams.deleteTeamSuccess });
+        showToast({ type: "success", message: t('teams.deleteTeamSuccess') });
         setTimeout(() => window.location.href = "/my-teams", 1500);
       } else {
-        showToast({ type: "error", message: data.error || copy.teams.deleteTeamFailed });
+        showToast({ type: "error", message: data.error || t('teams.deleteTeamFailed') });
       }
     } catch {
-      showToast({ type: "error", message: copy.teams.deleteTeamFailed });
+      showToast({ type: "error", message: t('teams.deleteTeamFailed') });
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);

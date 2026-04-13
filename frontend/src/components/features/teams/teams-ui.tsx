@@ -15,7 +15,7 @@ import { getStatusConfig, getDaysUntilStart } from "./constants";
 
 // ─── MemberProgress ────────────────────────────────────────────────
 export function MemberProgress({ current, max, showUrgency = true }: { current: number; max: number; showUrgency?: boolean }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["teams", "filter", "common"]);
   const pct = Math.min((current / max) * 100, 100);
   const remaining = max - current;
   const isFull = current >= max;
@@ -60,7 +60,7 @@ export function MemberProgress({ current, max, showUrgency = true }: { current: 
 
 // ─── StatusBadge ────────────────────────────────────────────────────
 export function StatusBadge({ status }: { status: string }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["teams", "filter", "common"]);
   const statusCfg = getStatusConfig(t);
   const cfg = statusCfg[status] ?? {
     label: status, dotColor: "bg-stone-400", bgColor: "bg-stone-100 dark:bg-stone-800",
@@ -82,7 +82,7 @@ export function StatusBadge({ status }: { status: string }) {
 
 // ─── TeamCard ───────────────────────────────────────────────────────
 export function TeamCard({ team }: { team: Team }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["teams", "filter", "common"]);
   const location = (team as any).location;
   const diff = location?.difficulty ? DIFFICULTY_CONFIG[location.difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const leaderName = team.leader?.nickname || team.leader?.name || t("teams.defaultLeader");
@@ -159,7 +159,7 @@ export function TeamSkeleton() {
 
 // ─── EmptyState ─────────────────────────────────────────────────────
 export function EmptyState({ onClear }: { onClear: () => void }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["teams", "filter", "common"]);
   return (
     <div className="flex flex-col items-center justify-center py-24 px-4">
       <div className="relative w-28 h-28 mb-8 flex items-center justify-center">
@@ -219,7 +219,7 @@ export function FilterPanel({
   startDate, endDate, selectedDifficulty, availableTags, selectedTags, activeFiltersCount,
   onDateQuickSelect, onDifficultyToggle, onTagToggle, onClearAll,
 }: FilterPanelProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["teams", "filter", "common"]);
   return (
     <div className="mt-4 pt-4 pb-1 border-t border-border space-y-4 animate-in slide-in-from-top-2 duration-200">
       <div>
@@ -303,7 +303,7 @@ export function TeamsHeader({
   searchQuery, showFilters, activeFiltersCount, isLoading, pagination,
   onSearchChange, onToggleFilters, renderFilterPanel,
 }: TeamsHeaderProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["teams", "filter", "common"]);
   return (
     <section className="relative pt-20 pb-6 border-b border-border bg-card">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -343,7 +343,7 @@ export function TeamsHeader({
 
 // ─── TeamsCtaSection ────────────────────────────────────────────────
 export function TeamsCtaSection() {
-  const { t } = useI18n();
+  const { t } = useI18n(["teams", "filter", "common"]);
   return (
     <div className="relative mt-16 text-center rounded-3xl border border-border/80 p-10 overflow-hidden bg-gradient-to-br from-amber-50/60 dark:from-amber-950/20 via-card dark:via-card to-amber-50/40 dark:to-amber-950/10">
       <svg className="absolute right-0 bottom-0 opacity-[0.06] w-64 h-32 pointer-events-none" viewBox="0 0 256 128" aria-hidden="true">

@@ -3,11 +3,12 @@
 import * as React from "react";
 import { useStore } from "@nanostores/react";
 import { Sun, Moon, Monitor } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { themeStore, type Theme, initThemeSystemListener } from "@/stores/theme";
 
 export function ThemeToggle() {
+  const { t } = useI18n(["common"]);
   const theme = useStore(themeStore);
   const [mounted, setMounted] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
@@ -35,7 +36,7 @@ export function ThemeToggle() {
     return (
       <button
         className="h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
-        aria-label={copy.theme.toggleLabel}
+        aria-label={t('common.toggleLabel')}
       >
         <Sun className="h-4 w-4" />
       </button>
@@ -63,7 +64,7 @@ export function ThemeToggle() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
-        aria-label={copy.theme.toggleLabel}
+        aria-label={t('common.toggleLabel')}
       >
         {getCurrentIcon()}
       </button>
@@ -85,7 +86,7 @@ export function ThemeToggle() {
             )}
           >
             <Sun className="h-4 w-4" />
-            <span>{copy.theme.light}</span>
+            <span>{t('common.light')}</span>
           </button>
           <button
             onClick={() => handleSelect("dark")}
@@ -97,7 +98,7 @@ export function ThemeToggle() {
             )}
           >
             <Moon className="h-4 w-4" />
-            <span>{copy.theme.dark}</span>
+            <span>{t('common.dark')}</span>
           </button>
           <button
             onClick={() => handleSelect("system")}
@@ -109,7 +110,7 @@ export function ThemeToggle() {
             )}
           >
             <Monitor className="h-4 w-4" />
-            <span>{copy.theme.system}</span>
+            <span>{t('common.system')}</span>
           </button>
         </div>
       )}

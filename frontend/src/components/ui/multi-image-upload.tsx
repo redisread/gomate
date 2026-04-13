@@ -17,7 +17,7 @@ import * as React from "react";
 import { Plus, X, AlertCircle, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { API_BASE } from "@/lib/api";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 
 /* ================================================================
    常量
@@ -124,6 +124,8 @@ export function MultiImageUpload({
   const [uploadingItems, setUploadingItems] = React.useState<UploadItem[]>([]);
   /** 移动端 tap 激活的图片索引（用于显示操作层） */
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
+
+  const { t } = useI18n(["ui"]);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const dragCounterRef = React.useRef(0);
@@ -287,14 +289,14 @@ export function MultiImageUpload({
             >
               <img
                 src={url}
-                alt={copy.ui.upload.imageAlt.replace("{index}", String(index + 1))}
+                alt={t('ui.upload.imageAlt').replace("{index}", String(index + 1))}
                 className="w-full h-full object-cover"
                 draggable={false}
               />
               {/* 封面角标（左上角） */}
               {isCurrentCover && !isActive && (
                 <div className="absolute top-1 left-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-xs font-medium shadow-sm">
-                  {copy.ui.upload.currentCover}
+                  {t('ui.upload.currentCover')}
                 </div>
               )}
               {/* 操作层：桌面 hover 或移动端 tap 激活时显示 */}
@@ -315,7 +317,7 @@ export function MultiImageUpload({
                         onSetCover(url);
                         setActiveIndex(null);
                       }}
-                      aria-label={copy.ui.upload.setAsCover}
+                      aria-label={t('ui.upload.setAsCover')}
                       className={cn(
                         "absolute top-1 left-1 w-6 h-6 rounded-full",
                         "flex items-center justify-center",
@@ -384,7 +386,7 @@ export function MultiImageUpload({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            aria-label={copy.ui.upload.addImage}
+            aria-label={t('ui.upload.addImage')}
             className={cn(
               "aspect-square rounded-xl border-2 border-dashed",
               "flex flex-col items-center justify-center gap-1",
@@ -396,7 +398,7 @@ export function MultiImageUpload({
             )}
           >
             <Plus className="h-5 w-5 text-stone-400" />
-            <span className="text-[10px] text-stone-400">{copy.ui.upload.addImage}</span>
+            <span className="text-[10px] text-stone-400">{t('ui.upload.addImage')}</span>
           </button>
         )}
       </div>
@@ -405,14 +407,14 @@ export function MultiImageUpload({
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-stone-400">
           {onSetCover
-            ? copy.ui.upload.coverHint
-            : copy.ui.upload.dragToSort.replace("{size}", "5")}
+            ? t('ui.upload.coverHint')
+            : t('ui.upload.dragToSort').replace("{size}", "5")}
         </p>
         <p className={cn(
           "text-xs tabular-nums shrink-0",
           totalCount >= max ? "text-amber-500 font-medium" : "text-stone-400"
         )}>
-          {copy.ui.upload.uploadedCount
+          {t('ui.upload.uploadedCount')
             .replace("{current}", String(values.length))
             .replace("{max}", String(max))}
         </p>

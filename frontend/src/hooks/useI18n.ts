@@ -1,37 +1,77 @@
 /**
  * React hook for i18n in Islands components
  *
- * Reads locale from cookie on client side, provides t() function
+ * - Accepts optional namespace list for auto-loading
+ * - Reads locale from cookie on client side
+ * - Provides t() function with loaded translations
  */
 
 import * as React from "react";
-import { t as translate, getLocale, type Locale, type TranslationKey } from "@/i18n";
+import {
+  t as translate,
+  getLocale,
+  loadNamespaces,
+  type Locale,
+} from "@/i18n";
 
 interface UseI18nReturn {
-  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
   locale: Locale;
+  loading: boolean;
 }
 
 /**
  * Hook for Islands components to access i18n
- * Reads locale from cookie on mount
+ *
+ * @param nsList - Optional list of namespaces to auto-load
+ * @returns { t, locale, loading }
+ *
+ * @example
+ * const { t } = useI18n(['common', 'teams']);
+ * <button>{t('teams.joinTeam')}</button>
  */
-export function useI18n(): UseI18nReturn {
+export function useI18n(nsList?: string[]): UseI18nReturn {
   const [locale, setLocale] = React.useState<Locale>(getLocale());
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // Re-read locale on visibility change (user may have changed it in another tab)
+    if (!nsList || nsList.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+
+    loadNamespaces(nsList, locale)
+      .then(() => {
+        if (!cancelled) setLoading(false);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error("[i18n] Failed to load namespaces:", err);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nsList, locale]);
+
+  // Re-read locale on visibility change
+  React.useEffect(() => {
     const handler = () => setLocale(getLocale());
     document.addEventListener("visibilitychange", handler);
     return () => document.removeEventListener("visibilitychange", handler);
   }, []);
 
-  const t = React.useCallback(
-    (key: TranslationKey, vars?: Record<string, string | number>) => {
+  const tFn = React.useCallback(
+    (key: string, vars?: Record<string, string | number>) => {
       return translate(key, { locale, vars });
     },
     [locale],
   );
 
-  return { t, locale };
+  return { t: tFn, locale, loading };
 }

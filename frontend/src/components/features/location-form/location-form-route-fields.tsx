@@ -97,7 +97,7 @@ export function LocationFormRouteFields({
   handleOpenCreatePoi, handleOpenEditPoi, handlePoiModalSuccess,
   handleOpenDeletePoi, handleConfirmDeletePoi,
 }: LocationFormRouteFieldsProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["admin", "pois"]);
   const poiRoleOptions = POI_ROLE_OPTIONS(t);
   return (
     <SectionCard

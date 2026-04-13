@@ -3,7 +3,6 @@ import { Loader2, UserCheck, Crown } from "lucide-react";
 import { formatRelativeTime } from "./team-detail-utils";
 import { Avatar } from "./team-detail-ui";
 import type { Application } from "@/lib/types";
-import { copy } from "@/lib/copy";
 
 function ApplicationCard({
   application,

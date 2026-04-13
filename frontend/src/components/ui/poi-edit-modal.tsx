@@ -15,7 +15,7 @@
 
 import * as React from "react";
 import { X, Loader2, MapPin } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { PoiDetail, PoiCreateInput, PoiUpdateInput } from "@/lib/types";
 
@@ -61,6 +61,7 @@ export function PoiEditModal({
   onSuccess,
   initialData,
 }: PoiEditModalProps) {
+  const { t } = useI18n(["pois"]);
   const [formData, setFormData] = React.useState<FormData>(DEFAULT_FORM);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -108,24 +109,24 @@ export function PoiEditModal({
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = copy.pois.nameRequired;
+      newErrors.name = t('pois.nameRequired');
     } else if (formData.name.length > 50) {
-      newErrors.name = copy.pois.nameMaxLength;
+      newErrors.name = t('pois.nameMaxLength');
     }
 
     const lat = parseFloat(formData.lat);
     const lng = parseFloat(formData.lng);
 
     if (!formData.lat.trim() || !formData.lng.trim()) {
-      newErrors.coordinates = copy.pois.coordinatesRequired;
+      newErrors.coordinates = t('pois.coordinatesRequired');
     } else if (isNaN(lat) || lat < -90 || lat > 90) {
-      newErrors.coordinates = copy.pois.latRangeInvalid;
+      newErrors.coordinates = t('pois.latRangeInvalid');
     } else if (isNaN(lng) || lng < -180 || lng > 180) {
-      newErrors.coordinates = copy.pois.lngRangeInvalid;
+      newErrors.coordinates = t('pois.lngRangeInvalid');
     }
 
     if (formData.description.length > 500) {
-      newErrors.description = copy.pois.descMaxLength;
+      newErrors.description = t('pois.descMaxLength');
     }
 
     setErrors(newErrors);
@@ -199,7 +200,7 @@ export function PoiEditModal({
 
   if (!open) return null;
 
-  const title = mode === "create" ? copy.pois.createTitle : copy.pois.editTitle;
+  const title = mode === "create" ? t('pois.createTitle') : t('pois.editTitle');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -237,14 +238,14 @@ export function PoiEditModal({
           {/* 名称 */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-stone-700">
-              {copy.pois.nameLabel}
+              {t('pois.nameLabel')}
               <span className="ml-0.5 text-red-500">*</span>
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => updateField("name", e.target.value)}
-              placeholder={copy.pois.namePlaceholder}
+              placeholder={t('pois.namePlaceholder')}
               className={cn(
                 "w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition-all",
                 "bg-stone-50 text-stone-800 placeholder:text-stone-400",
@@ -261,13 +262,13 @@ export function PoiEditModal({
           {/* 坐标 */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-stone-700">
-              {copy.pois.coordinatesLabel}
+              {t('pois.coordinatesLabel')}
               <span className="ml-0.5 text-red-500">*</span>
             </label>
-            <p className="text-xs text-stone-400 mb-2">{copy.pois.coordinatesHint}</p>
+            <p className="text-xs text-stone-400 mb-2">{t('pois.coordinatesHint')}</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-stone-500 mb-1">{copy.pois.latLabel}</label>
+                <label className="block text-xs text-stone-500 mb-1">{t('pois.latLabel')}</label>
                 <input
                   type="number"
                   step="any"
@@ -284,7 +285,7 @@ export function PoiEditModal({
                 />
               </div>
               <div>
-                <label className="block text-xs text-stone-500 mb-1">{copy.pois.lngLabel}</label>
+                <label className="block text-xs text-stone-500 mb-1">{t('pois.lngLabel')}</label>
                 <input
                   type="number"
                   step="any"
@@ -309,12 +310,12 @@ export function PoiEditModal({
           {/* 描述 */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-stone-700">
-              {copy.pois.descriptionLabel}
+              {t('pois.descriptionLabel')}
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => updateField("description", e.target.value)}
-              placeholder={copy.pois.descriptionPlaceholder}
+              placeholder={t('pois.descriptionPlaceholder')}
               rows={3}
               className={cn(
                 "w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition-all resize-none",
@@ -345,7 +346,7 @@ export function PoiEditModal({
             disabled={isSubmitting}
             className="px-4 py-2 rounded-xl text-sm font-medium text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-50"
           >
-            {copy.pois.cancel}
+            {t('pois.cancel')}
           </button>
           <button
             type="button"
@@ -360,10 +361,10 @@ export function PoiEditModal({
             {isSubmitting ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {copy.pois.loading}
+                {t('pois.loading')}
               </span>
             ) : (
-              copy.pois.save
+              t('pois.save')
             )}
           </button>
         </div>
@@ -393,6 +394,7 @@ export function PoiDeleteConfirm({
   associationCount,
   isDeleting = false,
 }: PoiDeleteConfirmProps) {
+  const { t } = useI18n(["pois"]);
   if (!open) return null;
 
   return (
@@ -419,7 +421,7 @@ export function PoiDeleteConfirm({
 
           {/* 标题 */}
           <h3 id="poi-delete-title" className="text-base font-semibold text-stone-800 mb-2">
-            {copy.pois.deleteConfirmTitle}
+            {t('pois.deleteConfirmTitle')}
           </h3>
 
           {/* 描述 */}
@@ -427,13 +429,13 @@ export function PoiDeleteConfirm({
             确定要删除「<span className="font-medium text-stone-700">{poiName}</span>」吗？
           </p>
           <p className="text-xs text-stone-400 mb-4">
-            {copy.pois.deleteConfirmDesc}
+            {t('pois.deleteConfirmDesc')}
           </p>
 
           {/* 关联数量提示 */}
           {associationCount > 0 && (
             <div className="px-3 py-2 rounded-lg bg-amber-50 border border-amber-100 text-sm text-amber-700 mb-4">
-              {copy.pois.deleteConfirmAssociations.replace("{count}", String(associationCount))}
+              {t('pois.deleteConfirmAssociations').replace("{count}", String(associationCount))}
             </div>
           )}
         </div>
@@ -446,7 +448,7 @@ export function PoiDeleteConfirm({
             disabled={isDeleting}
             className="px-4 py-2 rounded-xl text-sm font-medium text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-50"
           >
-            {copy.pois.cancel}
+            {t('pois.cancel')}
           </button>
           <button
             type="button"
@@ -457,10 +459,10 @@ export function PoiDeleteConfirm({
             {isDeleting ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {copy.pois.deleting}
+                {t('pois.deleting')}
               </span>
             ) : (
-              copy.pois.confirm
+              t('pois.confirm')
             )}
           </button>
         </div>

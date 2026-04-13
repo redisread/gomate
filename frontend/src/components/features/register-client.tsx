@@ -11,7 +11,7 @@ import { signUp } from "@/lib/auth-client";
  * 右侧：注册表单
  */
 export function RegisterClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["auth"]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
@@ -406,7 +406,7 @@ function PasswordStrength({ password }: { password: string }) {
     return { level: 4, label: t("auth.passwordStrengthStrong"), color: "#92400E" };
   };
 
-  const { t } = useI18n();
+  const { t } = useI18n(["auth"]);
   const { level, label, color } = getStrength(password, t);
 
   return (

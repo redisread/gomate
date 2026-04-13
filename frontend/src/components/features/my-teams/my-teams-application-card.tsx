@@ -22,7 +22,7 @@ function getLevelConfig(t: (key: any, vars?: Record<string, string | number>) =>
 }
 
 export function ApplicationCard({ application }: { application: ApplicationRecord }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["myTeams"]);
   const team = application.team;
   const statusConfig = getAppStatusConfig(t);
   const appStatus = statusConfig[application.status] || statusConfig.pending;
@@ -90,7 +90,7 @@ export function ApplicationCard({ application }: { application: ApplicationRecor
 export function PendingApprovalCard({ approval, onClick }: {
   approval: PendingApproval; onClick: (a: PendingApproval) => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["myTeams"]);
   const applicant = approval.applicant;
   const team = approval.team;
   if (!applicant || !team) return null;

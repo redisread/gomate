@@ -73,7 +73,7 @@ const sections = [
 ];
 
 export function PrivacyClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["nav", "content"]);
   return (
     <div className="bg-stone-50 dark:bg-stone-900 min-h-screen">
       {/* Hero 区域 */}
@@ -85,14 +85,14 @@ export function PrivacyClient() {
               {t("nav.home")}
             </a>
             <span className="mx-2">/</span>
-            <span className="text-stone-600 dark:text-stone-400">{t("privacy.pageTitle")}</span>
+            <span className="text-stone-600 dark:text-stone-400">{t("content.privacy.pageTitle")}</span>
           </nav>
 
-          <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-200 mb-2">{t("privacy.pageTitle")}</h1>
+          <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-200 mb-2">{t("content.privacy.pageTitle")}</h1>
           <p className="text-stone-500 dark:text-stone-400 mb-1">
-            {t("privacy.pageSubtitle")}
+            {t("content.privacy.pageSubtitle")}
           </p>
-          <p className="text-sm text-stone-400 dark:text-stone-500">{t("privacy.lastUpdated")}</p>
+          <p className="text-sm text-stone-400 dark:text-stone-500">{t("content.privacy.lastUpdated")}</p>
         </div>
       </div>
 

@@ -110,7 +110,7 @@ function StatCard({
  * 个人资料页客户端组件 - React Island
  */
 export function ProfileClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["profile", "common"]);
   const [user, setUser] = React.useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [createdTeams, setCreatedTeams] = React.useState<Team[]>([]);

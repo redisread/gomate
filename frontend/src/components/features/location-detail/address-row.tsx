@@ -1,6 +1,6 @@
 import * as React from "react";
 import { MapPin, Navigation, Check, Copy } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 
 interface AddressRowProps {
   address: string;
@@ -9,6 +9,7 @@ interface AddressRowProps {
 }
 
 export function AddressRow({ address, coordinates, locationName }: AddressRowProps) {
+  const { t } = useI18n(["locations"]);
   const [copied, setCopied] = React.useState(false);
 
   const handleCopy = async () => {
@@ -39,7 +40,7 @@ export function AddressRow({ address, coordinates, locationName }: AddressRowPro
         {coordinates && (
           <button
             onClick={handleNavigate}
-            title={copy.locations.navigateTooltip}
+            title={t('locations.navigateTooltip')}
             className="text-amber-400 hover:text-amber-600 transition-colors"
           >
             <Navigation className="h-4 w-4" />

@@ -8,7 +8,7 @@ import {
   Backpack,
   AlertTriangle,
 } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location } from "@/lib/types";
 import { DIFFICULTY_CONFIG, SEASON_LABEL } from "./constants";
@@ -18,8 +18,9 @@ interface RouteInfoCardProps {
 }
 
 export function RouteInfoCard({ location }: RouteInfoCardProps) {
+  const { t } = useI18n(["enums", "locations"]);
   const diffInfo = location.difficulty
-    ? (DIFFICULTY_CONFIG[location.difficulty] ?? DIFFICULTY_CONFIG.easy)
+    ? { ...DIFFICULTY_CONFIG[location.difficulty] ?? DIFFICULTY_CONFIG.easy, label: t(`enums.difficulty.${location.difficulty}`) }
     : null;
 
   const routeData = {
@@ -51,7 +52,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
       style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
       <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
         <span className="w-1 h-4 rounded-full bg-sky-400 flex-shrink-0" />
-        {copy.locations.routeInfo}
+        {t('locations.routeInfo')}
       </h2>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -60,7 +61,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
             icon={<Mountain className="h-4.5 w-4.5" />}
             iconBg={diffInfo.bgColor}
             iconColor={diffInfo.textColor}
-            label={copy.locations.difficultyLabel}
+            label={t('locations.difficultyLabel')}
             valueNode={
               <div className="space-y-2">
                 <span className={cn("font-bold text-sm", diffInfo.textColor)}>
@@ -78,7 +79,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
             icon={<Clock className="h-4.5 w-4.5" />}
             iconBg="bg-sky-50 dark:bg-sky-950/30"
             iconColor="text-sky-500 dark:text-sky-400"
-            label={copy.locations.estimatedTime}
+            label={t('locations.estimatedTime')}
             valueNode={<BigNumber value={durVal} unit={durUnit} />}
           />
         )}
@@ -87,7 +88,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
             icon={<Ruler className="h-4.5 w-4.5" />}
             iconBg="bg-violet-50 dark:bg-violet-950/30"
             iconColor="text-violet-500 dark:text-violet-400"
-            label={copy.locations.routeLength}
+            label={t('locations.routeLength')}
             valueNode={<BigNumber value={distVal} unit={distUnit} />}
           />
         )}
@@ -96,7 +97,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
             icon={<TrendingUp className="h-4.5 w-4.5" />}
             iconBg="bg-stone-100 dark:bg-stone-800"
             iconColor="text-stone-500 dark:text-stone-400"
-            label={copy.locations.totalElevation}
+            label={t('locations.totalElevation')}
             valueNode={<BigNumber value={elevVal} unit={elevUnit} />}
           />
         )}
@@ -106,7 +107,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
         <div className="mt-5 pt-4 border-t border-stone-100 dark:border-stone-800">
           <p className="text-[11px] text-stone-400 dark:text-stone-500 mb-2.5 flex items-center gap-1.5 font-semibold uppercase tracking-wide">
             <CalendarDays className="h-3.5 w-3.5 text-amber-400" />
-            {copy.locations.detailSeasonsLabel}
+            {t('locations.detailSeasonsLabel')}
           </p>
           <div className="flex flex-wrap gap-2">
             {location.bestSeason.map((season: string, i: number) => (

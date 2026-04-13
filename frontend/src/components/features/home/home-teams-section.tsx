@@ -7,7 +7,7 @@ type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeTeamsSection({ data }: { data: HomeData }) {
   const { teams, teamsRef, teamsInView } = data;
-  const { t } = useI18n();
+  const { t } = useI18n(["home", "teams", "common"]);
 
   return (
     <section id="teams" ref={teamsRef}

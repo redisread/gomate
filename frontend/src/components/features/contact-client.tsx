@@ -17,7 +17,7 @@ import { fetchAPI } from "@/lib/api";
 
 /** 联系我们页主组件 */
 export function ContactClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["feedback", "nav"]);
   const [form, setForm] = React.useState({
     name: "",
     email: "",
@@ -46,12 +46,12 @@ export function ContactClient() {
       });
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
-        setError(data.error ?? t("contact.submitError"));
+        setError(data.error ?? t("feedback.submitError"));
       } else {
         setSubmitted(true);
       }
     } catch {
-      setError(t("contact.submitError"));
+      setError(t("feedback.submitError"));
     } finally {
       setSubmitting(false);
     }
@@ -81,15 +81,15 @@ export function ContactClient() {
               </a>
               <ChevronRight className="w-4 h-4" />
               <span className="text-stone-700 dark:text-stone-300 font-medium">
-                {t("contact.pageTitle")}
+                {t("feedback.pageTitle")}
               </span>
             </nav>
 
             <h1 className="text-3xl font-bold text-foreground">
-              {t("contact.pageSubtitle")}
+              {t("feedback.pageSubtitle")}
             </h1>
             <p className="mt-2 text-stone-500 dark:text-stone-400 text-base">
-              {t("contact.pageDesc")}
+              {t("feedback.pageDesc")}
             </p>
           </div>
         </div>
@@ -105,7 +105,7 @@ export function ContactClient() {
               </div>
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-1">
-                  {t("contact.emailContact")}
+                  {t("feedback.emailContact")}
                 </h3>
                 <a
                   href="mailto:hi@gomate.live"
@@ -123,10 +123,10 @@ export function ContactClient() {
               </div>
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-1">
-                  {t("contact.wechatContact")}
+                  {t("feedback.wechatContact")}
                 </h3>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
-                  {t("contact.wechatScanHint")}
+                  {t("feedback.wechatScanHint")}
                 </p>
               </div>
             </div>
@@ -141,16 +141,16 @@ export function ContactClient() {
                   <CheckCircle className="h-7 w-7 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {t("contact.successTitle")}
+                  {t("feedback.successTitle")}
                 </h3>
                 <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">
-                  {t("contact.successDesc")}
+                  {t("feedback.successDesc")}
                 </p>
                 <button
                   onClick={handleReset}
                   className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors"
                 >
-                  {t("contact.continueSubmitBtn")}
+                  {t("feedback.continueSubmitBtn")}
                 </button>
               </div>
             ) : (
@@ -168,10 +168,10 @@ export function ContactClient() {
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-foreground">
-                      {t("contact.formTitle")}
+                      {t("feedback.formTitle")}
                     </h2>
                     <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-                      {t("contact.formSubtitle")}
+                      {t("feedback.formSubtitle")}
                     </p>
                   </div>
                 </div>
@@ -181,28 +181,28 @@ export function ContactClient() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-                        {t("contact.nameLabel")}
+                        {t("feedback.nameLabel")}
                       </label>
                       <input
                         type="text"
                         name="name"
                         value={form.name}
                         onChange={handleChange}
-                        placeholder={t("contact.namePlaceholder")}
+                        placeholder={t("feedback.namePlaceholder")}
                         required
                         className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-                        {t("contact.emailLabel")}
+                        {t("feedback.emailLabel")}
                       </label>
                       <input
                         type="email"
                         name="email"
                         value={form.email}
                         onChange={handleChange}
-                        placeholder={t("contact.emailPlaceholder")}
+                        placeholder={t("feedback.emailPlaceholder")}
                         required
                         className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
                       />
@@ -212,14 +212,14 @@ export function ContactClient() {
                   {/* 主题 */}
                   <div>
                     <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-                      {t("contact.subjectLabel")}
+                      {t("feedback.subjectLabel")}
                     </label>
                     <input
                       type="text"
                       name="subject"
                       value={form.subject}
                       onChange={handleChange}
-                      placeholder={t("contact.subjectPlaceholder")}
+                      placeholder={t("feedback.subjectPlaceholder")}
                       required
                       className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors"
                     />
@@ -228,13 +228,13 @@ export function ContactClient() {
                   {/* 详细建议 */}
                   <div>
                     <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-                      {t("contact.messageLabel")}
+                      {t("feedback.messageLabel")}
                     </label>
                     <textarea
                       name="message"
                       value={form.message}
                       onChange={handleChange}
-                      placeholder={t("contact.messagePlaceholder")}
+                      placeholder={t("feedback.messagePlaceholder")}
                       required
                       rows={5}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-foreground placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 transition-colors resize-none"
@@ -256,7 +256,7 @@ export function ContactClient() {
                       className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors"
                     >
                       <Send className="h-4 w-4" />
-                      {submitting ? t("contact.submitting") : t("contact.submitBtn")}
+                      {submitting ? t("feedback.submitting") : t("feedback.submitBtn")}
                     </button>
                   </div>
                 </form>

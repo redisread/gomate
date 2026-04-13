@@ -17,7 +17,7 @@ export function ApprovalDetailModal({ approval, isProcessing, onApprove, onRejec
   approval: PendingApproval; isProcessing: boolean;
   onApprove: () => Promise<void>; onReject: () => Promise<void>; onClose: () => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["myTeams", "teams", "common"]);
   const applicant = approval.applicant;
   if (!applicant) return null;
   const levelConfig = getLevelConfig(t);
@@ -99,7 +99,7 @@ export function ApprovalDetailModal({ approval, isProcessing, onApprove, onRejec
 export function RejectConfirmModal({ isOpen, isProcessing, onConfirm, onCancel }: {
   isOpen: boolean; isProcessing: boolean; onConfirm: () => Promise<void>; onCancel: () => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["myTeams", "teams", "common"]);
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
@@ -128,7 +128,7 @@ export function RejectConfirmModal({ isOpen, isProcessing, onConfirm, onCancel }
 export function CancelTeamModal({ teamId, isCancelling, onConfirm, onCancel }: {
   teamId: string | null; isCancelling: boolean; onConfirm: () => Promise<void>; onCancel: () => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["myTeams", "teams", "common"]);
   if (!teamId) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -158,7 +158,7 @@ export function CancelTeamModal({ teamId, isCancelling, onConfirm, onCancel }: {
 export function FormTeamModal({ teamId, isFull, isForming, onConfirm, onCancel }: {
   teamId: string | null; isFull: boolean; isForming: boolean; onConfirm: () => Promise<void>; onCancel: () => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["myTeams", "teams", "common"]);
   if (!teamId) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">

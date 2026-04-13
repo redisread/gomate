@@ -11,7 +11,7 @@ import { signIn } from "@/lib/auth-client";
  * 右侧：表单区
  */
 export function LoginClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["auth"]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);

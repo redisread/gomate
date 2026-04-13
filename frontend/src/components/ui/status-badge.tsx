@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 
 type TeamStatus = "recruiting" | "full" | "formed" | "cancelled" | "completed";
 type Difficulty  = "easy" | "moderate" | "hard" | "expert";
@@ -80,9 +80,10 @@ export function StatusBadge({
   size = "md",
   className,
 }: StatusBadgeProps) {
+  const { t } = useI18n(["enums"]);
   const s = STATUS_STYLES[status];
   // 温暖文案（v2.0：正在招募 / 名额已满 / 队伍已集结 / 圆满收队 / 已取消）
-  const label = copy.enums.teamStatus[status];
+  const label = t(`enums.teamStatus.${status}`);
 
   return (
     <span
@@ -127,8 +128,9 @@ export function DifficultyBadge({
   size = "md",
   className,
 }: DifficultyBadgeProps) {
+  const { t } = useI18n(["enums"]);
   const s     = DIFFICULTY_STYLES[difficulty];
-  const label = copy.enums.difficulty[difficulty];
+  const label = t(`enums.difficulty.${difficulty}`);
 
   return (
     <span

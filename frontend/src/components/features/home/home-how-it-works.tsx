@@ -3,7 +3,7 @@ import { useI18n } from "@/hooks/useI18n";
 import type { RefObject } from "react";
 
 export function HomeHowItWorksSection({ sectionRef, isInView }: { sectionRef: RefObject<HTMLDivElement>; isInView: boolean }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["home"]);
 
   const steps = [
     { step: "01", icon: <Search className="h-7 w-7" />, emoji: "🗺️", title: t("home.howItWorks.discoverTitle"), desc: t("home.howItWorks.discoverDesc"), color: "#D97706", bg: "rgba(217,119,6,0.08)", href: "/locations", cta: t("home.howItWorks.discoverCta") },

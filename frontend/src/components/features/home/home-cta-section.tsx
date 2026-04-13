@@ -5,7 +5,7 @@ type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeCtaSection({ data }: { data: HomeData }) {
   const { isLoggedIn, isDark, ctaRef, ctaInView } = data;
-  const { t } = useI18n();
+  const { t } = useI18n(["home"]);
 
   return (
     <section ref={ctaRef}

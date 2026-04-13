@@ -6,6 +6,8 @@ import "../styles/globals.css";
 import { Navbar } from "../components/layout/navbar";
 import { Footer } from "../components/layout/footer";
 import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, getSSRT } from "../i18n";
+import "../i18n/hydrate-client";
+import { loadLocaleData } from "../i18n/ssr-loader";
 
 interface Props {
   title?: string;
@@ -24,45 +26,61 @@ const {
 } = Astro.props;
 
 // 从 middleware 设置的 locals 或 cookie 读取 locale
-const localsLocale = (Astro as any).locals?.locale as Locale | undefined;
+const localsLocale = (Astro.locals as any)?.locale as Locale | undefined;
 const cookieLocale = Astro.cookies.get("gomate_locale")?.value as Locale | undefined;
 const resolvedLocale = localsLocale || cookieLocale;
 const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale)) ? resolvedLocale : DEFAULT_LOCALE;
-const ssr = getSSRT(locale);
+
+// ─── SSR i18n 数据加载 ──────────────────────────────────────────────
+// 从 locals 读取页面声明的 namespaces
+const declaredNs = (Astro.locals as any)?.__i18n_namespaces || [];
+// 添加 content namespace（用于 SEO 标题）
+const nsList = [...new Set([...declaredNs, "content"])];
+let ssrLocaleData: Record<Locale, Record<string, Record<string, unknown>>> = {} as any;
+let ssrLoadedData: Record<string, Record<string, unknown>> | undefined;
+try {
+  const origin = Astro.url.origin;
+  ssrLoadedData = await loadLocaleData(nsList, locale, origin);
+  ssrLocaleData = { [locale]: ssrLoadedData } as Record<Locale, Record<string, Record<string, unknown>>>;
+} catch {
+  // SSR 加载失败，客户端会 fallback 到 fetch
+}
+
+const ssr = getSSRT(locale, ssrLocaleData);
 
 // 页面级标题映射
 const titleMap: Record<string, string> = {
-  "GoMate - 发现趣处，组队同行": "seo.title",
-  "GoMate 是一个极简的「地点组队」平台，帮助户外爱好者找到志同道合的徒步伙伴。": "seo.description",
-  "探索地点 - GoMate": "seo.pages.locations",
-  "探索队伍 - GoMate": "seo.pages.teams",
-  "登录 - GoMate": "seo.pages.login",
-  "注册 - GoMate": "seo.pages.register",
-  "忘记密码 - GoMate": "seo.pages.forgotPassword",
-  "重置密码 - GoMate": "seo.pages.resetPassword",
-  "个人资料 - GoMate": "seo.pages.profile",
-  "编辑资料 - GoMate": "seo.pages.profileEdit",
-  "我的队伍 - GoMate": "seo.pages.myTeams",
-  "发布队伍 - GoMate": "seo.pages.createTeam",
-  "编辑队伍 - GoMate": "seo.pages.editTeam",
-  "地点详情 - GoMate": "seo.pages.locationDetail",
-  "队伍详情 - GoMate": "seo.pages.teamDetail",
-  "我的收藏 - GoMate": "seo.pages.favorites",
-  "用户主页 - GoMate": "seo.pages.userDetail",
-  "联系我们 - GoMate": "seo.pages.contact",
-  "意见反馈 - GoMate": "seo.pages.feedback",
-  "关于我们 - GoMate": "seo.pages.about",
-  "帮助中心 - GoMate": "seo.pages.help",
-  "隐私政策 - GoMate": "seo.pages.privacy",
-  "服务条款 - GoMate": "seo.pages.terms",
-  "管理地点 - GoMate": "seo.pages.adminLocations",
+  "GoMate - 发现趣处，组队同行": "content.title",
+  "GoMate 是一个极简的「地点组队」平台，帮助户外爱好者找到志同道合的徒步伙伴。": "content.description",
+  "探索地点 - GoMate": "content.seo_pages.locations",
+  "探索队伍 - GoMate": "content.seo_pages.teams",
+  "登录 - GoMate": "content.seo_pages.login",
+  "注册 - GoMate": "content.seo_pages.register",
+  "忘记密码 - GoMate": "content.seo_pages.forgotPassword",
+  "重置密码 - GoMate": "content.seo_pages.resetPassword",
+  "个人资料 - GoMate": "content.seo_pages.profile",
+  "编辑资料 - GoMate": "content.seo_pages.profileEdit",
+  "我的队伍 - GoMate": "content.seo_pages.myTeams",
+  "发布队伍 - GoMate": "content.seo_pages.createTeam",
+  "编辑队伍 - GoMate": "content.seo_pages.editTeam",
+  "地点详情 - GoMate": "content.seo_pages.locationDetail",
+  "队伍详情 - GoMate": "content.seo_pages.teamDetail",
+  "我的收藏 - GoMate": "content.seo_pages.favorites",
+  "用户主页 - GoMate": "content.seo_pages.userDetail",
+  "联系我们 - GoMate": "content.seo_pages.contact",
+  "意见反馈 - GoMate": "content.seo_pages.feedback",
+  "关于我们 - GoMate": "content.seo_pages.about",
+  "帮助中心 - GoMate": "content.seo_pages.help",
+  "隐私政策 - GoMate": "content.seo_pages.privacy",
+  "服务条款 - GoMate": "content.seo_pages.terms",
+  "管理地点 - GoMate": "content.seo_pages.adminLocations",
 };
 
 const titleKey = titleMap[propTitle];
 const descKey = titleMap[propDesc];
 
 // 标题逻辑：如果传入的是默认标题则翻译，否则拼接翻译后缀
-const title = titleKey ? ssr.t(titleKey as any) : `${propTitle}${ssr.t("seo.titleSuffix" as any)}`;
+const title = titleKey ? ssr.t(titleKey as any) : `${propTitle}${ssr.t("content.titleSuffix" as any)}`;
 const description = descKey ? ssr.t(descKey as any) : propDesc;
 
 // 读取主题 cookie，服务端设置 html class
@@ -120,6 +138,16 @@ function getHreflangUrl(loc: Locale) {
           }
         } catch (e) {}
       })();
+    </script>
+
+    {/* SSR i18n 内联数据 */}
+    <script is:inline set:html={`window.__I18N_DATA__=${JSON.stringify(ssrLocaleData)};`}></script>
+
+    {/* 客户端 hydration 时优先读取 SSR 内联数据 */}
+    <script is:inline>
+      if (window.__I18N_DATA__) {
+        // SSR 数据将在客户端 JS 加载后通过 hydrateSSRData() 处理
+      }
     </script>
   </head>
   <body class={["min-h-screen", isDark ? "dark bg-[#12100d]" : "bg-[#faf8f5]"].join(" ")}>

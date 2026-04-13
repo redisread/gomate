@@ -4,7 +4,7 @@ import { DIFFICULTY_CONFIG } from "@/lib/constants";
 import type { Location } from "@/lib/types";
 
 export function LocationCard({ location }: { location: Location }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["locations"]);
   const difficulty = location.difficulty ?? location.routes?.[0]?.difficulty;
   const diffConfig = difficulty ? DIFFICULTY_CONFIG[difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const firstTag = location.tags?.[0];

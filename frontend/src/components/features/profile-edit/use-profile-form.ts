@@ -2,7 +2,7 @@ import * as React from "react";
 import { fetchAPI, fetchCurrentUser, API_BASE } from "@/lib/api";
 import { parseExtra, formatBirthday, birthdayToTimestamp } from "@/lib/user-utils";
 import type { SessionUser } from "@/lib/types";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import type { MessageState } from "./constants";
 
 interface ProfileFormData {
@@ -17,6 +17,7 @@ interface ProfileFormData {
 }
 
 export function useProfileForm() {
+  const { t } = useI18n(["profile", "common", "errors"]);
   const [user, setUser] = React.useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -74,7 +75,7 @@ export function useProfileForm() {
       const value = equipmentInput.trim();
       if (!value) return;
       if (formData.equipment.length >= 10) {
-        setMessage({ type: "error", text: copy.profile.equipmentMaxReached });
+        setMessage({ type: "error", text: t('profile.equipmentMaxReached') });
         return;
       }
       if (formData.equipment.includes(value)) { setEquipmentInput(""); return; }
@@ -89,7 +90,7 @@ export function useProfileForm() {
   };
 
   const handleAddPresetEquipment = (item: string) => {
-    if (formData.equipment.length >= 10) { setMessage({ type: "error", text: copy.profile.equipmentMaxReached }); return; }
+    if (formData.equipment.length >= 10) { setMessage({ type: "error", text: t('profile.equipmentMaxReached') }); return; }
     if (formData.equipment.includes(item)) return;
     setFormData((prev) => ({ ...prev, equipment: [...prev.equipment, item] }));
     setMessage(null);
@@ -99,8 +100,8 @@ export function useProfileForm() {
     const file = e.target.files?.[0];
     if (!file) return;
     const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    if (!allowed.includes(file.type)) { setMessage({ type: "error", text: copy.profile.avatarInvalidType }); return; }
-    if (file.size > 5 * 1024 * 1024) { setMessage({ type: "error", text: copy.profile.avatarTooLarge }); return; }
+    if (!allowed.includes(file.type)) { setMessage({ type: "error", text: t('profile.avatarInvalidType') }); return; }
+    if (file.size > 5 * 1024 * 1024) { setMessage({ type: "error", text: t('profile.avatarTooLarge') }); return; }
     const reader = new FileReader();
     reader.onloadend = () => setAvatarPreview(reader.result as string);
     reader.readAsDataURL(file);
@@ -117,10 +118,10 @@ export function useProfileForm() {
       fd.append("userId", user.id);
       const res = await fetch(`${API_BASE}/upload/avatar`, { method: "POST", body: fd, credentials: "include" });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || copy.api.failed);
+      if (!res.ok) throw new Error(result.error || t('errors.failed'));
       return result.url;
     } catch {
-      setMessage({ type: "error", text: copy.profile.avatarUploadFailed });
+      setMessage({ type: "error", text: t('profile.avatarUploadFailed') });
       return null;
     } finally {
       setIsUploading(false);
@@ -151,12 +152,12 @@ export function useProfileForm() {
         }),
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || copy.common.save);
+      if (!res.ok) throw new Error(result.error || t('common.save'));
       setSavedDone(true);
-      setMessage({ type: "success", text: copy.profile.saveSuccess });
+      setMessage({ type: "success", text: t('profile.saveSuccess') });
       setTimeout(() => { window.location.replace("/profile"); }, 1000);
     } catch (err) {
-      setMessage({ type: "error", text: (err as Error).message || copy.common.save });
+      setMessage({ type: "error", text: (err as Error).message || t('common.save') });
     } finally {
       setIsSaving(false);
     }

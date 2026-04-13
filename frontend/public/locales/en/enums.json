@@ -1,0 +1,59 @@
+{
+  "difficulty": {
+    "easy": "🌿 轻松",
+    "moderate": "⛰ 适中",
+    "hard": "🧗 挑战",
+    "expert": "🏔 专家"
+  },
+  "locationType": {
+    "hiking": "户外徒步",
+    "explore": "城市探索",
+    "leisure": "休闲探店",
+    "travel": "旅行"
+  },
+  "teamStatus": {
+    "recruiting": "等你一起",
+    "full": "名额告急，可关注",
+    "formed": "整装待发",
+    "ongoing": "进行中",
+    "completed": "圆满归来",
+    "cancelled": "已取消",
+    "open": "等你一起",
+    "closed": "已结束"
+  },
+  "memberStatus": {
+    "pending": "待审核",
+    "approved": "已通过",
+    "rejected": "已拒绝",
+    "leave_pending": "退出申请中"
+  },
+  "level": {
+    "beginner": "新人",
+    "intermediate": "探索者",
+    "advanced": "资深玩家",
+    "expert": "传奇达人"
+  },
+  "leaderLevel": {
+    "beginner": "新人领队",
+    "intermediate": "探索者领队",
+    "advanced": "资深玩家领队",
+    "expert": "传奇达人领队"
+  },
+  "levelDesc": {
+    "beginner": "刚开始探索之旅",
+    "intermediate": "有一定活动经验",
+    "advanced": "经验丰富的玩家",
+    "expert": "资深活动达人"
+  },
+  "levelTitle": {
+    "beginner": "新人",
+    "intermediate": "探索者",
+    "advanced": "资深玩家",
+    "expert": "传奇达人"
+  },
+  "gender": {
+    "male": "男",
+    "female": "女",
+    "other": "其他"
+  }
+}

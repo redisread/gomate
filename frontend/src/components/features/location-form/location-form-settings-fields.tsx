@@ -64,7 +64,7 @@ interface LocationFormSettingsFieldsProps {
 }
 
 export function LocationFormSettingsFields({ formData, allTags, updateField }: LocationFormSettingsFieldsProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["admin"]);
   const facilityOptions = FACILITY_OPTIONS(t);
   return (
     <SectionCard icon={<Settings className="h-4 w-4" />} title={t("admin.formSettingsTitle")} collapsible defaultOpen={false}

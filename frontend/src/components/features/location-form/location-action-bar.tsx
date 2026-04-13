@@ -13,8 +13,8 @@ interface LocationActionBarProps {
   onDiscard: () => void;
 }
 
-export function LocationActionBar({ isDirty, isSaving, lastSaved, onSave, onDiscard }: LocationActionBarProps) {
-  const { t } = useI18n();
+export function LocationActionBar({ isDirty, isSaving, lastSaved: _lastSaved, onSave, onDiscard: _onDiscard }: LocationActionBarProps) {
+  const { t } = useI18n(["admin"]);
   return (
     <>
       {/* 移动端备选保存按钮（未触发 StickyActionBar 时） */}

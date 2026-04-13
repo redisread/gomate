@@ -1,5 +1,5 @@
 import { Users, ArrowRight } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
 import { TeamCard } from "./team-card";
 
@@ -9,6 +9,7 @@ interface TeamListSectionProps {
 }
 
 export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
+  const { t } = useI18n(["locations"]);
   const MAX_DISPLAY_TEAMS = 3;
   const displayedTeams = teams.slice(0, MAX_DISPLAY_TEAMS);
   const hasMore = teams.length > MAX_DISPLAY_TEAMS;
@@ -20,19 +21,19 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
         <div>
           <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-emerald-400 flex-shrink-0" />
-            {copy.locations.detailWaiting}
+            {t('locations.detailWaiting')}
           </h2>
           <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5 pl-3">
             {teams.length > 0
-              ? `${teams.length} ${copy.locations.teamsWaitingDesc}`
-              : copy.locations.detailNoTeamsDesc}
+              ? `${teams.length} ${t('locations.teamsWaitingDesc')}`
+              : t('locations.detailNoTeamsDesc')}
           </p>
         </div>
         <a
           href={`/teams/create?locationId=${locationId}`}
           className="text-xs text-amber-600 hover:text-amber-700 font-semibold transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
         >
-          {copy.locations.detailCreateTeam}
+          {t('locations.detailCreateTeam')}
           <ArrowRight className="h-3.5 w-3.5" />
         </a>
       </div>
@@ -64,6 +65,7 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
 }
 
 function EmptyTeamsState({ locationId }: { locationId: string }) {
+  const { t } = useI18n(["locations"]);
   return (
     <div className="flex flex-col items-center py-10">
       <div className="relative mb-5">
@@ -80,13 +82,13 @@ function EmptyTeamsState({ locationId }: { locationId: string }) {
       </div>
 
       <p className="text-stone-500 dark:text-stone-400 text-sm text-center max-w-xs leading-relaxed mb-5">
-        {copy.locations.detailNoTeamsDesc}
+        {t('locations.detailNoTeamsDesc')}
       </p>
 
       <a href={`/teams/create?locationId=${locationId}`}>
         <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-full text-sm font-semibold transition-all duration-200 shadow-[0_4px_16px_rgba(217,119,6,0.35)] hover:shadow-[0_6px_22px_rgba(217,119,6,0.45)] active:scale-[0.97]">
           <Users className="h-4 w-4" />
-          {copy.locations.detailNoTeamsBtn}
+          {t('locations.detailNoTeamsBtn')}
         </button>
       </a>
     </div>

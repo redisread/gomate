@@ -25,7 +25,7 @@ function ShimmerCard() {
 }
 
 function LocationCard({ location, index }: { location: Location; index: number }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["locations", "common"]);
   const route = location.routes?.[0];
   const delayMs = Math.min(index, 5) * 60;
 
@@ -113,7 +113,7 @@ function LocationCard({ location, index }: { location: Location; index: number }
 }
 
 export function EmptyState({ onClear }: { onClear: () => void }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["locations", "common"]);
   return (
     <div className="flex flex-col items-center justify-center py-24 px-4">
       <div className="relative mb-6">

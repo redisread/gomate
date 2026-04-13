@@ -1,0 +1,36 @@
+{
+  "upload": {
+    "hint": "点击上传图片",
+    "uploading": "上传中...",
+    "maxSize": "最大 {size}MB",
+    "invalidType": "不支持的文件格式",
+    "fileTooLarge": "文件太大，最大 {size}MB",
+    "uploadFailed": "上传失败",
+    "preview": "预览",
+    "maxImagesReached": "最多只能上传 {max} 张图片",
+    "supportedFormats": "仅支持 JPG、PNG、GIF、WebP 格式",
+    "fileSizeExceeded": "文件 {name} 超过 {size}MB",
+    "addImage": "添加图片",
+    "uploadedCount": "已上传 {current}/{max} 张",
+    "dragToSort": "拖拽可排序，最大 {size}MB/张",
+    "imageAlt": "图片 {index}",
+    "setAsCover": "设为封面",
+    "currentCover": "封面",
+    "coverHint": "点击图片可设为封面",
+    "selectFromAlbum": "或从下方相册选择"
+  },
+  "requirementSelector": {
+    "presetLabel": "常用标签（点击快速添加）",
+    "customLabel": "或自定义添加",
+    "placeholder": "输入其他要求...",
+    "selectedLabel": "已选择"
+  },
+  "tagSelector": {
+    "presetLabel": "可选标签（点击选择）",
+    "customLabel": "新建标签",
+    "selectedLabel": "已选标签",
+    "placeholder": "输入标签名称"
+  },
+  "coverHint": "点击图片可设为封面",
+  "selectFromAlbum": "或从下方相册选择"
+}

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Loader2, Camera, X, Check, ArrowLeft, User, MessageCircle } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { inputCls, LEVEL_OPTIONS, PRESET_EQUIPMENT } from "./constants";
 
@@ -46,6 +46,7 @@ interface AvatarSectionProps {
 }
 
 export function AvatarSection({ user, avatarPreview, selectedFile, isUploading, fileInputRef, onFileChange, onCancelFile }: AvatarSectionProps) {
+  const { t } = useI18n(["profile"]);
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative group cursor-pointer" onClick={() => !isUploading && fileInputRef.current?.click()}>
@@ -70,11 +71,11 @@ export function AvatarSection({ user, avatarPreview, selectedFile, isUploading, 
       {selectedFile ? (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-full text-xs text-amber-700 dark:text-amber-400">
           <Check className="h-3 w-3" />
-          <span>{copy.profile.avatarSelected} {selectedFile.name}</span>
+          <span>{t('profile.avatarSelected')} {selectedFile.name}</span>
           <button type="button" onClick={onCancelFile} className="text-amber-500 hover:text-amber-700 transition-colors ml-0.5"><X className="h-3 w-3" /></button>
         </div>
       ) : (
-        <p className="text-xs text-stone-400">{copy.profile.avatarSupportHint}</p>
+        <p className="text-xs text-stone-400">{t('profile.avatarSupportHint')}</p>
       )}
     </div>
   );
@@ -92,23 +93,24 @@ interface BasicInfoFieldsProps {
 }
 
 export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLimit, bioAtLimit, onChange }: BasicInfoFieldsProps) {
+  const { t } = useI18n(["profile"]);
   return (
     <div className="space-y-5">
       <div className="space-y-1.5">
-        <FieldLabel>{copy.profile.nameLabel}</FieldLabel>
+        <FieldLabel>{t('profile.nameLabel')}</FieldLabel>
         <input value={userName} disabled className={cn(inputCls, "bg-stone-50 dark:bg-stone-800 text-stone-400 dark:text-stone-600 cursor-not-allowed")} />
-        <p className="text-xs text-stone-400 flex items-center gap-1"><span className="sr-only">info</span>{copy.profile.nameHint}</p>
+        <p className="text-xs text-stone-400 flex items-center gap-1"><span className="sr-only">info</span>{t('profile.nameHint')}</p>
       </div>
       <div className="space-y-1.5">
-        <FieldLabel>{copy.profile.nicknameLabel}</FieldLabel>
-        <input name="nickname" type="text" value={nickname} onChange={onChange} maxLength={20} placeholder={copy.profile.nicknamePlaceholder} className={inputCls} />
-        <p className="text-xs text-stone-400">{copy.profile.nicknameHint}</p>
+        <FieldLabel>{t('profile.nicknameLabel')}</FieldLabel>
+        <input name="nickname" type="text" value={nickname} onChange={onChange} maxLength={20} placeholder={t('profile.nicknamePlaceholder')} className={inputCls} />
+        <p className="text-xs text-stone-400">{t('profile.nicknameHint')}</p>
       </div>
       <div className="space-y-1.5">
-        <FieldLabel>{copy.profile.bio}</FieldLabel>
-        <textarea name="bio" value={bio} onChange={onChange} rows={4} maxLength={200} placeholder={copy.profile.bioPlaceholder} className={cn(inputCls, "resize-none")} />
+        <FieldLabel>{t('profile.bio')}</FieldLabel>
+        <textarea name="bio" value={bio} onChange={onChange} rows={4} maxLength={200} placeholder={t('profile.bioPlaceholder')} className={cn(inputCls, "resize-none")} />
         <div className="flex items-center justify-between text-xs">
-          <span className="text-stone-400">{copy.profile.bioHint}</span>
+          <span className="text-stone-400">{t('profile.bioHint')}</span>
           <span className={cn(bioAtLimit ? "text-red-500 font-medium" : bioNearLimit ? "text-amber-500" : "text-stone-400")}>{bioLength}/200</span>
         </div>
       </div>
@@ -130,10 +132,11 @@ interface OutdoorInfoFieldsProps {
 }
 
 export function OutdoorInfoFields({ level, experience, equipment, equipmentInput, onChange, onEquipmentKeyDown, onRemoveEquipment, onAddPresetEquipment, onEquipmentInputChange }: OutdoorInfoFieldsProps) {
+  const { t } = useI18n(["profile", "enums"]);
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <FieldLabel>{copy.profile.levelLabel}</FieldLabel>
+        <FieldLabel>{t('profile.levelLabel')}</FieldLabel>
         <div className="grid grid-cols-2 gap-3">
           {LEVEL_OPTIONS.map((opt) => {
             const isSelected = level === opt.value;
@@ -152,12 +155,12 @@ export function OutdoorInfoFields({ level, experience, equipment, equipmentInput
         </div>
       </div>
       <div className="space-y-1.5">
-        <FieldLabel>{copy.profile.experienceLabel}</FieldLabel>
-        <textarea name="experience" value={experience} onChange={onChange} rows={3} maxLength={200} placeholder={copy.profile.experiencePlaceholder} className={cn(inputCls, "resize-none")} />
-        <p className="text-xs text-stone-400">{copy.profile.experienceHint}</p>
+        <FieldLabel>{t('profile.experienceLabel')}</FieldLabel>
+        <textarea name="experience" value={experience} onChange={onChange} rows={3} maxLength={200} placeholder={t('profile.experiencePlaceholder')} className={cn(inputCls, "resize-none")} />
+        <p className="text-xs text-stone-400">{t('profile.experienceHint')}</p>
       </div>
       <div className="space-y-1.5">
-        <FieldLabel>{copy.profile.equipment}</FieldLabel>
+        <FieldLabel>{t('profile.equipment')}</FieldLabel>
         <div className="flex flex-wrap gap-1.5">
           {PRESET_EQUIPMENT.map((item) => {
             const isSelected = equipment.includes(item);
@@ -171,8 +174,8 @@ export function OutdoorInfoFields({ level, experience, equipment, equipmentInput
             );
           })}
         </div>
-        <input type="text" value={equipmentInput} onChange={(e) => onEquipmentInputChange(e.target.value)} onKeyDown={onEquipmentKeyDown} placeholder={copy.profile.equipmentPlaceholder} className={inputCls} />
-        <p className="text-xs text-stone-400">{copy.profile.equipmentHint}</p>
+        <input type="text" value={equipmentInput} onChange={(e) => onEquipmentInputChange(e.target.value)} onKeyDown={onEquipmentKeyDown} placeholder={t('profile.equipmentPlaceholder')} className={inputCls} />
+        <p className="text-xs text-stone-400">{t('profile.equipmentHint')}</p>
         {equipment.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {equipment.map((item, index) => (
@@ -197,32 +200,33 @@ interface ContactFieldsProps {
 }
 
 export function ContactFields({ wechat, gender, birthday, onChange }: ContactFieldsProps) {
+  const { t } = useI18n(["profile", "common", "enums"]);
   return (
     <div className="space-y-5">
       <div className="space-y-1.5">
-        <FieldLabel>{copy.profile.wechat}</FieldLabel>
+        <FieldLabel>{t('profile.wechat')}</FieldLabel>
         <div className="relative">
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md bg-[#07C160] flex items-center justify-center flex-shrink-0">
             <MessageCircle className="h-3.5 w-3.5 text-white" />
           </div>
-          <input name="wechat" type="text" value={wechat} onChange={onChange} maxLength={50} placeholder={copy.profile.wechatPlaceholder} className={cn(inputCls, "pl-12 focus:ring-[#07C160] focus:border-[#07C160]")} />
+          <input name="wechat" type="text" value={wechat} onChange={onChange} maxLength={50} placeholder={t('profile.wechatPlaceholder')} className={cn(inputCls, "pl-12 focus:ring-[#07C160] focus:border-[#07C160]")} />
         </div>
-        <p className="text-xs text-stone-400">{copy.profile.wechatFieldHint}</p>
+        <p className="text-xs text-stone-400">{t('profile.wechatFieldHint')}</p>
       </div>
       <div className="space-y-1.5">
-        <FieldLabel>{copy.profile.genderLabel}</FieldLabel>
+        <FieldLabel>{t('profile.genderLabel')}</FieldLabel>
         <select name="gender" value={gender} onChange={onChange} className={cn(inputCls, "bg-white dark:bg-stone-800 appearance-none")}>
-          <option value="">{copy.common.unknown}</option>
-          <option value="male">{copy.enums.gender.male}</option>
-          <option value="female">{copy.enums.gender.female}</option>
-          <option value="other">{copy.enums.gender.other}</option>
+          <option value="">{t('common.unknown')}</option>
+          <option value="male">{(t('enums.gender') as any).male}</option>
+          <option value="female">{(t('enums.gender') as any).female}</option>
+          <option value="other">{(t('enums.gender') as any).other}</option>
         </select>
-        <p className="text-xs text-stone-400">{copy.profile.genderHint}</p>
+        <p className="text-xs text-stone-400">{t('profile.genderHint')}</p>
       </div>
       <div className="space-y-1.5">
-        <FieldLabel>{copy.profile.birthdayLabel}</FieldLabel>
+        <FieldLabel>{t('profile.birthdayLabel')}</FieldLabel>
         <input name="birthday" type="date" value={birthday} onChange={onChange} className={inputCls} />
-        <p className="text-xs text-stone-400">{copy.profile.birthdayHint}</p>
+        <p className="text-xs text-stone-400">{t('profile.birthdayHint')}</p>
       </div>
     </div>
   );
@@ -249,22 +253,23 @@ interface ActionBarProps {
 }
 
 export function ActionBar({ isSaving, isUploading, savedDone }: ActionBarProps) {
+  const { t } = useI18n(["profile", "common"]);
   const loading = isSaving || isUploading;
   return (
     <div className="flex gap-3 pt-2">
       <a href="/profile" className="flex-1">
         <button type="button" className="w-full border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 py-3 rounded-xl font-medium text-sm transition-colors">
-          {copy.common.cancel}
+          {t('common.cancel')}
         </button>
       </a>
       <button type="submit" disabled={loading} className={cn("flex-1 py-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed",
         savedDone ? "bg-amber-500 text-white shadow-md shadow-amber-100 dark:shadow-amber-950/30" : "bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 dark:shadow-amber-900/30 disabled:opacity-50"
       )}>
         {loading ? (
-          <><Loader2 className="h-4 w-4 animate-spin" />{isUploading ? copy.common.uploadingImg : copy.common.saving}</>
+          <><Loader2 className="h-4 w-4 animate-spin" />{isUploading ? t('common.uploadingImg') : t('common.saving')}</>
         ) : savedDone ? (
-          <><Check className="h-4 w-4" />{copy.profile.savedSuccess}</>
-        ) : copy.common.save}
+          <><Check className="h-4 w-4" />{t('profile.savedSuccess')}</>
+        ) : t('common.save')}
       </button>
     </div>
   );

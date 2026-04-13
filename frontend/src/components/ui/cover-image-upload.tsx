@@ -18,7 +18,7 @@ import * as React from "react";
 import { Upload, Image as ImageIcon, X, Link, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchAPI, API_BASE } from "@/lib/api";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 
 /* ================================================================
    类型定义
@@ -108,6 +108,7 @@ function CircularProgress({ progress, size = 56, strokeWidth = 4 }: CircularProg
    ================================================================ */
 
 export function CoverImageUpload({ value, onChange, disabled = false }: CoverImageUploadProps) {
+  const { t } = useI18n(["ui"]);
   /* ---- 状态 ---- */
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
   const [uploadState, setUploadState] = React.useState<UploadState>({ phase: "idle" });
@@ -510,7 +511,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 支持 JPG、PNG、WebP · 最大 5 MB · 推荐 16:9
               </p>
               <p className="mt-1 text-xs text-gray-400">
-                {copy.ui.upload.selectFromAlbum}
+                {t('ui.upload.selectFromAlbum')}
               </p>
             </div>
           </div>

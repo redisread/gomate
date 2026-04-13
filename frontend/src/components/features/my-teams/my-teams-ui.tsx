@@ -81,7 +81,7 @@ export function EmptyState({
 }
 
 export function LoadMoreButton({ hasMore, loading, onClick }: { hasMore: boolean; loading: boolean; onClick: () => void }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["myTeams", "teams", "common"]);
   if (!hasMore) return null;
   return (
     <button

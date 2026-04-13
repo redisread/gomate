@@ -67,7 +67,7 @@ function CapacityRing({ current, max, isFull }: { current: number; max: number; 
 }
 
 function LeaderChip({ leader }: { leader: Team["leader"] }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["home", "common", "enums"]);
   const name = leader.nickname ?? leader.name;
   const levelLabel = t(`enums.leaderLevel.${leader.level}` as TranslationKey) || t(`enums.level.${leader.level}` as TranslationKey) || leader.level;
   const initial = name.charAt(0).toUpperCase();
@@ -91,7 +91,7 @@ function LeaderChip({ leader }: { leader: Team["leader"] }) {
 }
 
 export function TeamCard({ team }: { team: Team }) {
-  const { t } = useI18n();
+  const { t } = useI18n(["home", "common", "enums"]);
   const [hovered, setHovered] = React.useState(false);
   const isFull = team.currentMembers >= team.maxMembers;
   const daysUntil = getDaysUntil(team.date);

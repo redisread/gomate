@@ -23,7 +23,7 @@ import { Footer } from "@/components/layout/footer";
  * 分步感知 + 情感化文案 + 品牌色 focus 状态
  */
 export function CreateTeamClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["teams", "errors", "common"]);
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
   const [routes, setRoutes] = React.useState<Route[]>([]);

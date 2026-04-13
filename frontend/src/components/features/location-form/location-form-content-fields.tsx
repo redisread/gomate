@@ -61,7 +61,7 @@ interface LocationFormContentFieldsProps {
 }
 
 export function LocationFormContentFields({ formData, isSaving, updateField }: LocationFormContentFieldsProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["admin", "ui"]);
   return (
     <SectionCard icon={<ImageIcon className="h-4 w-4" />} title={t("admin.formContentTitle")}>
       <Field label={t("admin.formCoverImageRequired")} hint={t("ui.selectFromAlbum")}>

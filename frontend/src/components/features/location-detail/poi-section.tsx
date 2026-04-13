@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import type { RoutePoi } from "@/lib/types";
 import { getLocationPois } from "@/lib/api";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { POI_ICON_MAP, POI_COLOR_MAP } from "./constants";
 
 interface PoiSectionProps {
@@ -10,6 +10,7 @@ interface PoiSectionProps {
 }
 
 export function PoiSection({ locationId }: PoiSectionProps) {
+  const { t } = useI18n(["locations"]);
   const [pois, setPois] = React.useState<RoutePoi[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -26,7 +27,7 @@ export function PoiSection({ locationId }: PoiSectionProps) {
       style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
       <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
         <span className="w-1 h-4 rounded-full bg-violet-400 flex-shrink-0" />
-        {copy.locations.poiSection}
+        {t('locations.poiSection')}
         <span className="ml-auto text-xs font-normal text-stone-400 dark:text-stone-500 bg-stone-50 dark:bg-stone-800 px-2 py-0.5 rounded-full border border-stone-100 dark:border-stone-700">
           {pois.length} 个
         </span>
@@ -42,9 +43,7 @@ export function PoiSection({ locationId }: PoiSectionProps) {
             const roleType = poi.roleType as string;
             const colors = POI_COLOR_MAP[roleType] ?? POI_COLOR_MAP.poi;
             const icon = POI_ICON_MAP[roleType] ?? POI_ICON_MAP.poi;
-            const roleLabel = copy.locations.poiRoleTypes[
-              roleType as keyof typeof copy.locations.poiRoleTypes
-            ] ?? roleType;
+            const roleLabel = t(`locations.poiRoleTypes.${roleType}` as any) || roleType;
 
             return (
               <div key={poi.id} className="flex items-start gap-3">

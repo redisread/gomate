@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 
 interface LocationPosterContentProps {
   title: string;
@@ -23,6 +23,7 @@ export function LocationPosterContent({
   tags,
   meta,
 }: LocationPosterContentProps) {
+  const { t } = useI18n(["share"]);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -134,7 +135,7 @@ export function LocationPosterContent({
             )}
             <div className="flex flex-col gap-1">
               <span className="text-[12px] leading-[16px] text-[#1e1812]">
-                {copy.share.scanToViewLocation}
+                {t('share.scanToViewLocation')}
               </span>
               <span
                 className="text-[10px]"

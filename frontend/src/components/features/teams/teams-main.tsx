@@ -10,7 +10,7 @@ import {
 } from "./teams-ui";
 
 export function TeamsClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["teams"]);
   const ctx = useTeams();
 
   return (

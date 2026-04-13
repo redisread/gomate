@@ -1,7 +1,7 @@
 import * as React from "react";
 import { X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { AnimatedProgress } from "./team-detail-ui";
 
 /* ── Join Bottom Sheet (Mobile) ── */
@@ -14,6 +14,7 @@ export function JoinBottomSheet({
   joinMessage: string; setJoinMessage: (v: string) => void;
   remaining: number; fillRatio: number; currentMembers: number; maxMembers: number;
 }) {
+  const { t } = useI18n(["teams"]);
   React.useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "";
@@ -52,7 +53,7 @@ export function JoinBottomSheet({
             <AnimatedProgress ratio={fillRatio} isFull={false} />
           </div>
           <textarea
-            placeholder={copy.teams.joinPlaceholder}
+            placeholder={t('teams.joinPlaceholder')}
             value={joinMessage}
             onChange={(e) => setJoinMessage(e.target.value)}
             rows={3}
@@ -64,7 +65,7 @@ export function JoinBottomSheet({
             className="w-full py-3.5 font-semibold text-white rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
-            {copy.teams.joinTeam}
+            {t('teams.joinTeam')}
           </button>
         </div>
       </div>
@@ -82,6 +83,7 @@ export function JoinDesktopModal({
   joinMessage: string; setJoinMessage: (v: string) => void;
   remaining: number; fillRatio: number; currentMembers: number; maxMembers: number;
 }) {
+  const { t } = useI18n(["teams"]);
   if (!open) return null;
 
   return (
@@ -106,7 +108,7 @@ export function JoinDesktopModal({
           <AnimatedProgress ratio={fillRatio} isFull={false} />
         </div>
         <textarea
-          placeholder={copy.teams.joinPlaceholder}
+          placeholder={t('teams.joinPlaceholder')}
           value={joinMessage}
           onChange={(e) => setJoinMessage(e.target.value)}
           rows={4}
@@ -118,7 +120,7 @@ export function JoinDesktopModal({
           className="w-full py-3.5 font-semibold text-white rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
-          {copy.teams.joinTeam}
+          {t('teams.joinTeam')}
         </button>
       </div>
     </div>
@@ -130,17 +132,18 @@ export function JoinDesktopModal({
 export function LeaveConfirmDialog({
   open, onCancel, onConfirm,
 }: { open: boolean; onCancel: () => void; onConfirm: () => void; }) {
+  const { t } = useI18n(["teams", "common"]);
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
-        <h3 className="text-lg font-bold text-foreground mb-2">{copy.teams.leaveTeamConfirm}</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed mb-6">{copy.teams.leaveTeamWarning}</p>
+        <h3 className="text-lg font-bold text-foreground mb-2">{t('teams.leaveTeamConfirm')}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-6">{t('teams.leaveTeamWarning')}</p>
         <button onClick={onConfirm} className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors mb-2">
-          {copy.teams.leaveTeam}
+          {t('teams.leaveTeam')}
         </button>
         <button onClick={onCancel} className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accent transition-colors">
-          {copy.common.cancel}
+          {t('common.cancel')}
         </button>
       </div>
     </div>
@@ -152,14 +155,15 @@ export function LeaveConfirmDialog({
 export function FormTeamConfirmDialog({
   open, isFull, isLoading, onCancel, onConfirm,
 }: { open: boolean; isFull: boolean; isLoading: boolean; onCancel: () => void; onConfirm: () => void; }) {
+  const { t } = useI18n(["teams", "common"]);
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
         <h3 className="text-lg font-bold text-foreground mb-2">
-          {isFull ? copy.teams.formTeamConfirm : copy.teams.formTeamUnderfilledConfirm}
+          {isFull ? t('teams.formTeamConfirm') : t('teams.formTeamUnderfilledConfirm')}
         </h3>
-        <p className="text-sm text-muted-foreground leading-relaxed mb-6">{copy.teams.formTeamWarning}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-6">{t('teams.formTeamWarning')}</p>
         <button
           onClick={onConfirm}
           disabled={isLoading}
@@ -169,7 +173,7 @@ export function FormTeamConfirmDialog({
           确认组建
         </button>
         <button onClick={onCancel} disabled={isLoading} className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accent transition-colors">
-          {copy.common.cancel}
+          {t('common.cancel')}
         </button>
       </div>
     </div>
@@ -181,6 +185,7 @@ export function FormTeamConfirmDialog({
 export function WechatEditModal({
   onClose, onSave, isSaving,
 }: { onClose: () => void; onSave: (wechat: string) => void; isSaving: boolean; }) {
+  const { t } = useI18n(["profile", "common"]);
   const [wechatInput, setWechatInput] = React.useState("");
 
   return (
@@ -188,8 +193,8 @@ export function WechatEditModal({
       <div className="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-foreground">{copy.profile.wechat}</h3>
-            <p className="text-xs text-muted-foreground/70 mt-0.5">{copy.profile.wechatHint}</p>
+            <h3 className="text-lg font-bold text-foreground">{t('profile.wechat')}</h3>
+            <p className="text-xs text-muted-foreground/70 mt-0.5">{t('profile.wechatHint')}</p>
           </div>
           <button onClick={onClose} disabled={isSaving} className="text-muted-foreground/70 hover:text-foreground">
             <X className="w-5 h-5" />
@@ -199,7 +204,7 @@ export function WechatEditModal({
           type="text"
           value={wechatInput}
           onChange={(e) => setWechatInput(e.target.value)}
-          placeholder={copy.profile.wechatPlaceholder}
+          placeholder={t('profile.wechatPlaceholder')}
           className="w-full px-4 py-3 bg-muted rounded-xl text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-amber-200 border border-border"
         />
         <button
@@ -215,7 +220,7 @@ export function WechatEditModal({
           disabled={isSaving}
           className="w-full py-3 text-muted-foreground text-sm hover:bg-accent rounded-xl transition-colors"
         >
-          {copy.common.cancel}
+          {t('common.cancel')}
         </button>
       </div>
     </div>
@@ -230,13 +235,14 @@ export function ApprovalConfirmDialog({
   open: boolean; type: "approve" | "reject"; userName: string;
   isLoading: boolean; onCancel: () => void; onConfirm: () => void;
 }) {
+  const { t } = useI18n(["teams", "common"]);
   if (!open) return null;
   const isApprove = type === "approve";
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
         <h3 className="text-lg font-bold text-foreground mb-2">
-          {isApprove ? copy.teams.approveConfirm : copy.teams.rejectConfirm}
+          {isApprove ? t('teams.approveConfirm') : t('teams.rejectConfirm')}
         </h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-6">
           {isApprove ? `${userName} 将正式加入队伍` : `拒绝后，${userName} 将不能加入此队伍。`}
@@ -250,10 +256,10 @@ export function ApprovalConfirmDialog({
           )}
         >
           {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-          {isApprove ? copy.teams.approveBtn : copy.teams.rejectBtn}
+          {isApprove ? t('teams.approveBtn') : t('teams.rejectBtn')}
         </button>
         <button onClick={onCancel} disabled={isLoading} className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accent transition-colors">
-          {copy.common.cancel}
+          {t('common.cancel')}
         </button>
       </div>
     </div>

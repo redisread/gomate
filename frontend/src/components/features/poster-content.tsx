@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 
 const ZPIX_FONT_URL =
   "https://cdn.jsdelivr.net/gh/SolidZORO/zpix-pixel-font@master/website/zpix.woff2";
@@ -34,6 +34,7 @@ export function PosterContent({
   tags,
   meta,
 }: PosterContentProps) {
+  const { t } = useI18n(["share"]);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export function PosterContent({
   }, [url]);
 
   const scanText =
-    type === "team" ? copy.share.scanToJoin : copy.share.scanToViewLocation;
+    type === "team" ? t('share.scanToJoin') : t('share.scanToViewLocation');
 
   return (
     <div

@@ -1,59 +1,20 @@
 /**
- * i18n 翻译工具函数
+ * i18n 翻译引擎 - 支持按需 namespace 加载
  *
- * 类型安全的 t(key, options) 函数，支持：
- * - 编译时 key 检查
- * - 变量替换 {variable}
+ * 功能：
+ * - 运行时 fetch 翻译文件（public/locales/{locale}/{ns}.json）
+ * - 双层缓存：内存 Map + localStorage（24h 过期）
  * - 语言回退链：ja → en → zh-CN
- * - 开发模式缺失 key 告警
+ * - SSR 内联数据：window.__I18N_DATA__
+ * - 向后兼容的 t(key, options) 签名
  */
-
-import zhCN from "./locales/zh-CN.json";
-import en from "./locales/en.json";
-import ja from "./locales/ja.json";
 
 // ─── 类型定义 ─────────────────────────────────────────────────────────────────
 
-type NestedKeyOf<T, Prefix extends string = ""> = T extends object
-  ? {
-      [K in keyof T & string]: T[K] extends object
-        ? NestedKeyOf<T[K], `${Prefix}${K}.`>
-        : `${Prefix}${K}`;
-    }[keyof T & string]
-  : never;
-
-export type TranslationKey = NestedKeyOf<typeof zhCN>;
-
-// 从嵌套路径中提取值
-type LeafValue<T, K extends string> = K extends `${infer Head}.${infer Rest}`
-  ? Head extends keyof T
-    ? LeafValue<T[Head], Rest>
-    : never
-  : K extends keyof T
-    ? T[K]
-    : never;
-
-// 从值中提取 {variable} 占位符
-type TemplateVars<S extends string> = S extends `${string}{${infer Key}}${infer Rest}`
-  ? { [P in Key | keyof TemplateVars<Rest>]: string | number }
-  : Record<string, never>;
-
-// 合并所有可能的变量 key
-type ExtractVars<T> = T extends string ? TemplateVars<T> : never;
-
-// t() 函数的 options 类型
-interface TranslateOptions {
-  locale?: Locale;
-  vars?: Record<string, string | number>;
-}
-
-// ─── 语言配置 ─────────────────────────────────────────────────────────────────
-
 export type Locale = "zh-CN" | "en" | "ja";
 
-export const SUPPORTED_LOCALES: Locale[] = ["zh-CN", "en", "ja"];
-
-export const DEFAULT_LOCALE: Locale = "zh-CN";
+const SUPPORTED_LOCALES: Locale[] = ["zh-CN", "en", "ja"];
+const DEFAULT_LOCALE: Locale = "zh-CN";
 
 // 语言回退链：ja → en → zh-CN
 const FALLBACK_MAP: Record<Locale, Locale[]> = {
@@ -62,25 +23,167 @@ const FALLBACK_MAP: Record<Locale, Locale[]> = {
   "zh-CN": [],
 };
 
-// ─── 翻译数据存储 ─────────────────────────────────────────────────────────────
+// 缓存过期时间（24 小时）
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-const translations: Record<Locale, typeof zhCN> = {
-  "zh-CN": zhCN,
-  en: en,
-  ja: ja,
-};
+// ─── 缓存层 ───────────────────────────────────────────────────────────────────
 
-// ─── 核心函数 ─────────────────────────────────────────────────────────────────
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
+// 内存缓存：key 格式 "locale:ns"
+const memoryCache = new Map<string, CacheEntry<Record<string, unknown>>>();
+
+/**
+ * 从 localStorage 读取缓存
+ */
+function loadFromPersistentCache(key: string): CacheEntry<unknown> | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 写入 localStorage 缓存
+ */
+function saveToPersistentCache(key: string, entry: CacheEntry<unknown>): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(entry));
+  } catch {
+    // localStorage 满了或不可用，静默失败
+  }
+}
+
+/**
+ * 从缓存中获取数据（内存优先，回退到 localStorage）
+ */
+function getFromCache(ns: string, locale: Locale): Record<string, unknown> | null {
+  const memKey = `${locale}:${ns}`;
+  const mem = memoryCache.get(memKey);
+  if (mem && mem.expiresAt > Date.now()) {
+    return mem.data;
+  }
+
+  const persist = loadFromPersistentCache(`i18n:${memKey}`);
+  if (persist && persist.expiresAt > Date.now()) {
+    const entry: CacheEntry<Record<string, unknown>> = {
+      data: persist.data as Record<string, unknown>,
+      expiresAt: persist.expiresAt,
+    };
+    memoryCache.set(memKey, entry);
+    return entry.data;
+  }
+
+  return null;
+}
+
+/**
+ * 写入缓存（同时更新内存和 localStorage）
+ */
+function setCache(ns: string, locale: Locale, data: Record<string, unknown>): void {
+  const memKey = `${locale}:${ns}`;
+  const entry: CacheEntry<Record<string, unknown>> = {
+    data,
+    expiresAt: Date.now() + CACHE_TTL_MS,
+  };
+  memoryCache.set(memKey, entry);
+  saveToPersistentCache(`i18n:${memKey}`, entry);
+}
+
+// ─── 运行时加载 ───────────────────────────────────────────────────────────────
+
+const pendingLoads = new Map<string, Promise<Record<string, unknown>>>();
+
+/**
+ * 加载单个 namespace 到内存和缓存
+ */
+export async function loadNamespace(ns: string, locale: Locale): Promise<Record<string, unknown>> {
+  // 1. 检查缓存
+  const cached = getFromCache(ns, locale);
+  if (cached) return cached;
+
+  // 2. 检查是否有正在进行的相同请求
+  const loadKey = `${locale}:${ns}`;
+  const existing = pendingLoads.get(loadKey);
+  if (existing) return existing;
+
+  // 3. 发起 fetch
+  const promise = fetch(`/locales/${locale}/${ns}.json`)
+    .then(async (res) => {
+      if (!res.ok) {
+        throw new Error(`Failed to load locale ${locale}/${ns}.json: ${res.status}`);
+      }
+      const data = (await res.json()) as Record<string, unknown>;
+      setCache(ns, locale, data);
+      pendingLoads.delete(loadKey);
+      return data;
+    })
+    .catch((err) => {
+      pendingLoads.delete(loadKey);
+      throw err;
+    });
+
+  pendingLoads.set(loadKey, promise);
+  return promise;
+}
+
+/**
+ * 批量加载多个 namespace（并行 fetch）
+ */
+export async function loadNamespaces(
+  nsList: string[],
+  locale: Locale,
+): Promise<Record<string, Record<string, unknown>>> {
+  const results: Record<string, Record<string, unknown>> = {};
+  await Promise.all(
+    nsList.map(async (ns) => {
+      results[ns] = await loadNamespace(ns, locale);
+    }),
+  );
+  return results;
+}
+
+/**
+ * 预加载 SSR 内联数据（客户端 hydration 时调用）
+ * 从 window.__I18N_DATA__ 读取服务端注入的翻译
+ */
+export function hydrateSSRData(
+  data?: Record<Locale, Record<string, Record<string, unknown>>>,
+): void {
+  const ssrData =
+    data ?? (typeof window !== "undefined" ? (window as unknown as Record<string, unknown>).__I18N_DATA__ : null);
+  if (!ssrData) return;
+
+  for (const [locale, nsMap] of Object.entries(ssrData)) {
+    for (const [ns, nsData] of Object.entries(nsMap)) {
+      setCache(ns, locale as Locale, nsData as Record<string, unknown>);
+    }
+  }
+  // 清理全局变量
+  if (typeof window !== "undefined") {
+    delete (window as unknown as Record<string, unknown>).__I18N_DATA__;
+  }
+}
+
+// ─── 核心翻译函数 ─────────────────────────────────────────────────────────────
 
 /**
  * 从嵌套对象中通过点号路径获取值
  */
-function getNestedValue(obj: Record<string, any>, path: string): string | undefined {
+function getNestedValue(obj: Record<string, unknown>, path: string): string | undefined {
   const keys = path.split(".");
-  let current: any = obj;
+  let current: unknown = obj;
   for (const key of keys) {
     if (current == null || typeof current !== "object") return undefined;
-    current = current[key];
+    current = (current as Record<string, unknown>)[key];
   }
   return typeof current === "string" ? current : undefined;
 }
@@ -96,46 +199,74 @@ function interpolate(template: string, vars?: Record<string, string | number>): 
 }
 
 /**
- * 翻译函数
+ * 在缓存中查找翻译值
+ */
+function findTranslation(key: string, locale: Locale): string | undefined {
+  // key 格式: "namespace.subKey.leafKey"
+  // 我们尝试用不同层级拆分 namespace
+  const parts = key.split(".");
+  if (parts.length < 2) return undefined;
+
+  // 尝试所有可能的 namespace 边界
+  // 例如 "teams.joinTeam" -> ns="teams", path="joinTeam"
+  // 例如 "teams.storyNarrative.growing" -> ns="teams", path="storyNarrative.growing"
+  for (let i = 1; i < parts.length; i++) {
+    const ns = parts.slice(0, i).join(".");
+    const path = parts.slice(i).join(".");
+
+    // 检查缓存
+    const nsData = getFromCache(ns, locale);
+    if (nsData) {
+      const value = getNestedValue(nsData, path);
+      if (value !== undefined) return value;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * 翻译函数（向后兼容）
  *
- * @param key - 翻译 key（类型安全，IDE 自动补全）
+ * @param key - 翻译 key（包含 namespace，如 'teams.joinTeam'）
  * @param options - 可选参数：locale 和 vars（变量替换）
  * @returns 翻译后的字符串
  *
  * @example
- * t('hero.titleLine1', { locale: 'en' })  // "Discover"
- * t('teams.openTeamsSubtitle', { vars: { count: 5 }, locale: 'en' })  // "5 teams waiting for you"
+ * t('hero.titleLine1', { locale: 'en' })
+ * t('teams.openTeamsSubtitle', { vars: { count: 5 } })
  */
-export function t(key: TranslationKey, options?: TranslateOptions): string {
-  const locale = options?.locale || DEFAULT_LOCALE;
+export function t(
+  key: string,
+  options?: { locale?: Locale; vars?: Record<string, string | number> },
+): string {
+  const locale = options?.locale || getLocale();
 
   // 1. 尝试当前语言
-  let value = getNestedValue(translations[locale], key);
+  const value = findTranslation(key, locale);
+  if (value !== undefined) {
+    return interpolate(value, options?.vars);
+  }
 
-  // 2. 如果缺失，尝试回退链
-  if (value === undefined) {
-    for (const fallback of FALLBACK_MAP[locale]) {
-      value = getNestedValue(translations[fallback], key);
-      if (value !== undefined) break;
+  // 2. 回退链
+  for (const fallback of FALLBACK_MAP[locale]) {
+    const fallbackValue = findTranslation(key, fallback);
+    if (fallbackValue !== undefined) {
+      return interpolate(fallbackValue, options?.vars);
     }
   }
 
   // 3. 仍然缺失，开发模式告警
-  if (value === undefined) {
-    if (import.meta.env.DEV) {
-      console.warn(`[i18n] Missing translation key: "${key}" for locale "${locale}"`);
-    }
-    value = key; // 返回 key 本身作为 fallback
+  if (import.meta.env.DEV) {
+    console.warn(`[i18n] Missing translation key: "${key}" for locale "${locale}"`);
   }
-
-  // 4. 变量替换
-  return interpolate(value, options?.vars);
+  return key;
 }
+
+// ─── Locale 管理 ──────────────────────────────────────────────────────────────
 
 /**
  * 获取当前 locale（从 URL 或 cookie 读取）
- * 在 Astro 页面中使用 Astro.params.locale
- * 在浏览器端使用此函数读取 cookie
  */
 export function getLocale(): Locale {
   if (typeof document === "undefined") return DEFAULT_LOCALE;
@@ -143,7 +274,6 @@ export function getLocale(): Locale {
   const match = document.cookie.match(/gomate_locale=(zh-CN|en|ja)/);
   if (match) return match[1] as Locale;
 
-  // 从浏览器语言推断
   const browserLang = navigator.language;
   if (browserLang.startsWith("ja")) return "ja";
   if (browserLang.startsWith("en")) return "en";
@@ -179,13 +309,39 @@ export function getLocaleName(locale: Locale): string {
 }
 
 /**
- * 根据当前 locale 获取对应页面的 title
- * SSR 用，Astro 页面在 <head> 中使用
+ * SSR 翻译辅助 - 直接基于已加载的数据查找，不依赖客户端缓存
  */
-export function getSSRT(locale: Locale) {
+export function getSSRT(
+  locale: Locale,
+  loadedData?: Record<string, Record<string, unknown>>,
+) {
   return {
-    t: (key: TranslationKey, vars?: Record<string, string | number>) => {
+    t: (key: string, vars?: Record<string, string | number>) => {
+      // 如果有已加载的 SSR 数据，直接从里面查找
+      if (loadedData && loadedData[locale]) {
+        const localeData = loadedData[locale];
+        // key 格式: "namespace.subKey.leafKey"
+        // 尝试所有可能的 namespace 边界
+        const parts = key.split(".");
+        for (let i = 1; i < parts.length; i++) {
+          const ns = parts.slice(0, i).join(".");
+          const path = parts.slice(i).join(".");
+          const nsData = localeData[ns];
+          if (nsData && typeof nsData === "object") {
+            const value = getNestedValue(nsData as Record<string, unknown>, path);
+            if (value !== undefined) {
+              return interpolate(value, vars);
+            }
+          }
+        }
+      }
+      // fallback 到通用 t()（会使用缓存）
       return t(key, { locale, vars });
     },
   };
 }
+
+// ─── 导出 ─────────────────────────────────────────────────────────────────────
+
+export type { TranslationKey, NamespacedKeys } from "./types";
+export { DEFAULT_LOCALE, SUPPORTED_LOCALES, FALLBACK_MAP };

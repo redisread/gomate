@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { API_BASE } from "@/lib/api";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { PosterContent } from "./poster-content";
 import { LocationPosterContent } from "./location-poster-content";
 
@@ -52,6 +52,7 @@ export function SharePosterModal({
   onClose,
   onToast,
 }: SharePosterModalProps) {
+  const { t } = useI18n(["common", "share"]);
   const posterRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [coverDataUrl, setCoverDataUrl] = useState<string | null | undefined>(
@@ -164,7 +165,7 @@ export function SharePosterModal({
     try {
       const blob = await generateImage();
       if (!blob) {
-        showToast({ type: "error", message: copy.share.generatePosterFailed });
+        showToast({ type: "error", message: t('share.generatePosterFailed') });
         return;
       }
       const objectUrl = URL.createObjectURL(blob);
@@ -173,7 +174,7 @@ export function SharePosterModal({
       a.download = "gomate-share.png";
       a.click();
       URL.revokeObjectURL(objectUrl);
-      showToast({ type: "success", message: copy.share.posterDownloaded });
+      showToast({ type: "success", message: t('share.posterDownloaded') });
     } finally {
       setIsGenerating(false);
     }
@@ -182,9 +183,9 @@ export function SharePosterModal({
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(url);
-      showToast({ type: "success", message: copy.share.linkCopied });
+      showToast({ type: "success", message: t('share.linkCopied') });
     } catch {
-      showToast({ type: "error", message: copy.share.copyFailed });
+      showToast({ type: "error", message: t('share.copyFailed') });
     }
   }
 
@@ -207,7 +208,7 @@ export function SharePosterModal({
       >
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <span className="text-sm font-semibold text-foreground">
-            {type === "team" ? copy.share.title : copy.share.locationTitle}
+            {type === "team" ? t('share.title') : t('share.locationTitle')}
           </span>
           <button
             onClick={onClose}
@@ -255,7 +256,7 @@ export function SharePosterModal({
           {(isLoading || isGenerating) && (
             <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-muted/60">
               <span className="text-sm text-stone-400 dark:text-stone-500">
-                {copy.common.loading}
+                {t('common.loading')}
               </span>
             </div>
           )}
@@ -267,13 +268,13 @@ export function SharePosterModal({
             disabled={isLoading || isGenerating}
             className="flex-1 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
           >
-            {copy.share.downloadQRCode}
+            {t('share.downloadQRCode')}
           </button>
           <button
             onClick={handleCopyLink}
             className="flex-1 rounded-lg border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 dark:text-stone-600 transition-colors hover:border-stone-400 dark:hover:border-stone-500"
           >
-            {copy.share.copyLink}
+            {t('share.copyLink')}
           </button>
         </div>
 

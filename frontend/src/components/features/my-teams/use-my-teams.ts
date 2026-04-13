@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import type { SessionUser } from "@/lib/types";
 import type { TeamItem, ApplicationRecord, PendingApproval } from "./my-teams-types";
 
 export function useMyTeams() {
+  const { t } = useI18n(["teams"]);
   const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(null);
   const [activeTab, setActiveTab] = React.useState("participated");
   const [applicationSubTab, setApplicationSubTab] = React.useState<"my" | "pending">("my");
@@ -208,9 +209,9 @@ export function useMyTeams() {
       const data = await r.json();
       if (data.success) {
         setCreatedTeams((prev) => prev.map((t) => (t.id === cancelTarget ? { ...t, status: "cancelled" } : t)));
-        setActionMessage(copy.teams.cancelTeamSuccess); setCancelTarget(null);
-      } else { setActionMessage(data.error || copy.teams.cancelTeamFailed); }
-    } catch { setActionMessage(copy.teams.cancelTeamFailed); }
+        setActionMessage(t('teams.cancelTeamSuccess')); setCancelTarget(null);
+      } else { setActionMessage(data.error || t('teams.cancelTeamFailed')); }
+    } catch { setActionMessage(t('teams.cancelTeamFailed')); }
     finally { setIsCancelling(false); setTimeout(() => setActionMessage(""), 3000); }
   };
 
@@ -228,9 +229,9 @@ export function useMyTeams() {
       const data = await r.json();
       if (data.success) {
         setCreatedTeams((prev) => prev.map((t) => (t.id === formTarget ? { ...t, status: "formed" } : t)));
-        setActionMessage(copy.teams.formTeamSuccess); setFormTarget(null);
-      } else { setActionMessage(data.error || copy.teams.formTeamFailed); }
-    } catch { setActionMessage(copy.teams.formTeamFailed); }
+        setActionMessage(t('teams.formTeamSuccess')); setFormTarget(null);
+      } else { setActionMessage(data.error || t('teams.formTeamFailed')); }
+    } catch { setActionMessage(t('teams.formTeamFailed')); }
     finally { setIsForming(false); setTimeout(() => setActionMessage(""), 3000); }
   };
 

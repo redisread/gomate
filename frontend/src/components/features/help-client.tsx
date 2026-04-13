@@ -86,7 +86,7 @@ function FaqAccordionItem({
 /** 帮助中心页主组件 */
 export function HelpClient() {
   const [openIndex, setOpenIndex] = React.useState<number | null>(null);
-  const { t } = useI18n();
+  const { t } = useI18n(["nav", "content"]);
 
   const handleToggle = (index: number) => {
     setOpenIndex((prev) => (prev === index ? null : index));
@@ -110,11 +110,11 @@ export function HelpClient() {
                 <span>{t("nav.home")}</span>
               </a>
               <ChevronRight className="w-4 h-4" />
-              <span className="text-foreground font-medium">{t("help.pageTitle")}</span>
+              <span className="text-foreground font-medium">{t("content.help.pageTitle")}</span>
             </nav>
 
-            <h1 className="text-3xl font-bold text-foreground">{t("help.pageTitle")}</h1>
-            <p className="mt-2 text-muted-foreground text-base">{t("help.pageSubtitle")}</p>
+            <h1 className="text-3xl font-bold text-foreground">{t("content.help.pageTitle")}</h1>
+            <p className="mt-2 text-muted-foreground text-base">{t("content.help.pageSubtitle")}</p>
           </div>
         </div>
 
@@ -133,16 +133,16 @@ export function HelpClient() {
 
           {/* 底部 CTA */}
           <div className="mt-12 text-center bg-card rounded-2xl border border-border shadow-sm px-8 py-10">
-            <h2 className="text-xl font-semibold text-foreground">{t("help.contactTitle")}</h2>
+            <h2 className="text-xl font-semibold text-foreground">{t("content.help.contactTitle")}</h2>
             <p className="mt-2 text-muted-foreground">
-              {t("help.contactDesc")}
+              {t("content.help.contactDesc")}
             </p>
             <a
               href="mailto:hello@gomate.live"
               className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors"
             >
               <Mail className="w-4 h-4" />
-              {t("help.contactBtn")}
+              {t("content.help.contactBtn")}
             </a>
           </div>
         </div>

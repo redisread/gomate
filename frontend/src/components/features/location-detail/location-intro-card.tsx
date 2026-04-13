@@ -9,7 +9,7 @@ import {
   Copy,
   Sparkles,
 } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location, Tag } from "@/lib/types";
 import { SEASON_LABEL } from "./constants";
@@ -28,6 +28,7 @@ interface LocationIntroCardProps {
  * - 标签胶囊（分类色彩）
  */
 export function LocationIntroCard({ location, actions, address, coordinates }: LocationIntroCardProps) {
+  const { t } = useI18n(["locations", "enums"]);
   const [expanded, setExpanded] = React.useState(false);
   const [isOverflow, setIsOverflow] = React.useState(false);
   const descRef = React.useRef<HTMLParagraphElement>(null);
@@ -117,11 +118,11 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
         <div className="flex items-center gap-2 mb-3">
           <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-amber-400 flex-shrink-0" />
-            {copy.locations.locationIntro}
+            {t('locations.locationIntro')}
           </h2>
-          {location.type && copy.enums.locationType[location.type as keyof typeof copy.enums.locationType] && (
+          {location.type && t(`enums.locationType.${location.type}`) && (
             <span className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50">
-              {copy.enums.locationType[location.type as keyof typeof copy.enums.locationType]}
+              {t(`enums.locationType.${location.type}`)}
             </span>
           )}
         </div>
@@ -177,7 +178,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
                   {coordinates && (
                     <button
                       onClick={handleNavigate}
-                      title={copy.locations.navigateTooltip}
+                      title={t('locations.navigateTooltip')}
                       className="text-amber-400 hover:text-amber-600 transition-colors"
                     >
                       <Navigation className="h-4 w-4" />
@@ -200,7 +201,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
             {location.bestSeason && location.bestSeason.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                <span className="text-xs text-stone-400 dark:text-stone-500">{copy.locations.detailSeasonsLabel}：</span>
+                <span className="text-xs text-stone-400 dark:text-stone-500">{t('locations.detailSeasonsLabel')}：</span>
                 {location.bestSeason.map((s) => (
                   <span
                     key={s}

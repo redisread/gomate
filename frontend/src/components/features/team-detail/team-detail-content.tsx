@@ -1,5 +1,5 @@
 import { MapPin, ArrowRight, AlertCircle, Clock, TrendingUp, Mountain } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import { useTeamDetail } from "./use-team-detail";
 import { getStatusInfo } from "./team-detail-utils";
 import { MemberAvatarGrid } from "./team-detail-members";
@@ -31,6 +31,7 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
 }
 
 function LocationCover({ location, statusInfo }: { location: any; statusInfo: { label: string }; }) {
+  const { t } = useI18n(["teams"]);
   return (
     <a href={`/locations/${location.id}`} className="group block">
       <div className="relative h-[300px] lg:h-[400px] rounded-2xl overflow-hidden bg-secondary hover:shadow-xl hover:shadow-amber-100/30 transition-all duration-300">
@@ -64,7 +65,7 @@ function LocationCover({ location, statusInfo }: { location: any; statusInfo: { 
           <h2 className="text-2xl font-bold text-white mb-2">{location.name}</h2>
           <LocationRouteInfo location={location} />
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur-sm border border-amber-400/30 text-amber-200 hover:text-white text-sm font-medium transition-all duration-150">
-            <span>{copy.teams.viewLocationDetail}</span>
+            <span>{t('teams.viewLocationDetail')}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
           </div>
         </div>
@@ -120,6 +121,7 @@ function JoinSection({ ctx, team, canJoin, isFull, isLeader, isMember, isPending
   ctx: ReturnType<typeof useTeamDetail>; team: any;
   canJoin: boolean; isFull: boolean; isLeader: boolean; isMember: boolean; isPending: boolean; userId: string | null;
 }) {
+  const { t } = useI18n(["teams"]);
   if (canJoin) {
     return (
       <button onClick={() => ctx.setShowJoinModal(true)}
@@ -154,7 +156,7 @@ function JoinSection({ ctx, team, canJoin, isFull, isLeader, isMember, isPending
     return (
       <div className="bg-muted rounded-2xl p-6 text-center">
         <p className="text-base text-muted-foreground/70">
-          {team.status === "completed" ? copy.teams.statusEnded : copy.teams.statusCancelled}
+          {team.status === "completed" ? t('teams.statusEnded') : t('teams.statusCancelled')}
         </p>
       </div>
     );

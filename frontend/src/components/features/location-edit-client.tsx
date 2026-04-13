@@ -86,7 +86,7 @@ interface MapPickerModalProps {
 }
 
 function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPickerModalProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["admin", "common"]);
   const mapContainerRef = React.useRef<HTMLDivElement>(null);
   const mapRef = React.useRef<any>(null);
   const markerRef = React.useRef<any>(null);
@@ -306,7 +306,7 @@ import type { FormData } from "./location-form";
 interface PreviewPanelProps { data: FormData; cityName: string; }
 
 function PreviewPanel({ data, cityName }: PreviewPanelProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["admin", "common"]);
   const seasonEmojis: Record<string, string> = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: "❄️" };
   return (
     <div className="sticky top-20">
@@ -361,7 +361,7 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
 interface LocationEditClientProps { locationId: string; }
 
 export function LocationEditClient({ locationId }: LocationEditClientProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["admin", "common"]);
   const form = useLocationForm(locationId);
   const [showPreview, setShowPreview] = React.useState(false);
   const [showMapPicker, setShowMapPicker] = React.useState(false);

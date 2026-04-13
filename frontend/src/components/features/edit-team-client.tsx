@@ -13,7 +13,7 @@ interface EditTeamClientProps {
 }
 
 export function EditTeamClient({ teamId }: EditTeamClientProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["teams", "errors", "common"]);
   const [team, setTeam] = React.useState<Team | null>(null);
   const [location, setLocation] = React.useState<Location | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);

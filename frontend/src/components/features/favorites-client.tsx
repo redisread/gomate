@@ -25,7 +25,7 @@ interface FavoriteLocation {
  * 我的收藏页客户端组件
  */
 export function FavoritesClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["favorites"]);
   const [favorites, setFavorites] = React.useState<FavoriteLocation[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [removingId, setRemovingId] = React.useState<string | null>(null);

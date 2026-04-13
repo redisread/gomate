@@ -7,13 +7,14 @@ import { TeamSidebar } from "./team-detail-sidebar";
 import { TeamMainContent } from "./team-detail-content";
 import { TeamModalsAndFooter } from "./team-detail-bottom-bar";
 import { TeamDetailSkeleton } from "./team-detail-skeleton";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 
 interface TeamDetailPartifulProps {
   teamId: string;
 }
 
 export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
+  const { t } = useI18n(["teams", "common"]);
   const ctx = useTeamDetail(teamId);
   const { team, loading, error } = ctx;
 
@@ -25,9 +26,9 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
-            <p className="text-muted-foreground/70">{error || copy.teams.notFound}</p>
+            <p className="text-muted-foreground/70">{error || t('teams.notFound')}</p>
             <a href="/teams" className="text-amber-600 hover:text-amber-700 underline underline-offset-2">
-              返回队伍列表
+              {t('common.returnTo', { fallback: '返回队伍列表' })}
             </a>
           </div>
         </div>

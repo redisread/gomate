@@ -48,7 +48,7 @@ function parseExtra(extra: string | null | undefined): { equipment?: string[]; e
  * 用户详情页客户端组件 - React Island
  */
 export function UserDetailClient({ userId }: UserDetailClientProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["userDetail", "profile", "common", "enums", "errors"]);
   const [user, setUser] = React.useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);

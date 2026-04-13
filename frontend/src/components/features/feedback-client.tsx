@@ -22,7 +22,7 @@ type FeedbackType = "suggestion" | "bug";
 
 /** 反馈建议页主组件 */
 export function FeedbackClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["feedback", "nav"]);
   const [type, setType] = React.useState<FeedbackType>("suggestion");
   const [form, setForm] = React.useState({
     name: "",

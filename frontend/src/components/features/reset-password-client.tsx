@@ -9,7 +9,7 @@ import { authClient } from "@/lib/auth-client";
  * 重置密码页 — 温暖品牌风格（居中卡片，品牌色调）
  */
 export function ResetPasswordClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["auth", "common"]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [success, setSuccess] = React.useState(false);

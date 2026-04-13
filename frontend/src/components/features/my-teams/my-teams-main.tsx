@@ -12,7 +12,7 @@ import { ApprovalDetailModal, RejectConfirmModal, CancelTeamModal, FormTeamModal
 import { StatBadge, LoadingState, EmptyState, LoadMoreButton } from "./my-teams-ui";
 
 export function MyTeamsClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["myTeams"]);
   const ctx = useMyTeams();
 
   if (!ctx.currentUser) {

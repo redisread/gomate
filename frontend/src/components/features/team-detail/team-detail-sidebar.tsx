@@ -1,5 +1,5 @@
 import { MapPin, ArrowRight, Calendar, Clock, Timer, AlertCircle, CheckCircle, Crown, Share2, Loader2, Users, Trash2, Pencil } from "lucide-react";
-import { copy } from "@/lib/copy";
+import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
 import { useTeamDetail } from "./use-team-detail";
 import { formatDuration } from "./team-detail-utils";
@@ -122,6 +122,7 @@ function ShareButton({ onClick }: { onClick: () => void; }) {
 }
 
 function LeaderActions({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
+  const { t } = useI18n(["teams"]);
   return (
     <div className="bg-amber-50 rounded-xl p-3 space-y-1.5">
       <a href={`/teams/${team.id}/edit`}
@@ -134,7 +135,7 @@ function LeaderActions({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; t
           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-400 hover:bg-accent rounded-lg transition-colors disabled:opacity-50 font-medium">
           {ctx.isForming && <Loader2 className="w-4 h-4 animate-spin" />}
           <Users className="w-4 h-4" />
-          {ctx.isFull ? copy.teams.formTeam : copy.teams.formTeamUnderfilled}
+          {ctx.isFull ? t('teams.formTeam') : t('teams.formTeamUnderfilled')}
         </button>
       )}
       {(team.status === "recruiting" || team.status === "cancelled") && (
@@ -142,7 +143,7 @@ function LeaderActions({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; t
           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-accent rounded-lg transition-colors disabled:opacity-50">
           {ctx.isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
           <Trash2 className="w-4 h-4" />
-          {copy.teams.deleteTeam}
+          {t('teams.deleteTeam')}
         </button>
       )}
     </div>

@@ -122,7 +122,7 @@ interface LightboxProps {
 }
 
 function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   React.useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -221,7 +221,7 @@ interface ActionCardProps {
  * 角色：转化率优化师 + 视觉总监
  */
 function ActionCard({ location, teams }: ActionCardProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   const totalParticipants = teams.reduce((sum, t) => sum + (t.currentMembers || 0), 0);
   const avatarLeaders = teams.filter((t) => t.leader?.avatar).slice(0, 5);
   const socialProofText =
@@ -321,7 +321,7 @@ interface RelatedLocationsProps {
  * 角色：视觉总监
  */
 function RelatedLocations({ locations }: RelatedLocationsProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   const diffInfo = getDifficultyInfo(t);
 
   if (locations.length === 0) return null;
@@ -411,7 +411,7 @@ interface MobileFloatingCTAProps {
  * - 双按钮：浏览队伍 + 发起组队
  */
 function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   const [heroLeft, setHeroLeft] = React.useState(false);
 
   React.useEffect(() => {
@@ -488,7 +488,7 @@ interface LocationDetailClientProps {
  * 角色：视觉总监 + 交互设计师 + 转化率优化师 三位一体
  */
 export function LocationDetailClient({ locationId }: LocationDetailClientProps) {
-  const { t } = useI18n();
+  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   const [location, setLocation] = React.useState<Location | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -565,7 +565,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
         loadRelatedLocations();
         loadPois(data.location.id);
       } else {
-        setError(t("api.locationNotFound"));
+        setError(t("errors.locationNotFound"));
       }
     } catch {
       setError(t("common.loading"));
@@ -659,7 +659,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
           <div className="text-center">
             <Mountain className="h-16 w-16 text-stone-200 dark:text-stone-700 mx-auto mb-4" />
             <h1 className="text-xl font-bold text-stone-700 dark:text-stone-300 mb-3">
-              {error || t("api.locationNotFound")}
+              {error || t("errors.locationNotFound")}
             </h1>
             <a href="/locations" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium underline underline-offset-2 transition-colors">
               {t("common.back")}

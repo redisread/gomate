@@ -7,7 +7,7 @@ type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeLocationsSection({ data }: { data: HomeData }) {
   const { locations, isLoading, pagination, currentPage, locationsRef, locationsInView, setCurrentPage, fetchLocations } = data;
-  const { t } = useI18n();
+  const { t } = useI18n(["home", "locations", "common"]);
 
   return (
     <section id="locations" ref={locationsRef}

@@ -1,7 +1,7 @@
 import { useI18n } from "@/hooks/useI18n";
 
 export function TermsClient() {
-  const { t } = useI18n();
+  const { t } = useI18n(["nav", "content"]);
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
       {/* Hero 区域 */}
@@ -11,11 +11,11 @@ export function TermsClient() {
           <nav className="text-sm text-stone-400 dark:text-stone-500 mb-6">
             <a href="/" className="hover:text-amber-600 transition-colors">{t("nav.home")}</a>
             <span className="mx-2">/</span>
-            <span className="text-stone-600 dark:text-stone-400">{t("terms.pageTitle")}</span>
+            <span className="text-stone-600 dark:text-stone-400">{t("content.terms.pageTitle")}</span>
           </nav>
-          <h1 className="text-3xl font-bold text-foreground mb-3">{t("terms.pageTitle")}</h1>
-          <p className="text-stone-500 dark:text-stone-400 mb-2">{t("terms.pageSubtitle")}</p>
-          <p className="text-sm text-stone-400 dark:text-stone-500">{t("terms.lastUpdated")}</p>
+          <h1 className="text-3xl font-bold text-foreground mb-3">{t("content.terms.pageTitle")}</h1>
+          <p className="text-stone-500 dark:text-stone-400 mb-2">{t("content.terms.pageSubtitle")}</p>
+          <p className="text-sm text-stone-400 dark:text-stone-500">{t("content.terms.lastUpdated")}</p>
         </div>
       </div>
 
