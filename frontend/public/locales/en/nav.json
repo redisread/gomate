@@ -1,0 +1,14 @@
+{
+  "home": "Home",
+  "locations": "Explore Locations",
+  "teams": "Find Teams",
+  "about": "About Us",
+  "createTeam": "Create Team",
+  "login": "Login",
+  "register": "Register",
+  "profile": "Profile",
+  "myTeams": "My Teams",
+  "myFavorites": "My Favorites",
+  "logout": "Logout",
+  "admin": "Admin"
+}

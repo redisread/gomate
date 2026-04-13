@@ -1,0 +1,14 @@
+{
+  "home": "ホーム",
+  "locations": "場所を探す",
+  "teams": "チームを探す",
+  "about": "私たちについて",
+  "createTeam": "チームを作成",
+  "login": "ログイン",
+  "register": "登録",
+  "profile": "プロフィール",
+  "myTeams": "自分のチーム",
+  "myFavorites": "お気に入り",
+  "logout": "ログアウト",
+  "admin": "管理画面"
+}
