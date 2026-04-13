@@ -4,6 +4,9 @@
  */
 import Layout from "../layouts/Layout.astro";
 import { LoginClient } from "../components/features/login-client";
+import { declareI18nNs } from "../middleware";
+
+declareI18nNs(Astro.locals, ["auth"]);
 ---
 
 <Layout

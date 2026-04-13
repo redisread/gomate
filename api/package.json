@@ -23,7 +23,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241112.0",
+    "@cloudflare/workers-types": "^4.20260409.1",
     "@eslint/js": "9",
     "@types/better-sqlite3": "^7.6.0",
     "@vitest/coverage-v8": "^2.0.0",
@@ -33,6 +33,6 @@
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.58.1",
     "vitest": "^2.0.0",
-    "wrangler": "^3.0.0"
+    "wrangler": "^4.0.0"
   }
 }

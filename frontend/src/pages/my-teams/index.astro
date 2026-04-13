@@ -4,6 +4,9 @@
  */
 import Layout from "../../layouts/Layout.astro";
 import { MyTeamsClient } from "../../components/features/my-teams-client";
+import { declareI18nNs } from "../../middleware";
+
+declareI18nNs(Astro.locals, ["myTeams", "teams"]);
 ---
 
 <Layout title="我的队伍 - GoMate" showNavbar={false} showFooter={false}>

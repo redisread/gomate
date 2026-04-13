@@ -4,6 +4,9 @@
  */
 import Layout from "../../layouts/Layout.astro";
 import { UserDetailClient } from "../../components/features/user-detail-client";
+import { declareI18nNs } from "../../middleware";
+
+declareI18nNs(Astro.locals, ["userDetail", "profile", "errors", "enums"]);
 
 export function getStaticPaths() {
   return [{ params: { id: "fallback" } }];

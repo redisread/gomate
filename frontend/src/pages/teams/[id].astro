@@ -4,6 +4,9 @@
  */
 import Layout from "../../layouts/Layout.astro";
 import { TeamDetailPartiful } from "../../components/features/team-detail-partiful";
+import { declareI18nNs } from "../../middleware";
+
+declareI18nNs(Astro.locals, ["teams"]);
 
 export function getStaticPaths() {
   return [{ params: { id: "fallback" } }];

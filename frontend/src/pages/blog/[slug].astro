@@ -1,6 +1,9 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
+import { declareI18nNs } from "@/middleware";
+
+declareI18nNs(Astro.locals, ["share"]);
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");

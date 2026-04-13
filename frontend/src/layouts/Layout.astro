@@ -6,7 +6,6 @@ import "../styles/globals.css";
 import { Navbar } from "../components/layout/navbar";
 import { Footer } from "../components/layout/footer";
 import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, getSSRT } from "../i18n";
-import "../i18n/hydrate-client";
 import { loadLocaleData } from "../i18n/ssr-loader";
 
 interface Props {
@@ -34,8 +33,8 @@ const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLoc
 // ─── SSR i18n 数据加载 ──────────────────────────────────────────────
 // 从 locals 读取页面声明的 namespaces
 const declaredNs = (Astro.locals as any)?.__i18n_namespaces || [];
-// 添加 content namespace（用于 SEO 标题）
-const nsList = [...new Set([...declaredNs, "content"])];
+// 注入全局 namespace（nav/common 用于 Navbar/Footer）+ content（用于 SEO 标题）
+const nsList = [...new Set([...declaredNs, "nav", "common", "content"])];
 let ssrLocaleData: Record<Locale, Record<string, Record<string, unknown>>> = {} as any;
 let ssrLoadedData: Record<string, Record<string, unknown>> | undefined;
 try {

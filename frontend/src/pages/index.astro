@@ -4,6 +4,9 @@
  */
 import Layout from "../layouts/Layout.astro";
 import { HomeClient } from "../components/features/home-client";
+import { declareI18nNs } from "../middleware";
+
+declareI18nNs(Astro.locals, ["home", "locations", "teams"]);
 ---
 
 <Layout title="GoMate - 发现趣处，组队同行">

@@ -4,6 +4,9 @@
  */
 import Layout from "../../layouts/Layout.astro";
 import { ProfileEditClient } from "../../components/features/profile-edit-client";
+import { declareI18nNs } from "../../middleware";
+
+declareI18nNs(Astro.locals, ["profile", "errors", "enums"]);
 ---
 
 <Layout title="编辑资料 - GoMate" showNavbar={false} showFooter={false}>

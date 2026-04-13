@@ -72,6 +72,21 @@ function getFromCache(ns: string, locale: Locale): Record<string, unknown> | nul
     return mem.data;
   }
 
+  // 兜底：直接从 SSR 内联数据读取（防止 hydration 未执行或时序问题）
+  if (typeof window !== "undefined") {
+    const ssrData = (window as unknown as Record<string, unknown>).__I18N_DATA__ as
+      | Record<string, Record<string, Record<string, unknown>>>
+      | undefined;
+    if (ssrData && ssrData[locale]) {
+      const nsData = ssrData[locale][ns];
+      if (nsData) {
+        // 注入缓存，后续请求走内存
+        setCache(ns, locale, nsData as Record<string, unknown>);
+        return nsData as Record<string, unknown>;
+      }
+    }
+  }
+
   const persist = loadFromPersistentCache(`i18n:${memKey}`);
   if (persist && persist.expiresAt > Date.now()) {
     const entry: CacheEntry<Record<string, unknown>> = {

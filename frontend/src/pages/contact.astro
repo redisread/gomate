@@ -4,6 +4,9 @@
  */
 import Layout from "../layouts/Layout.astro";
 import { ContactClient } from "../components/features/contact-client";
+import { declareI18nNs } from "../middleware";
+
+declareI18nNs(Astro.locals, ["feedback"]);
 ---
 
 <Layout title="联系我们 - GoMate">

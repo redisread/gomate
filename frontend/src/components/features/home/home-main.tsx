@@ -1,7 +1,6 @@
 "use client";
 
 import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 import { useHomeData } from "./use-home-data";
 import { HomeHero } from "./home-hero";
 import { HomeLocationsSection } from "./home-locations-section";
@@ -20,7 +19,6 @@ export function HomeClient() {
       <HomeHowItWorksSection sectionRef={data.howItWorksRef} isInView={data.howItWorksInView} />
       <HomeTeamsSection data={data} />
       <HomeCtaSection data={data} />
-      <Footer />
     </main>
   );
 }
