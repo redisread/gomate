@@ -73,7 +73,7 @@ interface UseTeamDetailReturn {
 }
 
 export function useTeamDetail(teamId: string): UseTeamDetailReturn {
-  const { t } = useI18n(["teams", "success", "errors", "common"]);
+  const { t } = useI18n(["teams", "errors", "common"]);
   const [team, setTeam] = React.useState<Team | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -166,7 +166,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       if (data.success) {
         setMemberStatus("pending");
         setShowJoinModal(false);
-        showToast({ type: "success", message: t('success.applied') });
+        showToast({ type: "success", message: t('teams.applied') });
         loadTeam();
       } else {
         const errorMsg = data.error || t('errors.joinFailed');
@@ -213,7 +213,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       const data = await res.json();
       if (data.success) {
         setMemberStatus(null);
-        showToast({ type: "success", message: t('success.leftTeam') });
+        showToast({ type: "success", message: t('teams.leftTeam') });
         loadTeam();
       } else {
         showToast({ type: "error", message: data.error || t('errors.leaveFailed') });
@@ -228,7 +228,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       const res = await fetchAPI(`/api/teams/${teamId}/members/${uid}/approve`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
-        showToast({ type: "success", message: t('success.approved') });
+        showToast({ type: "success", message: t('teams.approved') });
         setApplications((prev) => prev.filter((a) => a.userId !== uid));
         loadTeam();
       } else {
@@ -244,7 +244,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       const res = await fetchAPI(`/api/teams/${teamId}/members/${uid}/reject`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
-        showToast({ type: "success", message: t('success.rejected') });
+        showToast({ type: "success", message: t('teams.rejected') });
         setApplications((prev) => prev.filter((a) => a.userId !== uid));
       } else {
         showToast({ type: "error", message: data.error || t('errors.reviewFailed') });

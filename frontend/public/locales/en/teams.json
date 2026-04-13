@@ -323,5 +323,9 @@
     "messageInput": "简短介绍自己，让队长更快了解你",
     "shareButton": "分享给朋友，让他们也来加入",
     "leaderAvatar": "点击查看队长详细信息和带队经验"
-  }
+  },
+  "applied": "Application submitted, waiting for leader's review",
+  "leftTeam": "Successfully left the team",
+  "approved": "Application approved",
+  "rejected": "Application rejected"
 }
