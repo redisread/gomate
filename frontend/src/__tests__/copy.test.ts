@@ -147,15 +147,15 @@ describe("i18n - 关键文案存在性验证", () => {
   });
 
   it("teams 队伍文案包含必要字段", () => {
-    expect(t("teams")).not.toBe("teams");
+    expect(t("teams.openTeamsSubtitle")).toContain("队伍");
   });
 
   it("auth 认证文案包含必要字段", () => {
-    expect(t("auth")).not.toBe("auth");
+    expect(t("auth.loginBtn")).toBe("登录");
   });
 
   it("errors 错误文案包含必要字段", () => {
-    expect(t("errors")).not.toBe("errors");
+    expect(t("errors.locationNotFound")).toContain("地点");
   });
 });
 
