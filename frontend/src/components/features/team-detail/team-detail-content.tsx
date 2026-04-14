@@ -8,7 +8,8 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
   const { team, location, allMembers, canJoin, isFull, isLeader, isMember, isPending, userId } = ctx;
   if (!team) return null;
 
-  const statusInfo = getStatusInfo(team.status);
+  const { t } = useI18n(["enums"]);
+  const statusInfo = getStatusInfo(team.status, t);
 
   return (
     <div className="space-y-6">

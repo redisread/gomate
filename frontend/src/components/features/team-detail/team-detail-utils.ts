@@ -1,10 +1,10 @@
-export function getStatusInfo(status: string) {
+export function getStatusInfo(status: string, t: (key: string) => string) {
   const map: Record<string, { label: string; color: string }> = {
-    recruiting: { label: "enums.teamStatus.recruiting", color: "bg-amber-50 text-amber-700" },
-    full: { label: "enums.teamStatus.full", color: "bg-secondary text-muted-foreground" },
-    formed: { label: "enums.teamStatus.formed", color: "bg-sky-50 text-sky-700" },
-    completed: { label: "enums.teamStatus.completed", color: "bg-secondary text-muted-foreground" },
-    cancelled: { label: "enums.teamStatus.cancelled", color: "bg-red-50 text-red-600" },
+    recruiting: { label: t("enums.teamStatus.recruiting"), color: "bg-amber-50 text-amber-700" },
+    full: { label: t("enums.teamStatus.full"), color: "bg-secondary text-muted-foreground" },
+    formed: { label: t("enums.teamStatus.formed"), color: "bg-sky-50 text-sky-700" },
+    completed: { label: t("enums.teamStatus.completed"), color: "bg-secondary text-muted-foreground" },
+    cancelled: { label: t("enums.teamStatus.cancelled"), color: "bg-red-50 text-red-600" },
   };
   return map[status] || map.recruiting;
 }
