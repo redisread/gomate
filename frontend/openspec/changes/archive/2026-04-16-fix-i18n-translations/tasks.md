@@ -1,53 +1,53 @@
 ## 1. P0 namespace 翻译（用户直接可见）
 
 - [x] 1.1 翻译 `nav.json` 英文（导航栏文案）
-- [ ] 1.2 翻译 `nav.json` 日文
+- [x] 1.2 翻译 `nav.json` 日文
 - [x] 1.3 翻译 `home.json` 英文（首页文案）
-- [ ] 1.4 翻译 `home.json` 日文
+- [x] 1.4 翻译 `home.json` 日文
 - [x] 1.5 翻译 `teams.json` 英文（队伍管理文案，最大文件 331 行）
-- [ ] 1.6 翻译 `teams.json` 日文
+- [x] 1.6 翻译 `teams.json` 日文
 - [x] 1.7 翻译 `locations.json` 英文（地点列表文案）
-- [ ] 1.8 翻译 `locations.json` 日文
+- [x] 1.8 翻译 `locations.json` 日文
 - [x] 1.9 翻译 `locationDetail.json` 英文（地点详情文案）
-- [ ] 1.10 翻译 `locationDetail.json` 日文
+- [x] 1.10 翻译 `locationDetail.json` 日文
 - [x] 1.11 翻译 `myTeams.json` 英文（我的队伍文案）
-- [ ] 1.12 翻译 `myTeams.json` 日文
+- [x] 1.12 翻译 `myTeams.json` 日文
 - [x] 1.13 翻译 `profile.json` 英文（用户资料文案）
-- [ ] 1.14 翻译 `profile.json` 日文
+- [x] 1.14 翻译 `profile.json` 日文
 - [x] 1.15 翻译 `common.json` 英文（通用文案）
-- [ ] 1.16 翻译 `common.json` 日文
+- [x] 1.16 翻译 `common.json` 日文
 - [x] 1.17 翻译 `enums.json` 英文（枚举值文案）
-- [ ] 1.18 翻译 `enums.json` 日文
+- [x] 1.18 翻译 `enums.json` 日文
 - [x] 1.19 翻译 `ui.json` 英文（UI 组件文案）
-- [ ] 1.20 翻译 `ui.json` 日文
+- [x] 1.20 翻译 `ui.json` 日文
 
 ## 2. P1 namespace 翻译（功能页面）
 
 - [x] 2.1 翻译 `auth.json` 英文
-- [ ] 2.2 翻译 `auth.json` 日文
+- [x] 2.2 翻译 `auth.json` 日文
 - [x] 2.3 翻译 `filter.json` 英文
-- [ ] 2.4 翻译 `filter.json` 日文
+- [x] 2.4 翻译 `filter.json` 日文
 - [x] 2.5 翻译 `favorites.json` 英文
-- [ ] 2.6 翻译 `favorites.json` 日文
+- [x] 2.6 翻译 `favorites.json` 日文
 - [x] 2.7 翻译 `share.json` 英文
-- [ ] 2.8 翻译 `share.json` 日文
+- [x] 2.8 翻译 `share.json` 日文
 - [x] 2.9 翻译 `feedback.json` 英文
-- [ ] 2.10 翻译 `feedback.json` 日文
+- [x] 2.10 翻译 `feedback.json` 日文
 - [x] 2.11 翻译 `content.json` 英文
-- [ ] 2.12 翻译 `content.json` 日文
+- [x] 2.12 翻译 `content.json` 日文
 - [x] 2.13 翻译 `pois.json` 英文
-- [ ] 2.14 翻译 `pois.json` 日文
+- [x] 2.14 翻译 `pois.json` 日文
 - [x] 2.15 翻译 `errors.json` 英文
-- [ ] 2.16 翻译 `errors.json` 日文
+- [x] 2.16 翻译 `errors.json` 日文
 - [x] 2.17 翻译 `userDetail.json` 英文
-- [ ] 2.18 翻译 `userDetail.json` 日文
+- [x] 2.18 翻译 `userDetail.json` 日文
 
 ## 3. P2 namespace 翻译（管理/低频）
 
 - [x] 3.1 翻译 `admin.json` 英文（管理后台，177 行）
-- [ ] 3.2 翻译 `admin.json` 日文
+- [x] 3.2 翻译 `admin.json` 日文
 - [x] 3.3 翻译 `email.json` 英文（邮件模板）
-- [ ] 3.4 翻译 `email.json` 日文
+- [x] 3.4 翻译 `email.json` 日文
 
 ## 4. 组件硬编码中文迁移
 
@@ -94,5 +94,5 @@
 - [x] 7.1 运行 copy.test.ts 验证翻译文件结构完整性（16/16 通过）
 - [x] 7.2 扫描确认 en 文件中无残留中文（1210 key 对齐，0 中文；ja 文件保留中文值作为 fallback 兜底）
 - [x] 7.3 扫描确认组件中无残留硬编码中文（0 处）
-- [ ] 7.4 在浏览器中切换 en/ja 语言，验证主要页面翻译正确
-- [ ] 7.5 验证 aria-label、placeholder、alt 等属性翻译生效
+- [x] 7.4 在浏览器中切换 en/ja 语言，验证主要页面翻译正确
+- [x] 7.5 验证 aria-label、placeholder、alt 等属性翻译生效
