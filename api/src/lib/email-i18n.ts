@@ -45,6 +45,9 @@ function getNestedValue(obj: Record<string, unknown>, path: string): string | un
  * 如果 locale 无效，回退到 zh-CN
  */
 function getTemplateData(locale: EmailLocale): Record<string, unknown> {
+  if (!EMAIL_TEMPLATES[locale]) {
+    console.warn(`[Email i18n] Invalid locale "${locale}", falling back to zh-CN`);
+  }
   return EMAIL_TEMPLATES[locale] ?? EMAIL_TEMPLATES["zh-CN"];
 }
 

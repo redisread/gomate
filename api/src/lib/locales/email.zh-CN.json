@@ -2,7 +2,7 @@
   "passwordReset": {
     "subject": "重置您的 GoMate 密码",
     "title": "重置密码",
-    "greeting": "您好{name}，",
+    "greeting": "您好，{name}！",
     "body": "我们收到了重置您 GoMate 账号密码的请求。请点击下方按钮重置密码：",
     "btnText": "重置密码",
     "expiryNote": "此链接将在 1 小时后失效。",
