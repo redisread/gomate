@@ -1,59 +1,59 @@
 {
   "difficulty": {
-    "easy": "🌿 轻松",
-    "moderate": "⛰ 适中",
-    "hard": "🧗 挑战",
-    "expert": "🏔 专家"
+    "easy": "🌿 簡単",
+    "moderate": "⛰ 普通",
+    "hard": "🧗 チャレンジ",
+    "expert": "🏔 エキスパート"
   },
   "locationType": {
-    "hiking": "户外徒步",
-    "explore": "城市探索",
-    "leisure": "休闲探店",
+    "hiking": "アウトドアハイキング",
+    "explore": "街歩き探索",
+    "leisure": "カジュアル探店",
     "travel": "旅行"
   },
   "teamStatus": {
-    "recruiting": "等你一起",
-    "full": "名额告急，可关注",
-    "formed": "整装待发",
-    "ongoing": "进行中",
-    "completed": "圆满归来",
-    "cancelled": "已取消",
-    "open": "等你一起",
-    "closed": "已结束"
+    "recruiting": "参加募集中",
+    "full": "残りわずか",
+    "formed": "出発準備完了",
+    "ongoing": "進行中",
+    "completed": "完了",
+    "cancelled": "キャンセル",
+    "open": "参加募集中",
+    "closed": "終了"
   },
   "memberStatus": {
-    "pending": "待审核",
-    "approved": "已通过",
-    "rejected": "已拒绝",
-    "leave_pending": "退出申请中"
+    "pending": "審査待ち",
+    "approved": "承認済み",
+    "rejected": "却下",
+    "leave_pending": "退出申請中"
   },
   "level": {
-    "beginner": "新人",
+    "beginner": "初心者",
     "intermediate": "探索者",
-    "advanced": "资深玩家",
-    "expert": "传奇达人"
+    "advanced": "ベテラン",
+    "expert": "レジェンド"
   },
   "leaderLevel": {
-    "beginner": "新人领队",
-    "intermediate": "探索者领队",
-    "advanced": "资深玩家领队",
-    "expert": "传奇达人领队"
+    "beginner": "初心者リーダー",
+    "intermediate": "探索者リーダー",
+    "advanced": "ベテランリーダー",
+    "expert": "レジェンドリーダー"
   },
   "levelDesc": {
-    "beginner": "刚开始探索之旅",
-    "intermediate": "有一定活动经验",
-    "advanced": "经验丰富的玩家",
-    "expert": "资深活动达人"
+    "beginner": "旅を始めたばかり",
+    "intermediate": "ある程度の活動経験あり",
+    "advanced": "経験豊富なプレイヤー",
+    "expert": "アクティビティの達人"
   },
   "levelTitle": {
-    "beginner": "新人",
+    "beginner": "初心者",
     "intermediate": "探索者",
-    "advanced": "资深玩家",
-    "expert": "传奇达人"
+    "advanced": "ベテラン",
+    "expert": "レジェンド"
   },
   "gender": {
-    "male": "男",
-    "female": "女",
-    "other": "其他"
+    "male": "男性",
+    "female": "女性",
+    "other": "その他"
   }
 }

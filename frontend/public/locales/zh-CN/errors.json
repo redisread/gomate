@@ -64,5 +64,10 @@
   "sendEmailFailed": "发送邮件失败",
   "resetLinkInvalid": "无效的重置链接，请重新申请",
   "resetFailed": "重置密码失败",
-  "userNotFoundWithId": "User not found with ID"
+  "userNotFoundWithId": "User not found with ID",
+  "teamNotExist": "队伍不存在",
+  "getTeamDetailFailed": "获取队伍详情失败",
+  "networkRetry": "网络错误，请稍后重试",
+  "getStatusFailed": "获取状态失败",
+  "fetchApplicationsFailed": "获取申请列表失败"
 }

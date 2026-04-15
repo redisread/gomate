@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { ChevronDown, Check, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { City } from "@/lib/types";
+import { useI18n } from "@/hooks/useI18n";
 
 // 热门城市最大显示数量
 const HOT_CITY_MAX = 6;
@@ -29,6 +30,7 @@ export function CitySelect({
   error,
   disabled = false,
 }: CitySelectProps) {
+  const { t } = useI18n(["common"]);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlightIndex, setHighlightIndex] = useState(-1);
@@ -175,7 +177,7 @@ export function CitySelect({
             selectedCity ? "text-zinc-900" : "text-zinc-400"
           )}
         >
-          {selectedCity ? selectedCity.name : "请选择城市"}
+          {selectedCity ? selectedCity.name : t("common.selectCity")}
         </span>
         <ChevronDown
           className={cn(
@@ -212,7 +214,7 @@ export function CitySelect({
                 setQuery(e.target.value);
                 setHighlightIndex(-1);
               }}
-              placeholder="搜索城市..."
+              placeholder={t("common.search")}
               className="flex-1 text-sm outline-none placeholder:text-zinc-400"
             />
           </div>
@@ -220,7 +222,7 @@ export function CitySelect({
           {/* 热门城市（仅无搜索词时显示） */}
           {!query.trim() && hotCities.length > 0 && (
             <div className="px-3 pt-2 pb-1">
-              <p className="mb-1.5 text-xs font-medium text-zinc-400">热门城市</p>
+              <p className="mb-1.5 text-xs font-medium text-zinc-400">{t("common.hotCities")}</p>
               <div className="flex flex-wrap gap-1.5">
                 {hotCities.map((city) => (
                   <button

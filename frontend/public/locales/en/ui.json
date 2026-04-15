@@ -1,36 +1,58 @@
 {
   "upload": {
-    "hint": "点击上传图片",
-    "uploading": "上传中...",
-    "maxSize": "最大 {size}MB",
-    "invalidType": "不支持的文件格式",
-    "fileTooLarge": "文件太大，最大 {size}MB",
-    "uploadFailed": "上传失败",
-    "preview": "预览",
-    "maxImagesReached": "最多只能上传 {max} 张图片",
-    "supportedFormats": "仅支持 JPG、PNG、GIF、WebP 格式",
-    "fileSizeExceeded": "文件 {name} 超过 {size}MB",
-    "addImage": "添加图片",
-    "uploadedCount": "已上传 {current}/{max} 张",
-    "dragToSort": "拖拽可排序，最大 {size}MB/张",
-    "imageAlt": "图片 {index}",
-    "setAsCover": "设为封面",
-    "currentCover": "封面",
-    "coverHint": "点击图片可设为封面",
-    "selectFromAlbum": "或从下方相册选择"
+    "hint": "Click to upload image",
+    "uploading": "Uploading...",
+    "maxSize": "Max {size}MB",
+    "invalidType": "Unsupported file format",
+    "fileTooLarge": "File too large, max {size}MB",
+    "uploadFailed": "Upload failed",
+    "uploadCoverHint": "Click or drag to upload cover image",
+    "deleteCover": "Delete cover image",
+    "confirmUrl": "Confirm URL",
+    "uploadProgress": "Upload progress {progress}%",
+    "preview": "Preview",
+    "maxImagesReached": "Max {max} images allowed",
+    "supportedFormats": "Only JPG, PNG, GIF, WebP formats supported",
+    "fileSizeExceeded": "File {name} exceeds {size}MB",
+    "addImage": "Add image",
+    "uploadedCount": "Uploaded {current}/{max}",
+    "dragToSort": "Drag to sort, max {size}MB per image",
+    "imageAlt": "Image {index}",
+    "setAsCover": "Set as cover",
+    "currentCover": "Cover",
+    "coverHint": "Click image to set as cover",
+    "selectFromAlbum": "Or select from album below"
   },
   "requirementSelector": {
-    "presetLabel": "常用标签（点击快速添加）",
-    "customLabel": "或自定义添加",
-    "placeholder": "输入其他要求...",
-    "selectedLabel": "已选择"
+    "presetLabel": "Common tags (click to quickly add)",
+    "customLabel": "Or add custom",
+    "placeholder": "Enter other requirements...",
+    "selectedLabel": "Selected"
   },
   "tagSelector": {
-    "presetLabel": "可选标签（点击选择）",
-    "customLabel": "新建标签",
-    "selectedLabel": "已选标签",
-    "placeholder": "输入标签名称"
+    "presetLabel": "Available tags (click to select)",
+    "customLabel": "Create new tag",
+    "selectedLabel": "Selected tags",
+    "placeholder": "Enter tag name"
   },
-  "coverHint": "点击图片可设为封面",
-  "selectFromAlbum": "或从下方相册选择"
+  "coverHint": "Click image to set as cover",
+  "selectFromAlbum": "Or select from album below",
+  "emptyState": {
+    "teams": {
+      "title": "No teams have set off yet",
+      "desc": "Be the first to create a team and embark on a mountain adventure with like-minded companions!"
+    },
+    "locations": {
+      "title": "No location info yet",
+      "desc": "We're continuously adding more Shenzhen hiking spots. Stay tuned."
+    },
+    "search": {
+      "title": "No related content found",
+      "desc": "Try a different keyword or adjust filters — your perfect companion might be nearby."
+    },
+    "general": {
+      "title": "This place is still unexplored",
+      "desc": "Nothing here yet — go explore your first mountain journey!"
+    }
+  }
 }

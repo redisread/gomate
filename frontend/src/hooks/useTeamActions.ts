@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useToast } from "./useToast";
+import { useI18n } from "@/hooks/useI18n";
 
 interface UseTeamActionsOptions {
   teamId: string;
@@ -28,13 +29,14 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
   const [isSavingWechat, setIsSavingWechat] = useState(false);
 
   const { show: showToast } = useToast();
+  const { t } = useI18n(["teams"]);
 
   /**
    * 申请加入队伍
    */
   const joinTeam = useCallback(
     async (message: string = ""): Promise<JoinTeamResult> => {
-      if (!teamId) return { success: false, error: "缺少队伍ID" };
+      if (!teamId) return { success: false, error: t("teams.toast.networkError") };
 
       setIsJoining(true);
       try {
@@ -47,11 +49,11 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
         const data = await res.json();
 
         if (data.success) {
-          showToast({ type: "success", message: "申请已提交，等待队长审核" });
+          showToast({ type: "success", message: t("teams.toast.joinSuccess") });
           onSuccess?.();
           return { success: true };
         } else {
-          const errorMsg = data.error || "申请加入失败";
+          const errorMsg = data.error || t("teams.toast.networkError");
 
           // 检查是否需要填写微信号
           if (
@@ -66,14 +68,14 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
           return { success: false, error: errorMsg };
         }
       } catch (err) {
-        const errorMsg = "网络错误，请稍后重试";
+        const errorMsg = t("teams.toast.networkError");
         showToast({ type: "error", message: errorMsg });
         return { success: false, error: errorMsg };
       } finally {
         setIsJoining(false);
       }
     },
-    [teamId, onSuccess, showToast]
+    [teamId, onSuccess, showToast, t]
   );
 
   /**
@@ -91,20 +93,20 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
       const data = await res.json();
 
       if (data.success) {
-        showToast({ type: "success", message: "已成功退出队伍" });
+        showToast({ type: "success", message: t("teams.toast.leaveSuccess") });
         onSuccess?.();
         return true;
       } else {
-        showToast({ type: "error", message: data.error || "退出失败" });
+        showToast({ type: "error", message: data.error || t("teams.toast.leaveFailed") });
         return false;
       }
     } catch (err) {
-      showToast({ type: "error", message: "网络错误，请稍后重试" });
+      showToast({ type: "error", message: t("teams.toast.networkError") });
       return false;
     } finally {
       setIsLeaving(false);
     }
-  }, [teamId, onSuccess, showToast]);
+  }, [teamId, onSuccess, showToast, t]);
 
   /**
    * 批准成员申请
@@ -125,21 +127,21 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
         const data = await res.json();
 
         if (data.success) {
-          showToast({ type: "success", message: "已通过申请" });
+          showToast({ type: "success", message: t("teams.toast.approveSuccess") });
           onSuccess?.();
           return true;
         } else {
-          showToast({ type: "error", message: data.error || "审批失败" });
+          showToast({ type: "error", message: data.error || t("teams.toast.approveFailed") });
           return false;
         }
       } catch (err) {
-        showToast({ type: "error", message: "网络错误，请稍后重试" });
+        showToast({ type: "error", message: t("teams.toast.networkError") });
         return false;
       } finally {
         setIsApproving(null);
       }
     },
-    [teamId, onSuccess, showToast]
+    [teamId, onSuccess, showToast, t]
   );
 
   /**
@@ -161,21 +163,21 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
         const data = await res.json();
 
         if (data.success) {
-          showToast({ type: "success", message: "已拒绝申请" });
+          showToast({ type: "success", message: t("teams.toast.rejectSuccess") });
           onSuccess?.();
           return true;
         } else {
-          showToast({ type: "error", message: data.error || "操作失败" });
+          showToast({ type: "error", message: data.error || t("teams.toast.rejectFailed") });
           return false;
         }
       } catch (err) {
-        showToast({ type: "error", message: "网络错误，请稍后重试" });
+        showToast({ type: "error", message: t("teams.toast.networkError") });
         return false;
       } finally {
         setIsRejecting(null);
       }
     },
-    [teamId, onSuccess, showToast]
+    [teamId, onSuccess, showToast, t]
   );
 
   /**
@@ -196,21 +198,21 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
         const data = await res.json();
 
         if (data.success) {
-          showToast({ type: "success", message: "队伍组建成功" });
+          showToast({ type: "success", message: t("teams.toast.formSuccess") });
           onSuccess?.();
           return true;
         } else {
-          showToast({ type: "error", message: data.error || "组建失败" });
+          showToast({ type: "error", message: data.error || t("teams.toast.formFailed") });
           return false;
         }
       } catch (err) {
-        showToast({ type: "error", message: "网络错误，请稍后重试" });
+        showToast({ type: "error", message: t("teams.toast.networkError") });
         return false;
       } finally {
         setIsForming(false);
       }
     },
-    [teamId, onSuccess, showToast]
+    [teamId, onSuccess, showToast, t]
   );
 
   /**
@@ -235,19 +237,19 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
         const result = await res.json();
 
         if (result.success) {
-          showToast({ type: "success", message: "队伍信息已更新" });
+          showToast({ type: "success", message: t("teams.toast.updateSuccess") });
           onSuccess?.();
           return true;
         } else {
-          showToast({ type: "error", message: result.error || "更新失败" });
+          showToast({ type: "error", message: result.error || t("teams.toast.updateFailed") });
           return false;
         }
       } catch (err) {
-        showToast({ type: "error", message: "网络错误，请稍后重试" });
+        showToast({ type: "error", message: t("teams.toast.networkError") });
         return false;
       }
     },
-    [teamId, onSuccess, showToast]
+    [teamId, onSuccess, showToast, t]
   );
 
   /**
@@ -268,20 +270,20 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
         const data = await res.json();
 
         if (data.success || data.user) {
-          showToast({ type: "success", message: "微信号已保存" });
+          showToast({ type: "success", message: t("teams.toast.wechatSaved2") });
           return true;
         } else {
-          showToast({ type: "error", message: "保存微信号失败" });
+          showToast({ type: "error", message: t("teams.toast.wechatSaveFailed") });
           return false;
         }
       } catch (err) {
-        showToast({ type: "error", message: "网络错误，请稍后重试" });
+        showToast({ type: "error", message: t("teams.toast.networkError") });
         return false;
       } finally {
         setIsSavingWechat(false);
       }
     },
-    [showToast]
+    [showToast, t]
   );
 
   return {

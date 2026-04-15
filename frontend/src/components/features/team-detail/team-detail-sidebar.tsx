@@ -40,6 +40,7 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
 }
 
 function TeamTimeInfo({ team }: { team: Team; }) {
+  const { t } = useI18n(["teams"]);
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-base text-foreground/70">
@@ -55,7 +56,7 @@ function TeamTimeInfo({ team }: { team: Team; }) {
       {team.durationMin && team.durationMin > 0 && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Timer className="w-4 h-4" />
-          <span>约 {formatDuration(team.durationMin)}</span>
+          <span>{t('teams.estimatedPrefix')} {formatDuration(team.durationMin)}</span>
         </div>
       )}
     </div>
@@ -76,15 +77,16 @@ function MobileLocationLink({ location }: { location: any; }) {
 }
 
 function TeamCapacity({ team, canJoin, remaining }: { team: Team; canJoin: boolean; remaining: number; }) {
+  const { t } = useI18n(["teams"]);
   return (
     <div className="bg-amber-50 rounded-xl p-4 text-center">
       <p className="text-2xl font-bold text-amber-600 mb-1">
         {team.currentMembers}<span className="text-muted-foreground/70 text-lg">/{team.maxMembers}</span>
       </p>
-      <p className="text-xs text-muted-foreground">人已加入</p>
+      <p className="text-xs text-muted-foreground">{t('teams.peopleJoined')}</p>
       {canJoin && remaining > 0 && (
         <p className="text-xs text-amber-600 mt-2 font-medium">
-          {remaining === 1 ? "仅剩 1 个名额" : `还剩 ${remaining} 个名额`}
+          {remaining === 1 ? t('teams.spotsRemainingOne') : t('teams.spotsRemainingCount').replace('{remaining}', String(remaining))}
         </p>
       )}
     </div>
@@ -92,11 +94,12 @@ function TeamCapacity({ team, canJoin, remaining }: { team: Team; canJoin: boole
 }
 
 function LeaderCard({ leader }: { leader: any; }) {
+  const { t } = useI18n(["teams"]);
   return (
     <div className="border-t border-border pt-4">
       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
         <Crown className="w-3.5 h-3.5" />
-        <span className="font-medium">创建人</span>
+        <span className="font-medium">{t('teams.creatorLabel')}</span>
       </div>
       <a href={`/users/${leader.id}`}
         className="flex items-center gap-3 p-3 bg-muted rounded-xl hover:bg-amber-50 transition-colors">
@@ -110,12 +113,13 @@ function LeaderCard({ leader }: { leader: any; }) {
 }
 
 function ShareButton({ onClick }: { onClick: () => void; }) {
+  const { t } = useI18n(["teams"]);
   return (
     <div className="border-t border-border pt-4">
       <button onClick={onClick}
         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground/70 hover:bg-accent rounded-lg transition-colors">
         <Share2 className="w-4 h-4" />
-        分享队伍
+        {t('teams.shareTeam')}
       </button>
     </div>
   );
@@ -128,7 +132,7 @@ function LeaderActions({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; t
       <a href={`/teams/${team.id}/edit`}
         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground/70 hover:bg-accent rounded-lg transition-colors">
         <Pencil className="w-4 h-4" />
-        编辑队伍
+        {t('teams.editTeam')}
       </a>
       {(team.status === "recruiting" || team.status === "full") && (
         <button onClick={() => ctx.setShowFormConfirm(true)} disabled={ctx.isForming}
@@ -151,44 +155,47 @@ function LeaderActions({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; t
 }
 
 function MemberStatusIndicator({ onLeave }: { onLeave: () => void; }) {
+  const { t } = useI18n(["teams"]);
   return (
     <div className="bg-amber-50 rounded-xl p-3 space-y-2">
       <div className="flex items-center gap-2 text-amber-700">
         <CheckCircle className="w-4 h-4" />
-        <span className="font-medium text-sm">已加入队伍</span>
+        <span className="font-medium text-sm">{t('teams.joinedTeamStatus')}</span>
       </div>
       <button onClick={onLeave} className="w-full text-xs text-muted-foreground/70 hover:text-red-600 py-1 transition-colors">
-        退出队伍
+        {t('teams.leaveTeam')}
       </button>
     </div>
   );
 }
 
 function PendingStatusIndicator() {
+  const { t } = useI18n(["teams"]);
   return (
     <div className="bg-muted rounded-xl p-3 space-y-2">
       <div className="flex items-center gap-2 text-muted-foreground">
         <Clock className="w-4 h-4" />
-        <span className="font-medium text-sm">申请待审核</span>
+        <span className="font-medium text-sm">{t('teams.pendingReviewStatus')}</span>
       </div>
       <a href="/my-teams" className="block text-center text-xs text-amber-600 hover:text-amber-700">
-        查看我的队伍 &rarr;
+        {t('teams.myTeamsLink')} &rarr;
       </a>
     </div>
   );
 }
 
 function StatusLoadError({ onRetry }: { onRetry: () => void; }) {
+  const { t } = useI18n(["teams"]);
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center space-y-2">
       <div className="flex items-center justify-center gap-2 text-amber-700">
         <AlertCircle className="w-4 h-4" />
-        <span className="font-medium text-sm">无法加载您的状态</span>
+        <span className="font-medium text-sm">{t('teams.statusLoadFailed')}</span>
       </div>
-      <p className="text-xs text-amber-600">请刷新页面或重新尝试</p>
+      <p className="text-xs text-amber-600">{t('teams.retryMessage')}</p>
       <button onClick={onRetry}
         className="w-full py-2 text-xs text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors font-medium">
-        重新加载
+        {t('teams.reloadBtn')}
       </button>
     </div>
   );

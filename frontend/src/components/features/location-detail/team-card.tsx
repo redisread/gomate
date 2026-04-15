@@ -1,6 +1,7 @@
 import * as React from "react";
 import { CalendarDays, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
 
 interface TeamCardProps {
@@ -8,6 +9,7 @@ interface TeamCardProps {
 }
 
 export function TeamCard({ team }: TeamCardProps) {
+  const { t } = useI18n(["common"]);
   const [progressWidth, setProgressWidth] = React.useState(0);
 
   const ratio = team.maxMembers > 0
@@ -29,7 +31,7 @@ export function TeamCard({ team }: TeamCardProps) {
     const day = parseInt(parts[2], 10);
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     return {
-      month: monthNames[month - 1] ?? `${month}月`,
+      month: monthNames[month - 1] ?? `${month}`,
       day: String(day),
       full: team.date,
     };
@@ -113,9 +115,9 @@ export function TeamCard({ team }: TeamCardProps) {
               isFull ? "text-red-500" : isNearFull ? "text-orange-500" : "text-amber-600"
             )}
           >
-            {team.currentMembers}/{team.maxMembers} 人
-            {isFull && " · 已满员"}
-            {isNearFull && !isFull && " · 即将满员"}
+            {t('common.memberCount').replace('{current}', String(team.currentMembers)).replace('{max}', String(team.maxMembers))}
+            {isFull && ` · ${t('common.teamFullStatus')}`}
+            {isNearFull && !isFull && ` · ${t('common.teamNearFullStatus')}`}
           </span>
         </div>
       </div>

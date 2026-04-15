@@ -2,7 +2,7 @@ import * as React from "react";
 import { Loader2, Camera, X, Check, ArrowLeft, User, MessageCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import { inputCls, LEVEL_OPTIONS, PRESET_EQUIPMENT } from "./constants";
+import { inputCls, LEVEL_OPTIONS, PRESET_EQUIPMENT_KEYS } from "./constants";
 
 // ─── FieldLabel ─────────────────────────────────────────────────────
 export function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
@@ -46,13 +46,13 @@ interface AvatarSectionProps {
 }
 
 export function AvatarSection({ user, avatarPreview, selectedFile, isUploading, fileInputRef, onFileChange, onCancelFile }: AvatarSectionProps) {
-  const { t } = useI18n(["profile"]);
+  const { t } = useI18n(["profile", "common"]);
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative group cursor-pointer" onClick={() => !isUploading && fileInputRef.current?.click()}>
         <div className="w-28 h-28 rounded-full ring-4 ring-white dark:ring-stone-800 shadow-xl overflow-hidden bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
           {avatarPreview ? (
-            <img src={avatarPreview} alt="头像" className="w-full h-full object-cover" />
+            <img src={avatarPreview} alt={t("common.avatar")} className="w-full h-full object-cover" />
           ) : (
             <span className="text-4xl font-bold text-white select-none">{user?.name?.[0]?.toUpperCase() || "?"}</span>
           )}
@@ -93,7 +93,7 @@ interface BasicInfoFieldsProps {
 }
 
 export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLimit, bioAtLimit, onChange }: BasicInfoFieldsProps) {
-  const { t } = useI18n(["profile"]);
+  const { t } = useI18n(["profile", "common"]);
   return (
     <div className="space-y-5">
       <div className="space-y-1.5">
@@ -146,8 +146,8 @@ export function OutdoorInfoFields({ level, experience, equipment, equipmentInput
               )}>
                 <input type="radio" name="level" value={opt.value} checked={isSelected} onChange={onChange} className="sr-only" />
                 <span className="text-2xl mb-1.5">{opt.emoji}</span>
-                <span className={cn("text-sm font-bold", isSelected ? "text-amber-700 dark:text-amber-400" : "text-stone-800 dark:text-stone-200")}>{opt.label}</span>
-                <span className={cn("text-xs mt-0.5", isSelected ? "text-amber-600 dark:text-amber-500" : "text-stone-400 dark:text-stone-500")}>{opt.description}</span>
+                <span className={cn("text-sm font-bold", isSelected ? "text-amber-700 dark:text-amber-400" : "text-stone-800 dark:text-stone-200")}>{t(opt.label)}</span>
+                <span className={cn("text-xs mt-0.5", isSelected ? "text-amber-600 dark:text-amber-500" : "text-stone-400 dark:text-stone-500")}>{t(opt.description)}</span>
                 {isSelected && <span className="absolute top-2.5 right-2.5 w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center"><Check className="h-3 w-3" /></span>}
               </label>
             );
@@ -162,14 +162,15 @@ export function OutdoorInfoFields({ level, experience, equipment, equipmentInput
       <div className="space-y-1.5">
         <FieldLabel>{t('profile.equipment')}</FieldLabel>
         <div className="flex flex-wrap gap-1.5">
-          {PRESET_EQUIPMENT.map((item) => {
-            const isSelected = equipment.includes(item);
+          {PRESET_EQUIPMENT_KEYS.map((key) => {
+            const label = t(`profile.presetEquipment.${key}`);
+            const isSelected = equipment.includes(label);
             return (
-              <button key={item} type="button" onClick={() => onAddPresetEquipment(item)} disabled={isSelected}
+              <button key={key} type="button" onClick={() => onAddPresetEquipment(label)} disabled={isSelected}
                 className={cn("px-2.5 py-1 rounded-full text-xs font-medium transition-all",
                   isSelected ? "bg-amber-100 dark:bg-amber-900/40 text-amber-400 dark:text-amber-600 cursor-not-allowed" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-200 dark:hover:border-amber-900 border border-transparent"
                 )}>
-                {item}
+                {label}
               </button>
             );
           })}
@@ -217,9 +218,9 @@ export function ContactFields({ wechat, gender, birthday, onChange }: ContactFie
         <FieldLabel>{t('profile.genderLabel')}</FieldLabel>
         <select name="gender" value={gender} onChange={onChange} className={cn(inputCls, "bg-white dark:bg-stone-800 appearance-none")}>
           <option value="">{t('common.unknown')}</option>
-          <option value="male">{(t('enums.gender') as any).male}</option>
-          <option value="female">{(t('enums.gender') as any).female}</option>
-          <option value="other">{(t('enums.gender') as any).other}</option>
+          <option value="male">{t('enums.gender.male')}</option>
+          <option value="female">{t('enums.gender.female')}</option>
+          <option value="other">{t('enums.gender.other')}</option>
         </select>
         <p className="text-xs text-stone-400">{t('profile.genderHint')}</p>
       </div>

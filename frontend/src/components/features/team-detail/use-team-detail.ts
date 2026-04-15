@@ -150,7 +150,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
 
   const handleJoin = React.useCallback(async () => {
     if (!userId) {
-      showToast({ type: "error", message: "请先登录后再加入队伍" });
+      showToast({ type: "error", message: t("teams.toast.loginFirst") });
       setTimeout(() => {
         window.location.href = `/login?redirect=/teams/${teamId}`;
       }, 1000);
@@ -186,7 +186,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
 
   const handleSaveWechat = React.useCallback(async (wechat: string) => {
     if (!wechat.trim()) {
-      showToast({ type: "error", message: "微信号不能为空" });
+      showToast({ type: "error", message: t("teams.toast.wechatEmpty") });
       return;
     }
     try {
@@ -197,12 +197,12 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       const data = await res.json();
       if (data.success || data.user) {
         setShowWechatSheet(false);
-        showToast({ type: "success", message: "微信号已保存，请重新申请加入" });
+        showToast({ type: "success", message: t("teams.toast.wechatSavedReapply") });
       } else {
-        showToast({ type: "error", message: "保存微信号失败" });
+        showToast({ type: "error", message: t("teams.toast.wechatSaveFailed") });
       }
     } catch {
-      showToast({ type: "error", message: "保存微信号失败" });
+      showToast({ type: "error", message: t("teams.toast.wechatSaveFailed") });
     }
   }, [userId, showToast]);
 

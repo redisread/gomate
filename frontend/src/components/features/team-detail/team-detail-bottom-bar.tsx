@@ -32,7 +32,7 @@ export function TeamModalsAndFooter({ ctx }: { ctx: ReturnType<typeof useTeamDet
           description={team.description}
           leaderName={team.leader?.nickname || team.leader?.name}
           membersInfo={`${team.currentMembers}/${team.maxMembers}`}
-          meta={`${team.currentMembers}/${team.maxMembers} 人`}
+          meta={t('teams.teamMeta').replace('{currentMembers}', String(team.currentMembers)).replace('{maxMembers}', String(team.maxMembers))}
           tags={team.requirements?.slice(0, 4)}
           onClose={() => ctx.setShowShare(false)}
           onToast={ctx.show}
@@ -118,7 +118,7 @@ function WechatModals({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">{t('teams.wechatRequiredJoinDesc')}</p>
             <button onClick={() => { ctx.setShowWechatConfirm(false); ctx.setShowWechatSheet(true); }}
               className="w-full py-3 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 transition-colors mb-2">
-              {t('teams.fillWechatBtn') || "去填写"}
+              {t('teams.fillWechatBtn') || t('common.goToFill')}
             </button>
             <button onClick={() => ctx.setShowWechatConfirm(false)}
               className="w-full py-3 text-muted-foreground text-sm font-medium hover:bg-accent rounded-xl transition-colors">
@@ -220,7 +220,7 @@ function BottomBarPending({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
           <Share2 className="h-4 w-4" />
         </button>
         <a href="/my-teams" className="text-xs text-amber-600 flex items-center gap-1">
-          查看 <ArrowRight className="h-3 w-3" />
+          {t('teams.viewLink')} <ArrowRight className="h-3 w-3" />
         </a>
       </div>
     </div>
@@ -228,12 +228,13 @@ function BottomBarPending({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
 }
 
 function BottomBarNotLoggedIn({ team }: { team: Team; }) {
+  const { t } = useI18n(["teams"]);
   return (
     <div className="flex items-center justify-between min-h-[44px]">
-      <span className="text-sm text-muted-foreground">登录后即可申请加入</span>
+      <span className="text-sm text-muted-foreground">{t('teams.loginToJoinTeam')}</span>
       <a href={`/login?redirect=/teams/${team.id}`}
         className="px-4 py-2 bg-stone-800 text-white rounded-xl text-sm font-medium hover:bg-stone-900 transition-colors">
-        去登录
+        {t('teams.loginBtn')}
       </a>
     </div>
   );

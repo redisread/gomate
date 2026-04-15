@@ -1,14 +1,14 @@
 {
-  "pageTitle": "我的收藏",
-  "pageSubtitle": "你收藏的地点",
-  "addSuccess": "已收藏",
-  "removeSuccess": "已取消收藏",
-  "addFailed": "收藏失败，请重试",
-  "removeFailed": "取消收藏失败，请重试",
-  "loginRequired": "登录后才能收藏",
-  "emptyTitle": "还没有收藏",
-  "emptyDesc": "探索地点，收藏你感兴趣的地方",
-  "emptyBtn": "探索地点",
-  "locationCount": "个地点",
-  "backBtn": "返回"
+  "pageTitle": "お気に入り",
+  "pageSubtitle": "お気に入りスポット",
+  "addSuccess": "お気に入りに追加しました",
+  "removeSuccess": "お気に入りを解除しました",
+  "addFailed": "お気に入りに追加できませんでした。もう一度お試しください。",
+  "removeFailed": "お気に入りを解除できませんでした。もう一度お試しください。",
+  "loginRequired": "お気に入りにはログインが必要です",
+  "emptyTitle": "まだお気に入りがありません",
+  "emptyDesc": "スポットを探索して、気になる場所をお気に入りしましょう",
+  "emptyBtn": "スポットを探索",
+  "locationCount": "スポット",
+  "backBtn": "戻る"
 }

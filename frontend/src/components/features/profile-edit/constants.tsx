@@ -8,10 +8,10 @@ export const LEVEL_OPTIONS = [
   { value: "expert", emoji: "🦅", label: "enums.level.expert", description: "enums.levelDesc.expert" },
 ] as const;
 
-export const PRESET_EQUIPMENT = [
-  "登山杖", "冲锋衣", "登山包", "徒步鞋", "护膝",
-  "头灯", "睡袋", "帐篷", "防潮垫", "水壶",
-  "防晒霜", "墨镜", "雨衣", "帽子", "手套",
+export const PRESET_EQUIPMENT_KEYS = [
+  "trekkingPole", "hardshellJacket", "hikingBackpack", "hikingShoes", "kneePads",
+  "headlamp", "sleepingBag", "tent", "sleepingPad", "waterBottle",
+  "sunscreen", "sunglasses", "raincoat", "hat", "gloves",
 ] as const;
 
 export const inputCls =

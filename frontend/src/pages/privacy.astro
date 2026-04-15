@@ -4,6 +4,9 @@
  */
 import Layout from "../layouts/Layout.astro";
 import { PrivacyClient } from "../components/features/privacy-client";
+import { declareI18nNs } from "../middleware";
+
+declareI18nNs(Astro.locals, ['nav', 'content']);
 ---
 
 <Layout title="隐私政策 - GoMate">

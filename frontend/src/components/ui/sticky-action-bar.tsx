@@ -2,6 +2,7 @@
 
 import { Save, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/hooks/useI18n";
 
 /** 将 Date 格式化为相对时间文字 */
 function formatRelativeTime(date: Date): string {
@@ -41,6 +42,7 @@ export function StickyActionBar({
   onSave,
   onDiscard,
 }: StickyActionBarProps) {
+  const { t } = useI18n(["common"]);
   return (
     <div
       className={cn(
@@ -95,12 +97,12 @@ export function StickyActionBar({
             {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>保存中...</span>
+                <span>{t("common.savingChanges")}</span>
               </>
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                <span>保存更改</span>
+                <span>{t("common.saveChanges")}</span>
               </>
             )}
           </button>

@@ -10,6 +10,7 @@ import {
   setLocale,
   getLocaleName,
 } from "@/i18n";
+import { useI18n } from "@/hooks/useI18n";
 
 interface LanguageSwitcherProps {
   className?: string;
@@ -22,6 +23,7 @@ interface LanguageSwitcherProps {
  * - 选择后设置 cookie 并重定向到对应语言的相同页面
  */
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
+  const { t } = useI18n(["common"]);
   const [isOpen, setIsOpen] = React.useState(false);
   const [currentLocale, setCurrentLocale] = React.useState<Locale>(DEFAULT_LOCALE);
 
@@ -67,7 +69,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1 text-sm text-muted-foreground px-2 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
-        aria-label="切换语言"
+        aria-label={t("common.switchLanguage")}
         aria-expanded={isOpen}
       >
         <Globe className="h-4 w-4" />

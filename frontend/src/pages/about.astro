@@ -4,6 +4,9 @@
  */
 import Layout from "../layouts/Layout.astro";
 import { AboutClient } from "../components/features/about-client";
+import { declareI18nNs } from "../middleware";
+
+declareI18nNs(Astro.locals, ['nav', 'content']);
 ---
 
 <Layout title="关于我们 - GoMate">

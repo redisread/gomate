@@ -336,7 +336,7 @@ export function MultiImageUpload({
                       setActiveIndex(null);
                       handleDelete(index);
                     }}
-                    aria-label="删除图片"
+                    aria-label={t("ui.upload.deleteImage") || "删除图片"}
                     className={cn(
                       "absolute top-1 right-1 w-6 h-6 rounded-full",
                       "flex items-center justify-center",

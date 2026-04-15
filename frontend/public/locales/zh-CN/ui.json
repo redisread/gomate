@@ -6,6 +6,10 @@
     "invalidType": "不支持的文件格式",
     "fileTooLarge": "文件太大，最大 {size}MB",
     "uploadFailed": "上传失败",
+    "uploadCoverHint": "点击或拖拽上传封面图",
+    "deleteCover": "删除封面图",
+    "confirmUrl": "确认 URL",
+    "uploadProgress": "上传进度 {progress}%",
     "preview": "预览",
     "maxImagesReached": "最多只能上传 {max} 张图片",
     "supportedFormats": "仅支持 JPG、PNG、GIF、WebP 格式",
@@ -32,5 +36,23 @@
     "placeholder": "输入标签名称"
   },
   "coverHint": "点击图片可设为封面",
-  "selectFromAlbum": "或从下方相册选择"
+  "selectFromAlbum": "或从下方相册选择",
+  "emptyState": {
+    "teams": {
+      "title": "还没有队伍出发",
+      "desc": "成为第一个发起队伍的人，和志同道合的伙伴一起踏上山野！"
+    },
+    "locations": {
+      "title": "暂无地点信息",
+      "desc": "我们正在持续收录更多深圳徒步地点，敬请期待。"
+    },
+    "search": {
+      "title": "没有找到相关内容",
+      "desc": "试试换个关键词，或调整筛选条件，也许好伙伴就在附近。"
+    },
+    "general": {
+      "title": "这里还是一片净土",
+      "desc": "什么都还没有，快去探索属于你的第一次山野旅程吧！"
+    }
+  }
 }

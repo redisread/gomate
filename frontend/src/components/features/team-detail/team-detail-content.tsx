@@ -8,7 +8,7 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
   const { team, location, allMembers, canJoin, isFull, isLeader, isMember, isPending, userId } = ctx;
   if (!team) return null;
 
-  const { t } = useI18n(["enums"]);
+  const { t } = useI18n(["enums", "teams"]);
   const statusInfo = getStatusInfo(team.status, t);
 
   return (
@@ -18,9 +18,9 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
       {allMembers.length > 0 && (
         <div className="bg-muted rounded-2xl p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-foreground">Guest List</h3>
+            <h3 className="text-base font-semibold text-foreground">{t('teams.guestList')}</h3>
             <span className="text-sm text-muted-foreground bg-white px-3 py-1 rounded-full">
-              {allMembers.length} Going
+              {allMembers.length} {t('teams.goingCount')}
             </span>
           </div>
           <MemberAvatarGrid members={allMembers} leaderId={team.leader?.id} />
@@ -61,7 +61,7 @@ function LocationCover({ location, statusInfo }: { location: any; statusInfo: { 
         <div className="absolute bottom-0 left-0 right-0 p-6">
           <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
             <MapPin className="w-4 h-4" />
-            <span>活动地点</span>
+            <span>{t('teams.activityLocation')}</span>
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">{location.name}</h2>
           <LocationRouteInfo location={location} />
@@ -97,12 +97,13 @@ function LocationRouteInfo({ location }: { location: any; }) {
 }
 
 function RequirementsList({ requirements }: { requirements: any; }) {
+  const { t } = useI18n(["teams"]);
   if (!Array.isArray(requirements) || requirements.length === 0) return null;
   return (
     <div className="bg-muted rounded-2xl p-6 space-y-4">
       <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
         <AlertCircle className="w-5 h-5 text-amber-500" />
-        参与要求
+        {t('teams.requirementsTitle')}
       </h3>
       <ul className="space-y-3">
         {requirements.map((req: string, i: number) => (
@@ -127,7 +128,7 @@ function JoinSection({ ctx, team, canJoin, isFull, isLeader, isMember, isPending
     return (
       <button onClick={() => ctx.setShowJoinModal(true)}
         className="w-full py-4 bg-amber-600 text-white text-lg font-medium rounded-xl hover:bg-amber-700 transition-colors">
-        申请加入
+        {t('teams.joinTeam')}
       </button>
     );
   }
@@ -135,10 +136,10 @@ function JoinSection({ ctx, team, canJoin, isFull, isLeader, isMember, isPending
   if (!userId && !isLeader && !isMember && !isPending) {
     return (
       <div className="bg-muted rounded-2xl p-6 text-center space-y-3">
-        <p className="text-sm text-muted-foreground">登录后即可申请加入队伍</p>
+        <p className="text-sm text-muted-foreground">{t('teams.loginToJoinTeam')}</p>
         <a href={`/login?redirect=/teams/${team.id}`}
           className="inline-flex items-center gap-2 px-6 py-3 bg-stone-800 text-white rounded-xl text-sm font-medium hover:bg-stone-900 transition-colors">
-          去登录
+          {t('teams.loginBtn')}
           <ArrowRight className="w-4 h-4" />
         </a>
       </div>
@@ -148,7 +149,7 @@ function JoinSection({ ctx, team, canJoin, isFull, isLeader, isMember, isPending
   if (!canJoin && !isLeader && !isMember && !isPending && team.status === "recruiting" && isFull) {
     return (
       <div className="bg-muted rounded-2xl p-6 text-center">
-        <p className="text-base text-muted-foreground/70">名额已满，无法加入</p>
+        <p className="text-base text-muted-foreground/70">{t('teams.teamFullCannotJoin')}</p>
       </div>
     );
   }

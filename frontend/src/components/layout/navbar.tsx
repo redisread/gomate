@@ -30,7 +30,7 @@ interface NavbarProps {
  * - 用户菜单：hover 展开下拉
  */
 export function Navbar({ className }: NavbarProps) {
-  const { t } = useI18n(["nav"]);
+  const { t } = useI18n(["nav", "common"]);
   const [isScrolled,        setIsScrolled]        = React.useState(() => typeof window !== "undefined" && window.scrollY > 20);
   const [isMobileMenuOpen,  setIsMobileMenuOpen]  = React.useState(false);
   const [showUserMenu,      setShowUserMenu]      = React.useState(false);
@@ -124,7 +124,7 @@ export function Navbar({ className }: NavbarProps) {
             </a>
 
             {/* ---- 桌面端导航 ---- */}
-            <nav className="hidden md:flex items-center gap-1" aria-label="主导航">
+            <nav className="hidden md:flex items-center gap-1" aria-label={t("common.mainNav")}>
               {navLinks(t).map((link) => {
                 const active = isActive(link.href);
                 return (
@@ -295,7 +295,7 @@ export function Navbar({ className }: NavbarProps) {
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="p-1.5 rounded-lg text-muted-foreground hover:bg-accent transition-colors"
-                aria-label="关闭菜单"
+                aria-label={t("common.closeMenu")}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -319,7 +319,7 @@ export function Navbar({ className }: NavbarProps) {
             )}
 
             {/* 导航链接 */}
-            <nav className="flex flex-col px-3 py-3 gap-0.5" aria-label="移动端导航">
+            <nav className="flex flex-col px-3 py-3 gap-0.5" aria-label={t("common.mobileNav")}>
               {navLinks(t).map((link, i) => {
                 const active = isActive(link.href);
                 return (

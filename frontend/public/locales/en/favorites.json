@@ -1,14 +1,14 @@
 {
-  "pageTitle": "我的收藏",
-  "pageSubtitle": "你收藏的地点",
-  "addSuccess": "已收藏",
-  "removeSuccess": "已取消收藏",
-  "addFailed": "收藏失败，请重试",
-  "removeFailed": "取消收藏失败，请重试",
-  "loginRequired": "登录后才能收藏",
-  "emptyTitle": "还没有收藏",
-  "emptyDesc": "探索地点，收藏你感兴趣的地方",
-  "emptyBtn": "探索地点",
-  "locationCount": "个地点",
-  "backBtn": "返回"
+  "pageTitle": "My Favorites",
+  "pageSubtitle": "Your saved locations",
+  "addSuccess": "Added to favorites",
+  "removeSuccess": "Removed from favorites",
+  "addFailed": "Failed to add to favorites, please try again",
+  "removeFailed": "Failed to remove from favorites, please try again",
+  "loginRequired": "Please log in to add favorites",
+  "emptyTitle": "No favorites yet",
+  "emptyDesc": "Explore locations and save the places that interest you",
+  "emptyBtn": "Explore Locations",
+  "locationCount": "locations",
+  "backBtn": "Back"
 }

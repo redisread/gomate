@@ -108,7 +108,7 @@ function CircularProgress({ progress, size = 56, strokeWidth = 4 }: CircularProg
    ================================================================ */
 
 export function CoverImageUpload({ value, onChange, disabled = false }: CoverImageUploadProps) {
-  const { t } = useI18n(["ui"]);
+  const { t } = useI18n(["ui", "common"]);
   /* ---- 状态 ---- */
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
   const [uploadState, setUploadState] = React.useState<UploadState>({ phase: "idle" });
@@ -131,12 +131,12 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
     async (file: File) => {
       // 类型校验
       if (!file.type.startsWith("image/")) {
-        setUploadState({ phase: "error", message: "请选择图片格式的文件（JPG、PNG、WebP 等）" });
+        setUploadState({ phase: "error", message: t("ui.upload.invalidType") });
         return;
       }
       // 大小校验
       if (file.size > MAX_FILE_SIZE) {
-        setUploadState({ phase: "error", message: `文件过大，最大允许 5 MB（当前 ${formatBytes(file.size)}）` });
+        setUploadState({ phase: "error", message: t("ui.upload.fileTooLarge", { size: "5" }) });
         return;
       }
 
@@ -315,7 +315,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
         {/* 封面预览 */}
         <img
           src={value}
-          alt="封面图预览"
+          alt={t("ui.upload.coverHint")}
           className="w-full h-full object-cover"
           draggable={false}
         />
@@ -372,7 +372,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               type="button"
               disabled={disabled}
               onClick={handleDelete}
-              aria-label="删除封面图"
+              aria-label={t("ui.upload.deleteCover") || "删除封面图"}
               className={cn(
                 "flex items-center justify-center w-7 h-7 rounded-lg",
                 "bg-card/90 backdrop-blur-sm text-muted-foreground",
@@ -412,7 +412,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
         ref={dropZoneRef}
         role="button"
         tabIndex={disabled ? -1 : 0}
-        aria-label="点击或拖拽上传封面图"
+        aria-label={t("ui.upload.uploadCoverHint") || "点击或拖拽上传封面图"}
         aria-disabled={disabled}
         onClick={handleClickDropZone}
         onKeyDown={(e) => {
@@ -478,7 +478,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
           /* 错误状态 */
           <div className="flex flex-col items-center gap-2 px-6 text-center">
             <AlertCircle className="h-8 w-8 text-red-500" />
-            <p className="text-sm font-medium text-red-600 dark:text-red-400">上传失败</p>
+            <p className="text-sm font-medium text-red-600 dark:text-red-400">{t("ui.upload.uploadFailed")}</p>
             <p className="text-xs text-destructive/80">{uploadState.message}</p>
             <button
               type="button"
@@ -567,7 +567,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 type="button"
                 disabled={disabled || !urlInputValue.trim()}
                 onClick={handleUrlConfirm}
-                aria-label="确认 URL"
+                aria-label={t("ui.upload.confirmUrl") || "确认 URL"}
                 className={cn(
                   "flex items-center justify-center h-7 w-7 rounded-lg shrink-0",
                   "bg-amber-500 text-white",
@@ -585,7 +585,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                   setShowUrlInput(false);
                   setUrlInputValue("");
                 }}
-                aria-label="取消"
+                aria-label={t("common.cancel") || "取消"}
                 className={cn(
                   "flex items-center justify-center h-7 w-7 rounded-lg shrink-0",
                   "border border-border text-muted-foreground",

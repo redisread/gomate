@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchAPI } from "@/lib/api";
 import type { Team, TeamMember } from "@/lib/types";
+import { useI18n } from "@/hooks/useI18n";
 
 interface UseTeamDetailOptions {
   teamId: string;
@@ -24,6 +25,7 @@ export function useTeamDetail({
   teamId,
   autoLoad = true,
 }: UseTeamDetailOptions): UseTeamDetailReturn {
+  const { t } = useI18n(["errors"]);
   const [team, setTeam] = useState<Team | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export function useTeamDetail({
       const res = await fetchAPI(`/api/teams/${teamId}`);
 
       if (res.status === 404) {
-        setError("队伍不存在");
+        setError(t("errors.teamNotExist"));
         setTeam(null);
         return;
       }
@@ -48,15 +50,15 @@ export function useTeamDetail({
       if (data.success) {
         setTeam(data.team);
       } else {
-        setError(data.error || "获取队伍详情失败");
+        setError(data.error || t("errors.getTeamDetailFailed"));
       }
     } catch (err) {
-      setError("网络错误，请稍后重试");
+      setError(t("errors.networkRetry"));
       console.error("[useTeamDetail] 获取队伍失败:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [teamId]);
+  }, [teamId, t]);
 
   useEffect(() => {
     if (autoLoad) {
@@ -79,6 +81,7 @@ export function useTeamDetail({
  * const { memberStatus, isLoading, refetch } = useMyTeamStatus(teamId);
  */
 export function useMyTeamStatus(teamId: string) {
+  const { t } = useI18n(["errors"]);
   const [memberStatus, setMemberStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,11 +101,11 @@ export function useMyTeamStatus(teamId: string) {
       }
     } catch (err) {
       console.error("[useMyTeamStatus] 获取状态失败:", err);
-      setError("获取状态失败");
+      setError(t("errors.getStatusFailed"));
     } finally {
       setIsLoading(false);
     }
-  }, [teamId]);
+  }, [teamId, t]);
 
   useEffect(() => {
     fetchStatus();

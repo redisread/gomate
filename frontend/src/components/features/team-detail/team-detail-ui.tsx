@@ -1,6 +1,7 @@
 import * as React from "react";
 import { CheckCircle, X, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/hooks/useI18n";
 
 interface ToastOptions {
   type: "success" | "error";
@@ -64,6 +65,7 @@ export function Avatar({ name, avatar, isLeader, size = "md" }: { name?: string;
 }
 
 export function AnimatedProgress({ ratio, isFull }: { ratio: number; isFull: boolean }) {
+  const { t } = useI18n(["teams"]);
   const [width, setWidth] = React.useState(0);
   React.useEffect(() => {
     const t = setTimeout(() => setWidth(ratio), 100);
@@ -75,7 +77,7 @@ export function AnimatedProgress({ ratio, isFull }: { ratio: number; isFull: boo
       aria-valuenow={ratio}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label={`队伍招募进度 ${ratio}%`}
+      aria-label={t('teams.progressAriaLabel').replace('{ratio}', String(ratio))}
       className="h-1.5 rounded-full bg-secondary overflow-hidden"
     >
       <div

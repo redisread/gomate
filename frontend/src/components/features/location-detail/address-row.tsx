@@ -9,7 +9,7 @@ interface AddressRowProps {
 }
 
 export function AddressRow({ address, coordinates, locationName }: AddressRowProps) {
-  const { t } = useI18n(["locations"]);
+  const { t } = useI18n(["locations", "common"]);
   const [copied, setCopied] = React.useState(false);
 
   const handleCopy = async () => {
@@ -48,7 +48,7 @@ export function AddressRow({ address, coordinates, locationName }: AddressRowPro
         )}
         <button
           onClick={handleCopy}
-          title="复制地址"
+          title={t("common.copyAddress")}
           className="opacity-60 hover:opacity-100 transition-opacity"
         >
           {copied ? (

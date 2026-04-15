@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/hooks/useI18n";
 
 // ─────────────────────────────────────────────
 // SeasonPicker
@@ -74,6 +75,8 @@ interface SeasonPickerProps {
 
 /** 季节多选卡片组件 */
 export function SeasonPicker({ value, onChange, disabled = false }: SeasonPickerProps) {
+  const { t } = useI18n(["locations"]);
+
   const toggle = (key: string) => {
     if (disabled) return;
     const next = value.includes(key)
@@ -86,6 +89,8 @@ export function SeasonPicker({ value, onChange, disabled = false }: SeasonPicker
     <div className="grid grid-cols-4 gap-2">
       {SEASONS.map((season) => {
         const isSelected = value.includes(season.key);
+        const label = t(`locations.seasons.${season.key}.label`);
+        const months = t(`locations.seasons.${season.key}.months`);
 
         return (
           <button
@@ -127,10 +132,10 @@ export function SeasonPicker({ value, onChange, disabled = false }: SeasonPicker
             </span>
 
             {/* 季节名 */}
-            <span className="text-sm font-semibold text-foreground">{season.label}</span>
+            <span className="text-sm font-semibold text-foreground">{label}</span>
 
             {/* 月份 */}
-            <span className="text-xs text-muted-foreground">{season.months}</span>
+            <span className="text-xs text-muted-foreground">{months}</span>
           </button>
         );
       })}

@@ -21,7 +21,9 @@
     "dev": "concurrently \"pnpm api:dev\" \"pnpm web:dev\"",
     "lint": "pnpm -r lint",
     "type-check": "pnpm -r type-check",
-    "clean": "pnpm -r clean"
+    "clean": "pnpm -r clean",
+    "i18n:validate": "node scripts/validate-i18n-keys.mjs",
+    "i18n:gen-types": "node scripts/gen-i18n-types.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.0.0",

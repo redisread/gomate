@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Mountain, SearchX, Users, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/hooks/useI18n";
 
 /* ============================================================
    LoadingStates — 加载骨架屏 + 空状态组件集合
@@ -108,6 +109,7 @@ export function LocationCardSkeleton({ count = 6 }: { count?: number }) {
    全屏页面加载器（首屏）
    ============================================================ */
 export function PageLoader() {
+  const { t } = useI18n(["ui", "common"]);
   return (
     <div className="fixed inset-0 bg-[#faf8f5]/85 backdrop-blur-sm z-50 flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
@@ -121,7 +123,7 @@ export function PageLoader() {
           />
         </div>
         <p className="text-sm text-[#8f7f6e] animate-[pulse-soft_2s_ease-in-out_infinite]">
-          加载中...
+          {t("common.loading")}
         </p>
       </div>
     </div>
@@ -170,31 +172,11 @@ interface EmptyStateProps {
   className?: string;
 }
 
-const VARIANTS: Record<EmptyVariant, {
-  Icon:        React.ElementType;
-  defaultTitle: string;
-  defaultDesc:  string;
-}> = {
-  teams: {
-    Icon:         Users,
-    defaultTitle: "还没有队伍出发",
-    defaultDesc:  "成为第一个发起队伍的人，和志同道合的伙伴一起踏上山野！",
-  },
-  locations: {
-    Icon:         MapPin,
-    defaultTitle: "暂无地点信息",
-    defaultDesc:  "我们正在持续收录更多深圳徒步地点，敬请期待。",
-  },
-  search: {
-    Icon:         SearchX,
-    defaultTitle: "没有找到相关内容",
-    defaultDesc:  "试试换个关键词，或调整筛选条件，也许好伙伴就在附近。",
-  },
-  general: {
-    Icon:         Mountain,
-    defaultTitle: "这里还是一片净土",
-    defaultDesc:  "什么都还没有，快去探索属于你的第一次山野旅程吧！",
-  },
+const ICON_MAP: Record<EmptyVariant, React.ElementType> = {
+  teams:     Users,
+  locations: MapPin,
+  search:    SearchX,
+  general:   Mountain,
 };
 
 export function EmptyState({
@@ -204,7 +186,10 @@ export function EmptyState({
   action,
   className,
 }: EmptyStateProps) {
-  const { Icon, defaultTitle, defaultDesc } = VARIANTS[variant];
+  const { t } = useI18n(["ui"]);
+  const Icon = ICON_MAP[variant];
+  const defaultTitle = t(`ui.emptyState.${variant}.title`);
+  const defaultDesc = t(`ui.emptyState.${variant}.desc`);
 
   return (
     <div

@@ -7,14 +7,6 @@ import {
   Star,
 } from "lucide-react";
 
-// ─── 季节映射 ─────────────────────────────────────────────────────────────────
-export const SEASON_LABEL: Record<string, string> = {
-  spring: "春季",
-  summer: "夏季",
-  autumn: "秋季",
-  winter: "冬季",
-};
-
 // ─── 难度配置 ─────────────────────────────────────────────────────────────────
 export const DIFFICULTY_CONFIG: Record<
   string,

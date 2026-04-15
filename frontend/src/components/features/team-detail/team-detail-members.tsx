@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Crown, ChevronDown } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { TeamMember } from "@/lib/types";
 
@@ -10,6 +11,7 @@ export function MemberAvatarGrid({
   members: TeamMember[];
   leaderId?: string;
 }) {
+  const { t } = useI18n(["teams"]);
   const [expanded, setExpanded] = React.useState(false);
   const GRID_THRESHOLD = 8;
   const visible = expanded ? members : members.slice(0, GRID_THRESHOLD);
@@ -73,7 +75,7 @@ export function MemberAvatarGrid({
                 +{hidden}
               </span>
             </div>
-            <p className="text-[10px] text-muted-foreground/60">查看全部</p>
+            <p className="text-[10px] text-muted-foreground/60">{t('teams.viewAll')}</p>
           </button>
         )}
       </div>
@@ -84,7 +86,7 @@ export function MemberAvatarGrid({
           className="mt-3 flex items-center gap-1 text-xs text-muted-foreground/70 hover:text-amber-600 transition-colors"
         >
           <ChevronDown className="w-3.5 h-3.5 rotate-180" />
-          收起
+          {t('teams.collapseText')}
         </button>
       )}
     </div>

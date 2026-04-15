@@ -1,12 +1,38 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { getCollection } from "astro:content";
+import { declareI18nNs } from "../../middleware";
+import { loadLocaleData } from "../../i18n/ssr-loader";
+import { getLocaleFromCookie, type Locale, DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../../i18n";
+
+declareI18nNs(Astro.locals, ['blog']);
+
+// Read locale from cookie (SSR)
+const cookieLocale = Astro.cookies.get("gomate_locale")?.value as Locale | undefined;
+const blogLocale: Locale = (cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale)) ? cookieLocale : DEFAULT_LOCALE;
+
+// Load blog namespace translations for SSR
+let ssrT: (key: string) => string = (key: string) => key;
+try {
+  const origin = Astro.url.origin;
+  const blogData = await loadLocaleData(['blog'], blogLocale, origin);
+  // Simple SSR t() helper for this page
+  const nsData = blogData['blog'] as Record<string, string> | undefined;
+  ssrT = (key: string) => nsData?.[key] ?? key;
+} catch {
+  // Fallback to key
+}
 
 const allPosts = await getCollection("blog");
 const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-function formatDate(date: Date) {
-  return date.toLocaleDateString("zh-CN", {
+function formatDate(date: Date, locale: Locale) {
+  const langMap: Record<Locale, string> = {
+    "zh-CN": "zh-CN",
+    "en": "en-US",
+    "ja": "ja-JP",
+  };
+  return date.toLocaleDateString(langMap[locale], {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -14,13 +40,13 @@ function formatDate(date: Date) {
 }
 ---
 
-<Layout title="博客" description="GoMate 博客 - 记录徒步路上的故事">
+<Layout title={ssrT("title") + " - GoMate"} description={ssrT("description")}>
   <div class="min-h-screen bg-stone-50 dark:bg-stone-950">
     <!-- Header -->
     <header class="py-16 px-6">
       <div class="max-w-3xl mx-auto text-center">
-        <h1 class="text-3xl font-medium text-stone-800 dark:text-stone-100 mb-3">博客</h1>
-        <p class="text-stone-500 dark:text-stone-400">记录徒步路上的故事</p>
+        <h1 class="text-3xl font-medium text-stone-800 dark:text-stone-100 mb-3">{ssrT("title")}</h1>
+        <p class="text-stone-500 dark:text-stone-400">{ssrT("description")}</p>
       </div>
     </header>
 
@@ -43,7 +69,7 @@ function formatDate(date: Date) {
 
                 <!-- Date -->
                 <time class="text-sm text-stone-400 dark:text-stone-500">
-                  {formatDate(post.data.pubDate)}
+                  {formatDate(post.data.pubDate, blogLocale)}
                 </time>
               </a>
             </article>
@@ -53,7 +79,7 @@ function formatDate(date: Date) {
         <!-- Empty State -->
         {sortedPosts.length === 0 && (
           <div class="text-center py-20 text-stone-400 dark:text-stone-500">
-            <p>暂无文章</p>
+            <p>{ssrT("noArticles")}</p>
           </div>
         )}
       </div>

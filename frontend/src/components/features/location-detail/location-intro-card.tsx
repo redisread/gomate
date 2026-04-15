@@ -12,7 +12,6 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location, Tag } from "@/lib/types";
-import { SEASON_LABEL } from "./constants";
 
 interface LocationIntroCardProps {
   location: Location;
@@ -28,7 +27,7 @@ interface LocationIntroCardProps {
  * - 标签胶囊（分类色彩）
  */
 export function LocationIntroCard({ location, actions, address, coordinates }: LocationIntroCardProps) {
-  const { t } = useI18n(["locations", "enums"]);
+  const { t } = useI18n(["locations", "enums", "common"]);
   const [expanded, setExpanded] = React.useState(false);
   const [isOverflow, setIsOverflow] = React.useState(false);
   const descRef = React.useRef<HTMLParagraphElement>(null);
@@ -148,9 +147,9 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
             className="mt-2.5 inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-semibold transition-colors"
           >
             {expanded ? (
-              <>收起 <ChevronUp className="h-3.5 w-3.5" /></>
+              <> {t("common.collapse")} <ChevronUp className="h-3.5 w-3.5" /></>
             ) : (
-              <>展开全文 <ChevronDown className="h-3.5 w-3.5" /></>
+              <> {t("common.expandAll")} <ChevronDown className="h-3.5 w-3.5" /></>
             )}
           </button>
         )}
@@ -186,7 +185,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
                   )}
                   <button
                     onClick={handleCopy}
-                    title="复制地址"
+                    title={t("common.copyAddress")}
                     className="opacity-60 hover:opacity-100 transition-opacity"
                   >
                     {copied ? (
@@ -207,7 +206,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
                     key={s}
                     className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50"
                   >
-                    {SEASON_LABEL[s] ?? s}
+                    {t(`locations.seasons.${s}.label`) ?? s}
                   </span>
                 ))}
               </div>
@@ -246,7 +245,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
               <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           )}
-          <p className="absolute bottom-6 text-white/50 text-xs">点击任意处关闭 · 方向键切换</p>
+          <p className="absolute bottom-6 text-white/50 text-xs">{t("common.posterNavHint")}</p>
         </div>
       )}
     </div>

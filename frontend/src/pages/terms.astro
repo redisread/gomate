@@ -1,6 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { TermsClient } from "../components/features/terms-client";
+import { declareI18nNs } from "../middleware";
+
+declareI18nNs(Astro.locals, ['nav', 'content']);
 ---
 <Layout title="服务条款 - GoMate">
   <TermsClient client:load />

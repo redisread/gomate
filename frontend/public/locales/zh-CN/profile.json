@@ -97,5 +97,22 @@
   "statCompletedLabel": "已完成",
   "statCompletedSublabel": "圆满完成的活动",
   "genderMale": "♂ 男",
-  "genderFemale": "♀ 女"
+  "genderFemale": "♀ 女",
+  "presetEquipment": {
+    "trekkingPole": "登山杖",
+    "hardshellJacket": "冲锋衣",
+    "hikingBackpack": "登山包",
+    "hikingShoes": "徒步鞋",
+    "kneePads": "护膝",
+    "headlamp": "头灯",
+    "sleepingBag": "睡袋",
+    "tent": "帐篷",
+    "sleepingPad": "防潮垫",
+    "waterBottle": "水壶",
+    "sunscreen": "防晒霜",
+    "sunglasses": "墨镜",
+    "raincoat": "雨衣",
+    "hat": "帽子",
+    "gloves": "手套"
+  }
 }

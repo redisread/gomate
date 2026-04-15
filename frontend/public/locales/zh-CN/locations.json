@@ -70,5 +70,11 @@
     "viewpoint": "观景点",
     "facility": "设施",
     "poi": "兴趣点"
+  },
+  "seasons": {
+    "spring": { "label": "春季", "months": "3-5月" },
+    "summer": { "label": "夏季", "months": "6-8月" },
+    "autumn": { "label": "秋季", "months": "9-11月" },
+    "winter": { "label": "冬季", "months": "12-2月" }
   }
 }

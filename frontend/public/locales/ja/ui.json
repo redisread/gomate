@@ -1,36 +1,58 @@
 {
   "upload": {
-    "hint": "点击上传图片",
-    "uploading": "上传中...",
+    "hint": "クリックして画像をアップロード",
+    "uploading": "アップロード中...",
     "maxSize": "最大 {size}MB",
-    "invalidType": "不支持的文件格式",
-    "fileTooLarge": "文件太大，最大 {size}MB",
-    "uploadFailed": "上传失败",
-    "preview": "预览",
-    "maxImagesReached": "最多只能上传 {max} 张图片",
-    "supportedFormats": "仅支持 JPG、PNG、GIF、WebP 格式",
-    "fileSizeExceeded": "文件 {name} 超过 {size}MB",
-    "addImage": "添加图片",
-    "uploadedCount": "已上传 {current}/{max} 张",
-    "dragToSort": "拖拽可排序，最大 {size}MB/张",
-    "imageAlt": "图片 {index}",
-    "setAsCover": "设为封面",
-    "currentCover": "封面",
-    "coverHint": "点击图片可设为封面",
-    "selectFromAlbum": "或从下方相册选择"
+    "invalidType": "サポートされていないファイル形式です",
+    "fileTooLarge": "ファイルが大きすぎます（最大 {size}MB）",
+    "uploadFailed": "アップロードに失敗しました",
+    "uploadCoverHint": "クリックまたはドラッグしてカバー画像をアップロード",
+    "deleteCover": "カバー画像を削除",
+    "confirmUrl": "URLを確認",
+    "uploadProgress": "アップロード進捗 {progress}%",
+    "preview": "プレビュー",
+    "maxImagesReached": "最大 {max} 枚までアップロードできます",
+    "supportedFormats": "JPG、PNG、GIF、WebP 形式のみ対応",
+    "fileSizeExceeded": "ファイル {name} は {size}MB を超えています",
+    "addImage": "画像を追加",
+    "uploadedCount": "{current}/{max} 枚をアップロード済み",
+    "dragToSort": "ドラッグで並べ替え（最大 {size}MB/枚）",
+    "imageAlt": "画像 {index}",
+    "setAsCover": "表紙に設定",
+    "currentCover": "表紙",
+    "coverHint": "画像をクリックして表紙に設定",
+    "selectFromAlbum": "または下のアルバムから選択"
   },
   "requirementSelector": {
-    "presetLabel": "常用标签（点击快速添加）",
-    "customLabel": "或自定义添加",
-    "placeholder": "输入其他要求...",
-    "selectedLabel": "已选择"
+    "presetLabel": "よく使うタグ（クリックで快速追加）",
+    "customLabel": "またはカスタム追加",
+    "placeholder": "その他の要件を入力...",
+    "selectedLabel": "選択済み"
   },
   "tagSelector": {
-    "presetLabel": "可选标签（点击选择）",
-    "customLabel": "新建标签",
-    "selectedLabel": "已选标签",
-    "placeholder": "输入标签名称"
+    "presetLabel": "選択可能なタグ（クリックで選択）",
+    "customLabel": "新規タグ作成",
+    "selectedLabel": "選択したタグ",
+    "placeholder": "タグ名を入力"
   },
-  "coverHint": "点击图片可设为封面",
-  "selectFromAlbum": "或从下方相册选择"
+  "coverHint": "画像をクリックして表紙に設定",
+  "selectFromAlbum": "または下のアルバムから選択",
+  "emptyState": {
+    "teams": {
+      "title": "まだチームが出発していません",
+      "desc": "最初のチームを始めて、気の合う仲間と一緒に山へ出かけましょう！"
+    },
+    "locations": {
+      "title": "まだ場所情報がありません",
+      "desc": "深センのハイキング場所を継続的に收录しています。お楽しみに。"
+    },
+    "search": {
+      "title": "関連するコンテンツが見つかりません",
+      "desc": "キーワードを変えたり、フィルターを調整してみてください。完璧なパートナーが近くにいるかも。"
+    },
+    "general": {
+      "title": "ここはまだ未開拓の地",
+      "desc": "まだ何もありません — 最初の山岳アドベンチャーを探検しましょう！"
+    }
+  }
 }

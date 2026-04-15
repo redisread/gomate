@@ -61,7 +61,7 @@ export function PoiEditModal({
   onSuccess,
   initialData,
 }: PoiEditModalProps) {
-  const { t } = useI18n(["pois"]);
+  const { t } = useI18n(["pois", "common"]);
   const [formData, setFormData] = React.useState<FormData>(DEFAULT_FORM);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -227,7 +227,7 @@ export function PoiEditModal({
             type="button"
             onClick={handleClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
-            aria-label="关闭"
+            aria-label={t("common.wechat.close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -394,7 +394,7 @@ export function PoiDeleteConfirm({
   associationCount,
   isDeleting = false,
 }: PoiDeleteConfirmProps) {
-  const { t } = useI18n(["pois"]);
+  const { t } = useI18n(["pois", "common"]);
   if (!open) return null;
 
   return (

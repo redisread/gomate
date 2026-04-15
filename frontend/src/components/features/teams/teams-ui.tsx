@@ -94,7 +94,7 @@ export function TeamCard({ team }: { team: Team }) {
       <article className={cn("bg-card rounded-3xl border border-border overflow-hidden transition-all duration-300 hover:border-amber-200 hover:shadow-2xl hover:shadow-amber-100/40 dark:hover:border-amber-800 dark:hover:shadow-amber-900/20 hover:-translate-y-1.5")}>
         <div className="relative h-40 overflow-hidden">
           {location?.coverImage ? (
-            <img src={location.coverImage} alt={location.name ?? "封面"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <img src={location.coverImage} alt={location.name ?? t('common.unknown')} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : (
             <div className={cn("w-full h-full bg-gradient-to-br flex items-center justify-center", gradient)}>
               <Mountain className="h-10 w-10 text-white/40" />

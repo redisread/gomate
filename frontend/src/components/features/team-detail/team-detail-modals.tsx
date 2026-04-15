@@ -36,9 +36,9 @@ export function JoinBottomSheet({
         <div className="px-5 pb-5 pt-3">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-foreground text-lg">申请加入</h3>
+              <h3 className="font-bold text-foreground text-lg">{t('teams.joinTeam')}</h3>
               <p className="text-sm text-muted-foreground/70 mt-0.5">
-                {remaining === 1 ? "就差你一个了！" : `还差 ${remaining} 位伙伴`}
+                {remaining === 1 ? t('teams.justNeedYou') : t('teams.stillNeedMore').replace('{remaining}', String(remaining))}
               </p>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-stone-200">
@@ -47,7 +47,7 @@ export function JoinBottomSheet({
           </div>
           <div className="mb-4 bg-amber-50/60 rounded-2xl p-3.5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">已有 {currentMembers} / {maxMembers} 人</span>
+              <span className="text-xs text-muted-foreground">{t('teams.alreadyJoinedCount').replace('{current}', String(currentMembers)).replace('{max}', String(maxMembers))}</span>
               <span className="text-xs font-semibold text-amber-600">{fillRatio}%</span>
             </div>
             <AnimatedProgress ratio={fillRatio} isFull={false} />
@@ -91,9 +91,9 @@ export function JoinDesktopModal({
       <div className="bg-popover rounded-3xl max-w-md w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-xl font-bold text-foreground">申请加入</h3>
+            <h3 className="text-xl font-bold text-foreground">{t('teams.joinTeam')}</h3>
             <p className="text-sm text-muted-foreground/70 mt-0.5">
-              {remaining === 1 ? "就差你一个了！" : `还差 ${remaining} 位伙伴`}
+              {remaining === 1 ? t('teams.justNeedYou') : t('teams.stillNeedMore').replace('{remaining}', String(remaining))}
             </p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-stone-200">
@@ -102,7 +102,7 @@ export function JoinDesktopModal({
         </div>
         <div className="mb-4 bg-amber-50/60 rounded-2xl p-3.5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted-foreground">已有 {currentMembers} / {maxMembers} 人</span>
+            <span className="text-xs text-muted-foreground">{t('teams.alreadyJoinedCount').replace('{current}', String(currentMembers)).replace('{max}', String(maxMembers))}</span>
             <span className="text-xs font-semibold text-amber-600">{fillRatio}%</span>
           </div>
           <AnimatedProgress ratio={fillRatio} isFull={false} />
@@ -170,7 +170,7 @@ export function FormTeamConfirmDialog({
           className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white text-sm font-semibold transition-colors mb-2 flex items-center justify-center gap-2"
         >
           {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-          确认组建
+          {t('teams.confirmFormTeam')}
         </button>
         <button onClick={onCancel} disabled={isLoading} className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accent transition-colors">
           {t('common.cancel')}
@@ -213,7 +213,7 @@ export function WechatEditModal({
           className="w-full py-3 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 mb-2"
         >
           {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-          保存
+          {t('teams.saveBtn')}
         </button>
         <button
           onClick={onClose}
@@ -245,7 +245,7 @@ export function ApprovalConfirmDialog({
           {isApprove ? t('teams.approveConfirm') : t('teams.rejectConfirm')}
         </h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-          {isApprove ? `${userName} 将正式加入队伍` : `拒绝后，${userName} 将不能加入此队伍。`}
+          {isApprove ? t('teams.approveUserJoined').replace('{userName}', userName) : t('teams.rejectUserCannotJoin').replace('{userName}', userName)}
         </p>
         <button
           onClick={onConfirm}

@@ -11,7 +11,7 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location } from "@/lib/types";
-import { DIFFICULTY_CONFIG, SEASON_LABEL } from "./constants";
+import { DIFFICULTY_CONFIG } from "./constants";
 
 interface RouteInfoCardProps {
   location: Location;
@@ -115,7 +115,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
                 key={i}
                 className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-100 dark:border-amber-900/50"
               >
-                {SEASON_LABEL[season] ?? season}
+                {t(`locations.seasons.${season}.label`) ?? season}
               </span>
             ))}
           </div>

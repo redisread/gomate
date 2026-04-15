@@ -52,10 +52,7 @@ export function AboutClient() {
               <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100">{t("content.about.whoWeAre")}</h2>
             </div>
             <p className="text-stone-600 dark:text-stone-400 leading-relaxed">
-              GoMate 是一个极简的「地点组队」平台，专注于深圳徒步场景。
-              我们相信，最好的旅途需要最合适的同伴。无论你是想征服梧桐山、
-              漫步七娘山，还是探索深圳周边的无名小径，GoMate 都能帮你找到
-              志同道合的徒步伙伴。
+              {t("content.about.brandDesc")}
             </p>
           </section>
 

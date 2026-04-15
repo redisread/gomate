@@ -213,7 +213,7 @@ export function SharePosterModal({
           <button
             onClick={onClose}
             className="text-lg leading-none text-stone-400 dark:text-stone-500 transition-colors hover:text-stone-600 dark:text-stone-400 dark:text-stone-500"
-            aria-label="关闭"
+            aria-label={t("common.wechat.close")}
           >
             ✕
           </button>

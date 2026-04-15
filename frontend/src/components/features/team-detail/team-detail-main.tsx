@@ -28,7 +28,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
           <div className="text-center space-y-4">
             <p className="text-muted-foreground/70">{error || t('teams.notFound')}</p>
             <a href="/teams" className="text-amber-600 hover:text-amber-700 underline underline-offset-2">
-              {t('common.returnTo', { fallback: '返回队伍列表' })}
+              {t('common.backTeams')}
             </a>
           </div>
         </div>

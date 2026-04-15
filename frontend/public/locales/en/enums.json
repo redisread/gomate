@@ -1,59 +1,59 @@
 {
   "difficulty": {
-    "easy": "🌿 轻松",
-    "moderate": "⛰ 适中",
-    "hard": "🧗 挑战",
-    "expert": "🏔 专家"
+    "easy": "🌿 Easy",
+    "moderate": "⛰ Moderate",
+    "hard": "🧗 Challenging",
+    "expert": "🏔 Expert"
   },
   "locationType": {
-    "hiking": "户外徒步",
-    "explore": "城市探索",
-    "leisure": "休闲探店",
-    "travel": "旅行"
+    "hiking": "Outdoor Hiking",
+    "explore": "City Exploration",
+    "leisure": "Leisure Exploration",
+    "travel": "Travel"
   },
   "teamStatus": {
-    "recruiting": "等你一起",
-    "full": "名额告急，可关注",
-    "formed": "整装待发",
-    "ongoing": "进行中",
-    "completed": "圆满归来",
-    "cancelled": "已取消",
-    "open": "等你一起",
-    "closed": "已结束"
+    "recruiting": "Join Us",
+    "full": "Almost Full",
+    "formed": "Ready to Go",
+    "ongoing": "In Progress",
+    "completed": "Mission Complete",
+    "cancelled": "Cancelled",
+    "open": "Join Us",
+    "closed": "Ended"
   },
   "memberStatus": {
-    "pending": "待审核",
-    "approved": "已通过",
-    "rejected": "已拒绝",
-    "leave_pending": "退出申请中"
+    "pending": "Pending Review",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "leave_pending": "Leave Requested"
   },
   "level": {
-    "beginner": "新人",
-    "intermediate": "探索者",
-    "advanced": "资深玩家",
-    "expert": "传奇达人"
+    "beginner": "Beginner",
+    "intermediate": "Explorer",
+    "advanced": "Veteran",
+    "expert": "Legend"
   },
   "leaderLevel": {
-    "beginner": "新人领队",
-    "intermediate": "探索者领队",
-    "advanced": "资深玩家领队",
-    "expert": "传奇达人领队"
+    "beginner": "Beginner Leader",
+    "intermediate": "Explorer Leader",
+    "advanced": "Veteran Leader",
+    "expert": "Legend Leader"
   },
   "levelDesc": {
-    "beginner": "刚开始探索之旅",
-    "intermediate": "有一定活动经验",
-    "advanced": "经验丰富的玩家",
-    "expert": "资深活动达人"
+    "beginner": "Just starting the journey",
+    "intermediate": "Has some activity experience",
+    "advanced": "Experienced player",
+    "expert": "Activity master"
   },
   "levelTitle": {
-    "beginner": "新人",
-    "intermediate": "探索者",
-    "advanced": "资深玩家",
-    "expert": "传奇达人"
+    "beginner": "Beginner",
+    "intermediate": "Explorer",
+    "advanced": "Veteran",
+    "expert": "Legend"
   },
   "gender": {
-    "male": "男",
-    "female": "女",
-    "other": "其他"
+    "male": "Male",
+    "female": "Female",
+    "other": "Other"
   }
 }

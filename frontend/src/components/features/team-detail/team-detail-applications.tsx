@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Loader2, UserCheck, Crown } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 import { formatRelativeTime } from "./team-detail-utils";
 import { Avatar } from "./team-detail-ui";
 import type { Application } from "@/lib/types";
@@ -15,6 +16,7 @@ function ApplicationCard({
   onReject: () => void;
   isTeamFull: boolean;
 }) {
+  const { t } = useI18n(["teams", "common"]);
   const [approving, setApproving] = React.useState(false);
   const [rejecting, setRejecting] = React.useState(false);
 
@@ -30,7 +32,7 @@ function ApplicationCard({
     setRejecting(false);
   };
 
-  const name = application.user.nickname || application.user.name || "用户";
+  const name = application.user.nickname || application.user.name || t("common.unknown");
   const timeAgo = application.createdAt ? formatRelativeTime(new Date(application.createdAt)) : "";
 
   return (
@@ -43,13 +45,13 @@ function ApplicationCard({
           <Avatar name={name} avatar={application.user.avatar} size="sm" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{name}</p>
-            {timeAgo && <p className="text-xs text-muted-foreground/70">{timeAgo} 申请</p>}
+            {timeAgo && <p className="text-xs text-muted-foreground/70">{timeAgo} {t("teams.appliedLabel")}</p>}
           </div>
         </a>
       </div>
       {isTeamFull ? (
         <div className="text-center text-xs text-muted-foreground/70 bg-muted py-2 rounded-lg">
-          名额已满
+          {t('teams.teamFullAlert')}
         </div>
       ) : (
         <div className="flex gap-2">
@@ -59,7 +61,7 @@ function ApplicationCard({
             className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
           >
             {approving && <Loader2 className="w-3 h-3 animate-spin" />}
-            {approving ? "处理中" : "批准"}
+            {approving ? t('teams.processing') : t('teams.approveBtn')}
           </button>
           <button
             onClick={handleReject}
@@ -67,7 +69,7 @@ function ApplicationCard({
             className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:border-red-300 hover:text-red-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
           >
             {rejecting && <Loader2 className="w-3 h-3 animate-spin" />}
-            {rejecting ? "处理中" : "拒绝"}
+            {rejecting ? t('teams.processing') : t('teams.rejectBtn')}
           </button>
         </div>
       )}
@@ -86,6 +88,7 @@ export function TeamApplicationsSection({
   onReject: (uid: string) => void;
   isFull: boolean;
 }) {
+  const { t } = useI18n(["teams"]);
   if (applications.length === 0) return null;
 
   return (
@@ -93,10 +96,10 @@ export function TeamApplicationsSection({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <UserCheck className="w-3.5 h-3.5" />
-          <span className="font-medium">待审核申请</span>
+          <span className="font-medium">{t('teams.pendingApplications')}</span>
         </div>
         <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium">
-          {applications.length} 人
+          {t('teams.peopleCount').replace('{count}', String(applications.length))}
         </span>
       </div>
       <div className="space-y-2">
