@@ -1,0 +1,46 @@
+{
+  "passwordReset": {
+    "subject": "GoMate パスワードのリセット",
+    "title": "パスワードのリセット",
+    "greeting": "{name}さん、こんにちは。",
+    "body": "GoMate アカウントのパスワードリセットリクエストを受け付けました。下のボタンをクリックしてパスワードをリセットしてください：",
+    "btnText": "パスワードをリセット",
+    "expiryNote": "このリンクは 1 時間後に期限切れになります。",
+    "ignoreNote": "パスワードのリセットをリクエストしていない場合は、このメールを無視してください。"
+  },
+  "welcome": {
+    "subject": "GoMate へようこそ！",
+    "title": "GoMate へようこそ！",
+    "greeting": "{name}さん、こんにちは！",
+    "body": "深圳のハイキングシーンに特化したチームプラットフォーム GoMate にご登録ありがとうございます。",
+    "featuresTitle": "今すぐできること：",
+    "feature1": "深圳周辺の人気のハイキングルートを閲覧",
+    "feature2": "ハイキングチームの作成または参加",
+    "feature3": "気の合うハイキング爱好者と一緒に出发",
+    "closing": "ハッピーハイキング！",
+    "signature": "GoMate チーム"
+  },
+  "contactForm": {
+    "subject": "[GoMate ユーザーフィードバック] {subject}",
+    "title": "ユーザーフィードバック",
+    "nameLabel": "名前：",
+    "emailLabel": "メール：",
+    "subjectLabel": "件名：",
+    "contentLabel": "内容："
+  },
+  "feedback": {
+    "bugSubject": "[GoMate バグ報告] {name}より",
+    "suggestionSubject": "[GoMate 提案] {name}より",
+    "bugTitle": "バグ報告",
+    "suggestionTitle": "機能提案",
+    "nameLabel": "名前：",
+    "emailLabel": "メール：",
+    "bugDetailsTitle": "問題の詳細",
+    "deviceLabel": "デバイス：",
+    "browserLabel": "ブラウザ：",
+    "pageUrlLabel": "問題のページ：",
+    "bugDescriptionTitle": "問題の説明",
+    "suggestionDescriptionTitle": "提案内容",
+    "stepsTitle": "再現手順"
+  }
+}

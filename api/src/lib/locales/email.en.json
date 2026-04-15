@@ -1,0 +1,46 @@
+{
+  "passwordReset": {
+    "subject": "Reset Your GoMate Password",
+    "title": "Reset Password",
+    "greeting": "Hello{name},",
+    "body": "We received a request to reset the password for your GoMate account. Click the button below to reset your password:",
+    "btnText": "Reset Password",
+    "expiryNote": "This link will expire in 1 hour.",
+    "ignoreNote": "If you didn't request a password reset, please ignore this email."
+  },
+  "welcome": {
+    "subject": "Welcome to GoMate!",
+    "title": "Welcome to GoMate!",
+    "greeting": "Hi {name}!",
+    "body": "Thank you for joining GoMate, a teaming platform focused on the Shenzhen hiking scene.",
+    "featuresTitle": "You can now:",
+    "feature1": "Browse popular hiking routes around Shenzhen",
+    "feature2": "Create or join a hiking team",
+    "feature3": "Set off with like-minded hiking enthusiasts",
+    "closing": "Happy hiking!",
+    "signature": "The GoMate Team"
+  },
+  "contactForm": {
+    "subject": "[GoMate User Feedback] {subject}",
+    "title": "User Feedback",
+    "nameLabel": "Name:",
+    "emailLabel": "Email:",
+    "subjectLabel": "Subject:",
+    "contentLabel": "Message:"
+  },
+  "feedback": {
+    "bugSubject": "[GoMate Bug Report] from {name}",
+    "suggestionSubject": "[GoMate Suggestion] from {name}",
+    "bugTitle": "Bug Report",
+    "suggestionTitle": "Feature Suggestion",
+    "nameLabel": "Name:",
+    "emailLabel": "Email:",
+    "bugDetailsTitle": "Issue Details",
+    "deviceLabel": "Device:",
+    "browserLabel": "Browser:",
+    "pageUrlLabel": "Page URL:",
+    "bugDescriptionTitle": "Issue Description",
+    "suggestionDescriptionTitle": "Suggestion Details",
+    "stepsTitle": "Steps to Reproduce"
+  }
+}

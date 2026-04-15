@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getEmailField, getEmailTemplate, EmailLocale } from "./email-i18n";
 
 /**
  * 发送密码重置邮件
@@ -7,7 +8,8 @@ export async function sendPasswordResetEmail(
   email: string,
   resetUrl: string,
   name: string | undefined,
-  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string }
+  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string },
+  locale: EmailLocale = "zh-CN",
 ): Promise<{ success: boolean; error?: string }> {
   const apiKey = env.RESEND_API_KEY;
   if (!apiKey) {
@@ -18,19 +20,21 @@ export async function sendPasswordResetEmail(
   try {
     const resend = new Resend(apiKey);
     const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
+    const nameStr = name ? `，${name}` : "";
+    const greeting = getEmailField(locale, "passwordReset", "greeting", { name: nameStr });
 
     await resend.emails.send({
       from: fromEmail,
       to: email,
-      subject: "重置您的 GoMate 密码",
+      subject: getEmailField(locale, "passwordReset", "subject"),
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>重置密码</h2>
-          <p>您好${name ? `，${name}` : ""}，</p>
-          <p>我们收到了重置您 GoMate 账号密码的请求。请点击下方按钮重置密码：</p>
-          <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">重置密码</a>
-          <p>此链接将在 1 小时后失效。</p>
-          <p>如果您没有申请重置密码，请忽略此邮件。</p>
+          <h2>${getEmailField(locale, "passwordReset", "title")}</h2>
+          <p>${greeting}</p>
+          <p>${getEmailField(locale, "passwordReset", "body")}</p>
+          <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "passwordReset", "btnText")}</a>
+          <p>${getEmailField(locale, "passwordReset", "expiryNote")}</p>
+          <p>${getEmailField(locale, "passwordReset", "ignoreNote")}</p>
         </div>
       `,
     });
@@ -48,7 +52,8 @@ export async function sendPasswordResetEmail(
 export async function sendWelcomeEmail(
   email: string,
   name: string,
-  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string }
+  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string },
+  locale: EmailLocale = "zh-CN",
 ): Promise<{ success: boolean; error?: string }> {
   const apiKey = env.RESEND_API_KEY;
   if (!apiKey) return { success: false, error: "Email service not configured" };
@@ -60,20 +65,20 @@ export async function sendWelcomeEmail(
     await resend.emails.send({
       from: fromEmail,
       to: email,
-      subject: "欢迎加入 GoMate！",
+      subject: getEmailField(locale, "welcome", "subject"),
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>欢迎加入 GoMate！</h2>
-          <p>你好，${name}！</p>
-          <p>感谢您注册 GoMate，一个专注于深圳徒步场景的组队平台。</p>
-          <p>现在您可以：</p>
+          <h2>${getEmailField(locale, "welcome", "title")}</h2>
+          <p>${getEmailField(locale, "welcome", "greeting", { name })}</p>
+          <p>${getEmailField(locale, "welcome", "body")}</p>
+          <p>${getEmailField(locale, "welcome", "featuresTitle")}</p>
           <ul>
-            <li>浏览深圳周边的热门徒步路线</li>
-            <li>创建或加入徒步队伍</li>
-            <li>与志同道合的徒步爱好者一起出发</li>
+            <li>${getEmailField(locale, "welcome", "feature1")}</li>
+            <li>${getEmailField(locale, "welcome", "feature2")}</li>
+            <li>${getEmailField(locale, "welcome", "feature3")}</li>
           </ul>
-          <p>祝您徒步愉快！</p>
-          <p>GoMate 团队</p>
+          <p>${getEmailField(locale, "welcome", "closing")}</p>
+          <p>${getEmailField(locale, "welcome", "signature")}</p>
         </div>
       `,
     });
@@ -90,7 +95,8 @@ export async function sendWelcomeEmail(
  */
 export async function sendContactFormEmail(
   data: { name: string; email: string; subject: string; message: string },
-  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string }
+  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string },
+  locale: EmailLocale = "zh-CN",
 ): Promise<{ success: boolean; error?: string }> {
   const apiKey = env.RESEND_API_KEY;
   if (!apiKey) return { success: false, error: "Email service not configured" };
@@ -103,14 +109,14 @@ export async function sendContactFormEmail(
       from: fromEmail,
       to: "support@gomate.live",
       replyTo: data.email,
-      subject: `[GoMate 用户反馈] ${data.subject}`,
+      subject: getEmailField(locale, "contactForm", "subject", { subject: data.subject }),
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>用户反馈</h2>
-          <p><strong>姓名：</strong>${data.name}</p>
-          <p><strong>邮箱：</strong>${data.email}</p>
-          <p><strong>主题：</strong>${data.subject}</p>
-          <p><strong>内容：</strong></p>
+          <h2>${getEmailField(locale, "contactForm", "title")}</h2>
+          <p><strong>${getEmailField(locale, "contactForm", "nameLabel")}</strong>${data.name}</p>
+          <p><strong>${getEmailField(locale, "contactForm", "emailLabel")}</strong>${data.email}</p>
+          <p><strong>${getEmailField(locale, "contactForm", "subjectLabel")}</strong>${data.subject}</p>
+          <p><strong>${getEmailField(locale, "contactForm", "contentLabel")}</strong></p>
           <p style="white-space: pre-wrap;">${data.message}</p>
         </div>
       `,
@@ -137,7 +143,8 @@ export async function sendFeedbackEmail(
     steps?: string;
     pageUrl?: string;
   },
-  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string }
+  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string },
+  locale: EmailLocale = "zh-CN",
 ): Promise<{ success: boolean; error?: string }> {
   const apiKey = env.RESEND_API_KEY;
   if (!apiKey) return { success: false, error: "Email service not configured" };
@@ -145,38 +152,42 @@ export async function sendFeedbackEmail(
   try {
     const resend = new Resend(apiKey);
     const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
-    const typeLabel = data.type === "suggestion" ? "建议" : "Bug";
-    const subject = `[GoMate ${typeLabel}反馈] 来自 ${data.name}`;
+    const isBug = data.type === "bug";
+
+    const subject = getEmailField(locale, "feedback", isBug ? "bugSubject" : "suggestionSubject", { name: data.name });
+    const title = getEmailField(locale, "feedback", isBug ? "bugTitle" : "suggestionTitle");
+    const nameLabel = getEmailField(locale, "feedback", "nameLabel");
+    const emailLabel = getEmailField(locale, "feedback", "emailLabel");
 
     // 构建邮件内容
     let htmlContent = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: ${data.type === "bug" ? "#dc2626" : "#059669"};">
-          ${data.type === "bug" ? "🐛 Bug 反馈" : "💡 功能建议"}
+        <h2 style="color: ${isBug ? "#dc2626" : "#059669"};">
+          ${title}
         </h2>
-        <p><strong>姓名：</strong>${data.name}</p>
-        <p><strong>邮箱：</strong>${data.email}</p>
+        <p><strong>${nameLabel}</strong>${data.name}</p>
+        <p><strong>${emailLabel}</strong>${data.email}</p>
     `;
 
-    if (data.type === "bug") {
+    if (isBug) {
       htmlContent += `
         <hr style="margin: 16px 0; border: none; border-top: 1px solid #e5e7eb;" />
-        <h3>问题详情</h3>
-        ${data.device ? `<p><strong>设备类型：</strong>${data.device}</p>` : ""}
-        ${data.browser ? `<p><strong>浏览器：</strong>${data.browser}</p>` : ""}
-        ${data.pageUrl ? `<p><strong>问题页面：</strong><a href="${data.pageUrl}">${data.pageUrl}</a></p>` : ""}
+        <h3>${getEmailField(locale, "feedback", "bugDetailsTitle")}</h3>
+        ${data.device ? `<p><strong>${getEmailField(locale, "feedback", "deviceLabel")}</strong>${data.device}</p>` : ""}
+        ${data.browser ? `<p><strong>${getEmailField(locale, "feedback", "browserLabel")}</strong>${data.browser}</p>` : ""}
+        ${data.pageUrl ? `<p><strong>${getEmailField(locale, "feedback", "pageUrlLabel")}</strong><a href="${data.pageUrl}">${data.pageUrl}</a></p>` : ""}
       `;
     }
 
     htmlContent += `
       <hr style="margin: 16px 0; border: none; border-top: 1px solid #e5e7eb;" />
-      <h3>${data.type === "bug" ? "问题描述" : "建议内容"}</h3>
+      <h3>${getEmailField(locale, "feedback", isBug ? "bugDescriptionTitle" : "suggestionDescriptionTitle")}</h3>
       <p style="white-space: pre-wrap; background: #f9fafb; padding: 12px; border-radius: 6px;">${data.content}</p>
     `;
 
     if (data.steps) {
       htmlContent += `
-        <h3>复现步骤</h3>
+        <h3>${getEmailField(locale, "feedback", "stepsTitle")}</h3>
         <p style="white-space: pre-wrap; background: #fef3c7; padding: 12px; border-radius: 6px;">${data.steps}</p>
       `;
     }

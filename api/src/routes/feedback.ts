@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { sendFeedbackEmail } from "../lib/email";
 import type { Env } from "../lib/auth";
+import type { EmailLocale } from "../lib/email-i18n";
 
 const feedback = new Hono<{ Bindings: Env }>();
 
@@ -43,6 +44,11 @@ feedback.post("/", async (c) => {
     if (steps && steps.length > 2000) return c.json({ error: "复现步骤不能超过 2000 个字符" }, 400);
     if (pageUrl && pageUrl.length > 500) return c.json({ error: "页面 URL 不能超过 500 个字符" }, 400);
 
+    // 提取用户 locale
+    const cookie = c.req.raw.headers.get("Cookie") || "";
+    const localeMatch = cookie.match(/gomate_locale=(zh-CN|en|ja)/);
+    const locale: EmailLocale = localeMatch ? (localeMatch[1] as EmailLocale) : "zh-CN";
+
     // 发送邮件
     const result = await sendFeedbackEmail(
       {
@@ -55,7 +61,8 @@ feedback.post("/", async (c) => {
         steps: steps?.trim(),
         pageUrl: pageUrl?.trim(),
       },
-      c.env
+      c.env,
+      locale
     );
 
     if (!result.success) {

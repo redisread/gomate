@@ -1,0 +1,46 @@
+{
+  "passwordReset": {
+    "subject": "重置您的 GoMate 密码",
+    "title": "重置密码",
+    "greeting": "您好{name}，",
+    "body": "我们收到了重置您 GoMate 账号密码的请求。请点击下方按钮重置密码：",
+    "btnText": "重置密码",
+    "expiryNote": "此链接将在 1 小时后失效。",
+    "ignoreNote": "如果您没有申请重置密码，请忽略此邮件。"
+  },
+  "welcome": {
+    "subject": "欢迎加入 GoMate！",
+    "title": "欢迎加入 GoMate！",
+    "greeting": "你好，{name}！",
+    "body": "感谢您注册 GoMate，一个专注于深圳徒步场景的组队平台。",
+    "featuresTitle": "现在您可以：",
+    "feature1": "浏览深圳周边的热门徒步路线",
+    "feature2": "创建或加入徒步队伍",
+    "feature3": "与志同道合的徒步爱好者一起出发",
+    "closing": "祝您徒步愉快！",
+    "signature": "GoMate 团队"
+  },
+  "contactForm": {
+    "subject": "[GoMate 用户反馈] {subject}",
+    "title": "用户反馈",
+    "nameLabel": "姓名：",
+    "emailLabel": "邮箱：",
+    "subjectLabel": "主题：",
+    "contentLabel": "内容："
+  },
+  "feedback": {
+    "bugSubject": "[GoMate Bug反馈] 来自 {name}",
+    "suggestionSubject": "[GoMate 建议反馈] 来自 {name}",
+    "bugTitle": "Bug 反馈",
+    "suggestionTitle": "功能建议",
+    "nameLabel": "姓名：",
+    "emailLabel": "邮箱：",
+    "bugDetailsTitle": "问题详情",
+    "deviceLabel": "设备类型：",
+    "browserLabel": "浏览器：",
+    "pageUrlLabel": "问题页面：",
+    "bugDescriptionTitle": "问题描述",
+    "suggestionDescriptionTitle": "建议内容",
+    "stepsTitle": "复现步骤"
+  }
+}

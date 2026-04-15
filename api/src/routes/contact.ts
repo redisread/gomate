@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { sendContactFormEmail } from "../lib/email";
 import type { Env } from "../lib/auth";
+import type { EmailLocale } from "../lib/email-i18n";
 
 const contact = new Hono<{ Bindings: Env }>();
 
@@ -28,9 +29,15 @@ contact.post("/", async (c) => {
     if (subject.length > 200) return c.json({ error: "主题长度不能超过 200 个字符" }, 400);
     if (message.length > 5000) return c.json({ error: "建议内容不能超过 5000 个字符" }, 400);
 
+    // 提取用户 locale
+    const cookie = c.req.raw.headers.get("Cookie") || "";
+    const localeMatch = cookie.match(/gomate_locale=(zh-CN|en|ja)/);
+    const locale: EmailLocale = localeMatch ? (localeMatch[1] as EmailLocale) : "zh-CN";
+
     const result = await sendContactFormEmail(
       { name: name.trim(), email: email.trim().toLowerCase(), subject: subject.trim(), message: message.trim() },
-      c.env
+      c.env,
+      locale
     );
 
     if (!result.success) {
