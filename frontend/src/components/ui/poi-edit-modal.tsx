@@ -61,7 +61,7 @@ export function PoiEditModal({
   onSuccess,
   initialData,
 }: PoiEditModalProps) {
-  const { t } = useI18n(["pois", "common"]);
+  const { t } = useI18n(["pois", "common", "ui"]);
   const [formData, setFormData] = React.useState<FormData>(DEFAULT_FORM);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -159,7 +159,7 @@ export function PoiEditModal({
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "创建失败");
+        if (!res.ok) throw new Error(data.error || t("ui.poi.createFailed"));
 
         onSuccess({
           id: data.poiId,
@@ -169,7 +169,7 @@ export function PoiEditModal({
         handleClose();
       } else {
         // 编辑 POI
-        if (!initialData?.id) throw new Error("缺少 POI ID");
+        if (!initialData?.id) throw new Error(t("ui.poi.missingId"));
 
         const res = await fetch(`/api/pois/${initialData.id}`, {
           method: "PUT",
@@ -182,7 +182,7 @@ export function PoiEditModal({
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "更新失败");
+        if (!res.ok) throw new Error(data.error || t("ui.poi.updateFailed"));
 
         onSuccess({
           id: initialData.id,
@@ -394,7 +394,7 @@ export function PoiDeleteConfirm({
   associationCount,
   isDeleting = false,
 }: PoiDeleteConfirmProps) {
-  const { t } = useI18n(["pois", "common"]);
+  const { t } = useI18n(["pois", "common", "ui"]);
   if (!open) return null;
 
   return (
@@ -426,7 +426,7 @@ export function PoiDeleteConfirm({
 
           {/* 描述 */}
           <p className="text-sm text-stone-500 mb-1">
-            确定要删除「<span className="font-medium text-stone-700">{poiName}</span>」吗？
+            {t("common.confirmDelete").replace("{name}", poiName)}
           </p>
           <p className="text-xs text-stone-400 mb-4">
             {t('pois.deleteConfirmDesc')}

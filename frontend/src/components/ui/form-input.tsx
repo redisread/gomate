@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 
 /* ============================================================
    FormInput — 表单输入组件套件
@@ -137,6 +138,7 @@ interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
 
 export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
   ({ error, className, ...props }, ref) => {
+    const { t } = useI18n(["common"]);
     const [showPassword, setShowPassword] = React.useState(false);
 
     return (
@@ -154,7 +156,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
           tabIndex={-1}
           onClick={() => setShowPassword((v) => !v)}
           className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors duration-150"
-          aria-label={showPassword ? "隐藏密码" : "显示密码"}
+          aria-label={showPassword ? t("common.hidePassword") : t("common.showPassword")}
         >
           {showPassword ? (
             <EyeOff className="h-4 w-4" />

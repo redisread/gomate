@@ -64,7 +64,7 @@ function loadAmapScript(): Promise<void> {
     const existing = document.getElementById("amap-script");
     if (existing) {
       existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("高德地图加载失败")));
+      existing.addEventListener("error", () => reject(new Error("AMap failed to load")));
       const poll = setInterval(() => { if ((window as any).AMap) { clearInterval(poll); resolve(); } }, 100);
       setTimeout(() => clearInterval(poll), 5000);
       return;
@@ -73,7 +73,7 @@ function loadAmapScript(): Promise<void> {
     script.id = "amap-script";
     script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}&plugin=AMap.AutoComplete,AMap.Geocoder`;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("高德地图加载失败"));
+    script.onerror = () => reject(new Error("AMap failed to load"));
     document.head.appendChild(script);
   });
 }
@@ -86,7 +86,7 @@ interface MapPickerModalProps {
 }
 
 function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPickerModalProps) {
-  const { t } = useI18n(["admin", "common"]);
+  const { t } = useI18n(["admin", "common", "locations"]);
   const mapContainerRef = React.useRef<HTMLDivElement>(null);
   const mapRef = React.useRef<any>(null);
   const markerRef = React.useRef<any>(null);
@@ -171,7 +171,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
         else { const marker = new AMap.Marker({ position: [lng, lat] }); marker.setMap(map); markerRef.current = marker; }
         reverseGeocode(AMap, lng, lat, (addr) => setPickedAddress(addr));
       });
-    }).catch(() => { if (!destroyed) { setIsLoadingMap(false); setMapError("地图加载失败，请检查网络"); } });
+    }).catch(() => { if (!destroyed) { setIsLoadingMap(false); setMapError(t("locations.mapLoadFailed")); } });
     return () => { destroyed = true; };
   }, [initialLat, initialLng]);
 
@@ -306,7 +306,7 @@ import type { FormData } from "./location-form";
 interface PreviewPanelProps { data: FormData; cityName: string; }
 
 function PreviewPanel({ data, cityName }: PreviewPanelProps) {
-  const { t } = useI18n(["admin", "common"]);
+  const { t } = useI18n(["admin", "common", "locations"]);
   const seasonEmojis: Record<string, string> = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: "❄️" };
   return (
     <div className="sticky top-20">
@@ -361,7 +361,7 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
 interface LocationEditClientProps { locationId: string; }
 
 export function LocationEditClient({ locationId }: LocationEditClientProps) {
-  const { t } = useI18n(["admin", "common"]);
+  const { t } = useI18n(["admin", "common", "locations"]);
   const form = useLocationForm(locationId);
   const [showPreview, setShowPreview] = React.useState(false);
   const [showMapPicker, setShowMapPicker] = React.useState(false);

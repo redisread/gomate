@@ -9,7 +9,7 @@ interface TeamListSectionProps {
 }
 
 export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
-  const { t } = useI18n(["locations"]);
+  const { t } = useI18n(["locations", "common"]);
   const MAX_DISPLAY_TEAMS = 3;
   const displayedTeams = teams.slice(0, MAX_DISPLAY_TEAMS);
   const hasMore = teams.length > MAX_DISPLAY_TEAMS;
@@ -52,7 +52,7 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
             <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
               <a href={`/teams?locationId=${locationId}`} className="block">
                 <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-1.5 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 hover:border-amber-300 dark:hover:border-amber-700">
-                  查看全部 {teams.length} 支队伍
+                  {t("common.viewAllTeams").replace("{count}", String(teams.length))}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </a>
@@ -65,7 +65,7 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
 }
 
 function EmptyTeamsState({ locationId }: { locationId: string }) {
-  const { t } = useI18n(["locations"]);
+  const { t } = useI18n(["locations", "common"]);
   return (
     <div className="flex flex-col items-center py-10">
       <div className="relative mb-5">

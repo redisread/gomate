@@ -10,7 +10,7 @@ interface PoiSectionProps {
 }
 
 export function PoiSection({ locationId }: PoiSectionProps) {
-  const { t } = useI18n(["locations"]);
+  const { t } = useI18n(["locations", "common"]);
   const [pois, setPois] = React.useState<RoutePoi[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -29,7 +29,7 @@ export function PoiSection({ locationId }: PoiSectionProps) {
         <span className="w-1 h-4 rounded-full bg-violet-400 flex-shrink-0" />
         {t('locations.poiSection')}
         <span className="ml-auto text-xs font-normal text-stone-400 dark:text-stone-500 bg-stone-50 dark:bg-stone-800 px-2 py-0.5 rounded-full border border-stone-100 dark:border-stone-700">
-          {pois.length} 个
+          {t("common.poiCount").replace("{count}", String(pois.length))}
         </span>
       </h2>
 

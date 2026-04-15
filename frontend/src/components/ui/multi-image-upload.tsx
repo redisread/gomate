@@ -45,7 +45,7 @@ function CircularProgress({ progress, size = 40, strokeWidth = 3 }: {
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       className="rotate-[-90deg]"
-      aria-label={`上传进度 ${progress}%`}
+      aria-label={progress >= 0 ? `Upload progress ${progress}%` : undefined}
     >
       <circle
         cx={size / 2} cy={size / 2} r={radius}
@@ -186,7 +186,7 @@ export function MultiImageUpload({
           } catch {
             setUploadingItems((prev) =>
               prev.map((u) =>
-                u.key === itemKey ? { ...u, progress: null, error: "上传失败" } : u
+                u.key === itemKey ? { ...u, progress: null, error: t("ui.upload.uploadFailed") } : u
               )
             );
           }

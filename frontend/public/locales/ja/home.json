@@ -27,5 +27,11 @@
     "departingTomorrow": "明日出發",
     "departingInDays": "{days}日後に出發",
     "viewDetails": "詳細を見る"
+  },
+  "floatingLabels": {
+    "mountain1": "七娘山",
+    "mountain2": "東西衝",
+    "teamJoined": "{count}人がチーム結成済み",
+    "dayDepart": "{day}出發"
   }
 }

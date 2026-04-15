@@ -248,12 +248,12 @@ export function CitySelect({
           <ul
             ref={listRef}
             role="listbox"
-            aria-label="城市列表"
+            aria-label={t("common.cityList")}
             className="max-h-48 overflow-y-auto py-1"
           >
             {filteredCities.length === 0 ? (
               <li className="px-3 py-6 text-center text-sm text-zinc-400">
-                未找到匹配的城市
+                {t("common.noCitiesFound")}
               </li>
             ) : (
               filteredCities.map((city, index) => (

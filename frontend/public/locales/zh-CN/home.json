@@ -27,5 +27,11 @@
     "departingTomorrow": "明天出发",
     "departingInDays": "{days} 天后出发",
     "viewDetails": "查看详情"
+  },
+  "floatingLabels": {
+    "mountain1": "七娘山",
+    "mountain2": "东西冲",
+    "teamJoined": "{count}人已组队",
+    "dayDepart": "周{day}出发"
   }
 }

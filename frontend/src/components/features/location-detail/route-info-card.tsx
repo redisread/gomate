@@ -18,7 +18,7 @@ interface RouteInfoCardProps {
 }
 
 export function RouteInfoCard({ location }: RouteInfoCardProps) {
-  const { t } = useI18n(["enums", "locations"]);
+  const { t } = useI18n(["enums", "locations", "common"]);
   const diffInfo = location.difficulty
     ? { ...DIFFICULTY_CONFIG[location.difficulty] ?? DIFFICULTY_CONFIG.easy, label: t(`enums.difficulty.${location.difficulty}`) }
     : null;
@@ -126,7 +126,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
         <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
           <p className="text-[11px] text-stone-400 dark:text-stone-500 mb-2.5 flex items-center gap-1.5 font-semibold uppercase tracking-wide">
             <Backpack className="h-3.5 w-3.5 text-amber-400" />
-            推荐装备
+            {t("common.recommendedGear")}
           </p>
           <div className="flex flex-wrap gap-2">
             {routeData.equipmentNeeded.map((item: string, i: number) => (
@@ -145,7 +145,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
         <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
           <p className="text-[11px] text-orange-500 mb-2.5 flex items-center gap-1.5 font-semibold uppercase tracking-wide">
             <AlertTriangle className="h-3.5 w-3.5" />
-            注意事项
+            {t("common.precautions")}
           </p>
           <ul className="space-y-2">
             {routeData.warnings.map((w: string, i: number) => (

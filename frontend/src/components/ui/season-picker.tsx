@@ -11,8 +11,6 @@ import { useI18n } from "@/hooks/useI18n";
 interface SeasonConfig {
   key: string;
   emoji: string;
-  label: string;
-  months: string;
   selected: {
     border: string;
     bg: string;
@@ -21,50 +19,10 @@ interface SeasonConfig {
 }
 
 const SEASONS: SeasonConfig[] = [
-  {
-    key: "spring",
-    emoji: "🌸",
-    label: "春季",
-    months: "3-5月",
-    selected: {
-      border: "border-pink-300",
-      bg: "bg-pink-50",
-      badge: "bg-pink-300",
-    },
-  },
-  {
-    key: "summer",
-    emoji: "☀️",
-    label: "夏季",
-    months: "6-8月",
-    selected: {
-      border: "border-orange-300",
-      bg: "bg-orange-50",
-      badge: "bg-orange-300",
-    },
-  },
-  {
-    key: "autumn",
-    emoji: "🍂",
-    label: "秋季",
-    months: "9-11月",
-    selected: {
-      border: "border-amber-400",
-      bg: "bg-amber-50",
-      badge: "bg-amber-400",
-    },
-  },
-  {
-    key: "winter",
-    emoji: "❄️",
-    label: "冬季",
-    months: "12-2月",
-    selected: {
-      border: "border-sky-300",
-      bg: "bg-sky-50",
-      badge: "bg-sky-300",
-    },
-  },
+  { key: "spring", emoji: "🌸", selected: { border: "border-pink-300", bg: "bg-pink-50", badge: "bg-pink-300" } },
+  { key: "summer", emoji: "☀️", selected: { border: "border-orange-300", bg: "bg-orange-50", badge: "bg-orange-300" } },
+  { key: "autumn", emoji: "🍂", selected: { border: "border-amber-400", bg: "bg-amber-50", badge: "bg-amber-400" } },
+  { key: "winter", emoji: "❄️", selected: { border: "border-sky-300", bg: "bg-sky-50", badge: "bg-sky-300" } },
 ];
 
 interface SeasonPickerProps {

@@ -27,5 +27,11 @@
     "departingTomorrow": "Departing Tomorrow",
     "departingInDays": "Departing in {days} days",
     "viewDetails": "View Details"
+  },
+  "floatingLabels": {
+    "mountain1": "Qiniang Mountain",
+    "mountain2": "Dongxi Chong",
+    "teamJoined": "{count} people teamed",
+    "dayDepart": "Departing {day}"
   }
 }

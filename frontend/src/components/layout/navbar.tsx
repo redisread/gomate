@@ -112,7 +112,7 @@ export function Navbar({ className }: NavbarProps) {
             <a
               href="/"
               className="flex items-center gap-2.5 group shrink-0"
-              aria-label="GoMate 首页"
+              aria-label={t("common.home")}
             >
               <Mountain
                 className="h-7 w-7 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
@@ -256,7 +256,7 @@ export function Navbar({ className }: NavbarProps) {
               type="button"
               className="md:hidden p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label={isMobileMenuOpen ? "关闭菜单" : "打开菜单"}
+              aria-label={isMobileMenuOpen ? t("common.closeMenu") : t("common.openMenu")}
               aria-expanded={isMobileMenuOpen}
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

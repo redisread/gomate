@@ -5,15 +5,15 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 
 /** 将 Date 格式化为相对时间文字 */
-function formatRelativeTime(date: Date): string {
+function formatRelativeTime(date: Date, t: (key: string) => string): string {
   const diffMs = Date.now() - date.getTime();
   const diffMin = Math.floor(diffMs / 60_000);
 
-  if (diffMin < 1) return "刚刚";
-  if (diffMin < 60) return `${diffMin} 分钟前`;
+  if (diffMin < 1) return t("common.justNow");
+  if (diffMin < 60) return t("common.minutesAgo").replace("{count}", String(diffMin));
 
   const diffHour = Math.floor(diffMin / 60);
-  return `${diffHour} 小时前`;
+  return t("common.hoursAgo").replace("{count}", String(diffHour));
 }
 
 interface StickyActionBarProps {
@@ -65,8 +65,8 @@ export function StickyActionBar({
 
           <span className="text-sm text-stone-600 truncate">
             {lastSaved !== null
-              ? `草稿已自动保存 · ${formatRelativeTime(lastSaved)}`
-              : "有未保存的更改"}
+              ? `${t("common.draftAutoSaved")} · ${formatRelativeTime(lastSaved, t)}`
+              : t("common.unsavedChanges")}
           </span>
         </div>
 
@@ -79,7 +79,7 @@ export function StickyActionBar({
             disabled={isSaving}
             className="text-sm text-stone-500 hover:text-stone-700 disabled:opacity-40 transition-colors px-2 py-1.5"
           >
-            放弃更改
+            {t("common.discardChanges")}
           </button>
 
           {/* 保存更改 */}
