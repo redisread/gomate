@@ -278,6 +278,14 @@ export function t(
   return key;
 }
 
+/**
+ * 获取已缓存的 namespace 原始数据
+ * 用于访问非字符串值（如数组、嵌套对象）
+ */
+export function getNamespaceData(ns: string, locale: Locale): Record<string, unknown> | null {
+  return getFromCache(ns, locale);
+}
+
 // ─── Locale 管理 ──────────────────────────────────────────────────────────────
 
 /**

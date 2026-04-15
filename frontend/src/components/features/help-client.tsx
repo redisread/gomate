@@ -12,39 +12,6 @@ interface FaqItem {
   answer: string;
 }
 
-const FAQ_ITEMS: FaqItem[] = [
-  {
-    question: "如何加入一支队伍？",
-    answer:
-      "在队伍详情页点击「申请加入」，等待队长审核通过后即可加入。",
-  },
-  {
-    question: "如何创建自己的队伍？",
-    answer:
-      "登录后点击导航栏「创建队伍」，填写队伍信息、出发时间、人数限制等，发布后其他用户即可申请加入。",
-  },
-  {
-    question: "如何与队长取得联系？",
-    answer:
-      "目前可在队伍详情页查看队长信息，通过站外方式联系。我们正在开发站内消息功能，敬请期待。",
-  },
-  {
-    question: "队伍状态分别代表什么？",
-    answer:
-      "招募中（正在接受申请）、已满员（人数已达上限）、已成行（队伍确认出发）、已取消（活动取消）、已完成（活动结束）。",
-  },
-  {
-    question: "如何修改个人资料？",
-    answer:
-      "登录后点击右上角头像，进入「个人中心」，点击「编辑资料」即可修改昵称、简介、徒步等级等信息。",
-  },
-  {
-    question: "忘记密码怎么办？",
-    answer:
-      "在登录页点击「忘记密码」，输入注册邮箱，系统会发送重置密码邮件。",
-  },
-];
-
 /** 单个 accordion 条目 */
 function FaqAccordionItem({
   item,
@@ -86,7 +53,16 @@ function FaqAccordionItem({
 /** 帮助中心页主组件 */
 export function HelpClient() {
   const [openIndex, setOpenIndex] = React.useState<number | null>(null);
-  const { t } = useI18n(["nav", "content"]);
+  const { t, getNsData } = useI18n(["nav", "content"]);
+
+  // 从 i18n 加载后的 FAQ 数据
+  const faqItems = React.useMemo<FaqItem[]>(() => {
+    const data = getNsData();
+    const content = data?.content as Record<string, unknown> | undefined;
+    const help = content?.help as Record<string, unknown> | undefined;
+    const faq = help?.faq as FaqItem[] | undefined;
+    return Array.isArray(faq) && faq.length > 0 ? faq : [];
+  }, [getNsData]);
 
   const handleToggle = (index: number) => {
     setOpenIndex((prev) => (prev === index ? null : index));
@@ -121,7 +97,7 @@ export function HelpClient() {
         {/* FAQ 列表 */}
         <div className="max-w-3xl mx-auto px-6 py-12">
           <div className="flex flex-col gap-3">
-            {FAQ_ITEMS.map((item, index) => (
+            {faqItems.map((item, index) => (
               <FaqAccordionItem
                 key={index}
                 item={item}

@@ -179,7 +179,7 @@ export function MultiImageUpload({
             } else {
               setUploadingItems((prev) =>
                 prev.map((u) =>
-                  u.key === itemKey ? { ...u, progress: null, error: "上传失败" } : u
+                  u.key === itemKey ? { ...u, progress: null, error: t("ui.upload.uploadServerError") } : u
                 )
               );
             }
@@ -193,7 +193,7 @@ export function MultiImageUpload({
         } else {
           setUploadingItems((prev) =>
             prev.map((u) =>
-              u.key === itemKey ? { ...u, progress: null, error: `上传失败（${xhr.status}）` } : u
+              u.key === itemKey ? { ...u, progress: null, error: t("ui.upload.uploadHttpError").replace("{status}", String(xhr.status)) } : u
             )
           );
         }
@@ -202,7 +202,7 @@ export function MultiImageUpload({
       xhr.addEventListener("error", () => {
         setUploadingItems((prev) =>
           prev.map((u) =>
-            u.key === itemKey ? { ...u, progress: null, error: "网络错误" } : u
+            u.key === itemKey ? { ...u, progress: null, error: t("ui.upload.uploadNetworkError") } : u
           )
         );
       });
@@ -211,7 +211,7 @@ export function MultiImageUpload({
       xhr.withCredentials = true;
       xhr.send(formData);
     },
-    [values, onChange]
+    [values, onChange, t]
   );
 
   /* ---- 处理多文件选择 ---- */
@@ -368,7 +368,7 @@ export function MultiImageUpload({
                   onClick={() => handleClearError(item.key)}
                   className="text-[10px] underline text-red-400 hover:text-red-600"
                 >
-                  移除
+                  {t("ui.upload.removeItem")}
                 </button>
               </div>
             ) : (

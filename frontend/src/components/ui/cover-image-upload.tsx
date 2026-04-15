@@ -164,22 +164,22 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 if (data.url) {
                   resolve(data.url);
                 } else {
-                  reject(new Error(data.error ?? "上传失败，请重试"));
+                  reject(new Error(t("ui.upload.uploadServerError")));
                 }
               } catch {
-                reject(new Error("服务器返回了非法响应"));
+                reject(new Error(t("ui.upload.uploadInvalidResponse")));
               }
             } else {
               try {
                 const data = JSON.parse(xhr.responseText) as { error?: string };
-                reject(new Error(data.error ?? `上传失败（${xhr.status}）`));
+                reject(new Error(t("ui.upload.uploadHttpError").replace("{status}", String(xhr.status))));
               } catch {
-                reject(new Error(`上传失败（${xhr.status}）`));
+                reject(new Error(t("ui.upload.uploadHttpError").replace("{status}", String(xhr.status))));
               }
             }
           });
 
-          xhr.addEventListener("error", () => reject(new Error("网络错误，请检查连接后重试")));
+          xhr.addEventListener("error", () => reject(new Error(t("ui.upload.uploadNetworkError"))));
           xhr.addEventListener("abort", () => reject(new Error("上传已取消")));
 
           // 构建请求地址（复用 API_BASE）
@@ -197,7 +197,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
           fileSize: formatBytes(file.size),
         });
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "未知错误，请重试";
+        const msg = err instanceof Error ? err.message : t("ui.upload.uploadUnknownError");
         setUploadState({ phase: "error", message: msg });
       }
     },
@@ -364,7 +364,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               )}
             >
               <Upload className="h-3.5 w-3.5" />
-              更换
+              {t("ui.upload.replaceBtn")}
             </button>
 
             {/* 删除按钮 */}
@@ -458,7 +458,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               strokeWidth={5}
             />
             <p className="text-sm font-medium" style={{ color: "#D97706" }}>
-              上传中… {(uploadState as { phase: "uploading"; progress: number }).progress}%
+              {t("ui.upload.uploadProgressText").replace("{progress}", String((uploadState as { phase: "uploading"; progress: number }).progress))}
             </p>
           </div>
         ) : isDraggingOver ? (
@@ -471,7 +471,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               <Upload className="h-6 w-6" style={{ color: "#D97706" }} />
             </div>
             <p className="text-sm font-semibold" style={{ color: "#D97706" }}>
-              松开即上传
+              {t("ui.upload.dropPrompt")}
             </p>
           </div>
         ) : uploadState.phase === "error" ? (
@@ -488,7 +488,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               }}
               className="mt-1 text-xs underline text-destructive hover:text-destructive/80"
             >
-              重试
+              {t("ui.upload.uploadRetry")}
             </button>
           </div>
         ) : (
@@ -502,13 +502,13 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                拖拽图片到此处，或{" "}
+                {t("ui.upload.dropZoneText")}{" "}
                 <span style={{ color: "#D97706" }} className="font-semibold">
-                  点击选择
+                  {t("ui.upload.dropZoneHighlight")}
                 </span>
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground/60">
-                支持 JPG、PNG、WebP · 最大 5 MB · 推荐 16:9
+                {t("ui.upload.formatHint").replace("{size}", "5")}
               </p>
               <p className="mt-1 text-xs text-gray-400">
                 {t('ui.upload.selectFromAlbum')}
@@ -543,7 +543,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               )}
             >
               <Link className="h-3.5 w-3.5" />
-              粘贴图片 URL
+              {t("ui.upload.pasteUrlBtn")}
             </button>
           ) : (
             <div className="flex items-center gap-2">

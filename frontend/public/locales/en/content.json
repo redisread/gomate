@@ -48,19 +48,179 @@
   "privacy": {
     "lastUpdated": "Last Updated: January 1, 2025",
     "pageTitle": "Privacy Policy",
-    "pageSubtitle": "We value your privacy. Here is our privacy policy."
+    "pageSubtitle": "We value your privacy. Here is our privacy policy.",
+    "sections": [
+      {
+        "title": "1. Information Collection",
+        "content": "We collect the following types of information:",
+        "items": [
+          "Account information: email address, username, and password (encrypted) provided during registration",
+          "Profile: nickname, bio, and hiking level you voluntarily fill in",
+          "Usage data: teams you create, activities you participate in, locations you favorite"
+        ]
+      },
+      {
+        "title": "2. Information Use",
+        "content": "We use the collected information for:",
+        "items": [
+          "Providing and improving GoMate platform services",
+          "Sending account-related notifications (e.g., password reset emails)",
+          "Analyzing platform usage to optimize user experience",
+          "Ensuring platform security and preventing fraud"
+        ]
+      },
+      {
+        "title": "3. Information Protection",
+        "content": "We take the following measures to protect your information:",
+        "items": [
+          "All data transmission is encrypted via HTTPS",
+          "Passwords are encrypted with bcrypt — we cannot view your plaintext password",
+          "Regular security audits",
+          "Strictly limit employee access to user data"
+        ]
+      },
+      {
+        "title": "4. Cookie Usage",
+        "content": "We use cookies and similar technologies to:",
+        "items": [
+          "Maintain your login session",
+          "Remember your preferences",
+          "Analyze website traffic (using anonymous data)"
+        ],
+        "footer": "You can disable cookies through your browser settings, but this may affect the functionality of some features."
+      },
+      {
+        "title": "5. Third-Party Services",
+        "content": "We use the following third-party services:",
+        "items": [
+          "Cloudflare: for CDN and security protection",
+          "Resend: for sending system emails"
+        ],
+        "footer": "These service providers have their own privacy policies — we recommend reviewing them."
+      },
+      {
+        "title": "6. Your Rights",
+        "content": "You have the following rights:",
+        "items": [
+          "Access: You can view the information we hold about you in your profile",
+          "Modify: You can edit your personal data at any time",
+          "Delete: You can contact us to delete your account and associated data",
+          "Export: To export your data, please contact us"
+        ]
+      },
+      {
+        "title": "7. Contact Us",
+        "content": "If you have questions about this privacy policy, please contact:",
+        "items": ["Email: hello@gomate.live"]
+      }
+    ]
   },
   "terms": {
     "pageTitle": "Terms of Service",
     "pageSubtitle": "Please read the following terms carefully. Using GoMate means you agree to these terms.",
-    "lastUpdated": "Last Updated: January 1, 2025"
+    "lastUpdated": "Last Updated: January 1, 2025",
+    "sections": [
+      {
+        "title": "1. Acceptance of Terms",
+        "content": "By accessing or using the GoMate platform, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, please discontinue use of the platform."
+      },
+      {
+        "title": "2. Service Description",
+        "content": "GoMate is a location-based team-up platform focused on outdoor hiking scenarios, helping users:",
+        "items": [
+          "Discover quality hiking locations in and around Shenzhen",
+          "Post and join hiking teams",
+          "Connect with like-minded outdoor enthusiasts"
+        ],
+        "footer": "We reserve the right to modify, suspend, or terminate the service at any time."
+      },
+      {
+        "title": "3. User Accounts",
+        "items": [
+          "You must be at least 18 years old to register an account",
+          "You are responsible for maintaining the security of your account and password",
+          "You are responsible for all activities under your account",
+          "If you suspect unauthorized use of your account, please contact us immediately"
+        ]
+      },
+      {
+        "title": "4. User Code of Conduct",
+        "content": "When using GoMate, you must not:",
+        "items": [
+          "Post false or misleading team information",
+          "Harass, threaten, or harm other users",
+          "Post illegal or infringing content",
+          "Use automated tools for bulk operations",
+          "Attempt to breach or disrupt the platform's operation"
+        ],
+        "footer": "Violations of these rules may result in suspension or permanent termination of your account."
+      },
+      {
+        "title": "5. Content Ownership",
+        "items": [
+          "Content you publish (text, images, etc.) remains yours",
+          "By publishing content, you grant GoMate a non-exclusive right to display and distribute it",
+          "We will not sell your content to third parties"
+        ]
+      },
+      {
+        "title": "6. Outdoor Activity Disclaimer",
+        "content": "Important:",
+        "items": [
+          "Outdoor activities such as hiking carry inherent risks — GoMate only provides a team-up information platform",
+          "Participants assume all risks associated with activities",
+          "We strongly recommend assessing your fitness level and preparing adequate equipment before participating",
+          "GoMate is not liable for personal injury or property damage resulting from activity participation"
+        ],
+        "isDisclaimer": true
+      },
+      {
+        "title": "7. Service Changes and Termination",
+        "items": [
+          "We may update these Terms of Service at any time — updates will be announced on the platform",
+          "Continued use of the platform indicates acceptance of new terms",
+          "We reserve the right to terminate accounts for violations"
+        ]
+      },
+      {
+        "title": "8. Contact Us",
+        "content": "If you have questions about these Terms of Service, please contact:",
+        "items": ["Email: hello@gomate.live"]
+      }
+    ]
   },
   "help": {
     "pageTitle": "Help Center",
     "pageSubtitle": "FAQs and Contact",
-    "contactTitle": "Contact Us",
+    "contactTitle": "Still Have Questions?",
     "contactDesc": "If you have any questions, feel free to contact us",
-    "contactBtn": "Send Email"
+    "contactBtn": "Send Email",
+    "faq": [
+      {
+        "question": "How to join a team?",
+        "answer": "On the team detail page, click \"Join Request\" and wait for the team leader's approval."
+      },
+      {
+        "question": "How to create my own team?",
+        "answer": "After logging in, click \"Create Team\" in the navigation bar, fill in team details, departure time, member limits, etc. Once published, other users can apply to join."
+      },
+      {
+        "question": "How to contact the team leader?",
+        "answer": "You can view the team leader's info on the team detail page and contact them off-platform. We're developing an in-app messaging feature — stay tuned."
+      },
+      {
+        "question": "What do the team statuses mean?",
+        "answer": "Recruiting (accepting applications), Full (reached member limit), Confirmed (team is set to depart), Cancelled (event cancelled), Completed (event finished)."
+      },
+      {
+        "question": "How to edit my profile?",
+        "answer": "After logging in, click the avatar in the top-right corner to enter \"Profile\", then click \"Edit Profile\" to update your nickname, bio, hiking level, and more."
+      },
+      {
+        "question": "What if I forgot my password?",
+        "answer": "On the login page, click \"Forgot Password\", enter your registered email, and the system will send a password reset email."
+      }
+    ]
   },
   "pages": {
     "home": "Home",

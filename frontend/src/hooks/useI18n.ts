@@ -11,6 +11,7 @@ import {
   t as translate,
   getLocale,
   loadNamespaces,
+  getNamespaceData,
   type Locale,
 } from "@/i18n";
 
@@ -18,6 +19,7 @@ interface UseI18nReturn {
   t: (key: string, vars?: Record<string, string | number>) => string;
   locale: Locale;
   loading: boolean;
+  getNsData: () => Record<string, unknown> | null;
 }
 
 /**
@@ -73,5 +75,15 @@ export function useI18n(nsList?: string[]): UseI18nReturn {
     [locale],
   );
 
-  return { t: tFn, locale, loading };
+  const getNsData = React.useCallback(() => {
+    if (!nsList || nsList.length === 0) return null;
+    const results: Record<string, unknown> = {};
+    for (const ns of nsList) {
+      const data = getNamespaceData(ns, locale);
+      if (data) results[ns] = data;
+    }
+    return Object.keys(results).length > 0 ? results : null;
+  }, [locale, nsList]);
+
+  return { t: tFn, getNsData, locale, loading };
 }
