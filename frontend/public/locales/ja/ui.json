@@ -52,6 +52,11 @@
   },
   "coverHint": "画像をクリックして表紙に設定",
   "selectFromAlbum": "または下のアルバムから選択",
+  "poi": {
+    "createFailed": "チェックポイントの作成に失敗しました",
+    "updateFailed": "チェックポイントの更新に失敗しました",
+    "missingId": "チェックポイント ID がありません"
+  },
   "emptyState": {
     "teams": {
       "title": "まだチームが出発していません",

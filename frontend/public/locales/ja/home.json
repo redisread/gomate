@@ -16,22 +16,23 @@
     "discoverDesc": "厳選された目的地を閲覧。カフェ、公園、山、海岸を網羅。ルート情報とベストシーズンを確認して、次の行きたい場所を見つけよう",
     "discoverCta": "スポットを閲覧",
     "findTeamTitle": "同行パートナーを見つける",
-    "findTeamDesc": "スポットで募集中のチームをフィルター。誰が待っているか確認。リーダー情報とメンバー構成を見て、気の合う小队に参加申請",
+    "findTeamDesc": "スポットで募集中のチームをフィルター。誰が待っているか確認。リーダー情報とメンバー構成を見て、気の合う小隊に参加申請",
     "findTeamCta": "チームを探す",
-    "departTitle": "一緒に出發",
-    "departDesc": "参加申請が承認されたら、チームメイトと集合時間を決めて、バックパックを背けて出發。または自分でチームを立ち上げ、パートナーを連れて行きたい場所へ",
+    "departTitle": "一緒に出発",
+    "departDesc": "参加申請が承認されたら、チームメイトと集合時間を決めて、バックパックを背けて出発。または自分でチームを立ち上げ、パートナーを連れて行きたい場所へ",
     "departCta": "チームを立ち上げる"
   },
   "teamCard": {
-    "departingToday": "今日出發",
-    "departingTomorrow": "明日出發",
-    "departingInDays": "{days}日後に出發",
+    "departingToday": "今日出発",
+    "departingTomorrow": "明日出発",
+    "departingInDays": "{days}日後に出発",
     "viewDetails": "詳細を見る"
   },
   "floatingLabels": {
     "mountain1": "七娘山",
     "mountain2": "東西衝",
     "teamJoined": "{count}人がチーム結成済み",
-    "dayDepart": "{day}出發"
+    "dayDepart": "{day}出発",
+    "saturdayLabel": "土"
   }
 }

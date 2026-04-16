@@ -32,6 +32,7 @@
     "mountain1": "Qiniang Mountain",
     "mountain2": "Dongxi Chong",
     "teamJoined": "{count} people teamed",
-    "dayDepart": "Departing {day}"
+    "dayDepart": "Departing {day}",
+    "saturdayLabel": "Sat"
   }
 }

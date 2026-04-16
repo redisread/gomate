@@ -107,7 +107,7 @@ export function HomeHero({ data }: { data: HomeData }) {
       </div>
 
       <div className="absolute right-8 top-1/3 hidden lg:flex flex-col gap-3" aria-hidden="true">
-        {[{ icon: "👥", label: t("home.floatingLabels.teamJoined").replace("{count}", "3"), delay: "-1s" }, { icon: "🎒", label: t("home.floatingLabels.dayDepart").replace("{day}", "土"), delay: "-3.5s" }].map((item) => (
+        {[{ icon: "👥", label: t("home.floatingLabels.teamJoined").replace("{count}", "3"), delay: "-1s" }, { icon: "🎒", label: t("home.floatingLabels.dayDepart").replace("{day}", t("home.floatingLabels.saturdayLabel")), delay: "-3.5s" }].map((item) => (
           <div key={item.label} className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-down"
             style={{ boxShadow: "0 8px 24px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)", backdropFilter: "blur(12px)", animationDelay: item.delay }}>
             <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-base">{item.icon}</span>

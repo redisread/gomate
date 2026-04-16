@@ -105,6 +105,7 @@
   "refreshOrRetry": "Please refresh the page or try again",
   "pendingApplications": "Pending Applications",
   "savingChanges": "Saving...",
+  "unsavedChanges": "You have unsaved changes",
   "saveChanges": "Save changes",
   "discardChanges": "Discard changes",
   "goToFill": "Go fill",

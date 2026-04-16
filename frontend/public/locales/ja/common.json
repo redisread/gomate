@@ -105,6 +105,7 @@
   "refreshOrRetry": "ページを更新するか、もう一度お試しください",
   "pendingApplications": "審査待ち申請",
   "savingChanges": "保存中...",
+  "unsavedChanges": "保存されていない変更があります",
   "saveChanges": "変更を保存",
   "discardChanges": "変更を破棄",
   "goToFill": "記入へ",

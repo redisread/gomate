@@ -32,6 +32,7 @@
     "mountain1": "七娘山",
     "mountain2": "东西冲",
     "teamJoined": "{count}人已组队",
-    "dayDepart": "周{day}出发"
+    "dayDepart": "周{day}出发",
+    "saturdayLabel": "六"
   }
 }

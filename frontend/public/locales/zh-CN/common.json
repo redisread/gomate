@@ -105,6 +105,7 @@
   "refreshOrRetry": "请刷新页面或重新尝试",
   "pendingApplications": "待审核申请",
   "savingChanges": "保存中...",
+  "unsavedChanges": "有未保存的更改",
   "saveChanges": "保存更改",
   "discardChanges": "放弃更改",
   "goToFill": "去填写",
