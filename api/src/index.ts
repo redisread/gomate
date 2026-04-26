@@ -87,7 +87,7 @@ app.onError((err, c) => {
 export default {
   fetch: app.fetch,
 
-  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+  async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext) {
     const db = createDb(env.DB);
     const updatedIds = await updateExpiredTeams(db);
     console.log(`[Cron] 已更新 ${updatedIds.length} 个过期队伍:`, updatedIds);

@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Hono } from "hono";
 import { createTestDb } from "../helpers/db";
-import { seedUser, seedTeam, seedCity, seedLocation } from "../helpers/seed";
-import * as schema from "../../db/schema";
+import { seedUser } from "../helpers/seed";
 
 // ===== Mock 策略 =====
 let currentSession: { user: { id: string; email: string; name: string } } | null = null;
@@ -44,10 +43,6 @@ async function req(
 /** 设置登录会话 */
 function loginAs(user: { id: string; email: string; name: string }) {
   currentSession = { user };
-}
-
-function logout() {
-  currentSession = null;
 }
 
 describe("Admin API 集成测试", () => {

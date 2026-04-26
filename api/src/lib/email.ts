@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { getEmailField, getEmailTemplate, EmailLocale } from "./email-i18n";
+import { getEmailField, EmailLocale } from "./email-i18n";
 
 /**
  * 发送密码重置邮件

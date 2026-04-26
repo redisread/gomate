@@ -99,7 +99,7 @@ export function createAuth(env: Env) {
       requireEmailVerification: false,
       resetPasswordTokenExpiresIn: 3600,
       // 自定义邮件发送回调 - 使用正确的函数名
-      sendResetPassword: async ({ user, url, token }: ResetPasswordParams) => {
+      sendResetPassword: async ({ user, url, token: _token }: ResetPasswordParams) => {
         console.log("[Auth] 发送密码重置邮件:", user.email, "URL:", url);
         const result = await sendPasswordResetEmail(
           user.email,
@@ -112,7 +112,7 @@ export function createAuth(env: Env) {
         }
       },
       // 用户注册成功发送欢迎邮件
-      sendVerifyEmail: async ({ user, url }: VerifyEmailParams) => {
+      sendVerifyEmail: async ({ user, url: _url }: VerifyEmailParams) => {
         console.log("[Auth] 发送欢迎邮件:", user.email);
         const result = await sendWelcomeEmail(user.email, user.nickname || user.email, env);
         if (!result.success) {

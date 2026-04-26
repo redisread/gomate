@@ -64,7 +64,7 @@ hikingRoutes.get("/", async (c) => {
     if (cityId) conditions.push(eq(schema.routes.cityId, cityId));
     if (difficulty) conditions.push(eq(schema.routes.difficulty, difficulty));
 
-    let query = db
+    const query = db
       .select({
         route: schema.routes,
         location: schema.locations,
