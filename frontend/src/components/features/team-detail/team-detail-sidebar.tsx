@@ -56,7 +56,7 @@ function TeamTimeInfo({ team }: { team: Team; }) {
       {team.durationMin && team.durationMin > 0 && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Timer className="w-4 h-4" />
-          <span>{t('teams.estimatedPrefix')} {formatDuration(team.durationMin)}</span>
+          <span>{t('teams.estimatedPrefix')} {formatDuration(team.durationMin / 60)}</span>
         </div>
       )}
     </div>

@@ -564,8 +564,16 @@ teams.put("/:id", async (c) => {
       let newStartTime = originalStartTime;
       if (time) {
         const [hours, minutes] = time.split(":").map(Number);
-        newStartTime = new Date(originalStartTime);
-        newStartTime.setHours(hours, minutes, 0, 0);
+        // time is in Beijing (UTC+8); get the Beijing date of original startTime
+        const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+        const originalInBeijing = new Date(originalStartTime.getTime() + BEIJING_OFFSET_MS);
+        const beijingMs = Date.UTC(
+          originalInBeijing.getUTCFullYear(),
+          originalInBeijing.getUTCMonth(),
+          originalInBeijing.getUTCDate(),
+          hours, minutes, 0, 0
+        );
+        newStartTime = new Date(beijingMs - BEIJING_OFFSET_MS);
         updateData.startTime = newStartTime;
       }
       updateData.endTime = new Date(newStartTime.getTime() + currentDurationMin * 60000);
