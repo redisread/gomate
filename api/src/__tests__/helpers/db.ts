@@ -160,6 +160,7 @@ export function createTestDb() {
       status TEXT NOT NULL DEFAULT 'pending',
       joined_at INTEGER,
       status_updated_at INTEGER,
+      extra TEXT,
       created_at INTEGER NOT NULL,
       UNIQUE(team_id, user_id)
     );

@@ -169,16 +169,16 @@ describe("Teams API 集成测试", () => {
     });
   });
 
-  // ===== POST /teams/join - 申请加入 =====
-  describe("POST /teams/join - 申请加入队伍", () => {
+  // ===== POST /teams/:id/join - 申请加入 =====
+  describe("POST /teams/:id/join - 申请加入队伍", () => {
     it("未登录用户申请加入返回 401", async () => {
       const team = await seedTeam(testDb, leader.id, location.id);
       setSession(null);
 
-      const res = await req(app, "/teams/join", {
+      const res = await req(app, `/teams/${team.id}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId: team.id }),
+        body: JSON.stringify({}),
       });
       expect(res.status).toBe(401);
     });
@@ -187,10 +187,10 @@ describe("Teams API 集成测试", () => {
       const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 5 });
       setSession({ id: member.id, email: member.email, name: member.name });
 
-      const res = await req(app, "/teams/join", {
+      const res = await req(app, `/teams/${team.id}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId: team.id }),
+        body: JSON.stringify({}),
       });
       expect(res.status).toBe(200);
 
@@ -204,10 +204,10 @@ describe("Teams API 集成测试", () => {
       await seedTeamMember(testDb, team.id, member.id, "pending");
       setSession({ id: member.id, email: member.email, name: member.name });
 
-      const res = await req(app, "/teams/join", {
+      const res = await req(app, `/teams/${team.id}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId: team.id }),
+        body: JSON.stringify({}),
       });
       // 路由返回 400 并带有错误消息
       expect(res.status).toBe(400);
@@ -220,10 +220,10 @@ describe("Teams API 集成测试", () => {
       await seedTeamMember(testDb, team.id, member.id, "rejected");
       setSession({ id: member.id, email: member.email, name: member.name });
 
-      const res = await req(app, "/teams/join", {
+      const res = await req(app, `/teams/${team.id}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId: team.id }),
+        body: JSON.stringify({}),
       });
       expect(res.status).toBe(200);
       const json = await res.json() as { success: boolean };
@@ -328,7 +328,7 @@ describe("Teams API 集成测试", () => {
 
   // ===== POST /teams/:id/cancel-application - 取消申请 =====
   describe("POST /teams/:id/cancel-application - 取消申请", () => {
-    it("成功取消待审核申请", async () => {
+    it("成功取消待审核申请，状态变为 cancelled", async () => {
       const team = await seedTeam(testDb, leader.id, location.id);
       await seedTeamMember(testDb, team.id, member.id, "pending");
       setSession({ id: member.id, email: member.email, name: member.name });
@@ -336,9 +336,9 @@ describe("Teams API 集成测试", () => {
       const res = await req(app, `/teams/${team.id}/cancel-application`, { method: "POST" });
       expect(res.status).toBe(200);
 
-      const members = await testDb.select().from(schema.teamMembers)
+      const [membership] = await testDb.select().from(schema.teamMembers)
         .where(and(eq(schema.teamMembers.teamId, team.id), eq(schema.teamMembers.userId, member.id)));
-      expect(members).toHaveLength(0);
+      expect(membership.status).toBe("cancelled");
     });
   });
 
