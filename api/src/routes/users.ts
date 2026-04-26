@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, eq, ne, or, gt, inArray } from "drizzle-orm";
+import { and, eq, ne, gt, inArray } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";

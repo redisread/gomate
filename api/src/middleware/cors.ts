@@ -1,11 +1,11 @@
 import { cors } from "hono/cors";
-import type { Context, Env } from "hono";
+import type { Env } from "hono";
 
 /**
  * 解析 CORS_ALLOWED_ORIGINS 环境变量（逗号分隔字符串）
  * 开发环境自动追加 localhost 地址以支持本地调试
  */
-function parseAllowedOrigins(env: Env, origin: string): string[] {
+function parseAllowedOrigins(env: Env, _origin: string): string[] {
   const configured = (env.CORS_ALLOWED_ORIGINS ?? "")
     .split(",")
     .map((s) => s.trim())

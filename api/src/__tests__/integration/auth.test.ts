@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Hono } from "hono";
 import { createTestDb } from "../helpers/db";
-import { createAuth, type Env } from "../../lib/auth";
-import { authRoute } from "../../routes/auth";
+import type { Env } from "../../lib/auth";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { eq } from "drizzle-orm";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from "../../db/schema";
 
 /**
@@ -44,7 +46,7 @@ function createAuthTestApp(sqlite: ReturnType<typeof createTestDb>["sqlite"]) {
       const existingUser = await db
         .select({ id: schema.users.id })
         .from(schema.users)
-        .where(require("drizzle-orm").eq(schema.users.email, email.toLowerCase()))
+        .where(eq(schema.users.email, email.toLowerCase()))
         .limit(1);
 
       if (existingUser.length === 0) {
@@ -52,24 +54,13 @@ function createAuthTestApp(sqlite: ReturnType<typeof createTestDb>["sqlite"]) {
       }
 
       return c.json({ success: true, message: "重置密码邮件已发送，请检查您的邮箱" });
-    } catch (error) {
+    } catch {
       return c.json({ error: "发送重置邮件失败，请稍后重试" }, 500);
     }
   });
 
   // Better Auth 处理所有 /auth/* 路由
   app.all("/auth/*", (c) => {
-    const authInstance = createAuth({
-      DB: undefined as unknown as D1Database,
-      BETTER_AUTH_SECRET: "test-secret-key-for-testing-32chars",
-      APP_URL: "http://localhost:8799",
-      FRONTEND_URL: "http://localhost:3000",
-    });
-
-    // 重写 Better Auth 使用内存数据库
-    const { betterAuth } = require("better-auth");
-    const { drizzleAdapter } = require("better-auth/adapters/drizzle");
-
     const auth = betterAuth({
       database: drizzleAdapter(db as never, {
         provider: "sqlite",

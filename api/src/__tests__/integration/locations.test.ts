@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Hono } from "hono";
 import { createTestDb } from "../helpers/db";
 import { seedUser, seedCity, seedLocation } from "../helpers/seed";
-import { eq } from "drizzle-orm";
 import * as schema from "../../db/schema";
 
 let currentSession: { user: { id: string; email: string; name: string } } | null = null;
@@ -32,13 +31,8 @@ async function req(app: ReturnType<typeof createApp>, path: string, options: Req
   return app.fetch(new Request(`http://localhost${path}`, options), { DB: {} });
 }
 
-function setSession(user: { id: string; email: string; name: string; role?: string } | null) {
-  currentSession = user ? { user: { id: user.id, email: user.email, name: user.name } } : null;
-}
-
 describe("Locations API 集成测试", () => {
   let app: ReturnType<typeof createApp>;
-  let adminUser: schema.User;
   let city: schema.City;
 
   beforeEach(async () => {
@@ -47,7 +41,7 @@ describe("Locations API 集成测试", () => {
     app = createApp();
     currentSession = null;
 
-    adminUser = await seedUser(testDb, { name: "管理员", role: "admin", email: "admin@test.com" });
+    await seedUser(testDb, { name: "管理员", role: "admin", email: "admin@test.com" });
     city = await seedCity(testDb, { name: "深圳" });
   });
 

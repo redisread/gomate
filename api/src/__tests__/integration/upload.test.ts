@@ -2,8 +2,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Hono } from "hono";
 import { createTestDb } from "../helpers/db";
 import { seedUser } from "../helpers/seed";
-import * as schema from "../../db/schema";
-
 // ===== Mock 策略 =====
 let currentSession: { user: { id: string; email: string; name: string } } | null = null;
 let testDb: ReturnType<typeof createTestDb>["db"];

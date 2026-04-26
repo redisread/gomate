@@ -112,6 +112,7 @@ describe("用户 API 集成测试", () => {
     it("成功更新用户信息 → 200", async () => {
       // Arrange
       const user = await seedUser(testDb);
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
 
       // Act
       const res = await req(app, "/users/update", {
@@ -138,6 +139,10 @@ describe("用户 API 集成测试", () => {
      * 预期结果：返回 400
      */
     it("不提供 userId → 400", async () => {
+      // Arrange: set session so route reaches the userId check
+      const user = await seedUser(testDb);
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
       // Act
       const res = await req(app, "/users/update", {
         method: "PATCH",
@@ -156,6 +161,7 @@ describe("用户 API 集成测试", () => {
     it("更新 level 字段 → 200，level 已更新", async () => {
       // Arrange
       const user = await seedUser(testDb, { level: "beginner" });
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
 
       // Act
       const res = await req(app, "/users/update", {

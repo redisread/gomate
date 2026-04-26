@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Hono } from "hono";
-import { eq, like } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { createTestDb } from "../helpers/db";
 import { seedUser } from "../helpers/seed";
 import * as schema from "../../db/schema";
@@ -40,10 +40,6 @@ async function req(
 /** 设置登录会话 */
 function loginAs(user: { id: string; email: string; name: string }) {
   currentSession = { user };
-}
-
-function logout() {
-  currentSession = null;
 }
 
 /** 插入测试 POI */

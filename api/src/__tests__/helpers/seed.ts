@@ -7,8 +7,6 @@ function genId(prefix = "id") {
   return `${prefix}_${idCounter++}_${Date.now()}`;
 }
 
-const now = () => Math.floor(Date.now() / 1000);
-
 /**
  * 插入测试用户
  */

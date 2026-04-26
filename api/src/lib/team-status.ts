@@ -43,17 +43,19 @@ export async function updateExpiredTeams(db: AnyDb, teamId?: string): Promise<st
     return updatedIds;
   }
 
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
   // recruiting -> cancelled
   const recruitingExpired: TeamIdRow[] = await db
     .select({ id: teams.id })
     .from(teams)
-    .where(and(eq(teams.status, "recruiting"), lt(teams.endTime, now)));
+    .where(and(eq(teams.status, "recruiting"), lt(teams.endTime, now), lt(teams.createdAt, oneDayAgo)));
 
   if (recruitingExpired.length > 0) {
     await db
       .update(teams)
       .set({ status: "cancelled", updatedAt: now })
-      .where(and(eq(teams.status, "recruiting"), lt(teams.endTime, now)));
+      .where(and(eq(teams.status, "recruiting"), lt(teams.endTime, now), lt(teams.createdAt, oneDayAgo)));
     updatedIds.push(...recruitingExpired.map((t: TeamIdRow) => t.id));
   }
 
@@ -61,13 +63,13 @@ export async function updateExpiredTeams(db: AnyDb, teamId?: string): Promise<st
   const formedExpired: TeamIdRow[] = await db
     .select({ id: teams.id })
     .from(teams)
-    .where(and(eq(teams.status, "formed"), lt(teams.endTime, now)));
+    .where(and(eq(teams.status, "formed"), lt(teams.endTime, now), lt(teams.createdAt, oneDayAgo)));
 
   if (formedExpired.length > 0) {
     await db
       .update(teams)
       .set({ status: "completed", updatedAt: now })
-      .where(and(eq(teams.status, "formed"), lt(teams.endTime, now)));
+      .where(and(eq(teams.status, "formed"), lt(teams.endTime, now), lt(teams.createdAt, oneDayAgo)));
     updatedIds.push(...formedExpired.map((t: TeamIdRow) => t.id));
   }
 
