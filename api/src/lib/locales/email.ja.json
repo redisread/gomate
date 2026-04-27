@@ -28,6 +28,15 @@
     "subjectLabel": "件名：",
     "contentLabel": "内容："
   },
+  "teamJoinApplication": {
+    "subject": "{applicantName} がチームへの参加を申請しました",
+    "title": "新しいチーム申請",
+    "greeting": "{leaderName}さん、こんにちは。",
+    "body": "{applicantName} が「{teamTitle}」（{locationName}）への参加を申請しました。",
+    "prompt": "申請者が返信を待っていますので、早めにご対応ください。",
+    "viewApplicationBtn": "申請を確認",
+    "signature": "GoMate チーム"
+  },
   "feedback": {
     "bugSubject": "[GoMate バグ報告] {name}より",
     "suggestionSubject": "[GoMate 提案] {name}より",

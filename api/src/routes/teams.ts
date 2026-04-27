@@ -4,6 +4,7 @@ import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
+import { sendTeamJoinApplicationEmail } from "../lib/email";
 
 const teams = new Hono<{ Bindings: Env }>();
 
@@ -637,6 +638,7 @@ teams.post("/:id/join", async (c) => {
         await db.update(schema.teamMembers)
           .set({ status: "pending", createdAt: new Date(), statusUpdatedAt: new Date() })
           .where(eq(schema.teamMembers.id, existing.id));
+        notifyLeaderOfApplication(db, team, userId, c.env).catch(() => {});
         return c.json({ success: true, message: "重新申请已提交" });
       }
     }
@@ -645,6 +647,7 @@ teams.post("/:id/join", async (c) => {
     await db.insert(schema.teamMembers).values({
       id: memberId, teamId, userId, status: "pending", createdAt: new Date(),
     });
+    notifyLeaderOfApplication(db, team, userId, c.env).catch(() => {});
 
     return c.json({ success: true, message: "申请已提交，等待队长审核" });
   } catch (error) {
@@ -1170,5 +1173,36 @@ teams.delete("/:id", async (c) => {
     return c.json({ success: false, error: "删除队伍失败" }, 500);
   }
 });
+
+async function notifyLeaderOfApplication(
+  db: ReturnType<typeof createDb>,
+  team: typeof schema.teams.$inferSelect,
+  applicantUserId: string,
+  env: Env,
+) {
+  const [leaderRow, applicantRow, locationRow] = await Promise.all([
+    db.select({ email: schema.users.email, name: schema.users.name, nickname: schema.users.nickname })
+      .from(schema.users).where(eq(schema.users.id, team.leaderId)).then((r) => r[0]),
+    db.select({ name: schema.users.name, nickname: schema.users.nickname })
+      .from(schema.users).where(eq(schema.users.id, applicantUserId)).then((r) => r[0]),
+    db.select({ name: schema.locations.name })
+      .from(schema.locations).where(eq(schema.locations.id, team.locationId)).then((r) => r[0]),
+  ]);
+
+  if (!leaderRow || !applicantRow || !locationRow) return;
+
+  const frontendUrl = env.FRONTEND_URL || "https://gomate.live";
+  await sendTeamJoinApplicationEmail(
+    {
+      leaderEmail: leaderRow.email,
+      leaderName: leaderRow.nickname || leaderRow.name,
+      applicantName: applicantRow.nickname || applicantRow.name,
+      teamTitle: team.title,
+      locationName: locationRow.name,
+      teamUrl: `${frontendUrl}/teams/${team.id}`,
+    },
+    env,
+  );
+}
 
 export { teams as teamsRoute };
