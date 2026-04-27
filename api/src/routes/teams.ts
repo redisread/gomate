@@ -638,7 +638,11 @@ teams.post("/:id/join", async (c) => {
         await db.update(schema.teamMembers)
           .set({ status: "pending", createdAt: new Date(), statusUpdatedAt: new Date() })
           .where(eq(schema.teamMembers.id, existing.id));
-        notifyLeaderOfApplication(db, team, userId, c.env).catch(() => {});
+        c.executionCtx.waitUntil(
+          notifyLeaderOfApplication(db, team, userId, c.env).catch((err) => {
+            console.error("[Email] Team join notification failed:", err);
+          })
+        );
         return c.json({ success: true, message: "重新申请已提交" });
       }
     }
@@ -647,7 +651,11 @@ teams.post("/:id/join", async (c) => {
     await db.insert(schema.teamMembers).values({
       id: memberId, teamId, userId, status: "pending", createdAt: new Date(),
     });
-    notifyLeaderOfApplication(db, team, userId, c.env).catch(() => {});
+    c.executionCtx.waitUntil(
+      notifyLeaderOfApplication(db, team, userId, c.env).catch((err) => {
+        console.error("[Email] Team join notification failed:", err);
+      })
+    );
 
     return c.json({ success: true, message: "申请已提交，等待队长审核" });
   } catch (error) {
