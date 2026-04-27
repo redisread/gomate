@@ -130,6 +130,57 @@ export async function sendContactFormEmail(
 }
 
 /**
+ * 发送队伍加入申请通知邮件给队长
+ */
+export async function sendTeamJoinApplicationEmail(
+  data: {
+    leaderEmail: string;
+    leaderName: string;
+    applicantName: string;
+    teamTitle: string;
+    locationName: string;
+    teamUrl: string;
+  },
+  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string },
+  locale: EmailLocale = "zh-CN",
+): Promise<{ success: boolean; error?: string }> {
+  const apiKey = env.RESEND_API_KEY;
+  if (!apiKey) return { success: false, error: "Email service not configured" };
+
+  try {
+    const resend = new Resend(apiKey);
+    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
+    const vars = {
+      leaderName: data.leaderName,
+      applicantName: data.applicantName,
+      teamTitle: data.teamTitle,
+      locationName: data.locationName,
+    };
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: data.leaderEmail,
+      subject: getEmailField(locale, "teamJoinApplication", "subject", vars),
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #16a34a;">${getEmailField(locale, "teamJoinApplication", "title")}</h2>
+          <p>${getEmailField(locale, "teamJoinApplication", "greeting", vars)}</p>
+          <p>${getEmailField(locale, "teamJoinApplication", "body", vars)}</p>
+          <p>${getEmailField(locale, "teamJoinApplication", "prompt")}</p>
+          <a href="${data.teamUrl}" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "teamJoinApplication", "viewApplicationBtn")}</a>
+          <p style="color:#6b7280;font-size:14px;">${getEmailField(locale, "teamJoinApplication", "signature")}</p>
+        </div>
+      `,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[Email] Failed to send team join application email:", error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+/**
  * 发送用户反馈邮件（功能建议 / Bug 反馈）
  */
 export async function sendFeedbackEmail(
