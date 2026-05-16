@@ -110,7 +110,7 @@ export function LocationsHero({
         <div className="mt-3 relative" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 290ms both" }}>
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {cities.length > 0 && (
-              <button ref={cityBtnRef} type="button"
+              <button ref={cityBtnRef} type="button" data-city-btn
                 onClick={() => {
                   if (cityBtnRef.current) {
                     const rect = cityBtnRef.current.getBoundingClientRect();
@@ -149,7 +149,7 @@ export function LocationsHero({
 
         {/* 城市下拉 */}
         {showCityDropdown && (
-          <div ref={cityDropdownRef} className="fixed bg-popover border border-stone-200 dark:border-stone-700 rounded-xl shadow-lg z-[9999] min-w-[140px] max-h-60 overflow-y-auto py-1 origin-top"
+          <div ref={cityDropdownRef} data-city-dropdown className="fixed bg-popover border border-stone-200 dark:border-stone-700 rounded-xl shadow-lg z-[9999] min-w-[140px] max-h-60 overflow-y-auto py-1 origin-top"
             style={{ top: cityDropdownPos.top, left: cityDropdownPos.left, animation: "scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both" }}>
             <button type="button" onClick={() => onCitySelect("")}
               className={cn("w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
