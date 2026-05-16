@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown } from "lucide-react";
+import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchCurrentUser, API_BASE } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { type Locale, SUPPORTED_LOCALES, getLocale, setLocale, getLocaleName } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
+import { useIPLocation, getCityDisplay } from "@/hooks/useIPLocation";
 
 const navLinks = (t: (key: any) => string) => [
   { href: "/",          label: t("nav.home") },
@@ -39,6 +40,10 @@ export function Navbar({ className }: NavbarProps) {
     user?: { id: string; name: string; nickname?: string; email: string; image?: string };
     isAdmin?: boolean;
   } | null>(null);
+
+  // IP 定位获取用户城市（仅登录后）
+  const { city, isLoading: isLocating } = useIPLocation();
+  const userCity = session?.user ? getCityDisplay({ city }) : null;
 
   // 获取当前路径
   React.useEffect(() => {
@@ -171,6 +176,14 @@ export function Navbar({ className }: NavbarProps) {
 
               {session?.user ? (
                 <>
+                  {/* 用户所在城市 - 仅定位成功时显示 */}
+                  {userCity && (
+                    <div className="flex items-center gap-1 text-sm" style={{ color: "#666666" }}>
+                      <MapPin className="h-4 w-4" style={{ color: "#FF6B35" }} />
+                      <span>{userCity}</span>
+                    </div>
+                  )}
+
                   {/* 用户菜单 */}
                   <div className="relative" data-user-menu>
                     <button
