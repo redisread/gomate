@@ -70,12 +70,17 @@
     "checkpoint": "Checkpoint",
     "viewpoint": "Viewpoint",
     "facility": "Facility",
-    "poi": "Point of Interest"
+    "poi": "Point of Interest",
+    "campsite": "Campsite"
   },
   "seasons": {
     "spring": { "label": "Spring", "months": "Mar-May" },
     "summer": { "label": "Summer", "months": "Jun-Aug" },
     "autumn": { "label": "Autumn", "months": "Sep-Nov" },
-    "winter": { "label": "Winter", "months": "Dec-Feb" }
+    "winter": { "label": "Winter", "months": "Dec-Feb" },
+    "春季": { "label": "Spring", "months": "Mar-May" },
+    "夏季": { "label": "Summer", "months": "Jun-Aug" },
+    "秋季": { "label": "Autumn", "months": "Sep-Nov" },
+    "冬季": { "label": "Winter", "months": "Dec-Feb" }
   }
 }

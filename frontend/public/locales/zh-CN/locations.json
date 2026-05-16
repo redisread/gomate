@@ -70,12 +70,17 @@
     "checkpoint": "打卡点",
     "viewpoint": "观景点",
     "facility": "设施",
-    "poi": "兴趣点"
+    "poi": "兴趣点",
+    "campsite": "露营地"
   },
   "seasons": {
     "spring": { "label": "春季", "months": "3-5月" },
     "summer": { "label": "夏季", "months": "6-8月" },
     "autumn": { "label": "秋季", "months": "9-11月" },
-    "winter": { "label": "冬季", "months": "12-2月" }
+    "winter": { "label": "冬季", "months": "12-2月" },
+    "春季": { "label": "春季", "months": "3-5月" },
+    "夏季": { "label": "夏季", "months": "6-8月" },
+    "秋季": { "label": "秋季", "months": "9-11月" },
+    "冬季": { "label": "冬季", "months": "12-2月" }
   }
 }
