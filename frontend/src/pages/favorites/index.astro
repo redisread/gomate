@@ -6,7 +6,7 @@ import Layout from "../../layouts/Layout.astro";
 import { FavoritesClient } from "../../components/features/favorites-client";
 import { declareI18nNs } from "../../middleware";
 
-declareI18nNs(Astro.locals, ["favorites"]);
+declareI18nNs(Astro.locals, ["favorites", "content"]);
 ---
 
 <Layout title="我的收藏 - GoMate" showNavbar={false} showFooter={false}>
