@@ -6,7 +6,7 @@ import "../styles/globals.css";
 import { Navbar } from "../components/layout/navbar";
 import { Footer } from "../components/layout/footer";
 import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, getSSRT } from "../i18n";
-import { loadLocaleData } from "../i18n/ssr-loader";
+import { loadLocaleData } from "../i18n/ssr-loader.server";
 
 interface Props {
   title?: string;
