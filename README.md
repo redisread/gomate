@@ -10,7 +10,6 @@ GoMate 地点组队平台 - Monorepo 架构
 gomate/
 ├── api/                  # 后端 API（Hono + Cloudflare Workers）
 ├── frontend/             # Web 前端（Astro 6 + React + Cloudflare Pages）
-├── mobile/               # 移动端（Flutter iOS/Android）
 ├── packages/
 │   ├── types/            # 共享类型定义
 │   └── config/           # 共享配置（tsconfig 等）
@@ -20,13 +19,14 @@ gomate/
 └── pnpm-workspace.yaml   # workspace 包路径定义
 ```
 
+> 📱 **移动端已归档**：原 Flutter mobile 代码已迁移至 [redisread/gomate-mobile](https://github.com/redisread/gomate-mobile)
+
 ## 开发
 
 ### 前置要求
 
 - Node.js >= 20
 - pnpm >= 9
-- Flutter >= 3.24（移动端开发）
 
 ### 安装依赖
 
@@ -38,17 +38,21 @@ pnpm install
 
 后端 API：
 ```bash
+pnpm api:dev
+# 或
 pnpm --filter @gomate/api dev
 ```
 
 Web 前端：
 ```bash
+pnpm web:dev
+# 或
 pnpm --filter @gomate/frontend dev
 ```
 
-移动端：
+或者同时启动：
 ```bash
-cd mobile && flutter run
+pnpm dev
 ```
 
 ## 部署
@@ -65,15 +69,13 @@ cd mobile && flutter run
 - **生产地址**: https://gomate.live
 - **部署命令**: `pnpm web:build && cd frontend && wrangler pages deploy dist --project-name=gomate-frontend --branch=main`
 
-### 移动端
-
-- App Store / Google Play
+> 📱 **移动端已归档**：原 Flutter mobile 代码已迁移至 [redisread/gomate-mobile](https://github.com/redisread/gomate-mobile)
 
 ## 共享包
 
 ### @gomate/types
 
-共享类型定义，供 `api`、`frontend`、`mobile` 各子包共享使用：
+共享类型定义，供 `api`、`frontend` 各子包共享使用：
 
 - 枚举类型：`Difficulty`、`TeamStatus`、`TeamMemberStatus` 等
 - 数据模型：`Location`、`Route`、`Team`、`TeamMember`、`UserPublicProfile` 等
@@ -91,7 +93,6 @@ cd mobile && flutter run
 |--------|----------|------|
 | `api-deploy.yml` | `api/**` 变更推送到 main | 部署后端到 Cloudflare Workers |
 | `frontend-deploy.yml` | `frontend/**` 或 `packages/**` 变更推送到 main | 部署前端到 Cloudflare Pages |
-| `mobile-build.yml` | `mobile/**` 变更推送到 main | 构建 Android APK 和 iOS IPA |
 
 ## 数据库表
 
