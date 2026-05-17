@@ -6,8 +6,6 @@
  * 客户端 hydration 时优先读取此数据，避免首屏翻译闪烁。
  */
 
-import * as fs from "node:fs";
-import * as path from "node:path";
 import type { Locale } from "./index";
 
 /**
@@ -24,23 +22,28 @@ export async function loadLocaleData(
 ): Promise<Record<string, Record<string, unknown>>> {
   const results: Record<string, Record<string, unknown>> = {};
 
-  // SSR 期间直接读取文件系统，避免 fetch 在服务端失败
-  const localesDir = path.join(process.cwd(), "public", "locales", locale);
+  // 仅在 SSR 环境执行文件系统读取
+  if (import.meta.env.SSR) {
+    const { readFileSync, existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
 
-  await Promise.all(
-    nsList.map(async (ns) => {
-      try {
-        const filePath = path.join(localesDir, `${ns}.json`);
-        if (fs.existsSync(filePath)) {
-          const content = fs.readFileSync(filePath, "utf-8");
-          results[ns] = JSON.parse(content) as Record<string, unknown>;
+    const localesDir = join(process.cwd(), "public", "locales", locale);
+
+    await Promise.all(
+      nsList.map(async (ns) => {
+        try {
+          const filePath = join(localesDir, `${ns}.json`);
+          if (existsSync(filePath)) {
+            const content = readFileSync(filePath, "utf-8");
+            results[ns] = JSON.parse(content) as Record<string, unknown>;
+          }
+        } catch (err) {
+          // SSR 读取失败，客户端会 fallback 到 fetch
+          console.error(`[SSR] Failed to load locale ${locale}/${ns}:`, err);
         }
-      } catch (err) {
-        // SSR 读取失败，客户端会 fallback 到 fetch
-        console.error(`[SSR] Failed to load locale ${locale}/${ns}:`, err);
-      }
-    }),
-  );
+      }),
+    );
+  }
 
   return results;
 }
