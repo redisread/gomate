@@ -649,11 +649,17 @@ teams.post("/:id/join", async (c) => {
         await db.update(schema.teamMembers)
           .set({ status: "pending", createdAt: new Date(), statusUpdatedAt: new Date() })
           .where(eq(schema.teamMembers.id, existing.id));
-        c.executionCtx.waitUntil(
-          notifyLeaderOfApplication(db, team, userId, c.env).catch((err) => {
-            console.error("[Email] Team join notification failed:", err);
-          })
-        );
+        // 异步发送通知邮件（在 Cloudflare Workers 环境中使用 waitUntil，否则直接执行）
+        const notifyPromise = notifyLeaderOfApplication(db, team, userId, c.env).catch((err) => {
+          console.error("[Email] Team join notification failed:", err);
+        });
+        try {
+          if (c.executionCtx?.waitUntil) {
+            c.executionCtx.waitUntil(notifyPromise);
+          }
+        } catch {
+          // 非 Cloudflare 环境，直接执行不阻塞
+        }
         return c.json({ success: true, message: "重新申请已提交" });
       }
     }
@@ -662,11 +668,17 @@ teams.post("/:id/join", async (c) => {
     await db.insert(schema.teamMembers).values({
       id: memberId, teamId, userId, status: "pending", createdAt: new Date(),
     });
-    c.executionCtx.waitUntil(
-      notifyLeaderOfApplication(db, team, userId, c.env).catch((err) => {
-        console.error("[Email] Team join notification failed:", err);
-      })
-    );
+    // 异步发送通知邮件（在 Cloudflare Workers 环境中使用 waitUntil，否则直接执行）
+    const notifyPromise = notifyLeaderOfApplication(db, team, userId, c.env).catch((err) => {
+      console.error("[Email] Team join notification failed:", err);
+    });
+    try {
+      if (c.executionCtx?.waitUntil) {
+        c.executionCtx.waitUntil(notifyPromise);
+      }
+    } catch {
+      // 非 Cloudflare 环境，直接执行不阻塞
+    }
 
     return c.json({ success: true, message: "申请已提交，等待队长审核" });
   } catch (error) {
