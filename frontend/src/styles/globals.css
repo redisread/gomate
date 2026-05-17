@@ -583,6 +583,53 @@
   .stagger-5 { animation-delay: 250ms; }
   .stagger-6 { animation-delay: 300ms; }
 
+  /* ---- Skeleton Shimmer 骨架屏扫光效果 ---- */
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(226, 232, 240, 0.8) 0%,
+      rgba(226, 232, 240, 0.4) 40%,
+      rgba(226, 232, 240, 0.8) 80%,
+      rgba(226, 232, 240, 0.8) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  .dark .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(51, 65, 85, 0.8) 0%,
+      rgba(51, 65, 85, 0.4) 40%,
+      rgba(51, 65, 85, 0.8) 80%,
+      rgba(51, 65, 85, 0.8) 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  .skeleton-text {
+    background: rgba(226, 232, 240, 0.8);
+    animation: shimmer 1.5s ease-in-out infinite;
+    background-size: 200% 100%;
+    background-image: linear-gradient(
+      90deg,
+      rgba(226, 232, 240, 0.8) 0%,
+      rgba(226, 232, 240, 0.4) 40%,
+      rgba(226, 232, 240, 0.8) 80%,
+      rgba(226, 232, 240, 0.8) 100%
+    );
+  }
+
+  .dark .skeleton-text {
+    background-image: linear-gradient(
+      90deg,
+      rgba(51, 65, 85, 0.8) 0%,
+      rgba(51, 65, 85, 0.4) 40%,
+      rgba(51, 65, 85, 0.8) 80%,
+      rgba(51, 65, 85, 0.8) 100%
+    );
+  }
+
   /* ---- 动画时长 ---- */
   .duration-instant { transition-duration: var(--duration-instant); }
   .duration-fast    { transition-duration: var(--duration-fast); }

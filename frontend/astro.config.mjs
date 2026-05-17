@@ -28,6 +28,9 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    ssr: {
+      external: ["node:fs", "node:path"],
+    },
     define: {
       "import.meta.env.PUBLIC_API_URL": JSON.stringify(
         env.PUBLIC_API_URL || "http://localhost:8799"
