@@ -50,7 +50,7 @@ async function updateExpiredTeams(db: ReturnType<typeof createDb>, teamId?: stri
   await db
     .update(schema.teams)
     .set({ status: "completed", updatedAt: now })
-    .where(formedCondition as ReturnType<typeof and>);
+    .where(formedCondition as any);
 
   // 2. 将 startTime 已过期的 recruiting 队伍更新为 completed
   const recruitingCondition = teamId
@@ -59,7 +59,7 @@ async function updateExpiredTeams(db: ReturnType<typeof createDb>, teamId?: stri
   await db
     .update(schema.teams)
     .set({ status: "completed", updatedAt: now })
-    .where(recruitingCondition as ReturnType<typeof and>);
+    .where(recruitingCondition as any);
 }
 
 /**
