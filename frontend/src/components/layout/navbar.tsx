@@ -326,6 +326,13 @@ export function Navbar({ className }: NavbarProps) {
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground text-sm truncate">{session.user.nickname || session.user.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
+                    {/* 移动端城市显示 */}
+                    {userCity && (
+                      <p className="text-xs mt-1 flex items-center gap-1" style={{ color: "#666666" }}>
+                        <MapPin className="h-3 w-3" style={{ color: "#FF6B35" }} />
+                        {userCity}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
