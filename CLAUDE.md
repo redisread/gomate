@@ -12,14 +12,13 @@ GoMate 是一个极简的「地点组队」平台，专注于深圳徒步场景�
 gomate/
 ├── api/          # 后端 - Hono 4 + Cloudflare Workers + Drizzle ORM
 ├── frontend/     # 前端 - Astro 4 + React 18 + Tailwind CSS 4
+├── mobile/       # 移动端 - Flutter 3.24 + Riverpod 2.6
 ├── packages/
 │   ├── types/    # 共享 TypeScript 类型 (@gomate/types)
 │   └── config/   # 共享 tsconfig 配置 (@gomate/config)
 ├── package.json
 └── pnpm-workspace.yaml
 ```
-
-> 📱 **移动端已归档**：原 Flutter mobile 代码已迁移至 [redisread/gomate-mobile](https://github.com/redisread/gomate-mobile)
 
 ## 技术栈
 
@@ -38,6 +37,12 @@ gomate/
 - **语言**: TypeScript 5（严格模式）
 - **架构**: Astro 薄壳 + React Islands（client:load）
 
+### 移动端（mobile/）
+- **框架**: Flutter 3.24+
+- **状态管理**: Riverpod 2.6
+- **路由**: GoRouter 14
+- **HTTP**: Dio 5.7
+
 ## 开发命令
 
 ```bash
@@ -50,6 +55,7 @@ pnpm dev
 # 单独启动
 pnpm api:dev        # API: localhost:8799
 pnpm web:dev        # Frontend: localhost:5432
+cd mobile && flutter run
 
 # 本地调试检查
 # 启动本地调试前先检查是否已启动：
