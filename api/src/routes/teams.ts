@@ -50,6 +50,7 @@ async function updateExpiredTeams(db: ReturnType<typeof createDb>, teamId?: stri
   await db
     .update(schema.teams)
     .set({ status: "completed", updatedAt: now })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .where(formedCondition as any);
 
   // 2. 将 startTime 已过期的 recruiting 队伍更新为 completed
@@ -59,6 +60,7 @@ async function updateExpiredTeams(db: ReturnType<typeof createDb>, teamId?: stri
   await db
     .update(schema.teams)
     .set({ status: "completed", updatedAt: now })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .where(recruitingCondition as any);
 }
 

@@ -280,6 +280,7 @@ locations.get("/:id", async (c) => {
     const tags = tagRelations.map((r) => ({ id: r.tagId, name: r.tagName, type: r.tagType }));
 
     // 格式化路线数据
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formattedRoutes = (location.routes || []).map((route: any) => ({
       ...route,
       coordinates: route.coordinates ? safeJsonParse(route.coordinates, { lat: 0, lng: 0 }) : undefined,
