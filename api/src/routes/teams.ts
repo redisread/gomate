@@ -39,16 +39,27 @@ async function getRouteTags(
     }));
 }
 
-/** 将 endTime 已过期的 formed 队伍更新为 completed */
+/** 将已过期的队伍更新为 completed */
 async function updateExpiredTeams(db: ReturnType<typeof createDb>, teamId?: string) {
   const now = new Date();
-  const condition = teamId
+
+  // 1. 将 endTime 已过期的 formed 队伍更新为 completed
+  const formedCondition = teamId
     ? and(eq(schema.teams.id, teamId), eq(schema.teams.status, "formed"), lt(schema.teams.endTime, now))
     : and(eq(schema.teams.status, "formed"), lt(schema.teams.endTime, now));
   await db
     .update(schema.teams)
     .set({ status: "completed", updatedAt: now })
-    .where(condition as ReturnType<typeof and>);
+    .where(formedCondition as ReturnType<typeof and>);
+
+  // 2. 将 startTime 已过期的 recruiting 队伍更新为 completed
+  const recruitingCondition = teamId
+    ? and(eq(schema.teams.id, teamId), eq(schema.teams.status, "recruiting"), lt(schema.teams.startTime, now))
+    : and(eq(schema.teams.status, "recruiting"), lt(schema.teams.startTime, now));
+  await db
+    .update(schema.teams)
+    .set({ status: "completed", updatedAt: now })
+    .where(recruitingCondition as ReturnType<typeof and>);
 }
 
 /**
