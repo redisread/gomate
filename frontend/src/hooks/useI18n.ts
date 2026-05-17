@@ -4,6 +4,7 @@
  * - Accepts optional namespace list for auto-loading
  * - Reads locale from cookie on client side
  * - Provides t() function with loaded translations
+ * - 同步检查 SSR 缓存，避免首屏闪烁
  */
 
 import * as React from "react";
@@ -23,6 +24,15 @@ interface UseI18nReturn {
 }
 
 /**
+ * 同步检查所有 namespace 是否已在缓存中
+ * 用于 SSR  hydration 后立即判断 loading 状态
+ */
+function areAllNsCached(nsList: string[] | undefined, locale: Locale): boolean {
+  if (!nsList || nsList.length === 0) return true;
+  return nsList.every((ns) => getNamespaceData(ns, locale) !== null);
+}
+
+/**
  * Hook for Islands components to access i18n
  *
  * @param nsList - Optional list of namespaces to auto-load
@@ -34,10 +44,17 @@ interface UseI18nReturn {
  */
 export function useI18n(nsList?: string[]): UseI18nReturn {
   const [locale, setLocale] = React.useState<Locale>(getLocale());
-  const [loading, setLoading] = React.useState(true);
+  // 同步检查缓存：如果 SSR 数据已注入，直接设置 loading=false
+  const [loading, setLoading] = React.useState(() => !areAllNsCached(nsList, getLocale()));
 
   React.useEffect(() => {
     if (!nsList || nsList.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    // 如果数据已在缓存中，跳过加载
+    if (areAllNsCached(nsList, locale)) {
       setLoading(false);
       return;
     }
