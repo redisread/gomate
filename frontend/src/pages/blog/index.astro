@@ -5,7 +5,7 @@ import { declareI18nNs } from "../../middleware";
 import { loadLocaleData } from "../../i18n/ssr-loader.server";
 import { getLocaleFromCookie, type Locale, DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../../i18n";
 
-declareI18nNs(Astro.locals, ['blog']);
+declareI18nNs(Astro.locals, ['blog', 'content']);
 
 // Read locale from cookie (SSR)
 const cookieLocale = Astro.cookies.get("gomate_locale")?.value as Locale | undefined;
