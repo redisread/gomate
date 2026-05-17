@@ -10,6 +10,7 @@ import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { type Locale, SUPPORTED_LOCALES, getLocale, setLocale, getLocaleName } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
 import { useIPLocation, getCityDisplay } from "@/hooks/useIPLocation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const navLinks = (t: (key: any) => string) => [
   { href: "/",          label: t("nav.home") },
@@ -31,7 +32,7 @@ interface NavbarProps {
  * - 用户菜单：hover 展开下拉
  */
 export function Navbar({ className }: NavbarProps) {
-  const { t } = useI18n(["nav", "common"]);
+  const { t, loading: i18nLoading } = useI18n(["nav", "common"]);
   const [isScrolled,        setIsScrolled]        = React.useState(() => typeof window !== "undefined" && window.scrollY > 20);
   const [isMobileMenuOpen,  setIsMobileMenuOpen]  = React.useState(false);
   const [showUserMenu,      setShowUserMenu]      = React.useState(false);
@@ -99,6 +100,11 @@ export function Navbar({ className }: NavbarProps) {
     if (href === "/") return currentPath === "/";
     return currentPath.startsWith(href);
   };
+
+  // i18n 加载中显示骨架屏
+  if (i18nLoading) {
+    return <NavbarSkeleton className={className} />;
+  }
 
   return (
     <>
@@ -458,6 +464,49 @@ function CtaButton({
       {icon}
       {label}
     </a>
+  );
+}
+
+/**
+ * Navbar Skeleton - i18n 加载时显示
+ */
+function NavbarSkeleton({ className }: { className?: string }) {
+  return (
+    <header
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50",
+        "bg-white/80 dark:bg-slate-900/80 backdrop-blur-md",
+        className
+      )}
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo 区域 */}
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" />
+            <div className="h-6 w-20 rounded bg-slate-200 dark:bg-slate-700 skeleton-shimmer" />
+          </div>
+
+          {/* 桌面端导航链接 */}
+          <nav className="hidden md:flex items-center gap-1">
+            <div className="h-8 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "50ms" }} />
+            <div className="h-8 w-20 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "100ms" }} />
+            <div className="h-8 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "150ms" }} />
+          </nav>
+
+          {/* 桌面端操作区 */}
+          <div className="hidden md:flex items-center gap-2">
+            <div className="h-8 w-20 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "200ms" }} />
+            <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "250ms" }} />
+            <div className="h-9 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "300ms" }} />
+            <div className="h-9 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "350ms" }} />
+          </div>
+
+          {/* 移动端汉堡按钮占位 */}
+          <div className="md:hidden h-9 w-9 rounded-full bg-slate-200 dark:bg-slate-700 skeleton-shimmer" />
+        </div>
+      </div>
+    </header>
   );
 }
 
