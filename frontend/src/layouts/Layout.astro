@@ -144,9 +144,28 @@ function getHreflangUrl(loc: Locale) {
 
     {/* 客户端 hydration 时优先读取 SSR 内联数据 */}
     <script is:inline>
-      if (window.__I18N_DATA__) {
-        // SSR 数据将在客户端 JS 加载后通过 hydrateSSRData() 处理
-      }
+      (function() {
+        const ssrData = window.__I18N_DATA__;
+        if (!ssrData) return;
+
+        // 内联 hydrateSSRData 逻辑：将 SSR 数据写入内存缓存
+        // 注意：这里模拟 i18n/index.ts 中的内存缓存逻辑
+        if (typeof window !== 'undefined') {
+          window.__I18N_MEMORY_CACHE__ = window.__I18N_MEMORY_CACHE__ || new Map();
+          for (const [locale, nsMap] of Object.entries(ssrData)) {
+            for (const [ns, nsData] of Object.entries(nsMap)) {
+              const memKey = `${locale}:${ns}`;
+              const entry = {
+                data: nsData,
+                expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24h TTL
+              };
+              window.__I18N_MEMORY_CACHE__.set(memKey, entry);
+            }
+          }
+          // 清理全局变量避免重复处理
+          delete window.__I18N_DATA__;
+        }
+      })();
     </script>
   </head>
   <body class={["min-h-screen", isDark ? "dark bg-[#12100d]" : "bg-[#faf8f5]"].join(" ")}>

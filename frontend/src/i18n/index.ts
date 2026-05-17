@@ -72,6 +72,21 @@ function getFromCache(ns: string, locale: Locale): Record<string, unknown> | nul
     return mem.data;
   }
 
+  // 检查 SSR 预注入的内存缓存（Layout.astro 内联脚本设置）
+  if (typeof window !== "undefined") {
+    const ssrMemCache = (window as unknown as Record<string, unknown>).__I18N_MEMORY_CACHE__ as
+      | Map<string, CacheEntry<Record<string, unknown>>>
+      | undefined;
+    if (ssrMemCache) {
+      const ssrEntry = ssrMemCache.get(memKey);
+      if (ssrEntry && ssrEntry.expiresAt > Date.now()) {
+        // 同步到模块内存缓存
+        memoryCache.set(memKey, ssrEntry);
+        return ssrEntry.data;
+      }
+    }
+  }
+
   // 兜底：直接从 SSR 内联数据读取（防止 hydration 未执行或时序问题）
   if (typeof window !== "undefined") {
     const ssrData = (window as unknown as Record<string, unknown>).__I18N_DATA__ as
