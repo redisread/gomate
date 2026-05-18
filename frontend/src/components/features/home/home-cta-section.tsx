@@ -7,11 +7,14 @@ export function HomeCtaSection({ data }: { data: HomeData }) {
   const { isLoggedIn, isDark, ctaRef, ctaInView } = data;
   const { t } = useI18n(["home"]);
 
+  // SSR 默认使用亮色模式，hydration 完成后客户端主题会自动同步
+  const effectiveIsDark = isDark;
+
   return (
     <section ref={ctaRef}
       className={`py-24 section-hidden ${ctaInView ? "section-visible" : ""}`}
       style={{
-        background: isDark
+        background: effectiveIsDark
           ? "linear-gradient(160deg, #1c1608 0%, #12100d 50%, #1a1510 100%)"
           : "linear-gradient(160deg, #FFFBEB 0%, #faf8f5 50%, #f5f0e8 100%)",
       }}>

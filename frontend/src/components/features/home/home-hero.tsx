@@ -5,11 +5,11 @@ import type { useHomeData } from "./use-home-data";
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeHero({ data }: { data: HomeData }) {
-  const { isDark, animate, parallaxY, search, handleSearch, mounted } = data;
+  const { isDark, animate, parallaxY, search, handleSearch } = data;
   const { t } = useI18n(["home", "common", "content"]);
 
-  // 挂载前统一使用亮色模式，避免 SSR/CSR 主题不一致
-  const effectiveIsDark = mounted ? isDark : false;
+  // SSR 默认使用亮色模式，hydration 完成后客户端主题会自动同步
+  const effectiveIsDark = isDark;
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
