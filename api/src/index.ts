@@ -16,6 +16,7 @@ import { amapRoute } from "./routes/amap";
 import { poisRoute } from "./routes/pois";
 import { updateExpiredTeams } from "./lib/team-status";
 import { createDb } from "./db";
+import { fetchWithTimeout } from "./lib/timeout";
 import type { Env } from "./lib/auth";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -57,18 +58,86 @@ app.get("/r2/*", async (c) => {
   return new Response(object.body, { headers });
 });
 
+// 图片代理：允许的域名白名单（支持通配符）
+const ALLOWED_IMAGE_PATTERNS = [
+  "gomate.cos.jiahongw.com",
+  "*.githubusercontent.com",  // 覆盖所有子域名
+  "*.googleusercontent.com",
+  "cdn.discordapp.com",
+];
+
+// 速率限制配置
+const RATE_LIMIT_MAX = 100; // 每小时最大请求数
+const RATE_LIMIT_WARNING_THRESHOLD = 20; // 告警阈值：剩余请求数
+const RATE_LIMIT_WINDOW = 3600; // 1小时（秒）
+
+/**
+ * 验证域名是否在白名单中（支持通配符）
+ * @param hostname - 要验证的域名
+ * @returns boolean
+ */
+function isDomainAllowed(hostname: string): boolean {
+  return ALLOWED_IMAGE_PATTERNS.some(pattern => {
+    if (pattern.startsWith("*.")) {
+      const suffix = pattern.slice(1); // 移除开头的 "*"，保留 ".example.com"
+      return hostname.endsWith(suffix);
+    }
+    return hostname === pattern;
+  });
+}
+
 /** 图片代理：供前端 Canvas 绘图使用，绕过跨域限制 */
 app.get("/proxy-image", async (c) => {
   const url = c.req.query("url");
   if (!url) return c.json({ error: "url is required" }, 400);
+
+  // 验证 URL 格式
+  let urlObj: URL;
   try {
-    const resp = await fetch(url);
+    urlObj = new URL(url);
+  } catch {
+    return c.json({ error: "Invalid URL" }, 400);
+  }
+
+  // 验证域名白名单
+  if (!isDomainAllowed(urlObj.hostname)) {
+    return c.json({ error: "Domain not allowed" }, 403);
+  }
+
+  // 速率限制检查
+  const clientIP = c.req.header("CF-Connecting-IP") || "unknown";
+  const RATE_LIMIT_KEY = `rate:proxy:${clientIP}`;
+  const kv = c.env.GOMATE_KV;
+
+  if (kv) {
+    const current = await kv.get(RATE_LIMIT_KEY);
+    const count = current ? parseInt(current as string, 10) : 0;
+    const remaining = RATE_LIMIT_MAX - count;
+
+    if (remaining <= 0) {
+      return c.json({ error: "Rate limit exceeded" }, 429);
+    }
+
+    // 告警阈值检查
+    if (remaining <= RATE_LIMIT_WARNING_THRESHOLD) {
+      console.warn(`[RateLimit] IP ${clientIP} 即将达到速率限制，剩余 ${remaining - 1} 次请求`);
+    }
+
+    // 使用 KV TTL（1小时）
+    await kv.put(RATE_LIMIT_KEY, String(count + 1), { expirationTtl: RATE_LIMIT_WINDOW });
+  }
+
+  try {
+    const resp = await fetchWithTimeout(url, {}, 10000);
     if (!resp.ok) return c.json({ error: "fetch failed" }, 502);
+
     const headers = new Headers();
     const contentType = resp.headers.get("content-type");
     if (contentType) headers.set("Content-Type", contentType);
     headers.set("Access-Control-Allow-Origin", "*");
-    headers.set("Cache-Control", "public, max-age=86400");
+    // 优化缓存：图片缓存在边缘 24 小时
+    headers.set("Cache-Control", "public, max-age=86400, s-maxage=86400");
+
     return new Response(resp.body, { headers });
   } catch {
     return c.json({ error: "proxy failed" }, 502);
