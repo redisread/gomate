@@ -5,7 +5,6 @@ import { useI18n } from "@/hooks/useI18n";
 import { useLocationsList } from "./use-locations-list";
 import { LocationsHero, LocationsResultBar, LocationsCtaSection } from "./locations-hero";
 import { LocationsGrid } from "./locations-grid";
-import { LocationsGridSkeleton, LocationsHeroSkeleton } from "@/components/ui/skeleton";
 
 export function LocationsClient() {
   const ctx = useLocationsList();
@@ -36,22 +35,6 @@ export function LocationsClient() {
     const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     window.history.replaceState({}, "", newUrl);
   }, [ctx.currentPage]);
-
-  // i18n 加载中时显示骨架屏
-  if (i18nLoading) {
-    return (
-      <main className="min-h-screen bg-stone-50 dark:bg-stone-950">
-        <Navbar />
-        <LocationsHeroSkeleton />
-        <section className="py-10 lg:py-14">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <LocationsGridSkeleton />
-          </div>
-        </section>
-        <Footer />
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-stone-50 dark:bg-stone-950">

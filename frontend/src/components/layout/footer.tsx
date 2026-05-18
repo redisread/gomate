@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Mountain, Heart, Mail, ArrowUp, MapPin, Users, Plus, ExternalLink, Copy, Check, X } from "lucide-react";
 import type { TranslationKey } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
-import { FooterSkeleton } from "@/components/ui/skeleton";
 
 /**
  * 页脚组件 - 四列卡片式布局
@@ -152,18 +151,13 @@ function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: Tran
 }
 
 export function Footer() {
-  const { t, loading: i18nLoading } = useI18n(["common"]);
+  const { t } = useI18n(["common"]);
   const [showWechatQR, setShowWechatQR] = React.useState(false);
   // SSR 使用固定年份，CSR 更新为当前年份，避免 hydration mismatch
   const [year, setYear] = React.useState(2025);
   React.useEffect(() => {
     setYear(new Date().getFullYear());
   }, []);
-
-  // i18n 加载中显示骨架屏
-  if (i18nLoading) {
-    return <FooterSkeleton />;
-  }
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
