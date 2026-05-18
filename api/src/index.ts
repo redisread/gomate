@@ -58,6 +58,34 @@ app.get("/r2/*", async (c) => {
   return new Response(object.body, { headers });
 });
 
+// 图片代理：允许的域名白名单（支持通配符）
+const ALLOWED_IMAGE_PATTERNS = [
+  "gomate.cos.jiahongw.com",
+  "*.githubusercontent.com",  // 覆盖所有子域名
+  "*.googleusercontent.com",
+  "cdn.discordapp.com",
+];
+
+// 速率限制配置
+const RATE_LIMIT_MAX = 100; // 每小时最大请求数
+const RATE_LIMIT_WARNING_THRESHOLD = 20; // 告警阈值：剩余请求数
+const RATE_LIMIT_WINDOW = 3600; // 1小时（秒）
+
+/**
+ * 验证域名是否在白名单中（支持通配符）
+ * @param hostname - 要验证的域名
+ * @returns boolean
+ */
+function isDomainAllowed(hostname: string): boolean {
+  return ALLOWED_IMAGE_PATTERNS.some(pattern => {
+    if (pattern.startsWith("*.")) {
+      const suffix = pattern.slice(1); // 移除开头的 "*"，保留 ".example.com"
+      return hostname.endsWith(suffix);
+    }
+    return hostname === pattern;
+  });
+}
+
 /** 图片代理：供前端 Canvas 绘图使用，绕过跨域限制 */
 app.get("/proxy-image", async (c) => {
   const url = c.req.query("url");
@@ -72,30 +100,31 @@ app.get("/proxy-image", async (c) => {
   }
 
   // 验证域名白名单
-  const ALLOWED_IMAGE_DOMAINS = [
-    "gomate.cos.jiahongw.com",
-    "avatars.githubusercontent.com",
-    "lh3.googleusercontent.com",
-    "cdn.discordapp.com",
-  ];
-  if (!ALLOWED_IMAGE_DOMAINS.includes(urlObj.hostname)) {
+  if (!isDomainAllowed(urlObj.hostname)) {
     return c.json({ error: "Domain not allowed" }, 403);
   }
 
   // 速率限制检查
   const clientIP = c.req.header("CF-Connecting-IP") || "unknown";
-  const RATE_LIMIT_MAX = 100; // 每小时最大请求数
   const RATE_LIMIT_KEY = `rate:proxy:${clientIP}`;
   const kv = c.env.GOMATE_KV;
 
   if (kv) {
     const current = await kv.get(RATE_LIMIT_KEY);
     const count = current ? parseInt(current as string, 10) : 0;
-    if (count >= RATE_LIMIT_MAX) {
+    const remaining = RATE_LIMIT_MAX - count;
+
+    if (remaining <= 0) {
       return c.json({ error: "Rate limit exceeded" }, 429);
     }
+
+    // 告警阈值检查
+    if (remaining <= RATE_LIMIT_WARNING_THRESHOLD) {
+      console.warn(`[RateLimit] IP ${clientIP} 即将达到速率限制，剩余 ${remaining - 1} 次请求`);
+    }
+
     // 使用 KV TTL（1小时）
-    await kv.put(RATE_LIMIT_KEY, String(count + 1), { expirationTtl: 3600 });
+    await kv.put(RATE_LIMIT_KEY, String(count + 1), { expirationTtl: RATE_LIMIT_WINDOW });
   }
 
   try {
