@@ -154,6 +154,11 @@ function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: Tran
 export function Footer() {
   const { t, loading: i18nLoading } = useI18n(["common"]);
   const [showWechatQR, setShowWechatQR] = React.useState(false);
+  // SSR 使用固定年份，CSR 更新为当前年份，避免 hydration mismatch
+  const [year, setYear] = React.useState(2025);
+  React.useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
 
   // i18n 加载中显示骨架屏
   if (i18nLoading) {
@@ -391,7 +396,7 @@ export function Footer() {
           className="border-t border-border py-6 flex flex-col sm:flex-row items-center justify-between gap-3"
         >
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} {t("common.copyright")}
+            © {year} {t("common.copyright")}
           </p>
           <p className="text-xs flex items-center gap-1.5 text-muted-foreground">
             Made with
