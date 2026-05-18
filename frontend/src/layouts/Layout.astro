@@ -111,6 +111,13 @@ function getHreflangUrl(loc: Locale) {
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
 
+    {/* 字体加载优化：预连接和 DNS 预解析 */}
+    {/* 注：当前使用系统字体栈（PingFang SC 等），无需下载外部字体 */}
+    {/* 以下为未来引入外部字体预留优化配置 */}
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta name="font-loading" content="swap" />
+
     {/* hreflang alternate links */}
     {SUPPORTED_LOCALES.map((loc) => (
       <link rel="alternate" hreflang={loc} href={getHreflangUrl(loc)} />

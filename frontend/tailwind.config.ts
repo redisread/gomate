@@ -17,11 +17,14 @@ const config: Config = {
 
   theme: {
     extend: {
-      /* ---- 字体族 ---- */
+      /* ---- 字体族（优化版） ---- */
       fontFamily: {
-        // 中英文优化系统字体栈（Geist 优先，降级到中文字体）
+        /*
+         * 优化后的系统字体栈 — 零下载成本，即时渲染
+         * font-display: swap 通过 globals.css 中的 @font-face 规则实现
+         */
         sans: [
-          "var(--font-geist-sans)",
+          "System Sans",
           "PingFang SC",
           "Hiragino Sans GB",
           "Microsoft YaHei",
@@ -30,9 +33,11 @@ const config: Config = {
           "sans-serif",
         ],
         mono: [
-          "var(--font-geist-mono)",
           "JetBrains Mono",
           "Fira Code",
+          "SF Mono",
+          "Monaco",
+          "Consolas",
           "monospace",
         ],
       },
