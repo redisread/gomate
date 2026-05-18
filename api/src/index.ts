@@ -16,6 +16,7 @@ import { amapRoute } from "./routes/amap";
 import { poisRoute } from "./routes/pois";
 import { updateExpiredTeams } from "./lib/team-status";
 import { createDb } from "./db";
+import { fetchWithTimeout } from "./lib/timeout";
 import type { Env } from "./lib/auth";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -61,14 +62,53 @@ app.get("/r2/*", async (c) => {
 app.get("/proxy-image", async (c) => {
   const url = c.req.query("url");
   if (!url) return c.json({ error: "url is required" }, 400);
+
+  // 验证 URL 格式
+  let urlObj: URL;
   try {
-    const resp = await fetch(url);
+    urlObj = new URL(url);
+  } catch {
+    return c.json({ error: "Invalid URL" }, 400);
+  }
+
+  // 验证域名白名单
+  const ALLOWED_IMAGE_DOMAINS = [
+    "gomate.cos.jiahongw.com",
+    "avatars.githubusercontent.com",
+    "lh3.googleusercontent.com",
+    "cdn.discordapp.com",
+  ];
+  if (!ALLOWED_IMAGE_DOMAINS.includes(urlObj.hostname)) {
+    return c.json({ error: "Domain not allowed" }, 403);
+  }
+
+  // 速率限制检查
+  const clientIP = c.req.header("CF-Connecting-IP") || "unknown";
+  const RATE_LIMIT_MAX = 100; // 每小时最大请求数
+  const RATE_LIMIT_KEY = `rate:proxy:${clientIP}`;
+  const kv = c.env.GOMATE_KV;
+
+  if (kv) {
+    const current = await kv.get(RATE_LIMIT_KEY);
+    const count = current ? parseInt(current as string, 10) : 0;
+    if (count >= RATE_LIMIT_MAX) {
+      return c.json({ error: "Rate limit exceeded" }, 429);
+    }
+    // 使用 KV TTL（1小时）
+    await kv.put(RATE_LIMIT_KEY, String(count + 1), { expirationTtl: 3600 });
+  }
+
+  try {
+    const resp = await fetchWithTimeout(url, {}, 10000);
     if (!resp.ok) return c.json({ error: "fetch failed" }, 502);
+
     const headers = new Headers();
     const contentType = resp.headers.get("content-type");
     if (contentType) headers.set("Content-Type", contentType);
     headers.set("Access-Control-Allow-Origin", "*");
-    headers.set("Cache-Control", "public, max-age=86400");
+    // 优化缓存：图片缓存在边缘 24 小时
+    headers.set("Cache-Control", "public, max-age=86400, s-maxage=86400");
+
     return new Response(resp.body, { headers });
   } catch {
     return c.json({ error: "proxy failed" }, 502);
