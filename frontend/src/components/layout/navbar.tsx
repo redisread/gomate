@@ -42,6 +42,8 @@ export function Navbar({ className }: NavbarProps) {
     user?: { id: string; name: string; nickname?: string; email: string; image?: string };
     isAdmin?: boolean;
   } | null>(null);
+  // 延迟应用活跃状态，避免 SSR/CSR 不一致导致 hydration mismatch
+  const [mounted, setMounted] = React.useState(false);
 
   // IP 定位获取用户城市（仅登录后）
   const { city, isLoading: isLocating } = useIPLocation();
@@ -52,6 +54,7 @@ export function Navbar({ className }: NavbarProps) {
     // 只在客户端执行，避免 SSR/CSR 不一致
     if (typeof window !== "undefined") {
       setCurrentPath(window.location.pathname);
+      setMounted(true);
     }
   }, []);
 
@@ -123,6 +126,7 @@ export function Navbar({ className }: NavbarProps) {
           isScrolled ? "navbar-glass shadow-warm-sm" : "bg-transparent",
           className
         )}
+        suppressHydrationWarning
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
