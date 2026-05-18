@@ -78,6 +78,11 @@ export interface Env {
  * 创建 Better Auth 实例（适用于 Cloudflare Workers 环境）
  */
 export function createAuth(env: Env) {
+  // 强制检查 BETTER_AUTH_SECRET，生产环境必须有值
+  if (!env.BETTER_AUTH_SECRET) {
+    throw new Error("BETTER_AUTH_SECRET is required");
+  }
+
   const db = createDb(env.DB);
 
   return betterAuth({
@@ -138,7 +143,7 @@ export function createAuth(env: Env) {
         extra: { type: "string", required: false },
       },
     },
-    secret: env.BETTER_AUTH_SECRET || "dev-secret-key",
+    secret: env.BETTER_AUTH_SECRET,
     baseURL: env.APP_URL || "http://localhost:8799",
     basePath: "/auth",
     trustedOrigins: [
