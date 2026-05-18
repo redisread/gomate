@@ -156,7 +156,7 @@ app.onError((err, c) => {
 export default {
   fetch: app.fetch,
 
-  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+  async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext) {
     try {
       const db = createDb(env.DB);
       const updatedIds = await updateExpiredTeams(db);
