@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { getEmailField, EmailLocale } from "./email-i18n";
+import { withTimeout } from "./timeout";
 
 /**
  * 发送密码重置邮件
@@ -23,21 +24,25 @@ export async function sendPasswordResetEmail(
     const nameStr = name ? `，${name}` : "";
     const greeting = getEmailField(locale, "passwordReset", "greeting", { name: nameStr });
 
-    await resend.emails.send({
-      from: fromEmail,
-      to: email,
-      subject: getEmailField(locale, "passwordReset", "subject"),
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>${getEmailField(locale, "passwordReset", "title")}</h2>
-          <p>${greeting}</p>
-          <p>${getEmailField(locale, "passwordReset", "body")}</p>
-          <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "passwordReset", "btnText")}</a>
-          <p>${getEmailField(locale, "passwordReset", "expiryNote")}</p>
-          <p>${getEmailField(locale, "passwordReset", "ignoreNote")}</p>
-        </div>
-      `,
-    });
+    await withTimeout(
+      () => resend.emails.send({
+        from: fromEmail,
+        to: email,
+        subject: getEmailField(locale, "passwordReset", "subject"),
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>${getEmailField(locale, "passwordReset", "title")}</h2>
+            <p>${greeting}</p>
+            <p>${getEmailField(locale, "passwordReset", "body")}</p>
+            <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "passwordReset", "btnText")}</a>
+            <p>${getEmailField(locale, "passwordReset", "expiryNote")}</p>
+            <p>${getEmailField(locale, "passwordReset", "ignoreNote")}</p>
+          </div>
+        `,
+      }),
+      10000,
+      "Send password reset email timeout"
+    );
 
     return { success: true };
   } catch (error) {
@@ -62,26 +67,30 @@ export async function sendWelcomeEmail(
     const resend = new Resend(apiKey);
     const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
 
-    await resend.emails.send({
-      from: fromEmail,
-      to: email,
-      subject: getEmailField(locale, "welcome", "subject"),
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>${getEmailField(locale, "welcome", "title")}</h2>
-          <p>${getEmailField(locale, "welcome", "greeting", { name })}</p>
-          <p>${getEmailField(locale, "welcome", "body")}</p>
-          <p>${getEmailField(locale, "welcome", "featuresTitle")}</p>
-          <ul>
-            <li>${getEmailField(locale, "welcome", "feature1")}</li>
-            <li>${getEmailField(locale, "welcome", "feature2")}</li>
-            <li>${getEmailField(locale, "welcome", "feature3")}</li>
-          </ul>
-          <p>${getEmailField(locale, "welcome", "closing")}</p>
-          <p>${getEmailField(locale, "welcome", "signature")}</p>
-        </div>
-      `,
-    });
+    await withTimeout(
+      () => resend.emails.send({
+        from: fromEmail,
+        to: email,
+        subject: getEmailField(locale, "welcome", "subject"),
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>${getEmailField(locale, "welcome", "title")}</h2>
+            <p>${getEmailField(locale, "welcome", "greeting", { name })}</p>
+            <p>${getEmailField(locale, "welcome", "body")}</p>
+            <p>${getEmailField(locale, "welcome", "featuresTitle")}</p>
+            <ul>
+              <li>${getEmailField(locale, "welcome", "feature1")}</li>
+              <li>${getEmailField(locale, "welcome", "feature2")}</li>
+              <li>${getEmailField(locale, "welcome", "feature3")}</li>
+            </ul>
+            <p>${getEmailField(locale, "welcome", "closing")}</p>
+            <p>${getEmailField(locale, "welcome", "signature")}</p>
+          </div>
+        `,
+      }),
+      10000,
+      "Send welcome email timeout"
+    );
 
     return { success: true };
   } catch (error) {
@@ -105,22 +114,26 @@ export async function sendContactFormEmail(
     const resend = new Resend(apiKey);
     const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
 
-    await resend.emails.send({
-      from: fromEmail,
-      to: "support@gomate.live",
-      replyTo: data.email,
-      subject: getEmailField(locale, "contactForm", "subject", { subject: data.subject }),
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>${getEmailField(locale, "contactForm", "title")}</h2>
-          <p><strong>${getEmailField(locale, "contactForm", "nameLabel")}</strong>${data.name}</p>
-          <p><strong>${getEmailField(locale, "contactForm", "emailLabel")}</strong>${data.email}</p>
-          <p><strong>${getEmailField(locale, "contactForm", "subjectLabel")}</strong>${data.subject}</p>
-          <p><strong>${getEmailField(locale, "contactForm", "contentLabel")}</strong></p>
-          <p style="white-space: pre-wrap;">${data.message}</p>
-        </div>
-      `,
-    });
+    await withTimeout(
+      () => resend.emails.send({
+        from: fromEmail,
+        to: "support@gomate.live",
+        replyTo: data.email,
+        subject: getEmailField(locale, "contactForm", "subject", { subject: data.subject }),
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>${getEmailField(locale, "contactForm", "title")}</h2>
+            <p><strong>${getEmailField(locale, "contactForm", "nameLabel")}</strong>${data.name}</p>
+            <p><strong>${getEmailField(locale, "contactForm", "emailLabel")}</strong>${data.email}</p>
+            <p><strong>${getEmailField(locale, "contactForm", "subjectLabel")}</strong>${data.subject}</p>
+            <p><strong>${getEmailField(locale, "contactForm", "contentLabel")}</strong></p>
+            <p style="white-space: pre-wrap;">${data.message}</p>
+          </div>
+        `,
+      }),
+      10000,
+      "Send contact form email timeout"
+    );
 
     return { success: true };
   } catch (error) {
@@ -157,21 +170,25 @@ export async function sendTeamJoinApplicationEmail(
       locationName: data.locationName,
     };
 
-    await resend.emails.send({
-      from: fromEmail,
-      to: data.leaderEmail,
-      subject: getEmailField(locale, "teamJoinApplication", "subject", vars),
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #16a34a;">${getEmailField(locale, "teamJoinApplication", "title")}</h2>
-          <p>${getEmailField(locale, "teamJoinApplication", "greeting", vars)}</p>
-          <p>${getEmailField(locale, "teamJoinApplication", "body", vars)}</p>
-          <p>${getEmailField(locale, "teamJoinApplication", "prompt")}</p>
-          <a href="${data.teamUrl}" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "teamJoinApplication", "viewApplicationBtn")}</a>
-          <p style="color:#6b7280;font-size:14px;">${getEmailField(locale, "teamJoinApplication", "signature")}</p>
-        </div>
-      `,
-    });
+    await withTimeout(
+      () => resend.emails.send({
+        from: fromEmail,
+        to: data.leaderEmail,
+        subject: getEmailField(locale, "teamJoinApplication", "subject", vars),
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #16a34a;">${getEmailField(locale, "teamJoinApplication", "title")}</h2>
+            <p>${getEmailField(locale, "teamJoinApplication", "greeting", vars)}</p>
+            <p>${getEmailField(locale, "teamJoinApplication", "body", vars)}</p>
+            <p>${getEmailField(locale, "teamJoinApplication", "prompt")}</p>
+            <a href="${data.teamUrl}" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "teamJoinApplication", "viewApplicationBtn")}</a>
+            <p style="color:#6b7280;font-size:14px;">${getEmailField(locale, "teamJoinApplication", "signature")}</p>
+          </div>
+        `,
+      }),
+      10000,
+      "Send team join application email timeout"
+    );
 
     return { success: true };
   } catch (error) {
@@ -245,13 +262,17 @@ export async function sendFeedbackEmail(
 
     htmlContent += `</div>`;
 
-    await resend.emails.send({
-      from: fromEmail,
-      to: "support@gomate.live",
-      replyTo: data.email,
-      subject,
-      html: htmlContent,
-    });
+    await withTimeout(
+      () => resend.emails.send({
+        from: fromEmail,
+        to: "support@gomate.live",
+        replyTo: data.email,
+        subject,
+        html: htmlContent,
+      }),
+      10000,
+      "Send feedback email timeout"
+    );
 
     return { success: true };
   } catch (error) {
