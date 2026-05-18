@@ -87,9 +87,11 @@ export function useI18n(nsList?: string[]): UseI18nReturn {
 
   const tFn = React.useCallback(
     (key: string, vars?: Record<string, string | number>) => {
+      // loading 时返回空字符串而非 key，避免 SSR/CSR 不一致
+      if (loading) return "";
       return translate(key, { locale, vars });
     },
-    [locale],
+    [locale, loading],
   );
 
   const getNsData = React.useCallback(() => {
