@@ -339,7 +339,7 @@ export function RegisterClient() {
         {/* 底部版权 */}
         <div className="px-6 pb-6 text-center">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} GoMate · {t("auth.footerTagline")}
+            © 2025 GoMate · {t("auth.footerTagline")}
           </p>
         </div>
       </div>
