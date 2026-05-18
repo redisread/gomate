@@ -1,126 +1,55 @@
-# GoMate Monorepo
+# 🏔️ GoMate 地点组队平台
 
-GoMate 地点组队平台 - Monorepo 架构
+> 发现有趣地点，找到同行伙伴
 
-一个极简的「地点组队」平台，支持多城市徒步场景，帮助户外爱好者通过结构化组队找到志同道合的徒步伙伴。
+[![Live](https://img.shields.io/badge/Live-gomate.live-blue)](https://gomate.live)
 
-## 项目结构
+## 产品定位
 
-```
-gomate/
-├── api/                  # 后端 API（Hono + Cloudflare Workers）
-├── frontend/             # Web 前端（Astro 6 + React + Cloudflare Pages）
-├── packages/
-│   ├── types/            # 共享类型定义
-│   └── config/           # 共享配置（tsconfig 等）
-├── .github/
-│   └── workflows/        # CI/CD 工作流
-├── package.json          # pnpm workspace 根配置
-└── pnpm-workspace.yaml   # workspace 包路径定义
-```
+GoMate 是一个**地点组队平台**，解决「想出门但找不到伙伴」的问题：
 
-> 📱 **移动端已归档**：原 Flutter mobile 代码已迁移至 [redisread/gomate-mobile](https://github.com/redisread/gomate-mobile)
-
-## 开发
-
-### 前置要求
-
-- Node.js >= 20
-- pnpm >= 9
-
-### 安装依赖
-
-```bash
-pnpm install
-```
-
-### 启动开发服务器
-
-后端 API：
-```bash
-pnpm api:dev
-# 或
-pnpm --filter @gomate/api dev
-```
-
-Web 前端：
-```bash
-pnpm web:dev
-# 或
-pnpm --filter @gomate/frontend dev
-```
-
-或者同时启动：
-```bash
-pnpm dev
-```
-
-## 部署
-
-### 后端
-
-- **Worker**: `gomate-api`
-- **生产地址**: https://api.gomate.live
-- **部署命令**: `cd api && wrangler deploy --env production`
-
-### 前端
-
-- **项目**: `gomate-frontend`
-- **生产地址**: https://gomate.live
-- **部署命令**: `pnpm web:build && cd frontend && wrangler pages deploy dist --project-name=gomate-frontend --branch=main`
-
-> 📱 **移动端已归档**：原 Flutter mobile 代码已迁移至 [redisread/gomate-mobile](https://github.com/redisread/gomate-mobile)
-
-## 共享包
-
-### @gomate/types
-
-共享类型定义，供 `api`、`frontend` 各子包共享使用：
-
-- 枚举类型：`Difficulty`、`TeamStatus`、`TeamMemberStatus` 等
-- 数据模型：`Location`、`Route`、`Team`、`TeamMember`、`UserPublicProfile` 等
-- API 通用格式：`ApiResponse`、`PaginatedResponse`
-
-### @gomate/config
-
-共享 TypeScript 配置：
-- `tsconfig/base.json` - 通用基础配置
-- `tsconfig/cloudflare.json` - Cloudflare Workers 专用配置
-
-## CI/CD
-
-| 工作流 | 触发条件 | 说明 |
-|--------|----------|------|
-| `api-deploy.yml` | `api/**` 变更推送到 main | 部署后端到 Cloudflare Workers |
-| `frontend-deploy.yml` | `frontend/**` 或 `packages/**` 变更推送到 main | 部署前端到 Cloudflare Pages |
-
-## 数据库表
-
-| 表名 | 说明 |
+| 功能 | 描述 |
 |------|------|
-| `users` | 用户账号（Better Auth 扩展：bio、level） |
-| `sessions` / `accounts` / `verifications` | Better Auth 认证表 |
-| `locations` | 徒步地点（含标签、坐标、难度等） |
-| `routes` | 徒步路线（关联 location） |
-| `teams` | 徒步队伍（状态：recruiting / full / ongoing / completed / cancelled） |
-| `team_members` | 队伍成员（角色：leader / member，状态：pending / approved / rejected） |
-| `tags` / `entityToTags` | 标签系统 |
-| `cities` | 城市管理 |
-| `pois` / `entityToPois` | 兴趣点系统 |
-| `userFavorites` | 用户收藏 |
-| `password_resets` | 密码重置令牌 |
+| 🗺️ **发现地点** | 城市及周边户外地点推荐，含难度、标签、POI 标记 |
+| 👥 **组建队伍** | 一键发布组队信息，设定人数、时间、要求 |
+| ✅ **便捷参与** | 申请加入队伍，队长审核，组队出发 |
 
-## Git 提交规范
+## 在线体验
+
+**网站：** https://gomate.live
+
+**测试账号：**
+- 邮箱：`1427298683@qq.com`
+- 密码：`11111111`
+
+**核心流程：**
+浏览地点 → 查看详情 → 加入/创建队伍 → 等待确认 → 一起出发
+
+## 技术架构
 
 ```
-feat: 新功能
-fix: 修复
-docs: 文档
-style: 格式调整
-refactor: 重构
-test: 测试
-chore: 构建/工具
+前端: Astro 4 + React 18 + Tailwind CSS
+后端: Hono + Cloudflare Workers + D1 数据库
+部署: Cloudflare（全球边缘节点）
 ```
+
+## 快速开始
+
+```bash
+# 安装依赖
+pnpm install
+
+# 本地开发
+pnpm dev
+
+# 部署
+pnpm api:deploy    # 后端
+pnpm web:build     # 前端
+```
+
+## 相关仓库
+
+- 📱 **移动端**（Flutter）：已归档至 [gomate-mobile](https://github.com/redisread/gomate-mobile)
 
 ## 许可证
 
