@@ -87,9 +87,15 @@ app.onError((err, c) => {
 export default {
   fetch: app.fetch,
 
-  async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext) {
-    const db = createDb(env.DB);
-    const updatedIds = await updateExpiredTeams(db);
-    console.log(`[Cron] 已更新 ${updatedIds.length} 个过期队伍:`, updatedIds);
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    try {
+      const db = createDb(env.DB);
+      const updatedIds = await updateExpiredTeams(db);
+      console.log(`[Cron] 已更新 ${updatedIds.length} 个过期队伍:`, updatedIds);
+    } catch (error) {
+      console.error("[Cron] 更新过期队伍失败:", error);
+      // 可考虑上报到监控系统
+      // 注意：Cron 任务失败不会重试，错误仅用于日志记录
+    }
   },
 };
