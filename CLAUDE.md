@@ -259,7 +259,6 @@ node db/seed.ts
 **CI/CD（GitHub Actions）：**
 - `api/**` 推送 main → 部署 API 到 Cloudflare Workers
 - `frontend/**` 或 `packages/**` 推送 main → 部署前端到 Cloudflare Pages
-- `mobile/**` 推送 main → 构建 Android APK + iOS IPA
 
 ## 关键约定
 
@@ -366,7 +365,6 @@ chore: 构建/工具
 |------|------|--------------|
 | 前端页面功能文档 | `docs/frontend-pages.md` | 新增/删除页面、新增/修改页面功能点、新增 UI 交互 |
 | 后端 API 文档 | `docs/backend-api.md` | 新增/删除接口、修改请求参数或响应结构、修改认证要求 |
-| 移动端模块文档 | `docs/mobile-modules.md` | 新增/删除页面或模块、修改路由、新增 API 调用、修改数据模型 |
 
 **更新原则：**
 - 新增功能：在对应文档的相应章节追加内容
