@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && cp .assetsignore dist/",
+    "i18n:build": "cd .. && pnpm i18n:build",
+    "build": "pnpm i18n:build && astro build && cp .assetsignore dist/",
     "preview": "astro preview",
     "check": "astro check",
     "type-check": "astro check",
