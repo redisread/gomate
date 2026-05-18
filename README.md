@@ -1,16 +1,16 @@
-# 🏔️ GoMate 徒步组队平台
+# 🏔️ GoMate 地点组队平台
 
-> 发现户外好去处，找到同行好伙伴
+> 发现有趣地点，找到同行伙伴
 
 [![Live](https://img.shields.io/badge/Live-gomate.live-blue)](https://gomate.live)
 
 ## 产品定位
 
-GoMate 是一个**户外徒步组队平台**，解决「想出门但找不到伙伴」的问题：
+GoMate 是一个**地点组队平台**，解决「想出门但找不到伙伴」的问题：
 
 | 功能 | 描述 |
 |------|------|
-| 🗺️ **发现地点** | 深圳及周边徒步路线推荐，含难度、时长、POI 标记 |
+| 🗺️ **发现地点** | 城市及周边户外地点推荐，含难度、标签、POI 标记 |
 | 👥 **组建队伍** | 一键发布组队信息，设定人数、时间、要求 |
 | ✅ **便捷参与** | 申请加入队伍，队长审核，组队出发 |
 
@@ -18,15 +18,20 @@ GoMate 是一个**户外徒步组队平台**，解决「想出门但找不到伙
 
 **网站：** https://gomate.live
 
+**测试账号：**
+- 邮箱：`1427298683@qq.com`
+- 密码：`11111111`
+
 **核心流程：**
 浏览地点 → 查看详情 → 加入/创建队伍 → 等待确认 → 一起出发
 
-## 技术栈
+## 技术架构
 
-- **前端：** Astro + React + Tailwind CSS
-- **后端：** Hono + Cloudflare Workers
-- **数据库：** Cloudflare D1
-- **部署：** Cloudflare Pages + Workers
+```
+前端: Astro 4 + React 18 + Tailwind CSS
+后端: Hono + Cloudflare Workers + D1 数据库
+部署: Cloudflare（全球边缘节点）
+```
 
 ## 快速开始
 
