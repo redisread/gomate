@@ -4,7 +4,6 @@ import * as React from "react";
 import { Eye, EyeOff, Loader2, Mountain, ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { signIn } from "@/lib/auth-client";
-import { LoginSkeleton } from "@/components/ui/skeleton";
 
 /**
  * 登录页 — 温暖品牌双栏布局
@@ -12,16 +11,11 @@ import { LoginSkeleton } from "@/components/ui/skeleton";
  * 右侧：表单区
  */
 export function LoginClient() {
-  const { t, loading: i18nLoading } = useI18n(["auth"]);
+  const { t } = useI18n(["auth"]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [formData, setFormData] = React.useState({ email: "", password: "" });
-
-  // i18n 加载中显示骨架屏
-  if (i18nLoading) {
-    return <LoginSkeleton />;
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

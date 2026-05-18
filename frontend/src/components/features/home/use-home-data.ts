@@ -14,9 +14,11 @@ export function useHomeData() {
   const [pagination, setPagination] = React.useState({ total: 0, totalPages: 0, pageSize: 6 });
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [isDark, setIsDark] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
 
-  // Theme
+  // Theme - 延迟到客户端再设置，避免 SSR/CSR 不一致
   React.useEffect(() => {
+    setMounted(true);
     setIsDark(document.documentElement.classList.contains("dark"));
     const unsubscribe = effectiveThemeStore.subscribe((effective) => {
       setIsDark(effective === "dark");
@@ -82,7 +84,7 @@ export function useHomeData() {
   };
 
   return {
-    locations, teams, isLoading, currentPage, pagination, isLoggedIn, isDark,
+    locations, teams, isLoading, currentPage, pagination, isLoggedIn, isDark, mounted,
     animate, parallaxY, search,
     locationsRef, locationsInView, howItWorksRef, howItWorksInView,
     teamsRef, teamsInView, ctaRef, ctaInView,

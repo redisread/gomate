@@ -1,9 +1,10 @@
 ---
 /**
  * 管理员地点编辑页 - 动态路由
+ * 使用 React.lazy 延迟加载 LocationEditClient (-82K)
  */
 import Layout from "../../../../layouts/Layout.astro";
-import { LocationEditClient } from "../../../../components/features/location-edit-client";
+import { LazyLocationEditClient } from "../../../../components/features/lazy-location-edit-client";
 import { declareI18nNs } from "../../../../middleware";
 
 declareI18nNs(Astro.locals, ["admin", "pois", "ui", "content"]);
@@ -12,5 +13,5 @@ const { id } = Astro.params;
 ---
 
 <Layout title="编辑地点 - GoMate" showNavbar={false} showFooter={false}>
-  <LocationEditClient locationId={id!} client:load />
+  <LazyLocationEditClient locationId={id!} client:visible />
 </Layout>

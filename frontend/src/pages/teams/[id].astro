@@ -12,5 +12,5 @@ const { id } = Astro.params;
 ---
 
 <Layout title="队伍详情 - GoMate" showNavbar={false} showFooter={false}>
-  <TeamDetailPartiful teamId={id!} client:load />
+  <TeamDetailPartiful teamId={id!} client:visible />
 </Layout>

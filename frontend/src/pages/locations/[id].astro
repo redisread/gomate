@@ -12,5 +12,5 @@ const { id } = Astro.params;
 ---
 
 <Layout title="地点详情 - GoMate" showNavbar={false} showFooter={false}>
-  <LocationDetailClient locationId={id!} client:load />
+  <LocationDetailClient locationId={id!} client:visible />
 </Layout>

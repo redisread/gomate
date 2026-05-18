@@ -10,7 +10,6 @@ import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { type Locale, SUPPORTED_LOCALES, getLocale, setLocale, getLocaleName } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
 import { useIPLocation, getCityDisplay } from "@/hooks/useIPLocation";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const navLinks = (t: (key: any) => string) => [
   { href: "/",          label: t("nav.home") },
@@ -32,7 +31,7 @@ interface NavbarProps {
  * - 用户菜单：hover 展开下拉
  */
 export function Navbar({ className }: NavbarProps) {
-  const { t, loading: i18nLoading } = useI18n(["nav", "common"]);
+  const { t } = useI18n(["nav", "common"]);
   // SSR/CSR 初始状态必须一致，避免 hydration mismatch
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -111,11 +110,6 @@ export function Navbar({ className }: NavbarProps) {
     if (href === "/") return currentPath === "/";
     return currentPath.startsWith(href);
   };
-
-  // i18n 加载中显示骨架屏
-  if (i18nLoading) {
-    return <NavbarSkeleton className={className} />;
-  }
 
   return (
     <>
