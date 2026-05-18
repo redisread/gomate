@@ -114,16 +114,9 @@ export interface AnimateInConfig {
 }
 
 export function useAnimateIn(enabled = true): AnimateInConfig {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // 下一帧触发，确保 DOM 已挂载
-    const id = requestAnimationFrame(() => setMounted(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-
-  if (!enabled || !mounted) {
-    // 未挂载时隐藏，防止 FOUC
+  // 修复 hydration 错误：统一 SSR/CSR 返回值
+  // 动画通过 CSS animation-delay 控制，hydration 完成后自动播放
+  if (!enabled) {
     return {
       badge: "opacity-0",
       title: "opacity-0",

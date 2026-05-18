@@ -5,13 +5,16 @@ import type { useHomeData } from "./use-home-data";
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeHero({ data }: { data: HomeData }) {
-  const { isDark, animate, parallaxY, search, handleSearch } = data;
+  const { isDark, animate, parallaxY, search, handleSearch, mounted } = data;
   const { t } = useI18n(["home", "common", "content"]);
+
+  // 挂载前统一使用亮色模式，避免 SSR/CSR 主题不一致
+  const effectiveIsDark = mounted ? isDark : false;
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0" style={{
-        background: isDark
+        background: effectiveIsDark
           ? "linear-gradient(160deg, #1a1510 0%, rgba(217,119,6,0.04) 38%, #12100d 65%, #1a1510 100%)"
           : "linear-gradient(160deg, #FEF3C7 0%, rgba(255,122,101,0.06) 38%, #faf8f5 65%, #f5f0e8 100%)",
       }} />
@@ -32,7 +35,7 @@ export function HomeHero({ data }: { data: HomeData }) {
 
       <div className="relative z-10 text-center px-4 max-w-5xl mx-auto pt-24 pb-16">
         <span className={`inline-flex items-center gap-1.5 mb-7 px-4 py-1.5 text-sm font-medium rounded-full border ${animate.badge}`}
-          style={{ background: isDark ? "rgba(217,119,6,0.15)" : "rgba(217,119,6,0.08)", borderColor: isDark ? "rgba(217,119,6,0.3)" : "rgba(217,119,6,0.22)", color: isDark ? "#FCD34D" : "#92400E" }}>
+          style={{ background: effectiveIsDark ? "rgba(217,119,6,0.15)" : "rgba(217,119,6,0.08)", borderColor: effectiveIsDark ? "rgba(217,119,6,0.3)" : "rgba(217,119,6,0.22)", color: effectiveIsDark ? "#FCD34D" : "#92400E" }}>
           <Mountain className="h-3.5 w-3.5" />{t("content.hero.badge")}
         </span>
 
