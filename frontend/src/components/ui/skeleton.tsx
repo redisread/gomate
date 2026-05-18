@@ -273,3 +273,114 @@ export function LocationsSkeleton() {
     </main>
   );
 }
+
+/**
+ * Home 页面骨架屏
+ */
+export function HomeSkeleton() {
+  return (
+    <main className="min-h-screen bg-background">
+      <NavbarSkeleton />
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto">
+            <Skeleton variant="rounded" width={120} height={28} className="mx-auto mb-6" />
+            <Skeleton variant="text" width="80%" height={48} className="mx-auto mb-4" />
+            <Skeleton variant="text" width="60%" height={24} className="mx-auto mb-8" />
+            <div className="flex items-center justify-center gap-3">
+              <Skeleton variant="rounded" width={140} height={44} />
+              <Skeleton variant="rounded" width={140} height={44} />
+            </div>
+          </div>
+        </div>
+      </section>
+      {/* Locations Section */}
+      <section className="py-16 lg:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <Skeleton variant="text" width={180} height={32} />
+            <Skeleton variant="rounded" width={100} height={36} />
+          </div>
+          <LocationsGridSkeleton />
+        </div>
+      </section>
+      {/* How It Works Section */}
+      <section className="py-16 lg:py-20 bg-stone-50 dark:bg-stone-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <Skeleton variant="text" width={200} height={36} className="mx-auto mb-4" />
+            <Skeleton variant="text" width="50%" height={24} className="mx-auto" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="text-center space-y-4">
+                <Skeleton variant="circular" width={64} height={64} className="mx-auto" delay={i * 100} />
+                <Skeleton variant="text" width={120} height={24} className="mx-auto" delay={i * 100 + 50} />
+                <Skeleton variant="text" lines={2} width={200} className="mx-auto" delay={i * 100 + 100} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <FooterSkeleton />
+    </main>
+  );
+}
+
+/**
+ * Login 页面骨架屏
+ */
+export function LoginSkeleton() {
+  return (
+    <div className="min-h-screen flex">
+      {/* 左侧品牌区骨架 */}
+      <div className="hidden lg:flex lg:w-[480px] xl:w-[560px] flex-col justify-between p-12 relative overflow-hidden flex-shrink-0 bg-gradient-to-br from-amber-700 to-amber-500">
+        <Skeleton variant="circular" width={36} height={36} className="bg-white/20" />
+        <div className="space-y-6">
+          <Skeleton variant="text" width={100} height={20} className="bg-white/20" />
+          <Skeleton variant="text" width="90%" height={48} className="bg-white/20" />
+          <Skeleton variant="text" width="70%" height={24} className="bg-white/20" />
+          <div className="rounded-2xl p-4 space-y-3 bg-white/10">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton variant="circular" width={36} height={36} className="bg-white/20" delay={i * 50} />
+                <div className="flex-1 space-y-1">
+                  <Skeleton variant="text" width={80} height={16} className="bg-white/20" delay={i * 50 + 30} />
+                  <Skeleton variant="text" width={150} height={12} className="bg-white/20" delay={i * 50 + 60} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div />
+      </div>
+      {/* 右侧表单区骨架 */}
+      <div className="flex-1 flex flex-col bg-background">
+        <div className="lg:hidden px-6 pt-6">
+          <Skeleton variant="circular" width={28} height={28} />
+        </div>
+        <div className="flex-1 flex items-center justify-center px-6 py-12">
+          <div className="w-full max-w-sm space-y-6">
+            <div className="space-y-2">
+              <Skeleton variant="text" width={120} height={32} />
+              <Skeleton variant="text" width={180} height={20} />
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Skeleton variant="text" width={60} height={16} />
+                <Skeleton variant="rounded" width="100%" height={48} />
+              </div>
+              <div className="space-y-2">
+                <Skeleton variant="text" width={60} height={16} />
+                <Skeleton variant="rounded" width="100%" height={48} />
+              </div>
+              <Skeleton variant="rounded" width="100%" height={48} className="mt-4" />
+            </div>
+            <Skeleton variant="text" width={200} height={16} className="mx-auto" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
