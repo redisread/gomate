@@ -2,12 +2,16 @@ import { Crown, Share2, Trash2, Pencil, CheckCircle, LogOut, Clock, ArrowRight, 
 import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
 import { useTeamDetail } from "./use-team-detail";
-import { SharePosterModal } from "../share-poster-modal";
 import { ToastDisplay } from "./team-detail-ui";
 import {
   JoinBottomSheet, JoinDesktopModal, LeaveConfirmDialog,
   FormTeamConfirmDialog, WechatEditModal,
 } from "./team-detail-modals";
+import * as React from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// 动态导入 SharePosterModal
+const SharePosterModal = React.lazy(() => import("../share-poster-modal").then(m => ({ default: m.SharePosterModal })));
 
 export function TeamModalsAndFooter({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   const { t } = useI18n(["teams", "common"]);

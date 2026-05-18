@@ -30,7 +30,9 @@ import {
   TeamListSection,
   PoiSection,
 } from "@/components/features/location-detail-main-content";
-import { SharePosterModal } from "./share-poster-modal";
+
+// 动态导入 SharePosterModal
+const SharePosterModal = React.lazy(() => import("./share-poster-modal").then(m => ({ default: m.SharePosterModal })));
 
 // ─── 季节映射 ─────────────────────────────────────────────────────────────────
 function getSeasonLabel(t: (key: TranslationKey) => string) {
@@ -946,17 +948,19 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
       {/* 分享海报弹窗 */}
       {showShareModal && location && (
-        <SharePosterModal
-          type="location"
-          title={location.name}
-          subtitle={location.subtitle}
-          url={typeof window !== "undefined" ? window.location.href : ""}
-          imageUrl={location.coverImage}
-          meta={location.address}
-          tags={location.tags?.map((t) => t.name)}
-          description={location.description}
-          onClose={() => setShowShareModal(false)}
-        />
+        <React.Suspense fallback={null}>
+          <SharePosterModal
+            type="location"
+            title={location.name}
+            subtitle={location.subtitle}
+            url={typeof window !== "undefined" ? window.location.href : ""}
+            imageUrl={location.coverImage}
+            meta={location.address}
+            tags={location.tags?.map((t) => t.name)}
+            description={location.description}
+            onClose={() => setShowShareModal(false)}
+          />
+        </React.Suspense>
       )}
 
       <Footer />
