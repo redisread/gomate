@@ -3,6 +3,7 @@ import { Search, MapPin, X, ChevronDown, Sparkles, Compass, TreePine, Mountain, 
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { getRoleConfig, type RoleKey, type RoleCfg } from "./constants";
+import { LocationsHeroSkeleton } from "@/components/ui/skeleton";
 
 interface LocationsHeroProps {
   activeRole: RoleKey;
@@ -32,11 +33,16 @@ export function LocationsHero({
   isLoading, pagination, onRoleSelect, onSearchChange, onTagToggle,
   onCitySelect, onClearAll, onToggleCityDropdown, setCityDropdownPos,
 }: LocationsHeroProps) {
-  const { t } = useI18n(["locations"]);
+  const { t, loading: i18nLoading } = useI18n(["locations"]);
   const cfg = getRoleConfig(t);
   const cityBtnRef = React.useRef<HTMLButtonElement>(null);
   const cityDropdownRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // i18n 加载中时显示骨架屏
+  if (i18nLoading) {
+    return <LocationsHeroSkeleton />;
+  }
 
   return (
     <section className="relative pt-28 pb-10 bg-card border-b border-border">

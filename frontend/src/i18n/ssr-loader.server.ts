@@ -1,23 +1,14 @@
 /**
  * SSR i18n 数据加载器
  *
- * 在 Astro SSR 渲染时，通过 import.meta.glob 读取翻译 JSON 文件，
- * 内联到页面的 <script id="__i18n_data__"> 中。
- * 客户端 hydration 时优先读取此数据，避免首屏翻译闪烁。
- *
- * Cloudflare Workers 兼容：使用 import.meta.glob 替代 node:fs
+ * 使用构建时预读的翻译数据，Cloudflare Workers 兼容
  */
 
 import type { Locale } from "./index";
-
-// 使用 import.meta.glob 静态导入所有翻译文件（Cloudflare Workers 兼容）
-const translationModules = import.meta.glob("/public/locales/**/*.json", {
-  eager: true,
-  import: "default",
-});
+import { localesData } from "./locales-data";
 
 /**
- * 服务端加载翻译数据（使用静态导入，Cloudflare Workers 兼容）
+ * 服务端加载翻译数据（使用构建时预读的数据）
  *
  * @param nsList - 需要加载的 namespace 列表
  * @param locale - 当前语言
@@ -29,18 +20,11 @@ export async function loadLocaleData(
   _baseUrl: string,
 ): Promise<Record<string, Record<string, unknown>>> {
   const results: Record<string, Record<string, unknown>> = {};
+  const localeData = localesData[locale] || {};
 
   for (const ns of nsList) {
-    try {
-      // 从 glob 结果中查找对应的翻译文件
-      const path = `/public/locales/${locale}/${ns}.json`;
-      const module = translationModules[path];
-      if (module) {
-        results[ns] = module as Record<string, unknown>;
-      }
-    } catch (err) {
-      // SSR 读取失败，客户端会 fallback 到 fetch
-      console.error(`[SSR] Failed to load locale ${locale}/${ns}:`, err);
+    if (localeData[ns]) {
+      results[ns] = localeData[ns];
     }
   }
 
