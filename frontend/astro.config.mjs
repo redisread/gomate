@@ -28,9 +28,8 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
-    ssr: {
-      external: ["node:fs", "node:path"],
-    },
+    // 移除 ssr.external 配置 - Cloudflare Workers 不支持 Node API
+    // 如需文件操作，使用 Web File API
     define: {
       "import.meta.env.PUBLIC_API_URL": JSON.stringify(
         env.PUBLIC_API_URL || "http://localhost:8799"
