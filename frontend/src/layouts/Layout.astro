@@ -171,6 +171,6 @@ function getHreflangUrl(loc: Locale) {
   <body class={["min-h-screen", isDark ? "dark bg-[#12100d]" : "bg-[#faf8f5]"].join(" ")}>
     {showNavbar && <Navbar client:load />}
     <slot />
-    {showFooter && <Footer client:load />}
+    {showFooter && <Footer client:idle />}
   </body>
 </html>
