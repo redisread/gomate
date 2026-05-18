@@ -33,11 +33,12 @@ interface NavbarProps {
  */
 export function Navbar({ className }: NavbarProps) {
   const { t, loading: i18nLoading } = useI18n(["nav", "common"]);
-  const [isScrolled,        setIsScrolled]        = React.useState(() => typeof window !== "undefined" && window.scrollY > 20);
-  const [isMobileMenuOpen,  setIsMobileMenuOpen]  = React.useState(false);
-  const [showUserMenu,      setShowUserMenu]      = React.useState(false);
-  const [currentPath,       setCurrentPath]       = React.useState("");
-  const [session,           setSession]           = React.useState<{
+  // SSR/CSR 初始状态必须一致，避免 hydration mismatch
+  const [isScrolled, setIsScrolled] = React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [showUserMenu, setShowUserMenu] = React.useState(false);
+  const [currentPath, setCurrentPath] = React.useState("");
+  const [session, setSession] = React.useState<{
     user?: { id: string; name: string; nickname?: string; email: string; image?: string };
     isAdmin?: boolean;
   } | null>(null);
@@ -46,13 +47,18 @@ export function Navbar({ className }: NavbarProps) {
   const { city, isLoading: isLocating } = useIPLocation();
   const userCity = session?.user ? getCityDisplay({ city }) : null;
 
-  // 获取当前路径
+  // 获取当前路径（使用静态值避免 hydration mismatch）
   React.useEffect(() => {
-    setCurrentPath(window.location.pathname);
+    // 只在客户端执行，避免 SSR/CSR 不一致
+    if (typeof window !== "undefined") {
+      setCurrentPath(window.location.pathname);
+    }
   }, []);
 
-  // 滚动监听
+  // 滚动监听（只在客户端执行）
   React.useEffect(() => {
+    // 初始检测滚动位置
+    setIsScrolled(window.scrollY > 20);
     const onScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -135,7 +141,11 @@ export function Navbar({ className }: NavbarProps) {
             </a>
 
             {/* ---- 桌面端导航 ---- */}
-            <nav className="hidden md:flex items-center gap-1" aria-label={t("common.mainNav")}>
+            <nav
+              className="hidden md:flex items-center gap-1"
+              aria-label={t("common.mainNav")}
+              suppressHydrationWarning
+            >
               {navLinks(t).map((link) => {
                 const active = isActive(link.href);
                 return (

@@ -151,7 +151,69 @@ export function NavbarSkeleton() {
 }
 
 /**
- * Footer 专用骨架屏
+ * Locations Hero 骨架屏
+ * 模拟探索地点页面 Hero 区域
+ */
+export function LocationsHeroSkeleton() {
+  return (
+    <section className="relative pt-28 pb-10 bg-card border-b border-border">
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Badge */}
+        <Skeleton variant="rounded" width={140} height={24} className="mb-4" />
+
+        {/* Title */}
+        <Skeleton variant="text" width="60%" height={40} className="mb-2" />
+
+        {/* Tagline */}
+        <Skeleton variant="text" width="80%" height={24} className="mb-7" />
+
+        {/* Role buttons */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} variant="rounded" width="100%" height={60} delay={i * 50} />
+          ))}
+        </div>
+
+        {/* Search */}
+        <Skeleton variant="rounded" width="100%" height={50} className="mb-3" />
+
+        {/* Filter tags */}
+        <div className="flex gap-2">
+          <Skeleton variant="rounded" width={80} height={32} />
+          <Skeleton variant="rounded" width={60} height={32} delay={50} />
+          <Skeleton variant="rounded" width={70} height={32} delay={100} />
+          <Skeleton variant="rounded" width={55} height={32} delay={150} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Locations Grid 骨架屏
+ */
+export function LocationsGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="bg-card rounded-2xl overflow-hidden border border-border">
+          <Skeleton variant="rectangular" width="100%" height={200} delay={i * 50} />
+          <div className="p-4 space-y-3">
+            <Skeleton variant="text" width="80%" height={24} delay={i * 50 + 30} />
+            <Skeleton variant="text" width="60%" height={16} delay={i * 50 + 60} />
+            <div className="flex gap-2 pt-2">
+              <Skeleton variant="rounded" width={50} height={20} delay={i * 50 + 90} />
+              <Skeleton variant="rounded" width={60} height={20} delay={i * 50 + 120} />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Footer 骨架屏
  */
 export function FooterSkeleton() {
   return (
@@ -186,5 +248,28 @@ export function FooterSkeleton() {
         </div>
       </div>
     </footer>
+  );
+}
+
+/**
+ * Locations 页面完整骨架屏
+ * 包含 Hero + Grid
+ */
+export function LocationsSkeleton() {
+  return (
+    <main className="min-h-screen bg-stone-50 dark:bg-stone-950">
+      <NavbarSkeleton />
+      <LocationsHeroSkeleton />
+      <section className="py-10 lg:py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Result bar skeleton */}
+          <div className="flex items-center justify-between mb-7">
+            <Skeleton variant="text" width={120} height={16} />
+          </div>
+          <LocationsGridSkeleton />
+        </div>
+      </section>
+      <FooterSkeleton />
+    </main>
   );
 }
