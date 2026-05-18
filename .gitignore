@@ -63,3 +63,6 @@ midscene_run/
 # .claude/
 # .opencode/
 # openspec/
+
+# Auto-generated i18n data
+frontend/src/i18n/locales-data.ts
