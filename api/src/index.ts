@@ -14,7 +14,7 @@ import { hikingRoutesRoute } from "./routes/hiking-routes";
 import { adminRoute } from "./routes/admin";
 import { amapRoute } from "./routes/amap";
 import { poisRoute } from "./routes/pois";
-import { messagesRoute } from "./routes/messages";
+import messagesRoute from "./routes/messages";
 import { updateExpiredTeams } from "./lib/team-status";
 import { createDb } from "./db";
 import { fetchWithTimeout } from "./lib/timeout";

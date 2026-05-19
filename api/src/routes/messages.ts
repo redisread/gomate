@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { requireAuth } from "../lib/auth";
 import { createDb } from "../db";
+import { createAuth, type Env } from "../lib/auth";
 import {
   conversations,
   messages,
@@ -9,9 +9,8 @@ import {
   teamMembers,
   users,
 } from "../db/schema";
-import { eq, and, or, desc, asc, sql, lt } from "drizzle-orm";
+import { eq, and, or, desc, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import type { Env } from "../lib/auth";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -98,32 +97,26 @@ async function canAccessConversation(
 /**
  * GET /messages - 获取会话列表
  */
-app.get("/", requireAuth, async (c) => {
-  const user = c.get("user");
+app.get("/", async (c) => {
+  const authInstance = createAuth(c.env);
+  const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const user = session.user;
   const db = createDb(c.env.DB);
-  const cursor = c.req.query("cursor");
   const limit = Math.min(parseInt(c.req.query("limit") || "20"), 50);
 
   try {
-    let query = db
+    // 获取对话列表
+    const list = await db
       .select({
         id: conversations.id,
         teamId: conversations.teamId,
         lastMessageContent: conversations.lastMessageContent,
         lastMessageAt: conversations.lastMessageAt,
         createdAt: conversations.createdAt,
-        otherUser: {
-          id: users.id,
-          name: users.name,
-          nickname: users.nickname,
-          image: users.image,
-        },
-        unreadCount: sql<number>`(
-          SELECT COUNT(*) FROM messages
-          WHERE messages.conversation_id = ${conversations.id}
-          AND messages.sender_id != ${user.id}
-          AND messages.is_read = false
-        )`,
+        userId: conversations.userId,
+        leaderId: conversations.leaderId,
       })
       .from(conversations)
       .where(
@@ -135,12 +128,13 @@ app.get("/", requireAuth, async (c) => {
       .orderBy(desc(conversations.lastMessageAt))
       .limit(limit);
 
-    // 获取对方用户信息
-    const list = await query;
-
-    // 补充对方用户信息
+    // 获取对方用户信息并计算未读数
     const result = await Promise.all(
-      list.map(async (item) => {
+      list.map(async (conv) => {
+        // 获取对方用户ID
+        const otherUserId = conv.userId === user.id ? conv.leaderId : conv.userId;
+
+        // 获取对方用户信息
         const [otherUser] = await db
           .select({
             id: users.id,
@@ -149,22 +143,25 @@ app.get("/", requireAuth, async (c) => {
             image: users.image,
           })
           .from(users)
-          .where(
-            and(
-              eq(conversations.id, item.id),
-              sql`${users.id} = CASE
-                WHEN ${conversations.userId} = ${user.id}
-                THEN ${conversations.leaderId}
-                ELSE ${conversations.userId}
-              END`
-            )
-          )
-          .leftJoin(conversations, eq(conversations.id, item.id))
+          .where(eq(users.id, otherUserId))
           .limit(1);
 
+        // 获取未读消息数
+        const [unreadResult] = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(messages)
+          .where(
+            and(
+              eq(messages.conversationId, conv.id),
+              eq(messages.isRead, false),
+              sql`${messages.senderId} <> ${user.id}`
+            )
+          );
+
         return {
-          ...item,
+          ...conv,
           otherUser: otherUser || null,
+          unreadCount: unreadResult?.count || 0,
         };
       })
     );
@@ -179,8 +176,12 @@ app.get("/", requireAuth, async (c) => {
 /**
  * POST /messages - 创建对话
  */
-app.post("/", requireAuth, async (c) => {
-  const user = c.get("user");
+app.post("/", async (c) => {
+  const authInstance = createAuth(c.env);
+  const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const user = session.user;
   const body = await c.req.json();
   const db = createDb(c.env.DB);
 
@@ -242,8 +243,12 @@ app.post("/", requireAuth, async (c) => {
 /**
  * GET /messages/:id - 获取消息列表
  */
-app.get("/:id", requireAuth, async (c) => {
-  const user = c.get("user");
+app.get("/:id", async (c) => {
+  const authInstance = createAuth(c.env);
+  const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const user = session.user;
   const conversationId = c.req.param("id");
   const cursor = c.req.query("cursor");
   const limit = Math.min(parseInt(c.req.query("limit") || "20"), 50);
@@ -257,7 +262,19 @@ app.get("/:id", requireAuth, async (c) => {
     }
 
     // 构建查询
-    let query = db
+    let whereConditions = and(
+      eq(messages.conversationId, conversationId)
+    );
+
+    if (cursor) {
+      const cursorDate = new Date(parseInt(cursor));
+      whereConditions = and(
+        whereConditions,
+        sql`${messages.createdAt} < ${cursorDate}`
+      );
+    }
+
+    const list = await db
       .select({
         id: messages.id,
         senderId: messages.senderId,
@@ -265,25 +282,28 @@ app.get("/:id", requireAuth, async (c) => {
         isRead: messages.isRead,
         readAt: messages.readAt,
         createdAt: messages.createdAt,
-        sender: {
-          id: users.id,
-          name: users.name,
-          nickname: users.nickname,
-          image: users.image,
-        },
       })
       .from(messages)
-      .leftJoin(users, eq(users.id, messages.senderId))
-      .where(eq(messages.conversationId, conversationId))
+      .where(whereConditions)
       .orderBy(desc(messages.createdAt))
       .limit(limit);
 
-    if (cursor) {
-      const cursorDate = new Date(parseInt(cursor));
-      query = query.where(lt(messages.createdAt, cursorDate));
-    }
-
-    const list = await query;
+    // 获取发送者信息
+    const messagesWithSender = await Promise.all(
+      list.map(async (msg) => {
+        const [sender] = await db
+          .select({
+            id: users.id,
+            name: users.name,
+            nickname: users.nickname,
+            image: users.image,
+          })
+          .from(users)
+          .where(eq(users.id, msg.senderId))
+          .limit(1);
+        return { ...msg, sender };
+      })
+    );
 
     // 异步标记对方消息为已读
     c.executionCtx?.waitUntil(
@@ -293,7 +313,7 @@ app.get("/:id", requireAuth, async (c) => {
             .update(messages)
             .set({
               isRead: true,
-              readAt: Date.now(),
+              readAt: new Date(),
             })
             .where(
               and(
@@ -310,10 +330,10 @@ app.get("/:id", requireAuth, async (c) => {
 
     return c.json({
       success: true,
-      data: list.reverse(), // 按时间正序返回
+      data: messagesWithSender.reverse(),
       nextCursor:
-        list.length === limit
-          ? list[list.length - 1]?.createdAt?.getTime()
+        list.length === limit && list.length > 0
+          ? String(list[list.length - 1]?.createdAt?.getTime() || Date.now())
           : null,
     });
   } catch (error) {
@@ -325,8 +345,12 @@ app.get("/:id", requireAuth, async (c) => {
 /**
  * POST /messages/:id - 发送消息
  */
-app.post("/:id", requireAuth, async (c) => {
-  const user = c.get("user");
+app.post("/:id", async (c) => {
+  const authInstance = createAuth(c.env);
+  const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const user = session.user;
   const conversationId = c.req.param("id");
   const body = await c.req.json();
   const db = createDb(c.env.DB);
@@ -342,7 +366,7 @@ app.post("/:id", requireAuth, async (c) => {
 
     // 创建消息
     const messageId = nanoid();
-    const now = Date.now();
+    const now = new Date();
 
     await db.insert(messages).values({
       id: messageId,
@@ -376,8 +400,12 @@ app.post("/:id", requireAuth, async (c) => {
 /**
  * GET /messages/unread-count - 获取未读消息数
  */
-app.get("/unread-count", requireAuth, async (c) => {
-  const user = c.get("user");
+app.get("/unread-count", async (c) => {
+  const authInstance = createAuth(c.env);
+  const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const user = session.user;
   const db = createDb(c.env.DB);
 
   try {
