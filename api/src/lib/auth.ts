@@ -129,6 +129,11 @@ export function createAuth(env: Env) {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
     },
+    cookie: {
+      secure: true,
+      sameSite: "none",
+      domain: ".gomate.live",
+    },
     advanced: {
       useSecureCookies: true,
       crossSubDomainCookies: {
