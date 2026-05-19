@@ -74,7 +74,7 @@ const { id } = Astro.params;
         const sessionData = await sessionRes.json();
 
         if (!sessionData.user) {
-          window.location.href = "/auth/login?redirect=/messages";
+          window.location.href = "/login?redirect=/messages";
           return;
         }
 
@@ -82,7 +82,7 @@ const { id } = Astro.params;
         await loadMessages();
       } catch (err) {
         console.error("Auth check failed:", err);
-        window.location.href = "/auth/login?redirect=/messages";
+        window.location.href = "/login?redirect=/messages";
       }
     }
 
@@ -93,7 +93,7 @@ const { id } = Astro.params;
         });
 
         if (res.status === 401) {
-          window.location.href = "/auth/login?redirect=/messages";
+          window.location.href = "/login?redirect=/messages";
           return;
         }
 
