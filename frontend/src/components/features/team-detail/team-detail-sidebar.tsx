@@ -1,4 +1,4 @@
-import { MapPin, ArrowRight, Calendar, Clock, Timer, AlertCircle, CheckCircle, Crown, Share2, Loader2, Users, Trash2, Pencil } from "lucide-react";
+import { MapPin, ArrowRight, Calendar, Clock, Timer, AlertCircle, CheckCircle, Crown, Share2, Loader2, Users, Trash2, Pencil, MessageCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
 import { useTeamDetail } from "./use-team-detail";
@@ -21,7 +21,7 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
         </div>
       )}
       <TeamCapacity team={team} canJoin={ctx.canJoin} remaining={ctx.remaining} />
-      {team.leader && <LeaderCard leader={team.leader} />}
+      {team.leader && <LeaderCard leader={team.leader} teamId={team.id} canMessage={isMember || isPending} />}
       <ShareButton onClick={() => ctx.setShowShare(true)} />
       {isLeader && <LeaderActions ctx={ctx} team={team} />}
       {isMember && <MemberStatusIndicator onLeave={() => ctx.setShowLeave(true)} />}
@@ -93,8 +93,25 @@ function TeamCapacity({ team, canJoin, remaining }: { team: Team; canJoin: boole
   );
 }
 
-function LeaderCard({ leader }: { leader: any; }) {
+function LeaderCard({ leader, teamId, canMessage }: { leader: any; teamId: string; canMessage: boolean; }) {
   const { t } = useI18n(["teams"]);
+  const handleMessage = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.PUBLIC_API_URL}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ teamId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = `/messages/${data.data.id}`;
+      }
+    } catch (err) {
+      console.error("Failed to create conversation:", err);
+    }
+  };
+
   return (
     <div className="border-t border-border pt-4">
       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -108,6 +125,15 @@ function LeaderCard({ leader }: { leader: any; }) {
           <p className="font-semibold text-foreground text-sm">{leader.nickname || leader.name}</p>
         </div>
       </a>
+      {canMessage && (
+        <button
+          onClick={handleMessage}
+          className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+        >
+          <MessageCircle className="w-4 h-4" />
+          私信队长
+        </button>
+      )}
     </div>
   );
 }
