@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
+      - name: Generate i18n locales
+        run: pnpm i18n:build
       - name: Type Check
         run: pnpm --filter @gomate/frontend type-check
       - name: i18n Key Validation
