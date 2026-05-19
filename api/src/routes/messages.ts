@@ -434,7 +434,7 @@ app.post("/:id", async (c) => {
       return c.json({ error: "Invalid input", details: error.errors }, 400);
     }
     console.error("Failed to send message:", error);
-    return c.json({ error: "Failed to send messages" }, 500);
+    return c.json({ error: "Failed to send message" }, 500);
   }
 });
 
