@@ -53,14 +53,14 @@ declareI18nNs(Astro.locals, ["messages", "common"]);
         const sessionData = await sessionRes.json();
 
         if (!sessionData.user) {
-          window.location.href = "/auth/login?redirect=/messages";
+          window.location.href = "/login?redirect=/messages";
           return;
         }
 
         await loadConversations();
       } catch (err) {
         console.error("Auth check failed:", err);
-        window.location.href = "/auth/login?redirect=/messages";
+        window.location.href = "/login?redirect=/messages";
       }
     }
 
@@ -72,7 +72,7 @@ declareI18nNs(Astro.locals, ["messages", "common"]);
         const data = await res.json();
 
         if (res.status === 401) {
-          window.location.href = "/auth/login?redirect=/messages";
+          window.location.href = "/login?redirect=/messages";
           return;
         }
 
