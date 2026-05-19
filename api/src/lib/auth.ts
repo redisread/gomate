@@ -133,6 +133,7 @@ export function createAuth(env: Env) {
       defaultCookieAttributes: {
         sameSite: "none",
         secure: true,
+        path: "/",
       },
       crossSubDomainCookies: {
         enabled: true,
