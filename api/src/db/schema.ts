@@ -427,11 +427,70 @@ export type Team = typeof teams.$inferSelect;
 export type NewTeam = typeof teams.$inferInsert;
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type NewTeamMember = typeof teamMembers.$inferInsert;
+
+// 私信会话表
+export const conversations = sqliteTable(
+  "conversations",
+  {
+    id: text("id").primaryKey(),
+    teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
+    userId: text("user_id").references(() => users.id).notNull(),
+    leaderId: text("leader_id").references(() => users.id).notNull(),
+    initiatorId: text("initiator_id").references(() => users.id).notNull(),
+    lastMessageContent: text("last_message_content"),
+    lastMessageAt: integer("last_message_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    teamIdx: index("conversations_team_idx").on(table.teamId),
+    userIdx: index("conversations_user_idx").on(table.userId),
+    leaderIdx: index("conversations_leader_idx").on(table.leaderId),
+    participantIdx: uniqueIndex("conversations_participant_idx").on(table.teamId, table.userId),
+    lastMsgIdx: index("conversations_last_msg_idx").on(table.lastMessageAt),
+  })
+);
+
+// 私信消息表
+export const messages = sqliteTable(
+  "messages",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id").references(() => conversations.id, { onDelete: "cascade" }).notNull(),
+    senderId: text("sender_id").references(() => users.id).notNull(),
+    content: text("content").notNull(),
+    isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
+    readAt: integer("read_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    conversationIdx: index("messages_conversation_idx").on(table.conversationId),
+    senderIdx: index("messages_sender_idx").on(table.senderId),
+    createdIdx: index("messages_created_idx").on(table.createdAt),
+  })
+);
+
+// Relations
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+  team: one(teams, { fields: [conversations.teamId], references: [teams.id] }),
+  user: one(users, { fields: [conversations.userId], references: [users.id] }),
+  leader: one(users, { fields: [conversations.leaderId], references: [users.id] }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  conversation: one(conversations, { fields: [messages.conversationId], references: [conversations.id] }),
+  sender: one(users, { fields: [messages.senderId], references: [users.id] }),
+}));
 export type Poi = typeof pois.$inferSelect;
 export type NewPoi = typeof pois.$inferInsert;
 export type EntityToPoi = typeof entityToPois.$inferSelect;
 export type UserFavorite = typeof userFavorites.$inferSelect;
 export type NewUserFavorite = typeof userFavorites.$inferInsert;
+export type Conversation = typeof conversations.$inferSelect;
+export type NewConversation = typeof conversations.$inferInsert;
+export type Message = typeof messages.$inferSelect;
+export type NewMessage = typeof messages.$inferInsert;
 
 // ==================== Enums ====================
 
