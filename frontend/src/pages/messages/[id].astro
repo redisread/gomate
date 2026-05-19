@@ -68,7 +68,7 @@ const { id } = Astro.params;
     async function init() {
       try {
         // Check session
-        const sessionRes = await fetch(`${API_BASE}/auth/session`, {
+        const sessionRes = await fetch(`${API_BASE}/auth/get-session`, {
           credentials: "include",
         });
         const sessionData = await sessionRes.json();
