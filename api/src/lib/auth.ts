@@ -129,6 +129,15 @@ export function createAuth(env: Env) {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
     },
+    cookies: {
+      sessionToken: {
+        name: "better-auth.session_token",
+        secure: true,
+        sameSite: "none",
+        domain: ".gomate.live",
+        path: "/",
+      },
+    },
     user: {
       additionalFields: {
         bio: { type: "string", required: false, defaultValue: "" },
