@@ -1,17 +1,16 @@
 ---
+/**
+ * 聊天详情页
+ */
 import Layout from "../../layouts/Layout.astro";
-import { getSession } from "../../lib/auth";
+import { declareI18nNs } from "../../middleware";
 
-// Server-side auth check
-const session = await getSession(Astro.request);
-if (!session) {
-  return Astro.redirect("/auth/login?redirect=/messages");
-}
+declareI18nNs(Astro.locals, ["messages", "common"]);
 
 const { id } = Astro.params;
 ---
 
-<Layout title="聊天">
+<Layout title="聊天 - GoMate" showNavbar={false} showFooter={false}>
   <div class="fixed inset-0 bg-white dark:bg-gray-900">
     {/* Header */}
     <div class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
@@ -55,30 +54,35 @@ const { id } = Astro.params;
   </div>
 
   <script define:vars={{ conversationId: id }}>
+    const API_BASE = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
     const chatContainer = document.getElementById("chatContainer");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
     const headerInfo = document.getElementById("headerInfo");
 
-    const API_BASE = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
-
     let messages = [];
     let currentUserId = null;
     let otherUser = null;
 
-    // Get current user
+    // Initialize
     async function init() {
       try {
+        // Check session
         const sessionRes = await fetch(`${API_BASE}/auth/session`, {
           credentials: "include",
         });
         const sessionData = await sessionRes.json();
-        if (sessionData.user) {
-          currentUserId = sessionData.user.id;
+
+        if (!sessionData.user) {
+          window.location.href = "/auth/login?redirect=/messages";
+          return;
         }
+
+        currentUserId = sessionData.user.id;
         await loadMessages();
       } catch (err) {
-        console.error("Failed to init:", err);
+        console.error("Auth check failed:", err);
+        window.location.href = "/auth/login?redirect=/messages";
       }
     }
 
@@ -87,14 +91,22 @@ const { id } = Astro.params;
         const res = await fetch(`${API_BASE}/messages/${conversationId}?limit=50`, {
           credentials: "include",
         });
+
+        if (res.status === 401) {
+          window.location.href = "/auth/login?redirect=/messages";
+          return;
+        }
+
         const data = await res.json();
 
         if (data.success) {
           messages = data.data || [];
-          // Get other user info from first message
+          // Get other user info
           if (messages.length > 0) {
             const firstMsg = messages[0];
-            otherUser = firstMsg.senderId === currentUserId ? messages.find(m => m.senderId !== currentUserId)?.sender : firstMsg.sender;
+            otherUser = firstMsg.senderId === currentUserId
+              ? messages.find(m => m.senderId !== currentUserId)?.sender
+              : firstMsg.sender;
             updateHeader();
           }
           renderMessages();

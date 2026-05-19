@@ -1,16 +1,14 @@
 ---
+/**
+ * 消息中心页
+ */
 import Layout from "../../layouts/Layout.astro";
-import { MessageList } from "../../components/messages/MessageList";
-import { getSession } from "../../lib/auth";
+import { declareI18nNs } from "../../middleware";
 
-// Server-side auth check
-const session = await getSession(Astro.request);
-if (!session) {
-  return Astro.redirect("/auth/login?redirect=/messages");
-}
+declareI18nNs(Astro.locals, ["messages", "common"]);
 ---
 
-<Layout title="消息中心">
+<Layout title="消息中心 - GoMate" showNavbar={true} showFooter={false}>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <div class="max-w-2xl mx-auto">
       {/* Header */}
@@ -40,20 +38,43 @@ if (!session) {
   </div>
 
   <script>
-    import { useConversations } from "../../hooks/useMessages";
+    const API_BASE = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
 
     const messageListEl = document.getElementById("messageList");
     const refreshBtn = document.getElementById("refreshBtn");
 
-    let selectedId: string | null = null;
+    // Check auth and load conversations
+    async function init() {
+      try {
+        // Check session
+        const sessionRes = await fetch(`${API_BASE}/auth/session`, {
+          credentials: "include",
+        });
+        const sessionData = await sessionRes.json();
 
-    // Initialize React hook (workaround for Astro + React)
+        if (!sessionData.user) {
+          window.location.href = "/auth/login?redirect=/messages";
+          return;
+        }
+
+        await loadConversations();
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        window.location.href = "/auth/login?redirect=/messages";
+      }
+    }
+
     async function loadConversations() {
       try {
-        const res = await fetch(`${import.meta.env.PUBLIC_API_URL}/messages`, {
+        const res = await fetch(`${API_BASE}/messages`, {
           credentials: "include",
         });
         const data = await res.json();
+
+        if (res.status === 401) {
+          window.location.href = "/auth/login?redirect=/messages";
+          return;
+        }
 
         if (data.success && data.data?.length > 0) {
           renderList(data.data);
@@ -74,6 +95,10 @@ if (!session) {
           ? `<img src="${otherUser.image}" class="w-12 h-12 rounded-full object-cover" />`
           : `<div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"><span class="text-lg text-gray-500">${otherUser?.name?.[0] || "?"}</span></div>`;
 
+        const time = conv.lastMessageAt
+          ? formatTime(conv.lastMessageAt)
+          : "";
+
         return `
           <a href="/messages/${conv.id}" class="block hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
             <div class="flex items-start gap-3 p-4 border-b border-gray-100 dark:border-gray-800">
@@ -83,9 +108,7 @@ if (!session) {
                   <h4 class="text-sm font-medium text-gray-900 dark:text-white truncate">
                     ${otherUser?.nickname || otherUser?.name || "未知用户"}
                   </h4>
-                  <span class="text-xs text-gray-400">
-                    ${formatTime(conv.lastMessageAt)}
-                  </span>
+                  <span class="text-xs text-gray-400">${time}</span>
                 </div>
                 <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
                   ${conv.lastMessageContent || "暂无消息"}
@@ -152,7 +175,7 @@ if (!session) {
     }
 
     // Load on mount
-    loadConversations();
+    init();
 
     // Refresh button
     refreshBtn?.addEventListener("click", loadConversations);
