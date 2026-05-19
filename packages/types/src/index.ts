@@ -215,6 +215,44 @@ export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+/** 私信会话 */
+export interface Conversation {
+  id: string;
+  teamId: string;
+  userId: string;
+  leaderId: string;
+  initiatorId: string;
+  lastMessageContent?: string;
+  lastMessageAt?: number;
+  createdAt: number;
+  updatedAt: number;
+  otherUser?: {
+    id: string;
+    name: string;
+    nickname?: string | null;
+    image: string | null;
+  };
+  unreadCount?: number;
+}
+
+/** 私信消息 */
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  isRead: boolean;
+  readAt?: number;
+  createdAt: number;
+  sender?: {
+    id: string;
+    name: string;
+    nickname?: string | null;
+    image: string | null;
+  };
+}
   message?: string;
 }
 
