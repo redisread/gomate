@@ -19,6 +19,7 @@ bucket_name = "gomate"
 binding = "DB"
 database_name = "gomate-db"
 database_id = "7d17d076-202f-48f8-b343-24209cdb0ba1"
+migrations_dir = "db/migrations"
 
 # KV namespace for session cache
 [[kv_namespaces]]
@@ -68,6 +69,7 @@ bucket_name = "gomate"
 binding = "DB"
 database_name = "gomate-db"
 database_id = "7d17d076-202f-48f8-b343-24209cdb0ba1"
+migrations_dir = "db/migrations"
 
 [[env.production.kv_namespaces]]
 binding = "GOMATE_KV"
