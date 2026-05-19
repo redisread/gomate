@@ -127,7 +127,7 @@ export function useMessages(conversationId: string | undefined): UseMessagesRetu
           // Merge new messages
           const newMessages = data.data || [];
           const existingIds = new Set(messages.map((m) => m.id));
-          const merged = [...newMessages.filter((m) => !existingIds.has(m.id)), ...messages];
+          const merged = [...newMessages.filter((m: Message) => !existingIds.has(m.id)), ...messages];
           // Sort by createdAt
           merged.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
           setMessages(merged);
