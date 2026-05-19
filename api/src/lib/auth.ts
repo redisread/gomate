@@ -128,12 +128,12 @@ export function createAuth(env: Env) {
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
-      cookie: {
-        name: "__Secure-better-auth.session_token",
-        secure: true,
-        sameSite: "none",
+    },
+    advanced: {
+      useSecureCookies: true,
+      crossSubDomainCookies: {
+        enabled: true,
         domain: ".gomate.live",
-        path: "/",
       },
     },
     user: {
