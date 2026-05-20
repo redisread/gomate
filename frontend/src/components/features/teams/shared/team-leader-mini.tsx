@@ -63,7 +63,7 @@ export function TeamLeaderMini({
         </span>
         {showLevel && level && (
           <span className="text-xs text-muted-foreground">
-            {t(`enums.userLevel.${level}`)}
+            {t(`enums.level.${level}`)}
           </span>
         )}
       </div>
