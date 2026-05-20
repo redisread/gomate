@@ -209,6 +209,7 @@ interface FilterPanelProps {
   availableTags: { id: string; name: string }[];
   selectedTags: string[];
   activeFiltersCount: number;
+  activeDateQuickType: string | null;
   onDateQuickSelect: (type: string) => void;
   onDifficultyToggle: (id: string) => void;
   onTagToggle: (tagId: string) => void;
@@ -216,7 +217,7 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({
-  startDate, endDate, selectedDifficulty, availableTags, selectedTags, activeFiltersCount,
+  startDate, endDate, selectedDifficulty, availableTags, selectedTags, activeFiltersCount, activeDateQuickType,
   onDateQuickSelect, onDifficultyToggle, onTagToggle, onClearAll,
 }: FilterPanelProps) {
   const { t } = useI18n(["teams", "filter", "common"]);
@@ -230,12 +231,20 @@ export function FilterPanel({
             { key: "tomorrow", label: t("filter.dateQuickTomorrow") },
             { key: "weekend", label: t("filter.dateQuickWeekend") },
             { key: "7days", label: t("filter.dateQuick7Days") },
-          ].map((opt) => (
-            <button key={opt.key} onClick={() => onDateQuickSelect(opt.key)}
-              className="px-3 py-1.5 text-xs rounded-full border border-border bg-card text-stone-600 dark:text-stone-400 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 transition-colors">
-              {opt.label}
-            </button>
-          ))}
+          ].map((opt) => {
+            const isSelected = activeDateQuickType === opt.key;
+            return (
+              <button key={opt.key} onClick={() => onDateQuickSelect(opt.key)}
+                className={cn(
+                  "px-3 py-1.5 text-xs rounded-full border transition-all duration-200",
+                  isSelected
+                    ? "bg-amber-100 dark:bg-amber-900/30 border-amber-400 dark:border-amber-700 text-amber-800 dark:text-amber-300"
+                    : "border-border bg-card text-stone-600 dark:text-stone-400 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400"
+                )}>
+                {opt.label}
+              </button>
+            );
+          })}
           {(startDate || endDate) && (
             <button onClick={() => onDateQuickSelect("clear")}
               className="px-3 py-1.5 text-xs rounded-full border border-border text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
