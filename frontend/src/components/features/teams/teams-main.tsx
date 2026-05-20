@@ -32,6 +32,7 @@ export function TeamsClient() {
             availableTags={ctx.availableTags}
             selectedTags={ctx.selectedTags}
             activeFiltersCount={ctx.activeFiltersCount}
+            activeDateQuickType={ctx.activeDateQuickType}
             onDateQuickSelect={ctx.handleDateQuickSelect}
             onDifficultyToggle={ctx.handleDifficultyToggle}
             onTagToggle={ctx.handleTagToggle}

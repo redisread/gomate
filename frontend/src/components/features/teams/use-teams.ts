@@ -1,6 +1,10 @@
 import * as React from "react";
 import type { Team } from "@/lib/types";
 import { fetchAPI } from "@/lib/api";
+import {
+  getDateRangeByQuickType,
+  getActiveDateQuickType,
+} from "@/lib/date-beijing";
 
 export function useTeams() {
   const [teams, setTeams] = React.useState<Team[]>([]);
@@ -105,50 +109,15 @@ export function useTeams() {
   }, [selectedTags]);
 
   const handleDateQuickSelect = React.useCallback((type: string) => {
-    const today = new Date();
-    const formatDate = (d: Date) => d.toISOString().split("T")[0];
-
-    switch (type) {
-      case "today":
-        setStartDate(formatDate(today));
-        setEndDate(formatDate(today));
-        break;
-      case "tomorrow": {
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        setStartDate(formatDate(tomorrow));
-        setEndDate(formatDate(tomorrow));
-        break;
+    if (type === "clear") {
+      setStartDate("");
+      setEndDate("");
+    } else {
+      const range = getDateRangeByQuickType(type);
+      if (range) {
+        setStartDate(range.start);
+        setEndDate(range.end);
       }
-      case "weekend": {
-        const day = today.getDay();
-        const daysUntilSaturday = day === 0 ? 6 : 6 - day;
-        const saturday = new Date(today);
-        saturday.setDate(today.getDate() + daysUntilSaturday);
-        const sunday = new Date(saturday);
-        sunday.setDate(saturday.getDate() + 1);
-        setStartDate(formatDate(saturday));
-        setEndDate(formatDate(sunday));
-        break;
-      }
-      case "7days": {
-        const next7Days = new Date(today);
-        next7Days.setDate(today.getDate() + 7);
-        setStartDate(formatDate(today));
-        setEndDate(formatDate(next7Days));
-        break;
-      }
-      case "30days": {
-        const next30Days = new Date(today);
-        next30Days.setDate(today.getDate() + 30);
-        setStartDate(formatDate(today));
-        setEndDate(formatDate(next30Days));
-        break;
-      }
-      case "clear":
-        setStartDate("");
-        setEndDate("");
-        break;
     }
     setCurrentPage(1);
   }, []);
@@ -169,7 +138,12 @@ export function useTeams() {
     setShowFilters(false);
   }, []);
 
-  const activeFiltersCount = selectedDifficulty.length + (startDate ? 1 : 0) + (endDate ? 1 : 0) + selectedTags.length;
+  const activeFiltersCount = selectedDifficulty.length + (startDate && endDate ? 1 : 0) + selectedTags.length;
+
+  const activeDateQuickType = React.useMemo(
+    () => getActiveDateQuickType(startDate, endDate),
+    [startDate, endDate]
+  );
 
   return {
     teams,
@@ -184,6 +158,7 @@ export function useTeams() {
     availableTags,
     selectedTags,
     activeFiltersCount,
+    activeDateQuickType,
     setSearchQuery,
     setShowFilters,
     setStartDate,
