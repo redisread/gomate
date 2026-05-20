@@ -12,6 +12,7 @@ import {
   getCardGradient, getProgressGradient,
 } from "@/lib/constants";
 import { TeamUrgencyLabel, TeamProgress, TeamLeaderMini } from "./shared";
+import { getStatusConfig } from "./constants";
 
 // ─── MemberProgress ────────────────────────────────────────────────
 export function MemberProgress({ current, max, showUrgency = true }: { current: number; max: number; showUrgency?: boolean }) {

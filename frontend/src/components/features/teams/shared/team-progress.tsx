@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Team } from "@/lib/types";
 
@@ -18,10 +19,14 @@ export function TeamProgress({
   showLabel = true,
   size = "md",
 }: TeamProgressProps) {
-  // 防御：max <= 0 时显示为 100% neutral
-  const fillRatio = max > 0 ? Math.min(Math.max(current / max, 0), 1) : 1;
+  const { t } = useI18n(["teams"]);
+
+  // 判断是否为无限名额
+  const isUnlimited = max <= 0;
+  // 防御：max <= 0 时不显示进度（无限名额）
+  const fillRatio = isUnlimited ? 0 : Math.min(Math.max(current / max, 0), 1);
   const percentage = Math.round(fillRatio * 100);
-  const remaining = max > 0 ? Math.max(max - current, 0) : 0;
+  const remaining = isUnlimited ? 0 : Math.max(max - current, 0);
 
   // 判断颜色等级
   const getColorLevel = () => {
@@ -31,6 +36,11 @@ export function TeamProgress({
     }
     if (status === "full") {
       return { bar: "bg-red-500", track: "bg-stone-200 dark:bg-stone-700" };
+    }
+
+    // 无限名额使用 special 样式
+    if (isUnlimited) {
+      return { bar: "bg-emerald-500", track: "bg-emerald-100 dark:bg-emerald-900/30" };
     }
 
     // 按 fillRatio 分级
@@ -44,14 +54,14 @@ export function TeamProgress({
   };
 
   const colors = getColorLevel();
-  const isUrgent = fillRatio >= 0.8 && status !== "full" && status !== "cancelled" && status !== "completed";
+  const isUrgent = !isUnlimited && fillRatio >= 0.8 && status !== "full" && status !== "cancelled" && status !== "completed";
   const isFull = status === "full";
 
   // 显示文案
   const getLabel = () => {
-    if (max <= 0) return "名额不限";
-    if (isFull) return "已满员";
-    if (remaining === 1) return "仅剩 1 个名额";
+    if (isUnlimited) return t("teams.unlimitedSpots");
+    if (isFull) return t("teams.statusFull");
+    if (remaining === 1) return t("teams.spotsOneLeft");
     return `${current}/${max}`;
   };
 
@@ -62,13 +72,14 @@ export function TeamProgress({
           <span className={cn(
             "font-medium",
             isFull && "text-stone-500 dark:text-stone-400",
+            isUnlimited && "text-emerald-600 dark:text-emerald-400",
             isUrgent && "text-red-600",
-            !isFull && !isUrgent && "text-stone-500 dark:text-stone-400"
+            !isFull && !isUrgent && !isUnlimited && "text-stone-500 dark:text-stone-400"
           )}>
             {getLabel()}
           </span>
           {isUrgent && !isFull && (
-            <span className="text-red-600 font-medium">即将满员</span>
+            <span className="text-red-600 font-medium">{t("teams.almostFull")}</span>
           )}
         </div>
       )}
@@ -80,14 +91,25 @@ export function TeamProgress({
           isUrgent && "h-2.5"
         )}
       >
-        <div
-          className={cn(
-            "h-full rounded-full transition-all duration-700 ease-out",
-            colors.bar,
-            isUrgent && "animate-pulse"
-          )}
-          style={{ width: `${percentage}%` }}
-        />
+        {/* 无限名额显示特殊样式（虚线或 pulse 动画） */}
+        {isUnlimited ? (
+          <div
+            className={cn(
+              "h-full rounded-full transition-all duration-700 ease-out bg-emerald-500",
+              "animate-pulse"
+            )}
+            style={{ width: "100%" }}
+          />
+        ) : (
+          <div
+            className={cn(
+              "h-full rounded-full transition-all duration-700 ease-out",
+              colors.bar,
+              isUrgent && "animate-pulse"
+            )}
+            style={{ width: `${percentage}%` }}
+          />
+        )}
       </div>
     </div>
   );
