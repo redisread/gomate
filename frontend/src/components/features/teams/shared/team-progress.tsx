@@ -61,7 +61,7 @@ export function TeamProgress({
 
     // 按 fillRatio 分级
     if (fillRatio < 0.5) {
-      return { bar: "bg-stone-500", track: "bg-stone-200 dark:bg-stone-700" };
+      return { bar: "bg-emerald-500", track: "bg-stone-200 dark:bg-stone-700" };
     }
     if (fillRatio < 0.8) {
       return { bar: "bg-amber-500", track: "bg-stone-200 dark:bg-stone-700" };

@@ -109,7 +109,13 @@ export function TeamCard({ team }: { team: Team }) {
             </div>
           </div>
         ) : (
-          <div className="h-2 w-full" style={{ background: statusCfg.bar }} />
+          <TeamProgress
+            current={team.currentMembers}
+            max={team.maxMembers}
+            status={team.status}
+            showLabel={false}
+            size="sm"
+          />
         )}
 
         <div className="p-4">
@@ -117,9 +123,15 @@ export function TeamCard({ team }: { team: Team }) {
             <div className="flex items-center gap-1.5 mb-2.5">
               <MapPin className="h-3 w-3 flex-shrink-0" style={{ color: "#D97706" }} />
               <span className="text-xs font-medium truncate text-amber-800 dark:text-amber-300">{team.location.name}</span>
-              <span className="ml-auto flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" style={statusCfg.pill}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusCfg.dot }} />{statusCfg.label}
-              </span>
+              <div className="ml-auto flex-shrink-0">
+                <TeamUrgencyLabel
+                  status={team.status}
+                  currentMembers={team.currentMembers}
+                  maxMembers={team.maxMembers}
+                  date={team.date}
+                  variant="badge"
+                />
+              </div>
             </div>
           )}
 
