@@ -241,6 +241,47 @@ app.post("/", async (c) => {
 });
 
 /**
+ * GET /messages/unread-count - 获取未读消息数
+ * 注意：必须在 /:id 路由之前注册
+ */
+app.get("/unread-count", async (c) => {
+  const authInstance = createAuth(c.env);
+  const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const user = session.user;
+  const db = createDb(c.env.DB);
+
+  try {
+    const [result] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(messages)
+      .innerJoin(
+        conversations,
+        eq(conversations.id, messages.conversationId)
+      )
+      .where(
+        and(
+          eq(messages.isRead, false),
+          sql`${messages.senderId} != ${user.id}`,
+          or(
+            eq(conversations.userId, user.id),
+            eq(conversations.leaderId, user.id)
+          )
+        )
+      );
+
+    return c.json({
+      success: true,
+      data: { count: result?.count || 0 },
+    });
+  } catch (error) {
+    console.error("Failed to get unread count:", error);
+    return c.json({ error: "Failed to get unread count" }, 500);
+  }
+});
+
+/**
  * GET /messages/:id - 获取消息列表
  */
 app.get("/:id", async (c) => {
@@ -394,46 +435,6 @@ app.post("/:id", async (c) => {
     }
     console.error("Failed to send message:", error);
     return c.json({ error: "Failed to send message" }, 500);
-  }
-});
-
-/**
- * GET /messages/unread-count - 获取未读消息数
- */
-app.get("/unread-count", async (c) => {
-  const authInstance = createAuth(c.env);
-  const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-  if (!session) return c.json({ error: "Unauthorized" }, 401);
-
-  const user = session.user;
-  const db = createDb(c.env.DB);
-
-  try {
-    const [result] = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(messages)
-      .innerJoin(
-        conversations,
-        eq(conversations.id, messages.conversationId)
-      )
-      .where(
-        and(
-          eq(messages.isRead, false),
-          sql`${messages.senderId} != ${user.id}`,
-          or(
-            eq(conversations.userId, user.id),
-            eq(conversations.leaderId, user.id)
-          )
-        )
-      );
-
-    return c.json({
-      success: true,
-      data: { count: result?.count || 0 },
-    });
-  } catch (error) {
-    console.error("Failed to get unread count:", error);
-    return c.json({ error: "Failed to get unread count" }, 500);
   }
 });
 
