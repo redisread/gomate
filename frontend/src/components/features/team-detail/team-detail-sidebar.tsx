@@ -5,6 +5,7 @@ import { useTeamDetail } from "./use-team-detail";
 import { formatDuration } from "./team-detail-utils";
 import { Avatar } from "./team-detail-ui";
 import { TeamApplicationsSection } from "./team-detail-applications";
+import { TeamProgress, TeamLeaderMini } from "@/components/features/teams/shared";
 
 export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   const { team, location, isLeader, isMember, isPending, statusLoadFailed, applications, isFull } = ctx;
@@ -79,13 +80,16 @@ function MobileLocationLink({ location }: { location: any; }) {
 function TeamCapacity({ team, canJoin, remaining }: { team: Team; canJoin: boolean; remaining: number; }) {
   const { t } = useI18n(["teams"]);
   return (
-    <div className="bg-amber-50 rounded-xl p-4 text-center">
-      <p className="text-2xl font-bold text-amber-600 mb-1">
-        {team.currentMembers}<span className="text-muted-foreground/70 text-lg">/{team.maxMembers}</span>
-      </p>
-      <p className="text-xs text-muted-foreground">{t('teams.peopleJoined')}</p>
+    <div className="bg-amber-50 rounded-xl p-4 space-y-3">
+      <TeamProgress
+        current={team.currentMembers}
+        max={team.maxMembers}
+        status={team.status}
+        showLabel={true}
+        size="md"
+      />
       {canJoin && remaining > 0 && (
-        <p className="text-xs text-amber-600 mt-2 font-medium">
+        <p className="text-xs text-amber-600 mt-2 font-medium text-center">
           {remaining === 1 ? t('teams.spotsRemainingOne') : t('teams.spotsRemainingCount').replace('{remaining}', String(remaining))}
         </p>
       )}
@@ -120,10 +124,7 @@ function LeaderCard({ leader, teamId, canMessage }: { leader: any; teamId: strin
       </div>
       <a href={`/users/${leader.id}`}
         className="flex items-center gap-3 p-3 bg-muted rounded-xl hover:bg-amber-50 transition-colors">
-        <Avatar name={leader.nickname || leader.name || undefined} avatar={leader.avatar} isLeader size="md" />
-        <div className="flex-1">
-          <p className="font-semibold text-foreground text-sm">{leader.nickname || leader.name}</p>
-        </div>
+        <TeamLeaderMini leader={leader} showLevel={true} size="md" />
       </a>
       {canMessage && (
         <button

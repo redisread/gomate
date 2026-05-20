@@ -5,6 +5,7 @@ import type { TranslationKey } from "@/i18n";
 import { getDaysUntil } from "@/lib/date-utils";
 import { STATUS_CONFIG } from "@/lib/constants";
 import type { Team } from "@/lib/types";
+import { TeamProgress, TeamUrgencyLabel, TeamLeaderMini } from "@/components/features/teams/shared";
 
 function getDepartureLabel(daysUntil: number | null, t: (key: TranslationKey, vars?: Record<string, string | number>) => string): { text: string; urgent: boolean } | null {
   if (daysUntil === null) return null;
@@ -42,54 +43,6 @@ function AvatarStack({ members, extra = 0 }: { members: { name: string; avatar: 
   );
 }
 
-function CapacityRing({ current, max, isFull }: { current: number; max: number; isFull: boolean }) {
-  const ratio = max > 0 ? Math.min(current / max, 1) : 0;
-  const r = 16;
-  const circ = 2 * Math.PI * r;
-  const dash = circ * ratio;
-  const strokeColor = isFull ? "#ef4444" : "#D97706";
-  const textColor = isFull ? "#b91c1c" : "#92400E";
-
-  return (
-    <div className="relative w-10 h-10 flex items-center justify-center flex-shrink-0">
-      <svg width="40" height="40" viewBox="0 0 40 40" className="absolute inset-0 -rotate-90">
-        <circle cx="20" cy="20" r={r} fill="none" strokeWidth="3" className="stroke-muted/20" />
-        <circle cx="20" cy="20" r={r} fill="none" stroke={strokeColor} strokeWidth="3" strokeLinecap="round"
-          strokeDasharray={`${dash} ${circ}`}
-          style={{ transition: "stroke-dasharray 0.8s cubic-bezier(0.34,1.56,0.64,1)" }} />
-      </svg>
-      <div className="relative z-10 text-center leading-none">
-        <div className="text-[11px] font-bold" style={{ color: textColor }}>{current}</div>
-        <div className="text-[8px] text-muted-foreground leading-none">/{max}</div>
-      </div>
-    </div>
-  );
-}
-
-function LeaderChip({ leader }: { leader: Team["leader"] }) {
-  const { t } = useI18n(["home", "common", "enums"]);
-  const name = leader.nickname ?? leader.name;
-  const levelLabel = t(`enums.leaderLevel.${leader.level}` as TranslationKey) || t(`enums.level.${leader.level}` as TranslationKey) || leader.level;
-  const initial = name.charAt(0).toUpperCase();
-  return (
-    <div className="flex items-center gap-2">
-      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2"
-        style={{ borderColor: "rgba(217,119,6,0.25)", boxShadow: "0 2px 8px rgba(217,119,6,0.15)" }}>
-        {leader.avatar ? (
-          <img src={leader.avatar} alt={name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white"
-            style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)" }}>{initial}</div>
-        )}
-      </div>
-      <div className="min-w-0">
-        <div className="text-xs font-semibold text-foreground truncate leading-tight">{name}</div>
-        <div className="text-[10px] text-muted-foreground leading-tight truncate">{levelLabel}</div>
-      </div>
-    </div>
-  );
-}
-
 export function TeamCard({ team }: { team: Team }) {
   const { t } = useI18n(["home", "common", "enums"]);
   const [hovered, setHovered] = React.useState(false);
@@ -121,12 +74,13 @@ export function TeamCard({ team }: { team: Team }) {
             <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 40%)", opacity: hovered ? 1 : 0, transition: "opacity 0.3s ease" }} />
 
             <div className="absolute top-3 left-3">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-                style={{ background: "rgba(10,8,5,0.55)", color: "#fff", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.12)" }}>
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  style={{ background: statusCfg.dot, boxShadow: `0 0 0 2px ${statusCfg.dot}44`, animation: team.status === "recruiting" && !isFull ? "pulse-soft 2s ease-in-out infinite" : "none" }} />
-                {statusCfg.label}
-              </span>
+              <TeamUrgencyLabel
+                status={team.status}
+                currentMembers={team.currentMembers}
+                maxMembers={team.maxMembers}
+                date={team.date}
+                variant="badge"
+              />
             </div>
 
             {departureLabel && (
@@ -144,11 +98,14 @@ export function TeamCard({ team }: { team: Team }) {
                   <MapPin className="h-3.5 w-3.5 text-white/70 flex-shrink-0" />
                   <span className="text-white text-sm font-semibold drop-shadow-sm truncate">{team.location!.name}</span>
                 </div>
-                <span className="text-white/70 text-xs tabular-nums flex-shrink-0 ml-2">{team.currentMembers}/{team.maxMembers} {t("common.person")}</span>
               </div>
-              <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.20)" }}>
-                <div className="h-full rounded-full" style={{ width: `${Math.min((team.currentMembers / team.maxMembers) * 100, 100)}%`, background: statusCfg.bar, transition: "width 0.8s cubic-bezier(0.34,1.56,0.64,1)" }} />
-              </div>
+              <TeamProgress
+                current={team.currentMembers}
+                max={team.maxMembers}
+                status={team.status}
+                showLabel={false}
+                size="sm"
+              />
             </div>
           </div>
         ) : (
@@ -188,10 +145,9 @@ export function TeamCard({ team }: { team: Team }) {
           <div className="h-px mb-3 bg-border/30" />
 
           <div className="flex items-center gap-3">
-            <LeaderChip leader={team.leader} />
+            <TeamLeaderMini leader={team.leader} size="sm" />
             <div className="ml-auto flex items-center gap-2.5 flex-shrink-0">
               {approvedMembers.length > 0 && <AvatarStack members={approvedMembers} extra={extraCount} />}
-              <CapacityRing current={team.currentMembers} max={team.maxMembers} isFull={isFull} />
             </div>
           </div>
         </div>
