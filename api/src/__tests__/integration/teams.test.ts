@@ -163,6 +163,33 @@ describe("Teams API 集成测试", () => {
       expect(json.team.id).toBe(team.id);
     });
 
+    it("requirements 为非 JSON 字符串时不应 500，返回 []", async () => {
+      // 直接插入脏数据模拟旧数据
+      const id = `team-${Date.now()}`;
+      const futureTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await testDb.insert(schema.teams).values({
+        id,
+        locationId: location.id,
+        leaderId: leader.id,
+        title: "脏数据测试队伍",
+        startTime: futureTime,
+        endTime: new Date(futureTime.getTime() + 4 * 60 * 60 * 1000),
+        durationMin: 240,
+        maxMembers: 5,
+        icon: "⛰️",
+        status: "recruiting",
+        requirements: "无特殊要求", // 非 JSON 字符串
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await req(app, `/teams/${id}`);
+      expect(res.status).toBe(200);
+      const json = await res.json() as { team: { id: string; requirements: unknown[] } };
+      expect(json.team.id).toBe(id);
+      expect(json.team.requirements).toEqual([]);
+    });
+
     it("获取不存在的队伍返回 404", async () => {
       const res = await req(app, "/teams/nonexistent-id");
       expect(res.status).toBe(404);
