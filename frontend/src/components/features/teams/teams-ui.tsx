@@ -11,7 +11,7 @@ import {
   DIFFICULTY_CONFIG, DIFFICULTY_OPTIONS,
   getCardGradient, getProgressGradient,
 } from "@/lib/constants";
-import { getStatusConfig, getDaysUntilStart } from "./constants";
+import { TeamUrgencyLabel, TeamProgress, TeamLeaderMini } from "./shared";
 
 // ─── MemberProgress ────────────────────────────────────────────────
 export function MemberProgress({ current, max, showUrgency = true }: { current: number; max: number; showUrgency?: boolean }) {
@@ -85,9 +85,7 @@ export function TeamCard({ team }: { team: Team }) {
   const { t } = useI18n(["teams", "filter", "common"]);
   const location = (team as any).location;
   const diff = location?.difficulty ? DIFFICULTY_CONFIG[location.difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
-  const leaderName = team.leader?.nickname || team.leader?.name || t("teams.defaultLeader");
   const gradient = getCardGradient(team.id);
-  const daysInfo = location?.startDate ? getDaysUntilStart(t, location.startDate) : null;
 
   return (
     <a href={`/teams/${team.id}`} className="group block">
@@ -101,7 +99,15 @@ export function TeamCard({ team }: { team: Team }) {
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="absolute bottom-3 right-3"><StatusBadge status={team.status} /></div>
+          <div className="absolute bottom-3 right-3">
+            <TeamUrgencyLabel
+              status={team.status}
+              currentMembers={team.currentMembers}
+              maxMembers={team.maxMembers}
+              date={team.date}
+              variant="badge"
+            />
+          </div>
         </div>
         <div className="p-4">
           {location?.name && (
@@ -118,16 +124,17 @@ export function TeamCard({ team }: { team: Team }) {
             <span className="flex items-center gap-1 bg-stone-50 dark:bg-stone-800 px-2 py-0.5 rounded-full"><Calendar className="h-3 w-3" />{team.date}</span>
             {team.time && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{team.time}</span>}
           </div>
-          <div className="mb-3"><MemberProgress current={team.currentMembers} max={team.maxMembers} /></div>
+          <div className="mb-3">
+            <TeamProgress
+              current={team.currentMembers}
+              max={team.maxMembers}
+              status={team.status}
+              showLabel={true}
+              size="md"
+            />
+          </div>
           <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
-            <div className="flex items-center gap-1.5 min-w-0">
-              {team.leader?.avatar ? (
-                <img src={team.leader.avatar} alt={leaderName} className="w-5 h-5 rounded-full object-cover ring-1 ring-stone-100 dark:ring-stone-700" />
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center"><UserCircle className="h-4 w-4 text-stone-400 dark:text-stone-500" /></div>
-              )}
-              <span className="text-xs text-stone-400 dark:text-stone-500 truncate">{leaderName}</span>
-            </div>
+            <TeamLeaderMini leader={team.leader} size="sm" />
             <span className="text-xs text-stone-400 dark:text-stone-500 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors flex items-center gap-0.5">
               {t("teams.viewDetailShort")}<ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
             </span>
