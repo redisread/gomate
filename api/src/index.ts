@@ -15,6 +15,7 @@ import { adminRoute } from "./routes/admin";
 import { amapRoute } from "./routes/amap";
 import { poisRoute } from "./routes/pois";
 import messagesRoute from "./routes/messages";
+import activityPostsRoute from "./routes/activity-posts";
 import { updateExpiredTeams } from "./lib/team-status";
 import { createDb } from "./db";
 import { fetchWithTimeout } from "./lib/timeout";
@@ -45,6 +46,7 @@ app.route("/admin", adminRoute);
 app.route("/amap", amapRoute);
 app.route("/pois", poisRoute);
 app.route("/messages", messagesRoute);
+app.route("/activity-posts", activityPostsRoute);
 
 // R2 本地代理（挂在顶层，对齐原 Next.js /api/r2/* 路径）
 app.get("/r2/*", async (c) => {

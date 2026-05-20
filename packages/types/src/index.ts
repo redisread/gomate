@@ -253,8 +253,6 @@ export interface Message {
     image: string | null;
   };
 }
-  message?: string;
-}
 
 /** 分页信息 */
 export interface Pagination {
