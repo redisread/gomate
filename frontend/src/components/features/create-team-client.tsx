@@ -138,6 +138,12 @@ export function CreateTeamClient() {
     handleChange(e);
   };
 
+  // 快捷设置时长
+  const handleDurationQuickSelect = (minutes: number) => {
+    durationManuallyEditedRef.current = true;
+    setFormData((prev) => ({ ...prev, durationMin: String(minutes) }));
+  };
+
   /**
    * 根据路线难度和时长推荐合适的活动时长（分钟）
    */
@@ -389,6 +395,40 @@ export function CreateTeamClient() {
                     ))}
                   </select>
                 </div>
+                {/* 快捷选项按钮组 */}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <QuickDurationButton
+                    label={t("teams.durationHalfDay")}
+                    minutes={240}
+                    currentValue={formData.durationMin}
+                    onClick={() => handleDurationQuickSelect(240)}
+                  />
+                  <QuickDurationButton
+                    label={t("teams.durationFullDay")}
+                    minutes={480}
+                    currentValue={formData.durationMin}
+                    onClick={() => handleDurationQuickSelect(480)}
+                  />
+                  <QuickDurationButton
+                    label={t("teams.durationTwoDays")}
+                    minutes={2880}
+                    currentValue={formData.durationMin}
+                    onClick={() => handleDurationQuickSelect(2880)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const select = document.getElementById("durationMin") as HTMLSelectElement;
+                      if (select) {
+                        select.focus();
+                        select.click();
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 border border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary hover:text-primary"
+                  >
+                    {t("teams.durationCustom")}
+                  </button>
+                </div>
               </FormSection>
 
               <FormSection icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.maxSizeHint")}>
@@ -510,6 +550,34 @@ function getDurationOptions(t: (key: any, vars?: Record<string, string | number>
     { value: 900, label: t("teams.duration15h") },
     { value: 1200, label: t("teams.duration20h") },
   ];
+}
+
+/* ── 快捷时长按钮 ── */
+function QuickDurationButton({
+  label,
+  minutes,
+  currentValue,
+  onClick,
+}: {
+  label: string;
+  minutes: number;
+  currentValue: string;
+  onClick: () => void;
+}) {
+  const isActive = String(minutes) === currentValue;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 border ${
+        isActive
+          ? "bg-primary/10 border-primary text-primary"
+          : "bg-muted border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+      }`}
+    >
+      {label}
+    </button>
+  );
 }
 
 /* ── 表单字段区块 ── */
