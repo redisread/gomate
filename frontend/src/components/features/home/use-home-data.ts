@@ -47,7 +47,7 @@ export function useHomeData() {
   const fetchLocations = React.useCallback(async (page = 1) => {
     setIsLoading(true);
     try {
-      const res = await fetchAPI(`/api/locations?page=${page}&pageSize=6`);
+      const res = await fetchAPI(`/api/locations?page=${page}&pageSize=6&view=card`);
       const data = await res.json();
       if (data.success) {
         setLocations(data.locations);
