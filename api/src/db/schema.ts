@@ -388,6 +388,7 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
   route: one(routes, { fields: [teams.routeId], references: [routes.id] }),
   leader: one(users, { fields: [teams.leaderId], references: [users.id], relationName: "leaderTeams" }),
   members: many(teamMembers),
+  activityPosts: many(activityPosts),
 }));
 
 export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
@@ -482,6 +483,39 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   conversation: one(conversations, { fields: [messages.conversationId], references: [conversations.id] }),
   sender: one(users, { fields: [messages.senderId], references: [users.id] }),
 }));
+
+// ==================== Activity Posts (活动后分享) ====================
+
+export const activityPosts = sqliteTable(
+  "activity_posts",
+  {
+    id: text("id").primaryKey(),
+    teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
+    locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }),
+    authorId: text("author_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    content: text("content").notNull(),
+    images: text("images").notNull(), // JSON array of image URLs
+    status: text("status").notNull().default("visible"), // visible | hidden | deleted
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    teamIdx: index("activity_posts_team_idx").on(table.teamId),
+    locationIdx: index("activity_posts_location_idx").on(table.locationId),
+    authorIdx: index("activity_posts_author_idx").on(table.authorId),
+    statusIdx: index("activity_posts_status_idx").on(table.status),
+    createdAtIdx: index("activity_posts_created_at_idx").on(table.createdAt),
+  })
+);
+
+export const activityPostsRelations = relations(activityPosts, ({ one }) => ({
+  team: one(teams, { fields: [activityPosts.teamId], references: [teams.id] }),
+  location: one(locations, { fields: [activityPosts.locationId], references: [locations.id] }),
+  author: one(users, { fields: [activityPosts.authorId], references: [users.id] }),
+}));
+
+// Update teams relations to include activity posts
+// (Need to update existing teamsRelations)
 export type Poi = typeof pois.$inferSelect;
 export type NewPoi = typeof pois.$inferInsert;
 export type EntityToPoi = typeof entityToPois.$inferSelect;
@@ -491,6 +525,8 @@ export type Conversation = typeof conversations.$inferSelect;
 export type NewConversation = typeof conversations.$inferInsert;
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
+export type ActivityPost = typeof activityPosts.$inferSelect;
+export type NewActivityPost = typeof activityPosts.$inferInsert;
 
 // ==================== Enums ====================
 
@@ -508,3 +544,6 @@ export type EntityType = "location" | "route" | "activity";
 export type PoiCategory = "poi";
 export type PoiEntityType = "route" | "location" | "city";
 export type PoiRoleType = "waypoint" | "checkpoint" | "viewpoint" | "facility" | "poi";
+
+// 活动后分享状态
+export type ActivityPostStatus = "visible" | "hidden" | "deleted";
