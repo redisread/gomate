@@ -91,25 +91,25 @@ export function TeamProgress({
           isUrgent && "h-2.5"
         )}
       >
-        {/* 无限名额显示特殊样式（虚线或 pulse 动画） */}
-        {isUnlimited ? (
-          <div
-            className={cn(
-              "h-full rounded-full transition-all duration-700 ease-out bg-emerald-500",
-              "animate-pulse"
-            )}
-            style={{ width: "100%" }}
-          />
-        ) : (
-          <div
-            className={cn(
-              "h-full rounded-full transition-all duration-700 ease-out",
-              colors.bar,
-              isUrgent && "animate-pulse"
-            )}
-            style={{ width: `${percentage}%` }}
-          />
+    // 无限名额：只显示标签，不渲染进度条 fill
+  if (isUnlimited) {
+    return (
+      <div className={cn("space-y-2", size === "sm" && "space-y-1")}>
+        {showLabel && (
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium text-emerald-600 dark:text-emerald-400">
+              {t("teams.unlimitedSpots")}
+            </span>
+          </div>
         )}
+        {/* 无限名额显示细线占位，不填充 */}
+        <div className={cn(
+          "rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900/20",
+          size === "md" ? "h-1" : "h-0.5"
+        )} />
+      </div>
+    );
+  }
       </div>
     </div>
   );

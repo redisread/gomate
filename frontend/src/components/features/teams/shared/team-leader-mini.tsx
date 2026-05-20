@@ -1,6 +1,7 @@
 "use client";
 
 import { UserCircle } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Team } from "@/lib/types";
 
@@ -15,7 +16,8 @@ export function TeamLeaderMini({
   showLevel = false,
   size = "md",
 }: TeamLeaderMiniProps) {
-  const name = leader?.nickname || leader?.name || "领队";
+  const { t } = useI18n(["teams", "enums"]);
+  const name = leader?.nickname || leader?.name || t("teams.defaultLeader");
   const avatar = leader?.avatar;
   const level = leader?.level;
 
@@ -33,14 +35,6 @@ export function TeamLeaderMini({
   };
 
   const classes = sizeClasses[size];
-
-  // 等级标签映射
-  const levelLabels: Record<string, string> = {
-    beginner: "新手",
-    intermediate: "进阶",
-    advanced: "高阶",
-    expert: "专家",
-  };
 
   return (
     <div className="flex items-center gap-2 min-w-0">
@@ -69,7 +63,7 @@ export function TeamLeaderMini({
         </span>
         {showLevel && level && (
           <span className="text-xs text-muted-foreground">
-            {levelLabels[level] || level}
+            {t(`enums.userLevel.${level}`)}
           </span>
         )}
       </div>
