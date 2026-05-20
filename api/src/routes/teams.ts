@@ -14,6 +14,20 @@ function getRandomTeamIcon() {
   return TEAM_ICONS[Math.floor(Math.random() * TEAM_ICONS.length)];
 }
 
+/**
+ * 安全解析 requirements 字段
+ * 旧数据可能是非 JSON 字符串，解析失败返回空数组
+ */
+function parseRequirements(value: string | null | undefined): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 /** 获取单个路线的标签 */
 async function getRouteTags(
   db: ReturnType<typeof createDb>,
@@ -310,10 +324,7 @@ function formatTeams(result: {
     const durationHours = Math.round(
       (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
     );
-    let requirements: string[] = [];
-    try {
-      if (row.requirements) requirements = JSON.parse(row.requirements);
-    } catch { /* 忽略解析错误 */ }
+    const requirements = parseRequirements(row.requirements);
     return {
       id: row.id, locationId: row.locationId, routeId: row.routeId,
       title: row.title, description: row.description || "",
@@ -495,13 +506,7 @@ teams.get("/:id", async (c) => {
         description: teamWithRelations.description || "", date, time,
         duration: `${durationHours}小时`, durationMin: durationMinutes,
         maxMembers: teamWithRelations.maxMembers, currentMembers,
-        requirements: (() => {
-          try {
-            return teamWithRelations.requirements ? JSON.parse(teamWithRelations.requirements) : [];
-          } catch {
-            return [];
-          }
-        })(),
+        requirements: parseRequirements(teamWithRelations.requirements),
         status: teamWithRelations.status, createdAt: teamWithRelations.createdAt,
         route: teamWithRelations.route
           ? {
