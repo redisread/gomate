@@ -495,7 +495,13 @@ teams.get("/:id", async (c) => {
         description: teamWithRelations.description || "", date, time,
         duration: `${durationHours}小时`, durationMin: durationMinutes,
         maxMembers: teamWithRelations.maxMembers, currentMembers,
-        requirements: teamWithRelations.requirements ? JSON.parse(teamWithRelations.requirements) : [],
+        requirements: (() => {
+          try {
+            return teamWithRelations.requirements ? JSON.parse(teamWithRelations.requirements) : [];
+          } catch {
+            return [];
+          }
+        })(),
         status: teamWithRelations.status, createdAt: teamWithRelations.createdAt,
         route: teamWithRelations.route
           ? {
