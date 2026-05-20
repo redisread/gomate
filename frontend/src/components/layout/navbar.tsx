@@ -10,6 +10,7 @@ import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { type Locale, SUPPORTED_LOCALES, getLocale, setLocale, getLocaleName } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
 import { useIPLocation, getCityDisplay } from "@/hooks/useIPLocation";
+import { SearchInput } from "@/components/ui/search-input";
 
 const navLinks = (t: (key: any) => string) => [
   { href: "/",          label: t("nav.home") },
@@ -174,6 +175,9 @@ export function Navbar({ className }: NavbarProps) {
 
             {/* ---- 桌面端操作区 ---- */}
             <div className="hidden md:flex items-center gap-2">
+              {/* 搜索框 */}
+              <SearchInput className="w-56" />
+
               {/* 语言切换 */}
               <LanguageSwitcher />
 
