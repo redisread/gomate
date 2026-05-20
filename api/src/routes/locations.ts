@@ -41,6 +41,7 @@ async function requireAdmin(c: { env: Env; req: { raw: Request } }) {
  * 获取地点列表，支持分页、搜索、城市筛选、标签筛选
  * ?tags=true 返回热门标签
  * ?allTags=true 返回按类型分组的所有标签
+ * ?view=card 返回轻量卡片视图（首页用），跳过 routes/tags/images 等重字段
  */
 locations.get("/", async (c) => {
   try {
@@ -76,6 +77,7 @@ locations.get("/", async (c) => {
     const tagIdsParam = c.req.query("tagIds");
     const tagIds = tagIdsParam ? tagIdsParam.split(",").filter(Boolean) : [];
     const type = c.req.query("type") || "";
+    const view = c.req.query("view") || ""; // "card" for lightweight view
 
     // 构建过滤条件
     const conditions = [];
@@ -111,6 +113,100 @@ locations.get("/", async (c) => {
     const totalPages = Math.ceil(total / pageSize);
     const offset = (page - 1) * pageSize;
 
+    // ==================== view=card 轻量模式 ====================
+    if (view === "card") {
+      // 只查询卡片需要的字段，不 join city/routes
+      const locationList = await db
+        .select({
+          id: schema.locations.id,
+          name: schema.locations.name,
+          slug: schema.locations.slug,
+          type: schema.locations.type,
+          subtitle: schema.locations.subtitle,
+          description: schema.locations.description,
+          address: schema.locations.address,
+          cityName: schema.locations.cityName,
+          coverImage: schema.locations.coverImage,
+          createdAt: schema.locations.createdAt,
+        })
+        .from(schema.locations)
+        .where(whereClause)
+        .limit(pageSize)
+        .offset(offset);
+
+      const locationIds = locationList.map((l) => l.id);
+
+      // 只取每个地点的第一条路线（难度和耗时用）
+      const firstRoutes = locationIds.length > 0
+        ? await db
+            .select({
+              locationId: schema.routes.locationId,
+              difficulty: schema.routes.difficulty,
+              durationMin: schema.routes.durationMin,
+              durationMax: schema.routes.durationMax,
+              distance: schema.routes.distance,
+              elevation: schema.routes.elevation,
+            })
+            .from(schema.routes)
+            .where(inArray(schema.routes.locationId, locationIds))
+        : [];
+
+      const routeByLocation: Record<string, typeof firstRoutes[0]> = {};
+      for (const r of firstRoutes) {
+        if (!routeByLocation[r.locationId]) routeByLocation[r.locationId] = r;
+      }
+
+      // 只取每个地点第一个标签
+      const firstTags = locationIds.length > 0
+        ? await db
+            .select({
+              entityId: schema.entityToTags.entityId,
+              tagName: schema.tags.name,
+              tagType: schema.tags.type,
+            })
+            .from(schema.entityToTags)
+            .innerJoin(schema.tags, eq(schema.tags.id, schema.entityToTags.tagId))
+            .where(and(
+              eq(schema.entityToTags.entityType, "location"),
+              inArray(schema.entityToTags.entityId, locationIds)
+            ))
+        : [];
+
+      const firstTagByLocation: Record<string, { name: string; type: string }> = {};
+      for (const t of firstTags) {
+        if (!firstTagByLocation[t.entityId]) firstTagByLocation[t.entityId] = { name: t.tagName, type: t.tagType };
+      }
+
+      const formattedLocations = locationList.map((loc) => {
+        const route = routeByLocation[loc.id];
+        const tag = firstTagByLocation[loc.id];
+        return {
+          id: loc.id,
+          name: loc.name,
+          slug: loc.slug,
+          type: loc.type,
+          subtitle: loc.subtitle,
+          description: loc.description,
+          address: loc.address,
+          cityName: loc.cityName,
+          coverImage: loc.coverImage,
+          difficulty: route?.difficulty ?? null,
+          tags: tag ? [{ name: tag.name, type: tag.type }] : [],
+          routes: route ? [{
+            difficulty: route.difficulty,
+            durationMin: route.durationMin,
+            durationMax: route.durationMax,
+            distance: route.distance,
+            elevation: route.elevation,
+          }] : [],
+          createdAt: loc.createdAt,
+        };
+      });
+
+      return c.json({ success: true, locations: formattedLocations, pagination: { page, pageSize, total, totalPages } });
+    }
+
+    // ==================== 完整模式（默认） ====================
     // 查询地点列表
     const locationList = await db.query.locations.findMany({
       where: whereClause,
