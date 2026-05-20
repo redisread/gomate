@@ -204,7 +204,7 @@
   "spotsDesc": "{remaining} more companion(s) needed to set off",
   "spotsOneLeft": "Just you, let's go!",
   "joinNow": "Join Now",
-  "spotsLeft": "Only {count} spot(s) left!",
+  "spotsToForm": "{count} more needed to form",
   "almostFull": "🔥 Almost Full",
   "unlimitedSpots": "Unlimited",
   "daysLeft": "{count} day(s) left",

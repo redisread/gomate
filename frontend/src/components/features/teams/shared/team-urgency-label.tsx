@@ -186,7 +186,7 @@ export function TeamUrgencyLabel({
       "bg-amber-50/50 text-amber-700",
       variant === "text" && "text-amber-600"
     )}>
-      {t("teams.stillNeedMore", { remaining })}
+      {t("teams.spotsToForm", { count: remaining })}
     </span>
   );
 }

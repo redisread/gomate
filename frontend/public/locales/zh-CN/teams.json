@@ -204,7 +204,7 @@
   "spotsDesc": "还差 {remaining} 位伙伴就可以出发",
   "spotsOneLeft": "就差你一个，出发！",
   "joinNow": "立即加入",
-  "spotsLeft": "仅剩 {count} 个名额！",
+  "spotsToForm": "还差 {count} 人成行",
   "almostFull": "🔥 即将满员",
   "unlimitedSpots": "名额不限",
   "daysLeft": "还有 {count} 天",

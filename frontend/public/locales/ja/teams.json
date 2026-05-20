@@ -204,7 +204,7 @@
   "spotsDesc": "あと{remaining}人のパートナーで出発できます",
   "spotsOneLeft": "あなた一人だけ。出発！",
   "joinNow": "今すぐ参加",
-  "spotsLeft": "残り{count}枠のみ！",
+  "spotsToForm": "あと{count}人で成行",
   "almostFull": "🔥 まもなく満員",
   "unlimitedSpots": "定員なし",
   "daysLeft": "あと{count}日",
