@@ -3,13 +3,10 @@
 import * as React from "react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityPostCard, type ActivityPost } from "./activity-post-card";
 import { ActivityPostForm } from "./activity-post-form";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { fetchAPI } from "@/lib/api";
-import { Mountain, Plus, Loader2 } from "lucide-react";
+import { Mountain, Plus, Loader2, X } from "lucide-react";
 
 interface TeamActivityPostsProps {
   teamId: string;
@@ -22,7 +19,6 @@ export function TeamActivityPosts({ teamId, teamStatus, isMember, className }: T
   const { t } = useI18n(["teams"]);
   const [posts, setPosts] = React.useState<ActivityPost[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showForm, setShowForm] = React.useState(false);
 
   const canPost = teamStatus === "completed" && isMember;
@@ -67,45 +63,58 @@ export function TeamActivityPosts({ teamId, teamStatus, isMember, className }: T
 
   if (isLoading) {
     return (
-      <Card className={cn("bg-card", className)}>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className={cn("bg-card rounded-2xl border border-border p-6", className)}>
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className={cn("bg-card", className)}>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold">
+    <div className={cn("bg-card rounded-2xl border border-border", className)}>
+      {/* Header */}
+      <div className="flex flex-row items-center justify-between p-6 border-b border-border">
+        <h3 className="text-lg font-semibold text-foreground">
           {t("activityPosts.title")}
-        </CardTitle>
+        </h3>
         {canPost && (
-          <Dialog open={showForm} onOpenChange={setShowForm}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-2">
-                <Plus className="h-4 w-4" />
-                {t("activityPosts.add")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>{t("activityPosts.add")}</DialogTitle>
-              </DialogHeader>
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            {t("activityPosts.add")}
+          </button>
+        )}
+      </div>
+
+      {/* Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-card rounded-2xl border border-border w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h4 className="text-lg font-semibold">{t("activityPosts.add")}</h4>
+              <button
+                onClick={() => setShowForm(false)}
+                className="p-2 hover:bg-muted rounded-full transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4">
               <ActivityPostForm
                 teamId={teamId}
                 onSuccess={handleFormSuccess}
                 onCancel={() => setShowForm(false)}
               />
-            </DialogContent>
-          </Dialog>
-        )}
-      </CardHeader>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <CardContent className="pt-0">
+      {/* Content */}
+      <div className="p-6">
         {posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mb-4">
@@ -130,7 +139,7 @@ export function TeamActivityPosts({ teamId, teamStatus, isMember, className }: T
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

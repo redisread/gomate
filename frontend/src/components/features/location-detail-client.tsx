@@ -30,6 +30,7 @@ import {
   TeamListSection,
   PoiSection,
 } from "@/components/features/location-detail-main-content";
+import { LocationActivityPosts } from "@/components/features/activity-posts";
 
 // 动态导入 SharePosterModal
 const SharePosterModal = React.lazy(() => import("./share-poster-modal").then(m => ({ default: m.SharePosterModal })));
@@ -920,6 +921,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             {/* <RouteInfoCard location={location} /> */}
             <PoiSection locationId={location.id} />
             <TeamListSection teams={teams} locationId={location.id} />
+            <LocationActivityPosts locationId={locationId} />
           </div>
 
           {/* 右栏 sticky */}

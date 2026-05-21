@@ -3,8 +3,8 @@
 import * as React from "react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "@/lib/date-utils";
+import { Avatar } from "@/components/ui/avatar";
+import { formatTimeAgo } from "@/lib/date-utils";
 import { ImageGrid } from "./image-grid";
 import { Trash2 } from "lucide-react";
 
@@ -60,22 +60,18 @@ export function ActivityPostCard({
       {/* Header: Author + Date */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <Avatar className="h-9 w-9">
-            <AvatarImage
-              src={post.author?.avatar || undefined}
-              alt={post.author?.name || "Unknown"}
-            />
-            <AvatarFallback className="bg-stone-100 text-stone-500 text-sm">
-              {post.author?.name?.charAt(0) || "?"}
-            </AvatarFallback>
-          </Avatar>
+          <Avatar
+            src={post.author?.avatar}
+            name={post.author?.name || "?"}
+            size="md"
+          />
           <div className="flex flex-col">
             <span className="text-sm font-medium text-foreground">
               {post.author?.name || t("common.unknown")}
             </span>
             <span className="text-xs text-muted-foreground">
               {post.createdAt
-                ? formatDistanceToNow(post.createdAt)
+                ? formatTimeAgo(post.createdAt)
                 : t("common.unknown")}
             </span>
           </div>
