@@ -355,6 +355,25 @@
     "updateFailed": "更新失败",
     "wechatSaved2": "微信号已保存"
   },
+  "activityPosts": {
+    "title": "活动回顾",
+    "add": "发布活动回顾",
+    "fromTeam": "来自队伍",
+    "recentActivities": "最近活动",
+    "emptyTitle": "暂无活动回顾",
+    "emptyDescription": "成为第一个分享的人",
+    "emptyNotMember": "完成活动后成员可以发布回顾",
+    "locationEmpty": "该地点暂无活动回顾",
+    "placeholder": "分享这次活动的体验和感受...",
+    "addImage": "添加图片",
+    "publish": "发布",
+    "confirmDelete": "确定要删除这条回顾吗？",
+    "delete": "删除",
+    "contentRequired": "内容不能为空",
+    "maxImagesError": "最多只能上传 3 张图片",
+    "uploadError": "图片上传失败",
+    "submitError": "发布失败，请重试"
+  },
   "toast": {
     "loginFirst": "请先登录后再加入队伍",
     "wechatEmpty": "微信号不能为空",
