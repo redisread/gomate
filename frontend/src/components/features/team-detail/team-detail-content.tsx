@@ -3,6 +3,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { useTeamDetail } from "./use-team-detail";
 import { getStatusInfo } from "./team-detail-utils";
 import { MemberAvatarGrid } from "./team-detail-members";
+import { TeamActivityPosts } from "@/components/features/activity-posts";
 
 export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   const { team, location, allMembers, canJoin, isFull, isLeader, isMember, isPending, userId } = ctx;
@@ -27,6 +28,7 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
         </div>
       )}
       <JoinSection ctx={ctx} team={team} canJoin={canJoin} isFull={isFull} isLeader={isLeader} isMember={isMember} isPending={isPending} userId={userId} />
+      <TeamActivityPosts teamId={team.id} teamStatus={team.status} isMember={isMember} />
     </div>
   );
 }
