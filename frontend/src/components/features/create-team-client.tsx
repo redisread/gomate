@@ -411,9 +411,9 @@ export function CreateTeamClient() {
                   />
                   <QuickDurationButton
                     label={t("teams.durationTwoDays")}
-                    minutes={2880}
+                    minutes={1200}
                     currentValue={formData.durationMin}
-                    onClick={() => handleDurationQuickSelect(2880)}
+                    onClick={() => handleDurationQuickSelect(1200)}
                   />
                   <button
                     type="button"
