@@ -507,9 +507,13 @@ teams.get("/:id", async (c) => {
     } catch { /* 用户未登录 */ }
 
     // 计算已加入人数：approved + leave_pending 成员
-    const currentMembers = teamWithRelations.members?.filter(
+    // 如果队长不在 members 数组中，需要 +1
+    const leaderInMembers = teamWithRelations.members?.some(
+      (m: { userId: string }) => m.userId === teamWithRelations.leaderId
+    );
+    const currentMembers = (teamWithRelations.members?.filter(
       (m: { status: string }) => m.status === "approved" || m.status === "leave_pending"
-    ).length || 0;
+    ).length || 0) + (leaderInMembers ? 0 : 1);
 
     const isTeamMember = currentUserId
       ? !!teamWithRelations.members?.find(
