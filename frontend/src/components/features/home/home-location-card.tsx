@@ -1,39 +1,47 @@
+import { memo, useMemo } from "react";
 import { MapPin, Mountain, ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { DIFFICULTY_CONFIG } from "@/lib/constants";
+import { LocationCoverImage } from "@/components/ui/lazy-image";
 import type { Location } from "@/lib/types";
 
-export function LocationCard({ location }: { location: Location }) {
+/**
+ * 地点卡片组件
+ * 使用 React.memo 避免不必要重渲染
+ * 仅当 location.id 变化时重新渲染
+ */
+export const LocationCard = memo(function LocationCard({ location }: { location: Location }) {
   const { t } = useI18n(["locations"]);
   const difficulty = location.difficulty ?? location.routes?.[0]?.difficulty;
   const diffConfig = difficulty ? DIFFICULTY_CONFIG[difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const firstTag = location.tags?.[0];
 
+  // 使用 useMemo 缓存复杂计算
+  const routeInfo = useMemo(() => {
+    const route = location.routes?.[0];
+    if (!route) return null;
+    return {
+      duration: route.duration,
+      distance: route.distance,
+      elevation: route.elevation,
+    };
+  }, [location.routes]);
+
   return (
     <a href={`/locations/${location.id}`} className="block group">
       <article
-        className="overflow-hidden rounded-2xl cursor-pointer bg-card"
-        style={{
-          boxShadow: "var(--shadow-card)",
-          transition: "box-shadow 0.25s ease, transform 0.25s ease",
-        }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.transform = "translateY(-5px)";
-          el.style.boxShadow = "var(--shadow-card-hover)";
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.transform = "translateY(0)";
-          el.style.boxShadow = "var(--shadow-card)";
-        }}
+        className="overflow-hidden rounded-2xl cursor-pointer bg-card
+          shadow-[var(--shadow-card)]
+          transition-all duration-200 ease-out
+          hover:shadow-[var(--shadow-card-hover)]
+          hover:-translate-y-1
+          will-change-transform"
       >
         <div className="relative h-52 overflow-hidden bg-muted">
           {location.coverImage ? (
-            <img src={location.coverImage} alt={location.name} className="w-full h-full object-cover"
-              style={{ transition: "transform 0.5s ease" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1.06)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"; }}
+            <LocationCoverImage
+              src={location.coverImage}
+              alt={location.name}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-100 dark:from-amber-950/40 to-teal-100 dark:to-teal-950/40">
@@ -46,11 +54,11 @@ export function LocationCard({ location }: { location: Location }) {
           <div className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100"
             style={{ background: "linear-gradient(to top, rgba(146,64,14,0.90) 0%, rgba(146,64,14,0.55) 55%, transparent 100%)", transition: "opacity 0.3s ease" }}>
             <p className="text-white/90 text-sm line-clamp-2 leading-relaxed mb-2">{location.description}</p>
-            {location.routes?.[0] && (
+            {routeInfo && (
               <div className="flex flex-wrap gap-2 text-white/75 text-xs">
-                <span>🕐 {location.routes[0].duration}</span>
-                <span>📏 {location.routes[0].distance}</span>
-                {location.routes[0].elevation && <span>⛰️ {location.routes[0].elevation}</span>}
+                <span>🕐 {routeInfo.duration}</span>
+                <span>📏 {routeInfo.distance}</span>
+                {routeInfo.elevation && <span>⛰️ {routeInfo.elevation}</span>}
               </div>
             )}
           </div>
@@ -87,4 +95,7 @@ export function LocationCard({ location }: { location: Location }) {
       </article>
     </a>
   );
-}
+}, (prevProps, nextProps) => {
+  // 仅当 location.id 变化时重新渲染
+  return prevProps.location.id === nextProps.location.id;
+});

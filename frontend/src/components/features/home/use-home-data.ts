@@ -3,15 +3,16 @@
 import * as React from "react";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { effectiveThemeStore } from "@/stores/theme";
-import type { Location, Team } from "@/lib/types";
+import type { Team } from "@/lib/types";
+import { useLocations } from "@/hooks/use-locations";
 import { useInView, useAnimateIn, useParallax, useSearchInteraction } from "@/hooks/use-animations";
 
 export function useHomeData() {
-  const [locations, setLocations] = React.useState<Location[]>([]);
-  const [teams, setTeams] = React.useState<Team[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  // 使用 SWR 获取地点列表（带缓存）
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [pagination, setPagination] = React.useState({ total: 0, totalPages: 0, pageSize: 6 });
+  const { locations, pagination, isLoading, error } = useLocations(currentPage, 6);
+
+  const [teams, setTeams] = React.useState<Team[]>([]);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [isDark, setIsDark] = React.useState(false);
 
@@ -44,20 +45,6 @@ export function useHomeData() {
   const [ctaRef, ctaInView] = useInView(0.15);
 
   // Data fetchers
-  const fetchLocations = React.useCallback(async (page = 1) => {
-    setIsLoading(true);
-    try {
-      const res = await fetchAPI(`/api/locations?page=${page}&pageSize=6&view=card`);
-      const data = await res.json();
-      if (data.success) {
-        setLocations(data.locations);
-        setPagination(data.pagination);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   const fetchTeams = React.useCallback(async () => {
     try {
       const res = await fetchAPI("/api/teams?status=recruiting&pageSize=4");
@@ -69,9 +56,12 @@ export function useHomeData() {
   }, []);
 
   React.useEffect(() => {
-    fetchLocations(1);
     fetchTeams();
-  }, [fetchLocations, fetchTeams]);
+  }, [fetchTeams]);
+
+  const fetchLocations = React.useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {

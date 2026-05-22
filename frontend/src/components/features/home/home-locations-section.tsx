@@ -21,7 +21,9 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => <div key={i} className="skeleton h-72 rounded-2xl" />)}
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-72 rounded-2xl bg-muted animate-pulse" />
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
