@@ -49,13 +49,27 @@ export function useLocations(page = 1, pageSize = 6) {
   };
 }
 
+interface TagsResponse {
+  success: boolean;
+  tags: { id: string; name: string; type: string }[];
+}
+
+const tagsFetcher = async (url: string): Promise<TagsResponse> => {
+  const res = await fetchAPI(url);
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || "获取标签失败");
+  }
+  return data;
+};
+
 /**
  * 使用 SWR 获取热门标签
  */
 export function useLocationTags() {
-  const { data, error, isLoading } = useSWR<{ success: boolean; tags: { id: string; name: string; type: string }[] }>(
+  const { data, error, isLoading } = useSWR<TagsResponse>(
     "/api/locations?tags=true",
-    fetcher,
+    tagsFetcher,
     {
       revalidateOnFocus: false,
       dedupingInterval: 600000, // 10分钟，标签变化较少
