@@ -159,7 +159,7 @@ teams.get("/", async (c) => {
     const currentMembersSubquery = sql<number>`(
       SELECT COUNT(*) FROM team_members
       WHERE team_members.team_id = ${schema.teams.id}
-      AND team_members.status = 'approved'
+      AND team_members.status IN ('approved', 'leave_pending')
     )`;
 
     const teamColumns = {
@@ -506,9 +506,9 @@ teams.get("/:id", async (c) => {
       currentUserId = session?.user?.id || null;
     } catch { /* 用户未登录 */ }
 
-    // 计算已加入人数：approved 成员（队长创建时已加入 members 表，无需额外 +1）
+    // 计算已加入人数：approved + leave_pending 成员
     const currentMembers = teamWithRelations.members?.filter(
-      (m: { status: string }) => m.status === "approved"
+      (m: { status: string }) => m.status === "approved" || m.status === "leave_pending"
     ).length || 0;
 
     const isTeamMember = currentUserId
