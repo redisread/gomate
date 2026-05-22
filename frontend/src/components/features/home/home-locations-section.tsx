@@ -27,7 +27,7 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {locations.map((location) => <LocationCard key={location.id} location={location} />)}
+            {locations.map((location, index) => <LocationCard key={location.id} location={location} index={index} />)}
           </div>
         )}
 

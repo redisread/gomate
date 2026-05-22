@@ -5,16 +5,25 @@ import { DIFFICULTY_CONFIG } from "@/lib/constants";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
 import type { Location } from "@/lib/types";
 
+interface LocationCardProps {
+  location: Location;
+  /** 卡片索引，前3张为首屏图片，优先加载 */
+  index?: number;
+}
+
 /**
  * 地点卡片组件
  * 使用 React.memo 避免不必要重渲染
  * 仅当 location.id 变化时重新渲染
  */
-export const LocationCard = memo(function LocationCard({ location }: { location: Location }) {
+export const LocationCard = memo(function LocationCard({ location, index = 0 }: LocationCardProps) {
   const { t } = useI18n(["locations"]);
   const difficulty = location.difficulty ?? location.routes?.[0]?.difficulty;
   const diffConfig = difficulty ? DIFFICULTY_CONFIG[difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const firstTag = location.tags?.[0];
+
+  // 前3张图片为首屏，优先加载
+  const isPriority = index < 3;
 
   // 使用 useMemo 缓存复杂计算
   const routeInfo = useMemo(() => {
@@ -42,6 +51,7 @@ export const LocationCard = memo(function LocationCard({ location }: { location:
             <LocationCoverImage
               src={location.coverImage}
               alt={location.name}
+              priority={isPriority}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-100 dark:from-amber-950/40 to-teal-100 dark:to-teal-950/40">

@@ -63,6 +63,14 @@ export function useHomeData() {
     setCurrentPage(page);
   }, []);
 
+  // 首屏图片预加载（前3张地点封面图）
+  const preloadImages = React.useMemo(() => {
+    return locations
+      .slice(0, 3)
+      .map((loc) => loc.coverImage)
+      .filter(Boolean) as string[];
+  }, [locations]);
+
   const handleSearch = (query: string) => {
     if (query.trim()) {
       window.location.href = `/locations?q=${encodeURIComponent(query.trim())}`;
@@ -73,6 +81,7 @@ export function useHomeData() {
 
   return {
     locations, teams, isLoading, currentPage, pagination, isLoggedIn, isDark,
+    preloadImages,
     animate, parallaxY, search,
     locationsRef, locationsInView, howItWorksRef, howItWorksInView,
     teamsRef, teamsInView, ctaRef, ctaInView,

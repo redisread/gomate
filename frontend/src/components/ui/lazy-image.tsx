@@ -76,36 +76,44 @@ export function LazyImage({
   );
 }
 
+interface LocationCoverImageProps extends Omit<LazyImageProps, "placeholderClassName"> {
+  /** 首屏图片优先级，设为 true 时立即加载（非懒加载） */
+  priority?: boolean;
+}
+
 /**
  * 用于地点卡片的封面图组件
  * 包含渐变色占位符和悬停放大效果
+ * 支持首屏优先加载（priority=true 时使用 eager 加载）
  */
 export function LocationCoverImage({
   src,
   alt,
   className,
-}: Omit<LazyImageProps, "placeholderClassName">) {
+  priority = false,
+}: LocationCoverImageProps) {
   const [loaded, setLoaded] = useState(false);
 
   return (
     <div className="relative w-full h-full overflow-hidden">
-      {/* 渐变色占位符 */}
-      {!loaded && (
+      {/* 渐变色占位符 - 首屏图片不显示，立即加载 */}
+      {!loaded && !priority && (
         <div className="absolute inset-0 bg-gradient-to-br from-amber-100 dark:from-amber-950/40 to-teal-100 dark:to-teal-950/40" />
       )}
 
-      {/* 图片 */}
+      {/* 图片 - 首屏图片使用 eager 加载，fetchpriority="high" */}
       <img
         src={src}
         alt={alt}
-        loading="lazy"
-        decoding="async"
+        loading={priority ? "eager" : "lazy"}
+        decoding={priority ? "sync" : "async"}
+        fetchPriority={priority ? "high" : "auto"}
         onLoad={() => setLoaded(true)}
         className={cn(
           "w-full h-full object-cover",
           "transition-all duration-500 ease-out",
           "group-hover:scale-[1.06]",
-          loaded ? "opacity-100" : "opacity-0",
+          loaded || priority ? "opacity-100" : "opacity-0",
           className
         )}
       />
