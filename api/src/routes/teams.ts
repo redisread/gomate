@@ -15,6 +15,50 @@ function getRandomTeamIcon() {
 }
 
 /**
+ * 获取时间快捷筛选的日期范围（北京时间）
+ */
+function getTimeFilterRange(timeFilter: string): { start: string; end: string } | null {
+  const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+  const now = new Date();
+  const beijingNow = new Date(now.getTime() + BEIJING_OFFSET_MS);
+
+  const formatDate = (d: Date) => d.toISOString().split("T")[0];
+
+  switch (timeFilter) {
+    case "today": {
+      const dateStr = formatDate(beijingNow);
+      return { start: dateStr, end: dateStr };
+    }
+    case "tomorrow": {
+      const tomorrow = new Date(beijingNow);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dateStr = formatDate(tomorrow);
+      return { start: dateStr, end: dateStr };
+    }
+    case "weekend": {
+      const dayOfWeek = beijingNow.getUTCDay(); // 0=Sunday, 6=Saturday
+      const daysUntilSaturday = dayOfWeek === 0 ? 6 : 6 - dayOfWeek;
+
+      const saturday = new Date(beijingNow);
+      saturday.setDate(beijingNow.getDate() + daysUntilSaturday);
+
+      const sunday = new Date(saturday);
+      sunday.setDate(saturday.getDate() + 1);
+
+      return { start: formatDate(saturday), end: formatDate(sunday) };
+    }
+    case "7days": {
+      const start = formatDate(beijingNow);
+      const endDate = new Date(beijingNow);
+      endDate.setDate(endDate.getDate() + 7);
+      return { start, end: formatDate(endDate) };
+    }
+    default:
+      return null;
+  }
+}
+
+/**
  * 安全解析 requirements 字段
  * 旧数据可能是非 JSON 字符串，解析失败返回空数组
  */
@@ -99,11 +143,14 @@ teams.get("/", async (c) => {
     const search = c.req.query("search") || "";
     const statusParam = c.req.query("status") || "";
     const difficultyParam = c.req.query("difficulty") || "";
-    
+
     // 日期范围筛选参数
     const startDateFrom = c.req.query("startDateFrom"); // ISO 日期格式 YYYY-MM-DD
     const startDateTo = c.req.query("startDateTo");     // ISO 日期格式 YYYY-MM-DD
-    
+
+    // 时间快捷筛选参数（today/tomorrow/weekend/7days）
+    const timeFilter = c.req.query("timeFilter");
+
     // 标签筛选参数
     const tagIdsParam = c.req.query("tagIds") || "";
 
@@ -214,14 +261,26 @@ teams.get("/", async (c) => {
       conditions.push(like(schema.teams.title, `%${search}%`));
     }
 
-    // 日期范围筛选
-    if (startDateFrom) {
-      const fromDate = new Date(startDateFrom);
+    // 日期范围筛选（支持 timeFilter 快捷参数或 startDateFrom/To 自定义范围）
+    let effectiveStartDate = startDateFrom;
+    let effectiveEndDate = startDateTo;
+
+    // 如果提供了 timeFilter，计算对应的日期范围
+    if (timeFilter && !effectiveStartDate && !effectiveEndDate) {
+      const range = getTimeFilterRange(timeFilter);
+      if (range) {
+        effectiveStartDate = range.start;
+        effectiveEndDate = range.end;
+      }
+    }
+
+    if (effectiveStartDate) {
+      const fromDate = new Date(effectiveStartDate);
       fromDate.setHours(0, 0, 0, 0);
       conditions.push(gte(schema.teams.startTime, fromDate));
     }
-    if (startDateTo) {
-      const toDate = new Date(startDateTo);
+    if (effectiveEndDate) {
+      const toDate = new Date(effectiveEndDate);
       toDate.setHours(23, 59, 59, 999);
       conditions.push(lte(schema.teams.startTime, toDate));
     }

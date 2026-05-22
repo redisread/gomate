@@ -52,16 +52,31 @@ export function useTeams() {
     const q = params.get("q") || "";
     const page = parseInt(params.get("page") || "1", 10);
     const difficulty = params.get("difficulty")?.split(",").filter(Boolean) || [];
-    const start = params.get("startDate") || "";
-    const end = params.get("endDate") || "";
+    const timeFilter = params.get("timeFilter") || "";
     const tags = params.get("tags")?.split(",").filter(Boolean) || [];
 
     setSearchQuery(q);
     setCurrentPage(page);
     setSelectedDifficulty(difficulty);
-    setStartDate(start);
-    setEndDate(end);
     setSelectedTags(tags);
+
+    // 处理时间筛选：优先使用 timeFilter，回退到 startDate/endDate
+    let start = "";
+    let end = "";
+    if (timeFilter && ["today", "tomorrow", "weekend", "7days"].includes(timeFilter)) {
+      const range = getDateRangeByQuickType(timeFilter);
+      if (range) {
+        start = range.start;
+        end = range.end;
+        setStartDate(start);
+        setEndDate(end);
+      }
+    } else {
+      start = params.get("startDate") || "";
+      end = params.get("endDate") || "";
+      setStartDate(start);
+      setEndDate(end);
+    }
 
     loadTeams({ page, search: q, difficulty, startDateFrom: start, startDateTo: end, tagIds: tags });
   }, [loadTeams]);
@@ -88,9 +103,17 @@ export function useTeams() {
     if (searchQuery) params.set("q", searchQuery);
     if (currentPage > 1) params.set("page", currentPage.toString());
     if (selectedDifficulty.length) params.set("difficulty", selectedDifficulty.join(","));
-    if (startDate) params.set("startDate", startDate);
-    if (endDate) params.set("endDate", endDate);
     if (selectedTags.length) params.set("tags", selectedTags.join(","));
+
+    // 时间筛选参数：优先使用 timeFilter 快捷选项
+    const timeFilter = getActiveDateQuickType(startDate, endDate);
+    if (timeFilter) {
+      params.set("timeFilter", timeFilter);
+    } else if (startDate || endDate) {
+      // 自定义日期范围
+      if (startDate) params.set("startDate", startDate);
+      if (endDate) params.set("endDate", endDate);
+    }
 
     const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     window.history.replaceState({}, "", newUrl);
