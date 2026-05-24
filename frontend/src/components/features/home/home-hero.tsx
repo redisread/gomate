@@ -53,15 +53,15 @@ export function HomeHero({ data }: { data: HomeData }) {
             onChange={(e) => search.setValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleSearch(search.value); }}
             onFocus={() => search.setFocused(true)} onBlur={() => search.setFocused(false)}
-            className="w-full pl-10 sm:pl-14 pr-24 sm:pr-32 py-3 sm:py-4 bg-card/95 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground text-sm sm:text-base transition-all duration-250 focus:outline-none"
+            className="w-full pl-11 sm:pl-14 pr-28 sm:pr-32 py-3 sm:py-4 bg-card/95 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground text-sm sm:text-base transition-all duration-250 focus:outline-none"
             style={{ boxShadow: search.isFocused ? "0 6px 28px rgba(217,119,6,0.20), 0 0 0 3px rgba(217,119,6,0.12)" : "0 4px 20px rgba(30,24,18,0.08)", backdropFilter: "blur(8px)" }} />
           {search.value && (
-            <button onClick={search.clear} className="absolute right-[4.5rem] sm:right-[5.5rem] top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 animate-spin-in">
-              <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <button onClick={search.clear} className="absolute right-20 sm:right-28 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 animate-spin-in">
+              <X className="h-3.5 w-3.5" />
             </button>
           )}
           <button onClick={() => handleSearch(search.value)}
-            className={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl text-white transition-colors duration-150 ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 px-4 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl text-white transition-colors duration-150 ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}
             style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)", boxShadow: "0 2px 10px rgba(217,119,6,0.30)" }}>
             {t("common.search")}
           </button>
