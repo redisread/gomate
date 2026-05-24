@@ -61,9 +61,9 @@ export const LocationCard = memo(function LocationCard({ location, index = 0 }: 
 
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(15,15,12,0.72) 0%, rgba(15,15,12,0.18) 45%, transparent 70%)" }} />
 
-          <div className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100"
+          <div className="absolute inset-0 flex flex-col justify-end p-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
             style={{ background: "linear-gradient(to top, rgba(146,64,14,0.90) 0%, rgba(146,64,14,0.55) 55%, transparent 100%)", transition: "opacity 0.3s ease" }}>
-            <p className="text-white/90 text-sm line-clamp-2 leading-relaxed mb-2">{location.description}</p>
+            <p className="text-white/90 text-xs sm:text-sm line-clamp-1 sm:line-clamp-2 leading-relaxed mb-2">{location.description}</p>
             {routeInfo && (
               <div className="flex flex-wrap gap-2 text-white/75 text-xs">
                 <span>🕐 {routeInfo.duration}</span>

@@ -165,7 +165,7 @@ export function TeamCard({ team }: { team: Team }) {
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-white"
-          style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)", transform: hovered ? "translateY(0)" : "translateY(100%)", transition: "transform 0.28s cubic-bezier(0.34,1.56,0.64,1)" }}>
+          style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)", transform: hovered ? "translateY(0)" : "translateY(0)", transition: "transform 0.28s cubic-bezier(0.34,1.56,0.64,1)", opacity: hovered ? 1 : 0.9 }}>
           <span>{t("home.teamCard.viewDetails")}</span><ArrowRight className="h-3.5 w-3.5" />
         </div>
       </article>
