@@ -118,7 +118,7 @@ export function TeamCard({ team }: { team: Team }) {
           />
         )}
 
-        <div className="p-4">
+        <div className="p-4 pb-10 sm:pb-4">
           {!hasCover && team.location && (
             <div className="flex items-center gap-1.5 mb-2.5">
               <MapPin className="h-3 w-3 flex-shrink-0" style={{ color: "#D97706" }} />
@@ -164,7 +164,7 @@ export function TeamCard({ team }: { team: Team }) {
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-white translate-y-0 sm:translate-y-full sm:group-hover:translate-y-0 transition-transform duration-300 ease-out"
+        <div className="sm:absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-white sm:translate-y-full sm:group-hover:translate-y-0 transition-all duration-300 ease-out rounded-b-lg sm:rounded-none opacity-100 sm:opacity-0 sm:group-hover:opacity-100 mt-2 sm:mt-0 static sm:static"
           style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)", transitionTimingFunction: "cubic-bezier(0.34,1.56,0.64,1)" }}>
           <span>{t("home.teamCard.viewDetails")}</span><ArrowRight className="h-3.5 w-3.5" />
         </div>
