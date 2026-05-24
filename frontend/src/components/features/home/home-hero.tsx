@@ -47,21 +47,21 @@ export function HomeHero({ data }: { data: HomeData }) {
         <p className={`text-lg md:text-xl text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed ${animate.subtitle}`}>{t("content.hero.description")}</p>
 
         <div className={`relative max-w-2xl mx-auto mb-8 group ${animate.search}`}>
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 pointer-events-none transition-colors duration-200 text-muted-foreground"
+          <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 pointer-events-none transition-colors duration-200 text-muted-foreground"
             style={{ color: search.isFocused ? "#D97706" : undefined }} />
           <input type="text" placeholder={t("common.searchPlaceholder")} value={search.value}
             onChange={(e) => search.setValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleSearch(search.value); }}
             onFocus={() => search.setFocused(true)} onBlur={() => search.setFocused(false)}
-            className="w-full pl-14 pr-32 py-4 bg-card/95 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground text-base transition-all duration-250 focus:outline-none"
+            className="w-full pl-10 sm:pl-14 pr-24 sm:pr-32 py-3 sm:py-4 bg-card/95 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground text-sm sm:text-base transition-all duration-250 focus:outline-none"
             style={{ boxShadow: search.isFocused ? "0 6px 28px rgba(217,119,6,0.20), 0 0 0 3px rgba(217,119,6,0.12)" : "0 4px 20px rgba(30,24,18,0.08)", backdropFilter: "blur(8px)" }} />
           {search.value && (
-            <button onClick={search.clear} className="absolute right-[5.5rem] top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 animate-spin-in">
-              <X className="h-3.5 w-3.5" />
+            <button onClick={search.clear} className="absolute right-[4.5rem] sm:right-[5.5rem] top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 animate-spin-in">
+              <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </button>
           )}
           <button onClick={() => handleSearch(search.value)}
-            className={`absolute right-3 top-1/2 -translate-y-1/2 px-5 py-2 text-sm font-semibold rounded-xl text-white transition-colors duration-150 ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}
+            className={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl text-white transition-colors duration-150 ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}
             style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)", boxShadow: "0 2px 10px rgba(217,119,6,0.30)" }}>
             {t("common.search")}
           </button>
@@ -99,22 +99,22 @@ export function HomeHero({ data }: { data: HomeData }) {
         </div>
       </div>
 
-      <div className="absolute left-8 top-1/3 hidden lg:flex flex-col gap-3" aria-hidden="true">
-        {[{ icon: "🏔️", label: t("home.floatingLabels.mountain1"), delay: "0s" }, { icon: "🌊", label: t("home.floatingLabels.mountain2"), delay: "-2s" }].map((item) => (
-          <div key={item.label} className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-up"
-            style={{ boxShadow: "0 8px 24px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)", backdropFilter: "blur(12px)", animationDelay: item.delay }}>
-            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-base">{item.icon}</span>
-            <span className="text-sm font-medium text-foreground whitespace-nowrap">{item.label}</span>
+      <div className="absolute left-4 sm:left-8 top-1/3 flex flex-col gap-2 sm:gap-3" aria-hidden="true">
+        {[{ icon: "🏔️", label: t("home.floatingLabels.mountain1"), delay: "0s" }].map((item) => (
+          <div key={item.label} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-up"
+            style={{ boxShadow: "0 4px 16px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)", backdropFilter: "blur(12px)", animationDelay: item.delay }}>
+            <span className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-sm sm:text-base">{item.icon}</span>
+            <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap hidden sm:inline">{item.label}</span>
           </div>
         ))}
       </div>
 
-      <div className="absolute right-8 top-1/3 hidden lg:flex flex-col gap-3" aria-hidden="true">
-        {[{ icon: "👥", label: t("home.floatingLabels.teamJoined").replace("{count}", "3"), delay: "-1s" }, { icon: "🎒", label: t("home.floatingLabels.dayDepart").replace("{day}", t("home.floatingLabels.saturdayLabel")), delay: "-3.5s" }].map((item) => (
-          <div key={item.label} className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-down"
-            style={{ boxShadow: "0 8px 24px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)", backdropFilter: "blur(12px)", animationDelay: item.delay }}>
-            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-base">{item.icon}</span>
-            <span className="text-sm font-medium text-foreground whitespace-nowrap">{item.label}</span>
+      <div className="absolute right-4 sm:right-8 top-1/3 flex flex-col gap-2 sm:gap-3" aria-hidden="true">
+        {[{ icon: "👥", label: t("home.floatingLabels.teamJoined").replace("{count}", "3"), delay: "-1s" }].map((item) => (
+          <div key={item.label} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-down"
+            style={{ boxShadow: "0 4px 16px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)", backdropFilter: "blur(12px)", animationDelay: item.delay }}>
+            <span className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-sm sm:text-base">{item.icon}</span>
+            <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap hidden sm:inline">{item.label}</span>
           </div>
         ))}
       </div>

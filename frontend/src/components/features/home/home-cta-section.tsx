@@ -12,7 +12,7 @@ export function HomeCtaSection({ data }: { data: HomeData }) {
 
   return (
     <section ref={ctaRef}
-      className={`py-24 section-hidden ${ctaInView ? "section-visible" : ""}`}
+      className={`py-16 sm:py-20 lg:py-24 section-hidden ${ctaInView ? "section-visible" : ""}`}
       style={{
         background: effectiveIsDark
           ? "linear-gradient(160deg, #1c1608 0%, #12100d 50%, #1a1510 100%)"

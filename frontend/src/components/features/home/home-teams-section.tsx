@@ -11,7 +11,7 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
 
   return (
     <section id="teams" ref={teamsRef}
-      className={`py-20 bg-background section-hidden ${teamsInView ? "section-visible" : ""}`}>
+      className={`py-12 sm:py-16 lg:py-20 bg-background section-hidden ${teamsInView ? "section-visible" : ""}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <span className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">{t("home.recentTeams")}</span>
