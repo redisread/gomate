@@ -26,21 +26,30 @@ export function TeamModalsAndFooter({ ctx }: { ctx: ReturnType<typeof useTeamDet
       <ConfirmDialogs ctx={ctx} />
       <WechatModals ctx={ctx} />
       {ctx.showShare && (
-        <SharePosterModal
-          type="team"
-          title={team.title}
-          subtitle={team.date}
-          url={window.location.href}
-          imageUrl={location?.coverImage}
-          locationName={location?.name}
-          description={team.description}
-          leaderName={team.leader?.nickname || team.leader?.name}
-          membersInfo={`${team.currentMembers}/${team.maxMembers}`}
-          meta={t('teams.teamMeta').replace('{currentMembers}', String(team.currentMembers)).replace('{maxMembers}', String(team.maxMembers))}
-          tags={team.requirements?.slice(0, 4)}
-          onClose={() => ctx.setShowShare(false)}
-          onToast={ctx.show}
-        />
+        <React.Suspense fallback={
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-card rounded-xl px-6 py-4 flex items-center gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+              <span className="text-sm text-muted-foreground">加载中...</span>
+            </div>
+          </div>
+        }>
+          <SharePosterModal
+            type="team"
+            title={team.title}
+            subtitle={team.date}
+            url={window.location.href}
+            imageUrl={location?.coverImage}
+            locationName={location?.name}
+            description={team.description}
+            leaderName={team.leader?.nickname || team.leader?.name}
+            membersInfo={`${team.currentMembers}/${team.maxMembers}`}
+            meta={t('teams.teamMeta').replace('{currentMembers}', String(team.currentMembers)).replace('{maxMembers}', String(team.maxMembers))}
+            tags={team.requirements?.slice(0, 4)}
+            onClose={() => ctx.setShowShare(false)}
+            onToast={ctx.show}
+          />
+        </React.Suspense>
       )}
       <ToastDisplay toast={ctx.toast} exiting={ctx.exiting} />
       <MobileBottomBar ctx={ctx} team={team} />
