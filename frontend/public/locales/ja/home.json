@@ -5,8 +5,8 @@
     "title": "準備はできましたか",
     "subtitle": "同行者を見つければ、旅は遠くない",
     "description": "{count}人以上のパートナーがここで同行者を見つけました。あなたもできます。",
-    "joinBtn": "無料でGoMateに参加",
-    "browseTeamsBtn": "どんなチームがあるか見てみる"
+    "createTeamBtn": "チームを作成",
+    "viewAllTeamsLink": "すべてのチームを見る"
   },
   "howItWorks": {
     "badge": "利用の流れ",

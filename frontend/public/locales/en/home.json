@@ -5,8 +5,8 @@
     "title": "Ready to Go?",
     "subtitle": "Find your travel companions, the journey is not far",
     "description": "Over {count}+ companions have already found their travel partners here, and you can too",
-    "joinBtn": "Join GoMate for Free",
-    "browseTeamsBtn": "Browse Available Teams"
+    "createTeamBtn": "Create a Team",
+    "viewAllTeamsLink": "View all teams"
   },
   "howItWorks": {
     "badge": "How It Works",

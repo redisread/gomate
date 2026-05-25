@@ -29,22 +29,17 @@ export function HomeCtaSection({ data }: { data: HomeData }) {
           {t("home.cta.description", { count: 200 })}
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {!isLoggedIn && (
-            <a href="/register"
-              className="inline-block px-8 py-3.5 font-semibold rounded-full text-white text-base transition-all duration-150"
-              style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)", boxShadow: "0 4px 18px rgba(217,119,6,0.38)" }}
-              onMouseEnter={(e) => { const el = e.currentTarget as HTMLAnchorElement; el.style.transform = "translateY(-2px)"; el.style.boxShadow = "0 8px 26px rgba(217,119,6,0.50)"; }}
-              onMouseLeave={(e) => { const el = e.currentTarget as HTMLAnchorElement; el.style.transform = "translateY(0)"; el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.38)"; }}>
-              {t("home.cta.joinBtn")}
-            </a>
-          )}
+        <div className="flex flex-col gap-4 justify-center items-center">
+          <a href="/teams/create"
+            className="inline-block px-8 py-3.5 font-semibold rounded-full text-white text-base transition-all duration-150"
+            style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)", boxShadow: "0 4px 18px rgba(217,119,6,0.38)" }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLAnchorElement; el.style.transform = "translateY(-2px)"; el.style.boxShadow = "0 8px 26px rgba(217,119,6,0.50)"; }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLAnchorElement; el.style.transform = "translateY(0)"; el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.38)"; }}>
+            {t("home.cta.createTeamBtn")}
+          </a>
           <a href="/teams"
-            className="inline-block px-8 py-3.5 font-semibold rounded-full text-base text-foreground transition-all duration-150 border-2"
-            style={{ borderColor: "rgba(217,119,6,0.35)" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(217,119,6,0.06)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}>
-            {t("home.cta.browseTeamsBtn")}
+            className="text-[#D97706] hover:underline text-base font-medium transition-all duration-150">
+            {t("home.cta.viewAllTeamsLink")}
           </a>
         </div>
       </div>
