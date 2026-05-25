@@ -145,5 +145,9 @@
     "feedback": "Feedback - GoMate",
     "userDetail": "User Profile - GoMate"
   },
-  "madeWithLove": "by GoMate"
+  "madeWithLove": "by GoMate",
+  "footer": {
+    "expand": "Expand",
+    "collapse": "Collapse"
+  }
 }

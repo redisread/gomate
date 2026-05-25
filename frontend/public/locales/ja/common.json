@@ -145,5 +145,9 @@
     "feedback": "フィードバック - GoMate",
     "userDetail": "ユーザープロフィール - GoMate"
   },
-  "madeWithLove": "GoMate より"
+  "madeWithLove": "GoMate より",
+  "footer": {
+    "expand": "展開",
+    "collapse": "折りたたむ"
+  }
 }
