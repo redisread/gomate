@@ -99,7 +99,7 @@ export function HomeHero({ data }: { data: HomeData }) {
         </div>
       </div>
 
-      <div className="absolute left-4 sm:left-8 top-1/3 flex flex-col gap-2 sm:gap-3" aria-hidden="true">
+      <div className="absolute left-4 sm:left-8 top-1/3 hidden sm:flex flex-col gap-2 sm:gap-3" aria-hidden="true">
         {[{ icon: "🏔️", label: t("home.floatingLabels.mountain1"), delay: "0s" }].map((item) => (
           <div key={item.label} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-up"
             style={{ boxShadow: "0 4px 16px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)", backdropFilter: "blur(12px)", animationDelay: item.delay }}>
@@ -109,7 +109,7 @@ export function HomeHero({ data }: { data: HomeData }) {
         ))}
       </div>
 
-      <div className="absolute right-4 sm:right-8 top-1/3 flex flex-col gap-2 sm:gap-3" aria-hidden="true">
+      <div className="absolute right-4 sm:right-8 top-1/3 hidden sm:flex flex-col gap-2 sm:gap-3" aria-hidden="true">
         {[{ icon: "👥", label: t("home.floatingLabels.teamJoined").replace("{count}", "3"), delay: "-1s" }].map((item) => (
           <div key={item.label} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-down"
             style={{ boxShadow: "0 4px 16px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)", backdropFilter: "blur(12px)", animationDelay: item.delay }}>
