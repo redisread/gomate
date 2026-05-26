@@ -419,5 +419,10 @@
   "linkCopied": "Link copied",
   "posterComingSoon": "Poster feature coming soon",
   "shareHint": "Tip: Long press above to share with friends",
-  "close": "Close"
+  "close": "Close",
+  "generatingPoster": "Generating poster...",
+  "posterGenerateError": "Failed to generate poster",
+  "posterGenerateFallback": "Please use \"Copy Link\" to share",
+  "saveImageHint": "Tip: Click \"Save to Album\" to save, or long press image to save manually",
+  "saveToAlbum": "Save to Album"
 }

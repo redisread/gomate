@@ -419,5 +419,10 @@
   "linkCopied": "リンクをコピーしました",
   "posterComingSoon": "画像機能は近日公開予定",
   "shareHint": "ヒント：上の内容を長押しして友達に共有できます",
-  "close": "閉じる"
+  "close": "閉じる",
+  "generatingPoster": "画像を生成中...",
+  "posterGenerateError": "画像の生成に失敗しました",
+  "posterGenerateFallback": "「リンクをコピー」をご利用ください",
+  "saveImageHint": "ヒント：「保存」をタップするか、画像を長押しして保存してください",
+  "saveToAlbum": "保存"
 }

@@ -419,5 +419,10 @@
   "linkCopied": "链接已复制",
   "posterComingSoon": "海报功能即将上线",
   "shareHint": "提示：可以长按上方内容分享给好友",
-  "close": "关闭"
+  "close": "关闭",
+  "generatingPoster": "正在生成海报...",
+  "posterGenerateError": "生成海报失败",
+  "posterGenerateFallback": "请使用「复制链接」分享",
+  "saveImageHint": "提示：点击「保存到相册」按钮保存图片，或长按图片手动保存",
+  "saveToAlbum": "保存到相册"
 }
