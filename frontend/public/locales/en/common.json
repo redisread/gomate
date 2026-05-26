@@ -149,5 +149,8 @@
   "footer": {
     "expand": "Expand",
     "collapse": "Collapse"
-  }
+  },
+  "shareFailed": "Share failed",
+  "linkCopied": "Link copied",
+  "copyFailed": "Copy failed"
 }

@@ -7,11 +7,41 @@ import {
   JoinBottomSheet, JoinDesktopModal, LeaveConfirmDialog,
   FormTeamConfirmDialog, WechatEditModal,
 } from "./team-detail-modals";
+import { SharePosterModal } from "../share-poster-modal";
 import * as React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// 动态导入 SharePosterModal
-const SharePosterModal = React.lazy(() => import("../share-poster-modal").then(m => ({ default: m.SharePosterModal })));
+// 通用分享处理函数
+function useTeamShare(team: Team | null, show: (opts: { type: "success" | "error"; message: string }) => void) {
+  const { t } = useI18n(["common"]);
+
+  return async () => {
+    if (!team) return;
+
+    const shareData = {
+      title: team.title,
+      text: `${team.title} - ${team.date}`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          show({ type: "error", message: t("common.shareFailed") });
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        show({ type: "success", message: t("common.linkCopied") });
+      } catch {
+        show({ type: "error", message: t("common.copyFailed") });
+      }
+    }
+  };
+}
 
 export function TeamModalsAndFooter({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   const { t } = useI18n(["teams", "common"]);
@@ -152,10 +182,10 @@ function MobileBottomBar({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
     >
       <div className="max-w-7xl mx-auto px-4 py-3">
         {isLeader && <BottomBarLeader ctx={ctx} team={team} />}
-        {!isLeader && isMember && <BottomBarMember ctx={ctx} />}
-        {!isLeader && !isMember && isPending && <BottomBarPending ctx={ctx} />}
+        {!isLeader && isMember && <BottomBarMember ctx={ctx} team={team} />}
+        {!isLeader && !isMember && isPending && <BottomBarPending ctx={ctx} team={team} />}
         {!isLeader && !isMember && !isPending && !userId && <BottomBarNotLoggedIn team={team} />}
-        {!isLeader && !isMember && !isPending && userId && canJoin && <BottomBarCanJoin ctx={ctx} />}
+        {!isLeader && !isMember && !isPending && userId && canJoin && <BottomBarCanJoin ctx={ctx} team={team} />}
         {!isLeader && !isMember && !isPending && userId && !canJoin && <BottomBarCannotJoin ctx={ctx} team={team} />}
       </div>
     </div>
@@ -164,6 +194,8 @@ function MobileBottomBar({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
 
 function BottomBarLeader({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
+  const handleShare = useTeamShare(team, ctx.show);
+
   return (
     <div className="flex items-center justify-between min-h-[44px]">
       <div className="flex items-center gap-2 text-amber-600 text-sm">
@@ -171,7 +203,7 @@ function BottomBarLeader({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
         <span className="font-medium">{t('teams.youAreLeader')}</span>
       </div>
       <div className="flex items-center gap-3">
-        <button onClick={() => ctx.setShowShare(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+        <button onClick={handleShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
           <Share2 className="h-4 w-4" />
         </button>
         {(team.status === "recruiting" || team.status === "cancelled") && (
@@ -190,8 +222,10 @@ function BottomBarLeader({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
   );
 }
 
-function BottomBarMember({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
+function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
+  const handleShare = useTeamShare(team, ctx.show);
+
   return (
     <div className="flex items-center justify-between min-h-[44px]">
       <div className="flex items-center gap-2 text-amber-600 text-sm">
@@ -199,7 +233,7 @@ function BottomBarMember({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
         <span className="font-medium">{t('teams.statusApproved')}</span>
       </div>
       <div className="flex items-center gap-3">
-        <button onClick={() => ctx.setShowShare(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+        <button onClick={handleShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
           <Share2 className="h-4 w-4" />
         </button>
         <button onClick={() => ctx.setShowLeave(true)} className="flex items-center gap-1 text-xs text-muted-foreground border border-border rounded-full px-3 py-1.5 hover:border-red-300 hover:text-red-500 transition-colors">
@@ -211,8 +245,9 @@ function BottomBarMember({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   );
 }
 
-function BottomBarPending({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
+function BottomBarPending({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
+  const handleShare = useTeamShare(team, ctx.show);
   return (
     <div className="flex items-center justify-between min-h-[44px]">
       <div className="flex items-center gap-2 text-amber-600 text-sm">
@@ -220,7 +255,7 @@ function BottomBarPending({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
         <span className="font-medium">{t('teams.statusPending')}</span>
       </div>
       <div className="flex items-center gap-3">
-        <button onClick={() => ctx.setShowShare(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+        <button onClick={handleShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
           <Share2 className="h-4 w-4" />
         </button>
         <a href="/my-teams" className="text-xs text-amber-600 flex items-center gap-1">
@@ -244,11 +279,12 @@ function BottomBarNotLoggedIn({ team }: { team: Team; }) {
   );
 }
 
-function BottomBarCanJoin({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
+function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
+  const handleShare = useTeamShare(team, ctx.show);
   return (
     <div className="flex items-center gap-2">
-      <button onClick={() => ctx.setShowShare(true)} className="w-11 h-11 rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground hover:bg-amber-50 hover:text-amber-600 border border-border hover:border-amber-200 transition-all flex-shrink-0">
+      <button onClick={handleShare} className="w-11 h-11 rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground hover:bg-amber-50 hover:text-amber-600 border border-border hover:border-amber-200 transition-all flex-shrink-0">
         <Share2 className="h-4 w-4" />
       </button>
       <button onClick={() => ctx.setShowJoinModal(true)}
@@ -261,13 +297,14 @@ function BottomBarCanJoin({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
 
 function BottomBarCannotJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
+  const handleShare = useTeamShare(team, ctx.show);
   return (
     <div className="flex items-center justify-between min-h-[44px]">
       <div className="text-muted-foreground/70 text-sm">
         {team.status === "completed" ? t('teams.statusEnded') : team.status === "cancelled" ? t('teams.statusCancelled') : t('teams.teamFull')}
       </div>
-      <button onClick={() => ctx.setShowShare(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-        <Share2 className="h-4 h-4" />
+      <button onClick={handleShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+        <Share2 className="h-4 w-4" />
       </button>
     </div>
   );

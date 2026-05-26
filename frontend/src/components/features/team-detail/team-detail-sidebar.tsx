@@ -23,7 +23,19 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
       )}
       <TeamCapacity team={team} canJoin={ctx.canJoin} remaining={ctx.remaining} />
       {team.leader && <LeaderCard leader={team.leader} teamId={team.id} canMessage={isMember || isPending} />}
-      <ShareButton onClick={() => ctx.setShowShare(true)} />
+      <ShareButton team={team} onShare={() => {
+        const shareData = {
+          title: team.title,
+          text: `${team.title} - ${team.date}`,
+          url: window.location.href,
+        };
+
+        if (navigator.share) {
+          navigator.share(shareData).catch(() => {});
+        } else {
+          navigator.clipboard.writeText(window.location.href).catch(() => {});
+        }
+      }} />
       {isLeader && <LeaderActions ctx={ctx} team={team} />}
       {isMember && <MemberStatusIndicator onLeave={() => ctx.setShowLeave(true)} />}
       {isPending && <PendingStatusIndicator />}
@@ -139,11 +151,11 @@ function LeaderCard({ leader, teamId, canMessage }: { leader: any; teamId: strin
   );
 }
 
-function ShareButton({ onClick }: { onClick: () => void; }) {
+function ShareButton({ team, onShare }: { team: Team; onShare: () => void; }) {
   const { t } = useI18n(["teams"]);
   return (
     <div className="border-t border-border pt-4">
-      <button onClick={onClick}
+      <button onClick={onShare}
         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground/70 hover:bg-accent rounded-lg transition-colors">
         <Share2 className="w-4 h-4" />
         {t('teams.shareTeam')}

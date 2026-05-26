@@ -149,5 +149,8 @@
   "footer": {
     "expand": "展开",
     "collapse": "收起"
-  }
+  },
+  "shareFailed": "分享失败",
+  "linkCopied": "链接已复制",
+  "copyFailed": "复制失败"
 }

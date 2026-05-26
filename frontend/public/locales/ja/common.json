@@ -149,5 +149,8 @@
   "footer": {
     "expand": "展開",
     "collapse": "折りたたむ"
-  }
+  },
+  "shareFailed": "シェアに失敗しました",
+  "linkCopied": "リンクをコピーしました",
+  "copyFailed": "コピーに失敗しました"
 }
