@@ -23,6 +23,9 @@ export function TeamActivityPosts({ teamId, teamStatus, isMember, className }: T
 
   const canPost = teamStatus === "completed" && isMember;
 
+  // 队伍未完成时隐藏活动回顾区块
+  if (teamStatus !== "completed") return null;
+
   const loadPosts = React.useCallback(async () => {
     setIsLoading(true);
     try {
