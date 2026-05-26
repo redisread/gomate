@@ -100,7 +100,7 @@ export function SharePosterPreview({
               onClick={onClose}
               className="w-full py-3 text-muted-foreground hover:bg-muted rounded-xl transition-colors"
             >
-              {t("common.close")}
+              {t("teams.close")}
             </button>
           </div>
 
