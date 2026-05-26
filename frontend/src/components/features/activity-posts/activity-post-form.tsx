@@ -37,7 +37,7 @@ export function ActivityPostForm({ teamId, onSuccess, onCancel, className }: Act
 
     const remainingSlots = maxImages - images.length;
     if (remainingSlots <= 0) {
-      setError(t("activityPosts.maxImagesError"));
+      setError(t("teams.activityPosts.maxImagesError"));
       return;
     }
 
@@ -60,7 +60,7 @@ export function ActivityPostForm({ teamId, onSuccess, onCancel, className }: Act
         }
       }
     } catch (err) {
-      setError(t("activityPosts.uploadError"));
+      setError(t("teams.activityPosts.uploadError"));
     }
   };
 
@@ -70,7 +70,7 @@ export function ActivityPostForm({ teamId, onSuccess, onCancel, className }: Act
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      setError(t("activityPosts.contentRequired"));
+      setError(t("teams.activityPosts.contentRequired"));
       return;
     }
 
@@ -93,10 +93,10 @@ export function ActivityPostForm({ teamId, onSuccess, onCancel, className }: Act
         setImages([]);
         onSuccess?.();
       } else {
-        setError(data.message || t("activityPosts.submitError"));
+        setError(data.message || t("teams.activityPosts.submitError"));
       }
     } catch (err) {
-      setError(t("activityPosts.submitError"));
+      setError(t("teams.activityPosts.submitError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -107,7 +107,7 @@ export function ActivityPostForm({ teamId, onSuccess, onCancel, className }: Act
       {/* Content textarea */}
       <div className="space-y-2">
         <textarea
-          placeholder={t("activityPosts.placeholder")}
+          placeholder={t("teams.activityPosts.placeholder")}
           value={content}
           onChange={handleContentChange}
           rows={4}
@@ -158,7 +158,7 @@ export function ActivityPostForm({ teamId, onSuccess, onCancel, className }: Act
             className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
           >
             <ImagePlus className="h-4 w-4" />
-            {t("activityPosts.addImage")} ({images.length}/{maxImages})
+            {t("teams.activityPosts.addImage")} ({images.length}/{maxImages})
           </button>
         </div>
       )}
@@ -178,7 +178,7 @@ export function ActivityPostForm({ teamId, onSuccess, onCancel, className }: Act
           disabled={isSubmitting || !content.trim()}
           className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isSubmitting ? t("common.submitting") : t("activityPosts.publish")}
+          {isSubmitting ? t("common.submitting") : t("teams.activityPosts.publish")}
         </button>
       </div>
     </div>

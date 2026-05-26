@@ -51,7 +51,7 @@ export function LocationActivityPosts({ locationId, className }: LocationActivit
       <div className={cn("bg-card rounded-2xl border border-border", className)}>
         <div className="p-6 border-b border-border">
           <h3 className="text-lg font-semibold text-foreground">
-            {t("activityPosts.recentActivities")}
+            {t("teams.activityPosts.recentActivities")}
           </h3>
         </div>
         <div className="p-6">
@@ -60,7 +60,7 @@ export function LocationActivityPosts({ locationId, className }: LocationActivit
               <Mountain className="h-8 w-8 text-stone-400" />
             </div>
             <p className="text-muted-foreground text-sm">
-              {t("activityPosts.locationEmpty")}
+              {t("teams.activityPosts.locationEmpty")}
             </p>
           </div>
         </div>
@@ -72,7 +72,7 @@ export function LocationActivityPosts({ locationId, className }: LocationActivit
     <div className={cn("bg-card rounded-2xl border border-border", className)}>
       <div className="p-6 border-b border-border">
         <h3 className="text-lg font-semibold text-foreground">
-          {t("activityPosts.recentActivities")}
+          {t("teams.activityPosts.recentActivities")}
         </h3>
       </div>
       <div className="p-6">
