@@ -7,11 +7,55 @@ import {
   JoinBottomSheet, JoinDesktopModal, LeaveConfirmDialog,
   FormTeamConfirmDialog, WechatEditModal,
 } from "./team-detail-modals";
+import { ShareOptionsSheet } from "./share-options-sheet";
+import { SharePosterPreview } from "./share-poster-preview";
 import * as React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// 动态导入 SharePosterModal
-const SharePosterModal = React.lazy(() => import("../share-poster-modal").then(m => ({ default: m.SharePosterModal })));
+// 通用分享处理函数
+function useTeamShare(team: Team | null) {
+  const { t } = useI18n(["teams", "common"]);
+  const [showOptions, setShowOptions] = React.useState(false);
+  const [showPreview, setShowPreview] = React.useState(false);
+
+  const openShare = React.useCallback(() => {
+    setShowOptions(true);
+  }, []);
+
+  const closeOptions = React.useCallback(() => {
+    setShowOptions(false);
+  }, []);
+
+  const closePreview = React.useCallback(() => {
+    setShowPreview(false);
+  }, []);
+
+  const handleGeneratePoster = React.useCallback(() => {
+    setShowOptions(false);
+    setShowPreview(true);
+  }, []);
+
+  const handleCopyLink = React.useCallback(async () => {
+    if (!team) return;
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      // Show toast or feedback
+    } catch {
+      // Ignore
+    }
+    setShowOptions(false);
+  }, [team]);
+
+  return {
+    showOptions,
+    showPreview,
+    openShare,
+    closeOptions,
+    closePreview,
+    handleGeneratePoster,
+    handleCopyLink,
+  };
+}
 
 export function TeamModalsAndFooter({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   const { t } = useI18n(["teams", "common"]);
@@ -25,25 +69,8 @@ export function TeamModalsAndFooter({ ctx }: { ctx: ReturnType<typeof useTeamDet
       <JoinModals ctx={ctx} team={team} fillRatio={fillRatio} />
       <ConfirmDialogs ctx={ctx} />
       <WechatModals ctx={ctx} />
-      {ctx.showShare && (
-        <SharePosterModal
-          type="team"
-          title={team.title}
-          subtitle={team.date}
-          url={window.location.href}
-          imageUrl={location?.coverImage}
-          locationName={location?.name}
-          description={team.description}
-          leaderName={team.leader?.nickname || team.leader?.name}
-          membersInfo={`${team.currentMembers}/${team.maxMembers}`}
-          meta={t('teams.teamMeta').replace('{currentMembers}', String(team.currentMembers)).replace('{maxMembers}', String(team.maxMembers))}
-          tags={team.requirements?.slice(0, 4)}
-          onClose={() => ctx.setShowShare(false)}
-          onToast={ctx.show}
-        />
-      )}
       <ToastDisplay toast={ctx.toast} exiting={ctx.exiting} />
-      <MobileBottomBar ctx={ctx} team={team} />
+      <MobileBottomBar ctx={ctx} team={team} location={location} />
     </>
   );
 }
@@ -142,7 +169,7 @@ function WechatModals({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   );
 }
 
-function MobileBottomBar({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
+function MobileBottomBar({ ctx, team, location }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; location?: { name?: string; coverImage?: string } | null; }) {
   const { isLeader, isMember, isPending, userId, canJoin } = ctx;
 
   return (
@@ -151,83 +178,135 @@ function MobileBottomBar({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="max-w-7xl mx-auto px-4 py-3">
-        {isLeader && <BottomBarLeader ctx={ctx} team={team} />}
-        {!isLeader && isMember && <BottomBarMember ctx={ctx} />}
-        {!isLeader && !isMember && isPending && <BottomBarPending ctx={ctx} />}
+        {isLeader && <BottomBarLeader ctx={ctx} team={team} location={location} />}
+        {!isLeader && isMember && <BottomBarMember ctx={ctx} team={team} />}
+        {!isLeader && !isMember && isPending && <BottomBarPending ctx={ctx} team={team} />}
         {!isLeader && !isMember && !isPending && !userId && <BottomBarNotLoggedIn team={team} />}
-        {!isLeader && !isMember && !isPending && userId && canJoin && <BottomBarCanJoin ctx={ctx} />}
+        {!isLeader && !isMember && !isPending && userId && canJoin && <BottomBarCanJoin ctx={ctx} team={team} />}
         {!isLeader && !isMember && !isPending && userId && !canJoin && <BottomBarCannotJoin ctx={ctx} team={team} />}
       </div>
     </div>
   );
 }
 
-function BottomBarLeader({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
+function BottomBarLeader({ ctx, team, location }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; location?: { name?: string; coverImage?: string } | null; }) {
   const { t } = useI18n(["teams", "common"]);
+  const share = useTeamShare(team);
+
   return (
-    <div className="flex items-center justify-between min-h-[44px]">
-      <div className="flex items-center gap-2 text-amber-600 text-sm">
-        <Crown className="h-4 w-4" />
-        <span className="font-medium">{t('teams.youAreLeader')}</span>
-      </div>
-      <div className="flex items-center gap-3">
-        <button onClick={() => ctx.setShowShare(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-          <Share2 className="h-4 w-4" />
-        </button>
-        {(team.status === "recruiting" || team.status === "cancelled") && (
-          <button onClick={() => ctx.setShowDeleteConfirm(true)}
-            className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors"
-            title={t('teams.deleteTeam')}>
-            <Trash2 className="h-4 h-4" />
+    <>
+      <div className="flex items-center justify-between min-h-[44px]">
+        <div className="flex items-center gap-2 text-amber-600 text-sm">
+          <Crown className="h-4 w-4" />
+          <span className="font-medium">{t('teams.youAreLeader')}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={share.openShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+            <Share2 className="h-4 w-4" />
           </button>
-        )}
-        <a href={`/teams/${team.id}/edit`} className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
-          <Pencil className="h-3 w-3" />
-          {t('teams.editBtn')}
-        </a>
+          {(team.status === "recruiting" || team.status === "cancelled") && (
+            <button onClick={() => ctx.setShowDeleteConfirm(true)}
+              className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors"
+              title={t('teams.deleteTeam')}>
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          <a href={`/teams/${team.id}/edit`} className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
+            <Pencil className="h-3 w-3" />
+            {t('teams.editBtn')}
+          </a>
+        </div>
       </div>
-    </div>
+
+      {/* Share Modals */}
+      <ShareOptionsSheet
+        open={share.showOptions}
+        onClose={share.closeOptions}
+        onGeneratePoster={share.handleGeneratePoster}
+        onCopyLink={share.handleCopyLink}
+      />
+      <SharePosterPreview
+        open={share.showPreview}
+        teamTitle={team.title}
+        teamUrl={window.location.href}
+        onClose={share.closePreview}
+      />
+    </>
   );
 }
 
-function BottomBarMember({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
+function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
+  const share = useTeamShare(team);
+
   return (
-    <div className="flex items-center justify-between min-h-[44px]">
-      <div className="flex items-center gap-2 text-amber-600 text-sm">
-        <CheckCircle className="h-4 w-4" />
-        <span className="font-medium">{t('teams.statusApproved')}</span>
+    <>
+      <div className="flex items-center justify-between min-h-[44px]">
+        <div className="flex items-center gap-2 text-amber-600 text-sm">
+          <CheckCircle className="h-4 w-4" />
+          <span className="font-medium">{t('teams.statusApproved')}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={share.openShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+            <Share2 className="h-4 w-4" />
+          </button>
+          <button onClick={() => ctx.setShowLeave(true)} className="flex items-center gap-1 text-xs text-muted-foreground border border-border rounded-full px-3 py-1.5 hover:border-red-300 hover:text-red-500 transition-colors">
+            <LogOut className="h-3 w-3" />
+            {t('teams.leaveTeam')}
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        <button onClick={() => ctx.setShowShare(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-          <Share2 className="h-4 w-4" />
-        </button>
-        <button onClick={() => ctx.setShowLeave(true)} className="flex items-center gap-1 text-xs text-muted-foreground border border-border rounded-full px-3 py-1.5 hover:border-red-300 hover:text-red-500 transition-colors">
-          <LogOut className="h-3 w-3" />
-          {t('teams.leaveTeam')}
-        </button>
-      </div>
-    </div>
+
+      <ShareOptionsSheet
+        open={share.showOptions}
+        onClose={share.closeOptions}
+        onGeneratePoster={share.handleGeneratePoster}
+        onCopyLink={share.handleCopyLink}
+      />
+      <SharePosterPreview
+        open={share.showPreview}
+        teamTitle={team.title}
+        teamUrl={window.location.href}
+        onClose={share.closePreview}
+      />
+    </>
   );
 }
 
-function BottomBarPending({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
+function BottomBarPending({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
+  const share = useTeamShare(team);
+
   return (
-    <div className="flex items-center justify-between min-h-[44px]">
-      <div className="flex items-center gap-2 text-amber-600 text-sm">
-        <Clock className="h-4 w-4" />
-        <span className="font-medium">{t('teams.statusPending')}</span>
+    <>
+      <div className="flex items-center justify-between min-h-[44px]">
+        <div className="flex items-center gap-2 text-amber-600 text-sm">
+          <Clock className="h-4 w-4" />
+          <span className="font-medium">{t('teams.statusPending')}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={share.openShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+            <Share2 className="h-4 w-4" />
+          </button>
+          <a href="/my-teams" className="text-xs text-amber-600 flex items-center gap-1">
+            {t('teams.viewLink')} <ArrowRight className="h-3 w-3" />
+          </a>
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        <button onClick={() => ctx.setShowShare(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-          <Share2 className="h-4 w-4" />
-        </button>
-        <a href="/my-teams" className="text-xs text-amber-600 flex items-center gap-1">
-          {t('teams.viewLink')} <ArrowRight className="h-3 w-3" />
-        </a>
-      </div>
-    </div>
+
+      <ShareOptionsSheet
+        open={share.showOptions}
+        onClose={share.closeOptions}
+        onGeneratePoster={share.handleGeneratePoster}
+        onCopyLink={share.handleCopyLink}
+      />
+      <SharePosterPreview
+        open={share.showPreview}
+        teamTitle={team.title}
+        teamUrl={window.location.href}
+        onClose={share.closePreview}
+      />
+    </>
   );
 }
 
@@ -244,31 +323,65 @@ function BottomBarNotLoggedIn({ team }: { team: Team; }) {
   );
 }
 
-function BottomBarCanJoin({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
+function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
+  const share = useTeamShare(team);
+
   return (
-    <div className="flex items-center gap-2">
-      <button onClick={() => ctx.setShowShare(true)} className="w-11 h-11 rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground hover:bg-amber-50 hover:text-amber-600 border border-border hover:border-amber-200 transition-all flex-shrink-0">
-        <Share2 className="h-4 w-4" />
-      </button>
-      <button onClick={() => ctx.setShowJoinModal(true)}
-        className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all min-h-[44px]">
-        {t('teams.joinTeam')}
-      </button>
-    </div>
+    <>
+      <div className="flex items-center gap-2">
+        <button onClick={share.openShare} className="w-11 h-11 rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground hover:bg-amber-50 hover:text-amber-600 border border-border hover:border-amber-200 transition-all flex-shrink-0">
+          <Share2 className="h-4 w-4" />
+        </button>
+        <button onClick={() => ctx.setShowJoinModal(true)}
+          className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all min-h-[44px]">
+          {t('teams.joinTeam')}
+        </button>
+      </div>
+
+      <ShareOptionsSheet
+        open={share.showOptions}
+        onClose={share.closeOptions}
+        onGeneratePoster={share.handleGeneratePoster}
+        onCopyLink={share.handleCopyLink}
+      />
+      <SharePosterPreview
+        open={share.showPreview}
+        teamTitle={team.title}
+        teamUrl={window.location.href}
+        onClose={share.closePreview}
+      />
+    </>
   );
 }
 
 function BottomBarCannotJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
+  const share = useTeamShare(team);
+
   return (
-    <div className="flex items-center justify-between min-h-[44px]">
-      <div className="text-muted-foreground/70 text-sm">
-        {team.status === "completed" ? t('teams.statusEnded') : team.status === "cancelled" ? t('teams.statusCancelled') : t('teams.teamFull')}
+    <>
+      <div className="flex items-center justify-between min-h-[44px]">
+        <div className="text-muted-foreground/70 text-sm">
+          {team.status === "completed" ? t('teams.statusEnded') : team.status === "cancelled" ? t('teams.statusCancelled') : t('teams.teamFull')}
+        </div>
+        <button onClick={share.openShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+          <Share2 className="h-4 w-4" />
+        </button>
       </div>
-      <button onClick={() => ctx.setShowShare(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-        <Share2 className="h-4 h-4" />
-      </button>
-    </div>
+
+      <ShareOptionsSheet
+        open={share.showOptions}
+        onClose={share.closeOptions}
+        onGeneratePoster={share.handleGeneratePoster}
+        onCopyLink={share.handleCopyLink}
+      />
+      <SharePosterPreview
+        open={share.showPreview}
+        teamTitle={team.title}
+        teamUrl={window.location.href}
+        onClose={share.closePreview}
+      />
+    </>
   );
 }

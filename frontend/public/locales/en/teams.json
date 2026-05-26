@@ -411,5 +411,13 @@
   "teamMeta": "{currentMembers}/{maxMembers} people",
   "viewLink": "View",
   "approveUserJoined": "{userName} will officially join the team",
-  "rejectUserCannotJoin": "After rejection, {userName} will not be able to join this team."
+  "rejectUserCannotJoin": "After rejection, {userName} will not be able to join this team.",
+  "shareOptions": "Share Options",
+  "generatePoster": "Generate Share Poster",
+  "generatePosterDesc": "Create a beautiful poster to share",
+  "copyLink": "Copy Link",
+  "linkCopied": "Link copied",
+  "posterComingSoon": "Poster feature coming soon",
+  "shareHint": "Tip: Long press above to share with friends",
+  "close": "Close"
 }
