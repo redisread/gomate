@@ -499,7 +499,6 @@ export function Footer() {
             © {year} {t("common.copyright")}
           </p>
           <p className="text-xs flex items-center gap-1.5 text-muted-foreground">
-            Made with
             <Heart className="h-3 w-3 text-primary" style={{ fill: "currentColor" }} />
             {t("common.madeWithLove")}
           </p>
