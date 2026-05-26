@@ -411,5 +411,13 @@
   "teamMeta": "{currentMembers}/{maxMembers}人",
   "viewLink": "表示",
   "approveUserJoined": "{userName} が正式にチームに参加します",
-  "rejectUserCannotJoin": "却下後、{userName} はこのチームに参加できなくなります。"
+  "rejectUserCannotJoin": "却下後、{userName} はこのチームに参加できなくなります。",
+  "shareOptions": "共有オプション",
+  "generatePoster": "シェア画像を生成",
+  "generatePosterDesc": "美しい画像を作成して共有",
+  "copyLink": "リンクをコピー",
+  "linkCopied": "リンクをコピーしました",
+  "posterComingSoon": "画像機能は近日公開予定",
+  "shareHint": "ヒント：上の内容を長押しして友達に共有できます",
+  "close": "閉じる"
 }
