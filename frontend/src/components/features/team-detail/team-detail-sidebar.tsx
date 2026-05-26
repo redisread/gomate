@@ -6,10 +6,58 @@ import { formatDuration } from "./team-detail-utils";
 import { Avatar } from "./team-detail-ui";
 import { TeamApplicationsSection } from "./team-detail-applications";
 import { TeamProgress, TeamLeaderMini } from "@/components/features/teams/shared";
+import { ShareOptionsSheet } from "./share-options-sheet";
+import { SharePosterPreview } from "./share-poster-preview";
+import * as React from "react";
+
+// Reuse the same hook from bottom-bar
+function useTeamShare(team: Team | null) {
+  const [showOptions, setShowOptions] = React.useState(false);
+  const [showPreview, setShowPreview] = React.useState(false);
+
+  const openShare = React.useCallback(() => {
+    setShowOptions(true);
+  }, []);
+
+  const closeOptions = React.useCallback(() => {
+    setShowOptions(false);
+  }, []);
+
+  const closePreview = React.useCallback(() => {
+    setShowPreview(false);
+  }, []);
+
+  const handleGeneratePoster = React.useCallback(() => {
+    setShowOptions(false);
+    setShowPreview(true);
+  }, []);
+
+  const handleCopyLink = React.useCallback(async () => {
+    if (!team) return;
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+    } catch {
+      // Ignore
+    }
+    setShowOptions(false);
+  }, [team]);
+
+  return {
+    showOptions,
+    showPreview,
+    openShare,
+    closeOptions,
+    closePreview,
+    handleGeneratePoster,
+    handleCopyLink,
+  };
+}
 
 export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   const { team, location, isLeader, isMember, isPending, statusLoadFailed, applications, isFull } = ctx;
   if (!team) return null;
+
+  const share = useTeamShare(team);
 
   return (
     <aside className="lg:sticky lg:top-24 lg:self-start space-y-6">
@@ -23,7 +71,7 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
       )}
       <TeamCapacity team={team} canJoin={ctx.canJoin} remaining={ctx.remaining} />
       {team.leader && <LeaderCard leader={team.leader} teamId={team.id} canMessage={isMember || isPending} />}
-      <ShareButton onClick={() => ctx.setShowShare(true)} />
+      <ShareButton onClick={share.openShare} />
       {isLeader && <LeaderActions ctx={ctx} team={team} />}
       {isMember && <MemberStatusIndicator onLeave={() => ctx.setShowLeave(true)} />}
       {isPending && <PendingStatusIndicator />}
@@ -36,6 +84,20 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
           isFull={isFull}
         />
       )}
+
+      {/* Share Modals */}
+      <ShareOptionsSheet
+        open={share.showOptions}
+        onClose={share.closeOptions}
+        onGeneratePoster={share.handleGeneratePoster}
+        onCopyLink={share.handleCopyLink}
+      />
+      <SharePosterPreview
+        open={share.showPreview}
+        teamTitle={team.title}
+        teamUrl={window.location.href}
+        onClose={share.closePreview}
+      />
     </aside>
   );
 }
