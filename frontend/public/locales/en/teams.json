@@ -424,5 +424,7 @@
   "posterGenerateError": "Failed to generate poster",
   "posterGenerateFallback": "Please use \"Copy Link\" to share",
   "saveImageHint": "Tip: Click \"Save to Album\" to save, or long press image to save manually",
-  "saveToAlbum": "Save to Album"
+  "saveToAlbum": "Save to Album",
+  "qrCodeHint": "Scan to join team",
+  "posterFooter": "gomate.live · Discover places, join teams"
 }

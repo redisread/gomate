@@ -144,6 +144,8 @@ export function SharePosterPreview({
                 date={teamDate}
                 locationName={teamLocation}
                 url={teamUrl}
+                qrHint={t("teams.qrCodeHint")}
+                footerText={t("teams.posterFooter")}
               />
             </div>
 

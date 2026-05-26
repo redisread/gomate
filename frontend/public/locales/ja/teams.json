@@ -424,5 +424,7 @@
   "posterGenerateError": "画像の生成に失敗しました",
   "posterGenerateFallback": "「リンクをコピー」をご利用ください",
   "saveImageHint": "ヒント：「保存」をタップするか、画像を長押しして保存してください",
-  "saveToAlbum": "保存"
+  "saveToAlbum": "保存",
+  "qrCodeHint": "スキャンしてチームに参加",
+  "posterFooter": "gomate.live · 場所を発見し、チームに参加しよう"
 }

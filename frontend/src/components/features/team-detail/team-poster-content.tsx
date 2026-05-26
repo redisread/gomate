@@ -12,6 +12,8 @@ interface TeamPosterContentProps {
   date: string;
   locationName?: string;
   url: string;
+  qrHint: string;
+  footerText: string;
 }
 
 export function TeamPosterContent({
@@ -19,6 +21,8 @@ export function TeamPosterContent({
   date,
   locationName,
   url,
+  qrHint,
+  footerText,
 }: TeamPosterContentProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
@@ -92,7 +96,7 @@ export function TeamPosterContent({
             </div>
           )}
           <p className="mt-3 text-xs text-stone-500">
-            扫码加入队伍
+            {qrHint}
           </p>
         </div>
       </div>
@@ -100,7 +104,7 @@ export function TeamPosterContent({
       {/* Footer */}
       <div className="py-3 bg-stone-50 border-t border-stone-100">
         <p className="text-center text-xs text-stone-400">
-          gomate.live · 发现趣处，组队同行
+          {footerText}
         </p>
       </div>
     </div>

@@ -424,5 +424,7 @@
   "posterGenerateError": "生成海报失败",
   "posterGenerateFallback": "请使用「复制链接」分享",
   "saveImageHint": "提示：点击「保存到相册」按钮保存图片，或长按图片手动保存",
-  "saveToAlbum": "保存到相册"
+  "saveToAlbum": "保存到相册",
+  "qrCodeHint": "扫码加入队伍",
+  "posterFooter": "gomate.live · 发现趣处，组队同行"
 }
