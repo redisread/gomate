@@ -145,5 +145,9 @@
     "feedback": "反馈建议 - GoMate",
     "userDetail": "用户资料 - GoMate"
   },
-  "madeWithLove": "用 ❤️ 制作"
+  "madeWithLove": "用 ❤️ 制作",
+  "footer": {
+    "expand": "展开",
+    "collapse": "收起"
+  }
 }
