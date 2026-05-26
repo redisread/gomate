@@ -44,7 +44,7 @@ export function ActivityPostCard({
   const { t } = useI18n(["teams", "common"]);
 
   const handleDelete = () => {
-    if (onDelete && confirm(t("activityPosts.confirmDelete"))) {
+    if (onDelete && confirm(t("teams.activityPosts.confirmDelete"))) {
       onDelete(post.id);
     }
   };
@@ -81,7 +81,7 @@ export function ActivityPostCard({
           <button
             onClick={handleDelete}
             className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-            aria-label={t("activityPosts.delete")}
+            aria-label={t("teams.activityPosts.delete")}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -109,7 +109,7 @@ export function ActivityPostCard({
             href={`/teams/${post.team.id}`}
             className="text-xs text-muted-foreground hover:text-amber-600 transition-colors"
           >
-            {t("activityPosts.fromTeam")}: {post.team.title}
+            {t("teams.activityPosts.fromTeam")}: {post.team.title}
           </a>
         </div>
       )}

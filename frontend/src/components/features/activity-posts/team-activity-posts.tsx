@@ -76,7 +76,7 @@ export function TeamActivityPosts({ teamId, teamStatus, isMember, className }: T
       {/* Header */}
       <div className="flex flex-row items-center justify-between p-6 border-b border-border">
         <h3 className="text-lg font-semibold text-foreground">
-          {t("activityPosts.title")}
+          {t("teams.activityPosts.title")}
         </h3>
         {canPost && (
           <button
@@ -84,7 +84,7 @@ export function TeamActivityPosts({ teamId, teamStatus, isMember, className }: T
             className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors"
           >
             <Plus className="h-4 w-4" />
-            {t("activityPosts.add")}
+            {t("teams.activityPosts.add")}
           </button>
         )}
       </div>
@@ -94,7 +94,7 @@ export function TeamActivityPosts({ teamId, teamStatus, isMember, className }: T
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-card rounded-2xl border border-border w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h4 className="text-lg font-semibold">{t("activityPosts.add")}</h4>
+              <h4 className="text-lg font-semibold">{t("teams.activityPosts.add")}</h4>
               <button
                 onClick={() => setShowForm(false)}
                 className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -121,10 +121,10 @@ export function TeamActivityPosts({ teamId, teamStatus, isMember, className }: T
               <Mountain className="h-8 w-8 text-stone-400" />
             </div>
             <p className="text-muted-foreground text-sm mb-1">
-              {t("activityPosts.emptyTitle")}
+              {t("teams.activityPosts.emptyTitle")}
             </p>
             <p className="text-muted-foreground text-xs">
-              {canPost ? t("activityPosts.emptyDescription") : t("activityPosts.emptyNotMember")}
+              {canPost ? t("teams.activityPosts.emptyDescription") : t("teams.activityPosts.emptyNotMember")}
             </p>
           </div>
         ) : (
