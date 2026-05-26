@@ -228,6 +228,8 @@ function BottomBarLeader({ ctx, team, location }: { ctx: ReturnType<typeof useTe
       <SharePosterPreview
         open={share.showPreview}
         teamTitle={team.title}
+        teamDate={team.date}
+        teamLocation={location?.name}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
@@ -266,6 +268,8 @@ function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
       <SharePosterPreview
         open={share.showPreview}
         teamTitle={team.title}
+        teamDate={team.date}
+        teamLocation={location?.name}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
@@ -303,6 +307,8 @@ function BottomBarPending({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
       <SharePosterPreview
         open={share.showPreview}
         teamTitle={team.title}
+        teamDate={team.date}
+        teamLocation={location?.name}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
@@ -348,6 +354,8 @@ function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
       <SharePosterPreview
         open={share.showPreview}
         teamTitle={team.title}
+        teamDate={team.date}
+        teamLocation={location?.name}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
@@ -379,6 +387,8 @@ function BottomBarCannotJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDeta
       <SharePosterPreview
         open={share.showPreview}
         teamTitle={team.title}
+        teamDate={team.date}
+        teamLocation={location?.name}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />

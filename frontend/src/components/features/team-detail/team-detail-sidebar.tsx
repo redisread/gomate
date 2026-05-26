@@ -95,6 +95,8 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
       <SharePosterPreview
         open={share.showPreview}
         teamTitle={team.title}
+        teamDate={team.date}
+        teamLocation={location?.name}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
