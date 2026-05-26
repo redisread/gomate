@@ -1,6 +1,6 @@
 "use client";
 
-import useSWR from "swr";
+import { useState, useEffect, useCallback } from "react";
 import { fetchAPI } from "@/lib/api";
 import type { Location } from "@/lib/types";
 
@@ -15,30 +15,38 @@ interface LocationsResponse {
   };
 }
 
-const fetcher = async (url: string): Promise<LocationsResponse> => {
-  const res = await fetchAPI(url);
-  const data = await res.json();
-  if (!data.success) {
-    throw new Error(data.error || "获取地点列表失败");
-  }
-  return data;
-};
-
 /**
- * 使用 SWR 获取地点列表，支持缓存和自动重验证
- * 缓存时间：5分钟
+ * 获取地点列表，支持分页
  */
 export function useLocations(page = 1, pageSize = 6) {
-  const { data, error, isLoading, mutate } = useSWR<LocationsResponse>(
-    `/api/locations?page=${page}&pageSize=${pageSize}&view=card`,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 300000, // 5分钟去重
-      keepPreviousData: true, // 切换分页时保持旧数据
-      refreshInterval: 0, // 不自动刷新
+  const [data, setData] = useState<LocationsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetchAPI(`/api/locations?page=${page}&pageSize=${pageSize}&view=card`);
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || "获取地点列表失败");
+      }
+      setData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("获取地点列表失败"));
+    } finally {
+      setIsLoading(false);
     }
-  );
+  }, [page, pageSize]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const mutate = useCallback(async () => {
+    await fetchData();
+  }, [fetchData]);
 
   return {
     locations: data?.locations ?? [],
@@ -49,35 +57,49 @@ export function useLocations(page = 1, pageSize = 6) {
   };
 }
 
-interface TagsResponse {
-  success: boolean;
-  tags: { id: string; name: string; type: string }[];
-}
-
-const tagsFetcher = async (url: string): Promise<TagsResponse> => {
-  const res = await fetchAPI(url);
-  const data = await res.json();
-  if (!data.success) {
-    throw new Error(data.error || "获取标签失败");
-  }
-  return data;
-};
-
 /**
- * 使用 SWR 获取热门标签
+ * 获取热门标签
  */
 export function useLocationTags() {
-  const { data, error, isLoading } = useSWR<TagsResponse>(
-    "/api/locations?tags=true",
-    tagsFetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 600000, // 10分钟，标签变化较少
-    }
-  );
+  const [tags, setTags] = useState<{ id: string; name: string; type: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchTags = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await fetchAPI("/api/locations?tags=true");
+        const json = await res.json();
+        if (!json.success) {
+          throw new Error(json.error || "获取标签失败");
+        }
+        if (mounted) {
+          setTags(json.tags);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err : new Error("获取标签失败"));
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchTags();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return {
-    tags: data?.tags ?? [],
+    tags,
     isLoading,
     error,
   };
