@@ -41,14 +41,32 @@ export function SharePosterPreview({
       setError(null);
 
       try {
-        // Wait for fonts and images to load
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait for fonts to load (Zpix font from CDN)
+        if (document.fonts) {
+          await document.fonts.ready;
+        }
+
+        // Additional delay for iOS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        await new Promise(resolve => setTimeout(resolve, isIOS ? 500 : 300));
+
+        // Ensure element is visible for capture
+        const originalStyle = posterRef.current.style.cssText;
+        posterRef.current.style.cssText = originalStyle + '; visibility: visible !important; opacity: 1 !important;';
 
         const dataUrl = await toPng(posterRef.current, {
           pixelRatio: 2,
           cacheBust: true,
           backgroundColor: '#ffffff',
         });
+
+        // Restore original style
+        posterRef.current.style.cssText = originalStyle;
+
+        // Validate generated image
+        if (!dataUrl || dataUrl.length < 1000) {
+          throw new Error('Generated image is empty or too small');
+        }
 
         setPosterDataUrl(dataUrl);
       } catch (err) {
@@ -133,11 +151,16 @@ export function SharePosterPreview({
 
           {/* Poster Preview */}
           <div className="p-4 flex flex-col items-center">
-            {/* Hidden poster for generation */}
+            {/* Hidden poster for generation - use opacity:0 instead of off-screen for iOS compatibility */}
             <div
               ref={posterRef}
-              className="absolute -left-[9999px] top-0"
-              style={{ position: 'fixed', left: '-9999px' }}
+              className="fixed top-0 left-0 pointer-events-none"
+              style={{
+                opacity: 0,
+                zIndex: -1,
+                width: '340px',
+              }}
+              aria-hidden="true"
             >
               <TeamPosterContent
                 title={teamTitle}
