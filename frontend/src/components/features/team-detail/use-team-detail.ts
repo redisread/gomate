@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { fetchAPI } from "@/lib/api";
-import type { Team, TeamMember, Application } from "@/lib/types";
+import type { Team, TeamMember, Application, Location } from "@/lib/types";
 import { useI18n } from "@/hooks/useI18n";
 
 interface ToastOptions {
@@ -60,7 +60,7 @@ interface UseTeamDetailReturn {
   canJoin: boolean;
   isFull: boolean;
   remaining: number;
-  location: any;
+  location: Location | null;
   handleJoin: () => Promise<void>;
   handleSaveWechat: (wechat: string) => Promise<void>;
   handleLeave: () => Promise<void>;
@@ -325,7 +325,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
   const isFull = team ? team.currentMembers >= team.maxMembers : false;
   const canJoin = !isLeader && !isMember && !isPending && team?.status === "recruiting" && !isFull;
   const remaining = team ? team.maxMembers - team.currentMembers : 0;
-  const location = (team as any)?.location;
+  const location = team?.location ?? null;
 
   return {
     toast, exiting,
