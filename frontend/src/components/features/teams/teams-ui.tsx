@@ -2,7 +2,7 @@ import * as React from "react";
 import {
   Users, Mountain, UserCircle, ChevronRight, Flame, Lock,
   Flag, CheckCircle2, MapPin, Calendar, Clock, Filter,
-  CalendarDays, Tag, X, Search,
+  CalendarDays, Tag, X, Search, Sparkles, ArrowRight, Compass, TreePine,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
@@ -363,20 +363,121 @@ export function TeamsHeader({
 export function TeamsCtaSection() {
   const { t } = useI18n(["teams", "filter", "common"]);
   return (
-    <div className="relative mt-16 text-center rounded-3xl border border-border/80 p-10 overflow-hidden bg-gradient-to-br from-amber-50/60 dark:from-amber-950/20 via-card dark:via-card to-amber-50/40 dark:to-amber-950/10">
-      <svg className="absolute right-0 bottom-0 opacity-[0.06] w-64 h-32 pointer-events-none" viewBox="0 0 256 128" aria-hidden="true">
-        <path d="M0,128 L50,50 L100,90 L160,20 L210,70 L256,40 L256,128 Z" fill="currentColor" className="text-amber-700" />
-      </svg>
-      <div className="relative z-10">
-        <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-5"><Mountain className="h-7 w-7 text-amber-600" /></div>
-        <h2 className="text-2xl font-bold text-foreground mb-3">{t("teams.ctaTitle")}</h2>
-        <p className="text-stone-500 dark:text-stone-400 mb-7 max-w-sm mx-auto leading-relaxed">{t("teams.ctaDesc")}</p>
-        <a href="/teams/create">
-          <button className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-8 py-3.5 rounded-full font-medium transition-all duration-200 hover:shadow-lg hover:shadow-amber-200/60">
-            <Flame className="h-4 w-4" />{t("teams.createBtn")}
-          </button>
-        </a>
+    <section className="relative mt-16 py-16 lg:py-20 overflow-hidden">
+      {/* Background gradient orbs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/2 left-1/4 w-96 h-96 rounded-full bg-amber-400/10 dark:bg-amber-500/10 blur-[100px]" />
+        <div className="absolute bottom-0 right-1/3 w-80 h-80 rounded-full bg-orange-400/8 dark:bg-orange-500/8 blur-[80px]" />
       </div>
-    </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative">
+          {/* Main CTA Card */}
+          <div className="relative rounded-3xl overflow-hidden">
+            {/* Background layers */}
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 dark:from-amber-600 dark:via-amber-700 dark:to-orange-700" />
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNjAgMEgwVjYwSDYwVjBaIiBmaWxsPSJ1cmwoI3ApIi8+PGRlZnM+PHBhdHRlcm4gaWQ9InAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+PHBhdGggZD0iTTAgNjBWMHNNNjAgMFY2MCIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjwvc3ZnPg==')] opacity-30" />
+
+            {/* Decorative elements */}
+            <div className="absolute top-0 left-0 w-40 h-40 rounded-full bg-white/5 blur-2xl -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute bottom-0 right-0 w-56 h-56 rounded-full bg-white/5 blur-3xl translate-x-1/4 translate-y-1/4" />
+
+            {/* Mountain silhouette (decorative) */}
+            <svg className="absolute bottom-0 left-0 right-0 w-full h-32 opacity-10" viewBox="0 0 1440 120" preserveAspectRatio="none">
+              <path d="M0 120L240 60L480 100L720 40L960 90L1200 50L1440 80V120H0Z" fill="white"/>
+            </svg>
+
+            {/* Content */}
+            <div className="relative px-8 py-14 sm:px-12 sm:py-16 lg:px-16 lg:py-18">
+              <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-12">
+                {/* Left: Text Content */}
+                <div className="flex-1 text-center lg:text-left">
+                  {/* Badge */}
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 text-white/90 text-sm font-medium mb-5 border border-white/20">
+                    <Users className="w-4 h-4" />
+                    <span>{t("teams.ctaBadge")}</span>
+                  </div>
+
+                  {/* Title */}
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight">
+                    {t("teams.ctaTitle")}
+                  </h2>
+
+                  {/* Description */}
+                  <p className="text-base sm:text-lg text-white/80 mb-6 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                    {t("teams.ctaDesc")}
+                  </p>
+
+                  {/* Button Group */}
+                  <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
+                    <a href="/teams/create" className="group">
+                      <button className="inline-flex items-center gap-2 bg-white text-amber-700 px-6 py-3.5 rounded-2xl text-base font-semibold transition-all duration-300 hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-1 active:scale-95">
+                        <Sparkles className="w-5 h-5" />
+                        {t("teams.createBtn")}
+                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                      </button>
+                    </a>
+                    <a href="/locations" className="text-white/80 hover:text-white text-base font-medium transition-colors inline-flex items-center gap-1.5 hover:underline underline-offset-4">
+                      {t("teams.exploreLink")}
+                    </a>
+                  </div>
+                </div>
+
+                {/* Right: Visual Element - Team Card Stack */}
+                <div className="flex-shrink-0 relative">
+                  {/* Floating cards stack effect */}
+                  <div className="relative w-56 h-40 sm:w-72 sm:h-48">
+                    {/* Back card */}
+                    <div className="absolute inset-0 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 transform rotate-3 translate-x-3 translate-y-2" />
+                    {/* Middle card */}
+                    <div className="absolute inset-0 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 transform -rotate-2 -translate-x-2 translate-y-1" />
+                    {/* Front card */}
+                    <div className="absolute inset-0 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-2xl shadow-black/10 flex flex-col items-center justify-center p-5">
+                      <div className="w-14 h-14 rounded-2xl bg-white/90 flex items-center justify-center mb-3 shadow-lg">
+                        <Users className="w-7 h-7 text-amber-600" />
+                      </div>
+                      <div className="text-white text-center">
+                        <div className="text-base font-bold mb-0.5">{t("teams.ctaCardTitle")}</div>
+                        <div className="text-sm text-white/70">{t("teams.ctaCardDesc")}</div>
+                      </div>
+                    </div>
+
+                    {/* Floating decorative icons */}
+                    <div className="absolute -top-3 -right-3 w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-lg animate-pulse" style={{ animationDuration: "3s" }}>
+                      <Flame className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="absolute -bottom-1 -left-5 w-7 h-7 rounded-lg bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center shadow-lg animate-pulse" style={{ animationDuration: "4s", animationDelay: "1s" }}>
+                      <Mountain className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Trust indicators below */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-stone-500 dark:text-stone-400 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              </div>
+              <span>{t("teams.ctaTrust1")}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+              </div>
+              <span>{t("teams.ctaTrust2")}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+              </div>
+              <span>{t("teams.ctaTrust3")}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
