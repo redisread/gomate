@@ -11,6 +11,7 @@ interface TeamPosterContentProps {
   title: string;
   date: string;
   locationName?: string;
+  coverImage?: string;
   url: string;
   qrHint: string;
   footerText: string;
@@ -20,6 +21,7 @@ export function TeamPosterContent({
   title,
   date,
   locationName,
+  coverImage,
   url,
   qrHint,
   footerText,
@@ -48,6 +50,19 @@ export function TeamPosterContent({
           font-display: swap;
         }
       `}</style>
+
+      {/* Cover Image */}
+      {coverImage && (
+        <div className="w-full h-[120px] overflow-hidden">
+          <img
+            src={coverImage}
+            alt={locationName || "Location"}
+            className="w-full h-full object-cover"
+            data-cover="true"
+            crossOrigin="anonymous"
+          />
+        </div>
+      )}
 
       {/* Header - GoMate Logo */}
       <div className="flex items-center justify-center py-4 bg-gradient-to-r from-amber-500 to-amber-600">

@@ -11,6 +11,7 @@ interface SharePosterPreviewProps {
   teamTitle: string;
   teamDate: string;
   teamLocation?: string;
+  teamCoverImage?: string;
   teamUrl: string;
   onClose: () => void;
 }
@@ -20,6 +21,7 @@ export function SharePosterPreview({
   teamTitle,
   teamDate,
   teamLocation,
+  teamCoverImage,
   teamUrl,
   onClose,
 }: SharePosterPreviewProps) {
@@ -44,6 +46,15 @@ export function SharePosterPreview({
         // Wait for fonts to load (Zpix font from CDN)
         if (document.fonts) {
           await document.fonts.ready;
+        }
+
+        // Wait for cover image to load
+        const coverImg = posterRef.current?.querySelector('img[data-cover]') as HTMLImageElement | null;
+        if (coverImg && !coverImg.complete) {
+          await new Promise((resolve) => {
+            coverImg.onload = resolve;
+            coverImg.onerror = resolve;
+          });
         }
 
         // Additional delay for iOS
@@ -166,6 +177,7 @@ export function SharePosterPreview({
                 title={teamTitle}
                 date={teamDate}
                 locationName={teamLocation}
+                coverImage={teamCoverImage}
                 url={teamUrl}
                 qrHint={t("teams.qrCodeHint")}
                 footerText={t("teams.posterFooter")}

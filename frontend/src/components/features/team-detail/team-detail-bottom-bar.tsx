@@ -230,6 +230,7 @@ function BottomBarLeader({ ctx, team, location }: { ctx: ReturnType<typeof useTe
         teamTitle={team.title}
         teamDate={team.date}
         teamLocation={location?.name}
+        teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
@@ -271,6 +272,7 @@ function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
         teamTitle={team.title}
         teamDate={team.date}
         teamLocation={location?.name}
+        teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
@@ -311,6 +313,7 @@ function BottomBarPending({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
         teamTitle={team.title}
         teamDate={team.date}
         teamLocation={location?.name}
+        teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
@@ -359,6 +362,7 @@ function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
         teamTitle={team.title}
         teamDate={team.date}
         teamLocation={location?.name}
+        teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
@@ -393,6 +397,7 @@ function BottomBarCannotJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDeta
         teamTitle={team.title}
         teamDate={team.date}
         teamLocation={location?.name}
+        teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
