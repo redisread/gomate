@@ -30,7 +30,46 @@ export function SharePosterPreview({
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [posterDataUrl, setPosterDataUrl] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [processedCoverImage, setProcessedCoverImage] = React.useState<string | undefined>(undefined);
   const posterRef = React.useRef<HTMLDivElement>(null);
+
+  // Pre-load and process cover image to avoid CORS issues
+  React.useEffect(() => {
+    if (!open || !teamCoverImage) {
+      setProcessedCoverImage(undefined);
+      return;
+    }
+
+    const loadImage = async () => {
+      try {
+        // Try to load image and convert to data URL to avoid CORS
+        const response = await fetch(teamCoverImage);
+        if (!response.ok) throw new Error('Image fetch failed');
+        const blob = await response.blob();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        setProcessedCoverImage(dataUrl);
+      } catch (err) {
+        console.warn('[Poster] Failed to preload cover image:', err);
+        // Fallback: don't show cover image
+        setProcessedCoverImage(undefined);
+      }
+    };
+
+    loadImage();
+  }, [open, teamCoverImage]);
+
+  // Reset state when modal opens
+  React.useEffect(() => {
+    if (open) {
+      setPosterDataUrl(null);
+      setError(null);
+    }
+  }, [open, teamTitle, teamDate, teamLocation, teamCoverImage, teamUrl]);
 
   // Generate poster image when opened
   React.useEffect(() => {
@@ -49,7 +88,8 @@ export function SharePosterPreview({
         }
 
         // Wait for images to load (cover + QR code)
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Use a longer timeout to ensure everything is ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Additional delay for iOS
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -173,7 +213,7 @@ export function SharePosterPreview({
                 title={teamTitle}
                 date={teamDate}
                 locationName={teamLocation}
-                coverImage={teamCoverImage}
+                coverImage={processedCoverImage}
                 url={teamUrl}
                 qrHint={t("teams.qrCodeHint")}
                 footerText={t("teams.posterFooter")}
