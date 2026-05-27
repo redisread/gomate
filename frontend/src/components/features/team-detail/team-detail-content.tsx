@@ -28,7 +28,9 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
         </div>
       )}
       <JoinSection ctx={ctx} team={team} canJoin={canJoin} isFull={isFull} isLeader={isLeader} isMember={isMember} isPending={isPending} userId={userId} />
-      <TeamActivityPosts teamId={team.id} teamStatus={team.status} isMember={isMember} />
+      {team.status === "completed" && (
+        <TeamActivityPosts teamId={team.id} teamStatus={team.status} isMember={isMember} />
+      )}
     </div>
   );
 }

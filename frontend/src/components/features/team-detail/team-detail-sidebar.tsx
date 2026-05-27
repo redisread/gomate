@@ -6,9 +6,11 @@ import { formatDuration } from "./team-detail-utils";
 import { Avatar } from "./team-detail-ui";
 import { TeamApplicationsSection } from "./team-detail-applications";
 import { TeamProgress, TeamLeaderMini } from "@/components/features/teams/shared";
-import { ShareOptionsSheet } from "./share-options-sheet";
-import { SharePosterPreview } from "./share-poster-preview";
 import * as React from "react";
+
+// 懒加载分享相关组件
+const ShareOptionsSheet = React.lazy(() => import("./share-options-sheet").then(m => ({ default: m.ShareOptionsSheet })));
+const SharePosterPreview = React.lazy(() => import("./share-poster-preview").then(m => ({ default: m.SharePosterPreview })));
 
 // Reuse the same hook from bottom-bar
 function useTeamShare(team: Team | null) {
@@ -85,22 +87,26 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
         />
       )}
 
-      {/* Share Modals */}
-      <ShareOptionsSheet
-        open={share.showOptions}
-        onClose={share.closeOptions}
-        onGeneratePoster={share.handleGeneratePoster}
-        onCopyLink={share.handleCopyLink}
-      />
-      <SharePosterPreview
-        open={share.showPreview}
-        teamTitle={team.title}
-        teamDate={team.date}
-        teamLocation={location?.name}
-        teamCoverImage={location?.coverImage}
-        teamUrl={window.location.href}
-        onClose={share.closePreview}
-      />
+      {/* Share Modals - 懒加载 */}
+      <React.Suspense fallback={null}>
+        <ShareOptionsSheet
+          open={share.showOptions}
+          onClose={share.closeOptions}
+          onGeneratePoster={share.handleGeneratePoster}
+          onCopyLink={share.handleCopyLink}
+        />
+      </React.Suspense>
+      <React.Suspense fallback={null}>
+        <SharePosterPreview
+          open={share.showPreview}
+          teamTitle={team.title}
+          teamDate={team.date}
+          teamLocation={location?.name}
+          teamCoverImage={location?.coverImage}
+          teamUrl={window.location.href}
+          onClose={share.closePreview}
+        />
+      </React.Suspense>
     </aside>
   );
 }
