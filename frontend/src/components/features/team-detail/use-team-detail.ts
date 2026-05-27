@@ -94,8 +94,57 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
   const [statusLoadFailed, setStatusLoadFailed] = React.useState(false);
   const { toast, exiting, show: showToast } = useToast();
 
-  const loadTeam = React.useCallback(async () => {
+  const loadAllData = React.useCallback(async () => {
     setLoading(true);
+    try {
+      // 并行获取队伍数据和用户 session
+      const [teamRes, sessionRes] = await Promise.all([
+        fetchAPI(`/api/teams/${teamId}`),
+        fetchAPI("/auth/get-session"),
+      ]);
+
+      // 处理队伍数据
+      if (teamRes.status === 404) {
+        setError(t('teams.notFound'));
+        setLoading(false);
+        return;
+      }
+      const teamData = await teamRes.json();
+      if (teamData.success && teamData.team) {
+        setTeam(teamData.team);
+      } else {
+        setError(t('teams.notFound'));
+        setLoading(false);
+        return;
+      }
+
+      // 处理用户 session
+      const sessionData = await sessionRes.json();
+      if (sessionData?.user?.id) {
+        setUserId(sessionData.user.id);
+
+        // 获取用户状态
+        try {
+          const statusRes = await fetchAPI(`/api/teams/${teamId}/my-status`);
+          const statusData = await statusRes.json();
+          if (statusData.success) setMemberStatus(statusData.status);
+          setStatusLoadFailed(false);
+        } catch (e) {
+          console.error("Failed to fetch member status:", e);
+          setStatusLoadFailed(true);
+        }
+      } else {
+        setStatusLoadFailed(false);
+      }
+    } catch {
+      setError(t('teams.loadFailed'));
+    } finally {
+      setLoading(false);
+    }
+  }, [teamId, t]);
+
+  // 保留单独的刷新方法供其他操作使用
+  const loadTeam = React.useCallback(async () => {
     try {
       const res = await fetchAPI(`/api/teams/${teamId}`);
       if (res.status === 404) {
@@ -107,17 +156,16 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       else setError(t('teams.notFound'));
     } catch {
       setError(t('teams.loadFailed'));
-    } finally {
-      setLoading(false);
     }
-  }, [teamId]);
+  }, [teamId, t]);
 
   const checkUser = React.useCallback(async () => {
     try {
-      const res = await fetchAPI("/auth/get-session");
-      const data = await res.json();
-      if (data?.user?.id) {
-        setUserId(data.user.id);
+      const sessionRes = await fetchAPI("/auth/get-session");
+      const sessionData = await sessionRes.json();
+
+      if (sessionData?.user?.id) {
+        setUserId(sessionData.user.id);
         const statusRes = await fetchAPI(`/api/teams/${teamId}/my-status`);
         const statusData = await statusRes.json();
         if (statusData.success) setMemberStatus(statusData.status);
@@ -140,9 +188,8 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
   }, [teamId]);
 
   React.useEffect(() => {
-    loadTeam();
-    checkUser();
-  }, [teamId, loadTeam, checkUser]);
+    loadAllData();
+  }, [teamId, loadAllData]);
 
   React.useEffect(() => {
     if (team && userId && team.leader?.id === userId) fetchApplications();
