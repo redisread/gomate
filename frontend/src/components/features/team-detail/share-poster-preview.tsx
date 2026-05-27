@@ -48,18 +48,14 @@ export function SharePosterPreview({
           await document.fonts.ready;
         }
 
-        // Wait for cover image to load
-        const coverImg = posterRef.current?.querySelector('img[data-cover]') as HTMLImageElement | null;
-        if (coverImg && !coverImg.complete) {
-          await new Promise((resolve) => {
-            coverImg.onload = resolve;
-            coverImg.onerror = resolve;
-          });
-        }
+        // Wait for images to load (cover + QR code)
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         // Additional delay for iOS
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        await new Promise(resolve => setTimeout(resolve, isIOS ? 500 : 300));
+        if (isIOS) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
 
         // Ensure element is visible for capture
         const originalStyle = posterRef.current.style.cssText;

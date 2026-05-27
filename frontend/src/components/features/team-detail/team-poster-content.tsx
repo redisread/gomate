@@ -27,6 +27,7 @@ export function TeamPosterContent({
   footerText,
 }: TeamPosterContentProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [coverError, setCoverError] = useState(false);
 
   useEffect(() => {
     QRCode.toDataURL(url, {
@@ -51,15 +52,15 @@ export function TeamPosterContent({
         }
       `}</style>
 
-      {/* Cover Image */}
-      {coverImage && (
+      {/* Cover Image - only render if loaded successfully */}
+      {coverImage && !coverError && (
         <div className="w-full h-[120px] overflow-hidden">
           <img
             src={coverImage}
             alt={locationName || "Location"}
             className="w-full h-full object-cover"
             data-cover="true"
-            crossOrigin="anonymous"
+            onError={() => setCoverError(true)}
           />
         </div>
       )}
