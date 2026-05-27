@@ -39,8 +39,13 @@ function LocationCover({ location, statusInfo }: { location: any; statusInfo: { 
     <a href={`/locations/${location.id}`} className="group block">
       <div className="relative h-[300px] lg:h-[400px] rounded-2xl overflow-hidden bg-secondary hover:shadow-xl hover:shadow-amber-100/30 transition-all duration-300">
         {location.coverImage ? (
-          <img src={location.coverImage} alt={location.name}
-            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+          <img
+            src={location.coverImage}
+            alt={location.name}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-800 to-stone-900">
             <Mountain className="h-16 w-16 text-amber-400/60" />
