@@ -104,18 +104,15 @@ export function SharePosterPreview({
           await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        // Ensure element is visible for capture
-        const originalStyle = posterRef.current.style.cssText;
-        posterRef.current.style.cssText = originalStyle + '; visibility: visible !important; opacity: 1 !important;';
+        // Ensure element is visible for capture - element is already off-screen
+        // No need to toggle visibility, preventing screen flash
+        await new Promise(resolve => requestAnimationFrame(resolve));
 
         const dataUrl = await toPng(posterRef.current, {
           pixelRatio: 2,
           cacheBust: true,
           backgroundColor: '#ffffff',
         });
-
-        // Restore original style
-        posterRef.current.style.cssText = originalStyle;
 
         // Validate generated image
         if (!dataUrl || dataUrl.length < 1000) {
@@ -208,13 +205,16 @@ export function SharePosterPreview({
 
           {/* Poster Preview */}
           <div className="p-4 flex flex-col items-center bg-gradient-to-b from-amber-50/50 to-background">
-            {/* Hidden poster for generation */}
+            {/* Hidden poster for generation - off-screen to avoid flash */}
             <div
               ref={posterRef}
-              className="fixed top-0 left-0 pointer-events-none"
+              className="absolute pointer-events-none"
               style={{
-                opacity: 0,
-                zIndex: -1,
+                position: 'absolute',
+                left: '-9999px',
+                top: '-9999px',
+                opacity: 1,
+                visibility: 'visible',
               }}
               aria-hidden="true"
             >
