@@ -97,6 +97,7 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
         teamTitle={team.title}
         teamDate={team.date}
         teamLocation={location?.name}
+        teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
         onClose={share.closePreview}
       />
