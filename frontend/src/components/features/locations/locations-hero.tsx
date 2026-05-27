@@ -241,25 +241,42 @@ export function LocationsResultBar({
 export function LocationsCtaSection() {
   const { t } = useI18n(["locations"]);
   return (
-    <section className="relative py-16 border-t border-stone-200 dark:border-stone-800 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-50 dark:from-stone-900 dark:via-amber-950/20 dark:to-stone-900" />
-      <div className="absolute inset-0 opacity-[0.04] dark:opacity-[0.06]"
-        style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #78716c 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-      <div className="absolute left-8 top-1/2 -translate-y-1/2 opacity-[0.06]"><Compass className="h-32 w-32 text-stone-600 dark:text-stone-400" /></div>
-      <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-[0.06]"><TreePine className="h-32 w-32 text-stone-600 dark:text-stone-400" /></div>
+    <section className="py-10 lg:py-14">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="relative py-16 px-8 rounded-2xl bg-gradient-to-b from-amber-50/50 to-white dark:from-amber-950/20 dark:to-stone-900/50 border border-amber-200/50 dark:border-amber-900/30 shadow-sm overflow-hidden">
+            {/* Background pattern */}
+            <div className="absolute inset-0 opacity-[0.03]"
+              style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #78716c 1px, transparent 0)`, backgroundSize: "20px 20px" }} />
 
-      <div className="relative max-w-3xl mx-auto px-4 text-center">
-        <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center mx-auto mb-5 border border-amber-100 dark:border-amber-900/50">
-          <Mountain className="h-6 w-6 text-amber-600" />
+            {/* Content */}
+            <div className="relative text-center">
+              {/* Brand Icon */}
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-6 border border-amber-200/50 dark:border-amber-800/50">
+                <Mountain className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              </div>
+
+              {/* Title & Description */}
+              <h2 className="text-xl font-semibold text-foreground mb-2">{t("locations.ctaTitle")}</h2>
+              <p className="text-stone-500 dark:text-stone-400 text-sm mb-8 max-w-sm mx-auto leading-relaxed">
+                {t("locations.ctaDesc")}
+              </p>
+
+              {/* Primary Button */}
+              <a href="/teams/create">
+                <button className="group inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-amber-200/50 dark:shadow-amber-900/30">
+                  {t("locations.ctaBtn")}
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </button>
+              </a>
+
+              {/* Secondary Link */}
+              <a href="/contact" className="inline-flex items-center gap-1 mt-4 text-sm text-stone-500 dark:text-stone-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                {t("locations.contactLink")}
+              </a>
+            </div>
+          </div>
         </div>
-        <h2 className="text-2xl font-bold text-foreground mb-3">{t("locations.ctaTitle")}</h2>
-        <p className="text-stone-500 dark:text-stone-400 text-sm mb-7 max-w-sm mx-auto leading-relaxed">{t("locations.ctaDesc")}</p>
-        <a href="/contact">
-          <button className="group inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-7 py-3 rounded-full text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-amber-200 dark:shadow-amber-900/50">
-            {t("locations.ctaBtn")}
-            <ArrowRight className="h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1" />
-          </button>
-        </a>
       </div>
     </section>
   );
