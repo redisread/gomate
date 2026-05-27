@@ -240,6 +240,7 @@ function BottomBarLeader({ ctx, team, location }: { ctx: ReturnType<typeof useTe
 function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
+  const { location } = ctx;
 
   return (
     <>
@@ -280,6 +281,7 @@ function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
 function BottomBarPending({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
+  const { location } = ctx;
 
   return (
     <>
@@ -332,6 +334,7 @@ function BottomBarNotLoggedIn({ team }: { team: Team; }) {
 function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
+  const { location } = ctx;
 
   return (
     <>
@@ -366,6 +369,7 @@ function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
 function BottomBarCannotJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
+  const { location } = ctx;
 
   return (
     <>
