@@ -433,5 +433,14 @@
   "saveImageHint": "Tip: Click \"Save to Album\" to save, or long press image to save manually",
   "saveToAlbum": "Save to Album",
   "qrCodeHint": "Scan to join team",
-  "posterFooter": "gomate.live · Discover places, join teams"
+  "posterFooter": "gomate.live · Discover places, join teams",
+  "posterSpotsLeft": "{count} spots left",
+  "posterAlmostFull": "Almost full",
+  "posterDateLabel": "Departure Date",
+  "posterLocationLabel": "Location",
+  "posterMembersLabel": "Team Size",
+  "posterMemberCount": "{current}/{max} people",
+  "posterLeaderLabel": "Leader",
+  "posterQrHint": "Scan to join team",
+  "posterGeneratingDesc": "Generating beautiful poster...",
 }

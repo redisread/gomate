@@ -232,6 +232,10 @@ function BottomBarLeader({ ctx, team, location }: { ctx: ReturnType<typeof useTe
         teamLocation={location?.name}
         teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
+        teamCurrentMembers={team.currentMembers}
+        teamMaxMembers={team.maxMembers}
+        teamLeaderName={team.leader?.nickname || team.leader?.name}
+        teamLeaderAvatar={team.leader?.avatar}
         onClose={share.closePreview}
       />
     </>
@@ -274,6 +278,10 @@ function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
         teamLocation={location?.name}
         teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
+        teamCurrentMembers={team.currentMembers}
+        teamMaxMembers={team.maxMembers}
+        teamLeaderName={team.leader?.nickname || team.leader?.name}
+        teamLeaderAvatar={team.leader?.avatar}
         onClose={share.closePreview}
       />
     </>
@@ -315,6 +323,10 @@ function BottomBarPending({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
         teamLocation={location?.name}
         teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
+        teamCurrentMembers={team.currentMembers}
+        teamMaxMembers={team.maxMembers}
+        teamLeaderName={team.leader?.nickname || team.leader?.name}
+        teamLeaderAvatar={team.leader?.avatar}
         onClose={share.closePreview}
       />
     </>
@@ -364,6 +376,10 @@ function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
         teamLocation={location?.name}
         teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
+        teamCurrentMembers={team.currentMembers}
+        teamMaxMembers={team.maxMembers}
+        teamLeaderName={team.leader?.nickname || team.leader?.name}
+        teamLeaderAvatar={team.leader?.avatar}
         onClose={share.closePreview}
       />
     </>
@@ -399,6 +415,10 @@ function BottomBarCannotJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDeta
         teamLocation={location?.name}
         teamCoverImage={location?.coverImage}
         teamUrl={window.location.href}
+        teamCurrentMembers={team.currentMembers}
+        teamMaxMembers={team.maxMembers}
+        teamLeaderName={team.leader?.nickname || team.leader?.name}
+        teamLeaderAvatar={team.leader?.avatar}
         onClose={share.closePreview}
       />
     </>

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { toPng } from "html-to-image";
 import { useI18n } from "@/hooks/useI18n";
-import { Link2, X, CheckCircle, Download, Loader2 } from "lucide-react";
+import { Link2, X, CheckCircle, Download, Loader2, Share2 } from "lucide-react";
 import { TeamPosterContent } from "./team-poster-content";
 
 interface SharePosterPreviewProps {
@@ -13,6 +13,10 @@ interface SharePosterPreviewProps {
   teamLocation?: string;
   teamCoverImage?: string;
   teamUrl: string;
+  teamCurrentMembers?: number;
+  teamMaxMembers?: number;
+  teamLeaderName?: string;
+  teamLeaderAvatar?: string | null;
   onClose: () => void;
 }
 
@@ -23,6 +27,10 @@ export function SharePosterPreview({
   teamLocation,
   teamCoverImage,
   teamUrl,
+  teamCurrentMembers = 1,
+  teamMaxMembers = 5,
+  teamLeaderName,
+  teamLeaderAvatar,
   onClose,
 }: SharePosterPreviewProps) {
   const { t } = useI18n(["teams", "common"]);
@@ -82,13 +90,12 @@ export function SharePosterPreview({
       setError(null);
 
       try {
-        // Wait for fonts to load (Zpix font from CDN)
+        // Wait for fonts to load
         if (document.fonts) {
           await document.fonts.ready;
         }
 
-        // Wait for images to load (cover + QR code)
-        // Use a longer timeout to ensure everything is ready
+        // Wait for images to load
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Additional delay for iOS
@@ -180,14 +187,17 @@ export function SharePosterPreview({
       >
         {/* Modal */}
         <div
-          className="bg-card rounded-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-xl"
+          className="bg-card rounded-2xl max-w-[420px] w-full max-h-[90vh] overflow-y-auto shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <h3 className="text-lg font-semibold text-foreground">
-              {t("teams.shareTeam")}
-            </h3>
+            <div className="flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-amber-600" />
+              <h3 className="text-lg font-semibold text-foreground">
+                {t("teams.shareTeam")}
+              </h3>
+            </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -197,15 +207,14 @@ export function SharePosterPreview({
           </div>
 
           {/* Poster Preview */}
-          <div className="p-4 flex flex-col items-center">
-            {/* Hidden poster for generation - use opacity:0 instead of off-screen for iOS compatibility */}
+          <div className="p-4 flex flex-col items-center bg-gradient-to-b from-amber-50/50 to-background">
+            {/* Hidden poster for generation */}
             <div
               ref={posterRef}
               className="fixed top-0 left-0 pointer-events-none"
               style={{
                 opacity: 0,
                 zIndex: -1,
-                width: '340px',
               }}
               aria-hidden="true"
             >
@@ -215,27 +224,41 @@ export function SharePosterPreview({
                 locationName={teamLocation}
                 coverImage={processedCoverImage}
                 url={teamUrl}
-                qrHint={t("teams.qrCodeHint")}
-                footerText={t("teams.posterFooter")}
+                currentMembers={teamCurrentMembers}
+                maxMembers={teamMaxMembers}
+                leaderName={teamLeaderName}
+                leaderAvatar={teamLeaderAvatar}
               />
             </div>
 
             {/* Display generated poster */}
             {isGenerating ? (
-              <div className="w-[340px] h-[480px] bg-muted rounded-xl flex flex-col items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-3" />
+              <div className="w-[280px] h-[498px] bg-muted rounded-2xl flex flex-col items-center justify-center shadow-lg">
+                <Loader2 className="w-10 h-10 animate-spin text-amber-600 mb-4" />
                 <p className="text-sm text-muted-foreground">
                   {t("teams.generatingPoster")}
                 </p>
+                <p className="text-xs text-muted-foreground/70 mt-2">
+                  {t("teams.posterGeneratingDesc")}
+                </p>
               </div>
             ) : posterDataUrl ? (
-              <img
-                src={posterDataUrl}
-                alt="Team Poster"
-                className="w-[340px] rounded-xl shadow-lg"
-              />
+              <div className="relative">
+                <img
+                  src={posterDataUrl}
+                  alt="Team Poster"
+                  className="w-[280px] rounded-2xl shadow-2xl"
+                />
+                {/* Decorative corner */}
+                <div className="absolute -bottom-3 -right-3 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                  <CheckCircle className="w-4 h-4 text-white" />
+                </div>
+              </div>
             ) : error ? (
-              <div className="w-[340px] h-[480px] bg-muted rounded-xl flex flex-col items-center justify-center p-6">
+              <div className="w-[280px] h-[498px] bg-muted rounded-2xl flex flex-col items-center justify-center p-6">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-3">
+                  <X className="w-6 h-6 text-red-500" />
+                </div>
                 <p className="text-sm text-red-500 mb-2">{error}</p>
                 <p className="text-xs text-muted-foreground">
                   {t("teams.posterGenerateFallback")}
@@ -244,9 +267,11 @@ export function SharePosterPreview({
             ) : null}
 
             {/* Hint */}
-            <p className="mt-3 text-xs text-center text-muted-foreground">
-              {t("teams.saveImageHint")}
-            </p>
+            <div className="mt-4 text-center">
+              <p className="text-xs text-muted-foreground">
+                {t("teams.saveImageHint")}
+              </p>
+            </div>
           </div>
 
           {/* Actions */}
@@ -255,9 +280,9 @@ export function SharePosterPreview({
             <button
               onClick={handleSaveImage}
               disabled={!posterDataUrl}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-amber-200/50"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-5 h-5" />
               {t("teams.saveToAlbum")}
             </button>
 
