@@ -433,5 +433,14 @@
   "saveImageHint": "提示：点击「保存到相册」按钮保存图片，或长按图片手动保存",
   "saveToAlbum": "保存到相册",
   "qrCodeHint": "扫码加入队伍",
-  "posterFooter": "gomate.live · 发现趣处，组队同行"
+  "posterFooter": "gomate.live · 发现趣处，组队同行",
+  "posterSpotsLeft": "还差 {count} 人",
+  "posterAlmostFull": "即将满员",
+  "posterDateLabel": "出发日期",
+  "posterLocationLabel": "活动地点",
+  "posterMembersLabel": "队伍人数",
+  "posterMemberCount": "{current}/{max} 人",
+  "posterLeaderLabel": "领队",
+  "posterQrHint": "扫码加入队伍",
+  "posterGeneratingDesc": "正在生成精美海报...",
 }

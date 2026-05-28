@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { MapPin, Calendar, Users, Mountain } from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
 
 interface TeamPosterContentProps {
   title: string;
@@ -27,6 +28,7 @@ export function TeamPosterContent({
   leaderName,
   leaderAvatar,
 }: TeamPosterContentProps) {
+  const { t } = useI18n(["teams"]);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [coverError, setCoverError] = useState(false);
 
@@ -74,7 +76,9 @@ export function TeamPosterContent({
               background: "rgba(217, 119, 6, 0.85)",
             }}
           >
-            {remaining > 0 ? `还差 ${remaining} 人` : "即将满员"}
+            {remaining > 0
+              ? t("teams.posterSpotsLeft", { count: remaining })
+              : t("teams.posterAlmostFull")}
           </div>
         </div>
 
@@ -119,7 +123,7 @@ export function TeamPosterContent({
               <Calendar className="w-4 h-4 text-amber-600" />
             </div>
             <div>
-              <p className="text-xs text-stone-500">出发日期</p>
+              <p className="text-xs text-stone-500">{t("teams.posterDateLabel")}</p>
               <p className="text-sm font-semibold text-stone-800">{date}</p>
             </div>
           </div>
@@ -134,7 +138,7 @@ export function TeamPosterContent({
                 <MapPin className="w-4 h-4 text-stone-600" />
               </div>
               <div>
-                <p className="text-xs text-stone-500">活动地点</p>
+                <p className="text-xs text-stone-500">{t("teams.posterLocationLabel")}</p>
                 <p className="text-sm font-semibold text-stone-800">{locationName}</p>
               </div>
             </div>
@@ -149,9 +153,9 @@ export function TeamPosterContent({
               <Users className="w-4 h-4 text-emerald-600" />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-stone-500">队伍人数</p>
+              <p className="text-xs text-stone-500">{t("teams.posterMembersLabel")}</p>
               <p className="text-sm font-semibold text-stone-800">
-                {currentMembers}/{maxMembers} 人
+                {t("teams.posterMemberCount", { current: currentMembers, max: maxMembers })}
               </p>
             </div>
             {/* Progress bar */}
@@ -184,7 +188,7 @@ export function TeamPosterContent({
               </div>
             )}
             <div>
-              <p className="text-xs text-stone-500">领队</p>
+              <p className="text-xs text-stone-500">{t("teams.posterLeaderLabel")}</p>
               <p className="text-sm font-semibold text-stone-800">{leaderName}</p>
             </div>
           </div>
@@ -222,10 +226,10 @@ export function TeamPosterContent({
           {/* QR Hint */}
           <div className="mt-4 text-center">
             <p className="text-base font-semibold text-amber-700 mb-1">
-              扫码加入队伍
+              {t("teams.posterQrHint")}
             </p>
             <p className="text-xs text-stone-400">
-              gomate.live · 发现趣处，组队同行
+              {t("teams.posterFooter")}
             </p>
           </div>
         </div>

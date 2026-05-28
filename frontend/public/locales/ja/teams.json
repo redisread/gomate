@@ -433,5 +433,14 @@
   "saveImageHint": "ヒント：「保存」をタップするか、画像を長押しして保存してください",
   "saveToAlbum": "保存",
   "qrCodeHint": "スキャンしてチームに参加",
-  "posterFooter": "gomate.live · 場所を発見し、チームに参加しよう"
+  "posterFooter": "gomate.live · 場所を発見し、チームに参加しよう",
+  "posterSpotsLeft": "残り{count}名",
+  "posterAlmostFull": "満員間近",
+  "posterDateLabel": "出発日",
+  "posterLocationLabel": "開催地",
+  "posterMembersLabel": "チーム人数",
+  "posterMemberCount": "{current}/{max}名",
+  "posterLeaderLabel": "リーダー",
+  "posterQrHint": "スキャンしてチームに参加",
+  "posterGeneratingDesc": "素敵なシェア画像を生成中...",
 }

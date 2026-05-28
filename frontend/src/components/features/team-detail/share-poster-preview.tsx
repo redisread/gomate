@@ -239,7 +239,7 @@ export function SharePosterPreview({
                   {t("teams.generatingPoster")}
                 </p>
                 <p className="text-xs text-muted-foreground/70 mt-2">
-                  正在生成精美海报...
+                  {t("teams.posterGeneratingDesc")}
                 </p>
               </div>
             ) : posterDataUrl ? (
