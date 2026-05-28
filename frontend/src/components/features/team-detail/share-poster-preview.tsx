@@ -205,16 +205,15 @@ export function SharePosterPreview({
 
           {/* Poster Preview */}
           <div className="p-4 flex flex-col items-center bg-gradient-to-b from-amber-50/50 to-background">
-            {/* Hidden poster for generation - off-screen to avoid flash */}
+            {/* Hidden poster for generation - off-screen but renderable */}
             <div
               ref={posterRef}
-              className="absolute pointer-events-none"
+              className="pointer-events-none"
               style={{
-                position: 'absolute',
+                position: 'fixed',
                 left: '-9999px',
                 top: '-9999px',
-                opacity: 1,
-                visibility: 'visible',
+                opacity: 0,
               }}
               aria-hidden="true"
             >
