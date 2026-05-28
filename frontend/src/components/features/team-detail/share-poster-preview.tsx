@@ -104,15 +104,21 @@ export function SharePosterPreview({
           await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        // Ensure element is visible for capture - element is already off-screen
-        // No need to toggle visibility, preventing screen flash
+        // Make element visible for capture but nearly transparent to avoid flash
+        const element = posterRef.current;
+        element.style.transform = 'scale(1)';
+
+        // Wait for next frame to ensure styles are applied
         await new Promise(resolve => requestAnimationFrame(resolve));
 
-        const dataUrl = await toPng(posterRef.current, {
+        const dataUrl = await toPng(element, {
           pixelRatio: 2,
           cacheBust: true,
           backgroundColor: '#ffffff',
         });
+
+        // Restore hidden styles
+        element.style.transform = 'scale(0.01)';
 
         // Validate generated image
         if (!dataUrl || dataUrl.length < 1000) {
@@ -211,9 +217,9 @@ export function SharePosterPreview({
               className="pointer-events-none"
               style={{
                 position: 'fixed',
-                left: '-9999px',
-                top: '-9999px',
-                opacity: 0,
+                left: 0,
+                top: 0,
+                transform: 'scale(0.01)',
               }}
               aria-hidden="true"
             >
