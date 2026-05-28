@@ -104,10 +104,7 @@ export function SharePosterPreview({
           await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        // Ensure element is visible for capture - element is already off-screen
-        // No need to toggle visibility, preventing screen flash
-        await new Promise(resolve => requestAnimationFrame(resolve));
-
+        // Generate poster - element is already rendered off-screen
         const dataUrl = await toPng(posterRef.current, {
           pixelRatio: 2,
           cacheBust: true,
@@ -205,16 +202,15 @@ export function SharePosterPreview({
 
           {/* Poster Preview */}
           <div className="p-4 flex flex-col items-center bg-gradient-to-b from-amber-50/50 to-background">
-            {/* Hidden poster for generation - off-screen to avoid flash */}
+            {/* Hidden poster for generation - positioned off-screen to avoid flash */}
             <div
               ref={posterRef}
-              className="absolute pointer-events-none"
+              className="pointer-events-none"
               style={{
-                position: 'absolute',
+                position: 'fixed',
                 left: '-9999px',
                 top: '-9999px',
-                opacity: 1,
-                visibility: 'visible',
+                width: '375px',
               }}
               aria-hidden="true"
             >
