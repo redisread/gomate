@@ -99,15 +99,8 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
       <React.Suspense fallback={null}>
         <SharePosterPreview
           open={share.showPreview}
+          teamId={team.id}
           teamTitle={team.title}
-          teamDate={team.date}
-          teamLocation={location?.name}
-          teamCoverImage={location?.coverImage}
-          teamUrl={window.location.href}
-          teamCurrentMembers={team.currentMembers}
-          teamMaxMembers={team.maxMembers}
-          teamLeaderName={team.leader?.nickname || team.leader?.name}
-          teamLeaderAvatar={team.leader?.avatar}
           onClose={share.closePreview}
         />
       </React.Suspense>

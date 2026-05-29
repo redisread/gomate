@@ -81,16 +81,9 @@ export function TeamModalsAndFooter({ ctx }: { ctx: ReturnType<typeof useTeamDet
         }>
           <SharePosterModal
             type="team"
+            id={team.id}
             title={team.title}
-            subtitle={team.date}
             url={window.location.href}
-            imageUrl={location?.coverImage}
-            locationName={location?.name}
-            description={team.description}
-            leaderName={team.leader?.nickname || team.leader?.name}
-            membersInfo={`${team.currentMembers}/${team.maxMembers}`}
-            meta={t('teams.teamMeta').replace('{currentMembers}', String(team.currentMembers)).replace('{maxMembers}', String(team.maxMembers))}
-            tags={team.requirements?.slice(0, 4)}
             onClose={() => ctx.setShowShare(false)}
             onToast={ctx.show}
           />
@@ -254,15 +247,8 @@ function BottomBarLeader({ ctx, team, location }: { ctx: ReturnType<typeof useTe
       />
       <SharePosterPreview
         open={share.showPreview}
+        teamId={team.id}
         teamTitle={team.title}
-        teamDate={team.date}
-        teamLocation={location?.name}
-        teamCoverImage={location?.coverImage}
-        teamUrl={window.location.href}
-        teamCurrentMembers={team.currentMembers}
-        teamMaxMembers={team.maxMembers}
-        teamLeaderName={team.leader?.nickname || team.leader?.name}
-        teamLeaderAvatar={team.leader?.avatar}
         onClose={share.closePreview}
       />
     </>
@@ -300,15 +286,8 @@ function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
       />
       <SharePosterPreview
         open={share.showPreview}
+        teamId={team.id}
         teamTitle={team.title}
-        teamDate={team.date}
-        teamLocation={location?.name}
-        teamCoverImage={location?.coverImage}
-        teamUrl={window.location.href}
-        teamCurrentMembers={team.currentMembers}
-        teamMaxMembers={team.maxMembers}
-        teamLeaderName={team.leader?.nickname || team.leader?.name}
-        teamLeaderAvatar={team.leader?.avatar}
         onClose={share.closePreview}
       />
     </>
@@ -345,15 +324,8 @@ function BottomBarPending({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
       />
       <SharePosterPreview
         open={share.showPreview}
+        teamId={team.id}
         teamTitle={team.title}
-        teamDate={team.date}
-        teamLocation={location?.name}
-        teamCoverImage={location?.coverImage}
-        teamUrl={window.location.href}
-        teamCurrentMembers={team.currentMembers}
-        teamMaxMembers={team.maxMembers}
-        teamLeaderName={team.leader?.nickname || team.leader?.name}
-        teamLeaderAvatar={team.leader?.avatar}
         onClose={share.closePreview}
       />
     </>
@@ -398,15 +370,8 @@ function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
       />
       <SharePosterPreview
         open={share.showPreview}
+        teamId={team.id}
         teamTitle={team.title}
-        teamDate={team.date}
-        teamLocation={location?.name}
-        teamCoverImage={location?.coverImage}
-        teamUrl={window.location.href}
-        teamCurrentMembers={team.currentMembers}
-        teamMaxMembers={team.maxMembers}
-        teamLeaderName={team.leader?.nickname || team.leader?.name}
-        teamLeaderAvatar={team.leader?.avatar}
         onClose={share.closePreview}
       />
     </>
@@ -437,15 +402,8 @@ function BottomBarCannotJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDeta
       />
       <SharePosterPreview
         open={share.showPreview}
+        teamId={team.id}
         teamTitle={team.title}
-        teamDate={team.date}
-        teamLocation={location?.name}
-        teamCoverImage={location?.coverImage}
-        teamUrl={window.location.href}
-        teamCurrentMembers={team.currentMembers}
-        teamMaxMembers={team.maxMembers}
-        teamLeaderName={team.leader?.nickname || team.leader?.name}
-        teamLeaderAvatar={team.leader?.avatar}
         onClose={share.closePreview}
       />
     </>

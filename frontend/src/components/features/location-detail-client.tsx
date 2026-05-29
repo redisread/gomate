@@ -953,13 +953,9 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
         <React.Suspense fallback={null}>
           <SharePosterModal
             type="location"
+            id={location.id}
             title={location.name}
-            subtitle={location.subtitle}
             url={typeof window !== "undefined" ? window.location.href : ""}
-            imageUrl={location.coverImage}
-            meta={location.address}
-            tags={location.tags?.map((t) => t.name)}
-            description={location.description}
             onClose={() => setShowShareModal(false)}
           />
         </React.Suspense>
