@@ -9,6 +9,7 @@ import {
 } from "./team-detail-modals";
 import { ShareOptionsSheet } from "./share-options-sheet";
 import { SharePosterPreview } from "./share-poster-preview";
+import { SharePosterModal } from "@/components/features/share-poster-modal";
 import * as React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
