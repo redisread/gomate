@@ -1,4 +1,4 @@
-// @ts-expect-error - resvg-wasm types
+// @ts-ignore - resvg-wasm types
 import * as resvgWasm from "@resvg/resvg-wasm";
 import type { Env } from "../../lib/auth";
 import { loadFonts } from "./load-fonts";
@@ -39,9 +39,9 @@ async function initResvgWasm() {
   const wasmBuffer = await wasmResponse.arrayBuffer();
 
   // 初始化 WASM
-  // @ts-expect-error - resvgWasm types
+  // @ts-ignore - resvgWasm types
   if (resvgWasm.initWasm) {
-    // @ts-expect-error - resvgWasm types
+    // @ts-ignore - resvgWasm types
     await resvgWasm.initWasm(wasmBuffer);
   }
 
@@ -86,7 +86,7 @@ export async function generatePreviewImage(env: Env): Promise<Uint8Array> {
  * SVG 转 PNG
  */
 export async function renderSvgToPng(svg: string): Promise<Uint8Array> {
-  // @ts-expect-error - resvgWasm types
+  // @ts-ignore - resvgWasm types
   const { Resvg } = resvgWasm;
   const resvg = new Resvg(svg, {
     fitTo: {
