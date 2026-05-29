@@ -15,6 +15,8 @@ import { loadLocaleData } from "../i18n/ssr-loader.server";
 interface Props {
   title?: string;
   description?: string;
+  /** OG image URL for social sharing */
+  ogImage?: string;
   /** 是否显示导航栏，默认 true */
   showNavbar?: boolean;
   /** 是否显示页脚，默认 true */
@@ -24,6 +26,7 @@ interface Props {
 const {
   title: propTitle = "GoMate - 发现趣处，组队同行",
   description: propDesc = "GoMate 是一个极简的「地点组队」平台，帮助户外爱好者找到志同道合的徒步伙伴。",
+  ogImage,
   showNavbar = true,
   showFooter = true,
 } = Astro.props;
@@ -180,6 +183,21 @@ function getHreflangUrl(loc: Locale) {
     <meta name="description" content={description} />
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+
+    {/* Open Graph / Social Media Meta Tags */}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.url.toString()} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:width" content="375" />}
+    {ogImage && <meta property="og:image:height" content="1000" />}
+
+    {/* Twitter Card */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
 
     {/* ═══════════════════════════════════════════════════════════════
        Phase 3 Task 2: Critical CSS 内联优化

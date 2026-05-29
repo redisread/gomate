@@ -9,8 +9,9 @@ import { declareI18nNs } from "../../middleware";
 declareI18nNs(Astro.locals, ["locationDetail", "locations", "errors", "admin", "enums", "content"]);
 
 const { id } = Astro.params;
+const ogImage = id ? `https://api.gomate.live/share-image/location/${id}` : undefined;
 ---
 
-<Layout title="地点详情 - GoMate" showNavbar={false} showFooter={false}>
+<Layout title="地点详情 - GoMate" showNavbar={false} showFooter={false} ogImage={ogImage}>
   <LocationDetailClient locationId={id!} client:visible />
 </Layout>
