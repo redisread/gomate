@@ -1,16 +1,51 @@
 ---
 /**
  * 队伍详情页 - Partiful 风格
+ * Phase 5: 添加 og:image 支持
  */
 import Layout from "../../layouts/Layout.astro";
 import { TeamDetailPartiful } from "../../components/features/team-detail-partiful";
 import { declareI18nNs } from "../../middleware";
+import { API_BASE } from "../../lib/api";
 
 declareI18nNs(Astro.locals, ["teams", "content"]);
 
 const { id } = Astro.params;
+
+// Phase 5: 服务端获取队伍数据，用于 og:image
+let teamData: { title?: string; description?: string } | null = null;
+try {
+  const response = await fetch(`${API_BASE}/teams/${id}`);
+  if (response.ok) {
+    const data = await response.json();
+    if (data.success && data.team) {
+      teamData = data.team;
+    }
+  }
+} catch {
+  // 忽略错误，使用默认值
+}
+
+// 构建 og:image URL
+const ogImage = teamData
+  ? `${API_BASE}/share-image/team/${id}`
+  : undefined;
+
+const title = teamData?.title
+  ? `${teamData.title} - GoMate`
+  : "队伍详情 - GoMate";
+
+const description = teamData?.description
+  ? teamData.description.slice(0, 160)
+  : "加入队伍，一起探索户外精彩！";
 ---
 
-<Layout title="队伍详情 - GoMate" showNavbar={false} showFooter={false}>
+<Layout
+  title={title}
+  description={description}
+  ogImage={ogImage}
+  showNavbar={false}
+  showFooter={false}
+>
   <TeamDetailPartiful teamId={id!} client:visible />
 </Layout>

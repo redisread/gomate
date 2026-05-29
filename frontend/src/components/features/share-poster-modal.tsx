@@ -1,200 +1,151 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toPng } from "html-to-image";
+import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
-import { PosterContent } from "./poster-content";
-import { LocationPosterContent } from "./location-poster-content";
-
-/** Load an image as base64 data URL via API proxy to avoid CORS issues */
-async function loadImageAsDataUrl(url: string): Promise<string> {
-  const proxyUrl = `${API_BASE}/proxy-image?url=${encodeURIComponent(url)}`;
-  const resp = await fetch(proxyUrl);
-  if (!resp.ok) throw new Error("proxy fetch failed");
-  const blob = await resp.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
+import { Loader2, ImageIcon, Link2, X, CheckCircle, Download, RefreshCw } from "lucide-react";
 
 interface SharePosterModalProps {
   type: "team" | "location";
+  id: string;
   title: string;
-  subtitle?: string;
   url: string;
-  imageUrl?: string;
-  locationName?: string;
-  description?: string;
-  leaderName?: string;
-  membersInfo?: string;
-  tags?: string[];
-  meta?: string;
   onClose: () => void;
   onToast?: (opts: { type: "success" | "error"; message: string }) => void;
 }
 
+/**
+ * Phase 4: 分享海报弹窗
+ * 使用后端 API 生成图片，替代 html-to-image
+ */
 export function SharePosterModal({
   type,
+  id,
   title,
-  subtitle,
   url,
-  imageUrl,
-  locationName,
-  description,
-  leaderName,
-  membersInfo,
-  tags,
-  meta,
   onClose,
   onToast,
 }: SharePosterModalProps) {
   const { t } = useI18n(["common", "share"]);
-  const posterRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [coverDataUrl, setCoverDataUrl] = useState<string | null | undefined>(
-    undefined
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showRetry, setShowRetry] = useState(false);
+
+  const showToast = useCallback(
+    (opts: { type: "success" | "error"; message: string }) => {
+      if (onToast) {
+        onToast(opts);
+      }
+    },
+    [onToast]
   );
-  const [internalToast, setInternalToast] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
 
-  function showToast(opts: { type: "success" | "error"; message: string }) {
-    if (onToast) {
-      onToast(opts);
-    } else {
-      setInternalToast(opts);
-      setTimeout(() => setInternalToast(null), 2000);
-    }
-  }
+  /**
+   * 生成分享图片
+   */
+  const generateImage = useCallback(
+    async (refresh = false): Promise<string | null> => {
+      setIsGenerating(true);
+      setError(null);
+      setShowRetry(false);
 
-  const [fontReady, setFontReady] = useState(false);
+      try {
+        const endpoint =
+          type === "location"
+            ? `${API_BASE}/share-image/location/${id}${refresh ? "?refresh=1" : ""}`
+            : `${API_BASE}/share-image/team/${id}${refresh ? "?refresh=1" : ""}`;
 
-  // Load Zpix pixel font with timeout
-  useEffect(() => {
-    const ZPIX_URL =
-      "https://cdn.jsdelivr.net/gh/SolidZORO/zpix-pixel-font@master/website/zpix.woff2";
-    const font = new FontFace("Zpix", `url(${ZPIX_URL})`, {
-      style: "normal",
-      weight: "normal",
-    });
+        const response = await fetch(endpoint);
 
-    // 设置超时，防止字体加载卡住
-    const timeoutId = setTimeout(() => {
-      setFontReady(true);
-    }, 3000);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `Failed to generate image: ${response.status}`
+          );
+        }
 
-    font
-      .load()
-      .then((loaded) => {
-        clearTimeout(timeoutId);
-        document.fonts.add(loaded);
-        setFontReady(true);
-      })
-      .catch(() => {
-        clearTimeout(timeoutId);
-        setFontReady(true);
-      });
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        setImageUrl(url);
+        return url;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to generate image";
+        setError(message);
+        setShowRetry(true);
+        return null;
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+    [type, id]
+  );
 
-    return () => clearTimeout(timeoutId);
-  }, []);
-
-  // Pre-load cover image as data URL to avoid CORS in html-to-image
+  // 打开时自动生成
   useEffect(() => {
     if (!imageUrl) {
-      setCoverDataUrl(null);
-      return;
+      generateImage();
     }
-    setCoverDataUrl(undefined);
-    loadImageAsDataUrl(imageUrl)
-      .then(setCoverDataUrl)
-      .catch((err) => {
-        console.error('[SharePoster] 封面图加载失败:', imageUrl, err);
-        setCoverDataUrl(null);
-      });
+  }, [imageUrl, generateImage]);
+
+  // 关闭时清理
+  useEffect(() => {
+    return () => {
+      if (imageUrl) {
+        URL.revokeObjectURL(imageUrl);
+      }
+    };
   }, [imageUrl]);
 
-  const generateImage = useCallback(async (): Promise<Blob | null> => {
-    const node = posterRef.current;
-    if (!node) return null;
-
-    // 等待所有图片加载完成
-    const images = node.querySelectorAll('img');
-    await Promise.all(
-      Array.from(images).map(
-        (img) =>
-          new Promise<void>((resolve) => {
-            if (img.complete && img.naturalHeight !== 0) {
-              resolve();
-            } else {
-              img.onload = () => resolve();
-              img.onerror = () => resolve();
-              setTimeout(() => resolve(), 1000);
-            }
-          })
-      )
-    );
+  const handleDownload = async () => {
+    if (!imageUrl) return;
 
     try {
-      // 额外延迟，确保图片完全渲染到 canvas
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // iOS Safari special handling
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
-      const toPngOptions = {
-        pixelRatio: 2,
-        cacheBust: true,
-        skipFonts: true,
-        backgroundColor: '#faf8f5',
-      };
-      // html-to-image 已知问题：第一次调用 toPng 时 SVG foreignObject 渲染管线
-      // 可能未完整捕获 <img> 内容，第二次调用可确保图片正确嵌入
-      await toPng(node, toPngOptions);
-      const dataUrl = await toPng(node, toPngOptions);
-      const res = await fetch(dataUrl);
-      return res.blob();
-    } catch {
-      return null;
-    }
-  }, []);
-
-  async function handleDownload() {
-    setIsGenerating(true);
-    try {
-      const blob = await generateImage();
-      if (!blob) {
-        showToast({ type: "error", message: t('share.generatePosterFailed') });
-        return;
+      if (isIOS) {
+        // Open image in new tab for iOS (user can long press to save)
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.write(`
+            <html>
+              <head><title>长按保存图片</title></head>
+              <body style="margin:0;display:flex;justify-content:center;align-items:center;background:#000;">
+                <img src="${imageUrl}" style="max-width:100%;max-height:100vh;" />
+              </body>
+            </html>
+          `);
+        }
+      } else {
+        // Standard download for Android/PC
+        const link = document.createElement("a");
+        link.href = imageUrl;
+        link.download = `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.png`;
+        link.click();
       }
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = "gomate-share.png";
-      a.click();
-      URL.revokeObjectURL(objectUrl);
-      showToast({ type: "success", message: t('share.posterDownloaded') });
-    } finally {
-      setIsGenerating(false);
-    }
-  }
 
-  async function handleCopyLink() {
+      showToast({ type: "success", message: t("share.posterDownloaded") });
+    } catch {
+      showToast({ type: "error", message: t("share.downloadFailed") });
+    }
+  };
+
+  const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(url);
-      showToast({ type: "success", message: t('share.linkCopied') });
+      showToast({ type: "success", message: t("share.linkCopied") });
     } catch {
-      showToast({ type: "error", message: t('share.copyFailed') });
+      showToast({ type: "error", message: t("share.copyFailed") });
     }
-  }
+  };
 
-  // 方案三：改进加载状态判断 - undefined 表示"正在加载"，null 表示"已加载但无图片"
-  const isImageLoading = coverDataUrl === undefined;
-  const hasCoverImage = coverDataUrl !== undefined && coverDataUrl !== null;
+  const handleRetry = () => {
+    generateImage(true);
+  };
 
-  // 整体加载状态：图片未加载完成 或 字体未准备好的
-  const isLoading = isImageLoading || !fontReady;
+  const isLoading = isGenerating;
 
   return (
     <div
@@ -208,11 +159,11 @@ export function SharePosterModal({
       >
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <span className="text-sm font-semibold text-foreground">
-            {type === "team" ? t('share.title') : t('share.locationTitle')}
+            {type === "team" ? t("share.title") : t("share.locationTitle")}
           </span>
           <button
             onClick={onClose}
-            className="text-lg leading-none text-stone-400 dark:text-stone-500 transition-colors hover:text-stone-600 dark:text-stone-400 dark:text-stone-500"
+            className="text-lg leading-none text-stone-400 transition-colors hover:text-stone-600"
             aria-label={t("common.wechat.close")}
           >
             ✕
@@ -220,75 +171,68 @@ export function SharePosterModal({
         </div>
 
         <div className="relative px-4 pt-2">
+          {/* Poster Preview */}
           <div
-            ref={posterRef}
-            className={`overflow-hidden rounded-xl shadow ${
-              type === "location" ? "" : "border border-stone-200 dark:border-stone-700"
-            }`}
+            className="overflow-hidden rounded-xl shadow border border-stone-200"
+            style={{ aspectRatio: "375/640", maxHeight: "500px" }}
           >
-            {!isLoading &&
-              (type === "location" ? (
-                <LocationPosterContent
-                  title={title}
-                  subtitle={subtitle}
-                  url={url}
-                  coverImageDataUrl={hasCoverImage ? coverDataUrl : undefined}
-                  description={description}
-                  tags={tags}
-                  meta={meta}
-                />
-              ) : (
-                <PosterContent
-                  type={type}
-                  title={title}
-                  subtitle={subtitle}
-                  url={url}
-                  coverImageDataUrl={hasCoverImage ? coverDataUrl : undefined}
-                  locationName={locationName}
-                  description={description}
-                  leaderName={leaderName}
-                  membersInfo={membersInfo}
-                  tags={tags}
-                  meta={meta}
-                />
-              ))}
+            {isLoading ? (
+              <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-2" />
+                <span className="text-sm text-stone-500">
+                  {t("share.generating")}
+                </span>
+              </div>
+            ) : imageUrl ? (
+              <img
+                src={imageUrl}
+                alt="Share Poster"
+                className="w-full h-full object-contain"
+              />
+            ) : error ? (
+              <div className="w-full h-full bg-muted flex flex-col items-center justify-center p-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-2">
+                  <X className="w-6 h-6 text-red-500" />
+                </div>
+                <span className="text-sm text-red-500 mb-1">{error}</span>
+                <span className="text-xs text-stone-400">
+                  {t("share.generateFailed")}
+                </span>
+                {showRetry && (
+                  <button
+                    onClick={handleRetry}
+                    className="mt-3 flex items-center gap-1 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    {t("common.retry")}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <ImageIcon className="w-8 h-8 text-stone-300" />
+              </div>
+            )}
           </div>
-          {(isLoading || isGenerating) && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-muted/60">
-              <span className="text-sm text-stone-400 dark:text-stone-500">
-                {t('common.loading')}
-              </span>
-            </div>
-          )}
         </div>
 
         <div className="mt-4 flex gap-3 px-4 pb-4">
           <button
             onClick={handleDownload}
-            disabled={isLoading || isGenerating}
-            className="flex-1 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
+            disabled={isLoading || !imageUrl}
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
           >
-            {t('share.downloadQRCode')}
+            <Download className="w-4 h-4" />
+            {t("share.download")}
           </button>
           <button
             onClick={handleCopyLink}
-            className="flex-1 rounded-lg border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 dark:text-stone-600 transition-colors hover:border-stone-400 dark:hover:border-stone-500"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:border-stone-400"
           >
-            {t('share.copyLink')}
+            <Link2 className="w-4 h-4" />
+            {t("share.copyLink")}
           </button>
         </div>
-
-        {internalToast && (
-          <div
-            className={`mx-4 mb-4 rounded-lg px-3 py-2 text-center text-sm transition-opacity ${
-              internalToast.type === "success"
-                ? "bg-green-50 text-green-700"
-                : "bg-red-50 text-red-700"
-            }`}
-          >
-            {internalToast.message}
-          </div>
-        )}
       </div>
     </div>
   );

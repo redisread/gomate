@@ -1,152 +1,67 @@
 "use client";
 
 import * as React from "react";
-import { toPng } from "html-to-image";
+import { useState } from "react";
 import { useI18n } from "@/hooks/useI18n";
-import { Link2, X, CheckCircle, Download, Loader2, Share2 } from "lucide-react";
-import { TeamPosterContent } from "./team-poster-content";
+import { Link2, X, CheckCircle, Download, Loader2, Share2, RefreshCw } from "lucide-react";
+import { useShareImage } from "@/hooks/use-share-image";
 
 interface SharePosterPreviewProps {
   open: boolean;
+  teamId: string;
   teamTitle: string;
-  teamDate: string;
-  teamLocation?: string;
-  teamCoverImage?: string;
-  teamUrl: string;
-  teamCurrentMembers?: number;
-  teamMaxMembers?: number;
-  teamLeaderName?: string;
-  teamLeaderAvatar?: string | null;
   onClose: () => void;
 }
 
+/**
+ * 队伍分享预览弹窗
+ * Phase 4: 使用后端 API 生成图片，替代 html-to-image
+ */
 export function SharePosterPreview({
   open,
+  teamId,
   teamTitle,
-  teamDate,
-  teamLocation,
-  teamCoverImage,
-  teamUrl,
-  teamCurrentMembers = 1,
-  teamMaxMembers = 5,
-  teamLeaderName,
-  teamLeaderAvatar,
   onClose,
 }: SharePosterPreviewProps) {
   const { t } = useI18n(["teams", "common"]);
-  const [copied, setCopied] = React.useState(false);
-  const [isGenerating, setIsGenerating] = React.useState(false);
-  const [posterDataUrl, setPosterDataUrl] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [retryCount, setRetryCount] = React.useState(0);
-  const [processedCoverImage, setProcessedCoverImage] = React.useState<string | undefined>(undefined);
-  const posterRef = React.useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [showRetry, setShowRetry] = useState(false);
+  const teamUrl = typeof window !== "undefined" ? `${window.location.origin}/teams/${teamId}` : "";
 
-  // Pre-load and process cover image to avoid CORS issues
+  const {
+    isLoading,
+    error,
+    imageUrl,
+    generateImage,
+    downloadImage,
+    getDownloadUrl,
+    cleanup,
+  } = useShareImage({
+    type: "team",
+    id: teamId,
+  });
+
+  // 打开时自动生成
   React.useEffect(() => {
-    if (!open || !teamCoverImage) {
-      setProcessedCoverImage(undefined);
-      return;
+    if (open && !imageUrl) {
+      generateImage();
     }
+  }, [open, imageUrl, generateImage]);
 
-    const loadImage = async () => {
-      try {
-        // Try to load image and convert to data URL to avoid CORS
-        const response = await fetch(teamCoverImage);
-        if (!response.ok) throw new Error('Image fetch failed');
-        const blob = await response.blob();
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-        setProcessedCoverImage(dataUrl);
-      } catch (err) {
-        console.warn('[Poster] Failed to preload cover image:', err);
-        // Fallback: don't show cover image
-        setProcessedCoverImage(undefined);
-      }
-    };
-
-    loadImage();
-  }, [open, teamCoverImage]);
-
-  // Reset state when modal opens
+  // 关闭时清理
   React.useEffect(() => {
-    if (open) {
-      setPosterDataUrl(null);
-      setError(null);
-      setRetryCount(0);
+    if (!open) {
+      cleanup();
+      setShowRetry(false);
     }
-  }, [open, teamTitle, teamDate, teamLocation, teamCoverImage, teamUrl]);
+  }, [open, cleanup]);
 
-  // Generate poster image when opened
+  // 错误时显示重试按钮
   React.useEffect(() => {
-    if (!open || posterDataUrl) return;
-
-    const generatePoster = async () => {
-      if (!posterRef.current) {
-        // If ref not ready, retry after short delay
-        if (retryCount < 3) {
-          setTimeout(() => setRetryCount(c => c + 1), 500);
-        }
-        return;
-      }
-
-      setIsGenerating(true);
-      setError(null);
-
-      try {
-        // Wait for fonts to load
-        if (document.fonts) {
-          await document.fonts.ready;
-        }
-
-        // Wait for images and QR code to load
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Additional delay for iOS - WebKit needs more time to render
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-
-        // Ensure element is visible for capture (iOS Safari optimization)
-        const originalStyle = posterRef.current.style.cssText;
-        posterRef.current.style.cssText = originalStyle + '; visibility: visible !important; opacity: 1 !important;';
-
-        // Generate poster - element is rendered with opacity:0 for iOS compatibility
-        const dataUrl = await toPng(posterRef.current, {
-          pixelRatio: 2,
-          cacheBust: true,
-          backgroundColor: '#ffffff',
-        });
-
-        // Restore original style
-        posterRef.current.style.cssText = originalStyle;
-
-        // Validate generated image
-        if (!dataUrl || dataUrl.length < 1000) {
-          throw new Error('Generated image is empty or too small');
-        }
-
-        setPosterDataUrl(dataUrl);
-      } catch (err) {
-        console.error("Failed to generate poster:", err);
-        // Auto-retry once on failure
-        if (retryCount < 1) {
-          setRetryCount(c => c + 1);
-        } else {
-          setError(t("teams.posterGenerateError"));
-        }
-      } finally {
-        setIsGenerating(false);
-      }
-    };
-
-    generatePoster();
-  }, [open, posterDataUrl, t, retryCount]);
+    if (error) {
+      setShowRetry(true);
+    }
+  }, [error]);
 
   const handleCopyLink = async () => {
     try {
@@ -159,7 +74,7 @@ export function SharePosterPreview({
   };
 
   const handleSaveImage = async () => {
-    if (!posterDataUrl) return;
+    if (!imageUrl) return;
 
     try {
       // iOS Safari special handling
@@ -173,21 +88,26 @@ export function SharePosterPreview({
             <html>
               <head><title>长按保存图片</title></head>
               <body style="margin:0;display:flex;justify-content:center;align-items:center;background:#000;">
-                <img src="${posterDataUrl}" style="max-width:100%;max-height:100vh;" />
+                <img src="${imageUrl}" style="max-width:100%;max-height:100vh;" />
               </body>
             </html>
           `);
         }
       } else {
         // Standard download for Android/PC
-        const link = document.createElement("a");
-        link.href = posterDataUrl;
-        link.download = `gomate-team-${Date.now()}.png`;
-        link.click();
+        const success = await downloadImage(`gomate-team-${teamId.slice(0, 8)}.png`);
+        if (success) {
+          // Show success toast
+        }
       }
     } catch (err) {
       console.error("Failed to save image:", err);
     }
+  };
+
+  const handleRetry = () => {
+    setShowRetry(false);
+    generateImage(true); // 强制刷新
   };
 
   if (!open) return null;
@@ -222,33 +142,8 @@ export function SharePosterPreview({
 
           {/* Poster Preview */}
           <div className="p-4 flex flex-col items-center bg-gradient-to-b from-amber-50/50 to-background">
-            {/* Hidden poster for generation - use opacity instead of off-screen for iOS compatibility */}
-            <div
-              ref={posterRef}
-              className="pointer-events-none"
-              style={{
-                position: 'absolute',
-                opacity: 0,
-                width: '375px',
-                zIndex: -1,
-              }}
-              aria-hidden="true"
-            >
-              <TeamPosterContent
-                title={teamTitle}
-                date={teamDate}
-                locationName={teamLocation}
-                coverImage={processedCoverImage}
-                url={teamUrl}
-                currentMembers={teamCurrentMembers}
-                maxMembers={teamMaxMembers}
-                leaderName={teamLeaderName}
-                leaderAvatar={teamLeaderAvatar}
-              />
-            </div>
-
             {/* Display generated poster */}
-            {isGenerating ? (
+            {isLoading ? (
               <div className="w-[280px] h-[498px] bg-muted rounded-2xl flex flex-col items-center justify-center shadow-lg">
                 <Loader2 className="w-10 h-10 animate-spin text-amber-600 mb-4" />
                 <p className="text-sm text-muted-foreground">
@@ -258,10 +153,10 @@ export function SharePosterPreview({
                   {t("teams.posterGeneratingDesc")}
                 </p>
               </div>
-            ) : posterDataUrl ? (
+            ) : imageUrl ? (
               <div className="relative">
                 <img
-                  src={posterDataUrl}
+                  src={imageUrl}
                   alt="Team Poster"
                   className="w-[280px] rounded-2xl shadow-2xl"
                 />
@@ -276,9 +171,18 @@ export function SharePosterPreview({
                   <X className="w-6 h-6 text-red-500" />
                 </div>
                 <p className="text-sm text-red-500 mb-2">{error}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mb-4">
                   {t("teams.posterGenerateFallback")}
                 </p>
+                {showRetry && (
+                  <button
+                    onClick={handleRetry}
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    {t("common.retry")}
+                  </button>
+                )}
               </div>
             ) : null}
 
@@ -295,7 +199,7 @@ export function SharePosterPreview({
             {/* Save Image - Primary */}
             <button
               onClick={handleSaveImage}
-              disabled={!posterDataUrl}
+              disabled={!imageUrl || isLoading}
               className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-amber-200/50"
             >
               <Download className="w-5 h-5" />
