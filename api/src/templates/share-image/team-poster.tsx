@@ -49,7 +49,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
     : "已成行";
 
   const svg = await satori(
-    // @ts-ignore - Satori accepts plain object format
+    // @ts-expect-error - Satori accepts plain object format
     {
       type: "div",
       props: {

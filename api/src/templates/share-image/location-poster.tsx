@@ -87,7 +87,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
     : null;
 
   const svg = await satori(
-    // @ts-ignore - Satori accepts plain object format
+    // @ts-expect-error - Satori accepts plain object format
     {
       type: "div",
       props: {

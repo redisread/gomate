@@ -1,5 +1,4 @@
-import satori from "satori";
-// @ts-ignore - resvg-wasm types
+// @ts-expect-error - resvg-wasm types
 import * as resvgWasm from "@resvg/resvg-wasm";
 import type { Env } from "../../lib/auth";
 import { loadFonts } from "./load-fonts";
@@ -12,7 +11,6 @@ import { eq, and, sql } from "drizzle-orm";
 
 // WASM 模块缓存
 let wasmInitialized = false;
-let wasmModule: WebAssembly.Module | null = null;
 
 /**
  * 生成 MD5 哈希（使用 Web Crypto API）
@@ -41,9 +39,9 @@ async function initResvgWasm() {
   const wasmBuffer = await wasmResponse.arrayBuffer();
 
   // 初始化 WASM
-  // @ts-ignore
+  // @ts-expect-error - resvgWasm types
   if (resvgWasm.initWasm) {
-    // @ts-ignore
+    // @ts-expect-error - resvgWasm types
     await resvgWasm.initWasm(wasmBuffer);
   }
 
@@ -88,7 +86,7 @@ export async function generatePreviewImage(env: Env): Promise<Uint8Array> {
  * SVG 转 PNG
  */
 export async function renderSvgToPng(svg: string): Promise<Uint8Array> {
-  // @ts-ignore
+  // @ts-expect-error - resvgWasm types
   const { Resvg } = resvgWasm;
   const resvg = new Resvg(svg, {
     fitTo: {
@@ -234,7 +232,6 @@ async function loadImageAsBase64(
 ): Promise<string | null> {
   try {
     // 处理 R2 路径
-    let fetchUrl = imageUrl;
     if (imageUrl.startsWith("assets/") || imageUrl.startsWith("images/")) {
       // 从 R2 加载
       if (env.R2) {
@@ -429,7 +426,7 @@ function formatTeamDate(timestamp: number | Date): string {
  * 生成二维码
  * 使用纯 JS 实现（Cloudflare Workers 兼容）
  */
-async function generateQRCode(text: string): Promise<string> {
+async function generateQRCode(_text: string): Promise<string> {
   // 简化版：返回一个占位符 SVG 二维码
   // 实际生产可以使用 qrcode 库的纯 JS 版本
   // 这里使用一个 SVG 占位符表示二维码
