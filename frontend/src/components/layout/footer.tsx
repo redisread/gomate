@@ -322,10 +322,13 @@ export function Footer() {
 
             {/* 探索 */}
             <div>
-              <h3 className="text-sm font-semibold mb-4 tracking-wide" style={{ color: "#D97706" }}>
+              <h3
+                className="text-sm font-semibold mb-5 sm:mb-4 tracking-wide"
+                style={{ color: "#D97706" }}
+              >
                 {t("common.explore")}
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-4 sm:space-y-3">
                 {exploreLinks.map(({ href, label, icon: Icon }) => (
                   <li key={href}>
                     <a href={href} className="footer-link inline-flex items-center gap-2 text-sm text-muted-foreground group">
@@ -339,10 +342,13 @@ export function Footer() {
 
             {/* 支持 */}
             <div>
-              <h3 className="text-sm font-semibold mb-4 tracking-wide" style={{ color: "#D97706" }}>
+              <h3
+                className="text-sm font-semibold mb-5 sm:mb-4 tracking-wide"
+                style={{ color: "#D97706" }}
+              >
                 {t("common.support")}
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-4 sm:space-y-3">
                 {supportLinks.map(({ href, label }) => (
                   <li key={href}>
                     <a href={href} className="footer-link text-sm text-muted-foreground">{label}</a>
@@ -353,10 +359,13 @@ export function Footer() {
 
             {/* 法律/联系 */}
             <div>
-              <h3 className="text-sm font-semibold mb-4 tracking-wide" style={{ color: "#D97706" }}>
+              <h3
+                className="text-sm font-semibold mb-5 sm:mb-4 tracking-wide"
+                style={{ color: "#D97706" }}
+              >
                 {t("common.legal")}
               </h3>
-              <ul className="space-y-3 mb-6">
+              <ul className="space-y-4 sm:space-y-3 mb-6">
                 {legalLinks.map(({ href, label }) => (
                   <li key={href}>
                     <a href={href} className="footer-link text-sm text-muted-foreground">{label}</a>
@@ -494,7 +503,7 @@ export function Footer() {
         </div>
 
         {/* ── 版权栏（共享） ── */}
-        <div className="border-t border-border py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="border-t border-border py-8 sm:py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             © {year} {t("common.copyright")}
           </p>
