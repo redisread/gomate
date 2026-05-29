@@ -38,6 +38,7 @@ export function SharePosterPreview({
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [posterDataUrl, setPosterDataUrl] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [retryCount, setRetryCount] = React.useState(0);
   const [processedCoverImage, setProcessedCoverImage] = React.useState<string | undefined>(undefined);
   const posterRef = React.useRef<HTMLDivElement>(null);
 
@@ -76,6 +77,7 @@ export function SharePosterPreview({
     if (open) {
       setPosterDataUrl(null);
       setError(null);
+      setRetryCount(0);
     }
   }, [open, teamTitle, teamDate, teamLocation, teamCoverImage, teamUrl]);
 
@@ -84,7 +86,13 @@ export function SharePosterPreview({
     if (!open || posterDataUrl) return;
 
     const generatePoster = async () => {
-      if (!posterRef.current) return;
+      if (!posterRef.current) {
+        // If ref not ready, retry after short delay
+        if (retryCount < 3) {
+          setTimeout(() => setRetryCount(c => c + 1), 500);
+        }
+        return;
+      }
 
       setIsGenerating(true);
       setError(null);
@@ -95,21 +103,28 @@ export function SharePosterPreview({
           await document.fonts.ready;
         }
 
-        // Wait for images to load
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait for images and QR code to load
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // Additional delay for iOS
+        // Additional delay for iOS - WebKit needs more time to render
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         if (isIOS) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
-        // Generate poster - element is already rendered off-screen
+        // Ensure element is visible for capture (iOS Safari optimization)
+        const originalStyle = posterRef.current.style.cssText;
+        posterRef.current.style.cssText = originalStyle + '; visibility: visible !important; opacity: 1 !important;';
+
+        // Generate poster - element is rendered with opacity:0 for iOS compatibility
         const dataUrl = await toPng(posterRef.current, {
           pixelRatio: 2,
           cacheBust: true,
           backgroundColor: '#ffffff',
         });
+
+        // Restore original style
+        posterRef.current.style.cssText = originalStyle;
 
         // Validate generated image
         if (!dataUrl || dataUrl.length < 1000) {
@@ -119,14 +134,19 @@ export function SharePosterPreview({
         setPosterDataUrl(dataUrl);
       } catch (err) {
         console.error("Failed to generate poster:", err);
-        setError(t("teams.posterGenerateError"));
+        // Auto-retry once on failure
+        if (retryCount < 1) {
+          setRetryCount(c => c + 1);
+        } else {
+          setError(t("teams.posterGenerateError"));
+        }
       } finally {
         setIsGenerating(false);
       }
     };
 
     generatePoster();
-  }, [open, posterDataUrl, t]);
+  }, [open, posterDataUrl, t, retryCount]);
 
   const handleCopyLink = async () => {
     try {
@@ -202,15 +222,15 @@ export function SharePosterPreview({
 
           {/* Poster Preview */}
           <div className="p-4 flex flex-col items-center bg-gradient-to-b from-amber-50/50 to-background">
-            {/* Hidden poster for generation - positioned off-screen to avoid flash */}
+            {/* Hidden poster for generation - use opacity instead of off-screen for iOS compatibility */}
             <div
               ref={posterRef}
               className="pointer-events-none"
               style={{
-                position: 'fixed',
-                left: '-9999px',
-                top: '-9999px',
+                position: 'absolute',
+                opacity: 0,
                 width: '375px',
+                zIndex: -1,
               }}
               aria-hidden="true"
             >
