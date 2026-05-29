@@ -60,9 +60,15 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
       console.log("[Fonts] No R2 fonts, loading fallback from CDN");
       try {
         // 加载 Google Fonts Noto Sans SC 作为 fallback (TTF 格式)
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000); // 5秒超时
+
         const fallbackResponse = await fetch(
-          "https://fonts.gstatic.com/s/notosanssc/v40/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf"
+          "https://fonts.gstatic.com/s/notosanssc/v40/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf",
+          { signal: controller.signal }
         );
+        clearTimeout(timeout);
+
         if (fallbackResponse.ok) {
           const fontData = await fallbackResponse.arrayBuffer();
           fonts.push({

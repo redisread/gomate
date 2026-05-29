@@ -213,16 +213,16 @@ export async function generateLocationImage(
 }
 
 /**
- * 加载图片并转为 base64 Data URL
+ * 加载图片并转为 base64 Data URL（带超时）
  */
 async function loadImageAsBase64(
   imageUrl: string,
-  env: Env
+  env: Env,
+  timeoutMs = 5000
 ): Promise<string | null> {
   try {
     // 处理 R2 路径
     if (imageUrl.startsWith("assets/") || imageUrl.startsWith("images/")) {
-      // 从 R2 加载
       if (env.R2) {
         const object = await env.R2.get(imageUrl);
         if (object) {
@@ -234,13 +234,23 @@ async function loadImageAsBase64(
       return null;
     }
 
-    // 处理 CDN URL
+    // 处理 CDN URL（带超时）
     if (imageUrl.startsWith("http")) {
-      const response = await fetch(imageUrl);
-      if (!response.ok) return null;
-      const buffer = await response.arrayBuffer();
-      const contentType = response.headers.get("content-type") || "image/jpeg";
-      return `data:${contentType};base64,${btoa(String.fromCharCode(...new Uint8Array(buffer)))}`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const response = await fetch(imageUrl, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!response.ok) return null;
+        const buffer = await response.arrayBuffer();
+        const contentType = response.headers.get("content-type") || "image/jpeg";
+        return `data:${contentType};base64,${btoa(String.fromCharCode(...new Uint8Array(buffer)))}`;
+      } catch (e) {
+        clearTimeout(timeout);
+        console.error("[ShareImage] Load image timeout/error:", imageUrl, e);
+        return null;
+      }
     }
 
     return null;
@@ -327,27 +337,24 @@ export async function generateTeamImage(
   const fonts = await loadFonts(env);
   console.log("[ShareImage] Fonts loaded:", fonts.length);
 
-  // 7. 加载地点封面图
-  let coverImageBase64: string | null = null;
-  if (team.location?.coverImage) {
-    try {
-      coverImageBase64 = await loadImageAsBase64(team.location.coverImage, env);
-      console.log("[ShareImage] Cover image loaded");
-    } catch (e) {
-      console.error("[ShareImage] Failed to load cover image:", e);
-    }
-  }
-
-  // 8. 加载队长头像
-  let leaderAvatarBase64: string | null = null;
-  if (team.leader?.image) {
-    try {
-      leaderAvatarBase64 = await loadImageAsBase64(team.leader.image, env);
-      console.log("[ShareImage] Leader avatar loaded");
-    } catch (e) {
-      console.error("[ShareImage] Failed to load leader avatar:", e);
-    }
-  }
+  // 7. 并行加载图片（封面图 + 队长头像）
+  console.log("[ShareImage] Loading images in parallel...");
+  const [coverImageBase64, leaderAvatarBase64] = await Promise.all([
+    // 加载地点封面图
+    team.location?.coverImage
+      ? loadImageAsBase64(team.location.coverImage, env, 3000).then(result => {
+          console.log("[ShareImage] Cover image:", result ? "loaded" : "failed/missing");
+          return result;
+        })
+      : Promise.resolve(null),
+    // 加载队长头像
+    team.leader?.image
+      ? loadImageAsBase64(team.leader.image, env, 3000).then(result => {
+          console.log("[ShareImage] Leader avatar:", result ? "loaded" : "failed/missing");
+          return result;
+        })
+      : Promise.resolve(null),
+  ]);
 
   // 9. 格式化日期
   const date = formatTeamDate(team.startTime);
