@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { Env } from "../lib/auth";
-import { generatePreviewImage, generateLocationImage } from "../services/share-image/generate-share-image";
+import { generatePreviewImage, generateLocationImage, generateTeamImage } from "../services/share-image/generate-share-image";
 
 const shareImageRoute = new Hono<{ Bindings: Env }>();
 
@@ -48,7 +48,6 @@ shareImageRoute.get("/location/:locationId", async (c) => {
     // 如果强制刷新，先删除缓存
     if (refresh && c.env.R2) {
       try {
-        // 查找并删除该地点的所有缓存
         const prefix = `share/location/${locationId}-`;
         const list = await c.env.R2.list({ prefix });
         for (const object of list.objects) {
@@ -78,6 +77,60 @@ shareImageRoute.get("/location/:locationId", async (c) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return c.json(
       { error: "Failed to generate location image", details: errorMessage },
+      500
+    );
+  }
+});
+
+/**
+ * Phase 3: 队伍分享图生成
+ * GET /share-image/team/:teamId
+ * Query: ?download=1 | ?refresh=1
+ */
+shareImageRoute.get("/team/:teamId", async (c) => {
+  try {
+    const teamId = c.req.param("teamId");
+    const download = c.req.query("download") === "1";
+    const refresh = c.req.query("refresh") === "1";
+
+    if (!teamId) {
+      return c.json({ error: "Team ID is required" }, 400);
+    }
+
+    console.log("[ShareImage] Team request:", { teamId, download, refresh });
+
+    // 如果强制刷新，先删除缓存
+    if (refresh && c.env.R2) {
+      try {
+        const prefix = `share/team/${teamId}-`;
+        const list = await c.env.R2.list({ prefix });
+        for (const object of list.objects) {
+          await c.env.R2.delete(object.key);
+        }
+        console.log("[ShareImage] Cache cleared for:", teamId);
+      } catch (e) {
+        console.error("[ShareImage] Cache clear failed:", e);
+      }
+    }
+
+    const { png, cacheKey } = await generateTeamImage(c.env, teamId);
+
+    const headers: Record<string, string> = {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=86400",
+      "X-Cache-Key": cacheKey,
+    };
+
+    if (download) {
+      headers["Content-Disposition"] = `attachment; filename="team-${teamId}.png"`;
+    }
+
+    return new Response(png, { headers });
+  } catch (error) {
+    console.error("[ShareImage] Team image generation failed:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return c.json(
+      { error: "Failed to generate team image", details: errorMessage },
       500
     );
   }

@@ -5,9 +5,10 @@ import type { Env } from "../../lib/auth";
 import { loadFonts } from "./load-fonts";
 import { renderTestTemplate } from "../../templates/share-image/test-poster";
 import { renderLocationPoster } from "../../templates/share-image/location-poster";
+import { renderTeamPoster } from "../../templates/share-image/team-poster";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 // WASM 模块缓存
 let wasmInitialized = false;
@@ -261,6 +262,167 @@ async function loadImageAsBase64(
     console.error("[ShareImage] Load image error:", e);
     return null;
   }
+}
+
+/**
+ * Phase 3: 生成队伍分享图片
+ * 查询队伍数据，生成分享海报
+ */
+export async function generateTeamImage(
+  env: Env,
+  teamId: string
+): Promise<{ png: Uint8Array; cacheKey: string }> {
+  console.log("[ShareImage] Generating team image for:", teamId);
+
+  const db = createDb(env.DB);
+
+  // 1. 查询队伍数据
+  const team = await db.query.teams.findFirst({
+    where: eq(schema.teams.id, teamId),
+    with: {
+      location: true,
+      leader: true,
+    },
+  });
+
+  if (!team) {
+    throw new Error(`Team not found: ${teamId}`);
+  }
+
+  // 2. 查询队伍成员数量
+  const memberCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.teamMembers)
+    .where(
+      and(
+        eq(schema.teamMembers.teamId, teamId),
+        eq(schema.teamMembers.status, "approved")
+      )
+    )
+    .then((rows) => rows[0]?.count ?? 0);
+
+  const currentMembers = memberCount + 1; // +1 包含队长
+  const maxMembers = team.maxMembers;
+  const spotsToForm = Math.max(0, team.durationMin - currentMembers); // durationMin 存储成行人数
+
+  // 3. 生成内容哈希（用于缓存）
+  const contentData = {
+    title: team.title,
+    startTime: team.startTime,
+    locationName: team.location?.name,
+    currentMembers,
+    maxMembers,
+    status: team.status,
+    updatedAt: team.updatedAt,
+  };
+  const contentHash = (await generateMD5(JSON.stringify(contentData))).slice(0, 12);
+
+  const cacheKey = `share/team/${teamId}-${contentHash}.png`;
+
+  // 4. 检查 R2 缓存
+  if (env.R2) {
+    try {
+      const cached = await env.R2.get(cacheKey);
+      if (cached) {
+        console.log("[ShareImage] Cache hit:", cacheKey);
+        const png = new Uint8Array(await cached.arrayBuffer());
+        return { png, cacheKey };
+      }
+    } catch (e) {
+      console.error("[ShareImage] Cache check failed:", e);
+    }
+  }
+
+  // 5. 初始化 WASM
+  await initResvgWasm();
+  console.log("[ShareImage] WASM initialized");
+
+  // 6. 加载字体
+  const fonts = await loadFonts(env);
+  console.log("[ShareImage] Fonts loaded:", fonts.length);
+
+  // 7. 加载地点封面图
+  let coverImageBase64: string | null = null;
+  if (team.location?.coverImage) {
+    try {
+      coverImageBase64 = await loadImageAsBase64(team.location.coverImage, env);
+      console.log("[ShareImage] Cover image loaded");
+    } catch (e) {
+      console.error("[ShareImage] Failed to load cover image:", e);
+    }
+  }
+
+  // 8. 加载队长头像
+  let leaderAvatarBase64: string | null = null;
+  if (team.leader?.image) {
+    try {
+      leaderAvatarBase64 = await loadImageAsBase64(team.leader.image, env);
+      console.log("[ShareImage] Leader avatar loaded");
+    } catch (e) {
+      console.error("[ShareImage] Failed to load leader avatar:", e);
+    }
+  }
+
+  // 9. 格式化日期
+  const date = formatTeamDate(team.startTime);
+
+  // 10. 生成二维码
+  const teamUrl = `https://gomate.live/teams/${teamId}`;
+  const qrCodeDataUrl = await generateQRCode(teamUrl);
+  console.log("[ShareImage] QR code generated");
+
+  // 11. 渲染 SVG
+  const svg = await renderTeamPoster({
+    title: team.title,
+    date,
+    locationName: team.location?.name,
+    coverImage: coverImageBase64,
+    currentMembers,
+    maxMembers,
+    leaderName: team.leader?.name,
+    leaderAvatar: leaderAvatarBase64,
+    spotsToForm: spotsToForm > 0 ? spotsToForm : null,
+    qrCodeDataUrl,
+    fonts,
+  });
+  console.log("[ShareImage] SVG rendered");
+
+  // 12. SVG 转 PNG
+  const png = await renderSvgToPng(svg);
+  console.log("[ShareImage] PNG generated, size:", png.length);
+
+  // 13. 保存到 R2 缓存
+  if (env.R2) {
+    try {
+      await env.R2.put(cacheKey, png, {
+        httpMetadata: {
+          contentType: "image/png",
+          cacheControl: "public, max-age=86400",
+        },
+      });
+      console.log("[ShareImage] Cached to R2:", cacheKey);
+    } catch (e) {
+      console.error("[ShareImage] Cache save failed:", e);
+    }
+  }
+
+  return { png, cacheKey };
+}
+
+/**
+ * 格式化队伍日期
+ * 格式: 05月30日 周六
+ */
+function formatTeamDate(timestamp: number | Date): string {
+  const date = new Date(timestamp);
+  const months = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+  const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const weekday = weekdays[date.getDay()];
+
+  return `${month}${day}日 ${weekday}`;
 }
 
 /**
