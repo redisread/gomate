@@ -1,5 +1,7 @@
 /**
  * API 客户端 - 统一封装对后端 api/ 服务的 fetch 请求
+ *
+ * Note: 分享图功能已迁移到服务端生成 (PR #151)
  */
 
 export const API_BASE =
