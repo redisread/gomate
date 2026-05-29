@@ -1,89 +1,151 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
+import { Loader2, ImageIcon, Link2, X, CheckCircle, Download, RefreshCw } from "lucide-react";
 
 interface SharePosterModalProps {
   type: "team" | "location";
   id: string;
   title: string;
+  url: string;
   onClose: () => void;
   onToast?: (opts: { type: "success" | "error"; message: string }) => void;
 }
 
+/**
+ * Phase 4: 分享海报弹窗
+ * 使用后端 API 生成图片，替代 html-to-image
+ */
 export function SharePosterModal({
   type,
   id,
   title,
+  url,
   onClose,
   onToast,
 }: SharePosterModalProps) {
   const { t } = useI18n(["common", "share"]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [internalToast, setInternalToast] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showRetry, setShowRetry] = useState(false);
 
-  function showToast(opts: { type: "success" | "error"; message: string }) {
-    if (onToast) {
-      onToast(opts);
-    } else {
-      setInternalToast(opts);
-      setTimeout(() => setInternalToast(null), 2000);
+  const showToast = useCallback(
+    (opts: { type: "success" | "error"; message: string }) => {
+      if (onToast) {
+        onToast(opts);
+      }
+    },
+    [onToast]
+  );
+
+  /**
+   * 生成分享图片
+   */
+  const generateImage = useCallback(
+    async (refresh = false): Promise<string | null> => {
+      setIsGenerating(true);
+      setError(null);
+      setShowRetry(false);
+
+      try {
+        const endpoint =
+          type === "location"
+            ? `${API_BASE}/share-image/location/${id}${refresh ? "?refresh=1" : ""}`
+            : `${API_BASE}/share-image/team/${id}${refresh ? "?refresh=1" : ""}`;
+
+        const response = await fetch(endpoint);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `Failed to generate image: ${response.status}`
+          );
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        setImageUrl(url);
+        return url;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to generate image";
+        setError(message);
+        setShowRetry(true);
+        return null;
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+    [type, id]
+  );
+
+  // 打开时自动生成
+  useEffect(() => {
+    if (!imageUrl) {
+      generateImage();
     }
-  }
+  }, [imageUrl, generateImage]);
 
-  async function handleDownload() {
-    setIsGenerating(true);
+  // 关闭时清理
+  useEffect(() => {
+    return () => {
+      if (imageUrl) {
+        URL.revokeObjectURL(imageUrl);
+      }
+    };
+  }, [imageUrl]);
+
+  const handleDownload = async () => {
+    if (!imageUrl) return;
+
     try {
-      const endpoint =
-        type === "team"
-          ? `${API_BASE}/share-image/team/${id}?download=1`
-          : `${API_BASE}/share-image/location/${id}?download=1`;
+      // iOS Safari special handling
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
-      const resp = await fetch(endpoint);
-
-      if (!resp.ok) {
-        throw new Error("Failed to generate poster");
+      if (isIOS) {
+        // Open image in new tab for iOS (user can long press to save)
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.write(`
+            <html>
+              <head><title>长按保存图片</title></head>
+              <body style="margin:0;display:flex;justify-content:center;align-items:center;background:#000;">
+                <img src="${imageUrl}" style="max-width:100%;max-height:100vh;" />
+              </body>
+            </html>
+          `);
+        }
+      } else {
+        // Standard download for Android/PC
+        const link = document.createElement("a");
+        link.href = imageUrl;
+        link.download = `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.png`;
+        link.click();
       }
 
-      const blob = await resp.blob();
-      const objectUrl = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = "gomate-share.png";
-      a.click();
-
-      URL.revokeObjectURL(objectUrl);
       showToast({ type: "success", message: t("share.posterDownloaded") });
     } catch {
-      showToast({ type: "error", message: t("share.generatePosterFailed") });
-    } finally {
-      setIsGenerating(false);
+      showToast({ type: "error", message: t("share.downloadFailed") });
     }
-  }
+  };
 
-  async function handleCopyLink() {
+  const handleCopyLink = async () => {
     try {
-      const url =
-        type === "team"
-          ? `https://gomate.live/teams/${id}`
-          : `https://gomate.live/locations/${id}`;
       await navigator.clipboard.writeText(url);
       showToast({ type: "success", message: t("share.linkCopied") });
     } catch {
       showToast({ type: "error", message: t("share.copyFailed") });
     }
-  }
+  };
 
-  // 预览图 URL
-  const previewUrl =
-    type === "team"
-      ? `${API_BASE}/share-image/team/${id}`
-      : `${API_BASE}/share-image/location/${id}`;
+  const handleRetry = () => {
+    generateImage(true);
+  };
+
+  const isLoading = isGenerating;
 
   return (
     <div
@@ -101,7 +163,7 @@ export function SharePosterModal({
           </span>
           <button
             onClick={onClose}
-            className="text-lg leading-none text-stone-400 dark:text-stone-500 transition-colors hover:text-stone-600"
+            className="text-lg leading-none text-stone-400 transition-colors hover:text-stone-600"
             aria-label={t("common.wechat.close")}
           >
             ✕
@@ -109,50 +171,68 @@ export function SharePosterModal({
         </div>
 
         <div className="relative px-4 pt-2">
-          <div className="overflow-hidden rounded-xl shadow border border-stone-200 dark:border-stone-700">
-            <img
-              src={previewUrl}
-              alt="Share poster"
-              className="w-full h-auto"
-              loading="lazy"
-            />
+          {/* Poster Preview */}
+          <div
+            className="overflow-hidden rounded-xl shadow border border-stone-200"
+            style={{ aspectRatio: "375/640", maxHeight: "500px" }}
+          >
+            {isLoading ? (
+              <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-2" />
+                <span className="text-sm text-stone-500">
+                  {t("share.generating")}
+                </span>
+              </div>
+            ) : imageUrl ? (
+              <img
+                src={imageUrl}
+                alt="Share Poster"
+                className="w-full h-full object-contain"
+              />
+            ) : error ? (
+              <div className="w-full h-full bg-muted flex flex-col items-center justify-center p-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-2">
+                  <X className="w-6 h-6 text-red-500" />
+                </div>
+                <span className="text-sm text-red-500 mb-1">{error}</span>
+                <span className="text-xs text-stone-400">
+                  {t("share.generateFailed")}
+                </span>
+                {showRetry && (
+                  <button
+                    onClick={handleRetry}
+                    className="mt-3 flex items-center gap-1 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    {t("common.retry")}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <ImageIcon className="w-8 h-8 text-stone-300" />
+              </div>
+            )}
           </div>
-          {isGenerating && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-muted/60">
-              <span className="text-sm text-stone-400 dark:text-stone-500">
-                {t("common.loading")}
-              </span>
-            </div>
-          )}
         </div>
 
         <div className="mt-4 flex gap-3 px-4 pb-4">
           <button
             onClick={handleDownload}
-            disabled={isGenerating}
-            className="flex-1 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
+            disabled={isLoading || !imageUrl}
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
           >
-            {t("share.downloadQRCode")}
+            <Download className="w-4 h-4" />
+            {t("share.download")}
           </button>
           <button
             onClick={handleCopyLink}
-            className="flex-1 rounded-lg border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 transition-colors hover:border-stone-400 dark:hover:border-stone-500"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:border-stone-400"
           >
+            <Link2 className="w-4 h-4" />
             {t("share.copyLink")}
           </button>
         </div>
-
-        {internalToast && (
-          <div
-            className={`mx-4 mb-4 rounded-lg px-3 py-2 text-center text-sm transition-opacity ${
-              internalToast.type === "success"
-                ? "bg-green-50 text-green-700"
-                : "bg-red-50 text-red-700"
-            }`}
-          >
-            {internalToast.message}
-          </div>
-        )}
       </div>
     </div>
   );

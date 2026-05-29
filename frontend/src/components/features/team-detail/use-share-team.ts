@@ -11,12 +11,17 @@ interface UseShareTeamOptions {
   location?: { name?: string; coverImage?: string } | null;
 }
 
-export function useShareTeam({ team }: UseShareTeamOptions) {
+/**
+ * Phase 4: 队伍分享 Hook
+ * 使用后端 API 生成图片
+ */
+export function useShareTeam({ team, location }: UseShareTeamOptions) {
   const { t } = useI18n(["teams", "common"]);
   const [showOptions, setShowOptions] = React.useState(false);
   const [showPreview, setShowPreview] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
 
+  // 复制链接
   const handleCopyLink = React.useCallback(async () => {
     if (!team) return;
     try {
@@ -28,6 +33,7 @@ export function useShareTeam({ team }: UseShareTeamOptions) {
     }
   }, [team]);
 
+  // 生成海报 - 现在只是打开预览弹窗，实际生成在 SharePosterPreview 组件中
   const handleGeneratePoster = React.useCallback(async () => {
     setShowOptions(false);
     setShowPreview(true);
@@ -46,6 +52,7 @@ export function useShareTeam({ team }: UseShareTeamOptions) {
     showOptions,
     showPreview,
     copied,
+    isGenerating: false, // Phase 4: 生成状态在组件内部管理
     handleCopyLink,
     handleGeneratePoster,
     openShare,

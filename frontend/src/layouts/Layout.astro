@@ -15,7 +15,7 @@ import { loadLocaleData } from "../i18n/ssr-loader.server";
 interface Props {
   title?: string;
   description?: string;
-  /** OG image URL for social sharing */
+  /** Open Graph image URL */
   ogImage?: string;
   /** 是否显示导航栏，默认 true */
   showNavbar?: boolean;
@@ -184,20 +184,14 @@ function getHreflangUrl(loc: Locale) {
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
 
-    {/* Open Graph / Social Media Meta Tags */}
+    {/* Open Graph meta tags */}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={Astro.url.toString()} />
+    <meta property="og:url" content={Astro.url.href} />
     {ogImage && <meta property="og:image" content={ogImage} />}
-    {ogImage && <meta property="og:image:width" content="375" />}
-    {ogImage && <meta property="og:image:height" content="1000" />}
-
-    {/* Twitter Card */}
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    {ogImage && <meta name="twitter:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:width" content="1200" />}
+    {ogImage && <meta property="og:image:height" content="630" />}
 
     {/* ═══════════════════════════════════════════════════════════════
        Phase 3 Task 2: Critical CSS 内联优化
