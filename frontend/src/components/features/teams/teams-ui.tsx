@@ -145,7 +145,7 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
       </article>
     </a>
   );
-}
+});
 
 // ─── TeamSkeleton ───────────────────────────────────────────────────
 export function TeamSkeleton() {
