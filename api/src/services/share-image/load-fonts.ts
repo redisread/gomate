@@ -14,7 +14,7 @@ const FONT_CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
 
 /**
  * 加载字体数据
- * 从 R2 加载字体文件，并在 Worker 全局变量中缓存
+ * 从 R2 加载字体文件，如果没有则从 CDN 加载备用字体
  */
 export async function loadFonts(env: Env): Promise<FontData[]> {
   // 检查缓存
@@ -23,20 +23,12 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
     return fontCache;
   }
 
-  console.log("[Fonts] Loading fonts from R2");
+  console.log("[Fonts] Loading fonts");
 
   const fonts: FontData[] = [];
 
   try {
-    // 1. 加载系统字体作为 fallback
-    // 由于无法直接加载系统字体，我们使用一个默认配置
-    // 实际字体从 R2 加载
-
-    // 2. 尝试从 R2 加载自定义字体
-    // 支持的字体路径：
-    // - assets/fonts/zpix-400.woff2 (Zpix 像素字体 Regular)
-    // - assets/fonts/zpix-700.woff2 (Zpix 像素字体 Bold)
-
+    // 1. 尝试从 R2 加载自定义字体
     const fontPaths = [
       { path: "assets/fonts/zpix-400.woff2", name: "Zpix", weight: 400 },
       { path: "assets/fonts/noto-sans-400.woff2", name: "Noto Sans SC", weight: 400 },
@@ -63,10 +55,32 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
       }
     }
 
-    // 3. 如果没有从 R2 加载到任何字体，使用系统默认配置
-    // Satori 会使用系统字体作为 fallback
+    // 2. 如果没有从 R2 加载到任何字体，从 CDN 加载备用字体
     if (fonts.length === 0) {
-      console.log("[Fonts] No custom fonts loaded, using system defaults");
+      console.log("[Fonts] No R2 fonts, loading fallback from CDN");
+      try {
+        // 加载 Google Fonts Noto Sans SC 作为 fallback (TTF 格式)
+        const fallbackResponse = await fetch(
+          "https://fonts.gstatic.com/s/notosanssc/v40/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf"
+        );
+        if (fallbackResponse.ok) {
+          const fontData = await fallbackResponse.arrayBuffer();
+          fonts.push({
+            name: "Noto Sans SC",
+            data: fontData,
+            weight: 400,
+            style: "normal",
+          });
+          console.log(`[Fonts] Loaded fallback font (${fontData.byteLength} bytes)`);
+        }
+      } catch (e) {
+        console.error("[Fonts] Failed to load fallback font:", e);
+      }
+    }
+
+    // 3. 如果仍然没有字体，抛出错误
+    if (fonts.length === 0) {
+      throw new Error("No fonts available");
     }
 
     // 更新缓存
@@ -76,8 +90,7 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
     return fonts;
   } catch (error) {
     console.error("[Fonts] Failed to load fonts:", error);
-    // 返回空数组，Satori 会使用系统默认字体
-    return [];
+    throw error;
   }
 }
 
