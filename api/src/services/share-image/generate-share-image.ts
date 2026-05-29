@@ -1,4 +1,5 @@
 import * as resvgWasm from "@resvg/resvg-wasm";
+import resvgWasmModule from "./resvg.wasm";
 import type { Env } from "../../lib/auth";
 import { loadFonts } from "./load-fonts";
 import { renderTestTemplate } from "../../templates/share-image/test-poster";
@@ -24,15 +25,15 @@ async function generateMD5(data: string): Promise<string> {
 
 /**
  * 初始化 resvg-wasm
- * 使用 Workers WASM 绑定，避免动态实例化限制
+ * 直接导入 WASM 模块（ES module worker 方式）
  */
-async function initResvgWasm(env: Env) {
+async function initResvgWasm() {
   if (wasmInitialized) {
     return;
   }
 
-  // 使用 Workers WASM 绑定
-  await resvgWasm.initWasm(env.RESVG_WASM);
+  // 直接使用导入的 WASM 模块
+  await resvgWasm.initWasm(resvgWasmModule);
 
   wasmInitialized = true;
 }
@@ -44,7 +45,7 @@ export async function generatePreviewImage(env: Env): Promise<Uint8Array> {
   console.log("[ShareImage] Starting preview image generation");
 
   // 1. 初始化 WASM
-  await initResvgWasm(env);
+  await initResvgWasm();
   console.log("[ShareImage] WASM initialized");
 
   // 2. 加载字体
@@ -153,7 +154,7 @@ export async function generateLocationImage(
   }
 
   // 5. 初始化 WASM
-  await initResvgWasm(env);
+  await initResvgWasm();
   console.log("[ShareImage] WASM initialized");
 
   // 6. 加载字体
@@ -319,7 +320,7 @@ export async function generateTeamImage(
   }
 
   // 5. 初始化 WASM
-  await initResvgWasm(env);
+  await initResvgWasm();
   console.log("[ShareImage] WASM initialized");
 
   // 6. 加载字体
