@@ -1,11 +1,13 @@
 import satori from "satori";
-import { Resvg } from "@resvg/resvg-wasm";
+// @ts-ignore - resvg-wasm types
+import * as resvgWasm from "@resvg/resvg-wasm";
 import type { Env } from "../../lib/auth";
 import { loadFonts } from "./load-fonts";
 import { renderTestTemplate } from "../../templates/share-image/test-poster";
 
 // WASM 模块缓存
 let wasmInitialized = false;
+let wasmModule: WebAssembly.Module | null = null;
 
 /**
  * 初始化 resvg-wasm
@@ -22,8 +24,12 @@ async function initResvgWasm() {
   );
   const wasmBuffer = await wasmResponse.arrayBuffer();
 
-  // @ts-ignore: resvg-wasm initWasm expects ArrayBuffer
-  await (Resvg as any).initWasm?.(wasmBuffer);
+  // 初始化 WASM
+  // @ts-ignore
+  if (resvgWasm.initWasm) {
+    // @ts-ignore
+    await resvgWasm.initWasm(wasmBuffer);
+  }
 
   wasmInitialized = true;
 }
@@ -66,13 +72,14 @@ export async function generatePreviewImage(env: Env): Promise<Uint8Array> {
  * SVG 转 PNG
  */
 export async function renderSvgToPng(svg: string): Promise<Uint8Array> {
+  // @ts-ignore
+  const { Resvg } = resvgWasm;
   const resvg = new Resvg(svg, {
     fitTo: {
       mode: "width",
       value: 750,
     },
     font: {
-      // 使用系统默认字体作为 fallback
       defaultFontFamily: "system-ui",
     },
   });
