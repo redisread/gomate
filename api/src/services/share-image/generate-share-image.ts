@@ -4,7 +4,7 @@ import type { Env } from "../../lib/auth";
 import { loadFonts } from "./load-fonts";
 import { renderTestTemplate } from "../../templates/share-image/test-poster";
 import { renderLocationPoster } from "../../templates/share-image/location-poster";
-import { renderTeamPoster } from "../../templates/share-image/team-poster";
+import { renderTeamPosterSimple } from "../../templates/share-image/team-poster-simple";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -299,7 +299,7 @@ export async function generateTeamImage(
 
   const currentMembers = memberCount + 1; // +1 包含队长
   const maxMembers = team.maxMembers;
-  const spotsToForm = Math.max(0, team.durationMin - currentMembers); // durationMin 存储成行人数
+  const _spotsToForm = Math.max(0, team.durationMin - currentMembers); // durationMin 存储成行人数
 
   // 3. 生成内容哈希（用于缓存）
   const contentData = {
@@ -337,67 +337,31 @@ export async function generateTeamImage(
   const fonts = await loadFonts(env);
   console.log("[ShareImage] Fonts loaded:", fonts.length);
 
-  // 7. 并行加载图片（封面图 + 队长头像）
-  console.log("[ShareImage] Loading images in parallel...");
-  const [coverImageBase64, leaderAvatarBase64] = await Promise.all([
-    // 加载地点封面图
-    team.location?.coverImage
-      ? loadImageAsBase64(team.location.coverImage, env, 3000).then(result => {
-          console.log("[ShareImage] Cover image:", result ? "loaded" : "failed/missing");
-          return result;
-        })
-      : Promise.resolve(null),
-    // 加载队长头像
-    team.leader?.image
-      ? loadImageAsBase64(team.leader.image, env, 3000).then(result => {
-          console.log("[ShareImage] Leader avatar:", result ? "loaded" : "failed/missing");
-          return result;
-        })
-      : Promise.resolve(null),
-  ]);
+  // 7. 跳过图片加载（测试阶段）
+  console.log("[ShareImage] Skipping image loading for testing");
+  const _coverImageBase64 = null;
+  const _leaderAvatarBase64 = null;
 
-  // 9. 格式化日期
+  // 8. 格式化日期
   const date = formatTeamDate(team.startTime);
 
-  // 10. 生成二维码
-  const teamUrl = `https://gomate.live/teams/${teamId}`;
-  const qrCodeDataUrl = await generateQRCode(teamUrl);
-  console.log("[ShareImage] QR code generated");
-
-  // 11. 渲染 SVG
-  const svg = await renderTeamPoster({
+  // 9. 渲染 SVG（使用最简模板测试）
+  console.log("[ShareImage] Rendering team poster (simple)...");
+  const svg = await renderTeamPosterSimple({
     title: team.title,
     date,
-    locationName: team.location?.name,
-    coverImage: coverImageBase64,
     currentMembers,
     maxMembers,
-    leaderName: team.leader?.name,
-    leaderAvatar: leaderAvatarBase64,
-    spotsToForm: spotsToForm > 0 ? spotsToForm : null,
-    qrCodeDataUrl,
     fonts,
   });
   console.log("[ShareImage] SVG rendered");
 
-  // 12. SVG 转 PNG
+  // 11. SVG 转 PNG
   const png = await renderSvgToPng(svg);
   console.log("[ShareImage] PNG generated, size:", png.length);
 
-  // 13. 保存到 R2 缓存
-  if (env.R2) {
-    try {
-      await env.R2.put(cacheKey, png, {
-        httpMetadata: {
-          contentType: "image/png",
-          cacheControl: "public, max-age=86400",
-        },
-      });
-      console.log("[ShareImage] Cached to R2:", cacheKey);
-    } catch (e) {
-      console.error("[ShareImage] Cache save failed:", e);
-    }
-  }
+  // 12. 保存到 R2 缓存（跳过，测试阶段）
+  console.log("[ShareImage] Skipping R2 cache for testing");
 
   return { png, cacheKey };
 }
