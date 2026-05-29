@@ -64,6 +64,7 @@ export interface Env {
   DB: D1Database;
   GOMATE_KV?: KVNamespace;
   R2?: R2Bucket;
+  RESVG_WASM: WebAssembly.Module;
   BETTER_AUTH_SECRET?: string;
   RESEND_API_KEY?: string;
   RESEND_FROM_EMAIL?: string;

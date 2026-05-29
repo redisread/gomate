@@ -24,23 +24,15 @@ async function generateMD5(data: string): Promise<string> {
 
 /**
  * 初始化 resvg-wasm
- * 使用全局变量缓存，避免每次请求重新初始化
+ * 使用 Workers WASM 绑定，避免动态实例化限制
  */
-async function initResvgWasm() {
+async function initResvgWasm(env: Env) {
   if (wasmInitialized) {
     return;
   }
 
-  // 从 CDN 加载 WASM
-  const wasmResponse = await fetch(
-    "https://unpkg.com/@resvg/resvg-wasm@2.6.2/index_bg.wasm"
-  );
-  const wasmBuffer = await wasmResponse.arrayBuffer();
-
-  // 初始化 WASM
-  if (resvgWasm.initWasm) {
-    await resvgWasm.initWasm(wasmBuffer);
-  }
+  // 使用 Workers WASM 绑定
+  await resvgWasm.initWasm(env.RESVG_WASM);
 
   wasmInitialized = true;
 }
@@ -52,7 +44,7 @@ export async function generatePreviewImage(env: Env): Promise<Uint8Array> {
   console.log("[ShareImage] Starting preview image generation");
 
   // 1. 初始化 WASM
-  await initResvgWasm();
+  await initResvgWasm(env);
   console.log("[ShareImage] WASM initialized");
 
   // 2. 加载字体
@@ -161,7 +153,7 @@ export async function generateLocationImage(
   }
 
   // 5. 初始化 WASM
-  await initResvgWasm();
+  await initResvgWasm(env);
   console.log("[ShareImage] WASM initialized");
 
   // 6. 加载字体
@@ -327,7 +319,7 @@ export async function generateTeamImage(
   }
 
   // 5. 初始化 WASM
-  await initResvgWasm();
+  await initResvgWasm(env);
   console.log("[ShareImage] WASM initialized");
 
   // 6. 加载字体

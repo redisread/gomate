@@ -4,6 +4,11 @@ compatibility_date = "2026-02-26"
 compatibility_flags = ["nodejs_compat"]
 account_id = "e3afbb613458022947cd9dc9f5bd6334"
 
+# WASM 模块绑定
+[[wasm_modules]]
+binding = "RESVG_WASM"
+module = "node_modules/@resvg/resvg-wasm/index_bg.wasm"
+
 # 本地开发：监听所有网络接口，iOS 模拟器可通过宿主机 IP 访问
 [dev]
 ip = "0.0.0.0"
@@ -78,6 +83,10 @@ migrations_dir = "db/migrations"
 [[env.production.kv_namespaces]]
 binding = "GOMATE_KV"
 id = "638ecd78e70c48fda01904bc9c2105d8"
+
+[[env.production.wasm_modules]]
+binding = "RESVG_WASM"
+module = "node_modules/@resvg/resvg-wasm/index_bg.wasm"
 
 [env.production.placement]
 mode = "smart"
