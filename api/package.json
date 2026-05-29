@@ -16,16 +16,21 @@
   "dependencies": {
     "@gomate/types": "workspace:*",
     "@hono/zod-validator": "^0.4.0",
+    "@resvg/resvg-wasm": "^2.6.2",
     "better-auth": "^1.6.11",
     "drizzle-orm": "^0.36.0",
     "hono": "^4.6.0",
+    "qrcode": "^1.5.4",
     "resend": "^4.0.0",
+    "satori": "^0.26.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260409.1",
     "@eslint/js": "9",
     "@types/better-sqlite3": "^7.6.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^18.3.0",
     "@vitest/coverage-v8": "^2.0.0",
     "better-sqlite3": "^12.6.0",
     "drizzle-kit": "^0.28.0",

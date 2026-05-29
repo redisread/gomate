@@ -9,6 +9,8 @@
     "skipLibCheck": true,
     "outDir": "dist",
     "rootDir": "src",
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "paths": {
       "@gomate/types": ["../packages/types/src/index.ts"],
       "@gomate/types/*": ["../packages/types/src/*.ts"]
