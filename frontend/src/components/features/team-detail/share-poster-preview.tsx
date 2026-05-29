@@ -51,8 +51,13 @@ export function SharePosterPreview({
 
     const loadImage = async () => {
       try {
-        // Try to load image and convert to data URL to avoid CORS
-        const response = await fetch(teamCoverImage);
+        // Try to load image with timeout (5 seconds)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch(teamCoverImage, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
         if (!response.ok) throw new Error('Image fetch failed');
         const blob = await response.blob();
         const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -62,6 +67,7 @@ export function SharePosterPreview({
           reader.readAsDataURL(blob);
         });
         setProcessedCoverImage(dataUrl);
+        console.log('[Poster] Cover image loaded successfully');
       } catch (err) {
         console.warn('[Poster] Failed to preload cover image:', err);
         // Fallback: don't show cover image
@@ -98,17 +104,24 @@ export function SharePosterPreview({
       setError(null);
 
       try {
-        // Wait for fonts to load
+        // Wait for fonts to load with timeout (3 seconds max)
         if (document.fonts) {
-          await document.fonts.ready;
+          console.log('[Poster] Waiting for fonts...');
+          await Promise.race([
+            document.fonts.ready,
+            new Promise(resolve => setTimeout(resolve, 3000))
+          ]);
+          console.log('[Poster] Fonts ready or timeout');
         }
 
         // Wait for images and QR code to load
+        console.log('[Poster] Waiting for render...');
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         // Additional delay for iOS - WebKit needs more time to render
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         if (isIOS) {
+          console.log('[Poster] iOS detected, adding extra delay...');
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
@@ -116,6 +129,7 @@ export function SharePosterPreview({
         const originalStyle = posterRef.current.style.cssText;
         posterRef.current.style.cssText = originalStyle + '; visibility: visible !important; opacity: 1 !important;';
 
+        console.log('[Poster] Generating image...');
         // Generate poster - element is rendered with opacity:0 for iOS compatibility
         const dataUrl = await toPng(posterRef.current, {
           pixelRatio: 2,
@@ -131,11 +145,19 @@ export function SharePosterPreview({
           throw new Error('Generated image is empty or too small');
         }
 
+        // Additional validation: check if image is mostly blank (white)
+        const isBlank = await checkIfImageIsBlank(dataUrl);
+        if (isBlank) {
+          throw new Error('Generated image appears to be blank');
+        }
+
+        console.log('[Poster] Generated successfully');
         setPosterDataUrl(dataUrl);
       } catch (err) {
         console.error("Failed to generate poster:", err);
         // Auto-retry once on failure
         if (retryCount < 1) {
+          console.log('[Poster] Retrying...');
           setRetryCount(c => c + 1);
         } else {
           setError(t("teams.posterGenerateError"));
@@ -146,6 +168,49 @@ export function SharePosterPreview({
     };
 
     generatePoster();
+
+    // Helper to check if image is mostly blank
+    const checkIfImageIsBlank = (dataUrl: string): Promise<boolean> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 50; // Sample at low resolution
+            canvas.height = 89;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              resolve(false);
+              return;
+            }
+            ctx.drawImage(img, 0, 0, 50, 89);
+            const imageData = ctx.getImageData(0, 0, 50, 89);
+            const data = imageData.data;
+
+            // Check if most pixels are white/transparent
+            let whitePixels = 0;
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i];
+              const g = data[i + 1];
+              const b = data[i + 2];
+              const a = data[i + 3];
+              // Consider pixel white if RGB > 250 and alpha > 200
+              if (r > 250 && g > 250 && b > 250 && a > 200) {
+                whitePixels++;
+              }
+            }
+            const totalPixels = data.length / 4;
+            const whiteRatio = whitePixels / totalPixels;
+            console.log('[Poster] Blank check - white ratio:', whiteRatio);
+            resolve(whiteRatio > 0.95); // Consider blank if >95% white
+          } catch {
+            resolve(false);
+          }
+        };
+        img.onerror = () => resolve(false);
+        img.src = dataUrl;
+      });
+    };
   }, [open, posterDataUrl, t, retryCount]);
 
   const handleCopyLink = async () => {
