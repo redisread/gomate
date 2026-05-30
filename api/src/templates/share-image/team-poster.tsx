@@ -673,7 +673,6 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                             backgroundColor: "#ffffff",
                             borderRadius: 16,
                             border: "1px solid #f5f5f4",
-                            boxShadow: "0 10px 40px -10px rgba(217, 119, 6, 0.2)",
                           },
                           children: qrCodeDataUrl
                             ? {

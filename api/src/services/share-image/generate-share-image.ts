@@ -42,15 +42,11 @@ async function initResvgWasm() {
  * Phase 1: 生成预览图片（固定数据测试）
  */
 export async function generatePreviewImage(env: Env): Promise<Uint8Array> {
-  console.log("[ShareImage] Starting preview image generation");
-
   // 1. 初始化 WASM
   await initResvgWasm();
-  console.log("[ShareImage] WASM initialized");
 
   // 2. 加载字体
   const fonts = await loadFonts(env);
-  console.log("[ShareImage] Fonts loaded:", fonts.length);
 
   // 3. 渲染 SVG（使用固定测试数据）
   const svg = await renderTestTemplate({
@@ -63,11 +59,9 @@ export async function generatePreviewImage(env: Env): Promise<Uint8Array> {
     membersInfo: "3/5",
     fonts,
   });
-  console.log("[ShareImage] SVG rendered");
 
   // 4. SVG 转 PNG
   const png = await renderSvgToPng(svg);
-  console.log("[ShareImage] PNG generated, size:", png.length);
 
   return png;
 }
@@ -99,8 +93,6 @@ export async function generateLocationImage(
   env: Env,
   locationId: string
 ): Promise<{ png: Uint8Array; cacheKey: string }> {
-  console.log("[ShareImage] Generating location image for:", locationId);
-
   const db = createDb(env.DB);
 
   // 1. 查询地点数据
@@ -144,7 +136,6 @@ export async function generateLocationImage(
     try {
       const cached = await env.R2.get(cacheKey);
       if (cached) {
-        console.log("[ShareImage] Cache hit:", cacheKey);
         const png = new Uint8Array(await cached.arrayBuffer());
         return { png, cacheKey };
       }
@@ -155,18 +146,15 @@ export async function generateLocationImage(
 
   // 5. 初始化 WASM
   await initResvgWasm();
-  console.log("[ShareImage] WASM initialized");
 
   // 6. 加载字体
   const fonts = await loadFonts(env);
-  console.log("[ShareImage] Fonts loaded:", fonts.length);
 
   // 7. 加载封面图并转为 base64
   let coverImageBase64: string | null = null;
   if (location.coverImage) {
     try {
       coverImageBase64 = await loadImageAsBase64(location.coverImage, env);
-      console.log("[ShareImage] Cover image loaded");
     } catch (e) {
       console.error("[ShareImage] Failed to load cover image:", e);
     }
@@ -175,7 +163,6 @@ export async function generateLocationImage(
   // 8. 生成二维码
   const locationUrl = `https://gomate.live/locations/${location.slug}`;
   const qrCodeDataUrl = await generateQRCode(locationUrl);
-  console.log("[ShareImage] QR code generated");
 
   // 9. 渲染 SVG
   const svg = await renderLocationPoster({
@@ -188,11 +175,9 @@ export async function generateLocationImage(
     qrCodeDataUrl,
     fonts,
   });
-  console.log("[ShareImage] SVG rendered");
 
   // 10. SVG 转 PNG
   const png = await renderSvgToPng(svg);
-  console.log("[ShareImage] PNG generated, size:", png.length);
 
   // 11. 保存到 R2 缓存
   if (env.R2) {
@@ -203,7 +188,6 @@ export async function generateLocationImage(
           cacheControl: "public, max-age=86400",
         },
       });
-      console.log("[ShareImage] Cached to R2:", cacheKey);
     } catch (e) {
       console.error("[ShareImage] Cache save failed:", e);
     }
@@ -268,8 +252,6 @@ export async function generateTeamImage(
   env: Env,
   teamId: string
 ): Promise<{ png: Uint8Array; cacheKey: string }> {
-  console.log("[ShareImage] Generating team image for:", teamId);
-
   const db = createDb(env.DB);
 
   // 1. 查询队伍数据
@@ -320,7 +302,6 @@ export async function generateTeamImage(
     try {
       const cached = await env.R2.get(cacheKey);
       if (cached) {
-        console.log("[ShareImage] Cache hit:", cacheKey);
         const png = new Uint8Array(await cached.arrayBuffer());
         return { png, cacheKey };
       }
@@ -331,28 +312,19 @@ export async function generateTeamImage(
 
   // 5. 初始化 WASM
   await initResvgWasm();
-  console.log("[ShareImage] WASM initialized");
 
   // 6. 加载字体
   const fonts = await loadFonts(env);
-  console.log("[ShareImage] Fonts loaded:", fonts.length);
 
   // 7. 并行加载图片（封面图 + 队长头像）
-  console.log("[ShareImage] Loading images in parallel...");
   const [coverImageBase64, leaderAvatarBase64] = await Promise.all([
     // 加载地点封面图
     team.location?.coverImage
-      ? loadImageAsBase64(team.location.coverImage, env, 3000).then(result => {
-          console.log("[ShareImage] Cover image:", result ? "loaded" : "failed/missing");
-          return result;
-        })
+      ? loadImageAsBase64(team.location.coverImage, env, 3000)
       : Promise.resolve(null),
     // 加载队长头像
     team.leader?.image
-      ? loadImageAsBase64(team.leader.image, env, 3000).then(result => {
-          console.log("[ShareImage] Leader avatar:", result ? "loaded" : "failed/missing");
-          return result;
-        })
+      ? loadImageAsBase64(team.leader.image, env, 3000)
       : Promise.resolve(null),
   ]);
 
@@ -362,10 +334,8 @@ export async function generateTeamImage(
   // 9. 生成二维码
   const teamUrl = `https://gomate.live/teams/${teamId}`;
   const qrCodeDataUrl = await generateQRCode(teamUrl);
-  console.log("[ShareImage] QR code generated");
 
   // 10. 渲染 SVG（使用完整模板）
-  console.log("[ShareImage] Rendering team poster (full)...");
   const svg = await renderTeamPoster({
     title: team.title,
     date,
@@ -379,11 +349,9 @@ export async function generateTeamImage(
     qrCodeDataUrl,
     fonts,
   });
-  console.log("[ShareImage] SVG rendered");
 
   // 11. SVG 转 PNG
   const png = await renderSvgToPng(svg);
-  console.log("[ShareImage] PNG generated, size:", png.length);
 
   // 12. 保存到 R2 缓存
   if (env.R2) {
@@ -394,7 +362,6 @@ export async function generateTeamImage(
           cacheControl: "public, max-age=86400",
         },
       });
-      console.log("[ShareImage] Cached to R2:", cacheKey);
     } catch (e) {
       console.error("[ShareImage] Cache save failed:", e);
     }
