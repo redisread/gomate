@@ -19,11 +19,8 @@ const FONT_CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
 export async function loadFonts(env: Env): Promise<FontData[]> {
   // 检查缓存
   if (fontCache && Date.now() - fontCacheTime < FONT_CACHE_TTL) {
-    console.log("[Fonts] Using cached fonts");
     return fontCache;
   }
-
-  console.log("[Fonts] Loading fonts");
 
   const fonts: FontData[] = [];
 
@@ -46,9 +43,6 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
             weight,
             style: "normal",
           });
-          console.log(`[Fonts] Loaded ${path} (${fontData.byteLength} bytes)`);
-        } else {
-          console.log(`[Fonts] Font not found in R2: ${path}`);
         }
       } catch (e) {
         console.error(`[Fonts] Failed to load ${path}:`, e);
@@ -57,7 +51,6 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
 
     // 2. 如果没有从 R2 加载到任何字体，从 CDN 加载备用字体
     if (fonts.length === 0) {
-      console.log("[Fonts] No R2 fonts, loading fallback from CDN");
       try {
         // 加载 Google Fonts Noto Sans SC 作为 fallback (TTF 格式)
         const controller = new AbortController();
@@ -77,7 +70,6 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
             weight: 400,
             style: "normal",
           });
-          console.log(`[Fonts] Loaded fallback font (${fontData.byteLength} bytes)`);
         }
       } catch (e) {
         console.error("[Fonts] Failed to load fallback font:", e);
@@ -107,5 +99,4 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
 export function clearFontCache(): void {
   fontCache = null;
   fontCacheTime = 0;
-  console.log("[Fonts] Cache cleared");
 }

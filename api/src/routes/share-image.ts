@@ -43,9 +43,6 @@ shareImageRoute.get("/location/:locationId", async (c) => {
       return c.json({ error: "Location ID is required" }, 400);
     }
 
-    console.log("[ShareImage] Location request:", { locationId, download, refresh });
-
-    // 如果强制刷新，先删除缓存
     if (refresh && c.env.R2) {
       try {
         const prefix = `share/location/${locationId}-`;
@@ -53,7 +50,6 @@ shareImageRoute.get("/location/:locationId", async (c) => {
         for (const object of list.objects) {
           await c.env.R2.delete(object.key);
         }
-        console.log("[ShareImage] Cache cleared for:", locationId);
       } catch (e) {
         console.error("[ShareImage] Cache clear failed:", e);
       }
@@ -97,9 +93,6 @@ shareImageRoute.get("/team/:teamId", async (c) => {
       return c.json({ error: "Team ID is required" }, 400);
     }
 
-    console.log("[ShareImage] Team request:", { teamId, download, refresh });
-
-    // 如果强制刷新，先删除缓存
     if (refresh && c.env.R2) {
       try {
         const prefix = `share/team/${teamId}-`;
@@ -107,7 +100,6 @@ shareImageRoute.get("/team/:teamId", async (c) => {
         for (const object of list.objects) {
           await c.env.R2.delete(object.key);
         }
-        console.log("[ShareImage] Cache cleared for:", teamId);
       } catch (e) {
         console.error("[ShareImage] Cache clear failed:", e);
       }
