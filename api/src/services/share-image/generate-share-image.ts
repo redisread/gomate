@@ -215,7 +215,7 @@ async function loadImageAsBase64(
       .where(eq(schema.imageCaches.imageUrl, imageUrl))
       .limit(1);
 
-    if (cached.length > 0 && cached[0].expiresAt > Date.now()) {
+    if (cached.length > 0 && cached[0].expiresAt.getTime() > Date.now()) {
       return cached[0].base64Data;
     }
 
@@ -259,10 +259,10 @@ async function loadImageAsBase64(
 
     // 3. 写入 D1 缓存（24小时过期）
     if (base64Result) {
-      const now = Date.now();
-      const expiresAt = now + 24 * 60 * 60 * 1000; // 24小时
-
       try {
+        const now = Date.now();
+        const expiresAt = new Date(now + 24 * 60 * 60 * 1000); // 24小时后
+
         await db
           .insert(schema.imageCaches)
           .values({
@@ -272,8 +272,8 @@ async function loadImageAsBase64(
             contentType,
             size,
             expiresAt,
-            createdAt: now,
-            updatedAt: now,
+            createdAt: new Date(now),
+            updatedAt: new Date(now),
           })
           .onConflictDoUpdate({
             target: schema.imageCaches.imageUrl,
@@ -282,7 +282,7 @@ async function loadImageAsBase64(
               contentType,
               size,
               expiresAt,
-              updatedAt: now,
+              updatedAt: new Date(now),
             },
           });
       } catch (e) {
