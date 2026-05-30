@@ -360,8 +360,20 @@ export async function generateTeamImage(
   const png = await renderSvgToPng(svg);
   console.log("[ShareImage] PNG generated, size:", png.length);
 
-  // 12. 保存到 R2 缓存（跳过，测试阶段）
-  console.log("[ShareImage] Skipping R2 cache for testing");
+  // 12. 保存到 R2 缓存
+  if (env.R2) {
+    try {
+      await env.R2.put(cacheKey, png, {
+        httpMetadata: {
+          contentType: "image/png",
+          cacheControl: "public, max-age=86400",
+        },
+      });
+      console.log("[ShareImage] Cached to R2:", cacheKey);
+    } catch (e) {
+      console.error("[ShareImage] Cache save failed:", e);
+    }
+  }
 
   return { png, cacheKey };
 }
