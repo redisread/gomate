@@ -119,11 +119,11 @@ const { id } = Astro.params;
 
     function updateHeader() {
       if (!otherUser) return;
-      headerInfo.innerHTML = `
-        <h1 class="text-base font-semibold text-gray-900 dark:text-white">
-          ${otherUser.nickname || otherUser.name || "未知用户"}
-        </h1>
-      `;
+      // Use textContent to avoid XSS
+      const h1 = headerInfo.querySelector("h1");
+      if (h1) {
+        h1.textContent = otherUser.nickname || otherUser.name || "未知用户";
+      }
     }
 
     function renderMessages() {
@@ -135,56 +135,102 @@ const { id } = Astro.params;
       // Group by date
       const grouped = groupByDate(messages);
 
-      chatContainer.innerHTML = grouped.map((group) => `
-        <div class="space-y-3">
-          <div class="flex items-center justify-center">
-            <span class="text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
-              ${formatDate(group.date)}
-            </span>
-          </div>
-          ${group.messages.map(renderMessage).join("")}
-        </div>
-      `).join("");
+      // Build using DOM API to avoid XSS
+      chatContainer.innerHTML = "";
+
+      grouped.forEach((group) => {
+        const groupDiv = document.createElement("div");
+        groupDiv.className = "space-y-3";
+
+        // Date header
+        const dateDiv = document.createElement("div");
+        dateDiv.className = "flex items-center justify-center";
+        const dateSpan = document.createElement("span");
+        dateSpan.className = "text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full";
+        dateSpan.textContent = formatDate(group.date);
+        dateDiv.appendChild(dateSpan);
+        groupDiv.appendChild(dateDiv);
+
+        // Messages
+        group.messages.forEach((msg) => {
+          const msgEl = renderMessageElement(msg);
+          groupDiv.appendChild(msgEl);
+        });
+
+        chatContainer.appendChild(groupDiv);
+      });
     }
 
-    function renderMessage(msg) {
+    function renderMessageElement(msg) {
       const isOwn = msg.senderId === currentUserId;
       const sender = msg.sender || {};
       const time = msg.createdAt
         ? new Date(msg.createdAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })
         : "";
 
-      if (isOwn) {
-        return `
-          <div class="flex justify-end">
-            <div class="max-w-[70%]">
-              <div class="px-4 py-2 bg-blue-500 text-white rounded-2xl rounded-br-lg text-sm">
-                ${escapeHtml(msg.content)}
-              </div>
-              <div class="text-right mt-1 text-xs text-gray-400">
-                ${time}${msg.isRead ? " · 已读" : ""}
-              </div>
-            </div>
-          </div>
-        `;
-      } else {
-        const avatar = sender.image
-          ? `<img src="${sender.image}" class="w-8 h-8 rounded-full object-cover" />`
-          : `<div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"><span class="text-sm text-gray-500">${sender.name?.[0] || "?"}</span></div>`;
+      const wrapper = document.createElement("div");
 
-        return `
-          <div class="flex justify-start gap-2">
-            <div class="flex-shrink-0">${avatar}</div>
-            <div class="max-w-[70%]">
-              <div class="text-xs text-gray-500 mb-1">${sender.nickname || sender.name}</div>
-              <div class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl rounded-bl-lg text-sm">
-                ${escapeHtml(msg.content)}
-              </div>
-              <div class="mt-1 text-xs text-gray-400">${time}</div>
-            </div>
+      if (isOwn) {
+        wrapper.className = "flex justify-end";
+        wrapper.innerHTML = `
+          <div class="max-w-[70%]">
+            <div class="px-4 py-2 bg-blue-500 text-white rounded-2xl rounded-br-lg text-sm message-content"></div>
+            <div class="text-right mt-1 text-xs text-gray-400 message-meta"></div>
           </div>
         `;
+        const contentDiv = wrapper.querySelector(".message-content");
+        const metaDiv = wrapper.querySelector(".message-meta");
+        if (contentDiv) contentDiv.textContent = msg.content || "";
+        if (metaDiv) metaDiv.textContent = time + (msg.isRead ? " · 已读" : "");
+      } else {
+        wrapper.className = "flex justify-start gap-2";
+
+        // Build avatar safely
+        const avatarDiv = document.createElement("div");
+        avatarDiv.className = "flex-shrink-0";
+        if (sender.image) {
+          const imgUrl = String(sender.image);
+          if (imgUrl.startsWith("http://") || imgUrl.startsWith("https://") || imgUrl.startsWith("/")) {
+            const img = document.createElement("img");
+            img.src = imgUrl;
+            img.className = "w-8 h-8 rounded-full object-cover";
+            avatarDiv.appendChild(img);
+          } else {
+            const fallback = document.createElement("div");
+            fallback.className = "w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center";
+            const span = document.createElement("span");
+            span.className = "text-sm text-gray-500";
+            span.textContent = sender.name?.[0] || "?";
+            fallback.appendChild(span);
+            avatarDiv.appendChild(fallback);
+          }
+        } else {
+          const fallback = document.createElement("div");
+          fallback.className = "w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center";
+          const span = document.createElement("span");
+          span.className = "text-sm text-gray-500";
+          span.textContent = sender.name?.[0] || "?";
+          fallback.appendChild(span);
+          avatarDiv.appendChild(fallback);
+        }
+
+        wrapper.innerHTML = `
+          <div class="flex-shrink-0">${avatarDiv.innerHTML}</div>
+          <div class="max-w-[70%]">
+            <div class="text-xs text-gray-500 mb-1 sender-name"></div>
+            <div class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl rounded-bl-lg text-sm message-content"></div>
+            <div class="mt-1 text-xs text-gray-400 message-time"></div>
+          </div>
+        `;
+        const senderDiv = wrapper.querySelector(".sender-name");
+        const contentDiv = wrapper.querySelector(".message-content");
+        const timeDiv = wrapper.querySelector(".message-time");
+        if (senderDiv) senderDiv.textContent = sender.nickname || sender.name || "";
+        if (contentDiv) contentDiv.textContent = msg.content || "";
+        if (timeDiv) timeDiv.textContent = time;
       }
+
+      return wrapper;
     }
 
     function groupByDate(msgs) {
