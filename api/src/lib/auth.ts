@@ -65,6 +65,7 @@ export interface Env {
   GOMATE_KV?: KVNamespace;
   R2?: R2Bucket;
   BETTER_AUTH_SECRET?: string;
+  AUTH_SECRET_V2?: string; // 新的密钥名称，用于密钥轮换
   RESEND_API_KEY?: string;
   RESEND_FROM_EMAIL?: string;
   APP_URL?: string;
@@ -78,9 +79,12 @@ export interface Env {
  * 创建 Better Auth 实例（适用于 Cloudflare Workers 环境）
  */
 export function createAuth(env: Env) {
-  // 强制检查 BETTER_AUTH_SECRET，生产环境必须有值
-  if (!env.BETTER_AUTH_SECRET) {
-    throw new Error("BETTER_AUTH_SECRET is required");
+  // 支持密钥轮换：优先使用 AUTH_SECRET_V2，fallback 到 BETTER_AUTH_SECRET
+  const authSecret = env.AUTH_SECRET_V2 || env.BETTER_AUTH_SECRET;
+
+  // 强制检查 auth secret，生产环境必须有值
+  if (!authSecret) {
+    throw new Error("BETTER_AUTH_SECRET or AUTH_SECRET_V2 is required");
   }
 
   const db = createDb(env.DB);
@@ -154,7 +158,7 @@ export function createAuth(env: Env) {
         extra: { type: "string", required: false },
       },
     },
-    secret: env.BETTER_AUTH_SECRET,
+    secret: authSecret,
     baseURL: env.APP_URL || "http://localhost:8799",
     basePath: "/auth",
     trustedOrigins: [
