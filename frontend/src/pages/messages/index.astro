@@ -86,12 +86,6 @@ declareI18nNs(Astro.locals, ["messages", "common"]);
       }
     }
 
-    function escapeHtml(text: string): string {
-      const div = document.createElement("div");
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
     function renderList(conversations: any[]) {
       if (!messageListEl) return;
 
@@ -106,14 +100,17 @@ declareI18nNs(Astro.locals, ["messages", "common"]);
 
         // Create link element
         const link = document.createElement("a");
-        link.href = `/messages/${conv.id}`;
+        link.href = `/messages/${encodeURIComponent(String(conv.id))}`;
         link.className = "block hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors";
 
-        // Build inner HTML safely
+        // Create container
+        const container = document.createElement("div");
+        container.className = "flex items-start gap-3 p-4 border-b border-gray-100 dark:border-gray-800";
+
+        // Build avatar
         const avatarDiv = document.createElement("div");
         avatarDiv.className = "flex-shrink-0";
         if (otherUser?.image) {
-          // Validate image URL
           const imgUrl = String(otherUser.image);
           if (imgUrl.startsWith("http://") || imgUrl.startsWith("https://") || imgUrl.startsWith("/")) {
             const img = document.createElement("img");
@@ -121,7 +118,6 @@ declareI18nNs(Astro.locals, ["messages", "common"]);
             img.className = "w-12 h-12 rounded-full object-cover";
             avatarDiv.appendChild(img);
           } else {
-            // Invalid URL, show fallback
             const fallback = document.createElement("div");
             fallback.className = "w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center";
             const span = document.createElement("span");
@@ -139,37 +135,46 @@ declareI18nNs(Astro.locals, ["messages", "common"]);
           fallback.appendChild(span);
           avatarDiv.appendChild(fallback);
         }
+        container.appendChild(avatarDiv);
 
-        // Build content using textContent for safety
-        const nameText = otherUser?.nickname || otherUser?.name || "未知用户";
-        const messageText = conv.lastMessageContent || "暂无消息";
+        // Build content
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "flex-1 min-w-0";
 
-        link.innerHTML = `
-          <div class="flex items-start gap-3 p-4 border-b border-gray-100 dark:border-gray-800">
-            ${avatarDiv.innerHTML}
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between mb-1">
-                <h4 class="text-sm font-medium text-gray-900 dark:text-white truncate"></h4>
-                <span class="text-xs text-gray-400">${time}</span>
-              </div>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate"></p>
-            </div>
-            ${conv.unreadCount > 0 ? `
-              <div class="flex-shrink-0">
-                <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-red-500 rounded-full">
-                  ${conv.unreadCount > 99 ? "99+" : conv.unreadCount}
-                </span>
-              </div>
-            ` : ""}
-          </div>
-        `;
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "flex items-center justify-between mb-1";
 
-        // Set text content safely
-        const h4 = link.querySelector("h4");
-        const p = link.querySelector("p");
-        if (h4) h4.textContent = nameText;
-        if (p) p.textContent = messageText;
+        const nameEl = document.createElement("h4");
+        nameEl.className = "text-sm font-medium text-gray-900 dark:text-white truncate";
+        nameEl.textContent = otherUser?.nickname || otherUser?.name || "未知用户";
+        headerDiv.appendChild(nameEl);
 
+        const timeEl = document.createElement("span");
+        timeEl.className = "text-xs text-gray-400";
+        timeEl.textContent = time;
+        headerDiv.appendChild(timeEl);
+
+        contentDiv.appendChild(headerDiv);
+
+        const messageEl = document.createElement("p");
+        messageEl.className = "text-sm text-gray-500 dark:text-gray-400 truncate";
+        messageEl.textContent = conv.lastMessageContent || "暂无消息";
+        contentDiv.appendChild(messageEl);
+
+        container.appendChild(contentDiv);
+
+        // Unread count badge
+        if (conv.unreadCount > 0) {
+          const badgeDiv = document.createElement("div");
+          badgeDiv.className = "flex-shrink-0";
+          const badge = document.createElement("span");
+          badge.className = "inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-red-500 rounded-full";
+          badge.textContent = conv.unreadCount > 99 ? "99+" : String(conv.unreadCount);
+          badgeDiv.appendChild(badge);
+          container.appendChild(badgeDiv);
+        }
+
+        link.appendChild(container);
         messageListEl.appendChild(link);
       });
     }
