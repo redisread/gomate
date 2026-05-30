@@ -3,10 +3,12 @@ import { useState } from "react";
 import { Mountain, Heart, Mail, ArrowUp, MapPin, Users, Plus, ExternalLink, Copy, Check, X } from "lucide-react";
 import type { TranslationKey } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
+import { FooterMobile } from "./footer-mobile";
 
 /**
- * 页脚组件 - 四列卡片式布局
- * 结构：品牌卡片（左）+ 三列链接（右）+ 版权栏
+ * 页脚组件 - 响应式布局
+ * 桌面端：四列卡片式布局
+ * 移动端：手风琴式简洁布局
  */
 
 /**
@@ -153,11 +155,25 @@ function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: Tran
 export function Footer() {
   const { t } = useI18n(["common"]);
   const [showWechatQR, setShowWechatQR] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
+
   // SSR 使用固定年份，CSR 更新为当前年份，避免 hydration mismatch
   const [year, setYear] = React.useState(2025);
   React.useEffect(() => {
     setYear(new Date().getFullYear());
+    // 检测移动端
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // 移动端使用独立组件
+  if (isMobile) {
+    return <FooterMobile />;
+  }
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
