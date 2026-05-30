@@ -62,7 +62,7 @@ APP_URL = "https://api.gomate.live"
 FRONTEND_URL = "https://gomate.live"
 CORS_ALLOWED_ORIGINS = "https://gomate.live,https://api.gomate.live"
 AMAP_SERVER_KEY = ""
-BETTER_AUTH_SECRET = "s6Vdedr89YJzXbjEEtN3jnTvnx3HfbBZ"
+# BETTER_AUTH_SECRET 通过 wrangler secret 管理，不在此处存储
 BETTER_AUTH_URL = "https://api.gomate.live"
 
 [[env.production.r2_buckets]]
