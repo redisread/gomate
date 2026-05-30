@@ -337,10 +337,24 @@ export async function generateTeamImage(
   const fonts = await loadFonts(env);
   console.log("[ShareImage] Fonts loaded:", fonts.length);
 
-  // 7. 跳过图片加载（测试阶段）
-  console.log("[ShareImage] Skipping image loading for testing");
-  const _coverImageBase64 = null;
-  const _leaderAvatarBase64 = null;
+  // 7. 并行加载图片（封面图 + 队长头像）
+  console.log("[ShareImage] Loading images in parallel...");
+  const [coverImageBase64, leaderAvatarBase64] = await Promise.all([
+    // 加载地点封面图
+    team.location?.coverImage
+      ? loadImageAsBase64(team.location.coverImage, env, 3000).then(result => {
+          console.log("[ShareImage] Cover image:", result ? "loaded" : "failed/missing");
+          return result;
+        })
+      : Promise.resolve(null),
+    // 加载队长头像
+    team.leader?.image
+      ? loadImageAsBase64(team.leader.image, env, 3000).then(result => {
+          console.log("[ShareImage] Leader avatar:", result ? "loaded" : "failed/missing");
+          return result;
+        })
+      : Promise.resolve(null),
+  ]);
 
   // 8. 格式化日期
   const date = formatTeamDate(team.startTime);
@@ -350,13 +364,15 @@ export async function generateTeamImage(
   const qrCodeDataUrl = await generateQRCode(teamUrl);
   console.log("[ShareImage] QR code generated");
 
-  // 10. 渲染 SVG（使用最简模板 + 二维码）
-  console.log("[ShareImage] Rendering team poster (simple + QR)...");
+  // 10. 渲染 SVG（使用最简模板 + 二维码 + 图片）
+  console.log("[ShareImage] Rendering team poster (simple + QR + images)...");
   const svg = await renderTeamPosterSimple({
     title: team.title,
     date,
     currentMembers,
     maxMembers,
+    coverImage: coverImageBase64,
+    leaderAvatar: leaderAvatarBase64,
     qrCodeDataUrl,
     fonts,
   });

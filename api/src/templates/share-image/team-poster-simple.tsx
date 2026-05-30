@@ -23,10 +23,12 @@ interface TeamPosterData {
  * 队伍分享海报模板（最简版本 - 用于测试）
  */
 export async function renderTeamPosterSimple(data: TeamPosterData): Promise<string> {
-  const { title, date, currentMembers, maxMembers, qrCodeDataUrl, fonts } = data;
+  const { title, date, currentMembers, maxMembers, coverImage, leaderAvatar, qrCodeDataUrl, fonts } = data;
 
   const fontFamily = fonts.length > 0 ? fonts[0].name : "system-ui";
   const hasQR = !!qrCodeDataUrl;
+  const hasCover = !!coverImage;
+  const hasLeader = !!leaderAvatar;
 
   const svg = await satori(
     // @ts-expect-error - Satori accepts plain object format
@@ -43,6 +45,24 @@ export async function renderTeamPosterSimple(data: TeamPosterData): Promise<stri
           padding: 24,
         },
         children: [
+          // 封面图
+          ...(hasCover
+            ? [
+                {
+                  type: "img",
+                  props: {
+                    src: coverImage,
+                    style: {
+                      display: "flex",
+                      width: 327,
+                      height: 176,
+                      objectFit: "cover",
+                      marginBottom: 16,
+                    },
+                  },
+                },
+              ]
+            : []),
           {
             type: "div",
             props: {
@@ -75,11 +95,29 @@ export async function renderTeamPosterSimple(data: TeamPosterData): Promise<stri
                 display: "flex",
                 fontSize: 14,
                 color: "#57534e",
-                marginBottom: hasQR ? 16 : 0,
+                marginBottom: hasQR || hasLeader ? 16 : 0,
               },
               children: `成员: ${currentMembers}/${maxMembers}`,
             },
           },
+          // 队长头像
+          ...(hasLeader
+            ? [
+                {
+                  type: "img",
+                  props: {
+                    src: leaderAvatar,
+                    style: {
+                      display: "flex",
+                      width: 48,
+                      height: 48,
+                      borderRadius: 24,
+                      marginBottom: 16,
+                    },
+                  },
+                },
+              ]
+            : []),
           // 二维码
           ...(hasQR
             ? [
