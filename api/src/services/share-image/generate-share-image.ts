@@ -1,5 +1,6 @@
 import * as resvgWasm from "@resvg/resvg-wasm";
 import resvgWasmModule from "./resvg.wasm";
+import QRCode from "qrcode";
 import type { Env } from "../../lib/auth";
 import { loadFonts } from "./load-fonts";
 import { renderTestTemplate } from "../../templates/share-image/test-poster";
@@ -214,7 +215,7 @@ async function loadImageAsBase64(
       .where(eq(schema.imageCaches.imageUrl, imageUrl))
       .limit(1);
 
-    if (cached.length > 0 && cached[0].expiresAt > Date.now()) {
+    if (cached.length > 0 && cached[0].expiresAt.getTime() > Date.now()) {
       return cached[0].base64Data;
     }
 
@@ -258,10 +259,10 @@ async function loadImageAsBase64(
 
     // 3. 写入 D1 缓存（24小时过期）
     if (base64Result) {
-      const now = Date.now();
-      const expiresAt = now + 24 * 60 * 60 * 1000; // 24小时
-
       try {
+        const now = Date.now();
+        const expiresAt = new Date(now + 24 * 60 * 60 * 1000); // 24小时后
+
         await db
           .insert(schema.imageCaches)
           .values({
@@ -271,8 +272,8 @@ async function loadImageAsBase64(
             contentType,
             size,
             expiresAt,
-            createdAt: now,
-            updatedAt: now,
+            createdAt: new Date(now),
+            updatedAt: new Date(now),
           })
           .onConflictDoUpdate({
             target: schema.imageCaches.imageUrl,
@@ -281,7 +282,7 @@ async function loadImageAsBase64(
               contentType,
               size,
               expiresAt,
-              updatedAt: now,
+              updatedAt: new Date(now),
             },
           });
       } catch (e) {
@@ -440,35 +441,40 @@ function formatTeamDate(timestamp: number | Date): string {
 
 /**
  * 生成二维码
- * 使用纯 JS 实现（Cloudflare Workers 兼容）
+ * 使用 qrcode 库生成真实二维码（Cloudflare Workers 兼容）
  */
-async function generateQRCode(_text: string): Promise<string> {
-  // 简化版：返回一个占位符 SVG 二维码
-  // 实际生产可以使用 qrcode 库的纯 JS 版本
-  // 这里使用一个 SVG 占位符表示二维码
-  const qrSvg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25">
-      <rect width="25" height="25" fill="white"/>
-      <rect x="2" y="2" width="7" height="7" fill="#1e1812"/>
-      <rect x="3" y="3" width="5" height="5" fill="white"/>
-      <rect x="4" y="4" width="3" height="3" fill="#1e1812"/>
-      <rect x="16" y="2" width="7" height="7" fill="#1e1812"/>
-      <rect x="17" y="3" width="5" height="5" fill="white"/>
-      <rect x="18" y="4" width="3" height="3" fill="#1e1812"/>
-      <rect x="2" y="16" width="7" height="7" fill="#1e1812"/>
-      <rect x="3" y="17" width="5" height="5" fill="white"/>
-      <rect x="4" y="18" width="3" height="3" fill="#1e1812"/>
-      <rect x="10" y="10" width="5" height="5" fill="#1e1812"/>
-      <rect x="11" y="11" width="3" height="3" fill="white"/>
-      <rect x="12" y="12" width="1" height="1" fill="#1e1812"/>
-      <rect x="8" y="2" width="1" height="1" fill="#1e1812"/>
-      <rect x="14" y="4" width="1" height="1" fill="#1e1812"/>
-      <rect x="2" y="10" width="1" height="1" fill="#1e1812"/>
-      <rect x="20" y="14" width="1" height="1" fill="#1e1812"/>
-      <rect x="16" y="16" width="3" height="3" fill="#1e1812"/>
-      <rect x="20" y="18" width="2" height="2" fill="#1e1812"/>
-      <rect x="12" y="20" width="2" height="2" fill="#1e1812"/>
-    </svg>
-  `;
-  return `data:image/svg+xml;base64,${btoa(qrSvg)}`;
+async function generateQRCode(text: string): Promise<string> {
+  try {
+    // 使用 qrcode 生成 data URL
+    const dataUrl = await QRCode.toDataURL(text, {
+      width: 200,
+      margin: 2,
+      color: {
+        dark: "#1e1812",
+        light: "#ffffff",
+      },
+    });
+    return dataUrl;
+  } catch (e) {
+    console.error("[QRCode] Failed to generate QR code:", e);
+    // 降级：返回占位符 SVG
+    const qrSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25">
+        <rect width="25" height="25" fill="white"/>
+        <rect x="2" y="2" width="7" height="7" fill="#1e1812"/>
+        <rect x="3" y="3" width="5" height="5" fill="white"/>
+        <rect x="4" y="4" width="3" height="3" fill="#1e1812"/>
+        <rect x="16" y="2" width="7" height="7" fill="#1e1812"/>
+        <rect x="17" y="3" width="5" height="5" fill="white"/>
+        <rect x="18" y="4" width="3" height="3" fill="#1e1812"/>
+        <rect x="2" y="16" width="7" height="7" fill="#1e1812"/>
+        <rect x="3" y="17" width="5" height="5" fill="white"/>
+        <rect x="4" y="18" width="3" height="3" fill="#1e1812"/>
+        <rect x="10" y="10" width="5" height="5" fill="#1e1812"/>
+        <rect x="11" y="11" width="3" height="3" fill="white"/>
+        <rect x="12" y="12" width="1" height="1" fill="#1e1812"/>
+      </svg>
+    `;
+    return `data:image/svg+xml;base64,${btoa(qrSvg)}`;
+  }
 }

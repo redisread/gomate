@@ -89,42 +89,94 @@ declareI18nNs(Astro.locals, ["messages", "common"]);
     function renderList(conversations: any[]) {
       if (!messageListEl) return;
 
-      messageListEl.innerHTML = conversations.map((conv) => {
-        const otherUser = conv.otherUser;
-        const avatar = otherUser?.image
-          ? `<img src="${otherUser.image}" class="w-12 h-12 rounded-full object-cover" />`
-          : `<div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"><span class="text-lg text-gray-500">${otherUser?.name?.[0] || "?"}</span></div>`;
+      // Clear and rebuild using DOM API to avoid XSS
+      messageListEl.innerHTML = "";
 
+      conversations.forEach((conv) => {
+        const otherUser = conv.otherUser;
         const time = conv.lastMessageAt
           ? formatTime(conv.lastMessageAt)
           : "";
 
-        return `
-          <a href="/messages/${conv.id}" class="block hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-            <div class="flex items-start gap-3 p-4 border-b border-gray-100 dark:border-gray-800">
-              <div class="flex-shrink-0">${avatar}</div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between mb-1">
-                  <h4 class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    ${otherUser?.nickname || otherUser?.name || "未知用户"}
-                  </h4>
-                  <span class="text-xs text-gray-400">${time}</span>
-                </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                  ${conv.lastMessageContent || "暂无消息"}
-                </p>
-              </div>
-              ${conv.unreadCount > 0 ? `
-                <div class="flex-shrink-0">
-                  <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-red-500 rounded-full">
-                    ${conv.unreadCount > 99 ? "99+" : conv.unreadCount}
-                  </span>
-                </div>
-              ` : ""}
-            </div>
-          </a>
-        `;
-      }).join("");
+        // Create link element
+        const link = document.createElement("a");
+        link.href = `/messages/${encodeURIComponent(String(conv.id))}`;
+        link.className = "block hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors";
+
+        // Create container
+        const container = document.createElement("div");
+        container.className = "flex items-start gap-3 p-4 border-b border-gray-100 dark:border-gray-800";
+
+        // Build avatar
+        const avatarDiv = document.createElement("div");
+        avatarDiv.className = "flex-shrink-0";
+        if (otherUser?.image) {
+          const imgUrl = String(otherUser.image);
+          if (imgUrl.startsWith("http://") || imgUrl.startsWith("https://") || imgUrl.startsWith("/")) {
+            const img = document.createElement("img");
+            img.src = imgUrl;
+            img.className = "w-12 h-12 rounded-full object-cover";
+            avatarDiv.appendChild(img);
+          } else {
+            const fallback = document.createElement("div");
+            fallback.className = "w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center";
+            const span = document.createElement("span");
+            span.className = "text-lg text-gray-500";
+            span.textContent = otherUser?.name?.[0] || "?";
+            fallback.appendChild(span);
+            avatarDiv.appendChild(fallback);
+          }
+        } else {
+          const fallback = document.createElement("div");
+          fallback.className = "w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center";
+          const span = document.createElement("span");
+          span.className = "text-lg text-gray-500";
+          span.textContent = otherUser?.name?.[0] || "?";
+          fallback.appendChild(span);
+          avatarDiv.appendChild(fallback);
+        }
+        container.appendChild(avatarDiv);
+
+        // Build content
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "flex-1 min-w-0";
+
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "flex items-center justify-between mb-1";
+
+        const nameEl = document.createElement("h4");
+        nameEl.className = "text-sm font-medium text-gray-900 dark:text-white truncate";
+        nameEl.textContent = otherUser?.nickname || otherUser?.name || "未知用户";
+        headerDiv.appendChild(nameEl);
+
+        const timeEl = document.createElement("span");
+        timeEl.className = "text-xs text-gray-400";
+        timeEl.textContent = time;
+        headerDiv.appendChild(timeEl);
+
+        contentDiv.appendChild(headerDiv);
+
+        const messageEl = document.createElement("p");
+        messageEl.className = "text-sm text-gray-500 dark:text-gray-400 truncate";
+        messageEl.textContent = conv.lastMessageContent || "暂无消息";
+        contentDiv.appendChild(messageEl);
+
+        container.appendChild(contentDiv);
+
+        // Unread count badge
+        if (conv.unreadCount > 0) {
+          const badgeDiv = document.createElement("div");
+          badgeDiv.className = "flex-shrink-0";
+          const badge = document.createElement("span");
+          badge.className = "inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-red-500 rounded-full";
+          badge.textContent = conv.unreadCount > 99 ? "99+" : String(conv.unreadCount);
+          badgeDiv.appendChild(badge);
+          container.appendChild(badgeDiv);
+        }
+
+        link.appendChild(container);
+        messageListEl.appendChild(link);
+      });
     }
 
     function renderEmpty() {
