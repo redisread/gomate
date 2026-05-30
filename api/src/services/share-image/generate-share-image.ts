@@ -4,7 +4,7 @@ import type { Env } from "../../lib/auth";
 import { loadFonts } from "./load-fonts";
 import { renderTestTemplate } from "../../templates/share-image/test-poster";
 import { renderLocationPoster } from "../../templates/share-image/location-poster";
-import { renderTeamPosterSimple } from "../../templates/share-image/team-poster-simple";
+import { renderTeamPoster } from "../../templates/share-image/team-poster";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -299,7 +299,7 @@ export async function generateTeamImage(
 
   const currentMembers = memberCount + 1; // +1 包含队长
   const maxMembers = team.maxMembers;
-  const _spotsToForm = Math.max(0, team.durationMin - currentMembers); // durationMin 存储成行人数
+  const spotsToForm = Math.max(0, team.durationMin - currentMembers); // durationMin 存储成行人数
 
   // 3. 生成内容哈希（用于缓存）
   const contentData = {
@@ -364,15 +364,18 @@ export async function generateTeamImage(
   const qrCodeDataUrl = await generateQRCode(teamUrl);
   console.log("[ShareImage] QR code generated");
 
-  // 10. 渲染 SVG（使用最简模板 + 二维码 + 图片）
-  console.log("[ShareImage] Rendering team poster (simple + QR + images)...");
-  const svg = await renderTeamPosterSimple({
+  // 10. 渲染 SVG（使用完整模板）
+  console.log("[ShareImage] Rendering team poster (full)...");
+  const svg = await renderTeamPoster({
     title: team.title,
     date,
+    locationName: team.location?.name,
+    coverImage: coverImageBase64,
     currentMembers,
     maxMembers,
-    coverImage: coverImageBase64,
+    leaderName: team.leader?.name,
     leaderAvatar: leaderAvatarBase64,
+    spotsToForm: spotsToForm > 0 ? spotsToForm : null,
     qrCodeDataUrl,
     fonts,
   });
