@@ -11,7 +11,7 @@ import { useState, useEffect, useRef, useCallback, type RefObject } from "react"
    ============================================================ */
 export function useInView(threshold = 0.1): [RefObject<HTMLDivElement>, boolean] {
   const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
+  const [inView, setInView] = useState(true); // 默认可见，渐进增强
 
   useEffect(() => {
     const el = ref.current;
