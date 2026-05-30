@@ -9,9 +9,11 @@ import {
 } from "./team-detail-modals";
 import { ShareOptionsSheet } from "./share-options-sheet";
 import { SharePosterPreview } from "./share-poster-preview";
-import { SharePosterModal } from "@/components/features/share-poster-modal";
 import * as React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// 延迟加载分享海报弹窗，减少初始 bundle 大小
+const SharePosterModal = React.lazy(() => import("@/components/features/share-poster-modal").then(m => ({ default: m.SharePosterModal })));
 
 // 通用分享处理函数
 function useTeamShare(team: Team | null) {
