@@ -197,7 +197,8 @@ export async function generateLocationImage(
 }
 
 /**
- * 加载图片并转为 base64 Data URL（带超时）
+ * 加载图片并转为 base64 Data URL（带缓存）
+ * 优先从 D1 缓存读取，未命中则从 R2/CDN 加载并缓存到 D1
  */
 async function loadImageAsBase64(
   imageUrl: string,
@@ -205,39 +206,90 @@ async function loadImageAsBase64(
   timeoutMs = 5000
 ): Promise<string | null> {
   try {
+    // 1. 检查 D1 缓存（24小时有效）
+    const db = createDb(env.DB);
+    const cached = await db
+      .select({ base64Data: schema.imageCaches.base64Data, expiresAt: schema.imageCaches.expiresAt })
+      .from(schema.imageCaches)
+      .where(eq(schema.imageCaches.imageUrl, imageUrl))
+      .limit(1);
+
+    if (cached.length > 0 && cached[0].expiresAt > Date.now()) {
+      return cached[0].base64Data;
+    }
+
+    // 2. 缓存未命中，从源加载
+    let base64Result: string | null = null;
+    let contentType = "image/jpeg";
+    let size = 0;
+
     // 处理 R2 路径
     if (imageUrl.startsWith("assets/") || imageUrl.startsWith("images/")) {
       if (env.R2) {
         const object = await env.R2.get(imageUrl);
         if (object) {
           const buffer = await object.arrayBuffer();
-          const contentType = object.httpMetadata?.contentType || "image/jpeg";
-          return `data:${contentType};base64,${btoa(String.fromCharCode(...new Uint8Array(buffer)))}`;
+          size = buffer.byteLength;
+          contentType = object.httpMetadata?.contentType || "image/jpeg";
+          base64Result = `data:${contentType};base64,${btoa(String.fromCharCode(...new Uint8Array(buffer)))}`;
         }
       }
-      return null;
     }
 
     // 处理 CDN URL（带超时）
-    if (imageUrl.startsWith("http")) {
+    if (!base64Result && imageUrl.startsWith("http")) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
       try {
         const response = await fetch(imageUrl, { signal: controller.signal });
         clearTimeout(timeout);
-        if (!response.ok) return null;
-        const buffer = await response.arrayBuffer();
-        const contentType = response.headers.get("content-type") || "image/jpeg";
-        return `data:${contentType};base64,${btoa(String.fromCharCode(...new Uint8Array(buffer)))}`;
+        if (response.ok) {
+          const buffer = await response.arrayBuffer();
+          size = buffer.byteLength;
+          contentType = response.headers.get("content-type") || "image/jpeg";
+          base64Result = `data:${contentType};base64,${btoa(String.fromCharCode(...new Uint8Array(buffer)))}`;
+        }
       } catch (e) {
         clearTimeout(timeout);
         console.error("[ShareImage] Load image timeout/error:", imageUrl, e);
-        return null;
       }
     }
 
-    return null;
+    // 3. 写入 D1 缓存（24小时过期）
+    if (base64Result) {
+      const now = Date.now();
+      const expiresAt = now + 24 * 60 * 60 * 1000; // 24小时
+
+      try {
+        await db
+          .insert(schema.imageCaches)
+          .values({
+            id: await generateMD5(imageUrl),
+            imageUrl,
+            base64Data: base64Result,
+            contentType,
+            size,
+            expiresAt,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            target: schema.imageCaches.imageUrl,
+            set: {
+              base64Data: base64Result,
+              contentType,
+              size,
+              expiresAt,
+              updatedAt: now,
+            },
+          });
+      } catch (e) {
+        console.error("[ShareImage] Cache write failed:", e);
+      }
+    }
+
+    return base64Result;
   } catch (e) {
     console.error("[ShareImage] Load image error:", e);
     return null;

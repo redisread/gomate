@@ -550,3 +550,26 @@ export type PoiRoleType = "waypoint" | "checkpoint" | "viewpoint" | "facility" |
 
 // 活动后分享状态
 export type ActivityPostStatus = "visible" | "hidden" | "deleted";
+
+// ==================== Image Cache (分享图图片预缓存) ====================
+
+export const imageCaches = sqliteTable(
+  "image_caches",
+  {
+    id: text("id").primaryKey(),
+    imageUrl: text("image_url").notNull(), // 原始图片 URL
+    base64Data: text("base64_data").notNull(), // Base64 Data URL
+    contentType: text("content_type").notNull().default("image/jpeg"),
+    size: integer("size"), // 图片大小(字节)
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(), // 缓存过期时间
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    imageUrlIdx: uniqueIndex("image_caches_url_idx").on(table.imageUrl),
+    expiresIdx: index("image_caches_expires_idx").on(table.expiresAt),
+  })
+);
+
+export type ImageCache = typeof imageCaches.$inferSelect;
+export type NewImageCache = typeof imageCaches.$inferInsert;
