@@ -66,3 +66,6 @@ midscene_run/
 
 # Auto-generated i18n data
 frontend/src/i18n/locales-data.ts
+
+# Astro generated files
+.astro/
