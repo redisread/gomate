@@ -36,6 +36,7 @@ export const users = sqliteTable(
   (table) => ({
     emailIdx: index("users_email_idx").on(table.email),
     nameIdx: index("users_name_idx").on(table.name),
+    nicknameIdx: index("users_nickname_idx").on(table.nickname),
   })
 );
 
@@ -145,6 +146,7 @@ export const locations = sqliteTable(
     slugIdx: uniqueIndex("locations_slug_idx").on(table.slug),
     cityIdx: index("locations_city_idx").on(table.cityId),
     typeIdx: index("locations_type_idx").on(table.type),
+    createdAtIdx: index("locations_created_at_idx").on(table.createdAt),
   })
 );
 
@@ -232,6 +234,7 @@ export const teams = sqliteTable(
     leaderIdx: index("teams_leader_idx").on(table.leaderId),
     statusIdx: index("teams_status_idx").on(table.status),
     startTimeIdx: index("teams_start_time_idx").on(table.startTime),
+    titleIdx: index("teams_title_idx").on(table.title),
     statusCreatedAtIdx: index("teams_status_created_at_idx").on(table.status, table.createdAt),
     statusStartTimeIdx: index("teams_status_start_time_idx").on(table.status, table.startTime),
   })
@@ -547,3 +550,26 @@ export type PoiRoleType = "waypoint" | "checkpoint" | "viewpoint" | "facility" |
 
 // 活动后分享状态
 export type ActivityPostStatus = "visible" | "hidden" | "deleted";
+
+// ==================== Image Cache (分享图图片预缓存) ====================
+
+export const imageCaches = sqliteTable(
+  "image_caches",
+  {
+    id: text("id").primaryKey(),
+    imageUrl: text("image_url").notNull(), // 原始图片 URL
+    base64Data: text("base64_data").notNull(), // Base64 Data URL
+    contentType: text("content_type").notNull().default("image/jpeg"),
+    size: integer("size"), // 图片大小(字节)
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(), // 缓存过期时间
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    imageUrlIdx: uniqueIndex("image_caches_url_idx").on(table.imageUrl),
+    expiresIdx: index("image_caches_expires_idx").on(table.expiresAt),
+  })
+);
+
+export type ImageCache = typeof imageCaches.$inferSelect;
+export type NewImageCache = typeof imageCaches.$inferInsert;

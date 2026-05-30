@@ -342,7 +342,7 @@ function getHreflangUrl(loc: Locale) {
     </script>
   </head>
   <body class={["min-h-screen", isDark ? "dark bg-[#12100d]" : "bg-[#faf8f5]"].join(" ")}>
-    {showNavbar && <Navbar client:load />}
+    {showNavbar && <Navbar client:visible />}
     <slot />
     {showFooter && <Footer client:idle />}
   </body>

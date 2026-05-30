@@ -3,6 +3,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location, Tag } from "@/lib/types";
 import { tagColorClasses } from "./constants";
+import { LocationCoverImage } from "@/components/ui/lazy-image";
 
 function ShimmerCard() {
   return (
@@ -38,10 +39,11 @@ function LocationCard({ location, index }: { location: Location; index: number }
       <article className="bg-card rounded-2xl overflow-hidden border border-border hover:border-amber-200/50 dark:hover:border-amber-800/50 hover:shadow-xl hover:shadow-amber-100/40 dark:hover:shadow-amber-900/20 hover:ring-1 hover:ring-amber-200/40 dark:hover:ring-amber-700/40 transition-all duration-300 hover:-translate-y-1">
         <div className="relative h-52 overflow-hidden bg-stone-100 dark:bg-stone-800">
           {location.coverImage ? (
-            <img
+            <LocationCoverImage
               src={location.coverImage}
               alt={location.name}
-              className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500 ease-out"
+              priority={index < 6}
+              className="group-hover:scale-[1.06] transition-transform duration-500 ease-out"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-800 to-stone-900">

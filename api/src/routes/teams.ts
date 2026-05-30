@@ -218,6 +218,7 @@ teams.get("/", async (c) => {
         .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
         .where(and(...conditions))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
+      c.header("Cache-Control", "public, max-age=30");
       return c.json({ success: true, teams: formatTeams(result) });
     }
 
@@ -242,6 +243,7 @@ teams.get("/", async (c) => {
         .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
         .where(and(...conditions))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
+      c.header("Cache-Control", "public, max-age=30");
       return c.json({ success: true, teams: formatTeams(result) });
     }
 

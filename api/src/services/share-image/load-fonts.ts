@@ -25,29 +25,36 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
   const fonts: FontData[] = [];
 
   try {
-    // 1. 尝试从 R2 加载自定义字体
+    // 1. 并行从 R2 加载所有字体（优化：串行→并行）
     const fontPaths = [
       { path: "assets/fonts/zpix-400.woff2", name: "Zpix", weight: 400 },
       { path: "assets/fonts/noto-sans-400.woff2", name: "Noto Sans SC", weight: 400 },
       { path: "assets/fonts/noto-sans-700.woff2", name: "Noto Sans SC", weight: 700 },
     ];
 
-    for (const { path, name, weight } of fontPaths) {
+    const fontPromises = fontPaths.map(async ({ path, name, weight }) => {
       try {
         const fontObject = await env.R2?.get(path);
         if (fontObject) {
           const fontData = await fontObject.arrayBuffer();
-          fonts.push({
+          return {
             name,
             data: fontData,
             weight,
-            style: "normal",
-          });
+            style: "normal" as const,
+          };
         }
+        return null;
       } catch (e) {
         console.error(`[Fonts] Failed to load ${path}:`, e);
+        return null;
       }
-    }
+    });
+
+    const loadedFonts = await Promise.all(fontPromises);
+    loadedFonts.forEach((font) => {
+      if (font) fonts.push(font);
+    });
 
     // 2. 如果没有从 R2 加载到任何字体，从 CDN 加载备用字体
     if (fonts.length === 0) {
