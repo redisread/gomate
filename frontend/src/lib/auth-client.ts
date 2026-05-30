@@ -18,7 +18,6 @@ export const {
   useSession,
   getSession,
   updateUser,
-  forgotPassword,
   resetPassword,
   sendVerificationEmail,
   verifyEmail,
