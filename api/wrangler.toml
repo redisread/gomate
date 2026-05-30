@@ -33,11 +33,6 @@ head_sampling_rate = 1
 [placement]
 mode = "smart"
 
-# WASM 模块绑定 - resvg-wasm
-[[wasm_modules]]
-binding = "RESVG_WASM"
-module = "./node_modules/@resvg/resvg-wasm/index_bg.wasm"
-
 # 定时任务：每天 UTC 12:10（北京时间晚上 8:10）更新过期队伍状态
 [triggers]
 crons = ["10 12 * * *"]
