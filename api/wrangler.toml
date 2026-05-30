@@ -87,11 +87,6 @@ id = "638ecd78e70c48fda01904bc9c2105d8"
 [env.production.placement]
 mode = "smart"
 
-# WASM 模块绑定 - resvg-wasm (生产环境)
-[[env.production.wasm_modules]]
-binding = "RESVG_WASM"
-module = "./node_modules/@resvg/resvg-wasm/index_bg.wasm"
-
 [env.production.observability]
 enabled = true
 head_sampling_rate = 0.1
