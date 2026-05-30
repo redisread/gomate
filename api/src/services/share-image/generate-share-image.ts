@@ -345,13 +345,19 @@ export async function generateTeamImage(
   // 8. 格式化日期
   const date = formatTeamDate(team.startTime);
 
-  // 9. 渲染 SVG（使用最简模板测试）
-  console.log("[ShareImage] Rendering team poster (simple)...");
+  // 9. 生成二维码
+  const teamUrl = `https://gomate.live/teams/${teamId}`;
+  const qrCodeDataUrl = await generateQRCode(teamUrl);
+  console.log("[ShareImage] QR code generated");
+
+  // 10. 渲染 SVG（使用最简模板 + 二维码）
+  console.log("[ShareImage] Rendering team poster (simple + QR)...");
   const svg = await renderTeamPosterSimple({
     title: team.title,
     date,
     currentMembers,
     maxMembers,
+    qrCodeDataUrl,
     fonts,
   });
   console.log("[ShareImage] SVG rendered");

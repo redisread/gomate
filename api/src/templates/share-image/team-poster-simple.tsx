@@ -23,9 +23,10 @@ interface TeamPosterData {
  * 队伍分享海报模板（最简版本 - 用于测试）
  */
 export async function renderTeamPosterSimple(data: TeamPosterData): Promise<string> {
-  const { title, date, currentMembers, maxMembers, fonts } = data;
+  const { title, date, currentMembers, maxMembers, qrCodeDataUrl, fonts } = data;
 
   const fontFamily = fonts.length > 0 ? fonts[0].name : "system-ui";
+  const hasQR = !!qrCodeDataUrl;
 
   const svg = await satori(
     // @ts-expect-error - Satori accepts plain object format
@@ -74,10 +75,27 @@ export async function renderTeamPosterSimple(data: TeamPosterData): Promise<stri
                 display: "flex",
                 fontSize: 14,
                 color: "#57534e",
+                marginBottom: hasQR ? 16 : 0,
               },
               children: `成员: ${currentMembers}/${maxMembers}`,
             },
           },
+          // 二维码
+          ...(hasQR
+            ? [
+                {
+                  type: "img",
+                  props: {
+                    src: qrCodeDataUrl,
+                    style: {
+                      display: "flex",
+                      width: 80,
+                      height: 80,
+                    },
+                  },
+                },
+              ]
+            : []),
         ],
       },
     },
