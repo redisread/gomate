@@ -54,6 +54,8 @@ export function ImageGrid({ images, maxImages = 3, className }: ImageGridProps) 
           <img
             src={displayImages[0]}
             alt="Activity photo"
+            loading="lazy"
+            decoding="async"
             className="w-full h-auto max-h-64 object-cover hover:scale-105 transition-transform duration-300"
           />
         </div>
@@ -67,6 +69,7 @@ export function ImageGrid({ images, maxImages = 3, className }: ImageGridProps) 
             <img
               src={currentImage}
               alt="Activity photo"
+              loading="eager"
               className="max-w-full max-h-[80vh] object-contain rounded-lg"
             />
           </div>
@@ -93,6 +96,8 @@ export function ImageGrid({ images, maxImages = 3, className }: ImageGridProps) 
             <img
               src={image}
               alt={`Activity photo ${index + 1}`}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
             />
             {hasMore && index === maxImages - 1 && (
@@ -113,6 +118,7 @@ export function ImageGrid({ images, maxImages = 3, className }: ImageGridProps) 
           <img
             src={currentImage}
             alt="Activity photo"
+            loading="eager"
             className="max-w-full max-h-[80vh] object-contain rounded-lg"
           />
         </div>
