@@ -36,6 +36,7 @@ export const users = sqliteTable(
   (table) => ({
     emailIdx: index("users_email_idx").on(table.email),
     nameIdx: index("users_name_idx").on(table.name),
+    nicknameIdx: index("users_nickname_idx").on(table.nickname),
   })
 );
 
@@ -145,6 +146,7 @@ export const locations = sqliteTable(
     slugIdx: uniqueIndex("locations_slug_idx").on(table.slug),
     cityIdx: index("locations_city_idx").on(table.cityId),
     typeIdx: index("locations_type_idx").on(table.type),
+    createdAtIdx: index("locations_created_at_idx").on(table.createdAt),
   })
 );
 
@@ -232,6 +234,7 @@ export const teams = sqliteTable(
     leaderIdx: index("teams_leader_idx").on(table.leaderId),
     statusIdx: index("teams_status_idx").on(table.status),
     startTimeIdx: index("teams_start_time_idx").on(table.startTime),
+    titleIdx: index("teams_title_idx").on(table.title),
     statusCreatedAtIdx: index("teams_status_created_at_idx").on(table.status, table.createdAt),
     statusStartTimeIdx: index("teams_status_start_time_idx").on(table.status, table.startTime),
   })

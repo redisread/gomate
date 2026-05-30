@@ -53,6 +53,7 @@ locations.get("/", async (c) => {
         .select({ id: schema.tags.id, name: schema.tags.name, type: schema.tags.type })
         .from(schema.tags)
         .limit(15);
+      c.header("Cache-Control", "public, max-age=60");
       return c.json({ success: true, tags: popularTags });
     }
 
@@ -67,6 +68,7 @@ locations.get("/", async (c) => {
         if (!grouped[tag.type]) grouped[tag.type] = [];
         grouped[tag.type].push(tag);
       }
+      c.header("Cache-Control", "public, max-age=60");
       return c.json({ success: true, tags: grouped });
     }
 
@@ -203,6 +205,7 @@ locations.get("/", async (c) => {
         };
       });
 
+      c.header("Cache-Control", "public, max-age=60");
       return c.json({ success: true, locations: formattedLocations, pagination: { page, pageSize, total, totalPages } });
     }
 
