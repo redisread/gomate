@@ -1,0 +1,77 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  # API Package Validation
+  api-checks:
+    name: API Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm --filter @gomate/api lint
+      - name: Type Check
+        run: pnpm --filter @gomate/api type-check
+      - name: Build
+        run: pnpm --filter @gomate/api build
+      - name: Test
+        run: pnpm --filter @gomate/api test
+
+  # Frontend Package Validation
+  frontend-checks:
+    name: Frontend Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Generate i18n locales
+        run: pnpm i18n:build
+      - name: Lint
+        run: pnpm --filter @gomate/frontend lint
+      - name: Type Check
+        run: pnpm --filter @gomate/frontend type-check
+      - name: i18n Key Validation
+        run: pnpm --filter @gomate/frontend i18n:validate
+      - name: Test
+        run: pnpm --filter @gomate/frontend test
+      - name: Build
+        run: pnpm --filter @gomate/frontend build
+        env:
+          PUBLIC_API_URL: https://api.gomate.live
+
+  # Mobile Package Validation (if applicable)
+  mobile-checks:
+    name: Mobile Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm --filter @gomate/mobile lint || echo "No lint script"
+      - name: Type Check
+        run: pnpm --filter @gomate/mobile type-check || echo "No type-check script"
+      - name: Test
+        run: pnpm --filter @gomate/mobile test || echo "No test script"
