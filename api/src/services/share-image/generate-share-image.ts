@@ -443,12 +443,14 @@ function formatTeamDate(timestamp: number | Date): string {
  * 生成二维码
  * 使用 qrcode 库生成真实二维码（Cloudflare Workers 兼容）
  */
-async function generateQRCode(text: string): Promise<string> {
+export async function generateQRCode(text: string): Promise<string> {
   try {
     // 使用 qrcode 生成 data URL
+    // 优化参数：增大尺寸、提高纠错级别、增加边距，确保扫码识别率
     const dataUrl = await QRCode.toDataURL(text, {
-      width: 200,
-      margin: 2,
+      width: 240,
+      margin: 4,
+      errorCorrectionLevel: "H",
       color: {
         dark: "#1e1812",
         light: "#ffffff",

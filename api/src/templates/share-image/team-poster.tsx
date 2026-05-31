@@ -20,9 +20,14 @@ interface TeamPosterData {
 }
 
 /**
- * 队伍分享海报模板
- * 基于 team-poster-content.tsx 设计
- * 尺寸: 375 x auto (约 800px)
+ * 队伍分享海报模板（4:5 比例优化版）
+ * 尺寸: 375 x 468（4:5 比例，适合微信/小红书分享）
+ * 优化点：
+ * 1. 固定高度 468px，避免过长
+ * 2. 封面图压缩至 160px
+ * 3. 地点信息简化
+ * 4. 二维码增大至 160x160，周围留白
+ * 5. 队长信息与二维码并排
  */
 export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
   const { title, date, locationName, coverImage, currentMembers, maxMembers, leaderName, leaderAvatar, spotsToForm, qrCodeDataUrl, fonts } = data;
@@ -32,16 +37,14 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
   const hasLocation = !!locationName;
   const hasLeader = !!leaderName;
 
-  // 计算动态高度
-  const baseHeight = 400;
-  const coverHeight = hasCover ? 220 : 0;
-  const locationHeight = hasLocation ? 60 : 0;
-  const leaderHeight = hasLeader ? 64 : 0;
-  const calculatedHeight = baseHeight + coverHeight + locationHeight + leaderHeight;
+  // 固定高度 468px（4:5 比例）
+  const POSTER_HEIGHT = 468;
+  const POSTER_WIDTH = 375;
+  const COVER_HEIGHT = 160;
 
   // 进度百分比
   const progressPercent = Math.min((currentMembers / maxMembers) * 100, 100);
-  const progressWidth = Math.round((progressPercent / 100) * 64);
+  const progressWidth = Math.round((progressPercent / 100) * 48);
 
   // 状态标签文字
   const statusText = spotsToForm && spotsToForm > 0
@@ -56,12 +59,14 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
         style: {
           display: "flex",
           flexDirection: "column",
-          width: 375,
+          width: POSTER_WIDTH,
+          height: POSTER_HEIGHT,
           backgroundColor: "#ffffff",
           fontFamily,
+          overflow: "hidden",
         },
         children: [
-          // 封面图区域
+          // 封面图区域（压缩至 160px）
           ...(hasCover
             ? [
                 {
@@ -69,8 +74,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   props: {
                     style: {
                       display: "flex",
-                      width: 375,
-                      height: 220,
+                      width: POSTER_WIDTH,
+                      height: COVER_HEIGHT,
                       position: "relative",
                       overflow: "hidden",
                     },
@@ -82,8 +87,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                           src: coverImage,
                           style: {
                             display: "flex",
-                            width: 375,
-                            height: 220,
+                            width: POSTER_WIDTH,
+                            height: COVER_HEIGHT,
                             objectFit: "cover",
                           },
                         },
@@ -99,7 +104,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                             left: 0,
                             right: 0,
                             bottom: 0,
-                            background: "linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%)",
+                            background: "linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 40%)",
                           },
                         },
                       },
@@ -110,11 +115,11 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                           style: {
                             display: "flex",
                             position: "absolute",
-                            top: 16,
-                            left: 16,
-                            paddingHorizontal: 12,
-                            paddingVertical: 6,
-                            backgroundColor: "rgba(217, 119, 6, 0.85)",
+                            top: 12,
+                            left: 12,
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            backgroundColor: "rgba(217, 119, 6, 0.9)",
                             borderRadius: 9999,
                           },
                           children: {
@@ -122,7 +127,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                             props: {
                               style: {
                                 display: "flex",
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: 600,
                                 color: "#ffffff",
                               },
@@ -139,10 +144,10 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                             display: "flex",
                             flexDirection: "row",
                             alignItems: "center",
-                            gap: 6,
+                            gap: 4,
                             position: "absolute",
-                            top: 16,
-                            right: 16,
+                            top: 12,
+                            right: 12,
                           },
                           children: [
                             {
@@ -150,10 +155,10 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                               props: {
                                 style: {
                                   display: "flex",
-                                  width: 28,
-                                  height: 28,
-                                  backgroundColor: "rgba(255,255,255,0.2)",
-                                  borderRadius: 8,
+                                  width: 24,
+                                  height: 24,
+                                  backgroundColor: "rgba(255,255,255,0.25)",
+                                  borderRadius: 6,
                                   alignItems: "center",
                                   justifyContent: "center",
                                 },
@@ -162,7 +167,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   props: {
                                     style: {
                                       display: "flex",
-                                      fontSize: 14,
+                                      fontSize: 12,
                                       color: "#ffffff",
                                     },
                                     children: "⛰️",
@@ -175,7 +180,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                               props: {
                                 style: {
                                   display: "flex",
-                                  fontSize: 11,
+                                  fontSize: 10,
                                   fontWeight: 600,
                                   color: "#ffffff",
                                 },
@@ -191,18 +196,19 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
               ]
             : []),
 
-          // 内容区域
+          // 内容区域（紧凑布局）
           {
             type: "div",
             props: {
               style: {
                 display: "flex",
                 flexDirection: "column",
-                padding: 24,
-                paddingTop: hasCover ? 24 : 32,
+                padding: 20,
+                paddingTop: hasCover ? 16 : 24,
+                flex: 1,
               },
               children: [
-                // 装饰背景（渐变）
+                // 无封面时的背景装饰
                 ...(hasCover
                   ? []
                   : [
@@ -215,360 +221,35 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                             top: 0,
                             left: 0,
                             right: 0,
-                            height: 128,
+                            height: 100,
                             background: "linear-gradient(180deg, #FEF3C7 0%, #ffffff 100%)",
                           },
                         },
                       },
                     ]),
 
-                // 标题
+                // 标题（限制 2 行）
                 {
                   type: "h1",
                   props: {
                     style: {
                       display: "flex",
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: 700,
                       color: "#1c1917",
-                      lineHeight: 1.4,
+                      lineHeight: 1.35,
                       margin: 0,
-                      marginBottom: 16,
+                      marginBottom: 12,
+                      maxHeight: 48,
+                      overflow: "hidden",
+                      textAlign: "center",
+                      justifyContent: "center",
                     },
                     children: title,
                   },
                 },
 
-                // 日期卡片
-                {
-                  type: "div",
-                  props: {
-                    style: {
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: 12,
-                      backgroundColor: "rgba(254, 243, 199, 0.8)",
-                      borderRadius: 12,
-                      marginBottom: 12,
-                    },
-                    children: [
-                      // 日历图标
-                      {
-                        type: "div",
-                        props: {
-                          style: {
-                            display: "flex",
-                            width: 36,
-                            height: 36,
-                            backgroundColor: "rgba(217, 119, 6, 0.15)",
-                            borderRadius: 8,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 16,
-                          },
-                          children: "📅",
-                        },
-                      },
-                      {
-                        type: "div",
-                        props: {
-                          style: {
-                            display: "flex",
-                            flexDirection: "column",
-                          },
-                          children: [
-                            {
-                              type: "span",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  fontSize: 11,
-                                  color: "#78716c",
-                                },
-                                children: "活动日期",
-                              },
-                            },
-                            {
-                              type: "span",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  fontSize: 13,
-                                  fontWeight: 600,
-                                  color: "#292524",
-                                },
-                                children: date,
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                  },
-                },
-
-                // 地点卡片
-                ...(hasLocation
-                  ? [
-                      {
-                        type: "div",
-                        props: {
-                          style: {
-                            display: "flex",
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 12,
-                            padding: 12,
-                            backgroundColor: "rgba(245, 245, 244, 0.8)",
-                            borderRadius: 12,
-                            marginBottom: 12,
-                          },
-                          children: [
-                            {
-                              type: "div",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  width: 36,
-                                  height: 36,
-                                  backgroundColor: "rgba(120, 113, 108, 0.1)",
-                                  borderRadius: 8,
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontSize: 16,
-                                },
-                                children: "📍",
-                              },
-                            },
-                            {
-                              type: "div",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  flexDirection: "column",
-                                },
-                                children: [
-                                  {
-                                    type: "span",
-                                    props: {
-                                      style: {
-                                        display: "flex",
-                                        fontSize: 11,
-                                        color: "#78716c",
-                                      },
-                                      children: "活动地点",
-                                    },
-                                  },
-                                  {
-                                    type: "span",
-                                    props: {
-                                      style: {
-                                        display: "flex",
-                                        fontSize: 13,
-                                        fontWeight: 600,
-                                        color: "#292524",
-                                      },
-                                      children: locationName,
-                                    },
-                                  },
-                                ],
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ]
-                  : []),
-
-                // 人数卡片
-                {
-                  type: "div",
-                  props: {
-                    style: {
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: 12,
-                      backgroundColor: "rgba(209, 250, 229, 0.8)",
-                      borderRadius: 12,
-                      marginBottom: hasLeader ? 12 : 20,
-                    },
-                    children: [
-                      {
-                        type: "div",
-                        props: {
-                          style: {
-                            display: "flex",
-                            width: 36,
-                            height: 36,
-                            backgroundColor: "rgba(16, 185, 129, 0.15)",
-                            borderRadius: 8,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 16,
-                          },
-                          children: "👥",
-                        },
-                      },
-                      {
-                        type: "div",
-                        props: {
-                          style: {
-                            display: "flex",
-                            flexDirection: "column",
-                            flex: 1,
-                          },
-                          children: [
-                            {
-                              type: "span",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  fontSize: 11,
-                                  color: "#78716c",
-                                },
-                                children: "队伍人数",
-                              },
-                            },
-                            {
-                              type: "span",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  fontSize: 13,
-                                  fontWeight: 600,
-                                  color: "#292524",
-                                },
-                                children: `${currentMembers}/${maxMembers}人`,
-                              },
-                            },
-                          ],
-                        },
-                      },
-                      // 进度条
-                      {
-                        type: "div",
-                        props: {
-                          style: {
-                            display: "flex",
-                            width: 64,
-                            height: 8,
-                            backgroundColor: "#e7e5e4",
-                            borderRadius: 4,
-                            overflow: "hidden",
-                          },
-                          children: {
-                            type: "div",
-                            props: {
-                              style: {
-                                display: "flex",
-                                width: progressWidth,
-                                height: 8,
-                                backgroundColor: "#10b981",
-                                borderRadius: 4,
-                              },
-                            },
-                          },
-                        },
-                      },
-                    ],
-                  },
-                },
-
-                // 队长信息
-                ...(hasLeader
-                  ? [
-                      {
-                        type: "div",
-                        props: {
-                          style: {
-                            display: "flex",
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 12,
-                            padding: 12,
-                            borderRadius: 12,
-                            border: "1px solid #f5f5f4",
-                            marginBottom: 20,
-                          },
-                          children: [
-                            // 队长头像
-                            leaderAvatar
-                              ? {
-                                  type: "img",
-                                  props: {
-                                    src: leaderAvatar,
-                                    style: {
-                                      display: "flex",
-                                      width: 40,
-                                      height: 40,
-                                      borderRadius: 20,
-                                      objectFit: "cover",
-                                    },
-                                  },
-                                }
-                              : {
-                                  type: "div",
-                                  props: {
-                                    style: {
-                                      display: "flex",
-                                      width: 40,
-                                      height: 40,
-                                      borderRadius: 20,
-                                      background: "linear-gradient(135deg, #D97706 0%, #FCD34D 100%)",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      fontSize: 14,
-                                      fontWeight: 700,
-                                      color: "#ffffff",
-                                    },
-                                    children: leaderName!.charAt(0).toUpperCase(),
-                                  },
-                                },
-                            {
-                              type: "div",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  flexDirection: "column",
-                                },
-                                children: [
-                                  {
-                                    type: "span",
-                                    props: {
-                                      style: {
-                                        display: "flex",
-                                        fontSize: 11,
-                                        color: "#78716c",
-                                      },
-                                      children: "队长",
-                                    },
-                                  },
-                                  {
-                                    type: "span",
-                                    props: {
-                                      style: {
-                                        display: "flex",
-                                        fontSize: 13,
-                                        fontWeight: 600,
-                                        color: "#292524",
-                                      },
-                                      children: leaderName,
-                                    },
-                                  },
-                                ],
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ]
-                  : []),
-
-                // 分割线
+                // 日期 + 地点（单行合并）
                 {
                   type: "div",
                   props: {
@@ -577,18 +258,87 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       flexDirection: "row",
                       alignItems: "center",
                       gap: 8,
-                      marginBottom: 20,
+                      padding: "10px 12px",
+                      backgroundColor: "rgba(254, 243, 199, 0.8)",
+                      borderRadius: 10,
+                      marginBottom: 10,
                     },
                     children: [
                       {
-                        type: "div",
+                        type: "span",
                         props: {
                           style: {
                             display: "flex",
-                            flex: 1,
-                            height: 1,
-                            backgroundColor: "#e7e5e4",
+                            fontSize: 14,
                           },
+                          children: "📅",
+                        },
+                      },
+                      {
+                        type: "span",
+                        props: {
+                          style: {
+                            display: "flex",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#292524",
+                          },
+                          children: date,
+                        },
+                      },
+                      ...(hasLocation
+                        ? [
+                            {
+                              type: "span",
+                              props: {
+                                style: {
+                                  display: "flex",
+                                  fontSize: 12,
+                                  color: "#78716c",
+                                  marginLeft: 4,
+                                },
+                                children: `· ${locationName}`,
+                              },
+                            },
+                          ]
+                        : []),
+                    ],
+                  },
+                },
+
+                // 人数进度条（紧凑版）
+                {
+                  type: "div",
+                  props: {
+                    style: {
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 16,
+                    },
+                    children: [
+                      {
+                        type: "span",
+                        props: {
+                          style: {
+                            display: "flex",
+                            fontSize: 13,
+                            color: "#78716c",
+                          },
+                          children: "👥",
+                        },
+                      },
+                      {
+                        type: "span",
+                        props: {
+                          style: {
+                            display: "flex",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#292524",
+                          },
+                          children: `${currentMembers}/${maxMembers}人`,
                         },
                       },
                       {
@@ -596,57 +346,24 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                         props: {
                           style: {
                             display: "flex",
-                            flexDirection: "row",
-                            gap: 4,
-                          },
-                          children: [
-                            {
-                              type: "div",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  width: 6,
-                                  height: 6,
-                                  borderRadius: 3,
-                                  backgroundColor: "#fbbf24",
-                                },
-                              },
-                            },
-                            {
-                              type: "div",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  width: 6,
-                                  height: 6,
-                                  borderRadius: 3,
-                                  backgroundColor: "#f59e0b",
-                                },
-                              },
-                            },
-                            {
-                              type: "div",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  width: 6,
-                                  height: 6,
-                                  borderRadius: 3,
-                                  backgroundColor: "#d97706",
-                                },
-                              },
-                            },
-                          ],
-                        },
-                      },
-                      {
-                        type: "div",
-                        props: {
-                          style: {
-                            display: "flex",
                             flex: 1,
-                            height: 1,
+                            height: 6,
                             backgroundColor: "#e7e5e4",
+                            borderRadius: 3,
+                            overflow: "hidden",
+                            marginLeft: 4,
+                          },
+                          children: {
+                            type: "div",
+                            props: {
+                              style: {
+                                display: "flex",
+                                width: progressWidth,
+                                height: 6,
+                                backgroundColor: "#10b981",
+                                borderRadius: 3,
+                              },
+                            },
                           },
                         },
                       },
@@ -654,25 +371,153 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   },
                 },
 
-                // QR Code 区域
+                // 底部区域：队长 + 二维码 并排
                 {
                   type: "div",
                   props: {
                     style: {
                       display: "flex",
-                      flexDirection: "column",
+                      flexDirection: "row",
                       alignItems: "center",
+                      justifyContent: "space-between",
+                      marginTop: "auto",
+                      paddingTop: 12,
+                      borderTop: "1px solid #f5f5f4",
                     },
                     children: [
+                      // 左侧：队长信息
+                      ...(hasLeader
+                        ? [
+                            {
+                              type: "div",
+                              props: {
+                                style: {
+                                  display: "flex",
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  gap: 10,
+                                },
+                                children: [
+                                  // 队长头像
+                                  leaderAvatar
+                                    ? {
+                                        type: "img",
+                                        props: {
+                                          src: leaderAvatar,
+                                          style: {
+                                            display: "flex",
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: 18,
+                                            objectFit: "cover",
+                                          },
+                                        },
+                                      }
+                                    : {
+                                        type: "div",
+                                        props: {
+                                          style: {
+                                            display: "flex",
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: 18,
+                                            background: "linear-gradient(135deg, #D97706 0%, #FCD34D 100%)",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            color: "#ffffff",
+                                          },
+                                          children: leaderName!.charAt(0).toUpperCase(),
+                                        },
+                                      },
+                                  {
+                                    type: "div",
+                                    props: {
+                                      style: {
+                                        display: "flex",
+                                        flexDirection: "column",
+                                      },
+                                      children: [
+                                        {
+                                          type: "span",
+                                          props: {
+                                            style: {
+                                              display: "flex",
+                                              fontSize: 10,
+                                              color: "#a8a29e",
+                                            },
+                                            children: "队长",
+                                          },
+                                        },
+                                        {
+                                          type: "span",
+                                          props: {
+                                            style: {
+                                              display: "flex",
+                                              fontSize: 12,
+                                              fontWeight: 600,
+                                              color: "#292524",
+                                            },
+                                            children: leaderName,
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                ],
+                              },
+                            },
+                          ]
+                        : [
+                            // 无队长时的占位
+                            {
+                              type: "div",
+                              props: {
+                                style: {
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                },
+                                children: [
+                                  {
+                                    type: "span",
+                                    props: {
+                                      style: {
+                                        display: "flex",
+                                        fontSize: 12,
+                                        fontWeight: 600,
+                                        color: "#b45309",
+                                      },
+                                      children: "扫码加入队伍",
+                                    },
+                                  },
+                                  {
+                                    type: "span",
+                                    props: {
+                                      style: {
+                                        display: "flex",
+                                        fontSize: 10,
+                                        color: "#a8a29e",
+                                      },
+                                      children: "gomate.live",
+                                    },
+                                  },
+                                ],
+                              },
+                            },
+                          ]),
+
+                      // 右侧：二维码（160x160，带白边）
                       {
                         type: "div",
                         props: {
                           style: {
                             display: "flex",
-                            padding: 16,
+                            padding: 8,
                             backgroundColor: "#ffffff",
-                            borderRadius: 16,
-                            border: "1px solid #f5f5f4",
+                            borderRadius: 12,
+                            border: "1px solid #e7e5e4",
                           },
                           children: qrCodeDataUrl
                             ? {
@@ -681,8 +526,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   src: qrCodeDataUrl,
                                   style: {
                                     display: "flex",
-                                    width: 144,
-                                    height: 144,
+                                    width: 80,
+                                    height: 80,
                                   },
                                 },
                               }
@@ -691,102 +536,17 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                 props: {
                                   style: {
                                     display: "flex",
-                                    width: 144,
-                                    height: 144,
+                                    width: 80,
+                                    height: 80,
                                     backgroundColor: "#f5f5f4",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    fontSize: 12,
+                                    fontSize: 10,
                                     color: "#a8a29e",
                                   },
                                   children: "QR",
                                 },
                               },
-                        },
-                      },
-                      {
-                        type: "div",
-                        props: {
-                          style: {
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            marginTop: 16,
-                          },
-                          children: [
-                            {
-                              type: "span",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  fontSize: 14,
-                                  fontWeight: 600,
-                                  color: "#b45309",
-                                  marginBottom: 4,
-                                },
-                                children: "扫码加入队伍",
-                              },
-                            },
-                            {
-                              type: "span",
-                              props: {
-                                style: {
-                                  display: "flex",
-                                  fontSize: 11,
-                                  color: "#a8a29e",
-                                },
-                                children: "gomate.live",
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          },
-
-          // 底部装饰
-          {
-            type: "div",
-            props: {
-              style: {
-                display: "flex",
-                height: 64,
-                position: "relative",
-                overflow: "hidden",
-                marginTop: "auto",
-              },
-              children: [
-                {
-                  type: "svg",
-                  props: {
-                    width: 375,
-                    height: 60,
-                    viewBox: "0 0 375 60",
-                    preserveAspectRatio: "none",
-                    style: {
-                      display: "flex",
-                      position: "absolute",
-                      bottom: 0,
-                    },
-                    children: [
-                      {
-                        type: "path",
-                        props: {
-                          d: "M0,60 L0,40 Q93.75,20 187.5,40 Q281.25,60 375,40 L375,60 Z",
-                          fill: "#FEF3C7",
-                          opacity: 0.5,
-                        },
-                      },
-                      {
-                        type: "path",
-                        props: {
-                          d: "M0,60 L0,50 Q93.75,30 187.5,50 Q281.25,70 375,50 L375,60 Z",
-                          fill: "#FDE68A",
-                          opacity: 0.3,
                         },
                       },
                     ],
@@ -799,8 +559,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
       },
     },
     {
-      width: 375,
-      height: calculatedHeight,
+      width: POSTER_WIDTH,
+      height: POSTER_HEIGHT,
       fonts: fonts.map((f) => ({
         name: f.name,
         data: f.data,
