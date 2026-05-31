@@ -144,7 +144,7 @@ export function SharePosterPreview({
           <div className="p-4 flex flex-col items-center bg-gradient-to-b from-amber-50/50 to-background">
             {/* Display generated poster */}
             {isLoading ? (
-              <div className="w-[280px] h-[498px] bg-muted rounded-2xl flex flex-col items-center justify-center shadow-lg">
+              <div className="w-[280px] h-[350px] bg-muted rounded-2xl flex flex-col items-center justify-center shadow-lg">
                 <Loader2 className="w-10 h-10 animate-spin text-amber-600 mb-4" />
                 <p className="text-sm text-muted-foreground">
                   {t("teams.generatingPoster")}
@@ -166,7 +166,7 @@ export function SharePosterPreview({
                 </div>
               </div>
             ) : error ? (
-              <div className="w-[280px] h-[498px] bg-muted rounded-2xl flex flex-col items-center justify-center p-6">
+              <div className="w-[280px] h-[350px] bg-muted rounded-2xl flex flex-col items-center justify-center p-6">
                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-3">
                   <X className="w-6 h-6 text-red-500" />
                 </div>
