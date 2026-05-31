@@ -40,7 +40,8 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
   return (
     <main className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <div className="flex-1 max-w-7xl mx-auto px-6 py-8 lg:py-12 pb-24 lg:pb-12">
+      {/* pt-20 为固定导航栏预留空间（移动端） */}
+      <div className="flex-1 max-w-7xl mx-auto px-6 pt-20 pb-8 lg:pt-8 lg:pb-12 lg:py-8 pb-24 lg:pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 lg:gap-12">
           <TeamSidebar ctx={ctx} />
           <TeamMainContent ctx={ctx} />
