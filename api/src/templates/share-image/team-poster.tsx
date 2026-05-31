@@ -242,6 +242,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       marginBottom: 12,
                       maxHeight: 48,
                       overflow: "hidden",
+                      textAlign: "center",
+                      justifyContent: "center",
                     },
                     children: title,
                   },
@@ -475,6 +477,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                 style: {
                                   display: "flex",
                                   flexDirection: "column",
+                                  alignItems: "center",
                                 },
                                 children: [
                                   {
