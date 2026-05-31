@@ -60,10 +60,10 @@ export function LocationsHero({
           {t("locations.ctaHeroBadge")}
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 leading-tight" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 80ms both" }}>
+        <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 leading-tight text-center" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 80ms both" }}>
           {t("locations.pageTitle")}
         </h1>
-        <p className="text-stone-400 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed max-w-xl" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}>
+        <p className="text-stone-400 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed max-w-xl text-center mx-auto" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}>
           {t("locations.heroTagline")}
         </p>
 
