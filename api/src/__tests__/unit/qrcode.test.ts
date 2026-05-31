@@ -14,7 +14,7 @@ describe("QR Code Generation", () => {
     (QRCode.toDataURL as any).mockResolvedValue(mockDataUrl);
 
     // Import the function dynamically to get the real implementation
-    const { generateQRCode } = await import("../services/share-image/generate-share-image");
+    const { generateQRCode } = await import("../../services/share-image/generate-share-image");
 
     const testUrl = "https://gomate.live/locations/test-location";
     const result = await generateQRCode(testUrl);
@@ -38,7 +38,7 @@ describe("QR Code Generation", () => {
       .mockResolvedValueOnce(mockDataUrl1)
       .mockResolvedValueOnce(mockDataUrl2);
 
-    const { generateQRCode } = await import("../services/share-image/generate-share-image");
+    const { generateQRCode } = await import("../../services/share-image/generate-share-image");
 
     const url1 = "https://gomate.live/locations/location-1";
     const url2 = "https://gomate.live/teams/team-2";
@@ -58,7 +58,7 @@ describe("QR Code Generation", () => {
   it("should fallback to placeholder on error", async () => {
     (QRCode.toDataURL as any).mockRejectedValue(new Error("QR generation failed"));
 
-    const { generateQRCode } = await import("../services/share-image/generate-share-image");
+    const { generateQRCode } = await import("../../services/share-image/generate-share-image");
 
     const testUrl = "https://gomate.live/locations/test";
     const result = await generateQRCode(testUrl);
