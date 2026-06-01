@@ -1,0 +1,14 @@
+---
+/**
+ * 发现页 - 故事列表
+ */
+import Layout from "../../layouts/Layout.astro";
+import { DiscoverMain } from "../../components/features/discover-client";
+import { declareI18nNs } from "../../middleware";
+
+declareI18nNs(Astro.locals, ["content", "common"]);
+---
+
+<Layout title="发现 - GoMate" showNavbar={true} showFooter={true}>
+  <DiscoverMain client:visible />
+</Layout>

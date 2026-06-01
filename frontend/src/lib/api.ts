@@ -6,8 +6,8 @@
 
 export const API_BASE =
   typeof window !== "undefined"
-    ? (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8799"
-    : (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8799";
+    ? (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8888"
+    : (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8888";
 
 /**
  * 通用 fetch 封装，自动携带 credentials 和 Content-Type

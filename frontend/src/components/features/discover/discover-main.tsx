@@ -1,0 +1,368 @@
+"use client";
+
+import * as React from "react";
+import { Compass, Loader2, Plus, MapPin, Tag, Flame } from "lucide-react";
+import { StoryCard } from "./story-card";
+import { FeaturedStoryCard } from "./featured-story-card";
+import { SidebarSection } from "./sidebar-section";
+import { useI18n } from "@/hooks/useI18n";
+
+interface Story {
+  id: string;
+  title: string;
+  summary: string;
+  coverImage?: string;
+  viewCount: number;
+  likeCount: number;
+  createdAt: number;
+  author: {
+    id: string;
+    name: string;
+    image?: string;
+  } | null;
+  location?: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+}
+
+interface StoriesResponse {
+  success: boolean;
+  data: Story[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
+// Mock data for sidebar
+const POPULAR_LOCATIONS = [
+  { id: "1", name: "梧桐山", storyCount: 45 },
+  { id: "2", name: "东西涌", storyCount: 32 },
+  { id: "3", name: "七娘山", storyCount: 28 },
+  { id: "4", name: "马峦山", storyCount: 21 },
+  { id: "5", name: "阳台山", storyCount: 18 },
+];
+
+const POPULAR_TAGS = [
+  { name: "徒步", count: 128 },
+  { name: "海岸线", count: 86 },
+  { name: "露营", count: 54 },
+  { name: "瀑布", count: 45 },
+  { name: "城市周边", count: 67 },
+];
+
+// Mock data for stories
+const MOCK_STORIES: Story[] = [
+  {
+    id: "1",
+    title: "梧桐山徒步攻略：深圳最美日出路线",
+    summary: "梧桐山是深圳最高峰，海拔943.7米。这条路线从梧桐山北路出发，经过好汉坡，最后到达大梧桐顶。全程约8公里，耗时4-5小时，是深圳户外爱好者必打卡的经典路线。",
+    coverImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=500&fit=crop",
+    viewCount: 1234,
+    likeCount: 89,
+    createdAt: Date.now() - 86400000 * 2,
+    author: { id: "1", name: "山野行者", image: "" },
+    location: { id: "1", name: "梧桐山", slug: "wutong" },
+  },
+  {
+    id: "2",
+    title: "东西涌穿越：深圳最经典海岸线",
+    summary: "东西涌穿越被誉为深圳最美的海岸线徒步路线。沿途可以欣赏到壮观的海蚀地貌、清澈的海水和原始的海岸线。",
+    coverImage: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=400&h=300&fit=crop",
+    viewCount: 987,
+    likeCount: 76,
+    createdAt: Date.now() - 86400000 * 5,
+    author: { id: "2", name: "海边的卡夫卡", image: "" },
+    location: { id: "2", name: "东西涌", slug: "dongxi" },
+  },
+  {
+    id: "3",
+    title: "七娘山探秘：大鹏半岛的绿野仙踪",
+    summary: "七娘山是深圳第二高峰，也是大鹏半岛的最高峰。这里有着原始次生林、瀑布和独特的火山地质景观。",
+    coverImage: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop",
+    viewCount: 856,
+    likeCount: 65,
+    createdAt: Date.now() - 86400000 * 8,
+    author: { id: "3", name: "森林漫步者", image: "" },
+    location: { id: "3", name: "七娘山", slug: "qiniang" },
+  },
+  {
+    id: "4",
+    title: "马峦山瀑布群：城市中的自然秘境",
+    summary: "马峦山位于坪山区，拥有深圳最大的瀑布群。这里既有壮观的瀑布，也有清幽的溪谷，是周末休闲的好去处。",
+    coverImage: "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=400&h=300&fit=crop",
+    viewCount: 743,
+    likeCount: 58,
+    createdAt: Date.now() - 86400000 * 12,
+    author: { id: "4", name: "溪水清音", image: "" },
+    location: { id: "4", name: "马峦山", slug: "maluan" },
+  },
+];
+
+export function DiscoverMain() {
+  const { t } = useI18n(["content", "common"]);
+  const [stories, setStories] = React.useState<Story[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [page, setPage] = React.useState(1);
+  const [hasMore, setHasMore] = React.useState(false);
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+
+  // Initial load
+  React.useEffect(() => {
+    loadStories(1, false);
+  }, []);
+
+  const loadStories = async (pageNum: number, append: boolean) => {
+    try {
+      if (pageNum === 1) {
+        setIsLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+      setError(null);
+
+      // Mock data for demo - bypass API
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const mockResponse: StoriesResponse = {
+        success: true,
+        data: MOCK_STORIES,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: MOCK_STORIES.length,
+          hasMore: false,
+        },
+      };
+
+      if (mockResponse.success) {
+        if (append) {
+          setStories((prev) => [...prev, ...mockResponse.data]);
+        } else {
+          setStories(mockResponse.data);
+        }
+        setHasMore(mockResponse.pagination.hasMore);
+        setPage(pageNum);
+      } else {
+        setError(t("content.discover.loadError"));
+      }
+    } catch (err) {
+      setError(t("content.discover.loadError"));
+      console.error("Load stories error:", err);
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
+
+  const handleStoryClick = (story: Story) => {
+    window.location.href = `/discover/${story.id}`;
+  };
+
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasMore) {
+      loadStories(page + 1, true);
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">{t("content.discover.loading")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-destructive mb-4">{error}</p>
+          <button
+            onClick={() => loadStories(1, false)}
+            className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
+          >
+            {t("content.discover.retry")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (stories.length === 0) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Compass className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">{t("content.discover.empty")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header - 紧凑设计 */}
+      <div className="pt-24 pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-start justify-between gap-4">
+            {/* Left: Title + Subtitle */}
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Compass className="w-4 h-4 text-primary" />
+                </div>
+                <h1 className="text-2xl font-bold text-foreground">
+                  {t("content.discover.title")}
+                </h1>
+              </div>
+              <p className="text-muted-foreground text-sm pl-11">
+                {t("content.discover.subtitle")}
+              </p>
+            </div>
+
+            {/* Right: Publish Button (Desktop) */}
+            <button
+              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+              onClick={() => window.location.href = "/discover/create"}
+            >
+              <Plus className="h-4 w-4" />
+              {t("content.discover.publish")}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content: Two Column Layout */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-8">
+          {/* Left: Main Content Flow */}
+          <div className="space-y-4">
+            {/* Featured Story - 第一篇作为精选 */}
+            {stories.length > 0 && (
+              <FeaturedStoryCard
+                story={stories[0]}
+                onClick={handleStoryClick}
+              />
+            )}
+
+            {/* Story List - 其余故事 */}
+            <div className="space-y-3">
+              {stories.slice(1).map((story) => (
+                <StoryCard
+                  key={story.id}
+                  story={story}
+                  onClick={handleStoryClick}
+                />
+              ))}
+            </div>
+
+            {/* Load More */}
+            {hasMore && (
+              <div className="py-6 flex justify-center">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="px-6 py-2.5 rounded-lg border border-border bg-background hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  {isLoadingMore ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("content.discover.loading")}
+                    </span>
+                  ) : (
+                    t("content.discover.loadMore")
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* No more */}
+            {!hasMore && stories.length > 0 && (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                {t("content.discover.noMore")}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Sidebar - 300px */}
+          <aside className="hidden lg:block space-y-4">
+            {/* Publish CTA */}
+            <div className="p-5 rounded-lg border border-border bg-white shadow-sm">
+              <h3 className="font-semibold text-sm mb-2">{t("content.discover.shareStory")}</h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                {t("content.discover.shareStoryDesc")}
+              </p>
+              <button
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                onClick={() => window.location.href = "/discover/create"}
+              >
+                <Plus className="h-4 w-4" />
+                {t("content.discover.publish")}
+              </button>
+            </div>
+
+            {/* Popular Locations */}
+            <SidebarSection
+              icon={<MapPin className="w-4 h-4" />}
+              title={t("content.discover.popularLocations")}
+            >
+              <div className="space-y-2">
+                {POPULAR_LOCATIONS.slice(0, 5).map((location) => (
+                  <a
+                    key={location.id}
+                    href={`/locations/${location.id}`}
+                    className="flex items-center justify-between py-2 px-2 -mx-2 rounded-md hover:bg-muted/50 transition-colors"
+                  >
+                    <span className="text-sm text-foreground">{location.name}</span>
+                    <span className="text-xs text-muted-foreground">{location.storyCount} 篇</span>
+                  </a>
+                ))}
+              </div>
+            </SidebarSection>
+
+            {/* Popular Tags */}
+            <SidebarSection
+              icon={<Tag className="w-4 h-4" />}
+              title={t("content.discover.popularTags")}
+            >
+              <div className="flex flex-wrap gap-2">
+                {POPULAR_TAGS.map((tag) => (
+                  <a
+                    key={tag.name}
+                    href={`/discover?tag=${tag.name}`}
+                    className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/50 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    #{tag.name}
+                    <span className="ml-1 text-muted-foreground/60">{tag.count}</span>
+                  </a>
+                ))}
+              </div>
+            </SidebarSection>
+
+            {/* Trending */}
+            <SidebarSection
+              icon={<Flame className="w-4 h-4" />}
+              title={t("content.discover.trending")}
+            >
+              <div className="text-sm text-muted-foreground">
+                {t("content.discover.trendingDesc")}
+              </div>
+            </SidebarSection>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
