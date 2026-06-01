@@ -11,7 +11,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
 });
 
 // We need to re-import after mock setup
-const API_BASE = "http://localhost:8799";
+const API_BASE = "http://localhost:8888";
 
 describe("API 客户端封装", () => {
   beforeEach(() => {
