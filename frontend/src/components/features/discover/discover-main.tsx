@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Compass, Loader2, Plus, MapPin, Tag, Flame } from "lucide-react";
+import { apiGet } from "@/lib/api";
 import { StoryCard } from "./story-card";
 import { FeaturedStoryCard } from "./featured-story-card";
 import { SidebarSection } from "./sidebar-section";
