@@ -27,6 +27,8 @@ interface Story {
   } | null;
 }
 
+import { apiGet } from "@/lib/api";
+
 interface StoriesResponse {
   success: boolean;
   data: Story[];
@@ -55,54 +57,6 @@ const POPULAR_TAGS = [
   { name: "城市周边", count: 67 },
 ];
 
-// Mock data for stories
-const MOCK_STORIES: Story[] = [
-  {
-    id: "1",
-    title: "梧桐山徒步攻略：深圳最美日出路线",
-    summary: "梧桐山是深圳最高峰，海拔943.7米。这条路线从梧桐山北路出发，经过好汉坡，最后到达大梧桐顶。全程约8公里，耗时4-5小时，是深圳户外爱好者必打卡的经典路线。",
-    coverImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=500&fit=crop",
-    viewCount: 1234,
-    likeCount: 89,
-    createdAt: Date.now() - 86400000 * 2,
-    author: { id: "1", name: "山野行者", image: "" },
-    location: { id: "1", name: "梧桐山", slug: "wutong" },
-  },
-  {
-    id: "2",
-    title: "东西涌穿越：深圳最经典海岸线",
-    summary: "东西涌穿越被誉为深圳最美的海岸线徒步路线。沿途可以欣赏到壮观的海蚀地貌、清澈的海水和原始的海岸线。",
-    coverImage: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=400&h=300&fit=crop",
-    viewCount: 987,
-    likeCount: 76,
-    createdAt: Date.now() - 86400000 * 5,
-    author: { id: "2", name: "海边的卡夫卡", image: "" },
-    location: { id: "2", name: "东西涌", slug: "dongxi" },
-  },
-  {
-    id: "3",
-    title: "七娘山探秘：大鹏半岛的绿野仙踪",
-    summary: "七娘山是深圳第二高峰，也是大鹏半岛的最高峰。这里有着原始次生林、瀑布和独特的火山地质景观。",
-    coverImage: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop",
-    viewCount: 856,
-    likeCount: 65,
-    createdAt: Date.now() - 86400000 * 8,
-    author: { id: "3", name: "森林漫步者", image: "" },
-    location: { id: "3", name: "七娘山", slug: "qiniang" },
-  },
-  {
-    id: "4",
-    title: "马峦山瀑布群：城市中的自然秘境",
-    summary: "马峦山位于坪山区，拥有深圳最大的瀑布群。这里既有壮观的瀑布，也有清幽的溪谷，是周末休闲的好去处。",
-    coverImage: "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=400&h=300&fit=crop",
-    viewCount: 743,
-    likeCount: 58,
-    createdAt: Date.now() - 86400000 * 12,
-    author: { id: "4", name: "溪水清音", image: "" },
-    location: { id: "4", name: "马峦山", slug: "maluan" },
-  },
-];
-
 export function DiscoverMain() {
   const { t } = useI18n(["content", "common"]);
   const [stories, setStories] = React.useState<Story[]>([]);
@@ -112,24 +66,10 @@ export function DiscoverMain() {
   const [hasMore, setHasMore] = React.useState(false);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
 
-  // Initial load
+  // Initial load - call real API
   React.useEffect(() => {
-    const loadInitialStories = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setStories(MOCK_STORIES);
-        setHasMore(false);
-      } catch (err) {
-        setError(t("content.discover.loadError"));
-        console.error("Load stories error:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadInitialStories();
-  }, [t]);
+    loadStories(1, false);
+  }, []);
 
   const loadStories = async (pageNum: number, append: boolean) => {
     try {
@@ -140,27 +80,15 @@ export function DiscoverMain() {
       }
       setError(null);
 
-      // Mock data for demo - bypass API
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await apiGet<StoriesResponse>(`/stories?page=${pageNum}&limit=10`);
 
-      const mockResponse: StoriesResponse = {
-        success: true,
-        data: MOCK_STORIES,
-        pagination: {
-          page: 1,
-          limit: 10,
-          total: MOCK_STORIES.length,
-          hasMore: false,
-        },
-      };
-
-      if (mockResponse.success) {
+      if (response.success) {
         if (append) {
-          setStories((prev) => [...prev, ...mockResponse.data]);
+          setStories((prev) => [...prev, ...response.data]);
         } else {
-          setStories(mockResponse.data);
+          setStories(response.data);
         }
-        setHasMore(mockResponse.pagination.hasMore);
+        setHasMore(response.pagination.hasMore);
         setPage(pageNum);
       } else {
         setError(t("content.discover.loadError"));
