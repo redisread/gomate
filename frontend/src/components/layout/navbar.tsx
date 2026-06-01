@@ -14,6 +14,7 @@ import { SearchInput } from "@/components/ui/search-input";
 
 const navLinks = (t: (key: any) => string) => [
   { href: "/",          label: t("nav.home") },
+  { href: "/discover",  label: t("nav.discover") },
   { href: "/locations", label: t("nav.locations") },
   { href: "/teams",     label: t("nav.teams") },
 ];

@@ -551,6 +551,43 @@ export type PoiRoleType = "waypoint" | "checkpoint" | "viewpoint" | "facility" |
 // 活动后分享状态
 export type ActivityPostStatus = "visible" | "hidden" | "deleted";
 
+// ==================== Stories (发现/故事) ====================
+
+export const stories = sqliteTable(
+  "stories",
+  {
+    id: text("id").primaryKey(),
+    authorId: text("author_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    title: text("title").notNull(),
+    summary: text("summary").notNull(), // 摘要，限制 150 字
+    content: text("content").notNull(), // Markdown/富文本内容
+    coverImage: text("cover_image"), // 120x80px 封面图
+    locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }), // 关联地点（可选）
+    status: text("status").notNull().default("published"), // draft | published | hidden
+    viewCount: integer("view_count").default(0),
+    likeCount: integer("like_count").default(0),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    authorIdx: index("stories_author_idx").on(table.authorId),
+    locationIdx: index("stories_location_idx").on(table.locationId),
+    statusIdx: index("stories_status_idx").on(table.status),
+    createdAtIdx: index("stories_created_at_idx").on(table.createdAt),
+  })
+);
+
+export const storiesRelations = relations(stories, ({ one }) => ({
+  author: one(users, { fields: [stories.authorId], references: [users.id] }),
+  location: one(locations, { fields: [stories.locationId], references: [locations.id] }),
+}));
+
+export type Story = typeof stories.$inferSelect;
+export type NewStory = typeof stories.$inferInsert;
+
+// 发现内容状态
+export type StoryStatus = "draft" | "published" | "hidden";
+
 // ==================== Image Cache (分享图图片预缓存) ====================
 
 export const imageCaches = sqliteTable(

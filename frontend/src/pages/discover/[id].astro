@@ -1,0 +1,47 @@
+---
+/**
+ * 故事详情页 - 动态路由
+ */
+import Layout from "../../layouts/Layout.astro";
+import { StoryDetail } from "../../components/features/discover-client";
+import { declareI18nNs } from "../../middleware";
+import { API_BASE } from "../../lib/api";
+
+declareI18nNs(Astro.locals, ["content", "common"]);
+
+const { id } = Astro.params;
+
+// 服务端获取故事数据，用于 SEO
+let storyData: { title?: string; summary?: string; coverImage?: string } | null = null;
+try {
+  const response = await fetch(`${API_BASE}/stories/${id}`);
+  if (response.ok) {
+    const data = await response.json();
+    if (data.success && data.data) {
+      storyData = data.data;
+    }
+  }
+} catch {
+  // 忽略错误，使用默认值
+}
+
+const title = storyData?.title
+  ? `${storyData.title} - GoMate发现`
+  : "故事详情 - GoMate发现";
+
+const description = storyData?.summary
+  ? storyData.summary.slice(0, 160)
+  : "发现精彩内容，分享户外故事";
+
+const ogImage = storyData?.coverImage;
+---
+
+<Layout
+  title={title}
+  description={description}
+  ogImage={ogImage}
+  showNavbar={true}
+  showFooter={true}
+>
+  <StoryDetail storyId={id!} client:visible />
+</Layout>
