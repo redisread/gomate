@@ -39,22 +39,27 @@ interface StoriesResponse {
   };
 }
 
-// Mock data for sidebar
-const POPULAR_LOCATIONS = [
-  { id: "1", name: "梧桐山", storyCount: 45 },
-  { id: "2", name: "东西涌", storyCount: 32 },
-  { id: "3", name: "七娘山", storyCount: 28 },
-  { id: "4", name: "马峦山", storyCount: 21 },
-  { id: "5", name: "阳台山", storyCount: 18 },
-];
+interface Location {
+  id: string;
+  name: string;
+  slug: string;
+  storyCount?: number;
+}
 
-const POPULAR_TAGS = [
-  { name: "徒步", count: 128 },
-  { name: "海岸线", count: 86 },
-  { name: "露营", count: 54 },
-  { name: "瀑布", count: 45 },
-  { name: "城市周边", count: 67 },
-];
+interface Tag {
+  name: string;
+  count?: number;
+}
+
+interface LocationsResponse {
+  success: boolean;
+  data: Location[];
+}
+
+interface TagsResponse {
+  success: boolean;
+  data: Tag[];
+}
 
 export function DiscoverMain() {
   const { t } = useI18n(["content", "common"]);
@@ -65,12 +70,41 @@ export function DiscoverMain() {
   const [hasMore, setHasMore] = React.useState(false);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
 
+  // Sidebar data
+  const [locations, setLocations] = React.useState<Location[]>([]);
+  const [tags, setTags] = React.useState<Tag[]>([]);
+
   // Initial load - call real API
   React.useEffect(() => {
     loadStories(1, false);
-  }, []);
+    loadSidebarData();
+  }, [loadStories]);
 
-  const loadStories = async (pageNum: number, append: boolean) => {
+  const loadSidebarData = async () => {
+    try {
+      // Load locations
+      const locationsRes = await apiGet<LocationsResponse>("/locations?view=card&pageSize=5");
+      if (locationsRes.success) {
+        setLocations(locationsRes.data);
+      }
+    } catch (err) {
+      console.error("Load locations error:", err);
+      setLocations([]);
+    }
+
+    try {
+      // Load tags
+      const tagsRes = await apiGet<TagsResponse>("/locations?tags=true");
+      if (tagsRes.success) {
+        setTags(tagsRes.data);
+      }
+    } catch (err) {
+      console.error("Load tags error:", err);
+      setTags([]);
+    }
+  };
+
+  const loadStories = React.useCallback(async (pageNum: number, append: boolean) => {
     try {
       if (pageNum === 1) {
         setIsLoading(true);
@@ -99,7 +133,7 @@ export function DiscoverMain() {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  };
+  }, [t]);
 
   const handleStoryClick = (story: Story) => {
     window.location.href = `/discover/${story.id}`;
@@ -255,42 +289,46 @@ export function DiscoverMain() {
             </div>
 
             {/* Popular Locations */}
-            <SidebarSection
-              icon={<MapPin className="w-4 h-4" />}
-              title={t("content.discover.popularLocations")}
-            >
-              <div className="space-y-2">
-                {POPULAR_LOCATIONS.slice(0, 5).map((location) => (
-                  <a
-                    key={location.id}
-                    href={`/locations/${location.id}`}
-                    className="flex items-center justify-between py-2 px-2 -mx-2 rounded-md hover:bg-muted/50 transition-colors"
-                  >
-                    <span className="text-sm text-foreground">{location.name}</span>
-                    <span className="text-xs text-muted-foreground">{location.storyCount} 篇</span>
-                  </a>
-                ))}
-              </div>
-            </SidebarSection>
+            {locations.length > 0 && (
+              <SidebarSection
+                icon={<MapPin className="w-4 h-4" />}
+                title={t("content.discover.popularLocations")}
+              >
+                <div className="space-y-2">
+                  {locations.map((location) => (
+                    <a
+                      key={location.id}
+                      href={`/locations/${location.slug || location.id}`}
+                      className="flex items-center justify-between py-2 px-2 -mx-2 rounded-md hover:bg-muted/50 transition-colors"
+                    >
+                      <span className="text-sm text-foreground">{location.name}</span>
+                      <span className="text-xs text-muted-foreground">{location.storyCount || 0} 篇</span>
+                    </a>
+                  ))}
+                </div>
+              </SidebarSection>
+            )}
 
             {/* Popular Tags */}
-            <SidebarSection
-              icon={<Tag className="w-4 h-4" />}
-              title={t("content.discover.popularTags")}
-            >
-              <div className="flex flex-wrap gap-2">
-                {POPULAR_TAGS.map((tag) => (
-                  <a
-                    key={tag.name}
-                    href={`/discover?tag=${tag.name}`}
-                    className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/50 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                  >
-                    #{tag.name}
-                    <span className="ml-1 text-muted-foreground/60">{tag.count}</span>
-                  </a>
-                ))}
-              </div>
-            </SidebarSection>
+            {tags.length > 0 && (
+              <SidebarSection
+                icon={<Tag className="w-4 h-4" />}
+                title={t("content.discover.popularTags")}
+              >
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <a
+                      key={tag.name}
+                      href={`/discover?tag=${tag.name}`}
+                      className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/50 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                      #{tag.name}
+                      <span className="ml-1 text-muted-foreground/60">{tag.count || 0}</span>
+                    </a>
+                  ))}
+                </div>
+              </SidebarSection>
+            )}
 
             {/* Trending */}
             <SidebarSection
