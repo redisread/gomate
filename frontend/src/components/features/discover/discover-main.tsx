@@ -74,36 +74,6 @@ export function DiscoverMain() {
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [tags, setTags] = React.useState<Tag[]>([]);
 
-  // Initial load - call real API
-  React.useEffect(() => {
-    loadStories(1, false);
-    loadSidebarData();
-  }, [loadStories]);
-
-  const loadSidebarData = async () => {
-    try {
-      // Load locations
-      const locationsRes = await apiGet<LocationsResponse>("/locations?view=card&pageSize=5");
-      if (locationsRes.success) {
-        setLocations(locationsRes.data);
-      }
-    } catch (err) {
-      console.error("Load locations error:", err);
-      setLocations([]);
-    }
-
-    try {
-      // Load tags
-      const tagsRes = await apiGet<TagsResponse>("/locations?tags=true");
-      if (tagsRes.success) {
-        setTags(tagsRes.data);
-      }
-    } catch (err) {
-      console.error("Load tags error:", err);
-      setTags([]);
-    }
-  };
-
   const loadStories = React.useCallback(async (pageNum: number, append: boolean) => {
     try {
       if (pageNum === 1) {
@@ -134,6 +104,36 @@ export function DiscoverMain() {
       setIsLoadingMore(false);
     }
   }, [t]);
+
+  // Initial load - call real API
+  React.useEffect(() => {
+    loadStories(1, false);
+    loadSidebarData();
+  }, [loadStories]);
+
+  const loadSidebarData = async () => {
+    try {
+      // Load locations
+      const locationsRes = await apiGet<LocationsResponse>("/locations?view=card&pageSize=5");
+      if (locationsRes.success) {
+        setLocations(locationsRes.data);
+      }
+    } catch (err) {
+      console.error("Load locations error:", err);
+      setLocations([]);
+    }
+
+    try {
+      // Load tags
+      const tagsRes = await apiGet<TagsResponse>("/locations?tags=true");
+      if (tagsRes.success) {
+        setTags(tagsRes.data);
+      }
+    } catch (err) {
+      console.error("Load tags error:", err);
+      setTags([]);
+    }
+  };
 
   const handleStoryClick = (story: Story) => {
     window.location.href = `/discover/${story.id}`;
