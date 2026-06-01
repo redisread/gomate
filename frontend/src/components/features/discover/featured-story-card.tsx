@@ -97,7 +97,7 @@ export function FeaturedStoryCard({ story, onClick, className }: FeaturedStoryCa
       </div>
 
       {/* 内容区 */}
-      <div className="p-5">
+      <div className="p-4 sm:p-5">
         {/* 标题 - 18px 加粗 */}
         <h3 className="text-lg font-bold text-foreground line-clamp-2 mb-3 group-hover:text-primary transition-colors">
           {story.title}
@@ -109,7 +109,7 @@ export function FeaturedStoryCard({ story, onClick, className }: FeaturedStoryCa
         </p>
 
         {/* Meta 信息 */}
-        <div className="flex items-center gap-2 pt-4 border-t border-border/40">
+        <div className="flex items-center gap-2 pt-4 border-t border-border/40 min-w-0">
           {/* 作者头像 */}
           {story.author?.image ? (
             <img
@@ -122,13 +122,13 @@ export function FeaturedStoryCard({ story, onClick, className }: FeaturedStoryCa
               {story.author?.name?.charAt(0) || "?"}
             </div>
           )}
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground truncate">
             {story.author?.name || t("content.discover.anonymous")}
           </span>
           <span className="text-muted-foreground/40">·</span>
-          <span className="text-sm text-muted-foreground">{formatDate(story.createdAt)}</span>
+          <span className="text-sm text-muted-foreground shrink-0">{formatDate(story.createdAt)}</span>
           {story.location && (
-            <span className="ml-auto text-xs text-primary/80 bg-primary/5 px-2 py-0.5 rounded">
+            <span className="ml-auto text-xs text-primary/80 bg-primary/5 px-2 py-0.5 rounded truncate max-w-[40%]">
               {story.location.name}
             </span>
           )}

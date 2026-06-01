@@ -37,7 +37,7 @@ interface StoryCardProps {
 /**
  * 故事卡片组件 - 横排布局（保持可扫读）
  * 桌面：左侧图片 120×80，右侧内容
- * 移动：左侧图片 100×75
+ * 移动：图片置顶，避免窄屏文本挤压
  * 8px 圆角，细边框，轻阴影
  */
 export function StoryCard({ story, onClick, className }: StoryCardProps) {
@@ -63,7 +63,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
       onClick={handleClick}
       className={cn(
         // 基础样式：白底、细边框、轻阴影，8px 圆角
-        "flex gap-4 p-4 bg-white cursor-pointer rounded-lg overflow-hidden",
+        "flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4 bg-white cursor-pointer rounded-lg overflow-hidden",
         "border border-border/60",
         "shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
         // Hover：微边框色 + 微上移
@@ -72,8 +72,8 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
         className
       )}
     >
-      {/* 封面图 - 桌面 120×80，移动 100×75 */}
-      <div className="flex-shrink-0 w-[100px] h-[75px] sm:w-[120px] sm:h-[80px] rounded-lg overflow-hidden bg-muted">
+      {/* 封面图 - 移动端置顶，桌面端横排 */}
+      <div className="flex-shrink-0 w-full aspect-[16/9] sm:w-[120px] sm:h-[80px] sm:aspect-auto rounded-lg overflow-hidden bg-muted">
         {story.coverImage ? (
           <img
             src={story.coverImage}
@@ -112,7 +112,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
         </p>
 
         {/* Meta 行：作者 + 日期 + 地点 */}
-        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 mt-3 sm:mt-2 text-xs text-muted-foreground flex-wrap">
           {/* 作者头像 */}
           {story.author?.image ? (
             <img
@@ -127,7 +127,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
           )}
 
           {/* 作者名 */}
-          <span className="truncate max-w-[80px]">
+          <span className="truncate max-w-[96px] sm:max-w-[80px]">
             {story.author?.name || t("content.discover.anonymous")}
           </span>
 
@@ -135,7 +135,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
           <span className="text-muted-foreground/40">·</span>
 
           {/* 日期 */}
-          <span>{formatDate(story.createdAt)}</span>
+          <span className="shrink-0">{formatDate(story.createdAt)}</span>
 
           {/* 地点标签（如果有） */}
           {story.location && (

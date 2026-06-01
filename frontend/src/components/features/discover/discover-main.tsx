@@ -47,18 +47,22 @@ interface Location {
 }
 
 interface Tag {
+  id?: string;
   name: string;
+  type?: string;
   count?: number;
 }
 
 interface LocationsResponse {
   success: boolean;
-  data: Location[];
+  locations?: Location[];
+  data?: Location[];
 }
 
 interface TagsResponse {
   success: boolean;
-  data: Tag[];
+  tags?: Tag[];
+  data?: Tag[];
 }
 
 export function DiscoverMain() {
@@ -112,25 +116,26 @@ export function DiscoverMain() {
   }, [loadStories]);
 
   const loadSidebarData = async () => {
-    try {
-      // Load locations
-      const locationsRes = await apiGet<LocationsResponse>("/locations?view=card&pageSize=5");
-      if (locationsRes.success) {
-        setLocations(locationsRes.data);
+    const [locationsResult, tagsResult] = await Promise.allSettled([
+      apiGet<LocationsResponse>("/locations?view=card&pageSize=5"),
+      apiGet<TagsResponse>("/locations?tags=true"),
+    ]);
+
+    if (locationsResult.status === "fulfilled" && locationsResult.value.success) {
+      setLocations(locationsResult.value.locations ?? locationsResult.value.data ?? []);
+    } else {
+      if (locationsResult.status === "rejected") {
+        console.error("Load locations error:", locationsResult.reason);
       }
-    } catch (err) {
-      console.error("Load locations error:", err);
       setLocations([]);
     }
 
-    try {
-      // Load tags
-      const tagsRes = await apiGet<TagsResponse>("/locations?tags=true");
-      if (tagsRes.success) {
-        setTags(tagsRes.data);
+    if (tagsResult.status === "fulfilled" && tagsResult.value.success) {
+      setTags(tagsResult.value.tags ?? tagsResult.value.data ?? []);
+    } else {
+      if (tagsResult.status === "rejected") {
+        console.error("Load tags error:", tagsResult.reason);
       }
-    } catch (err) {
-      console.error("Load tags error:", err);
       setTags([]);
     }
   };
@@ -189,9 +194,9 @@ export function DiscoverMain() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header - 紧凑设计 */}
-      <div className="pt-24 pb-6">
+      <div className="pt-20 sm:pt-24 pb-5 sm:pb-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             {/* Left: Title + Subtitle */}
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -202,14 +207,14 @@ export function DiscoverMain() {
                   {t("content.discover.title")}
                 </h1>
               </div>
-              <p className="text-muted-foreground text-sm pl-11">
+              <p className="text-muted-foreground text-sm sm:pl-11 leading-relaxed">
                 {t("content.discover.subtitle")}
               </p>
             </div>
 
-            {/* Right: Publish Button (Desktop) */}
+            {/* Right: Publish Button */}
             <button
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+              className="flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
               onClick={() => window.location.href = "/discover/create"}
             >
               <Plus className="h-4 w-4" />
@@ -220,8 +225,8 @@ export function DiscoverMain() {
       </div>
 
       {/* Main Content: Two Column Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-5 lg:gap-8">
           {/* Left: Main Content Flow */}
           <div className="space-y-4">
             {/* Featured Story - 第一篇作为精选 */}
@@ -302,7 +307,9 @@ export function DiscoverMain() {
                       className="flex items-center justify-between py-2 px-2 -mx-2 rounded-md hover:bg-muted/50 transition-colors"
                     >
                       <span className="text-sm text-foreground">{location.name}</span>
-                      <span className="text-xs text-muted-foreground">{location.storyCount || 0} 篇</span>
+                      {typeof location.storyCount === "number" && (
+                        <span className="text-xs text-muted-foreground">{location.storyCount} 篇</span>
+                      )}
                     </a>
                   ))}
                 </div>
@@ -318,12 +325,14 @@ export function DiscoverMain() {
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
                     <a
-                      key={tag.name}
+                      key={tag.id ?? tag.name}
                       href={`/discover?tag=${tag.name}`}
                       className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/50 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                     >
                       #{tag.name}
-                      <span className="ml-1 text-muted-foreground/60">{tag.count || 0}</span>
+                      {typeof tag.count === "number" && (
+                        <span className="ml-1 text-muted-foreground/60">{tag.count}</span>
+                      )}
                     </a>
                   ))}
                 </div>
