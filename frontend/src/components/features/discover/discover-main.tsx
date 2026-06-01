@@ -28,8 +28,6 @@ interface Story {
   } | null;
 }
 
-import { apiGet } from "@/lib/api";
-
 interface StoriesResponse {
   success: boolean;
   data: Story[];
