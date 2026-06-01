@@ -68,7 +68,7 @@ interface TagsResponse {
 export function DiscoverMain() {
   const { t } = useI18n(["content", "common"]);
   const [stories, setStories] = React.useState<Story[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [page, setPage] = React.useState(1);
   const [hasMore, setHasMore] = React.useState(false);
@@ -77,6 +77,13 @@ export function DiscoverMain() {
   // Sidebar data
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [tags, setTags] = React.useState<Tag[]>([]);
+
+  // Hydration safety - only start loading after mount
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const loadStories = React.useCallback(async (pageNum: number, append: boolean) => {
     try {
@@ -109,11 +116,14 @@ export function DiscoverMain() {
     }
   }, [t]);
 
-  // Initial load - call real API
+  // Initial load - call real API only after mount
   React.useEffect(() => {
-    loadStories(1, false);
-    loadSidebarData();
-  }, [loadStories]);
+    if (mounted) {
+      setIsLoading(true);
+      loadStories(1, false);
+      loadSidebarData();
+    }
+  }, [mounted, loadStories]);
 
   const loadSidebarData = async () => {
     const [locationsResult, tagsResult] = await Promise.allSettled([
@@ -150,13 +160,13 @@ export function DiscoverMain() {
     }
   };
 
-  // Loading state
-  if (isLoading) {
+  // Loading state (includes unmounted state for hydration safety)
+  if (!mounted || isLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">{t("content.discover.loading")}</p>
+          <p className="text-muted-foreground" suppressHydrationWarning>{t("content.discover.loading")}</p>
         </div>
       </div>
     );
@@ -167,7 +177,7 @@ export function DiscoverMain() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center bg-background">
         <div className="text-center">
-          <p className="text-destructive mb-4">{error}</p>
+          <p className="text-destructive mb-4" suppressHydrationWarning>{error}</p>
           <button
             onClick={() => loadStories(1, false)}
             className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
@@ -185,7 +195,7 @@ export function DiscoverMain() {
       <div className="min-h-[60vh] flex items-center justify-center bg-background">
         <div className="text-center">
           <Compass className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">{t("content.discover.empty")}</p>
+          <p className="text-muted-foreground" suppressHydrationWarning>{t("content.discover.empty")}</p>
         </div>
       </div>
     );
