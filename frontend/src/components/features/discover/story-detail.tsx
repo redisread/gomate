@@ -48,11 +48,7 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
   const [isLiking, setIsLiking] = React.useState(false);
   const [liked, setLiked] = React.useState(false);
 
-  React.useEffect(() => {
-    loadStory();
-  }, [storyId]);
-
-  const loadStory = async () => {
+  const loadStory = React.useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -70,7 +66,11 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [storyId, t]);
+
+  React.useEffect(() => {
+    loadStory();
+  }, [loadStory]);
 
   const handleLike = async () => {
     if (isLiking || liked) return;

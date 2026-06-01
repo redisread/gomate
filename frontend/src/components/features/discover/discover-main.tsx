@@ -114,8 +114,22 @@ export function DiscoverMain() {
 
   // Initial load
   React.useEffect(() => {
-    loadStories(1, false);
-  }, []);
+    const loadInitialStories = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setStories(MOCK_STORIES);
+        setHasMore(false);
+      } catch (err) {
+        setError(t("content.discover.loadError"));
+        console.error("Load stories error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadInitialStories();
+  }, [t]);
 
   const loadStories = async (pageNum: number, append: boolean) => {
     try {
