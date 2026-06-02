@@ -148,3 +148,79 @@ export async function seedTeamMember(
   const [inserted] = await db.select().from(schema.teamMembers).where(eq(schema.teamMembers.id, id));
   return inserted;
 }
+
+/**
+ * 插入测试故事
+ */
+export async function seedStory(
+  db: TestDb,
+  authorId: string,
+  overrides: Partial<schema.NewStory> = {}
+): Promise<schema.Story> {
+  const id = genId("story");
+  const ts = new Date();
+  const { id: _omitId, ...restOverrides } = overrides;
+  const story: schema.NewStory = {
+    id,
+    authorId,
+    title: restOverrides.title ?? `TestStory_${id}`,
+    summary: restOverrides.summary ?? "测试故事摘要",
+    content: restOverrides.content ?? "测试故事内容",
+    coverImage: restOverrides.coverImage ?? null,
+    locationId: restOverrides.locationId ?? null,
+    status: restOverrides.status ?? "published",
+    viewCount: restOverrides.viewCount ?? 0,
+    likeCount: restOverrides.likeCount ?? 0,
+    createdAt: restOverrides.createdAt ?? ts,
+    updatedAt: restOverrides.updatedAt ?? ts,
+    ...restOverrides,
+  };
+  await db.insert(schema.stories).values(story);
+  const [inserted] = await db.select().from(schema.stories).where(eq(schema.stories.id, id));
+  return inserted;
+}
+
+/**
+ * 插入测试标签
+ */
+export async function seedTag(
+  db: TestDb,
+  overrides: Partial<schema.NewTag> = {}
+): Promise<schema.Tag> {
+  const id = genId("tag");
+  const ts = new Date();
+  const { id: _omitId, ...restOverrides } = overrides;
+  const tag: schema.NewTag = {
+    id,
+    name: restOverrides.name ?? `TestTag_${id}`,
+    type: restOverrides.type ?? "activity",
+    createdAt: restOverrides.createdAt ?? ts,
+    ...restOverrides,
+  };
+  await db.insert(schema.tags).values(tag);
+  const [inserted] = await db.select().from(schema.tags).where(eq(schema.tags.id, id));
+  return inserted;
+}
+
+/**
+ * 关联标签到实体
+ */
+export async function seedEntityTag(
+  db: TestDb,
+  entityId: string,
+  entityType: string,
+  tagId: string
+): Promise<schema.EntityToTag> {
+  const id = genId("et");
+  const ts = new Date();
+  const entityTag: typeof schema.entityToTags.$inferInsert = {
+    id,
+    entityId,
+    entityType,
+    tagId,
+    createdAt: ts,
+  };
+  await db.insert(schema.entityToTags).values(entityTag);
+  const [inserted] = await db.select().from(schema.entityToTags).where(eq(schema.entityToTags.id, id));
+  return inserted;
+}
