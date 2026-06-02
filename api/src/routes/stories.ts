@@ -1,11 +1,79 @@
 import { Hono } from "hono";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, count, sql } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 
 const stories = new Hono<{ Bindings: Env }>();
+
+/**
+ * GET /stories/stats
+ * 获取故事统计数据（本周新增、热门地点）
+ */
+stories.get("/stats", async (c) => {
+  try {
+    const db = createDb(c.env.DB);
+
+    // 计算本周开始时间（周一）
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay() + 1);
+    weekStart.setHours(0, 0, 0, 0);
+
+    // 1. 本周新增故事数
+    const weeklyNewResult = await db
+      .select({ count: count() })
+      .from(schema.stories)
+      .where(
+        sql`${schema.stories.createdAt} >= ${weekStart.getTime()} AND ${schema.stories.status} = 'published'`
+      );
+    const weeklyNewStories = weeklyNewResult[0]?.count ?? 0;
+
+    // 2. 热门地点（按故事数量排序 TOP 1）
+    const popularLocationResult = await db
+      .select({
+        locationId: schema.stories.locationId,
+        storyCount: count(),
+      })
+      .from(schema.stories)
+      .where(
+        sql`${schema.stories.locationId} IS NOT NULL AND ${schema.stories.status} = 'published'`
+      )
+      .groupBy(schema.stories.locationId)
+      .orderBy(desc(count()))
+      .limit(1);
+
+    let popularLocation = null;
+    if (popularLocationResult.length > 0 && popularLocationResult[0].locationId) {
+      const location = await db.query.locations.findFirst({
+        where: eq(schema.locations.id, popularLocationResult[0].locationId),
+      });
+      if (location) {
+        popularLocation = {
+          id: location.id,
+          name: location.name,
+          slug: location.slug,
+          storyCount: popularLocationResult[0].storyCount,
+        };
+      }
+    }
+
+    // 设置缓存头（5分钟）
+    c.header("Cache-Control", "public, max-age=300");
+
+    return c.json({
+      success: true,
+      data: {
+        weeklyNewStories,
+        popularLocation,
+      },
+    });
+  } catch (error) {
+    console.error("Get stories stats error:", error);
+    return c.json({ success: false, message: "获取统计数据失败" }, 500);
+  }
+});
 
 /**
  * GET /stories
