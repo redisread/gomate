@@ -352,15 +352,26 @@ locations.put("/", async (c) => {
  */
 locations.get("/:id", async (c) => {
   try {
-    const id = c.req.param("id");
+    const idOrSlug = c.req.param("id");
     const db = createDb(c.env.DB);
 
-    const location = await db.query.locations.findFirst({
-      where: eq(schema.locations.id, id),
+    // 先尝试按 id 查询
+    let location = await db.query.locations.findFirst({
+      where: eq(schema.locations.id, idOrSlug),
       with: {
         routes: true,
       },
     });
+
+    // 如果未找到，尝试按 slug 查询
+    if (!location) {
+      location = await db.query.locations.findFirst({
+        where: eq(schema.locations.slug, idOrSlug),
+        with: {
+          routes: true,
+        },
+      });
+    }
 
     if (!location) return c.json({ error: "地点不存在" }, 404);
 
@@ -372,7 +383,7 @@ locations.get("/:id", async (c) => {
       .where(
         and(
           eq(schema.entityToTags.entityType, "location"),
-          eq(schema.entityToTags.entityId, id)
+          eq(schema.entityToTags.entityId, location.id)
         )
       );
 
@@ -413,14 +424,22 @@ locations.get("/:id", async (c) => {
  */
 locations.get("/:id/pois", async (c) => {
   try {
-    const id = c.req.param("id");
+    const idOrSlug = c.req.param("id");
     const db = createDb(c.env.DB);
 
     // 验证地点存在
-    const location = await db.query.locations.findFirst({
-      where: eq(schema.locations.id, id),
+    let location = await db.query.locations.findFirst({
+      where: eq(schema.locations.id, idOrSlug),
       columns: { id: true },
     });
+
+    if (!location) {
+      location = await db.query.locations.findFirst({
+        where: eq(schema.locations.slug, idOrSlug),
+        columns: { id: true },
+      });
+    }
+
     if (!location) return c.json({ error: "地点不存在" }, 404);
 
     // 查询地点关联的 POI（entityType = "location"）
@@ -431,7 +450,7 @@ locations.get("/:id/pois", async (c) => {
       .where(
         and(
           eq(schema.entityToPois.entityType, "location"),
-          eq(schema.entityToPois.entityId, id)
+          eq(schema.entityToPois.entityId, location.id)
         )
       )
       .orderBy(asc(schema.entityToPois.order));
