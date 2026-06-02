@@ -17,7 +17,9 @@ export function HomeHowItWorksSection({ sectionRef, isInView }: { sectionRef: Re
         <div className="text-center mb-14">
           <span className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">{t("home.howItWorks.badge")}</span>
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">{t("home.howItWorks.title")}</h2>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto leading-relaxed">{t("home.howItWorks.subtitle")}</p>
+          <div className="flex justify-center">
+            <p className="text-muted-foreground text-lg w-full max-w-xl leading-relaxed text-center">{t("home.howItWorks.subtitle")}</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

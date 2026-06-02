@@ -65,9 +65,11 @@ export function LocationsHero({
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 leading-tight text-center" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 80ms both" }}>
           {t("locations.pageTitle")}
         </h1>
-        <p className="text-stone-400 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed max-w-xl text-center mx-auto" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}>
-          {t("locations.pageSubtitle")}
-        </p>
+        <div className="flex justify-center">
+          <p className="text-stone-400 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed w-full max-w-xl text-center" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}>
+            {t("locations.pageSubtitle")}
+          </p>
+        </div>
 
         {/* 场景角色入口 */}
         <div className="mb-6" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 190ms both" }}>

@@ -44,7 +44,9 @@ export function HomeHero({ data }: { data: HomeData }) {
           <span className="block text-gradient-brand">{t("content.hero.titleLine2")}</span>
         </h1>
 
-        <p className={`text-lg md:text-xl text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed text-center ${animate.subtitle}`}>{t("content.hero.description")}</p>
+        <div className="flex justify-center">
+          <p className={`text-lg md:text-xl text-muted-foreground mb-10 w-full max-w-xl leading-relaxed text-center ${animate.subtitle}`}>{t("content.hero.description")}</p>
+        </div>
 
         <div className={`relative max-w-2xl mx-auto mb-8 group ${animate.search}`}>
           <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 pointer-events-none transition-colors duration-200 text-muted-foreground"
