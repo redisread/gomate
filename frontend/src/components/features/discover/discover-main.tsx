@@ -59,10 +59,17 @@ interface LocationsResponse {
   data?: Location[];
 }
 
-interface TagsResponse {
+interface StoriesStatsResponse {
   success: boolean;
-  tags?: Tag[];
-  data?: Tag[];
+  data: {
+    weeklyNewStories: number;
+    popularLocation: {
+      id: string;
+      name: string;
+      slug: string;
+      storyCount: number;
+    } | null;
+  };
 }
 
 export function DiscoverMain() {
@@ -77,6 +84,8 @@ export function DiscoverMain() {
   // Sidebar data
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [tags, setTags] = React.useState<Tag[]>([]);
+  const [stats, setStats] = React.useState<StoriesStatsResponse["data"] | null>(null);
+  const [statsLoading, setStatsLoading] = React.useState(false);
 
   // Hydration safety - only start loading after mount
   const [mounted, setMounted] = React.useState(false);
@@ -126,9 +135,10 @@ export function DiscoverMain() {
   }, [mounted, loadStories]);
 
   const loadSidebarData = async () => {
-    const [locationsResult, tagsResult] = await Promise.allSettled([
+    const [locationsResult, tagsResult, statsResult] = await Promise.allSettled([
       apiGet<LocationsResponse>("/locations?view=card&pageSize=5"),
       apiGet<TagsResponse>("/locations?tags=true"),
+      apiGet<StoriesStatsResponse>("/stories/stats"),
     ]);
 
     if (locationsResult.status === "fulfilled" && locationsResult.value.success) {
@@ -147,6 +157,15 @@ export function DiscoverMain() {
         console.error("Load tags error:", tagsResult.reason);
       }
       setTags([]);
+    }
+
+    if (statsResult.status === "fulfilled" && statsResult.value.success) {
+      setStats(statsResult.value.data);
+    } else {
+      if (statsResult.status === "rejected") {
+        console.error("Load stats error:", statsResult.reason);
+      }
+      setStats(null);
     }
   };
 
@@ -354,9 +373,22 @@ export function DiscoverMain() {
               icon={<Flame className="w-4 h-4" />}
               title={t("content.discover.trending")}
             >
-              <div className="text-sm text-muted-foreground">
-                {t("content.discover.trendingDesc")}
-              </div>
+              {stats ? (
+                <div className="space-y-2 text-sm">
+                  <p className="text-muted-foreground">
+                    本周新增 <span className="text-foreground font-medium">{stats.weeklyNewStories}</span> 篇故事
+                  </p>
+                  {stats.popularLocation && (
+                    <p className="text-muted-foreground">
+                      <span className="text-foreground font-medium">{stats.popularLocation.name}</span> 是最热门的目的地
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  {t("content.discover.trendingDesc")}
+                </div>
+              )}
             </SidebarSection>
           </aside>
         </div>
