@@ -16,7 +16,9 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
         <div className="text-center mb-12">
           <span className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">{t("home.recentTeams")}</span>
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">{t("teams.pageTitle")}</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-lg">{t("teams.pageSubtitle")}</p>
+          <div className="flex justify-center">
+          <p className="text-muted-foreground w-full max-w-2xl text-center leading-relaxed text-lg">{t("teams.pageSubtitle")}</p>
+        </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
