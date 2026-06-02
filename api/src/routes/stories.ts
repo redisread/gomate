@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, desc, count, sql } from "drizzle-orm";
+import { eq, desc, count, sql, inArray, and } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -78,7 +78,7 @@ stories.get("/stats", async (c) => {
 /**
  * GET /stories
  * 获取故事列表（分页）
- * Query: page, limit, status
+ * Query: page, limit, status, tag
  */
 stories.get("/", async (c) => {
   try {
@@ -86,9 +86,57 @@ stories.get("/", async (c) => {
     const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
     const limit = Math.min(20, parseInt(c.req.query("limit") || "10", 10));
     const status = c.req.query("status") || "published";
+    const tag = c.req.query("tag");
     const offset = (page - 1) * limit;
 
-    const whereClause = eq(schema.stories.status, status);
+    // 基础过滤条件：状态
+    let whereConditions = [eq(schema.stories.status, status)];
+
+    // 如果指定了标签，先查询该标签对应的故事ID列表
+    let storyIdsWithTag: string[] = [];
+    if (tag && tag.trim()) {
+      const tagName = tag.trim();
+      // 查询标签ID
+      const tagRecord = await db.query.tags.findFirst({
+        where: eq(schema.tags.name, tagName),
+      });
+
+      if (tagRecord) {
+        // 查询关联的故事ID
+        const entityTagsResult = await db
+          .select({ entityId: schema.entityToTags.entityId })
+          .from(schema.entityToTags)
+          .where(
+            and(
+              eq(schema.entityToTags.tagId, tagRecord.id),
+              eq(schema.entityToTags.entityType, "story")
+            )
+          );
+        storyIdsWithTag = entityTagsResult.map((r) => r.entityId);
+      }
+
+      // 如果有标签但无关联故事，返回空结果
+      if (storyIdsWithTag.length === 0) {
+        return c.json({
+          success: true,
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            hasMore: false,
+          },
+        });
+      }
+
+      // 添加故事ID过滤条件
+      whereConditions.push(inArray(schema.stories.id, storyIdsWithTag));
+    }
+
+    // 组合过滤条件
+    const whereClause = whereConditions.length > 1
+      ? and(whereConditions[0], whereConditions[1])
+      : whereConditions[0];
 
     const items = await db
       .select({

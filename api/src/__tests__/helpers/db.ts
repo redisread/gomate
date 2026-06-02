@@ -207,6 +207,21 @@ export function createTestDb() {
       created_at INTEGER NOT NULL,
       UNIQUE(user_id, entity_type, entity_id)
     );
+
+    CREATE TABLE IF NOT EXISTS stories (
+      id TEXT PRIMARY KEY,
+      author_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      content TEXT NOT NULL,
+      cover_image TEXT,
+      location_id TEXT REFERENCES locations(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'published',
+      view_count INTEGER NOT NULL DEFAULT 0,
+      like_count INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `);
 
   const db = drizzle(sqlite, { schema });
