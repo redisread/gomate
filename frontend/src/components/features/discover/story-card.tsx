@@ -81,8 +81,8 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
         className
       )}
     >
-      {/* 封面图 - 移动端置顶，桌面端横排 */}
-      <div className="flex-shrink-0 w-full aspect-[16/9] sm:w-[120px] sm:h-[80px] sm:aspect-auto rounded-lg overflow-hidden bg-muted">
+      {/* 封面图 - 移动端 4:3，桌面端 120x80 横版 */}
+      <div className="flex-shrink-0 w-full aspect-[4/3] sm:w-[140px] sm:h-[100px] sm:aspect-auto rounded-lg overflow-hidden bg-muted">
         {story.coverImage ? (
           <img
             src={story.coverImage}
@@ -115,12 +115,12 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
           {story.title}
         </h3>
 
-        {/* 摘要 - 14px，最多 2 行 */}
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-auto leading-relaxed">
+        {/* 摘要 - 最多 3 行 */}
+        <p className="text-sm text-muted-foreground line-clamp-3 mb-auto leading-relaxed">
           {story.summary}
         </p>
 
-        {/* Meta 行：作者 + 日期 + 地点 */}
+        {/* Meta 行：作者 + 日期 + 阅读时间，移动端隐藏地点 */}
         <div className="flex items-center gap-2 mt-3 sm:mt-2 text-xs text-muted-foreground flex-wrap">
           {/* 作者头像 */}
           {story.author?.image ? (
@@ -136,24 +136,25 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
           )}
 
           {/* 作者名 */}
-          <span className="truncate max-w-[96px] sm:max-w-[80px]">
+          <span className="truncate max-w-[120px]">
             {story.author?.name || t("content.discover.anonymous")}
           </span>
 
-          {/* 分隔点 */}
           <span className="text-muted-foreground/40">·</span>
 
           {/* 日期 */}
           <span className="shrink-0" suppressHydrationWarning>{formatDate(story.createdAt)}</span>
 
-          {/* 地点标签（如果有） */}
+          <span className="text-muted-foreground/40">·</span>
+
+          {/* 阅读时间 */}
+          <span className="shrink-0">{Math.ceil(story.summary.length / 300)} 分钟</span>
+
+          {/* 地点标签 - 桌面端显示 */}
           {story.location && (
-            <>
-              <span className="text-muted-foreground/40">·</span>
-              <span className="text-primary/80 bg-primary/5 px-1.5 py-0.5 rounded">
-                {story.location.name}
-              </span>
-            </>
+            <span className="hidden sm:inline-flex ml-auto text-xs text-primary bg-primary/8 px-2 py-0.5 rounded-full">
+              {story.location.name}
+            </span>
           )}
         </div>
       </div>
