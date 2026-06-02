@@ -183,24 +183,27 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
 
       {/* Content */}
       <main className="max-w-3xl mx-auto px-4 py-6">
-        {/* Cover Image */}
+        {/* Cover Image - Full Bleed */}
         {story.coverImage && (
-          <div className="mb-6 rounded-lg overflow-hidden">
+          <div className="mb-8 -mx-4 sm:mx-0 sm:rounded-xl overflow-hidden bg-muted">
             <img
               src={story.coverImage}
               alt={story.title}
-              className="w-full h-auto max-h-[400px] object-cover"
+              className="w-full h-auto max-h-[50vh] min-h-[200px] object-cover"
             />
           </div>
         )}
 
-        {/* Title */}
-        <h1 className="text-2xl font-bold text-foreground mb-4">
-          {story.title}
-        </h1>
+        {/* Title with decorative line */}
+        <div className="mb-6">
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
+            {story.title}
+          </h1>
+          <div className="h-1 w-20 bg-primary/60 rounded-full"></div>
+        </div>
 
-        {/* Author & Meta */}
-        <div className="flex items-center justify-between py-4 border-b border-border mb-6">
+        {/* Author & Meta with reading stats */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 border-b border-border mb-6">
           <div className="flex items-center gap-3">
             <Avatar
               src={story.author?.image}
@@ -218,6 +221,11 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
           </div>
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            {/* Reading stats */}
+            <span>{story.content?.length?.toLocaleString() || 0} 字</span>
+            <span>·</span>
+            <span>{Math.ceil((story.content?.length || 0) / 300)} 分钟阅读</span>
+            <span className="hidden sm:inline">·</span>
             <span className="flex items-center gap-1">
               <Eye className="h-4 w-4" />
               {story.viewCount}
@@ -229,10 +237,12 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
           </div>
         </div>
 
-        {/* Summary */}
+        {/* Summary - Enhanced style */}
         {story.summary && (
-          <div className="mb-6 p-4 bg-accent/50 rounded-lg">
-            <p className="text-muted-foreground italic">{story.summary}</p>
+          <div className="mb-8 p-5 bg-gradient-to-r from-accent/50 to-accent/30 rounded-xl border-l-4 border-primary/40">
+            <p className="text-foreground/80 text-base leading-relaxed font-medium">
+              {story.summary}
+            </p>
           </div>
         )}
 
