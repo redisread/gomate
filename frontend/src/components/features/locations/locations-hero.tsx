@@ -52,12 +52,14 @@ export function LocationsHero({
       </div>
 
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-xs font-medium"
-          style={{ background: "rgba(217,119,6,0.08)", border: "1px solid rgba(217,119,6,0.2)", color: "#b45309", animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both" }}
-        >
-          <Sparkles className="h-3 w-3" />
-          {t("locations.ctaHeroBadge")}
+        <div className="flex justify-center">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-xs font-medium"
+            style={{ background: "rgba(217,119,6,0.08)", border: "1px solid rgba(217,119,6,0.2)", color: "#b45309", animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both" }}
+          >
+            <Sparkles className="h-3 w-3" />
+            {t("locations.ctaHeroBadge")}
+          </div>
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 leading-tight text-center" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 80ms both" }}>
