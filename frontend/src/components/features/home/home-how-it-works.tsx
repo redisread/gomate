@@ -30,8 +30,8 @@ export function HomeHowItWorksSection({ sectionRef, isInView }: { sectionRef: Re
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-2xl" style={{ background: item.bg }}>{item.emoji}</div>
                 <span className="text-5xl font-black leading-none select-none" style={{ color: item.bg.replace("0.08", "0.18") }}>{item.step}</span>
               </div>
-              <h3 className="text-xl font-bold mb-3" style={{ color: item.color }}>{item.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed flex-1 mb-5">{item.desc}</p>
+              <h3 className="text-xl font-bold mb-3 text-center" style={{ color: item.color }}>{item.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed flex-1 mb-5 text-center">{item.desc}</p>
               <a href={item.href}>
                 <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-150"
                   style={{ background: item.bg, color: item.color }}
