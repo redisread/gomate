@@ -25,9 +25,11 @@ export function HomeCtaSection({ data }: { data: HomeData }) {
           {t("home.cta.subtitle")}
         </h2>
 
-        <p className="text-muted-foreground text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-          {t("home.cta.description", { count: 200 })}
-        </p>
+        <div className="flex justify-center">
+          <p className="text-muted-foreground text-lg mb-10 w-full max-w-xl text-center leading-relaxed">
+            {t("home.cta.description", { count: 200 })}
+          </p>
+        </div>
 
         <div className="flex flex-col gap-4 justify-center items-center">
           <a href="/teams/create"

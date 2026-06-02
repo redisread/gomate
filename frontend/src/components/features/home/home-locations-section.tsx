@@ -16,7 +16,9 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
         <div className="text-center mb-12">
           <span className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">{t("home.featuredLocations")}</span>
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">{t("locations.pageTitle")}</h2>
-          <p className="text-center text-muted-foreground max-w-xl mx-auto leading-relaxed text-lg">{t("locations.pageSubtitle")}</p>
+          <div className="flex justify-center">
+            <p className="text-center text-muted-foreground w-full max-w-xl leading-relaxed text-lg">{t("locations.pageSubtitle")}</p>
+          </div>
         </div>
 
         {isLoading ? (
