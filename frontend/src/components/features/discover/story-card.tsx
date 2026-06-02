@@ -47,6 +47,12 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
     onClick?.(story);
   };
 
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -55,7 +61,10 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
     if (diffDays === 0) return t("content.discover.today");
     if (diffDays === 1) return t("content.discover.yesterday");
     if (diffDays < 7) return t("content.discover.daysAgo", { days: diffDays });
-    return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+    // 使用固定格式避免 hydration mismatch
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}月${day}日`;
   };
 
   return (
@@ -135,7 +144,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
           <span className="text-muted-foreground/40">·</span>
 
           {/* 日期 */}
-          <span className="shrink-0">{formatDate(story.createdAt)}</span>
+          <span className="shrink-0" suppressHydrationWarning>{formatDate(story.createdAt)}</span>
 
           {/* 地点标签（如果有） */}
           {story.location && (

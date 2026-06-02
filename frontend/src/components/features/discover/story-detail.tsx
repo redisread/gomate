@@ -118,11 +118,11 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
-    return date.toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    // 使用固定格式避免 hydration mismatch
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${year}年${month}月${day}日`;
   };
 
   // Loading state
@@ -211,7 +211,7 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
               <p className="font-medium text-foreground">
                 {story.author?.name || t("content.discover.anonymous")}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground" suppressHydrationWarning>
                 {formatDate(story.createdAt)}
               </p>
             </div>

@@ -48,7 +48,10 @@ export function FeaturedStoryCard({ story, onClick, className }: FeaturedStoryCa
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
-    return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+    // 使用固定格式避免 hydration mismatch
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}月${day}日`;
   };
 
   return (
@@ -126,7 +129,7 @@ export function FeaturedStoryCard({ story, onClick, className }: FeaturedStoryCa
             {story.author?.name || t("content.discover.anonymous")}
           </span>
           <span className="text-muted-foreground/40">·</span>
-          <span className="text-sm text-muted-foreground shrink-0">{formatDate(story.createdAt)}</span>
+          <span className="text-sm text-muted-foreground shrink-0" suppressHydrationWarning>{formatDate(story.createdAt)}</span>
           {story.location && (
             <span className="ml-auto text-xs text-primary/80 bg-primary/5 px-2 py-0.5 rounded truncate max-w-[40%]">
               {story.location.name}
