@@ -13,7 +13,7 @@ declareI18nNs(Astro.locals, ["locationDetail", "locations", "errors", "admin", "
 const { id } = Astro.params;
 
 // Phase 5: 服务端获取地点数据，用于 og:image
-let locationData: { name?: string; description?: string; coverImage?: string } | null = null;
+let locationData: { id?: string; name?: string; description?: string; coverImage?: string } | null = null;
 try {
   const response = await fetch(`${API_BASE}/locations/${id}`);
   if (response.ok) {
@@ -28,7 +28,7 @@ try {
 
 // 构建 og:image URL
 const ogImage = locationData
-  ? `${API_BASE}/share-image/location/${id}`
+  ? `${API_BASE}/share-image/location/${locationData.id || id}`
   : undefined;
 
 const title = locationData?.name

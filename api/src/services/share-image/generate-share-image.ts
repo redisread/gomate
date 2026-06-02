@@ -96,10 +96,16 @@ export async function generateLocationImage(
 ): Promise<{ png: Uint8Array; cacheKey: string }> {
   const db = createDb(env.DB);
 
-  // 1. 查询地点数据
-  const location = await db.query.locations.findFirst({
+  // 1. 查询地点数据，兼容 id 和 slug
+  let location = await db.query.locations.findFirst({
     where: eq(schema.locations.id, locationId),
   });
+
+  if (!location) {
+    location = await db.query.locations.findFirst({
+      where: eq(schema.locations.slug, locationId),
+    });
+  }
 
   if (!location) {
     throw new Error(`Location not found: ${locationId}`);
@@ -112,7 +118,7 @@ export async function generateLocationImage(
     .innerJoin(schema.tags, eq(schema.tags.id, schema.entityToTags.tagId))
     .where(
       and(
-        eq(schema.entityToTags.entityId, locationId),
+        eq(schema.entityToTags.entityId, location.id),
         eq(schema.entityToTags.entityType, "location")
       )
     );
@@ -130,7 +136,7 @@ export async function generateLocationImage(
   };
   const contentHash = (await generateMD5(JSON.stringify(contentData))).slice(0, 12);
 
-  const cacheKey = `share/location/${locationId}-${contentHash}.png`;
+  const cacheKey = `share/location/${location.id}-${contentHash}.png`;
 
   // 4. 检查 R2 缓存
   if (env.R2) {

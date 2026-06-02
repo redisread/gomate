@@ -109,6 +109,21 @@ describe("Locations API 集成测试", () => {
       expect(json.location.name).toBe("梧桐山");
     });
 
+    it("支持通过 slug 获取地点详情", async () => {
+      const location = await seedLocation(testDb, city.id, {
+        name: "梧桐山",
+        slug: "wutong-mountain",
+      });
+
+      const res = await req(app, "/locations/wutong-mountain");
+      expect(res.status).toBe(200);
+      const json = await res.json() as { success: boolean; location: { id: string; slug: string; name: string } };
+      expect(json.success).toBe(true);
+      expect(json.location.id).toBe(location.id);
+      expect(json.location.slug).toBe("wutong-mountain");
+      expect(json.location.name).toBe("梧桐山");
+    });
+
     it("获取不存在的地点返回 404", async () => {
       const res = await req(app, "/locations/nonexistent-id");
       expect(res.status).toBe(404);

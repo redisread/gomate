@@ -59,6 +59,12 @@ interface LocationsResponse {
   data?: Location[];
 }
 
+interface TagsResponse {
+  success: boolean;
+  tags?: Tag[];
+  data?: Tag[];
+}
+
 interface StoriesStatsResponse {
   success: boolean;
   data: {
