@@ -76,7 +76,7 @@ describe("Stories API 集成测试", () => {
 
       // 创建故事
       const story1 = await seedStory(testDb, user.id, { title: "溯溪故事", status: "published" });
-      const story2 = await seedStory(testDb, user.id, { title: "其他故事", status: "published" });
+      const _story2 = await seedStory(testDb, user.id, { title: "其他故事", status: "published" });
 
       // 关联标签
       await seedEntityTag(testDb, story1.id, "story", tag.id);

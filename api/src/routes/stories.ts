@@ -90,7 +90,7 @@ stories.get("/", async (c) => {
     const offset = (page - 1) * limit;
 
     // 基础过滤条件：状态
-    let whereConditions = [eq(schema.stories.status, status)];
+    const whereConditions = [eq(schema.stories.status, status)];
 
     // 如果指定了标签，先查询该标签对应的故事ID列表
     let storyIdsWithTag: string[] = [];
