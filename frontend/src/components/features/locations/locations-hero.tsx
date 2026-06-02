@@ -64,7 +64,7 @@ export function LocationsHero({
           {t("locations.pageTitle")}
         </h1>
         <p className="text-stone-400 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed max-w-xl text-center mx-auto" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}>
-          {t("locations.heroTagline")}
+          {t("locations.pageSubtitle")}
         </p>
 
         {/* 场景角色入口 */}
