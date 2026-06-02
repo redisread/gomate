@@ -510,6 +510,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   const [showArrows, setShowArrows] = React.useState(false);
   // Lightbox
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+  const resolvedLocationId = location?.id;
 
   // 视差
   const [parallaxOffset, setParallaxOffset] = React.useState(0);
@@ -546,16 +547,16 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
   // 初始化收藏状态
   React.useEffect(() => {
-    if (!locationId || !userId) return;
+    if (!resolvedLocationId || !userId) return;
     fetchAPI(`/favorites?entityType=location`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data) return;
         const favs: { entityId: string }[] = data.favorites || [];
-        setIsFavorited(favs.some((f) => f.entityId === locationId));
+        setIsFavorited(favs.some((f) => f.entityId === resolvedLocationId));
       })
       .catch(() => {});
-  }, [locationId, userId]);
+  }, [resolvedLocationId, userId]);
 
   const loadLocation = async () => {
     setIsLoading(true);
@@ -565,7 +566,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       if (data.success && data.location) {
         setLocation(data.location);
         loadTeams(data.location.id);
-        loadRelatedLocations();
+        loadRelatedLocations(data.location.id);
         loadPois(data.location.id);
       } else {
         setError(t("errors.locationNotFound"));
@@ -587,13 +588,13 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     }
   };
 
-  const loadRelatedLocations = async () => {
+  const loadRelatedLocations = async (currentLocationId: string) => {
     try {
       const res = await fetchAPI("/api/locations?pageSize=4");
       const data = await res.json();
       if (data.success) {
         setRelatedLocations(
-          (data.locations || []).filter((l: Location) => l.id !== locationId).slice(0, 3)
+          (data.locations || []).filter((l: Location) => l.id !== currentLocationId).slice(0, 3)
         );
       }
     } catch (err) {
@@ -633,13 +634,14 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     const newFavorited = !isFavorited;
     setIsFavorited(newFavorited);
     try {
+      if (!location) return;
       if (newFavorited) {
         await fetchAPI("/favorites", {
           method: "POST",
-          body: JSON.stringify({ entityType: "location", entityId: locationId }),
+          body: JSON.stringify({ entityType: "location", entityId: location.id }),
         });
       } else {
-        await fetchAPI(`/favorites?entityType=location&entityId=${locationId}`, { method: "DELETE" });
+        await fetchAPI(`/favorites?entityType=location&entityId=${location.id}`, { method: "DELETE" });
       }
     } catch {
       setIsFavorited(!newFavorited);
@@ -883,7 +885,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               actions={
                 <>
                   {isAdmin && (
-                    <a href={`/admin/locations/${locationId}/edit`}>
+                    <a href={`/admin/locations/${location.id}/edit`}>
                       <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs font-medium transition-all duration-150 active:scale-95 border border-stone-200 dark:border-stone-700">
                         <Pencil className="h-3.5 w-3.5" />
                         {t("admin.editLocation")}
@@ -921,7 +923,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             {/* <RouteInfoCard location={location} /> */}
             <PoiSection locationId={location.id} />
             <TeamListSection teams={teams} locationId={location.id} />
-            <LocationActivityPosts locationId={locationId} />
+            <LocationActivityPosts locationId={location.id} />
           </div>
 
           {/* 右栏 sticky */}
