@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Compass, Loader2, Plus, MapPin, Tag, Flame } from "lucide-react";
+import { Compass, Loader2, Plus, MapPin, Tag, Flame, X } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { StoryCard } from "./story-card";
 import { FeaturedStoryCard } from "./featured-story-card";
@@ -87,6 +87,9 @@ export function DiscoverMain() {
   const [hasMore, setHasMore] = React.useState(false);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
 
+  // 标签筛选状态 - 从 URL 读取
+  const [selectedTag, setSelectedTag] = React.useState<string | null>(null);
+
   // Sidebar data
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [tags, setTags] = React.useState<Tag[]>([]);
@@ -100,7 +103,16 @@ export function DiscoverMain() {
     setMounted(true);
   }, []);
 
-  const loadStories = React.useCallback(async (pageNum: number, append: boolean) => {
+  // 从 URL 读取 tag 参数
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tagParam = params.get("tag");
+      setSelectedTag(tagParam || null);
+    }
+  }, []);
+
+  const loadStories = React.useCallback(async (pageNum: number, append: boolean, tagFilter: string | null = selectedTag) => {
     try {
       if (pageNum === 1) {
         setIsLoading(true);
@@ -109,7 +121,8 @@ export function DiscoverMain() {
       }
       setError(null);
 
-      const response = await apiGet<StoriesResponse>(`/stories?page=${pageNum}&limit=10`);
+      const tagQuery = tagFilter ? `&tag=${encodeURIComponent(tagFilter)}` : "";
+      const response = await apiGet<StoriesResponse>(`/stories?page=${pageNum}&limit=10${tagQuery}`);
 
       if (response.success) {
         if (append) {
@@ -129,16 +142,16 @@ export function DiscoverMain() {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [t]);
+  }, [t, selectedTag]);
 
   // Initial load - call real API only after mount
   React.useEffect(() => {
     if (mounted) {
       setIsLoading(true);
-      loadStories(1, false);
+      loadStories(1, false, selectedTag);
       loadSidebarData();
     }
-  }, [mounted, loadStories]);
+  }, [mounted, loadStories, selectedTag]);
 
   const loadSidebarData = async () => {
     const [locationsResult, tagsResult, statsResult] = await Promise.allSettled([
@@ -179,9 +192,42 @@ export function DiscoverMain() {
     window.location.href = `/discover/${story.id}`;
   };
 
+  // 处理标签点击
+  const handleTagClick = (tagName: string) => {
+    const newTag = tagName === selectedTag ? null : tagName;
+    setSelectedTag(newTag);
+
+    // 更新 URL
+    if (newTag) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tag", newTag);
+      window.history.pushState({}, "", url.toString());
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tag");
+      window.history.pushState({}, "", url.toString());
+    }
+
+    // 重置列表并重新加载
+    setStories([]);
+    setPage(1);
+    loadStories(1, false, newTag);
+  };
+
+  // 清除筛选
+  const handleClearFilter = () => {
+    setSelectedTag(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("tag");
+    window.history.pushState({}, "", url.toString());
+    setStories([]);
+    setPage(1);
+    loadStories(1, false, null);
+  };
+
   const handleLoadMore = () => {
     if (!isLoadingMore && hasMore) {
-      loadStories(page + 1, true);
+      loadStories(page + 1, true, selectedTag);
     }
   };
 
@@ -204,7 +250,7 @@ export function DiscoverMain() {
         <div className="text-center">
           <p className="text-destructive mb-4" suppressHydrationWarning>{error}</p>
           <button
-            onClick={() => loadStories(1, false)}
+            onClick={() => loadStories(1, false, selectedTag)}
             className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
           >
             {t("content.discover.retry")}
@@ -264,6 +310,47 @@ export function DiscoverMain() {
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-5 lg:gap-8">
           {/* Left: Main Content Flow */}
           <div className="space-y-4">
+            {/* Mobile Tag Filter - 横向滚动标签入口 */}
+            <div className="lg:hidden">
+              {tags.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 scrollbar-hide">
+                  {tags.map((tag) => (
+                    <button
+                      key={tag.id ?? tag.name}
+                      onClick={() => handleTagClick(tag.name)}
+                      className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors ${
+                        selectedTag === tag.name
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      #{tag.name}
+                      {typeof tag.count === "number" && (
+                        <span className="ml-1 opacity-60">{tag.count}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Filter Status Chip */}
+            {selectedTag && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">筛选:</span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                  #{selectedTag}
+                  <button
+                    onClick={handleClearFilter}
+                    className="ml-1 p-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                    aria-label="清除筛选"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              </div>
+            )}
+
             {/* Featured Story - 第一篇作为精选 */}
             {stories.length > 0 && (
               <FeaturedStoryCard
@@ -359,16 +446,22 @@ export function DiscoverMain() {
               >
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
-                    <a
+                    <button
                       key={tag.id ?? tag.name}
-                      href={`/discover?tag=${tag.name}`}
-                      className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/50 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      onClick={() => handleTagClick(tag.name)}
+                      className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs transition-colors ${
+                        selectedTag === tag.name
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
                     >
                       #{tag.name}
                       {typeof tag.count === "number" && (
-                        <span className="ml-1 text-muted-foreground/60">{tag.count}</span>
+                        <span className={`ml-1 ${selectedTag === tag.name ? "opacity-80" : "opacity-60"}`}>
+                          {tag.count}
+                        </span>
                       )}
-                    </a>
+                    </button>
                   ))}
                 </div>
               </SidebarSection>
