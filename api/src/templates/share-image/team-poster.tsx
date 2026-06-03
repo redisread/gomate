@@ -29,6 +29,76 @@ function clampText(text: string, maxLength: number): string {
   return `${text.slice(0, maxLength - 1)}…`;
 }
 
+// 日历图标
+function CalendarIcon() {
+  return {
+    type: "svg",
+    props: {
+      width: 12,
+      height: 12,
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#b45309",
+      strokeWidth: 2,
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      style: { display: "flex" },
+      children: [
+        { type: "rect", props: { x: 3, y: 4, width: 18, height: 18, rx: 2, ry: 2 } },
+        { type: "line", props: { x1: 16, y1: 2, x2: 16, y2: 6 } },
+        { type: "line", props: { x1: 8, y1: 2, x2: 8, y2: 6 } },
+        { type: "line", props: { x1: 3, y1: 10, x2: 21, y2: 10 } },
+      ],
+    },
+  };
+}
+
+// 位置图标
+function LocationIcon() {
+  return {
+    type: "svg",
+    props: {
+      width: 12,
+      height: 12,
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#b45309",
+      strokeWidth: 2,
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      style: { display: "flex" },
+      children: [
+        { type: "path", props: { d: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" } },
+        { type: "circle", props: { cx: 12, cy: 10, r: 3 } },
+      ],
+    },
+  };
+}
+
+// 用户图标
+function UsersIcon() {
+  return {
+    type: "svg",
+    props: {
+      width: 12,
+      height: 12,
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#57534e",
+      strokeWidth: 2,
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      style: { display: "flex" },
+      children: [
+        { type: "path", props: { d: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" } },
+        { type: "circle", props: { cx: 9, cy: 7, r: 4 } },
+        { type: "path", props: { d: "M23 21v-2a4 4 0 0 0-3-3.87" } },
+        { type: "path", props: { d: "M16 3.13a4 4 0 0 1 0 7.75" } },
+      ],
+    },
+  };
+}
+
 function pill(label: string, color = "#92400e", bg = "#fffbeb") {
   return {
     type: "div",
@@ -58,32 +128,46 @@ function pill(label: string, color = "#92400e", bg = "#fffbeb") {
   };
 }
 
-function infoCard(label: string, value: string) {
+function infoCard(label: string, value: string, icon?: unknown) {
   return {
     type: "div",
     props: {
       style: {
         display: "flex",
         flexDirection: "column",
-        gap: 4,
+        gap: 6,
         flex: 1,
         minWidth: 0,
         padding: "10px 12px",
         borderRadius: 12,
-        backgroundColor: "#fff7ed",
-        border: "1px solid rgba(217, 119, 6, 0.14)",
+        backgroundColor: "#ffffff",
+        border: "1px solid #e7e5e4",
       },
       children: [
         {
-          type: "span",
+          type: "div",
           props: {
             style: {
               display: "flex",
-              fontSize: 10,
-              fontWeight: 600,
-              color: "#b45309",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
             },
-            children: label,
+            children: [
+              icon || null,
+              {
+                type: "span",
+                props: {
+                  style: {
+                    display: "flex",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: "#78716c",
+                  },
+                  children: label,
+                },
+              },
+            ],
           },
         },
         {
@@ -92,9 +176,9 @@ function infoCard(label: string, value: string) {
             style: {
               display: "flex",
               fontSize: 13,
-              fontWeight: 700,
-              lineHeight: 1.25,
-              color: "#292524",
+              fontWeight: 600,
+              lineHeight: 1.3,
+              color: "#44403c",
               maxHeight: 34,
               overflow: "hidden",
             },
@@ -150,6 +234,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
             overflow: "hidden",
             borderBottomLeftRadius: 18,
             borderBottomRightRadius: 18,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
           },
           children: [
             {
@@ -317,6 +402,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       maxHeight: 52,
                       overflow: "hidden",
                       letterSpacing: "-0.2px",
+                      textShadow: "0 1px 2px rgba(0,0,0,0.05)",
                     },
                     children: clampText(title, 32),
                   },
@@ -331,8 +417,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       marginTop: 10,
                     },
                     children: [
-                      infoCard("出发时间", date),
-                      infoCard("集合地点", locationText),
+                      infoCard("出发时间", date, CalendarIcon()),
+                      infoCard("集合地点", locationText, LocationIcon()),
                     ],
                   },
                 },
@@ -361,15 +447,29 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                           },
                           children: [
                             {
-                              type: "span",
+                              type: "div",
                               props: {
                                 style: {
                                   display: "flex",
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  color: "#57534e",
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  gap: 6,
                                 },
-                                children: "同行伙伴",
+                                children: [
+                                  UsersIcon(),
+                                  {
+                                    type: "span",
+                                    props: {
+                                      style: {
+                                        display: "flex",
+                                        fontSize: 12,
+                                        fontWeight: 700,
+                                        color: "#57534e",
+                                      },
+                                      children: "同行伙伴",
+                                    },
+                                  },
+                                ],
                               },
                             },
                             {
@@ -573,10 +673,11 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                         props: {
                           style: {
                             display: "flex",
-                            padding: 5,
+                            padding: 4,
                             backgroundColor: "#ffffff",
                             borderRadius: 12,
                             border: "1px solid #d6d3d1",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                           },
                           children: qrCodeDataUrl
                             ? {
