@@ -22,7 +22,7 @@ interface TeamPosterData {
 const POSTER_WIDTH = 375;
 const POSTER_HEIGHT = 468;
 const CARD_WIDTH = 343;
-const COVER_HEIGHT = 118;
+const COVER_HEIGHT = 108;
 
 // 设计规范配色
 const COLORS = {
@@ -322,7 +322,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
             display: "flex",
             flexDirection: "column",
             width: POSTER_WIDTH,
-            height: 92,
+            height: 84,
             padding: "16px 20px 0 20px",
             background: "linear-gradient(135deg, #fef3c7 0%, #fed7aa 56%, #fff7ed 100%)",
           },
@@ -394,8 +394,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                 display: "flex",
                 flexDirection: "column",
                 width: CARD_WIDTH,
-                margin: "10px 16px 0 16px",
-                padding: "13px 14px 12px 14px",
+                margin: "8px 16px 0 16px",
+                padding: "10px 14px",
                 borderRadius: 18,
                 backgroundColor: "#ffffff",
                 border: "1px solid rgba(214, 211, 209, 0.84)",
@@ -427,7 +427,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       display: "flex",
                       flexDirection: "row",
                       gap: 8,
-                      marginTop: 10,
+                      marginTop: 8,
                     },
                     children: [
                       infoCard("出发时间", date, CalendarIcon()),
@@ -441,9 +441,9 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                     style: {
                       display: "flex",
                       flexDirection: "column",
-                      gap: 8,
-                      marginTop: 10,
-                      padding: "10px",
+                      gap: 6,
+                      marginTop: 8,
+                      padding: "8px 10px",
                       borderRadius: 14,
                       backgroundColor: "#fafaf9",
                       border: "1px solid #e7e5e4",
@@ -554,8 +554,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                 alignItems: "center",
                 justifyContent: "space-between",
                 width: CARD_WIDTH,
-                margin: "10px 16px 0 16px",
-                padding: "10px 14px",
+                margin: "8px 16px 0 16px",
+                padding: "8px 14px",
                 borderRadius: 18,
                 backgroundColor: "#ffffff",
                 border: "1px solid rgba(214, 211, 209, 0.84)",
@@ -569,7 +569,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       flexDirection: "row",
                       alignItems: "center",
                       gap: 9,
-                      width: 174,
+                      width: 158,
                     },
                     children: [
                       leaderAvatar
@@ -699,8 +699,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   src: qrCodeDataUrl,
                                   style: {
                                     display: "flex",
-                                    width: 64,
-                                    height: 64,
+                                    width: 88,
+                                    height: 88,
                                   },
                                 },
                               }
@@ -709,8 +709,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                 props: {
                                   style: {
                                     display: "flex",
-                                    width: 64,
-                                    height: 64,
+                                    width: 88,
+                                    height: 88,
                                     backgroundColor: "#f5f5f4",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -737,7 +737,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                 justifyContent: "center",
                 alignItems: "center",
                 gap: 6,
-                marginTop: 6,
+                marginTop: 4,
               },
               children: [
                 {
