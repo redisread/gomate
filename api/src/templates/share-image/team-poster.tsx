@@ -24,6 +24,18 @@ const POSTER_HEIGHT = 468;
 const CARD_WIDTH = 343;
 const COVER_HEIGHT = 118;
 
+// 设计规范配色
+const COLORS = {
+  primary: "#d97706",      // amber-600
+  primaryDark: "#b45309", // amber-700
+  bg: "#fafaf9",           // stone-50
+  title: "#1c1917",      // stone-900
+  body: "#44403c",       // stone-700
+  muted: "#78716c",      // stone-500
+  white: "#ffffff",
+  border: "#e7e5e4",     // stone-200
+};
+
 function clampText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength - 1)}…`;
@@ -99,7 +111,8 @@ function UsersIcon() {
   };
 }
 
-function pill(label: string, color = "#92400e", bg = "#fffbeb") {
+// 渐变状态标签
+function gradientPill(label: string) {
   return {
     type: "div",
     props: {
@@ -109,8 +122,7 @@ function pill(label: string, color = "#92400e", bg = "#fffbeb") {
         justifyContent: "center",
         padding: "5px 10px",
         borderRadius: 999,
-        backgroundColor: bg,
-        border: "1px solid rgba(217, 119, 6, 0.18)",
+        background: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
       },
       children: {
         type: "span",
@@ -119,7 +131,7 @@ function pill(label: string, color = "#92400e", bg = "#fffbeb") {
             display: "flex",
             fontSize: 11,
             fontWeight: 700,
-            color,
+            color: "#ffffff",
           },
           children: label,
         },
@@ -232,8 +244,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
             height: COVER_HEIGHT,
             position: "relative",
             overflow: "hidden",
-            borderBottomLeftRadius: 18,
-            borderBottomRightRadius: 18,
+            borderBottomLeftRadius: 16,
+            borderBottomRightRadius: 16,
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
           },
           children: [
@@ -270,7 +282,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   top: 14,
                   left: 16,
                 },
-                children: pill(statusText, "#ffffff", "rgba(217, 119, 6, 0.88)"),
+                children: gradientPill(statusText),
               },
             },
             {
@@ -325,7 +337,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   justifyContent: "space-between",
                 },
                 children: [
-                  pill(statusText),
+                  gradientPill(statusText),
                   {
                     type: "span",
                     props: {
@@ -368,7 +380,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
           flexDirection: "column",
           width: POSTER_WIDTH,
           height: POSTER_HEIGHT,
-          backgroundColor: "#fffaf0",
+          backgroundColor: "#fafaf9",
           fontFamily,
           overflow: "hidden",
           position: "relative",
@@ -402,7 +414,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       maxHeight: 52,
                       overflow: "hidden",
                       letterSpacing: "-0.2px",
-                      textShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                      textAlign: "center",
+                      justifyContent: "center",
                     },
                     children: clampText(title, 32),
                   },
@@ -570,7 +583,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                 height: 38,
                                 borderRadius: 19,
                                 objectFit: "cover",
-                                border: "2px solid #fbbf24",
+                                border: "2px solid #d97706",
                               },
                             },
                           }
@@ -588,7 +601,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                 fontSize: 14,
                                 fontWeight: 800,
                                 color: "#ffffff",
-                                border: "2px solid #fbbf24",
+                                border: "2px solid #d97706",
                               },
                               children: leaderInitial,
                             },
