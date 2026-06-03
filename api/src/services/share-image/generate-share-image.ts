@@ -340,7 +340,8 @@ export async function generateTeamImage(
 
   const currentMembers = memberCount + 1; // +1 包含队长
   const maxMembers = team.maxMembers;
-  const spotsToForm = Math.max(0, team.durationMin - currentMembers); // durationMin 存储成行人数
+  // 计算还差多少人满员（方案2：使用 maxMembers - currentMembers）
+  const spotsToForm = Math.max(0, maxMembers - currentMembers);
 
   // 3. 生成内容哈希（用于缓存）
   const contentData = {
