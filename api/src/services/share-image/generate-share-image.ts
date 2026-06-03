@@ -451,10 +451,9 @@ function formatTeamDate(timestamp: number | Date): string {
  */
 export async function generateQRCode(text: string): Promise<string> {
   try {
-    // 使用 qrcode 生成 data URL
-    // 优化参数：增大尺寸、提高纠错级别、增加边距，确保扫码识别率
-    const dataUrl = await QRCode.toDataURL(text, {
-      width: 240,
+    // 使用纯 SVG 输出，避免 Cloudflare Workers 环境中 PNG DataURL 生成失败后落入不可扫描占位图。
+    const svg = await QRCode.toString(text, {
+      type: "svg",
       margin: 4,
       errorCorrectionLevel: "H",
       color: {
@@ -462,7 +461,7 @@ export async function generateQRCode(text: string): Promise<string> {
         light: "#ffffff",
       },
     });
-    return dataUrl;
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
   } catch (e) {
     console.error("[QRCode] Failed to generate QR code:", e);
     // 降级：返回占位符 SVG
