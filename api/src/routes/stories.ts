@@ -475,4 +475,49 @@ stories.post("/:id/like", async (c) => {
   }
 });
 
+/**
+ * GET /stories/tags
+ * 获取故事相关的热门标签（只返回有故事关联的标签）
+ */
+stories.get("/tags", async (c) => {
+  try {
+    const db = createDb(c.env.DB);
+
+    // 查询有故事关联的标签
+    const storyTags = await db
+      .select({
+        id: schema.tags.id,
+        name: schema.tags.name,
+        type: schema.tags.type,
+        count: sql<number>`count(${schema.entityToTags.entityId})`.as("count"),
+      })
+      .from(schema.tags)
+      .innerJoin(
+        schema.entityToTags,
+        eq(schema.tags.id, schema.entityToTags.tagId)
+      )
+      .where(eq(schema.entityToTags.entityType, "story"))
+      .groupBy(schema.tags.id, schema.tags.name, schema.tags.type)
+      .orderBy(sql`count(${schema.entityToTags.entityId})`)
+      .limit(15);
+
+    // 格式化返回，添加 count
+    const formattedTags = storyTags.map((tag) => ({
+      id: tag.id,
+      name: tag.name,
+      type: tag.type,
+      count: tag.count,
+    }));
+
+    c.header("Cache-Control", "public, max-age=60");
+    return c.json({
+      success: true,
+      tags: formattedTags,
+    });
+  } catch (error) {
+    console.error("Get story tags error:", error);
+    return c.json({ success: false, message: "获取标签失败" }, 500);
+  }
+});
+
 export default stories;

@@ -156,7 +156,7 @@ export function DiscoverMain() {
   const loadSidebarData = async () => {
     const [locationsResult, tagsResult, statsResult] = await Promise.allSettled([
       apiGet<LocationsResponse>("/locations?view=card&pageSize=5"),
-      apiGet<TagsResponse>("/locations?tags=true"),
+      apiGet<TagsResponse>("/stories/tags"),
       apiGet<StoriesStatsResponse>("/stories/stats"),
     ]);
 
