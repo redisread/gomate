@@ -154,7 +154,7 @@ export function SharePosterModal({
       onClick={onClose}
     >
       <div
-        className="mx-4 mt-8 mb-8 w-full max-w-sm rounded-2xl bg-white"
+        className="mx-4 mt-8 mb-8 w-full max-w-sm max-h-[90vh] flex flex-col rounded-2xl bg-white"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -170,11 +170,11 @@ export function SharePosterModal({
           </button>
         </div>
 
-        <div className="relative px-4 pt-2">
+        <div className="relative px-4 pt-2 flex-1 overflow-y-auto">
           {/* Poster Preview */}
           <div
             className="overflow-hidden rounded-xl shadow border border-stone-200"
-            style={{ aspectRatio: "375/640", maxHeight: "500px" }}
+            style={{ aspectRatio: "375/468", maxHeight: "min(55vh, 468px)" }}
           >
             {isLoading ? (
               <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
@@ -216,7 +216,7 @@ export function SharePosterModal({
           </div>
         </div>
 
-        <div className="mt-4 flex gap-3 px-4 pb-4">
+        <div className="mt-4 flex gap-3 px-4 pb-4 flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
           <button
             onClick={handleDownload}
             disabled={isLoading || !imageUrl}
