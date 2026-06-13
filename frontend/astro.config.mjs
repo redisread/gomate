@@ -8,7 +8,9 @@ const env = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
 
 export default defineConfig({
   output: "server",
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    imageService: "passthrough",
+  }),
   i18n: {
     defaultLocale: "zh-CN",
     locales: ["zh-CN", "en", "ja"],
