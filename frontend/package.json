@@ -17,12 +17,12 @@
     "i18n:validate": "node ../scripts/validate-i18n-keys.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "11",
-    "@astrojs/react": "^3.6.0",
+    "@astrojs/cloudflare": "^13.7.0",
+    "@astrojs/react": "^5.0.7",
     "@nanostores/persistent": "^1.3.3",
     "@nanostores/react": "^1.1.0",
     "@tailwindcss/vite": "^4.2.2",
-    "astro": "^4.16.0",
+    "astro": "^6.4.6",
     "better-auth": "^1.3.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.0.0",
@@ -35,7 +35,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.8",
+    "@astrojs/check": "^0.9.9",
     "@astrojs/sitemap": "^3.7.2",
     "@eslint/js": "9",
     "@tailwindcss/typography": "^0.5.19",
@@ -47,6 +47,7 @@
     "jsdom": "^29.0.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.58.1",
-    "vitest": "^2.0.0"
+    "vitest": "^2.0.0",
+    "wrangler": "^4.100.0"
   }
 }

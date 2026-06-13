@@ -28,6 +28,7 @@ jobs:
         run: pnpm --filter @gomate/frontend build
         env:
           PUBLIC_API_URL: https://api.gomate.live
+          CLOUDFLARE_ENV: production
       - name: Deploy to Workers
         uses: cloudflare/wrangler-action@v3
         with:

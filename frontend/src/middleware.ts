@@ -8,8 +8,14 @@
  * - 同时通过 cookie 设置 locale 供 React Islands 读取
  */
 
-import type { MiddlewareHandler, Locals } from "astro";
+import type { MiddlewareHandler } from "astro";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from "@/i18n";
+
+// Astro 6 changed locals type, use unknown for compatibility
+interface AppLocals {
+  locale?: Locale;
+  __i18n_namespaces?: string[];
+}
 
 // ─── SSR i18n Helpers ──────────────────────────────────────────────────
 
@@ -20,15 +26,15 @@ import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from "@/i18n";
  * // 在 Astro 页面的 frontmatter 中调用
  * declareI18nNs(Astro.locals, ['common', 'teams']);
  */
-export function declareI18nNs(locals: Locals, nsList: string[]): void {
-  locals.__i18n_namespaces = nsList;
+export function declareI18nNs(locals: unknown, nsList: string[]): void {
+  (locals as AppLocals).__i18n_namespaces = nsList;
 }
 
 /**
  * 获取当前页面声明的 namespaces。
  */
-export function getI18nNs(locals: Locals): string[] | undefined {
-  return locals.__i18n_namespaces;
+export function getI18nNs(locals: unknown): string[] | undefined {
+  return (locals as AppLocals).__i18n_namespaces;
 }
 
 /**
