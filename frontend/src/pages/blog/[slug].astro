@@ -1,6 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { getCollection, type CollectionEntry } from "astro:content";
+import { getCollection, render, type CollectionEntry } from "astro:content";
 import { declareI18nNs } from "@/middleware";
 
 declareI18nNs(Astro.locals, ["share", "content"]);
@@ -8,7 +8,7 @@ declareI18nNs(Astro.locals, ["share", "content"]);
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
   return posts.map((post) => ({
-    params: { slug: post.slug },
+    params: { slug: post.id },
     props: { post },
   }));
 }
@@ -23,7 +23,7 @@ let { post } = Astro.props;
 // SSR mode: fetch post if not provided by getStaticPaths
 if (!post && slug) {
   const posts = await getCollection("blog");
-  post = posts.find((p) => p.slug === slug);
+  post = posts.find((p) => p.id === slug);
 }
 
 // Handle case where post is not found
@@ -31,7 +31,7 @@ if (!post) {
   return Astro.redirect("/blog");
 }
 
-const { Content } = await post.render();
+const { Content } = await render(post);
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("zh-CN", {
@@ -41,7 +41,8 @@ function formatDate(date: Date) {
   });
 }
 
-function estimateReadTime(content: string) {
+function estimateReadTime(content: string | undefined) {
+  if (!content) return "1 分钟";
   const words = content.split(/\s+/).length;
   const minutes = Math.ceil(words / 200);
   return `${minutes} 分钟`;
