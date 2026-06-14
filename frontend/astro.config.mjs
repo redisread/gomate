@@ -10,7 +10,6 @@ export default defineConfig({
   output: "server",
   adapter: cloudflare({
     imageService: "passthrough",
-    session: false, // Disable SESSION KV binding (not needed for this project)
   }),
   i18n: {
     defaultLocale: "zh-CN",
