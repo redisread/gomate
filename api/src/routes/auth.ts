@@ -70,14 +70,14 @@ auth.post("/forgot-password", async (c) => {
 auth.all("/*", async (c) => {
   const path = new URL(c.req.url).pathname;
 
-  // 针对敏感端点的限流
-  if (path.includes("/sign-in")) {
+  // 针对敏感端点的限流（精确匹配 Better Auth 的路径格式）
+  if (path.endsWith("/sign-in/email") || path.endsWith("/sign-in")) {
     const ip = getClientIP(c.req.raw);
     const result = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:signin:${ip}`, 20, 60);
     if (!result.allowed) {
       return c.json({ success: false, error: "登录尝试过于频繁，请稍后再试", retryAfter: result.retryAfter }, 429);
     }
-  } else if (path.includes("/sign-up")) {
+  } else if (path.endsWith("/sign-up/email") || path.endsWith("/sign-up")) {
     const ip = getClientIP(c.req.raw);
     const result = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:signup:${ip}`, 10, 60);
     if (!result.allowed) {

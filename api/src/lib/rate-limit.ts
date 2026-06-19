@@ -4,6 +4,12 @@
  * Usage:
  *   const result = await checkRateLimit(kv, "rate:auth:login:<ip>", 20, 60);
  *   if (!result.allowed) return c.json({ error: "Too many requests" }, 429);
+ *
+ * NOTE: Cloudflare KV has no atomic increment, so concurrent requests within
+ * the same window may both read the same count and both be allowed — the
+ * effective limit can briefly exceed `maxRequests` under burst traffic. This
+ * is acceptable for auth rate limiting (soft barrier, IP-keyed, short window).
+ * For stricter limits, consider a Durable Object with single-threaded state.
  */
 
 export interface RateLimitResult {

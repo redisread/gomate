@@ -32,8 +32,8 @@ export const corsMiddleware = cors({
     const allowed = parseAllowedOrigins(c.env, origin);
     if (allowed.includes(origin)) return origin;
 
-    // 仅开发环境允许局域网 IP（移动端调试）
-    const isDev = allowed.some((o) => o.includes("localhost"));
+    // 仅开发环境允许局域网 IP（移动端调试）— 通过 APP_URL 判断，避免匹配生产域名中的子串
+    const isDev = (c.env.APP_URL ?? "").includes("localhost");
     if (isDev && /^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin)) return origin;
     if (isDev && /^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin)) return origin;
 
