@@ -502,7 +502,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [userId, setUserId] = React.useState<string | null>(null);
   const [showShareModal, setShowShareModal] = React.useState(false);
-  const [pois, setPois] = React.useState<RoutePoi[]>([]);
+  const [_pois, setPois] = React.useState<RoutePoi[]>([]);
 
   // 图片画廊
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);

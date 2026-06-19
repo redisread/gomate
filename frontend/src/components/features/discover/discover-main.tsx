@@ -94,7 +94,7 @@ export function DiscoverMain() {
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [tags, setTags] = React.useState<Tag[]>([]);
   const [stats, setStats] = React.useState<StoriesStatsResponse["data"] | null>(null);
-  const [statsLoading, setStatsLoading] = React.useState(false);
+  const [_statsLoading, _setStatsLoading] = React.useState(false);
 
   // Hydration safety - only start loading after mount
   const [mounted, setMounted] = React.useState(false);

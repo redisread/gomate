@@ -10,7 +10,6 @@ import {
   AlertCircle,
   Loader2,
   Sparkles,
-  CheckCircle2,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
@@ -25,8 +24,8 @@ import { Footer } from "@/components/layout/footer";
 export function CreateTeamClient() {
   const { t } = useI18n(["teams", "errors", "common"]);
   const [locations, setLocations] = React.useState<Location[]>([]);
-  const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
-  const [routes, setRoutes] = React.useState<Route[]>([]);
+  const [_selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
+  const [_routes, setRoutes] = React.useState<Route[]>([]);
   const [selectedRoute, setSelectedRoute] = React.useState<Route | null>(null);
   const [recommendedDuration, setRecommendedDuration] = React.useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);

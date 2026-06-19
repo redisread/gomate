@@ -67,7 +67,7 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
           showToast({ type: "error", message: errorMsg });
           return { success: false, error: errorMsg };
         }
-      } catch (err) {
+      } catch {
         const errorMsg = t("teams.toast.networkError");
         showToast({ type: "error", message: errorMsg });
         return { success: false, error: errorMsg };
@@ -100,7 +100,7 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
         showToast({ type: "error", message: data.error || t("teams.toast.leaveFailed") });
         return false;
       }
-    } catch (err) {
+    } catch {
       showToast({ type: "error", message: t("teams.toast.networkError") });
       return false;
     } finally {
@@ -134,7 +134,7 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
           showToast({ type: "error", message: data.error || t("teams.toast.approveFailed") });
           return false;
         }
-      } catch (err) {
+      } catch {
         showToast({ type: "error", message: t("teams.toast.networkError") });
         return false;
       } finally {
@@ -170,7 +170,7 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
           showToast({ type: "error", message: data.error || t("teams.toast.rejectFailed") });
           return false;
         }
-      } catch (err) {
+      } catch {
         showToast({ type: "error", message: t("teams.toast.networkError") });
         return false;
       } finally {
@@ -205,7 +205,7 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
           showToast({ type: "error", message: data.error || t("teams.toast.formFailed") });
           return false;
         }
-      } catch (err) {
+      } catch {
         showToast({ type: "error", message: t("teams.toast.networkError") });
         return false;
       } finally {
@@ -244,7 +244,7 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
           showToast({ type: "error", message: result.error || t("teams.toast.updateFailed") });
           return false;
         }
-      } catch (err) {
+      } catch {
         showToast({ type: "error", message: t("teams.toast.networkError") });
         return false;
       }
@@ -276,7 +276,7 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
           showToast({ type: "error", message: t("teams.toast.wechatSaveFailed") });
           return false;
         }
-      } catch (err) {
+      } catch {
         showToast({ type: "error", message: t("teams.toast.networkError") });
         return false;
       } finally {

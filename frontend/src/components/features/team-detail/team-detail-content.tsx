@@ -7,9 +7,10 @@ import { TeamActivityPosts } from "@/components/features/activity-posts";
 
 export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   const { team, location, allMembers, canJoin, isFull, isLeader, isMember, isPending, userId } = ctx;
+  const { t } = useI18n(["enums", "teams"]);
+
   if (!team) return null;
 
-  const { t } = useI18n(["enums", "teams"]);
   const statusInfo = getStatusInfo(team.status, t);
 
   return (

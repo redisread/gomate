@@ -65,7 +65,7 @@ poisRoute.get("/", async (c) => {
     return c.json({ success: true, pois });
   } catch (error) {
     console.error("Get pois error:", error);
-    return c.json({ error: "获取打卡点列表失败" }, 500);
+    return c.json({ success: false, error: "获取打卡点列表失败" }, 500);
   }
 });
 
@@ -85,7 +85,7 @@ poisRoute.get("/:id", async (c) => {
       .limit(1);
 
     if (!poi.length) {
-      return c.json({ error: "打卡点不存在" }, 404);
+      return c.json({ success: false, error: "打卡点不存在" }, 404);
     }
 
     const p = poi[0];
@@ -104,7 +104,7 @@ poisRoute.get("/:id", async (c) => {
     });
   } catch (error) {
     console.error("Get poi error:", error);
-    return c.json({ error: "获取打卡点详情失败" }, 500);
+    return c.json({ success: false, error: "获取打卡点详情失败" }, 500);
   }
 });
 
@@ -125,21 +125,21 @@ poisRoute.post("/", async (c) => {
 
     // 验证必填字段
     if (!body.name?.trim()) {
-      return c.json({ error: "名称为必填项" }, 400);
+      return c.json({ success: false, error: "名称为必填项" }, 400);
     }
     if (body.name.length > 50) {
-      return c.json({ error: "名称不能超过50个字符" }, 400);
+      return c.json({ success: false, error: "名称不能超过50个字符" }, 400);
     }
 
     // 验证坐标
     const coordinates = validateCoordinates(body.coordinates);
     if (!coordinates) {
-      return c.json({ error: "坐标格式无效，需要 { lat: number, lng: number }" }, 400);
+      return c.json({ success: false, error: "坐标格式无效，需要 { lat: number, lng: number }" }, 400);
     }
 
     // 可选字段验证
     if (body.description && body.description.length > 500) {
-      return c.json({ error: "描述不能超过500个字符" }, 400);
+      return c.json({ success: false, error: "描述不能超过500个字符" }, 400);
     }
 
     const poiId = generatePoiId();
@@ -158,10 +158,10 @@ poisRoute.post("/", async (c) => {
     return c.json({ success: true, poiId });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
     console.error("Create poi error:", error);
-    return c.json({ error: "创建打卡点失败" }, 500);
+    return c.json({ success: false, error: "创建打卡点失败" }, 500);
   }
 });
 
@@ -188,7 +188,7 @@ poisRoute.put("/:id", async (c) => {
       .where(eq(schema.pois.id, id))
       .limit(1);
     if (!existing.length) {
-      return c.json({ error: "打卡点不存在" }, 404);
+      return c.json({ success: false, error: "打卡点不存在" }, 404);
     }
 
     // 构建更新数据
@@ -196,10 +196,10 @@ poisRoute.put("/:id", async (c) => {
 
     if (body.name !== undefined) {
       if (!body.name.trim()) {
-        return c.json({ error: "名称不能为空" }, 400);
+        return c.json({ success: false, error: "名称不能为空" }, 400);
       }
       if (body.name.length > 50) {
-        return c.json({ error: "名称不能超过50个字符" }, 400);
+        return c.json({ success: false, error: "名称不能超过50个字符" }, 400);
       }
       updateData.name = body.name.trim();
     }
@@ -207,14 +207,14 @@ poisRoute.put("/:id", async (c) => {
     if (body.coordinates !== undefined) {
       const coordinates = validateCoordinates(body.coordinates);
       if (!coordinates) {
-        return c.json({ error: "坐标格式无效" }, 400);
+        return c.json({ success: false, error: "坐标格式无效" }, 400);
       }
       updateData.coordinates = JSON.stringify(coordinates);
     }
 
     if (body.description !== undefined) {
       if (body.description && body.description.length > 500) {
-        return c.json({ error: "描述不能超过500个字符" }, 400);
+        return c.json({ success: false, error: "描述不能超过500个字符" }, 400);
       }
       updateData.description = body.description?.trim() ?? null;
     }
@@ -231,10 +231,10 @@ poisRoute.put("/:id", async (c) => {
     return c.json({ success: true });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
     console.error("Update poi error:", error);
-    return c.json({ error: "更新打卡点失败" }, 500);
+    return c.json({ success: false, error: "更新打卡点失败" }, 500);
   }
 });
 
@@ -256,7 +256,7 @@ poisRoute.delete("/:id", async (c) => {
       .where(eq(schema.pois.id, id))
       .limit(1);
     if (!existing.length) {
-      return c.json({ error: "打卡点不存在" }, 404);
+      return c.json({ success: false, error: "打卡点不存在" }, 404);
     }
 
     // 查询关联数量（用于前端提示）
@@ -272,9 +272,9 @@ poisRoute.delete("/:id", async (c) => {
     return c.json({ success: true, removedAssociations });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
     console.error("Delete poi error:", error);
-    return c.json({ error: "删除打卡点失败" }, 500);
+    return c.json({ success: false, error: "删除打卡点失败" }, 500);
   }
 });

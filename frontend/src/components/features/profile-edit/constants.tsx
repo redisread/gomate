@@ -1,5 +1,4 @@
-import * as React from "react";
-import { User, FileText, MapPin, MessageCircle, Mail, Loader2, Camera, X, Check, ArrowLeft } from "lucide-react";
+import { FileText, MapPin, MessageCircle, Mail, User } from "lucide-react";
 
 export const LEVEL_OPTIONS = [
   { value: "beginner", emoji: "🌱", label: "enums.level.beginner", description: "enums.levelDesc.beginner" },

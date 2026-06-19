@@ -159,7 +159,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
     }
   }, [teamId, t]);
 
-  const checkUser = React.useCallback(async () => {
+  const _checkUser = React.useCallback(async () => {
     try {
       const sessionRes = await fetchAPI("/auth/get-session");
       const sessionData = await sessionRes.json();
@@ -184,7 +184,9 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       const res = await fetchAPI(`/api/teams/${teamId}/applications?status=pending`);
       const data = await res.json();
       if (data.success) setApplications(data.applications || []);
-    } catch {}
+    } catch {
+      console.warn('Failed to fetch applications');
+    }
   }, [teamId]);
 
   React.useEffect(() => {

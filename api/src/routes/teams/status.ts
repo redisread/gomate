@@ -62,19 +62,19 @@ status.post("/cancel-application", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: "请先登录" }, 401);
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
 
-    if (!teamId) return c.json({ error: "缺少队伍ID" }, 400);
+    if (!teamId) return c.json({ success: false, error: "缺少队伍ID" }, 400);
 
     const members = await db.query.teamMembers.findMany({
       where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, session.user.id), eq(schema.teamMembers.status, "pending")),
       limit: 1,
     });
     const membership = members[0];
-    if (!membership) return c.json({ error: "未找到待审核的申请" }, 404);
+    if (!membership) return c.json({ success: false, error: "未找到待审核的申请" }, 404);
 
     // 改为更新状态而不是删除，保留历史记录
     await db.update(schema.teamMembers)
@@ -84,7 +84,7 @@ status.post("/cancel-application", async (c) => {
     return c.json({ success: true, message: "申请已取消" });
   } catch (error) {
     console.error("Cancel application error:", error);
-    return c.json({ error: "取消申请失败" }, 500);
+    return c.json({ success: false, error: "取消申请失败" }, 500);
   }
 });
 

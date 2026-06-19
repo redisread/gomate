@@ -44,10 +44,10 @@ export function Navbar({ className }: NavbarProps) {
     isAdmin?: boolean;
   } | null>(null);
   // 延迟应用活跃状态，避免 SSR/CSR 不一致导致 hydration mismatch
-  const [mounted, setMounted] = React.useState(false);
+  const [_mounted, setMounted] = React.useState(false);
 
   // IP 定位获取用户城市（仅登录后）
-  const { city, isLoading: isLocating } = useIPLocation();
+  const { city, isLoading: _isLocating } = useIPLocation();
   const userCity = session?.user ? getCityDisplay({ city }) : null;
 
   // 获取当前路径（使用静态值避免 hydration mismatch）
@@ -485,7 +485,7 @@ function CtaButton({
 /**
  * Navbar Skeleton - i18n 加载时显示
  */
-function NavbarSkeleton({ className }: { className?: string }) {
+function _NavbarSkeleton({ className }: { className?: string }) {
   return (
     <header
       className={cn(

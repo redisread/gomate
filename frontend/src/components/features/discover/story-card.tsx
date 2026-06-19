@@ -47,7 +47,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
     onClick?.(story);
   };
 
-  const [mounted, setMounted] = React.useState(false);
+  const [_mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);

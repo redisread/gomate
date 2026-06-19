@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Loader2, UserCheck, Crown } from "lucide-react";
+import { Loader2, UserCheck } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { formatRelativeTime } from "./team-detail-utils";
 import { Avatar } from "./team-detail-ui";

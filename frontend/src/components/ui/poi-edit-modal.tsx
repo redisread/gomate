@@ -17,7 +17,7 @@ import * as React from "react";
 import { X, Loader2, MapPin } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import type { PoiDetail, PoiCreateInput, PoiUpdateInput } from "@/lib/types";
+import type { PoiDetail } from "@/lib/types";
 
 /* ================================================================
    类型与常量

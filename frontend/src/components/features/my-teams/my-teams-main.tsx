@@ -26,6 +26,8 @@ export function MyTeamsClient() {
     );
   }
 
+  const formTargetTeam = ctx.createdTeams.find((t2) => t2.id === ctx.formTarget);
+
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
@@ -198,7 +200,7 @@ export function MyTeamsClient() {
         onConfirm={ctx.handleCancelTeam} onCancel={() => ctx.setCancelTarget(null)}
       />
       <FormTeamModal
-        teamId={ctx.formTarget} isFull={!!ctx.createdTeams.find((t2) => t2.id === ctx.formTarget)?.currentMembers && ctx.createdTeams.find((t2) => t2.id === ctx.formTarget)?.currentMembers! >= ctx.createdTeams.find((t2) => t2.id === ctx.formTarget)?.maxMembers!}
+        teamId={ctx.formTarget} isFull={formTargetTeam ? formTargetTeam.currentMembers >= formTargetTeam.maxMembers : false}
         isForming={ctx.isForming} onConfirm={ctx.handleFormTeam} onCancel={() => ctx.setFormTarget(null)}
       />
     </main>

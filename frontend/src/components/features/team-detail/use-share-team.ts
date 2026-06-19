@@ -3,8 +3,6 @@
 import * as React from "react";
 import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
-import { ShareOptionsSheet } from "./share-options-sheet";
-import { SharePosterPreview } from "./share-poster-preview";
 
 interface UseShareTeamOptions {
   team: Team | null;
@@ -15,8 +13,8 @@ interface UseShareTeamOptions {
  * Phase 4: 队伍分享 Hook
  * 使用后端 API 生成图片
  */
-export function useShareTeam({ team, location }: UseShareTeamOptions) {
-  const { t } = useI18n(["teams", "common"]);
+export function useShareTeam({ team, location: _location }: UseShareTeamOptions) {
+  const { t: _t } = useI18n(["teams", "common"]);
   const [showOptions, setShowOptions] = React.useState(false);
   const [showPreview, setShowPreview] = React.useState(false);
   const [copied, setCopied] = React.useState(false);

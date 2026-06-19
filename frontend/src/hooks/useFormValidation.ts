@@ -17,7 +17,7 @@ type ErrorMap = Record<string, string | undefined>;
  */
 export function useFormValidation(rules: RuleMap) {
   // 已触碰（失焦过）的字段集合
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [_touched, setTouched] = useState<Record<string, boolean>>({});
   // 字段错误映射
   const [errors, setErrors] = useState<ErrorMap>({});
 

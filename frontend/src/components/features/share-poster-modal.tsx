@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
-import { Loader2, ImageIcon, Link2, X, CheckCircle, Download, RefreshCw } from "lucide-react";
+import { Loader2, ImageIcon, Link2, X, Download, RefreshCw } from "lucide-react";
 
 interface SharePosterModalProps {
   type: "team" | "location";
@@ -21,7 +21,7 @@ interface SharePosterModalProps {
 export function SharePosterModal({
   type,
   id,
-  title,
+  title: _title,
   url,
   onClose,
   onToast,

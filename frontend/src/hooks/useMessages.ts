@@ -48,7 +48,7 @@ export function useConversations(): UseConversationsReturn {
       } else {
         setError(data.error || "Failed to load conversations");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to load conversations");
     } finally {
       setLoading(false);
@@ -102,7 +102,7 @@ export function useMessages(conversationId: string | undefined): UseMessagesRetu
         } else {
           setError(data.error || "Failed to load messages");
         }
-      } catch (err) {
+      } catch {
         setError("Failed to load messages");
       } finally {
         setLoading(false);
@@ -132,7 +132,7 @@ export function useMessages(conversationId: string | undefined): UseMessagesRetu
           merged.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
           setMessages(merged);
         }
-      } catch (err) {
+      } catch {
         // Silent fail for polling
       }
     };
@@ -144,30 +144,26 @@ export function useMessages(conversationId: string | undefined): UseMessagesRetu
   const sendMessage = async (content: string) => {
     if (!conversationId) return;
 
-    try {
-      const res = await fetch(`${API_BASE}/messages/${conversationId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ content }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        // Optimistically add message
-        const newMessage: Message = {
-          id: data.data.id,
-          conversationId,
-          senderId: "current_user", // Will be replaced on next poll
-          content,
-          isRead: false,
-          createdAt: Date.now(),
-        };
-        setMessages((prev) => [...prev, newMessage]);
-      } else {
-        throw new Error(data.error);
-      }
-    } catch (err) {
-      throw err;
+    const res = await fetch(`${API_BASE}/messages/${conversationId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ content }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Optimistically add message
+      const newMessage: Message = {
+        id: data.data.id,
+        conversationId,
+        senderId: "current_user", // Will be replaced on next poll
+        content,
+        isRead: false,
+        createdAt: Date.now(),
+      };
+      setMessages((prev) => [...prev, newMessage]);
+    } else {
+      throw new Error(data.error);
     }
   };
 
@@ -186,7 +182,7 @@ export function useMessages(conversationId: string | undefined): UseMessagesRetu
         setHasMore(!!data.nextCursor);
         setCursor(data.nextCursor);
       }
-    } catch (err) {
+    } catch {
       setError("Failed to load more messages");
     } finally {
       setLoading(false);
@@ -218,7 +214,7 @@ export function useUnreadCount(): UseUnreadCountReturn {
       if (data.success) {
         setCount(data.data?.count || 0);
       }
-    } catch (err) {
+    } catch {
       // Silent fail
     }
   }, []);

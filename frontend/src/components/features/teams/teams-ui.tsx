@@ -1,8 +1,7 @@
 import * as React from "react";
 import {
-  Users, Mountain, UserCircle, ChevronRight, Flame, Lock,
-  Flag, CheckCircle2, MapPin, Calendar, Clock, Filter,
-  CalendarDays, Tag, X, Search, Sparkles, ArrowRight, Compass, TreePine,
+  Users, Mountain, ChevronRight, Flame, MapPin, Calendar, Clock, Filter,
+  CalendarDays, Tag, X, Search, Sparkles, ArrowRight,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
@@ -87,7 +86,7 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
   const location = (team as any).location;
   const diff = location?.difficulty ? DIFFICULTY_CONFIG[location.difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const gradient = getCardGradient(team.id);
-  const daysInfo = location?.startDate ? getDaysUntilStart(t, location.startDate) : null;
+  const _daysInfo = location?.startDate ? getDaysUntilStart(t, location.startDate) : null;
 
   return (
     <a href={`/teams/${team.id}`} className="group block">

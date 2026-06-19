@@ -16,7 +16,7 @@ membership.post("/join", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: "请先登录" }, 401);
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const userId = session.user.id;
     const db = createDb(c.env.DB);
@@ -27,21 +27,21 @@ membership.post("/join", async (c) => {
       .where(eq(schema.users.id, userId))
       .then((rows) => rows[0]);
 
-    if (!userRecord?.wechat) return c.json({ error: "请先填写微信号才能加入队伍" }, 400);
+    if (!userRecord?.wechat) return c.json({ success: false, error: "请先填写微信号才能加入队伍" }, 400);
 
     const teamId = c.req.param("id");
-    if (!teamId) return c.json({ error: "缺少队伍ID" }, 400);
+    if (!teamId) return c.json({ success: false, error: "缺少队伍ID" }, 400);
 
     const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId as string) });
-    if (!team) return c.json({ error: "队伍不存在" }, 404);
-    if (team.status !== "recruiting") return c.json({ error: "该队伍当前不接受新成员" }, 400);
+    if (!team) return c.json({ success: false, error: "队伍不存在" }, 404);
+    if (team.status !== "recruiting") return c.json({ success: false, error: "该队伍当前不接受新成员" }, 400);
 
     const [{ approvedCount }] = await db
       .select({ approvedCount: sql<number>`count(*)` })
       .from(schema.teamMembers)
       .where(and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.status, "approved")));
 
-    if (approvedCount >= team.maxMembers) return c.json({ error: "队伍已满" }, 400);
+    if (approvedCount >= team.maxMembers) return c.json({ success: false, error: "队伍已满" }, 400);
 
     const existingMembers = await db.query.teamMembers.findMany({
       where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, userId)),
@@ -50,8 +50,8 @@ membership.post("/join", async (c) => {
     const existing = existingMembers[0];
 
     if (existing) {
-      if (existing.status === "approved") return c.json({ error: "你已经是该队伍的成员" }, 400);
-      if (existing.status === "pending") return c.json({ error: "你已经提交了申请，请等待审核" }, 400);
+      if (existing.status === "approved") return c.json({ success: false, error: "你已经是该队伍的成员" }, 400);
+      if (existing.status === "pending") return c.json({ success: false, error: "你已经提交了申请，请等待审核" }, 400);
       if (existing.status === "rejected") {
         await db.update(schema.teamMembers)
           .set({ status: "pending", createdAt: new Date(), statusUpdatedAt: new Date() })
@@ -90,7 +90,7 @@ membership.post("/join", async (c) => {
     return c.json({ success: true, message: "申请已提交，等待队长审核" });
   } catch (error) {
     console.error("Join team error:", error);
-    return c.json({ error: "申请加入失败" }, 500);
+    return c.json({ success: false, error: "申请加入失败" }, 500);
   }
 });
 
@@ -102,33 +102,33 @@ membership.post("/members/:userId/approve", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: "请先登录" }, 401);
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const teamId = c.req.param("id");
     const targetUserId = c.req.param("userId");
     const db = createDb(c.env.DB);
 
-    if (!teamId) return c.json({ error: "缺少队伍ID" }, 400);
+    if (!teamId) return c.json({ success: false, error: "缺少队伍ID" }, 400);
 
     const team = await db.query.teams.findFirst({
       where: eq(schema.teams.id, teamId as string), with: { location: true },
     });
-    if (!team) return c.json({ error: "队伍不存在" }, 404);
-    if (team.leaderId !== session.user.id) return c.json({ error: "只有队长可以审核成员" }, 403);
+    if (!team) return c.json({ success: false, error: "队伍不存在" }, 404);
+    if (team.leaderId !== session.user.id) return c.json({ success: false, error: "只有队长可以审核成员" }, 403);
 
     const members = await db.query.teamMembers.findMany({
       where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "pending")),
       limit: 1,
     });
     const membership = members[0];
-    if (!membership) return c.json({ error: "未找到该成员的申请" }, 404);
+    if (!membership) return c.json({ success: false, error: "未找到该成员的申请" }, 404);
 
     const [{ approvedCount }] = await db
       .select({ approvedCount: sql<number>`count(*)` })
       .from(schema.teamMembers)
       .where(and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.status, "approved")));
 
-    if (approvedCount >= team.maxMembers) return c.json({ error: "队伍已满，无法批准新成员" }, 400);
+    if (approvedCount >= team.maxMembers) return c.json({ success: false, error: "队伍已满，无法批准新成员" }, 400);
 
     const now = new Date();
     const newCount = approvedCount + 1;
@@ -144,7 +144,7 @@ membership.post("/members/:userId/approve", async (c) => {
     return c.json({ success: true, message: "已通过申请" });
   } catch (error) {
     console.error("Approve member error:", error);
-    return c.json({ error: "批准申请失败" }, 500);
+    return c.json({ success: false, error: "批准申请失败" }, 500);
   }
 });
 
@@ -156,27 +156,27 @@ membership.post("/members/:userId/reject", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: "请先登录" }, 401);
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const teamId = c.req.param("id");
     const targetUserId = c.req.param("userId");
     const db = createDb(c.env.DB);
 
-    if (!teamId) return c.json({ error: "缺少队伍ID" }, 400);
+    if (!teamId) return c.json({ success: false, error: "缺少队伍ID" }, 400);
 
     const body = await c.req.json<{ reason?: string }>().catch(() => ({} as { reason?: string }));
     const { reason } = body;
 
     const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId as string) });
-    if (!team) return c.json({ error: "队伍不存在" }, 404);
-    if (team.leaderId !== session.user.id) return c.json({ error: "只有队长可以审核成员" }, 403);
+    if (!team) return c.json({ success: false, error: "队伍不存在" }, 404);
+    if (team.leaderId !== session.user.id) return c.json({ success: false, error: "只有队长可以审核成员" }, 403);
 
     const members = await db.query.teamMembers.findMany({
       where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "pending")),
       limit: 1,
     });
     const membership = members[0];
-    if (!membership) return c.json({ error: "未找到该成员的申请" }, 404);
+    if (!membership) return c.json({ success: false, error: "未找到该成员的申请" }, 404);
 
     const now = new Date();
     const extra = reason ? JSON.stringify({ rejectReason: reason }) : null;
@@ -195,7 +195,7 @@ membership.post("/members/:userId/reject", async (c) => {
     return c.json({ success: true, message: "已拒绝申请" });
   } catch (error) {
     console.error("Reject member error:", error);
-    return c.json({ error: "拒绝申请失败" }, 500);
+    return c.json({ success: false, error: "拒绝申请失败" }, 500);
   }
 });
 

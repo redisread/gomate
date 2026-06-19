@@ -24,7 +24,7 @@ const CRITICAL_ROUTES = [
 ];
 
 // 用户可能访问的次关键路由
-const SECONDARY_ROUTES = [
+const _SECONDARY_ROUTES = [
   "/about",
   "/help",
   "/contact",
@@ -53,7 +53,7 @@ function prefetchRoute(href: string) {
  * 创建 DNS 预解析
  * @param url - 预解析的域名
  */
-function prefetchDNS(url: string) {
+function _prefetchDNS(url: string) {
   if (typeof window === "undefined") return;
 
   const existingLink = document.querySelector(`link[rel="dns-prefetch"][href="${url}"]`);
@@ -120,7 +120,6 @@ PrefetchLink.displayName = "PrefetchLink";
 export function RoutePreloaderScript() {
   return (
     <script
-      // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{
         __html: `
           (function() {

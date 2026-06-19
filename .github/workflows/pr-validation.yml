@@ -60,22 +60,3 @@ jobs:
       - name: Test (non-blocking)
         run: pnpm --filter @gomate/frontend test || echo "Tests skipped"
         continue-on-error: true
-
-  # Mobile Package Validation (if applicable)
-  mobile-checks:
-    name: Mobile Checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - name: Lint
-        run: pnpm --filter @gomate/mobile lint || echo "No lint script"
-      - name: Type Check
-        run: pnpm --filter @gomate/mobile type-check || echo "No type-check script"
-      - name: Test
-        run: pnpm --filter @gomate/mobile test || echo "No test script"

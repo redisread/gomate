@@ -4,8 +4,8 @@ import type { useHomeData } from "./use-home-data";
 
 type HomeData = ReturnType<typeof useHomeData>;
 
-export function HomeCtaSection({ data }: { data: HomeData }) {
-  const { isLoggedIn, isDark, ctaRef, ctaInView } = data;
+export function HomeCtaSection({ data }: { data: Omit<HomeData, "isLoggedIn"> & { isLoggedIn?: boolean } }) {
+  const { isDark, ctaRef, ctaInView } = data;
   const { t } = useI18n(["home"]);
 
   // SSR 默认使用亮色模式，hydration 完成后客户端主题会自动同步

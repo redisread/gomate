@@ -48,7 +48,7 @@ interface SearchResultItemProps {
 }
 
 export function SearchResultItem({
-  id,
+  id: _id,
   name,
   coverImage,
   cityName,

@@ -3,7 +3,6 @@
 import * as React from "react";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
 
 export const LEVEL_CONFIG: Record<string, {
   badge: string;
@@ -82,7 +81,7 @@ export function StatCard({
 }
 
 export function ProfileSkeleton({ variant = "amber" }: { variant?: "amber" | "sky" }) {
-  const bgColor = variant === "amber" ? "amber" : "sky";
+  const _bgColor = variant === "amber" ? "amber" : "sky";
   
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden mb-6">

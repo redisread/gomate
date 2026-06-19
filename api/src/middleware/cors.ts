@@ -32,9 +32,10 @@ export const corsMiddleware = cors({
     const allowed = parseAllowedOrigins(c.env, origin);
     if (allowed.includes(origin)) return origin;
 
-    // 允许局域网 IP（移动端调试）
-    if (/^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin)) return origin;
-    if (/^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin)) return origin;
+    // 仅开发环境允许局域网 IP（移动端调试）
+    const isDev = allowed.some((o) => o.includes("localhost"));
+    if (isDev && /^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin)) return origin;
+    if (isDev && /^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin)) return origin;
 
     // 解析失败或无匹配时记录警告
     console.warn("[CORS] Rejected origin:", origin, "Allowed:", allowed);

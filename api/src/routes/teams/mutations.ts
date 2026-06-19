@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
 import { createAuth } from "../../lib/auth";
 import { createDb } from "../../db";
@@ -8,6 +9,29 @@ import { getRandomTeamIcon } from "./utils";
 
 const mutations = new Hono<{ Bindings: Env }>();
 
+const createTeamSchema = z.object({
+  locationId: z.string().min(1),
+  routeId: z.string().optional(),
+  title: z.string().min(1).max(100),
+  description: z.string().max(2000).optional(),
+  date: z.string().min(1),
+  time: z.string().min(1),
+  duration: z.string().optional(),
+  durationMin: z.number().optional(),
+  maxMembers: z.number().int().min(2).max(50),
+  requirements: z.array(z.string()).optional(),
+});
+
+const updateTeamSchema = z.object({
+  title: z.string().min(1).max(100).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  maxMembers: z.number().int().min(2).max(50).optional(),
+  requirements: z.array(z.string()).optional().nullable(),
+  icon: z.string().optional(),
+  time: z.string().optional(),
+  durationMin: z.number().optional(),
+});
+
 /**
  * POST /teams
  * 创建新队伍（需登录，需填写微信号）
@@ -16,7 +40,7 @@ mutations.post("/", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: "请先登录" }, 401);
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const db = createDb(c.env.DB);
     const userId = session.user.id;
@@ -28,24 +52,20 @@ mutations.post("/", async (c) => {
       .then((rows) => rows[0]);
 
     if (!userRecord?.wechat) {
-      return c.json({ error: "请先填写微信号才能创建队伍" }, 400);
+      return c.json({ success: false, error: "请先填写微信号才能创建队伍" }, 400);
     }
 
-    const body = await c.req.json<{
-      locationId?: string; routeId?: string; title?: string;
-      description?: string; date?: string; time?: string;
-      duration?: string; durationMin?: number; maxMembers?: number;
-      requirements?: string[];
-    }>();
-    const { locationId, routeId, title, description, date, time, duration, durationMin, maxMembers, requirements } = body;
-
-    if (!locationId || !title || !date || !time || !maxMembers) {
-      return c.json({ error: "缺少必填字段" }, 400);
+    const body = await c.req.json();
+    const parsed = createTeamSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ success: false, error: "输入无效", details: parsed.error.errors }, 400);
     }
+
+    const { locationId, routeId, title, description, date, time, duration, durationMin, maxMembers, requirements } = parsed.data;
 
     const startTime = new Date(`${date}T${time}`);
     if (isNaN(startTime.getTime())) {
-      return c.json({ error: "无效的日期或时间格式" }, 400);
+      return c.json({ success: false, error: "无效的日期或时间格式" }, 400);
     }
 
     const durationMinutes = durationMin || (duration
@@ -72,7 +92,7 @@ mutations.post("/", async (c) => {
     return c.json({ success: true, team: { id: teamId, locationId, routeId, leaderId: userId, title, description, startTime: startTime.toISOString(), endTime: endTime.toISOString(), durationMin: durationMinutes, maxMembers, currentMembers: 1, requirements, icon: teamIcon, status: "recruiting", createdAt: now.toISOString() } });
   } catch (error) {
     console.error("Create team error:", error);
-    return c.json({ error: "创建队伍失败" }, 500);
+    return c.json({ success: false, error: "创建队伍失败" }, 500);
   }
 });
 
@@ -98,13 +118,13 @@ mutations.put("/:id", async (c) => {
     if (team.leaderId !== session.user.id)
       return c.json({ success: false, error: "只有队长可以修改队伍" }, 403);
 
-    const body = await c.req.json<{
-      title?: string; description?: string; maxMembers?: number;
-      requirements?: string[]; time?: string; durationMin?: number;
-    }>();
-    const { title, description, maxMembers, requirements, time, durationMin } = body;
+    const body = await c.req.json();
+    const parsed = updateTeamSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ success: false, error: "输入无效", details: parsed.error.errors }, 400);
+    }
 
-    if (!title || !maxMembers) return c.json({ success: false, error: "缺少必填字段" }, 400);
+    const { title, description, maxMembers, requirements, time, durationMin } = parsed.data;
 
     type UpdateData = {
       title: string; description: string | null; maxMembers: number;

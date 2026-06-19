@@ -32,7 +32,7 @@ export function ToastDisplay({ toast, exiting }: { toast: ToastOptions | null; e
 }
 
 export function Avatar({ name, avatar, isLeader, size = "md" }: { name?: string; avatar?: string | null; isLeader?: boolean; size?: "sm" | "md" | "lg" }) {
-  const displayChar = name?.[0] || "?";
+  const _displayChar = name?.[0] || "?";
   const kaomoji = ["◡‿◡", "˘◡˘", "◠‿◠", "◕‿◕", "◉‿◉"];
   const randomKaomoji = kaomoji[(name?.charCodeAt(0) || 0) % kaomoji.length];
 

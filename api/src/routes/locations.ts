@@ -268,7 +268,7 @@ locations.get("/", async (c) => {
     return c.json({ success: true, locations: formattedLocations, pagination: { page, pageSize, total, totalPages } });
   } catch (error) {
     console.error("Get locations error:", error);
-    return c.json({ error: "获取地点列表失败" }, 500);
+    return c.json({ success: false, error: "获取地点列表失败" }, 500);
   }
 });
 
@@ -299,10 +299,10 @@ locations.post("/", async (c) => {
     return c.json({ success: true, location: { id, slug } });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
     console.error("Create location error:", error);
-    return c.json({ error: "创建地点失败" }, 500);
+    return c.json({ success: false, error: "创建地点失败" }, 500);
   }
 });
 
@@ -317,7 +317,7 @@ locations.put("/", async (c) => {
     const body = await c.req.json();
     const { id, ...updateData } = body;
 
-    if (!id) return c.json({ error: "缺少地点 ID" }, 400);
+    if (!id) return c.json({ success: false, error: "缺少地点 ID" }, 400);
 
     const dataToUpdate: Record<string, unknown> = { updatedAt: new Date() };
     if (updateData.name !== undefined) dataToUpdate.name = updateData.name;
@@ -339,10 +339,10 @@ locations.put("/", async (c) => {
     return c.json({ success: true });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
     console.error("Update location error:", error);
-    return c.json({ error: "更新地点失败" }, 500);
+    return c.json({ success: false, error: "更新地点失败" }, 500);
   }
 });
 
@@ -373,7 +373,7 @@ locations.get("/:id", async (c) => {
       });
     }
 
-    if (!location) return c.json({ error: "地点不存在" }, 404);
+    if (!location) return c.json({ success: false, error: "地点不存在" }, 404);
 
     // 查询地点关联的标签
     const tagRelations = await db
@@ -414,7 +414,7 @@ locations.get("/:id", async (c) => {
     });
   } catch (error) {
     console.error("Get location error:", error);
-    return c.json({ error: "获取地点详情失败" }, 500);
+    return c.json({ success: false, error: "获取地点详情失败" }, 500);
   }
 });
 
@@ -440,7 +440,7 @@ locations.get("/:id/pois", async (c) => {
       });
     }
 
-    if (!location) return c.json({ error: "地点不存在" }, 404);
+    if (!location) return c.json({ success: false, error: "地点不存在" }, 404);
 
     // 查询地点关联的 POI（entityType = "location"）
     const locationPois = await db
@@ -472,7 +472,7 @@ locations.get("/:id/pois", async (c) => {
     return c.json({ success: true, pois });
   } catch (error) {
     console.error("Get location pois error:", error);
-    return c.json({ error: "获取打卡点失败" }, 500);
+    return c.json({ success: false, error: "获取打卡点失败" }, 500);
   }
 });
 
@@ -487,17 +487,17 @@ locations.delete("/:id", async (c) => {
     const db = createDb(c.env.DB);
 
     const existing = await db.query.locations.findFirst({ where: eq(schema.locations.id, id) });
-    if (!existing) return c.json({ error: "地点不存在" }, 404);
+    if (!existing) return c.json({ success: false, error: "地点不存在" }, 404);
 
     await db.delete(schema.locations).where(eq(schema.locations.id, id));
 
     return c.json({ success: true });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
     console.error("Delete location error:", error);
-    return c.json({ error: "删除地点失败" }, 500);
+    return c.json({ success: false, error: "删除地点失败" }, 500);
   }
 });
 
@@ -524,7 +524,7 @@ locations.get("/:id/tags", async (c) => {
     return c.json({ success: true, tags: rows.map((r) => r.tag) });
   } catch (error) {
     console.error("Get location tags error:", error);
-    return c.json({ error: "获取标签失败" }, 500);
+    return c.json({ success: false, error: "获取标签失败" }, 500);
   }
 });
 
@@ -565,10 +565,10 @@ locations.put("/:id/tags", async (c) => {
     return c.json({ success: true });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
     console.error("Update location tags error:", error);
-    return c.json({ error: "更新标签失败" }, 500);
+    return c.json({ success: false, error: "更新标签失败" }, 500);
   }
 });
 
@@ -613,10 +613,10 @@ locations.put("/:id/pois", async (c) => {
     return c.json({ success: true });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
+    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
     console.error("Update location pois error:", error);
-    return c.json({ error: "更新打卡点失败" }, 500);
+    return c.json({ success: false, error: "更新打卡点失败" }, 500);
   }
 });
 
@@ -664,7 +664,7 @@ locations.get("/search", async (c) => {
     });
   } catch (error) {
     console.error("Search locations error:", error);
-    return c.json({ error: "搜索失败" }, 500);
+    return c.json({ success: false, error: "搜索失败" }, 500);
   }
 });
 

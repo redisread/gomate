@@ -37,23 +37,6 @@ function SectionCard({ icon, title, badge, children, defaultOpen = true, collaps
   );
 }
 
-interface FieldProps {
-  label: string; required?: boolean; hint?: string; error?: string; children: React.ReactNode;
-}
-
-function Field({ label, required, hint, error, children }: FieldProps) {
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
-        {label}{required && <span className="ml-1 text-red-400">*</span>}
-      </label>
-      {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
-      {!error && hint && <p className="text-xs text-stone-400">{hint}</p>}
-    </div>
-  );
-}
-
 function styledInput(hasError?: boolean) {
   return cn(
     "w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all duration-150",
