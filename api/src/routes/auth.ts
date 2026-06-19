@@ -19,13 +19,13 @@ const forgotPasswordSchema = z.object({
  * 限流：5 次/分钟/IP
  */
 auth.post("/forgot-password", async (c) => {
-  const ip = getClientIP(c.req.raw);
-  const rateResult = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:forgot:${ip}`, 5, 60);
-  if (!rateResult.allowed) {
-    return c.json({ success: false, error: "请求过于频繁，请稍后再试", retryAfter: rateResult.retryAfter }, 429);
-  }
-
   try {
+    const ip = getClientIP(c.req.raw);
+    const rateResult = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:forgot:${ip}`, 5, 60);
+    if (!rateResult.allowed) {
+      return c.json({ success: false, error: "请求过于频繁，请稍后再试", retryAfter: rateResult.retryAfter }, 429);
+    }
+
     const body = await c.req.json();
     const parsed = forgotPasswordSchema.safeParse(body);
     if (!parsed.success) {
@@ -71,18 +71,22 @@ auth.all("/*", async (c) => {
   const path = new URL(c.req.url).pathname;
 
   // 针对敏感端点的限流（精确匹配 Better Auth 的路径格式）
-  if (path.endsWith("/sign-in/email") || path.endsWith("/sign-in")) {
+  // 限流失败时降级放行，不阻断认证流程
+  try {
     const ip = getClientIP(c.req.raw);
-    const result = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:signin:${ip}`, 20, 60);
-    if (!result.allowed) {
-      return c.json({ success: false, error: "登录尝试过于频繁，请稍后再试", retryAfter: result.retryAfter }, 429);
+    if (path.endsWith("/sign-in/email") || path.endsWith("/sign-in")) {
+      const result = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:signin:${ip}`, 20, 60);
+      if (!result.allowed) {
+        return c.json({ success: false, error: "登录尝试过于频繁，请稍后再试", retryAfter: result.retryAfter }, 429);
+      }
+    } else if (path.endsWith("/sign-up/email") || path.endsWith("/sign-up")) {
+      const result = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:signup:${ip}`, 10, 60);
+      if (!result.allowed) {
+        return c.json({ success: false, error: "注册请求过于频繁，请稍后再试", retryAfter: result.retryAfter }, 429);
+      }
     }
-  } else if (path.endsWith("/sign-up/email") || path.endsWith("/sign-up")) {
-    const ip = getClientIP(c.req.raw);
-    const result = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:signup:${ip}`, 10, 60);
-    if (!result.allowed) {
-      return c.json({ success: false, error: "注册请求过于频繁，请稍后再试", retryAfter: result.retryAfter }, 429);
-    }
+  } catch (err) {
+    console.warn("[Auth] Rate limit check failed, allowing request:", err);
   }
 
   const authInstance = createAuth(c.env);

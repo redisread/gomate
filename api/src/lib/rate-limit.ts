@@ -10,7 +10,14 @@
  * effective limit can briefly exceed `maxRequests` under burst traffic. This
  * is acceptable for auth rate limiting (soft barrier, IP-keyed, short window).
  * For stricter limits, consider a Durable Object with single-threaded state.
+ *
+ * NOTE: Cloudflare KV enforces a minimum TTL of 60 seconds. When the remaining
+ * window is shorter than 60s we clamp to 60. The timestamp in the entry still
+ * tracks the real window boundary, so rate-limit decisions stay correct.
  */
+
+/** Cloudflare KV minimum TTL (seconds). */
+const KV_MIN_TTL = 60;
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -55,10 +62,13 @@ export async function checkRateLimit(
     }
   }
 
+  // TTL must be ≥ 60s (Cloudflare KV minimum)
+  const safeTtl = (seconds: number) => Math.max(KV_MIN_TTL, seconds);
+
   if (!entry) {
     // New window
     const newEntry: RateLimitEntry = { count: 1, ts: now };
-    await kv.put(key, JSON.stringify(newEntry), { expirationTtl: windowSeconds });
+    await kv.put(key, JSON.stringify(newEntry), { expirationTtl: safeTtl(windowSeconds) });
     return { allowed: true, remaining: maxRequests - 1, retryAfter: 0 };
   }
 
@@ -71,7 +81,7 @@ export async function checkRateLimit(
 
   // Increment counter within existing window
   entry.count += 1;
-  await kv.put(key, JSON.stringify(entry), { expirationTtl: Math.max(1, retryAfter) });
+  await kv.put(key, JSON.stringify(entry), { expirationTtl: safeTtl(retryAfter) });
   return { allowed: true, remaining: remaining - 1, retryAfter: 0 };
 }
 
