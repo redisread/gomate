@@ -1,5 +1,4 @@
 import type { Conversation } from "@gomate/types";
-import { useState, useEffect } from "react";
 
 interface MessageListProps {
   conversations: Conversation[];

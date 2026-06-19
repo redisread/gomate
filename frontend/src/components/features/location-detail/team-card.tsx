@@ -1,7 +1,5 @@
 import * as React from "react";
 import { CalendarDays, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
 import { TeamProgress, TeamUrgencyLabel, TeamLeaderMini } from "@/components/features/teams/shared";
 
@@ -10,7 +8,6 @@ interface TeamCardProps {
 }
 
 export function TeamCard({ team }: TeamCardProps) {
-  const { t } = useI18n(["common"]);
 
   const dateInfo = React.useMemo(() => {
     if (!team.date) return null;

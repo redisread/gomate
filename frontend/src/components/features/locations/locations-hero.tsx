@@ -30,7 +30,7 @@ interface LocationsHeroProps {
 export function LocationsHero({
   activeRole, searchQuery, selectedCityId, selectedTags, cities, popularTags,
   showCityDropdown, cityDropdownPos, selectedCityName, hasActiveFilters,
-  isLoading, pagination, onRoleSelect, onSearchChange, onTagToggle,
+  isLoading: _isLoading, pagination: _pagination, onRoleSelect, onSearchChange, onTagToggle,
   onCitySelect, onClearAll, onToggleCityDropdown, setCityDropdownPos,
 }: LocationsHeroProps) {
   const { t, loading: i18nLoading } = useI18n(["locations"]);

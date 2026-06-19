@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
-import { Mountain, Heart, Mail, ArrowUp, MapPin, Users, Plus, ExternalLink, Copy, Check, X } from "lucide-react";
+import { Mountain, Heart, Mail, ArrowUp, MapPin, Users, Plus, Copy, Check, X } from "lucide-react";
 import type { TranslationKey } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
 import { FooterMobile } from "./footer-mobile";

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Users, MapPin, Mountain, Crown, Hourglass, ClipboardCheck, Loader2 } from "lucide-react";
+import { Users, Mountain, Crown, Hourglass, ClipboardCheck, Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 

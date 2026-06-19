@@ -17,7 +17,7 @@
 import * as React from "react";
 import { Upload, Image as ImageIcon, X, Link, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchAPI, API_BASE } from "@/lib/api";
+import { API_BASE } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
 
 /* ================================================================
@@ -170,12 +170,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 reject(new Error(t("ui.upload.uploadInvalidResponse")));
               }
             } else {
-              try {
-                const data = JSON.parse(xhr.responseText) as { error?: string };
-                reject(new Error(t("ui.upload.uploadHttpError").replace("{status}", String(xhr.status))));
-              } catch {
-                reject(new Error(t("ui.upload.uploadHttpError").replace("{status}", String(xhr.status))));
-              }
+              reject(new Error(t("ui.upload.uploadHttpError").replace("{status}", String(xhr.status))));
             }
           });
 

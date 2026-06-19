@@ -59,7 +59,7 @@ export function ActivityPostForm({ teamId, onSuccess, onCancel, className }: Act
           setImages((prev) => [...prev, data.url]);
         }
       }
-    } catch (err) {
+    } catch {
       setError(t("teams.activityPosts.uploadError"));
     }
   };
@@ -95,7 +95,7 @@ export function ActivityPostForm({ teamId, onSuccess, onCancel, className }: Act
       } else {
         setError(data.message || t("teams.activityPosts.submitError"));
       }
-    } catch (err) {
+    } catch {
       setError(t("teams.activityPosts.submitError"));
     } finally {
       setIsSubmitting(false);

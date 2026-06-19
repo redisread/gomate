@@ -10,7 +10,7 @@ import { useInView, useAnimateIn, useParallax, useSearchInteraction } from "@/ho
 export function useHomeData() {
   // 使用 SWR 获取地点列表（带缓存）
   const [currentPage, setCurrentPage] = React.useState(1);
-  const { locations, pagination, isLoading, error } = useLocations(currentPage, 6);
+  const { locations, pagination, isLoading, error: _error } = useLocations(currentPage, 6);
 
   const [teams, setTeams] = React.useState<Team[]>([]);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);

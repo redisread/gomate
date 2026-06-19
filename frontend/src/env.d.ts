@@ -1,4 +1,4 @@
-/// <reference path="../.astro/types.d.ts" />
+import "../.astro/types.d.ts";
 
 import type { Locale } from "./i18n";
 

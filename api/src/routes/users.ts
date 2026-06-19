@@ -55,7 +55,7 @@ function validateUserExtra(extra: unknown): extra is { equipment?: string[]; exp
 users.get("/", async (c) => {
   try {
     const userId = c.req.query("id");
-    if (!userId) return c.json({ error: "User ID is required" }, 400);
+    if (!userId) return c.json({ success: false, error: "User ID is required" }, 400);
 
     const db = createDb(c.env.DB);
     const userList = await db
@@ -64,7 +64,7 @@ users.get("/", async (c) => {
       .where(eq(schema.users.id, userId))
       .limit(1);
 
-    if (!userList.length) return c.json({ error: "User not found" }, 404);
+    if (!userList.length) return c.json({ success: false, error: "User not found" }, 404);
 
     const user = userList[0];
     return c.json({
@@ -82,7 +82,7 @@ users.get("/", async (c) => {
     });
   } catch (error) {
     console.error("[API /users] Error:", error);
-    return c.json({ error: "Failed to get user" }, 500);
+    return c.json({ success: false, error: "Failed to get user" }, 500);
   }
 });
 
@@ -94,7 +94,7 @@ users.patch("/update", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: "请先登录" }, 401);
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const db = createDb(c.env.DB);
     const body = await c.req.json<{
@@ -104,7 +104,7 @@ users.patch("/update", async (c) => {
     }>();
     const { userId, name, nickname, bio, level, image, wechat, gender, birthday, extra } = body;
 
-    if (!userId) return c.json({ error: "User ID is required" }, 400);
+    if (!userId) return c.json({ success: false, error: "User ID is required" }, 400);
 
     const updateData: Partial<typeof schema.users.$inferInsert> = {};
     if (name !== undefined) updateData.name = name;
@@ -118,7 +118,7 @@ users.patch("/update", async (c) => {
       updateData.birthday = birthday === null ? null : new Date(birthday as number);
     }
     if (extra !== undefined) {
-      if (!validateUserExtra(extra)) return c.json({ error: "Invalid extra field format" }, 400);
+      if (!validateUserExtra(extra)) return c.json({ success: false, error: "Invalid extra field format" }, 400);
       updateData.extra = JSON.stringify(extra);
     }
     updateData.updatedAt = new Date();
@@ -140,7 +140,7 @@ users.patch("/update", async (c) => {
         .where(eq(schema.users.id, session.user.id))
         .limit(1);
       if (!sessionUser.length || sessionUser[0].role !== "admin") {
-        return c.json({ error: "无权限修改他人资料" }, 403);
+        return c.json({ success: false, error: "无权限修改他人资料" }, 403);
       }
     }
 
@@ -149,7 +149,7 @@ users.patch("/update", async (c) => {
       .from(schema.users)
       .where(eq(schema.users.id, targetUserId))
       .limit(1);
-    if (!existing.length) return c.json({ error: `User not found: ${targetUserId}` }, 404);
+    if (!existing.length) return c.json({ success: false, error: `User not found: ${targetUserId}` }, 404);
 
     await db.update(schema.users).set(updateData).where(eq(schema.users.id, targetUserId));
 
@@ -164,7 +164,7 @@ users.patch("/update", async (c) => {
     return c.json({ success: true, user: sanitizeUser(updatedUser) });
   } catch (error) {
     console.error("User update error:", error);
-    return c.json({ error: "Failed to update user" }, 500);
+    return c.json({ success: false, error: "Failed to update user" }, 500);
   }
 });
 
@@ -176,7 +176,7 @@ users.get("/pending-approvals", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: "请先登录" }, 401);
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const db = createDb(c.env.DB);
     const { and, desc, inArray, sql } = await import("drizzle-orm");
@@ -239,7 +239,7 @@ users.get("/pending-approvals", async (c) => {
     return c.json({ success: true, approvals: formattedApprovals, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
     console.error("Get pending approvals error:", error);
-    return c.json({ error: "获取待审批列表失败" }, 500);
+    return c.json({ success: false, error: "获取待审批列表失败" }, 500);
   }
 });
 
@@ -251,7 +251,7 @@ users.get("/applications", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: "请先登录" }, 401);
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const db = createDb(c.env.DB);
     const { desc, sql, ne } = await import("drizzle-orm");
@@ -370,7 +370,7 @@ const totalPages = Math.ceil(total / pageSize);
     return c.json({ success: true, applications, stats, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
     console.error("Get user applications error:", error);
-    return c.json({ error: "获取申请列表失败" }, 500);
+    return c.json({ success: false, error: "获取申请列表失败" }, 500);
   }
 });
 
@@ -382,7 +382,7 @@ users.get("/teams/joined", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: "请先登录" }, 401);
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const db = createDb(c.env.DB);
     const { desc, sql, inArray, ne } = await import("drizzle-orm");
@@ -456,7 +456,7 @@ users.get("/teams/joined", async (c) => {
     return c.json({ success: true, teams, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
     console.error("Get joined teams error:", error);
-    return c.json({ error: "获取加入的队伍失败" }, 500);
+    return c.json({ success: false, error: "获取加入的队伍失败" }, 500);
   }
 });
 
@@ -468,7 +468,7 @@ users.get("/created-teams", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: "请先登录" }, 401);
+    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
 
     const db = createDb(c.env.DB);
     const { desc, sql } = await import("drizzle-orm");
@@ -530,7 +530,7 @@ users.get("/created-teams", async (c) => {
     return c.json({ success: true, teams, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
     console.error("Get created teams error:", error);
-    return c.json({ error: "获取创建的队伍失败" }, 500);
+    return c.json({ success: false, error: "获取创建的队伍失败" }, 500);
   }
 });
 
@@ -549,7 +549,7 @@ users.get("/:id", async (c) => {
       .where(eq(schema.users.id, id))
       .limit(1);
 
-    if (!userList.length) return c.json({ error: "User not found" }, 404);
+    if (!userList.length) return c.json({ success: false, error: "User not found" }, 404);
 
     const user = userList[0];
 
@@ -699,7 +699,7 @@ users.get("/:id", async (c) => {
     });
   } catch (error) {
     console.error("Get user profile error:", error);
-    return c.json({ error: "Failed to get user profile" }, 500);
+    return c.json({ success: false, error: "Failed to get user profile" }, 500);
   }
 });
 

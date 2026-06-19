@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchAPI } from "@/lib/api";
-import type { Team, TeamMember } from "@/lib/types";
+import type { Team } from "@/lib/types";
 import { useI18n } from "@/hooks/useI18n";
 
 interface UseTeamDetailOptions {

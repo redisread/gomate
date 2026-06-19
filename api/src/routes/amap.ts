@@ -7,7 +7,7 @@ export const amapRoute = new Hono<{ Bindings: Env }>();
 /** 输入提示（地图搜索候选） */
 amapRoute.get("/inputtips", async (c) => {
   const AMAP_KEY = c.env.AMAP_SERVER_KEY;
-  if (!AMAP_KEY) return c.json({ error: "AMAP_SERVER_KEY not configured" }, 500);
+  if (!AMAP_KEY) return c.json({ success: false, error: "AMAP_SERVER_KEY not configured" }, 500);
 
   const keywords = c.req.query("keywords") ?? "";
   const city = c.req.query("city") ?? "全国";
@@ -20,14 +20,14 @@ amapRoute.get("/inputtips", async (c) => {
     return c.json(data);
   } catch (error) {
     console.error("[Amap] inputtips timeout:", error);
-    return c.json({ error: "Request timeout", status: "0", tips: [] }, 504);
+    return c.json({ success: false, error: "Request timeout", status: "0", tips: [] }, 504);
   }
 });
 
 /** 正地理编码（地址 → 坐标） */
 amapRoute.get("/geocode", async (c) => {
   const AMAP_KEY = c.env.AMAP_SERVER_KEY;
-  if (!AMAP_KEY) return c.json({ error: "AMAP_SERVER_KEY not configured" }, 500);
+  if (!AMAP_KEY) return c.json({ success: false, error: "AMAP_SERVER_KEY not configured" }, 500);
 
   const address = c.req.query("address") ?? "";
   if (!address.trim()) return c.json({ status: "0", geocodes: [] });
@@ -39,14 +39,14 @@ amapRoute.get("/geocode", async (c) => {
     return c.json(data);
   } catch (error) {
     console.error("[Amap] geocode timeout:", error);
-    return c.json({ error: "Request timeout", status: "0", geocodes: [] }, 504);
+    return c.json({ success: false, error: "Request timeout", status: "0", geocodes: [] }, 504);
   }
 });
 
 /** 逆地理编码（坐标 → 地址） */
 amapRoute.get("/regeo", async (c) => {
   const AMAP_KEY = c.env.AMAP_SERVER_KEY;
-  if (!AMAP_KEY) return c.json({ error: "AMAP_SERVER_KEY not configured" }, 500);
+  if (!AMAP_KEY) return c.json({ success: false, error: "AMAP_SERVER_KEY not configured" }, 500);
 
   const location = c.req.query("location") ?? "";
   if (!location) return c.json({ status: "0" });
@@ -58,6 +58,6 @@ amapRoute.get("/regeo", async (c) => {
     return c.json(data);
   } catch (error) {
     console.error("[Amap] regeo timeout:", error);
-    return c.json({ error: "Request timeout", status: "0" }, 504);
+    return c.json({ success: false, error: "Request timeout", status: "0" }, 504);
   }
 });

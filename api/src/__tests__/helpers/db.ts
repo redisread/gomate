@@ -222,6 +222,40 @@ export function createTestDb() {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS conversations (
+      id TEXT PRIMARY KEY,
+      team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      leader_id TEXT NOT NULL REFERENCES users(id),
+      initiator_id TEXT NOT NULL REFERENCES users(id),
+      last_message_content TEXT,
+      last_message_at INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS messages (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      sender_id TEXT NOT NULL REFERENCES users(id),
+      content TEXT NOT NULL,
+      is_read INTEGER NOT NULL DEFAULT 0,
+      read_at INTEGER,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS activity_posts (
+      id TEXT PRIMARY KEY,
+      team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+      location_id TEXT REFERENCES locations(id) ON DELETE SET NULL,
+      author_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      content TEXT NOT NULL,
+      images TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'visible',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `);
 
   const db = drizzle(sqlite, { schema });

@@ -13,7 +13,6 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { StickyActionBar } from "@/components/ui/sticky-action-bar";
 import { EditProgressBar } from "@/components/ui/season-picker";
-import { PoiEditModal, PoiDeleteConfirm } from "@/components/ui/poi-edit-modal";
 import { cn } from "@/lib/utils";
 
 import {
@@ -377,14 +376,6 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
     { id: "media", label: t("admin.progressStep3"), done: !!form.formData.coverImage },
     { id: "finish", label: t("admin.progressStep4"), done: !!form.formData.name && !!form.formData.description && !!form.formData.cityId && !!form.formData.coverImage },
   ];
-
-  // Close POI modal/delete from parent
-  const closePoiModal = React.useCallback(() => {
-    // handled internally by hook
-  }, []);
-  const closeDeleteConfirm = React.useCallback(() => {
-    // handled internally by hook
-  }, []);
 
   if (!form.location) return <EditSkeleton />;
 

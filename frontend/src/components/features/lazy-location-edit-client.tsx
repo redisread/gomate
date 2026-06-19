@@ -6,7 +6,6 @@
  */
 
 import * as React from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 // 动态导入 LocationEditClient
 const LocationEditClient = React.lazy(

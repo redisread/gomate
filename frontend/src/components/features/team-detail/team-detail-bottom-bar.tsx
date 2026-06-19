@@ -10,14 +10,13 @@ import {
 import { ShareOptionsSheet } from "./share-options-sheet";
 import { SharePosterPreview } from "./share-poster-preview";
 import * as React from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 // 延迟加载分享海报弹窗，减少初始 bundle 大小
 const SharePosterModal = React.lazy(() => import("@/components/features/share-poster-modal").then(m => ({ default: m.SharePosterModal })));
 
 // 通用分享处理函数
 function useTeamShare(team: Team | null) {
-  const { t } = useI18n(["teams", "common"]);
+  const { t: _t } = useI18n(["teams", "common"]);
   const [showOptions, setShowOptions] = React.useState(false);
   const [showPreview, setShowPreview] = React.useState(false);
 
@@ -61,7 +60,7 @@ function useTeamShare(team: Team | null) {
 }
 
 export function TeamModalsAndFooter({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
-  const { t } = useI18n(["teams", "common"]);
+  const { t: _t } = useI18n(["teams", "common"]);
   const { team, location } = ctx;
   if (!team) return null;
 
@@ -211,7 +210,7 @@ function MobileBottomBar({ ctx, team, location }: { ctx: ReturnType<typeof useTe
   );
 }
 
-function BottomBarLeader({ ctx, team, location }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; location?: { name?: string; coverImage?: string } | null; }) {
+function BottomBarLeader({ ctx, team, location: _location }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; location?: { name?: string; coverImage?: string } | null; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
 
@@ -260,7 +259,6 @@ function BottomBarLeader({ ctx, team, location }: { ctx: ReturnType<typeof useTe
 function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
-  const { location } = ctx;
 
   return (
     <>
@@ -296,10 +294,9 @@ function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
   );
 }
 
-function BottomBarPending({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
+function BottomBarPending({ ctx: _ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
-  const { location } = ctx;
 
   return (
     <>
@@ -350,7 +347,6 @@ function BottomBarNotLoggedIn({ team }: { team: Team; }) {
 function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
-  const { location } = ctx;
 
   return (
     <>
@@ -380,10 +376,9 @@ function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
   );
 }
 
-function BottomBarCannotJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
+function BottomBarCannotJoin({ ctx: _ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
-  const { location } = ctx;
 
   return (
     <>

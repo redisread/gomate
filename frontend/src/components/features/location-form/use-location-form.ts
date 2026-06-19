@@ -187,7 +187,7 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
               const parsed = JSON.parse(raw);
               const expiresAt = parsed._draftExpiresAt;
               if (expiresAt && Date.now() < expiresAt) {
-                const { _draftExpiresAt, ...draftData } = parsed;
+                const { _draftExpiresAt: __draftExpiresAt, ...draftData } = parsed;
                 if (JSON.stringify(draftData) !== JSON.stringify(serverData)) {
                   setPendingDraft(draftData);
                   setShowDraftBanner(true);

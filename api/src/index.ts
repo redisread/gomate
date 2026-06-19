@@ -54,11 +54,11 @@ app.route("/share-image", shareImageRoute);
 
 // R2 本地代理（挂在顶层，对齐原 Next.js /api/r2/* 路径）
 app.get("/r2/*", async (c) => {
-  if (!c.env.R2) return c.json({ error: "R2 not configured" }, 500);
+  if (!c.env.R2) return c.json({ success: false, error: "R2 not configured" }, 500);
   const key = c.req.path.replace(/^\/r2\//, "");
-  if (!key) return c.json({ error: "Key is required" }, 400);
+  if (!key) return c.json({ success: false, error: "Key is required" }, 400);
   const object = await c.env.R2.get(key);
-  if (!object) return c.json({ error: "File not found" }, 404);
+  if (!object) return c.json({ success: false, error: "File not found" }, 404);
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
@@ -97,19 +97,19 @@ function isDomainAllowed(hostname: string): boolean {
 /** 图片代理：供前端 Canvas 绘图使用，绕过跨域限制 */
 app.get("/proxy-image", async (c) => {
   const url = c.req.query("url");
-  if (!url) return c.json({ error: "url is required" }, 400);
+  if (!url) return c.json({ success: false, error: "url is required" }, 400);
 
   // 验证 URL 格式
   let urlObj: URL;
   try {
     urlObj = new URL(url);
   } catch {
-    return c.json({ error: "Invalid URL" }, 400);
+    return c.json({ success: false, error: "Invalid URL" }, 400);
   }
 
   // 验证域名白名单
   if (!isDomainAllowed(urlObj.hostname)) {
-    return c.json({ error: "Domain not allowed" }, 403);
+    return c.json({ success: false, error: "Domain not allowed" }, 403);
   }
 
   // 速率限制检查
@@ -123,7 +123,7 @@ app.get("/proxy-image", async (c) => {
     const remaining = RATE_LIMIT_MAX - count;
 
     if (remaining <= 0) {
-      return c.json({ error: "Rate limit exceeded" }, 429);
+      return c.json({ success: false, error: "Rate limit exceeded" }, 429);
     }
 
     // 告警阈值检查
@@ -137,7 +137,7 @@ app.get("/proxy-image", async (c) => {
 
   try {
     const resp = await fetchWithTimeout(url, {}, 10000);
-    if (!resp.ok) return c.json({ error: "fetch failed" }, 502);
+    if (!resp.ok) return c.json({ success: false, error: "fetch failed" }, 502);
 
     const headers = new Headers();
     const contentType = resp.headers.get("content-type");
@@ -148,17 +148,17 @@ app.get("/proxy-image", async (c) => {
 
     return new Response(resp.body, { headers });
   } catch {
-    return c.json({ error: "proxy failed" }, 502);
+    return c.json({ success: false, error: "proxy failed" }, 502);
   }
 });
 
 // 404 兜底
-app.notFound((c) => c.json({ error: "Not found" }, 404));
+app.notFound((c) => c.json({ success: false, error: "Not found" }, 404));
 
 // 全局错误处理
 app.onError((err, c) => {
   console.error("Unhandled error:", err);
-  return c.json({ error: "Internal server error" }, 500);
+  return c.json({ success: false, error: "Internal server error" }, 500);
 });
 
 export default {

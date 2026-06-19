@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 
 interface LocationActionBarProps {

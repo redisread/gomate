@@ -8,7 +8,7 @@ import { LocationsGrid } from "./locations-grid";
 
 export function LocationsClient() {
   const ctx = useLocationsList();
-  const { loading: i18nLoading } = useI18n(["locations", "filter"]);
+  const { loading: _i18nLoading } = useI18n(["locations", "filter"]);
 
   // 点击外部关闭城市下拉
   useEffect(() => {

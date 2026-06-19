@@ -40,7 +40,7 @@ shareImageRoute.get("/location/:locationId", async (c) => {
     const refresh = c.req.query("refresh") === "1";
 
     if (!locationId) {
-      return c.json({ error: "Location ID is required" }, 400);
+      return c.json({ success: false, error: "Location ID is required" }, 400);
     }
 
     if (refresh && c.env.R2) {
@@ -90,7 +90,7 @@ shareImageRoute.get("/team/:teamId", async (c) => {
     const refresh = c.req.query("refresh") === "1";
 
     if (!teamId) {
-      return c.json({ error: "Team ID is required" }, 400);
+      return c.json({ success: false, error: "Team ID is required" }, 400);
     }
 
     if (refresh && c.env.R2) {

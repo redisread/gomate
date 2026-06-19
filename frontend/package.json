@@ -23,7 +23,7 @@
     "@nanostores/react": "^1.1.0",
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^6.4.6",
-    "better-auth": "^1.3.0",
+    "better-auth": "^1.6.11",
     "clsx": "^2.1.1",
     "framer-motion": "^11.0.0",
     "lucide-react": "^0.460.0",

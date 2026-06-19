@@ -301,7 +301,9 @@ export function ProfileClient() {
                       </div>
                     );
                   }
-                } catch {}
+                } catch {
+                  console.warn("Failed to parse extra data (equipment section)");
+                }
                 return null;
               })()}
 
@@ -322,7 +324,9 @@ export function ProfileClient() {
                       </div>
                     );
                   }
-                } catch {}
+                } catch {
+                  console.warn("Failed to parse extra data (experience section)");
+                }
                 return null;
               })()}
             </section>

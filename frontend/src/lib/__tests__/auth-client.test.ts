@@ -21,7 +21,7 @@ describe("Auth 客户端", () => {
     // Assert
     expect(authClient).toBeDefined();
     expect(configRef.value).toBeDefined();
-    expect(configRef.value?.baseURL).toBe("http://localhost:8888");
+    expect(configRef.value?.baseURL).toBe("http://localhost:8799");
     expect(configRef.value?.basePath).toBe("/auth");
   });
 });

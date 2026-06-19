@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { t, loadNamespace, type Locale } from "../i18n";
+import { t, type Locale } from "../i18n";
 import { hydrateSSRData } from "../i18n";
 
 /**
@@ -10,7 +10,7 @@ import { hydrateSSRData } from "../i18n";
 // 预加载枚举数据到内存缓存
 beforeAll(async () => {
   // 将三个语言的枚举数据直接注入缓存，避免 fetch
-  const locales: Locale[] = ["zh-CN", "en", "ja"];
+  const _locales: Locale[] = ["zh-CN", "en", "ja"];
   const zhEnums = {
     difficulty: { easy: "🌿 轻松", moderate: "⛰ 适中", hard: "🧗 挑战", expert: "🏔 专家" },
     teamStatus: {

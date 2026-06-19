@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Loader2, Camera, X, Check, ArrowLeft, User, MessageCircle } from "lucide-react";
+import { Loader2, Camera, X, Check, MessageCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { inputCls, LEVEL_OPTIONS, PRESET_EQUIPMENT_KEYS } from "./constants";

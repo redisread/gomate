@@ -3,7 +3,6 @@ import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
 import { useTeamDetail } from "./use-team-detail";
 import { formatDuration } from "./team-detail-utils";
-import { Avatar } from "./team-detail-ui";
 import { TeamApplicationsSection } from "./team-detail-applications";
 import { TeamProgress, TeamLeaderMini } from "@/components/features/teams/shared";
 import * as React from "react";
@@ -57,9 +56,9 @@ function useTeamShare(team: Team | null) {
 
 export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   const { team, location, isLeader, isMember, isPending, statusLoadFailed, applications, isFull } = ctx;
-  if (!team) return null;
-
   const share = useTeamShare(team);
+
+  if (!team) return null;
 
   return (
     <aside className="lg:sticky lg:top-24 lg:self-start space-y-6">

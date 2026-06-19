@@ -1,9 +1,21 @@
 import { Hono } from "hono";
+import { z } from "zod";
 import { sendFeedbackEmail } from "../lib/email";
 import type { Env } from "../lib/auth";
 import type { EmailLocale } from "../lib/email-i18n";
 
 const feedback = new Hono<{ Bindings: Env }>();
+
+const feedbackSchema = z.object({
+  type: z.enum(["suggestion", "bug"]).optional(),
+  name: z.string().min(1).max(100),
+  email: z.string().email("请输入有效的邮箱地址"),
+  content: z.string().min(1).max(5000),
+  device: z.string().optional(),
+  browser: z.string().optional(),
+  steps: z.string().max(2000).optional(),
+  pageUrl: z.string().max(500).optional(),
+});
 
 /**
  * POST /feedback
@@ -11,38 +23,13 @@ const feedback = new Hono<{ Bindings: Env }>();
  */
 feedback.post("/", async (c) => {
   try {
-    const body = await c.req.json<{
-      type: "suggestion" | "bug";
-      name?: string;
-      email?: string;
-      content?: string;
-      device?: string;
-      browser?: string;
-      steps?: string;
-      pageUrl?: string;
-    }>();
-
-    const { type, name, email, content, device, browser, steps, pageUrl } = body;
-
-    // 基础校验
-    if (!name || !email || !content) {
-      return c.json({ error: "请填写所有必填字段" }, 400);
+    const body = await c.req.json();
+    const parsed = feedbackSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ success: false, error: "输入无效", details: parsed.error.errors }, 400);
     }
 
-    if (!type || !["suggestion", "bug"].includes(type)) {
-      return c.json({ error: "反馈类型无效" }, 400);
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return c.json({ error: "请输入有效的邮箱地址" }, 400);
-    }
-
-    // 长度校验
-    if (name.length > 100) return c.json({ error: "姓名长度不能超过 100 个字符" }, 400);
-    if (content.length > 5000) return c.json({ error: "内容长度不能超过 5000 个字符" }, 400);
-    if (steps && steps.length > 2000) return c.json({ error: "复现步骤不能超过 2000 个字符" }, 400);
-    if (pageUrl && pageUrl.length > 500) return c.json({ error: "页面 URL 不能超过 500 个字符" }, 400);
+    const { type, name, email, content, device, browser, steps, pageUrl } = parsed.data;
 
     // 提取用户 locale
     const cookie = c.req.raw.headers.get("Cookie") || "";
@@ -67,7 +54,7 @@ feedback.post("/", async (c) => {
 
     if (!result.success) {
       console.error("Failed to send feedback email:", result.error);
-      return c.json({ error: "发送失败，请稍后重试" }, 500);
+      return c.json({ success: false, error: "发送失败，请稍后重试" }, 500);
     }
 
     return c.json({
@@ -76,7 +63,7 @@ feedback.post("/", async (c) => {
     });
   } catch (error) {
     console.error("Feedback API error:", error);
-    return c.json({ error: "服务器错误，请稍后重试" }, 500);
+    return c.json({ success: false, error: "服务器错误，请稍后重试" }, 500);
   }
 });
 
