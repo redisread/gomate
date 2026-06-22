@@ -3,6 +3,7 @@ import { z } from "zod";
 import { sendContactFormEmail } from "../lib/email";
 import type { Env } from "../lib/auth";
 import type { EmailLocale } from "../lib/email-i18n";
+import { APIErrors } from "../lib/api-errors";
 
 const contact = new Hono<{ Bindings: Env }>();
 
@@ -22,7 +23,7 @@ contact.post("/", async (c) => {
     const body = await c.req.json();
     const parsed = contactSchema.safeParse(body);
     if (!parsed.success) {
-      return c.json({ success: false, error: "输入无效", details: parsed.error.errors }, 400);
+      return c.json(APIErrors.validationError("输入无效", parsed.error.errors), 400);
     }
 
     const { name, email, subject, message } = parsed.data;
@@ -40,13 +41,13 @@ contact.post("/", async (c) => {
 
     if (!result.success) {
       console.error("Failed to send contact email:", result.error);
-      return c.json({ success: false, error: "发送失败，请稍后重试" }, 500);
+      return c.json(APIErrors.internalError("发送失败，请稍后重试"), 500);
     }
 
     return c.json({ success: true, message: "您的建议已成功提交，我们会尽快查看并回复。" });
   } catch (error) {
     console.error("Contact API error:", error);
-    return c.json({ success: false, error: "服务器错误，请稍后重试" }, 500);
+    return c.json(APIErrors.internalError("服务器错误，请稍后重试"), 500);
   }
 });
 
