@@ -5,6 +5,8 @@ import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
+import { createLocationSchema, updateLocationSchema } from "../lib/validation";
+import { APIErrors } from "../lib/api-errors";
 
 const locations = new Hono<{ Bindings: Env }>();
 
@@ -281,28 +283,36 @@ locations.post("/", async (c) => {
     await requireAdmin(c);
     const db = createDb(c.env.DB);
     const body = await c.req.json();
+
+    // Validate input
+    const parsed = createLocationSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
+    }
+
+    const data = parsed.data;
     const id = nanoid();
-    const slug = body.slug || body.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const slug = data.slug || data.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
     await db.insert(schema.locations).values({
-      id, name: body.name, slug, type: body.type || null, subtitle: body.subtitle || null,
-      description: body.description, address: body.address || null,
-      cityId: body.cityId, cityName: body.cityName || null,
-      bestSeason: JSON.stringify(body.bestSeason || []),
-      coverImage: body.coverImage,
-      images: JSON.stringify(body.images || []),
-      coordinates: JSON.stringify(body.coordinates || { lat: 0, lng: 0 }),
-      extra: body.extra ? JSON.stringify(body.extra) : null,
+      id, name: data.name, slug, type: data.type || null, subtitle: data.subtitle || null,
+      description: data.description, address: data.address || null,
+      cityId: data.cityId, cityName: data.cityName || null,
+      bestSeason: JSON.stringify(data.bestSeason || []),
+      coverImage: data.coverImage,
+      images: JSON.stringify(data.images || []),
+      coordinates: JSON.stringify(data.coordinates || { lat: 0, lng: 0 }),
+      extra: data.extra ? JSON.stringify(data.extra) : null,
       createdAt: new Date(), updatedAt: new Date(),
     });
 
     return c.json({ success: true, location: { id, slug } });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Create location error:", error);
-    return c.json({ success: false, error: "创建地点失败" }, 500);
+    return c.json(APIErrors.internalError("创建地点失败"), 500);
   }
 });
 
@@ -315,9 +325,14 @@ locations.put("/", async (c) => {
     await requireAdmin(c);
     const db = createDb(c.env.DB);
     const body = await c.req.json();
-    const { id, ...updateData } = body;
 
-    if (!id) return c.json({ success: false, error: "缺少地点 ID" }, 400);
+    // Validate input
+    const parsed = updateLocationSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
+    }
+
+    const { id, ...updateData } = parsed.data;
 
     const dataToUpdate: Record<string, unknown> = { updatedAt: new Date() };
     if (updateData.name !== undefined) dataToUpdate.name = updateData.name;
@@ -339,10 +354,10 @@ locations.put("/", async (c) => {
     return c.json({ success: true });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Update location error:", error);
-    return c.json({ success: false, error: "更新地点失败" }, 500);
+    return c.json(APIErrors.internalError("更新地点失败"), 500);
   }
 });
 
