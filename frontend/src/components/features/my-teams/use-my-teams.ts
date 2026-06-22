@@ -84,7 +84,7 @@ export function useMyTeams() {
     if (!currentUser?.id) return;
     if (append) setCreatedLoadingMore(true); else setCreatedLoading(true);
     try {
-      const r = await fetchAPI(`/api/user/created-teams?page=${page}&pageSize=10`);
+      const r = await fetchAPI(`/api/users/created-teams?page=${page}&pageSize=10`);
       const data = await r.json();
       if (data.success) {
         if (append) setCreatedTeams((prev) => [...prev, ...data.teams]);
@@ -98,7 +98,7 @@ export function useMyTeams() {
     if (!currentUser?.id) return;
     if (append) setJoinedLoadingMore(true); else setJoinedLoading(true);
     try {
-      const r = await fetchAPI(`/api/user/teams/joined?page=${page}&pageSize=10`);
+      const r = await fetchAPI(`/api/users/teams/joined?page=${page}&pageSize=10`);
       const data = await r.json();
       if (data.success) {
         if (append) setJoinedTeams((prev) => [...prev, ...data.teams]);
@@ -112,7 +112,7 @@ export function useMyTeams() {
     if (!currentUser?.id) return;
     if (append) setApplicationsLoadingMore(true); else setApplicationsLoading(true);
     try {
-      const r = await fetchAPI(`/api/user/applications?page=${page}&pageSize=10`);
+      const r = await fetchAPI(`/api/users/applications?page=${page}&pageSize=10`);
       const data = await r.json();
       if (data.success) {
         if (append) setApplications((prev) => [...prev, ...data.applications]);
@@ -126,7 +126,7 @@ export function useMyTeams() {
     if (!currentUser?.id) return;
     if (append) setPendingLoadingMore(true); else setPendingLoading(true);
     try {
-      const r = await fetchAPI(`/api/user/pending-approvals?page=${page}&pageSize=10`);
+      const r = await fetchAPI(`/api/users/pending-approvals?page=${page}&pageSize=10`);
       const data = await r.json();
       if (data.success) {
         if (append) setPendingApprovals((prev) => [...prev, ...data.approvals]);

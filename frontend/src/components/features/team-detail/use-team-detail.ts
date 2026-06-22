@@ -239,7 +239,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       return;
     }
     try {
-      const res = await fetchAPI("/api/user/update", {
+      const res = await fetchAPI("/api/users/update", {
         method: "PATCH",
         body: JSON.stringify({ userId, wechat: wechat.trim() }),
       });

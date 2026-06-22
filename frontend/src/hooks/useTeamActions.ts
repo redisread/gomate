@@ -261,7 +261,7 @@ export function useTeamActions({ teamId, onSuccess }: UseTeamActionsOptions) {
 
       setIsSavingWechat(true);
       try {
-        const res = await fetchAPI("/api/user/update", {
+        const res = await fetchAPI("/api/users/update", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, wechat: wechat.trim() }),

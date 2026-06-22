@@ -89,8 +89,8 @@ export function ProfileClient() {
   const loadTeams = async (_userId: string) => {
     try {
       const [createdRes, joinedRes] = await Promise.all([
-        fetchAPI("/api/user/created-teams"),
-        fetchAPI("/api/user/teams/joined"),
+        fetchAPI("/api/users/created-teams"),
+        fetchAPI("/api/users/teams/joined"),
       ]);
       const createdData = await createdRes.json();
       const joinedData = await joinedRes.json();

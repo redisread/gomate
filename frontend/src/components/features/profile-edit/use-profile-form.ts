@@ -143,7 +143,7 @@ export function useProfileForm() {
       if (formData.experience) extra.experience = formData.experience;
       if (formData.equipment.length > 0) extra.equipment = formData.equipment;
 
-      const res = await fetchAPI("/api/user/update", {
+      const res = await fetchAPI("/api/users/update", {
         method: "PATCH",
         body: JSON.stringify({
           userId: user!.id, nickname: formData.nickname || null, image: avatarUrl,
