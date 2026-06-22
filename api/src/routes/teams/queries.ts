@@ -104,7 +104,11 @@ queries.get("/", async (c) => {
         .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
         .where(and(...conditions))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
-      return c.json({ success: true, teams: formatTeams(result) });
+      return c.json({
+        success: true,
+        teams: formatTeams(result),
+        pagination: { page: 1, pageSize: result.length, total: result.length, totalPages: 1, hasMore: false }
+      });
     }
 
     // 特殊模式：某地点的队伍
@@ -128,7 +132,11 @@ queries.get("/", async (c) => {
         .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
         .where(and(...conditions))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
-      return c.json({ success: true, teams: formatTeams(result) });
+      return c.json({
+        success: true,
+        teams: formatTeams(result),
+        pagination: { page: 1, pageSize: result.length, total: result.length, totalPages: 1, hasMore: false }
+      });
     }
 
     // 通用列表模式：支持搜索、status、difficulty、日期范围、标签、分页
@@ -224,6 +232,7 @@ queries.get("/", async (c) => {
     const total = cnt;
 
     const totalPages = Math.ceil(total / pageSize);
+    const hasMore = page < totalPages;
     const offset = (page - 1) * pageSize;
 
     // 查询列表
@@ -241,7 +250,7 @@ queries.get("/", async (c) => {
     return c.json({
       success: true,
       teams: formatTeams(result),
-      pagination: { page, pageSize, total, totalPages },
+      pagination: { page, pageSize, total, totalPages, hasMore },
     });
   } catch (error) {
     console.error("Get teams error:", error);
