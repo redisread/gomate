@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
+import { APIErrors } from "../lib/api-errors";
 
 const cities = new Hono<{ Bindings: Env }>();
 
@@ -50,7 +51,7 @@ cities.get("/", async (c) => {
     return c.json({ success: true, cities: result });
   } catch (error) {
     console.error("Get cities error:", error);
-    return c.json({ success: false, error: "获取城市列表失败" }, 500);
+    return c.json(APIErrors.internalError("获取城市列表失败"), 500);
   }
 });
 
@@ -68,7 +69,7 @@ cities.post("/", async (c) => {
     }>();
 
     if (!body.adcode || !body.name || !body.level) {
-      return c.json({ success: false, error: "缺少必填字段" }, 400);
+      return c.json(APIErrors.badRequest("缺少必填字段"), 400);
     }
 
     const cityId = `city-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -86,10 +87,10 @@ cities.post("/", async (c) => {
     return c.json({ success: true, cityId });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Create city error:", error);
-    return c.json({ success: false, error: "创建城市失败" }, 500);
+    return c.json(APIErrors.internalError("创建城市失败"), 500);
   }
 });
 
