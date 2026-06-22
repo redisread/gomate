@@ -36,7 +36,6 @@ app.route("/auth", authRoute);
 app.route("/teams", teamsRoute);
 app.route("/locations", locationsRoute);
 app.route("/users", usersRoute);
-app.route("/user", usersRoute); // 兼容前端 /user/* 路径
 app.route("/upload", uploadRoute);
 app.route("/cities", citiesRoute);
 app.route("/tags", tagsRoute);
