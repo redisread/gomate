@@ -5,6 +5,7 @@ import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
+import { createActivityPostSchema } from "../lib/validation";
 
 const activityPosts = new Hono<{ Bindings: Env }>();
 
@@ -123,20 +124,14 @@ activityPosts.post("/teams/:id/activity-posts", async (c) => {
     }
 
     const body = await c.req.json();
-    const { content, images = [] } = body;
 
-    if (!content || content.trim().length === 0) {
-      return c.json(APIErrors.badRequest("内容不能为空"), 400);
+    // Validate input with Zod
+    const parsed = createActivityPostSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
     }
 
-    if (content.length > 200) {
-      return c.json(APIErrors.badRequest("内容不能超过200字"), 400);
-    }
-
-    if (images.length > 3) {
-      return c.json(APIErrors.badRequest("图片不能超过3张"), 400);
-    }
-
+    const data = parsed.data;
     const postId = crypto.randomUUID();
     const now = new Date();
 
@@ -145,8 +140,8 @@ activityPosts.post("/teams/:id/activity-posts", async (c) => {
       teamId,
       locationId: team.locationId,
       authorId: userId,
-      content: content.trim(),
-      images: JSON.stringify(images),
+      content: data.content.trim(),
+      images: JSON.stringify(data.images || []),
       status: "visible",
       createdAt: now,
       updatedAt: now,
