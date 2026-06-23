@@ -1,6 +1,6 @@
 import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
-import { eq, and, inArray, asc } from "drizzle-orm";
+import { eq, and, inArray, asc, sql } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
@@ -58,13 +58,25 @@ hikingRoutes.get("/", async (c) => {
     const locationId = c.req.query("locationId");
     const cityId = c.req.query("cityId");
     const difficulty = c.req.query("difficulty");
-    const limit = c.req.query("limit") ? parseInt(c.req.query("limit")!, 10) : undefined;
-    const offset = c.req.query("offset") ? parseInt(c.req.query("offset")!, 10) : 0;
+    const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
+    const pageSize = Math.min(100, parseInt(c.req.query("pageSize") || "20", 10));
+    const offset = (page - 1) * pageSize;
 
     const conditions = [];
     if (locationId) conditions.push(eq(schema.routes.locationId, locationId));
     if (cityId) conditions.push(eq(schema.routes.cityId, cityId));
     if (difficulty) conditions.push(eq(schema.routes.difficulty, difficulty));
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get total count
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(schema.routes)
+      .where(whereClause);
+
+    const totalPages = Math.ceil(total / pageSize);
+    const hasMore = page < totalPages;
 
     const query = db
       .select({
@@ -75,10 +87,11 @@ hikingRoutes.get("/", async (c) => {
       .from(schema.routes)
       .leftJoin(schema.locations, eq(schema.routes.locationId, schema.locations.id))
       .leftJoin(schema.cities, eq(schema.routes.cityId, schema.cities.id))
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .where(whereClause)
+      .limit(pageSize)
       .offset(offset);
 
-    const results = limit ? await query.limit(limit) : await query;
+    const results = await query;
 
     const routeIds = results.map((r) => r.route.id);
     const tagsMap = await getRoutesTags(db, routeIds);
@@ -107,7 +120,17 @@ hikingRoutes.get("/", async (c) => {
       };
     });
 
-    return c.json({ success: true, routes: formattedRoutes });
+    return c.json({
+      success: true,
+      routes: formattedRoutes,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+        hasMore,
+      },
+    });
   } catch (error) {
     console.error("Get routes error:", error);
     return c.json(APIErrors.internalError("获取路线列表失败"), 500);
