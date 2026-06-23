@@ -1,3 +1,4 @@
+import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
 import type { Env } from "../lib/auth";
 import { generatePreviewImage, generateLocationImage, generateTeamImage } from "../services/share-image/generate-share-image";
@@ -40,7 +41,7 @@ shareImageRoute.get("/location/:locationId", async (c) => {
     const refresh = c.req.query("refresh") === "1";
 
     if (!locationId) {
-      return c.json({ success: false, error: "Location ID is required" }, 400);
+      return c.json(APIErrors.badRequest("Location ID is required"), 400);
     }
 
     if (refresh && c.env.R2) {
@@ -90,7 +91,7 @@ shareImageRoute.get("/team/:teamId", async (c) => {
     const refresh = c.req.query("refresh") === "1";
 
     if (!teamId) {
-      return c.json({ success: false, error: "Team ID is required" }, 400);
+      return c.json(APIErrors.badRequest("Team ID is required"), 400);
     }
 
     if (refresh && c.env.R2) {

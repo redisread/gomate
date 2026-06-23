@@ -1,3 +1,4 @@
+import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import { createDb } from "../db";
@@ -43,7 +44,7 @@ tags.get("/", async (c) => {
     return c.json({ success: true, tags: result });
   } catch (error) {
     console.error("Get tags error:", error);
-    return c.json({ success: false, error: "获取标签列表失败" }, 500);
+    return c.json(APIErrors.internalError("获取标签列表失败"), 500);
   }
 });
 
@@ -58,7 +59,7 @@ tags.post("/", async (c) => {
     const body = await c.req.json<{ name?: string; type?: string; description?: string }>();
 
     if (!body.name || !body.type) {
-      return c.json({ success: false, error: "缺少必填字段" }, 400);
+      return c.json(APIErrors.badRequest("缺少必填字段"), 400);
     }
 
     // 检查是否已存在同名同类标签
@@ -83,10 +84,10 @@ tags.post("/", async (c) => {
     return c.json({ success: true, tagId, existing: false });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Create tag error:", error);
-    return c.json({ success: false, error: "创建标签失败" }, 500);
+    return c.json(APIErrors.internalError("创建标签失败"), 500);
   }
 });
 

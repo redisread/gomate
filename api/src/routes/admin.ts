@@ -1,3 +1,4 @@
+import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import { createDb } from "../db";
@@ -33,7 +34,7 @@ admin.post("/clear-rate-limit", async (c) => {
     const body = await c.req.json<{ identifier?: string }>();
 
     if (!body.identifier || typeof body.identifier !== "string") {
-      return c.json({ success: false, error: "请提供要清除的标识符（邮箱）" }, 400);
+      return c.json(APIErrors.badRequest("请提供要清除的标识符（邮箱）"), 400);
     }
 
     // Worker 环境下速率限制不跨请求持久化，直接返回成功
@@ -43,10 +44,10 @@ admin.post("/clear-rate-limit", async (c) => {
     });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Clear rate limit error:", error);
-    return c.json({ success: false, error: "清除失败" }, 500);
+    return c.json(APIErrors.internalError("清除失败"), 500);
   }
 });
 
@@ -69,10 +70,10 @@ admin.post("/cron/update-expired-teams", async (c) => {
     });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Manual cron trigger error:", error);
-    return c.json({ success: false, error: "执行失败" }, 500);
+    return c.json(APIErrors.internalError("执行失败"), 500);
   }
 });
 
