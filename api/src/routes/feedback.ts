@@ -1,3 +1,4 @@
+import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
 import { z } from "zod";
 import { sendFeedbackEmail } from "../lib/email";
@@ -26,7 +27,7 @@ feedback.post("/", async (c) => {
     const body = await c.req.json();
     const parsed = feedbackSchema.safeParse(body);
     if (!parsed.success) {
-      return c.json({ success: false, error: "输入无效", details: parsed.error.errors }, 400);
+      return c.json(APIErrors.validationError("输入无效", parsed.error.errors), 400);
     }
 
     const { type, name, email, content, device, browser, steps, pageUrl } = parsed.data;
@@ -54,7 +55,7 @@ feedback.post("/", async (c) => {
 
     if (!result.success) {
       console.error("Failed to send feedback email:", result.error);
-      return c.json({ success: false, error: "发送失败，请稍后重试" }, 500);
+      return c.json(APIErrors.internalError("发送失败，请稍后重试"), 500);
     }
 
     return c.json({
@@ -63,7 +64,7 @@ feedback.post("/", async (c) => {
     });
   } catch (error) {
     console.error("Feedback API error:", error);
-    return c.json({ success: false, error: "服务器错误，请稍后重试" }, 500);
+    return c.json(APIErrors.internalError("服务器错误，请稍后重试"), 500);
   }
 });
 

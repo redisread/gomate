@@ -1,3 +1,4 @@
+import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
@@ -23,13 +24,13 @@ auth.post("/forgot-password", async (c) => {
     const ip = getClientIP(c.req.raw);
     const rateResult = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:forgot:${ip}`, 5, 60);
     if (!rateResult.allowed) {
-      return c.json({ success: false, error: "请求过于频繁，请稍后再试", retryAfter: rateResult.retryAfter }, 429);
+      return c.json(APIErrors.badRequest("请求过于频繁，请稍后再试", { retryAfter: rateResult.retryAfter }), 429);
     }
 
     const body = await c.req.json();
     const parsed = forgotPasswordSchema.safeParse(body);
     if (!parsed.success) {
-      return c.json({ success: false, error: parsed.error.errors[0]?.message || "请提供有效的邮箱地址" }, 400);
+      return c.json(APIErrors.validationError(parsed.error.errors[0]?.message || "请提供有效的邮箱地址"), 400);
     }
     const { email } = parsed.data;
 
@@ -57,7 +58,7 @@ auth.post("/forgot-password", async (c) => {
     return c.json({ success: true, message: "如果该邮箱已注册，重置密码邮件已发送" });
   } catch (error) {
     console.error("Forgot password error:", error);
-    return c.json({ success: false, error: "发送重置邮件失败，请稍后重试" }, 500);
+    return c.json(APIErrors.internalError("发送重置邮件失败，请稍后重试"), 500);
   }
 });
 
@@ -77,12 +78,12 @@ auth.all("/*", async (c) => {
     if (path.endsWith("/sign-in/email") || path.endsWith("/sign-in")) {
       const result = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:signin:${ip}`, 20, 60);
       if (!result.allowed) {
-        return c.json({ success: false, error: "登录尝试过于频繁，请稍后再试", retryAfter: result.retryAfter }, 429);
+        return c.json(APIErrors.badRequest("登录尝试过于频繁，请稍后再试", { retryAfter: result.retryAfter }), 429);
       }
     } else if (path.endsWith("/sign-up/email") || path.endsWith("/sign-up")) {
       const result = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:signup:${ip}`, 10, 60);
       if (!result.allowed) {
-        return c.json({ success: false, error: "注册请求过于频繁，请稍后再试", retryAfter: result.retryAfter }, 429);
+        return c.json(APIErrors.badRequest("注册请求过于频繁，请稍后再试", { retryAfter: result.retryAfter }), 429);
       }
     }
   } catch (err) {

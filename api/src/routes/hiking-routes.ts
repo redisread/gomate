@@ -1,3 +1,4 @@
+import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
 import { eq, and, inArray, asc } from "drizzle-orm";
 import { createDb } from "../db";
@@ -108,7 +109,7 @@ hikingRoutes.get("/", async (c) => {
     return c.json({ success: true, routes: formattedRoutes });
   } catch (error) {
     console.error("Get routes error:", error);
-    return c.json({ success: false, error: "获取路线列表失败" }, 500);
+    return c.json(APIErrors.internalError("获取路线列表失败"), 500);
   }
 });
 
@@ -130,7 +131,7 @@ hikingRoutes.post("/", async (c) => {
 
     if (!body.locationId || !body.cityId || !body.name || !body.difficulty ||
         body.durationMin === undefined || body.durationMax === undefined || body.distance === undefined) {
-      return c.json({ success: false, error: "缺少必填字段" }, 400);
+      return c.json(APIErrors.badRequest("缺少必填字段"), 400);
     }
 
     const routeId = `route_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -170,10 +171,10 @@ hikingRoutes.post("/", async (c) => {
     return c.json({ success: true, routeId });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Create route error:", error);
-    return c.json({ success: false, error: "创建路线失败" }, 500);
+    return c.json(APIErrors.internalError("创建路线失败"), 500);
   }
 });
 
@@ -198,7 +199,7 @@ hikingRoutes.get("/:id", async (c) => {
       .where(eq(schema.routes.id, id))
       .limit(1);
 
-    if (!result.length) return c.json({ success: false, error: "路线不存在" }, 404);
+    if (!result.length) return c.json(APIErrors.notFound("路线不存在"), 404);
 
     const { route, location, city } = result[0];
 
@@ -254,7 +255,7 @@ hikingRoutes.get("/:id", async (c) => {
     });
   } catch (error) {
     console.error("Get route error:", error);
-    return c.json({ success: false, error: "获取路线详情失败" }, 500);
+    return c.json(APIErrors.internalError("获取路线详情失败"), 500);
   }
 });
 
@@ -313,10 +314,10 @@ hikingRoutes.put("/:id", async (c) => {
     return c.json({ success: true });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Update route error:", error);
-    return c.json({ success: false, error: "更新路线失败" }, 500);
+    return c.json(APIErrors.internalError("更新路线失败"), 500);
   }
 });
 
@@ -331,17 +332,17 @@ hikingRoutes.delete("/:id", async (c) => {
     const db = createDb(c.env.DB);
 
     const existing = await db.select({ id: schema.routes.id }).from(schema.routes).where(eq(schema.routes.id, id)).limit(1);
-    if (!existing.length) return c.json({ success: false, error: "路线不存在" }, 404);
+    if (!existing.length) return c.json(APIErrors.notFound("路线不存在"), 404);
 
     await db.delete(schema.routes).where(eq(schema.routes.id, id));
 
     return c.json({ success: true });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "未登录") return c.json({ success: false, error: "未登录" }, 401);
-    if (message === "无权限访问") return c.json({ success: false, error: "无权限访问" }, 403);
+    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Delete route error:", error);
-    return c.json({ success: false, error: "删除路线失败" }, 500);
+    return c.json(APIErrors.internalError("删除路线失败"), 500);
   }
 });
 
