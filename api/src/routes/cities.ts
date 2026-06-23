@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
@@ -33,23 +33,44 @@ cities.get("/", async (c) => {
     const hot = c.req.query("hot");
     const province = c.req.query("province");
     const level = c.req.query("level");
-    const limit = c.req.query("limit") ? parseInt(c.req.query("limit")!, 10) : undefined;
-    const offset = c.req.query("offset") ? parseInt(c.req.query("offset")!, 10) : 0;
+    const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
+    const pageSize = Math.min(100, parseInt(c.req.query("pageSize") || "20", 10));
+    const offset = (page - 1) * pageSize;
 
     const conditions = [];
     if (hot === "true") conditions.push(eq(schema.cities.isHot, true));
     if (province) conditions.push(eq(schema.cities.province, province));
     if (level) conditions.push(eq(schema.cities.level, level));
 
-    const query = db
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get total count
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(schema.cities)
+      .where(whereClause);
+
+    const totalPages = Math.ceil(total / pageSize);
+    const hasMore = page < totalPages;
+
+    const result = await db
       .select()
       .from(schema.cities)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .where(whereClause)
+      .limit(pageSize)
       .offset(offset);
 
-    const result = limit ? await query.limit(limit) : await query;
-
-    return c.json({ success: true, cities: result });
+    return c.json({
+      success: true,
+      cities: result,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+        hasMore,
+      },
+    });
   } catch (error) {
     console.error("Get cities error:", error);
     return c.json(APIErrors.internalError("获取城市列表失败"), 500);

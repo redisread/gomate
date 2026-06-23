@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
@@ -30,16 +30,30 @@ favorites.get("/", async (c) => {
 
     const db = createDb(c.env.DB);
     const entityType = c.req.query("entityType");
+    const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
+    const pageSize = Math.min(100, parseInt(c.req.query("pageSize") || "20", 10));
+    const offset = (page - 1) * pageSize;
 
     const conditions = [eq(schema.userFavorites.userId, session.user.id)];
     if (entityType) {
       conditions.push(eq(schema.userFavorites.entityType, entityType));
     }
 
+    const whereClause = and(...conditions);
+
+    // Get total count
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(schema.userFavorites)
+      .where(whereClause);
+
+    const totalPages = Math.ceil(total / pageSize);
+    const hasMore = page < totalPages;
+
     const favs = await db
       .select({ favorite: schema.userFavorites, location: schema.locations })
       .from(schema.userFavorites)
-      .where(and(...conditions))
+      .where(whereClause)
       .leftJoin(
         schema.locations,
         and(
@@ -47,7 +61,9 @@ favorites.get("/", async (c) => {
           eq(schema.userFavorites.entityId, schema.locations.id)
         )
       )
-      .orderBy(schema.userFavorites.createdAt);
+      .orderBy(schema.userFavorites.createdAt)
+      .limit(pageSize)
+      .offset(offset);
 
     const formattedFavorites = favs.map(({ favorite, location }) => ({
       id: favorite.id,
@@ -74,7 +90,17 @@ favorites.get("/", async (c) => {
         : undefined,
     }));
 
-    return c.json({ success: true, favorites: formattedFavorites });
+    return c.json({
+      success: true,
+      favorites: formattedFavorites,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+        hasMore,
+      },
+    });
   } catch (error) {
     console.error("Get favorites error:", error);
     return c.json(APIErrors.internalError("获取收藏列表失败"), 500);
