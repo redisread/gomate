@@ -4,6 +4,7 @@ import { like, eq } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
+import { createPoiSchema, updatePoiSchema } from "../lib/validation";
 
 export const poisRoute = new Hono<{ Bindings: Env }>();
 
@@ -117,40 +118,22 @@ poisRoute.post("/", async (c) => {
   try {
     await checkAdmin(c);
     const db = createDb(c.env.DB);
-    const body = await c.req.json<{
-      name?: string;
-      description?: string;
-      coordinates?: { lat: number; lng: number };
-      images?: string[];
-    }>();
+    const body = await c.req.json();
 
-    // 验证必填字段
-    if (!body.name?.trim()) {
-      return c.json(APIErrors.badRequest("名称为必填项"), 400);
-    }
-    if (body.name.length > 50) {
-      return c.json(APIErrors.badRequest("名称不能超过50个字符"), 400);
+    // Validate input with Zod
+    const parsed = createPoiSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
     }
 
-    // 验证坐标
-    const coordinates = validateCoordinates(body.coordinates);
-    if (!coordinates) {
-      return c.json(APIErrors.badRequest("坐标格式无效，需要 { lat: number, lng: number }"), 400);
-    }
-
-    // 可选字段验证
-    if (body.description && body.description.length > 500) {
-      return c.json(APIErrors.badRequest("描述不能超过500个字符"), 400);
-    }
-
+    const data = parsed.data;
     const poiId = generatePoiId();
     await db.insert(schema.pois).values({
       id: poiId,
-      name: body.name.trim(),
-      description: body.description?.trim() ?? null,
-      coordinates: JSON.stringify(coordinates),
-      // category 由数据库默认值自动填充为 "poi"
-      images: body.images ? JSON.stringify(body.images) : null,
+      name: data.name.trim(),
+      description: data.description?.trim() ?? null,
+      coordinates: JSON.stringify(data.coordinates),
+      images: data.images ? JSON.stringify(data.images) : null,
       extra: null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -175,12 +158,15 @@ poisRoute.put("/:id", async (c) => {
     await checkAdmin(c);
     const id = c.req.param("id");
     const db = createDb(c.env.DB);
-    const body = await c.req.json<{
-      name?: string;
-      description?: string;
-      coordinates?: { lat: number; lng: number };
-      images?: string[];
-    }>();
+    const body = await c.req.json();
+
+    // Validate input with Zod
+    const parsed = updatePoiSchema.safeParse({ ...body, id });
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
+    }
+
+    const data = parsed.data;
 
     // 检查 POI 是否存在
     const existing = await db
@@ -195,33 +181,20 @@ poisRoute.put("/:id", async (c) => {
     // 构建更新数据
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
 
-    if (body.name !== undefined) {
-      if (!body.name.trim()) {
-        return c.json(APIErrors.badRequest("名称不能为空"), 400);
-      }
-      if (body.name.length > 50) {
-        return c.json(APIErrors.badRequest("名称不能超过50个字符"), 400);
-      }
-      updateData.name = body.name.trim();
+    if (data.name !== undefined) {
+      updateData.name = data.name.trim();
     }
 
-    if (body.coordinates !== undefined) {
-      const coordinates = validateCoordinates(body.coordinates);
-      if (!coordinates) {
-        return c.json(APIErrors.badRequest("坐标格式无效"), 400);
-      }
-      updateData.coordinates = JSON.stringify(coordinates);
+    if (data.coordinates !== undefined) {
+      updateData.coordinates = JSON.stringify(data.coordinates);
     }
 
-    if (body.description !== undefined) {
-      if (body.description && body.description.length > 500) {
-        return c.json(APIErrors.badRequest("描述不能超过500个字符"), 400);
-      }
-      updateData.description = body.description?.trim() ?? null;
+    if (data.description !== undefined) {
+      updateData.description = data.description?.trim() ?? null;
     }
 
-    if (body.images !== undefined) {
-      updateData.images = body.images ? JSON.stringify(body.images) : null;
+    if (data.images !== undefined) {
+      updateData.images = data.images ? JSON.stringify(data.images) : null;
     }
 
     await db
