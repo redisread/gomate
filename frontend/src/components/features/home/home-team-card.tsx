@@ -43,7 +43,7 @@ function AvatarStack({ members, extra = 0 }: { members: { name: string; avatar: 
   );
 }
 
-export function TeamCard({ team }: { team: Team }) {
+export function TeamCard({ team, featured = false }: { team: Team; featured?: boolean }) {
   const { t } = useI18n(["home", "common", "enums"]);
   const [hovered, setHovered] = React.useState(false);
   const isFull = team.currentMembers >= team.maxMembers;
@@ -59,13 +59,26 @@ export function TeamCard({ team }: { team: Team }) {
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <article className="overflow-hidden rounded-2xl cursor-pointer bg-card relative"
+      <article className={`overflow-hidden rounded-2xl cursor-pointer bg-card relative ${featured ? 'ring-2 ring-amber-500/50' : ''}`}
         style={{
-          boxShadow: hovered ? `0 20px 48px ${statusCfg.glow}, 0 6px 18px rgba(0,0,0,0.10)` : "0 2px 14px rgba(0,0,0,0.07)",
+          boxShadow: hovered
+            ? `0 20px 48px ${statusCfg.glow}, 0 6px 18px rgba(0,0,0,0.10)`
+            : featured
+              ? '0 4px 20px rgba(217,119,6,0.15), 0 2px 14px rgba(0,0,0,0.07)'
+              : "0 2px 14px rgba(0,0,0,0.07)",
           transform: hovered ? "translateY(-5px) scale(1.005)" : "translateY(0) scale(1)",
           transition: "box-shadow 0.30s ease, transform 0.30s cubic-bezier(0.34,1.56,0.64,1)",
         }}
         onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+
+        {/* Featured 徽章 */}
+        {featured && (
+          <div className="absolute top-3 left-3 z-10">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md">
+              ⭐ 精选
+            </span>
+          </div>
+        )}
         {hasCover ? (
           <div className="relative h-36 overflow-hidden">
             <img src={team.location!.coverImage} alt={team.location!.name ?? ""} className="w-full h-full object-cover"
