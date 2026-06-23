@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
+import { createTagSchema } from "../lib/validation";
 
 const tags = new Hono<{ Bindings: Env }>();
 
@@ -56,17 +57,21 @@ tags.post("/", async (c) => {
   try {
     await checkAdmin(c);
     const db = createDb(c.env.DB);
-    const body = await c.req.json<{ name?: string; type?: string; description?: string }>();
+    const body = await c.req.json();
 
-    if (!body.name || !body.type) {
-      return c.json(APIErrors.badRequest("缺少必填字段"), 400);
+    // Validate input with Zod
+    const parsed = createTagSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
     }
+
+    const { name, type } = parsed.data;
 
     // 检查是否已存在同名同类标签
     const existing = await db
       .select({ id: schema.tags.id })
       .from(schema.tags)
-      .where(eq(schema.tags.name, body.name))
+      .where(eq(schema.tags.name, name))
       .limit(1);
 
     if (existing.length > 0) {
@@ -76,8 +81,8 @@ tags.post("/", async (c) => {
     const tagId = `tag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     await db.insert(schema.tags).values({
       id: tagId,
-      name: body.name,
-      type: body.type,
+      name,
+      type,
       createdAt: new Date(),
     });
 
