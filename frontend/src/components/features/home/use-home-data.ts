@@ -13,6 +13,7 @@ export function useHomeData() {
   const { locations, pagination, isLoading, error: _error } = useLocations(currentPage, 6);
 
   const [teams, setTeams] = React.useState<Team[]>([]);
+  const [teamsLoading, setTeamsLoading] = React.useState(true);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [isDark, setIsDark] = React.useState(false);
 
@@ -47,11 +48,14 @@ export function useHomeData() {
   // Data fetchers
   const fetchTeams = React.useCallback(async () => {
     try {
+      setTeamsLoading(true);
       const res = await fetchAPI("/api/teams?status=recruiting&pageSize=4");
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
     } catch (error) {
       console.error("[HomeClient] 获取队伍列表失败:", error);
+    } finally {
+      setTeamsLoading(false);
     }
   }, []);
 
@@ -80,7 +84,7 @@ export function useHomeData() {
   };
 
   return {
-    locations, teams, isLoading, currentPage, pagination, isLoggedIn, isDark,
+    locations, teams, teamsLoading, isLoading, currentPage, pagination, isLoggedIn, isDark,
     preloadImages,
     animate, parallaxY, search,
     locationsRef, locationsInView, howItWorksRef, howItWorksInView,
