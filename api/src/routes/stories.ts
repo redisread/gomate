@@ -5,6 +5,7 @@ import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
+import { createStorySchema, updateStorySchema } from "../lib/validation";
 
 const stories = new Hono<{ Bindings: Env }>();
 
@@ -273,39 +274,25 @@ stories.post("/", async (c) => {
     const userId = session.user.id;
 
     const body = await c.req.json();
-    const { title, summary, content, coverImage, locationId } = body;
 
-    if (!title || title.trim().length === 0) {
-      return c.json(APIErrors.badRequest("标题不能为空"), 400);
+    // Validate input with Zod
+    const parsed = createStorySchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
     }
 
-    if (title.length > 100) {
-      return c.json(APIErrors.badRequest("标题不能超过100字"), 400);
-    }
-
-    if (!summary || summary.trim().length === 0) {
-      return c.json(APIErrors.badRequest("摘要不能为空"), 400);
-    }
-
-    if (summary.length > 150) {
-      return c.json(APIErrors.badRequest("摘要不能超过150字"), 400);
-    }
-
-    if (!content || content.trim().length === 0) {
-      return c.json(APIErrors.badRequest("内容不能为空"), 400);
-    }
-
+    const data = parsed.data;
     const storyId = crypto.randomUUID();
     const now = new Date();
 
     await db.insert(schema.stories).values({
       id: storyId,
       authorId: userId,
-      title: title.trim(),
-      summary: summary.trim(),
-      content: content.trim(),
-      coverImage,
-      locationId,
+      title: data.title.trim(),
+      summary: data.summary.trim(),
+      content: data.content.trim(),
+      coverImage: data.coverImage,
+      locationId: data.locationId,
       status: "published",
       viewCount: 0,
       likeCount: 0,
@@ -358,18 +345,24 @@ stories.put("/:id", async (c) => {
     }
 
     const body = await c.req.json();
-    const { title, summary, content, coverImage, locationId, status } = body;
 
+    // Validate input with Zod
+    const parsed = updateStorySchema.safeParse({ ...body, id });
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
+    }
+
+    const data = parsed.data;
     const updateData: Partial<typeof schema.stories.$inferInsert> = {
       updatedAt: new Date(),
     };
 
-    if (title !== undefined) updateData.title = title.trim();
-    if (summary !== undefined) updateData.summary = summary.trim();
-    if (content !== undefined) updateData.content = content.trim();
-    if (coverImage !== undefined) updateData.coverImage = coverImage;
-    if (locationId !== undefined) updateData.locationId = locationId;
-    if (status !== undefined) updateData.status = status;
+    if (data.title !== undefined) updateData.title = data.title.trim();
+    if (data.summary !== undefined) updateData.summary = data.summary.trim();
+    if (data.content !== undefined) updateData.content = data.content.trim();
+    if (data.coverImage !== undefined) updateData.coverImage = data.coverImage;
+    if (data.locationId !== undefined) updateData.locationId = data.locationId;
+    if (data.status !== undefined) updateData.status = data.status;
 
     await db.update(schema.stories).set(updateData).where(eq(schema.stories.id, id));
 
