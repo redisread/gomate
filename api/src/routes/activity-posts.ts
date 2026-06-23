@@ -1,3 +1,4 @@
+import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
 import { eq, desc, and } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
@@ -23,7 +24,7 @@ activityPosts.get("/teams/:id/activity-posts", async (c) => {
     });
 
     if (!team) {
-      return c.json({ success: false, message: "队伍不存在" }, 404);
+      return c.json(APIErrors.notFound("队伍不存在"), 404);
     }
 
     // Get visible activity posts for this team
@@ -66,7 +67,7 @@ activityPosts.get("/teams/:id/activity-posts", async (c) => {
     });
   } catch (error) {
     console.error("Get activity posts error:", error);
-    return c.json({ success: false, message: "获取分享列表失败" }, 500);
+    return c.json(APIErrors.internalError("获取分享列表失败"), 500);
   }
 });
 
@@ -81,7 +82,7 @@ activityPosts.post("/teams/:id/activity-posts", async (c) => {
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
     if (!session) {
-      return c.json({ success: false, message: "请先登录" }, 401);
+      return c.json(APIErrors.unauthorized("请先登录"), 401);
     }
 
     const db = createDb(c.env.DB);
@@ -94,13 +95,13 @@ activityPosts.post("/teams/:id/activity-posts", async (c) => {
     });
 
     if (!team) {
-      return c.json({ success: false, message: "队伍不存在" }, 404);
+      return c.json(APIErrors.notFound("队伍不存在"), 404);
     }
 
     // Check if team is completed
     if (team.status !== "completed") {
       return c.json(
-        { success: false, message: "只有已完成的队伍才能发布分享" },
+        APIErrors.forbidden("只有已完成的队伍才能发布分享"),
         403
       );
     }
@@ -116,7 +117,7 @@ activityPosts.post("/teams/:id/activity-posts", async (c) => {
 
     if (!membership) {
       return c.json(
-        { success: false, message: "只有队伍成员才能发布分享" },
+        APIErrors.forbidden("只有队伍成员才能发布分享"),
         403
       );
     }
@@ -125,15 +126,15 @@ activityPosts.post("/teams/:id/activity-posts", async (c) => {
     const { content, images = [] } = body;
 
     if (!content || content.trim().length === 0) {
-      return c.json({ success: false, message: "内容不能为空" }, 400);
+      return c.json(APIErrors.badRequest("内容不能为空"), 400);
     }
 
     if (content.length > 200) {
-      return c.json({ success: false, message: "内容不能超过200字" }, 400);
+      return c.json(APIErrors.badRequest("内容不能超过200字"), 400);
     }
 
     if (images.length > 3) {
-      return c.json({ success: false, message: "图片不能超过3张" }, 400);
+      return c.json(APIErrors.badRequest("图片不能超过3张"), 400);
     }
 
     const postId = crypto.randomUUID();
@@ -158,7 +159,7 @@ activityPosts.post("/teams/:id/activity-posts", async (c) => {
     });
   } catch (error) {
     console.error("Create activity post error:", error);
-    return c.json({ success: false, message: "发布失败" }, 500);
+    return c.json(APIErrors.internalError("发布失败"), 500);
   }
 });
 
@@ -173,7 +174,7 @@ activityPosts.delete("/activity-posts/:id", async (c) => {
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
     if (!session) {
-      return c.json({ success: false, message: "请先登录" }, 401);
+      return c.json(APIErrors.unauthorized("请先登录"), 401);
     }
 
     const db = createDb(c.env.DB);
@@ -186,7 +187,7 @@ activityPosts.delete("/activity-posts/:id", async (c) => {
     });
 
     if (!post) {
-      return c.json({ success: false, message: "分享不存在" }, 404);
+      return c.json(APIErrors.notFound("分享不存在"), 404);
     }
 
     // Check permission: author or admin
@@ -194,7 +195,7 @@ activityPosts.delete("/activity-posts/:id", async (c) => {
     const isAdmin = session.user.role === "admin";
 
     if (!isAuthor && !isAdmin) {
-      return c.json({ success: false, message: "无权删除" }, 403);
+      return c.json(APIErrors.forbidden("无权删除"), 403);
     }
 
     // Soft delete by updating status
@@ -212,7 +213,7 @@ activityPosts.delete("/activity-posts/:id", async (c) => {
     });
   } catch (error) {
     console.error("Delete activity post error:", error);
-    return c.json({ success: false, message: "删除失败" }, 500);
+    return c.json(APIErrors.internalError("删除失败"), 500);
   }
 });
 
@@ -232,7 +233,7 @@ activityPosts.get("/locations/:id/activity-posts", async (c) => {
     });
 
     if (!location) {
-      return c.json({ success: false, message: "地点不存在" }, 404);
+      return c.json(APIErrors.notFound("地点不存在"), 404);
     }
 
     // Get visible activity posts for this location
@@ -286,7 +287,7 @@ activityPosts.get("/locations/:id/activity-posts", async (c) => {
     });
   } catch (error) {
     console.error("Get location activity posts error:", error);
-    return c.json({ success: false, message: "获取分享列表失败" }, 500);
+    return c.json(APIErrors.internalError("获取分享列表失败"), 500);
   }
 });
 
