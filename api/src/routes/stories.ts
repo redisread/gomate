@@ -1,3 +1,4 @@
+import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
 import { eq, desc, count, sql, inArray, and } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
@@ -71,7 +72,7 @@ stories.get("/stats", async (c) => {
     });
   } catch (error) {
     console.error("Get stories stats error:", error);
-    return c.json({ success: false, message: "获取统计数据失败" }, 500);
+    return c.json(APIErrors.internalError("获取统计数据失败"), 500);
   }
 });
 
@@ -180,7 +181,7 @@ stories.get("/", async (c) => {
     });
   } catch (error) {
     console.error("Get stories error:", error);
-    return c.json({ success: false, message: "获取故事列表失败" }, 500);
+    return c.json(APIErrors.internalError("获取故事列表失败"), 500);
   }
 });
 
@@ -215,7 +216,7 @@ stories.get("/:id", async (c) => {
       .limit(1);
 
     if (!result.length) {
-      return c.json({ success: false, message: "故事不存在" }, 404);
+      return c.json(APIErrors.notFound("故事不存在"), 404);
     }
 
     const { story, author, location } = result[0];
@@ -250,7 +251,7 @@ stories.get("/:id", async (c) => {
     });
   } catch (error) {
     console.error("Get story detail error:", error);
-    return c.json({ success: false, message: "获取故事详情失败" }, 500);
+    return c.json(APIErrors.internalError("获取故事详情失败"), 500);
   }
 });
 
@@ -265,7 +266,7 @@ stories.post("/", async (c) => {
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
     if (!session) {
-      return c.json({ success: false, message: "请先登录" }, 401);
+      return c.json(APIErrors.unauthorized("请先登录"), 401);
     }
 
     const db = createDb(c.env.DB);
@@ -275,23 +276,23 @@ stories.post("/", async (c) => {
     const { title, summary, content, coverImage, locationId } = body;
 
     if (!title || title.trim().length === 0) {
-      return c.json({ success: false, message: "标题不能为空" }, 400);
+      return c.json(APIErrors.badRequest("标题不能为空"), 400);
     }
 
     if (title.length > 100) {
-      return c.json({ success: false, message: "标题不能超过100字" }, 400);
+      return c.json(APIErrors.badRequest("标题不能超过100字"), 400);
     }
 
     if (!summary || summary.trim().length === 0) {
-      return c.json({ success: false, message: "摘要不能为空" }, 400);
+      return c.json(APIErrors.badRequest("摘要不能为空"), 400);
     }
 
     if (summary.length > 150) {
-      return c.json({ success: false, message: "摘要不能超过150字" }, 400);
+      return c.json(APIErrors.badRequest("摘要不能超过150字"), 400);
     }
 
     if (!content || content.trim().length === 0) {
-      return c.json({ success: false, message: "内容不能为空" }, 400);
+      return c.json(APIErrors.badRequest("内容不能为空"), 400);
     }
 
     const storyId = crypto.randomUUID();
@@ -319,7 +320,7 @@ stories.post("/", async (c) => {
     });
   } catch (error) {
     console.error("Create story error:", error);
-    return c.json({ success: false, message: "发布失败" }, 500);
+    return c.json(APIErrors.internalError("发布失败"), 500);
   }
 });
 
@@ -334,7 +335,7 @@ stories.put("/:id", async (c) => {
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
     if (!session) {
-      return c.json({ success: false, message: "请先登录" }, 401);
+      return c.json(APIErrors.unauthorized("请先登录"), 401);
     }
 
     const db = createDb(c.env.DB);
@@ -346,14 +347,14 @@ stories.put("/:id", async (c) => {
     });
 
     if (!story) {
-      return c.json({ success: false, message: "故事不存在" }, 404);
+      return c.json(APIErrors.notFound("故事不存在"), 404);
     }
 
     const isAuthor = story.authorId === userId;
     const isAdmin = session.user.role === "admin";
 
     if (!isAuthor && !isAdmin) {
-      return c.json({ success: false, message: "无权编辑" }, 403);
+      return c.json(APIErrors.forbidden("无权编辑"), 403);
     }
 
     const body = await c.req.json();
@@ -378,7 +379,7 @@ stories.put("/:id", async (c) => {
     });
   } catch (error) {
     console.error("Update story error:", error);
-    return c.json({ success: false, message: "更新失败" }, 500);
+    return c.json(APIErrors.internalError("更新失败"), 500);
   }
 });
 
@@ -393,7 +394,7 @@ stories.delete("/:id", async (c) => {
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
     if (!session) {
-      return c.json({ success: false, message: "请先登录" }, 401);
+      return c.json(APIErrors.unauthorized("请先登录"), 401);
     }
 
     const db = createDb(c.env.DB);
@@ -405,14 +406,14 @@ stories.delete("/:id", async (c) => {
     });
 
     if (!story) {
-      return c.json({ success: false, message: "故事不存在" }, 404);
+      return c.json(APIErrors.notFound("故事不存在"), 404);
     }
 
     const isAuthor = story.authorId === userId;
     const isAdmin = session.user.role === "admin";
 
     if (!isAuthor && !isAdmin) {
-      return c.json({ success: false, message: "无权删除" }, 403);
+      return c.json(APIErrors.forbidden("无权删除"), 403);
     }
 
     await db
@@ -429,7 +430,7 @@ stories.delete("/:id", async (c) => {
     });
   } catch (error) {
     console.error("Delete story error:", error);
-    return c.json({ success: false, message: "删除失败" }, 500);
+    return c.json(APIErrors.internalError("删除失败"), 500);
   }
 });
 
@@ -443,7 +444,7 @@ stories.post("/:id/like", async (c) => {
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
     if (!session) {
-      return c.json({ success: false, message: "请先登录" }, 401);
+      return c.json(APIErrors.unauthorized("请先登录"), 401);
     }
 
     const db = createDb(c.env.DB);
@@ -454,7 +455,7 @@ stories.post("/:id/like", async (c) => {
     });
 
     if (!story) {
-      return c.json({ success: false, message: "故事不存在" }, 404);
+      return c.json(APIErrors.notFound("故事不存在"), 404);
     }
 
     await db
@@ -471,7 +472,7 @@ stories.post("/:id/like", async (c) => {
     });
   } catch (error) {
     console.error("Like story error:", error);
-    return c.json({ success: false, message: "点赞失败" }, 500);
+    return c.json(APIErrors.internalError("点赞失败"), 500);
   }
 });
 
@@ -516,7 +517,7 @@ stories.get("/tags", async (c) => {
     });
   } catch (error) {
     console.error("Get story tags error:", error);
-    return c.json({ success: false, message: "获取标签失败" }, 500);
+    return c.json(APIErrors.internalError("获取标签失败"), 500);
   }
 });
 
