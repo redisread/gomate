@@ -28,15 +28,6 @@ function generatePoiId(): string {
   return `poi_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
-/** 验证坐标格式 */
-function validateCoordinates(coords: unknown): { lat: number; lng: number } | null {
-  if (typeof coords !== "object" || coords === null) return null;
-  const { lat, lng } = coords as Record<string, unknown>;
-  if (typeof lat !== "number" || typeof lng !== "number") return null;
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  return { lat, lng };
-}
-
 /**
  * GET /pois
  * 获取打卡点列表（支持关键词搜索），供编辑页选择关联

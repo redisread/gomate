@@ -4,7 +4,7 @@ import { eq, and, inArray, asc, sql } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
-import { createHikingRouteSchema, updateHikingRouteSchema } from "../lib/validation";
+import { createHikingRouteSchema } from "../lib/validation";
 
 const hikingRoutes = new Hono<{ Bindings: Env }>();
 
@@ -155,12 +155,11 @@ hikingRoutes.post("/", async (c) => {
 
     const data = parsed.data;
     const routeId = `route_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const extra: Record<string, unknown> = {};
 
     await db.insert(schema.routes).values({
       id: routeId,
       locationId: data.locationId,
-      cityId: data.cityId || null,
+      cityId: data.cityId,
       name: data.name,
       description: data.description || null,
       difficulty: data.difficulty,
@@ -176,7 +175,7 @@ hikingRoutes.post("/", async (c) => {
 
     // 关联标签
     if (body.tagIds && body.tagIds.length > 0) {
-      const records = body.tagIds.map((tagId) => ({
+      const records = body.tagIds.map((tagId: string) => ({
         id: `ett_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         entityId: routeId,
         entityType: "route" as const,
@@ -318,7 +317,7 @@ hikingRoutes.put("/:id", async (c) => {
         and(eq(schema.entityToTags.entityId, id), eq(schema.entityToTags.entityType, "route"))
       );
       if (body.tagIds.length > 0) {
-        const records = body.tagIds.map((tagId) => ({
+        const records = body.tagIds.map((tagId: string) => ({
           id: `ett_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           entityId: id,
           entityType: "route" as const,

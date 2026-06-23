@@ -128,15 +128,17 @@ mutations.put("/:id", async (c) => {
     const { title, description, maxMembers, requirements, time, durationMin } = parsed.data;
 
     type UpdateData = {
-      title: string; description: string | null; maxMembers: number;
+      title?: string; description: string | null; maxMembers?: number;
       requirements: string | null; updatedAt: Date;
       durationMin?: number; startTime?: Date; endTime?: Date;
     };
     const updateData: UpdateData = {
-      title, description: description || null, maxMembers,
+      description: description || null,
       requirements: requirements ? JSON.stringify(requirements) : null,
       updatedAt: new Date(),
     };
+    if (title !== undefined) updateData.title = title;
+    if (maxMembers !== undefined) updateData.maxMembers = maxMembers;
 
     if (time || durationMin) {
       const originalStartTime = new Date(team.startTime);
