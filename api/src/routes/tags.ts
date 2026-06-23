@@ -1,6 +1,6 @@
 import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
@@ -31,18 +31,39 @@ tags.get("/", async (c) => {
   try {
     const db = createDb(c.env.DB);
     const type = c.req.query("type");
-    const limit = c.req.query("limit") ? parseInt(c.req.query("limit")!, 10) : undefined;
-    const offset = c.req.query("offset") ? parseInt(c.req.query("offset")!, 10) : 0;
+    const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
+    const pageSize = Math.min(100, parseInt(c.req.query("pageSize") || "50", 10));
+    const offset = (page - 1) * pageSize;
 
-    const query = db
+    const whereClause = type ? eq(schema.tags.type, type) : undefined;
+
+    // Get total count
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(schema.tags)
+      .where(whereClause);
+
+    const totalPages = Math.ceil(total / pageSize);
+    const hasMore = page < totalPages;
+
+    const result = await db
       .select()
       .from(schema.tags)
-      .where(type ? eq(schema.tags.type, type) : undefined)
+      .where(whereClause)
+      .limit(pageSize)
       .offset(offset);
 
-    const result = limit ? await query.limit(limit) : await query;
-
-    return c.json({ success: true, tags: result });
+    return c.json({
+      success: true,
+      tags: result,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+        hasMore,
+      },
+    });
   } catch (error) {
     console.error("Get tags error:", error);
     return c.json(APIErrors.internalError("获取标签列表失败"), 500);
