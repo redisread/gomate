@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
+import { APIErrors } from "../lib/api-errors";
 
 /** 安全解析 JSON 字符串 */
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -24,7 +25,7 @@ favorites.get("/", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const db = createDb(c.env.DB);
     const entityType = c.req.query("entityType");
@@ -75,7 +76,7 @@ favorites.get("/", async (c) => {
     return c.json({ success: true, favorites: formattedFavorites });
   } catch (error) {
     console.error("Get favorites error:", error);
-    return c.json({ success: false, error: "获取收藏列表失败" }, 500);
+    return c.json(APIErrors.internalError("获取收藏列表失败"), 500);
   }
 });
 
@@ -87,14 +88,14 @@ favorites.post("/", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const body = await c.req.json<{ entityType?: string; entityId?: string }>();
     const { entityType, entityId } = body;
 
-    if (!entityType || !entityId) return c.json({ success: false, error: "缺少必要参数" }, 400);
+    if (!entityType || !entityId) return c.json(APIErrors.badRequest("缺少必要参数"), 400);
     if (!["location", "route"].includes(entityType))
-      return c.json({ success: false, error: "不支持的实体类型" }, 400);
+      return c.json(APIErrors.badRequest("不支持的实体类型"), 400);
 
     const db = createDb(c.env.DB);
 
@@ -108,7 +109,7 @@ favorites.post("/", async (c) => {
       ))
       .limit(1);
 
-    if (existing.length > 0) return c.json({ success: false, error: "已经收藏过了" }, 409);
+    if (existing.length > 0) return c.json(APIErrors.conflict("已经收藏过了"), 409);
 
     if (entityType === "location") {
       const loc = await db
@@ -116,7 +117,7 @@ favorites.post("/", async (c) => {
         .from(schema.locations)
         .where(eq(schema.locations.id, entityId))
         .limit(1);
-      if (!loc.length) return c.json({ success: false, error: "地点不存在" }, 404);
+      if (!loc.length) return c.json(APIErrors.notFound("地点不存在"), 404);
     }
 
     const id = crypto.randomUUID();
@@ -128,7 +129,7 @@ favorites.post("/", async (c) => {
     return c.json({ success: true, favorite: { id, entityType, entityId, createdAt: now } });
   } catch (error) {
     console.error("Add favorite error:", error);
-    return c.json({ success: false, error: "添加收藏失败" }, 500);
+    return c.json(APIErrors.internalError("添加收藏失败"), 500);
   }
 });
 
@@ -140,12 +141,12 @@ favorites.delete("/", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const entityType = c.req.query("entityType");
     const entityId = c.req.query("entityId");
 
-    if (!entityType || !entityId) return c.json({ success: false, error: "缺少必要参数" }, 400);
+    if (!entityType || !entityId) return c.json(APIErrors.badRequest("缺少必要参数"), 400);
 
     const db = createDb(c.env.DB);
     await db.delete(schema.userFavorites).where(
@@ -159,7 +160,7 @@ favorites.delete("/", async (c) => {
     return c.json({ success: true });
   } catch (error) {
     console.error("Delete favorite error:", error);
-    return c.json({ success: false, error: "取消收藏失败" }, 500);
+    return c.json(APIErrors.internalError("取消收藏失败"), 500);
   }
 });
 

@@ -11,6 +11,7 @@ import {
 } from "../db/schema";
 import { eq, and, or, desc, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { APIErrors } from "../lib/api-errors";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -100,7 +101,7 @@ async function canAccessConversation(
 app.get("/", async (c) => {
   const authInstance = createAuth(c.env);
   const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-  if (!session) return c.json({ success: false, error: "Unauthorized" }, 401);
+  if (!session) return c.json(APIErrors.unauthorized("Unauthorized"), 401);
 
   const user = session.user;
   const db = createDb(c.env.DB);
@@ -169,7 +170,7 @@ app.get("/", async (c) => {
     return c.json({ success: true, data: result });
   } catch (error) {
     console.error("Failed to get conversations:", error);
-    return c.json({ success: false, error: "Failed to get conversations" }, 500);
+    return c.json(APIErrors.internalError("Failed to get conversations"), 500);
   }
 });
 
@@ -179,7 +180,7 @@ app.get("/", async (c) => {
 app.post("/", async (c) => {
   const authInstance = createAuth(c.env);
   const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-  if (!session) return c.json({ success: false, error: "Unauthorized" }, 401);
+  if (!session) return c.json(APIErrors.unauthorized("Unauthorized"), 401);
 
   const user = session.user;
   const body = await c.req.json();
@@ -233,10 +234,10 @@ app.post("/", async (c) => {
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return c.json({ success: false, error: "Invalid input", details: error.errors }, 400);
+      return c.json(APIErrors.validationError("Invalid input", error.errors), 400);
     }
     console.error("Failed to create conversation:", error);
-    return c.json({ success: false, error: "Failed to create conversation" }, 500);
+    return c.json(APIErrors.internalError("Failed to create conversation"), 500);
   }
 });
 
@@ -247,7 +248,7 @@ app.post("/", async (c) => {
 app.get("/unread-count", async (c) => {
   const authInstance = createAuth(c.env);
   const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-  if (!session) return c.json({ success: false, error: "Unauthorized" }, 401);
+  if (!session) return c.json(APIErrors.unauthorized("Unauthorized"), 401);
 
   const user = session.user;
   const db = createDb(c.env.DB);
@@ -277,7 +278,7 @@ app.get("/unread-count", async (c) => {
     });
   } catch (error) {
     console.error("Failed to get unread count:", error);
-    return c.json({ success: false, error: "Failed to get unread count" }, 500);
+    return c.json(APIErrors.internalError("Failed to get unread count"), 500);
   }
 });
 
@@ -287,7 +288,7 @@ app.get("/unread-count", async (c) => {
 app.get("/:id", async (c) => {
   const authInstance = createAuth(c.env);
   const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-  if (!session) return c.json({ success: false, error: "Unauthorized" }, 401);
+  if (!session) return c.json(APIErrors.unauthorized("Unauthorized"), 401);
 
   const user = session.user;
   const conversationId = c.req.param("id");
@@ -299,7 +300,7 @@ app.get("/:id", async (c) => {
     // 权限检查
     const hasAccess = await canAccessConversation(db, conversationId, user.id);
     if (!hasAccess) {
-      return c.json({ success: false, error: "Access denied" }, 403);
+      return c.json(APIErrors.forbidden("Access denied"), 403);
     }
 
     // 构建查询
@@ -379,7 +380,7 @@ app.get("/:id", async (c) => {
     });
   } catch (error) {
     console.error("Failed to get messages:", error);
-    return c.json({ success: false, error: "Failed to get messages" }, 500);
+    return c.json(APIErrors.internalError("Failed to get messages"), 500);
   }
 });
 
@@ -389,7 +390,7 @@ app.get("/:id", async (c) => {
 app.post("/:id", async (c) => {
   const authInstance = createAuth(c.env);
   const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-  if (!session) return c.json({ success: false, error: "Unauthorized" }, 401);
+  if (!session) return c.json(APIErrors.unauthorized("Unauthorized"), 401);
 
   const user = session.user;
   const conversationId = c.req.param("id");
@@ -402,7 +403,7 @@ app.post("/:id", async (c) => {
     // 权限检查
     const hasAccess = await canAccessConversation(db, conversationId, user.id);
     if (!hasAccess) {
-      return c.json({ success: false, error: "Access denied" }, 403);
+      return c.json(APIErrors.forbidden("Access denied"), 403);
     }
 
     // 创建消息
@@ -431,10 +432,10 @@ app.post("/:id", async (c) => {
     return c.json({ success: true, data: { id: messageId } }, 201);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return c.json({ success: false, error: "Invalid input", details: error.errors }, 400);
+      return c.json(APIErrors.validationError("Invalid input", error.errors), 400);
     }
     console.error("Failed to send message:", error);
-    return c.json({ success: false, error: "Failed to send message" }, 500);
+    return c.json(APIErrors.internalError("Failed to send message"), 500);
   }
 });
 
