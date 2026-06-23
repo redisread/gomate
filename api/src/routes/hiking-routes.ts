@@ -4,7 +4,7 @@ import { eq, and, inArray, asc, sql } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
-import { createHikingRouteSchema, updateHikingRouteSchema } from "../lib/validation";
+import { createHikingRouteSchema } from "../lib/validation";
 
 const hikingRoutes = new Hono<{ Bindings: Env }>();
 
@@ -155,7 +155,6 @@ hikingRoutes.post("/", async (c) => {
 
     const data = parsed.data;
     const routeId = `route_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const extra: Record<string, unknown> = {};
 
     await db.insert(schema.routes).values({
       id: routeId,

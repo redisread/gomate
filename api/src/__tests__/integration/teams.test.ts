@@ -116,8 +116,8 @@ describe("Teams API 集成测试", () => {
         body: JSON.stringify({ locationId: location.id, title: "测试队伍", date: "2026-06-01", time: "08:00", maxMembers: 5 }),
       });
       expect(res.status).toBe(400);
-      const json = await res.json() as { error: string };
-      expect(json.error).toContain("微信号");
+      const json = await res.json() as { error: { message: string } };
+      expect(json.error.message).toContain("微信号");
     });
 
     it("已登录且有微信号的用户成功创建队伍返回 200", async () => {
@@ -238,8 +238,8 @@ describe("Teams API 集成测试", () => {
       });
       // 路由返回 400 并带有错误消息
       expect(res.status).toBe(400);
-      const json = await res.json() as { error?: string };
-      expect(json.error).toContain("已经提交了申请");
+      const json = await res.json() as { error?: { message: string } };
+      expect(json.error?.message).toContain("已经提交了申请");
     });
 
     it("被拒绝的用户重新申请成功，状态重置为 pending", async () => {
@@ -348,8 +348,8 @@ describe("Teams API 集成测试", () => {
 
       const res = await req(app, `/teams/${team.id}/leave`, { method: "POST" });
       expect(res.status).toBe(400);
-      const json = await res.json() as { error: string };
-      expect(json.error).toContain("队长不能退出");
+      const json = await res.json() as { error: { message: string } };
+      expect(json.error.message).toContain("队长不能退出");
     });
   });
 

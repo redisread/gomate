@@ -166,9 +166,9 @@ describe("Stories API 集成测试", () => {
     it("故事不存在返回 404", async () => {
       const res = await req(app, "/stories/non-existent-id");
       expect(res.status).toBe(404);
-      const json = await res.json() as { success: boolean; message: string };
+      const json = await res.json() as { success: boolean; error: { message: string } };
       expect(json.success).toBe(false);
-      expect(json.message).toBe("故事不存在");
+      expect(json.error.message).toBe("故事不存在");
     });
   });
 

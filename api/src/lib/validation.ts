@@ -37,8 +37,7 @@ export const updateLocationSchema = createLocationSchema.partial().extend({
  * POI (Point of Interest) validation schemas
  */
 export const createPoiSchema = z.object({
-  locationId: z.string().min(1, "地点ID不能为空"),
-  name: z.string().min(1, "打卡点名称不能为空").max(50, "打卡点名称不能超过50字"),
+  name: z.string().trim().min(1, "打卡点名称不能为空").max(50, "打卡点名称不能超过50字"),
   description: z.string().max(500, "描述不能超过500字").optional(),
   coordinates: z.object({
     lat: z.number().min(-90).max(90, "纬度必须在-90到90之间"),
@@ -71,7 +70,6 @@ export const updateStorySchema = createStorySchema.partial().extend({
  * Activity Post validation schemas
  */
 export const createActivityPostSchema = z.object({
-  teamId: z.string().min(1, "队伍ID不能为空"),
   content: z.string().min(1, "内容不能为空").max(200, "内容不能超过200字"),
   images: z.array(z.string().url("图片必须是有效URL")).max(3, "最多3张图片").optional(),
 });
