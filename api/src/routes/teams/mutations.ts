@@ -1,3 +1,4 @@
+import { APIErrors } from "../../lib/api-errors";
 import { Hono } from "hono";
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
@@ -40,7 +41,7 @@ mutations.post("/", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const db = createDb(c.env.DB);
     const userId = session.user.id;
@@ -52,20 +53,20 @@ mutations.post("/", async (c) => {
       .then((rows) => rows[0]);
 
     if (!userRecord?.wechat) {
-      return c.json({ success: false, error: "请先填写微信号才能创建队伍" }, 400);
+      return c.json(APIErrors.badRequest("请先填写微信号才能创建队伍"), 400);
     }
 
     const body = await c.req.json();
     const parsed = createTeamSchema.safeParse(body);
     if (!parsed.success) {
-      return c.json({ success: false, error: "输入无效", details: parsed.error.errors }, 400);
+      return c.json(APIErrors.validationError("输入无效", parsed.error.errors), 400);
     }
 
     const { locationId, routeId, title, description, date, time, duration, durationMin, maxMembers, requirements } = parsed.data;
 
     const startTime = new Date(`${date}T${time}`);
     if (isNaN(startTime.getTime())) {
-      return c.json({ success: false, error: "无效的日期或时间格式" }, 400);
+      return c.json(APIErrors.badRequest("无效的日期或时间格式"), 400);
     }
 
     const durationMinutes = durationMin || (duration
@@ -92,7 +93,7 @@ mutations.post("/", async (c) => {
     return c.json({ success: true, team: { id: teamId, locationId, routeId, leaderId: userId, title, description, startTime: startTime.toISOString(), endTime: endTime.toISOString(), durationMin: durationMinutes, maxMembers, currentMembers: 1, requirements, icon: teamIcon, status: "recruiting", createdAt: now.toISOString() } });
   } catch (error) {
     console.error("Create team error:", error);
-    return c.json({ success: false, error: "创建队伍失败" }, 500);
+    return c.json(APIErrors.internalError("创建队伍失败"), 500);
   }
 });
 
@@ -104,7 +105,7 @@ mutations.put("/:id", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
@@ -114,14 +115,14 @@ mutations.put("/:id", async (c) => {
       with: { location: true },
     });
 
-    if (!team) return c.json({ success: false, error: "队伍不存在" }, 404);
+    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (team.leaderId !== session.user.id)
-      return c.json({ success: false, error: "只有队长可以修改队伍" }, 403);
+      return c.json(APIErrors.forbidden("只有队长可以修改队伍"), 403);
 
     const body = await c.req.json();
     const parsed = updateTeamSchema.safeParse(body);
     if (!parsed.success) {
-      return c.json({ success: false, error: "输入无效", details: parsed.error.errors }, 400);
+      return c.json(APIErrors.validationError("输入无效", parsed.error.errors), 400);
     }
 
     const { title, description, maxMembers, requirements, time, durationMin } = parsed.data;
@@ -164,7 +165,7 @@ mutations.put("/:id", async (c) => {
     return c.json({ success: true, message: "队伍信息已更新" });
   } catch (error) {
     console.error("Update team error:", error);
-    return c.json({ success: false, error: "更新队伍失败" }, 500);
+    return c.json(APIErrors.internalError("更新队伍失败"), 500);
   }
 });
 
@@ -176,20 +177,20 @@ mutations.delete("/:id", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const teamId = c.req.param("id");
     const userId = session.user.id;
     const db = createDb(c.env.DB);
 
     const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
-    if (!team) return c.json({ success: false, error: "队伍不存在" }, 404);
+    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
 
     if (team.leaderId !== userId)
-      return c.json({ success: false, error: "只有队长可以删除队伍" }, 403);
+      return c.json(APIErrors.forbidden("只有队长可以删除队伍"), 403);
 
     if (team.status !== "recruiting" && team.status !== "cancelled")
-      return c.json({ success: false, error: "只有招募中或已取消的队伍可以删除" }, 400);
+      return c.json(APIErrors.badRequest("只有招募中或已取消的队伍可以删除"), 400);
 
     await db.delete(schema.teamMembers).where(eq(schema.teamMembers.teamId, teamId));
     await db.delete(schema.teams).where(eq(schema.teams.id, teamId));
@@ -197,7 +198,7 @@ mutations.delete("/:id", async (c) => {
     return c.json({ success: true, message: "队伍已删除" });
   } catch (error) {
     console.error("Delete team error:", error);
-    return c.json({ success: false, error: "删除队伍失败" }, 500);
+    return c.json(APIErrors.internalError("删除队伍失败"), 500);
   }
 });
 
@@ -209,7 +210,7 @@ mutations.post("/:id/form", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
@@ -218,17 +219,17 @@ mutations.post("/:id/form", async (c) => {
     const isUnderfilled = body.isUnderfilled === true;
 
     const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
-    if (!team) return c.json({ success: false, error: "队伍不存在" }, 404);
-    if (team.leaderId !== session.user.id) return c.json({ success: false, error: "只有队长可以组建队伍" }, 403);
+    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
+    if (team.leaderId !== session.user.id) return c.json(APIErrors.forbidden("只有队长可以组建队伍"), 403);
     if (team.status !== "recruiting" && team.status !== "full")
-      return c.json({ success: false, error: "当前队伍状态无法组建" }, 400);
+      return c.json(APIErrors.badRequest("当前队伍状态无法组建"), 400);
 
     const [{ approvedCount }] = await db
       .select({ approvedCount: sql<number>`count(*)` })
       .from(schema.teamMembers)
       .where(and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, "approved")));
 
-    if (approvedCount < 1) return c.json({ success: false, error: "队伍至少需要1人才能组建" }, 400);
+    if (approvedCount < 1) return c.json(APIErrors.badRequest("队伍至少需要1人才能组建"), 400);
 
     await db.update(schema.teams)
       .set({ status: "formed", updatedAt: new Date() })
@@ -237,7 +238,7 @@ mutations.post("/:id/form", async (c) => {
     return c.json({ success: true, message: "队伍已组建", isUnderfilled });
   } catch (error) {
     console.error("Form team error:", error);
-    return c.json({ success: false, error: "组建队伍失败" }, 500);
+    return c.json(APIErrors.internalError("组建队伍失败"), 500);
   }
 });
 
@@ -249,17 +250,17 @@ mutations.post("/:id/cancel", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
 
     const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
-    if (!team) return c.json({ success: false, error: "队伍不存在" }, 404);
+    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (team.leaderId !== session.user.id)
-      return c.json({ success: false, error: "只有队长可以取消队伍" }, 403);
+      return c.json(APIErrors.forbidden("只有队长可以取消队伍"), 403);
     if (team.status !== "recruiting" && team.status !== "full")
-      return c.json({ success: false, error: "当前队伍状态无法取消" }, 400);
+      return c.json(APIErrors.badRequest("当前队伍状态无法取消"), 400);
 
     await db.update(schema.teams)
       .set({ status: "cancelled", updatedAt: new Date() })
@@ -268,7 +269,7 @@ mutations.post("/:id/cancel", async (c) => {
     return c.json({ success: true, message: "队伍已取消" });
   } catch (error) {
     console.error("Cancel team error:", error);
-    return c.json({ success: false, error: "取消队伍失败" }, 500);
+    return c.json(APIErrors.internalError("取消队伍失败"), 500);
   }
 });
 
