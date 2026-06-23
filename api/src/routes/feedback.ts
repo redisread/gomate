@@ -8,7 +8,7 @@ import type { EmailLocale } from "../lib/email-i18n";
 const feedback = new Hono<{ Bindings: Env }>();
 
 const feedbackSchema = z.object({
-  type: z.enum(["suggestion", "bug"]).optional(),
+  type: z.enum(["suggestion", "bug"], { message: "类型必须是 suggestion 或 bug" }),
   name: z.string().min(1).max(100),
   email: z.string().email("请输入有效的邮箱地址"),
   content: z.string().min(1).max(5000),

@@ -60,7 +60,7 @@ async function createTestUser(
   };
 
   await db.insert(schema.users).values(user);
-  return user;
+  return user as typeof schema.users.$inferSelect;
 }
 
 /**
@@ -86,8 +86,8 @@ async function createTestTeam(
     ...overrides,
   };
 
-  await db.insert(schema.teams).values(team);
-  return team;
+  await db.insert(schema.teams).values(team as typeof schema.teams.$inferInsert);
+  return team as typeof schema.teams.$inferSelect;
 }
 
 /**

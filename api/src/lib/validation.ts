@@ -42,7 +42,7 @@ export const createPoiSchema = z.object({
   coordinates: z.object({
     lat: z.number().min(-90).max(90, "纬度必须在-90到90之间"),
     lng: z.number().min(-180).max(180, "经度必须在-180到180之间"),
-  }, "坐标格式无效"),
+  }, { message: "坐标格式无效" }),
   images: z.array(z.string().url("图片必须是有效URL")).max(10, "最多10张图片").optional(),
 });
 
@@ -64,6 +64,7 @@ export const createStorySchema = z.object({
 
 export const updateStorySchema = createStorySchema.partial().extend({
   id: z.string().min(1, "故事ID不能为空"),
+  status: z.enum(["draft", "published", "hidden"], { message: "状态必须是 draft、published 或 hidden" }).optional(),
 });
 
 /**
@@ -95,7 +96,7 @@ export const updateTagSchema = createTagSchema.partial().extend({
  * Favorite validation schemas
  */
 export const createFavoriteSchema = z.object({
-  entityType: z.enum(["location", "route", "story"], "实体类型必须是 location、route 或 story"),
+  entityType: z.enum(["location", "route", "story"], { message: "实体类型必须是 location、route 或 story" }),
   entityId: z.string().min(1, "实体ID不能为空"),
 });
 
@@ -105,7 +106,7 @@ export const createFavoriteSchema = z.object({
 export const createCitySchema = z.object({
   name: z.string().min(1, "城市名称不能为空").max(100, "城市名称不能超过100字"),
   province: z.string().min(1, "省份不能为空").max(100, "省份不能超过100字"),
-  level: z.enum(["city", "district", "county"], "级别必须是 city、district 或 county"),
+  level: z.enum(["city", "district", "county"], { message: "级别必须是 city、district 或 county" }),
   adcode: z.string().min(1, "行政区划代码不能为空").max(20, "行政区划代码不能超过20字"),
   isHot: z.boolean().optional(),
 });
@@ -121,8 +122,10 @@ export const createHikingRouteSchema = z.object({
   name: z.string().min(1, "路线名称不能为空").max(200, "路线名称不能超过200字"),
   description: z.string().max(5000, "描述不能超过5000字").optional(),
   locationId: z.string().min(1, "地点ID不能为空"),
-  difficulty: z.enum(["easy", "medium", "hard"], "难度必须是 easy、medium 或 hard"),
-  durationMin: z.number().int().min(1, "时长必须大于0"),
+  cityId: z.string().min(1, "城市ID不能为空"),
+  difficulty: z.enum(["easy", "medium", "hard"], { message: "难度必须是 easy、medium 或 hard" }),
+  durationMin: z.number().int().min(1, "最小时长必须大于0"),
+  durationMax: z.number().int().min(1, "最大时长必须大于0"),
   distance: z.number().min(0, "距离不能为负"),
   elevation: z.number().min(0, "海拔不能为负").optional(),
   tags: z.array(z.string()).max(20, "最多20个标签").optional(),
