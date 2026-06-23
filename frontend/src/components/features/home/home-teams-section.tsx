@@ -1,12 +1,13 @@
-import { ArrowRight, Users, Compass } from "lucide-react";
+import { ArrowRight, Users, Compass, MapPin, Calendar } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 import { TeamCard } from "./home-team-card";
+import { TeamCardSkeleton } from "./home-team-card-skeleton";
 
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeTeamsSection({ data }: { data: HomeData }) {
-  const { teams, teamsRef, teamsInView } = data;
+  const { teams, teamsLoading, teamsRef, teamsInView } = data;
   const { t } = useI18n(["home", "teams", "common"]);
 
   return (
@@ -64,11 +65,40 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
         </div>
 
         {/* 网格布局优化 - 3列 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {teams.slice(0, 6).map((team, index) => (
-            <TeamCard key={team.id} team={team} featured={index === 0} />
-          ))}
-        </div>
+        {teamsLoading ? (
+          /* 加载状态 - 骨架屏 */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <TeamCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : teams.length === 0 ? (
+          /* 空状态 */
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center mb-6">
+              <Users className="w-12 h-12 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-3">
+              {t("home.noTeams") || "暂无活跃队伍"}
+            </h3>
+            <p className="text-muted-foreground text-center max-w-md mb-8">
+              {t("home.noTeamsDescription") || "目前还没有活跃的队伍，成为第一个创建队伍的人吧！"}
+            </p>
+            <a href="/teams/create">
+              <button className="group bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-8 py-4 rounded-xl text-base font-semibold transition-all duration-300 inline-flex items-center gap-3 shadow-lg hover:shadow-xl hover:scale-105">
+                <MapPin className="w-5 h-5" />
+                {t("home.createFirstTeam") || "创建第一个队伍"}
+              </button>
+            </a>
+          </div>
+        ) : (
+          /* 正常状态 - 队伍列表 */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {teams.slice(0, 6).map((team, index) => (
+              <TeamCard key={team.id} team={team} featured={index === 0} />
+            ))}
+          </div>
+        )}
 
         {/* CTA 按钮优化 */}
         <div className="text-center mt-16">
