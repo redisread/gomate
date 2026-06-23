@@ -4,6 +4,7 @@ import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
 import { APIErrors } from "../lib/api-errors";
+import { createFavoriteSchema } from "../lib/validation";
 
 /** 安全解析 JSON 字符串 */
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -90,13 +91,15 @@ favorites.post("/", async (c) => {
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-    const body = await c.req.json<{ entityType?: string; entityId?: string }>();
-    const { entityType, entityId } = body;
+    const body = await c.req.json();
 
-    if (!entityType || !entityId) return c.json(APIErrors.badRequest("缺少必要参数"), 400);
-    if (!["location", "route"].includes(entityType))
-      return c.json(APIErrors.badRequest("不支持的实体类型"), 400);
+    // Validate input with Zod
+    const parsed = createFavoriteSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
+    }
 
+    const { entityType, entityId } = parsed.data;
     const db = createDb(c.env.DB);
 
     const existing = await db

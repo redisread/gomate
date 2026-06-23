@@ -4,6 +4,7 @@ import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
 import { APIErrors } from "../lib/api-errors";
+import { createCitySchema } from "../lib/validation";
 
 const cities = new Hono<{ Bindings: Env }>();
 
@@ -63,23 +64,23 @@ cities.post("/", async (c) => {
   try {
     await checkAdmin(c);
     const db = createDb(c.env.DB);
-    const body = await c.req.json<{
-      adcode?: string; name?: string; level?: string;
-      province?: string; isHot?: boolean;
-    }>();
+    const body = await c.req.json();
 
-    if (!body.adcode || !body.name || !body.level) {
-      return c.json(APIErrors.badRequest("缺少必填字段"), 400);
+    // Validate input with Zod
+    const parsed = createCitySchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
     }
 
+    const data = parsed.data;
     const cityId = `city-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     await db.insert(schema.cities).values({
       id: cityId,
-      adcode: body.adcode,
-      name: body.name,
-      level: body.level,
-      province: body.province || null,
-      isHot: body.isHot ?? false,
+      adcode: data.adcode,
+      name: data.name,
+      level: data.level,
+      province: data.province || null,
+      isHot: data.isHot ?? false,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

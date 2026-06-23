@@ -4,6 +4,7 @@ import { eq, and, inArray, asc } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
+import { createHikingRouteSchema, updateHikingRouteSchema } from "../lib/validation";
 
 const hikingRoutes = new Hono<{ Bindings: Env }>();
 
@@ -121,37 +122,31 @@ hikingRoutes.post("/", async (c) => {
   try {
     await checkAdmin(c);
     const db = createDb(c.env.DB);
-    const body = await c.req.json<{
-      locationId?: string; cityId?: string; name?: string; description?: string;
-      difficulty?: string; durationMin?: number; durationMax?: number;
-      distance?: number; elevation?: number;
-      routeGuide?: { overview: string; tips: string[] };
-      equipmentNeeded?: string[]; warnings?: string[]; tagIds?: string[];
-    }>();
+    const body = await c.req.json();
 
-    if (!body.locationId || !body.cityId || !body.name || !body.difficulty ||
-        body.durationMin === undefined || body.durationMax === undefined || body.distance === undefined) {
-      return c.json(APIErrors.badRequest("缺少必填字段"), 400);
+    // Validate input with Zod
+    const parsed = createHikingRouteSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
     }
 
+    const data = parsed.data;
     const routeId = `route_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const extra: Record<string, unknown> = {};
-    if (body.equipmentNeeded) extra.equipmentNeeded = body.equipmentNeeded;
-    if (body.warnings) extra.warnings = body.warnings;
 
     await db.insert(schema.routes).values({
       id: routeId,
-      locationId: body.locationId,
-      cityId: body.cityId,
-      name: body.name,
-      description: body.description,
-      difficulty: body.difficulty,
-      durationMin: body.durationMin,
-      durationMax: body.durationMax,
-      distance: body.distance,
-      elevation: body.elevation,
-      routeGuide: body.routeGuide ? JSON.stringify(body.routeGuide) : null,
-      extra: Object.keys(extra).length > 0 ? JSON.stringify(extra) : null,
+      locationId: data.locationId,
+      cityId: data.cityId || null,
+      name: data.name,
+      description: data.description || null,
+      difficulty: data.difficulty,
+      durationMin: data.durationMin,
+      durationMax: data.durationMax,
+      distance: data.distance,
+      elevation: data.elevation || null,
+      routeGuide: null,
+      extra: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
