@@ -1,5 +1,5 @@
 import * as React from "react";
-import { MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
+import { MapPin, Calendar, ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { TranslationKey } from "@/i18n";
 import { getDaysUntil } from "@/lib/date-utils";
@@ -151,15 +151,11 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
           <h3 className="font-bold text-foreground line-clamp-1 mb-2 leading-snug"
             style={{ fontSize: "15px", color: hovered ? "#D97706" : undefined, transition: "color 0.2s ease" }}>{team.title}</h3>
 
+          {/* 精简信息：只保留日期，移除时长 */}
           <div className="flex items-center gap-3 mb-3">
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <Calendar className="h-3 w-3 flex-shrink-0" style={{ color: "#D97706" }} />{team.date}{team.time && <span className="ml-0.5 font-medium">{team.time}</span>}
             </span>
-            {team.duration && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3 flex-shrink-0" style={{ color: "#D97706" }} />{t("common.approx")} {team.duration}
-              </span>
-            )}
             {!hasCover && departureLabel && (
               <span className="ml-auto flex-shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full"
                 style={{ background: departureLabel.urgent ? "rgba(239,68,68,0.10)" : "rgba(217,119,6,0.08)", color: departureLabel.urgent ? "#b91c1c" : "#D97706" }}>

@@ -92,10 +92,19 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
             </a>
           </div>
         ) : (
-          /* 正常状态 - 队伍列表 */
+          /* 正常状态 - 队伍列表（带 stagger 动画） */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {teams.slice(0, 6).map((team, index) => (
-              <TeamCard key={team.id} team={team} featured={index === 0} />
+              <div
+                key={team.id}
+                className="opacity-0 animate-fade-in-up"
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                  animationFillMode: 'forwards',
+                }}
+              >
+                <TeamCard team={team} featured={index === 0} />
+              </div>
             ))}
           </div>
         )}
