@@ -6,6 +6,7 @@ import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { sendTeamJoinApplicationEmail } from "../../lib/email";
+import { requireTeamLeader } from "../../lib/team-permissions";
 
 const membership = new Hono<{ Bindings: Env }>();
 
@@ -99,7 +100,7 @@ membership.post("/join", async (c) => {
  * POST /teams/:id/members/:userId/approve
  * 批准成员申请（仅队长）
  */
-membership.post("/members/:userId/approve", async (c) => {
+membership.post("/members/:userId/approve", requireTeamLeader(), async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
@@ -111,11 +112,8 @@ membership.post("/members/:userId/approve", async (c) => {
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
 
-    const team = await db.query.teams.findFirst({
-      where: eq(schema.teams.id, teamId as string), with: { location: true },
-    });
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId !== session.user.id) return c.json(APIErrors.forbidden("只有队长可以审核成员"), 403);
+    // Get team from context (set by requireTeamLeader middleware)
+    const team = c.get("team") as typeof schema.teams.$inferSelect;
 
     const members = await db.query.teamMembers.findMany({
       where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "pending")),
@@ -153,7 +151,7 @@ membership.post("/members/:userId/approve", async (c) => {
  * POST /teams/:id/members/:userId/reject
  * 拒绝成员申请（仅队长）
  */
-membership.post("/members/:userId/reject", async (c) => {
+membership.post("/members/:userId/reject", requireTeamLeader(), async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
@@ -168,9 +166,8 @@ membership.post("/members/:userId/reject", async (c) => {
     const body = await c.req.json<{ reason?: string }>().catch(() => ({} as { reason?: string }));
     const { reason } = body;
 
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId as string) });
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId !== session.user.id) return c.json(APIErrors.forbidden("只有队长可以审核成员"), 403);
+    // Get team from context (set by requireTeamLeader middleware)
+    const team = c.get("team") as typeof schema.teams.$inferSelect;
 
     const members = await db.query.teamMembers.findMany({
       where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "pending")),
