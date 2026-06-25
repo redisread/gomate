@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Heart, Share2, Eye, Loader2, MapPin } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Eye, Loader2, MapPin, Quote, Clock, FileText, ArrowRight } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -125,28 +125,68 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
     return `${year}年${month}月${day}日`;
   };
 
-  // Loading state
+  // Loading state - Enhanced skeleton screen
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">{t("content.discover.loading")}</p>
-        </div>
+      <div className="min-h-screen bg-background">
+        {/* Header skeleton */}
+        <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border/50 shadow-sm">
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="h-9 w-24 bg-muted rounded-xl animate-pulse" />
+              <div className="h-9 w-20 bg-muted rounded-xl animate-pulse" />
+            </div>
+          </div>
+        </header>
+
+        {/* Content skeleton */}
+        <main className="max-w-4xl mx-auto px-6 py-12">
+          {/* Cover image skeleton */}
+          <div className="relative h-[60vh] min-h-[400px] bg-muted rounded-2xl mb-12 animate-pulse" />
+
+          {/* Summary skeleton */}
+          <div className="mb-12 p-6 bg-accent/30 rounded-2xl">
+            <div className="h-6 w-3/4 bg-muted rounded animate-pulse mb-3" />
+            <div className="h-6 w-1/2 bg-muted rounded animate-pulse" />
+          </div>
+
+          {/* Stats skeleton */}
+          <div className="flex items-center gap-6 mb-12 pb-8 border-b border-border">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-5 w-20 bg-muted rounded animate-pulse" />
+            ))}
+          </div>
+
+          {/* Content skeleton */}
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-4 bg-muted rounded animate-pulse" style={{ width: `${Math.random() * 40 + 60}%` }} />
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
 
-  // Error state
+  // Error state - Enhanced style
   if (error || !story) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-4">{error || t("content.discover.storyNotFound")}</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center px-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-destructive/10 mb-6">
+            <FileText className="h-10 w-10 text-destructive" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-3">
+            {error || t("content.discover.storyNotFound")}
+          </h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            抱歉，我们无法找到这个故事。它可能已被删除或不存在。
+          </p>
           <button
             onClick={() => window.location.href = "/discover"}
-            className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all duration-200 hover:scale-105"
           >
+            <ArrowLeft className="h-4 w-4" />
             {t("content.discover.backToDiscover")}
           </button>
         </div>
@@ -156,131 +196,157 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-16 z-30 bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+      {/* Header - Enhanced with glass morphism */}
+      <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border/50 shadow-sm">
+        <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
+            {/* Back button - Enhanced style */}
             <button
               onClick={() => window.location.href = "/discover"}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+              className="group flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground bg-accent/50 hover:bg-accent rounded-xl transition-all duration-200"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
               {t("content.discover.back")}
             </button>
 
-            <div className="flex items-center gap-2">
+            {/* Action buttons - Enhanced style */}
+            <div className="flex items-center gap-3">
               <button
                 onClick={handleShare}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground bg-accent/50 hover:bg-accent rounded-xl transition-all duration-200"
               >
                 <Share2 className="h-4 w-4" />
-                {t("content.discover.share")}
+                <span className="hidden sm:inline">{t("content.discover.share")}</span>
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="max-w-3xl mx-auto px-4 py-6">
-        {/* Cover Image - Full Bleed */}
-        {story.coverImage && (
-          <div className="mb-8 -mx-4 sm:mx-0 sm:rounded-xl overflow-hidden bg-muted">
-            <img
-              src={story.coverImage}
-              alt={story.title}
-              className="w-full h-auto max-h-[50vh] min-h-[200px] object-cover"
-            />
+      {/* Cover Image - Magazine Style */}
+      {story.coverImage && (
+        <div className="relative h-[60vh] min-h-[400px] overflow-hidden">
+          <img
+            src={story.coverImage}
+            alt={story.title}
+            className="w-full h-full object-cover"
+          />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+
+          {/* Title and author overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-8 sm:p-12">
+            <div className="max-w-4xl mx-auto">
+              {/* Category tag */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/90 text-white text-xs font-semibold mb-4">
+                <MapPin className="h-3 w-3" />
+                {story.location?.name || "户外故事"}
+              </div>
+
+              {/* Title */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
+                {story.title}
+              </h1>
+
+              {/* Author info */}
+              <div className="flex items-center gap-3">
+                <Avatar
+                  src={story.author?.image}
+                  name={story.author?.name || t("content.discover.anonymous")}
+                  size="md"
+                  className="border-2 border-white/30"
+                />
+                <div className="text-white">
+                  <p className="font-medium">{story.author?.name || t("content.discover.anonymous")}</p>
+                  <p className="text-sm text-white/70" suppressHydrationWarning>
+                    {formatDate(story.createdAt)}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-
-        {/* Title with decorative line */}
-        <div className="mb-6">
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
-            {story.title}
-          </h1>
-          <div className="h-1 w-20 bg-primary/60 rounded-full"></div>
         </div>
+      )}
 
-        {/* Author & Meta with reading stats */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 border-b border-border mb-6">
-          <div className="flex items-center gap-3">
-            <Avatar
-              src={story.author?.image}
-              name={story.author?.name || t("content.discover.anonymous")}
-              size="md"
-            />
-            <div>
-              <p className="font-medium text-foreground">
-                {story.author?.name || t("content.discover.anonymous")}
-              </p>
-              <p className="text-sm text-muted-foreground" suppressHydrationWarning>
-                {formatDate(story.createdAt)}
+      {/* Content Area - Enhanced typography */}
+      <main className="max-w-4xl mx-auto px-6 py-12">
+        {/* Summary - Enhanced style with quote icon */}
+        {story.summary && (
+          <div className="mb-12 p-6 bg-gradient-to-br from-accent/60 to-accent/30 rounded-2xl border-l-4 border-primary">
+            <div className="flex items-start gap-3">
+              <Quote className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+              <p className="text-foreground/90 text-lg leading-relaxed font-medium">
+                {story.summary}
               </p>
             </div>
           </div>
+        )}
 
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            {/* Reading stats */}
-            <span>{story.content?.length?.toLocaleString() || 0} 字</span>
-            <span>·</span>
-            <span>{Math.ceil((story.content?.length || 0) / 400)} 分钟阅读</span>
-            <span className="hidden sm:inline">·</span>
-            <span className="flex items-center gap-1">
-              <Eye className="h-4 w-4" />
-              {story.viewCount}
-            </span>
-            <span className="flex items-center gap-1">
-              <Heart className="h-4 w-4" />
-              {story.likeCount}
-            </span>
+        {/* Stats - Enhanced layout */}
+        <div className="flex flex-wrap items-center gap-6 mb-12 pb-8 border-b border-border">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Eye className="h-4 w-4" />
+            <span className="font-medium">{story.viewCount}</span>
+            <span>浏览</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Heart className="h-4 w-4" />
+            <span className="font-medium">{story.likeCount}</span>
+            <span>点赞</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span className="font-medium">{Math.ceil((story.content?.length || 0) / 400)}</span>
+            <span>分钟阅读</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <FileText className="h-4 w-4" />
+            <span className="font-medium">{story.content?.length?.toLocaleString() || 0}</span>
+            <span>字</span>
           </div>
         </div>
 
-        {/* Summary - Enhanced style */}
-        {story.summary && (
-          <div className="mb-8 p-5 bg-gradient-to-r from-accent/50 to-accent/30 rounded-xl border-l-4 border-primary/40">
-            <p className="text-foreground/80 text-base leading-relaxed font-medium">
-              {story.summary}
-            </p>
-          </div>
-        )}
-
-        {/* Location */}
+        {/* Location Card - Enhanced style */}
         {story.location && (
-          <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" />
-            <span>{t("content.discover.relatedLocation")}</span>
-            <a
-              href={`/locations/${story.location.slug}`}
-              className="text-primary hover:underline"
-            >
-              {story.location.name}
+          <div className="mb-12 p-5 bg-accent/30 rounded-xl border border-border hover:border-primary/50 transition-colors">
+            <a href={`/locations/${story.location.slug}`} className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <MapPin className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">相关地点</p>
+                <p className="font-semibold text-foreground hover:text-primary transition-colors">
+                  {story.location.name}
+                </p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground ml-auto" />
             </a>
           </div>
         )}
 
-        {/* Content */}
-        <article className="max-w-none">
+        {/* Article Content - Enhanced typography */}
+        <article className="prose prose-lg max-w-none prose-headings:font-bold prose-p:leading-relaxed prose-a:text-primary hover:prose-a:underline">
           <MarkdownContent content={story.content} />
         </article>
 
-        {/* Actions */}
-        <div className="mt-10 pt-6 border-t border-border flex items-center justify-center gap-4">
-          <button
-            onClick={handleLike}
-            disabled={isLiking || liked}
-            className={cn(
-              "flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors min-w-[140px]",
-              liked
-                ? "bg-red-500 text-white hover:bg-red-600"
-                : "border border-border bg-background hover:bg-accent"
-            )}
-          >
-            <Heart className={cn("h-5 w-5", liked && "fill-current")} />
-            {liked ? t("content.discover.liked") : t("content.discover.like")}
-            {story.likeCount > 0 && ` (${story.likeCount})`}
-          </button>
+        {/* Actions - Enhanced style */}
+        <div className="mt-16 pt-8 border-t border-border">
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={handleLike}
+              disabled={isLiking || liked}
+              className={cn(
+                "group flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold transition-all duration-300",
+                liked
+                  ? "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/30"
+                  : "border-2 border-border bg-background hover:border-primary hover:text-primary"
+              )}
+            >
+              <Heart className={cn("h-5 w-5 transition-transform group-hover:scale-110", liked && "fill-current")} />
+              {liked ? t("content.discover.liked") : t("content.discover.like")}
+              {story.likeCount > 0 && ` (${story.likeCount})`}
+            </button>
+          </div>
         </div>
       </main>
     </div>
