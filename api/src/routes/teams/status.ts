@@ -105,6 +105,7 @@ status.post("/members/:userId/approve-leave", requireTeamLeader(), async (c) => 
     const db = createDb(c.env.DB);
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
+    if (!targetUserId) return c.json(APIErrors.badRequest("缺少用户ID"), 400);
 
     // Get team from context (set by requireTeamLeader middleware)
     const team = c.get("team") as typeof schema.teams.$inferSelect;
@@ -149,6 +150,7 @@ status.post("/members/:userId/reject-leave", requireTeamLeader(), async (c) => {
     const db = createDb(c.env.DB);
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
+    if (!targetUserId) return c.json(APIErrors.badRequest("缺少用户ID"), 400);
 
     const members = await db.query.teamMembers.findMany({
       where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "leave_pending")),

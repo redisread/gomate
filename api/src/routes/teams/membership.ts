@@ -111,6 +111,7 @@ membership.post("/members/:userId/approve", requireTeamLeader(), async (c) => {
     const db = createDb(c.env.DB);
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
+    if (!targetUserId) return c.json(APIErrors.badRequest("缺少用户ID"), 400);
 
     // Get team from context (set by requireTeamLeader middleware)
     const team = c.get("team") as typeof schema.teams.$inferSelect;
@@ -162,6 +163,7 @@ membership.post("/members/:userId/reject", requireTeamLeader(), async (c) => {
     const db = createDb(c.env.DB);
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
+    if (!targetUserId) return c.json(APIErrors.badRequest("缺少用户ID"), 400);
 
     const body = await c.req.json<{ reason?: string }>().catch(() => ({} as { reason?: string }));
     const { reason } = body;
@@ -212,6 +214,7 @@ membership.post("/members/:userId/remove", async (c) => {
     const db = createDb(c.env.DB);
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
+    if (!targetUserId) return c.json(APIErrors.badRequest("缺少用户ID"), 400);
 
     const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
     if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
