@@ -6,6 +6,7 @@ import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { sendTeamJoinApplicationEmail } from "../../lib/email";
+import { requireTeamLeader } from "../../lib/team-permissions";
 
 const membership = new Hono<{ Bindings: Env }>();
 
@@ -33,19 +34,19 @@ membership.post("/join", async (c) => {
     const teamId = c.req.param("id");
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
 
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId as string) });
+    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
     if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (team.status !== "recruiting") return c.json(APIErrors.badRequest("该队伍当前不接受新成员"), 400);
 
     const [{ approvedCount }] = await db
       .select({ approvedCount: sql<number>`count(*)` })
       .from(schema.teamMembers)
-      .where(and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.status, "approved")));
+      .where(and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, "approved")));
 
     if (approvedCount >= team.maxMembers) return c.json(APIErrors.badRequest("队伍已满"), 400);
 
     const existingMembers = await db.query.teamMembers.findMany({
-      where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, userId)),
+      where: and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.userId, userId)),
       limit: 1,
     });
     const existing = existingMembers[0];
@@ -74,7 +75,7 @@ membership.post("/join", async (c) => {
 
     const memberId = `tm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     await db.insert(schema.teamMembers).values({
-      id: memberId, teamId: teamId as string, userId, status: "pending", createdAt: new Date(),
+      id: memberId, teamId: teamId, userId, status: "pending", createdAt: new Date(),
     });
     // 异步发送通知邮件（在 Cloudflare Workers 环境中使用 waitUntil，否则直接执行）
     const notifyPromise = notifyLeaderOfApplication(db, team, userId, c.env).catch((err) => {
@@ -99,7 +100,7 @@ membership.post("/join", async (c) => {
  * POST /teams/:id/members/:userId/approve
  * 批准成员申请（仅队长）
  */
-membership.post("/members/:userId/approve", async (c) => {
+membership.post("/members/:userId/approve", requireTeamLeader(), async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
@@ -110,15 +111,13 @@ membership.post("/members/:userId/approve", async (c) => {
     const db = createDb(c.env.DB);
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
+    if (!targetUserId) return c.json(APIErrors.badRequest("缺少用户ID"), 400);
 
-    const team = await db.query.teams.findFirst({
-      where: eq(schema.teams.id, teamId as string), with: { location: true },
-    });
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId !== session.user.id) return c.json(APIErrors.forbidden("只有队长可以审核成员"), 403);
+    // Get team from context (set by requireTeamLeader middleware)
+    const team = c.get("team") as typeof schema.teams.$inferSelect;
 
     const members = await db.query.teamMembers.findMany({
-      where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "pending")),
+      where: and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "pending")),
       limit: 1,
     });
     const membership = members[0];
@@ -127,7 +126,7 @@ membership.post("/members/:userId/approve", async (c) => {
     const [{ approvedCount }] = await db
       .select({ approvedCount: sql<number>`count(*)` })
       .from(schema.teamMembers)
-      .where(and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.status, "approved")));
+      .where(and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, "approved")));
 
     if (approvedCount >= team.maxMembers) return c.json(APIErrors.badRequest("队伍已满，无法批准新成员"), 400);
 
@@ -140,7 +139,7 @@ membership.post("/members/:userId/approve", async (c) => {
       .where(eq(schema.teamMembers.id, membership.id));
     await db.update(schema.teams)
       .set({ status: newStatus, updatedAt: now })
-      .where(eq(schema.teams.id, teamId as string));
+      .where(eq(schema.teams.id, teamId));
 
     return c.json({ success: true, message: "已通过申请" });
   } catch (error) {
@@ -153,7 +152,7 @@ membership.post("/members/:userId/approve", async (c) => {
  * POST /teams/:id/members/:userId/reject
  * 拒绝成员申请（仅队长）
  */
-membership.post("/members/:userId/reject", async (c) => {
+membership.post("/members/:userId/reject", requireTeamLeader(), async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
@@ -164,16 +163,16 @@ membership.post("/members/:userId/reject", async (c) => {
     const db = createDb(c.env.DB);
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
+    if (!targetUserId) return c.json(APIErrors.badRequest("缺少用户ID"), 400);
 
     const body = await c.req.json<{ reason?: string }>().catch(() => ({} as { reason?: string }));
     const { reason } = body;
 
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId as string) });
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId !== session.user.id) return c.json(APIErrors.forbidden("只有队长可以审核成员"), 403);
+    // Get team from context (set by requireTeamLeader middleware)
+    const team = c.get("team") as typeof schema.teams.$inferSelect;
 
     const members = await db.query.teamMembers.findMany({
-      where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "pending")),
+      where: and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "pending")),
       limit: 1,
     });
     const membership = members[0];
@@ -190,7 +189,7 @@ membership.post("/members/:userId/reject", async (c) => {
     if (team.status === "full") {
       await db.update(schema.teams)
         .set({ status: "recruiting", updatedAt: now })
-        .where(eq(schema.teams.id, teamId as string));
+        .where(eq(schema.teams.id, teamId));
     }
 
     return c.json({ success: true, message: "已拒绝申请" });
@@ -215,14 +214,15 @@ membership.post("/members/:userId/remove", async (c) => {
     const db = createDb(c.env.DB);
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
+    if (!targetUserId) return c.json(APIErrors.badRequest("缺少用户ID"), 400);
 
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId as string) });
+    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
     if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (team.leaderId !== session.user.id) return c.json(APIErrors.forbidden("只有队长可以移除成员"), 403);
     if (targetUserId === session.user.id) return c.json(APIErrors.badRequest("不能移除自己"), 400);
 
     const members = await db.query.teamMembers.findMany({
-      where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "approved")),
+      where: and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "approved")),
       limit: 1,
     });
     const membership = members[0];
@@ -233,11 +233,11 @@ membership.post("/members/:userId/remove", async (c) => {
     const [{ remainingCount }] = await db
       .select({ remainingCount: sql<number>`count(*)` })
       .from(schema.teamMembers)
-      .where(and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.status, "approved")));
+      .where(and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, "approved")));
 
     await db.update(schema.teams)
       .set({ status: remainingCount < team.maxMembers ? "recruiting" : team.status, updatedAt: new Date() })
-      .where(eq(schema.teams.id, teamId as string));
+      .where(eq(schema.teams.id, teamId));
 
     return c.json({ success: true, message: "已移除成员" });
   } catch (error) {
@@ -261,12 +261,12 @@ membership.post("/leave-request", async (c) => {
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
 
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId as string) });
+    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
     if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (team.status !== "formed") return c.json(APIErrors.badRequest("只有已组建的队伍需要申请退出"), 400);
 
     const members = await db.query.teamMembers.findMany({
-      where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, session.user.id), eq(schema.teamMembers.status, "approved")),
+      where: and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.userId, session.user.id), eq(schema.teamMembers.status, "approved")),
       limit: 1,
     });
     const membership = members[0];
@@ -274,7 +274,7 @@ membership.post("/leave-request", async (c) => {
     if (membership.userId === team.leaderId) return c.json(APIErrors.badRequest("队长不能退出队伍"), 400);
 
     const leaveRequests = await db.query.teamMembers.findMany({
-      where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, session.user.id), eq(schema.teamMembers.status, "leave_pending")),
+      where: and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.userId, session.user.id), eq(schema.teamMembers.status, "leave_pending")),
       limit: 1,
     });
     if (leaveRequests.length > 0) return c.json(APIErrors.badRequest("您已提交退出申请，请等待队长审批"), 400);
