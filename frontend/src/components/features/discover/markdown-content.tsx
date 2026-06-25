@@ -45,10 +45,10 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
       .replace(/~~(.*?)~~/g, '<del class="line-through text-muted-foreground">$1</del>')
       // 链接
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline font-medium" target="_blank" rel="noopener noreferrer">$1</a>')
-      // 无序列表 - 使用自定义样式
-      .replace(/^\s*[-*+] (.*$)/gim, '<li class="pl-2 py-1 relative before:content-["•"] before:absolute before:left-[-1rem] before:text-primary/60">$1</li>')
-      // 有序列表
-      .replace(/^\s*\d+\. (.*$)/gim, '<li class="pl-2 py-1 relative list-decimal marker:text-muted-foreground">$1</li>')
+      // 无序列表 - 改进样式
+      .replace(/^\s*[-*+] (.*$)/gim, '<li class="py-1.5 pl-6 relative">$1</li>')
+      // 有序列表 - 添加 data-index 属性用于区分
+      .replace(/^\s*(\d+)\. (.*$)/gim, '<li class="py-1.5 pl-6" data-index="$1">$2</li>')
       // 引用块 - 增强样式
       .replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-primary/40 bg-accent/30 pl-5 pr-4 py-3 my-6 rounded-r-lg text-foreground/80">$1</blockquote>')
       // 分隔线
@@ -63,8 +63,11 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
       html = '<p class="mb-5 leading-[1.8] text-foreground/90">' + html + '</p>';
     }
 
-    // 包装列表项
-    html = html.replace(/(<li[^>]*>.*?<\/li>\s*)+/gs, '<ul class="my-5 pl-6 space-y-1">$&</ul>');
+    // 包裹列表项 - 分别处理有序和无序列表
+    // 无序列表（没有 data-index 属性的 li）
+    html = html.replace(/(<li(?![^>]*data-index)[^>]*>.*?<\/li>\s*)+/gs, '<ul class="my-5 space-y-1 list-disc list-inside marker:text-primary/60">$&</ul>');
+    // 有序列表（有 data-index 属性的 li）
+    html = html.replace(/(<li[^>]*data-index[^>]*>.*?<\/li>\s*)+/gs, '<ol class="my-5 space-y-1 list-decimal list-inside marker:text-muted-foreground marker:font-semibold">$&</ol>');
 
     return html;
   }, [content]);
