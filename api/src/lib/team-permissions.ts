@@ -6,6 +6,14 @@ import type { Context, Next } from "hono";
 import type { Env } from "./auth";
 import { createAuth } from "./auth";
 
+type TeamContext = {
+  Bindings: Env;
+  Variables: {
+    team: typeof schema.teams.$inferSelect;
+    membership: typeof schema.teamMembers.$inferSelect;
+  };
+};
+
 /**
  * Team permission check middleware
  * Checks if the current user is the team leader
@@ -18,7 +26,7 @@ import { createAuth } from "./auth";
  * ```
  */
 export function requireTeamLeader() {
-  return async (c: Context<{ Bindings: Env }>, next: Next) => {
+  return async (c: Context<TeamContext>, next: Next) => {
     try {
       const teamId = c.req.param("id");
       if (!teamId) {
@@ -63,7 +71,7 @@ export function requireTeamLeader() {
  * Check if user is a team member (any role)
  */
 export function requireTeamMember() {
-  return async (c: Context<{ Bindings: Env }>, next: Next) => {
+  return async (c: Context<TeamContext>, next: Next) => {
     try {
       const teamId = c.req.param("id");
       if (!teamId) {
@@ -77,7 +85,7 @@ export function requireTeamMember() {
         return c.json(APIErrors.unauthorized("请先登录"), 401);
       }
 
-      const _userId = session.user.id;
+      const userId = session.user.id;
       const db = createDb(c.env.DB);
 
       // Check if user is a member of the team
