@@ -811,3 +811,45 @@
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+/* ============================================================
+   Story Detail Page Animations
+   ============================================================ */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s ease-out;
+}
+
+/* Prose enhancements for story content */
+.prose-lg p {
+  margin-bottom: 1.5em;
+  line-height: 1.8;
+}
+
+.prose-lg h2 {
+  margin-top: 2em;
+  margin-bottom: 0.8em;
+  font-size: 1.8em;
+}
+
+.prose-lg h3 {
+  margin-top: 1.5em;
+  margin-bottom: 0.6em;
+  font-size: 1.4em;
+}
+
+.prose-lg img {
+  border-radius: 12px;
+  margin: 2em 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
