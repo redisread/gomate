@@ -77,7 +77,7 @@ export function requireTeamMember() {
         return c.json(APIErrors.unauthorized("请先登录"), 401);
       }
 
-      const userId = session.user.id;
+      const _userId = session.user.id;
       const db = createDb(c.env.DB);
 
       // Check if user is a member of the team

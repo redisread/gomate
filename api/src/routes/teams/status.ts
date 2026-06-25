@@ -150,9 +150,6 @@ status.post("/members/:userId/reject-leave", requireTeamLeader(), async (c) => {
 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
 
-    // Get team from context (set by requireTeamLeader middleware)
-    const team = c.get("team") as typeof schema.teams.$inferSelect;
-
     const members = await db.query.teamMembers.findMany({
       where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "leave_pending")),
       limit: 1,
