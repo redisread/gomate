@@ -1,4 +1,3 @@
-import { ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 import { LocationCard } from "./home-location-card";
@@ -6,7 +5,7 @@ import { LocationCard } from "./home-location-card";
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeLocationsSection({ data }: { data: HomeData }) {
-  const { locations, isLoading, pagination, currentPage, locationsRef, locationsInView, setCurrentPage, fetchLocations } = data;
+  const { locations, isLoading, locationsRef, locationsInView } = data;
   const { t } = useI18n(["home", "locations", "common"]);
 
   return (
@@ -33,24 +32,6 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
           </div>
         )}
 
-        {pagination.totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-10">
-            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
-              <button key={page} onClick={() => { setCurrentPage(page); fetchLocations(page); }}
-                className={`w-10 h-10 rounded-full text-sm font-medium transition-all duration-150 ${page === currentPage ? "bg-brand text-brand-foreground shadow-brand-glow" : "bg-muted text-muted-foreground hover:bg-accent hover:text-brand"}`}>
-                {page}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="text-center mt-10">
-          <a href="/locations">
-            <button className="border border-border hover:bg-accent text-foreground hover:text-brand px-7 py-3 rounded-xl text-sm font-medium transition-all duration-150 inline-flex items-center gap-2">
-              {t("common.viewAll")}<ArrowRight className="h-4 w-4" />
-            </button>
-          </a>
-        </div>
       </div>
     </section>
   );
