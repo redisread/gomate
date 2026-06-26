@@ -5,7 +5,7 @@ import type { useHomeData } from "./use-home-data";
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeHero({ data }: { data: HomeData }) {
-  const { isDark, animate, parallaxY, search, handleSearch } = data;
+  const { isDark, animate, search, handleSearch } = data;
   const { t } = useI18n(["home", "common", "content"]);
 
   // SSR 默认使用亮色模式，hydration 完成后客户端主题会自动同步
@@ -18,20 +18,6 @@ export function HomeHero({ data }: { data: HomeData }) {
           ? "linear-gradient(160deg, #1a1510 0%, rgba(217,119,6,0.04) 38%, #12100d 65%, #1a1510 100%)"
           : "linear-gradient(160deg, #FEF3C7 0%, rgba(255,122,101,0.06) 38%, #faf8f5 65%, #f5f0e8 100%)",
       }} />
-
-      <div className="absolute -top-40 -left-40 w-[640px] h-[640px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(217,119,6,0.13) 0%, transparent 68%)", transform: `translateY(${parallaxY * 0.8}px)` }} aria-hidden="true" />
-      <div className="absolute -bottom-28 -right-28 w-[520px] h-[520px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(255,122,101,0.10) 0%, transparent 68%)", transform: `translateY(${-parallaxY * 0.6}px)` }} aria-hidden="true" />
-      <div className="absolute top-1/3 right-1/4 w-[220px] h-[220px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(252,211,77,0.16) 0%, transparent 70%)", transform: `translateY(${parallaxY * 1.2}px)` }} aria-hidden="true" />
-
-      <svg className="absolute bottom-0 left-0 right-0 w-full pointer-events-none"
-        style={{ opacity: 0.12, transform: `translateY(${parallaxY * 0.5}px)` }}
-        viewBox="0 0 1440 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="none">
-        <path d="M0 260L100 200L200 230L320 160L440 210L560 130L680 185L800 95L920 150L1040 55L1160 110L1280 35L1440 90V260H0Z" fill="#D97706" />
-        <path d="M0 260L160 220L300 250L460 190L600 240L760 165L900 215L1060 145L1200 195L1360 130L1440 170V260H0Z" fill="#92400E" opacity="0.65" />
-      </svg>
 
       <div className="relative z-10 text-center px-4 max-w-5xl mx-auto pt-24 pb-16">
         <span className={`inline-flex items-center gap-1.5 mb-7 px-4 py-1.5 text-sm font-medium rounded-full border ${animate.badge}`}
@@ -99,26 +85,6 @@ export function HomeHero({ data }: { data: HomeData }) {
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="absolute left-4 sm:left-8 top-1/3 hidden sm:flex flex-col gap-2 sm:gap-3" aria-hidden="true">
-        {[{ icon: "🏔️", label: t("home.floatingLabels.mountain1"), delay: "0s" }].map((item) => (
-          <div key={item.label} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-up"
-            style={{ boxShadow: "0 4px 16px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)", backdropFilter: "blur(12px)", animationDelay: item.delay }}>
-            <span className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-sm sm:text-base">{item.icon}</span>
-            <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap hidden sm:inline">{item.label}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="absolute right-4 sm:right-8 top-1/3 hidden sm:flex flex-col gap-2 sm:gap-3" aria-hidden="true">
-        {[{ icon: "👥", label: t("home.floatingLabels.teamJoined").replace("{count}", "3"), delay: "-1s" }].map((item) => (
-          <div key={item.label} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-br from-card/95 to-amber-50/80 dark:to-amber-950/60 border border-amber-200/50 dark:border-amber-900/50 animate-float-down"
-            style={{ boxShadow: "0 4px 16px rgba(217,119,6,0.12), 0 2px 8px rgba(0,0,0,0.06)", backdropFilter: "blur(12px)", animationDelay: item.delay }}>
-            <span className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-sm sm:text-base">{item.icon}</span>
-            <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap hidden sm:inline">{item.label}</span>
-          </div>
-        ))}
       </div>
     </section>
   );
