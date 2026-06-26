@@ -62,7 +62,6 @@ export async function invalidateCache(key: string): Promise<void> {
  * 清除所有缓存
  */
 export async function clearAllCache(): Promise<void> {
-  const cache = caches.default;
   // Cloudflare Cache API 不支持清除所有缓存
   // 需要使用特定的缓存键模式来管理
   console.warn('[Cache] clearAllCache is not fully supported by Cloudflare Cache API');
