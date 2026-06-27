@@ -5,6 +5,7 @@ import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
 import { APIErrors } from "../lib/api-errors";
 import { createFavoriteSchema } from "../lib/validation";
+import { generateId } from "../lib/id";
 
 /** 安全解析 JSON 字符串 */
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -149,7 +150,7 @@ favorites.post("/", async (c) => {
       if (!loc.length) return c.json(APIErrors.notFound("地点不存在"), 404);
     }
 
-    const id = crypto.randomUUID();
+    const id = generateId();
     const now = new Date();
     await db.insert(schema.userFavorites).values({
       id, userId: session.user.id, entityType, entityId, createdAt: now,
