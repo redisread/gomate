@@ -11,7 +11,7 @@ import {
 } from "../db/schema";
 import { eq, and, or, desc, sql, inArray } from "drizzle-orm";
 import { generateId } from "../lib/id";
-import { APIErrors } from "../lib/api-errors";
+import { APIErrors, type APIError } from "../lib/api-errors";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -25,7 +25,8 @@ type UserSummary = {
 // ============ Validation Schemas ============
 
 const createConversationSchema = z.object({
-  teamId: z.string(),
+  teamId: z.string().min(1),
+  userId: z.string().min(1).optional(),
 });
 
 const sendMessageSchema = z.object({
@@ -34,31 +35,11 @@ const sendMessageSchema = z.object({
 
 // ============ Helper Functions ============
 
-/**
- * 检查用户是否可以创建对话（是队伍成员且不是队长）
- */
-async function canCreateConversation(
+async function findApprovedMember(
   db: ReturnType<typeof createDb>,
   teamId: string,
   userId: string
-): Promise<{ can: boolean; leaderId?: string; error?: string }> {
-  // 获取队伍信息
-  const [team] = await db
-    .select({ id: teams.id, leaderId: teams.leaderId })
-    .from(teams)
-    .where(eq(teams.id, teamId))
-    .limit(1);
-
-  if (!team) {
-    return { can: false, error: "Team not found" };
-  }
-
-  // 不能私信自己（自己是队长）
-  if (team.leaderId === userId) {
-    return { can: false, error: "Cannot message yourself" };
-  }
-
-  // 检查是否是队伍成员（申请中或已通过）
+) {
   const [membership] = await db
     .select({ status: teamMembers.status })
     .from(teamMembers)
@@ -66,19 +47,76 @@ async function canCreateConversation(
       and(
         eq(teamMembers.teamId, teamId),
         eq(teamMembers.userId, userId),
-        or(
-          eq(teamMembers.status, "pending"),
-          eq(teamMembers.status, "approved")
-        )
+        eq(teamMembers.status, "approved")
       )
     )
     .limit(1);
 
-  if (!membership) {
-    return { can: false, error: "Not a team member" };
+  return membership;
+}
+
+/**
+ * 解析队伍私信参与者：只允许队长与 approved 成员建立一对一会话。
+ */
+async function resolveConversationParticipants(
+  db: ReturnType<typeof createDb>,
+  teamId: string,
+  requesterId: string,
+  targetUserId?: string
+): Promise<
+  | { ok: true; userId: string; leaderId: string; initiatorId: string }
+  | { ok: false; status: 400 | 403 | 404; error: APIError }
+> {
+  const [team] = await db
+    .select({ id: teams.id, leaderId: teams.leaderId })
+    .from(teams)
+    .where(eq(teams.id, teamId))
+    .limit(1);
+
+  if (!team) return { ok: false, status: 404, error: APIErrors.notFound("Team not found") };
+
+  if (team.leaderId === requesterId) {
+    if (!targetUserId) {
+      return { ok: false, status: 400, error: APIErrors.badRequest("Target user is required") };
+    }
+    if (targetUserId === requesterId) {
+      return { ok: false, status: 400, error: APIErrors.badRequest("Cannot message yourself") };
+    }
+    const membership = await findApprovedMember(db, teamId, targetUserId);
+    if (!membership) {
+      return {
+        ok: false,
+        status: 403,
+        error: APIErrors.forbidden("Target user is not an approved team member"),
+      };
+    }
+    return {
+      ok: true,
+      userId: targetUserId,
+      leaderId: requesterId,
+      initiatorId: requesterId,
+    };
   }
 
-  return { can: true, leaderId: team.leaderId };
+  if (targetUserId) {
+    return {
+      ok: false,
+      status: 403,
+      error: APIErrors.forbidden("Only team leader can choose a target member"),
+    };
+  }
+
+  const membership = await findApprovedMember(db, teamId, requesterId);
+  if (!membership) {
+    return { ok: false, status: 403, error: APIErrors.forbidden("Not an approved team member") };
+  }
+
+  return {
+    ok: true,
+    userId: requesterId,
+    leaderId: team.leaderId,
+    initiatorId: requesterId,
+  };
 }
 
 /**
@@ -90,14 +128,43 @@ async function canAccessConversation(
   userId: string
 ): Promise<boolean> {
   const [conv] = await db
-    .select({ userId: conversations.userId, leaderId: conversations.leaderId })
+    .select({
+      teamId: conversations.teamId,
+      userId: conversations.userId,
+      leaderId: conversations.leaderId,
+    })
     .from(conversations)
     .where(eq(conversations.id, conversationId))
     .limit(1);
 
   if (!conv) return false;
 
+  const membership = await findApprovedMember(db, conv.teamId, conv.userId);
+  if (!membership) return false;
+
   return conv.userId === userId || conv.leaderId === userId;
+}
+
+async function runBackground(c: { executionCtx?: ExecutionContext }, task: () => Promise<void>) {
+  let waitUntil: ExecutionContext["waitUntil"] | undefined;
+  try {
+    waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
+  } catch {
+    await task();
+    return;
+  }
+
+  if (waitUntil) {
+    const promise = task();
+    try {
+      waitUntil(promise);
+    } catch {
+      await promise;
+    }
+    return;
+  }
+
+  await task();
 }
 
 // ============ API Routes ============
@@ -127,6 +194,14 @@ app.get("/", async (c) => {
         leaderId: conversations.leaderId,
       })
       .from(conversations)
+      .innerJoin(
+        teamMembers,
+        and(
+          eq(teamMembers.teamId, conversations.teamId),
+          eq(teamMembers.userId, conversations.userId),
+          eq(teamMembers.status, "approved")
+        )
+      )
       .where(
         or(
           eq(conversations.userId, user.id),
@@ -203,16 +278,17 @@ app.post("/", async (c) => {
   const db = createDb(c.env.DB);
 
   try {
-    const { teamId } = createConversationSchema.parse(body);
+    const { teamId, userId: targetUserId } = createConversationSchema.parse(body);
 
     // 检查权限
-    const { can, leaderId, error } = await canCreateConversation(
+    const participants = await resolveConversationParticipants(
       db,
       teamId,
-      user.id
+      user.id,
+      targetUserId
     );
-    if (!can) {
-      return c.json({ error }, 403);
+    if (!participants.ok) {
+      return c.json(participants.error, participants.status);
     }
 
     // 检查是否已存在对话
@@ -222,8 +298,8 @@ app.post("/", async (c) => {
       .where(
         and(
           eq(conversations.teamId, teamId),
-          eq(conversations.userId, user.id),
-          eq(conversations.leaderId, leaderId!)
+          eq(conversations.userId, participants.userId),
+          eq(conversations.leaderId, participants.leaderId)
         )
       )
       .limit(1);
@@ -239,9 +315,9 @@ app.post("/", async (c) => {
     await db.insert(conversations).values({
       id,
       teamId,
-      userId: user.id,
-      leaderId: leaderId!,
-      initiatorId: user.id,
+      userId: participants.userId,
+      leaderId: participants.leaderId,
+      initiatorId: participants.initiatorId,
     });
 
     return c.json(
@@ -276,6 +352,14 @@ app.get("/unread-count", async (c) => {
       .innerJoin(
         conversations,
         eq(conversations.id, messages.conversationId)
+      )
+      .innerJoin(
+        teamMembers,
+        and(
+          eq(teamMembers.teamId, conversations.teamId),
+          eq(teamMembers.userId, conversations.userId),
+          eq(teamMembers.status, "approved")
+        )
       )
       .where(
         and(
@@ -318,6 +402,33 @@ app.get("/:id", async (c) => {
     if (!hasAccess) {
       return c.json(APIErrors.forbidden("Access denied"), 403);
     }
+
+    const [conversation] = await db
+      .select({
+        id: conversations.id,
+        teamId: conversations.teamId,
+        userId: conversations.userId,
+        leaderId: conversations.leaderId,
+      })
+      .from(conversations)
+      .where(eq(conversations.id, conversationId))
+      .limit(1);
+
+    const otherUserId = conversation
+      ? conversation.userId === user.id ? conversation.leaderId : conversation.userId
+      : null;
+    const [otherUser] = otherUserId
+      ? await db
+          .select({
+            id: users.id,
+            name: users.name,
+            nickname: users.nickname,
+            image: users.image,
+          })
+          .from(users)
+          .where(eq(users.id, otherUserId))
+          .limit(1)
+      : [];
 
     // 构建查询
     let whereConditions = and(
@@ -365,31 +476,36 @@ app.get("/:id", async (c) => {
     }));
 
     // 异步标记对方消息为已读
-    c.executionCtx?.waitUntil(
-      (async () => {
-        try {
-          await db
-            .update(messages)
-            .set({
-              isRead: true,
-              readAt: new Date(),
-            })
-            .where(
-              and(
-                eq(messages.conversationId, conversationId),
-                eq(messages.isRead, false),
-                sql`${messages.senderId} != ${user.id}`
-              )
-            );
-        } catch (err) {
-          console.error("Failed to mark messages as read:", err);
-        }
-      })()
-    );
+    await runBackground(c, async () => {
+      try {
+        await db
+          .update(messages)
+          .set({
+            isRead: true,
+            readAt: new Date(),
+          })
+          .where(
+            and(
+              eq(messages.conversationId, conversationId),
+              eq(messages.isRead, false),
+              sql`${messages.senderId} != ${user.id}`
+            )
+          );
+      } catch (err) {
+        console.error("Failed to mark messages as read:", err);
+      }
+    });
 
     return c.json({
       success: true,
       data: messagesWithSender.reverse(),
+      conversation: conversation
+        ? {
+            id: conversation.id,
+            teamId: conversation.teamId,
+            otherUser: otherUser || null,
+          }
+        : null,
       nextCursor:
         list.length === limit && list.length > 0
           ? String(list[list.length - 1]?.createdAt?.getTime() || Date.now())

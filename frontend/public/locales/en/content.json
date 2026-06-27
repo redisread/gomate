@@ -206,7 +206,7 @@
       },
       {
         "question": "How to contact the team leader?",
-        "answer": "You can view the team leader's info on the team detail page and contact them off-platform. We're developing an in-app messaging feature — stay tuned."
+        "answer": "Approved team members can message the leader from the team detail page, and leaders can message approved members from the member list. Pending applicants cannot use in-app messages yet."
       },
       {
         "question": "What do the team statuses mean?",
@@ -237,6 +237,8 @@
     "profile": "Profile",
     "profileEdit": "Edit Profile",
     "myTeams": "My Teams",
+    "messages": "Messages",
+    "chat": "Chat",
     "favorites": "My Favorites",
     "userDetail": "User Profile",
     "contact": "Contact Us",

@@ -6,6 +6,7 @@ import { formatDuration } from "./team-detail-utils";
 import { TeamApplicationsSection } from "./team-detail-applications";
 import { TeamProgress, TeamLeaderMini } from "@/components/features/teams/shared";
 import * as React from "react";
+import { createConversation } from "@/hooks/useMessages";
 
 // 懒加载分享相关组件
 const ShareOptionsSheet = React.lazy(() => import("./share-options-sheet").then(m => ({ default: m.ShareOptionsSheet })));
@@ -71,7 +72,7 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
         </div>
       )}
       <TeamCapacity team={team} canJoin={ctx.canJoin} remaining={ctx.remaining} />
-      {team.leader && <LeaderCard leader={team.leader} teamId={team.id} canMessage={isMember || isPending} />}
+      {team.leader && <LeaderCard leader={team.leader} teamId={team.id} canMessage={isMember} />}
       <ShareButton onClick={share.openShare} />
       {isLeader && <LeaderActions ctx={ctx} team={team} />}
       {isMember && <MemberStatusIndicator onLeave={() => ctx.setShowLeave(true)} />}
@@ -166,20 +167,20 @@ function TeamCapacity({ team, canJoin, remaining }: { team: Team; canJoin: boole
 
 function LeaderCard({ leader, teamId, canMessage }: { leader: any; teamId: string; canMessage: boolean; }) {
   const { t } = useI18n(["teams"]);
+  const [isStarting, setIsStarting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
   const handleMessage = async () => {
+    setIsStarting(true);
+    setError(null);
     try {
-      const res = await fetch(`${import.meta.env.PUBLIC_API_URL}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ teamId }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        window.location.href = `/messages/${data.data.id}`;
-      }
+      const conversation = await createConversation(teamId);
+      window.location.href = `/messages/${conversation.id}`;
     } catch (err) {
       console.error("Failed to create conversation:", err);
+      setError(t("teams.messageStartFailed"));
+    } finally {
+      setIsStarting(false);
     }
   };
 
@@ -194,13 +195,18 @@ function LeaderCard({ leader, teamId, canMessage }: { leader: any; teamId: strin
         <TeamLeaderMini leader={leader} showLevel={true} size="md" />
       </a>
       {canMessage && (
-        <button
-          onClick={handleMessage}
-          className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-        >
-          <MessageCircle className="w-4 h-4" />
-          私信队长
-        </button>
+        <div className="mt-2 space-y-2">
+          <button
+            type="button"
+            onClick={handleMessage}
+            disabled={isStarting}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isStarting ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+            {t("teams.messageLeader")}
+          </button>
+          {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+        </div>
       )}
     </div>
   );

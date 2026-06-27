@@ -1,28 +1,39 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
-import { createTestDb } from "../helpers/db";
-import type { Env } from "../../lib/auth";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { eq } from "drizzle-orm";
+import { createTestDb } from "../helpers/db";
 import { generateId } from "../../lib/id";
 import * as schema from "../../db/schema";
+import type { Env } from "../../lib/auth";
+
+const testContext = vi.hoisted(() => ({
+  db: null as ReturnType<typeof drizzle> | null,
+}));
+
+vi.mock("../../db", () => ({
+  createDb: () => {
+    if (!testContext.db) throw new Error("Test DB not initialized");
+    return testContext.db;
+  },
+}));
+
+vi.mock("../../lib/auth", () => ({
+  createAuth: () => ({
+    api: {
+      getSession: async ({ headers }: { headers: Headers }) => {
+        const userId = headers.get("x-test-user-id");
+        return userId ? { user: { id: userId } } : null;
+      },
+    },
+  }),
+}));
+
 import messagesRoutes from "../../routes/messages";
 
-/**
- * Helper to check if status code is in allowed set
- */
-function expectStatus(res: { status: number }, allowed: number[]) {
-  expect(allowed).toContain(res.status);
-}
-
-/**
- * 创建测试用 messages app
- */
-function createMessagesTestApp(sqlite: ReturnType<typeof createTestDb>["sqlite"]) {
-  const _db = drizzle(sqlite, { schema });
-
+function createMessagesTestApp() {
   const app = new Hono<{ Bindings: Env }>();
 
-  // 注入环境变量
   app.use("*", async (c, next) => {
     (c as unknown as { env: Partial<Env> }).env = {
       BETTER_AUTH_SECRET: "test-secret-key-for-testing-32chars",
@@ -32,17 +43,18 @@ function createMessagesTestApp(sqlite: ReturnType<typeof createTestDb>["sqlite"]
     await next();
   });
 
-  // 注册 messages 路由
   app.route("/messages", messagesRoutes);
-
   return app;
 }
 
-/**
- * 创建测试用户
- */
+type TestDb = ReturnType<typeof drizzle>;
+type TestUser = typeof schema.users.$inferSelect;
+type TestTeam = typeof schema.teams.$inferSelect;
+type TestTeamOverrides = Pick<typeof schema.teams.$inferInsert, "locationId" | "leaderId"> &
+  Partial<typeof schema.teams.$inferInsert>;
+
 async function createTestUser(
-  db: ReturnType<typeof drizzle>,
+  db: TestDb,
   overrides: Partial<typeof schema.users.$inferInsert> = {}
 ) {
   const id = generateId();
@@ -50,51 +62,45 @@ async function createTestUser(
     id,
     name: `Test User ${id.slice(0, 6)}`,
     email: `test-${id}@test.com`,
-    role: "user" as const,
-    status: "active" as const,
-    level: "beginner" as const,
+    role: "user",
+    status: "active",
+    level: "beginner",
     emailVerified: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  };
+  } satisfies typeof schema.users.$inferInsert;
 
   await db.insert(schema.users).values(user);
-  return user as typeof schema.users.$inferSelect;
+  return user as TestUser;
 }
 
-/**
- * 创建测试队伍
- */
 async function createTestTeam(
-  db: ReturnType<typeof drizzle>,
-  overrides: Partial<typeof schema.teams.$inferInsert>
+  db: TestDb,
+  overrides: TestTeamOverrides
 ) {
   const id = generateId();
   const now = new Date();
   const team = {
     id,
     title: `Test Team ${id.slice(0, 6)}`,
-    status: "completed" as const,
+    status: "recruiting",
     icon: "⛰️",
     maxMembers: 10,
     durationMin: 240,
     startTime: now,
-    endTime: new Date(now.getTime() + 4 * 60 * 60 * 1000), // 4 hours later
+    endTime: new Date(now.getTime() + 4 * 60 * 60 * 1000),
     createdAt: now,
     updatedAt: now,
     ...overrides,
-  };
+  } satisfies typeof schema.teams.$inferInsert;
 
-  await db.insert(schema.teams).values(team as typeof schema.teams.$inferInsert);
-  return team as typeof schema.teams.$inferSelect;
+  await db.insert(schema.teams).values(team);
+  return team as TestTeam;
 }
 
-/**
- * 添加队伍成员
- */
 async function addTeamMember(
-  db: ReturnType<typeof drizzle>,
+  db: TestDb,
   teamId: string,
   userId: string,
   status: typeof schema.teamMembers.$inferInsert["status"] = "approved"
@@ -104,32 +110,40 @@ async function addTeamMember(
     teamId,
     userId,
     status,
-    joinedAt: new Date(),
+    joinedAt: status === "approved" ? new Date() : null,
     statusUpdatedAt: new Date(),
     createdAt: new Date(),
   });
 }
 
-describe("Messages API 集成测试", () => {
-  let sqlite: ReturnType<typeof createTestDb>["sqlite"];
-  let app: ReturnType<typeof createMessagesTestApp>;
-  let db: ReturnType<typeof drizzle>;
+function authHeaders(userId: string, extra?: Record<string, string>) {
+  return {
+    "Content-Type": "application/json",
+    "x-test-user-id": userId,
+    ...extra,
+  };
+}
 
-  let leader: typeof schema.users.$inferSelect;
-  let member: typeof schema.users.$inferSelect;
-  let team: typeof schema.teams.$inferSelect;
+describe("Messages API 集成测试", () => {
+  let app: ReturnType<typeof createMessagesTestApp>;
+  let db: TestDb;
+  let leader: TestUser;
+  let approvedMember: TestUser;
+  let pendingMember: TestUser;
+  let outsider: TestUser;
+  let team: TestTeam;
 
   beforeEach(async () => {
     const testDb = createTestDb();
-    sqlite = testDb.sqlite;
-    db = drizzle(sqlite, { schema });
-    app = createMessagesTestApp(sqlite);
+    db = drizzle(testDb.sqlite, { schema });
+    testContext.db = db;
+    app = createMessagesTestApp();
 
-    // 创建队长和成员
     leader = await createTestUser(db, { name: "Leader", email: "leader@test.com" });
-    member = await createTestUser(db, { name: "Member", email: "member@test.com" });
+    approvedMember = await createTestUser(db, { name: "Member", email: "member@test.com" });
+    pendingMember = await createTestUser(db, { name: "Pending", email: "pending@test.com" });
+    outsider = await createTestUser(db, { name: "Outsider", email: "outsider@test.com" });
 
-    // 创建地点和路线（队伍需要）
     const cityId = generateId();
     await db.insert(schema.cities).values({
       id: cityId,
@@ -157,259 +171,247 @@ describe("Messages API 集成测试", () => {
       updatedAt: new Date(),
     });
 
-    // 创建队伍，队长是 leader
     team = await createTestTeam(db, {
       locationId,
       leaderId: leader.id,
     });
 
-    // 添加成员到队伍
-    await addTeamMember(db, team.id, member.id, "approved");
-    await addTeamMember(db, team.id, leader.id, "approved");
+    await addTeamMember(db, team.id, approvedMember.id, "approved");
+    await addTeamMember(db, team.id, pendingMember.id, "pending");
   });
 
-  describe("POST /messages - 创建对话", () => {
-    /**
-     * 测试场景：成员创建与队长的对话
-     * 预期结果：返回 201，包含对话 ID
-     */
-    it("成员创建对话 → 应返回成功响应", async () => {
-      // Arrange
-      const body = JSON.stringify({ teamId: team.id });
-
-      // Act - 以成员身份创建对话（会创建与队长的对话）
-      const res = await app.request("/messages", {
+  describe("POST /messages", () => {
+    it("approved 成员可创建并复用与队长的对话", async () => {
+      const first = await app.request("/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
+        headers: authHeaders(approvedMember.id),
+        body: JSON.stringify({ teamId: team.id }),
       });
 
-      // Assert - 当前实现需要认证，未认证时返回 401
-      // 如果认证通过，应该返回 201
-      expectStatus(res, [201, 401]);
+      expect(first.status).toBe(201);
+      const firstData = await first.json() as { success: boolean; data: { id: string; isNew: boolean } };
+      expect(firstData).toMatchObject({ success: true, data: { isNew: true } });
 
-      if (res.status === 201) {
-        const data = await res.json() as Record<string, unknown>;
-        expect(data.success).toBe(true);
-        expect((data.data as Record<string, unknown>).id).toBeDefined();
-        expect((data.data as Record<string, unknown>).isNew).toBe(true);
-      }
-    });
-
-    /**
-     * 测试场景：缺少 teamId
-     * 预期结果：返回 400
-     */
-    it("缺少 teamId → 应返回错误", async () => {
-      // Arrange
-      const body = JSON.stringify({});
-
-      // Act
-      const res = await app.request("/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-      });
-
-      // Assert - 未认证返回 401，已认证但参数无效返回 400
-      expectStatus(res, [400, 401]);
-    });
-  });
-
-  describe("POST /messages/:id - 发送消息", () => {
-    let conversationId: string;
-
-    beforeEach(async () => {
-      // 创建一个对话
-      conversationId = generateId();
-      await db.insert(schema.conversations).values({
-        id: conversationId,
+      const [conversation] = await db
+        .select()
+        .from(schema.conversations)
+        .where(eq(schema.conversations.id, firstData.data.id))
+        .limit(1);
+      expect(conversation).toMatchObject({
         teamId: team.id,
-        userId: member.id,
+        userId: approvedMember.id,
         leaderId: leader.id,
-        initiatorId: member.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        initiatorId: approvedMember.id,
       });
-    });
 
-    /**
-     * 测试场景：在对话中发送消息
-     * 预期结果：返回 201，包含消息 ID
-     */
-    it("发送消息 → 应返回成功响应", async () => {
-      // Arrange
-      const body = JSON.stringify({ content: "Hello, this is a test message!" });
-
-      // Act
-      const res = await app.request(`/messages/${conversationId}`, {
+      const second = await app.request("/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
+        headers: authHeaders(approvedMember.id),
+        body: JSON.stringify({ teamId: team.id }),
       });
-
-      // Assert - 需要认证
-      expectStatus(res, [201, 401]);
-
-      if (res.status === 201) {
-        const data = await res.json() as Record<string, unknown>;
-        expect(data.success).toBe(true);
-        expect((data.data as Record<string, unknown>).id).toBeDefined();
-      }
+      expect(second.status).toBe(200);
+      const secondData = await second.json() as { data: { id: string; isNew: boolean } };
+      expect(secondData.data).toEqual({ id: firstData.data.id, isNew: false });
     });
 
-    /**
-     * 测试场景：发送空内容
-     * 预期结果：返回 400
-     */
-    it("发送空内容 → 应返回错误", async () => {
-      // Arrange
-      const body = JSON.stringify({ content: "" });
-
-      // Act
-      const res = await app.request(`/messages/${conversationId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-      });
-
-      // Assert
-      expectStatus(res, [400, 401]);
-    });
-
-    /**
-     * 测试场景：访问不存在的对话
-     * 预期结果：返回 403 或 404
-     */
-    it("访问不存在的对话 → 应返回错误", async () => {
-      // Arrange
-      const body = JSON.stringify({ content: "Test message" });
-      const fakeConversationId = "nonexistent";
-
-      // Act
-      const res = await app.request(`/messages/${fakeConversationId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-      });
-
-      // Assert
-      expectStatus(res, [403, 404, 401]);
-    });
-  });
-
-  describe("GET /messages/:id - 获取消息列表", () => {
-    let conversationId: string;
-
-    beforeEach(async () => {
-      // 创建一个对话并添加一些消息
-      conversationId = generateId();
-      await db.insert(schema.conversations).values({
-        id: conversationId,
-        teamId: team.id,
-        userId: member.id,
-        leaderId: leader.id,
-        initiatorId: member.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      // 添加测试消息
-      for (let i = 0; i < 3; i++) {
-        await db.insert(schema.messages).values({
-          id: generateId(),
-          conversationId,
-          senderId: member.id,
-          content: `Test message ${i + 1}`,
-          isRead: false,
-          createdAt: new Date(Date.now() - (2 - i) * 60000),
-        });
-      }
-    });
-
-    /**
-     * 测试场景：获取对话的消息列表
-     * 预期结果：返回 200，包含消息列表
-     */
-    it("获取消息列表 → 应返回成功响应", async () => {
-      // Act
-      const res = await app.request(`/messages/${conversationId}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      // Assert - 需要认证
-      expectStatus(res, [200, 401]);
-
-      if (res.status === 200) {
-        const data = await res.json() as Record<string, unknown>;
-        expect(data.success).toBe(true);
-        expect(Array.isArray(data.data)).toBe(true);
-      }
-    });
-
-    /**
-     * 测试场景：访问无权限的对话
-     * 预期结果：返回 403
-     */
-    it("无权限访问对话 → 应返回 403", async () => {
-      // 创建一个无关用户（用于验证权限检查）
-      await createTestUser(db, { name: "Other", email: "other@test.com" });
-
-      // Act - 以其他用户身份访问（需要模拟认证）
-      const res = await app.request(`/messages/${conversationId}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      // Assert - 未认证返回 401
-      expectStatus(res, [403, 401]);
-    });
-  });
-
-  describe("GET /messages/unread-count - 获取未读消息数", () => {
-    /**
-     * 测试场景：获取未读消息数
-     * 预期结果：返回 200，包含计数
-     */
-    it("获取未读消息数 → 应返回成功响应", async () => {
-      // Act
-      const res = await app.request("/messages/unread-count", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      // Assert - 需要认证
-      expectStatus(res, [200, 401]);
-
-      if (res.status === 200) {
-        const data = await res.json() as Record<string, unknown>;
-        expect(data.success).toBe(true);
-        expect((data.data as Record<string, unknown>).count).toBeDefined();
-      }
-    });
-  });
-
-  describe("GET /messages - 获取会话列表", () => {
-    /**
-     * 测试场景：获取用户的会话列表
-     * 预期结果：返回 200，包含会话列表
-     */
-    it("获取会话列表 → 应返回成功响应", async () => {
-      // Act
+    it("pending 成员不可创建队伍私信", async () => {
       const res = await app.request("/messages", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        headers: authHeaders(pendingMember.id),
+        body: JSON.stringify({ teamId: team.id }),
       });
 
-      // Assert - 需要认证
-      expectStatus(res, [200, 401]);
+      expect(res.status).toBe(403);
+    });
 
-      if (res.status === 200) {
-        const data = await res.json() as Record<string, unknown>;
-        expect(data.success).toBe(true);
-        expect(Array.isArray(data.data)).toBe(true);
-      }
+    it("队长可给 approved 成员创建对话", async () => {
+      const res = await app.request("/messages", {
+        method: "POST",
+        headers: authHeaders(leader.id),
+        body: JSON.stringify({ teamId: team.id, userId: approvedMember.id }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json() as { success: boolean; data: { id: string; isNew: boolean } };
+      expect(data.success).toBe(true);
+      expect(data.data.isNew).toBe(true);
+
+      const [conversation] = await db
+        .select()
+        .from(schema.conversations)
+        .where(eq(schema.conversations.id, data.data.id))
+        .limit(1);
+      expect(conversation).toMatchObject({
+        teamId: team.id,
+        userId: approvedMember.id,
+        leaderId: leader.id,
+        initiatorId: leader.id,
+      });
+    });
+
+    it("队长不可给 pending 或非成员创建对话", async () => {
+      const pendingRes = await app.request("/messages", {
+        method: "POST",
+        headers: authHeaders(leader.id),
+        body: JSON.stringify({ teamId: team.id, userId: pendingMember.id }),
+      });
+      expect(pendingRes.status).toBe(403);
+
+      const outsiderRes = await app.request("/messages", {
+        method: "POST",
+        headers: authHeaders(leader.id),
+        body: JSON.stringify({ teamId: team.id, userId: outsider.id }),
+      });
+      expect(outsiderRes.status).toBe(403);
+    });
+
+    it("非队长不可指定目标成员创建对话", async () => {
+      const res = await app.request("/messages", {
+        method: "POST",
+        headers: authHeaders(approvedMember.id),
+        body: JSON.stringify({ teamId: team.id, userId: outsider.id }),
+      });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe("conversation access", () => {
+    async function createConversationAsMember() {
+      const res = await app.request("/messages", {
+        method: "POST",
+        headers: authHeaders(approvedMember.id),
+        body: JSON.stringify({ teamId: team.id }),
+      });
+      const data = await res.json() as { data: { id: string } };
+      return data.data.id;
+    }
+
+    it("approved 成员和队长可互发、读取消息并统计未读", async () => {
+      const conversationId = await createConversationAsMember();
+
+      const sendRes = await app.request(`/messages/${conversationId}`, {
+        method: "POST",
+        headers: authHeaders(approvedMember.id),
+        body: JSON.stringify({ content: "Hello leader" }),
+      });
+      expect(sendRes.status).toBe(201);
+
+      const unreadRes = await app.request("/messages/unread-count", {
+        method: "GET",
+        headers: authHeaders(leader.id),
+      });
+      expect(unreadRes.status).toBe(200);
+      const unreadData = await unreadRes.json() as { data: { count: number } };
+      expect(unreadData.data.count).toBe(1);
+
+      const listRes = await app.request(`/messages/${conversationId}`, {
+        method: "GET",
+        headers: authHeaders(leader.id),
+      });
+      expect(listRes.status).toBe(200);
+      const listData = await listRes.json() as { data: Array<{ content: string; senderId: string }> };
+      expect(listData.data).toHaveLength(1);
+      expect(listData.data[0]).toMatchObject({
+        content: "Hello leader",
+        senderId: approvedMember.id,
+      });
+
+      const unreadAfterReadRes = await app.request("/messages/unread-count", {
+        method: "GET",
+        headers: authHeaders(leader.id),
+      });
+      expect(unreadAfterReadRes.status).toBe(200);
+      const unreadAfterReadData = await unreadAfterReadRes.json() as { data: { count: number } };
+      expect(unreadAfterReadData.data.count).toBe(0);
+
+      const replyRes = await app.request(`/messages/${conversationId}`, {
+        method: "POST",
+        headers: authHeaders(leader.id),
+        body: JSON.stringify({ content: "Hi" }),
+      });
+      expect(replyRes.status).toBe(201);
+    });
+
+    it("非会话参与者不可读取或发送消息", async () => {
+      const conversationId = await createConversationAsMember();
+
+      const readRes = await app.request(`/messages/${conversationId}`, {
+        method: "GET",
+        headers: authHeaders(outsider.id),
+      });
+      expect(readRes.status).toBe(403);
+
+      const sendRes = await app.request(`/messages/${conversationId}`, {
+        method: "POST",
+        headers: authHeaders(outsider.id),
+        body: JSON.stringify({ content: "Nope" }),
+      });
+      expect(sendRes.status).toBe(403);
+    });
+
+    it("成员不再 approved 后双方都不可继续访问已有会话", async () => {
+      const conversationId = await createConversationAsMember();
+      await app.request(`/messages/${conversationId}`, {
+        method: "POST",
+        headers: authHeaders(leader.id),
+        body: JSON.stringify({ content: "Before removal" }),
+      });
+
+      await db
+        .update(schema.teamMembers)
+        .set({ status: "rejected" })
+        .where(eq(schema.teamMembers.userId, approvedMember.id));
+
+      const memberListRes = await app.request("/messages", {
+        method: "GET",
+        headers: authHeaders(approvedMember.id),
+      });
+      expect(memberListRes.status).toBe(200);
+      const memberListData = await memberListRes.json() as { data: unknown[] };
+      expect(memberListData.data).toEqual([]);
+
+      const memberUnreadRes = await app.request("/messages/unread-count", {
+        method: "GET",
+        headers: authHeaders(approvedMember.id),
+      });
+      expect(memberUnreadRes.status).toBe(200);
+      const memberUnreadData = await memberUnreadRes.json() as { data: { count: number } };
+      expect(memberUnreadData.data.count).toBe(0);
+
+      const memberReadRes = await app.request(`/messages/${conversationId}`, {
+        method: "GET",
+        headers: authHeaders(approvedMember.id),
+      });
+      expect(memberReadRes.status).toBe(403);
+
+      const memberSendRes = await app.request(`/messages/${conversationId}`, {
+        method: "POST",
+        headers: authHeaders(approvedMember.id),
+        body: JSON.stringify({ content: "No longer in team" }),
+      });
+      expect(memberSendRes.status).toBe(403);
+
+      const leaderListRes = await app.request("/messages", {
+        method: "GET",
+        headers: authHeaders(leader.id),
+      });
+      expect(leaderListRes.status).toBe(200);
+      const leaderListData = await leaderListRes.json() as { data: unknown[] };
+      expect(leaderListData.data).toEqual([]);
+
+      const leaderReadRes = await app.request(`/messages/${conversationId}`, {
+        method: "GET",
+        headers: authHeaders(leader.id),
+      });
+      expect(leaderReadRes.status).toBe(403);
+
+      const leaderSendRes = await app.request(`/messages/${conversationId}`, {
+        method: "POST",
+        headers: authHeaders(leader.id),
+        body: JSON.stringify({ content: "No longer in team" }),
+      });
+      expect(leaderSendRes.status).toBe(403);
     });
   });
 });

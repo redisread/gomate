@@ -25,7 +25,12 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
               {allMembers.length} {t('teams.goingCount')}
             </span>
           </div>
-          <MemberAvatarGrid members={allMembers} leaderId={team.leader?.id} />
+          <MemberAvatarGrid
+            members={allMembers}
+            leaderId={team.leader?.id}
+            teamId={team.id}
+            canMessageMembers={isLeader}
+          />
         </div>
       )}
       <JoinSection ctx={ctx} team={team} canJoin={canJoin} isFull={isFull} isLeader={isLeader} isMember={isMember} isPending={isPending} userId={userId} />
