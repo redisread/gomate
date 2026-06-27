@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Heart, Share2, Eye, Loader2, MapPin, Quote, Clock, FileText, ArrowRight } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Eye, MapPin, Quote, Clock, FileText, ArrowRight } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
