@@ -7,6 +7,7 @@ import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { getRandomTeamIcon } from "./utils";
+import { generateId } from "../../lib/id";
 
 const mutations = new Hono<{ Bindings: Env }>();
 
@@ -73,8 +74,8 @@ mutations.post("/", async (c) => {
       ? parseFloat(duration.replace(/[^0-9.]/g, "")) * 60 || 240
       : 240);
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
-    const teamId = `team-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const memberId = `tm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const teamId = generateId();
+    const memberId = generateId();
     const now = new Date();
     const teamIcon = getRandomTeamIcon();
 

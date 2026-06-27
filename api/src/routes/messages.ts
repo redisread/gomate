@@ -10,7 +10,7 @@ import {
   users,
 } from "../db/schema";
 import { eq, and, or, desc, sql } from "drizzle-orm";
-import { nanoid } from "nanoid";
+import { generateId } from "../lib/id";
 import { APIErrors } from "../lib/api-errors";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -219,7 +219,7 @@ app.post("/", async (c) => {
     }
 
     // 创建新对话
-    const id = nanoid();
+    const id = generateId();
     await db.insert(conversations).values({
       id,
       teamId,
@@ -407,7 +407,7 @@ app.post("/:id", async (c) => {
     }
 
     // 创建消息
-    const messageId = nanoid();
+    const messageId = generateId();
     const now = new Date();
 
     await db.insert(messages).values({

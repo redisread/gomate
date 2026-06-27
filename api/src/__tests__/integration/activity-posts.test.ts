@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Hono } from "hono";
 import { createTestDb } from "../helpers/db";
 import { eq } from "drizzle-orm";
-import { nanoid } from "nanoid";
+import { generateId } from "../../lib/id";
 import * as schema from "../../db/schema";
 
 // ===== Mock 策略（同 teams.test.ts）=====
@@ -56,8 +56,8 @@ describe("Activity Posts API 集成测试", () => {
     currentSession = null;
 
     // 创建队长和成员
-    const leaderId = nanoid();
-    const memberId = nanoid();
+    const leaderId = generateId();
+    const memberId = generateId();
     await testDb.insert(schema.users).values({
       id: leaderId, name: "Leader", email: "leader@test.com",
       role: "user", status: "active", level: "beginner",
@@ -73,22 +73,22 @@ describe("Activity Posts API 集成测试", () => {
     member = (await testDb.query.users.findFirst({ where: eq(schema.users.id, memberId) }))!;
 
     // 创建城市 + 地点
-    const cityId = nanoid();
+    const cityId = generateId();
     await testDb.insert(schema.cities).values({
       id: cityId, adcode: "110000", name: "北京", level: "city",
       isHot: true, createdAt: new Date(), updatedAt: new Date(),
     });
 
-    const locationId = nanoid();
+    const locationId = generateId();
     await testDb.insert(schema.locations).values({
-      id: locationId, name: "Test Location", slug: `test-${nanoid()}`,
+      id: locationId, name: "Test Location", slug: `test-${generateId()}`,
       description: "Test", cityId, cityName: "北京", bestSeason: "spring",
       coverImage: "https://example.com/cover.jpg", images: "[]",
       coordinates: "{}", createdAt: new Date(), updatedAt: new Date(),
     });
 
     // 创建已完成的队伍
-    const teamId = nanoid();
+    const teamId = generateId();
     const now = new Date();
     await testDb.insert(schema.teams).values({
       id: teamId, locationId, leaderId: leader.id, title: "Test Team",
@@ -100,11 +100,11 @@ describe("Activity Posts API 集成测试", () => {
 
     // 添加成员
     await testDb.insert(schema.teamMembers).values({
-      id: nanoid(), teamId: team.id, userId: leader.id, status: "approved",
+      id: generateId(), teamId: team.id, userId: leader.id, status: "approved",
       joinedAt: now, createdAt: now,
     });
     await testDb.insert(schema.teamMembers).values({
-      id: nanoid(), teamId: team.id, userId: member.id, status: "approved",
+      id: generateId(), teamId: team.id, userId: member.id, status: "approved",
       joinedAt: now, createdAt: now,
     });
   });
@@ -165,7 +165,7 @@ describe("Activity Posts API 集成测试", () => {
 
     it("队伍未完成 → 应返回 403", async () => {
       // 创建一个 recruiting 状态的队伍
-      const rTeamId = nanoid();
+      const rTeamId = generateId();
       const now = new Date();
       await testDb.insert(schema.teams).values({
         id: rTeamId, locationId: team.locationId, leaderId: leader.id,
@@ -174,7 +174,7 @@ describe("Activity Posts API 集成测试", () => {
         status: "recruiting", createdAt: now, updatedAt: now,
       });
       await testDb.insert(schema.teamMembers).values({
-        id: nanoid(), teamId: rTeamId, userId: member.id,
+        id: generateId(), teamId: rTeamId, userId: member.id,
         status: "approved", joinedAt: now, createdAt: now,
       });
 
@@ -213,7 +213,7 @@ describe("Activity Posts API 集成测试", () => {
     it("有分享的队伍 → 应返回分享列表", async () => {
       // 直接插入一条分享
       await testDb.insert(schema.activityPosts).values({
-        id: nanoid(), teamId: team.id, locationId: team.locationId,
+        id: generateId(), teamId: team.id, locationId: team.locationId,
         authorId: member.id, content: "Test post content",
         images: JSON.stringify(["https://example.com/photo.jpg"]),
         status: "visible", createdAt: new Date(), updatedAt: new Date(),
@@ -234,7 +234,7 @@ describe("Activity Posts API 集成测试", () => {
     let postId: string;
 
     beforeEach(async () => {
-      postId = nanoid();
+      postId = generateId();
       await testDb.insert(schema.activityPosts).values({
         id: postId, teamId: team.id, locationId: team.locationId,
         authorId: member.id, content: "Test post to delete",

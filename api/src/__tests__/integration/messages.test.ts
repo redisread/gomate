@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { createTestDb } from "../helpers/db";
 import type { Env } from "../../lib/auth";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { nanoid } from "nanoid";
+import { generateId } from "../../lib/id";
 import * as schema from "../../db/schema";
 import messagesRoutes from "../../routes/messages";
 
@@ -45,7 +45,7 @@ async function createTestUser(
   db: ReturnType<typeof drizzle>,
   overrides: Partial<typeof schema.users.$inferInsert> = {}
 ) {
-  const id = nanoid();
+  const id = generateId();
   const user = {
     id,
     name: `Test User ${id.slice(0, 6)}`,
@@ -70,7 +70,7 @@ async function createTestTeam(
   db: ReturnType<typeof drizzle>,
   overrides: Partial<typeof schema.teams.$inferInsert>
 ) {
-  const id = nanoid();
+  const id = generateId();
   const now = new Date();
   const team = {
     id,
@@ -100,7 +100,7 @@ async function addTeamMember(
   status: typeof schema.teamMembers.$inferInsert["status"] = "approved"
 ) {
   await db.insert(schema.teamMembers).values({
-    id: nanoid(),
+    id: generateId(),
     teamId,
     userId,
     status,
@@ -130,7 +130,7 @@ describe("Messages API 集成测试", () => {
     member = await createTestUser(db, { name: "Member", email: "member@test.com" });
 
     // 创建地点和路线（队伍需要）
-    const cityId = nanoid();
+    const cityId = generateId();
     await db.insert(schema.cities).values({
       id: cityId,
       adcode: "110000",
@@ -141,11 +141,11 @@ describe("Messages API 集成测试", () => {
       updatedAt: new Date(),
     });
 
-    const locationId = nanoid();
+    const locationId = generateId();
     await db.insert(schema.locations).values({
       id: locationId,
       name: "Test Location",
-      slug: `test-location-${nanoid()}`,
+      slug: `test-location-${generateId()}`,
       description: "Test",
       cityId,
       cityName: "北京",
@@ -221,7 +221,7 @@ describe("Messages API 集成测试", () => {
 
     beforeEach(async () => {
       // 创建一个对话
-      conversationId = nanoid();
+      conversationId = generateId();
       await db.insert(schema.conversations).values({
         id: conversationId,
         teamId: team.id,
@@ -303,7 +303,7 @@ describe("Messages API 集成测试", () => {
 
     beforeEach(async () => {
       // 创建一个对话并添加一些消息
-      conversationId = nanoid();
+      conversationId = generateId();
       await db.insert(schema.conversations).values({
         id: conversationId,
         teamId: team.id,
@@ -317,7 +317,7 @@ describe("Messages API 集成测试", () => {
       // 添加测试消息
       for (let i = 0; i < 3; i++) {
         await db.insert(schema.messages).values({
-          id: nanoid(),
+          id: generateId(),
           conversationId,
           senderId: member.id,
           content: `Test message ${i + 1}`,

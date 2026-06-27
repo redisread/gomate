@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { eq, like, and, sql, inArray, asc } from "drizzle-orm";
-import { nanoid } from "nanoid";
+import { generateId } from "../lib/id";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -291,7 +291,7 @@ locations.post("/", async (c) => {
     }
 
     const data = parsed.data;
-    const id = nanoid();
+    const id = generateId();
     const slug = data.slug || data.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
     await db.insert(schema.locations).values({
@@ -569,7 +569,7 @@ locations.put("/:id/tags", async (c) => {
     if (tagIds && tagIds.length > 0) {
       await db.insert(schema.entityToTags).values(
         tagIds.map((tagId) => ({
-          id: nanoid(),
+          id: generateId(),
           entityId: id,
           entityType: "location" as const,
           tagId,
@@ -615,7 +615,7 @@ locations.put("/:id/pois", async (c) => {
     if (poiLinks && poiLinks.length > 0) {
       await db.insert(schema.entityToPois).values(
         poiLinks.map((link) => ({
-          id: nanoid(),
+          id: generateId(),
           entityId: id,
           entityType: "location" as const,
           poiId: link.poiId,

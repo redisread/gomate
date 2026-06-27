@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { nanoid } from "nanoid";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -134,6 +135,7 @@ export function createAuth(env: Env) {
       updateAge: 60 * 60 * 24,
     },
     advanced: {
+      generateId: () => nanoid(),
       defaultCookieAttributes: {
         sameSite: "none",
         secure: true,

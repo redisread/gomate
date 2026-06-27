@@ -7,6 +7,7 @@ import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { sendTeamJoinApplicationEmail } from "../../lib/email";
 import { requireTeamLeader } from "../../lib/team-permissions";
+import { generateId } from "../../lib/id";
 
 const membership = new Hono<{ Bindings: Env }>();
 
@@ -73,7 +74,7 @@ membership.post("/join", async (c) => {
       }
     }
 
-    const memberId = `tm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const memberId = generateId();
     await db.insert(schema.teamMembers).values({
       id: memberId, teamId: teamId, userId, status: "pending", createdAt: new Date(),
     });

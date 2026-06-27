@@ -6,6 +6,7 @@ import { createDb } from "../db";
 import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 import { createActivityPostSchema } from "../lib/validation";
+import { generateId } from "../lib/id";
 
 const activityPosts = new Hono<{ Bindings: Env }>();
 
@@ -132,7 +133,7 @@ activityPosts.post("/teams/:id/activity-posts", async (c) => {
     }
 
     const data = parsed.data;
-    const postId = crypto.randomUUID();
+    const postId = generateId();
     const now = new Date();
 
     await db.insert(schema.activityPosts).values({

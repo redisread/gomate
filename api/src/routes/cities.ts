@@ -5,6 +5,7 @@ import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
 import { APIErrors } from "../lib/api-errors";
 import { createCitySchema } from "../lib/validation";
+import { generateId } from "../lib/id";
 
 const cities = new Hono<{ Bindings: Env }>();
 
@@ -94,7 +95,7 @@ cities.post("/", async (c) => {
     }
 
     const data = parsed.data;
-    const cityId = `city-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const cityId = generateId();
     await db.insert(schema.cities).values({
       id: cityId,
       adcode: data.adcode,

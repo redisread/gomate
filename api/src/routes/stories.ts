@@ -6,6 +6,7 @@ import { createDb } from "../db";
 import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 import { createStorySchema, updateStorySchema } from "../lib/validation";
+import { generateId } from "../lib/id";
 
 const stories = new Hono<{ Bindings: Env }>();
 
@@ -282,7 +283,7 @@ stories.post("/", async (c) => {
     }
 
     const data = parsed.data;
-    const storyId = crypto.randomUUID();
+    const storyId = generateId();
     const now = new Date();
 
     await db.insert(schema.stories).values({

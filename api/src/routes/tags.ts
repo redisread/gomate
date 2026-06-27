@@ -5,6 +5,7 @@ import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
 import { createTagSchema } from "../lib/validation";
+import { generateId } from "../lib/id";
 
 const tags = new Hono<{ Bindings: Env }>();
 
@@ -99,7 +100,7 @@ tags.post("/", async (c) => {
       return c.json({ success: true, tagId: existing[0].id, existing: true });
     }
 
-    const tagId = `tag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const tagId = generateId();
     await db.insert(schema.tags).values({
       id: tagId,
       name,

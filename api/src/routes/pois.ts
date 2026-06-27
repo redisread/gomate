@@ -5,6 +5,7 @@ import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
 import { createPoiSchema, updatePoiSchema } from "../lib/validation";
+import { generateId } from "../lib/id";
 
 export const poisRoute = new Hono<{ Bindings: Env }>();
 
@@ -23,10 +24,7 @@ async function checkAdmin(c: { env: Env; req: { raw: Request } }) {
   return session;
 }
 
-/** 生成 POI ID */
-function generatePoiId(): string {
-  return `poi_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
+// POI ID 统一使用 generateId() 生成
 
 /**
  * GET /pois
@@ -118,7 +116,7 @@ poisRoute.post("/", async (c) => {
     }
 
     const data = parsed.data;
-    const poiId = generatePoiId();
+    const poiId = generateId();
     await db.insert(schema.pois).values({
       id: poiId,
       name: data.name.trim(),
