@@ -1,0 +1,14 @@
+---
+/**
+ * 发布故事页
+ */
+import Layout from "../../layouts/Layout.astro";
+import { CreateStoryClient } from "../../components/features/create-story-client";
+import { declareI18nNs } from "../../middleware";
+
+declareI18nNs(Astro.locals, ["content", "common", "ui"]);
+---
+
+<Layout title="发布故事 - GoMate" showNavbar={true} showFooter={true}>
+  <CreateStoryClient client:load />
+</Layout>

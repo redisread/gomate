@@ -7,9 +7,12 @@ import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 import { createStorySchema, updateStorySchema } from "../lib/validation";
 import { generateId } from "../lib/id";
-import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../lib/cache";
 
 const stories = new Hono<{ Bindings: Env }>();
+
+function normalizeStoryTags(tags: string[] | undefined): string[] {
+  return [...new Set((tags ?? []).map((tag) => tag.trim()).filter(Boolean))].slice(0, 10);
+}
 
 /**
  * GET /stories/stats
@@ -63,8 +66,7 @@ stories.get("/stats", async (c) => {
       }
     }
 
-    // 设置缓存头（5分钟）
-    c.header("Cache-Control", "public, max-age=300");
+    c.header("Cache-Control", "no-store");
 
     return c.json({
       success: true,
@@ -92,12 +94,6 @@ stories.get("/", async (c) => {
     const status = c.req.query("status") || "published";
     const tag = c.req.query("tag");
     const offset = (page - 1) * limit;
-
-    // 公共故事列表，使用缓存（键含全部查询参数）
-    const cacheKey = buildListCacheKey("stories", {
-      page: String(page), limit: String(limit), status, tag: tag || "",
-    });
-    const body = await getCachedOrFetch(cacheKey, async () => {
 
     // 基础过滤条件：状态
     const whereConditions = [eq(schema.stories.status, status)];
@@ -127,7 +123,8 @@ stories.get("/", async (c) => {
 
       // 如果有标签但无关联故事，返回空结果
       if (storyIdsWithTag.length === 0) {
-        return {
+        c.header("Cache-Control", "no-store");
+        return c.json({
           success: true,
           data: [],
           pagination: {
@@ -136,7 +133,7 @@ stories.get("/", async (c) => {
             total: 0,
             hasMore: false,
           },
-        };
+        });
       }
 
       // 添加故事ID过滤条件
@@ -178,7 +175,8 @@ stories.get("/", async (c) => {
         : null,
     }));
 
-    return {
+    c.header("Cache-Control", "no-store");
+    return c.json({
       success: true,
       data: formatted,
       pagination: {
@@ -187,13 +185,54 @@ stories.get("/", async (c) => {
         total: totalResult,
         hasMore: items.length === limit,
       },
-    };
     });
-    setPublicCacheHeaders(c);
-    return c.json(body);
   } catch (error) {
     console.error("Get stories error:", error);
     return c.json(APIErrors.internalError("获取故事列表失败"), 500);
+  }
+});
+
+/**
+ * GET /stories/tags
+ * 获取故事相关的热门标签（只返回有故事关联的标签）
+ */
+stories.get("/tags", async (c) => {
+  try {
+    const db = createDb(c.env.DB);
+
+    // 查询有故事关联的标签
+    const storyTags = await db
+      .select({
+        id: schema.tags.id,
+        name: schema.tags.name,
+        type: schema.tags.type,
+        count: sql<number>`count(${schema.entityToTags.entityId})`.as("count"),
+      })
+      .from(schema.tags)
+      .innerJoin(
+        schema.entityToTags,
+        eq(schema.tags.id, schema.entityToTags.tagId)
+      )
+      .where(eq(schema.entityToTags.entityType, "story"))
+      .groupBy(schema.tags.id, schema.tags.name, schema.tags.type)
+      .orderBy(desc(count()))
+      .limit(15);
+
+    const formattedTags = storyTags.map((tag) => ({
+      id: tag.id,
+      name: tag.name,
+      type: tag.type,
+      count: tag.count,
+    }));
+
+    c.header("Cache-Control", "no-store");
+    return c.json({
+      success: true,
+      tags: formattedTags,
+    });
+  } catch (error) {
+    console.error("Get story tags error:", error);
+    return c.json(APIErrors.internalError("获取标签失败"), 500);
   }
 });
 
@@ -293,6 +332,7 @@ stories.post("/", async (c) => {
     }
 
     const data = parsed.data;
+    const normalizedTags = normalizeStoryTags(data.tags);
     const storyId = generateId();
     const now = new Date();
 
@@ -310,6 +350,35 @@ stories.post("/", async (c) => {
       createdAt: now,
       updatedAt: now,
     });
+
+    for (const tagName of normalizedTags) {
+      let tag = await db.query.tags.findFirst({
+        where: eq(schema.tags.name, tagName),
+      });
+
+      if (!tag) {
+        const tagId = generateId();
+        await db.insert(schema.tags).values({
+          id: tagId,
+          name: tagName,
+          type: "activity",
+          createdAt: now,
+        });
+        tag = await db.query.tags.findFirst({
+          where: eq(schema.tags.id, tagId),
+        });
+      }
+
+      if (tag) {
+        await db.insert(schema.entityToTags).values({
+          id: generateId(),
+          entityId: storyId,
+          entityType: "story",
+          tagId: tag.id,
+          createdAt: now,
+        });
+      }
+    }
 
     return c.json({
       success: true,
@@ -477,51 +546,6 @@ stories.post("/:id/like", async (c) => {
   } catch (error) {
     console.error("Like story error:", error);
     return c.json(APIErrors.internalError("点赞失败"), 500);
-  }
-});
-
-/**
- * GET /stories/tags
- * 获取故事相关的热门标签（只返回有故事关联的标签）
- */
-stories.get("/tags", async (c) => {
-  try {
-    const db = createDb(c.env.DB);
-
-    // 查询有故事关联的标签
-    const storyTags = await db
-      .select({
-        id: schema.tags.id,
-        name: schema.tags.name,
-        type: schema.tags.type,
-        count: sql<number>`count(${schema.entityToTags.entityId})`.as("count"),
-      })
-      .from(schema.tags)
-      .innerJoin(
-        schema.entityToTags,
-        eq(schema.tags.id, schema.entityToTags.tagId)
-      )
-      .where(eq(schema.entityToTags.entityType, "story"))
-      .groupBy(schema.tags.id, schema.tags.name, schema.tags.type)
-      .orderBy(sql`count(${schema.entityToTags.entityId})`)
-      .limit(15);
-
-    // 格式化返回，添加 count
-    const formattedTags = storyTags.map((tag) => ({
-      id: tag.id,
-      name: tag.name,
-      type: tag.type,
-      count: tag.count,
-    }));
-
-    c.header("Cache-Control", "public, max-age=60");
-    return c.json({
-      success: true,
-      tags: formattedTags,
-    });
-  } catch (error) {
-    console.error("Get story tags error:", error);
-    return c.json(APIErrors.internalError("获取标签失败"), 500);
   }
 });
 

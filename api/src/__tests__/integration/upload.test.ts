@@ -339,4 +339,56 @@ describe("上传 API 集成测试", () => {
       expect(res.status).toBe(401);
     });
   });
+
+  describe("POST /upload/story - 上传故事封面", () => {
+    it("未登录 → 401", async () => {
+      logout();
+      const formData = new FormData();
+      formData.append("file", new Blob(["test"], { type: "image/jpeg" }), "story.jpg");
+
+      const res = await req(app, bindings, "/upload/story", createFormDataRequest(formData));
+
+      expect(res.status).toBe(401);
+    });
+
+    it("上传不支持的文件类型 → 400", async () => {
+      const user = await seedUser(testDb);
+      loginAs(user);
+      const formData = new FormData();
+      formData.append("file", new Blob(["test"], { type: "application/pdf" }), "story.pdf");
+
+      const res = await req(app, bindings, "/upload/story", createFormDataRequest(formData));
+
+      expect(res.status).toBe(400);
+    });
+
+    it("上传超过 5MB 的文件 → 400", async () => {
+      const user = await seedUser(testDb);
+      loginAs(user);
+      const formData = new FormData();
+      const oversized = new Blob([new Uint8Array(5 * 1024 * 1024 + 1)], { type: "image/png" });
+      formData.append("file", oversized, "large.png");
+
+      const res = await req(app, bindings, "/upload/story", createFormDataRequest(formData));
+
+      expect(res.status).toBe(400);
+    });
+
+    it("登录用户上传合法故事封面 → 200", async () => {
+      const user = await seedUser(testDb);
+      loginAs(user);
+      const formData = new FormData();
+      formData.append("file", new Blob(["fake-story-cover"], { type: "image/webp" }), "cover.webp");
+
+      const res = await req(app, bindings, "/upload/story", createFormDataRequest(formData));
+
+      expect(res.status).toBe(200);
+      const data = await res.json() as Record<string, unknown>;
+      expect(data.success).toBe(true);
+      expect(data.key).toContain(`stories/${user.id}`);
+      expect(data.url).toMatch(/https?:\/\//);
+      expect(data.size).toBeGreaterThan(0);
+      expect(data.type).toBe("image/webp");
+    });
+  });
 });
