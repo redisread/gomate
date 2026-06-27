@@ -95,7 +95,7 @@ export function MemberAvatarGrid({
                   onClick={() => handleMessageMember(m)}
                   disabled={messagingUserId === m.userId}
                   aria-label={t("teams.messageMemberAria", { name })}
-                  className="inline-flex h-7 items-center gap-1 rounded-full bg-blue-50 px-2.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-60"
+                  className="inline-flex h-7 items-center gap-1 rounded-full bg-primary/10 px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {messagingUserId === m.userId ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
