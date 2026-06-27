@@ -831,25 +831,24 @@
 }
 
 /* Prose enhancements for story content */
-.prose-lg p {
-  margin-bottom: 1.5em;
-  line-height: 1.8;
-}
-
-.prose-lg h2 {
-  margin-top: 2em;
-  margin-bottom: 0.8em;
-  font-size: 1.8em;
-}
-
-.prose-lg h3 {
-  margin-top: 1.5em;
-  margin-bottom: 0.6em;
-  font-size: 1.4em;
-}
-
-.prose-lg img {
+.prose-content img {
   border-radius: 12px;
   margin: 2em 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.prose-content table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.prose-content th,
+.prose-content td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+}
+
+.prose-content th {
+  background: var(--muted);
+  font-weight: 600;
 }

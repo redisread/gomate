@@ -325,7 +325,7 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
         )}
 
         {/* Article Content - Enhanced typography */}
-        <article className="prose prose-lg max-w-none prose-headings:font-bold prose-p:leading-relaxed prose-a:text-primary hover:prose-a:underline">
+        <article className="prose prose-lg max-w-none prose-headings:font-bold prose-p:leading-relaxed prose-a:text-primary hover:prose-a:underline prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none prose-pre:bg-muted/70 prose-pre:p-4 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-pre:text-sm prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-accent/30 prose-blockquote:rounded-r-lg prose-hr:my-8 prose-hr:border-border/60">
           <MarkdownContent content={story.content} />
         </article>
 
