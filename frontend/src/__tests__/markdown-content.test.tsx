@@ -15,7 +15,7 @@
      });
 
      it("undefined 内容返回 null", () => {
-       const { container } = render(<MarkdownContent content={undefined as any} />);
+       const { container } = render(<MarkdownContent content={undefined as unknown as string} />);
        expect(container.firstChild).toBeNull();
      });
    });
@@ -38,6 +38,17 @@
        const heading = screen.getByRole("heading", { level: 3 });
        expect(heading).toHaveTextContent("三级标题");
      });
+
+    it("支持将标题层级整体下移一级", () => {
+      render(<MarkdownContent content={`# 一级标题
+## 二级标题
+### 三级标题`} headingOffset={1} />);
+
+      expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("一级标题");
+      expect(screen.getByRole("heading", { level: 3 })).toHaveTextContent("二级标题");
+      expect(screen.getByRole("heading", { level: 4 })).toHaveTextContent("三级标题");
+    });
 
     it("渲染 h4-h6 标题", () => {
       const { container } = render(

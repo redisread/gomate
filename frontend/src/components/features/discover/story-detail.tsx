@@ -40,6 +40,8 @@ interface StoryDetailProps {
   storyId: string;
 }
 
+const contentSkeletonWidths = ["92%", "78%", "88%", "64%", "84%", "72%"];
+
 export function StoryDetail({ storyId }: StoryDetailProps) {
   const { t } = useI18n(["content"]);
   const [story, setStory] = React.useState<Story | null>(null);
@@ -159,8 +161,8 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
 
           {/* Content skeleton */}
           <div className="space-y-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-4 bg-muted rounded animate-pulse" style={{ width: `${Math.random() * 40 + 60}%` }} />
+            {contentSkeletonWidths.map((width) => (
+              <div key={width} className="h-4 bg-muted rounded animate-pulse" style={{ width }} />
             ))}
           </div>
         </main>
@@ -325,8 +327,11 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
         )}
 
         {/* Article Content - Enhanced typography */}
-        <article className="prose prose-lg max-w-none prose-headings:font-bold prose-p:leading-relaxed prose-a:text-primary hover:prose-a:underline prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none prose-pre:bg-muted/70 prose-pre:p-4 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-pre:text-sm prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-accent/30 prose-blockquote:rounded-r-lg prose-hr:my-8 prose-hr:border-border/60">
-          <MarkdownContent content={story.content} />
+        <article
+          aria-label="故事正文"
+          className="story-prose prose mx-auto w-full prose-a:text-primary hover:prose-a:underline prose-code:before:content-none prose-code:after:content-none"
+        >
+          <MarkdownContent content={story.content} headingOffset={1} />
         </article>
 
         {/* Actions - Enhanced style */}
