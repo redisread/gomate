@@ -5,7 +5,7 @@ import { createTestDb } from "../helpers/db";
 import { seedUser, seedStory, seedTag, seedEntityTag, seedCity, seedLocation } from "../helpers/seed";
 import * as schema from "../../db/schema";
 
-let currentSession: { user: { id: string; email: string; name: string } } | null = null;
+let currentSession: { user: { id: string; email: string; name: string; role?: string } } | null = null;
 let testDb: ReturnType<typeof createTestDb>["db"];
 
 vi.mock("../../lib/auth", () => ({
@@ -174,6 +174,14 @@ describe("Stories API 集成测试", () => {
       expect(json.success).toBe(false);
       expect(json.error.message).toBe("故事不存在");
     });
+
+    it("hidden 故事详情返回 404", async () => {
+      const story = await seedStory(testDb, user.id, { title: "已删除故事", status: "hidden" });
+
+      const res = await req(app, `/stories/${story.id}`);
+
+      expect(res.status).toBe(404);
+    });
   });
 
   describe("GET /stories/stats - 故事统计", () => {
@@ -185,6 +193,20 @@ describe("Stories API 集成测试", () => {
       const json = await res.json() as { success: boolean; data: { weeklyNewStories: number } };
       expect(json.success).toBe(true);
       expect(typeof json.data.weeklyNewStories).toBe("number");
+    });
+  });
+
+  describe("GET /stories/tags - 故事标签", () => {
+    it("不统计 hidden 故事的标签", async () => {
+      const tag = await seedTag(testDb, { name: "已删除标签", type: "activity" });
+      const hiddenStory = await seedStory(testDb, user.id, { title: "已隐藏故事", status: "hidden" });
+      await seedEntityTag(testDb, hiddenStory.id, "story", tag.id);
+
+      const res = await req(app, "/stories/tags");
+
+      expect(res.status).toBe(200);
+      const json = await res.json() as { tags: { name: string }[] };
+      expect(json.tags.some((item) => item.name === "已删除标签")).toBe(false);
     });
   });
 
@@ -276,6 +298,52 @@ describe("Stories API 集成测试", () => {
       const tagsRes = await req(app, "/stories/tags");
       const tagsJson = await tagsRes.json() as { tags: { name: string; count: number }[] };
       expect(tagsJson.tags.some((tag) => tag.name === "露营" && Number(tag.count) >= 1)).toBe(true);
+    });
+  });
+
+  describe("DELETE /stories/:id - 删除故事", () => {
+    it("管理员可以删除其他用户的故事", async () => {
+      const admin = await seedUser(testDb, { role: "admin", email: "admin@example.com" });
+      currentSession = { user: { id: admin.id, email: admin.email, name: admin.name, role: "admin" } };
+      const story = await seedStory(testDb, user.id, { title: "他人故事", status: "published" });
+
+      const res = await req(app, `/stories/${story.id}`, { method: "DELETE" });
+
+      expect(res.status).toBe(200);
+      const deletedStory = await testDb.query.stories.findFirst({
+        where: eq(schema.stories.id, story.id),
+      });
+      expect(deletedStory?.status).toBe("hidden");
+    });
+
+    it("作者删除故事后软删除记录并清理 story 标签关联", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name, role: "user" } };
+      const tag = await seedTag(testDb, { name: "待清理标签", type: "activity" });
+      const story = await seedStory(testDb, user.id, { title: "准备删除的故事", status: "published" });
+      await seedEntityTag(testDb, story.id, "story", tag.id);
+
+      const res = await req(app, `/stories/${story.id}`, { method: "DELETE" });
+
+      expect(res.status).toBe(200);
+      const deletedStory = await testDb.query.stories.findFirst({
+        where: eq(schema.stories.id, story.id),
+      });
+      expect(deletedStory?.status).toBe("hidden");
+
+      const remainingLink = await testDb.query.entityToTags.findFirst({
+        where: and(
+          eq(schema.entityToTags.entityId, story.id),
+          eq(schema.entityToTags.entityType, "story")
+        ),
+      });
+      expect(remainingLink).toBeUndefined();
+
+      const tagsRes = await req(app, "/stories/tags");
+      const tagsJson = await tagsRes.json() as { tags: { name: string }[] };
+      expect(tagsJson.tags.some((item) => item.name === "待清理标签")).toBe(false);
+
+      const detailRes = await req(app, `/stories/${story.id}`);
+      expect(detailRes.status).toBe(404);
     });
   });
 });

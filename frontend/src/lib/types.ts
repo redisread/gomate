@@ -108,6 +108,7 @@ export interface SessionUser {
   nickname?: string | null;
   email?: string | null;
   image?: string | null;
+  role?: "user" | "admin" | string | null;
   bio?: string | null;
   level?: UserLevel | null;
   completedHikes?: number | null;

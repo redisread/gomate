@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Heart, Share2, Eye, MapPin, Quote, Clock, FileText, ArrowRight } from "lucide-react";
-import { apiGet, apiPost } from "@/lib/api";
+import { AlertTriangle, ArrowLeft, Heart, Share2, Eye, MapPin, Quote, Clock, FileText, ArrowRight, Loader2, Trash2 } from "lucide-react";
+import { apiDelete, apiGet, apiPost, fetchCurrentUser } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { MarkdownContent } from "./markdown-content";
+import type { SessionUser } from "@/lib/types";
 
 interface Story {
   id: string;
@@ -41,12 +42,16 @@ interface StoryDetailProps {
 }
 
 export function StoryDetail({ storyId }: StoryDetailProps) {
-  const { t } = useI18n(["content"]);
+  const { t } = useI18n(["content", "common"]);
   const [story, setStory] = React.useState<Story | null>(null);
+  const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [isLiking, setIsLiking] = React.useState(false);
   const [liked, setLiked] = React.useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState("");
 
   const loadStory = React.useCallback(async () => {
     try {
@@ -72,6 +77,25 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
     loadStory();
   }, [loadStory]);
 
+  React.useEffect(() => {
+    let cancelled = false;
+    fetchCurrentUser()
+      .then((user) => {
+        if (!cancelled) setCurrentUser(user);
+      })
+      .catch(() => {
+        if (!cancelled) setCurrentUser(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const canDelete = Boolean(
+    story && currentUser && (story.author?.id === currentUser.id || currentUser.role === "admin")
+  );
+
   const handleLike = async () => {
     if (isLiking || liked) return;
 
@@ -91,6 +115,21 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
       console.error("Like story error:", err);
     } finally {
       setIsLiking(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!canDelete || isDeleting) return;
+
+    try {
+      setIsDeleting(true);
+      setDeleteError("");
+      await apiDelete<{ success: boolean; message?: string }>(`/stories/${storyId}`);
+      window.location.href = "/discover";
+    } catch (err) {
+      console.error("Delete story error:", err);
+      setDeleteError(t("content.discover.deleteFailed"));
+      setIsDeleting(false);
     }
   };
 
@@ -211,6 +250,18 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
 
             {/* Action buttons - Enhanced style */}
             <div className="flex items-center gap-3">
+              {canDelete && (
+                <button
+                  onClick={() => {
+                    setDeleteError("");
+                    setDeleteConfirmOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/15 rounded-xl transition-all duration-200"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t("content.discover.deleteStory")}</span>
+                </button>
+              )}
               <button
                 onClick={handleShare}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground bg-accent/50 hover:bg-accent rounded-xl transition-all duration-200"
@@ -349,6 +400,48 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
           </div>
         </div>
       </main>
+
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-story-title"
+            aria-describedby="delete-story-description"
+            className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl"
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <h3 id="delete-story-title" className="mb-2 text-lg font-bold text-foreground">
+              {t("content.discover.deleteConfirmTitle")}
+            </h3>
+            <p id="delete-story-description" className="mb-5 text-sm leading-relaxed text-muted-foreground">
+              {t("content.discover.deleteConfirmDesc")}
+            </p>
+            {deleteError && (
+              <p className="mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {deleteError}
+              </p>
+            )}
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-destructive px-4 py-3 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isDeleting ? t("content.discover.deletingStory") : t("content.discover.deleteStory")}
+            </button>
+            <button
+              onClick={() => setDeleteConfirmOpen(false)}
+              disabled={isDeleting}
+              className="w-full rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {t("common.cancel")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

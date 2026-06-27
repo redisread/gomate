@@ -213,7 +213,16 @@ stories.get("/tags", async (c) => {
         schema.entityToTags,
         eq(schema.tags.id, schema.entityToTags.tagId)
       )
-      .where(eq(schema.entityToTags.entityType, "story"))
+      .innerJoin(
+        schema.stories,
+        eq(schema.entityToTags.entityId, schema.stories.id)
+      )
+      .where(
+        and(
+          eq(schema.entityToTags.entityType, "story"),
+          eq(schema.stories.status, "published")
+        )
+      )
       .groupBy(schema.tags.id, schema.tags.name, schema.tags.type)
       .orderBy(desc(count()))
       .limit(15);
@@ -263,7 +272,12 @@ stories.get("/:id", async (c) => {
       .from(schema.stories)
       .leftJoin(schema.users, eq(schema.stories.authorId, schema.users.id))
       .leftJoin(schema.locations, eq(schema.stories.locationId, schema.locations.id))
-      .where(eq(schema.stories.id, id))
+      .where(
+        and(
+          eq(schema.stories.id, id),
+          eq(schema.stories.status, "published")
+        )
+      )
       .limit(1);
 
     if (!result.length) {
@@ -496,6 +510,15 @@ stories.delete("/:id", async (c) => {
         updatedAt: new Date(),
       })
       .where(eq(schema.stories.id, id));
+
+    await db
+      .delete(schema.entityToTags)
+      .where(
+        and(
+          eq(schema.entityToTags.entityId, id),
+          eq(schema.entityToTags.entityType, "story")
+        )
+      );
 
     return c.json({
       success: true,
