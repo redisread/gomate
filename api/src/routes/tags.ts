@@ -6,6 +6,7 @@ import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
 import { createTagSchema } from "../lib/validation";
 import { generateId } from "../lib/id";
+import { setPublicCacheHeaders } from "../lib/cache";
 
 const tags = new Hono<{ Bindings: Env }>();
 
@@ -54,6 +55,7 @@ tags.get("/", async (c) => {
       .limit(pageSize)
       .offset(offset);
 
+    setPublicCacheHeaders(c);
     return c.json({
       success: true,
       tags: result,

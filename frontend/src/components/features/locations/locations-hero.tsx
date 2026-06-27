@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Search, MapPin, X, ChevronDown, Sparkles, Compass, Mountain, ArrowRight, CheckCircle, Zap, Shield } from "lucide-react";
+import { Search, MapPin, X, ChevronDown, Sparkles, Compass, ArrowRight, CheckCircle, Zap, Shield } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { getRoleConfig, type RoleKey, type RoleCfg } from "./constants";

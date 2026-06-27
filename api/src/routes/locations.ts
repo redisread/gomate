@@ -7,7 +7,7 @@ import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 import { createLocationSchema, updateLocationSchema } from "../lib/validation";
 import { APIErrors } from "../lib/api-errors";
-import { getCachedOrFetch, buildListCacheKey } from "../lib/cache";
+import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../lib/cache";
 
 const locations = new Hono<{ Bindings: Env }>();
 
@@ -56,7 +56,7 @@ locations.get("/", async (c) => {
         .select({ id: schema.tags.id, name: schema.tags.name, type: schema.tags.type })
         .from(schema.tags)
         .limit(15);
-      c.header("Cache-Control", "public, max-age=60");
+      setPublicCacheHeaders(c);
       return c.json({ success: true, tags: popularTags });
     }
 
@@ -71,7 +71,7 @@ locations.get("/", async (c) => {
         if (!grouped[tag.type]) grouped[tag.type] = [];
         grouped[tag.type].push(tag);
       }
-      c.header("Cache-Control", "public, max-age=60");
+      setPublicCacheHeaders(c);
       return c.json({ success: true, tags: grouped });
     }
 
@@ -276,6 +276,7 @@ locations.get("/", async (c) => {
 
     return { success: true, locations: formattedLocations, pagination: { page, pageSize, total, totalPages } };
     });
+    setPublicCacheHeaders(c);
     return c.json(body);
   } catch (error) {
     console.error("Get locations error:", error);

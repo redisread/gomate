@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { fetchAPI } from "@/lib/api";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { fetchPublicAPI } from "@/lib/api";
 import type { Location } from "@/lib/types";
 
-interface LocationsResponse {
+export interface LocationsResponse {
   success: boolean;
   locations: Location[];
   pagination: {
@@ -18,16 +18,19 @@ interface LocationsResponse {
 /**
  * 获取地点列表，支持分页
  */
-export function useLocations(page = 1, pageSize = 6) {
-  const [data, setData] = useState<LocationsResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function useLocations(page = 1, pageSize = 6, initialData?: LocationsResponse | null) {
+  const [data, setData] = useState<LocationsResponse | null>(initialData ?? null);
+  const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<Error | null>(null);
+  const initialKeyRef = useRef(
+    initialData ? `${initialData.pagination.page}:${initialData.pagination.pageSize}` : "",
+  );
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetchAPI(`/api/locations?page=${page}&pageSize=${pageSize}&view=card`);
+      const res = await fetchPublicAPI(`/api/locations?page=${page}&pageSize=${pageSize}&view=card`);
       const json = await res.json();
       if (!json.success) {
         throw new Error(json.error || "获取地点列表失败");
@@ -41,8 +44,13 @@ export function useLocations(page = 1, pageSize = 6) {
   }, [page, pageSize]);
 
   useEffect(() => {
+    const key = `${page}:${pageSize}`;
+    if (initialKeyRef.current === key) {
+      initialKeyRef.current = "";
+      return;
+    }
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, page, pageSize]);
 
   const mutate = useCallback(async () => {
     await fetchData();
@@ -72,7 +80,7 @@ export function useLocationTags() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetchAPI("/api/locations?tags=true");
+        const res = await fetchPublicAPI("/api/locations?tags=true");
         const json = await res.json();
         if (!json.success) {
           throw new Error(json.error || "获取标签失败");

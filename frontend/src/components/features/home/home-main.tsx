@@ -1,7 +1,7 @@
 "use client";
 
 import { Navbar } from "@/components/layout/navbar";
-import { useHomeData } from "./use-home-data";
+import { useHomeData, type HomeInitialData } from "./use-home-data";
 import { HomeHero } from "./home-hero";
 import { HomeLocationsSection } from "./home-locations-section";
 import { HomeHowItWorksSection } from "./home-how-it-works";
@@ -9,8 +9,8 @@ import { HomeTeamsSection } from "./home-teams-section";
 import { HomeCtaSection } from "./home-cta-section";
 import { PreloadImages } from "./preload-images";
 
-export function HomeClient() {
-  const data = useHomeData();
+export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
+  const data = useHomeData(initialData);
 
   return (
     <>

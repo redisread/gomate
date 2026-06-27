@@ -9,26 +9,77 @@ export const API_BASE =
     ? (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8799"
     : (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8799";
 
-/**
- * 通用 fetch 封装，自动携带 credentials 和 Content-Type
- */
-export async function fetchAPI(
-  path: string,
-  options?: RequestInit
-): Promise<Response> {
-  const normalizedPath = path.startsWith("/api/") ? path.slice(4) : path;
+type APIRequestInit = RequestInit & {
+  /**
+   * Whether to send cookies with the request. Defaults to true for backwards
+   * compatibility with authenticated API calls.
+   */
+  auth?: boolean;
+};
+
+function normalizePath(path: string): string {
+  return path.startsWith("/api/") ? path.slice(4) : path;
+}
+
+function isJsonRequest(method: string, body: BodyInit | null | undefined): boolean {
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+  return method !== "GET" && method !== "HEAD" && body !== undefined && !isFormData;
+}
+
+function buildHeaders(options: APIRequestInit, method: string): HeadersInit | undefined {
+  const headers = new Headers(options.headers);
+  if (isJsonRequest(method, options.body as BodyInit | null | undefined) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  const entries = Array.from(headers.entries());
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+async function requestAPI(path: string, options: APIRequestInit = {}): Promise<Response> {
+  const { auth = true, ...fetchOptions } = options;
+  const normalizedPath = normalizePath(path);
+  const method = (fetchOptions.method || "GET").toUpperCase();
+
   return fetch(`${API_BASE}${normalizedPath}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
-    credentials: "include",
+    ...fetchOptions,
+    headers: buildHeaders(options, method),
+    credentials: auth ? "include" : "omit",
   });
 }
 
 /**
- * GET 请求
+ * 通用 fetch 封装，默认携带 credentials；GET 不默认添加 JSON header，避免跨域预检。
+ */
+export async function fetchAPI(
+  path: string,
+  options?: APIRequestInit
+): Promise<Response> {
+  return requestAPI(path, options);
+}
+
+/**
+ * 公开数据 fetch 封装：不携带 credentials，也不为 GET 添加自定义 header。
+ */
+export async function fetchPublicAPI(
+  path: string,
+  options?: Omit<APIRequestInit, "auth">
+): Promise<Response> {
+  return requestAPI(path, { ...options, auth: false });
+}
+
+/**
+ * 公开 GET 请求。
+ */
+export async function publicApiGet<T>(path: string): Promise<T> {
+  const res = await fetchPublicAPI(path);
+  if (!res.ok) {
+    throw new Error(`API GET ${path} failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+/**
+ * 通用 GET 请求，保留登录态兼容。
  */
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetchAPI(path);

@@ -1,4 +1,4 @@
-import { Search, Users, Compass, MapPin } from "lucide-react";
+import { Users, Compass, MapPin } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { RefObject } from "react";
 

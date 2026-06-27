@@ -1,9 +1,7 @@
-import * as React from "react";
 import { MapPin, Calendar, ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { TranslationKey } from "@/i18n";
 import { getDaysUntil } from "@/lib/date-utils";
-import { STATUS_CONFIG } from "@/lib/constants";
 import type { Team } from "@/lib/types";
 import { TeamProgress, TeamUrgencyLabel, TeamLeaderMini } from "@/components/features/teams/shared";
 
@@ -45,11 +43,7 @@ function AvatarStack({ members, extra = 0 }: { members: { name: string; avatar: 
 
 export function TeamCard({ team, featured = false }: { team: Team; featured?: boolean }) {
   const { t } = useI18n(["home", "common", "enums"]);
-  const [hovered, setHovered] = React.useState(false);
-  const isFull = team.currentMembers >= team.maxMembers;
   const daysUntil = getDaysUntil(team.date);
-  const statusKey = isFull ? "full" : team.status;
-  const statusCfg = STATUS_CONFIG[statusKey];
   const departureLabel = getDepartureLabel(daysUntil, t);
   const hasCover = Boolean(team.location?.coverImage);
 
@@ -59,8 +53,7 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <article className={`overflow-hidden rounded-2xl cursor-pointer bg-card relative transition-all duration-300 hover:-translate-y-1.5 hover:shadow-warm-md ${featured ? 'ring-2 ring-amber-500/50' : ''}`}
-        onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+      <article className={`overflow-hidden rounded-2xl cursor-pointer bg-card relative transition-all duration-300 hover:-translate-y-1.5 hover:shadow-warm-md ${featured ? 'ring-2 ring-amber-500/50' : ''}`}>
 
         {/* Featured badge */}
         {featured && (

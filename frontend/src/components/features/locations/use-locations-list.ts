@@ -1,23 +1,41 @@
 import * as React from "react";
 import type { Location } from "@/lib/types";
-import { fetchAPI } from "@/lib/api";
+import { fetchPublicAPI } from "@/lib/api";
 import type { RoleKey } from "./constants";
 
-export function useLocationsList() {
-  const [locations, setLocations] = React.useState<Location[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+interface LocationsPagination {
+  page?: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface LocationsListInitialData {
+  locations: Location[];
+  pagination: LocationsPagination;
+  popularTags: { id: string; name: string }[];
+  cities: { id: string; name: string }[];
+}
+
+export function useLocationsList(initialData?: LocationsListInitialData) {
+  const [locations, setLocations] = React.useState<Location[]>(initialData?.locations ?? []);
+  const [isLoading, setIsLoading] = React.useState(!initialData);
   const [gridKey, setGridKey] = React.useState(0);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [pagination, setPagination] = React.useState({ total: 0, totalPages: 0, pageSize: 12 });
-  const [popularTags, setPopularTags] = React.useState<{ id: string; name: string }[]>([]);
+  const [pagination, setPagination] = React.useState<LocationsPagination>(
+    initialData?.pagination ?? { total: 0, totalPages: 0, pageSize: 12 },
+  );
+  const [popularTags, setPopularTags] = React.useState<{ id: string; name: string }[]>(initialData?.popularTags ?? []);
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
-  const [cities, setCities] = React.useState<{ id: string; name: string }[]>([]);
+  const [cities, setCities] = React.useState<{ id: string; name: string }[]>(initialData?.cities ?? []);
   const [selectedCityId, setSelectedCityId] = React.useState("");
   const [activeRole, setActiveRole] = React.useState<RoleKey>("");
   const [showCityDropdown, setShowCityDropdown] = React.useState(false);
   const [cityDropdownPos, setCityDropdownPos] = React.useState({ top: 0, left: 0 });
   const [gridFading, setGridFading] = React.useState(false);
+  const hasInitialDataRef = React.useRef(Boolean(initialData));
+  const skipInitialFilterFetchRef = React.useRef(true);
 
   const loadLocations = React.useCallback(
     async (params: { page?: number; search?: string; tagIds?: string[]; cityId?: string; type?: string }) => {
@@ -30,7 +48,7 @@ export function useLocationsList() {
         if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
         if (params.cityId) query.set("cityId", params.cityId);
         if (params.type) query.set("type", params.type);
-        const res = await fetchAPI(`/locations?${query}`);
+        const res = await fetchPublicAPI(`/locations?${query}`);
         const data = await res.json();
         if (data.success) {
           setLocations(data.locations);
@@ -58,27 +76,37 @@ export function useLocationsList() {
     setCurrentPage(page);
     setSelectedCityId(cityId);
     setActiveRole(type);
+    if (hasInitialDataRef.current) {
+      hasInitialDataRef.current = false;
+      return;
+    }
     loadLocations({ page, search: q, tagIds: tags, cityId, type });
   }, [loadLocations]);
 
   // 加载标签
   React.useEffect(() => {
-    fetchAPI("/locations?tags=true")
+    if (initialData?.popularTags) return;
+    fetchPublicAPI("/locations?tags=true")
       .then((r) => r.json())
       .then((data) => { if (data.success && data.tags) setPopularTags(data.tags); })
       .catch(() => {});
-  }, []);
+  }, [initialData?.popularTags]);
 
   // 加载城市
   React.useEffect(() => {
-    fetchAPI("/cities")
+    if (initialData?.cities) return;
+    fetchPublicAPI("/cities")
       .then((r) => r.json())
       .then((data) => { if (data.success && data.cities) setCities(data.cities); })
       .catch(() => {});
-  }, []);
+  }, [initialData?.cities]);
 
   // 搜索防抖
   React.useEffect(() => {
+    if (skipInitialFilterFetchRef.current) {
+      skipInitialFilterFetchRef.current = false;
+      return;
+    }
     const timer = setTimeout(() => {
       loadLocations({ page: 1, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId, type: activeRole });
     }, 300);

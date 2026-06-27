@@ -5,10 +5,47 @@
 import Layout from "../../layouts/Layout.astro";
 import { LocationsClient } from "../../components/features/locations-client";
 import { declareI18nNs } from "../../middleware";
+import { API_BASE } from "../../lib/api";
+import type { LocationsListInitialData } from "../../components/features/locations/use-locations-list";
+import type { Location } from "../../lib/types";
 
 declareI18nNs(Astro.locals, ["locations", "filter", "content"]);
+
+async function fetchJson<T>(path: string): Promise<T | null> {
+  try {
+    const response = await fetch(`${API_BASE}${path}`);
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+const params = Astro.url.searchParams;
+const listQuery = new URLSearchParams();
+listQuery.set("page", params.get("page") || "1");
+listQuery.set("pageSize", "12");
+if (params.get("q")) listQuery.set("search", params.get("q")!);
+if (params.get("tags")) listQuery.set("tagIds", params.get("tags")!);
+if (params.get("cityId")) listQuery.set("cityId", params.get("cityId")!);
+if (params.get("type")) listQuery.set("type", params.get("type")!);
+
+const [locationsData, tagsData, citiesData] = await Promise.all([
+  fetchJson<{ success: boolean; locations: Location[]; pagination: LocationsListInitialData["pagination"] }>(`/locations?${listQuery}`),
+  fetchJson<{ success: boolean; tags: { id: string; name: string }[] }>("/locations?tags=true"),
+  fetchJson<{ success: boolean; cities: { id: string; name: string }[] }>("/cities"),
+]);
+
+const initialData = locationsData?.success
+  ? {
+      locations: locationsData.locations ?? [],
+      pagination: locationsData.pagination,
+      popularTags: tagsData?.success ? tagsData.tags ?? [] : [],
+      cities: citiesData?.success ? citiesData.cities ?? [] : [],
+    } satisfies LocationsListInitialData
+  : undefined;
 ---
 
 <Layout title="探索地点 - GoMate" showNavbar={false} showFooter={false}>
-  <LocationsClient client:visible />
+  <LocationsClient initialData={initialData} client:visible />
 </Layout>

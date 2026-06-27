@@ -3,15 +3,15 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useI18n } from "@/hooks/useI18n";
-import { useTeams } from "./use-teams";
+import { useTeams, type TeamsInitialData } from "./use-teams";
 import {
   TeamsHeader, FilterPanel, TeamsCtaSection,
   TeamCard, TeamSkeleton, EmptyState, Pagination,
 } from "./teams-ui";
 
-export function TeamsClient() {
+export function TeamsClient({ initialData }: { initialData?: TeamsInitialData }) {
   const { t } = useI18n(["teams"]);
-  const ctx = useTeams();
+  const ctx = useTeams(initialData);
 
   return (
     <main className="min-h-screen bg-background">

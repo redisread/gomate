@@ -7,7 +7,7 @@ import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 import { createStorySchema, updateStorySchema } from "../lib/validation";
 import { generateId } from "../lib/id";
-import { getCachedOrFetch, buildListCacheKey } from "../lib/cache";
+import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../lib/cache";
 
 const stories = new Hono<{ Bindings: Env }>();
 
@@ -189,6 +189,7 @@ stories.get("/", async (c) => {
       },
     };
     });
+    setPublicCacheHeaders(c);
     return c.json(body);
   } catch (error) {
     console.error("Get stories error:", error);
