@@ -17,7 +17,12 @@ export async function getCachedOrFetch<T>(
   key: string,
   fetcher: () => Promise<T>
 ): Promise<T> {
-  const cache = caches.default;
+  // Cloudflare Cache API 仅在 Workers 运行时可用；
+  // 测试环境或非 Workers 环境无 caches.default，降级为直接执行 fetcher
+  const cache = (globalThis as unknown as { caches?: { default: Cache } }).caches?.default;
+  if (!cache) {
+    return fetcher();
+  }
 
   // 尝试从缓存获取
   const cacheKey = new Request(`https://cache.internal/${key}`);
@@ -53,9 +58,31 @@ export async function getCachedOrFetch<T>(
  * @param key 缓存键
  */
 export async function invalidateCache(key: string): Promise<void> {
-  const cache = caches.default;
+  const cache = (globalThis as unknown as { caches?: { default: Cache } }).caches?.default;
+  if (!cache) return;
   const cacheKey = new Request(`https://cache.internal/${key}`);
   await cache.delete(cacheKey);
+}
+
+/**
+ * 根据资源名和查询参数构建规范化的列表缓存键。
+ *
+ * 将查询参数按 key 排序后拼接为 `资源:list:key1=val1&key2=val2`，
+ * 确保不同查询参数组合产生不同缓存键，避免数据串池。
+ *
+ * @param resource 资源名（如 teams / locations / stories）
+ * @param query 查询参数对象（Hono 的 c.req.query 只能逐个取，这里接收 Record）
+ * @returns 规范化的缓存键，如 `teams:list:page=1&pagesize=12`
+ */
+export function buildListCacheKey(
+  resource: string,
+  query: Record<string, string | undefined>
+): string {
+  const entries = Object.entries(query)
+    .filter(([, v]) => v !== undefined && v !== "")
+    .map(([k, v]) => `${k.toLowerCase()}=${v}`)
+    .sort();
+  return `${resource}:list:${entries.join("&")}`;
 }
 
 /**

@@ -7,6 +7,7 @@ import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 import { createLocationSchema, updateLocationSchema } from "../lib/validation";
 import { APIErrors } from "../lib/api-errors";
+import { getCachedOrFetch, buildListCacheKey } from "../lib/cache";
 
 const locations = new Hono<{ Bindings: Env }>();
 
@@ -83,6 +84,13 @@ locations.get("/", async (c) => {
     const type = c.req.query("type") || "";
     const view = c.req.query("view") || ""; // "card" for lightweight view
 
+    // 公共列表数据，使用缓存（键含全部查询参数，避免不同过滤串池）
+    const cacheKey = buildListCacheKey("locations", {
+      page: String(page), pageSize: String(pageSize), search, cityId,
+      tagIds: tagIdsParam, type, view,
+    });
+    const body = await getCachedOrFetch(cacheKey, async () => {
+
     // 构建过滤条件
     const conditions = [];
     if (search) conditions.push(like(schema.locations.name, `%${search}%`));
@@ -101,7 +109,7 @@ locations.get("/", async (c) => {
         ));
       tagLocationIds = [...new Set(tagMatches.map((t) => t.entityId))];
       if (tagLocationIds.length === 0) {
-        return c.json({ success: true, locations: [], pagination: { page, pageSize, total: 0, totalPages: 0 } });
+        return { success: true, locations: [], pagination: { page, pageSize, total: 0, totalPages: 0 } };
       }
       conditions.push(inArray(schema.locations.id, tagLocationIds));
     }
@@ -207,8 +215,7 @@ locations.get("/", async (c) => {
         };
       });
 
-      c.header("Cache-Control", "public, max-age=60");
-      return c.json({ success: true, locations: formattedLocations, pagination: { page, pageSize, total, totalPages } });
+      return { success: true, locations: formattedLocations, pagination: { page, pageSize, total, totalPages } };
     }
 
     // ==================== 完整模式（默认） ====================
@@ -267,7 +274,9 @@ locations.get("/", async (c) => {
       };
     });
 
-    return c.json({ success: true, locations: formattedLocations, pagination: { page, pageSize, total, totalPages } });
+    return { success: true, locations: formattedLocations, pagination: { page, pageSize, total, totalPages } };
+    });
+    return c.json(body);
   } catch (error) {
     console.error("Get locations error:", error);
     return c.json(APIErrors.internalError("获取地点列表失败"), 500);
