@@ -551,7 +551,7 @@ export type UserStatus = "active" | "suspended" | "banned" | "deleted";
 export type UserGender = "male" | "female" | "other";
 export type CityLevel = "city" | "district";
 export type TagType = "location" | "route" | "activity";
-export type EntityType = "location" | "route" | "activity";
+export type EntityType = "location" | "route" | "activity" | "story";
 // POI 内部分类标识，不对外暴露，默认值为 "poi"
 export type PoiCategory = "poi";
 export type PoiEntityType = "route" | "location" | "city";

@@ -433,12 +433,70 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 - **认证：** 是（仅管理员）
 - **Form-Data：** `file`（同上）
 
+### POST `/upload/story`
+上传故事封面图
+
+- **认证：** 是（登录用户）
+- **Form-Data：** `file`（JPEG/PNG/GIF/WebP，最大 5MB）
+- **响应：** `{ "success": true, "key": "stories/...", "url": "https://gomate.cos.jiahongw.com/...", "size": 123456, "type": "image/jpeg" }`
+
 ### GET `/r2/*`
 R2 文件代理（本地开发专用）
 
 ---
 
-## 7. 收藏管理 `/favorites`
+## 7. 发现故事 `/stories`
+
+### GET `/stories`
+获取已发布故事列表
+
+- **认证：** 否
+- **Query：** `page`（默认 1）、`limit`（默认 10，最大 20）、`status`（默认 `published`）、`tag`
+- **响应：** `{ "success": true, "data": [{ "id", "title", "summary", "content", "coverImage", "locationId", "viewCount", "likeCount", "author": {...} }], "pagination": { "page", "limit", "total", "hasMore" } }`
+
+### POST `/stories`
+发布故事
+
+- **认证：** 是（登录用户）
+- **Body：** `{ "title", "summary", "content", "coverImage", "locationId", "tags": ["徒步", "露营"] }`
+- **行为：** 使用当前登录用户作为作者，故事状态直接写入 `published`；`tags` 会 trim、去空、去重并限制最多 10 个，不存在的标签自动创建为 `type="activity"`，同时写入 `entity_to_tags(entityType="story")`。
+- **响应：** `{ "success": true, "message": "发布成功", "data": { "id": "story-xxx" } }`
+
+### GET `/stories/tags`
+获取有故事关联的热门标签
+
+- **认证：** 否
+- **响应：** `{ "success": true, "tags": [{ "id", "name", "type", "count" }] }`
+
+### GET `/stories/stats`
+获取故事统计数据
+
+- **认证：** 否
+- **响应：** `{ "success": true, "data": { "weeklyNewStories", "popularLocation" } }`
+
+### GET `/stories/:id`
+获取故事详情，并增加浏览数
+
+- **认证：** 否
+
+### PUT `/stories/:id`
+更新故事
+
+- **认证：** 是（作者或管理员）
+
+### DELETE `/stories/:id`
+软删除故事，状态改为 `hidden`
+
+- **认证：** 是（作者或管理员）
+
+### POST `/stories/:id/like`
+点赞故事
+
+- **认证：** 是（登录用户）
+
+---
+
+## 8. 收藏管理 `/favorites`
 
 ### GET `/favorites`
 获取收藏列表
@@ -460,7 +518,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 8. 城市管理 `/cities`
+## 9. 城市管理 `/cities`
 
 ### GET `/cities`
 获取城市列表
@@ -477,7 +535,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 9. 标签管理 `/tags`
+## 10. 标签管理 `/tags`
 
 ### GET `/tags`
 获取标签列表
@@ -495,7 +553,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 10. 打卡点管理 `/pois`
+## 11. 打卡点管理 `/pois`
 
 ### GET `/pois`
 获取打卡点列表（支持搜索）
@@ -577,7 +635,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 11. 联系表单 `/contact`
+## 12. 联系表单 `/contact`
 
 ### POST `/contact`
 提交联系表单
@@ -589,7 +647,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 12. 管理工具 `/admin`
+## 13. 管理工具 `/admin`
 
 ### POST `/admin/clear-rate-limit`
 清除速率限制
@@ -599,7 +657,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 13. 健康检查
+## 14. 健康检查
 
 ### GET `/health`
 - **认证：** 否

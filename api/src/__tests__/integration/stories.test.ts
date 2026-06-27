@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Hono } from "hono";
+import { and, eq } from "drizzle-orm";
 import { createTestDb } from "../helpers/db";
-import { seedUser, seedStory, seedTag, seedEntityTag } from "../helpers/seed";
+import { seedUser, seedStory, seedTag, seedEntityTag, seedCity, seedLocation } from "../helpers/seed";
 import * as schema from "../../db/schema";
 
 let currentSession: { user: { id: string; email: string; name: string } } | null = null;
@@ -34,6 +35,7 @@ async function req(app: ReturnType<typeof createApp>, path: string, options: Req
 describe("Stories API 集成测试", () => {
   let app: ReturnType<typeof createApp>;
   let user: schema.User;
+  let location: schema.Location;
 
   beforeEach(async () => {
     const fresh = createTestDb();
@@ -42,6 +44,8 @@ describe("Stories API 集成测试", () => {
     currentSession = null;
 
     user = await seedUser(testDb, { name: "测试用户", email: "test@example.com" });
+    const city = await seedCity(testDb);
+    location = await seedLocation(testDb, city.id, { name: "测试地点" });
   });
 
   describe("GET /stories - 故事列表", () => {
@@ -181,6 +185,97 @@ describe("Stories API 集成测试", () => {
       const json = await res.json() as { success: boolean; data: { weeklyNewStories: number } };
       expect(json.success).toBe(true);
       expect(typeof json.data.weeklyNewStories).toBe("number");
+    });
+  });
+
+  describe("POST /stories - 创建故事", () => {
+    it("未登录创建故事 → 401", async () => {
+      const res = await req(app, "/stories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "一次海岸线徒步",
+          summary: "记录一次轻量海岸线徒步。",
+          content: "天气很好，路线也适合新手。",
+          coverImage: "https://example.com/story.jpg",
+          locationId: location.id,
+        }),
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("登录用户创建合法故事后写入 stories 并返回 id", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      const res = await req(app, "/stories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "  一次海岸线徒步  ",
+          summary: "  记录一次轻量海岸线徒步。  ",
+          content: "  天气很好，路线也适合新手。  ",
+          coverImage: "https://example.com/story.jpg",
+          locationId: location.id,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json() as { success: boolean; data: { id: string } };
+      expect(json.success).toBe(true);
+      expect(json.data.id).toBeTruthy();
+
+      const story = await testDb.query.stories.findFirst({
+        where: eq(schema.stories.id, json.data.id),
+      });
+      expect(story?.authorId).toBe(user.id);
+      expect(story?.title).toBe("一次海岸线徒步");
+      expect(story?.summary).toBe("记录一次轻量海岸线徒步。");
+      expect(story?.content).toBe("天气很好，路线也适合新手。");
+      expect(story?.status).toBe("published");
+    });
+
+    it("创建带标签故事后可通过标签筛选并出现在热门标签", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      const res = await req(app, "/stories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "海边露营记录",
+          summary: "周末海边露营和轻徒步记录。",
+          content: "从停车场到营地一路都比较平缓。",
+          coverImage: "https://example.com/camping.jpg",
+          locationId: location.id,
+          tags: ["  露营  ", "徒步", "露营", ""],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json() as { data: { id: string } };
+
+      const campingTag = await testDb.query.tags.findFirst({
+        where: eq(schema.tags.name, "露营"),
+      });
+      expect(campingTag?.type).toBe("activity");
+
+      const tagLink = await testDb.query.entityToTags.findFirst({
+        where: and(
+          eq(schema.entityToTags.entityId, json.data.id),
+          eq(schema.entityToTags.entityType, "story"),
+          eq(schema.entityToTags.tagId, campingTag!.id)
+        ),
+      });
+      expect(tagLink).toBeDefined();
+
+      const filteredRes = await req(app, "/stories?tag=露营");
+      const filteredJson = await filteredRes.json() as { data: { id: string; title: string }[] };
+      expect(filteredJson.data).toHaveLength(1);
+      expect(filteredJson.data[0].id).toBe(json.data.id);
+
+      const tagsRes = await req(app, "/stories/tags");
+      const tagsJson = await tagsRes.json() as { tags: { name: string; count: number }[] };
+      expect(tagsJson.tags.some((tag) => tag.name === "露营" && Number(tag.count) >= 1)).toBe(true);
     });
   });
 });

@@ -24,6 +24,28 @@ function getPublicUrl(env: Env, key: string): string | null {
   return `${env.R2_PUBLIC_URL}/${key}`;
 }
 
+async function uploadImageFile(c: { env: Env; req: { header: (name: string) => string | undefined } }, file: File, key: string) {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type))
+    return { error: APIErrors.badRequest("Invalid file type. Allowed: JPEG, PNG, GIF, WebP"), status: 400 as const };
+  if (file.size > MAX_FILE_SIZE)
+    return { error: APIErrors.badRequest("File too large. Maximum size: 5MB"), status: 400 as const };
+  if (!c.env.R2) return { error: APIErrors.internalError("R2 storage not configured"), status: 500 as const };
+
+  const arrayBuffer = await file.arrayBuffer();
+  await c.env.R2.put(key, arrayBuffer, {
+    httpMetadata: { contentType: file.type },
+  });
+
+  const host = c.req.header("host") || "";
+  const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
+  const publicUrl = isLocalDev
+    ? `http://${host}/r2/${key}`
+    : getPublicUrl(c.env, key);
+  if (!publicUrl) return { error: APIErrors.internalError("R2_PUBLIC_URL not configured"), status: 500 as const };
+
+  return { data: { success: true, key, url: publicUrl, size: file.size, type: file.type } };
+}
+
 /**
  * POST /upload/avatar
  * 上传用户头像到 R2（需登录，只能上传自己的头像）
@@ -54,29 +76,11 @@ upload.post("/avatar", async (c) => {
       }
     }
 
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type))
-      return c.json(APIErrors.badRequest("Invalid file type. Allowed: JPEG, PNG, GIF, WebP"), 400);
-    if (file.size > MAX_FILE_SIZE)
-      return c.json(APIErrors.badRequest("File too large. Maximum size: 5MB"), 400);
-
-    if (!c.env.R2) return c.json(APIErrors.internalError("R2 storage not configured"), 500);
-
     const ext = file.type.split("/")[1] || "jpg";
     const key = `avatars/${userId}-${Date.now()}.${ext}`;
-    const arrayBuffer = await file.arrayBuffer();
-
-    await c.env.R2.put(key, arrayBuffer, {
-      httpMetadata: { contentType: file.type },
-    });
-
-    const host = c.req.header("host") || "";
-    const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
-    const publicUrl = isLocalDev
-      ? `http://${host}/r2/${key}`
-      : getPublicUrl(c.env, key);
-    if (!publicUrl) return c.json(APIErrors.internalError("R2_PUBLIC_URL not configured"), 500);
-
-    return c.json({ success: true, key, url: publicUrl, size: file.size, type: file.type });
+    const result = await uploadImageFile(c, file, key);
+    if ("error" in result) return c.json(result.error, result.status);
+    return c.json(result.data);
   } catch (error) {
     console.error("Avatar upload error:", error);
     return c.json(APIErrors.internalError("Failed to upload avatar"), 500);
@@ -137,35 +141,43 @@ upload.post("/location", async (c) => {
       .then((rows) => rows[0]);
     if (!user || user.role !== "admin") return c.json(APIErrors.forbidden("无权限访问"), 403);
 
-    if (!c.env.R2) return c.json(APIErrors.internalError("R2 storage not configured"), 500);
+    const formData = await c.req.formData();
+    const file = formData.get("file") as File | null;
+    if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
+
+    const ext = file.type.split("/")[1] || "jpg";
+    const key = `locations/${Date.now()}.${ext}`;
+    const result = await uploadImageFile(c, file, key);
+    if ("error" in result) return c.json(result.error, result.status);
+    return c.json(result.data);
+  } catch (error) {
+    console.error("Location image upload error:", error);
+    return c.json(APIErrors.internalError("Failed to upload location image"), 500);
+  }
+});
+
+/**
+ * POST /upload/story
+ * 上传故事封面图（需要登录）
+ */
+upload.post("/story", async (c) => {
+  try {
+    const authInstance = createAuth(c.env);
+    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const formData = await c.req.formData();
     const file = formData.get("file") as File | null;
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type))
-      return c.json(APIErrors.badRequest("Invalid file type"), 400);
-    if (file.size > MAX_FILE_SIZE)
-      return c.json(APIErrors.badRequest("File too large. Maximum size: 5MB"), 400);
 
     const ext = file.type.split("/")[1] || "jpg";
-    const key = `locations/${Date.now()}.${ext}`;
-    const arrayBuffer = await file.arrayBuffer();
-
-    await c.env.R2.put(key, arrayBuffer, {
-      httpMetadata: { contentType: file.type },
-    });
-
-    const host = c.req.header("host") || "";
-    const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
-    const publicUrl = isLocalDev
-      ? `http://${host}/r2/${key}`
-      : getPublicUrl(c.env, key);
-    if (!publicUrl) return c.json(APIErrors.internalError("R2_PUBLIC_URL not configured"), 500);
-
-    return c.json({ success: true, key, url: publicUrl, size: file.size, type: file.type });
+    const key = `stories/${session.user.id}-${Date.now()}.${ext}`;
+    const result = await uploadImageFile(c, file, key);
+    if ("error" in result) return c.json(result.error, result.status);
+    return c.json(result.data);
   } catch (error) {
-    console.error("Location image upload error:", error);
-    return c.json(APIErrors.internalError("Failed to upload location image"), 500);
+    console.error("Story image upload error:", error);
+    return c.json(APIErrors.internalError("Failed to upload story image"), 500);
   }
 });
 
