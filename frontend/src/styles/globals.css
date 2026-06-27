@@ -175,30 +175,8 @@
     50%       { opacity: 0.5; }
   }
 
-  /* 收藏按钮点击时的心跳弹弹效果 */
-  @keyframes heartbeat {
-    0%   { transform: scale(1); }
-    40%  { transform: scale(1.35); }
-    70%  { transform: scale(0.88); }
-    100% { transform: scale(1); }
-  }
 
-  /* 操作成功时的弹入反馈 */
-  @keyframes success-bounce {
-    0%   { transform: scale(0.6); opacity: 0; }
-    60%  { transform: scale(1.15); opacity: 1; }
-    100% { transform: scale(1); }
-  }
 
-  /* 浮动卡片上下漂浮 */
-  @keyframes float-up {
-    0%, 100% { transform: translateY(0px); }
-    50%       { transform: translateY(-10px); }
-  }
-  @keyframes float-down {
-    0%, 100% { transform: translateY(0px); }
-    50%       { transform: translateY(8px); }
-  }
 
   /* 清空按钮旋转出现（简化版） */
   @keyframes spin-in {
@@ -265,19 +243,7 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* 加入成功弹跳 */
-  @keyframes joinBounce {
-    0%   { transform: scale(1); }
-    40%  { transform: scale(1.05); }
-    70%  { transform: scale(0.98); }
-    100% { transform: scale(1); }
-  }
 
-  /* 加入成功勾号渐入 */
-  @keyframes checkFadeIn {
-    from { opacity: 0; transform: translateX(8px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
 
   /* Toast 退出淡出（fade-out） */
   --animate-fade-out: fade-out 0.2s ease-in both;
@@ -798,18 +764,6 @@
 
 .animate-fade-in-up {
   animation: fade-in-up 0.6s ease-out;
-}
-
-/* ============================================================
-   Float Animation for CTA Icon
-   ============================================================ */
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
 }
 
 /* ============================================================
