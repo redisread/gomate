@@ -1,7 +1,7 @@
 import * as React from "react";
 import {
   Users, Mountain, ChevronRight, Flame, MapPin, Calendar, Clock, Filter,
-  CalendarDays, Tag, X, Search, Sparkles, ArrowRight,
+  CalendarDays, Tag, X, Search, Sparkles, ArrowRight, CheckCircle, Zap, Shield,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
@@ -362,118 +362,81 @@ export function TeamsHeader({
 export function TeamsCtaSection() {
   const { t } = useI18n(["teams", "filter", "common"]);
   return (
-    <section className="relative mt-16 py-16 lg:py-20 overflow-hidden">
-      {/* Background gradient orbs */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/4 w-96 h-96 rounded-full bg-amber-400/10 dark:bg-amber-500/10 blur-[100px]" />
-        <div className="absolute bottom-0 right-1/3 w-80 h-80 rounded-full bg-orange-400/8 dark:bg-orange-500/8 blur-[80px]" />
-      </div>
-
+    <section className="relative mt-16 py-16 lg:py-20 overflow-hidden bg-gradient-to-b from-amber-50/50 via-stone-50/80 to-orange-50/30 dark:from-amber-950/20 dark:via-stone-950/80 dark:to-orange-950/10">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative">
-          {/* Main CTA Card */}
-          <div className="relative rounded-3xl overflow-hidden">
-            {/* Background layers */}
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 dark:from-amber-600 dark:via-amber-700 dark:to-orange-700" />
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNjAgMEgwVjYwSDYwVjBaIiBmaWxsPSJ1cmwoI3ApIi8+PGRlZnM+PHBhdHRlcm4gaWQ9InAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+PHBhdGggZD0iTTAgNjBWMHNNNjAgMFY2MCIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjwvc3ZnPg==')] opacity-30" />
+        <div className="relative rounded-3xl border border-amber-200/50 bg-white/80 dark:bg-stone-900/80 backdrop-blur-sm shadow-warm-sm overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-amber-100/40 blur-3xl translate-x-1/3 -translate-y-1/3" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-orange-100/30 blur-3xl -translate-x-1/4 translate-y-1/4" />
+          </div>
 
-            {/* Decorative elements */}
-            <div className="absolute top-0 left-0 w-40 h-40 rounded-full bg-white/5 blur-2xl -translate-x-1/2 -translate-y-1/2" />
-            <div className="absolute bottom-0 right-0 w-56 h-56 rounded-full bg-white/5 blur-3xl translate-x-1/4 translate-y-1/4" />
-
-            {/* Mountain silhouette (decorative) */}
-            <svg className="absolute bottom-0 left-0 right-0 w-full h-32 opacity-10" viewBox="0 0 1440 120" preserveAspectRatio="none">
-              <path d="M0 120L240 60L480 100L720 40L960 90L1200 50L1440 80V120H0Z" fill="white"/>
-            </svg>
-
-            {/* Content */}
-            <div className="relative px-8 py-14 sm:px-12 sm:py-16 lg:px-16 lg:py-18">
-              <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-12">
-                {/* Left: Text Content */}
-                <div className="flex-1 text-center lg:text-left">
-                  {/* Badge */}
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 text-white/90 text-sm font-medium mb-5 border border-white/20">
-                    <Users className="w-4 h-4" />
-                    <span>{t("teams.ctaBadge")}</span>
-                  </div>
-
-                  {/* Title */}
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight">
-                    {t("teams.ctaTitle")}
-                  </h2>
-
-                  {/* Description */}
-                  <p className="text-base sm:text-lg text-white/80 mb-6 max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                    {t("teams.ctaDesc")}
-                  </p>
-
-                  {/* Button Group */}
-                  <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
-                    <a href="/teams/create" className="group">
-                      <button className="inline-flex items-center gap-2 bg-white text-amber-700 px-6 py-3.5 rounded-2xl text-base font-semibold transition-all duration-300 hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-1 active:scale-95">
-                        <Sparkles className="w-5 h-5" />
-                        {t("teams.createBtn")}
-                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                      </button>
-                    </a>
-                    <a href="/locations" className="text-white/80 hover:text-white text-base font-medium transition-colors inline-flex items-center gap-1.5 hover:underline underline-offset-4">
-                      {t("teams.exploreLink")}
-                    </a>
-                  </div>
+          <div className="relative px-8 py-12 sm:px-12 sm:py-14 lg:px-16 lg:py-16">
+            <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-14">
+              {/* Left: Text Content */}
+              <div className="flex-1 text-center lg:text-left">
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-100/80 text-orange-800 text-sm font-medium mb-5 border border-orange-200/60">
+                  <Users className="w-4 h-4" />
+                  <span>{t("teams.ctaBadge")}</span>
                 </div>
 
-                {/* Right: Visual Element - Team Card Stack */}
-                <div className="flex-shrink-0 relative">
-                  {/* Floating cards stack effect */}
-                  <div className="relative w-56 h-40 sm:w-72 sm:h-48">
-                    {/* Back card */}
-                    <div className="absolute inset-0 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 transform rotate-3 translate-x-3 translate-y-2" />
-                    {/* Middle card */}
-                    <div className="absolute inset-0 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 transform -rotate-2 -translate-x-2 translate-y-1" />
-                    {/* Front card */}
-                    <div className="absolute inset-0 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-2xl shadow-black/10 flex flex-col items-center justify-center p-5">
-                      <div className="w-14 h-14 rounded-2xl bg-white/90 flex items-center justify-center mb-3 shadow-lg">
-                        <Users className="w-7 h-7 text-amber-600" />
-                      </div>
-                      <div className="text-white text-center">
-                        <div className="text-base font-bold mb-0.5">{t("teams.ctaCardTitle")}</div>
-                        <div className="text-sm text-white/70">{t("teams.ctaCardDesc")}</div>
-                      </div>
-                    </div>
+                {/* Title */}
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-3 leading-tight">
+                  {t("teams.ctaTitle")}
+                </h2>
 
-                    {/* Floating decorative icons */}
-                    <div className="absolute -top-3 -right-3 w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-lg animate-pulse" style={{ animationDuration: "3s" }}>
-                      <Flame className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="absolute -bottom-1 -left-5 w-7 h-7 rounded-lg bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center shadow-lg animate-pulse" style={{ animationDuration: "4s", animationDelay: "1s" }}>
-                      <Mountain className="w-3.5 h-3.5 text-white" />
-                    </div>
+                {/* Description */}
+                <p className="text-base sm:text-lg text-stone-500 dark:text-stone-400 mb-7 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                  {t("teams.ctaDesc")}
+                </p>
+
+                {/* Button Group */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
+                  <a href="/teams/create" className="group">
+                    <button className="inline-flex items-center gap-2 bg-orange-600 text-white px-7 py-3.5 rounded-2xl text-base font-semibold transition-all duration-200 hover:bg-orange-700 hover:shadow-lg hover:shadow-orange-200/40 active:scale-[0.98]">
+                      <Sparkles className="w-5 h-5" />
+                      {t("teams.createBtn")}
+                      <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </button>
+                  </a>
+                  <a href="/locations" className="text-stone-500 dark:text-stone-400 hover:text-orange-700 dark:hover:text-orange-400 text-base font-medium transition-colors inline-flex items-center gap-1.5">
+                    {t("teams.exploreLink")}
+                  </a>
+                </div>
+              </div>
+
+              {/* Right: Visual Element — simplified circular icon */}
+              <div className="flex-shrink-0 relative">
+                <div className="relative w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center">
+                  {/* Outer ring */}
+                  <div className="absolute inset-0 rounded-full border-2 border-dashed border-orange-200/60" />
+                  {/* Inner circle */}
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shadow-warm-md">
+                    <Users className="w-10 h-10 sm:w-12 sm:h-12 text-orange-600" />
                   </div>
+                  {/* Small decorative dots */}
+                  <div className="absolute top-2 right-6 w-3 h-3 rounded-full bg-orange-300/60" />
+                  <div className="absolute bottom-4 left-4 w-2 h-2 rounded-full bg-amber-300/50" />
+                  <div className="absolute top-8 left-2 w-2.5 h-2.5 rounded-full bg-orange-200/70" />
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Trust indicators below */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-stone-500 dark:text-stone-400 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              </div>
-              <span>{t("teams.ctaTrust1")}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-              </div>
-              <span>{t("teams.ctaTrust2")}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-              </div>
-              <span>{t("teams.ctaTrust3")}</span>
-            </div>
+        {/* Trust indicators */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-stone-500 dark:text-stone-400 text-sm">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-emerald-500" />
+            <span>{t("teams.ctaTrust1")}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-amber-500" />
+            <span>{t("teams.ctaTrust2")}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-blue-500" />
+            <span>{t("teams.ctaTrust3")}</span>
           </div>
         </div>
       </div>
