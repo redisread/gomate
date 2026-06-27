@@ -7,6 +7,7 @@ import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 import { createStorySchema, updateStorySchema } from "../lib/validation";
 import { generateId } from "../lib/id";
+import { getCachedOrFetch, buildListCacheKey } from "../lib/cache";
 
 const stories = new Hono<{ Bindings: Env }>();
 
@@ -92,6 +93,12 @@ stories.get("/", async (c) => {
     const tag = c.req.query("tag");
     const offset = (page - 1) * limit;
 
+    // 公共故事列表，使用缓存（键含全部查询参数）
+    const cacheKey = buildListCacheKey("stories", {
+      page: String(page), limit: String(limit), status, tag: tag || "",
+    });
+    const body = await getCachedOrFetch(cacheKey, async () => {
+
     // 基础过滤条件：状态
     const whereConditions = [eq(schema.stories.status, status)];
 
@@ -120,7 +127,7 @@ stories.get("/", async (c) => {
 
       // 如果有标签但无关联故事，返回空结果
       if (storyIdsWithTag.length === 0) {
-        return c.json({
+        return {
           success: true,
           data: [],
           pagination: {
@@ -129,7 +136,7 @@ stories.get("/", async (c) => {
             total: 0,
             hasMore: false,
           },
-        });
+        };
       }
 
       // 添加故事ID过滤条件
@@ -171,7 +178,7 @@ stories.get("/", async (c) => {
         : null,
     }));
 
-    return c.json({
+    return {
       success: true,
       data: formatted,
       pagination: {
@@ -180,7 +187,9 @@ stories.get("/", async (c) => {
         total: totalResult,
         hasMore: items.length === limit,
       },
+    };
     });
+    return c.json(body);
   } catch (error) {
     console.error("Get stories error:", error);
     return c.json(APIErrors.internalError("获取故事列表失败"), 500);

@@ -5,6 +5,7 @@ import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { getTimeFilterRange, parseRequirements, getRouteTags } from "./utils";
+import { getCachedOrFetch, buildListCacheKey } from "../../lib/cache";
 
 const queries = new Hono<{ Bindings: Env }>();
 
@@ -111,11 +112,53 @@ queries.get("/", async (c) => {
       });
     }
 
-    // 特殊模式：某地点的队伍
+    // 特殊模式：某地点的队伍（公共数据，使用缓存）
     if (locationId) {
-      const conditions = [eq(schema.teams.locationId, locationId)];
+      const cacheKey = buildListCacheKey("teams", { locationId, status: statusParam });
+      const body = await getCachedOrFetch(cacheKey, async () => {
+        const conditions = [eq(schema.teams.locationId, locationId)];
 
-      // 添加 status 过滤
+        // 添加 status 过滤
+        if (statusParam) {
+          const statuses = statusParam.split(",").filter(Boolean);
+          if (statuses.length === 1) {
+            conditions.push(eq(schema.teams.status, statuses[0]));
+          } else if (statuses.length > 1) {
+            conditions.push(inArray(schema.teams.status, statuses));
+          }
+        }
+
+        const rows = await db
+          .select(teamColumns)
+          .from(schema.teams)
+          .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
+          .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+          .where(and(...conditions))
+          .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
+        return {
+          success: true,
+          teams: formatTeams(rows),
+          pagination: { page: 1, pageSize: rows.length, total: rows.length, totalPages: 1, hasMore: false }
+        };
+      });
+      return c.json(body);
+    }
+
+    // 通用列表模式：支持搜索、status、difficulty、日期范围、标签、分页（公共数据，使用缓存）
+    const cacheKey = buildListCacheKey("teams", {
+      page: String(page),
+      pageSize: String(pageSize),
+      search,
+      status: statusParam,
+      difficulty: difficultyParam,
+      startDateFrom,
+      startDateTo,
+      timeFilter,
+      tagIds: tagIdsParam,
+    });
+    const body = await getCachedOrFetch(cacheKey, async () => {
+      const conditions = [];
+
       if (statusParam) {
         const statuses = statusParam.split(",").filter(Boolean);
         if (statuses.length === 1) {
@@ -125,133 +168,109 @@ queries.get("/", async (c) => {
         }
       }
 
-      result = await db
+      if (search) {
+        conditions.push(like(schema.teams.title, `%${search}%`));
+      }
+
+      // 日期范围筛选（支持 timeFilter 快捷参数或 startDateFrom/To 自定义范围）
+      let effectiveStartDate = startDateFrom;
+      let effectiveEndDate = startDateTo;
+
+      // 如果提供了 timeFilter，计算对应的日期范围
+      if (timeFilter && !effectiveStartDate && !effectiveEndDate) {
+        const range = getTimeFilterRange(timeFilter);
+        if (range) {
+          effectiveStartDate = range.start;
+          effectiveEndDate = range.end;
+        }
+      }
+
+      if (effectiveStartDate) {
+        const fromDate = new Date(effectiveStartDate);
+        fromDate.setHours(0, 0, 0, 0);
+        conditions.push(gte(schema.teams.startTime, fromDate));
+      }
+      if (effectiveEndDate) {
+        const toDate = new Date(effectiveEndDate);
+        toDate.setHours(23, 59, 59, 999);
+        conditions.push(lte(schema.teams.startTime, toDate));
+      }
+
+      // difficulty 过滤需要 join routes 表
+      const difficultyList = difficultyParam ? difficultyParam.split(",").filter(Boolean) : [];
+
+      // 标签筛选
+      const tagIds = tagIdsParam ? tagIdsParam.split(",").filter(Boolean) : [];
+
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      // 如果有标签筛选，先查出符合条件的 teamIds
+      let filteredTeamIds: string[] | null = null;
+      if (tagIds.length > 0) {
+        const tagResults = await db
+          .select({ entityId: schema.entityToTags.entityId })
+          .from(schema.entityToTags)
+          .where(
+            and(
+              eq(schema.entityToTags.entityType, "activity"),
+              inArray(schema.entityToTags.tagId, tagIds)
+            )
+          );
+        filteredTeamIds = tagResults.map(r => r.entityId);
+        if (filteredTeamIds.length === 0) {
+          // 没有符合条件的队伍，直接返回空结果
+          return {
+            success: true,
+            teams: [],
+            pagination: { page, pageSize, total: 0, totalPages: 0 },
+          };
+        }
+      }
+
+      // 构建最终 where 条件
+      const finalWhereClause = (() => {
+        const allConditions = [];
+        if (whereClause) allConditions.push(whereClause);
+        if (difficultyList.length > 0) {
+          allConditions.push(inArray(schema.routes.difficulty, difficultyList));
+        }
+        if (filteredTeamIds) {
+          allConditions.push(inArray(schema.teams.id, filteredTeamIds));
+        }
+        return allConditions.length > 0 ? and(...allConditions) : undefined;
+      })();
+
+      // 统计总数
+      const [{ cnt }] = await db
+        .select({ cnt: sql<number>`count(distinct ${schema.teams.id})` })
+        .from(schema.teams)
+        .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
+        .where(finalWhereClause);
+      const total = cnt;
+
+      const totalPages = Math.ceil(total / pageSize);
+      const hasMore = page < totalPages;
+      const offset = (page - 1) * pageSize;
+
+      // 查询列表
+      const rows = await db
         .select(teamColumns)
         .from(schema.teams)
         .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
         .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-        .where(and(...conditions))
-        .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
-      return c.json({
+        .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
+        .where(finalWhereClause)
+        .orderBy(desc(schema.teams.startTime))
+        .limit(pageSize)
+        .offset(offset) as TeamRow[];
+
+      return {
         success: true,
-        teams: formatTeams(result),
-        pagination: { page: 1, pageSize: result.length, total: result.length, totalPages: 1, hasMore: false }
-      });
-    }
-
-    // 通用列表模式：支持搜索、status、difficulty、日期范围、标签、分页
-    const conditions = [];
-
-    if (statusParam) {
-      const statuses = statusParam.split(",").filter(Boolean);
-      if (statuses.length === 1) {
-        conditions.push(eq(schema.teams.status, statuses[0]));
-      } else if (statuses.length > 1) {
-        conditions.push(inArray(schema.teams.status, statuses));
-      }
-    }
-
-    if (search) {
-      conditions.push(like(schema.teams.title, `%${search}%`));
-    }
-
-    // 日期范围筛选（支持 timeFilter 快捷参数或 startDateFrom/To 自定义范围）
-    let effectiveStartDate = startDateFrom;
-    let effectiveEndDate = startDateTo;
-
-    // 如果提供了 timeFilter，计算对应的日期范围
-    if (timeFilter && !effectiveStartDate && !effectiveEndDate) {
-      const range = getTimeFilterRange(timeFilter);
-      if (range) {
-        effectiveStartDate = range.start;
-        effectiveEndDate = range.end;
-      }
-    }
-
-    if (effectiveStartDate) {
-      const fromDate = new Date(effectiveStartDate);
-      fromDate.setHours(0, 0, 0, 0);
-      conditions.push(gte(schema.teams.startTime, fromDate));
-    }
-    if (effectiveEndDate) {
-      const toDate = new Date(effectiveEndDate);
-      toDate.setHours(23, 59, 59, 999);
-      conditions.push(lte(schema.teams.startTime, toDate));
-    }
-
-    // difficulty 过滤需要 join routes 表
-    const difficultyList = difficultyParam ? difficultyParam.split(",").filter(Boolean) : [];
-
-    // 标签筛选
-    const tagIds = tagIdsParam ? tagIdsParam.split(",").filter(Boolean) : [];
-
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-    // 如果有标签筛选，先查出符合条件的 teamIds
-    let filteredTeamIds: string[] | null = null;
-    if (tagIds.length > 0) {
-      const tagResults = await db
-        .select({ entityId: schema.entityToTags.entityId })
-        .from(schema.entityToTags)
-        .where(
-          and(
-            eq(schema.entityToTags.entityType, "activity"),
-            inArray(schema.entityToTags.tagId, tagIds)
-          )
-        );
-      filteredTeamIds = tagResults.map(r => r.entityId);
-      if (filteredTeamIds.length === 0) {
-        // 没有符合条件的队伍，直接返回空结果
-        return c.json({
-          success: true,
-          teams: [],
-          pagination: { page, pageSize, total: 0, totalPages: 0 },
-        });
-      }
-    }
-
-    // 构建最终 where 条件
-    const finalWhereClause = (() => {
-      const allConditions = [];
-      if (whereClause) allConditions.push(whereClause);
-      if (difficultyList.length > 0) {
-        allConditions.push(inArray(schema.routes.difficulty, difficultyList));
-      }
-      if (filteredTeamIds) {
-        allConditions.push(inArray(schema.teams.id, filteredTeamIds));
-      }
-      return allConditions.length > 0 ? and(...allConditions) : undefined;
-    })();
-
-    // 统计总数
-    const [{ cnt }] = await db
-      .select({ cnt: sql<number>`count(distinct ${schema.teams.id})` })
-      .from(schema.teams)
-      .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
-      .where(finalWhereClause);
-    const total = cnt;
-
-    const totalPages = Math.ceil(total / pageSize);
-    const hasMore = page < totalPages;
-    const offset = (page - 1) * pageSize;
-
-    // 查询列表
-    result = await db
-      .select(teamColumns)
-      .from(schema.teams)
-      .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
-      .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-      .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
-      .where(finalWhereClause)
-      .orderBy(desc(schema.teams.startTime))
-      .limit(pageSize)
-      .offset(offset) as TeamRow[];
-
-    return c.json({
-      success: true,
-      teams: formatTeams(result),
-      pagination: { page, pageSize, total, totalPages, hasMore },
+        teams: formatTeams(rows),
+        pagination: { page, pageSize, total, totalPages, hasMore },
+      };
     });
+    return c.json(body);
   } catch (error) {
     console.error("Get teams error:", error);
     return c.json({ success: false, error: "获取队伍列表失败" }, 500);
