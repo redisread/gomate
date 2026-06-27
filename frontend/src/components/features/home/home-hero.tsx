@@ -5,10 +5,8 @@ import type { useHomeData } from "./use-home-data";
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeHero({ data }: { data: HomeData }) {
-  const { isDark, animate, search, handleSearch } = data;
+  const { animate, search, handleSearch } = data;
   const { t } = useI18n(["home", "common", "content"]);
-
-  const effectiveIsDark = isDark;
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">

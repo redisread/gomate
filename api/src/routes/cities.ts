@@ -6,6 +6,7 @@ import { createAuth, type Env } from "../lib/auth";
 import { APIErrors } from "../lib/api-errors";
 import { createCitySchema } from "../lib/validation";
 import { generateId } from "../lib/id";
+import { setPublicCacheHeaders } from "../lib/cache";
 
 const cities = new Hono<{ Bindings: Env }>();
 
@@ -61,6 +62,7 @@ cities.get("/", async (c) => {
       .limit(pageSize)
       .offset(offset);
 
+    setPublicCacheHeaders(c);
     return c.json({
       success: true,
       cities: result,

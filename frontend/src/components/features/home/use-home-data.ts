@@ -1,21 +1,26 @@
 "use client";
 
 import * as React from "react";
-import { fetchAPI, fetchCurrentUser } from "@/lib/api";
+import { fetchPublicAPI } from "@/lib/api";
 import { effectiveThemeStore } from "@/stores/theme";
 import type { Team } from "@/lib/types";
-import { useLocations } from "@/hooks/use-locations";
+import { useLocations, type LocationsResponse } from "@/hooks/use-locations";
 import { useInView, useAnimateIn, useParallax, useSearchInteraction } from "@/hooks/use-animations";
 
-export function useHomeData() {
+export interface HomeInitialData {
+  locations?: LocationsResponse | null;
+  teams?: Team[];
+}
+
+export function useHomeData(initialData?: HomeInitialData) {
   // 使用 SWR 获取地点列表（带缓存）
   const [currentPage, setCurrentPage] = React.useState(1);
-  const { locations, pagination, isLoading, error: _error } = useLocations(currentPage, 6);
+  const { locations, pagination, isLoading, error: _error } = useLocations(currentPage, 6, initialData?.locations);
 
-  const [teams, setTeams] = React.useState<Team[]>([]);
-  const [teamsLoading, setTeamsLoading] = React.useState(true);
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [teams, setTeams] = React.useState<Team[]>(initialData?.teams ?? []);
+  const [teamsLoading, setTeamsLoading] = React.useState(!initialData?.teams);
   const [isDark, setIsDark] = React.useState(false);
+  const hasInitialTeamsRef = React.useRef(Boolean(initialData?.teams));
 
   // Theme - 只在客户端检测，避免 SSR/CSR 不一致
   React.useEffect(() => {
@@ -24,14 +29,6 @@ export function useHomeData() {
       setIsDark(effective === "dark");
     });
     return unsubscribe;
-  }, []);
-
-  // Login status
-  React.useEffect(() => {
-    (async () => {
-      const user = await fetchCurrentUser();
-      setIsLoggedIn(!!user);
-    })();
   }, []);
 
   // Animation hooks
@@ -49,7 +46,7 @@ export function useHomeData() {
   const fetchTeams = React.useCallback(async () => {
     try {
       setTeamsLoading(true);
-      const res = await fetchAPI("/api/teams?status=recruiting&pageSize=4");
+      const res = await fetchPublicAPI("/api/teams?status=recruiting&pageSize=4");
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
     } catch (error) {
@@ -60,6 +57,10 @@ export function useHomeData() {
   }, []);
 
   React.useEffect(() => {
+    if (hasInitialTeamsRef.current) {
+      hasInitialTeamsRef.current = false;
+      return;
+    }
     fetchTeams();
   }, [fetchTeams]);
 
@@ -84,7 +85,7 @@ export function useHomeData() {
   };
 
   return {
-    locations, teams, teamsLoading, isLoading, currentPage, pagination, isLoggedIn, isDark,
+    locations, teams, teamsLoading, isLoading, currentPage, pagination, isDark,
     preloadImages,
     animate, parallaxY, search,
     locationsRef, locationsInView, howItWorksRef, howItWorksInView,

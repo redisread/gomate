@@ -9,11 +9,18 @@ import {
   teamMembers,
   users,
 } from "../db/schema";
-import { eq, and, or, desc, sql } from "drizzle-orm";
+import { eq, and, or, desc, sql, inArray } from "drizzle-orm";
 import { generateId } from "../lib/id";
 import { APIErrors } from "../lib/api-errors";
 
 const app = new Hono<{ Bindings: Env }>();
+
+type UserSummary = {
+  id: string;
+  name: string;
+  nickname: string | null;
+  image: string | null;
+};
 
 // ============ Validation Schemas ============
 
@@ -129,14 +136,13 @@ app.get("/", async (c) => {
       .orderBy(desc(conversations.lastMessageAt))
       .limit(limit);
 
-    // 获取对方用户信息并计算未读数
-    const result = await Promise.all(
-      list.map(async (conv) => {
-        // 获取对方用户ID
-        const otherUserId = conv.userId === user.id ? conv.leaderId : conv.userId;
+    const otherUserIds = [...new Set(list.map((conv) =>
+      conv.userId === user.id ? conv.leaderId : conv.userId
+    ))];
+    const conversationIds = list.map((conv) => conv.id);
 
-        // 获取对方用户信息
-        const [otherUser] = await db
+    const otherUsers = otherUserIds.length > 0
+      ? await db
           .select({
             id: users.id,
             name: users.name,
@@ -144,28 +150,38 @@ app.get("/", async (c) => {
             image: users.image,
           })
           .from(users)
-          .where(eq(users.id, otherUserId))
-          .limit(1);
+          .where(inArray(users.id, otherUserIds))
+      : [];
+    const usersById = new Map<string, UserSummary>(otherUsers.map((otherUser) => [otherUser.id, otherUser]));
 
-        // 获取未读消息数
-        const [unreadResult] = await db
-          .select({ count: sql<number>`COUNT(*)` })
+    const unreadRows = conversationIds.length > 0
+      ? await db
+          .select({
+            conversationId: messages.conversationId,
+            count: sql<number>`COUNT(*)`,
+          })
           .from(messages)
           .where(
             and(
-              eq(messages.conversationId, conv.id),
+              inArray(messages.conversationId, conversationIds),
               eq(messages.isRead, false),
               sql`${messages.senderId} <> ${user.id}`
             )
-          );
-
-        return {
-          ...conv,
-          otherUser: otherUser || null,
-          unreadCount: unreadResult?.count || 0,
-        };
-      })
+          )
+          .groupBy(messages.conversationId)
+      : [];
+    const unreadCountByConversationId = new Map(
+      unreadRows.map((row) => [row.conversationId, Number(row.count) || 0])
     );
+
+    const result = list.map((conv) => {
+      const otherUserId = conv.userId === user.id ? conv.leaderId : conv.userId;
+      return {
+        ...conv,
+        otherUser: usersById.get(otherUserId) || null,
+        unreadCount: unreadCountByConversationId.get(conv.id) || 0,
+      };
+    });
 
     return c.json({ success: true, data: result });
   } catch (error) {
@@ -330,10 +346,9 @@ app.get("/:id", async (c) => {
       .orderBy(desc(messages.createdAt))
       .limit(limit);
 
-    // 获取发送者信息
-    const messagesWithSender = await Promise.all(
-      list.map(async (msg) => {
-        const [sender] = await db
+    const senderIds = [...new Set(list.map((msg) => msg.senderId))];
+    const senders = senderIds.length > 0
+      ? await db
           .select({
             id: users.id,
             name: users.name,
@@ -341,11 +356,13 @@ app.get("/:id", async (c) => {
             image: users.image,
           })
           .from(users)
-          .where(eq(users.id, msg.senderId))
-          .limit(1);
-        return { ...msg, sender };
-      })
-    );
+          .where(inArray(users.id, senderIds))
+      : [];
+    const sendersById = new Map<string, UserSummary>(senders.map((sender) => [sender.id, sender]));
+    const messagesWithSender = list.map((msg) => ({
+      ...msg,
+      sender: sendersById.get(msg.senderId),
+    }));
 
     // 异步标记对方消息为已读
     c.executionCtx?.waitUntil(

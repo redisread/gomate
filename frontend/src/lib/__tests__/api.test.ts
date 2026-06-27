@@ -24,7 +24,7 @@ describe("API 客户端封装", () => {
   });
 
   describe("fetchAPI", () => {
-    it("发送 GET 请求并返回 Response", async () => {
+    it("发送 GET 请求时不添加 JSON header，避免跨域预检", async () => {
       // Arrange
       mockFetch.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
       const { fetchAPI } = await import("@/lib/api");
@@ -36,7 +36,7 @@ describe("API 客户端封装", () => {
       expect(mockFetch).toHaveBeenCalledWith(
         `${API_BASE}/test`,
         expect.objectContaining({
-          headers: { "Content-Type": "application/json" },
+          headers: undefined,
           credentials: "include",
         }),
       );
@@ -73,20 +73,43 @@ describe("API 客户端封装", () => {
       );
     });
 
-    it("携带自定义 headers 和 method", async () => {
+    it("携带自定义 headers 和 method，并为 JSON 写请求补 Content-Type", async () => {
       // Arrange
       mockFetch.mockResolvedValue(new Response("", { status: 200 }));
       const { fetchAPI } = await import("@/lib/api");
 
       // Act
-      await fetchAPI("/test", { method: "PUT", headers: { "X-Custom": "value" } });
+      await fetchAPI("/test", {
+        method: "PUT",
+        body: JSON.stringify({ ok: true }),
+        headers: { "X-Custom": "value" },
+      });
 
       // Assert
       expect(mockFetch).toHaveBeenCalledWith(
         `${API_BASE}/test`,
         expect.objectContaining({
           method: "PUT",
-          headers: { "Content-Type": "application/json", "X-Custom": "value" },
+          body: JSON.stringify({ ok: true }),
+          headers: { "content-type": "application/json", "x-custom": "value" },
+        }),
+      );
+    });
+
+    it("公开请求不携带 credentials", async () => {
+      // Arrange
+      mockFetch.mockResolvedValue(new Response("", { status: 200 }));
+      const { fetchPublicAPI } = await import("@/lib/api");
+
+      // Act
+      await fetchPublicAPI("/locations?page=1");
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${API_BASE}/locations?page=1`,
+        expect.objectContaining({
+          headers: undefined,
+          credentials: "omit",
         }),
       );
     });
@@ -130,6 +153,7 @@ describe("API 客户端封装", () => {
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({ name: "test" }),
+          headers: { "content-type": "application/json" },
         }),
       );
       expect(result).toEqual({ id: 1 });

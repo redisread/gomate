@@ -5,10 +5,53 @@
 import Layout from "../../layouts/Layout.astro";
 import { TeamsClient } from "../../components/features/teams-client";
 import { declareI18nNs } from "../../middleware";
+import { API_BASE } from "../../lib/api";
+import { getDateRangeByQuickType } from "../../lib/date-beijing";
+import type { TeamsInitialData } from "../../components/features/teams/use-teams";
+import type { Team } from "../../lib/types";
 
 declareI18nNs(Astro.locals, ["teams", "filter", "content"]);
+
+async function fetchJson<T>(path: string): Promise<T | null> {
+  try {
+    const response = await fetch(`${API_BASE}${path}`);
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+const params = Astro.url.searchParams;
+const listQuery = new URLSearchParams();
+listQuery.set("status", "recruiting");
+listQuery.set("page", params.get("page") || "1");
+listQuery.set("pageSize", "12");
+if (params.get("q")) listQuery.set("search", params.get("q")!);
+if (params.get("difficulty")) listQuery.set("difficulty", params.get("difficulty")!);
+if (params.get("tags")) listQuery.set("tagIds", params.get("tags")!);
+
+const timeFilter = params.get("timeFilter");
+const quickRange = timeFilter ? getDateRangeByQuickType(timeFilter) : null;
+const startDate = quickRange?.start || params.get("startDate");
+const endDate = quickRange?.end || params.get("endDate");
+if (startDate) listQuery.set("startDateFrom", startDate);
+if (endDate) listQuery.set("startDateTo", endDate);
+
+const [teamsData, tagsData] = await Promise.all([
+  fetchJson<{ success: boolean; teams: Team[]; pagination: TeamsInitialData["pagination"] }>(`/teams?${listQuery}`),
+  fetchJson<{ success: boolean; tags: { id: string; name: string }[] }>("/tags?type=activity"),
+]);
+
+const initialData = teamsData?.success
+  ? {
+      teams: teamsData.teams ?? [],
+      pagination: teamsData.pagination,
+      availableTags: tagsData?.success ? tagsData.tags ?? [] : [],
+    } satisfies TeamsInitialData
+  : undefined;
 ---
 
 <Layout title="探索队伍 - GoMate" showNavbar={false} showFooter={false}>
-  <TeamsClient client:load />
+  <TeamsClient initialData={initialData} client:load />
 </Layout>

@@ -8,7 +8,7 @@ vi.stubGlobal("fetch", mockFetch);
 vi.stubGlobal("import", { meta: { env: { PUBLIC_API_URL: "http://localhost:8799" } } });
 
 // 动态导入（确保 mock 先于模块加载）
-const { fetchAPI, apiGet, apiPost, apiPut, apiDelete } = await import("../lib/api");
+const { fetchAPI, fetchPublicAPI, apiGet, apiPost, apiPut, apiDelete } = await import("../lib/api");
 
 function makeResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -33,11 +33,11 @@ describe("API 客户端封装", () => {
       );
     });
 
-    it("自动携带 Content-Type: application/json", async () => {
+    it("GET 默认不携带 Content-Type，避免跨域预检", async () => {
       mockFetch.mockResolvedValueOnce(makeResponse({}));
       await fetchAPI("/teams");
       const [, options] = mockFetch.mock.calls[0];
-      expect(options.headers["Content-Type"]).toBe("application/json");
+      expect(options.headers).toBeUndefined();
     });
 
     it("自动携带 credentials: include", async () => {
@@ -51,7 +51,15 @@ describe("API 客户端封装", () => {
       mockFetch.mockResolvedValueOnce(makeResponse({}));
       await fetchAPI("/teams", { headers: { Authorization: "Bearer token123" } });
       const [, options] = mockFetch.mock.calls[0];
-      expect(options.headers.Authorization).toBe("Bearer token123");
+      expect(options.headers.authorization).toBe("Bearer token123");
+    });
+
+    it("公开请求不携带 credentials", async () => {
+      mockFetch.mockResolvedValueOnce(makeResponse({}));
+      await fetchPublicAPI("/teams");
+      const [, options] = mockFetch.mock.calls[0];
+      expect(options.credentials).toBe("omit");
+      expect(options.headers).toBeUndefined();
     });
   });
 
@@ -91,6 +99,7 @@ describe("API 客户端封装", () => {
       const [, options] = mockFetch.mock.calls[0];
       expect(options.body).toBe(JSON.stringify(body));
       expect(options.method).toBe("POST");
+      expect(options.headers["content-type"]).toBe("application/json");
     });
 
     it("请求失败时抛出服务器返回的 message", async () => {

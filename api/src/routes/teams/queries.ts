@@ -1,11 +1,12 @@
 import { Hono } from "hono";
-import { eq, desc, and, ne, sql, like, inArray, gte, lte, lt } from "drizzle-orm";
+import { eq, desc, and, ne, sql, like, inArray, gte, lte } from "drizzle-orm";
 import { createAuth } from "../../lib/auth";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { getTimeFilterRange, parseRequirements, getRouteTags } from "./utils";
-import { getCachedOrFetch, buildListCacheKey } from "../../lib/cache";
+import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../../lib/cache";
+import { updateExpiredTeams } from "../../lib/team-status";
 
 const queries = new Hono<{ Bindings: Env }>();
 
@@ -40,8 +41,6 @@ queries.get("/", async (c) => {
 
     // 标签筛选参数
     const tagIdsParam = c.req.query("tagIds") || "";
-
-    await updateExpiredTeams(db);
 
     const currentMembersSubquery = sql<number>`(
       SELECT COUNT(*) FROM team_members
@@ -141,6 +140,7 @@ queries.get("/", async (c) => {
           pagination: { page: 1, pageSize: rows.length, total: rows.length, totalPages: 1, hasMore: false }
         };
       });
+      setPublicCacheHeaders(c);
       return c.json(body);
     }
 
@@ -270,6 +270,7 @@ queries.get("/", async (c) => {
         pagination: { page, pageSize, total, totalPages, hasMore },
       };
     });
+    setPublicCacheHeaders(c);
     return c.json(body);
   } catch (error) {
     console.error("Get teams error:", error);
@@ -521,30 +522,5 @@ queries.get("/:id/my-status", async (c) => {
     return c.json({ success: false, error: "获取状态失败" }, 500);
   }
 });
-
-/** 将已过期的队伍更新为 completed */
-async function updateExpiredTeams(db: ReturnType<typeof createDb>, teamId?: string) {
-  const now = new Date();
-
-  // 1. 将 endTime 已过期的 formed 队伍更新为 completed
-  const formedCondition = teamId
-    ? and(eq(schema.teams.id, teamId), eq(schema.teams.status, "formed"), lt(schema.teams.endTime, now))
-    : and(eq(schema.teams.status, "formed"), lt(schema.teams.endTime, now));
-  await db
-    .update(schema.teams)
-    .set({ status: "completed", updatedAt: now })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .where(formedCondition as any);
-
-  // 2. 将 startTime 已过期的 recruiting 队伍更新为 completed
-  const recruitingCondition = teamId
-    ? and(eq(schema.teams.id, teamId), eq(schema.teams.status, "recruiting"), lt(schema.teams.startTime, now))
-    : and(eq(schema.teams.status, "recruiting"), lt(schema.teams.startTime, now));
-  await db
-    .update(schema.teams)
-    .set({ status: "completed", updatedAt: now })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .where(recruitingCondition as any);
-}
 
 export default queries;

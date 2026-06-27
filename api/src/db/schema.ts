@@ -144,6 +144,7 @@ export const locations = sqliteTable(
   },
   (table) => ({
     slugIdx: uniqueIndex("locations_slug_idx").on(table.slug),
+    nameIdx: index("locations_name_idx").on(table.name),
     cityIdx: index("locations_city_idx").on(table.cityId),
     typeIdx: index("locations_type_idx").on(table.type),
     createdAtIdx: index("locations_created_at_idx").on(table.createdAt),
@@ -204,6 +205,7 @@ export const entityToTags = sqliteTable(
   (table) => ({
     entityIdx: index("entity_to_tags_entity_idx").on(table.entityId, table.entityType),
     tagIdx: index("entity_to_tags_tag_idx").on(table.tagId),
+    typeTagEntityIdx: index("entity_to_tags_type_tag_entity_idx").on(table.entityType, table.tagId, table.entityId),
     uniqueEntityTag: uniqueIndex("entity_to_tags_unique_idx").on(table.entityId, table.entityType, table.tagId),
   })
 );
@@ -256,6 +258,7 @@ export const teamMembers = sqliteTable(
   (table) => ({
     teamIdx: index("team_members_team_idx").on(table.teamId),
     userIdx: index("team_members_user_idx").on(table.userId),
+    teamStatusIdx: index("team_members_team_status_idx").on(table.teamId, table.status),
     uniqueTeamUser: uniqueIndex("team_members_team_user_idx").on(table.teamId, table.userId),
   })
 );
@@ -471,6 +474,12 @@ export const messages = sqliteTable(
     conversationIdx: index("messages_conversation_idx").on(table.conversationId),
     senderIdx: index("messages_sender_idx").on(table.senderId),
     createdIdx: index("messages_created_idx").on(table.createdAt),
+    conversationCreatedIdx: index("messages_conversation_created_at_idx").on(table.conversationId, table.createdAt),
+    conversationUnreadSenderIdx: index("messages_conversation_unread_sender_idx").on(
+      table.conversationId,
+      table.isRead,
+      table.senderId
+    ),
   })
 );
 

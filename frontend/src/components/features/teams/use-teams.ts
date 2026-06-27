@@ -1,23 +1,41 @@
 import * as React from "react";
 import type { Team } from "@/lib/types";
-import { fetchAPI } from "@/lib/api";
+import { fetchPublicAPI } from "@/lib/api";
 import {
   getDateRangeByQuickType,
   getActiveDateQuickType,
 } from "@/lib/date-beijing";
 
-export function useTeams() {
-  const [teams, setTeams] = React.useState<Team[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+interface TeamsPagination {
+  page?: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasMore?: boolean;
+}
+
+export interface TeamsInitialData {
+  teams: Team[];
+  pagination: TeamsPagination;
+  availableTags: { id: string; name: string }[];
+}
+
+export function useTeams(initialData?: TeamsInitialData) {
+  const [teams, setTeams] = React.useState<Team[]>(initialData?.teams ?? []);
+  const [isLoading, setIsLoading] = React.useState(!initialData);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [pagination, setPagination] = React.useState({ total: 0, totalPages: 0, pageSize: 12 });
+  const [pagination, setPagination] = React.useState<TeamsPagination>(
+    initialData?.pagination ?? { total: 0, totalPages: 0, pageSize: 12 },
+  );
   const [showFilters, setShowFilters] = React.useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = React.useState<string[]>([]);
   const [startDate, setStartDate] = React.useState("");
   const [endDate, setEndDate] = React.useState("");
-  const [availableTags, setAvailableTags] = React.useState<{ id: string; name: string }[]>([]);
+  const [availableTags, setAvailableTags] = React.useState<{ id: string; name: string }[]>(initialData?.availableTags ?? []);
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
+  const hasInitialDataRef = React.useRef(Boolean(initialData));
+  const skipInitialFilterFetchRef = React.useRef(true);
 
   const loadTeams = React.useCallback(
     async (params: { page?: number; search?: string; difficulty?: string[]; startDateFrom?: string; startDateTo?: string; tagIds?: string[] }) => {
@@ -33,7 +51,7 @@ export function useTeams() {
         if (params.startDateTo) query.set("startDateTo", params.startDateTo);
         if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
 
-        const res = await fetchAPI(`/teams?${query}`);
+        const res = await fetchPublicAPI(`/teams?${query}`);
         const data = await res.json();
         if (data.success) {
           setTeams(data.teams || []);
@@ -78,19 +96,28 @@ export function useTeams() {
       setEndDate(end);
     }
 
+    if (hasInitialDataRef.current) {
+      hasInitialDataRef.current = false;
+      return;
+    }
     loadTeams({ page, search: q, difficulty, startDateFrom: start, startDateTo: end, tagIds: tags });
   }, [loadTeams]);
 
   // 加载可用标签
   React.useEffect(() => {
-    fetchAPI("/tags?type=activity")
+    if (initialData?.availableTags) return;
+    fetchPublicAPI("/tags?type=activity")
       .then((r) => r.json())
       .then((data) => { if (data.success && data.tags) setAvailableTags(data.tags); })
       .catch(() => {});
-  }, []);
+  }, [initialData?.availableTags]);
 
   // 搜索防抖
   React.useEffect(() => {
+    if (skipInitialFilterFetchRef.current) {
+      skipInitialFilterFetchRef.current = false;
+      return;
+    }
     const timer = setTimeout(() => {
       loadTeams({ page: 1, search: searchQuery, difficulty: selectedDifficulty, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
       updateURL();

@@ -2,10 +2,14 @@ name: Deploy API
 on:
   push:
     branches: [main]
-    paths: ['api/**']
+    paths: ['api/**', '.github/workflows/api-deploy.yml']
 
 permissions:
   contents: read
+
+concurrency:
+  group: deploy-api-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   test:
@@ -30,7 +34,13 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @gomate/api run deploy
+      - name: Apply D1 migrations
+        run: pnpm --filter @gomate/api exec wrangler d1 migrations apply gomate-db --env production --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Deploy API Worker
+        run: pnpm --filter @gomate/api run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

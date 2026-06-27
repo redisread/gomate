@@ -5,10 +5,34 @@
 import Layout from "../layouts/Layout.astro";
 import { HomeClient } from "../components/features/home-client";
 import { declareI18nNs } from "../middleware";
+import { API_BASE } from "../lib/api";
+import type { HomeInitialData } from "../components/features/home/use-home-data";
+import type { LocationsResponse } from "../hooks/use-locations";
+import type { Team } from "../lib/types";
 
 declareI18nNs(Astro.locals, ["home", "locations", "teams", "content"]);
+
+async function fetchJson<T>(path: string): Promise<T | null> {
+  try {
+    const response = await fetch(`${API_BASE}${path}`);
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+const [locationsData, teamsData] = await Promise.all([
+  fetchJson<LocationsResponse>("/locations?page=1&pageSize=6&view=card"),
+  fetchJson<{ success: boolean; teams: Team[] }>("/teams?status=recruiting&pageSize=4"),
+]);
+
+const initialData: HomeInitialData = {
+  locations: locationsData?.success ? locationsData : null,
+  teams: teamsData?.success ? teamsData.teams ?? [] : undefined,
+};
 ---
 
 <Layout title="GoMate - 发现趣处，组队同行">
-  <HomeClient client:visible />
+  <HomeClient initialData={initialData} client:visible />
 </Layout>

@@ -5,6 +5,19 @@
  */
 
 const CACHE_TTL = 300; // 5 minutes
+const STALE_WHILE_REVALIDATE = 600; // 10 minutes
+
+export const PUBLIC_CACHE_CONTROL = `public, max-age=60, s-maxage=${CACHE_TTL}, stale-while-revalidate=${STALE_WHILE_REVALIDATE}`;
+
+/**
+ * 给公共 GET 响应设置浏览器/CDN 缓存头。
+ *
+ * 数据仍由 getCachedOrFetch 写入 Workers Cache；这个 helper 让真实 HTTP 响应
+ * 也能被边缘和浏览器缓存，避免首屏数据每次都回源。
+ */
+export function setPublicCacheHeaders(c: { header: (name: string, value: string) => void }): void {
+  c.header("Cache-Control", PUBLIC_CACHE_CONTROL);
+}
 
 /**
  * 从缓存获取数据，如果缓存不存在则执行 fetcher 函数并缓存结果
@@ -39,7 +52,7 @@ export async function getCachedOrFetch<T>(
   // 创建新的响应并缓存
   const newResponse = new Response(JSON.stringify(data), {
     headers: {
-      'Cache-Control': `public, max-age=${CACHE_TTL}`,
+      'Cache-Control': PUBLIC_CACHE_CONTROL,
       'Content-Type': 'application/json',
     },
   });

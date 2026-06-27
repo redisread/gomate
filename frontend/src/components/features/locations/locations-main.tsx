@@ -2,12 +2,12 @@ import { useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useI18n } from "@/hooks/useI18n";
-import { useLocationsList } from "./use-locations-list";
+import { useLocationsList, type LocationsListInitialData } from "./use-locations-list";
 import { LocationsHero, LocationsResultBar, LocationsCtaSection } from "./locations-hero";
 import { LocationsGrid } from "./locations-grid";
 
-export function LocationsClient() {
-  const ctx = useLocationsList();
+export function LocationsClient({ initialData }: { initialData?: LocationsListInitialData }) {
+  const ctx = useLocationsList(initialData);
   const { loading: _i18nLoading } = useI18n(["locations", "filter"]);
 
   // 点击外部关闭城市下拉

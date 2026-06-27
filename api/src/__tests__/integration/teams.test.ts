@@ -92,6 +92,32 @@ describe("Teams API 集成测试", () => {
       expect(json.teams).toHaveLength(1);
       expect(json.teams[0].title).toBe("队伍A");
     });
+
+    it("列表查询不会批量更新已过期队伍状态", async () => {
+      const pastStart = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      const team = await seedTeam(testDb, leader.id, location.id, {
+        title: "已过期但未归档队伍",
+        startTime: pastStart,
+        endTime: new Date(pastStart.getTime() + 60 * 60 * 1000),
+        status: "recruiting",
+      });
+
+      const res = await req(app, "/teams");
+      expect(res.status).toBe(200);
+
+      const [afterList] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
+      expect(afterList.status).toBe("recruiting");
+    });
+
+    it("公共列表响应带 CDN 缓存头", async () => {
+      await seedTeam(testDb, leader.id, location.id, { title: "队伍A" });
+
+      const res = await req(app, "/teams?page=1&pageSize=12");
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get("Cache-Control")).toContain("s-maxage=300");
+      expect(res.headers.get("Cache-Control")).toContain("stale-while-revalidate=600");
+    });
   });
 
   // ===== POST /teams - 创建队伍 =====
@@ -188,6 +214,21 @@ describe("Teams API 集成测试", () => {
       const json = await res.json() as { team: { id: string; requirements: unknown[] } };
       expect(json.team.id).toBe(id);
       expect(json.team.requirements).toEqual([]);
+    });
+
+    it("详情查询仅刷新当前过期队伍状态", async () => {
+      const pastEnd = new Date(Date.now() - 60 * 60 * 1000);
+      const team = await seedTeam(testDb, leader.id, location.id, {
+        status: "recruiting",
+        startTime: new Date(pastEnd.getTime() - 4 * 60 * 60 * 1000),
+        endTime: pastEnd,
+      });
+
+      const res = await req(app, `/teams/${team.id}`);
+      expect(res.status).toBe(200);
+
+      const [afterDetail] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
+      expect(afterDetail.status).toBe("cancelled");
     });
 
     it("获取不存在的队伍返回 404", async () => {
