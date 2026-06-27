@@ -4,9 +4,34 @@
  */
 import Layout from "../../layouts/Layout.astro";
 import { declareI18nNs } from "../../middleware";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, getSSRT, type Locale } from "../../i18n";
+import { loadLocaleData } from "../../i18n/ssr-loader.server";
 
 declareI18nNs(Astro.locals, ["messages", "common"]);
 
+const localsLocale = (Astro.locals as any)?.locale as Locale | undefined;
+const cookieLocale = Astro.cookies.get("gomate_locale")?.value as Locale | undefined;
+const resolvedLocale = localsLocale || cookieLocale;
+const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale))
+  ? resolvedLocale
+  : DEFAULT_LOCALE;
+const loadedData = await loadLocaleData(["messages"], locale, Astro.url.origin);
+const ssr = getSSRT(locale, { [locale]: loadedData } as Record<Locale, Record<string, Record<string, unknown>>>);
+const dateLocale = locale === "zh-CN" ? "zh-CN" : locale === "ja" ? "ja-JP" : "en-US";
+const apiBase = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
+const copy = {
+  loading: ssr.t("messages.loading"),
+  unknownUser: ssr.t("messages.unknownUser"),
+  noMessagesPrompt: ssr.t("messages.noMessagesPrompt"),
+  inputPlaceholder: ssr.t("messages.inputPlaceholder"),
+  send: ssr.t("messages.send"),
+  loadFailed: ssr.t("messages.loadFailed"),
+  forbidden: ssr.t("messages.forbidden"),
+  sendFailed: ssr.t("messages.sendFailed"),
+  read: ssr.t("messages.read"),
+  today: ssr.t("messages.today"),
+  yesterday: ssr.t("messages.yesterday"),
+};
 const { id } = Astro.params;
 ---
 
@@ -24,41 +49,44 @@ const { id } = Astro.params;
           </svg>
         </a>
         <div id="headerInfo" class="flex-1">
-          <h1 class="text-base font-semibold text-gray-900 dark:text-white">加载中...</h1>
+          <h1 class="text-base font-semibold text-gray-900 dark:text-white">{copy.loading}</h1>
         </div>
       </div>
     </div>
 
     {/* Chat Messages */}
     <div id="chatContainer" class="h-[calc(100vh-120px)] overflow-y-auto p-4 space-y-4">
-      <div class="text-center text-gray-500">加载中...</div>
+      <div class="text-center text-gray-500">{copy.loading}</div>
     </div>
 
     {/* Input */}
     <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
-      <div class="max-w-2xl mx-auto flex items-center gap-2">
-        <input
-          id="messageInput"
-          type="text"
-          placeholder="输入消息..."
-          class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-        />
-        <button
-          id="sendBtn"
-          class="px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-medium disabled:opacity-50 hover:bg-blue-600 transition-colors"
-        >
-          发送
-        </button>
+      <div class="max-w-2xl mx-auto space-y-2">
+        <p id="chatError" class="hidden text-sm text-red-600"></p>
+        <div class="flex items-center gap-2">
+          <input
+            id="messageInput"
+            type="text"
+            placeholder={copy.inputPlaceholder}
+            class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white disabled:opacity-60"
+          />
+          <button
+            id="sendBtn"
+            class="px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-medium disabled:opacity-50 hover:bg-blue-600 transition-colors"
+          >
+            {copy.send}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <script define:vars={{ conversationId: id }}>
-    const API_BASE = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
+  <script is:inline define:vars={{ conversationId: id, API_BASE: apiBase, copy, dateLocale }}>
     const chatContainer = document.getElementById("chatContainer");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
     const headerInfo = document.getElementById("headerInfo");
+    const chatError = document.getElementById("chatError");
 
     let messages = [];
     let currentUserId = null;
@@ -97,12 +125,22 @@ const { id } = Astro.params;
           return;
         }
 
+        if (res.status === 403) {
+          setComposerDisabled(true);
+          renderStatusMessage(copy.forbidden, "text-center text-red-500");
+          return;
+        }
+
         const data = await res.json();
 
         if (data.success) {
           messages = data.data || [];
+          if (data.conversation?.otherUser) {
+            otherUser = data.conversation.otherUser;
+            updateHeader();
+          }
           // Get other user info
-          if (messages.length > 0) {
+          if (!otherUser && messages.length > 0) {
             const firstMsg = messages[0];
             otherUser = firstMsg.senderId === currentUserId
               ? messages.find(m => m.senderId !== currentUserId)?.sender
@@ -111,10 +149,45 @@ const { id } = Astro.params;
           }
           renderMessages();
           scrollToBottom();
+        } else {
+          showChatError(getErrorMessage(data, copy.loadFailed));
         }
       } catch (err) {
-        chatContainer.innerHTML = `<div class="text-center text-red-500">加载失败</div>`;
+        renderStatusMessage(copy.loadFailed, "text-center text-red-500");
       }
+    }
+
+    function renderStatusMessage(message, className = "text-center text-gray-500") {
+      if (!chatContainer) return;
+      chatContainer.innerHTML = "";
+      const status = document.createElement("div");
+      status.className = className;
+      status.textContent = message;
+      chatContainer.appendChild(status);
+    }
+
+    function setComposerDisabled(disabled) {
+      if (messageInput) messageInput.disabled = disabled;
+      if (sendBtn) sendBtn.disabled = disabled;
+    }
+
+    function showChatError(message) {
+      if (!chatError) return;
+      chatError.textContent = message;
+      chatError.classList.remove("hidden");
+    }
+
+    function clearChatError() {
+      if (!chatError) return;
+      chatError.textContent = "";
+      chatError.classList.add("hidden");
+    }
+
+    function getErrorMessage(data, fallback) {
+      if (typeof data?.error === "string") return data.error;
+      if (typeof data?.error?.message === "string") return data.error.message;
+      if (typeof data?.message === "string") return data.message;
+      return fallback;
     }
 
     function updateHeader() {
@@ -122,13 +195,13 @@ const { id } = Astro.params;
       // Use textContent to avoid XSS
       const h1 = headerInfo.querySelector("h1");
       if (h1) {
-        h1.textContent = otherUser.nickname || otherUser.name || "未知用户";
+        h1.textContent = otherUser.nickname || otherUser.name || copy.unknownUser;
       }
     }
 
     function renderMessages() {
       if (messages.length === 0) {
-        chatContainer.innerHTML = `<div class="text-center text-gray-500">暂无消息，发送一条吧</div>`;
+        renderStatusMessage(copy.noMessagesPrompt);
         return;
       }
 
@@ -165,7 +238,7 @@ const { id } = Astro.params;
       const isOwn = msg.senderId === currentUserId;
       const sender = msg.sender || {};
       const time = msg.createdAt
-        ? new Date(msg.createdAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })
+        ? new Date(msg.createdAt).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })
         : "";
 
       const wrapper = document.createElement("div");
@@ -183,7 +256,7 @@ const { id } = Astro.params;
 
         const metaDiv = document.createElement("div");
         metaDiv.className = "text-right mt-1 text-xs text-gray-400";
-        metaDiv.textContent = time + (msg.isRead ? " · 已读" : "");
+        metaDiv.textContent = time + (msg.isRead ? ` · ${copy.read}` : "");
         container.appendChild(metaDiv);
 
         wrapper.appendChild(container);
@@ -265,9 +338,9 @@ const { id } = Astro.params;
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
 
-      if (date.toDateString() === today.toDateString()) return "今天";
-      if (date.toDateString() === yesterday.toDateString()) return "昨天";
-      return date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
+      if (date.toDateString() === today.toDateString()) return copy.today;
+      if (date.toDateString() === yesterday.toDateString()) return copy.yesterday;
+      return date.toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" });
     }
 
     function scrollToBottom() {
@@ -279,6 +352,7 @@ const { id } = Astro.params;
       if (!content) return;
 
       sendBtn.disabled = true;
+      clearChatError();
 
       try {
         const res = await fetch(`${API_BASE}/messages/${conversationId}`, {
@@ -288,6 +362,11 @@ const { id } = Astro.params;
           body: JSON.stringify({ content }),
         });
         const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          showChatError(getErrorMessage(data, copy.sendFailed));
+          return;
+        }
 
         if (data.success) {
           messageInput.value = "";
@@ -303,7 +382,7 @@ const { id } = Astro.params;
           scrollToBottom();
         }
       } catch (err) {
-        alert("发送失败，请重试");
+        showChatError(copy.sendFailed);
       } finally {
         sendBtn.disabled = false;
       }

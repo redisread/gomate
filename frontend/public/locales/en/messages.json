@@ -1,0 +1,21 @@
+{
+  "centerTitle": "Messages",
+  "chatTitle": "Chat",
+  "loading": "Loading...",
+  "emptyTitle": "No messages yet",
+  "emptyDescription": "Join a team to message the leader",
+  "discover": "Discover places",
+  "unknownUser": "Unknown user",
+  "noMessages": "No messages yet",
+  "noMessagesPrompt": "No messages yet. Send the first one.",
+  "inputPlaceholder": "Type a message...",
+  "send": "Send",
+  "retry": "Retry",
+  "loadFailed": "Failed to load. Please try again later.",
+  "forbidden": "You do not have access to this conversation",
+  "centerForbidden": "You do not have access to messages",
+  "sendFailed": "Failed to send. Please try again.",
+  "read": "Read",
+  "today": "Today",
+  "yesterday": "Yesterday"
+}

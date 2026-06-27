@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown, MapPin } from "lucide-react";
+import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown, MapPin, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchCurrentUser, API_BASE } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
@@ -11,6 +11,7 @@ import { type Locale, SUPPORTED_LOCALES, getLocale, setLocale, getLocaleName } f
 import { useI18n } from "@/hooks/useI18n";
 import { useIPLocation, getCityDisplay } from "@/hooks/useIPLocation";
 import { SearchInput } from "@/components/ui/search-input";
+import { useUnreadCount } from "@/hooks/useMessages";
 
 const navLinks = (t: (key: any) => string) => [
   { href: "/",          label: t("nav.home") },
@@ -45,6 +46,7 @@ export function Navbar({ className }: NavbarProps) {
   } | null>(null);
   // 延迟应用活跃状态，避免 SSR/CSR 不一致导致 hydration mismatch
   const [_mounted, setMounted] = React.useState(false);
+  const { count: unreadCount } = useUnreadCount(!!session?.user);
 
   // IP 定位获取用户城市（仅登录后）
   const { city, isLoading: _isLocating } = useIPLocation();
@@ -249,6 +251,21 @@ export function Navbar({ className }: NavbarProps) {
                           {t("nav.myTeams")}
                         </a>
                         <a
+                          href="/messages"
+                          className="flex items-center justify-between gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                            {t("nav.messages")}
+                          </span>
+                          {unreadCount > 0 && (
+                            <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-medium leading-none text-white">
+                              {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
+                          )}
+                        </a>
+                        <a
                           href="/favorites"
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
                           onClick={() => setShowUserMenu(false)}
@@ -408,6 +425,19 @@ export function Navbar({ className }: NavbarProps) {
                   >
                     <Mountain className="h-4 w-4 text-muted-foreground" />
                     {t("nav.myTeams")}
+                  </a>
+                  <a
+                    href="/messages"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 border border-border text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-colors font-medium text-sm"
+                  >
+                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                    {t("nav.messages")}
+                    {unreadCount > 0 && (
+                      <span className="ml-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-medium leading-none text-white">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
                   </a>
                   <a
                     href="/favorites"

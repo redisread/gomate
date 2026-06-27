@@ -1,0 +1,21 @@
+{
+  "centerTitle": "メッセージ",
+  "chatTitle": "チャット",
+  "loading": "読み込み中...",
+  "emptyTitle": "まだメッセージはありません",
+  "emptyDescription": "チームに参加するとリーダーにメッセージできます",
+  "discover": "場所を探す",
+  "unknownUser": "不明なユーザー",
+  "noMessages": "まだメッセージはありません",
+  "noMessagesPrompt": "まだメッセージはありません。最初のメッセージを送りましょう。",
+  "inputPlaceholder": "メッセージを入力...",
+  "send": "送信",
+  "retry": "再試行",
+  "loadFailed": "読み込みに失敗しました。後でもう一度お試しください。",
+  "forbidden": "この会話にアクセスできません",
+  "centerForbidden": "メッセージにアクセスできません",
+  "sendFailed": "送信に失敗しました。もう一度お試しください。",
+  "read": "既読",
+  "today": "今日",
+  "yesterday": "昨日"
+}

@@ -26,6 +26,18 @@ interface UseUnreadCountReturn {
   refetch: () => void;
 }
 
+function getApiErrorMessage(data: unknown, fallback: string): string {
+  if (!data || typeof data !== "object") return fallback;
+  const payload = data as { error?: unknown; message?: unknown };
+  if (typeof payload.error === "string") return payload.error;
+  if (payload.error && typeof payload.error === "object") {
+    const error = payload.error as { message?: unknown };
+    if (typeof error.message === "string") return error.message;
+  }
+  if (typeof payload.message === "string") return payload.message;
+  return fallback;
+}
+
 // ============ Hooks ============
 
 /**
@@ -202,10 +214,14 @@ export function useMessages(conversationId: string | undefined): UseMessagesRetu
 /**
  * 获取未读消息数
  */
-export function useUnreadCount(): UseUnreadCountReturn {
+export function useUnreadCount(enabled = true): UseUnreadCountReturn {
   const [count, setCount] = useState(0);
 
   const fetchCount = useCallback(async () => {
+    if (!enabled) {
+      setCount(0);
+      return;
+    }
     try {
       const res = await fetch(`${API_BASE}/messages/unread-count`, {
         credentials: "include",
@@ -217,7 +233,7 @@ export function useUnreadCount(): UseUnreadCountReturn {
     } catch {
       // Silent fail
     }
-  }, []);
+  }, [enabled]);
 
   // Initial load
   useEffect(() => {
@@ -226,9 +242,10 @@ export function useUnreadCount(): UseUnreadCountReturn {
 
   // Polling (30s interval)
   useEffect(() => {
+    if (!enabled) return;
     const interval = setInterval(fetchCount, 30000);
     return () => clearInterval(interval);
-  }, [fetchCount]);
+  }, [enabled, fetchCount]);
 
   return { count, refetch: fetchCount };
 }
@@ -236,7 +253,7 @@ export function useUnreadCount(): UseUnreadCountReturn {
 /**
  * 创建会话
  */
-export async function createConversation(teamId: string): Promise<{
+export async function createConversation(teamId: string, userId?: string): Promise<{
   id: string;
   isNew: boolean;
 }> {
@@ -244,11 +261,11 @@ export async function createConversation(teamId: string): Promise<{
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ teamId }),
+    body: JSON.stringify({ teamId, ...(userId ? { userId } : {}) }),
   });
   const data = await res.json();
   if (data.success) {
     return data.data;
   }
-  throw new Error(data.error || "Failed to create conversation");
+  throw new Error(getApiErrorMessage(data, "Failed to create conversation"));
 }

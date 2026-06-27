@@ -1,21 +1,43 @@
 import * as React from "react";
-import { Crown, ChevronDown } from "lucide-react";
+import { Crown, ChevronDown, Loader2, MessageCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { TeamMember } from "@/lib/types";
+import { createConversation } from "@/hooks/useMessages";
 
 export function MemberAvatarGrid({
   members,
   leaderId,
+  teamId,
+  canMessageMembers = false,
 }: {
   members: TeamMember[];
   leaderId?: string;
+  teamId?: string;
+  canMessageMembers?: boolean;
 }) {
   const { t } = useI18n(["teams"]);
   const [expanded, setExpanded] = React.useState(false);
+  const [messagingUserId, setMessagingUserId] = React.useState<string | null>(null);
+  const [messageError, setMessageError] = React.useState<string | null>(null);
   const GRID_THRESHOLD = 8;
   const visible = expanded ? members : members.slice(0, GRID_THRESHOLD);
   const hidden = members.length - GRID_THRESHOLD;
+
+  const handleMessageMember = async (member: TeamMember) => {
+    if (!teamId) return;
+    setMessagingUserId(member.userId);
+    setMessageError(null);
+    try {
+      const conversation = await createConversation(teamId, member.userId);
+      window.location.href = `/messages/${conversation.id}`;
+    } catch (err) {
+      console.error("Failed to create member conversation:", err);
+      setMessageError(t("teams.messageStartFailed"));
+    } finally {
+      setMessagingUserId(null);
+    }
+  };
 
   return (
     <div>
@@ -23,45 +45,67 @@ export function MemberAvatarGrid({
         {visible.map((m) => {
           const name = m.nickname || m.name;
           const isLeader = m.userId === leaderId;
+          const canMessageMember =
+            canMessageMembers &&
+            !!teamId &&
+            !isLeader &&
+            m.status === "approved";
 
           return (
-            <a
+            <div
               key={m.id}
-              href={`/users/${m.userId}`}
-              className="relative group flex flex-col items-center gap-1.5 cursor-pointer"
+              className="relative group flex flex-col items-center gap-1.5"
             >
-              <div
-                className={cn(
-                  "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-150",
-                  isLeader
-                    ? "ring-2 ring-amber-400 ring-offset-1 bg-gradient-to-br from-amber-500 to-amber-300 group-hover:ring-amber-300"
-                    : "bg-secondary ring-1 ring-secondary/50 group-hover:scale-105 group-hover:ring-amber-300"
-                )}
-              >
-                {m.avatar ? (
-                  <img src={m.avatar} alt={name} className="w-full h-full object-cover" />
-                ) : (
-                  <span
-                    className={cn(
-                      "font-semibold text-sm",
-                      isLeader ? "text-white" : "text-stone-500 text-muted-foreground/70"
-                    )}
-                  >
-                    {name?.[0] || "?"}
+              <a href={`/users/${m.userId}`} className="relative flex flex-col items-center gap-1.5 cursor-pointer">
+                <div
+                  className={cn(
+                    "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-150",
+                    isLeader
+                      ? "ring-2 ring-amber-400 ring-offset-1 bg-gradient-to-br from-amber-500 to-amber-300 group-hover:ring-amber-300"
+                      : "bg-secondary ring-1 ring-secondary/50 group-hover:scale-105 group-hover:ring-amber-300"
+                  )}
+                >
+                  {m.avatar ? (
+                    <img src={m.avatar} alt={name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span
+                      className={cn(
+                        "font-semibold text-sm",
+                        isLeader ? "text-white" : "text-stone-500 text-muted-foreground/70"
+                      )}
+                    >
+                      {name?.[0] || "?"}
+                    </span>
+                  )}
+                </div>
+                {isLeader && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center shadow-sm">
+                    <Crown className="w-2.5 h-2.5 text-white" />
                   </span>
                 )}
-              </div>
-              {isLeader && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center shadow-sm">
-                  <Crown className="w-2.5 h-2.5 text-white" />
-                </span>
+                {m.wechat && (
+                  <p className="text-xs text-muted-foreground max-w-[60px] truncate text-center leading-tight">
+                    {m.wechat}
+                  </p>
+                )}
+              </a>
+              {canMessageMember && (
+                <button
+                  type="button"
+                  onClick={() => handleMessageMember(m)}
+                  disabled={messagingUserId === m.userId}
+                  aria-label={t("teams.messageMemberAria", { name })}
+                  className="inline-flex h-7 items-center gap-1 rounded-full bg-blue-50 px-2.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-60"
+                >
+                  {messagingUserId === m.userId ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <MessageCircle className="h-3 w-3" />
+                  )}
+                  {t("teams.messageMember")}
+                </button>
               )}
-              {m.wechat && (
-                <p className="text-xs text-muted-foreground max-w-[60px] truncate text-center leading-tight">
-                  {m.wechat}
-                </p>
-              )}
-            </a>
+            </div>
           );
         })}
 
@@ -89,6 +133,7 @@ export function MemberAvatarGrid({
           {t('teams.collapseText')}
         </button>
       )}
+      {messageError && <p className="mt-3 text-xs text-red-600">{messageError}</p>}
     </div>
   );
 }
