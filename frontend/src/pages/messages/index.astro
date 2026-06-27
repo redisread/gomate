@@ -22,6 +22,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
 const copy = {
   centerTitle: ssr.t("messages.centerTitle"),
   loading: ssr.t("messages.loading"),
+  loadingConversations: ssr.t("messages.loadingConversations"),
   emptyTitle: ssr.t("messages.emptyTitle"),
   emptyDescription: ssr.t("messages.emptyDescription"),
   discover: ssr.t("messages.discover"),
@@ -30,34 +31,54 @@ const copy = {
   retry: ssr.t("messages.retry"),
   loadFailed: ssr.t("messages.loadFailed"),
   centerForbidden: ssr.t("messages.centerForbidden"),
+  refresh: ssr.t("messages.refresh"),
+  conversationList: ssr.t("messages.conversationList"),
+  openConversation: ssr.t("messages.openConversation"),
+  unreadMessages: ssr.t("messages.unreadMessages"),
   yesterday: ssr.t("messages.yesterday"),
 };
 ---
 
 <Layout title="消息中心 - GoMate" showNavbar={true} showFooter={false}>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <div class="max-w-2xl mx-auto">
-      {/* Header */}
-      <div class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4">
-        <div class="flex items-center justify-between">
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+  <div class="min-h-screen bg-background text-foreground">
+    <div class="mx-auto min-h-screen max-w-2xl border-x border-border/70 bg-card/60">
+      <div class="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
+        <div class="flex items-center justify-between gap-3">
+          <h1 class="text-lg font-semibold leading-tight text-foreground">
             {copy.centerTitle}
           </h1>
           <button
             id="refreshBtn"
-            class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            type="button"
+            aria-label={copy.refresh}
+            title={copy.refresh}
+            class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg id="refreshIcon" class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
         </div>
       </div>
 
-      {/* Message List */}
-      <div id="messageList" class="bg-white dark:bg-gray-800 min-h-[calc(100vh-140px)]">
-        <div class="p-4 text-center text-gray-500">
-          {copy.loading}
+      <div
+        id="messageList"
+        role="list"
+        aria-label={copy.conversationList}
+        aria-busy="true"
+        class="min-h-[calc(100vh-132px)] divide-y divide-border/70"
+      >
+        <div role="status" aria-label={copy.loadingConversations} class="divide-y divide-border/70">
+          {Array.from({ length: 4 }).map(() => (
+            <div class="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+              <div class="h-12 w-12 shrink-0 animate-pulse rounded-full bg-muted"></div>
+              <div class="min-w-0 flex-1 space-y-2">
+                <div class="h-3.5 w-1/3 animate-pulse rounded bg-muted"></div>
+                <div class="h-3 w-2/3 animate-pulse rounded bg-muted"></div>
+              </div>
+            </div>
+          ))}
+          <span class="sr-only">{copy.loading}</span>
         </div>
       </div>
     </div>
@@ -66,11 +87,12 @@ const copy = {
   <script is:inline define:vars={{ API_BASE: apiBase, copy, dateLocale }}>
     const messageListEl = document.getElementById("messageList");
     const refreshBtn = document.getElementById("refreshBtn");
+    const refreshIcon = document.getElementById("refreshIcon");
 
-    // Check auth and load conversations
+    let conversationsRequestInFlight = false;
+
     async function init() {
       try {
-        // Check session
         const sessionRes = await fetch(`${API_BASE}/auth/get-session`, {
           credentials: "include",
         });
@@ -81,19 +103,27 @@ const copy = {
           return;
         }
 
-        await loadConversations();
+        await loadConversations({ showSkeleton: true });
       } catch (err) {
         console.error("Auth check failed:", err);
         window.location.href = "/login?redirect=/messages";
       }
     }
 
-    async function loadConversations() {
+    async function loadConversations(options = {}) {
+      if (conversationsRequestInFlight) return;
+      conversationsRequestInFlight = true;
+      setRefreshBusy(true);
+
+      if (options.showSkeleton) {
+        renderSkeleton();
+      }
+
       try {
         const res = await fetch(`${API_BASE}/messages`, {
           credentials: "include",
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (res.status === 401) {
           window.location.href = "/login?redirect=/messages";
@@ -101,108 +131,130 @@ const copy = {
         }
 
         if (res.status === 403) {
-          renderError(copy.centerForbidden);
+          renderError(copy.centerForbidden, false);
           return;
         }
 
-        if (data.success && data.data?.length > 0) {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
           renderList(data.data);
         } else {
           renderEmpty();
         }
       } catch (err) {
-        renderError(copy.loadFailed);
+        renderError(copy.loadFailed, true);
+      } finally {
+        conversationsRequestInFlight = false;
+        setRefreshBusy(false);
       }
+    }
+
+    function setRefreshBusy(isBusy) {
+      if (refreshBtn) {
+        refreshBtn.disabled = isBusy;
+        refreshBtn.setAttribute("aria-busy", isBusy ? "true" : "false");
+      }
+      refreshIcon?.classList.toggle("animate-spin", isBusy);
+    }
+
+    function renderSkeleton() {
+      if (!messageListEl) return;
+      messageListEl.setAttribute("aria-busy", "true");
+      messageListEl.innerHTML = "";
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "divide-y divide-border/70";
+      wrapper.setAttribute("role", "status");
+      wrapper.setAttribute("aria-label", copy.loadingConversations);
+
+      for (let i = 0; i < 4; i += 1) {
+        const row = document.createElement("div");
+        row.className = "flex items-center gap-3 px-4 py-3.5 sm:px-5";
+
+        const avatar = document.createElement("div");
+        avatar.className = "h-12 w-12 shrink-0 animate-pulse rounded-full bg-muted";
+
+        const content = document.createElement("div");
+        content.className = "min-w-0 flex-1 space-y-2";
+
+        const title = document.createElement("div");
+        title.className = "h-3.5 w-1/3 animate-pulse rounded bg-muted";
+        const text = document.createElement("div");
+        text.className = "h-3 w-2/3 animate-pulse rounded bg-muted";
+
+        content.appendChild(title);
+        content.appendChild(text);
+        row.appendChild(avatar);
+        row.appendChild(content);
+        wrapper.appendChild(row);
+      }
+
+      const srText = document.createElement("span");
+      srText.className = "sr-only";
+      srText.textContent = copy.loading;
+      wrapper.appendChild(srText);
+      messageListEl.appendChild(wrapper);
     }
 
     function renderList(conversations) {
       if (!messageListEl) return;
 
-      // Clear and rebuild using DOM API to avoid XSS
+      messageListEl.removeAttribute("aria-busy");
       messageListEl.innerHTML = "";
 
       conversations.forEach((conv) => {
         const otherUser = conv.otherUser;
-        const time = conv.lastMessageAt
-          ? formatTime(conv.lastMessageAt)
-          : "";
+        const displayName = getDisplayName(otherUser);
+        const time = conv.lastMessageAt ? formatTime(conv.lastMessageAt) : "";
+        const unreadCount = Number(conv.unreadCount) || 0;
 
-        // Create link element
         const link = document.createElement("a");
         link.href = `/messages/${encodeURIComponent(String(conv.id))}`;
-        link.className = "block hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors";
+        link.setAttribute("role", "listitem");
+        link.setAttribute("aria-label", `${copy.openConversation}: ${displayName}`);
+        link.className = "block transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";
 
-        // Create container
         const container = document.createElement("div");
-        container.className = "flex items-start gap-3 p-4 border-b border-gray-100 dark:border-gray-800";
+        container.className = "flex min-h-[76px] items-center gap-3 px-4 py-3.5 sm:px-5";
 
-        // Build avatar
-        const avatarDiv = document.createElement("div");
-        avatarDiv.className = "flex-shrink-0";
-        if (otherUser?.image) {
-          const imgUrl = String(otherUser.image);
-          if (imgUrl.startsWith("http://") || imgUrl.startsWith("https://") || imgUrl.startsWith("/")) {
-            const img = document.createElement("img");
-            img.src = imgUrl;
-            img.className = "w-12 h-12 rounded-full object-cover";
-            avatarDiv.appendChild(img);
-          } else {
-            const fallback = document.createElement("div");
-            fallback.className = "w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center";
-            const span = document.createElement("span");
-            span.className = "text-lg text-gray-500";
-            span.textContent = otherUser?.name?.[0] || "?";
-            fallback.appendChild(span);
-            avatarDiv.appendChild(fallback);
-          }
-        } else {
-          const fallback = document.createElement("div");
-          fallback.className = "w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center";
-          const span = document.createElement("span");
-          span.className = "text-lg text-gray-500";
-          span.textContent = otherUser?.name?.[0] || "?";
-          fallback.appendChild(span);
-          avatarDiv.appendChild(fallback);
-        }
-        container.appendChild(avatarDiv);
+        container.appendChild(createAvatar(otherUser, "h-12 w-12 text-sm"));
 
-        // Build content
         const contentDiv = document.createElement("div");
-        contentDiv.className = "flex-1 min-w-0";
+        contentDiv.className = "min-w-0 flex-1";
 
         const headerDiv = document.createElement("div");
-        headerDiv.className = "flex items-center justify-between mb-1";
+        headerDiv.className = "flex items-baseline gap-2";
 
-        const nameEl = document.createElement("h4");
-        nameEl.className = "text-sm font-medium text-gray-900 dark:text-white truncate";
-        nameEl.textContent = otherUser?.nickname || otherUser?.name || copy.unknownUser;
+        const nameEl = document.createElement("h2");
+        nameEl.className = "min-w-0 flex-1 truncate text-sm font-semibold text-foreground";
+        nameEl.textContent = displayName;
         headerDiv.appendChild(nameEl);
 
-        const timeEl = document.createElement("span");
-        timeEl.className = "text-xs text-gray-400";
-        timeEl.textContent = time;
-        headerDiv.appendChild(timeEl);
-
-        contentDiv.appendChild(headerDiv);
-
-        const messageEl = document.createElement("p");
-        messageEl.className = "text-sm text-gray-500 dark:text-gray-400 truncate";
-        messageEl.textContent = conv.lastMessageContent || copy.noMessages;
-        contentDiv.appendChild(messageEl);
-
-        container.appendChild(contentDiv);
-
-        // Unread count badge
-        if (conv.unreadCount > 0) {
-          const badgeDiv = document.createElement("div");
-          badgeDiv.className = "flex-shrink-0";
-          const badge = document.createElement("span");
-          badge.className = "inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-red-500 rounded-full";
-          badge.textContent = conv.unreadCount > 99 ? "99+" : String(conv.unreadCount);
-          badgeDiv.appendChild(badge);
-          container.appendChild(badgeDiv);
+        if (time) {
+          const timeEl = document.createElement("time");
+          timeEl.className = "shrink-0 text-xs text-muted-foreground";
+          timeEl.textContent = time;
+          headerDiv.appendChild(timeEl);
         }
 
+        const footerDiv = document.createElement("div");
+        footerDiv.className = "mt-1 flex items-center gap-2";
+
+        const messageEl = document.createElement("p");
+        messageEl.className = "min-w-0 flex-1 truncate text-sm text-muted-foreground";
+        messageEl.textContent = conv.lastMessageContent || copy.noMessages;
+        footerDiv.appendChild(messageEl);
+
+        if (unreadCount > 0) {
+          const badge = document.createElement("span");
+          badge.className = "inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold leading-none text-white dark:text-neutral-900";
+          badge.setAttribute("aria-label", `${unreadCount} ${copy.unreadMessages}`);
+          badge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
+          footerDiv.appendChild(badge);
+        }
+
+        contentDiv.appendChild(headerDiv);
+        contentDiv.appendChild(footerDiv);
+        container.appendChild(contentDiv);
         link.appendChild(container);
         messageListEl.appendChild(link);
       });
@@ -210,26 +262,34 @@ const copy = {
 
     function renderEmpty() {
       if (!messageListEl) return;
+      messageListEl.removeAttribute("aria-busy");
       messageListEl.innerHTML = "";
+
       const container = document.createElement("div");
-      container.className = "flex flex-col items-center justify-center h-64 text-center p-4";
+      container.className = "flex min-h-[22rem] flex-col items-center justify-center px-6 text-center";
+      container.setAttribute("role", "status");
+
       const icon = document.createElement("div");
-      icon.className = "w-16 h-16 mb-4 text-gray-300";
+      icon.className = "mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground";
       icon.innerHTML = `
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-full h-full">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="h-7 w-7" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
       `;
-      const title = document.createElement("h3");
-      title.className = "text-lg font-medium text-gray-900 dark:text-white mb-2";
+
+      const title = document.createElement("h2");
+      title.className = "text-base font-semibold text-foreground";
       title.textContent = copy.emptyTitle;
+
       const desc = document.createElement("p");
-      desc.className = "text-sm text-gray-500 dark:text-gray-400";
+      desc.className = "mt-2 max-w-xs text-sm leading-6 text-muted-foreground";
       desc.textContent = copy.emptyDescription;
+
       const link = document.createElement("a");
       link.href = "/";
-      link.className = "mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600";
+      link.className = "mt-5 inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
       link.textContent = copy.discover;
+
       container.appendChild(icon);
       container.appendChild(title);
       container.appendChild(desc);
@@ -237,27 +297,63 @@ const copy = {
       messageListEl.appendChild(container);
     }
 
-    function renderError(message = copy.loadFailed) {
+    function renderError(message = copy.loadFailed, canRetry = true) {
       if (!messageListEl) return;
+      messageListEl.removeAttribute("aria-busy");
       messageListEl.innerHTML = "";
+
       const container = document.createElement("div");
-      container.className = "flex flex-col items-center justify-center h-64 text-center p-4";
+      container.className = "flex min-h-[22rem] flex-col items-center justify-center px-6 text-center";
+      container.setAttribute("role", "alert");
+
       const text = document.createElement("p");
-      text.className = "text-gray-500";
+      text.className = "max-w-sm text-sm leading-6 text-destructive";
       text.textContent = message;
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "mt-4 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm";
-      button.textContent = copy.retry;
-      button.addEventListener("click", () => location.reload());
       container.appendChild(text);
-      container.appendChild(button);
+
+      if (canRetry) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "mt-5 inline-flex h-10 items-center rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+        button.textContent = copy.retry;
+        button.addEventListener("click", () => loadConversations({ showSkeleton: true }));
+        container.appendChild(button);
+      }
+
       messageListEl.appendChild(container);
+    }
+
+    function createAvatar(user, sizeClass) {
+      const avatar = document.createElement("div");
+      avatar.className = `${sizeClass} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted font-semibold text-muted-foreground ring-1 ring-border/70`;
+      avatar.setAttribute("aria-hidden", "true");
+
+      const imgUrl = user?.image ? String(user.image) : "";
+      if (imgUrl.startsWith("http://") || imgUrl.startsWith("https://") || imgUrl.startsWith("/")) {
+        const img = document.createElement("img");
+        img.src = imgUrl;
+        img.alt = "";
+        img.loading = "lazy";
+        img.className = "h-full w-full object-cover";
+        avatar.appendChild(img);
+        return avatar;
+      }
+
+      const fallback = document.createElement("span");
+      fallback.textContent = getDisplayName(user).trim().charAt(0) || "?";
+      avatar.appendChild(fallback);
+      return avatar;
+    }
+
+    function getDisplayName(user) {
+      return user?.nickname || user?.name || copy.unknownUser;
     }
 
     function formatTime(timestamp) {
       if (!timestamp) return "";
       const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) return "";
+
       const now = new Date();
       const isToday = date.toDateString() === now.toDateString();
       const yesterday = new Date(now);
@@ -265,20 +361,16 @@ const copy = {
 
       if (isToday) {
         return date.toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" });
-      } else if (date.toDateString() === yesterday.toDateString()) {
-        return copy.yesterday;
-      } else {
-        return date.toLocaleDateString(dateLocale, { month: "short", day: "numeric" });
       }
+      if (date.toDateString() === yesterday.toDateString()) {
+        return copy.yesterday;
+      }
+      return date.toLocaleDateString(dateLocale, { month: "short", day: "numeric" });
     }
 
-    // Load on mount
     init();
 
-    // Refresh button
-    refreshBtn?.addEventListener("click", loadConversations);
-
-    // Polling (30s)
-    setInterval(loadConversations, 30000);
+    refreshBtn?.addEventListener("click", () => loadConversations());
+    setInterval(() => loadConversations(), 30000);
   </script>
 </Layout>

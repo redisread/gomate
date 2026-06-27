@@ -24,78 +24,127 @@ const copy = {
   unknownUser: ssr.t("messages.unknownUser"),
   noMessagesPrompt: ssr.t("messages.noMessagesPrompt"),
   inputPlaceholder: ssr.t("messages.inputPlaceholder"),
-  send: ssr.t("messages.send"),
   loadFailed: ssr.t("messages.loadFailed"),
   forbidden: ssr.t("messages.forbidden"),
   sendFailed: ssr.t("messages.sendFailed"),
   read: ssr.t("messages.read"),
   today: ssr.t("messages.today"),
   yesterday: ssr.t("messages.yesterday"),
+  backToMessages: ssr.t("messages.backToMessages"),
+  messageList: ssr.t("messages.messageList"),
+  messageInputLabel: ssr.t("messages.messageInputLabel"),
+  sendMessage: ssr.t("messages.sendMessage"),
+  sending: ssr.t("messages.sending"),
+  privateConversation: ssr.t("messages.privateConversation"),
 };
 const { id } = Astro.params;
 ---
 
 <Layout title="聊天 - GoMate" showNavbar={false} showFooter={false}>
-  <div class="fixed inset-0 bg-white dark:bg-gray-900">
-    {/* Header */}
-    <div class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-      <div class="flex items-center gap-3">
+  <div class="fixed inset-0 flex flex-col bg-background text-foreground">
+    <header class="shrink-0 border-b border-border bg-background/95 px-3 py-2.5 backdrop-blur">
+      <div class="mx-auto flex max-w-2xl items-center gap-3">
         <a
           href="/messages"
-          class="p-2 -ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+          aria-label={copy.backToMessages}
+          title={copy.backToMessages}
+          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </a>
-        <div id="headerInfo" class="flex-1">
-          <h1 class="text-base font-semibold text-gray-900 dark:text-white">{copy.loading}</h1>
+
+        <div id="headerAvatar" class="hidden"></div>
+
+        <div id="headerInfo" class="min-w-0 flex-1">
+          <h1 class="truncate text-base font-semibold leading-tight text-foreground">{copy.loading}</h1>
+          <p id="headerMeta" class="mt-0.5 hidden text-xs text-muted-foreground"></p>
         </div>
       </div>
-    </div>
+    </header>
 
-    {/* Chat Messages */}
-    <div id="chatContainer" class="h-[calc(100vh-120px)] overflow-y-auto p-4 space-y-4">
-      <div class="text-center text-gray-500">{copy.loading}</div>
-    </div>
+    <main
+      id="chatContainer"
+      role="log"
+      aria-live="polite"
+      aria-label={copy.messageList}
+      class="flex-1 overflow-y-auto px-3 py-4 sm:px-4"
+    >
+      <div role="status" aria-label={copy.loading} class="mx-auto flex max-w-2xl flex-col gap-4">
+        <div class="flex justify-start gap-2">
+          <div class="h-8 w-8 shrink-0 animate-pulse rounded-full bg-muted"></div>
+          <div class="h-10 w-44 animate-pulse rounded-2xl rounded-bl-md bg-muted"></div>
+        </div>
+        <div class="flex justify-end">
+          <div class="h-10 w-52 animate-pulse rounded-2xl rounded-br-md bg-muted"></div>
+        </div>
+        <span class="sr-only">{copy.loading}</span>
+      </div>
+    </main>
 
-    {/* Input */}
-    <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
-      <div class="max-w-2xl mx-auto space-y-2">
-        <p id="chatError" class="hidden text-sm text-red-600"></p>
-        <div class="flex items-center gap-2">
+    <form
+      id="messageForm"
+      class="shrink-0 border-t border-border bg-background/95 px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur sm:px-4"
+    >
+      <div class="mx-auto max-w-2xl space-y-2">
+        <p id="chatError" role="alert" class="hidden text-sm leading-5 text-destructive"></p>
+        <div class="flex items-end gap-2">
+          <label for="messageInput" class="sr-only">{copy.messageInputLabel}</label>
           <input
             id="messageInput"
             type="text"
+            maxlength="1000"
+            autocomplete="off"
             placeholder={copy.inputPlaceholder}
-            class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white disabled:opacity-60"
+            class="h-11 min-w-0 flex-1 rounded-full border border-input bg-card px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
           />
           <button
             id="sendBtn"
-            class="px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-medium disabled:opacity-50 hover:bg-blue-600 transition-colors"
+            type="submit"
+            disabled
+            aria-label={copy.sendMessage}
+            title={copy.sendMessage}
+            class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {copy.send}
+            <span id="sendText" class="sr-only">{copy.sendMessage}</span>
+            <svg id="sendIcon" class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h13m0 0-5-5m5 5-5 5" />
+            </svg>
+            <svg id="sendSpinner" class="hidden h-4.5 w-4.5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
           </button>
         </div>
       </div>
-    </div>
+    </form>
   </div>
 
   <script is:inline define:vars={{ conversationId: id, API_BASE: apiBase, copy, dateLocale }}>
     const chatContainer = document.getElementById("chatContainer");
+    const messageForm = document.getElementById("messageForm");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
+    const sendText = document.getElementById("sendText");
+    const sendIcon = document.getElementById("sendIcon");
+    const sendSpinner = document.getElementById("sendSpinner");
     const headerInfo = document.getElementById("headerInfo");
+    const headerAvatar = document.getElementById("headerAvatar");
+    const headerMeta = document.getElementById("headerMeta");
     const chatError = document.getElementById("chatError");
 
     let messages = [];
     let currentUserId = null;
     let otherUser = null;
+    let composerLocked = false;
+    let isSending = false;
+    let isLoadingMessages = false;
+    let lastRenderedSignature = null;
+    let pollTimer = null;
 
-    // Initialize
     async function init() {
       try {
-        // Check session
         const sessionRes = await fetch(`${API_BASE}/auth/get-session`, {
           credentials: "include",
         });
@@ -107,18 +156,25 @@ const { id } = Astro.params;
         }
 
         currentUserId = sessionData.user.id;
-        await loadMessages();
+        await loadMessages({ forceScroll: true });
+        pollTimer = window.setInterval(() => loadMessages(), 5000);
       } catch (err) {
         console.error("Auth check failed:", err);
         window.location.href = "/login?redirect=/messages";
       }
     }
 
-    async function loadMessages() {
+    async function loadMessages(options = {}) {
+      if (isLoadingMessages) return;
+      isLoadingMessages = true;
+
+      const shouldStayAtBottom = options.forceScroll || isNearBottom();
+
       try {
         const res = await fetch(`${API_BASE}/messages/${conversationId}?limit=50`, {
           credentials: "include",
         });
+        const data = await res.json().catch(() => ({}));
 
         if (res.status === 401) {
           window.location.href = "/login?redirect=/messages";
@@ -127,48 +183,89 @@ const { id } = Astro.params;
 
         if (res.status === 403) {
           setComposerDisabled(true);
-          renderStatusMessage(copy.forbidden, "text-center text-red-500");
+          renderStatusMessage(copy.forbidden, "error", "alert");
           return;
         }
 
-        const data = await res.json();
+        if (!data.success) {
+          if (lastRenderedSignature === null) {
+            renderStatusMessage(getErrorMessage(data, copy.loadFailed), "error", "alert");
+          } else {
+            showChatError(getErrorMessage(data, copy.loadFailed));
+          }
+          return;
+        }
 
-        if (data.success) {
-          messages = data.data || [];
-          if (data.conversation?.otherUser) {
-            otherUser = data.conversation.otherUser;
-            updateHeader();
-          }
-          // Get other user info
-          if (!otherUser && messages.length > 0) {
-            const firstMsg = messages[0];
-            otherUser = firstMsg.senderId === currentUserId
-              ? messages.find(m => m.senderId !== currentUserId)?.sender
-              : firstMsg.sender;
-            updateHeader();
-          }
+        clearChatError();
+        const nextMessages = Array.isArray(data.data) ? data.data : [];
+        const nextSignature = getMessagesSignature(nextMessages);
+
+        messages = nextMessages;
+        if (data.conversation?.otherUser) {
+          otherUser = data.conversation.otherUser;
+          updateHeader();
+        } else if (!otherUser && messages.length > 0) {
+          const firstMsg = messages[0];
+          otherUser = firstMsg.senderId === currentUserId
+            ? messages.find((message) => message.senderId !== currentUserId)?.sender
+            : firstMsg.sender;
+          updateHeader();
+        }
+
+        if (nextSignature !== lastRenderedSignature) {
           renderMessages();
-          scrollToBottom();
-        } else {
-          showChatError(getErrorMessage(data, copy.loadFailed));
+          lastRenderedSignature = nextSignature;
+          if (shouldStayAtBottom) {
+            scrollToBottom({ smooth: !options.forceScroll });
+          }
         }
       } catch (err) {
-        renderStatusMessage(copy.loadFailed, "text-center text-red-500");
+        if (lastRenderedSignature === null) {
+          renderStatusMessage(copy.loadFailed, "error", "alert");
+        } else {
+          showChatError(copy.loadFailed);
+        }
+      } finally {
+        isLoadingMessages = false;
       }
     }
 
-    function renderStatusMessage(message, className = "text-center text-gray-500") {
+    function renderStatusMessage(message, tone = "muted", role = "status") {
       if (!chatContainer) return;
       chatContainer.innerHTML = "";
       const status = document.createElement("div");
-      status.className = className;
+      status.setAttribute("role", role);
+      status.className = [
+        "mx-auto flex min-h-full max-w-2xl items-center justify-center px-6 py-16 text-center text-sm leading-6",
+        tone === "error" ? "text-destructive" : "text-muted-foreground",
+      ].join(" ");
       status.textContent = message;
       chatContainer.appendChild(status);
     }
 
     function setComposerDisabled(disabled) {
+      composerLocked = disabled;
       if (messageInput) messageInput.disabled = disabled;
-      if (sendBtn) sendBtn.disabled = disabled;
+      updateSendButton();
+    }
+
+    function setSending(sending) {
+      isSending = sending;
+      sendIcon?.classList.toggle("hidden", sending);
+      sendSpinner?.classList.toggle("hidden", !sending);
+      if (sendText) sendText.textContent = sending ? copy.sending : copy.sendMessage;
+      if (sendBtn) {
+        sendBtn.setAttribute("aria-label", sending ? copy.sending : copy.sendMessage);
+        sendBtn.setAttribute("title", sending ? copy.sending : copy.sendMessage);
+        sendBtn.setAttribute("aria-busy", sending ? "true" : "false");
+      }
+      updateSendButton();
+    }
+
+    function updateSendButton() {
+      if (!sendBtn || !messageInput) return;
+      const hasContent = messageInput.value.trim().length > 0;
+      sendBtn.disabled = composerLocked || isSending || !hasContent;
     }
 
     function showChatError(message) {
@@ -191,47 +288,54 @@ const { id } = Astro.params;
     }
 
     function updateHeader() {
-      if (!otherUser) return;
-      // Use textContent to avoid XSS
-      const h1 = headerInfo.querySelector("h1");
+      const h1 = headerInfo?.querySelector("h1");
       if (h1) {
-        h1.textContent = otherUser.nickname || otherUser.name || copy.unknownUser;
+        h1.textContent = getDisplayName(otherUser);
+      }
+      if (headerMeta) {
+        headerMeta.textContent = copy.privateConversation;
+        headerMeta.classList.remove("hidden");
+      }
+      if (headerAvatar) {
+        headerAvatar.innerHTML = "";
+        headerAvatar.className = "flex";
+        headerAvatar.appendChild(createAvatar(otherUser, "h-10 w-10 text-sm"));
       }
     }
 
     function renderMessages() {
+      if (!chatContainer) return;
       if (messages.length === 0) {
         renderStatusMessage(copy.noMessagesPrompt);
         return;
       }
 
-      // Group by date
       const grouped = groupByDate(messages);
-
-      // Build using DOM API to avoid XSS
       chatContainer.innerHTML = "";
+
+      const list = document.createElement("div");
+      list.className = "mx-auto flex max-w-2xl flex-col gap-5";
 
       grouped.forEach((group) => {
         const groupDiv = document.createElement("div");
-        groupDiv.className = "space-y-3";
+        groupDiv.className = "flex flex-col gap-3";
 
-        // Date header
         const dateDiv = document.createElement("div");
         dateDiv.className = "flex items-center justify-center";
         const dateSpan = document.createElement("span");
-        dateSpan.className = "text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full";
+        dateSpan.className = "rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground";
         dateSpan.textContent = formatDate(group.date);
         dateDiv.appendChild(dateSpan);
         groupDiv.appendChild(dateDiv);
 
-        // Messages
         group.messages.forEach((msg) => {
-          const msgEl = renderMessageElement(msg);
-          groupDiv.appendChild(msgEl);
+          groupDiv.appendChild(renderMessageElement(msg));
         });
 
-        chatContainer.appendChild(groupDiv);
+        list.appendChild(groupDiv);
       });
+
+      chatContainer.appendChild(list);
     }
 
     function renderMessageElement(msg) {
@@ -247,74 +351,44 @@ const { id } = Astro.params;
         wrapper.className = "flex justify-end";
 
         const container = document.createElement("div");
-        container.className = "max-w-[70%]";
+        container.className = "max-w-[82%] sm:max-w-md";
 
         const contentDiv = document.createElement("div");
-        contentDiv.className = "px-4 py-2 bg-blue-500 text-white rounded-2xl rounded-br-lg text-sm";
+        contentDiv.className = "whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground";
         contentDiv.textContent = msg.content || "";
         container.appendChild(contentDiv);
 
         const metaDiv = document.createElement("div");
-        metaDiv.className = "text-right mt-1 text-xs text-gray-400";
+        metaDiv.className = "mt-1 text-right text-xs text-muted-foreground";
         metaDiv.textContent = time + (msg.isRead ? ` · ${copy.read}` : "");
         container.appendChild(metaDiv);
 
         wrapper.appendChild(container);
-      } else {
-        wrapper.className = "flex justify-start gap-2";
-
-        // Build avatar safely
-        const avatarDiv = document.createElement("div");
-        avatarDiv.className = "flex-shrink-0";
-        if (sender.image) {
-          const imgUrl = String(sender.image);
-          if (imgUrl.startsWith("http://") || imgUrl.startsWith("https://") || imgUrl.startsWith("/")) {
-            const img = document.createElement("img");
-            img.src = imgUrl;
-            img.className = "w-8 h-8 rounded-full object-cover";
-            avatarDiv.appendChild(img);
-          } else {
-            const fallback = document.createElement("div");
-            fallback.className = "w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center";
-            const span = document.createElement("span");
-            span.className = "text-sm text-gray-500";
-            span.textContent = sender.name?.[0] || "?";
-            fallback.appendChild(span);
-            avatarDiv.appendChild(fallback);
-          }
-        } else {
-          const fallback = document.createElement("div");
-          fallback.className = "w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center";
-          const span = document.createElement("span");
-          span.className = "text-sm text-gray-500";
-          span.textContent = sender.name?.[0] || "?";
-          fallback.appendChild(span);
-          avatarDiv.appendChild(fallback);
-        }
-        wrapper.appendChild(avatarDiv);
-
-        // Build content
-        const container = document.createElement("div");
-        container.className = "max-w-[70%]";
-
-        const senderDiv = document.createElement("div");
-        senderDiv.className = "text-xs text-gray-500 mb-1";
-        senderDiv.textContent = sender.nickname || sender.name || "";
-        container.appendChild(senderDiv);
-
-        const contentDiv = document.createElement("div");
-        contentDiv.className = "px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl rounded-bl-lg text-sm";
-        contentDiv.textContent = msg.content || "";
-        container.appendChild(contentDiv);
-
-        const timeDiv = document.createElement("div");
-        timeDiv.className = "mt-1 text-xs text-gray-400";
-        timeDiv.textContent = time;
-        container.appendChild(timeDiv);
-
-        wrapper.appendChild(container);
+        return wrapper;
       }
 
+      wrapper.className = "flex justify-start gap-2";
+      wrapper.appendChild(createAvatar(sender, "h-8 w-8 text-xs"));
+
+      const container = document.createElement("div");
+      container.className = "max-w-[82%] sm:max-w-md";
+
+      const senderDiv = document.createElement("div");
+      senderDiv.className = "mb-1 ml-1 text-xs text-muted-foreground";
+      senderDiv.textContent = getDisplayName(sender);
+      container.appendChild(senderDiv);
+
+      const contentDiv = document.createElement("div");
+      contentDiv.className = "whitespace-pre-wrap break-words rounded-2xl rounded-bl-md border border-border bg-card px-4 py-2.5 text-sm leading-relaxed text-foreground";
+      contentDiv.textContent = msg.content || "";
+      container.appendChild(contentDiv);
+
+      const timeDiv = document.createElement("div");
+      timeDiv.className = "mt-1 ml-1 text-xs text-muted-foreground";
+      timeDiv.textContent = time;
+      container.appendChild(timeDiv);
+
+      wrapper.appendChild(container);
       return wrapper;
     }
 
@@ -322,7 +396,7 @@ const { id } = Astro.params;
       const groups = [];
       msgs.forEach((msg) => {
         const date = msg.createdAt ? new Date(msg.createdAt).toDateString() : "";
-        const existing = groups.find((g) => g.date === date);
+        const existing = groups.find((group) => group.date === date);
         if (existing) {
           existing.messages.push(msg);
         } else {
@@ -332,8 +406,14 @@ const { id } = Astro.params;
       return groups;
     }
 
+    function getMessagesSignature(msgs) {
+      return msgs.map((msg) => `${msg.id}:${msg.isRead ? "1" : "0"}:${msg.createdAt || ""}`).join("|");
+    }
+
     function formatDate(dateStr) {
       const date = new Date(dateStr);
+      if (Number.isNaN(date.getTime())) return "";
+
       const today = new Date();
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
@@ -343,15 +423,51 @@ const { id } = Astro.params;
       return date.toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" });
     }
 
-    function scrollToBottom() {
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+    function isNearBottom() {
+      if (!chatContainer) return true;
+      return chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < 96;
+    }
+
+    function scrollToBottom(options = {}) {
+      if (!chatContainer) return;
+      chatContainer.scrollTo({
+        top: chatContainer.scrollHeight,
+        behavior: options.smooth ? "smooth" : "auto",
+      });
+    }
+
+    function createAvatar(user, sizeClass) {
+      const avatar = document.createElement("div");
+      avatar.className = `${sizeClass} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted font-semibold text-muted-foreground ring-1 ring-border/70`;
+      avatar.setAttribute("aria-hidden", "true");
+
+      const imgUrl = user?.image ? String(user.image) : "";
+      if (imgUrl.startsWith("http://") || imgUrl.startsWith("https://") || imgUrl.startsWith("/")) {
+        const img = document.createElement("img");
+        img.src = imgUrl;
+        img.alt = "";
+        img.loading = "lazy";
+        img.className = "h-full w-full object-cover";
+        avatar.appendChild(img);
+        return avatar;
+      }
+
+      const fallback = document.createElement("span");
+      fallback.textContent = getDisplayName(user).trim().charAt(0) || "?";
+      avatar.appendChild(fallback);
+      return avatar;
+    }
+
+    function getDisplayName(user) {
+      return user?.nickname || user?.name || copy.unknownUser;
     }
 
     async function sendMessage() {
+      if (!messageInput || composerLocked || isSending) return;
       const content = messageInput.value.trim();
       if (!content) return;
 
-      sendBtn.disabled = true;
+      setSending(true);
       clearChatError();
 
       try {
@@ -361,44 +477,58 @@ const { id } = Astro.params;
           credentials: "include",
           body: JSON.stringify({ content }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+
+        if (res.status === 401) {
+          window.location.href = "/login?redirect=/messages";
+          return;
+        }
+
+        if (res.status === 403) {
+          setComposerDisabled(true);
+          showChatError(copy.forbidden);
+          return;
+        }
 
         if (!res.ok || !data.success) {
           showChatError(getErrorMessage(data, copy.sendFailed));
           return;
         }
 
-        if (data.success) {
-          messageInput.value = "";
-          // Optimistically add message
-          messages.push({
-            id: data.data.id,
-            senderId: currentUserId,
-            content,
-            isRead: false,
-            createdAt: Date.now(),
-          });
-          renderMessages();
-          scrollToBottom();
-        }
+        messageInput.value = "";
+        updateSendButton();
+        messages.push({
+          id: data.data.id,
+          senderId: currentUserId,
+          content,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+        renderMessages();
+        lastRenderedSignature = getMessagesSignature(messages);
+        scrollToBottom({ smooth: true });
       } catch (err) {
         showChatError(copy.sendFailed);
       } finally {
-        sendBtn.disabled = false;
+        setSending(false);
       }
     }
 
-    sendBtn?.addEventListener("click", sendMessage);
-    messageInput?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
+    messageForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      sendMessage();
     });
 
-    // Polling (5s)
-    setInterval(loadMessages, 5000);
+    messageInput?.addEventListener("input", () => {
+      clearChatError();
+      updateSendButton();
+    });
 
+    window.addEventListener("beforeunload", () => {
+      if (pollTimer) window.clearInterval(pollTimer);
+    });
+
+    updateSendButton();
     init();
   </script>
 </Layout>
