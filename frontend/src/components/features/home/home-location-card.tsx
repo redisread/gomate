@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { MapPin, Mountain, ArrowRight } from "lucide-react";
+import { MapPin, Mountain, ArrowRight, Clock, Route } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { DIFFICULTY_CONFIG } from "@/lib/constants";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
@@ -66,9 +66,9 @@ export const LocationCard = memo(function LocationCard({ location, index = 0 }: 
             <p className="text-white/90 text-xs sm:text-sm line-clamp-1 sm:line-clamp-2 leading-relaxed mb-2">{location.description}</p>
             {routeInfo && (
               <div className="flex flex-wrap gap-2 text-white/75 text-xs">
-                <span>🕐 {routeInfo.duration}</span>
-                <span>📏 {routeInfo.distance}</span>
-                {routeInfo.elevation && <span>⛰️ {routeInfo.elevation}</span>}
+                <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {routeInfo.duration}</span>
+                <span className="inline-flex items-center gap-1"><Route className="h-3 w-3" /> {routeInfo.distance}</span>
+                {routeInfo.elevation && <span className="inline-flex items-center gap-1">⛰️ {routeInfo.elevation}</span>}
               </div>
             )}
           </div>
@@ -91,11 +91,16 @@ export const LocationCard = memo(function LocationCard({ location, index = 0 }: 
         </div>
 
         <div className="px-4 py-3 flex items-center justify-between">
-          <div className="min-w-0">
-            <h3 className="font-semibold text-foreground text-sm group-hover:text-brand transition-colors duration-150 truncate">{location.name}</h3>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
               <MapPin className="h-3 w-3 flex-shrink-0" />{location.address || t("locations.defaultCity")}
             </p>
+            {routeInfo && (
+              <div className="flex items-center gap-3 mt-1 text-xs text-stone-500 dark:text-stone-400">
+                <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{routeInfo.duration}</span>
+                <span className="inline-flex items-center gap-1"><Route className="h-3 w-3" />{routeInfo.distance}</span>
+              </div>
+            )}
           </div>
           <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ml-3 transition-all duration-150 group-hover:bg-brand group-hover:text-white"
             style={{ background: "var(--brand-subtle)", color: "var(--brand)" }}>
