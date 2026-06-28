@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/useToast";
 import { MarkdownContent } from "./markdown-content";
 import { StoryDetailSkeleton } from "./story-detail-skeleton";
 import { StoryToast } from "./story-detail-toast";
+import { ShareStorySheet } from "./share-story-sheet";
 import type { Story, StoryDetailProps, StoryDetailResponse } from "./story-detail-types";
 import {
   CONTENT_WIDTH,
@@ -44,6 +45,7 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState("");
+  const [showShareSheet, setShowShareSheet] = React.useState(false);
 
   const loadStory = React.useCallback(async () => {
     try {
@@ -224,7 +226,7 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
             )}
             <button
               type="button"
-              onClick={handleShare}
+              onClick={() => setShowShareSheet(true)}
               className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               aria-label={t("content.discover.share")}
             >
@@ -293,6 +295,13 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
           t={t}
         />
       )}
+
+      <ShareStorySheet
+        open={showShareSheet}
+        onClose={() => setShowShareSheet(false)}
+        title={story?.title || ""}
+        onCopyLink={copyCurrentUrl}
+      />
     </div>
   );
 }
