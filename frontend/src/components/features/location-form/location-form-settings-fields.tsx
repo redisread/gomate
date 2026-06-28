@@ -67,7 +67,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
   const { t } = useI18n(["admin"]);
   const facilityOptions = FACILITY_OPTIONS(t);
   return (
-    <SectionCard icon={<Settings className="h-4 w-4" />} title={t("admin.formSettingsTitle")} collapsible defaultOpen={false}
+    <SectionCard icon={<Settings className="h-4 w-4" />} title={t("admin.formSettingsTitleRecommended")} collapsible defaultOpen={true}
       badge={<span className="text-[10px] text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">{t("admin.optionalBadge")}</span>}>
       {/* 配套设施 */}
       <Field label={t("admin.formFacilitiesTitle")}>
