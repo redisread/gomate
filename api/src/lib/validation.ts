@@ -65,6 +65,7 @@ export const createStorySchema = z.object({
 export const updateStorySchema = createStorySchema.partial().extend({
   id: z.string().min(1, "故事ID不能为空"),
   status: z.enum(["draft", "published", "hidden"], { message: "状态必须是 draft、published 或 hidden" }).optional(),
+  tags: z.array(z.string()).max(10, "最多10个标签").optional(),
 });
 
 /**
