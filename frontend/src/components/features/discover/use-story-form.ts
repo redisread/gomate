@@ -13,6 +13,7 @@ export interface FormFields {
   locationName: string;
   tags: string[];
   status: string;
+  authorId: string;
 }
 
 interface LocationOption {
@@ -151,6 +152,7 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
           locationName: data.location?.name || "",
           tags,
           status: data.status || "published",
+          authorId: data.author?.id || "",
         };
 
         // 权限检查
@@ -187,7 +189,7 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
 
   // 自动保存草稿（每 30 秒）
   React.useEffect(() => {
-    if (initialForm.current && !draftAvailable) {
+    if (initialForm.current) {
       draftTimer.current = setInterval(() => {
         saveDraft(storyId, form);
       }, 30000);
@@ -197,9 +199,9 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
     };
   }, [storyId, form, draftAvailable]);
 
-  const canEdit = Boolean(
-    form && currentUser && (currentUser.role === "admin" || true),
-  );
+  const isAuthor = Boolean(form.authorId && currentUser && form.authorId === currentUser.id);
+  const isAdmin = currentUser?.role === "admin";
+  const canEdit = Boolean(currentUser && (isAuthor || isAdmin));
 
   const updateField = React.useCallback(<K extends keyof FormFields>(key: K, value: FormFields[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
