@@ -64,6 +64,7 @@ interface UseLocationFormReturn {
   handleConfirmDeletePoi: () => Promise<void>;
   handlePoiSearch: (value: string) => void;
   clearPoiSearchResults: () => void;
+  isSearchingPois: boolean;
 }
 
 /* ================================================================
@@ -134,6 +135,7 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
   const [isDeletingPoi, setIsDeletingPoi] = React.useState(false);
   const [poiSearch, setPoiSearch] = React.useState("");
   const [poiSearchResults, setPoiSearchResults] = React.useState<typeof allPois>([]);
+  const [isSearchingPois, setIsSearchingPois] = React.useState(false);
 
   // Auth guard
   React.useEffect(() => {
@@ -398,12 +400,21 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
     finally { setIsDeletingPoi(false); }
   }, [deletingPoi]);
 
+  const poiSearchTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handlePoiSearch = React.useCallback((value: string) => {
     setPoiSearch(value);
+    if (poiSearchTimer.current) clearTimeout(poiSearchTimer.current);
     if (!value.trim()) { setPoiSearchResults([]); return; }
-    const q = value.toLowerCase();
-    setPoiSearchResults(allPois.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 8));
-  }, [allPois]);
+    setIsSearchingPois(true);
+    poiSearchTimer.current = setTimeout(() => {
+      fetchAPI(`/pois?search=${encodeURIComponent(value)}&limit=8`)
+        .then((r) => r.json())
+        .then((data) => setPoiSearchResults(data.pois ?? []))
+        .catch(() => setPoiSearchResults([]))
+        .finally(() => setIsSearchingPois(false));
+    }, 350);
+  }, []);
 
   return {
     location, cities, allTags, allPois, formData, errors, isSaving, isDirty, saveMessage,
@@ -414,5 +425,6 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
     handleOpenCreatePoi, handleOpenEditPoi, handlePoiModalSuccess,
     handleOpenDeletePoi, handleConfirmDeletePoi, handlePoiSearch,
     clearPoiSearchResults: () => setPoiSearchResults([]),
+    isSearchingPois,
   };
 }

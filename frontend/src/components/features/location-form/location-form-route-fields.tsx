@@ -74,6 +74,7 @@ interface LocationFormRouteFieldsProps {
   handleOpenDeletePoi: (poiId: string, poiName: string) => Promise<void>;
   handleConfirmDeletePoi: () => Promise<void>;
   clearPoiSearchResults: () => void;
+  isSearchingPois?: boolean;
 }
 
 export function LocationFormRouteFields({
@@ -81,7 +82,7 @@ export function LocationFormRouteFields({
   deleteConfirmOpen, deletingPoi, deletingPoiAssociations, isDeletingPoi,
   poiSearch, poiSearchResults, updateField, handlePoiSearch,
   handleOpenCreatePoi, handleOpenEditPoi, handlePoiModalSuccess,
-  handleOpenDeletePoi, handleConfirmDeletePoi, clearPoiSearchResults,
+  handleOpenDeletePoi, handleConfirmDeletePoi, clearPoiSearchResults, isSearchingPois = false,
 }: LocationFormRouteFieldsProps) {
   const { t } = useI18n(["admin", "pois"]);
   const { toast, show: showToast, isExiting } = useToast();
@@ -104,6 +105,11 @@ export function LocationFormRouteFields({
           className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 transition-opacity shrink-0">
           <Plus className="h-4 w-4" /><span className="hidden sm:inline">{t("pois.createBtn")}</span>
         </button>
+        {isSearchingPois && (
+          <div className="flex items-center justify-center py-2">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+          </div>
+        )}
       </div>
 
       {poiSearchResults.length > 0 && (
@@ -135,8 +141,29 @@ export function LocationFormRouteFields({
         <div className="space-y-2">
           {formData.poiLinks.map((link, idx) => {
             const poi = allPois.find((p) => p.id === link.poiId);
+            const handleDragStart = (e: React.DragEvent) => {
+              e.dataTransfer.setData("text/plain", String(idx));
+              e.dataTransfer.effectAllowed = "move";
+            };
+            const handleDragOver = (e: React.DragEvent) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+            };
+            const handleDrop = (e: React.DragEvent) => {
+              e.preventDefault();
+              const fromIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
+              if (fromIdx === idx) return;
+              const next = [...formData.poiLinks];
+              const [moved] = next.splice(fromIdx, 1);
+              const toIdx = fromIdx < idx ? idx - 1 : idx;
+              next.splice(toIdx, 0, moved);
+              // 重新生成 order 字段
+              updateField("poiLinks", next.map((l, i) => ({ ...l, order: i })));
+            };
             return (
-              <div key={link.poiId} className="px-3 py-2 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700">
+              <div key={link.poiId} draggable
+                onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop}
+                className="px-3 py-2 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 cursor-grab active:cursor-grabbing">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 text-[10px] font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
                   <span className="flex-1 text-sm text-stone-700 dark:text-stone-300 truncate">{poi?.name ?? link.poiId}</span>
