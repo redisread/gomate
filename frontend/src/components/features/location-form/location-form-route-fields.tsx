@@ -4,6 +4,8 @@ import * as React from "react";
 import { Plus, Pencil, Trash2, X, MapPin, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
+import { useToast } from "@/hooks/useToast";
+import { StoryToast } from "../discover/story-detail-toast";
 import type { PoiDetail } from "@/lib/types";
 import type { FormData } from "./use-location-form";
 import { PoiEditModal, PoiDeleteConfirm } from "@/components/ui/poi-edit-modal";
@@ -71,6 +73,7 @@ interface LocationFormRouteFieldsProps {
   handlePoiModalSuccess: (poi: { id: string; name: string; coordinates: { lat: number; lng: number } }) => void;
   handleOpenDeletePoi: (poiId: string, poiName: string) => Promise<void>;
   handleConfirmDeletePoi: () => Promise<void>;
+  clearPoiSearchResults: () => void;
 }
 
 export function LocationFormRouteFields({
@@ -78,16 +81,18 @@ export function LocationFormRouteFields({
   deleteConfirmOpen, deletingPoi, deletingPoiAssociations, isDeletingPoi,
   poiSearch, poiSearchResults, updateField, handlePoiSearch,
   handleOpenCreatePoi, handleOpenEditPoi, handlePoiModalSuccess,
-  handleOpenDeletePoi, handleConfirmDeletePoi,
+  handleOpenDeletePoi, handleConfirmDeletePoi, clearPoiSearchResults,
 }: LocationFormRouteFieldsProps) {
   const { t } = useI18n(["admin", "pois"]);
+  const { toast, show: showToast, isExiting } = useToast();
   const poiRoleOptions = POI_ROLE_OPTIONS(t);
   return (
+    <>
     <SectionCard
       icon={<MapPin className="h-4 w-4" />}
-      title={t("admin.formRouteTitle")}
+      title="关联打卡点（推荐添加）"
       badge={<span className="text-[10px] text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">{t("admin.optionalBadge")}</span>}
-      collapsible defaultOpen={false}
+      collapsible defaultOpen={true}
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="relative flex-1">
@@ -110,7 +115,8 @@ export function LocationFormRouteFields({
                 onClick={() => {
                   if (already) return;
                   updateField("poiLinks", [...formData.poiLinks, { poiId: poi.id, roleType: "poi", order: formData.poiLinks.length }]);
-                  handlePoiSearch("");
+                  clearPoiSearchResults();
+                  showToast({ type: "success", message: t("pois.associated") });
                 }}
                 className={cn("w-full flex items-center gap-2.5 px-3 py-2 text-left border-b border-stone-50 dark:border-stone-800 last:border-b-0 transition-colors",
                   already ? "opacity-40 cursor-not-allowed" : "hover:bg-amber-50 dark:hover:bg-amber-950/20")}>
@@ -151,7 +157,10 @@ export function LocationFormRouteFields({
                     className="text-xs border border-stone-200 dark:border-stone-700 rounded-lg px-2 py-1 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 outline-none focus:border-amber-400 shrink-0">
                     {poiRoleOptions.map((r) => (<option key={r.value} value={r.value}>{r.label}</option>))}
                   </select>
-                  <button type="button" onClick={() => updateField("poiLinks", formData.poiLinks.filter((_, i) => i !== idx))}
+                  <button type="button" onClick={() => {
+                      updateField("poiLinks", formData.poiLinks.filter((_, i) => i !== idx));
+                      showToast({ type: "success", message: t("pois.unassociated") });
+                    }}
                     className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors shrink-0" title={t("pois.unlinkBtn")}>
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -169,5 +178,7 @@ export function LocationFormRouteFields({
         onConfirm={handleConfirmDeletePoi} poiName={deletingPoi?.name ?? ""}
         associationCount={deletingPoiAssociations} isDeleting={isDeletingPoi} />
     </SectionCard>
+      <StoryToast toast={toast} exiting={isExiting} />
+    </>
   );
 }

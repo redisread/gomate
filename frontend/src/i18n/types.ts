@@ -1148,6 +1148,8 @@ export type TranslationKey =
   | "pois.confirm"
   | "pois.searchPlaceholder"
   | "pois.noResults"
+	| "pois.associated"
+	| "pois.unassociated"
   | "pois.alreadyAdded"
   | "pois.orderPrefix"
   | "pois.nameMaxLength"
