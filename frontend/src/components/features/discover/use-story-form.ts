@@ -95,7 +95,7 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
 
   const [form, setForm] = React.useState<FormFields>({
     title: "", summary: "", content: "", coverImage: "", locationId: "",
-    locationName: "", tags: [], status: "published",
+    locationName: "", tags: [], status: "published", authorId: "",
   });
   const initialForm = React.useRef<FormFields | null>(null);
   const [allTags, setAllTags] = React.useState<TagOption[]>([]);
