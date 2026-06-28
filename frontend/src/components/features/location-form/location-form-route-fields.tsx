@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, X, MapPin, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
+import { StoryToast } from "../discover/story-detail-toast";
 import type { PoiDetail } from "@/lib/types";
 import type { FormData } from "./use-location-form";
 import { PoiEditModal, PoiDeleteConfirm } from "@/components/ui/poi-edit-modal";
@@ -83,24 +84,10 @@ export function LocationFormRouteFields({
   handleOpenDeletePoi, handleConfirmDeletePoi, clearPoiSearchResults,
 }: LocationFormRouteFieldsProps) {
   const { t } = useI18n(["admin", "pois"]);
-  const { toast, show: showToast } = useToast();
+  const { toast, show: showToast, isExiting } = useToast();
   const poiRoleOptions = POI_ROLE_OPTIONS(t);
   return (
-    <div className="relative">
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed top-4 right-4 z-50 px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all duration-300 ${
-            toast.type === "success"
-              ? "bg-emerald-600 text-white"
-              : toast.type === "error"
-                ? "bg-red-600 text-white"
-                : "bg-stone-800 text-white"
-          }`}
-          style={{ animation: toast.isExiting ? "fadeOut 0.2s ease forwards" : "fadeIn 0.2s ease" }}>
-          {toast.message}
-        </div>
-      )}
+    <>
     <SectionCard
       icon={<MapPin className="h-4 w-4" />}
       title="关联打卡点（推荐添加）"
@@ -191,6 +178,7 @@ export function LocationFormRouteFields({
         onConfirm={handleConfirmDeletePoi} poiName={deletingPoi?.name ?? ""}
         associationCount={deletingPoiAssociations} isDeleting={isDeletingPoi} />
     </SectionCard>
-    </div>
+      <StoryToast toast={toast} exiting={isExiting} />
+    </>
   );
 }
