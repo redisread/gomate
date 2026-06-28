@@ -1,59 +1,19 @@
-import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
-import { and, eq, ne, gt, inArray } from "drizzle-orm";
-import { createAuth } from "../lib/auth";
-import { createDb } from "../db";
-import * as schema from "../db/schema";
-import type { Env } from "../lib/auth";
+import { and, eq } from "drizzle-orm";
+import { createAuth } from "../../lib/auth";
+import { createDb } from "../../db";
+import * as schema from "../../db/schema";
+import type { Env } from "../../lib/auth";
+import { APIErrors } from "../../lib/api-errors";
+import { formatBeijingDateTime, getUserStats, getUserOngoingTeams } from "./utils";
 
-/** 格式化日期为北京时间（UTC+8）的 date 和 time 字符串 */
-function formatBeijingDateTime(date: Date | null): { date: string | null; time: string | null } {
-  if (!date) return { date: null, time: null };
-  const beijingDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-  return {
-    date: beijingDate.toISOString().split("T")[0],
-    time: beijingDate.toISOString().slice(11, 16),
-  };
-}
-
-/** 返回安全的用户对象（时间戳格式） */
-function sanitizeUser(user: typeof schema.users.$inferSelect) {
-  return {
-    id: user.id,
-    name: user.name,
-    nickname: user.nickname,
-    email: user.email,
-    avatar: user.image,
-    bio: user.bio,
-    gender: user.gender,
-    birthday: user.birthday,
-    level: user.level || "beginner",
-    completedHikes: user.completedHikes ?? 0,
-    wechat: user.wechat,
-    extra: user.extra,
-    role: user.role || "user",
-    status: user.status,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
-}
-
-const users = new Hono<{ Bindings: Env }>();
-
-/** 校验 UserExtra 字段格式 */
-function validateUserExtra(extra: unknown): extra is { equipment?: string[]; experience?: string } {
-  if (typeof extra !== "object" || extra === null) return false;
-  const e = extra as Record<string, unknown>;
-  if (e.equipment !== undefined && !Array.isArray(e.equipment)) return false;
-  if (e.experience !== undefined && typeof e.experience !== "string") return false;
-  return true;
-}
+const queries = new Hono<{ Bindings: Env }>();
 
 /**
  * GET /users?id={userId}
  * 获取用户信息
  */
-users.get("/", async (c) => {
+queries.get("/", async (c) => {
   try {
     const userId = c.req.query("id");
     if (!userId) return c.json(APIErrors.badRequest("User ID is required"), 400);
@@ -88,92 +48,10 @@ users.get("/", async (c) => {
 });
 
 /**
- * PATCH /users/update
- * 更新用户信息（需登录，只能修改自己的资料）
- */
-users.patch("/update", async (c) => {
-  try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-    const db = createDb(c.env.DB);
-    const body = await c.req.json<{
-      userId?: string; name?: string; nickname?: string; bio?: string;
-      level?: string; image?: string; wechat?: string; gender?: string;
-      birthday?: string | number; extra?: unknown;
-    }>();
-    const { userId, name, nickname, bio, level, image, wechat, gender, birthday, extra } = body;
-
-    if (!userId) return c.json(APIErrors.badRequest("User ID is required"), 400);
-
-    const updateData: Partial<typeof schema.users.$inferInsert> = {};
-    if (name !== undefined) updateData.name = name;
-    if (nickname !== undefined) updateData.nickname = nickname;
-    if (bio !== undefined) updateData.bio = bio;
-    if (level !== undefined) updateData.level = level;
-    if (image !== undefined) updateData.image = image;
-    if (wechat !== undefined) updateData.wechat = wechat;
-    if (gender !== undefined) updateData.gender = gender;
-    if (birthday !== undefined) {
-      updateData.birthday = birthday === null ? null : new Date(birthday as number);
-    }
-    if (extra !== undefined) {
-      if (!validateUserExtra(extra)) return c.json(APIErrors.badRequest("Invalid extra field format"), 400);
-      updateData.extra = JSON.stringify(extra);
-    }
-    updateData.updatedAt = new Date();
-
-    // 支持 email 或 id 查找用户
-    let targetUserId = userId;
-    const byEmail = await db
-      .select({ id: schema.users.id })
-      .from(schema.users)
-      .where(eq(schema.users.email, userId))
-      .limit(1);
-    if (byEmail.length > 0) targetUserId = byEmail[0].id;
-
-    // 鉴权：只允许修改自己的资料（管理员除外）
-    if (targetUserId !== session.user.id) {
-      const sessionUser = await db
-        .select({ role: schema.users.role })
-        .from(schema.users)
-        .where(eq(schema.users.id, session.user.id))
-        .limit(1);
-      if (!sessionUser.length || sessionUser[0].role !== "admin") {
-        return c.json(APIErrors.forbidden("无权限修改他人资料"), 403);
-      }
-    }
-
-    const existing = await db
-      .select({ id: schema.users.id })
-      .from(schema.users)
-      .where(eq(schema.users.id, targetUserId))
-      .limit(1);
-    if (!existing.length) return c.json(APIErrors.notFound(`User not found: ${targetUserId}`), 404);
-
-    await db.update(schema.users).set(updateData).where(eq(schema.users.id, targetUserId));
-
-    // 读取更新后的完整用户数据
-    const updatedRows = await db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.id, targetUserId))
-      .limit(1);
-    const updatedUser = updatedRows[0];
-
-    return c.json({ success: true, user: sanitizeUser(updatedUser) });
-  } catch (error) {
-    console.error("User update error:", error);
-    return c.json(APIErrors.internalError("Failed to update user"), 500);
-  }
-});
-
-/**
  * GET /users/pending-approvals
  * 获取当前用户作为队长需要审批的所有申请（支持分页）
  */
-users.get("/pending-approvals", async (c) => {
+queries.get("/pending-approvals", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
@@ -248,7 +126,7 @@ users.get("/pending-approvals", async (c) => {
  * GET /users/applications
  * 获取当前用户的所有申请记录（以成员身份申请的，不含自己作为队长的）（支持分页）
  */
-users.get("/applications", async (c) => {
+queries.get("/applications", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
@@ -379,7 +257,7 @@ const totalPages = Math.ceil(total / pageSize);
  * GET /users/teams/joined
  * 获取当前用户以成员身份加入（已审批通过）的所有队伍（支持分页）
  */
-users.get("/teams/joined", async (c) => {
+queries.get("/teams/joined", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
@@ -465,7 +343,7 @@ users.get("/teams/joined", async (c) => {
  * GET /users/created-teams
  * 获取当前用户创建的所有队伍（支持分页）
  */
-users.get("/created-teams", async (c) => {
+queries.get("/created-teams", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
@@ -539,7 +417,7 @@ users.get("/created-teams", async (c) => {
  * GET /users/:id
  * 获取指定用户的公开资料（必须放在所有具体路径之后，避免被提前匹配）
  */
-users.get("/:id", async (c) => {
+queries.get("/:id", async (c) => {
   try {
     const id = c.req.param("id");
     const db = createDb(c.env.DB);
@@ -559,128 +437,8 @@ users.get("/:id", async (c) => {
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
     const isSelf = session?.user?.id === id;
 
-    // 统计创建的队伍数
-    const createdTeamsCount = await db
-      .select({ count: schema.teams.id })
-      .from(schema.teams)
-      .where(eq(schema.teams.leaderId, id));
-
-    // 统计参加的队伍数（已审批通过，排除自己作为队长的）
-    const joinedTeamsCount = await db
-      .select({ count: schema.teamMembers.id })
-      .from(schema.teamMembers)
-      .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
-      .where(
-        and(
-          eq(schema.teamMembers.userId, id),
-          eq(schema.teamMembers.status, "approved"),
-          // 排除自己作为队长的队伍
-          ne(schema.teams.leaderId, id)
-        )
-      );
-
-    // 统计已完成的队伍数（包括自己创建的和参加的）
-    const completedAsLeaderCount = await db
-      .select({ count: schema.teams.id })
-      .from(schema.teams)
-      .where(
-        and(
-          eq(schema.teams.leaderId, id),
-          eq(schema.teams.status, "completed")
-        )
-      );
-
-    const completedAsMemberCount = await db
-      .select({ count: schema.teamMembers.id })
-      .from(schema.teamMembers)
-      .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
-      .where(
-        and(
-          eq(schema.teamMembers.userId, id),
-          eq(schema.teamMembers.status, "approved"),
-          eq(schema.teams.status, "completed"),
-          // 排除自己作为队长的队伍（避免重复计数）
-          ne(schema.teams.leaderId, id)
-        )
-      );
-
-    const stats = {
-      createdTeams: createdTeamsCount.length,
-      joinedTeams: joinedTeamsCount.length,
-      completedTeams: completedAsLeaderCount.length + completedAsMemberCount.length,
-    };
-
-    // 查询正在进行中的队伍（作为队长或已批准成员）
-    const now = new Date();
-    const activeStatuses = ["recruiting", "full", "formed"];
-
-    // 获取用户参与的所有队伍ID（作为队长或已批准成员）
-    const { sql } = await import("drizzle-orm");
-    const currentMembersSubquery = sql<number>`(SELECT COUNT(*) FROM team_members WHERE team_members.team_id = ${schema.teams.id} AND team_members.status = 'approved')`;
-
-    // 查询作为队长的正在进行中的队伍
-    const createdOngoingTeams = await db
-      .select({
-        id: schema.teams.id, title: schema.teams.title, startTime: schema.teams.startTime,
-        endTime: schema.teams.endTime, maxMembers: schema.teams.maxMembers, status: schema.teams.status,
-        locationName: schema.locations.name, locationCoverImage: schema.locations.coverImage,
-        currentMembers: currentMembersSubquery,
-      })
-      .from(schema.teams)
-      .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-      .where(
-        and(
-          eq(schema.teams.leaderId, id),
-          inArray(schema.teams.status, activeStatuses),
-          gt(schema.teams.endTime, now)
-        )
-      )
-      .limit(5);
-
-    // 查询作为成员加入的正在进行中的队伍
-    const joinedOngoingTeams = await db
-      .select({
-        id: schema.teams.id, title: schema.teams.title, startTime: schema.teams.startTime,
-        endTime: schema.teams.endTime, maxMembers: schema.teams.maxMembers, status: schema.teams.status,
-        locationName: schema.locations.name, locationCoverImage: schema.locations.coverImage,
-        currentMembers: currentMembersSubquery,
-      })
-      .from(schema.teams)
-      .innerJoin(schema.teamMembers, eq(schema.teamMembers.teamId, schema.teams.id))
-      .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-      .where(
-        and(
-          eq(schema.teamMembers.userId, id),
-          eq(schema.teamMembers.status, "approved"),
-          ne(schema.teams.leaderId, id), // 排除自己作为队长的
-          inArray(schema.teams.status, activeStatuses),
-          gt(schema.teams.endTime, now)
-        )
-      )
-      .limit(5);
-
-    // 合并并格式化正在进行中的队伍
-    const allOngoingTeams = [...createdOngoingTeams, ...joinedOngoingTeams]
-      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-      .slice(0, 8);
-
-    const ongoingTeams = allOngoingTeams.map((row) => {
-      const startDate = new Date(row.startTime);
-      const { date, time } = formatBeijingDateTime(startDate);
-      return {
-        id: row.id,
-        title: row.title,
-        date,
-        time,
-        status: row.status,
-        currentMembers: row.currentMembers ?? 0,
-        maxMembers: row.maxMembers,
-        location: row.locationName ? {
-          name: row.locationName,
-          coverImage: row.locationCoverImage || "",
-        } : null,
-      };
-    });
+    const stats = await getUserStats(db, id);
+    const ongoingTeams = await getUserOngoingTeams(db, id);
 
     return c.json({
       success: true,
@@ -704,4 +462,4 @@ users.get("/:id", async (c) => {
   }
 });
 
-export { users as usersRoute };
+export default queries;

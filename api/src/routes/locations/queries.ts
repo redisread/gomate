@@ -1,43 +1,13 @@
 import { Hono } from "hono";
 import { eq, like, and, sql, inArray, asc } from "drizzle-orm";
-import { generateId } from "../lib/id";
-import { createAuth } from "../lib/auth";
-import { createDb } from "../db";
-import * as schema from "../db/schema";
-import type { Env } from "../lib/auth";
-import { createLocationSchema, updateLocationSchema } from "../lib/validation";
-import { APIErrors } from "../lib/api-errors";
-import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../lib/cache";
+import { createDb } from "../../db";
+import * as schema from "../../db/schema";
+import type { Env } from "../../lib/auth";
+import { APIErrors } from "../../lib/api-errors";
+import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../../lib/cache";
+import { safeJsonParse } from "./utils";
 
-const locations = new Hono<{ Bindings: Env }>();
-
-/** 安全解析 JSON 字段 */
-function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
-  if (!value) return fallback;
-  try {
-    return JSON.parse(value);
-  } catch {
-    if (Array.isArray(fallback)) {
-      return value.split(/[,、]/).map((s: string) => s.trim()).filter(Boolean) as unknown as T;
-    }
-    return fallback;
-  }
-}
-
-/** 验证管理员权限 */
-async function requireAdmin(c: { env: Env; req: { raw: Request } }) {
-  const authInstance = createAuth(c.env);
-  const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-  if (!session) throw new Error("未登录");
-  const db = createDb(c.env.DB);
-  const user = await db
-    .select({ role: schema.users.role })
-    .from(schema.users)
-    .where(eq(schema.users.id, session.user.id))
-    .then((rows) => rows[0]);
-  if (!user || user.role !== "admin") throw new Error("无权限访问");
-  return session;
-}
+const queries = new Hono<{ Bindings: Env }>();
 
 /**
  * GET /locations
@@ -46,7 +16,7 @@ async function requireAdmin(c: { env: Env; req: { raw: Request } }) {
  * ?allTags=true 返回按类型分组的所有标签
  * ?view=card 返回轻量卡片视图（首页用），跳过 routes/tags/images 等重字段
  */
-locations.get("/", async (c) => {
+queries.get("/", async (c) => {
   try {
     const db = createDb(c.env.DB);
 
@@ -285,97 +255,10 @@ locations.get("/", async (c) => {
 });
 
 /**
- * POST /locations
- * 创建新地点（需要管理员权限）
- */
-locations.post("/", async (c) => {
-  try {
-    await requireAdmin(c);
-    const db = createDb(c.env.DB);
-    const body = await c.req.json();
-
-    // Validate input
-    const parsed = createLocationSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
-    }
-
-    const data = parsed.data;
-    const id = generateId();
-    const slug = data.slug || data.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-
-    await db.insert(schema.locations).values({
-      id, name: data.name, slug, type: data.type || null, subtitle: data.subtitle || null,
-      description: data.description, address: data.address || null,
-      cityId: data.cityId, cityName: data.cityName || null,
-      bestSeason: JSON.stringify(data.bestSeason || []),
-      coverImage: data.coverImage,
-      images: JSON.stringify(data.images || []),
-      coordinates: JSON.stringify(data.coordinates || { lat: 0, lng: 0 }),
-      extra: data.extra ? JSON.stringify(data.extra) : null,
-      createdAt: new Date(), updatedAt: new Date(),
-    });
-
-    return c.json({ success: true, location: { id, slug } });
-  } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Create location error:", error);
-    return c.json(APIErrors.internalError("创建地点失败"), 500);
-  }
-});
-
-/**
- * PUT /locations
- * 更新地点（需要管理员权限）
- */
-locations.put("/", async (c) => {
-  try {
-    await requireAdmin(c);
-    const db = createDb(c.env.DB);
-    const body = await c.req.json();
-
-    // Validate input
-    const parsed = updateLocationSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
-    }
-
-    const { id, ...updateData } = parsed.data;
-
-    const dataToUpdate: Record<string, unknown> = { updatedAt: new Date() };
-    if (updateData.name !== undefined) dataToUpdate.name = updateData.name;
-    if (updateData.slug !== undefined) dataToUpdate.slug = updateData.slug;
-    if (updateData.type !== undefined) dataToUpdate.type = updateData.type || null;
-    if (updateData.subtitle !== undefined) dataToUpdate.subtitle = updateData.subtitle || null;
-    if (updateData.description !== undefined) dataToUpdate.description = updateData.description;
-    if (updateData.address !== undefined) dataToUpdate.address = updateData.address || null;
-    if (updateData.cityId !== undefined) dataToUpdate.cityId = updateData.cityId;
-    if (updateData.cityName !== undefined) dataToUpdate.cityName = updateData.cityName || null;
-    if (updateData.bestSeason !== undefined) dataToUpdate.bestSeason = JSON.stringify(updateData.bestSeason);
-    if (updateData.coverImage !== undefined) dataToUpdate.coverImage = updateData.coverImage;
-    if (updateData.images !== undefined) dataToUpdate.images = JSON.stringify(updateData.images);
-    if (updateData.coordinates !== undefined) dataToUpdate.coordinates = JSON.stringify(updateData.coordinates);
-    if (updateData.extra !== undefined) dataToUpdate.extra = updateData.extra ? JSON.stringify(updateData.extra) : null;
-
-    await db.update(schema.locations).set(dataToUpdate).where(eq(schema.locations.id, id));
-
-    return c.json({ success: true });
-  } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Update location error:", error);
-    return c.json(APIErrors.internalError("更新地点失败"), 500);
-  }
-});
-
-/**
  * GET /locations/:id
  * 获取单个地点详情
  */
-locations.get("/:id", async (c) => {
+queries.get("/:id", async (c) => {
   try {
     const idOrSlug = c.req.param("id");
     const db = createDb(c.env.DB);
@@ -447,7 +330,7 @@ locations.get("/:id", async (c) => {
  * GET /locations/:id/pois
  * 获取地点关联的打卡点（POI）列表
  */
-locations.get("/:id/pois", async (c) => {
+queries.get("/:id/pois", async (c) => {
   try {
     const idOrSlug = c.req.param("id");
     const db = createDb(c.env.DB);
@@ -502,35 +385,10 @@ locations.get("/:id/pois", async (c) => {
 });
 
 /**
- * DELETE /locations/:id
- * 删除地点（需要管理员权限）
- */
-locations.delete("/:id", async (c) => {
-  try {
-    await requireAdmin(c);
-    const id = c.req.param("id");
-    const db = createDb(c.env.DB);
-
-    const existing = await db.query.locations.findFirst({ where: eq(schema.locations.id, id) });
-    if (!existing) return c.json(APIErrors.notFound("地点不存在"), 404);
-
-    await db.delete(schema.locations).where(eq(schema.locations.id, id));
-
-    return c.json({ success: true });
-  } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Delete location error:", error);
-    return c.json(APIErrors.internalError("删除地点失败"), 500);
-  }
-});
-
-/**
  * GET /locations/:id/tags
  * 获取地点当前关联的标签列表
  */
-locations.get("/:id/tags", async (c) => {
+queries.get("/:id/tags", async (c) => {
   try {
     const id = c.req.param("id");
     const db = createDb(c.env.DB);
@@ -554,103 +412,11 @@ locations.get("/:id/tags", async (c) => {
 });
 
 /**
- * PUT /locations/:id/tags
- * 全量替换地点关联的标签（需要管理员权限）
- * body: { tagIds: string[] }
- */
-locations.put("/:id/tags", async (c) => {
-  try {
-    await requireAdmin(c);
-    const id = c.req.param("id");
-    const { tagIds } = await c.req.json<{ tagIds: string[] }>();
-    const db = createDb(c.env.DB);
-
-    // 删除旧关联
-    await db
-      .delete(schema.entityToTags)
-      .where(
-        and(
-          eq(schema.entityToTags.entityId, id),
-          eq(schema.entityToTags.entityType, "location")
-        )
-      );
-
-    // 批量插入新关联
-    if (tagIds && tagIds.length > 0) {
-      await db.insert(schema.entityToTags).values(
-        tagIds.map((tagId) => ({
-          id: generateId(),
-          entityId: id,
-          entityType: "location" as const,
-          tagId,
-        }))
-      );
-    }
-
-    return c.json({ success: true });
-  } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Update location tags error:", error);
-    return c.json(APIErrors.internalError("更新标签失败"), 500);
-  }
-});
-
-/**
- * PUT /locations/:id/pois
- * 全量替换地点关联的打卡点（需要管理员权限）
- * body: { pois: Array<{ poiId: string; roleType: string; order: number }> }
- */
-locations.put("/:id/pois", async (c) => {
-  try {
-    await requireAdmin(c);
-    const id = c.req.param("id");
-    const { pois: poiLinks } = await c.req.json<{
-      pois: Array<{ poiId: string; roleType: string; order: number }>;
-    }>();
-    const db = createDb(c.env.DB);
-
-    // 删除旧关联
-    await db
-      .delete(schema.entityToPois)
-      .where(
-        and(
-          eq(schema.entityToPois.entityId, id),
-          eq(schema.entityToPois.entityType, "location")
-        )
-      );
-
-    // 批量插入新关联
-    if (poiLinks && poiLinks.length > 0) {
-      await db.insert(schema.entityToPois).values(
-        poiLinks.map((link) => ({
-          id: generateId(),
-          entityId: id,
-          entityType: "location" as const,
-          poiId: link.poiId,
-          roleType: link.roleType as schema.PoiRoleType,
-          order: link.order,
-        }))
-      );
-    }
-
-    return c.json({ success: true });
-  } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Update location pois error:", error);
-    return c.json(APIErrors.internalError("更新打卡点失败"), 500);
-  }
-});
-
-/**
  * GET /locations/search
  * 前缀搜索地点（用于搜索框实时提示）
  * Query: q=keyword&limit=10
  */
-locations.get("/search", async (c) => {
+queries.get("/search", async (c) => {
   try {
     const db = createDb(c.env.DB);
     const query = c.req.query("q") || "";
@@ -693,4 +459,4 @@ locations.get("/search", async (c) => {
   }
 });
 
-export { locations as locationsRoute };
+export default queries;
