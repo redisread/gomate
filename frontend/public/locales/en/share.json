@@ -18,5 +18,9 @@
   "noAddress": "No address available",
   "themeLight": "Light",
   "themeDark": "Dark",
-  "viewBtn": "Check It Out"
+  "viewBtn": "Check It Out",
+  "weibo": "Weibo",
+  "twitter": "Twitter",
+  "email": "Email",
+  "wechat": "WeChat"
 }

@@ -18,5 +18,9 @@
   "noAddress": "暂无地址信息",
   "themeLight": "明亮",
   "themeDark": "深色",
-  "viewBtn": "去看看"
+  "viewBtn": "去看看",
+  "weibo": "微博",
+  "twitter": "Twitter",
+  "email": "邮件",
+  "wechat": "微信"
 }
