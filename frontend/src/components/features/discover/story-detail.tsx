@@ -300,6 +300,8 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
         open={showShareSheet}
         onClose={() => setShowShareSheet(false)}
         title={story?.title || ""}
+        storyId={storyId}
+        summary={story?.summary || ""}
         onCopyLink={copyCurrentUrl}
       />
     </div>

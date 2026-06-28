@@ -1,34 +1,38 @@
 "use client";
 
 import * as React from "react";
-import { Link2, Share2, X } from "lucide-react";
+import { ImagePlus, Link2, Mail, MessageCircle, Share2, Twitter, X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
+import { weiboShareUrl, twitterShareUrl, mailtoUrl } from "@/lib/share-channels";
 
 interface ShareStorySheetProps {
   open: boolean;
   onClose: () => void;
   title: string;
+  storyId: string;
+  summary: string;
   onCopyLink: () => void;
 }
 
-export function ShareStorySheet({ open, onClose, title, onCopyLink }: ShareStorySheetProps) {
+export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopyLink }: ShareStorySheetProps) {
   const { t } = useI18n(["common", "teams"]);
+  const url = typeof window !== "undefined" ? window.location.href : "";
 
   if (!open) return null;
 
-  const handleCopyLink = () => {
-    onCopyLink();
-    onClose();
-  };
-
+  const handleCopyLink = () => { onCopyLink(); onClose(); };
   const handleSystemShare = async () => {
     try {
-      await navigator.share({ title, url: window.location.href });
+      await navigator.share({ title, url });
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
     }
     onClose();
   };
+  const handleWeibo = () => { window.open(weiboShareUrl(url, title), "_blank"); onClose(); };
+  const handleTwitter = () => { window.open(twitterShareUrl(url, title), "_blank"); onClose(); };
+  const handleEmail = () => { window.location.href = mailtoUrl(title, `${title}\n\n${summary}\n\n${url}`); onClose(); };
+  const handlePoster = () => { window.open(`/share-image/story/${storyId}`, "_blank"); onClose(); };
 
   return (
     <>
@@ -49,6 +53,22 @@ export function ShareStorySheet({ open, onClose, title, onCopyLink }: ShareStory
             <button onClick={handleSystemShare} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center"><Share2 className="w-5 h-5 text-blue-600" /></div>
               <span className="text-xs text-muted-foreground">{t("common.share")}</span>
+            </button>
+            <button onClick={handleWeibo} className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center"><MessageCircle className="w-5 h-5 text-red-500" /></div>
+              <span className="text-xs text-muted-foreground">微博</span>
+            </button>
+            <button onClick={handleTwitter} className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center"><Twitter className="w-5 h-5 text-sky-500" /></div>
+              <span className="text-xs text-muted-foreground">Twitter</span>
+            </button>
+            <button onClick={handleEmail} className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center"><Mail className="w-5 h-5 text-stone-600" /></div>
+              <span className="text-xs text-muted-foreground">邮件</span>
+            </button>
+            <button onClick={handlePoster} className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center"><ImagePlus className="w-5 h-5 text-purple-600" /></div>
+              <span className="text-xs text-muted-foreground">{t("teams.generatePoster")}</span>
             </button>
           </div>
         </div>
