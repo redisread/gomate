@@ -412,5 +412,6 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
     deletingPoiAssociations, isDeletingPoi, poiSearch, poiSearchResults,
     handleOpenCreatePoi, handleOpenEditPoi, handlePoiModalSuccess,
     handleOpenDeletePoi, handleConfirmDeletePoi, handlePoiSearch,
+    clearPoiSearchResults: () => setPoiSearchResults([]),
   };
 }

@@ -72,6 +72,7 @@ interface LocationFormRouteFieldsProps {
   handlePoiModalSuccess: (poi: { id: string; name: string; coordinates: { lat: number; lng: number } }) => void;
   handleOpenDeletePoi: (poiId: string, poiName: string) => Promise<void>;
   handleConfirmDeletePoi: () => Promise<void>;
+  clearPoiSearchResults: () => void;
 }
 
 export function LocationFormRouteFields({
@@ -79,7 +80,7 @@ export function LocationFormRouteFields({
   deleteConfirmOpen, deletingPoi, deletingPoiAssociations, isDeletingPoi,
   poiSearch, poiSearchResults, updateField, handlePoiSearch,
   handleOpenCreatePoi, handleOpenEditPoi, handlePoiModalSuccess,
-  handleOpenDeletePoi, handleConfirmDeletePoi,
+  handleOpenDeletePoi, handleConfirmDeletePoi, clearPoiSearchResults,
 }: LocationFormRouteFieldsProps) {
   const { t } = useI18n(["admin", "pois"]);
   const { toast, show: showToast } = useToast();
@@ -127,7 +128,8 @@ export function LocationFormRouteFields({
                 onClick={() => {
                   if (already) return;
                   updateField("poiLinks", [...formData.poiLinks, { poiId: poi.id, roleType: "poi", order: formData.poiLinks.length }]);
-                  showToast({ type: "success", message: "已关联打卡点" });
+                  clearPoiSearchResults();
+                  showToast({ type: "success", message: t("pois.associated") });
                 }}
                 className={cn("w-full flex items-center gap-2.5 px-3 py-2 text-left border-b border-stone-50 dark:border-stone-800 last:border-b-0 transition-colors",
                   already ? "opacity-40 cursor-not-allowed" : "hover:bg-amber-50 dark:hover:bg-amber-950/20")}>
@@ -170,7 +172,7 @@ export function LocationFormRouteFields({
                   </select>
                   <button type="button" onClick={() => {
                       updateField("poiLinks", formData.poiLinks.filter((_, i) => i !== idx));
-                      showToast({ type: "success", message: "已取消关联" });
+                      showToast({ type: "success", message: t("pois.unassociated") });
                     }}
                     className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors shrink-0" title={t("pois.unlinkBtn")}>
                     <X className="h-3.5 w-3.5" />
