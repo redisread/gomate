@@ -1,0 +1,17 @@
+---
+/**
+ * 故事编辑页 - 动态路由
+ */
+import Layout from "../../../layouts/Layout.astro";
+import { StoryEditClient } from "../../../components/features/discover/story-edit-client";
+import { declareI18nNs } from "../../../middleware";
+
+declareI18nNs(Astro.locals, ["content", "common", "ui"]);
+
+const { id } = Astro.params;
+---
+
+<Layout title="编辑故事 - GoMate" showNavbar={true} showFooter={false}>
+  <StoryEditClient storyId={id!} client:load />
+</Layout>
+ShelL

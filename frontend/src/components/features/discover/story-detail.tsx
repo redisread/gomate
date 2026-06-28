@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Share2 } from "lucide-react";
+import { ArrowLeft, FileText, Share2 } from "lucide-react";
 import { apiDelete, apiGet, apiPost, fetchCurrentUser } from "@/lib/api";
 import type { SessionUser } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -207,13 +207,20 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
 
           <div className="flex items-center gap-2">
             {canDelete && (
-              <StoryDeleteButton
-                onClick={() => {
-                  setDeleteError("");
-                  setDeleteConfirmOpen(true);
-                }}
-                t={t}
-              />
+              <>
+                <a href={`/discover/${storyId}/edit`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+                  <FileText className="h-4 w-4" />
+                  {t("common.edit")}
+                </a>
+                <StoryDeleteButton
+                  onClick={() => {
+                    setDeleteError("");
+                    setDeleteConfirmOpen(true);
+                  }}
+                  t={t}
+                />
+              </>
             )}
             <button
               type="button"
