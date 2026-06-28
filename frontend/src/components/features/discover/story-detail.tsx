@@ -33,6 +33,14 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
   const [error, setError] = React.useState<string | null>(null);
   const [isLiking, setIsLiking] = React.useState(false);
   const [liked, setLiked] = React.useState(false);
+
+  // 从 API 响应初始化点赞状态
+  React.useEffect(() => {
+    if (story) {
+      setLiked(story.isLiked ?? false);
+    }
+  }, [story?.id, story?.isLiked]);
+
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState("");
@@ -110,30 +118,48 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
   }, [copyCurrentUrl, story]);
 
   const handleLike = React.useCallback(async () => {
-    if (isLiking || liked) return;
+    if (isLiking) return;
+
+    // 乐观更新：先翻转本地状态
+    const prevLiked = liked;
+    const prevLikeCount = story?.likeCount ?? 0;
+    setLiked(!liked);
+    setStory((prev) =>
+      prev ? { ...prev, likeCount: prev.likeCount + (liked ? -1 : 1) } : prev,
+    );
 
     try {
       setIsLiking(true);
-      const response = await apiPost<{ success: boolean; message: string }>(
+      const response = await apiPost<{ success: boolean; liked: boolean; message: string }>(
         `/stories/${storyId}/like`,
       );
 
       if (response.success) {
-        setLiked(true);
-        setStory((prev) =>
-          prev ? { ...prev, likeCount: prev.likeCount + 1 } : prev,
-        );
-        showToast({ type: "success", message: t("content.discover.liked") });
+        setLiked(response.liked);
+        showToast({
+          type: "success",
+          message: response.liked ? t("content.discover.liked") : t("content.discover.unliked"),
+        });
       } else {
+        // API 返回失败 → 回滚本地状态
+        setLiked(prevLiked);
+        setStory((prev) =>
+          prev ? { ...prev, likeCount: prevLikeCount } : prev,
+        );
         showToast({ type: "error", message: t("content.discover.likeFailed") });
       }
     } catch (err) {
+      // 网络异常 → 回滚本地状态
+      setLiked(prevLiked);
+      setStory((prev) =>
+        prev ? { ...prev, likeCount: prevLikeCount } : prev,
+      );
       showToast({ type: "error", message: t("content.discover.likeFailed") });
       console.error("Like story error:", err);
     } finally {
       setIsLiking(false);
     }
-  }, [isLiking, liked, showToast, storyId, t]);
+  }, [isLiking, liked, story, showToast, storyId, t]);
 
   const handleDelete = React.useCallback(async () => {
     if (!canDelete || isDeleting) return;

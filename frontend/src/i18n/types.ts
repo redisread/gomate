@@ -505,6 +505,7 @@ export type TranslationKey =
   | "content.discover.anonymous"
   | "content.discover.relatedLocation"
   | "content.discover.liked"
+	  | "content.discover.unliked"
   | "content.discover.like"
   | "content.discover.linkCopied"
   | "content.discover.today"
