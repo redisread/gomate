@@ -204,7 +204,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
         </Field>
 
         {/* 安全警告 */}
-        <Field label={t("admin.formWarningsTitle")}>
+        <Field label="" hint="">{/* label 在 SubSectionCard title 中 */}
           <div className="space-y-2">
             {formData.extra.warnings.map((w, idx) => (
               <div key={idx} draggable
