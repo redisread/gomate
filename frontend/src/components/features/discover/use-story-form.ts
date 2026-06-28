@@ -123,7 +123,7 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
         const [user, storyRes, tagsRes] = await Promise.all([
           fetchCurrentUser().catch(() => null),
           fetchAPI(`/stories/${storyId}`).then((r: Response) => r.ok ? r.json() : { success: false }).catch(() => ({ success: false })),
-          fetch("/api/stories/tags").then((r) => r.json()).catch(() => ({ tags: [] })),
+          fetchAPI("/stories/tags").then((r) => r.json()).catch(() => ({ tags: [] })),
         ]);
 
         if (cancelled) return;
