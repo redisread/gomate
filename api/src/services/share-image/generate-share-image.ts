@@ -6,6 +6,7 @@ import { loadFonts } from "./load-fonts";
 import { renderTestTemplate } from "../../templates/share-image/test-poster";
 import { renderLocationPoster } from "../../templates/share-image/location-poster";
 import { renderTeamPoster } from "../../templates/share-image/team-poster";
+import { renderStoryPoster } from "../../templates/share-image/story-poster";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -444,6 +445,86 @@ function formatTeamDate(timestamp: number | Date): string {
   const weekday = weekdays[date.getDay()];
 
   return `${month}${day}日 ${weekday}`;
+}
+
+/**
+ * Phase 5: 生成故事分享图片
+ * 查询故事数据，生成分享海报
+ */
+export async function generateStoryImage(
+  env: Env,
+  storyId: string
+): Promise<{ png: Uint8Array; cacheKey: string }> {
+  const db = createDb(env.DB);
+
+  // 1. 查询故事数据
+  const story = await db.query.stories.findFirst({
+    where: eq(schema.stories.id, storyId),
+    with: { author: true, location: true },
+  });
+
+  if (!story || story.status !== "published") {
+    throw new Error(story ? "Story not published" : `Story not found: ${storyId}`);
+  }
+
+  // 2. 生成内容哈希
+  const contentData = {
+    title: story.title, summary: story.summary, coverImage: story.coverImage,
+    authorId: story.authorId, locationId: story.locationId, updatedAt: story.updatedAt,
+  };
+  const contentHash = (await generateMD5(JSON.stringify(contentData))).slice(0, 12);
+  const cacheKey = `share/story/${storyId}-${contentHash}.png`;
+
+  // 3. 检查 R2 缓存
+  if (env.R2) {
+    try {
+      const cached = await env.R2.get(cacheKey);
+      if (cached) {
+        const png = new Uint8Array(await cached.arrayBuffer());
+        return { png, cacheKey };
+      }
+    } catch (e) { console.error("[ShareImage] Cache check failed:", e); }
+  }
+
+  // 4. 初始化 WASM + 加载字体
+  await initResvgWasm();
+  const fonts = await loadFonts(env);
+
+  // 5. 并行加载图片
+  const [coverImageBase64, authorAvatarBase64] = await Promise.all([
+    story.coverImage ? loadImageAsBase64(story.coverImage, env, 3000) : Promise.resolve(null),
+    story.author?.image ? loadImageAsBase64(story.author.image, env, 3000) : Promise.resolve(null),
+  ]);
+
+  // 6. 生成二维码
+  const storyUrl = `https://gomate.live/discover/${storyId}`;
+  const qrCodeDataUrl = await generateQRCode(storyUrl);
+
+  // 7. 渲染 SVG
+  const svg = await renderStoryPoster({
+    title: story.title,
+    summary: story.summary,
+    coverImage: coverImageBase64 ?? undefined,
+    authorName: (story.author?.name || story.author?.nickname) ?? undefined,
+    authorAvatar: authorAvatarBase64 ?? undefined,
+    locationName: story.location?.name ?? undefined,
+    qrCodeDataUrl,
+    fonts,
+  });
+
+  // 8. SVG 转 PNG
+  const png = await renderSvgToPng(svg);
+
+  // 9. 保存到 R2
+  if (env.R2) {
+    try {
+      await env.R2.put(cacheKey, png, {
+        httpMetadata: { contentType: "image/png", cacheControl: "public, max-age=86400" },
+      });
+    } catch (e) { console.error("[ShareImage] Cache save failed:", e); }
+  }
+
+  return { png, cacheKey };
 }
 
 /**

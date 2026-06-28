@@ -1,7 +1,7 @@
 import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
 import type { Env } from "../lib/auth";
-import { generatePreviewImage, generateLocationImage, generateTeamImage } from "../services/share-image/generate-share-image";
+import { generatePreviewImage, generateLocationImage, generateTeamImage, generateStoryImage } from "../services/share-image/generate-share-image";
 
 const shareImageRoute = new Hono<{ Bindings: Env }>();
 
@@ -124,6 +124,55 @@ shareImageRoute.get("/team/:teamId", async (c) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return c.json(
       { error: "Failed to generate team image", details: errorMessage },
+      500
+    );
+  }
+});
+
+/**
+ * Phase 5: 故事分享图片
+ * GET /share-image/story/:storyId
+ */
+shareImageRoute.get("/story/:storyId", async (c) => {
+  try {
+    const storyId = c.req.param("storyId");
+    const download = c.req.query("download") === "1";
+    const refresh = c.req.query("refresh") === "1";
+
+    if (!storyId) {
+      return c.json(APIErrors.badRequest("Story ID is required"), 400);
+    }
+
+    if (refresh && c.env.R2) {
+      try {
+        const prefix = `share/story/${storyId}-`;
+        const list = await c.env.R2.list({ prefix });
+        for (const object of list.objects) {
+          await c.env.R2.delete(object.key);
+        }
+      } catch (e) {
+        console.error("[ShareImage] Cache clear failed:", e);
+      }
+    }
+
+    const { png, cacheKey } = await generateStoryImage(c.env, storyId);
+
+    const headers: Record<string, string> = {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=86400",
+      "X-Cache-Key": cacheKey,
+    };
+
+    if (download) {
+      headers["Content-Disposition"] = `attachment; filename="story-${storyId}.png"`;
+    }
+
+    return new Response(png, { headers });
+  } catch (error) {
+    console.error("[ShareImage] Story image generation failed:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return c.json(
+      { error: "Failed to generate story image", details: errorMessage },
       500
     );
   }
