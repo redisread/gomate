@@ -171,6 +171,9 @@ shareImageRoute.get("/story/:storyId", async (c) => {
   } catch (error) {
     console.error("[ShareImage] Story image generation failed:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage === "Story not published" || errorMessage.includes("not found")) {
+      return c.json({ error: errorMessage, details: errorMessage }, 404);
+    }
     return c.json(
       { error: "Failed to generate story image", details: errorMessage },
       500
