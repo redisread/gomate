@@ -162,6 +162,7 @@
   "formTagsTitle": "Associated Tags",
   "formTagsHint": "Select tags related to this location",
   "formRouteTitle": "Associated Checkpoints",
+  "deleteSuccessToast": "Deleted",
   "facilityParking": "Parking",
   "facilityRestroom": "Restroom",
   "facilityWater": "Water Station",

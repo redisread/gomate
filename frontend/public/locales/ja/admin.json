@@ -162,6 +162,7 @@
   "formTagsTitle": "関連タグ",
   "formTagsHint": "このスポットに関連するタグを選択",
   "formRouteTitle": "関連チェックポイント",
+  "deleteSuccessToast": "削除しました",
   "facilityParking": "駐車場",
   "facilityRestroom": "トイレ",
   "facilityWater": "補給ポイント",

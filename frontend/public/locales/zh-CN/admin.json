@@ -162,6 +162,7 @@
   "formTagsTitle": "关联标签",
   "formTagsHint": "选择与该地点相关的标签",
   "formRouteTitle": "关联打卡点",
+  "deleteSuccessToast": "已删除",
   "facilityParking": "停车场",
   "facilityRestroom": "卫生间",
   "facilityWater": "补给水源",
