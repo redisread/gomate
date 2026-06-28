@@ -491,46 +491,49 @@ stories.put("/:id", async (c) => {
 
     await db.update(schema.stories).set(updateData).where(eq(schema.stories.id, id));
 
-    // 如果传了 tags，更新标签关联
+    // 如果传了 tags，在事务内更新标签关联
     if (data.tags !== undefined) {
-      // 先删除旧关联
-      await db
-        .delete(schema.entityToTags)
-        .where(
-          and(
-            eq(schema.entityToTags.entityId, id),
-            eq(schema.entityToTags.entityType, "story")
-          )
-        );
+      const newTags = data.tags;
+      await db.transaction(async (tx) => {
+        // 先删除旧关联
+        await tx
+          .delete(schema.entityToTags)
+          .where(
+            and(
+              eq(schema.entityToTags.entityId, id),
+              eq(schema.entityToTags.entityType, "story")
+            )
+          );
 
-      // 插入新关联（空数组则清除所有）
-      if (data.tags.length > 0) {
-        const tagEntries: (typeof schema.entityToTags.$inferInsert)[] = [];
-        for (const tagName of data.tags) {
-          let tag = await db.query.tags.findFirst({
-            where: eq(schema.tags.name, tagName),
-          });
-          if (!tag) {
-            const tagId = generateId();
-            await db.insert(schema.tags).values({
-              id: tagId,
-              name: tagName,
-              type: "activity",
-              createdAt: new Date(),
+        // 插入新关联（空数组则清除所有）
+        if (newTags.length > 0) {
+          const tagEntries: (typeof schema.entityToTags.$inferInsert)[] = [];
+          for (const tagName of newTags) {
+            let tag = await tx.query.tags.findFirst({
+              where: eq(schema.tags.name, tagName),
             });
-            tag = { id: tagId, name: tagName, type: "activity", createdAt: new Date() };
+            if (!tag) {
+              const tagId = generateId();
+              await tx.insert(schema.tags).values({
+                id: tagId,
+                name: tagName,
+                type: "activity",
+                createdAt: new Date(),
+              });
+              tag = { id: tagId, name: tagName, type: "activity", createdAt: new Date() };
+            }
+            tagEntries.push({
+              id: generateId(),
+              entityId: id,
+              entityType: "story",
+              tagId: tag.id,
+            });
           }
-          tagEntries.push({
-            id: generateId(),
-            entityId: id,
-            entityType: "story",
-            tagId: tag.id,
-          });
+          if (tagEntries.length > 0) {
+            await tx.insert(schema.entityToTags).values(tagEntries);
+          }
         }
-        if (tagEntries.length > 0) {
-          await db.insert(schema.entityToTags).values(tagEntries);
-        }
-      }
+      });
     }
 
     return c.json({
