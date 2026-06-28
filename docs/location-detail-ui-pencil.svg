@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">GoMate 地点详情页 UI 草图</title>
+  <desc id="desc">地点详情页桌面端和移动端的手绘风布局稿，突出路线摘要、队伍入口、地址导航和移动端底部 CTA。</desc>
+  <defs>
+    <filter id="pencil">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="8" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.8" />
+    </filter>
+    <filter id="paper">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="4" seed="21" result="grain" />
+      <feColorMatrix in="grain" type="saturate" values="0" />
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.08" />
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" mode="multiply" />
+    </filter>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#2f3a2f" />
+    </marker>
+    <style>
+      .paper { fill: #fbf7ea; filter: url(#paper); }
+      .frame { fill: #fffdf6; stroke: #2f3a2f; stroke-width: 2.2; filter: url(#pencil); }
+      .phone { fill: #fffdf6; stroke: #2f3a2f; stroke-width: 2.4; filter: url(#pencil); }
+      .ink { fill: #243024; font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+      .muted { fill: #687166; font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+      .tiny { font-size: 15px; }
+      .small { font-size: 18px; }
+      .body { font-size: 20px; }
+      .h2 { font-size: 26px; font-weight: 700; }
+      .h1 { font-size: 36px; font-weight: 800; }
+      .label { font-size: 16px; font-weight: 700; letter-spacing: 0; }
+      .line { fill: none; stroke: #2f3a2f; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: url(#pencil); }
+      .soft-line { fill: none; stroke: #8b8f82; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; filter: url(#pencil); }
+      .dash { stroke-dasharray: 8 8; }
+      .card { fill: #fffaf0; stroke: #2f3a2f; stroke-width: 1.8; filter: url(#pencil); }
+      .quiet { fill: #f2efe4; stroke: #7b806f; stroke-width: 1.4; filter: url(#pencil); }
+      .hero { fill: #d7dfd1; stroke: #2f3a2f; stroke-width: 1.8; filter: url(#pencil); }
+      .route { fill: #edf5ee; stroke: #2f3a2f; stroke-width: 1.8; filter: url(#pencil); }
+      .team { fill: #fff2dc; stroke: #2f3a2f; stroke-width: 1.8; filter: url(#pencil); }
+      .cta { fill: #d97941; stroke: #2f3a2f; stroke-width: 1.8; filter: url(#pencil); }
+      .secondary { fill: #eff5f6; stroke: #2f3a2f; stroke-width: 1.8; filter: url(#pencil); }
+      .note { fill: #fff6c7; stroke: #2f3a2f; stroke-width: 1.6; filter: url(#pencil); }
+      .white { fill: #fffdf6; }
+      .ctaText { fill: #fffdf6; font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: 19px; font-weight: 800; }
+    </style>
+  </defs>
+
+  <rect class="paper" x="0" y="0" width="1600" height="1120" />
+  <text class="ink h1" x="70" y="72">地点详情页 UI 草图 / Pencil draft</text>
+  <text class="muted body" x="72" y="108">目标：首屏更快判断路线难度、出行成本和队伍机会；保留图片氛围，但不让图片吞掉决策信息。</text>
+
+  <!-- Desktop frame -->
+  <text class="ink h2" x="80" y="166">Desktop 1440</text>
+  <text class="muted small" x="265" y="166">压缩 hero + 路线摘要前置 + 右侧行动卡</text>
+  <rect class="frame" x="70" y="190" width="1060" height="805" rx="14" />
+  <rect class="quiet" x="92" y="212" width="1016" height="44" rx="8" />
+  <circle cx="119" cy="234" r="6" fill="#d97941" />
+  <circle cx="141" cy="234" r="6" fill="#e5c96d" />
+  <circle cx="163" cy="234" r="6" fill="#6aa580" />
+  <text class="muted tiny" x="196" y="240">GoMate / locations / 梧桐山</text>
+
+  <!-- Desktop hero -->
+  <rect class="hero" x="92" y="276" width="1016" height="220" rx="8" />
+  <path class="soft-line" d="M110 458 C190 392, 270 430, 340 374 C418 313, 476 344, 552 302 C610 270, 710 319, 785 286 C870 249, 992 302, 1088 258" />
+  <path class="soft-line" d="M112 486 C222 432, 310 454, 414 392 C526 326, 628 388, 736 334 C858 274, 984 344, 1088 296" />
+  <rect x="116" y="304" width="92" height="28" rx="8" fill="#fffdf6" opacity="0.88" />
+  <text class="ink label" x="132" y="324">中等难度</text>
+  <rect x="218" y="304" width="88" height="28" rx="8" fill="#fffdf6" opacity="0.88" />
+  <text class="ink label" x="234" y="324">春 / 秋</text>
+  <text class="ink h1" x="116" y="390">梧桐山</text>
+  <text class="muted body" x="118" y="423">深圳第一高峰 · 经典城市登山目的地</text>
+  <g>
+    <rect class="white" x="116" y="444" width="118" height="34" rx="8" opacity="0.9" />
+    <text class="ink label" x="136" y="467">2-3 小时</text>
+    <rect class="white" x="246" y="444" width="92" height="34" rx="8" opacity="0.9" />
+    <text class="ink label" x="266" y="467">5.5 km</text>
+    <rect class="white" x="350" y="444" width="92" height="34" rx="8" opacity="0.9" />
+    <text class="ink label" x="371" y="467">700 m</text>
+  </g>
+  <rect class="secondary" x="934" y="446" width="146" height="32" rx="8" />
+  <text class="ink label" x="964" y="468">查看相册</text>
+
+  <!-- Desktop content grid -->
+  <rect class="route" x="92" y="520" width="642" height="172" rx="8" />
+  <text class="ink h2" x="118" y="558">路线摘要</text>
+  <text class="muted small" x="120" y="588">先让用户决定“走哪条、要多久、难不难”。</text>
+  <rect class="white" x="120" y="610" width="168" height="54" rx="8" opacity="0.95" />
+  <text class="ink label" x="138" y="634">泰山涧线路</text>
+  <text class="muted tiny" x="138" y="654">推荐 · 中等</text>
+  <rect class="quiet" x="302" y="610" width="134" height="54" rx="8" />
+  <text class="ink label" x="322" y="634">好汉坡</text>
+  <text class="muted tiny" x="322" y="654">挑战 · 困难</text>
+  <rect class="quiet" x="450" y="610" width="134" height="54" rx="8" />
+  <text class="ink label" x="470" y="634">百年古道</text>
+  <text class="muted tiny" x="470" y="654">安静 · 简单</text>
+  <path class="line" d="M608 606 L706 606 L706 670 L608 670 Z" />
+  <text class="muted tiny" x="621" y="633">装备 / 提醒</text>
+  <text class="muted tiny" x="621" y="654">折叠展开</text>
+
+  <rect class="card" x="92" y="712" width="642" height="122" rx="8" />
+  <text class="ink h2" x="118" y="750">地点简介</text>
+  <text class="muted small" x="120" y="780">描述保留 3-4 行，标签和地址不再挤在同一卡片顶部。</text>
+  <path class="soft-line" d="M120 804 L690 804 M120 820 L642 820" />
+
+  <rect class="team" x="92" y="854" width="642" height="116" rx="8" />
+  <text class="ink h2" x="118" y="892">正在招募</text>
+  <text class="muted small" x="120" y="920">队伍卡片保留日期、发起人、人数进度；空态直接引导发起组队。</text>
+  <rect class="white" x="548" y="878" width="150" height="42" rx="8" opacity="0.95" />
+  <text class="ink label" x="582" y="905">看全部队伍</text>
+
+  <!-- Sidebar -->
+  <rect class="note" x="764" y="520" width="344" height="210" rx="8" />
+  <text class="ink h2" x="790" y="558">行动卡</text>
+  <text class="muted small" x="792" y="588">sticky，不再向用户重复喊 CTA。</text>
+  <rect class="cta" x="792" y="614" width="288" height="46" rx="8" />
+  <text class="ctaText" x="884" y="644">发起组队</text>
+  <rect class="secondary" x="792" y="674" width="138" height="40" rx="8" />
+  <text class="ink label" x="828" y="700">浏览队伍</text>
+  <rect class="secondary" x="942" y="674" width="138" height="40" rx="8" />
+  <text class="ink label" x="978" y="700">去导航</text>
+
+  <rect class="card" x="764" y="750" width="344" height="220" rx="8" />
+  <text class="ink h2" x="790" y="788">地址 / 相关地点</text>
+  <text class="muted small" x="792" y="818">地址复制、导航和推荐地点放右侧，降低主内容干扰。</text>
+  <path class="soft-line" d="M792 846 L1068 846 M792 876 L1030 876 M792 906 L1068 906 M792 936 L1012 936" />
+
+  <!-- Annotations desktop -->
+  <rect class="note" x="78" y="1008" width="316" height="78" rx="8" />
+  <text class="ink label" x="98" y="1036">1. Hero 降高</text>
+  <text class="muted tiny" x="98" y="1062">图片负责氛围，不占满判断空间。</text>
+  <path class="line" marker-end="url(#arrow)" d="M262 1008 C284 890, 242 610, 330 494" />
+
+  <rect class="note" x="420" y="1008" width="346" height="78" rx="8" />
+  <text class="ink label" x="440" y="1036">2. 路线摘要前置</text>
+  <text class="muted tiny" x="440" y="1062">用 API routes 数据驱动，不再是假空态。</text>
+  <path class="line" marker-end="url(#arrow)" d="M590 1008 C560 894, 594 756, 458 692" />
+
+  <rect class="note" x="790" y="1008" width="328" height="78" rx="8" />
+  <text class="ink label" x="810" y="1036">3. CTA 收敛</text>
+  <text class="muted tiny" x="810" y="1062">桌面右侧 sticky，移动端底部固定。</text>
+  <path class="line" marker-end="url(#arrow)" d="M956 1008 C948 904, 938 812, 938 730" />
+
+  <!-- Mobile frame -->
+  <text class="ink h2" x="1220" y="166">Mobile 390</text>
+  <text class="muted small" x="1365" y="166">判断链条更短</text>
+  <rect class="phone" x="1220" y="190" width="330" height="805" rx="34" />
+  <rect class="quiet" x="1240" y="220" width="290" height="44" rx="14" />
+  <text class="muted tiny" x="1298" y="248">GoMate</text>
+
+  <rect class="hero" x="1240" y="280" width="290" height="190" rx="10" />
+  <path class="soft-line" d="M1254 438 C1290 392, 1340 418, 1384 366 C1430 314, 1482 364, 1518 326" />
+  <text class="ink h2" x="1260" y="356">梧桐山</text>
+  <text class="muted tiny" x="1262" y="382">深圳第一高峰</text>
+  <rect class="white" x="1260" y="408" width="72" height="28" rx="8" opacity="0.9" />
+  <text class="ink tiny" x="1274" y="427">中等</text>
+  <rect class="white" x="1342" y="408" width="72" height="28" rx="8" opacity="0.9" />
+  <text class="ink tiny" x="1356" y="427">春秋</text>
+  <rect class="white" x="1424" y="408" width="78" height="28" rx="8" opacity="0.9" />
+  <text class="ink tiny" x="1438" y="427">相册</text>
+
+  <rect class="route" x="1240" y="488" width="290" height="136" rx="8" />
+  <text class="ink label" x="1260" y="518">推荐路线：泰山涧</text>
+  <text class="muted tiny" x="1260" y="544">2-3 小时 · 5.5 km · 爬升 700 m</text>
+  <rect class="white" x="1260" y="564" width="76" height="34" rx="8" opacity="0.95" />
+  <text class="ink tiny" x="1275" y="586">装备</text>
+  <rect class="white" x="1346" y="564" width="76" height="34" rx="8" opacity="0.95" />
+  <text class="ink tiny" x="1361" y="586">提醒</text>
+  <rect class="white" x="1432" y="564" width="76" height="34" rx="8" opacity="0.95" />
+  <text class="ink tiny" x="1447" y="586">切换</text>
+
+  <rect class="team" x="1240" y="642" width="290" height="112" rx="8" />
+  <text class="ink label" x="1260" y="672">2 个队伍正在招募</text>
+  <text class="muted tiny" x="1260" y="698">10月03日 · 3/5 人 · 小趴菜</text>
+  <rect class="white" x="1260" y="716" width="248" height="16" rx="8" opacity="0.9" />
+  <rect x="1260" y="716" width="148" height="16" rx="8" fill="#6aa580" opacity="0.75" />
+
+  <rect class="card" x="1240" y="772" width="290" height="110" rx="8" />
+  <text class="ink label" x="1260" y="802">地点简介</text>
+  <path class="soft-line" d="M1260 826 L1506 826 M1260 846 L1482 846 M1260 866 L1444 866" />
+
+  <rect class="secondary" x="1240" y="900" width="290" height="54" rx="12" />
+  <text class="ink label" x="1260" y="932">地址导航 · 复制地址</text>
+
+  <rect class="quiet" x="1240" y="956" width="290" height="20" rx="8" />
+  <rect class="white" x="1260" y="918" width="0" height="0" />
+  <rect class="secondary" x="1242" y="968" width="118" height="44" rx="10" />
+  <text class="ink label" x="1268" y="996">看队伍</text>
+  <rect class="cta" x="1370" y="968" width="158" height="44" rx="10" />
+  <text class="ctaText" x="1411" y="996">发起组队</text>
+
+  <!-- Mobile annotation -->
+  <rect class="note" x="1190" y="1016" width="384" height="70" rx="8" />
+  <text class="ink label" x="1210" y="1043">移动端顺序：Hero → 路线 → 队伍 → 简介 → 地址</text>
+  <text class="muted tiny" x="1210" y="1067">底部 CTA 常驻，但只保留两个动作，避免按钮挤压。</text>
+</svg>

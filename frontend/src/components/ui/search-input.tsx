@@ -158,10 +158,12 @@ export function SearchInput({ placeholder = "搜索地点...", className = "" }:
           }}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
+          aria-label={placeholder}
           className="w-full pl-10 pr-4 py-2.5 bg-stone-100 dark:bg-stone-800 border-0 rounded-xl text-stone-900 dark:text-stone-100 placeholder:text-stone-500 focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-600"
         />
         <svg
           className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500"
+          aria-hidden="true"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

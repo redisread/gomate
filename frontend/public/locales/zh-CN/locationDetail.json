@@ -13,5 +13,17 @@
   "nextImage": "下一张",
   "imageAlt": "图片 {index}",
   "favorite": "收藏",
-  "unfavorite": "取消收藏"
+  "unfavorite": "取消收藏",
+  "routeSummarySubtitle": "先确定路线、用时和强度，再决定是否组队出发",
+  "routeOptions": "{count} 条路线",
+  "recommendedRoute": "推荐路线",
+  "routeCardAria": "选择路线 {name}",
+  "routeTips": "路线提示",
+  "addressAndRelated": "地址与推荐",
+  "metricUnits": {
+    "hour": "小时",
+    "minute": "分钟",
+    "kilometer": "km",
+    "meter": "m"
+  }
 }

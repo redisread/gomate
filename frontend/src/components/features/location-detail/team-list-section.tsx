@@ -15,8 +15,7 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
   const hasMore = teams.length > MAX_DISPLAY_TEAMS;
 
   return (
-    <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-5"
-      style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
+    <div className="bg-card rounded-xl border border-stone-100 dark:border-stone-800 p-5 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h2 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -86,7 +85,7 @@ function EmptyTeamsState({ locationId }: { locationId: string }) {
       </p>
 
       <a href={`/teams/create?locationId=${locationId}`}>
-        <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-full text-sm font-semibold transition-all duration-200 shadow-[0_4px_16px_rgba(217,119,6,0.35)] hover:shadow-[0_6px_22px_rgba(217,119,6,0.45)] active:scale-[0.97]">
+        <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-semibold transition-all duration-200 shadow-[0_6px_16px_rgba(217,119,6,0.22)] hover:shadow-[0_8px_20px_rgba(217,119,6,0.28)] active:scale-[0.97]">
           <Users className="h-4 w-4" />
           {t('locations.detailNoTeamsBtn')}
         </button>
