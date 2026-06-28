@@ -1,5 +1,7 @@
 import * as React from "react";
 import {
+  ChevronLeft,
+  ChevronRight,
   ChevronDown,
   ChevronUp,
   MapPin,
@@ -18,6 +20,8 @@ interface LocationIntroCardProps {
   actions?: React.ReactNode;
   address?: string;
   coordinates?: { lat: number; lng: number };
+  showGallery?: boolean;
+  showTravelMeta?: boolean;
 }
 
 /**
@@ -26,8 +30,15 @@ interface LocationIntroCardProps {
  * - 图片缩略图画廊行（可点击放大）
  * - 标签胶囊（分类色彩）
  */
-export function LocationIntroCard({ location, actions, address, coordinates }: LocationIntroCardProps) {
-  const { t } = useI18n(["locations", "enums", "common"]);
+export function LocationIntroCard({
+  location,
+  actions,
+  address,
+  coordinates,
+  showGallery = true,
+  showTravelMeta = true,
+}: LocationIntroCardProps) {
+  const { t } = useI18n(["locations", "enums", "common", "locationDetail"]);
   const [expanded, setExpanded] = React.useState(false);
   const [isOverflow, setIsOverflow] = React.useState(false);
   const descRef = React.useRef<HTMLParagraphElement>(null);
@@ -77,23 +88,23 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
   };
 
   return (
-    <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 overflow-hidden"
-      style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
+    <div className="bg-card rounded-xl border border-stone-100 dark:border-stone-800 overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
 
-      {(galleryImages.length > 0 || actions) && (
+      {((showGallery && galleryImages.length > 0) || actions) && (
         <div className="px-5 pt-5 pb-0">
           <div className="flex items-center gap-3 pb-1">
+            {showGallery && (
             <div className="flex gap-2 overflow-x-auto scrollbar-none flex-1">
             {galleryImages.slice(0, 6).map((img, idx) => (
               <button
                 key={idx}
                 onClick={() => openLightbox(idx)}
                 className="relative flex-shrink-0 w-[88px] h-[66px] rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 group"
-                aria-label={`查看图片 ${idx + 1}`}
+                aria-label={t("locationDetail.imageAlt", { index: String(idx + 1) })}
               >
                 <img
                   src={img}
-                  alt={`${location.name} 图片 ${idx + 1}`}
+                  alt={t("locationDetail.imageAlt", { index: String(idx + 1) })}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-108"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-200 rounded-xl" />
@@ -108,6 +119,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
               </button>
             ))}
             </div>
+            )}
             {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
           </div>
         </div>
@@ -167,7 +179,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
           </div>
         )}
 
-        {(address || (location.bestSeason && location.bestSeason.length > 0)) && (
+        {showTravelMeta && (address || (location.bestSeason && location.bestSeason.length > 0)) && (
           <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
             {address && (
               <div className="flex items-start gap-2.5 mb-3">
@@ -176,16 +188,20 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
                 <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
                   {coordinates && (
                     <button
+                      type="button"
                       onClick={handleNavigate}
                       title={t('locations.navigateTooltip')}
+                      aria-label={t('locations.navigateTooltip')}
                       className="text-amber-400 hover:text-amber-600 transition-colors"
                     >
                       <Navigation className="h-4 w-4" />
                     </button>
                   )}
                   <button
+                    type="button"
                     onClick={handleCopy}
                     title={t("common.copyAddress")}
+                    aria-label={t("common.copyAddress")}
                     className="opacity-60 hover:opacity-100 transition-opacity"
                   >
                     {copied ? (
@@ -215,7 +231,7 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
         )}
       </div>
 
-      {lightboxIndex !== null && (
+      {showGallery && lightboxIndex !== null && (
         <div
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center"
           onClick={() => setLightboxIndex(null)}
@@ -225,24 +241,28 @@ export function LocationIntroCard({ location, actions, address, coordinates }: L
           </div>
           {galleryImages.length > 1 && (
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); setLightboxActive((i) => (i - 1 + galleryImages.length) % galleryImages.length); }}
               className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 dark:bg-black/20 dark:hover:bg-black/30 flex items-center justify-center transition-colors"
+              aria-label={t("locationDetail.prevImage")}
             >
-              <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              <ChevronLeft className="h-5 w-5 text-white" />
             </button>
           )}
           <img
             src={galleryImages[lightboxActive]}
-            alt={`${location.name} 大图`}
+            alt={t("locationDetail.imageAlt", { index: String(lightboxActive + 1) })}
             className="max-w-[90vw] max-h-[88vh] object-contain rounded-xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
           {galleryImages.length > 1 && (
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); setLightboxActive((i) => (i + 1) % galleryImages.length); }}
               className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 dark:bg-black/20 dark:hover:bg-black/30 flex items-center justify-center transition-colors"
+              aria-label={t("locationDetail.nextImage")}
             >
-              <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              <ChevronRight className="h-5 w-5 text-white" />
             </button>
           )}
           <p className="absolute bottom-6 text-white/50 text-xs">{t("common.posterNavHint")}</p>

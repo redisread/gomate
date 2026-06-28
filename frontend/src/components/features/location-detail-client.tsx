@@ -20,17 +20,20 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { TranslationKey } from "@/i18n";
-import { fetchAPI, getLocationPois } from "@/lib/api";
-import type { Location, Team, RoutePoi } from "@/lib/types";
+import { fetchAPI } from "@/lib/api";
+import type { Location, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import {
   LocationIntroCard,
+  RouteInfoCard,
   TeamListSection,
   PoiSection,
+  AddressRow,
 } from "@/components/features/location-detail-main-content";
 import { LocationActivityPosts } from "@/components/features/activity-posts";
+import { normalizeLocationRoutes, type RouteMetric } from "@/components/features/location-detail/route-utils";
 
 // 动态导入 SharePosterModal
 const SharePosterModal = React.lazy(() => import("./share-poster-modal").then(m => ({ default: m.SharePosterModal })));
@@ -75,11 +78,32 @@ function getDifficultyInfo(t: (key: TranslationKey) => string) {
 }
 
 // ─── 骨架屏 ───────────────────────────────────────────────────────────────────
+function LoadingNavbarSkeleton() {
+  return (
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/20 dark:bg-stone-900/20 backdrop-blur-sm">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Mountain className="h-7 w-7 text-amber-500" />
+            <span className="text-xl font-bold text-amber-500">GoMate</span>
+          </div>
+          <div className="hidden items-center gap-3 md:flex">
+            <div className="h-8 w-16 rounded-full bg-white/45 dark:bg-stone-800/50" />
+            <div className="h-8 w-16 rounded-full bg-white/35 dark:bg-stone-800/40" />
+            <div className="h-8 w-56 rounded-full bg-white/45 dark:bg-stone-800/50" />
+          </div>
+          <div className="h-9 w-9 rounded-lg bg-white/45 dark:bg-stone-800/50 md:hidden" />
+        </div>
+      </div>
+    </header>
+  );
+}
+
 function LoadingSkeleton() {
   return (
     <main className="min-h-screen bg-stone-50 dark:bg-stone-950 pb-24 lg:pb-0">
-      <Navbar />
-      <div className="relative h-[480px] sm:h-[560px] lg:h-[640px] overflow-hidden bg-stone-200 dark:bg-stone-800 skeleton">
+      <LoadingNavbarSkeleton />
+      <div className="relative h-[390px] sm:h-[460px] lg:h-[520px] overflow-hidden bg-stone-200 dark:bg-stone-800 skeleton">
         <div className="absolute top-5 right-5 flex items-center gap-2">
           <div className="h-8 w-16 rounded-full bg-stone-300/60 dark:bg-stone-700/60" />
           <div className="h-9 w-9 rounded-full bg-stone-300/60 dark:bg-stone-700/60" />
@@ -219,10 +243,6 @@ interface ActionCardProps {
   teams: Team[];
 }
 
-/**
- * 右侧 sticky 操作卡（CRO 极致优化版）
- * 角色：转化率优化师 + 视觉总监
- */
 function ActionCard({ location, teams }: ActionCardProps) {
   const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   const totalParticipants = teams.reduce((sum, t) => sum + (t.currentMembers || 0), 0);
@@ -234,14 +254,11 @@ function ActionCard({ location, teams }: ActionCardProps) {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden bg-gradient-to-br from-amber-50 to-amber-50/50 dark:from-amber-950/30 dark:to-amber-900/20 border border-amber-200/60 dark:border-amber-900/50"
-      style={{
-        boxShadow: "0 4px 24px rgba(217,119,6,0.10), 0 1px 4px rgba(0,0,0,0.04)",
-      }}
+      className="rounded-xl overflow-hidden bg-card border border-stone-100 dark:border-stone-800 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"
     >
       <div className="p-5">
         {/* 情感标题 */}
-        <p className="text-[13px] font-bold mb-1 text-amber-900 dark:text-amber-300">
+        <p className="text-[13px] font-bold mb-1 text-foreground">
           {t("locations.detailParticipate")}
         </p>
 
@@ -260,7 +277,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
               ))}
             </div>
           )}
-          <p className="text-xs font-medium text-amber-800 dark:text-amber-400">
+          <p className="text-xs font-medium text-muted-foreground">
             {socialProofText}
           </p>
         </div>
@@ -268,10 +285,10 @@ function ActionCard({ location, teams }: ActionCardProps) {
         {/* 活跃度指示 */}
         {teams.length > 0 && (
           <div
-            className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-200/60 dark:border-amber-900/50"
+            className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50"
           >
-            <Flame className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-            <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400">
+            <Flame className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
               {t("locationDetail.activeRecruiting")}
             </span>
           </div>
@@ -280,21 +297,9 @@ function ActionCard({ location, teams }: ActionCardProps) {
         {/* 主 CTA */}
         <a href={`/teams/create?locationId=${location.id}`} className="block mb-3">
           <button
-            className="relative w-full py-3.5 rounded-xl text-sm font-bold text-white overflow-hidden
-              bg-gradient-to-r from-amber-700 via-amber-600 to-amber-500
-              shadow-lg shadow-amber-700/40 hover:shadow-xl hover:shadow-amber-700/50 hover:-translate-y-0.5
-              transition-all duration-200 active:scale-[0.97]"
+            className="w-full py-3.5 rounded-xl text-sm font-bold text-primary-foreground bg-primary shadow-[0_8px_18px_rgba(217,119,6,0.20)] hover:shadow-[0_10px_22px_rgba(217,119,6,0.26)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
           >
-            <span
-              className="absolute inset-0 rounded-xl pointer-events-none motion-reduce:hidden"
-              style={{
-                background:
-                  "linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.30) 50%, transparent 65%)",
-                backgroundSize: "200% 100%",
-                animation: "shimmer 2.6s ease-in-out infinite",
-              }}
-            />
-            <span className="relative flex items-center justify-center gap-2">
+            <span className="flex items-center justify-center gap-2">
               <Users className="h-4 w-4" />
               {t("locations.detailCreateTeam")}
             </span>
@@ -304,7 +309,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
         {/* 次要 CTA */}
         <a href={`/teams?locationId=${location.id}`} className="block">
           <button
-            className="w-full py-2.5 rounded-xl text-sm font-semibold text-amber-800 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60 bg-transparent hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:border-amber-400/80 dark:hover:border-amber-600/80 transition-all duration-150 active:scale-[0.97]"
+            className="w-full py-2.5 rounded-xl text-sm font-semibold text-foreground border border-stone-200 dark:border-stone-700 bg-transparent hover:bg-stone-50 dark:hover:bg-stone-800 transition-all duration-150 active:scale-[0.97]"
           >
               {t("locations.detailBrowseTeams")}
           </button>
@@ -337,10 +342,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
   };
 
   return (
-    <div
-      className="bg-white dark:bg-stone-900 rounded-2xl p-5 border border-stone-200 dark:border-stone-700"
-      style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
-    >
+    <div className="bg-card rounded-xl p-5 border border-stone-100 dark:border-stone-800 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">
           {t("locations.relatedTitle")}
@@ -439,36 +441,28 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
         boxShadow: "0 -8px 32px rgba(0,0,0,0.12)",
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div className="max-w-7xl mx-auto px-3 py-3 flex items-center gap-2.5 sm:px-4 sm:gap-3 max-[360px]:px-2 max-[360px]:gap-2">
         {/* 地点信息 */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 max-[360px]:hidden">
           <p className="text-[10px] text-stone-400 dark:text-stone-500 font-semibold uppercase tracking-wide">{t("locationDetail.destination")}</p>
           <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight">{location.name}</p>
         </div>
 
         {/* 浏览队伍 */}
-        <a href={`/teams?locationId=${location.id}`} className="flex-shrink-0">
+        <a href={`/teams?locationId=${location.id}`} className="flex-shrink-0 max-[360px]:flex-1">
           <button
-            className="px-4 py-2.5 rounded-xl text-sm font-semibold text-amber-800 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-all duration-150 active:scale-[0.96]"
+            className="px-3 sm:px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-all duration-150 active:scale-[0.96] whitespace-nowrap max-[360px]:w-full max-[360px]:px-2"
           >
             {t("locationDetail.browseTeams")}
           </button>
         </a>
 
         {/* 主 CTA */}
-        <a href={`/teams/create?locationId=${location.id}`} className="flex-shrink-0">
+        <a href={`/teams/create?locationId=${location.id}`} className="flex-shrink-0 max-[360px]:flex-1">
           <button
-            className="relative flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold text-white overflow-hidden bg-gradient-to-r from-amber-700 to-amber-600 shadow-md shadow-amber-700/40 active:scale-[0.96] transition-transform duration-150"
+            className="flex w-full items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-bold text-primary-foreground bg-primary shadow-[0_6px_16px_rgba(217,119,6,0.24)] active:scale-[0.96] transition-transform duration-150 whitespace-nowrap max-[360px]:px-2"
           >
-            <span
-              className="absolute inset-0 rounded-xl pointer-events-none motion-reduce:hidden"
-              style={{
-                background: "linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.28) 50%, transparent 65%)",
-                backgroundSize: "200% 100%",
-                animation: "shimmer 2.6s ease-in-out infinite",
-              }}
-            />
-            <span className="relative flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5">
               <Users className="h-4 w-4" />
               {t("locationDetail.gatherPartners")}
             </span>
@@ -477,6 +471,93 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
       </div>
       {/* iOS 安全区 */}
       <div style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
+    </div>
+  );
+}
+
+function formatRouteMetric(
+  metric: RouteMetric | undefined,
+  t: (key: string, vars?: Record<string, string | number>) => string
+) {
+  if (!metric) return null;
+  const unit = metric.unit ? t(`locationDetail.metricUnits.${metric.unit}`) : "";
+  return unit ? `${metric.value} ${unit}` : metric.value;
+}
+
+function HeroMetricPill({
+  icon,
+  value,
+}: {
+  icon: React.ReactNode;
+  value: string | null;
+}) {
+  if (!value) return null;
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm">
+      {icon}
+      {value}
+    </span>
+  );
+}
+
+function HeroActions({
+  location,
+  isAdmin,
+  isFavorited,
+  heartAnimating,
+  onShare,
+  onFavorite,
+}: {
+  location: Location;
+  isAdmin: boolean;
+  isFavorited: boolean;
+  heartAnimating: boolean;
+  onShare: () => void;
+  onFavorite: () => void;
+}) {
+  const { t } = useI18n(["locationDetail", "locations", "admin"]);
+  return (
+    <div className="absolute right-4 top-20 z-20 flex items-center gap-2 sm:right-6">
+      {isAdmin && (
+        <a href={`/admin/locations/${location.id}/edit`}>
+          <button
+            type="button"
+            title={t("admin.editLocation")}
+            aria-label={t("admin.editLocation")}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-md transition-colors hover:bg-black/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+        </a>
+      )}
+      <button
+        type="button"
+        onClick={onShare}
+        title={t("locations.detailShareBtn")}
+        aria-label={t("locations.detailShareBtn")}
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-md transition-colors hover:bg-black/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      >
+        <Share2 className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={onFavorite}
+        title={isFavorited ? t("locationDetail.unfavorite") : t("locationDetail.favorite")}
+        aria-label={isFavorited ? t("locationDetail.unfavorite") : t("locationDetail.favorite")}
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-md transition-colors hover:bg-black/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      >
+        <Heart
+          className={cn(
+            "h-4 w-4 transition-all duration-200",
+            isFavorited ? "fill-red-400 text-red-400 scale-110" : "text-white"
+          )}
+          style={
+            heartAnimating
+              ? { animation: "heartbeat 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards" }
+              : undefined
+          }
+        />
+      </button>
     </div>
   );
 }
@@ -502,7 +583,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [userId, setUserId] = React.useState<string | null>(null);
   const [showShareModal, setShowShareModal] = React.useState(false);
-  const [_pois, setPois] = React.useState<RoutePoi[]>([]);
 
   // 图片画廊
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
@@ -567,7 +647,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
         setLocation(data.location);
         loadTeams(data.location.id);
         loadRelatedLocations(data.location.id);
-        loadPois(data.location.id);
       } else {
         setError(t("errors.locationNotFound"));
       }
@@ -599,15 +678,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       }
     } catch (err) {
       console.error("[LocationDetail] 获取相关地点失败:", err);
-    }
-  };
-
-  const loadPois = async (locId: string) => {
-    try {
-      const data = await getLocationPois(locId);
-      setPois(data || []);
-    } catch (err) {
-      console.error("[LocationDetail] 获取打卡点失败:", err);
     }
   };
 
@@ -676,8 +746,11 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     );
   }
 
-  const diffInfo = getDifficultyInfo(t)[location.difficulty as keyof ReturnType<typeof getDifficultyInfo>] ?? {
-    label: location.difficulty || "",
+  const normalizedRoutes = normalizeLocationRoutes(location);
+  const primaryRoute = normalizedRoutes[0];
+  const heroDifficulty = location.difficulty ?? primaryRoute?.difficulty;
+  const diffInfo = getDifficultyInfo(t)[heroDifficulty as keyof ReturnType<typeof getDifficultyInfo>] ?? {
+    label: heroDifficulty || "",
     dot: "bg-stone-400",
     text: "text-stone-700",
     pill: "bg-white/20 text-white border-white/20",
@@ -699,16 +772,15 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       <Navbar />
 
       {/* ================================================================
-          Hero 封面区域（极致优化版）
-          - 更高的视觉冲击力：更大的图片高度
-          - 精致信息层次：面包屑→徽章→标题→数据条→指示器
-          - 右上角操作组：编辑/分享/收藏
+          Hero 封面区域
+          - 图片负责目的地氛围，核心路线信息前移到首屏下方
+          - 右上角保留编辑/分享/收藏
           - 左右箭头：hover 时滑入
           - 放大查看按钮 → Lightbox
           ================================================================ */}
       <div
         ref={heroRef}
-        className="relative h-[480px] sm:h-[560px] lg:h-[640px] overflow-hidden bg-stone-900"
+        className="relative h-[390px] sm:h-[460px] lg:h-[520px] overflow-hidden bg-stone-900"
         onMouseEnter={() => setShowArrows(true)}
         onMouseLeave={() => setShowArrows(false)}
       >
@@ -735,6 +807,15 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
         {/* 渐变遮罩 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/15" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-transparent" />
+
+        <HeroActions
+          location={location}
+          isAdmin={isAdmin}
+          isFavorited={isFavorited}
+          heartAnimating={heartAnimating}
+          onShare={handleShare}
+          onFavorite={handleFavorite}
+        />
 
         {/* 放大查看按钮（hover 时显示）*/}
         {galleryImages.length > 0 && (
@@ -822,26 +903,20 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             )}
 
             {/* 快速数据条 */}
-            {(location.duration || (location as any).distance || (location as any).elevation) && (
+            {primaryRoute && (
               <div className="flex items-center gap-2 flex-wrap mb-3">
-                {location.duration && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-black/35 text-white/90 backdrop-blur-sm border border-white/10">
-                    <Clock className="h-3 w-3 text-amber-300" />
-                    {location.duration}
-                  </span>
-                )}
-                {(location as any).distance && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-black/35 text-white/90 backdrop-blur-sm border border-white/10">
-                    <Ruler className="h-3 w-3 text-sky-300" />
-                    {(location as any).distance}
-                  </span>
-                )}
-                {(location as any).elevation && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-black/35 text-white/90 backdrop-blur-sm border border-white/10">
-                    <TrendingUp className="h-3 w-3 text-emerald-300" />
-                    {(location as any).elevation}
-                  </span>
-                )}
+                <HeroMetricPill
+                  icon={<Clock className="h-3 w-3 text-amber-300" />}
+                  value={formatRouteMetric(primaryRoute.duration, t)}
+                />
+                <HeroMetricPill
+                  icon={<Ruler className="h-3 w-3 text-sky-300" />}
+                  value={formatRouteMetric(primaryRoute.distance, t)}
+                />
+                <HeroMetricPill
+                  icon={<TrendingUp className="h-3 w-3 text-emerald-300" />}
+                  value={formatRouteMetric(primaryRoute.elevation, t)}
+                />
               </div>
             )}
 
@@ -877,59 +952,49 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* 左/中栏 */}
-          <div className="lg:col-span-2 space-y-5 pt-6">
-            <LocationIntroCard
-              location={location}
-              address={location.address}
-              coordinates={location.coordinates}
-              actions={
-                <>
-                  {isAdmin && (
-                    <a href={`/admin/locations/${location.id}/edit`}>
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs font-medium transition-all duration-150 active:scale-95 border border-stone-200 dark:border-stone-700">
-                        <Pencil className="h-3.5 w-3.5" />
-                        {t("admin.editLocation")}
-                      </button>
-                    </a>
-                  )}
-                  <button
-                    onClick={handleShare}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs font-medium transition-all duration-150 active:scale-95 border border-stone-200 dark:border-stone-700"
-                  >
-                    <Share2 className="h-3.5 w-3.5" />
-                    {t("locations.detailShareBtn")}
-                  </button>
-                  <button
-                    onClick={handleFavorite}
-                    className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 flex items-center justify-center transition-all duration-150 active:scale-95 border border-stone-200 dark:border-stone-700"
-                    aria-label={isFavorited ? t("locationDetail.unfavorite") : t("locationDetail.favorite")}
-                  >
-                    <Heart
-                      className={cn(
-                        "h-4 w-4 transition-all duration-200",
-                        isFavorited ? "fill-red-400 text-red-400 scale-110" : "text-stone-500"
-                      )}
-                      style={
-                        heartAnimating
-                          ? { animation: "heartbeat 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards" }
-                          : undefined
-                      }
-                    />
-                  </button>
-                </>
-              }
-            />
-            {/* TODO: 路线信息模块 - 后续实现 */}
-            {/* <RouteInfoCard location={location} /> */}
-            <PoiSection locationId={location.id} />
-            <TeamListSection teams={teams} locationId={location.id} />
-            <LocationActivityPosts locationId={location.id} />
+          <div className="lg:col-span-2 flex flex-col gap-5 pt-5 lg:pt-6">
+            <div className="order-1">
+              <RouteInfoCard location={location} />
+            </div>
+            <div className="order-3 lg:order-2">
+              <LocationIntroCard
+                location={location}
+                showGallery={false}
+                showTravelMeta={false}
+              />
+            </div>
+            {location.address && (
+              <div className="order-4 lg:hidden">
+                <AddressRow
+                  address={location.address}
+                  coordinates={location.coordinates}
+                  locationName={location.name}
+                />
+              </div>
+            )}
+            <div className="order-2 lg:order-3">
+              <TeamListSection teams={teams} locationId={location.id} />
+            </div>
+            <div className="order-5">
+              <PoiSection locationId={location.id} />
+            </div>
+            <div className="order-6">
+              <LocationActivityPosts locationId={location.id} />
+            </div>
           </div>
 
           {/* 右栏 sticky */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-4 -mt-12 relative z-10">
+            <div className="sticky top-24 space-y-4 lg:-mt-10 relative z-10">
               <ActionCard location={location} teams={teams} />
+              {location.address && (
+                <AddressRow
+                  address={location.address}
+                  coordinates={location.coordinates}
+                  locationName={location.name}
+                  className="hidden lg:flex"
+                />
+              )}
               <RelatedLocations locations={relatedLocations} />
             </div>
           </div>

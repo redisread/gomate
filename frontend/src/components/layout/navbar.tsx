@@ -133,7 +133,7 @@ export function Navbar({ className }: NavbarProps) {
             <a
               href="/"
               className="flex items-center gap-2.5 group shrink-0"
-              aria-label={t("common.home")}
+              aria-label="GoMate"
             >
               <Mountain
                 className="h-7 w-7 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"

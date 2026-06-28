@@ -80,13 +80,15 @@ export interface Route {
   name: string;
   description?: string;
   difficulty: 'easy' | 'moderate' | 'hard' | 'expert';
-  duration: string;
-  distance: string;
-  elevation?: string;
+  duration?: string;
+  durationMin?: number;
+  durationMax?: number;
+  distance?: string | number;
+  elevation?: string | number;
   routeGuide?: {
     overview: string;
     tips: string[];
-  };
+  } | string;
   waypoints?: {
     name: string;
     lat: number;
@@ -95,6 +97,10 @@ export interface Route {
   }[];
   equipmentNeeded?: string[];
   warnings?: string[];
+  extra?: {
+    equipmentNeeded?: string[];
+    warnings?: string[];
+  } | string | null;
   tags?: Tag[]; // 关联的标签
   location?: Location; // 关联的地点
   pois?: RoutePoi[]; // 关联的 POI

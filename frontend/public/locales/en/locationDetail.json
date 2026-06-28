@@ -13,5 +13,17 @@
   "nextImage": "Next",
   "imageAlt": "Image {index}",
   "favorite": "Favorite",
-  "unfavorite": "Unfavorite"
+  "unfavorite": "Unfavorite",
+  "routeSummarySubtitle": "Choose the route, time, and intensity before deciding how to go together",
+  "routeOptions": "{count} routes",
+  "recommendedRoute": "Recommended",
+  "routeCardAria": "Select route {name}",
+  "routeTips": "Route Tips",
+  "addressAndRelated": "Address & Recommendations",
+  "metricUnits": {
+    "hour": "h",
+    "minute": "min",
+    "kilometer": "km",
+    "meter": "m"
+  }
 }
