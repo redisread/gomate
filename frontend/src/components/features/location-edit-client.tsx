@@ -443,7 +443,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
               updateField={form.updateField} handlePoiSearch={form.handlePoiSearch}
               handleOpenCreatePoi={form.handleOpenCreatePoi} handleOpenEditPoi={form.handleOpenEditPoi}
               handlePoiModalSuccess={form.handlePoiModalSuccess} handleOpenDeletePoi={form.handleOpenDeletePoi}
-              handleConfirmDeletePoi={form.handleConfirmDeletePoi} clearPoiSearchResults={form.clearPoiSearchResults} />
+              handleConfirmDeletePoi={form.handleConfirmDeletePoi} clearPoiSearchResults={form.clearPoiSearchResults} isSearchingPois={form.isSearchingPois} />
             <LocationActionBar isDirty={form.isDirty} isSaving={form.isSaving} onSave={form.handleSave} onDiscard={form.handleDiscard} />
           </div>
 
