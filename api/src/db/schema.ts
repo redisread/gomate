@@ -5,6 +5,7 @@ import {
   real,
   index,
   uniqueIndex,
+  primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
@@ -354,6 +355,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
   favorites: many(userFavorites),
+  storyLikes: many(userStoryLikes),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -586,9 +588,10 @@ export const stories = sqliteTable(
   })
 );
 
-export const storiesRelations = relations(stories, ({ one }) => ({
+export const storiesRelations = relations(stories, ({ one, many }) => ({
   author: one(users, { fields: [stories.authorId], references: [users.id] }),
   location: one(locations, { fields: [stories.locationId], references: [locations.id] }),
+  likes: many(userStoryLikes),
 }));
 
 export type Story = typeof stories.$inferSelect;
@@ -596,6 +599,30 @@ export type NewStory = typeof stories.$inferInsert;
 
 // 发现内容状态
 export type StoryStatus = "draft" | "published" | "hidden";
+
+// ==================== User Story Likes (点赞) ====================
+
+export const userStoryLikes = sqliteTable(
+  "user_story_likes",
+  {
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    storyId: text("story_id").references(() => stories.id, { onDelete: "cascade" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.storyId] }),
+    userIdx: index("user_story_likes_user_idx").on(table.userId),
+    storyIdx: index("user_story_likes_story_idx").on(table.storyId),
+  })
+);
+
+export const userStoryLikesRelations = relations(userStoryLikes, ({ one }) => ({
+  user: one(users, { fields: [userStoryLikes.userId], references: [users.id] }),
+  story: one(stories, { fields: [userStoryLikes.storyId], references: [stories.id] }),
+}));
+
+export type UserStoryLike = typeof userStoryLikes.$inferSelect;
+export type NewUserStoryLike = typeof userStoryLikes.$inferInsert;
 
 // ==================== Image Cache (分享图图片预缓存) ====================
 

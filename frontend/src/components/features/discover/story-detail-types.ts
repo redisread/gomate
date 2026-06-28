@@ -6,6 +6,7 @@ export interface Story {
   coverImage?: string;
   viewCount: number;
   likeCount: number;
+  isLiked?: boolean;
   createdAt: number;
   updatedAt: number;
   status: string;

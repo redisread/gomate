@@ -95,6 +95,10 @@ stories.get("/", async (c) => {
     const tag = c.req.query("tag");
     const offset = (page - 1) * limit;
 
+    // 获取当前登录用户（可选），用于 isLiked 判断
+    const auth = createAuth(c.env);
+    const session = await auth.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
+
     // 基础过滤条件：状态
     const whereConditions = [eq(schema.stories.status, status)];
 
@@ -164,8 +168,19 @@ stories.get("/", async (c) => {
 
     const totalResult = await db.$count(schema.stories, whereClause);
 
+    // 查询当前用户已点赞的故事ID列表
+    let likedStoryIds = new Set<string>();
+    if (session) {
+      const userLikes = await db
+        .select({ storyId: schema.userStoryLikes.storyId })
+        .from(schema.userStoryLikes)
+        .where(eq(schema.userStoryLikes.userId, session.user.id));
+      likedStoryIds = new Set(userLikes.map((l) => l.storyId));
+    }
+
     const formatted = items.map(({ story, author }) => ({
       ...story,
+      isLiked: likedStoryIds.has(story.id),
       author: author
         ? {
             id: author.id,
@@ -293,11 +308,27 @@ stories.get("/:id", async (c) => {
       .set({ viewCount: currentViewCount + 1 })
       .where(eq(schema.stories.id, id));
 
+    // 检查当前用户是否已点赞（仅登录用户）
+    let isLiked = false;
+    const authInstance = createAuth(c.env);
+    const session = await authInstance.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
+    if (session) {
+      const likeRecord = await db.query.userStoryLikes.findFirst({
+        where: and(
+          eq(schema.userStoryLikes.userId, session.user.id),
+          eq(schema.userStoryLikes.storyId, id)
+        ),
+        columns: { userId: true },
+      });
+      isLiked = !!likeRecord;
+    }
+
     return c.json({
       success: true,
       data: {
         ...story,
         viewCount: currentViewCount + 1,
+        isLiked,
         author: author
           ? {
               id: author.id,
@@ -532,7 +563,9 @@ stories.delete("/:id", async (c) => {
 
 /**
  * POST /stories/:id/like
- * 点赞故事
+ * 点赞/取消点赞故事（toggle）
+ * 已点赞 → 取消点赞（likeCount -1）
+ * 未点赞 → 点赞（likeCount +1）
  */
 stories.post("/:id/like", async (c) => {
   try {
@@ -545,27 +578,69 @@ stories.post("/:id/like", async (c) => {
 
     const db = createDb(c.env.DB);
     const id = c.req.param("id");
+    const userId = session.user.id;
 
     const story = await db.query.stories.findFirst({
       where: eq(schema.stories.id, id),
+      columns: { id: true, likeCount: true },
     });
 
     if (!story) {
       return c.json(APIErrors.notFound("故事不存在"), 404);
     }
 
-    await db
-      .update(schema.stories)
-      .set({
-        likeCount: (story.likeCount ?? 0) + 1,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.stories.id, id));
-
-    return c.json({
-      success: true,
-      message: "点赞成功",
+    // 检查是否已点赞
+    const existingLike = await db.query.userStoryLikes.findFirst({
+      where: and(
+        eq(schema.userStoryLikes.userId, userId),
+        eq(schema.userStoryLikes.storyId, id)
+      ),
+      columns: { userId: true },
     });
+
+    if (existingLike) {
+      // 已点赞 → 取消点赞
+      await db.batch([
+        db.delete(schema.userStoryLikes).where(
+          and(
+            eq(schema.userStoryLikes.userId, userId),
+            eq(schema.userStoryLikes.storyId, id)
+          )
+        ),
+        db.update(schema.stories)
+          .set({
+            likeCount: Math.max(0, (story.likeCount ?? 0) - 1),
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.stories.id, id)),
+      ]);
+
+      return c.json({
+        success: true,
+        liked: false,
+        message: "取消点赞成功",
+      });
+    } else {
+      // 未点赞 → 点赞
+      await db.batch([
+        db.insert(schema.userStoryLikes).values({
+          userId,
+          storyId: id,
+        }),
+        db.update(schema.stories)
+          .set({
+            likeCount: (story.likeCount ?? 0) + 1,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.stories.id, id)),
+      ]);
+
+      return c.json({
+        success: true,
+        liked: true,
+        message: "点赞成功",
+      });
+    }
   } catch (error) {
     console.error("Like story error:", error);
     return c.json(APIErrors.internalError("点赞失败"), 500);

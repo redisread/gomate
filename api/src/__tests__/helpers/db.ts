@@ -223,6 +223,13 @@ export function createTestDb() {
       updated_at INTEGER NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS user_story_likes (
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+      PRIMARY KEY (user_id, story_id)
+    );
+
     CREATE TABLE IF NOT EXISTS conversations (
       id TEXT PRIMARY KEY,
       team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
