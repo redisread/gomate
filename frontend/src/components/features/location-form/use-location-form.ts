@@ -402,6 +402,11 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
 
   const poiSearchTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // cleanup timer on unmount
+  React.useEffect(() => {
+    return () => { if (poiSearchTimer.current) clearTimeout(poiSearchTimer.current); };
+  }, []);
+
   const handlePoiSearch = React.useCallback((value: string) => {
     setPoiSearch(value);
     if (poiSearchTimer.current) clearTimeout(poiSearchTimer.current);
