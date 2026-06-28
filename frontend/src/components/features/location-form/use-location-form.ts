@@ -63,6 +63,7 @@ interface UseLocationFormReturn {
   handleOpenDeletePoi: (poiId: string, poiName: string) => Promise<void>;
   handleConfirmDeletePoi: () => Promise<void>;
   handlePoiSearch: (value: string) => void;
+  clearPoiSearchResults: () => void;
 }
 
 /* ================================================================
