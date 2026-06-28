@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ImagePlus, Link2, Mail, MessageCircle, Share2, Twitter, X } from "lucide-react";
+import { ImagePlus, Link2, Mail, MessageCircle, Share2, Twitter, X, Smartphone } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { weiboShareUrl, twitterShareUrl, mailtoUrl } from "@/lib/share-channels";
 
@@ -15,23 +15,33 @@ interface ShareStorySheetProps {
 }
 
 export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopyLink }: ShareStorySheetProps) {
-  const { t } = useI18n(["common", "teams"]);
+  const { t } = useI18n(["common", "teams", "share"]);
   const url = typeof window !== "undefined" ? window.location.href : "";
 
   if (!open) return null;
 
   const handleCopyLink = () => { onCopyLink(); onClose(); };
   const handleSystemShare = async () => {
-    try {
-      await navigator.share({ title, url });
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
-    }
+    try { await navigator.share({ title, url }); } catch (err) { if (err instanceof DOMException && err.name === "AbortError") return; }
     onClose();
   };
   const handleWeibo = () => { window.open(weiboShareUrl(url, title), "_blank"); onClose(); };
   const handleTwitter = () => { window.open(twitterShareUrl(url, title), "_blank"); onClose(); };
   const handleEmail = () => { window.location.href = mailtoUrl(title, `${title}\n\n${summary}\n\n${url}`); onClose(); };
+  const handleWechat = async () => {
+    try {
+      const res = await fetch(`/share-image/story/${storyId}`);
+      if (!res.ok) { window.open(url, "_blank"); onClose(); return; }
+      const blob = await res.blob();
+      const file = new File([blob], "story.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title, url });
+      } else {
+        window.open(url, "_blank");
+      }
+    } catch { window.open(url, "_blank"); }
+    onClose();
+  };
   const handlePoster = () => { window.open(`/share-image/story/${storyId}`, "_blank"); onClose(); };
 
   return (
@@ -56,15 +66,19 @@ export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopy
             </button>
             <button onClick={handleWeibo} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center"><MessageCircle className="w-5 h-5 text-red-500" /></div>
-              <span className="text-xs text-muted-foreground">微博</span>
+              <span className="text-xs text-muted-foreground">{t("share.weibo")}</span>
             </button>
             <button onClick={handleTwitter} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center"><Twitter className="w-5 h-5 text-sky-500" /></div>
-              <span className="text-xs text-muted-foreground">Twitter</span>
+              <span className="text-xs text-muted-foreground">{t("share.twitter")}</span>
             </button>
             <button onClick={handleEmail} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center"><Mail className="w-5 h-5 text-stone-600" /></div>
-              <span className="text-xs text-muted-foreground">邮件</span>
+              <span className="text-xs text-muted-foreground">{t("share.email")}</span>
+            </button>
+            <button onClick={handleWechat} className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center"><Smartphone className="w-5 h-5 text-green-600" /></div>
+              <span className="text-xs text-muted-foreground">微信</span>
             </button>
             <button onClick={handlePoster} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center"><ImagePlus className="w-5 h-5 text-purple-600" /></div>
