@@ -646,3 +646,25 @@ export const imageCaches = sqliteTable(
 
 export type ImageCache = typeof imageCaches.$inferSelect;
 export type NewImageCache = typeof imageCaches.$inferInsert;
+
+// ==================== Share Events (分享埋点) ====================
+
+export const shareEvents = sqliteTable(
+  "share_events",
+  {
+    id: text("id").primaryKey(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id").notNull(),
+    shareChannel: text("share_channel").notNull(),
+    userId: text("user_id"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => ({
+    entityIdx: index("share_events_entity_idx").on(table.entityType, table.entityId),
+    channelIdx: index("share_events_channel_idx").on(table.shareChannel),
+    createdAtIdx: index("share_events_created_at_idx").on(table.createdAt),
+  })
+);
+
+export type ShareEvent = typeof shareEvents.$inferSelect;
+export type NewShareEvent = typeof shareEvents.$inferInsert;
