@@ -64,9 +64,11 @@ function SubSectionCard({ title, children, defaultOpen = false }: SubSectionCard
 function Field({ label, required, hint, error, children }: FieldProps) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
-        {label}{required && <span className="ml-1 text-red-400">*</span>}
-      </label>
+      {label && (
+        <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
+          {label}{required && <span className="ml-1 text-red-400">*</span>}
+        </label>
+      )}
       {children}
       {error && <p className="text-xs text-red-500">{error}</p>}
       {!error && hint && <p className="text-xs text-stone-400">{hint}</p>}
@@ -106,7 +108,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
       badge={<span className="text-[10px] text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">{t("admin.optionalBadge")}</span>}>
       <div className="space-y-2">
       <SubSectionCard title={t("admin.formFacilitiesTitle")} defaultOpen={true}>
-        <Field label={t("admin.formFacilitiesTitle")}>
+        <Field label="" hint="">{/* label 在 SubSectionCard title 中 */}
           <div className="flex flex-wrap gap-2">
             {facilityOptions.map((f) => {
               const selected = formData.extra.facilities.includes(f.value);
@@ -125,7 +127,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
 
       <SubSectionCard title={t("admin.formTipsSectionTitle")}>
         {/* 徒步贴士 */}
-        <Field label={t("admin.formTipsTitle")}>
+        <Field label="" hint="">{/* label 在 SubSectionCard title 中 */}
           <div className="space-y-2">
             {formData.extra.tips.map((tip, idx) => (
               <div key={idx} className="flex items-center gap-2">
@@ -201,7 +203,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
 
       <SubSectionCard title={t("admin.formTagsTitle")}>
         {/* 关联标签 */}
-        <Field label={t("admin.formTagsTitle")} hint={t("admin.formTagsHint")}>
+        <Field label="" hint={t("admin.formTagsHint")}>
           {allTags.length === 0 ? (
             <p className="text-xs text-stone-400">{t("admin.noTagsAvailable")}</p>
           ) : (
