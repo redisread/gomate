@@ -78,7 +78,7 @@ export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopy
             </button>
             <button onClick={handleWechat} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center"><Smartphone className="w-5 h-5 text-green-600" /></div>
-              <span className="text-xs text-muted-foreground">微信</span>
+              <span className="text-xs text-muted-foreground">{t("share.wechat")}</span>
             </button>
             <button onClick={handlePoster} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center"><ImagePlus className="w-5 h-5 text-purple-600" /></div>

@@ -1284,6 +1284,7 @@ export type TranslationKey =
   | "share.weibo"
   | "share.twitter"
   | "share.email"
+  | "share.wechat"
   | "share.inviteText"
   | "share.locationInviteText"
   | "share.tabLink"
