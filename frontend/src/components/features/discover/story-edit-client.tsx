@@ -7,7 +7,8 @@ import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
 import { MarkdownContent } from "./markdown-content";
 import { StoryToast } from "./story-detail-toast";
-import { useStoryForm, FormFields } from "./use-story-form";
+import { useStoryForm } from "./use-story-form";
+import type { FormFields } from "./use-story-form";
 
 interface StoryEditClientProps {
   storyId: string;
