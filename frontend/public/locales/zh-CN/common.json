@@ -150,5 +150,7 @@
     "expand": "展开",
     "collapse": "收起"
   },
-  "languageChangedTo": "语言已切换为 {lang}"
+  "languageChangedTo": "语言已切换为 {lang}",
+  "selectLanguage": "选择语言",
+  "close": "关闭"
 }

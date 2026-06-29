@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Globe, Check } from "lucide-react";
+import { Globe, Check, X } from "lucide-react";
 import {
   type Locale,
   SUPPORTED_LOCALES,
@@ -12,6 +12,7 @@ import {
 } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface LanguageSwitcherProps {
   className?: string;
@@ -25,14 +26,14 @@ const LOCALE_FLAGS: Record<Locale, string> = {
 
 /**
  * 语言切换器组件
- * - 显示当前语言（国旗 + 名称）
- * - 点击展开语言选择菜单
- * - 支持键盘导航（↑↓ Enter Esc）
+ * - 桌面端：下拉菜单（国旗 + 名称 + ✓ 标记 + 键盘导航）
+ * - 移动端：底部 Sheet（遮罩 + 弹出动画 + 标题 + 关闭按钮）
  * - 选择后设置 cookie、显示 Toast、重定向到对应语言的相同页面
  */
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
   const { t } = useI18n(["common"]);
   const { toast, show: showToast, isExiting } = useToast();
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const [isOpen, setIsOpen] = React.useState(false);
   const [currentLocale, setCurrentLocale] = React.useState<Locale>(DEFAULT_LOCALE);
   const [focusedIndex, setFocusedIndex] = React.useState(-1);
@@ -42,9 +43,9 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
     setCurrentLocale(getLocale());
   }, []);
 
-  // 键盘导航
+  // 键盘导航（仅桌面端）
   React.useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen || isMobile) {
       setFocusedIndex(-1);
       return;
     }
@@ -74,14 +75,24 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, focusedIndex]);
+  }, [isOpen, focusedIndex, isMobile]);
 
-  // 焦点跟随
+  // 焦点跟随（仅桌面端）
   React.useEffect(() => {
-    if (focusedIndex >= 0) {
+    if (focusedIndex >= 0 && !isMobile) {
       buttonRefs.current[focusedIndex]?.focus();
     }
-  }, [focusedIndex]);
+  }, [focusedIndex, isMobile]);
+
+  // Sheet 打开时锁定 body 滚动
+  React.useEffect(() => {
+    if (isOpen && isMobile) {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }
+  }, [isOpen, isMobile]);
 
   const handleSelect = (locale: Locale) => {
     if (locale === currentLocale) {
@@ -128,8 +139,41 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
   };
 
   const handleMouseEnter = (index: number) => {
-    setFocusedIndex(index);
+    if (!isMobile) {
+      setFocusedIndex(index);
+    }
   };
+
+  // 渲染语言选项
+  const renderOptions = () =>
+    SUPPORTED_LOCALES.map((locale, index) => {
+      const isActive = locale === currentLocale;
+      const isFocused = index === focusedIndex;
+      return (
+        <button
+          key={locale}
+          ref={(el) => { buttonRefs.current[index] = el; }}
+          type="button"
+          role="option"
+          aria-selected={isActive}
+          onClick={() => handleSelect(locale)}
+          onMouseEnter={() => handleMouseEnter(index)}
+          className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm transition-colors rounded-lg ${
+            isActive
+              ? "text-primary bg-accent font-medium"
+              : isFocused
+              ? "bg-accent/50 text-foreground"
+              : "text-foreground hover:bg-accent"
+          }`}
+        >
+          <span className="text-xl" role="img" aria-label={getLocaleName(locale)}>
+            {LOCALE_FLAGS[locale]}
+          </span>
+          <span className="flex-1 text-left">{getLocaleName(locale)}</span>
+          {isActive && <Check className="h-4 w-4 text-primary" />}
+        </button>
+      );
+    });
 
   return (
     <div className={`relative inline-block ${className || ""}`} data-lang-switcher>
@@ -139,7 +183,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         className="flex items-center gap-1.5 text-sm text-muted-foreground px-2 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
         aria-label={t("common.switchLanguage")}
         aria-expanded={isOpen}
-        aria-haspopup="listbox"
+        aria-haspopup={isMobile ? "dialog" : "listbox"}
       >
         <span className="text-base" role="img" aria-label={getLocaleName(currentLocale)}>
           {LOCALE_FLAGS[currentLocale]}
@@ -147,7 +191,8 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         <span className="hidden sm:inline">{getLocaleName(currentLocale)}</span>
       </button>
 
-      {isOpen && (
+      {/* 桌面端下拉菜单 */}
+      {!isMobile && isOpen && (
         <div
           className="absolute right-0 top-full mt-1.5 w-40 rounded-xl overflow-hidden bg-popover border border-border shadow-lg z-50"
           style={{
@@ -156,35 +201,52 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
           role="listbox"
           aria-label={t("common.switchLanguage")}
         >
-          {SUPPORTED_LOCALES.map((locale, index) => {
-            const isActive = locale === currentLocale;
-            const isFocused = index === focusedIndex;
-            return (
-              <button
-                key={locale}
-                ref={(el) => { buttonRefs.current[index] = el; }}
-                type="button"
-                role="option"
-                aria-selected={isActive}
-                onClick={() => handleSelect(locale)}
-                onMouseEnter={() => handleMouseEnter(index)}
-                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${
-                  isActive
-                    ? "text-primary bg-accent font-medium"
-                    : isFocused
-                    ? "bg-accent/50 text-foreground"
-                    : "text-foreground hover:bg-accent"
-                }`}
-              >
-                <span className="text-base" role="img" aria-label={getLocaleName(locale)}>
-                  {LOCALE_FLAGS[locale]}
-                </span>
-                <span className="flex-1 text-left">{getLocaleName(locale)}</span>
-                {isActive && <Check className="h-3.5 w-3.5 text-primary" />}
-              </button>
-            );
-          })}
+          {renderOptions()}
         </div>
+      )}
+
+      {/* 移动端底部 Sheet */}
+      {isMobile && isOpen && (
+        <>
+          {/* 遮罩 */}
+          <div
+            className="fixed inset-0 bg-black/40 z-50 transition-opacity"
+            onClick={() => setIsOpen(false)}
+            aria-hidden="true"
+          />
+          {/* Sheet */}
+          <div
+            className="fixed bottom-0 left-0 right-0 bg-background z-50 rounded-t-2xl"
+            style={{
+              paddingBottom: "env(safe-area-inset-bottom)",
+              animation: "slideUp 0.2s ease",
+              maxHeight: "50vh",
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("common.selectLanguage")}
+          >
+            <div className="p-4">
+              {/* 标题栏 */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-base font-medium text-foreground">
+                  {t("common.selectLanguage")}
+                </span>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 hover:bg-muted rounded-full transition-colors"
+                  aria-label={t("common.close") || "Close"}
+                >
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              {/* 选项列表 */}
+              <div className="space-y-2">
+                {renderOptions()}
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Toast 通知 */}
