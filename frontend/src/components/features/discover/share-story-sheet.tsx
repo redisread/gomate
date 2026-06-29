@@ -5,11 +5,12 @@ import { ImagePlus, Link2, Mail, MessageCircle, Share2, Twitter, X, Smartphone }
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI } from "@/lib/api";
 import { weiboShareUrl, twitterShareUrl, mailtoUrl } from "@/lib/share-channels";
+import { StoryPosterPreview } from "./story-poster-preview";
 
 
 async function trackShare(storyId: string, channel: string) {
   try {
-    await fetchAPI("/api/shares/track", {
+    await fetchAPI("/shares/track", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ entity_type: "story", entity_id: storyId, share_channel: channel }),
     });
@@ -28,6 +29,7 @@ interface ShareStorySheetProps {
 export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopyLink }: ShareStorySheetProps) {
   const { t } = useI18n(["common", "teams", "share"]);
   const url = typeof window !== "undefined" ? window.location.href : "";
+  const [showPosterPreview, setShowPosterPreview] = React.useState(false);
 
   if (!open) return null;
 
@@ -53,7 +55,7 @@ export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopy
     } catch { window.open(url, "_blank"); }
     onClose();
   };
-  const handlePoster = () => { window.open(`/share-image/story/${storyId}`, "_blank"); onClose(); };
+  const handlePoster = () => { trackShare(storyId, "poster"); setShowPosterPreview(true); };
 
   return (
     <>
@@ -98,6 +100,13 @@ export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopy
           </div>
         </div>
       </div>
+
+      <StoryPosterPreview
+        open={showPosterPreview}
+        storyId={storyId}
+        storyTitle={title}
+        onClose={() => setShowPosterPreview(false)}
+      />
     </>
   );
 }
