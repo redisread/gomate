@@ -97,7 +97,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
     const localeName = getLocaleName(locale);
     showToast({
       type: "success",
-      message: t("common.languageChangedTo", { vars: { lang: localeName } }),
+      message: t("common.languageChangedTo", { lang: localeName }),
     });
 
     // 重定向到对应语言的页面

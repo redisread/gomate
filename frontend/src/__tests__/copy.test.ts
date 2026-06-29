@@ -9,8 +9,8 @@ import { hydrateSSRData } from "../i18n";
 
 // 预加载枚举数据到内存缓存
 beforeAll(async () => {
-  // 将三个语言的枚举数据直接注入缓存，避免 fetch
-  const _locales: Locale[] = ["zh-CN", "en", "ja"];
+  // 将两个语言的枚举数据直接注入缓存，避免 fetch
+  const _locales: Locale[] = ["zh-CN", "en"];
   const zhEnums = {
     difficulty: { easy: "🌿 轻松", moderate: "⛰ 适中", hard: "🧗 挑战", expert: "🏔 专家" },
     teamStatus: {
@@ -38,7 +38,6 @@ beforeAll(async () => {
   const data: Record<Locale, Record<string, Record<string, unknown>>> = {
     "zh-CN": { enums: zhEnums, common: zhCommon, teams: zhTeams, auth: zhAuth, errors: zhErrors },
     en: { enums: zhEnums, common: zhCommon, teams: zhTeams, auth: zhAuth, errors: zhErrors },
-    ja: { enums: zhEnums, common: zhCommon, teams: zhTeams, auth: zhAuth, errors: zhErrors },
   };
   hydrateSSRData(data);
 });
