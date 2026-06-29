@@ -3,7 +3,18 @@
 import * as React from "react";
 import { ImagePlus, Link2, Mail, MessageCircle, Share2, Twitter, X, Smartphone } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
+import { fetchAPI } from "@/lib/api";
 import { weiboShareUrl, twitterShareUrl, mailtoUrl } from "@/lib/share-channels";
+
+
+async function trackShare(storyId: string, channel: string) {
+  try {
+    await fetchAPI("/api/shares/track", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entity_type: "story", entity_id: storyId, share_channel: channel }),
+    });
+  } catch { /* don't block share flow */ }
+}
 
 interface ShareStorySheetProps {
   open: boolean;
@@ -20,15 +31,15 @@ export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopy
 
   if (!open) return null;
 
-  const handleCopyLink = () => { onCopyLink(); onClose(); };
+  const handleCopyLink = () => { trackShare(storyId, "copy"); onCopyLink(); onClose(); };
   const handleSystemShare = async () => {
     try { await navigator.share({ title, url }); } catch (err) { if (err instanceof DOMException && err.name === "AbortError") return; }
-    onClose();
+    trackShare(storyId, "native"); onClose();
   };
-  const handleWeibo = () => { window.open(weiboShareUrl(url, title), "_blank"); onClose(); };
-  const handleTwitter = () => { window.open(twitterShareUrl(url, title), "_blank"); onClose(); };
+  const handleWeibo = () => { trackShare(storyId, "weibo"); window.open(weiboShareUrl(url, title), "_blank"); onClose(); };
+  const handleTwitter = () => { trackShare(storyId, "twitter"); window.open(twitterShareUrl(url, title), "_blank"); onClose(); };
   const handleEmail = () => { window.location.href = mailtoUrl(title, `${title}\n\n${summary}\n\n${url}`); onClose(); };
-  const handleWechat = async () => {
+  const handleWechat = async () => { trackShare(storyId, "wechat");
     try {
       const res = await fetch(`/share-image/story/${storyId}`);
       if (!res.ok) { window.open(url, "_blank"); onClose(); return; }
