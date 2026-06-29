@@ -149,5 +149,6 @@
   "footer": {
     "expand": "Expand",
     "collapse": "Collapse"
-  }
+  },
+  "languageChangedTo": "Language changed to {lang}"
 }

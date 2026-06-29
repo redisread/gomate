@@ -17,7 +17,7 @@ const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLoc
   : DEFAULT_LOCALE;
 const loadedData = await loadLocaleData(["messages"], locale, Astro.url.origin);
 const ssr = getSSRT(locale, { [locale]: loadedData } as Record<Locale, Record<string, Record<string, unknown>>>);
-const dateLocale = locale === "zh-CN" ? "zh-CN" : locale === "ja" ? "ja-JP" : "en-US";
+const dateLocale = locale === "zh-CN" ? "zh-CN" : "en-US";
 const apiBase = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
 const copy = {
   loading: ssr.t("messages.loading"),

@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const LOCALES_DIR = path.join(PROJECT_ROOT, "frontend", "public", "locales");
-const LOCALES = ["zh-CN", "en", "ja"];
+const LOCALES = ["zh-CN", "en"];
 const BASE_LOCALE = "zh-CN";
 
 let errors = 0;
