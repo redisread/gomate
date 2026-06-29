@@ -18,5 +18,9 @@
   "noAddress": "住所情報がありません",
   "themeLight": "ライト",
   "themeDark": "ダーク",
-  "viewBtn": "見てみる"
+  "viewBtn": "見てみる",
+  "weibo": "微博",
+  "twitter": "Twitter",
+  "email": "メール",
+  "wechat": "微信"
 }
