@@ -1,5 +1,3 @@
-import React from "react";
-
 interface HighlightedTextProps {
   text: string;
   keyword: string;
