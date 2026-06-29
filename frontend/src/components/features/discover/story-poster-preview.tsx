@@ -4,6 +4,7 @@ import * as React from "react";
 import { Link2, X, Download, Loader2, Share2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
+import { fetchAPI } from "@/lib/api";
 import { StoryToast } from "./story-detail-toast";
 
 interface StoryPosterPreviewProps {
@@ -26,7 +27,7 @@ export function StoryPosterPreview({ open, storyId, storyTitle, onClose }: Story
     setIsLoading(true);
     setHasError(false);
     setImageUrl(null);
-    fetch(`/share-image/story/${storyId}`)
+    fetchAPI(`/api/share-image/story/${storyId}`)
       .then((r) => { if (!r.ok) throw new Error("Failed"); return r.blob(); })
       .then((blob) => { setImageUrl(URL.createObjectURL(blob)); setIsLoading(false); })
       .catch(() => { setHasError(true); setIsLoading(false); showToast({ type: "error", message: "海报生成失败，已复制链接" }); navigator.clipboard.writeText(storyUrl).catch(() => {}); });
