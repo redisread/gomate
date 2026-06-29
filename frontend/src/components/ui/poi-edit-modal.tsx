@@ -17,6 +17,7 @@ import * as React from "react";
 import { X, Loader2, MapPin } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
+import { fetchAPI } from "@/lib/api";
 import type { PoiDetail } from "@/lib/types";
 
 /* ================================================================
@@ -148,7 +149,7 @@ export function PoiEditModal({
     try {
       if (mode === "create") {
         // 创建 POI
-        const res = await fetch("/api/pois", {
+        const res = await fetchAPI("/api/pois", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
