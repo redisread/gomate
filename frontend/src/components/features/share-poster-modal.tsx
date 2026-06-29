@@ -89,7 +89,7 @@ export function SharePosterModal({
     }
   }, [imageUrl, generateImage]);
 
-  // 关闭时清理
+  // imageUrl 变化时 revoke 旧的 blob URL，组件卸载时也 revoke
   useEffect(() => {
     return () => {
       if (imageUrl) {

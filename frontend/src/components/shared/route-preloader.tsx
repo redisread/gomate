@@ -23,13 +23,6 @@ const CRITICAL_ROUTES = [
   "/register",
 ];
 
-// 用户可能访问的次关键路由
-const _SECONDARY_ROUTES = [
-  "/about",
-  "/help",
-  "/contact",
-];
-
 /**
  * 创建预加载链接
  * @param href - 目标路由
@@ -46,22 +39,6 @@ function prefetchRoute(href: string) {
   link.rel = "prefetch";
   link.href = href;
   link.as = "document";
-  document.head.appendChild(link);
-}
-
-/**
- * 创建 DNS 预解析
- * @param url - 预解析的域名
- */
-function _prefetchDNS(url: string) {
-  if (typeof window === "undefined") return;
-
-  const existingLink = document.querySelector(`link[rel="dns-prefetch"][href="${url}"]`);
-  if (existingLink) return;
-
-  const link = document.createElement("link");
-  link.rel = "dns-prefetch";
-  link.href = url;
   document.head.appendChild(link);
 }
 

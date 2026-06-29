@@ -3,7 +3,7 @@ import Layout from "@/layouts/Layout.astro";
 import { getCollection } from "astro:content";
 import { declareI18nNs } from "../../middleware";
 import { loadLocaleData } from "../../i18n/ssr-loader.server";
-import { getLocaleFromCookie, type Locale, DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../../i18n";
+import { type Locale, DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../../i18n";
 
 declareI18nNs(Astro.locals, ['blog', 'content']);
 
