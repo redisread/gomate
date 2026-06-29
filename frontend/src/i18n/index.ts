@@ -11,14 +11,13 @@
 
 // ─── 类型定义 ─────────────────────────────────────────────────────────────────
 
-export type Locale = "zh-CN" | "en" | "ja";
+export type Locale = "zh-CN" | "en";
 
-const SUPPORTED_LOCALES: Locale[] = ["zh-CN", "en", "ja"];
+const SUPPORTED_LOCALES: Locale[] = ["zh-CN", "en"];
 const DEFAULT_LOCALE: Locale = "zh-CN";
 
-// 语言回退链：ja → en → zh-CN
+// 语言回退链：en → zh-CN
 const FALLBACK_MAP: Record<Locale, Locale[]> = {
-  ja: ["en", "zh-CN"],
   en: ["zh-CN"],
   "zh-CN": [],
 };
@@ -309,11 +308,10 @@ export function getNamespaceData(ns: string, locale: Locale): Record<string, unk
 export function getLocale(): Locale {
   if (typeof document === "undefined") return DEFAULT_LOCALE;
 
-  const match = document.cookie.match(/gomate_locale=(zh-CN|en|ja)/);
+  const match = document.cookie.match(/gomate_locale=(zh-CN|en)/);
   if (match) return match[1] as Locale;
 
   const browserLang = navigator.language;
-  if (browserLang.startsWith("ja")) return "ja";
   if (browserLang.startsWith("en")) return "en";
   return DEFAULT_LOCALE;
 }
@@ -329,7 +327,7 @@ export function setLocale(locale: Locale): void {
  * 从 cookie 字符串中提取 locale（SSR 用）
  */
 export function getLocaleFromCookie(cookieStr: string): Locale {
-  const match = cookieStr.match(/gomate_locale=(zh-CN|en|ja)/);
+  const match = cookieStr.match(/gomate_locale=(zh-CN|en)/);
   if (match) return match[1] as Locale;
   return DEFAULT_LOCALE;
 }
@@ -341,7 +339,6 @@ export function getLocaleName(locale: Locale): string {
   const names: Record<Locale, string> = {
     "zh-CN": "中文",
     en: "English",
-    ja: "日本語",
   };
   return names[locale];
 }
