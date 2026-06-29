@@ -150,5 +150,7 @@
     "expand": "Expand",
     "collapse": "Collapse"
   },
-  "languageChangedTo": "Language changed to {lang}"
+  "languageChangedTo": "Language changed to {lang}",
+  "selectLanguage": "Select Language",
+  "close": "Close"
 }
