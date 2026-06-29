@@ -24,7 +24,7 @@ export async function renderStoryPoster(data: StoryPosterData): Promise<string> 
   } : null;
 
   const svg = await satori(
-    // @ts-expect-error
+    // @ts-expect-error - Satori accepts plain object format
     {
       type: "div",
       props: {
