@@ -30,7 +30,6 @@ function formatDate(date: Date, locale: Locale) {
   const langMap: Record<Locale, string> = {
     "zh-CN": "zh-CN",
     "en": "en-US",
-    "ja": "ja-JP",
   };
   return date.toLocaleDateString(langMap[locale], {
     year: "numeric",
