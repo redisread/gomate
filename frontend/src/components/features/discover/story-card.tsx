@@ -3,6 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
+import { Heart, Eye, Clock } from "lucide-react";
 
 interface StoryAuthor {
   id: string;
@@ -35,10 +36,10 @@ interface StoryCardProps {
 }
 
 /**
- * 故事卡片组件 - 横排布局（保持可扫读）
- * 桌面：左侧图片 120×80，右侧内容
- * 移动：图片置顶，避免窄屏文本挤压
- * 8px 圆角，细边框，轻阴影
+ * 故事卡片组件 - 瀑布流布局（垂直卡片）
+ * - 封面图（可变高度）
+ * - 标题 + 摘要
+ * - 作者 + 互动数据
  */
 export function StoryCard({ story, onClick, className }: StoryCardProps) {
   const { t } = useI18n(["content"]);
@@ -46,12 +47,6 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
   const handleClick = () => {
     onClick?.(story);
   };
-
-  const [_mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -61,28 +56,32 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
     if (diffDays === 0) return t("content.discover.today");
     if (diffDays === 1) return t("content.discover.yesterday");
     if (diffDays < 7) return t("content.discover.daysAgo", { days: diffDays });
-    // 使用固定格式避免 hydration mismatch
     const month = date.getMonth() + 1;
     const day = date.getDate();
     return `${month}月${day}日`;
+  };
+
+  const formatCount = (count: number) => {
+    if (count >= 10000) return `${(count / 10000).toFixed(1)}w`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+    return count.toString();
   };
 
   return (
     <article
       onClick={handleClick}
       className={cn(
-        // 基础样式：白底、细边框、轻阴影，8px 圆角
-        "flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4 bg-white cursor-pointer rounded-lg overflow-hidden",
+        "bg-white cursor-pointer rounded-lg overflow-hidden",
         "border border-border/60",
         "shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
-        // Hover：微边框色 + 微上移
-        "hover:border-primary/30 hover:-translate-y-[1px]",
+        "hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-[2px]",
         "transition-all duration-300",
+        "break-inside-avoid mb-4",
         className
       )}
     >
-      {/* 封面图 - 移动端 4:3，桌面端 120x80 横版 */}
-      <div className="flex-shrink-0 w-full aspect-[4/3] sm:w-[140px] sm:h-[100px] sm:aspect-auto rounded-lg overflow-hidden bg-muted">
+      {/* 封面图 */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         {story.coverImage ? (
           <img
             src={story.coverImage}
@@ -95,67 +94,74 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
               const parent = target.parentElement;
               if (parent) {
                 const fallback = document.createElement('div');
-                fallback.className = 'w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted';
-                fallback.innerHTML = '<span class="text-xl">🏔️</span>';
+                fallback.className = 'w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-50 to-stone-100';
+                fallback.innerHTML = '<span class="text-3xl">🏔️</span>';
                 parent.appendChild(fallback);
               }
             }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-50/50 to-stone-100">
-            <span className="text-xl">🏔️</span>
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-50 to-stone-100">
+            <span className="text-3xl">🏔️</span>
           </div>
+        )}
+        {/* 地点标签 */}
+        {story.location && (
+          <span className="absolute bottom-2 left-2 text-xs text-white bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
+            {story.location.name}
+          </span>
         )}
       </div>
 
-      {/* 右侧内容 */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        {/* 标题 - 16px 加粗，1-2 行 */}
-        <h3 className="text-base font-semibold text-foreground line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+      {/* 内容区域 */}
+      <div className="p-3 space-y-2">
+        {/* 标题 */}
+        <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
           {story.title}
         </h3>
 
-        {/* 摘要 - 最多 3 行 */}
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-auto leading-relaxed">
+        {/* 摘要 */}
+        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
           {story.summary}
         </p>
 
-        {/* Meta 行：作者 + 日期 + 阅读时间，移动端隐藏地点 */}
-        <div className="flex items-center gap-2 mt-3 sm:mt-2 text-xs text-muted-foreground flex-wrap">
-          {/* 作者头像 */}
-          {story.author?.image ? (
-            <img
-              src={story.author.image}
-              alt={story.author.name}
-              className="w-5 h-5 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-              {story.author?.name?.charAt(0) || "?"}
-            </div>
-          )}
-
-          {/* 作者名 */}
-          <span className="truncate max-w-[120px]">
-            {story.author?.name || t("content.discover.anonymous")}
-          </span>
-
-          <span className="text-muted-foreground/40">·</span>
-
-          {/* 日期 */}
-          <span className="shrink-0" suppressHydrationWarning>{formatDate(story.createdAt)}</span>
-
-          <span className="text-muted-foreground/40">·</span>
-
-          {/* 阅读时间 */}
-          <span className="shrink-0">{Math.ceil(story.summary.length / 300)} 分钟</span>
-
-          {/* 地点标签 - 桌面端显示 */}
-          {story.location && (
-            <span className="hidden sm:inline-flex ml-auto text-xs text-primary bg-primary/8 px-2 py-0.5 rounded-full">
-              {story.location.name}
+        {/* 作者 + 数据 */}
+        <div className="flex items-center justify-between pt-1">
+          {/* 作者 */}
+          <div className="flex items-center gap-1.5">
+            {story.author?.image ? (
+              <img
+                src={story.author.image}
+                alt={story.author.name}
+                className="w-5 h-5 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-medium text-primary">
+                {story.author?.name?.charAt(0) || "?"}
+              </div>
+            )}
+            <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+              {story.author?.name || t("content.discover.anonymous")}
             </span>
-          )}
+          </div>
+
+          {/* 互动数据 */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+            <span className="flex items-center gap-0.5">
+              <Eye className="w-3 h-3" />
+              {formatCount(story.viewCount)}
+            </span>
+            <span className="flex items-center gap-0.5">
+              <Heart className="w-3 h-3" />
+              {formatCount(story.likeCount)}
+            </span>
+          </div>
+        </div>
+
+        {/* 日期 */}
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
+          <Clock className="w-3 h-3" />
+          <span suppressHydrationWarning>{formatDate(story.createdAt)}</span>
         </div>
       </div>
     </article>
