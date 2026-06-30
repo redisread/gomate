@@ -1,6 +1,6 @@
 import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
-import { eq } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
@@ -74,6 +74,77 @@ admin.post("/cron/update-expired-teams", async (c) => {
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Manual cron trigger error:", error);
     return c.json(APIErrors.internalError("执行失败"), 500);
+  }
+});
+
+/**
+ * GET /admin/share-analytics
+ * 全局分享分析（仅管理员）
+ * - 总体 + 渠道分布
+ * - 最近 7 天每日趋势
+ * - Top 10 被分享的故事
+ */
+admin.get("/share-analytics", async (c) => {
+  try {
+    await checkAdmin(c);
+    const db = createDb(c.env.DB);
+
+    // 1. 总体 + 渠道分布
+    const overallResult = await db
+      .select({
+        channel: schema.shareEvents.shareChannel,
+        count: sql<number>`count(*)`,
+      })
+      .from(schema.shareEvents)
+      .groupBy(schema.shareEvents.shareChannel);
+
+    const byChannel: Record<string, number> = {};
+    let totalShares = 0;
+    for (const row of overallResult) {
+      byChannel[row.channel] = row.count;
+      totalShares += row.count;
+    }
+
+    // 2. 最近 7 天每日趋势
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const sevenDaysAgoMs = sevenDaysAgo.getTime();
+
+    const trendResult = await db
+      .select({
+        date: sql<string>`date(${schema.shareEvents.createdAt} / 1000, 'unixepoch')`,
+        count: sql<number>`count(*)`,
+      })
+      .from(schema.shareEvents)
+      .where(sql`${schema.shareEvents.createdAt} >= ${sevenDaysAgoMs}`)
+      .groupBy(sql`date(${schema.shareEvents.createdAt} / 1000, 'unixepoch')`)
+      .orderBy(sql`date(${schema.shareEvents.createdAt} / 1000, 'unixepoch')`);
+
+    // 3. Top 10 被分享的故事
+    const topResult = await db
+      .select({
+        entityId: schema.shareEvents.entityId,
+        count: sql<number>`count(*)`,
+      })
+      .from(schema.shareEvents)
+      .where(eq(schema.shareEvents.entityType, "story"))
+      .groupBy(schema.shareEvents.entityId)
+      .orderBy(sql`count(*) DESC`)
+      .limit(10);
+
+    return c.json({
+      success: true,
+      overall: { total: totalShares, byChannel },
+      trend: trendResult,
+      top: topResult,
+    });
+  } catch (error) {
+    const message = (error as Error).message;
+    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
+    console.error("Get share analytics error:", error);
+    return c.json(APIErrors.internalError("获取分享分析失败"), 500);
   }
 });
 

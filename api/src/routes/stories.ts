@@ -692,4 +692,52 @@ stories.post("/:id/like", async (c) => {
   }
 });
 
+/**
+ * GET /stories/:id/share-stats
+ * 获取单个故事的分享统计（总数 + 渠道分布）
+ */
+stories.get("/:id/share-stats", async (c) => {
+  try {
+    const storyId = c.req.param("id");
+    const db = createDb(c.env.DB);
+
+    // 验证故事存在
+    const story = await db.query.stories.findFirst({
+      where: eq(schema.stories.id, storyId),
+      columns: { id: true },
+    });
+
+    if (!story) {
+      return c.json(APIErrors.notFound("故事不存在"), 404);
+    }
+
+    // 总数 + 渠道分布
+    const result = await db
+      .select({
+        channel: schema.shareEvents.shareChannel,
+        count: sql<number>`count(*)`,
+      })
+      .from(schema.shareEvents)
+      .where(
+        and(
+          eq(schema.shareEvents.entityType, "story"),
+          eq(schema.shareEvents.entityId, storyId)
+        )
+      )
+      .groupBy(schema.shareEvents.shareChannel);
+
+    const byChannel: Record<string, number> = {};
+    let total = 0;
+    for (const row of result) {
+      byChannel[row.channel] = row.count;
+      total += row.count;
+    }
+
+    return c.json({ success: true, total, byChannel });
+  } catch (error) {
+    console.error("Get share stats error:", error);
+    return c.json(APIErrors.internalError("获取分享统计失败"), 500);
+  }
+});
+
 export default stories;
