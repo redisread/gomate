@@ -17,13 +17,26 @@
     "dev": "concurrently \"pnpm api:dev\" \"pnpm web:dev\"",
     "lint": "pnpm -r lint",
     "type-check": "pnpm -r type-check",
+    "preflight": "pnpm type-check && pnpm lint",
     "clean": "pnpm -r clean",
     "i18n:validate": "node scripts/validate-i18n-keys.mjs",
     "i18n:gen-types": "node scripts/gen-i18n-types.mjs",
-    "i18n:build": "tsx scripts/build-locales.ts"
+    "i18n:build": "tsx scripts/build-locales.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
     "concurrently": "^9.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
+    "prettier": "^3.0.0",
     "tsx": "^4.22.2",
     "typescript": "^5"
   },
