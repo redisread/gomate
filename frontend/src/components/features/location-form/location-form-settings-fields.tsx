@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Settings, Plus, ChevronDown, GripVertical, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Settings, Plus, ChevronDown, GripVertical, CheckCircle2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { FormData } from "./use-location-form";
