@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Link2, X, Download, Loader2, Share2 } from "lucide-react";
+import { Link2, X, Download, Loader2, Share2, RefreshCw } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
 import { fetchAPI } from "@/lib/api";
@@ -20,18 +20,30 @@ export function StoryPosterPreview({ open, storyId, storyTitle, onClose }: Story
   const [imageUrl, setImageUrl] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [hasError, setHasError] = React.useState(false);
-  const storyUrl = typeof window !== "undefined" ? `${window.location.origin}/discover/${storyId}` : "";
+  const [retryCount, setRetryCount] = React.useState(0);
+  const storyUrl = React.useMemo(
+    () => typeof window !== "undefined" ? `${window.location.origin}/discover/${storyId}` : "",
+    [storyId]
+  );
 
-  React.useEffect(() => {
-    if (!open) return;
+  const fetchPoster = React.useCallback(() => {
     setIsLoading(true);
     setHasError(false);
     setImageUrl(null);
     fetchAPI(`/api/share-image/story/${storyId}`)
       .then((r) => { if (!r.ok) throw new Error("Failed"); return r.blob(); })
       .then((blob) => { setImageUrl(URL.createObjectURL(blob)); setIsLoading(false); })
-      .catch(() => { setHasError(true); setIsLoading(false); showToast({ type: "error", message: "海报生成失败，已复制链接" }); navigator.clipboard.writeText(storyUrl).catch(() => {}); });
-  }, [open, storyId, storyUrl, showToast]);
+      .catch(() => { setHasError(true); setIsLoading(false); showToast({ type: "error", message: "海报生成失败" }); });
+  }, [storyId, showToast]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    fetchPoster();
+  }, [open, fetchPoster, retryCount]);
+
+  const handleRetry = () => {
+    setRetryCount((c) => c + 1);
+  };
 
   const handleDownload = async () => {
     if (!imageUrl) return;
@@ -69,6 +81,9 @@ export function StoryPosterPreview({ open, storyId, storyTitle, onClose }: Story
             <div className="py-10 text-center space-y-3">
               <p className="text-sm text-muted-foreground">海报生成失败</p>
               <div className="flex justify-center gap-3">
+                <button onClick={handleRetry} className="px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors">
+                  <RefreshCw className="h-4 w-4 inline mr-1" />重试
+                </button>
                 <button onClick={handleShare} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:opacity-90 transition-opacity">
                   <Share2 className="h-4 w-4 inline mr-1" />{t("common.share")}
                 </button>

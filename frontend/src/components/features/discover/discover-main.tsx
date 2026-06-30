@@ -52,6 +52,32 @@ interface TagsResponse {
   data?: Tag[];
 }
 
+/**
+ * 骨架屏组件
+ */
+function StoryCardSkeleton() {
+  return (
+    <div className="bg-white rounded-lg overflow-hidden border border-border/60 animate-pulse">
+      <div className="aspect-[4/3] bg-stone-200" />
+      <div className="p-3 space-y-2">
+        <div className="h-4 bg-stone-200 rounded w-3/4" />
+        <div className="h-3 bg-stone-100 rounded w-full" />
+        <div className="h-3 bg-stone-100 rounded w-2/3" />
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded-full bg-stone-200" />
+            <div className="h-3 bg-stone-200 rounded w-16" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-3 bg-stone-200 rounded w-8" />
+            <div className="h-3 bg-stone-200 rounded w-8" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DiscoverMain() {
   const { t } = useI18n(["content", "common"]);
   const [stories, setStories] = React.useState<Story[]>([]);
@@ -61,11 +87,14 @@ export function DiscoverMain() {
   const [hasMore, setHasMore] = React.useState(false);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
 
-  // 标签筛选状态 - 从 URL 读取
+  // 标签筛选状态
   const [selectedTag, setSelectedTag] = React.useState<string | null>(null);
   const [tags, setTags] = React.useState<Tag[]>([]);
 
-  // Hydration safety - only start loading after mount
+  // 无限滚动
+  const loadMoreRef = React.useRef<HTMLDivElement>(null);
+
+  // Hydration safety
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -91,7 +120,7 @@ export function DiscoverMain() {
       setError(null);
 
       const tagQuery = tagFilter ? `&tag=${encodeURIComponent(tagFilter)}` : "";
-      const response = await apiGet<StoriesResponse>(`/stories?page=${pageNum}&limit=10${tagQuery}`);
+      const response = await apiGet<StoriesResponse>(`/stories?page=${pageNum}&limit=12${tagQuery}`);
 
       if (response.success) {
         if (append) {
@@ -113,7 +142,7 @@ export function DiscoverMain() {
     }
   }, [t, selectedTag]);
 
-  // Initial load - call real API only after mount
+  // Initial load
   React.useEffect(() => {
     if (mounted) {
       setIsLoading(true);
@@ -133,15 +162,38 @@ export function DiscoverMain() {
     }
   };
 
+  // 无限滚动 - IntersectionObserver
+  React.useEffect(() => {
+    if (!hasMore || isLoadingMore || isLoading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          loadStories(page + 1, true, selectedTag);
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasMore, isLoadingMore, isLoading, page, selectedTag, loadStories]);
+
   const handleStoryClick = (story: Story) => {
     window.location.href = `/discover/${story.id}`;
   };
 
-  // 处理标签点击
   const handleTagSelect = (tagName: string | null) => {
     setSelectedTag(tagName);
 
-    // 更新 URL
     const url = new URL(window.location.href);
     if (tagName) {
       url.searchParams.set("tag", tagName);
@@ -150,7 +202,6 @@ export function DiscoverMain() {
     }
     window.history.pushState({}, "", url.toString());
 
-    // 重置列表并重新加载
     setStories([]);
     setPage(1);
     loadStories(1, false, tagName);
@@ -162,13 +213,28 @@ export function DiscoverMain() {
     }
   };
 
-  // Loading state (includes unmounted state for hydration safety)
+  // Loading state
   if (!mounted || isLoading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground" suppressHydrationWarning>{t("content.discover.loading")}</p>
+      <div className="min-h-screen bg-background">
+        <div className="pt-20 sm:pt-24 pb-5 sm:pb-6">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Compass className="w-4 h-4 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground">
+                {t("content.discover.title")}
+              </h1>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pb-12">
+          <div className="columns-2 sm:columns-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <StoryCardSkeleton key={i} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -205,11 +271,10 @@ export function DiscoverMain() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header - 紧凑设计 */}
+      {/* Header */}
       <div className="pt-20 sm:pt-24 pb-5 sm:pb-6">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            {/* Left: Title + Subtitle */}
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -224,7 +289,7 @@ export function DiscoverMain() {
               </p>
             </div>
 
-            {/* Right: Publish CTA (desktop) */}
+            {/* Publish CTA (desktop) */}
             <button
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
               onClick={() => window.location.href = "/discover/create"}
@@ -236,8 +301,8 @@ export function DiscoverMain() {
         </div>
       </div>
 
-      {/* Main Content - Single Column */}
-      <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 pb-12">
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pb-12">
         <div className="space-y-4">
           {/* Tag Filter Bar */}
           <TagFilterBar
@@ -246,7 +311,7 @@ export function DiscoverMain() {
             onTagSelect={handleTagSelect}
           />
 
-          {/* Featured Story - 第一篇作为精选 */}
+          {/* Featured Story */}
           {stories.length > 0 && (
             <FeaturedStoryCard
               story={stories[0]}
@@ -254,8 +319,8 @@ export function DiscoverMain() {
             />
           )}
 
-          {/* Story List - 其余故事 */}
-          <div className="space-y-3">
+          {/* 瀑布流 Story Grid */}
+          <div className="columns-2 sm:columns-3 gap-4">
             {stories.slice(1).map((story) => (
               <StoryCard
                 key={story.id}
@@ -265,23 +330,22 @@ export function DiscoverMain() {
             ))}
           </div>
 
-          {/* Load More */}
+          {/* 无限滚动触发点 */}
           {hasMore && (
-            <div className="py-6 flex justify-center">
-              <button
-                onClick={handleLoadMore}
-                disabled={isLoadingMore}
-                className="px-6 py-2.5 rounded-lg border border-border bg-background hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                {isLoadingMore ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("content.discover.loading")}
-                  </span>
-                ) : (
-                  t("content.discover.loadMore")
-                )}
-              </button>
+            <div ref={loadMoreRef} className="py-6 flex justify-center">
+              {isLoadingMore ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">{t("content.discover.loading")}</span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleLoadMore}
+                  className="px-6 py-2.5 rounded-lg border border-border bg-background hover:bg-accent transition-colors text-sm"
+                >
+                  {t("content.discover.loadMore")}
+                </button>
+              )}
             </div>
           )}
 
