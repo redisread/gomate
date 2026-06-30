@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
@@ -62,7 +62,7 @@ favorites.get("/", async (c) => {
           eq(schema.userFavorites.entityId, schema.locations.id)
         )
       )
-      .orderBy(schema.userFavorites.createdAt)
+      .orderBy(desc(schema.userFavorites.createdAt))
       .limit(pageSize)
       .offset(offset);
 
@@ -71,6 +71,8 @@ favorites.get("/", async (c) => {
       entityType: favorite.entityType,
       entityId: favorite.entityId,
       createdAt: favorite.createdAt,
+      // 标记幽灵收藏（地点已删除）
+      isDeleted: favorite.entityType === "location" && !location,
       location: location
         ? {
             id: location.id,
@@ -91,6 +93,9 @@ favorites.get("/", async (c) => {
         : undefined,
     }));
 
+    // 过滤幽灵收藏后的实际数量
+    const visibleCount = formattedFavorites.filter(f => !f.isDeleted).length;
+
     return c.json({
       success: true,
       favorites: formattedFavorites,
@@ -98,6 +103,7 @@ favorites.get("/", async (c) => {
         page,
         pageSize,
         total,
+        visibleCount,
         totalPages,
         hasMore,
       },
