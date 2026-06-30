@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Globe, Check, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import {
   type Locale,
   SUPPORTED_LOCALES,
