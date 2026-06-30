@@ -12,6 +12,7 @@ interface FavoriteLocation {
   entityType: string;
   entityId: string;
   createdAt: string;
+  isDeleted?: boolean;
   location: {
     id: string;
     name: string;
@@ -28,6 +29,7 @@ export function FavoritesClient() {
   const { t } = useI18n(["favorites"]);
   const [favorites, setFavorites] = React.useState<FavoriteLocation[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const [removingId, setRemovingId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -43,12 +45,14 @@ export function FavoritesClient() {
 
   const loadFavorites = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const res = await fetchAPI("/favorites?entityType=location");
       if (!res.ok) throw new Error("failed");
       const data = await res.json();
       setFavorites(data.favorites || []);
     } catch {
+      setError(t("favorites.loadFailed") || "加载失败");
       setFavorites([]);
     } finally {
       setIsLoading(false);
@@ -112,8 +116,24 @@ export function FavoritesClient() {
             </div>
           )}
 
+          {/* 错误状态 */}
+          {!isLoading && error && (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-red-50 dark:bg-red-950/30">
+                <Heart className="h-8 w-8 text-red-500" />
+              </div>
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-2">{error}</h2>
+              <button
+                onClick={loadFavorites}
+                className="mt-4 px-5 py-2.5 rounded-xl text-sm font-medium bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
+              >
+                {t("favorites.retry") || "重试"}
+              </button>
+            </div>
+          )}
+
           {/* 空状态 */}
-          {!isLoading && favorites.length === 0 && (
+          {!isLoading && !error && favorites.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-amber-50 dark:bg-amber-950/30"
@@ -133,10 +153,37 @@ export function FavoritesClient() {
           )}
 
           {/* 收藏列表 */}
-          {!isLoading && favorites.length > 0 && (
+          {!isLoading && !error && favorites.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {favorites.map((fav) => {
-                if (!fav.location) return null;
+                // 幽灵收藏：地点已下线
+                if (fav.isDeleted || !fav.location) {
+                  return (
+                    <div
+                      key={fav.id}
+                      className="bg-card rounded-2xl overflow-hidden opacity-60"
+                      style={{ boxShadow: "0 1px 4px rgba(30,24,18,0.06)" }}
+                    >
+                      <div className="h-48 bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
+                        <div className="text-center">
+                          <Mountain className="h-8 w-8 text-stone-300 mx-auto mb-2" />
+                          <p className="text-xs text-stone-400">{t("favorites.locationDeleted") || "该地点已下线"}</p>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <p className="text-sm text-stone-400">{t("favorites.locationDeletedDesc") || "此地点已被移除"}</p>
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(fav.entityId)}
+                          className="mt-2 text-xs text-stone-400 hover:text-stone-600 transition-colors"
+                        >
+                          {t("favorites.removeSuccess") || "取消收藏"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 const loc = fav.location;
                 return (
                   <div
