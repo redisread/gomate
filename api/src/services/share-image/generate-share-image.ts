@@ -450,11 +450,12 @@ function formatTeamDate(timestamp: number | Date): string {
 /**
  * Phase 5: 生成故事分享图片
  * 查询故事数据，生成分享海报
+ * @returns 图片数据，或 null（故事不存在/未发布）
  */
 export async function generateStoryImage(
   env: Env,
   storyId: string
-): Promise<{ png: Uint8Array; cacheKey: string }> {
+): Promise<{ png: Uint8Array; cacheKey: string } | null> {
   const db = createDb(env.DB);
 
   // 1. 查询故事数据
@@ -463,14 +464,16 @@ export async function generateStoryImage(
     with: { author: true, location: true },
   });
 
+  // 故事不存在或未发布 → 返回 null，由 route 层处理 404
   if (!story || story.status !== "published") {
-    throw new Error(story ? "Story not published" : `Story not found: ${storyId}`);
+    return null;
   }
 
-  // 2. 生成内容哈希
+  // 2. 生成内容哈希（用 createdAt 替代 updatedAt，更稳定）
   const contentData = {
     title: story.title, summary: story.summary, coverImage: story.coverImage,
-    authorId: story.authorId, locationId: story.locationId, updatedAt: story.updatedAt,
+    authorId: story.authorId, locationId: story.locationId,
+    createdAt: story.createdAt,  // 故事创建时间，比 updatedAt 稳定
   };
   const contentHash = (await generateMD5(JSON.stringify(contentData))).slice(0, 12);
   const cacheKey = `share/story/${storyId}-${contentHash}.png`;
