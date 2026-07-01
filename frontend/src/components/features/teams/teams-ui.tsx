@@ -86,7 +86,7 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
   const location = team.location;
   const diff = location?.difficulty ? DIFFICULTY_CONFIG[location.difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const gradient = getCardGradient(team.id);
-  const _daysInfo = location?.startDate ? getDaysUntilStart(t, location.startDate) : null;
+  const _daysInfo = team.startTime ? getDaysUntilStart(t, team.startTime) : null;
 
   return (
     <a href={`/teams/${team.id}`} className="group block">
