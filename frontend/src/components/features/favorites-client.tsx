@@ -4,6 +4,7 @@ import * as React from "react";
 import { Heart, MapPin, ArrowLeft, Mountain } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
+import { safeFetch } from "@/lib/api-helpers";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
@@ -46,17 +47,14 @@ export function FavoritesClient() {
   const loadFavorites = async () => {
     setIsLoading(true);
     setError(null);
-    try {
-      const res = await fetchAPI("/favorites?entityType=location");
-      if (!res.ok) throw new Error("failed");
-      const data = await res.json();
-      setFavorites(data.favorites || []);
-    } catch {
+    const data = await safeFetch<{ favorites: FavoriteLocation[] }>("/favorites?entityType=location");
+    if (data?.favorites) {
+      setFavorites(data.favorites);
+    } else {
       setError(t("favorites.loadFailed") || "加载失败");
       setFavorites([]);
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   const handleRemove = async (entityId: string) => {
