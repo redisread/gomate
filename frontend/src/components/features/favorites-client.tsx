@@ -46,17 +46,14 @@ export function FavoritesClient() {
   const loadFavorites = async () => {
     setIsLoading(true);
     setError(null);
-    try {
-      const res = await fetchAPI("/favorites?entityType=location");
-      if (!res.ok) throw new Error("failed");
-      const data = await res.json();
-      setFavorites(data.favorites || []);
-    } catch {
+    const data = await safeFetch<{ favorites: { entityId: string }[] }>("/favorites?entityType=location");
+    if (data?.favorites) {
+      setFavorites(data.favorites);
+    } else {
       setError(t("favorites.loadFailed") || "加载失败");
       setFavorites([]);
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   const handleRemove = async (entityId: string) => {
