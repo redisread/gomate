@@ -57,14 +57,48 @@ function EditSkeleton() {
 
 const AMAP_KEY = (import.meta.env.PUBLIC_AMAP_KEY as string | undefined) || "";
 
+// AMap 类型声明
+interface AMapMap {
+  setCenter: (center: number[]) => void;
+  setZoom: (zoom: number) => void;
+  on: (event: string, handler: (e: { lnglat: { lng: number; lat: number } }) => void) => void;
+}
+
+interface AMapMarker {
+  setMap: (map: AMapMap | null) => void;
+  setPosition: (position: number[]) => void;
+}
+
+interface AMapGeocoder {
+  getAddress: (location: number[], callback: (status: string, result: { regeocode?: { formattedAddress: string } }) => void) => void;
+}
+
+interface AMapAutoComplete {
+  search: (keyword: string, callback: (status: string, result: { tips: Array<{ name: string; location?: { lng: number; lat: number } }> }) => void) => void;
+}
+
+interface AMapInstance {
+  Map: new (container: HTMLElement, options: Record<string, unknown>) => AMapMap;
+  Marker: new (options: Record<string, unknown>) => AMapMarker;
+  AutoComplete: new (options?: Record<string, unknown>) => AMapAutoComplete;
+  Geocoder: new (options?: Record<string, unknown>) => AMapGeocoder;
+  LngLat: new (lng: number, lat: number) => unknown;
+}
+
+declare global {
+  interface Window {
+    AMap?: AMapInstance;
+  }
+}
+
 function loadAmapScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if ((window as any).AMap) { resolve(); return; }
+    if (window.AMap) { resolve(); return; }
     const existing = document.getElementById("amap-script");
     if (existing) {
       existing.addEventListener("load", () => resolve());
       existing.addEventListener("error", () => reject(new Error("AMap failed to load")));
-      const poll = setInterval(() => { if ((window as any).AMap) { clearInterval(poll); resolve(); } }, 100);
+      const poll = setInterval(() => { if (window.AMap) { clearInterval(poll); resolve(); } }, 100);
       setTimeout(() => clearInterval(poll), 5000);
       return;
     }
@@ -87,8 +121,8 @@ interface MapPickerModalProps {
 function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPickerModalProps) {
   const { t } = useI18n(["admin", "common", "locations"]);
   const mapContainerRef = React.useRef<HTMLDivElement>(null);
-  const mapRef = React.useRef<any>(null);
-  const markerRef = React.useRef<any>(null);
+  const mapRef = React.useRef<AMapMap | null>(null);
+  const markerRef = React.useRef<AMapMarker | null>(null);
   const [pickedAddress, setPickedAddress] = React.useState("");
   const [pickedLat, setPickedLat] = React.useState<number | null>(null);
   const [pickedLng, setPickedLng] = React.useState<number | null>(null);
@@ -138,22 +172,23 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
     if (isNaN(lat) || isNaN(lng)) return;
     const map = mapRef.current; if (!map) return;
     map.setCenter([lng, lat]); map.setZoom(15);
-    const AMap = (window as any).AMap;
+    const AMap = window.AMap;
     if (markerRef.current) { markerRef.current.setPosition([lng, lat]); }
-    else { const marker = new AMap.Marker({ position: [lng, lat] }); marker.setMap(map); markerRef.current = marker; }
+    else if (AMap) { const marker = new AMap.Marker({ position: [lng, lat] }); marker.setMap(mapRef.current!); markerRef.current = marker; }
     setPickedLat(lat); setPickedLng(lng); setPickedAddress("");
-    reverseGeocode(AMap, lng, lat, (addr) => setPickedAddress(addr));
+    if (AMap) reverseGeocode(AMap, lng, lat, (addr) => setPickedAddress(addr));
   }
 
   React.useEffect(() => {
     let destroyed = false;
     loadAmapScript().then(() => {
       if (destroyed || !mapContainerRef.current) return;
-      const AMap = (window as any).AMap;
+      const AMap = window.AMap;
+      if (!AMap) return;
       const parsedLat = parseFloat(String(initialLat));
       const parsedLng = parseFloat(String(initialLng));
       const hasCoords = !isNaN(parsedLat) && !isNaN(parsedLng);
-      const map = new AMap.Map(mapContainerRef.current, {
+      const map = new AMap.Map(mapContainerRef.current!, {
         zoom: hasCoords ? 15 : 12, center: hasCoords ? [parsedLng, parsedLat] : [114.05, 22.55],
         mapStyle: "amap://styles/light",
       });
@@ -174,10 +209,10 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
     return () => { destroyed = true; };
   }, [initialLat, initialLng]);
 
-  function reverseGeocode(AMap: any, lng: number, lat: number, callback: (addr: string) => void) {
+  function reverseGeocode(AMap: AMapInstance, lng: number, lat: number, callback: (addr: string) => void) {
     if (!AMap.Geocoder) { callback(`${lat.toFixed(6)}, ${lng.toFixed(6)}`); return; }
     const geocoder = new AMap.Geocoder({ radius: 100 });
-    geocoder.getAddress([lng, lat], (_status: string, result: any) => {
+    geocoder.getAddress([lng, lat], (_status: string, result) => {
       if (result?.regeocode?.formattedAddress) callback(result.regeocode.formattedAddress);
       else callback(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
     });

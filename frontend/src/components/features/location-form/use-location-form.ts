@@ -175,9 +175,9 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
             bestSeason: normalizeSeasons(loc.bestSeason ?? []), coverImage: loc.coverImage,
             images: loc.images ?? [], lat: loc.coordinates?.lat ?? "", lng: loc.coordinates?.lng ?? "",
             extra: {
-              facilities: (loc.extra as any)?.facilities ?? [],
-              tips: Array.isArray((loc.extra as any)?.tips) ? (loc.extra as any)?.tips : [],
-              warnings: Array.isArray((loc.extra as any)?.warnings) ? (loc.extra as any)?.warnings : [],
+              facilities: loc.extra?.facilities ?? [],
+              tips: Array.isArray(loc.extra?.tips) ? loc.extra.tips : [],
+              warnings: Array.isArray(loc.extra?.warnings) ? loc.extra.warnings : [],
             },
             tagIds: currentTagIds, poiLinks: currentPoiLinks,
           };
@@ -317,9 +317,9 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
       bestSeason: normalizeSeasons(location.bestSeason ?? []), coverImage: location.coverImage,
       images: location.images ?? [], lat: location.coordinates?.lat ?? "", lng: location.coordinates?.lng ?? "",
       extra: {
-        facilities: (location.extra as any)?.facilities ?? [],
-        tips: Array.isArray((location.extra as any)?.tips) ? (location.extra as any)?.tips : [],
-        warnings: Array.isArray((location.extra as any)?.warnings) ? (location.extra as any)?.warnings : [],
+        facilities: location.extra?.facilities ?? [],
+        tips: Array.isArray(location.extra?.tips) ? location.extra.tips : [],
+        warnings: Array.isArray(location.extra?.warnings) ? location.extra.warnings : [],
       },
       tagIds: formData.tagIds, poiLinks: formData.poiLinks,
     });
