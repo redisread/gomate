@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@import "./icon-sizes.css";
 
 /* ============================================================
    GoMate Design System v2.0 — globals.css
