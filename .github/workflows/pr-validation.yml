@@ -18,8 +18,8 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm --filter @gomate/api lint
@@ -39,8 +39,8 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - name: Generate i18n locales
         run: pnpm i18n:build
@@ -60,3 +60,25 @@ jobs:
       - name: Test (non-blocking)
         run: pnpm --filter @gomate/frontend test || echo "Tests skipped"
         continue-on-error: true
+
+  # Lighthouse Performance Audit
+  lighthouse:
+    name: Lighthouse Audit
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run Lighthouse on production
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            https://gomate.live/
+            https://gomate.live/locations
+            https://gomate.live/teams
+          uploadArtifacts: true
+          budgetPath: ./lighthouse-budget.json
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
