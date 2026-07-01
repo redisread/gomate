@@ -40,5 +40,16 @@ export default defineConfig({
         env.PUBLIC_AMAP_KEY || ""
       ),
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // 将大型依赖拆分为独立 chunk
+            'vendor-lucide': ['lucide-react'],
+            'vendor-markdown': ['react-markdown', 'remark-gfm'],
+          },
+        },
+      },
+    },
   },
 });
