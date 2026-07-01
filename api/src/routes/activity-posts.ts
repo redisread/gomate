@@ -7,6 +7,7 @@ import * as schema from "../db/schema";
 import type { Env } from "../lib/auth";
 import { createActivityPostSchema } from "../lib/validation";
 import { generateId } from "../lib/id";
+import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../lib/cache";
 
 const activityPosts = new Hono<{ Bindings: Env }>();
 
@@ -29,44 +30,54 @@ activityPosts.get("/teams/:id/activity-posts", async (c) => {
       return c.json(APIErrors.notFound("队伍不存在"), 404);
     }
 
-    // Get visible activity posts for this team
-    const posts = await db
-      .select({
-        post: schema.activityPosts,
-        author: {
-          id: schema.users.id,
-          name: schema.users.name,
-          nickname: schema.users.nickname,
-          avatar: schema.users.image,
-        },
-      })
-      .from(schema.activityPosts)
-      .leftJoin(schema.users, eq(schema.activityPosts.authorId, schema.users.id))
-      .where(
-        and(
-          eq(schema.activityPosts.teamId, teamId),
-          eq(schema.activityPosts.status, "visible")
-        )
-      )
-      .orderBy(desc(schema.activityPosts.createdAt))
-      .limit(limit);
-
-    const formattedPosts = posts.map(({ post, author }) => ({
-      ...post,
-      images: JSON.parse(post.images || "[]"),
-      author: author
-        ? {
-            id: author.id,
-            name: author.nickname || author.name,
-            avatar: author.avatar,
-          }
-        : null,
-    }));
-
-    return c.json({
-      success: true,
-      data: formattedPosts,
+    // 使用缓存
+    const cacheKey = buildListCacheKey("activity-posts", {
+      teamId, limit: String(limit)
     });
+    setPublicCacheHeaders(c);
+
+    const result = await getCachedOrFetch(cacheKey, async () => {
+      // Get visible activity posts for this team
+      const posts = await db
+        .select({
+          post: schema.activityPosts,
+          author: {
+            id: schema.users.id,
+            name: schema.users.name,
+            nickname: schema.users.nickname,
+            avatar: schema.users.image,
+          },
+        })
+        .from(schema.activityPosts)
+        .leftJoin(schema.users, eq(schema.activityPosts.authorId, schema.users.id))
+        .where(
+          and(
+            eq(schema.activityPosts.teamId, teamId),
+            eq(schema.activityPosts.status, "visible")
+          )
+        )
+        .orderBy(desc(schema.activityPosts.createdAt))
+        .limit(limit);
+
+      const formattedPosts = posts.map(({ post, author }) => ({
+        ...post,
+        images: JSON.parse(post.images || "[]"),
+        author: author
+          ? {
+              id: author.id,
+              name: author.nickname || author.name,
+              avatar: author.avatar,
+            }
+          : null,
+      }));
+
+      return {
+        success: true,
+        data: formattedPosts,
+      };
+    });
+
+    return c.json(result);
   } catch (error) {
     console.error("Get activity posts error:", error);
     return c.json(APIErrors.internalError("获取分享列表失败"), 500);
