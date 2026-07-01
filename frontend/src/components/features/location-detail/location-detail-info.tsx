@@ -3,13 +3,14 @@
 import { MapPin, Clock, Ruler, TrendingUp } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { Location } from "@/lib/types";
+import type { RouteMetric } from "./route-utils";
 
 interface LocationDetailInfoProps {
   location: Location;
   primaryRoute?: {
-    duration?: string;
-    distance?: string;
-    elevation?: string;
+    duration?: RouteMetric;
+    distance?: RouteMetric;
+    elevation?: RouteMetric;
   };
 }
 
@@ -38,7 +39,7 @@ export function LocationDetailInfo({ location, primaryRoute }: LocationDetailInf
               <Clock className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">{t("locations.estimatedTime")}</p>
-                <p className="text-sm font-medium">{primaryRoute.duration}</p>
+                <p className="text-sm font-medium">{primaryRoute.duration.value}</p>
               </div>
             </div>
           )}
@@ -47,7 +48,7 @@ export function LocationDetailInfo({ location, primaryRoute }: LocationDetailInf
               <Ruler className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">{t("locations.routeLength")}</p>
-                <p className="text-sm font-medium">{primaryRoute.distance}</p>
+                <p className="text-sm font-medium">{primaryRoute.distance.value}</p>
               </div>
             </div>
           )}
@@ -56,7 +57,7 @@ export function LocationDetailInfo({ location, primaryRoute }: LocationDetailInf
               <TrendingUp className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">{t("locations.totalElevation")}</p>
-                <p className="text-sm font-medium">{primaryRoute.elevation}</p>
+                <p className="text-sm font-medium">{primaryRoute.elevation.value}</p>
               </div>
             </div>
           )}

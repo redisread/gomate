@@ -32,7 +32,7 @@ export function LocationDetailGallery({ images, locationName }: LocationDetailGa
     <>
       {/* 主图片区域 */}
       <div
-        ref={heroRef}
+        ref={heroRef as React.RefObject<HTMLDivElement>}
         className="relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-xl"
         onMouseEnter={() => setShowArrows(true)}
         onMouseLeave={() => setShowArrows(false)}
