@@ -4,6 +4,7 @@ import * as React from "react";
 import { Heart, MapPin, ArrowLeft, Mountain } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
+import { safeFetch } from "@/lib/api-helpers";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
@@ -46,7 +47,7 @@ export function FavoritesClient() {
   const loadFavorites = async () => {
     setIsLoading(true);
     setError(null);
-    const data = await safeFetch<{ favorites: { entityId: string }[] }>("/favorites?entityType=location");
+    const data = await safeFetch<{ favorites: FavoriteLocation[] }>("/favorites?entityType=location");
     if (data?.favorites) {
       setFavorites(data.favorites);
     } else {
