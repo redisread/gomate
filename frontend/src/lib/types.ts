@@ -44,7 +44,7 @@ export interface Location {
   };
   extra?: {
     facilities?: string[];  // ["parking", "restroom", "water", "food"]
-    tips?: string;
+    tips?: string | string[];
     warnings?: string[];
   };
 
