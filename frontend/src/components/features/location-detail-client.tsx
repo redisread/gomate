@@ -21,6 +21,7 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import type { TranslationKey } from "@/i18n";
 import { fetchAPI } from "@/lib/api";
+import { safeFetch } from "@/lib/api-helpers";
 import type { Location, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
@@ -640,44 +641,34 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
   const loadLocation = async () => {
     setIsLoading(true);
-    try {
-      const res = await fetchAPI(`/api/locations/${locationId}`);
-      const data = await res.json();
-      if (data.success && data.location) {
-        setLocation(data.location);
-        loadTeams(data.location.id);
-        loadRelatedLocations(data.location.id);
-      } else {
-        setError(t("errors.locationNotFound"));
-      }
-    } catch {
-      setError(t("common.loading"));
-    } finally {
-      setIsLoading(false);
+    const data = await safeFetch<{ success: boolean; location: Location }>(`/api/locations/${locationId}`);
+    if (data?.success && data.location) {
+      setLocation(data.location);
+      loadTeams(data.location.id);
+      loadRelatedLocations(data.location.id);
+    } else {
+      setError(t("errors.locationNotFound"));
     }
+    setIsLoading(false);
   };
 
   const loadTeams = async (locId: string) => {
-    try {
-      const res = await fetchAPI(`/api/teams?locationId=${locId}&status=recruiting&pageSize=5`);
-      const data = await res.json();
-      if (data.success) setTeams(data.teams || []);
-    } catch (err) {
-      console.error("[LocationDetail] 获取队伍失败:", err);
-    }
+    const data = await safeFetch<{ success: boolean; teams: Team[] }>(
+      `/api/teams?locationId=${locId}&status=recruiting&pageSize=5`,
+      { silent: true }
+    );
+    if (data?.success) setTeams(data.teams || []);
   };
 
   const loadRelatedLocations = async (currentLocationId: string) => {
-    try {
-      const res = await fetchAPI("/api/locations?pageSize=4");
-      const data = await res.json();
-      if (data.success) {
-        setRelatedLocations(
-          (data.locations || []).filter((l: Location) => l.id !== currentLocationId).slice(0, 3)
-        );
-      }
-    } catch (err) {
-      console.error("[LocationDetail] 获取相关地点失败:", err);
+    const data = await safeFetch<{ success: boolean; locations: Location[] }>(
+      "/api/locations?pageSize=4",
+      { silent: true }
+    );
+    if (data?.success) {
+      setRelatedLocations(
+        (data.locations || []).filter((l) => l.id !== currentLocationId).slice(0, 3)
+      );
     }
   };
 
