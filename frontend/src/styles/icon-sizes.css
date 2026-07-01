@@ -1,0 +1,59 @@
+/* Icon size utilities - extracted from repeated className patterns */
+.icon-xs {
+  @apply h-3 w-3;
+}
+
+.icon-sm {
+  @apply h-3.5 w-3.5;
+}
+
+.icon-md {
+  @apply h-4 w-4;
+}
+
+.icon-lg {
+  @apply h-5 w-5;
+}
+
+.icon-xl {
+  @apply h-6 w-6;
+}
+
+/* Spacing utilities */
+.gap-xs {
+  @apply gap-1;
+}
+
+.gap-sm {
+  @apply gap-1.5;
+}
+
+.gap-md {
+  @apply gap-2;
+}
+
+.gap-lg {
+  @apply gap-3;
+}
+
+/* Text utilities */
+.text-caption {
+  @apply text-xs text-muted-foreground;
+}
+
+.text-body-sm {
+  @apply text-sm text-muted-foreground;
+}
+
+.text-body {
+  @apply text-base;
+}
+
+/* Layout utilities */
+.container-narrow {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.grid-responsive {
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
+}
