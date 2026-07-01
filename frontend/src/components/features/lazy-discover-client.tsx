@@ -27,13 +27,13 @@ export function LazyDiscoverMain(props: LazyDiscoverMainProps) {
 }
 
 interface LazyStoryDetailProps {
-  [key: string]: unknown;
+  storyId: string;
 }
 
-export function LazyStoryDetail(props: LazyStoryDetailProps) {
+export function LazyStoryDetail({ storyId }: LazyStoryDetailProps) {
   return (
     <React.Suspense fallback={<StoryDetailLoadingSkeleton />}>
-      <StoryDetail {...props} />
+      <StoryDetail storyId={storyId} />
     </React.Suspense>
   );
 }
