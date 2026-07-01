@@ -172,6 +172,7 @@ export interface Team {
   description: string;
   date: string;
   time: string;
+  startTime?: string; // 开始时间（API 返回，可能不存在）
   duration: string;
   durationMin?: number; // 活动时长（分钟）
   maxMembers: number;

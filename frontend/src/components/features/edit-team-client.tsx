@@ -54,9 +54,9 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
           }
           setIsLeader(true);
           setTeam(t2);
-          setLocation((t2 as any).location || null);
+          setLocation(t2.location || null);
 
-          const startTime = new Date((t2 as any).startTime || t2.date);
+          const startTime = new Date(t2.startTime || t2.date);
           const timeStr = `${String(startTime.getHours()).padStart(2, "0")}:${String(startTime.getMinutes()).padStart(2, "0")}`;
 
           setFormData({
