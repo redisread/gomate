@@ -112,7 +112,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     const cleanPath = "/" + segments.slice(1).join("/") || "/";
 
     // 设置 locale 供后续 middleware 和 Layout.astro 读取
-    (context.locals as any).locale = firstSegment;
+    (context.locals as AppLocals).locale = firstSegment as Locale;
 
     // 设置 locale cookie 供 React Islands 读取
     context.cookies.set("gomate_locale", firstSegment as string, {

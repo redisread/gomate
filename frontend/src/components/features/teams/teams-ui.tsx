@@ -83,7 +83,7 @@ export function StatusBadge({ status }: { status: string }) {
 // ─── TeamCard ───────────────────────────────────────────────────────
 export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
   const { t } = useI18n(["teams", "filter", "common"]);
-  const location = (team as any).location;
+  const location = team.location;
   const diff = location?.difficulty ? DIFFICULTY_CONFIG[location.difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const gradient = getCardGradient(team.id);
   const _daysInfo = location?.startDate ? getDaysUntilStart(t, location.startDate) : null;
