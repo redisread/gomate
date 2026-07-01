@@ -6,5 +6,5 @@ import { declareI18nNs } from "../middleware";
 declareI18nNs(Astro.locals, ['nav', 'content']);
 ---
 <Layout title="服务条款 - GoMate">
-  <TermsClient client:load />
+  <TermsClient client:visible />
 </Layout>
