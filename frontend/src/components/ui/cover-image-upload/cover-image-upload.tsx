@@ -19,6 +19,7 @@ import { Upload, Image as ImageIcon, X, Link, Check, AlertCircle } from "lucide-
 import { cn } from "@/lib/utils";
 import { API_BASE } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
+import { CircularProgress } from "./circular-progress";
 
 /* ================================================================
    类型定义
@@ -49,58 +50,11 @@ const ACCEPT_TYPES = "image/*";
 
 /** 将字节数格式化为可读字符串 */
 function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-/* ================================================================
-   圆形进度条子组件
-   ================================================================ */
-
-interface CircularProgressProps {
-  progress: number; // 0 ~ 100
-  size?: number;
-  strokeWidth?: number;
-}
-
-function CircularProgress({ progress, size = 56, strokeWidth = 4 }: CircularProgressProps) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (progress / 100) * circumference;
-
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      aria-label={`上传进度 ${progress}%`}
-      className="rotate-[-90deg]"
-    >
-      {/* 背景轨道 */}
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="rgba(255,255,255,0.3)"
-        strokeWidth={strokeWidth}
-      />
-      {/* 进度弧 */}
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="#D97706"
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        style={{ transition: "stroke-dashoffset 0.2s ease" }}
-      />
-    </svg>
-  );
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
 /* ================================================================
