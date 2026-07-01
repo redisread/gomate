@@ -22,58 +22,64 @@ stories.get("/stats", async (c) => {
   try {
     const db = createDb(c.env.DB);
 
-    // 计算本周开始时间（周一）
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay() + 1);
-    weekStart.setHours(0, 0, 0, 0);
+    // 使用缓存
+    const { getCachedOrFetch, setPublicCacheHeaders } = await import("../lib/cache");
+    setPublicCacheHeaders(c);
 
-    // 1. 本周新增故事数
-    const weeklyNewResult = await db
-      .select({ count: count() })
-      .from(schema.stories)
-      .where(
-        sql`${schema.stories.createdAt} >= ${weekStart.getTime()} AND ${schema.stories.status} = 'published'`
-      );
-    const weeklyNewStories = weeklyNewResult[0]?.count ?? 0;
+    const data = await getCachedOrFetch("stories:stats", async () => {
+      // 计算本周开始时间（周一）
+      const now = new Date();
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - now.getDay() + 1);
+      weekStart.setHours(0, 0, 0, 0);
 
-    // 2. 热门地点（按故事数量排序 TOP 1）
-    const popularLocationResult = await db
-      .select({
-        locationId: schema.stories.locationId,
-        storyCount: count(),
-      })
-      .from(schema.stories)
-      .where(
-        sql`${schema.stories.locationId} IS NOT NULL AND ${schema.stories.status} = 'published'`
-      )
-      .groupBy(schema.stories.locationId)
-      .orderBy(desc(count()))
-      .limit(1);
+      // 1. 本周新增故事数
+      const weeklyNewResult = await db
+        .select({ count: count() })
+        .from(schema.stories)
+        .where(
+          sql`${schema.stories.createdAt} >= ${weekStart.getTime()} AND ${schema.stories.status} = 'published'`
+        );
+      const weeklyNewStories = weeklyNewResult[0]?.count ?? 0;
 
-    let popularLocation = null;
-    if (popularLocationResult.length > 0 && popularLocationResult[0].locationId) {
-      const location = await db.query.locations.findFirst({
-        where: eq(schema.locations.id, popularLocationResult[0].locationId),
-      });
-      if (location) {
-        popularLocation = {
-          id: location.id,
-          name: location.name,
-          slug: location.slug,
-          storyCount: popularLocationResult[0].storyCount,
-        };
+      // 2. 热门地点（按故事数量排序 TOP 1）
+      const popularLocationResult = await db
+        .select({
+          locationId: schema.stories.locationId,
+          storyCount: count(),
+        })
+        .from(schema.stories)
+        .where(
+          sql`${schema.stories.locationId} IS NOT NULL AND ${schema.stories.status} = 'published'`
+        )
+        .groupBy(schema.stories.locationId)
+        .orderBy(desc(count()))
+        .limit(1);
+
+      let popularLocation = null;
+      if (popularLocationResult.length > 0 && popularLocationResult[0].locationId) {
+        const location = await db.query.locations.findFirst({
+          where: eq(schema.locations.id, popularLocationResult[0].locationId),
+        });
+        if (location) {
+          popularLocation = {
+            id: location.id,
+            name: location.name,
+            slug: location.slug,
+            storyCount: popularLocationResult[0].storyCount,
+          };
+        }
       }
-    }
 
-    c.header("Cache-Control", "no-store");
+      return {
+        weeklyNewStories,
+        popularLocation,
+      };
+    });
 
     return c.json({
       success: true,
-      data: {
-        weeklyNewStories,
-        popularLocation,
-      },
+      data,
     });
   } catch (error) {
     console.error("Get stories stats error:", error);
@@ -215,41 +221,46 @@ stories.get("/tags", async (c) => {
   try {
     const db = createDb(c.env.DB);
 
-    // 查询有故事关联的标签
-    const storyTags = await db
-      .select({
-        id: schema.tags.id,
-        name: schema.tags.name,
-        type: schema.tags.type,
-        count: sql<number>`count(${schema.entityToTags.entityId})`.as("count"),
-      })
-      .from(schema.tags)
-      .innerJoin(
-        schema.entityToTags,
-        eq(schema.tags.id, schema.entityToTags.tagId)
-      )
-      .innerJoin(
-        schema.stories,
-        eq(schema.entityToTags.entityId, schema.stories.id)
-      )
-      .where(
-        and(
-          eq(schema.entityToTags.entityType, "story"),
-          eq(schema.stories.status, "published")
+    // 使用缓存
+    const { getCachedOrFetch, setPublicCacheHeaders } = await import("../lib/cache");
+    setPublicCacheHeaders(c);
+
+    const formattedTags = await getCachedOrFetch("stories:tags", async () => {
+      // 查询有故事关联的标签
+      const storyTags = await db
+        .select({
+          id: schema.tags.id,
+          name: schema.tags.name,
+          type: schema.tags.type,
+          count: sql<number>`count(${schema.entityToTags.entityId})`.as("count"),
+        })
+        .from(schema.tags)
+        .innerJoin(
+          schema.entityToTags,
+          eq(schema.tags.id, schema.entityToTags.tagId)
         )
-      )
-      .groupBy(schema.tags.id, schema.tags.name, schema.tags.type)
-      .orderBy(desc(count()))
-      .limit(15);
+        .innerJoin(
+          schema.stories,
+          eq(schema.entityToTags.entityId, schema.stories.id)
+        )
+        .where(
+          and(
+            eq(schema.entityToTags.entityType, "story"),
+            eq(schema.stories.status, "published")
+          )
+        )
+        .groupBy(schema.tags.id, schema.tags.name, schema.tags.type)
+        .orderBy(desc(count()))
+        .limit(15);
 
-    const formattedTags = storyTags.map((tag) => ({
-      id: tag.id,
-      name: tag.name,
-      type: tag.type,
-      count: tag.count,
-    }));
+      return storyTags.map((tag) => ({
+        id: tag.id,
+        name: tag.name,
+        type: tag.type,
+        count: tag.count,
+      }));
+    });
 
-    c.header("Cache-Control", "no-store");
     return c.json({
       success: true,
       tags: formattedTags,
