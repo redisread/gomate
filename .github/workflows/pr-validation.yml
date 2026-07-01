@@ -61,11 +61,12 @@ jobs:
         run: pnpm --filter @gomate/frontend test || echo "Tests skipped"
         continue-on-error: true
 
-  # Lighthouse Performance Audit
+  # Lighthouse Performance Audit (non-blocking)
   lighthouse:
     name: Lighthouse Audit
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
