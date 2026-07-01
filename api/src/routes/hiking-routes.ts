@@ -6,6 +6,7 @@ import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
 import { createHikingRouteSchema } from "../lib/validation";
 import { generateId } from "../lib/id";
+import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../lib/cache";
 
 const hikingRoutes = new Hono<{ Bindings: Env }>();
 
@@ -63,75 +64,85 @@ hikingRoutes.get("/", async (c) => {
     const pageSize = Math.min(100, parseInt(c.req.query("pageSize") || "20", 10));
     const offset = (page - 1) * pageSize;
 
-    const conditions = [];
-    if (locationId) conditions.push(eq(schema.routes.locationId, locationId));
-    if (cityId) conditions.push(eq(schema.routes.cityId, cityId));
-    if (difficulty) conditions.push(eq(schema.routes.difficulty, difficulty));
+    // 使用缓存
+    const cacheKey = buildListCacheKey("hiking-routes", {
+      locationId, cityId, difficulty, page: String(page), pageSize: String(pageSize)
+    });
+    setPublicCacheHeaders(c);
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const result = await getCachedOrFetch(cacheKey, async () => {
+      const conditions = [];
+      if (locationId) conditions.push(eq(schema.routes.locationId, locationId));
+      if (cityId) conditions.push(eq(schema.routes.cityId, cityId));
+      if (difficulty) conditions.push(eq(schema.routes.difficulty, difficulty));
 
-    // Get total count
-    const [{ total }] = await db
-      .select({ total: sql<number>`count(*)` })
-      .from(schema.routes)
-      .where(whereClause);
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const totalPages = Math.ceil(total / pageSize);
-    const hasMore = page < totalPages;
+      // Get total count
+      const [{ total }] = await db
+        .select({ total: sql<number>`count(*)` })
+        .from(schema.routes)
+        .where(whereClause);
 
-    const query = db
-      .select({
-        route: schema.routes,
-        location: schema.locations,
-        city: schema.cities,
-      })
-      .from(schema.routes)
-      .leftJoin(schema.locations, eq(schema.routes.locationId, schema.locations.id))
-      .leftJoin(schema.cities, eq(schema.routes.cityId, schema.cities.id))
-      .where(whereClause)
-      .limit(pageSize)
-      .offset(offset);
+      const totalPages = Math.ceil(total / pageSize);
+      const hasMore = page < totalPages;
 
-    const results = await query;
+      const query = db
+        .select({
+          route: schema.routes,
+          location: schema.locations,
+          city: schema.cities,
+        })
+        .from(schema.routes)
+        .leftJoin(schema.locations, eq(schema.routes.locationId, schema.locations.id))
+        .leftJoin(schema.cities, eq(schema.routes.cityId, schema.cities.id))
+        .where(whereClause)
+        .limit(pageSize)
+        .offset(offset);
 
-    const routeIds = results.map((r) => r.route.id);
-    const tagsMap = await getRoutesTags(db, routeIds);
+      const results = await query;
 
-    const formattedRoutes = results.map(({ route, location, city }) => {
-      const extra = route.extra ? JSON.parse(route.extra) : {};
+      const routeIds = results.map((r) => r.route.id);
+      const tagsMap = await getRoutesTags(db, routeIds);
+
+      const formattedRoutes = results.map(({ route, location, city }) => {
+        const extra = route.extra ? JSON.parse(route.extra) : {};
+        return {
+          id: route.id,
+          locationId: route.locationId,
+          cityId: route.cityId,
+          name: route.name,
+          description: route.description,
+          difficulty: route.difficulty,
+          durationMin: route.durationMin,
+          durationMax: route.durationMax,
+          distance: route.distance,
+          elevation: route.elevation,
+          routeGuide: route.routeGuide ? JSON.parse(route.routeGuide) : null,
+          equipmentNeeded: extra.equipmentNeeded || [],
+          warnings: extra.warnings || [],
+          tags: tagsMap[route.id] || [],
+          location,
+          city,
+          createdAt: route.createdAt,
+          updatedAt: route.updatedAt,
+        };
+      });
+
       return {
-        id: route.id,
-        locationId: route.locationId,
-        cityId: route.cityId,
-        name: route.name,
-        description: route.description,
-        difficulty: route.difficulty,
-        durationMin: route.durationMin,
-        durationMax: route.durationMax,
-        distance: route.distance,
-        elevation: route.elevation,
-        routeGuide: route.routeGuide ? JSON.parse(route.routeGuide) : null,
-        equipmentNeeded: extra.equipmentNeeded || [],
-        warnings: extra.warnings || [],
-        tags: tagsMap[route.id] || [],
-        location,
-        city,
-        createdAt: route.createdAt,
-        updatedAt: route.updatedAt,
+        success: true,
+        routes: formattedRoutes,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages,
+          hasMore,
+        },
       };
     });
 
-    return c.json({
-      success: true,
-      routes: formattedRoutes,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages,
-        hasMore,
-      },
-    });
+    return c.json(result);
   } catch (error) {
     console.error("Get routes error:", error);
     return c.json(APIErrors.internalError("获取路线列表失败"), 500);
