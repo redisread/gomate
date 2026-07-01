@@ -196,7 +196,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
       {/* Hero 封面区域 */}
       <div
-        ref={heroRef}
+        ref={heroRef as React.RefObject<HTMLDivElement>}
         className="relative h-[390px] sm:h-[460px] lg:h-[520px] overflow-hidden bg-stone-900"
         onMouseEnter={() => setShowArrows(true)}
         onMouseLeave={() => setShowArrows(false)}
