@@ -1,0 +1,96 @@
+---
+/**
+ * 创建入口页 — 统一的内容创建导航
+ */
+import Layout from "../layouts/Layout.astro";
+import { declareI18nNs } from "../middleware";
+
+declareI18nNs(Astro.locals, ["common", "content", "teams"]);
+---
+
+<Layout title="创建 - GoMate" showNavbar={true} showFooter={true}>
+  <div class="min-h-[80vh] flex items-center justify-center px-4 py-16">
+    <div class="w-full max-w-2xl">
+      <div class="text-center mb-12">
+        <h1 class="text-3xl font-bold text-foreground mb-3">创建内容</h1>
+        <p class="text-muted-foreground">选择你想要创建的内容类型</p>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <!-- 发布活动 -->
+        <a
+          href="/teams/create"
+          class="card-base p-6 group transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)" }}
+            >
+              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+            </div>
+            <div>
+              <div class="font-semibold text-foreground group-hover:text-amber-600 transition-colors">
+                发布活动
+              </div>
+              <div class="text-sm text-muted-foreground mt-1">
+                创建徒步活动，邀请队友
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- 发布故事 -->
+        <a
+          href="/discover/create"
+          class="card-base p-6 group transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)" }}
+            >
+              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <div>
+              <div class="font-semibold text-foreground group-hover:text-violet-600 transition-colors">
+                发布故事
+              </div>
+              <div class="text-sm text-muted-foreground mt-1">
+                分享你的旅行见闻
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- 更多 -->
+        <div
+          class="card-base p-6 opacity-60"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%)" }}
+            >
+              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </div>
+            <div>
+              <div class="font-semibold text-foreground">
+                即将推出
+              </div>
+              <div class="text-sm text-muted-foreground mt-1">
+                更多内容类型敬请期待
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
