@@ -1,4 +1,6 @@
 import { MapPin, ArrowRight, Calendar, Clock, Timer, AlertCircle, CheckCircle, Crown, Share2, Loader2, Users, Trash2, Pencil, MessageCircle } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
 import { useTeamDetail } from "./use-team-detail";
@@ -68,7 +70,9 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
       {location && <MobileLocationLink location={location} />}
       {team.description && (
         <div className="border-t border-border pt-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">{team.description}</p>
+          <div className="text-sm text-muted-foreground leading-relaxed prose-sm">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{team.description}</ReactMarkdown>
+          </div>
         </div>
       )}
       <TeamCapacity team={team} canJoin={ctx.canJoin} remaining={ctx.remaining} />
