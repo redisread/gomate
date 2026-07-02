@@ -5,6 +5,7 @@
  */
 import Layout from "../../layouts/Layout.astro";
 import { LocationDetailClient } from "../../components/features/location-detail-client";
+import { ErrorBoundary } from "../../components/ui/error-boundary";
 import { declareI18nNs } from "../../middleware";
 import { API_BASE } from "../../lib/api";
 
@@ -47,5 +48,7 @@ const description = locationData?.description
   showNavbar={false}
   showFooter={false}
 >
-  <LocationDetailClient locationId={id!} client:visible />
+  <ErrorBoundary>
+    <LocationDetailClient locationId={id!} client:visible />
+  </ErrorBoundary>
 </Layout>
