@@ -19,6 +19,11 @@ export const DIFFICULTY_CONFIG: Record<
     bg: string;
     color: string;
     activeColor: string;
+    barColor: string;
+    textColor: string;
+    bgColor: string;
+    percent: number;
+    ringColor: string;
   }
 > = {
   easy: {
@@ -28,6 +33,11 @@ export const DIFFICULTY_CONFIG: Record<
     bg: "rgba(217,119,6,0.85)",
     color: "#fff",
     activeColor: "bg-amber-600 border-amber-600 text-white",
+    barColor: "bg-emerald-400",
+    textColor: "text-emerald-700 dark:text-emerald-400",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+    percent: 25,
+    ringColor: "ring-emerald-200 dark:ring-emerald-800",
   },
   moderate: {
     label: "适中",
@@ -36,6 +46,11 @@ export const DIFFICULTY_CONFIG: Record<
     bg: "rgba(217,119,6,0.88)",
     color: "#fff",
     activeColor: "bg-amber-500 border-amber-500 text-white",
+    barColor: "bg-amber-400",
+    textColor: "text-amber-700 dark:text-amber-400",
+    bgColor: "bg-amber-50 dark:bg-amber-950/30",
+    percent: 50,
+    ringColor: "ring-amber-200 dark:ring-amber-800",
   },
   hard: {
     label: "困难",
@@ -44,6 +59,11 @@ export const DIFFICULTY_CONFIG: Record<
     bg: "rgba(255,122,101,0.90)",
     color: "#fff",
     activeColor: "bg-orange-500 border-orange-500 text-white",
+    barColor: "bg-orange-500",
+    textColor: "text-orange-700 dark:text-orange-400",
+    bgColor: "bg-orange-50 dark:bg-orange-950/30",
+    percent: 75,
+    ringColor: "ring-orange-200 dark:ring-orange-800",
   },
   expert: {
     label: "专家",
@@ -52,6 +72,11 @@ export const DIFFICULTY_CONFIG: Record<
     bg: "rgba(109,40,217,0.85)",
     color: "#fff",
     activeColor: "bg-red-500 border-red-500 text-white",
+    barColor: "bg-red-500",
+    textColor: "text-red-700 dark:text-red-400",
+    bgColor: "bg-red-50 dark:bg-red-950/30",
+    percent: 100,
+    ringColor: "ring-red-200 dark:ring-red-800",
   },
 };
 

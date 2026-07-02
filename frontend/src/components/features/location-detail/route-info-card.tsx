@@ -11,7 +11,7 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location } from "@/lib/types";
-import { DIFFICULTY_CONFIG } from "./constants";
+import { DIFFICULTY_CONFIG } from "@/lib/constants";
 import {
   normalizeLocationRoutes,
   type NormalizedLocationRoute,

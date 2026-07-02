@@ -23,6 +23,7 @@ import type { TranslationKey } from "@/i18n";
 import { fetchAPI } from "@/lib/api";
 import type { Location, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { getDifficultyBadgeStyles } from "@/lib/difficulty-badge";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import {
@@ -48,34 +49,6 @@ function getSeasonLabel(t: (key: TranslationKey) => string) {
   };
 }
 
-function getDifficultyInfo(t: (key: TranslationKey) => string) {
-  return {
-    easy: {
-      label: t("enums.difficulty.easy"),
-      dot: "bg-emerald-400",
-      text: "text-emerald-700 dark:text-emerald-400",
-      pill: "bg-emerald-500/20 text-emerald-100 border-emerald-400/30",
-    },
-    moderate: {
-      label: t("enums.difficulty.moderate"),
-      dot: "bg-amber-400",
-      text: "text-amber-700 dark:text-amber-400",
-      pill: "bg-amber-500/20 text-amber-100 border-amber-400/30",
-    },
-    hard: {
-      label: t("enums.difficulty.hard"),
-      dot: "bg-orange-500",
-      text: "text-orange-700 dark:text-orange-400",
-      pill: "bg-orange-500/20 text-orange-100 border-orange-400/30",
-    },
-    expert: {
-      label: t("enums.difficulty.expert"),
-      dot: "bg-red-500",
-      text: "text-red-700 dark:text-red-400",
-      pill: "bg-red-500/20 text-red-100 border-red-400/30",
-    },
-  };
-}
 
 // ─── 骨架屏 ───────────────────────────────────────────────────────────────────
 function LoadingNavbarSkeleton() {
@@ -753,7 +726,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   const normalizedRoutes = normalizeLocationRoutes(location);
   const primaryRoute = normalizedRoutes[0];
   const heroDifficulty = location.difficulty ?? primaryRoute?.difficulty;
-  const diffInfo = getDifficultyInfo(t)[heroDifficulty as keyof ReturnType<typeof getDifficultyInfo>] ?? {
+  const diffInfo = getDifficultyBadgeStyles(key => t(key as TranslationKey))[heroDifficulty as keyof ReturnType<typeof getDifficultyBadgeStyles>] ?? {
     label: heroDifficulty || "",
     dot: "bg-stone-400",
     text: "text-stone-700",
