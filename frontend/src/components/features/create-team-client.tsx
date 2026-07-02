@@ -15,6 +15,9 @@ import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import type { Location, Route } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
+import { FieldGroup } from "@/components/ui/field-group";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { QuickDurationButton } from "./create-team/quick-duration-button";
 import { Footer } from "@/components/layout/footer";
 
 /**
@@ -288,7 +291,7 @@ export function CreateTeamClient() {
           <form onSubmit={handleSubmit} className="space-y-6">
 
             {/* 队伍标题 */}
-            <FormSection icon="✏️" label={t("teams.formLabel.name")} required>
+            <FieldGroup icon="✏️" label={t("teams.formLabel.name")} required>
               <input
                 id="title"
                 name="title"
@@ -299,10 +302,10 @@ export function CreateTeamClient() {
                 required
                 className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
-            </FormSection>
+            </FieldGroup>
 
             {/* 目的地 */}
-            <FormSection icon="📍" label={t("teams.formLabel.location")} required>
+            <FieldGroup icon="📍" label={t("teams.formLabel.location")} required>
               <div className="relative">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                 <select
@@ -319,13 +322,13 @@ export function CreateTeamClient() {
                   ))}
                 </select>
               </div>
-            </FormSection>
+            </FieldGroup>
 
             {/* 路线选择（暂时隐藏） */}
 
             {/* 日期 + 时间 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormSection icon="📅" label={t("teams.formLabel.date")} required>
+              <FieldGroup icon="📅" label={t("teams.formLabel.date")} required>
                 <div className="relative">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
@@ -339,9 +342,9 @@ export function CreateTeamClient() {
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   />
                 </div>
-              </FormSection>
+              </FieldGroup>
 
-              <FormSection icon="⏰" label={t("teams.formLabel.meetTime")} required>
+              <FieldGroup icon="⏰" label={t("teams.formLabel.meetTime")} required>
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
@@ -354,7 +357,7 @@ export function CreateTeamClient() {
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   />
                 </div>
-              </FormSection>
+              </FieldGroup>
             </div>
 
             {/* 日期不可修改提示 */}
@@ -365,7 +368,7 @@ export function CreateTeamClient() {
 
             {/* 时长 + 最大人数 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormSection
+              <FieldGroup
                 icon="⌛"
                 label={t("teams.formLabel.duration")}
                 required
@@ -428,9 +431,9 @@ export function CreateTeamClient() {
                     {t("teams.durationCustom")}
                   </button>
                 </div>
-              </FormSection>
+              </FieldGroup>
 
-              <FormSection icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.maxSizeHint")}>
+              <FieldGroup icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.maxSizeHint")}>
                 <div className="relative">
                   <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
@@ -446,11 +449,11 @@ export function CreateTeamClient() {
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   />
                 </div>
-              </FormSection>
+              </FieldGroup>
             </div>
 
             {/* 队伍描述 */}
-            <FormSection icon="📝" label={t("teams.formLabel.description")} required hint={t("teams.descriptionHint")}>
+            <FieldGroup icon="📝" label={t("teams.formLabel.description")} required hint={t("teams.descriptionHint")}>
               <textarea
                 id="description"
                 name="description"
@@ -461,7 +464,7 @@ export function CreateTeamClient() {
                 rows={4}
                 className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
-            </FormSection>
+            </FieldGroup>
 
             {/* 温馨提示 */}
             <div
@@ -490,35 +493,17 @@ export function CreateTeamClient() {
               >
                 {t("common.cancel")}
               </button>
-              <button
-                type="submit"
-                disabled={isSubmitting || !hasWechat}
-                className="flex-2 flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{
-                  background: isSubmitting || !hasWechat ? "#D97706" : "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
-                  boxShadow: isSubmitting || !hasWechat ? "none" : "0 4px 18px rgba(217,119,6,0.35)",
-                  flex: "2",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSubmitting && hasWechat) {
-                    const el = e.currentTarget as HTMLButtonElement;
-                    el.style.transform = "translateY(-1px)";
-                    el.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.transform = "translateY(0)";
-                  el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
-                }}
+              <SubmitButton
+                loading={isSubmitting || !hasWechat}
+                loadingText={!hasWechat ? t("teams.wechatRequiredBtn") : t("teams.createBtnLoading")}
+                className="flex-2"
               >
-                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {!hasWechat
                   ? t("teams.wechatRequiredBtn")
                   : isSubmitting
                   ? t("teams.createBtnLoading")
                   : t("teams.createBtn")}
-              </button>
+              </SubmitButton>
             </div>
           </form>
         </div>
@@ -551,61 +536,4 @@ function getDurationOptions(t: (key: any, vars?: Record<string, string | number>
   ];
 }
 
-/* ── 快捷时长按钮 ── */
-function QuickDurationButton({
-  label,
-  minutes,
-  currentValue,
-  onClick,
-}: {
-  label: string;
-  minutes: number;
-  currentValue: string;
-  onClick: () => void;
-}) {
-  const isActive = String(minutes) === currentValue;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 border ${
-        isActive
-          ? "bg-primary/10 border-primary text-primary"
-          : "bg-muted border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
 
-/* ── 表单字段区块 ── */
-function FormSection({
-  icon,
-  label,
-  required,
-  hint,
-  children,
-}: {
-  icon: string;
-  label: string;
-  required?: boolean;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5">
-        <span className="text-base">{icon}</span>
-        <label className="text-sm font-medium text-foreground">
-          {label}
-          {required && <span className="ml-0.5 text-destructive">*</span>}
-        </label>
-        {hint && (
-          <span className="text-xs ml-auto text-muted-foreground">{hint}</span>
-        )}
-      </div>
-      {children}
-    </div>
-  );
-}

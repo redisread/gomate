@@ -6,6 +6,8 @@ import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import type { Team, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
+import { FieldGroup } from "@/components/ui/field-group";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Footer } from "@/components/layout/footer";
 
 interface EditTeamClientProps {
@@ -218,7 +220,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
         >
           <form onSubmit={handleSubmit} className="space-y-6">
 
-            <FormSection icon="✏️" label={t("teams.formLabel.name")} required>
+            <FieldGroup icon="✏️" label={t("teams.formLabel.name")} required>
               <input
                 id="title"
                 name="title"
@@ -230,9 +232,9 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 maxLength={60}
                 className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
-            </FormSection>
+            </FieldGroup>
 
-            <FormSection icon="📍" label={t("teams.formLabel.location")}>
+            <FieldGroup icon="📍" label={t("teams.formLabel.location")}>
               <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-muted border border-border">
                 <span className="text-sm text-foreground">{location?.name || team.date}</span>
                 {location && (
@@ -245,9 +247,9 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 <AlertCircle className="h-3 w-3" />
                 {t("teams.editLocationLocked")}
               </p>
-            </FormSection>
+            </FieldGroup>
 
-            <FormSection icon="📅" label={t("teams.formLabel.date")}>
+            <FieldGroup icon="📅" label={t("teams.formLabel.date")}>
               <div className="px-4 py-3 rounded-xl bg-muted border border-border">
                 <span className="text-sm text-foreground">{team.date}</span>
               </div>
@@ -255,10 +257,10 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 <AlertCircle className="h-3 w-3" />
                 {t("teams.editDateLocked")}
               </p>
-            </FormSection>
+            </FieldGroup>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormSection icon="⏰" label={t("teams.formLabel.meetTime")}>
+              <FieldGroup icon="⏰" label={t("teams.formLabel.meetTime")}>
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
@@ -270,9 +272,9 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   />
                 </div>
-              </FormSection>
+              </FieldGroup>
 
-              <FormSection icon="⌛" label={t("teams.formLabel.duration")}>
+              <FieldGroup icon="⌛" label={t("teams.formLabel.duration")}>
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <select
@@ -287,10 +289,10 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                     ))}
                   </select>
                 </div>
-              </FormSection>
+              </FieldGroup>
             </div>
 
-            <FormSection icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.editMaxSizeHint", { current: team.currentMembers })}>
+            <FieldGroup icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.editMaxSizeHint", { current: team.currentMembers })}>
               <div className="relative">
                 <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
                 <input
@@ -310,9 +312,9 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 <AlertCircle className="h-3 w-3" />
                 {t("teams.editMaxMembersTip", { current: team.currentMembers })}
               </p>
-            </FormSection>
+            </FieldGroup>
 
-            <FormSection icon="📝" label={t("teams.formLabel.description")}>
+            <FieldGroup icon="📝" label={t("teams.formLabel.description")}>
               <textarea
                 id="description"
                 name="description"
@@ -322,9 +324,9 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 rows={4}
                 className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
-            </FormSection>
+            </FieldGroup>
 
-            <FormSection icon="📋" label={t("teams.editRequirementsLabel")} hint={t("teams.editRequirementsHint")}>
+            <FieldGroup icon="📋" label={t("teams.editRequirementsLabel")} hint={t("teams.editRequirementsHint")}>
               <ul className="space-y-2">
                 {formData.requirements.map((req, i) => (
                   <li key={i} className="flex items-center gap-2">
@@ -366,7 +368,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                   {t("teams.editRequirementsEmptyTip")}
                 </p>
               )}
-            </FormSection>
+            </FieldGroup>
 
             <div
               className="rounded-xl px-4 py-3.5 text-sm flex items-start gap-2.5 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/40"
@@ -394,31 +396,13 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               >
                 {t("common.cancel")}
               </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{
-                  background: isSubmitting ? "#D97706" : "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
-                  boxShadow: isSubmitting ? "none" : "0 4px 18px rgba(217,119,6,0.35)",
-                  flex: "2",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSubmitting) {
-                    const el = e.currentTarget as HTMLButtonElement;
-                    el.style.transform = "translateY(-1px)";
-                    el.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.transform = "translateY(0)";
-                  el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
-                }}
+              <SubmitButton
+                loading={isSubmitting}
+                loadingText={t("common.saving")}
+                className="flex-2"
               >
-                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isSubmitting ? t("common.saving") : t("teams.editSaveBtn")}
-              </button>
+              </SubmitButton>
             </div>
           </form>
         </div>
@@ -426,35 +410,5 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
 
       <Footer />
     </main>
-  );
-}
-
-function FormSection({
-  icon,
-  label,
-  required,
-  hint,
-  children,
-}: {
-  icon: string;
-  label: string;
-  required?: boolean;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5">
-        <span className="text-base">{icon}</span>
-        <label className="text-sm font-medium text-foreground">
-          {label}
-          {required && <span className="ml-0.5 text-destructive">*</span>}
-        </label>
-        {hint && (
-          <span className="text-xs ml-auto text-muted-foreground">{hint}</span>
-        )}
-      </div>
-      {children}
-    </div>
   );
 }
