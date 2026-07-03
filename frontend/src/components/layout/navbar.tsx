@@ -9,7 +9,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { type Locale, SUPPORTED_LOCALES, getLocale, setLocale, getLocaleName } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
-import { SearchInput } from "@/components/ui/search-input";
 import { useUnreadCount } from "@/hooks/useMessages";
 
 const navLinks = (t: (key: any) => string) => [
@@ -174,9 +173,6 @@ export function Navbar({ className }: NavbarProps) {
 
             {/* ---- 桌面端操作区 ---- */}
             <div className="hidden md:flex items-center gap-2">
-              {/* 搜索框 */}
-              <SearchInput className="w-56" />
-
               {/* 语言切换 */}
               <LanguageSwitcher />
 

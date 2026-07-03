@@ -11,7 +11,6 @@ const locations = new Hono<{ Bindings: Env }>();
 // GET /locations/:id
 // GET /locations/:id/pois
 // GET /locations/:id/tags
-// GET /locations/search
 locations.route("/", queries);
 
 // Mount mutation routes (POST, PUT, DELETE)
