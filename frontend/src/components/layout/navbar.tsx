@@ -347,8 +347,6 @@ export function Navbar({ className }: NavbarProps) {
                   />
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground text-sm truncate">{session.user.nickname || session.user.name}</p>
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
