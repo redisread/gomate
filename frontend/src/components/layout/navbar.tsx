@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown, MapPin, MessageCircle } from "lucide-react";
+import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchCurrentUser, API_BASE } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
@@ -9,8 +9,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { type Locale, SUPPORTED_LOCALES, getLocale, setLocale, getLocaleName } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
-import { useIPLocation, getCityDisplay } from "@/hooks/useIPLocation";
-import { SearchInput } from "@/components/ui/search-input";
 import { useUnreadCount } from "@/hooks/useMessages";
 
 const navLinks = (t: (key: any) => string) => [
@@ -48,9 +46,6 @@ export function Navbar({ className }: NavbarProps) {
   const [_mounted, setMounted] = React.useState(false);
   const { count: unreadCount } = useUnreadCount(!!session?.user);
 
-  // IP 定位获取用户城市（仅登录后）
-  const { city, isLoading: _isLocating } = useIPLocation();
-  const userCity = session?.user ? getCityDisplay({ city }) : null;
 
   // 获取当前路径（使用静态值避免 hydration mismatch）
   React.useEffect(() => {
@@ -178,9 +173,6 @@ export function Navbar({ className }: NavbarProps) {
 
             {/* ---- 桌面端操作区 ---- */}
             <div className="hidden md:flex items-center gap-2">
-              {/* 搜索框 */}
-              <SearchInput className="w-56" />
-
               {/* 语言切换 */}
               <LanguageSwitcher />
 
@@ -199,14 +191,6 @@ export function Navbar({ className }: NavbarProps) {
 
               {session?.user ? (
                 <>
-                  {/* 用户所在城市 - 仅定位成功时显示 */}
-                  {userCity && (
-                    <div className="flex items-center gap-1 text-sm" style={{ color: "#666666" }}>
-                      <MapPin className="h-4 w-4" style={{ color: "#FF6B35" }} />
-                      <span>{userCity}</span>
-                    </div>
-                  )}
-
                   {/* 用户菜单 */}
                   <div className="relative" data-user-menu>
                     <button
@@ -363,14 +347,6 @@ export function Navbar({ className }: NavbarProps) {
                   />
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground text-sm truncate">{session.user.nickname || session.user.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
-                    {/* 移动端城市显示 */}
-                    {userCity && (
-                      <p className="text-xs mt-1 flex items-center gap-1" style={{ color: "#666666" }}>
-                        <MapPin className="h-3 w-3" style={{ color: "#FF6B35" }} />
-                        {userCity}
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
