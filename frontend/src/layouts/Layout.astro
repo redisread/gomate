@@ -59,58 +59,68 @@ const ssr = getSSRT(locale, ssrLocaleData);
 const criticalCSS = `
 :root {
   color-scheme: light;
-  --primary-50: #FFFBEB;
-  --primary-300: #FCD34D;
-  --primary-400: #F59E0B;
-  --primary-500: #D97706;
-  --neutral-50: #faf8f5;
-  --neutral-100: #f2ede7;
-  --neutral-200: #e8e0d7;
-  --neutral-500: #8f7f6e;
-  --neutral-900: #1e1812;
-  --background: #faf8f5;
-  --foreground: #1e1812;
-  --card: rgba(255,255,255,0.85);
-  --card-foreground: #1e1812;
-  --popover: #ffffff;
-  --popover-foreground: #1e1812;
-  --primary: #D97706;
-  --primary-foreground: #FFFBEB;
-  --secondary: #f2ede7;
-  --secondary-foreground: #1e1812;
-  --muted: #f2ede7;
-  --muted-foreground: #8f7f6e;
-  --accent: #FFFBEB;
-  --accent-foreground: #92400E;
+  --pixel-ink: #1a1612;
+  --pixel-paper: #f3e4bf;
+  --pixel-paper-2: #e8d39d;
+  --pixel-amber: #d97706;
+  --pixel-amber-dark: #92400e;
+  --pixel-amber-light: #fbbf24;
+  --pixel-teal: #0d9488;
+  --pixel-red: #dc2626;
+  --pixel-green: #16a34a;
+  --pixel-blue: #2563eb;
+  --primary-50: #fff7d6;
+  --primary-300: #fbbf24;
+  --primary-400: #d97706;
+  --primary-500: #d97706;
+  --neutral-50: #f3e4bf;
+  --neutral-100: #e8d39d;
+  --neutral-200: #c9a96a;
+  --neutral-500: #6b5636;
+  --neutral-900: #1a1612;
+  --background: #f3e4bf;
+  --foreground: #1a1612;
+  --card: #fffaf0;
+  --card-foreground: #1a1612;
+  --popover: #fffaf0;
+  --popover-foreground: #1a1612;
+  --primary: #d97706;
+  --primary-foreground: #fffaf0;
+  --secondary: #e8d39d;
+  --secondary-foreground: #1a1612;
+  --muted: #e8d39d;
+  --muted-foreground: #6b5636;
+  --accent: #fbbf24;
+  --accent-foreground: #1a1612;
   --destructive: #e53e3e;
-  --border: #e8e0d7;
-  --input: #e8e0d7;
+  --border: #1a1612;
+  --input: #1a1612;
   --ring: #D97706;
 }
 .dark {
   color-scheme: dark;
-  --background: #12100d;
-  --foreground: #f0ede8;
-  --card: rgba(30,26,20,0.90);
-  --card-foreground: #f0ede8;
-  --popover: #1e1a14;
-  --popover-foreground: #f0ede8;
-  --primary: #F59E0B;
-  --primary-foreground: #1c0f00;
-  --secondary: #2a2520;
-  --secondary-foreground: #c8bfb4;
-  --muted: #2a2520;
-  --muted-foreground: #7a6e63;
-  --accent: #3d2000;
-  --accent-foreground: #FCD34D;
+  --background: #2d2418;
+  --foreground: #f3e4bf;
+  --card: #241d14;
+  --card-foreground: #f3e4bf;
+  --popover: #241d14;
+  --popover-foreground: #f3e4bf;
+  --primary: #fbbf24;
+  --primary-foreground: #1a1612;
+  --secondary: #3a2a14;
+  --secondary-foreground: #f3e4bf;
+  --muted: #3a2a14;
+  --muted-foreground: #c9b891;
+  --accent: #3a2a14;
+  --accent-foreground: #fbbf24;
   --destructive: #fc8181;
-  --border: #38322a;
-  --input: #38322a;
+  --border: #fbbf24;
+  --input: #fbbf24;
   --ring: #F59E0B;
 }
 *,*::before,*::after{box-sizing:border-box;border-color:var(--border)}
 html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;-webkit-text-size-adjust:100%;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;background-color:var(--background);color:var(--foreground);line-height:1.6;min-height:100vh}
+body{margin:0;font-family:"VT323","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;background-color:var(--background);color:var(--foreground);line-height:1.6;min-height:100vh}
 h1,h2,h3,h4,h5,h6{margin:0;line-height:1.25}
 p{margin:0}
 a{color:inherit;text-decoration:none}
@@ -219,11 +229,10 @@ function getHreflangUrl(loc: Locale) {
       <style set:html={criticalCSS}></style>
     )}
 
-    {/* 字体加载优化：预连接和 DNS 预解析 */}
-    {/* 注：当前使用系统字体栈（PingFang SC 等），无需下载外部字体 */}
-    {/* 以下为未来引入外部字体预留优化配置 */}
+    {/* Pixel UI fonts from the provided design draft */}
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
     <meta name="font-loading" content="swap" />
 
     {/* API 域名预连接（减少 TTFB） */}
@@ -360,9 +369,9 @@ function getHreflangUrl(loc: Locale) {
       })();
     </script>
   </head>
-  <body class={["min-h-screen", isDark ? "dark bg-[#12100d]" : "bg-[#faf8f5]"].join(" ")}>
-    {showNavbar && <Navbar client:visible />}
+  <body class={["min-h-screen bg-background", isDark ? "dark" : ""].join(" ")}>
+    {showNavbar && <Navbar client:only="react" />}
     <slot />
-    {showFooter && <Footer client:idle />}
+    {showFooter && <Footer client:only="react" />}
   </body>
 </html>

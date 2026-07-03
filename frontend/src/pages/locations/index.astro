@@ -9,7 +9,7 @@ import { API_BASE } from "../../lib/api";
 import type { LocationsListInitialData } from "../../components/features/locations/use-locations-list";
 import type { Location } from "../../lib/types";
 
-declareI18nNs(Astro.locals, ["locations", "filter", "content"]);
+declareI18nNs(Astro.locals, ["locations", "filter", "content", "nav", "common"]);
 
 async function fetchJson<T>(path: string): Promise<T | null> {
   try {
@@ -47,5 +47,5 @@ const initialData = locationsData?.success
 ---
 
 <Layout title="探索地点 - GoMate" showNavbar={false} showFooter={false}>
-  <LocationsClient initialData={initialData} client:visible />
+  <LocationsClient initialData={initialData} client:only="react" />
 </Layout>

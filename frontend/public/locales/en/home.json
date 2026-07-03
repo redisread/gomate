@@ -1,6 +1,9 @@
 {
   "featuredLocations": "Featured Locations",
   "recentTeams": "Recent Teams",
+  "noTeams": "No active teams yet",
+  "noTeamsDescription": "There are no active teams right now. Be the first to create one.",
+  "createFirstTeam": "Create the first team",
   "cta": {
     "title": "Ready to Go?",
     "subtitle": "Find your travel companions, the journey is not far",

@@ -1,6 +1,9 @@
 {
   "featuredLocations": "厳選スポット",
   "recentTeams": "最近のチーム",
+  "noTeams": "募集中のチームはまだありません",
+  "noTeamsDescription": "現在アクティブなチームはありません。最初のチームを作成しましょう。",
+  "createFirstTeam": "最初のチームを作成",
   "cta": {
     "title": "準備はできましたか",
     "subtitle": "同行者を見つければ、旅は遠くない",

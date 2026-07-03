@@ -17,13 +17,13 @@
     "i18n:validate": "node ../scripts/validate-i18n-keys.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^13.7.0",
-    "@astrojs/react": "^5.0.7",
+    "@astrojs/cloudflare": "^14.1.1",
+    "@astrojs/react": "^6.0.1",
     "@gomate/types": "workspace:*",
     "@nanostores/persistent": "^1.3.3",
     "@nanostores/react": "^1.1.0",
     "@tailwindcss/vite": "^4.2.2",
-    "astro": "^6.4.6",
+    "astro": "^7.0.6",
     "better-auth": "^1.6.11",
     "clsx": "^2.1.1",
     "lucide-react": "^0.460.0",
@@ -38,21 +38,22 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
-    "@astrojs/sitemap": "^3.7.2",
+    "@astrojs/sitemap": "^3.7.3",
     "@eslint/js": "9",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
-    "@vitest/coverage-v8": "^2.0.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/expect": "4.1.9",
     "eslint": "9",
     "eslint-plugin-react-hooks": "5",
     "jsdom": "^29.0.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.58.1",
-    "vite": "^7.3.5",
-    "vitest": "^2.0.0",
-    "wrangler": "^4.100.0"
+    "vite": "^8.1.3",
+    "vitest": "^4.1.9",
+    "wrangler": "^4.107.0"
   }
 }

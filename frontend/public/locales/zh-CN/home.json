@@ -1,6 +1,9 @@
 {
   "featuredLocations": "精选地点",
   "recentTeams": "近期队伍",
+  "noTeams": "暂无活跃队伍",
+  "noTeamsDescription": "目前还没有活跃的队伍，成为第一个创建队伍的人吧！",
+  "createFirstTeam": "创建第一个队伍",
   "cta": {
     "title": "准备好了吗",
     "subtitle": "找到同行的人，出发就不远",

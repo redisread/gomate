@@ -43,10 +43,16 @@ export default defineConfig({
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            // 将大型依赖拆分为独立 chunk
-            'vendor-lucide': ['lucide-react'],
-            'vendor-markdown': ['react-markdown', 'remark-gfm'],
+          manualChunks(id) {
+            if (id.includes("node_modules/lucide-react")) {
+              return "vendor-lucide";
+            }
+            if (
+              id.includes("node_modules/react-markdown") ||
+              id.includes("node_modules/remark-gfm")
+            ) {
+              return "vendor-markdown";
+            }
           },
         },
       },

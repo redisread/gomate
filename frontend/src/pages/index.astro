@@ -10,7 +10,7 @@ import type { HomeInitialData } from "../components/features/home/use-home-data"
 import type { LocationsResponse } from "../hooks/use-locations";
 import type { Team } from "../lib/types";
 
-declareI18nNs(Astro.locals, ["home", "locations", "teams", "content"]);
+declareI18nNs(Astro.locals, ["home", "locations", "teams", "content", "nav", "common"]);
 
 async function fetchJson<T>(path: string): Promise<T | null> {
   try {
@@ -34,5 +34,5 @@ const initialData: HomeInitialData = {
 ---
 
 <Layout title="GoMate - 发现趣处，组队同行">
-  <HomeClient initialData={initialData} client:visible />
+  <HomeClient initialData={initialData} client:only="react" />
 </Layout>

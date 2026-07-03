@@ -10,7 +10,7 @@ import { getDateRangeByQuickType } from "../../lib/date-beijing";
 import type { TeamsInitialData } from "../../components/features/teams/use-teams";
 import type { Team } from "../../lib/types";
 
-declareI18nNs(Astro.locals, ["teams", "filter", "content"]);
+declareI18nNs(Astro.locals, ["teams", "filter", "content", "nav", "common"]);
 
 async function fetchJson<T>(path: string): Promise<T | null> {
   try {
@@ -53,5 +53,5 @@ const initialData = teamsData?.success
 ---
 
 <Layout title="探索队伍 - GoMate" showNavbar={false} showFooter={false}>
-  <TeamsClient initialData={initialData} client:load />
+  <TeamsClient initialData={initialData} client:only="react" />
 </Layout>

@@ -10,5 +10,5 @@ declareI18nNs(Astro.locals, ["content", "common"]);
 ---
 
 <Layout title="发现 - GoMate" showNavbar={true} showFooter={true}>
-  <LazyDiscoverMain client:visible />
+  <LazyDiscoverMain client:only="react" />
 </Layout>

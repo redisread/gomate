@@ -1002,3 +1002,396 @@
     padding-left: 1.2rem;
   }
 }
+
+/* ============================================================
+   Pixel Art Skin v1.1
+   Source design: gomate-pixel-all.html, 21 route mockups.
+   This layer changes presentation only and keeps existing page data flow.
+   ============================================================ */
+:root {
+  --pixel-ink: #1a1612;
+  --pixel-paper: #f3e4bf;
+  --pixel-paper-2: #e8d39d;
+  --pixel-paper-3: #fffaf0;
+  --pixel-amber: #d97706;
+  --pixel-amber-dark: #92400e;
+  --pixel-amber-light: #fbbf24;
+  --pixel-teal: #0d9488;
+  --pixel-red: #dc2626;
+  --pixel-green: #16a34a;
+  --pixel-blue: #2563eb;
+  --pixel-purple: #7c3aed;
+  --pixel-muted: #6b5636;
+  --pixel-step: 4px;
+
+  --background: var(--pixel-paper);
+  --foreground: var(--pixel-ink);
+  --card: var(--pixel-paper-3);
+  --card-foreground: var(--pixel-ink);
+  --popover: var(--pixel-paper-3);
+  --popover-foreground: var(--pixel-ink);
+  --primary: var(--pixel-amber);
+  --primary-foreground: #fffaf0;
+  --secondary: var(--pixel-paper-2);
+  --secondary-foreground: var(--pixel-ink);
+  --muted: var(--pixel-paper-2);
+  --muted-foreground: var(--pixel-muted);
+  --accent: var(--pixel-amber-light);
+  --accent-foreground: var(--pixel-ink);
+  --destructive: var(--pixel-red);
+  --border: var(--pixel-ink);
+  --input: var(--pixel-ink);
+  --ring: var(--pixel-amber);
+  --brand: var(--pixel-amber);
+  --brand-foreground: #fffaf0;
+  --brand-subtle: #fbbf2433;
+  --brand-muted: #fff7d6;
+  --warm: var(--pixel-amber-light);
+  --warm-foreground: var(--pixel-ink);
+  --success: var(--pixel-green);
+  --success-subtle: #dcfce7;
+  --warning: var(--pixel-amber);
+  --warning-subtle: #fff7d6;
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --shadow-card: 6px 6px 0 var(--pixel-ink);
+  --shadow-card-hover: 9px 9px 0 var(--pixel-ink);
+  --shadow-glow: 6px 6px 0 var(--pixel-ink);
+  --shadow-warm-sm: 4px 4px 0 var(--pixel-ink);
+}
+
+.dark {
+  --background: #2d2418;
+  --foreground: var(--pixel-paper);
+  --card: #241d14;
+  --card-foreground: var(--pixel-paper);
+  --popover: #241d14;
+  --popover-foreground: var(--pixel-paper);
+  --primary: var(--pixel-amber-light);
+  --primary-foreground: var(--pixel-ink);
+  --secondary: #3a2a14;
+  --secondary-foreground: var(--pixel-paper);
+  --muted: #3a2a14;
+  --muted-foreground: #c9b891;
+  --accent: #3a2a14;
+  --accent-foreground: var(--pixel-amber-light);
+  --border: var(--pixel-amber-light);
+  --input: var(--pixel-amber-light);
+  --ring: var(--pixel-amber-light);
+}
+
+html {
+  image-rendering: pixelated;
+}
+
+body {
+  min-width: 0;
+  overflow-x: hidden;
+  font-family: "VT323", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  font-size: 20px;
+  background-color: var(--background) !important;
+  background-image:
+    linear-gradient(to right, rgb(26 22 18 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(26 22 18 / 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.dark body {
+  background-color: #2d2418 !important;
+  background-image:
+    linear-gradient(to right, rgb(251 191 36 / 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(251 191 36 / 0.08) 1px, transparent 1px);
+}
+
+h1,
+h2,
+h3,
+.font-bold,
+.font-semibold,
+.text-gradient-brand,
+.text-gradient-hero {
+  font-family: "Press Start 2P", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+h1,
+.text-gradient-hero {
+  text-shadow: 3px 3px 0 var(--pixel-amber-light);
+}
+
+h2,
+h3 {
+  text-shadow: 2px 2px 0 rgb(251 191 36 / 0.35);
+}
+
+main,
+section,
+article,
+aside,
+form {
+  min-width: 0;
+}
+
+.navbar-glass,
+header.fixed,
+header.sticky {
+  background: var(--pixel-ink) !important;
+  border-bottom: var(--pixel-step) solid var(--pixel-amber) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+header.fixed a,
+header.fixed button {
+  font-family: "Press Start 2P", "PingFang SC", system-ui, sans-serif;
+  font-size: 10px;
+}
+
+header.fixed svg {
+  color: var(--pixel-amber-light) !important;
+  stroke-width: 2.5;
+}
+
+.text-gradient-brand,
+.text-gradient-hero {
+  background: none !important;
+  color: var(--pixel-amber-light) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+header.fixed nav a,
+header.fixed button,
+.footer-link,
+a[href],
+button {
+  text-underline-offset: 4px;
+}
+
+header.fixed nav a[aria-current="page"],
+header.fixed nav a:hover,
+header.fixed button:hover {
+  border-color: var(--pixel-amber-light) !important;
+  background: transparent !important;
+  color: var(--pixel-amber-light) !important;
+}
+
+.card-base,
+.card-interactive,
+.bg-card,
+.bg-popover,
+article.bg-card,
+.rounded-lg,
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl,
+.rounded-full {
+  border-radius: 0 !important;
+}
+
+.card-base,
+.card-interactive,
+.rounded-lg.border,
+.rounded-xl.border,
+.rounded-2xl.border,
+.rounded-3xl.border,
+.bg-card.border,
+article.bg-card,
+.shadow-sm,
+.shadow-md,
+.shadow-lg,
+.shadow-xl,
+.shadow-2xl,
+.shadow-warm,
+.shadow-warm-sm,
+.shadow-warm-md,
+.shadow-warm-xl,
+.shadow-card {
+  border: var(--pixel-step) solid var(--pixel-ink) !important;
+  box-shadow: var(--shadow-card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.dark .card-base,
+.dark .card-interactive,
+.dark .rounded-lg.border,
+.dark .rounded-xl.border,
+.dark .rounded-2xl.border,
+.dark .rounded-3xl.border,
+.dark .bg-card.border,
+.dark article.bg-card {
+  border-color: var(--pixel-amber-light) !important;
+  box-shadow: 6px 6px 0 #0b0a08 !important;
+}
+
+.card-interactive:hover,
+article.bg-card:hover,
+a.bg-card:hover {
+  transform: translate(-3px, -3px) !important;
+  box-shadow: var(--shadow-card-hover) !important;
+}
+
+button,
+a[class*="bg-primary"],
+a[class*="bg-amber"],
+button[class*="bg-primary"],
+button[class*="bg-amber"],
+.btn-primary,
+.btn-base,
+.px-btn {
+  border-radius: 0 !important;
+  border: var(--pixel-step) solid var(--pixel-ink) !important;
+  box-shadow: 4px 4px 0 var(--pixel-ink) !important;
+  font-family: "Press Start 2P", "PingFang SC", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+a[class*="bg-primary"],
+a[class*="bg-amber"],
+button[class*="bg-primary"],
+button[class*="bg-amber"],
+.btn-primary {
+  background: var(--pixel-amber) !important;
+  color: #fffaf0 !important;
+}
+
+button:hover,
+a[class*="bg-primary"]:hover,
+a[class*="bg-amber"]:hover,
+button[class*="bg-primary"]:hover,
+button[class*="bg-amber"]:hover,
+.btn-primary:hover {
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 6px 6px 0 var(--pixel-ink) !important;
+}
+
+button:active,
+a[class*="bg-primary"]:active,
+a[class*="bg-amber"]:active,
+button[class*="bg-primary"]:active,
+button[class*="bg-amber"]:active,
+.btn-primary:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 2px 2px 0 var(--pixel-ink) !important;
+}
+
+input,
+textarea,
+select,
+.px-input {
+  border-radius: 0 !important;
+  border: var(--pixel-step) solid var(--pixel-ink) !important;
+  background: #fffaf0 !important;
+  color: var(--pixel-ink) !important;
+  font-family: "VT323", "PingFang SC", system-ui, sans-serif;
+  font-size: 20px;
+  box-shadow: none !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: var(--pixel-step) solid var(--pixel-amber-light) !important;
+  outline-offset: 2px;
+  --tw-ring-shadow: 0 0 #0000 !important;
+}
+
+kbd,
+.badge-base,
+[class*="rounded-full"][class*="text-"],
+[class*="rounded-full"][class*="bg-"],
+.px-tag {
+  border-radius: 0 !important;
+  border: 2px solid var(--pixel-ink) !important;
+  background: var(--pixel-paper-2) !important;
+  color: var(--pixel-ink) !important;
+  font-family: "Press Start 2P", "PingFang SC", system-ui, sans-serif;
+  font-size: 9px;
+}
+
+img,
+video,
+canvas {
+  image-rendering: auto;
+}
+
+.prose-content img,
+.story-prose :where(img),
+[class*="overflow-hidden"] > img {
+  border-radius: 0 !important;
+  border: var(--pixel-step) solid var(--pixel-ink);
+  box-shadow: 6px 6px 0 var(--pixel-ink);
+}
+
+.bg-gradient-hero,
+[class*="bg-gradient-to-"] {
+  background-image:
+    linear-gradient(to right, rgb(26 22 18 / 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(26 22 18 / 0.08) 1px, transparent 1px) !important;
+  background-color: var(--pixel-paper) !important;
+}
+
+.blur-3xl {
+  display: none !important;
+}
+
+footer {
+  background: var(--pixel-ink) !important;
+  color: var(--pixel-paper) !important;
+  border-top: var(--pixel-step) solid var(--pixel-amber) !important;
+}
+
+footer .card-base,
+footer .bg-card,
+footer .bg-popover {
+  background: #241d14 !important;
+  color: var(--pixel-paper) !important;
+  border-color: var(--pixel-amber) !important;
+}
+
+footer a:hover,
+footer button:hover {
+  color: var(--pixel-amber-light) !important;
+}
+
+@media (max-width: 767px) {
+  body {
+    font-size: 18px;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 8vw, 2rem) !important;
+    line-height: 1.45 !important;
+  }
+
+  h2 {
+    font-size: clamp(1rem, 5vw, 1.35rem) !important;
+    line-height: 1.45 !important;
+  }
+
+  header.fixed a,
+  header.fixed button,
+  button,
+  a[class*="bg-primary"],
+  a[class*="bg-amber"],
+  button[class*="bg-primary"],
+  button[class*="bg-amber"] {
+    font-size: 9px;
+  }
+
+  .card-base,
+  .card-interactive,
+  .rounded-lg.border,
+  .rounded-xl.border,
+  .rounded-2xl.border,
+  .rounded-3xl.border,
+  .bg-card.border,
+  article.bg-card {
+    box-shadow: 4px 4px 0 var(--pixel-ink) !important;
+  }
+}
