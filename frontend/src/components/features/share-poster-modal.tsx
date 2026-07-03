@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
+import { openBlankWindow } from "@/lib/window-utils";
 import { useI18n } from "@/hooks/useI18n";
 import { Loader2, ImageIcon, Link2, X, Download, RefreshCw } from "lucide-react";
 
@@ -107,7 +108,7 @@ export function SharePosterModal({
 
       if (isIOS) {
         // Open image in new tab for iOS (user can long press to save)
-        const newWindow = window.open();
+        const newWindow = openBlankWindow();
         if (newWindow) {
           newWindow.document.write(`
             <html>

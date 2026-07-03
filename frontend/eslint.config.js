@@ -43,7 +43,7 @@ export default tseslint.config(
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_',
       }],
-      'no-restricted-properties': ['warn', {
+      'no-restricted-properties': ['error', {
         object: 'window',
         property: 'open',
         message: 'Use window.open sparingly; prefer React Router navigation',

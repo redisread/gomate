@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
+import { openExternalUrl } from "@/lib/window-utils";
 import type { Location, Tag } from "@/lib/types";
 
 interface LocationIntroCardProps {
@@ -62,7 +63,7 @@ export function LocationIntroCard({
     if (!coordinates) return;
     const dest = encodeURIComponent(location.name || address || "");
     const url = `https://uri.amap.com/navigation?to=${coordinates.lng},${coordinates.lat},${dest}&callnative=0`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    openExternalUrl(url);
   };
 
   React.useEffect(() => {

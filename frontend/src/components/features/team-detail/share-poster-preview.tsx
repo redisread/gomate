@@ -5,6 +5,7 @@ import { useState, useRef, useCallback } from "react";
 import { useI18n } from "@/hooks/useI18n";
 import { Link2, X, CheckCircle, Download, Loader2, Share2, RefreshCw } from "lucide-react";
 import { useShareImage } from "@/hooks/use-share-image";
+import { openBlankWindow } from "@/lib/window-utils";
 
 interface SharePosterPreviewProps {
   open: boolean;
@@ -115,7 +116,7 @@ export function SharePosterPreview({
 
       if (isIOS) {
         // Open image in new tab for iOS (user can long press to save)
-        const newWindow = window.open();
+        const newWindow = openBlankWindow();
         if (newWindow) {
           newWindow.document.write(`
             <html>

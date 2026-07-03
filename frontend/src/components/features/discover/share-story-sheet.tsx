@@ -5,6 +5,7 @@ import { ImagePlus, Link2, Mail, MessageCircle, Share2, Twitter, X, Smartphone }
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI } from "@/lib/api";
 import { weiboShareUrl, twitterShareUrl, mailtoUrl } from "@/lib/share-channels";
+import { openExternalUrl } from "@/lib/window-utils";
 import { StoryPosterPreview } from "./story-poster-preview";
 
 
@@ -38,21 +39,21 @@ export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopy
     try { await navigator.share({ title, url }); } catch (err) { if (err instanceof DOMException && err.name === "AbortError") return; }
     trackShare(storyId, "native"); onClose();
   };
-  const handleWeibo = () => { trackShare(storyId, "weibo"); window.open(weiboShareUrl(url, title), "_blank"); onClose(); };
-  const handleTwitter = () => { trackShare(storyId, "twitter"); window.open(twitterShareUrl(url, title), "_blank"); onClose(); };
+  const handleWeibo = () => { trackShare(storyId, "weibo"); openExternalUrl(weiboShareUrl(url, title)); onClose(); };
+  const handleTwitter = () => { trackShare(storyId, "twitter"); openExternalUrl(twitterShareUrl(url, title)); onClose(); };
   const handleEmail = () => { window.location.href = mailtoUrl(title, `${title}\n\n${summary}\n\n${url}`); onClose(); };
   const handleWechat = async () => { trackShare(storyId, "wechat");
     try {
       const res = await fetch(`/share-image/story/${storyId}`);
-      if (!res.ok) { window.open(url, "_blank"); onClose(); return; }
+      if (!res.ok) { openExternalUrl(url); onClose(); return; }
       const blob = await res.blob();
       const file = new File([blob], "story.png", { type: "image/png" });
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title, url });
       } else {
-        window.open(url, "_blank");
+        openExternalUrl(url);
       }
-    } catch { window.open(url, "_blank"); }
+    } catch { openExternalUrl(url); }
     onClose();
   };
   const handlePoster = () => { trackShare(storyId, "poster"); setShowPosterPreview(true); };
