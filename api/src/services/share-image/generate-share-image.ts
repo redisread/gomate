@@ -26,6 +26,20 @@ async function generateMD5(data: string): Promise<string> {
 }
 
 /**
+ * ArrayBuffer 转 base64（分块编码防栈溢出）
+ */
+function bufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunkSize, bytes.length)));
+  }
+  return btoa(binary);
+}
+
+
+/**
  * 初始化 resvg-wasm
  * 直接导入 WASM 模块（ES module worker 方式）
  */
@@ -160,9 +174,11 @@ export async function generateLocationImage(
 
   // 7. 加载封面图并转为 base64
   let coverImageBase64: string | null = null;
+  let coverLoaded = false;
   if (location.coverImage) {
     try {
       coverImageBase64 = await loadImageAsBase64(location.coverImage, env);
+      if (coverImageBase64) coverLoaded = true;
     } catch (e) {
       console.error("[ShareImage] Failed to load cover image:", e);
     }
@@ -175,6 +191,7 @@ export async function generateLocationImage(
       if (Array.isArray(images) && images.length > 0) {
         console.log("[ShareImage] Trying fallback image:", images[0]);
         coverImageBase64 = await loadImageAsBase64(images[0], env);
+        if (coverImageBase64) coverLoaded = true;
       }
     } catch (e) {
       console.error("[ShareImage] Failed to load fallback image:", e);
@@ -214,7 +231,7 @@ export async function generateLocationImage(
     }
   }
 
-  return { png, cacheKey };
+  return { png, cacheKey, coverLoaded };
 }
 
 /**
@@ -252,7 +269,7 @@ async function loadImageAsBase64(
           const buffer = await object.arrayBuffer();
           size = buffer.byteLength;
           contentType = object.httpMetadata?.contentType || "image/jpeg";
-          base64Result = `data:${contentType};base64,${btoa(String.fromCharCode(...new Uint8Array(buffer)))}`;
+          base64Result = `data:${contentType};base64,${bufferToBase64(buffer)}`;
         }
       }
     }
@@ -269,7 +286,7 @@ async function loadImageAsBase64(
           const buffer = await response.arrayBuffer();
           size = buffer.byteLength;
           contentType = response.headers.get("content-type") || "image/jpeg";
-          base64Result = `data:${contentType};base64,${btoa(String.fromCharCode(...new Uint8Array(buffer)))}`;
+          base64Result = `data:${contentType};base64,${bufferToBase64(buffer)}`;
         }
       } catch (e) {
         clearTimeout(timeout);
