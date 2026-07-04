@@ -10,6 +10,8 @@ import { renderStoryPoster } from "../../templates/share-image/story-poster";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import { eq, and, sql } from "drizzle-orm";
+import { lookupPosterStrings, type PosterLocale } from "./poster-i18n";
+import { safeJsonParse } from "../../routes/locations/utils";
 
 // WASM 模块缓存
 let wasmInitialized = false;
@@ -104,21 +106,27 @@ export async function renderSvgToPng(svg: string): Promise<Uint8Array> {
 /**
  * Phase 2: 生成地点分享图片
  * 查询地点数据，生成分享海报
+ *
+ * 查询优化：一次性拉取 routes，避免 N+1
+ * 图片加载：主 cover → images[0] 兜底，预加载使用短超时避免阻塞
  */
 export async function generateLocationImage(
   env: Env,
-  locationId: string
+  locationId: string,
+  locale: PosterLocale = "zh-CN"
 ): Promise<{ png: Uint8Array; cacheKey: string; coverLoaded: boolean }> {
   const db = createDb(env.DB);
 
   // 1. 查询地点数据，兼容 id 和 slug
   let location = await db.query.locations.findFirst({
     where: eq(schema.locations.id, locationId),
+    with: { routes: true },
   });
 
   if (!location) {
     location = await db.query.locations.findFirst({
       where: eq(schema.locations.slug, locationId),
+      with: { routes: true },
     });
   }
 
@@ -140,13 +148,15 @@ export async function generateLocationImage(
 
   const tags = tagRelations.map((r) => r.tagName);
 
-  // 3. 生成内容哈希（用于缓存）
+  // 3. 生成内容哈希（用于缓存）- 加入封面图 URL 作为版本号
   const contentData = {
     title: location.name,
     subtitle: location.subtitle,
     description: location.description,
     address: location.address,
     coverImage: location.coverImage,
+    cityName: location.cityName,
+    bestSeason: location.bestSeason,
     tags,
   };
   const contentHash = (await generateMD5(JSON.stringify(contentData))).slice(0, 12);
@@ -172,13 +182,15 @@ export async function generateLocationImage(
   // 6. 加载字体
   const fonts = await loadFonts(env);
 
-  // 7. 加载封面图并转为 base64
+  // 7. 加载封面图（含 fallback），优先走缓存命中
+  // 超时用 8s，低于 Worker 的 10s CPU 限制
   let coverImageBase64: string | null = null;
   let coverLoaded = false;
   if (location.coverImage) {
     try {
-      coverImageBase64 = await loadImageAsBase64(location.coverImage, env);
+      coverImageBase64 = await loadImageAsBase64(location.coverImage, env, 8000);
       if (coverImageBase64) coverLoaded = true;
+      else console.warn("[ShareImage] Cover image returned null:", location.coverImage);
     } catch (e) {
       console.error("[ShareImage] Failed to load cover image:", e);
     }
@@ -186,23 +198,40 @@ export async function generateLocationImage(
 
   // 兜底：coverImage 失败时尝试 images[0]
   if (!coverImageBase64 && location.images) {
-    try {
-      const images = JSON.parse(location.images) as string[];
-      if (Array.isArray(images) && images.length > 0) {
-        console.log("[ShareImage] Trying fallback image:", images[0]);
-        coverImageBase64 = await loadImageAsBase64(images[0], env);
+    const images = safeJsonParse<string[]>(location.images, []);
+    if (images.length > 0) {
+      console.log("[ShareImage] Trying fallback image:", images[0]);
+      try {
+        coverImageBase64 = await loadImageAsBase64(images[0], env, 8000);
         if (coverImageBase64) coverLoaded = true;
+      } catch (e) {
+        console.error("[ShareImage] Failed to load fallback image:", e);
       }
-    } catch (e) {
-      console.error("[ShareImage] Failed to load fallback image:", e);
     }
   }
 
   // 8. 生成二维码
-  const locationUrl = `https://gomate.live/locations/${location.slug}`;
+  const slugOrId = location.slug || location.id;
+  const locationUrl = `https://gomate.live/locations/${slugOrId}`;
   const qrCodeDataUrl = await generateQRCode(locationUrl);
 
-  // 9. 渲染 SVG
+  // 9. 解析路线数据（取第一条）
+  const primaryRoute = location.routes?.[0] ?? null;
+  const routeMetrics = primaryRoute
+    ? {
+        difficulty: primaryRoute.difficulty,
+        durationMin: primaryRoute.durationMin,
+        durationMax: primaryRoute.durationMax,
+        distance: primaryRoute.distance,
+        elevation: primaryRoute.elevation,
+      }
+    : null;
+
+  // 10. 解析最佳季节（容错：非数组值 → 空数组）
+  const bestSeason = safeJsonParse<string[]>(location.bestSeason, []);
+
+  // 11. 渲染 SVG（注入 i18n 文案，避免模板内做双语分支）
+  const i18n = lookupPosterStrings(locale);
   const svg = await renderLocationPoster({
     title: location.name,
     subtitle: location.subtitle,
@@ -210,14 +239,29 @@ export async function generateLocationImage(
     address: location.address,
     coverImage: coverImageBase64,
     tags,
+    cityName: location.cityName ?? null,
+    bestSeason,
+    type: location.type ?? null,
+    routeMetrics,
     qrCodeDataUrl,
+    locale,
     fonts,
+    i18n: {
+      scanToView: i18n.scanToView,
+      siteSlogan: i18n.siteSlogan,
+      bestSeasonLabel: i18n.bestSeasonLabel,
+      distanceLabel: i18n.distanceLabel,
+      durationLabel: i18n.durationLabel,
+      elevationLabel: i18n.elevationLabel,
+      difficultyLabel: i18n.difficultyLabel,
+      brandName: i18n.brandName,
+    },
   });
 
-  // 10. SVG 转 PNG
+  // 12. SVG 转 PNG
   const png = await renderSvgToPng(svg);
 
-  // 11. 保存到 R2 缓存
+  // 13. 保存到 R2 缓存
   if (env.R2) {
     try {
       await env.R2.put(cacheKey, png, {

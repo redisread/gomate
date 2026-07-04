@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
+import { getLocale } from "@/i18n";
 import { Loader2, ImageIcon, Link2, X, Download, RefreshCw } from "lucide-react";
 
 interface SharePosterModalProps {
@@ -51,10 +52,14 @@ export function SharePosterModal({
       setShowRetry(false);
 
       try {
-        const endpoint =
+        // 把当前语言传给后端，让海报文案跟随用户语言
+      const locale = getLocale();
+      const qs = new URLSearchParams({ locale });
+      if (refresh) qs.set("refresh", "1");
+      const endpoint =
           type === "location"
-            ? `${API_BASE}/share-image/location/${id}${refresh ? "?refresh=1" : ""}`
-            : `${API_BASE}/share-image/team/${id}${refresh ? "?refresh=1" : ""}`;
+            ? `${API_BASE}/share-image/location/${id}?${qs.toString()}`
+            : `${API_BASE}/share-image/team/${id}?${qs.toString()}`;
 
         const response = await fetch(endpoint);
 
@@ -171,10 +176,12 @@ export function SharePosterModal({
         </div>
 
         <div className="relative px-4 pt-2 flex-1 overflow-y-auto">
-          {/* Poster Preview */}
+          {/* Poster Preview - 根据海报类型动态适配长宽比 */}
           <div
             className="overflow-hidden rounded-xl shadow border border-stone-200"
-            style={{ aspectRatio: "375/468", maxHeight: "min(55vh, 468px)" }}
+            style={type === "location"
+              ? { aspectRatio: "375/696", maxHeight: "min(60vh, 698px)" }
+              : { aspectRatio: "375/468", maxHeight: "min(55vh, 468px)" }}
           >
             {isLoading ? (
               <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
