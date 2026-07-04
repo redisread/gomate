@@ -158,6 +158,9 @@ importers:
       tailwindcss:
         specifier: ^4.0.0
         version: 4.3.0
+      vditor:
+        specifier: ^3.11.2
+        version: 3.11.2
       zod:
         specifier: ^3.23.0
         version: 3.25.76
@@ -4041,6 +4044,12 @@ packages:
         integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==,
       }
 
+  diff-match-patch@1.0.5:
+    resolution:
+      {
+        integrity: sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==,
+      }
+
   diff@8.0.4:
     resolution:
       {
@@ -7256,6 +7265,12 @@ packages:
         integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==,
       }
 
+  vditor@3.11.2:
+    resolution:
+      {
+        integrity: sha512-8QguQQUPWbBFocnfQmWjz4jiykQnvsmCuhOomGIVVK7vc+dQq2h8w9qQQuEjUTZpnZT5fEdYbj4aLr1NGdAZaA==,
+      }
+
   vfile-location@5.0.3:
     resolution:
       {
@@ -9908,6 +9923,8 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
+  diff-match-patch@1.0.5: {}
+
   diff@8.0.4: {}
 
   dijkstrajs@1.0.3: {}
@@ -12066,6 +12083,10 @@ snapshots:
       punycode: 2.3.1
 
   util-deprecate@1.0.2: {}
+
+  vditor@3.11.2:
+    dependencies:
+      diff-match-patch: 1.0.5
 
   vfile-location@5.0.3:
     dependencies:
