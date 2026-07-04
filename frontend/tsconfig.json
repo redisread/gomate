@@ -9,5 +9,5 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react"
   },
-  "exclude": ["public/vditor"]
+  "exclude": ["public/vditor", "dist"]
 }
