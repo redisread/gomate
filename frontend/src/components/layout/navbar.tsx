@@ -7,7 +7,6 @@ import { fetchCurrentUser, API_BASE } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleToggle } from "@/components/layout/locale-toggle";
-import { type Locale, SUPPORTED_LOCALES, getLocale, setLocale, getLocaleName } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
 import { useUnreadCount } from "@/hooks/useMessages";
 
@@ -379,10 +378,8 @@ export function Navbar({ className }: NavbarProps) {
             {/* 底部操作按钮 */}
             <div className="mt-auto flex flex-col gap-3 px-4 pb-8 pt-4 border-t border-border">
               {/* 语言切换（移动端） */}
-              <div className="flex items-center justify-center gap-3 py-2">
-                {SUPPORTED_LOCALES.map((locale) => (
-                  <MobileLangButton key={locale} locale={locale} />
-                ))}
+              <div className="flex items-center justify-center py-2">
+                <LocaleToggle />
               </div>
               {session?.user ? (
                 <>
@@ -531,43 +528,3 @@ function _NavbarSkeleton({ className }: { className?: string }) {
   );
 }
 
-/** 移动端语言切换按钮 */
-function MobileLangButton({ locale }: { locale: Locale }) {
-  const isActive = locale === getLocale();
-  const handleClick = () => {
-    setLocale(locale);
-    const path = window.location.pathname;
-    const segments = path.split("/").filter(Boolean);
-    const firstSegment = segments[0] as Locale | undefined;
-    const hasPrefix = SUPPORTED_LOCALES.includes(firstSegment as Locale);
-
-    let newPath: string;
-    if (locale === "zh-CN") {
-      newPath = hasPrefix ? "/" + segments.slice(1).join("/") : path;
-      if (!newPath.startsWith("/")) newPath = "/" + newPath;
-    } else {
-      if (hasPrefix) {
-        segments[0] = locale;
-        newPath = "/" + segments.join("/");
-      } else {
-        newPath = "/" + locale + path;
-      }
-    }
-    if (!newPath || newPath === "/") newPath = locale === "zh-CN" ? "/" : "/" + locale;
-    window.location.href = newPath;
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${
-        isActive
-          ? "bg-primary text-primary-foreground"
-          : "bg-accent text-muted-foreground hover:text-foreground"
-      }`}
-    >
-      {getLocaleName(locale)}
-    </button>
-  );
-}
