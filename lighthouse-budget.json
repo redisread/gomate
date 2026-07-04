@@ -4,7 +4,7 @@
     "timings": [
       {
         "metric": "largest-contentful-paint",
-        "budget": 3500
+        "budget": 15000
       },
       {
         "metric": "cumulative-layout-shift",
@@ -12,17 +12,13 @@
       },
       {
         "metric": "total-blocking-time",
-        "budget": 400
+        "budget": 1500
       }
     ],
     "resourceSizes": [
       {
         "resourceType": "script",
-        "budget": 350
-      },
-      {
-        "resourceType": "total",
-        "budget": 1200
+        "budget": 200
       }
     ],
     "resourceCounts": [

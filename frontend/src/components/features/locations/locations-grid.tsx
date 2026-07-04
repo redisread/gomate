@@ -42,7 +42,7 @@ function LocationCard({ location, index }: { location: Location; index: number }
             <LocationCoverImage
               src={location.coverImage}
               alt={location.name}
-              priority={index < 6}
+              priority={index < 2}
               className="group-hover:scale-[1.06] transition-transform duration-500 ease-out"
             />
           ) : (

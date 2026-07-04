@@ -219,12 +219,7 @@ function getHreflangUrl(loc: Locale) {
       <style set:html={criticalCSS}></style>
     )}
 
-    {/* 字体加载优化：预连接和 DNS 预解析 */}
-    {/* 注：当前使用系统字体栈（PingFang SC 等），无需下载外部字体 */}
-    {/* 以下为未来引入外部字体预留优化配置 */}
-    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <meta name="font-loading" content="swap" />
+    {/* 字体：当前使用系统字体栈（PingFang SC 等），无需预连接外部字体 */}
 
     {/* API 域名预连接（减少 TTFB） */}
     <link rel="dns-prefetch" href="https://api.gomate.live" />
