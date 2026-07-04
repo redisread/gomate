@@ -2,6 +2,7 @@ import { APIErrors } from "../lib/api-errors";
 import { Hono } from "hono";
 import type { Env } from "../lib/auth";
 import { generatePreviewImage, generateLocationImage, generateTeamImage, generateStoryImage } from "../services/share-image/generate-share-image";
+import { resolvePosterLocale } from "../services/share-image/poster-i18n";
 
 const shareImageRoute = new Hono<{ Bindings: Env }>();
 
@@ -56,7 +57,8 @@ shareImageRoute.get("/location/:locationId", async (c) => {
       }
     }
 
-    const { png, cacheKey, coverLoaded } = await generateLocationImage(c.env, locationId);
+    const locale = resolvePosterLocale(c.req.header("accept-language"), c.req.query("locale"));
+    const { png, cacheKey, coverLoaded } = await generateLocationImage(c.env, locationId, locale);
 
     const headers: Record<string, string> = {
       "Content-Type": "image/png",
