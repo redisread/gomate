@@ -13,23 +13,32 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * LocaleToggle — dropdown language selector
+ * LocaleToggle — responsive language selector
  *
- * - 触发按钮：Globe 图标 + 当前语言名
- * - 下拉菜单：所有支持语言，当前项带 ✓
- * - 选择后跳转对应 locale 前缀路径
+ * - Desktop (>md): dropdown (Globe icon + current name)
+ * - Mobile (<=md): horizontal button group (all options visible)
+ *
+ * 选择后跳转对应 locale 前缀路径并刷新页面。
  */
 export function LocaleToggle() {
   const [current, setCurrent] = React.useState<Locale>(DEFAULT_LOCALE);
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
     setCurrent(getLocale());
+
+    // 检测移动端（与 Tailwind `md` 断点一致）
+    const mq = window.matchMedia("(max-width: 768px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    handler(mq);
+    mq.addEventListener("change", handler as (e: MediaQueryListEvent) => void);
+    return () => mq.removeEventListener("change", handler as (e: MediaQueryListEvent) => void);
   }, []);
 
-  // 点击外部关闭菜单
+  // 点击外部关闭下拉菜单（仅桌面端需要）
   React.useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || isMobile) return;
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.closest("[data-locale-toggle]")) {
@@ -38,7 +47,7 @@ export function LocaleToggle() {
     };
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
-  }, [isOpen]);
+  }, [isOpen, isMobile]);
 
   const handleSelect = (locale: Locale) => {
     if (locale === current) {
@@ -68,6 +77,33 @@ export function LocaleToggle() {
     window.location.href = newPath;
   };
 
+  // 移动端：横向按钮组
+  if (isMobile) {
+    return (
+      <div className="flex items-center gap-2" data-locale-toggle>
+        {SUPPORTED_LOCALES.map((locale) => {
+          const isActive = locale === current;
+          return (
+            <button
+              key={locale}
+              type="button"
+              onClick={() => handleSelect(locale)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-accent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {getLocaleName(locale)}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // 桌面端：下拉菜单
   return (
     <div className="relative" data-locale-toggle>
       <button
