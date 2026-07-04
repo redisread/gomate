@@ -76,8 +76,6 @@ vi.mock("vditor", () => ({
   default: MockVditor,
 }));
 
-vi.mock("vditor/dist/css/content-theme/dark.css", () => ({}));
-vi.mock("vditor/dist/css/content-theme/light.css", () => ({}));
 
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
