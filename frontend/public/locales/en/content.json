@@ -333,6 +333,7 @@
       "tagsLabel": "Tags",
       "tagsHint": "Press Enter to add, up to 10 tags",
       "tagsPlaceholder": "Example: hiking, camping, family",
+      "tagsRequired": "Add at least one tag",
       "tagsMax": "Add up to 10 tags",
       "addTag": "Add tag",
       "removeTag": "Remove {tag} tag",

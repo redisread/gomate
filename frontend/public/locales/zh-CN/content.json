@@ -333,6 +333,7 @@
       "tagsLabel": "标签",
       "tagsHint": "按 Enter 添加，最多 10 个",
       "tagsPlaceholder": "例如：徒步、露营、亲子",
+      "tagsRequired": "请至少添加一个标签",
       "tagsMax": "最多添加 10 个标签",
       "addTag": "添加标签",
       "removeTag": "移除 {tag} 标签",
