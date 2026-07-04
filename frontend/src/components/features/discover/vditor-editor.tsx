@@ -12,6 +12,14 @@ interface VditorEditorProps {
 }
 
 /**
+ * 检测当前是否为暗色主题
+ */
+function detectDark(): boolean {
+  return document.documentElement.classList.contains("dark") ||
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+/**
  * Vditor 即时渲染（IR）编辑器组件
  * 封装 Vditor 3.11+，支持暗色主题
  */
@@ -20,14 +28,19 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
   const instanceRef = React.useRef<Vditor | null>(null);
   const { t } = useI18n(["content"]);
 
+  // 用 ref 持有最新值，避免 Vditor 回调中的 stale closure
+  const valueRef = React.useRef(value);
+  const onChangeRef = React.useRef(onChange);
+  const placeholderRef = React.useRef(placeholder);
+
+  React.useEffect(() => { valueRef.current = value; }, [value]);
+  React.useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  React.useEffect(() => { placeholderRef.current = placeholder; }, [placeholder]);
+
   // 监听暗色主题
   const [isDark, setIsDark] = React.useState(false);
   React.useEffect(() => {
-    const checkDark = () => {
-      const dark = document.documentElement.classList.contains("dark") ||
-        window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setIsDark(dark);
-    };
+    const checkDark = () => setIsDark(detectDark());
     checkDark();
     const observer = new MutationObserver(checkDark);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
@@ -46,8 +59,11 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
 
       if (cancelled || !vditorRef.current) return;
 
+      // 在初始化时重新读取主题，避免闭包捕获到旧值
+      const dark = detectDark();
+
       // 导入对应主题 CSS
-      if (isDark) {
+      if (dark) {
         await import("vditor/dist/css/content-theme/dark.css");
       } else {
         await import("vditor/dist/css/content-theme/light.css");
@@ -57,8 +73,8 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
         mode: "ir",
         height: 400,
         minHeight: 200,
-        placeholder: placeholder ?? t("content.writeStories"),
-        theme: isDark ? "dark" : "classic",
+        placeholder: placeholderRef.current ?? t("content.writeStories"),
+        theme: dark ? "dark" : "classic",
         toolbar: readOnly
           ? []
           : [
@@ -85,13 +101,17 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
               "fullscreen",
             ],
         input: (md: string) => {
-          if (md !== value) {
-            onChange(md);
+          if (md !== valueRef.current) {
+            onChangeRef.current(md);
           }
         },
         after: () => {
           if (vditorInstance) {
-            vditorInstance.setValue(value);
+            vditorInstance.setValue(valueRef.current);
+            // 初始化时应用 readOnly 状态（readOnly effect 可能在实例创建前运行）
+            if (readOnly) {
+              try { vditorInstance.disabled(); } catch { /* ignore */ }
+            }
           }
         },
       });
