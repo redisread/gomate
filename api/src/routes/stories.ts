@@ -663,7 +663,7 @@ stories.post("/:id/like", async (c) => {
           eq(schema.userStoryLikes.storyId, id)
         )
       );
-      // 条件递减：仅当 likeCount > 0 时才减，避免并发下穿零
+      // 原子递减：SQL 层面条件判断，避免负数
       await db.update(schema.stories)
         .set({
           likeCount: sql`MAX(0, ${schema.stories.likeCount} - 1)`,
@@ -675,26 +675,19 @@ stories.post("/:id/like", async (c) => {
         ));
       liked = false;
     } else {
-      // 未点赞 → 点赞：用 insert 返回值判断是否实际插入成功，
-      // 只有真正插入新行时才递增 likeCount，避免并发重复插入导致计数膨胀
-      const insertResult = await db.insert(schema.userStoryLikes).values({
+      // 未点赞 → 点赞：先插入（PRIMARY KEY 约束 + onConflictDoNothing 防重复）
+      await db.insert(schema.userStoryLikes).values({
         userId,
         storyId: id,
-      }).onConflictDoNothing().returning({ userId: schema.userStoryLikes.userId });
-
-      if (insertResult.length > 0) {
-        // 实际插入了新行 → 递增
-        await db.update(schema.stories)
-          .set({
-            likeCount: sql`${schema.stories.likeCount} + 1`,
-            updatedAt: new Date(),
-          })
-          .where(eq(schema.stories.id, id));
-        liked = true;
-      } else {
-        // 并发插入冲突（另一请求已插入）→ 不递增，但视为已点赞
-        liked = true;
-      }
+      }).onConflictDoNothing();
+      // 原子递增
+      await db.update(schema.stories)
+        .set({
+          likeCount: sql`${schema.stories.likeCount} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.stories.id, id));
+      liked = true;
     }
 
     // 返回最新 likeCount，以便前端修正乐观计算的偏差
