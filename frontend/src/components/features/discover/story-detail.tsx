@@ -35,9 +35,11 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
   const [isLiking, setIsLiking] = React.useState(false);
   const [liked, setLiked] = React.useState(false);
 
-  // 从 API 响应初始化点赞状态
+  // 从 API 响应初始化点赞状态（仅在故事数据首次加载时同步）
+  const storyIdRef = React.useRef<string | null>(null);
   React.useEffect(() => {
-    if (story) {
+    if (story && story.id !== storyIdRef.current) {
+      storyIdRef.current = story.id;
       setLiked(story.isLiked ?? false);
     }
   }, [story?.id, story?.isLiked]);
@@ -122,22 +124,38 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
   const handleLike = React.useCallback(async () => {
     if (isLiking) return;
 
+    // 未登录用户引导登录，避免无意义的 API 请求
+    if (!currentUser) {
+      window.location.href = "/login";
+      return;
+    }
+
     // 乐观更新：先翻转本地状态
     const prevLiked = liked;
     const prevLikeCount = story?.likeCount ?? 0;
-    setLiked(!liked);
+    const nextLiked = !liked;
+    setLiked(nextLiked);
     setStory((prev) =>
-      prev ? { ...prev, likeCount: prev.likeCount + (liked ? -1 : 1) } : prev,
+      prev
+        ? { ...prev, isLiked: nextLiked, likeCount: prev.likeCount + (liked ? -1 : 1) }
+        : prev,
     );
 
     try {
       setIsLiking(true);
-      const response = await apiPost<{ success: boolean; liked: boolean; message: string }>(
-        `/stories/${storyId}/like`,
-      );
+      const response = await apiPost<{
+        success: boolean;
+        liked: boolean;
+        likeCount: number;
+        message: string;
+      }>(`/stories/${storyId}/like`);
 
       if (response.success) {
+        // 以服务器返回值为准，修正乐观计算的偏差
         setLiked(response.liked);
+        setStory((prev) =>
+          prev ? { ...prev, isLiked: response.liked, likeCount: response.likeCount } : prev,
+        );
         showToast({
           type: "success",
           message: response.liked ? t("content.discover.liked") : t("content.discover.unliked"),
@@ -146,7 +164,7 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
         // API 返回失败 → 回滚本地状态
         setLiked(prevLiked);
         setStory((prev) =>
-          prev ? { ...prev, likeCount: prevLikeCount } : prev,
+          prev ? { ...prev, isLiked: prevLiked, likeCount: prevLikeCount } : prev,
         );
         showToast({ type: "error", message: t("content.discover.likeFailed") });
       }
@@ -154,14 +172,14 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
       // 网络异常 → 回滚本地状态
       setLiked(prevLiked);
       setStory((prev) =>
-        prev ? { ...prev, likeCount: prevLikeCount } : prev,
+        prev ? { ...prev, isLiked: prevLiked, likeCount: prevLikeCount } : prev,
       );
       showToast({ type: "error", message: t("content.discover.likeFailed") });
       console.error("Like story error:", err);
     } finally {
       setIsLiking(false);
     }
-  }, [isLiking, liked, story, showToast, storyId, t]);
+  }, [isLiking, liked, story, currentUser, showToast, storyId, t]);
 
   const handleDelete = React.useCallback(async () => {
     if (!canDelete || isDeleting) return;

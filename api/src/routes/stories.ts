@@ -638,7 +638,7 @@ stories.post("/:id/like", async (c) => {
 
     const story = await db.query.stories.findFirst({
       where: eq(schema.stories.id, id),
-      columns: { id: true, likeCount: true },
+      columns: { id: true },
     });
 
     if (!story) {
@@ -654,49 +654,61 @@ stories.post("/:id/like", async (c) => {
       columns: { userId: true },
     });
 
+    let liked: boolean;
     if (existingLike) {
       // 已点赞 → 取消点赞
-      await db.batch([
-        db.delete(schema.userStoryLikes).where(
-          and(
-            eq(schema.userStoryLikes.userId, userId),
-            eq(schema.userStoryLikes.storyId, id)
-          )
-        ),
-        db.update(schema.stories)
-          .set({
-            likeCount: Math.max(0, (story.likeCount ?? 0) - 1),
-            updatedAt: new Date(),
-          })
-          .where(eq(schema.stories.id, id)),
-      ]);
-
-      return c.json({
-        success: true,
-        liked: false,
-        message: "取消点赞成功",
-      });
+      await db.delete(schema.userStoryLikes).where(
+        and(
+          eq(schema.userStoryLikes.userId, userId),
+          eq(schema.userStoryLikes.storyId, id)
+        )
+      );
+      // 条件递减：仅当 likeCount > 0 时才减，避免并发下穿零
+      await db.update(schema.stories)
+        .set({
+          likeCount: sql`MAX(0, ${schema.stories.likeCount} - 1)`,
+          updatedAt: new Date(),
+        })
+        .where(and(
+          eq(schema.stories.id, id),
+          sql`${schema.stories.likeCount} > 0`
+        ));
+      liked = false;
     } else {
-      // 未点赞 → 点赞
-      await db.batch([
-        db.insert(schema.userStoryLikes).values({
-          userId,
-          storyId: id,
-        }),
-        db.update(schema.stories)
+      // 未点赞 → 点赞：用 insert 返回值判断是否实际插入成功，
+      // 只有真正插入新行时才递增 likeCount，避免并发重复插入导致计数膨胀
+      const insertResult = await db.insert(schema.userStoryLikes).values({
+        userId,
+        storyId: id,
+      }).onConflictDoNothing().returning({ userId: schema.userStoryLikes.userId });
+
+      if (insertResult.length > 0) {
+        // 实际插入了新行 → 递增
+        await db.update(schema.stories)
           .set({
-            likeCount: (story.likeCount ?? 0) + 1,
+            likeCount: sql`${schema.stories.likeCount} + 1`,
             updatedAt: new Date(),
           })
-          .where(eq(schema.stories.id, id)),
-      ]);
-
-      return c.json({
-        success: true,
-        liked: true,
-        message: "点赞成功",
-      });
+          .where(eq(schema.stories.id, id));
+        liked = true;
+      } else {
+        // 并发插入冲突（另一请求已插入）→ 不递增，但视为已点赞
+        liked = true;
+      }
     }
+
+    // 返回最新 likeCount，以便前端修正乐观计算的偏差
+    const updated = await db.query.stories.findFirst({
+      where: eq(schema.stories.id, id),
+      columns: { likeCount: true },
+    });
+
+    return c.json({
+      success: true,
+      liked,
+      likeCount: updated?.likeCount ?? 0,
+      message: liked ? "点赞成功" : "取消点赞成功",
+    });
   } catch (error) {
     console.error("Like story error:", error);
     return c.json(APIErrors.internalError("点赞失败"), 500);
