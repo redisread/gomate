@@ -5,6 +5,7 @@ import { AlertCircle, ArrowLeft, ImagePlus, Loader2, Plus, Send, X } from "lucid
 import { API_BASE, fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-input";
 import { useI18n } from "@/hooks/useI18n";
+import { VditorEditor } from "./discover/vditor-editor";
 
 interface LocationOption {
   id: string;
@@ -18,17 +19,7 @@ interface LocationsResponse {
   data?: LocationOption[];
 }
 
-interface CreateStoryResponse {
-  success: boolean;
-  data?: { id: string };
-  error?: { message?: string };
-}
 
-interface UploadResponse {
-  success: boolean;
-  url?: string;
-  error?: { message?: string };
-}
 
 interface StoryForm {
   title: string;
@@ -157,268 +148,274 @@ export function CreateStoryClient() {
         body: formData,
         credentials: "include",
       });
-      const data = await res.json().catch(() => null) as UploadResponse | null;
-      if (!res.ok || !data?.success || !data.url) {
-        throw new Error(getApiErrorMessage(data, t("content.discover.create.uploadFailed")));
+      const data = await res.json();
+      if (data.success && data.url) {
+        setForm((prev) => ({ ...prev, coverImage: data.url }));
+      } else {
+        setFormError(getApiErrorMessage(data, t("content.discover.create.uploadFailed")));
+        setErrors((prev) => ({ ...prev, coverImage: t("content.discover.create.uploadFailed") }));
       }
-      updateField("coverImage", data.url);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t("content.discover.create.uploadFailed");
-      setErrors((prev) => ({ ...prev, coverImage: message }));
+    } catch {
+      setFormError(t("content.discover.create.uploadFailed"));
+      setErrors((prev) => ({ ...prev, coverImage: t("content.discover.create.uploadFailed") }));
     } finally {
-      setIsUploading(false);
-      event.target.value = "";
+      if (!cancelledRef.current) {
+        setIsUploading(false);
+      }
     }
   };
+
+  // Use a ref to track cancellation for cleanup
+  const cancelledRef = React.useRef(false);
+  React.useEffect(() => {
+    return () => { cancelledRef.current = true; };
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setFormError("");
+
     if (!validate()) return;
+    if (tags.length === 0) {
+      setErrors((prev) => ({ ...prev, tags: t("content.discover.create.tagsRequired") }));
+      return;
+    }
 
     setIsSubmitting(true);
+
     try {
-      const res = await fetchAPI("/api/stories", {
+      const res = await fetch(`${API_BASE}/stories`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
-          title: form.title,
-          summary: form.summary,
+          title: form.title.trim(),
+          summary: form.summary.trim(),
           content: form.content,
-          coverImage: form.coverImage,
+          coverImage: form.coverImage || undefined,
           locationId: form.locationId,
           tags,
         }),
       });
-      const response = await res.json().catch(() => null) as CreateStoryResponse | null;
 
-      if (res.ok && response?.success && response.data?.id) {
-        window.location.href = `/discover/${response.data.id}`;
-        return;
+      const data = await res.json();
+
+      if (res.ok && data.success && data.data?.id) {
+        window.location.href = `/discover/${data.data.id}`;
+      } else {
+        setFormError(getApiErrorMessage(data, t("content.discover.create.submitFailed")));
       }
-
-      setFormError(getApiErrorMessage(response, t("content.discover.create.submitFailed")));
-      setIsSubmitting(false);
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : t("content.discover.create.submitFailed"));
+    } catch {
+      setFormError(t("content.discover.create.submitFailed"));
+    } finally {
       setIsSubmitting(false);
     }
   };
 
   if (isCheckingAuth) {
     return (
-      <main className="min-h-[60vh] flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">{t("content.discover.create.authChecking")}</p>
-        </div>
-      </main>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-14">
-        <a
-          href="/discover"
-          className="inline-flex items-center gap-1.5 text-sm mb-6 text-muted-foreground hover:text-primary transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t("content.discover.backToDiscover")}
-        </a>
-
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <Send className="h-5 w-5 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">
-              {t("content.discover.create.title")}
-            </h1>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {t("content.discover.create.subtitle")}
-          </p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-40 border-b border-border/60 bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <a href="/discover" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            {t("content.discover.back")}
+          </a>
+          <h1 className="text-base font-semibold text-foreground">{t("content.discover.create.title")}</h1>
+          <div className="w-20" />
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {formError && (
-            <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <p>{formError}</p>
-            </div>
-          )}
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        {formError && (
+          <div className="mb-6 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {formError}
+          </div>
+        )}
 
-          <FormField
-            label={t("content.discover.create.coverLabel")}
-            htmlFor="story-cover"
-            required
-            error={errors.coverImage}
-            hint={t("content.discover.create.coverHint")}
-          >
-            <div className="overflow-hidden rounded-lg border border-border bg-card">
-              {form.coverImage ? (
-                <div className="relative aspect-[16/9] bg-muted">
-                  <img
-                    src={form.coverImage}
-                    alt={t("content.discover.create.coverPreviewAlt")}
-                    className="h-full w-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => updateField("coverImage", "")}
-                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-sm hover:bg-background"
-                    aria-label={t("content.discover.create.removeCover")}
-                    disabled={isSubmitting || isUploading}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <label
-                  htmlFor="story-cover"
-                  className="flex aspect-[16/9] cursor-pointer flex-col items-center justify-center gap-3 bg-muted/30 px-4 text-center hover:bg-muted/50 transition-colors"
-                >
-                  {isUploading ? (
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  ) : (
-                    <ImagePlus className="h-8 w-8 text-muted-foreground" />
-                  )}
-                  <span className="text-sm font-medium text-foreground">
-                    {isUploading ? t("content.discover.create.uploading") : t("content.discover.create.uploadCover")}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {t("content.discover.create.uploadFormat")}
-                  </span>
-                </label>
-              )}
-            </div>
-            <input
-              id="story-cover"
-              type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp"
-              className="sr-only"
-              onChange={handleCoverUpload}
-              disabled={isSubmitting || isUploading}
-            />
-          </FormField>
-
-          <FormField label={t("content.discover.create.titleLabel")} htmlFor="story-title" required error={errors.title}>
-            <Input
-              id="story-title"
-              value={form.title}
-              onChange={(event) => updateField("title", event.target.value)}
-              maxLength={100}
-              placeholder={t("content.discover.create.titlePlaceholder")}
-              disabled={isSubmitting}
-            />
-          </FormField>
-
-          <FormField
-            label={t("content.discover.create.summaryLabel")}
-            htmlFor="story-summary"
-            required
-            error={errors.summary}
-            hint={t("content.discover.create.summaryHint")}
-          >
-            <Textarea
-              id="story-summary"
-              value={form.summary}
-              onChange={(event) => updateField("summary", event.target.value)}
-              maxLength={150}
-              className="min-h-[84px]"
-              placeholder={t("content.discover.create.summaryPlaceholder")}
-              disabled={isSubmitting}
-            />
-          </FormField>
-
-          <FormField label={t("content.discover.create.locationLabel")} htmlFor="story-location" required error={errors.locationId}>
-            <Select
-              id="story-location"
-              value={form.locationId}
-              onChange={(event) => updateField("locationId", event.target.value)}
-              options={locations.map((location) => ({ value: location.id, label: location.name }))}
-              placeholder={locationsLoading ? t("content.discover.create.locationsLoading") : t("content.discover.create.locationPlaceholder")}
-              disabled={isSubmitting || locationsLoading}
-            />
-          </FormField>
-
-          <FormField
-            label={t("content.discover.create.contentLabel")}
-            htmlFor="story-content"
-            required
-            error={errors.content}
-            hint={t("content.discover.create.contentHint")}
-          >
-            <Textarea
-              id="story-content"
-              value={form.content}
-              onChange={(event) => updateField("content", event.target.value)}
-              maxLength={10000}
-              className="min-h-[260px] font-mono text-[13px]"
-              placeholder={t("content.discover.create.contentPlaceholder")}
-              disabled={isSubmitting}
-            />
-          </FormField>
-
-          <FormField label={t("content.discover.create.tagsLabel")} htmlFor="story-tags" error={errors.tags} hint={t("content.discover.create.tagsHint")}>
-            <div className="flex gap-2">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left: Form fields */}
+          <div className="lg:col-span-4 space-y-6">
+            <FormField
+              label={t("content.discover.create.titleLabel")}
+              htmlFor="story-title"
+              required
+              error={errors.title}
+            >
               <Input
-                id="story-tags"
-                value={tagInput}
-                onChange={(event) => setTagInput(event.target.value)}
-                onKeyDown={handleTagKeyDown}
-                placeholder={t("content.discover.create.tagsPlaceholder")}
-                disabled={isSubmitting || tags.length >= 10}
+                id="story-title"
+                value={form.title}
+                onChange={(event) => updateField("title", event.target.value)}
+                placeholder={t("content.discover.create.titlePlaceholder")}
+                disabled={isSubmitting}
               />
-              <button
-                type="button"
-                onClick={addTag}
-                disabled={isSubmitting || tags.length >= 10 || !tagInput.trim()}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label={t("content.discover.create.addTag")}
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary"
-                  >
-                    #{tag}
+            </FormField>
+
+            <FormField
+              label={t("content.discover.create.coverLabel")}
+              htmlFor="story-cover"
+              required
+              error={errors.coverImage}
+              hint={t("content.discover.create.coverHint")}
+            >
+              <div className="space-y-2">
+                {form.coverImage && (
+                  <div className="relative rounded-lg overflow-hidden border border-border">
+                    <img src={form.coverImage} alt="Cover" className="w-full aspect-video object-cover" />
                     <button
                       type="button"
-                      onClick={() => removeTag(tag)}
-                      className="rounded-full p-0.5 hover:bg-primary/15"
-                      aria-label={t("content.discover.create.removeTag", { tag })}
-                      disabled={isSubmitting}
+                      onClick={() => updateField("coverImage", "")}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="h-3 w-3" />
                     </button>
-                  </span>
-                ))}
+                  </div>
+                )}
+                <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-background text-sm text-muted-foreground cursor-pointer hover:bg-accent hover:text-foreground transition-colors">
+                  <ImagePlus className="h-4 w-4" />
+                  {isUploading ? t("content.discover.create.uploading") : t("content.discover.create.coverPlaceholder")}
+                  <input
+                    id="story-cover"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleCoverUpload}
+                    disabled={isUploading || isSubmitting}
+                  />
+                </label>
               </div>
-            )}
-          </FormField>
+            </FormField>
 
-          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-end">
-            <a
-              href="/discover"
-              className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+            <FormField
+              label={t("content.discover.create.summaryLabel")}
+              htmlFor="story-summary"
+              required
+              error={errors.summary}
+              hint={t("content.discover.create.summaryHint")}
             >
-              {t("common.cancel")}
-            </a>
-            <button
-              type="submit"
-              disabled={isSubmitting || isUploading}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              <Textarea
+                id="story-summary"
+                value={form.summary}
+                onChange={(event) => updateField("summary", event.target.value)}
+                maxLength={150}
+                className="min-h-[84px]"
+                placeholder={t("content.discover.create.summaryPlaceholder")}
+                disabled={isSubmitting}
+              />
+            </FormField>
+
+            <FormField
+              label={t("content.discover.create.locationLabel")}
+              htmlFor="story-location"
+              required
+              error={errors.locationId}
             >
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {isSubmitting ? t("content.discover.create.submitting") : t("content.discover.create.submit")}
-            </button>
+              <Select
+                id="story-location"
+                value={form.locationId}
+                onChange={(event) => updateField("locationId", event.target.value)}
+                options={locations.map((location) => ({ value: location.id, label: location.name }))}
+                placeholder={locationsLoading ? t("content.discover.create.locationsLoading") : t("content.discover.create.locationPlaceholder")}
+                disabled={isSubmitting || locationsLoading}
+              />
+            </FormField>
+
+            <FormField
+              label={t("content.discover.create.tagsLabel")}
+              htmlFor="story-tags"
+              required
+              error={errors.tags}
+              hint={t("content.discover.create.tagsHint")}
+            >
+              <div className="flex gap-2">
+                <Input
+                  id="story-tags"
+                  value={tagInput}
+                  onChange={(event) => setTagInput(event.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  placeholder={t("content.discover.create.tagsPlaceholder")}
+                  disabled={isSubmitting || tags.length >= 10}
+                />
+                <button
+                  type="button"
+                  onClick={addTag}
+                  disabled={isSubmitting || tags.length >= 10 || !tagInput.trim()}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label={t("content.discover.create.addTag")}
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary"
+                    >
+                      #{tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="rounded-full p-0.5 hover:bg-primary/15"
+                        aria-label={t("content.discover.create.removeTag", { tag })}
+                        disabled={isSubmitting}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </FormField>
+
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-end">
+              <a
+                href="/discover"
+                className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+              >
+                {t("common.cancel")}
+              </a>
+              <button
+                type="submit"
+                disabled={isSubmitting || isUploading}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {isSubmitting ? t("content.discover.create.submitting") : t("content.discover.create.submit")}
+              </button>
+            </div>
+          </div>
+
+          {/* Right: VditorEditor (SV 分屏自带预览) */}
+          <div className="lg:col-span-8">
+            <FormField
+              label={t("content.discover.create.contentLabel")}
+              htmlFor="story-content"
+              required
+              error={errors.content}
+              hint={t("content.discover.create.contentHint")}
+            >
+              <div className="rounded-lg border border-border overflow-hidden" style={{ height: "calc(100vh - 10rem)", minHeight: "500px" }}>
+                <VditorEditor
+                  value={form.content}
+                  onChange={(v) => updateField("content", v)}
+                  placeholder={t("content.discover.create.contentPlaceholder")}
+                />
+              </div>
+            </FormField>
           </div>
         </form>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

@@ -7,7 +7,7 @@ import { VditorEditor } from "../components/features/discover/vditor-editor";
  * VditorEditor 组件测试
  *
  * 通过 mock vditor 模块模拟编辑器行为，验证：
- * - 初始化参数正确
+ * - 初始化参数正确（sv 分屏模式）
  * - input 回调正确触发 onChange
  * - 外部 value 同步到编辑器
  * - 主题切换
@@ -128,7 +128,7 @@ describe("VditorEditor", () => {
     resetMockState();
   });
 
-  it("用正确的配置初始化 Vditor", async () => {
+  it("用正确的配置初始化 Vditor（sv 分屏模式）", async () => {
     const onChange = vi.fn();
     render(
       <VditorEditor
@@ -144,13 +144,16 @@ describe("VditorEditor", () => {
 
     const inst = mockState.instance;
     expect(inst).not.toBeNull();
-    expect(inst?.vditor.options.mode).toBe("ir");
-    expect(inst?.vditor.options.height).toBe(400);
-    expect(inst?.vditor.options.minHeight).toBe(200);
+    expect(inst?.vditor.options.mode).toBe("sv");
+    expect(inst?.vditor.options.height).toBe("100%");
+    expect(inst?.vditor.options.minHeight).toBe(400);
     expect(inst?.vditor.options.placeholder).toBe("输入内容...");
     expect(inst?.vditor.options.theme).toBe("classic");
     expect(Array.isArray(inst?.vditor.options.toolbar)).toBe(true);
     expect((inst?.vditor.options.toolbar as unknown[]).length).toBeGreaterThan(0);
+    // preview 配置
+    const preview = inst?.vditor.options.preview as { mode?: string } | undefined;
+    expect(preview?.mode).toBe("both");
   });
 
   it("未传 placeholder 时使用 i18n 默认文案", async () => {
@@ -173,6 +176,18 @@ describe("VditorEditor", () => {
     });
 
     expect(mockState.instance?.vditor.options.toolbar).toEqual([]);
+  });
+
+  it("readOnly 为 true 时 resize 禁用", async () => {
+    const onChange = vi.fn();
+    render(<VditorEditor value="" onChange={onChange} readOnly />);
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
+    const resize = mockState.instance?.vditor.options.resize as { enable?: boolean } | undefined;
+    expect(resize?.enable).toBe(false);
   });
 
   it("input 回调触发 onChange", async () => {
