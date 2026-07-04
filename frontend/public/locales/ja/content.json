@@ -333,6 +333,7 @@
       "tagsLabel": "タグ",
       "tagsHint": "Enter で追加、最大 10 個",
       "tagsPlaceholder": "例：ハイキング、キャンプ、親子",
+      "tagsRequired": "タグを少なくとも1つ追加してください",
       "tagsMax": "タグは最大 10 個まで追加できます",
       "addTag": "タグを追加",
       "removeTag": "{tag} タグを削除",

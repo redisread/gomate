@@ -20,9 +20,14 @@ function detectDark(): boolean {
 }
 
 /**
- * Vditor 即时渲染（IR）编辑器组件
- * 封装 Vditor 3.11+，支持暗色主题
+ * Vditor SV（分屏）编辑器组件
+ * 左侧编辑 Markdown 源码，右侧实时预览渲染结果
+ * 支持暗色主题
+ *
+ * CDN 指向本地 /vditor/dist 静态资源，避免 unpkg.com 在国内不可访问的问题
  */
+const VDITOR_CDN = "/vditor";
+
 export function VditorEditor({ value, onChange, placeholder, readOnly = false }: VditorEditorProps) {
   const vditorRef = React.useRef<HTMLDivElement>(null);
   const instanceRef = React.useRef<Vditor | null>(null);
@@ -62,19 +67,13 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
       // 在初始化时重新读取主题，避免闭包捕获到旧值
       const dark = detectDark();
 
-      // 导入对应主题 CSS
-      if (dark) {
-        await import("vditor/dist/css/content-theme/dark.css");
-      } else {
-        await import("vditor/dist/css/content-theme/light.css");
-      }
-
       vditorInstance = new Vditor(vditorRef.current, {
-        mode: "ir",
-        height: 400,
-        minHeight: 200,
+        mode: "sv",
+        height: "100%",
+        minHeight: 400,
         placeholder: placeholderRef.current ?? t("content.writeStories"),
         theme: dark ? "dark" : "classic",
+        cdn: VDITOR_CDN,
         toolbar: readOnly
           ? []
           : [
@@ -99,7 +98,24 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
               "|",
               "preview",
               "fullscreen",
+              "|",
+              "outline",
             ],
+        preview: {
+          mode: "both",
+          delay: 300,
+          // @ts-expect-error IPreview 类型不含 theme，但运行时支持
+          theme: {
+            current: dark ? "dark" : "light",
+          },
+          hljs: {
+            style: dark ? "atom-one-dark" : "github",
+          },
+        },
+        resize: {
+          enable: !readOnly,
+          position: "bottom",
+        },
         input: (md: string) => {
           if (md !== valueRef.current) {
             onChangeRef.current(md);
@@ -108,7 +124,7 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
         after: () => {
           if (vditorInstance) {
             vditorInstance.setValue(valueRef.current);
-            // 初始化时应用 readOnly 状态（readOnly effect 可能在实例创建前运行）
+            // 初始化时应用 readOnly 状态
             if (readOnly) {
               try { vditorInstance.disabled(); } catch { /* ignore */ }
             }
