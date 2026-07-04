@@ -104,6 +104,7 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
         preview: {
           mode: "both",
           delay: 300,
+          // @ts-expect-error IPreview 类型不含 theme，但运行时支持
           theme: {
             current: dark ? "dark" : "light",
           },
