@@ -94,7 +94,7 @@ export async function renderSvgToPng(svg: string): Promise<Uint8Array> {
 export async function generateLocationImage(
   env: Env,
   locationId: string
-): Promise<{ png: Uint8Array; cacheKey: string }> {
+): Promise<{ png: Uint8Array; cacheKey: string; coverLoaded: boolean }> {
   const db = createDb(env.DB);
 
   // 1. 查询地点数据，兼容 id 和 slug
@@ -145,7 +145,7 @@ export async function generateLocationImage(
       const cached = await env.R2.get(cacheKey);
       if (cached) {
         const png = new Uint8Array(await cached.arrayBuffer());
-        return { png, cacheKey };
+        return { png, cacheKey, coverLoaded: true };
       }
     } catch (e) {
       console.error("[ShareImage] Cache check failed:", e);
@@ -165,6 +165,19 @@ export async function generateLocationImage(
       coverImageBase64 = await loadImageAsBase64(location.coverImage, env);
     } catch (e) {
       console.error("[ShareImage] Failed to load cover image:", e);
+    }
+  }
+
+  // 兜底：coverImage 失败时尝试 images[0]
+  if (!coverImageBase64 && location.images) {
+    try {
+      const images = JSON.parse(location.images) as string[];
+      if (Array.isArray(images) && images.length > 0) {
+        console.log("[ShareImage] Trying fallback image:", images[0]);
+        coverImageBase64 = await loadImageAsBase64(images[0], env);
+      }
+    } catch (e) {
+      console.error("[ShareImage] Failed to load fallback image:", e);
     }
   }
 
