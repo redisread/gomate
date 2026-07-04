@@ -56,12 +56,13 @@ shareImageRoute.get("/location/:locationId", async (c) => {
       }
     }
 
-    const { png, cacheKey } = await generateLocationImage(c.env, locationId);
+    const { png, cacheKey, coverLoaded } = await generateLocationImage(c.env, locationId);
 
     const headers: Record<string, string> = {
       "Content-Type": "image/png",
       "Cache-Control": "public, max-age=86400",
       "X-Cache-Key": cacheKey,
+      "X-Cover-Loaded": String(coverLoaded),
     };
 
     if (download) {
