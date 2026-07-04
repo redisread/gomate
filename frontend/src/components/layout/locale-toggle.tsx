@@ -36,7 +36,7 @@ export function LocaleToggle() {
     return () => mq.removeEventListener("change", handler as (e: MediaQueryListEvent) => void);
   }, []);
 
-  // 点击外部关闭下拉菜单
+  // 点击外部关闭下拉菜单（仅桌面端需要）
   React.useEffect(() => {
     if (!isOpen || isMobile) return;
     const handler = (e: MouseEvent) => {
