@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
 import { MarkdownContent } from "./markdown-content";
+import { VditorEditor } from "./vditor-editor";
 import { StoryToast } from "./story-detail-toast";
 import { useStoryForm } from "./use-story-form";
 import type { FormFields } from "./use-story-form";
@@ -135,8 +136,11 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
                 placeholder="输入故事摘要（最多 150 字）" className="w-full px-3 py-2.5 rounded-xl border border-border bg-white text-sm outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 resize-none" />
               <span className="text-xs text-muted-foreground">{form.summary.length}/150</span></div>
             <div><label className="block text-sm font-medium text-foreground mb-1.5">正文（Markdown）</label>
-              <textarea value={form.content} onChange={(e) => updateField("content", e.target.value)} maxLength={10000} rows={12}
-                placeholder="使用 Markdown 编写故事内容" className="w-full px-3 py-2.5 rounded-xl border border-border bg-white text-sm outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 resize-y font-mono" /></div>
+              <VditorEditor
+                value={form.content}
+                onChange={(value) => updateField("content", value)}
+                placeholder="使用 Markdown 编写故事内容"
+              /></div>
             <div><label className="block text-sm font-medium text-foreground mb-1.5">状态</label>
               <select value={form.status} onChange={(e) => updateField("status", e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl border border-border bg-white text-sm outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400">
