@@ -22,8 +22,8 @@ export const LocationCard = memo(function LocationCard({ location, index = 0 }: 
   const diffConfig = difficulty ? DIFFICULTY_CONFIG[difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const firstTag = location.tags?.[0];
 
-  // 前3张图片为首屏，优先加载
-  const isPriority = index < 3;
+  // 仅第一张图片为首屏，优先加载
+  const isPriority = index === 0;
 
   // 使用 useMemo 缓存复杂计算
   const routeInfo = useMemo(() => {
