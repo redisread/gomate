@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { fetchCurrentUser, API_BASE } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { LocaleToggle } from "@/components/layout/locale-toggle";
 import { type Locale, SUPPORTED_LOCALES, getLocale, setLocale, getLocaleName } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
 import { useUnreadCount } from "@/hooks/useMessages";
@@ -174,7 +174,7 @@ export function Navbar({ className }: NavbarProps) {
             {/* ---- 桌面端操作区 ---- */}
             <div className="hidden md:flex items-center gap-2">
               {/* 语言切换 */}
-              <LanguageSwitcher />
+              <LocaleToggle />
 
               {/* 主题切换 */}
               <ThemeToggle />
