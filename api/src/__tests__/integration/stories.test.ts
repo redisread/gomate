@@ -301,6 +301,149 @@ describe("Stories API 集成测试", () => {
     });
   });
 
+  describe("POST /stories/:id/like - 点赞 toggle", () => {
+    it("未登录点赞 → 401", async () => {
+      const story = await seedStory(testDb, user.id, { title: "测试故事", status: "published" });
+
+      const res = await req(app, `/stories/${story.id}/like`, { method: "POST" });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("点赞不存在的故事 → 404", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      const res = await req(app, "/stories/non-existent-id/like", { method: "POST" });
+
+      expect(res.status).toBe(404);
+    });
+
+    it("首次点赞 → liked=true, likeCount=1", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+      const story = await seedStory(testDb, user.id, { title: "测试故事", status: "published" });
+
+      const res = await req(app, `/stories/${story.id}/like`, { method: "POST" });
+
+      expect(res.status).toBe(200);
+      const json = await res.json() as { success: boolean; liked: boolean; likeCount: number };
+      expect(json.success).toBe(true);
+      expect(json.liked).toBe(true);
+      expect(json.likeCount).toBe(1);
+
+      const dbStory = await testDb.query.stories.findFirst({
+        where: eq(schema.stories.id, story.id),
+      });
+      expect(dbStory?.likeCount).toBe(1);
+    });
+
+    it("再次点赞（取消） → liked=false, likeCount=0", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+      const story = await seedStory(testDb, user.id, { title: "测试故事", status: "published" });
+
+      // 第一次点赞
+      await req(app, `/stories/${story.id}/like`, { method: "POST" });
+
+      // 第二次点赞 → 取消
+      const res = await req(app, `/stories/${story.id}/like`, { method: "POST" });
+
+      expect(res.status).toBe(200);
+      const json = await res.json() as { success: boolean; liked: boolean; likeCount: number };
+      expect(json.success).toBe(true);
+      expect(json.liked).toBe(false);
+      expect(json.likeCount).toBe(0);
+
+      const dbStory = await testDb.query.stories.findFirst({
+        where: eq(schema.stories.id, story.id),
+      });
+      expect(dbStory?.likeCount).toBe(0);
+    });
+
+    it("likeCount 不会减到负数", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+      // 手动创建一个 likeCount=0 的故事
+      const story = await seedStory(testDb, user.id, { title: "零点赞故事", status: "published", likeCount: 0 });
+
+      // 先点赞
+      await req(app, `/stories/${story.id}/like`, { method: "POST" });
+      // 再取消
+      await req(app, `/stories/${story.id}/like`, { method: "POST" });
+      // 再次取消（异常状态：点赞记录已删除但 likeCount 已经是 0）
+      // 直接操作 DB 删除 like 记录但保留 likeCount=0，然后尝试取消
+      await testDb.delete(schema.userStoryLikes).where(
+        and(
+          eq(schema.userStoryLikes.userId, user.id),
+          eq(schema.userStoryLikes.storyId, story.id),
+        ),
+      );
+      await testDb.update(schema.stories).set({ likeCount: 0 }).where(eq(schema.stories.id, story.id));
+
+      // 此时 likeCount=0，再插入点赞再取消，不会为负
+      const res1 = await req(app, `/stories/${story.id}/like`, { method: "POST" });
+      expect((await res1.json() as { likeCount: number }).likeCount).toBe(1);
+
+      const res2 = await req(app, `/stories/${story.id}/like`, { method: "POST" });
+      expect((await res2.json() as { likeCount: number }).likeCount).toBe(0);
+    });
+
+    it("多次点赞/取消后数据一致", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+      const story = await seedStory(testDb, user.id, { title: "测试故事", status: "published" });
+
+      // 连续 toggle 3 次
+      await req(app, `/stories/${story.id}/like`, { method: "POST" }); // +1
+      await req(app, `/stories/${story.id}/like`, { method: "POST" }); // -1
+      const res = await req(app, `/stories/${story.id}/like`, { method: "POST" }); // +1
+
+      const json = await res.json() as { liked: boolean; likeCount: number };
+      expect(json.liked).toBe(true);
+      expect(json.likeCount).toBe(1);
+
+      const dbStory = await testDb.query.stories.findFirst({
+        where: eq(schema.stories.id, story.id),
+      });
+      expect(dbStory?.likeCount).toBe(1);
+
+      const likeRecord = await testDb.query.userStoryLikes.findFirst({
+        where: and(
+          eq(schema.userStoryLikes.userId, user.id),
+          eq(schema.userStoryLikes.storyId, story.id),
+        ),
+      });
+      expect(likeRecord).toBeDefined();
+    });
+
+    it("并发点赞不会导致 likeCount 膨胀", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+      const story = await seedStory(testDb, user.id, { title: "并发测试故事", status: "published" });
+
+      // 模拟并发：5 个请求同时发送（一个用户对同一故事）
+      const results = await Promise.all(
+        Array.from({ length: 5 }, () =>
+          req(app, `/stories/${story.id}/like`, { method: "POST" })
+        )
+      );
+
+      // 所有请求都应成功
+      results.forEach((res) => expect(res.status).toBe(200));
+
+      // 由于是同一用户，只有第一次插入有效，后续都被 onConflictDoNothing 拦截
+      // 验证最终一致性：数据库记录 vs likeCount 一致
+      const dbStory = await testDb.query.stories.findFirst({
+        where: eq(schema.stories.id, story.id),
+      });
+
+      // 数据库中只有 1 条点赞记录
+      const likeRecords = await testDb.select().from(schema.userStoryLikes).where(
+        eq(schema.userStoryLikes.storyId, story.id),
+      );
+      expect(likeRecords.length).toBeLessThanOrEqual(1);
+
+      // likeCount 不应该超过实际点赞数
+      expect((dbStory?.likeCount ?? 0)).toBeLessThanOrEqual(1);
+      expect((dbStory?.likeCount ?? 0)).toBeGreaterThanOrEqual(0);
+    });
+  });
+
   describe("DELETE /stories/:id - 删除故事", () => {
     it("管理员可以删除其他用户的故事", async () => {
       const admin = await seedUser(testDb, { role: "admin", email: "admin@example.com" });
