@@ -1,0 +1,72 @@
+default_model = "kimi-code/kimi-for-coding"
+
+[[hooks]]
+event = "UserPromptSubmit"
+command = "if [ -x '/Users/victor/.orca/agent-hooks/kimi-hook.sh' ]; then /bin/sh '/Users/victor/.orca/agent-hooks/kimi-hook.sh'; fi"
+timeout = 10
+
+[[hooks]]
+event = "PreToolUse"
+command = "if [ -x '/Users/victor/.orca/agent-hooks/kimi-hook.sh' ]; then /bin/sh '/Users/victor/.orca/agent-hooks/kimi-hook.sh'; fi"
+timeout = 10
+
+[[hooks]]
+event = "PostToolUse"
+command = "if [ -x '/Users/victor/.orca/agent-hooks/kimi-hook.sh' ]; then /bin/sh '/Users/victor/.orca/agent-hooks/kimi-hook.sh'; fi"
+timeout = 10
+
+[[hooks]]
+event = "PostToolUseFailure"
+command = "if [ -x '/Users/victor/.orca/agent-hooks/kimi-hook.sh' ]; then /bin/sh '/Users/victor/.orca/agent-hooks/kimi-hook.sh'; fi"
+timeout = 10
+
+[[hooks]]
+event = "PermissionRequest"
+command = "if [ -x '/Users/victor/.orca/agent-hooks/kimi-hook.sh' ]; then /bin/sh '/Users/victor/.orca/agent-hooks/kimi-hook.sh'; fi"
+timeout = 10
+
+[[hooks]]
+event = "Stop"
+command = "if [ -x '/Users/victor/.orca/agent-hooks/kimi-hook.sh' ]; then /bin/sh '/Users/victor/.orca/agent-hooks/kimi-hook.sh'; fi"
+timeout = 10
+
+[[hooks]]
+event = "StopFailure"
+command = "if [ -x '/Users/victor/.orca/agent-hooks/kimi-hook.sh' ]; then /bin/sh '/Users/victor/.orca/agent-hooks/kimi-hook.sh'; fi"
+timeout = 10
+
+[providers."managed:kimi-code"]
+type = "kimi"
+api_key = "sk-kimi-pQWeuPugpj2gwhNEAlrv8xGosBKesKWYHF8zUOVlRonFUWrhVsSLoh6Vg6urrIfH"
+base_url = "https://api.kimi.com/coding/v1"
+
+[providers."managed:kimi-code".oauth]
+storage = "file"
+key = "oauth/kimi-code"
+
+[models."kimi-code/kimi-for-coding"]
+provider = "managed:kimi-code"
+model = "kimi-for-coding"
+max_context_size = 262144
+capabilities = [ "thinking", "always_thinking", "image_in", "video_in", "tool_use" ]
+display_name = "K2.7 Code"
+
+[thinking]
+enabled = true
+
+[services.moonshot_search]
+base_url = "https://api.kimi.com/coding/v1/search"
+api_key = ""
+
+[services.moonshot_search.oauth]
+storage = "file"
+key = "oauth/kimi-code"
+
+[services.moonshot_fetch]
+base_url = "https://api.kimi.com/coding/v1/fetch"
+api_key = ""
+
+[services.moonshot_fetch.oauth]
+storage = "file"
+key = "oauth/kimi-code"
+

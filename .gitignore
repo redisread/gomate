@@ -14,6 +14,11 @@
 !.yarn/releases
 !.yarn/versions
 
+# Playwright
+playwright-report/
+e2e-report/
+test-results/
+
 # testing
 /coverage
 

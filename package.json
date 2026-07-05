@@ -17,6 +17,9 @@
     "dev": "concurrently \"pnpm api:dev\" \"pnpm web:dev\"",
     "dev:fresh": "pnpm db:reset && concurrently \"pnpm api:dev\" \"pnpm web:dev\"",
     "db:reset": "node scripts/reset-local-db.mjs",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:debug": "playwright test --debug",
     "lint": "pnpm -r lint",
     "type-check": "pnpm -r type-check",
     "preflight": "pnpm type-check && pnpm lint",
@@ -38,6 +41,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "concurrently": "^9.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
