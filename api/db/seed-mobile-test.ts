@@ -22,6 +22,7 @@
 
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { randomBytes, scryptSync } from "node:crypto";
 import * as schema from "../src/db/schema";
 import path from "path";
 import fs from "fs";
@@ -44,6 +45,21 @@ function findDbFile(): string {
 }
 
 const genId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+/**
+ * 使用与 Better Auth 默认一致的 scrypt 参数生成密码 hash
+ * 格式：salt:key（均为 hex 字符串，中间用 : 分隔）
+ */
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const key = scryptSync(password.normalize("NFKC"), salt, 64, {
+    N: 16384,
+    r: 16,
+    p: 1,
+    maxmem: 128 * 16384 * 16 * 2,
+  });
+  return `${salt}:${key.toString("hex")}`;
+}
 
 async function main() {
   const dbPath = findDbFile();
@@ -791,6 +807,9 @@ async function main() {
   
   // ==================== 创建账号（Better Auth）====================
   console.log("\n=== Creating Better Auth Accounts ===");
+
+  // 所有测试账号使用统一密码 test1234
+  const TEST_PASSWORD_HASH = hashPassword("test1234");
   
   for (const user of users) {
     await db.insert(schema.accounts).values({
@@ -798,7 +817,7 @@ async function main() {
       userId: user.id,
       accountId: user.email,
       providerId: "credential",
-      password: "$2a$10$dummyHashForTestingPurposesOnly1234567890", // 测试用固定密码 hash
+      password: TEST_PASSWORD_HASH,
       createdAt: now,
       updatedAt: now,
     });
