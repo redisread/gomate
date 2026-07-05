@@ -53,13 +53,13 @@ export default defineConfig({
       name: "chromium-staging",
       use: {
         ...devices["Desktop Chrome"],
-        baseURL: "https://staging.gomate.live",
+        baseURL: process.env.E2E_BASE_URL || "https://staging.gomate.live",
       },
     },
   ],
 
   // 自动启动本地开发服务器（仅在非 staging 测试时）
-  webServer: process.env.E2E_BASE_URL?.startsWith("https://staging")
+  webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
         command: "pnpm dev:fresh",
