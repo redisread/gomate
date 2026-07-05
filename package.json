@@ -18,6 +18,7 @@
     "dev:fresh": "pnpm db:reset && concurrently \"pnpm api:dev\" \"pnpm web:dev\"",
     "db:reset": "node scripts/reset-local-db.mjs",
     "e2e": "playwright test",
+    "e2e:staging": "E2E_BASE_URL=https://staging.gomate.live playwright test --project=chromium-staging",
     "e2e:ui": "playwright test --ui",
     "e2e:debug": "playwright test --debug",
     "e2e:browser-use": "browser-use <<'PY'\nexec(open('e2e/browser-use/home_smoke.py').read())\nPY",

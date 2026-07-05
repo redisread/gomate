@@ -31,8 +31,8 @@ export default defineConfig({
   ],
 
   use: {
-    // 测试基础 URL
-    baseURL: "http://localhost:5432",
+    // 测试基础 URL（可通过环境变量覆盖，用于 staging 测试）
+    baseURL: process.env.E2E_BASE_URL || "http://localhost:5432",
 
     // 保存 trace，失败时便于调试
     trace: "retain-on-failure",
@@ -49,13 +49,22 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "chromium-staging",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "https://staging.gomate.live",
+      },
+    },
   ],
 
-  // 自动启动本地开发服务器
-  webServer: {
-    command: "pnpm dev:fresh",
-    url: "http://localhost:5432",
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  // 自动启动本地开发服务器（仅在非 staging 测试时）
+  webServer: process.env.E2E_BASE_URL?.startsWith("https://staging")
+    ? undefined
+    : {
+        command: "pnpm dev:fresh",
+        url: "http://localhost:5432",
+        reuseExistingServer: !process.env.CI,
+        timeout: 180_000,
+      },
 });
