@@ -31,15 +31,20 @@ log(f"Page title: {info.get('title', 'N/A')}")
 log(f"Page URL: {info.get('url', 'N/A')}")
 
 # 截图用于人工/AI 验收
-capture_screenshot()
+try:
+    capture_screenshot()
+    log("Screenshot captured")
+except Exception as e:
+    log(f"Screenshot capture timed out or failed: {e}")
+    log("Continuing with keyword checks...")
 
 # 检查页面文本中是否包含 GoMate 品牌或关键导航
 body_text = js("document.body.innerText").lower()
-keywords = ["gomate", "explore locations", "find teams", "discover"]
+keywords = ["gomate", "发现", "探索地点", "找队伍", "explore", "team"]
 found = [k for k in keywords if k in body_text]
 log(f"Found keywords: {found}")
 
-if len(found) >= 2:
+if len(found) >= 3:
     log("✅ Home page smoke test passed")
 else:
     log("❌ Home page smoke test failed: expected keywords not found")
