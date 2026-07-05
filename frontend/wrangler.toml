@@ -29,6 +29,14 @@ binding = "ASSETS"
 [env.staging.vars]
 PUBLIC_API_URL = "https://api-staging.gomate.live"
 
+[[env.staging.kv_namespaces]]
+binding = "SESSION"
+id = "f8480fa769054962ab59333aa7015ff6"
+
+[[env.staging.routes]]
+pattern = "staging.gomate.live"
+custom_domain = true
+
 [env.staging.observability]
 enabled = true
 
@@ -45,6 +53,10 @@ binding = "ASSETS"
 
 [env.production.vars]
 PUBLIC_API_URL = "https://api.gomate.live"
+
+[[env.production.kv_namespaces]]
+binding = "SESSION"
+id = "6e3db6b00bc4421faeb1402c2e51f7d1"
 
 [env.production.observability]
 enabled = true
