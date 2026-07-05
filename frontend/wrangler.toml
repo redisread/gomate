@@ -15,6 +15,23 @@ binding = "ASSETS"
 [observability]
 enabled = true
 
+# Staging environment
+[env.staging]
+name = "gomate-frontend-staging"
+compatibility_date = "2026-02-26"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+main = "@astrojs/cloudflare/entrypoints/server"
+
+[env.staging.assets]
+directory = "./dist"
+binding = "ASSETS"
+
+[env.staging.vars]
+PUBLIC_API_URL = "https://api-staging.gomate.live"
+
+[env.staging.observability]
+enabled = true
+
 # Production environment
 [env.production]
 name = "gomate-frontend"
