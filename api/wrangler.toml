@@ -77,6 +77,10 @@ migrations_dir = "db/migrations"
 binding = "GOMATE_KV"
 id = "5668184b0f7642f6895b716ca84d1c4a"
 
+[[env.staging.routes]]
+pattern = "api-staging.gomate.live"
+custom_domain = true
+
 [env.staging.placement]
 mode = "smart"
 
@@ -84,7 +88,6 @@ mode = "smart"
 enabled = true
 head_sampling_rate = 1
 
-# 定时任务：每天 UTC 12:10（北京时间晚上 8:10）更新过期队伍状态
 [env.staging.triggers]
 crons = ["10 12 * * *"]
 
@@ -125,6 +128,5 @@ mode = "smart"
 enabled = true
 head_sampling_rate = 0.1
 
-# 定时任务：每天 UTC 12:10（北京时间晚上 8:10）更新过期队伍状态
 [env.production.triggers]
 crons = ["10 12 * * *"]
