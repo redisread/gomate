@@ -1,0 +1,20 @@
+# GoMate 本地开发环境变量模板（API）
+# 复制此文件为 .dev.vars 并填入真实值
+# .dev.vars 不会被提交到 Git
+
+# Better Auth 认证密钥
+# 生成命令：openssl rand -base64 32
+BETTER_AUTH_SECRET=your-better-auth-secret-here
+
+# 应用 URL（本地 API 地址）
+BETTER_AUTH_URL=http://localhost:8799
+
+# 联系邮箱
+CONTACT_EMAIL=gomate@example.com
+
+# 高德地图 Web服务 Key（用于地址地理编码，本地可选）
+AMAP_SERVER_KEY=
+
+# Resend 邮件服务（本地可选，不填则邮件功能不可用）
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=GoMate <noreply@example.com>

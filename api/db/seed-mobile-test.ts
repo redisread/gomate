@@ -23,7 +23,6 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "../src/db/schema";
-import { eq } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
 
@@ -546,6 +545,7 @@ async function main() {
   const memberB = users.find(u => u.email === "member_b@test.com")!;
   const expertUser = users.find(u => u.email === "expert@test.com")!;
   const beginnerUser = users.find(u => u.email === "beginner@test.com")!;
+  const adminUser = users.find(u => u.email === "admin@test.com")!;
   
   // 招募中队伍 1：队长 + 1 个已批准成员 + 1 个待审核申请
   const teamRecruiting1 = teams.find(t => t.id.includes("team_recruiting_1"))!;
@@ -574,7 +574,7 @@ async function main() {
   });
   console.log(`Team ${teamRecruiting1.title}: leader + 1 approved + 1 pending`);
   
-  // 招募中队伍 2：队长 + 6 个已批准成员（快满）
+  // 招募中队伍 2：队长 + 5 个已批准成员 + 1 个待审核申请（所有成员互不重复）
   const teamRecruiting2 = teams.find(t => t.id.includes("team_recruiting_2"))!;
   await db.insert(schema.teamMembers).values({
     id: genId("tm_leader2"),
@@ -584,20 +584,21 @@ async function main() {
     joinedAt: now,
     createdAt: now,
   });
-  for (let i = 0; i < 5; i++) {
+  const teamRecruiting2Approved = [memberB.id, expertUser.id, beginnerUser.id, memberA.id, leaderA.id];
+  for (let i = 0; i < teamRecruiting2Approved.length; i++) {
     await db.insert(schema.teamMembers).values({
       id: genId(`tm_member_${i}_2`),
       teamId: teamRecruiting2.id,
-      userId: i === 0 ? memberB.id : i === 1 ? expertUser.id : i === 2 ? beginnerUser.id : leaderA.id,
+      userId: teamRecruiting2Approved[i],
       status: "approved",
       joinedAt: now,
       createdAt: now,
     });
   }
   await db.insert(schema.teamMembers).values({
-    id: genId("tm_beginner_pending_2"),
+    id: genId("tm_admin_pending_2"),
     teamId: teamRecruiting2.id,
-    userId: beginnerUser.id,
+    userId: adminUser.id,
     status: "pending",
     createdAt: now,
   });
@@ -613,11 +614,12 @@ async function main() {
     joinedAt: now,
     createdAt: now,
   });
-  for (let i = 0; i < 4; i++) {
+  const teamFull1Approved = [memberB.id, expertUser.id, memberA.id, leaderA.id];
+  for (let i = 0; i < teamFull1Approved.length; i++) {
     await db.insert(schema.teamMembers).values({
       id: genId(`tm_member_full_${i}`),
       teamId: teamFull1.id,
-      userId: i === 0 ? memberB.id : i === 1 ? expertUser.id : i === 2 ? memberA.id : leaderA.id,
+      userId: teamFull1Approved[i],
       status: "approved",
       joinedAt: now,
       createdAt: now,
@@ -625,7 +627,7 @@ async function main() {
   }
   console.log(`Team ${teamFull1.title}: leader + 4 approved (full)`);
   
-  // 已组建队伍：队长 + 9 个成员（已组建）
+  // 已组建队伍：队长 + 5 个成员（已组建）+ 1 个申请退出
   const teamFormed1 = teams.find(t => t.id.includes("team_formed_1"))!;
   await db.insert(schema.teamMembers).values({
     id: genId("tm_leader_formed"),
@@ -635,11 +637,12 @@ async function main() {
     joinedAt: now,
     createdAt: now,
   });
-  for (let i = 0; i < 9; i++) {
+  const teamFormed1Approved = [memberB.id, memberA.id, expertUser.id, beginnerUser.id, leaderB.id];
+  for (let i = 0; i < teamFormed1Approved.length; i++) {
     await db.insert(schema.teamMembers).values({
       id: genId(`tm_member_formed_${i}`),
       teamId: teamFormed1.id,
-      userId: i < 3 ? [memberB.id, memberA.id, expertUser.id][i] : leaderB.id,
+      userId: teamFormed1Approved[i],
       status: "approved",
       joinedAt: now,
       createdAt: now,
@@ -649,11 +652,11 @@ async function main() {
   await db.insert(schema.teamMembers).values({
     id: genId("tm_member_leave_pending"),
     teamId: teamFormed1.id,
-    userId: beginnerUser.id,
+    userId: adminUser.id,
     status: "leave_pending",
     createdAt: now,
   });
-  console.log(`Team ${teamFormed1.title}: leader + 9 approved + 1 leave_pending`);
+  console.log(`Team ${teamFormed1.title}: leader + 5 approved + 1 leave_pending`);
   
   // 已完成队伍：队长 + 5 个已完成成员
   const teamCompleted1 = teams.find(t => t.id.includes("team_completed_1"))!;
@@ -665,11 +668,12 @@ async function main() {
     joinedAt: now,
     createdAt: now,
   });
-  for (let i = 0; i < 5; i++) {
+  const teamCompleted1Approved = [memberB.id, memberA.id, expertUser.id, beginnerUser.id, leaderB.id];
+  for (let i = 0; i < teamCompleted1Approved.length; i++) {
     await db.insert(schema.teamMembers).values({
       id: genId(`tm_member_completed_${i}`),
       teamId: teamCompleted1.id,
-      userId: i < 3 ? [memberB.id, memberA.id, expertUser.id][i] : leaderB.id,
+      userId: teamCompleted1Approved[i],
       status: "approved",
       joinedAt: now,
       createdAt: now,
