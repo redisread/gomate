@@ -57,9 +57,9 @@ jobs:
       - name: Lint (non-blocking)
         run: pnpm --filter @gomate/frontend lint || echo "Lint warnings - to be fixed in dedicated task"
         continue-on-error: true
-  # E2E Tests
+  # E2E Tests (local dev server)
   e2e-tests:
-    name: E2E Tests
+    name: E2E Tests (Local)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

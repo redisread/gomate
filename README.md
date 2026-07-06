@@ -40,6 +40,9 @@ GoMate 是一个**地点组队平台**，解决「想出门但找不到伙伴」
 # 安装依赖
 pnpm install
 
+# 检查本地环境是否就绪（Node/pnpm、环境文件、端口、wrangler 登录等）
+pnpm env:check
+
 # 方式 1：直接启动（假设本地 D1 已初始化）
 pnpm dev
 
@@ -62,7 +65,7 @@ pnpm db:reset
 # 安装浏览器（首次运行）
 pnpm exec playwright install chromium
 
-# 运行所有 E2E 测试（自动启动本地服务器）
+# 运行本地 E2E 测试（自动启动本地服务器）
 pnpm e2e
 
 # 无头模式（CI 用）
@@ -93,6 +96,26 @@ PY
 
 1. API 密钥：复制 `api/.dev.vars.example` 为 `api/.dev.vars`
 2. 前端 API 地址：复制 `frontend/.env.local.example` 为 `frontend/.env.local`
+
+## 本地环境故障排查
+
+如果 `pnpm dev:fresh` 启动失败或 E2E 测试行为异常，先运行：
+
+```bash
+pnpm env:check
+```
+
+常见问题：
+
+| 问题                            | 可能原因                                     | 解决办法                                         |
+| ------------------------------- | -------------------------------------------- | ------------------------------------------------ |
+| `pnpm dev:fresh` 提示端口被占用 | 5432（frontend）或 8799（api）被其他进程占用 | 关闭占用端口的进程，或运行 `pnpm env:check` 查看 |
+| E2E 登录失败                    | 本地 D1 数据库没有 seed 测试账号             | 运行 `pnpm db:reset` 重新初始化                  |
+| Playwright 报错找不到浏览器     | Chromium 未安装                              | `pnpm exec playwright install chromium`          |
+| `wrangler` 提示未登录           | Cloudflare 账号未认证                        | `pnpm exec wrangler login`                       |
+| `api/.dev.vars` 缺失            | 本地 secrets 未配置                          | 复制 `api/.dev.vars.example` 并填入              |
+
+如果排查后仍无法解决，请附带 `pnpm env:check` 输出和错误日志提 issue。
 
 ## 部署
 
