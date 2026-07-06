@@ -294,6 +294,7 @@ export function CreateTeamClient() {
             <FieldGroup icon="✏️" label={t("teams.formLabel.name")} required>
               <input
                 id="title"
+                data-testid="create-team-title"
                 name="title"
                 type="text"
                 placeholder={t("teams.formPlaceholder.name")}
@@ -310,6 +311,7 @@ export function CreateTeamClient() {
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                 <select
                   id="locationId"
+                  data-testid="create-team-location"
                   name="locationId"
                   value={formData.locationId}
                   onChange={handleChange}
@@ -333,6 +335,7 @@ export function CreateTeamClient() {
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
                     id="date"
+                    data-testid="create-team-date"
                     name="date"
                     type="date"
                     value={formData.date}
@@ -349,6 +352,7 @@ export function CreateTeamClient() {
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
                     id="time"
+                    data-testid="create-team-time"
                     name="time"
                     type="time"
                     value={formData.time}
@@ -384,6 +388,7 @@ export function CreateTeamClient() {
                   )}
                   <select
                     id="durationMin"
+                    data-testid="create-team-duration"
                     name="durationMin"
                     value={formData.durationMin}
                     onChange={handleDurationChange}
@@ -438,6 +443,7 @@ export function CreateTeamClient() {
                   <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
                     id="maxMembers"
+                    data-testid="create-team-max-members"
                     name="maxMembers"
                     type="number"
                     min={2}
@@ -456,6 +462,7 @@ export function CreateTeamClient() {
             <FieldGroup icon="📝" label={t("teams.formLabel.description")} required hint={t("teams.descriptionHint")}>
               <textarea
                 id="description"
+                data-testid="create-team-description"
                 name="description"
                 placeholder={t("teams.formPlaceholder.description")}
                 value={formData.description}
@@ -494,6 +501,7 @@ export function CreateTeamClient() {
                 {t("common.cancel")}
               </button>
               <SubmitButton
+                data-testid="create-team-submit"
                 loading={isSubmitting || !hasWechat}
                 loadingText={!hasWechat ? t("teams.wechatRequiredBtn") : t("teams.createBtnLoading")}
                 className="flex-2"

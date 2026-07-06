@@ -18,18 +18,10 @@ test.describe("Auth", () => {
     await page.locator("[data-testid='login-email']").fill("admin@test.com");
     await page.locator("[data-testid='login-password']").fill("test1234");
     await page.locator("[data-testid='login-submit']").click();
-    // Wait for navigation to complete (success or failure)
-    await page.waitForTimeout(3000);
-    // Check if we're on home page or still on login (login may fail with seeded data)
-    const url = page.url();
-    if (url.includes("/login")) {
-      // Login failed - check error is shown or page is still responsive
-      await expect(page.locator("body")).toBeVisible();
-    } else {
-      // Login succeeded - should be on home
-      await expect(page).toHaveURL(/\/$/);
-      await expect(page.locator("body")).toContainText("GoMate");
-    }
+    // Deterministic assertion: wait for navigation to home
+    await page.waitForURL("/", { timeout: 5000 });
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator("body")).toContainText("GoMate");
   });
 
   test("invalid credentials show error or stay on login", async ({ page }) => {
@@ -37,10 +29,9 @@ test.describe("Auth", () => {
     await page.locator("[data-testid='login-email']").fill("nonexistent@test.com");
     await page.locator("[data-testid='login-password']").fill("wrongpassword");
     await page.locator("[data-testid='login-submit']").click();
-    await page.waitForTimeout(2000);
-    // Should stay on login page or show error
-    const url = page.url();
-    expect(url.includes("/login")).toBe(true);
+    // Wait for any navigation or response to settle, then assert we remain on login
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveURL(/\/login/);
   });
 
   test("register page loads and form is interactive", async ({ page }) => {
