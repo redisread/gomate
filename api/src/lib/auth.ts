@@ -90,6 +90,9 @@ export function createAuth(env: Env) {
 
   const db = createDb(env.DB);
 
+  // 本地 HTTP 开发时不能使用 Secure cookie，否则浏览器不会保存/发送 session
+  const isSecure = (env.APP_URL || "").startsWith("https");
+
   return betterAuth({
     database: drizzleAdapter(db as never, {
       provider: "sqlite",
@@ -137,14 +140,16 @@ export function createAuth(env: Env) {
     advanced: {
       generateId: () => nanoid(),
       defaultCookieAttributes: {
-        sameSite: "none",
-        secure: true,
+        sameSite: isSecure ? "none" : "lax",
+        secure: isSecure,
         path: "/",
       },
-      crossSubDomainCookies: {
-        enabled: true,
-        domain: ".gomate.live",
-      },
+      crossSubDomainCookies: isSecure
+        ? {
+            enabled: true,
+            domain: ".gomate.live",
+          }
+        : undefined,
     },
     user: {
       additionalFields: {
