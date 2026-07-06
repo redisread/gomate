@@ -170,6 +170,7 @@ export function LoginClient() {
                 </label>
                 <input
                   id="email"
+                  data-testid="login-email"
                   name="email"
                   type="email"
                   placeholder={t("auth.emailPlaceholder")}
@@ -196,6 +197,7 @@ export function LoginClient() {
                 <div className="relative">
                   <input
                     id="password"
+                    data-testid="login-password"
                     name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder={t("auth.passwordPlaceholder")}
@@ -226,6 +228,7 @@ export function LoginClient() {
 
               {/* 登录按钮 */}
               <button
+                data-testid="login-submit"
                 type="submit"
                 disabled={isLoading}
                 className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
