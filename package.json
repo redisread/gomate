@@ -18,7 +18,7 @@
     "dev:fresh": "pnpm db:reset && concurrently \"pnpm api:dev\" \"pnpm web:dev\"",
     "db:reset": "node scripts/reset-local-db.mjs",
     "e2e": "playwright test",
-    "e2e:ci": "playwright test --headless",
+    "e2e:ci": "playwright test",
     "e2e:staging": "E2E_BASE_URL=https://staging.gomate.live playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:debug": "playwright test --debug",
