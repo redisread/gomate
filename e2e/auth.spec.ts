@@ -1,13 +1,5 @@
 import { test, expect } from "@playwright/test";
-
-async function fillLoginForm(page, email: string, password: string) {
-  // Wait for React island hydration so controlled inputs keep their values
-  await page.waitForLoadState("networkidle");
-  const emailInput = page.locator("[data-testid='login-email']");
-  await emailInput.waitFor({ state: "visible" });
-  await emailInput.fill(email);
-  await page.locator("[data-testid='login-password']").fill(password);
-}
+import { fillLoginForm } from "./helpers";
 
 test.describe("Auth", () => {
   test("login page loads and form is interactive", async ({ page }) => {
