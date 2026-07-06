@@ -77,7 +77,7 @@ jobs:
         run: pnpm e2e:ci
         env:
           CI: true
-          PUBLIC_API_URL: https://api.gomate.live
+          PUBLIC_API_URL: http://localhost:8799
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
