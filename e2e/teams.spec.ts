@@ -2,7 +2,11 @@ import { test, expect } from "@playwright/test";
 
 async function loginAsAdmin(page) {
   await page.goto("/login");
-  await page.locator("[data-testid='login-email']").fill("admin@test.com");
+  // Wait for React island hydration so controlled inputs keep their values
+  await page.waitForLoadState("networkidle");
+  const emailInput = page.locator("[data-testid='login-email']");
+  await emailInput.waitFor({ state: "visible" });
+  await emailInput.fill("admin@test.com");
   await page.locator("[data-testid='login-password']").fill("test1234");
   await page.locator("[data-testid='login-submit']").click();
   await page.waitForURL("/", { timeout: 15000 });

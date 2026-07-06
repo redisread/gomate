@@ -1,5 +1,14 @@
 import { test, expect } from "@playwright/test";
 
+async function fillLoginForm(page, email: string, password: string) {
+  // Wait for React island hydration so controlled inputs keep their values
+  await page.waitForLoadState("networkidle");
+  const emailInput = page.locator("[data-testid='login-email']");
+  await emailInput.waitFor({ state: "visible" });
+  await emailInput.fill(email);
+  await page.locator("[data-testid='login-password']").fill(password);
+}
+
 test.describe("Auth", () => {
   test("login page loads and form is interactive", async ({ page }) => {
     await page.goto("/login");
@@ -7,27 +16,24 @@ test.describe("Auth", () => {
     await expect(page.locator("form")).toBeVisible();
     await expect(page.locator("[data-testid='login-email']")).toBeVisible();
     await expect(page.locator("[data-testid='login-password']")).toBeVisible();
-    await page.locator("[data-testid='login-email']").fill("leader_a@test.com");
-    await page.locator("[data-testid='login-password']").fill("test1234");
+    await fillLoginForm(page, "leader_a@test.com", "test1234");
     await page.locator("[data-testid='login-submit']").click();
     await expect(page.locator("body")).toBeVisible();
   });
 
   test("successful login redirects to home", async ({ page }) => {
     await page.goto("/login");
-    await page.locator("[data-testid='login-email']").fill("admin@test.com");
-    await page.locator("[data-testid='login-password']").fill("test1234");
+    await fillLoginForm(page, "admin@test.com", "test1234");
     await page.locator("[data-testid='login-submit']").click();
     // Deterministic assertion: wait for navigation to home
-    await page.waitForURL("/", { timeout: 5000 });
+    await page.waitForURL("/", { timeout: 15000 });
     await expect(page).toHaveURL(/\/$/);
     await expect(page.locator("body")).toContainText("GoMate");
   });
 
   test("invalid credentials show error or stay on login", async ({ page }) => {
     await page.goto("/login");
-    await page.locator("[data-testid='login-email']").fill("nonexistent@test.com");
-    await page.locator("[data-testid='login-password']").fill("wrongpassword");
+    await fillLoginForm(page, "nonexistent@test.com", "wrongpassword");
     await page.locator("[data-testid='login-submit']").click();
     // Wait for any navigation or response to settle, then assert we remain on login
     await page.waitForLoadState("networkidle");
