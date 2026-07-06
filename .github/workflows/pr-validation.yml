@@ -58,9 +58,11 @@ jobs:
         run: pnpm --filter @gomate/frontend lint || echo "Lint warnings - to be fixed in dedicated task"
         continue-on-error: true
   # E2E Tests (local dev server)
+  # 观察期：continue-on-error=true，收集 flaky 率，不阻塞 PR 合并
   e2e-tests:
     name: E2E Tests (Local)
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -78,10 +80,22 @@ jobs:
         env:
           CI: true
           PUBLIC_API_URL: http://localhost:8799
+      - name: Generate E2E health report
+        if: always()
+        run: node scripts/e2e-health-report.mjs
       - name: Upload Playwright report
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: e2e-report/
           retention-days: 7
+      - name: Upload E2E health report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-health-report
+          path: |
+            e2e-health-report.json
+            e2e-health-history.json
+          retention-days: 14

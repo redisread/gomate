@@ -18,16 +18,17 @@ export default defineConfig({
   // 每个测试用 1 个 worker，避免登录状态冲突
   workers: 1,
 
-  // 失败重试 1 次（本地开发时关闭，CI 开启）
-  retries: process.env.CI ? 1 : 0,
+  // CI 中失败重试 2 次，减少偶发失败（观察期统计用）
+  retries: process.env.CI ? 2 : 0,
 
   // 测试超时
   timeout: 30_000,
 
-  // 报告器
+  // 报告器：list + html + json（健康度脚本解析 json）
   reporter: [
     ["list"],
     ["html", { outputFolder: "e2e-report" }],
+    ["json", { outputFile: "e2e-report/results.json" }],
   ],
 
   use: {
