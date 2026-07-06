@@ -5,19 +5,19 @@ test.describe("Auth", () => {
     await page.goto("/login");
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.locator("form")).toBeVisible();
-    await expect(page.locator("input#email")).toBeVisible();
-    await expect(page.locator("input#password")).toBeVisible();
-    await page.locator("input#email").fill("leader_a@test.com");
-    await page.locator("input#password").fill("test1234");
-    await page.locator("button[type='submit']").click();
+    await expect(page.locator("[data-testid='login-email']")).toBeVisible();
+    await expect(page.locator("[data-testid='login-password']")).toBeVisible();
+    await page.locator("[data-testid='login-email']").fill("leader_a@test.com");
+    await page.locator("[data-testid='login-password']").fill("test1234");
+    await page.locator("[data-testid='login-submit']").click();
     await expect(page.locator("body")).toBeVisible();
   });
 
   test("successful login redirects to home", async ({ page }) => {
     await page.goto("/login");
-    await page.locator("input#email").fill("admin@test.com");
-    await page.locator("input#password").fill("test1234");
-    await page.locator("button[type='submit']").click();
+    await page.locator("[data-testid='login-email']").fill("admin@test.com");
+    await page.locator("[data-testid='login-password']").fill("test1234");
+    await page.locator("[data-testid='login-submit']").click();
     // Wait for navigation to complete (success or failure)
     await page.waitForTimeout(3000);
     // Check if we're on home page or still on login (login may fail with seeded data)
@@ -34,9 +34,9 @@ test.describe("Auth", () => {
 
   test("invalid credentials show error or stay on login", async ({ page }) => {
     await page.goto("/login");
-    await page.locator("input#email").fill("nonexistent@test.com");
-    await page.locator("input#password").fill("wrongpassword");
-    await page.locator("button[type='submit']").click();
+    await page.locator("[data-testid='login-email']").fill("nonexistent@test.com");
+    await page.locator("[data-testid='login-password']").fill("wrongpassword");
+    await page.locator("[data-testid='login-submit']").click();
     await page.waitForTimeout(2000);
     // Should stay on login page or show error
     const url = page.url();
@@ -47,9 +47,9 @@ test.describe("Auth", () => {
     await page.goto("/register");
     await expect(page).toHaveURL(/\/register$/);
     await expect(page.locator("form")).toBeVisible();
-    await expect(page.locator("input#name")).toBeVisible();
-    await expect(page.locator("input#email")).toBeVisible();
-    await expect(page.locator("input#password")).toBeVisible();
-    await expect(page.locator("input#confirmPassword")).toBeVisible();
+    await expect(page.locator("[data-testid='register-name']")).toBeVisible();
+    await expect(page.locator("[data-testid='register-email']")).toBeVisible();
+    await expect(page.locator("[data-testid='register-password']")).toBeVisible();
+    await expect(page.locator("[data-testid='register-confirm-password']")).toBeVisible();
   });
 });

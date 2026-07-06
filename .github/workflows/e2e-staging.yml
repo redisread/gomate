@@ -1,0 +1,39 @@
+name: E2E Staging
+
+on:
+  # 手动触发
+  workflow_dispatch:
+  # 每天北京时间早上 8 点自动跑一次（UTC 00:00）
+  schedule:
+    - cron: "0 0 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-staging:
+    name: E2E Tests against Staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium
+      - name: Generate i18n locales
+        run: pnpm i18n:build
+      - name: Run E2E tests against staging
+        run: pnpm e2e:staging
+        env:
+          CI: true
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-staging
+          path: e2e-report/
+          retention-days: 7
