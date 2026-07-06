@@ -117,6 +117,17 @@ pnpm env:check
 
 如果排查后仍无法解决，请附带 `pnpm env:check` 输出和错误日志提 issue。
 
+## E2E CI 观察期
+
+PR Validation 中已启用本地 E2E 测试，当前处于 **2 周观察期**：
+
+- E2E 测试会执行，但 **不阻塞 PR 合并**（`continue-on-error: true`）
+- 每次运行都会自动生成 `e2e-health-report.json` 并上传 artifact
+- 观察指标：flaky rate、failure rate、平均耗时、失败原因分类
+- 目标：连续运行 flaky rate < 5% 后，进入软阻塞期（required 但可 override）
+
+作为开发者，**请在提交 PR 前本地运行 `pnpm e2e:ci` 并确保通过**，减少 CI 噪音。
+
 ## 部署
 
 ```bash
