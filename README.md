@@ -54,6 +54,41 @@ pnpm db:reset
 # 密码：test1234
 ```
 
+## E2E 测试
+
+### Playwright（推荐）
+
+```bash
+# 安装浏览器（首次运行）
+pnpm exec playwright install chromium
+
+# 运行所有 E2E 测试（自动启动本地服务器）
+pnpm e2e
+
+# 无头模式（CI 用）
+pnpm e2e:ci
+
+# 调试模式（带 UI）
+pnpm e2e:ui
+
+# 测试 staging 环境
+pnpm e2e:staging
+```
+
+### browser-use（AI 驱动探索式测试）
+
+```bash
+# 启动带远程调试的 Chrome
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+  --remote-debugging-port=9222 \
+  --user-data-dir=/tmp/browser-use-profile
+
+# 运行 AI 驱动测试
+BU_CDP_URL=http://localhost:9222 browser-use <<'PY'
+exec(open("e2e/browser-use/login_flow.py").read())
+PY
+```
+
 ## 本地环境配置
 
 1. API 密钥：复制 `api/.dev.vars.example` 为 `api/.dev.vars`

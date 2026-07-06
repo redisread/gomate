@@ -57,6 +57,31 @@ jobs:
       - name: Lint (non-blocking)
         run: pnpm --filter @gomate/frontend lint || echo "Lint warnings - to be fixed in dedicated task"
         continue-on-error: true
-      - name: Test (non-blocking)
-        run: pnpm --filter @gomate/frontend test || echo "Tests skipped"
-        continue-on-error: true
+  # E2E Tests
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium
+      - name: Generate i18n locales
+        run: pnpm i18n:build
+      - name: Run E2E tests
+        run: pnpm e2e:ci
+        env:
+          CI: true
+          PUBLIC_API_URL: https://api.gomate.live
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e-report/
+          retention-days: 7

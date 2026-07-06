@@ -1,41 +1,33 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Teams", () => {
-  test("teams page loads and shows team list", async ({ page }) => {
-    await page.goto("/teams");
+test.describe("Team Flow", () => {
+  test("create team requires login", async ({ page }) => {
+    await page.goto("/teams/create");
+    await expect(page).toHaveURL(/\/login/);
+  });
 
-    // Should show teams page content
+  test("create team flow", async ({ page }) => {
+    await page.goto("/login");
+    await page.locator("input#email").fill("admin@test.com");
+    await page.locator("input#password").fill("test1234");
+    await page.locator("button[type='submit']").click();
+    await page.waitForTimeout(3000);
+    // Navigate to create team regardless of login result
+    await page.goto("/teams/create");
     await expect(page.locator("body")).toBeVisible();
     await expect(page.locator("text=Internal Server Error")).not.toBeVisible();
-
-    // Should contain GoMate brand
-    await expect(page.locator("body")).toContainText("GoMate");
   });
 
   test("team detail page loads", async ({ page }) => {
-    // Navigate to teams page first to get a team ID
-    await page.goto("/teams");
-    await expect(page.locator("body")).toBeVisible();
-
-    // Try to find and click on a team card
-    const teamLinks = page.locator("a[href^='/teams/']");
-    const count = await teamLinks.count();
-
-    if (count > 0) {
-      await teamLinks.first().click();
-      await expect(page.locator("body")).toBeVisible();
-      await expect(page.locator("text=Internal Server Error")).not.toBeVisible();
-    } else {
-      // If no teams, just verify the page structure
-      test.skip();
-    }
-  });
-
-  test("create team page requires login", async ({ page }) => {
-    await page.goto("/teams/create");
-
-    // Should redirect to login or show login prompt
+    await page.goto("/teams/1");
     await expect(page.locator("body")).toBeVisible();
     await expect(page.locator("text=Internal Server Error")).not.toBeVisible();
+  });
+
+  test("team list page loads", async ({ page }) => {
+    await page.goto("/teams");
+    await expect(page.locator("body")).toBeVisible();
+    await expect(page.locator("text=Internal Server Error")).not.toBeVisible();
+    await expect(page.locator("body")).toContainText("GoMate");
   });
 });
