@@ -36,7 +36,11 @@ function ApplicationCard({
   const timeAgo = application.createdAt ? formatRelativeTime(new Date(application.createdAt)) : "";
 
   return (
-    <div className="p-3 bg-card rounded-xl hover:shadow-sm transition-shadow">
+    <div
+      data-testid="team-application-card"
+      data-user-id={application.userId}
+      className="p-3 bg-card rounded-xl hover:shadow-sm transition-shadow"
+    >
       <div className="flex items-center gap-2.5 mb-2">
         <a
           href={`/users/${application.user.id}`}
@@ -56,6 +60,7 @@ function ApplicationCard({
       ) : (
         <div className="flex gap-2">
           <button
+            data-testid="team-application-approve"
             onClick={handleApprove}
             disabled={approving || rejecting}
             className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
@@ -64,6 +69,7 @@ function ApplicationCard({
             {approving ? t('teams.processing') : t('teams.approveBtn')}
           </button>
           <button
+            data-testid="team-application-reject"
             onClick={handleReject}
             disabled={approving || rejecting}
             className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:border-red-300 hover:text-red-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
@@ -92,7 +98,7 @@ export function TeamApplicationsSection({
   if (applications.length === 0) return null;
 
   return (
-    <div className="border-t border-border pt-4">
+    <div data-testid="team-applications-section" className="border-t border-border pt-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <UserCheck className="w-3.5 h-3.5" />

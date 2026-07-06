@@ -42,8 +42,12 @@ export async function getCachedOrFetch<T>(
   const cachedResponse = await cache.match(cacheKey);
 
   if (cachedResponse) {
-    const data = await cachedResponse.json();
-    return data as T;
+    try {
+      const data = await cachedResponse.json();
+      return data as T;
+    } catch (err) {
+      console.warn('[Cache] Failed to parse cached response, treating as miss:', err);
+    }
   }
 
   // 缓存未命中，执行 fetcher 获取数据

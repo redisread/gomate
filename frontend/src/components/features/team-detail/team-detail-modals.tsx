@@ -108,6 +108,7 @@ export function JoinDesktopModal({
           <AnimatedProgress ratio={fillRatio} isFull={false} />
         </div>
         <textarea
+          data-testid="team-join-message"
           placeholder={t('teams.joinPlaceholder')}
           value={joinMessage}
           onChange={(e) => setJoinMessage(e.target.value)}
@@ -115,6 +116,7 @@ export function JoinDesktopModal({
           className="w-full px-4 py-3 rounded-2xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none resize-none mb-4 bg-muted border border-border focus:border-amber-400 transition-all"
         />
         <button
+          data-testid="team-join-submit"
           onClick={onJoin}
           disabled={isJoining}
           className="w-full py-3.5 font-semibold text-white rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
