@@ -126,6 +126,7 @@ export function Navbar({ className }: NavbarProps) {
             {/* ---- Logo ---- */}
             <a
               href="/"
+              data-testid="nav-logo"
               className="flex items-center gap-2.5 group shrink-0"
               aria-label="GoMate"
             >
@@ -150,6 +151,7 @@ export function Navbar({ className }: NavbarProps) {
                   <a
                     key={link.href}
                     href={link.href}
+                    data-testid={`nav-link-${link.href.replace(/\//g, "-") || "home"}`}
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "relative px-3.5 py-2 text-sm font-medium rounded-lg transition-colors duration-150",
@@ -270,17 +272,18 @@ export function Navbar({ className }: NavbarProps) {
                   </div>
 
                   {/* 主 CTA：发布队伍 */}
-                  <CtaButton href="/teams/create" label={t("nav.createTeam")} icon={<Plus className="h-4 w-4" />} />
+                  <CtaButton href="/teams/create" data-testid="nav-create-team" label={t("nav.createTeam")} icon={<Plus className="h-4 w-4" />} />
                 </>
               ) : (
                 <>
                   <a
                     href="/login"
+                    data-testid="nav-login"
                     className="text-sm font-medium text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
                   >
                     {t("nav.login")}
                   </a>
-                  <CtaButton href="/register" label={t("nav.register")} />
+                  <CtaButton href="/register" data-testid="nav-register" label={t("nav.register")} />
                 </>
               )}
             </div>
@@ -288,6 +291,7 @@ export function Navbar({ className }: NavbarProps) {
             {/* ---- 移动端汉堡按钮 ---- */}
             <button
               type="button"
+              data-testid="nav-mobile-menu-toggle"
               className="md:hidden p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={isMobileMenuOpen ? t("common.closeMenu") : t("common.openMenu")}
@@ -469,14 +473,17 @@ function CtaButton({
   href,
   label,
   icon,
+  "data-testid": dataTestId,
 }: {
   href: string;
   label: string;
   icon?: React.ReactNode;
+  "data-testid"?: string;
 }) {
   return (
     <a
       href={href}
+      data-testid={dataTestId}
       className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.97] bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
     >
       {icon}
