@@ -1,18 +1,21 @@
 import { test, expect } from "@playwright/test";
 import { loginAs, gotoTeamByTitle } from "./helpers";
 
-const MEMBER_A = { email: "member_a@test.com", password: "test1234" };
+const EXPERT = { email: "expert@test.com", password: "test1234" };
+const ADMIN = { email: "admin@test.com", password: "test1234" };
 const LEADER_A = { email: "leader_a@test.com", password: "test1234" };
 const LEADER_B = { email: "leader_b@test.com", password: "test1234" };
 
 const TEAM_1_TITLE = "周末清水湾海岸线徒步";
 const TEAM_2_TITLE = "梧桐山轻松线体验";
-const APPLICANT_NICKNAME = "徒步新人";
+const EXPERT_NICKNAME = "Expert Hiker";
+const ADMIN_NICKNAME = "Admin";
 
 test.describe("Team Application Flow", () => {
   test("member can apply to join a recruiting team", async ({ page }) => {
-    await loginAs(page, MEMBER_A.email, MEMBER_A.password);
-    await gotoTeamByTitle(page, TEAM_2_TITLE);
+    // expert 不是队伍 1 的成员，可以提交加入申请
+    await loginAs(page, EXPERT.email, EXPERT.password);
+    await gotoTeamByTitle(page, TEAM_1_TITLE);
 
     await page.locator("[data-testid='team-join-button']").click();
     await expect(page.locator("[data-testid='team-join-message']")).toBeVisible();
@@ -30,10 +33,10 @@ test.describe("Team Application Flow", () => {
     const applicationsSection = page.locator("[data-testid='team-applications-section']");
     await expect(applicationsSection).toBeVisible();
 
-    // 找到 member_a 的申请卡片并点击通过
+    // 找到 expert 的申请卡片并点击通过
     const appCard = applicationsSection
       .locator("[data-testid='team-application-card']")
-      .filter({ hasText: APPLICANT_NICKNAME });
+      .filter({ hasText: EXPERT_NICKNAME });
     await appCard.locator("[data-testid='team-application-approve']").click();
 
     // 审批后该申请卡片应消失
@@ -47,10 +50,10 @@ test.describe("Team Application Flow", () => {
     const applicationsSection = page.locator("[data-testid='team-applications-section']");
     await expect(applicationsSection).toBeVisible();
 
-    // 找到 member_a 在上一用例中提交的申请卡片并点击拒绝
+    // 种子数据中 admin 在队伍 2 有一条待审核申请，找到后点击拒绝
     const appCard = applicationsSection
       .locator("[data-testid='team-application-card']")
-      .filter({ hasText: APPLICANT_NICKNAME });
+      .filter({ hasText: ADMIN_NICKNAME });
     await appCard.locator("[data-testid='team-application-reject']").click();
 
     // 拒绝后该申请卡片应消失
