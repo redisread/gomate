@@ -261,7 +261,7 @@ function LeaderActions({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; t
 function MemberStatusIndicator({ onLeave }: { onLeave: () => void; }) {
   const { t } = useI18n(["teams"]);
   return (
-    <div className="bg-amber-50 rounded-xl p-3 space-y-2">
+    <div data-testid="team-member-status" className="bg-amber-50 rounded-xl p-3 space-y-2">
       <div className="flex items-center gap-2 text-amber-700">
         <CheckCircle className="w-4 h-4" />
         <span className="font-medium text-sm">{t('teams.joinedTeamStatus')}</span>
@@ -276,7 +276,7 @@ function MemberStatusIndicator({ onLeave }: { onLeave: () => void; }) {
 function PendingStatusIndicator() {
   const { t } = useI18n(["teams"]);
   return (
-    <div className="bg-muted rounded-xl p-3 space-y-2">
+    <div data-testid="team-pending-status" className="bg-muted rounded-xl p-3 space-y-2">
       <div className="flex items-center gap-2 text-muted-foreground">
         <Clock className="w-4 h-4" />
         <span className="font-medium text-sm">{t('teams.pendingReviewStatus')}</span>

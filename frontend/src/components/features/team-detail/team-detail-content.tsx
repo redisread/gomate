@@ -141,8 +141,11 @@ function JoinSection({ ctx, team, canJoin, isFull, isLeader, isMember, isPending
   const { t } = useI18n(["teams"]);
   if (canJoin) {
     return (
-      <button onClick={() => ctx.setShowJoinModal(true)}
-        className="w-full py-4 bg-amber-600 text-white text-lg font-medium rounded-xl hover:bg-amber-700 transition-colors">
+      <button
+        data-testid="team-join-button"
+        onClick={() => ctx.setShowJoinModal(true)}
+        className="w-full py-4 bg-amber-600 text-white text-lg font-medium rounded-xl hover:bg-amber-700 transition-colors"
+      >
         {t('teams.joinTeam')}
       </button>
     );

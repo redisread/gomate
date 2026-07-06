@@ -61,6 +61,8 @@ pnpm db:reset
 
 ### Playwright（推荐）
 
+覆盖范围：登录/注册、地点浏览、队伍创建、**队伍申请与审批**。
+
 ```bash
 # 安装浏览器（首次运行）
 pnpm exec playwright install chromium
