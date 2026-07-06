@@ -214,6 +214,7 @@ export function RegisterClient() {
               {/* 昵称 */}
               <FormField
                 id="name"
+                testId="register-name"
                 label={t("auth.nickname")}
                 type="text"
                 placeholder={t("auth.nicknamePlaceholder")}
@@ -226,6 +227,7 @@ export function RegisterClient() {
               {/* 邮箱 */}
               <FormField
                 id="email"
+                testId="register-email"
                 label={t("auth.email")}
                 type="email"
                 placeholder={t("auth.emailPlaceholder")}
@@ -242,6 +244,7 @@ export function RegisterClient() {
                 <div className="relative">
                   <input
                     id="password"
+                    data-testid="register-password"
                     name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder={t("auth.passwordMinHint")}
@@ -268,6 +271,7 @@ export function RegisterClient() {
               {/* 确认密码 */}
               <FormField
                 id="confirmPassword"
+                testId="register-confirm-password"
                 label={t("auth.confirmPassword")}
                 type="password"
                 placeholder={t("auth.reenterPassword")}
@@ -289,6 +293,7 @@ export function RegisterClient() {
 
               {/* 注册按钮 */}
               <button
+                data-testid="register-submit"
                 type="submit"
                 disabled={isLoading}
                 className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -350,6 +355,7 @@ export function RegisterClient() {
 /* ── 通用表单字段 ── */
 function FormField({
   id,
+  testId,
   label,
   type,
   placeholder,
@@ -360,6 +366,7 @@ function FormField({
   hasError,
 }: {
   id: string;
+  testId?: string;
   label: string;
   type: string;
   placeholder?: string;
@@ -376,6 +383,7 @@ function FormField({
       </label>
       <input
         id={id}
+        data-testid={testId}
         name={id}
         type={type}
         placeholder={placeholder}
