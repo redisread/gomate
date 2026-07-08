@@ -20,7 +20,8 @@ export async function loginAs(page: Page, email: string, password: string) {
   await fillLoginForm(page, email, password);
   await page.locator("[data-testid='login-submit']").click();
   // 等待登录接口响应完成，避免在 CI 慢机器上还没收到响应就判断超时
-  await page.waitForResponse(/\/api\/auth\//, { timeout: 30000 }).catch(() => null);
+  // Better Auth 的 basePath 是 /auth，实际请求为 /auth/sign-in/email
+  await page.waitForResponse(/\/auth\//, { timeout: 30000 }).catch(() => null);
   // 登录后可能重定向到 / 或 /en/ 等同义词，用正则匹配首页路径
   await page.waitForURL(/\/$/, { timeout: 30000 });
   await page.waitForLoadState("domcontentloaded");
