@@ -60,12 +60,32 @@ export default defineConfig({
   ],
 
   // 自动启动本地开发服务器（仅在非 staging 测试时）
+  // CI 中拆分为 api + web 两个独立服务，确保 API 完全 ready 后再跑测试，
+  // 避免登录请求打到尚未初始化好 D1 的 API 上。
   webServer: process.env.E2E_BASE_URL
     ? undefined
-    : {
-        command: "pnpm dev:fresh",
-        url: "http://localhost:5432",
-        reuseExistingServer: !process.env.CI,
-        timeout: 180_000,
-      },
+    : process.env.CI
+      ? [
+          {
+            command: "pnpm api:dev",
+            url: "http://localhost:8799/health",
+            reuseExistingServer: false,
+            timeout: 120_000,
+          },
+          {
+            command: "pnpm web:dev",
+            url: "http://localhost:5432",
+            reuseExistingServer: false,
+            timeout: 180_000,
+            env: {
+              PUBLIC_API_URL: process.env.PUBLIC_API_URL || "http://localhost:8799",
+            },
+          },
+        ]
+      : {
+          command: "pnpm dev:fresh",
+          url: "http://localhost:5432",
+          reuseExistingServer: true,
+          timeout: 180_000,
+        },
 });

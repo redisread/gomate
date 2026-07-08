@@ -75,11 +75,21 @@ jobs:
         run: pnpm exec playwright install chromium
       - name: Generate i18n locales
         run: pnpm i18n:build
+      - name: Reset and verify local D1 database
+        run: |
+          pnpm db:reset
+          dbfile=$(find api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject -maxdepth 1 -name '*.sqlite' ! -name 'metadata.sqlite' -print -quit)
+          echo "D1 database file: $dbfile"
+          sqlite3 "$dbfile" "SELECT COUNT(*) AS users_count FROM users;"
+          sqlite3 "$dbfile" "SELECT email, role FROM users ORDER BY email LIMIT 10;"
+          sqlite3 "$dbfile" "SELECT COUNT(*) AS accounts_count FROM accounts;"
+          sqlite3 "$dbfile" "SELECT account_id, provider_id FROM accounts ORDER BY account_id LIMIT 10;"
       - name: Run E2E tests
         run: pnpm e2e:ci
         env:
           CI: true
           PUBLIC_API_URL: http://localhost:8799
+          DEBUG: pw:webserver
       - name: Generate E2E health report
         if: always()
         run: node scripts/e2e-health-report.mjs
