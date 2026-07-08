@@ -75,6 +75,15 @@ jobs:
         run: pnpm exec playwright install chromium
       - name: Generate i18n locales
         run: pnpm i18n:build
+      - name: Prepare local secrets for wrangler dev
+        run: |
+          # CI 中没有本地 .dev.vars，需要给 wrangler dev 提供一个测试用的 BETTER_AUTH_SECRET
+          cat > api/.dev.vars <<'EOF'
+          BETTER_AUTH_SECRET=ci-local-dev-secret-key-32chars-long-12345
+          RESEND_API_KEY=
+          AMAP_SERVER_KEY=
+          EOF
+          echo "api/.dev.vars created"
       - name: Reset and verify local D1 database
         run: |
           pnpm db:reset
