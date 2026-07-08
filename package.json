@@ -18,6 +18,7 @@
     "dev:fresh": "pnpm db:reset && concurrently \"pnpm api:dev\" \"pnpm web:dev\"",
     "env:check": "node scripts/env-check.mjs",
     "db:reset": "node scripts/reset-local-db.mjs",
+    "db:promote-admin": "node scripts/promote-admin.mjs",
     "e2e": "playwright test --project=chromium",
     "e2e:ci": "playwright test --project=chromium",
     "e2e:staging": "E2E_BASE_URL=https://staging.gomate.live playwright test --project=chromium-staging",

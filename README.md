@@ -52,9 +52,25 @@ pnpm dev:fresh
 # 仅重置本地数据库并灌入测试数据
 pnpm db:reset
 
+# 提升指定用户为 admin（本地验证用，远程环境会二次确认）
+pnpm db:promote-admin --email admin@test.com --env local --yes
+
 # 本地测试账号（由 db:reset 自动生成）
 # 邮箱：admin@test.com / leader_a@test.com / leader_b@test.com / member_a@test.com
 # 密码：test1234
+```
+
+# 提升用户为 admin
+
+地点/路线/城市管理等接口需要 `role = 'admin'`。如果注册账号默认是 `user`，可用以下脚本提升：
+
+```bash
+# 本地
+pnpm db:promote-admin --email admin@test.com --env local --yes
+
+# staging / production（会二次确认）
+pnpm db:promote-admin --email victor@example.com --env production
+pnpm db:promote-admin --user-id <user-id> --env staging --yes
 ```
 
 ## E2E 测试

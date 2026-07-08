@@ -37,7 +37,10 @@ function findDbFile(): string {
     throw new Error(`D1 database directory not found: ${DB_PATH}`);
   }
   const files = fs.readdirSync(DB_PATH);
-  const dbFile = files.find(f => f.endsWith(".sqlite"));
+  // 排除 metadata.sqlite；真正的 D1 DB 文件名是数据库 ID 的哈希（很长的一串）
+  const dbFile = files
+    .filter((f) => f.endsWith(".sqlite") && f !== "metadata.sqlite")
+    .sort((a, b) => b.length - a.length)[0];
   if (!dbFile) {
     throw new Error("No SQLite database file found in D1 directory");
   }
