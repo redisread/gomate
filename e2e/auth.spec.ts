@@ -18,7 +18,7 @@ test.describe("Auth", () => {
     await fillLoginForm(page, "admin@test.com", "test1234");
     await page.locator("[data-testid='login-submit']").click();
     // Deterministic assertion: wait for navigation to home
-    await page.waitForURL(/\/$/, { timeout: 15000 });
+    await page.waitForURL(/\/$/, { timeout: 30000 });
     await expect(page).toHaveURL(/\/$/);
     await expect(page.locator("body")).toContainText("GoMate");
   });

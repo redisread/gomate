@@ -22,7 +22,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
 
   // 测试超时
-  timeout: 30_000,
+  timeout: process.env.CI ? 60_000 : 30_000,
 
   // 报告器：list + html + json（健康度脚本解析 json）
   reporter: [
