@@ -84,6 +84,10 @@ jobs:
           AMAP_SERVER_KEY=
           EOF
           echo "api/.dev.vars created"
+      - name: Verify required environment variables
+        run: pnpm env:check --ci
+        env:
+          PUBLIC_API_URL: http://localhost:8799
       - name: Reset and verify local D1 database
         run: |
           pnpm db:reset
