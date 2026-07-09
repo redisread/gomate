@@ -71,7 +71,13 @@ function parseDotenv(filePath) {
     const eq = trimmed.indexOf("=");
     if (eq === -1) continue;
     const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
     vars[key] = value;
   }
   return vars;
@@ -145,9 +151,9 @@ function checkSecrets() {
   const errors = [];
 
   if (IS_PRODUCTION) {
-    if (!apiSecrets.AUTH_SECRET_V2) {
+    if (!apiSecrets.AUTH_SECRET_V2 && !apiSecrets.BETTER_AUTH_SECRET) {
       errors.push(
-        "生产环境缺少 AUTH_SECRET_V2（应通过 wrangler secret put 设置）",
+        "生产环境缺少 AUTH_SECRET_V2 或 BETTER_AUTH_SECRET（应通过 wrangler secret put 设置）",
       );
     }
   } else {
