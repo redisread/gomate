@@ -6,20 +6,35 @@ import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
 import { updateExpiredTeams } from "../lib/team-status";
 
+// 自定义错误类，避免字符串匹配导致的脆弱性
+class AuthenticationError extends Error {
+  constructor(message = "未登录") {
+    super(message);
+    this.name = "AuthenticationError";
+  }
+}
+
+class AuthorizationError extends Error {
+  constructor(message = "无权限访问") {
+    super(message);
+    this.name = "AuthorizationError";
+  }
+}
+
 const admin = new Hono<{ Bindings: Env }>();
 
 /** 验证管理员权限 */
 async function checkAdmin(c: { env: Env; req: { raw: Request } }) {
   const authInstance = createAuth(c.env);
   const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-  if (!session) throw new Error("未登录");
+  if (!session) throw new AuthenticationError();
   const db = createDb(c.env.DB);
   const user = await db
     .select({ role: schema.users.role })
     .from(schema.users)
     .where(eq(schema.users.id, session.user.id))
     .then((rows) => rows[0]);
-  if (!user || user.role !== "admin") throw new Error("无权限访问");
+  if (!user || user.role !== "admin") throw new AuthorizationError();
   return session;
 }
 
@@ -43,9 +58,8 @@ admin.post("/clear-rate-limit", async (c) => {
       message: `已清除 ${body.identifier} 的速率限制`,
     });
   } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
+    if (error instanceof AuthenticationError) return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (error instanceof AuthorizationError) return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Clear rate limit error:", error);
     return c.json(APIErrors.internalError("清除失败"), 500);
   }
@@ -69,9 +83,8 @@ admin.post("/cron/update-expired-teams", async (c) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
+    if (error instanceof AuthenticationError) return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (error instanceof AuthorizationError) return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Manual cron trigger error:", error);
     return c.json(APIErrors.internalError("执行失败"), 500);
   }
@@ -140,9 +153,8 @@ admin.get("/share-analytics", async (c) => {
       top: topResult,
     });
   } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
+    if (error instanceof AuthenticationError) return c.json(APIErrors.unauthorized("未登录"), 401);
+    if (error instanceof AuthorizationError) return c.json(APIErrors.forbidden("无权限访问"), 403);
     console.error("Get share analytics error:", error);
     return c.json(APIErrors.internalError("获取分享分析失败"), 500);
   }

@@ -8,6 +8,7 @@ import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { getRandomTeamIcon } from "./utils";
 import { generateId } from "../../lib/id";
+import { invalidateCache, buildListCacheKey } from "../../lib/cache";
 
 const mutations = new Hono<{ Bindings: Env }>();
 
@@ -91,6 +92,11 @@ mutations.post("/", async (c) => {
       joinedAt: now, createdAt: now,
     });
 
+    // 清除相关缓存（Cache API 不支持通配删除，需显式列出常用键）
+    // TODO: 改用 KV 缓存版本号或标签缓存，避免遗漏
+    void invalidateCache(buildListCacheKey("teams", { locationId, status: "recruiting" }));
+    void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
+
     return c.json({ success: true, team: { id: teamId, locationId, routeId, leaderId: userId, title, description, startTime: startTime.toISOString(), endTime: endTime.toISOString(), durationMin: durationMinutes, maxMembers, currentMembers: 1, requirements, icon: teamIcon, status: "recruiting", createdAt: now.toISOString() } });
   } catch (error) {
     console.error("Create team error:", error);
@@ -165,6 +171,10 @@ mutations.put("/:id", async (c) => {
 
     await db.update(schema.teams).set(updateData).where(eq(schema.teams.id, teamId));
 
+    // 清除相关缓存
+    void invalidateCache(buildListCacheKey("teams", { locationId: team.locationId, status: "recruiting" }));
+    void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
+
     return c.json({ success: true, message: "队伍信息已更新" });
   } catch (error) {
     console.error("Update team error:", error);
@@ -197,6 +207,10 @@ mutations.delete("/:id", async (c) => {
 
     await db.delete(schema.teamMembers).where(eq(schema.teamMembers.teamId, teamId));
     await db.delete(schema.teams).where(eq(schema.teams.id, teamId));
+
+    // 清除相关缓存
+    void invalidateCache(buildListCacheKey("teams", { locationId: team.locationId, status: "recruiting" }));
+    void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
 
     return c.json({ success: true, message: "队伍已删除" });
   } catch (error) {
@@ -238,6 +252,10 @@ mutations.post("/:id/form", async (c) => {
       .set({ status: "formed", updatedAt: new Date() })
       .where(eq(schema.teams.id, teamId));
 
+    // 清除相关缓存
+    void invalidateCache(buildListCacheKey("teams", { locationId: team.locationId, status: "recruiting" }));
+    void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
+
     return c.json({ success: true, message: "队伍已组建", isUnderfilled });
   } catch (error) {
     console.error("Form team error:", error);
@@ -268,6 +286,10 @@ mutations.post("/:id/cancel", async (c) => {
     await db.update(schema.teams)
       .set({ status: "cancelled", updatedAt: new Date() })
       .where(eq(schema.teams.id, teamId));
+
+    // 清除相关缓存
+    void invalidateCache(buildListCacheKey("teams", { locationId: team.locationId, status: "recruiting" }));
+    void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
 
     return c.json({ success: true, message: "队伍已取消" });
   } catch (error) {
