@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
+import { checkRateLimit } from "../lib/rate-limit";
 import type { Env } from "../lib/auth";
 
 const upload = new Hono<{ Bindings: Env }>();
@@ -12,6 +13,34 @@ const upload = new Hono<{ Bindings: Env }>();
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 /** 最大文件大小：5MB */
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+/** 上传速率限制：10 次/小时 */
+const UPLOAD_RATE_LIMIT_MAX = 10;
+const UPLOAD_RATE_LIMIT_WINDOW = 3600;
+
+/** 常见图片格式的 Magic Number */
+const MAGIC_NUMBERS = {
+  jpeg: [0xFF, 0xD8, 0xFF],
+  png: [0x89, 0x50, 0x4E, 0x47],
+  gif: [0x47, 0x49, 0x46, 0x38],
+  webp: [0x52, 0x49, 0x46, 0x46],
+};
+
+function validateMagicNumber(buffer: ArrayBuffer): boolean {
+  const bytes = new Uint8Array(buffer);
+  if (bytes.length < 4) return false;
+
+  const checks = [
+    { magic: MAGIC_NUMBERS.jpeg, minLen: 3 },
+    { magic: MAGIC_NUMBERS.png, minLen: 4 },
+    { magic: MAGIC_NUMBERS.gif, minLen: 4 },
+    { magic: MAGIC_NUMBERS.webp, minLen: 4 },
+  ];
+
+  return checks.some(({ magic, minLen }) => {
+    if (bytes.length < minLen) return false;
+    return magic.every((b, i) => bytes[i] === b);
+  });
+}
 
 /**
  * 生成 R2 对象公开 URL
@@ -29,9 +58,13 @@ async function uploadImageFile(c: { env: Env; req: { header: (name: string) => s
     return { error: APIErrors.badRequest("Invalid file type. Allowed: JPEG, PNG, GIF, WebP"), status: 400 as const };
   if (file.size > MAX_FILE_SIZE)
     return { error: APIErrors.badRequest("File too large. Maximum size: 5MB"), status: 400 as const };
-  if (!c.env.R2) return { error: APIErrors.internalError("R2 storage not configured"), status: 500 as const };
 
   const arrayBuffer = await file.arrayBuffer();
+  if (!validateMagicNumber(arrayBuffer))
+    return { error: APIErrors.badRequest("Invalid file content. File header does not match allowed image formats."), status: 400 as const };
+
+  if (!c.env.R2) return { error: APIErrors.internalError("R2 storage not configured"), status: 500 as const };
+
   await c.env.R2.put(key, arrayBuffer, {
     httpMetadata: { contentType: file.type },
   });
@@ -62,6 +95,10 @@ upload.post("/avatar", async (c) => {
 
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
     if (!userId) return c.json(APIErrors.badRequest("User ID is required"), 400);
+
+    // 速率限制
+    const rateLimit = await checkRateLimit(c.env.GOMATE_KV, `rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
+    if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
 
     // 鉴权：只允许上传自己的头像（管理员除外）
     if (userId !== session.user.id) {
@@ -145,6 +182,10 @@ upload.post("/location", async (c) => {
     const file = formData.get("file") as File | null;
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
 
+    // 速率限制
+    const rateLimit = await checkRateLimit(c.env.GOMATE_KV, `rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
+    if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
+
     const ext = file.type.split("/")[1] || "jpg";
     const key = `locations/${Date.now()}.${ext}`;
     const result = await uploadImageFile(c, file, key);
@@ -169,6 +210,10 @@ upload.post("/story", async (c) => {
     const formData = await c.req.formData();
     const file = formData.get("file") as File | null;
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
+
+    // 速率限制
+    const rateLimit = await checkRateLimit(c.env.GOMATE_KV, `rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
+    if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
 
     const ext = file.type.split("/")[1] || "jpg";
     const key = `stories/${session.user.id}-${Date.now()}.${ext}`;
