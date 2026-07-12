@@ -53,16 +53,12 @@ jobs:
         run: pnpm --filter @gomate/frontend build
         env:
           PUBLIC_API_URL: https://api.gomate.live
-      # Lint: non-blocking for now (historical debt)
-      - name: Lint (non-blocking)
-        run: pnpm --filter @gomate/frontend lint || echo "Lint warnings - to be fixed in dedicated task"
-        continue-on-error: true
+      - name: Lint
+        run: pnpm --filter @gomate/frontend lint
   # E2E Tests (local dev server)
-  # 观察期：continue-on-error=true，收集 flaky 率，不阻塞 PR 合并
   e2e-tests:
     name: E2E Tests (Local)
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
