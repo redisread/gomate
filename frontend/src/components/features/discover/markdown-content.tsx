@@ -11,11 +11,24 @@ interface MarkdownContentProps {
 }
 
 const baseComponents: Components = {
-  a: ({ href, children, ...props }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
-      {children}
-    </a>
-  ),
+  a: ({ href = "", children, ...props }) => {
+    const isSafe =
+      /^https?:\/\//.test(href) ||
+      href.startsWith("/") ||
+      href.startsWith("#") ||
+      href.startsWith("mailto:");
+
+    if (!isSafe) {
+      console.warn("[MarkdownContent] Blocked unsafe link:", href);
+      return <span className="text-muted-foreground line-through" title="不安全的链接已阻止">{children}</span>;
+    }
+
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer nofollow" {...props}>
+        {children}
+      </a>
+    );
+  },
 };
 
 const shiftedHeadingComponents: Components = {

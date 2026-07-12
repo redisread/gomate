@@ -111,6 +111,7 @@ export const LocationCard = memo(function LocationCard({ location, index = 0 }: 
     </a>
   );
 }, (prevProps, nextProps) => {
-  // 仅当 location.id 变化时重新渲染
-  return prevProps.location.id === nextProps.location.id;
+  // 比较 id 和 index，确保首屏加载状态变化时重新渲染
+  return prevProps.location.id === nextProps.location.id &&
+         prevProps.index === nextProps.index;
 });

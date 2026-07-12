@@ -46,7 +46,7 @@ queries.get("/", async (c) => {
     }
 
     const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
-    const pageSize = Math.min(200, parseInt(c.req.query("pageSize") || "12", 10));
+    const pageSize = Math.min(100, Math.max(1, parseInt(c.req.query("pageSize") || "12", 10)));
     const search = c.req.query("search") || "";
     const cityId = c.req.query("cityId") || "";
     const tagIdsParam = c.req.query("tagIds");
