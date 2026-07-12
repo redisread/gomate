@@ -42,11 +42,19 @@ queries.get("/", async (c) => {
     // 标签筛选参数
     const tagIdsParam = c.req.query("tagIds") || "";
 
-    const currentMembersSubquery = sql<number>`(
-      SELECT COUNT(*) FROM team_members
-      WHERE team_members.team_id = ${schema.teams.id}
-      AND team_members.status IN ('approved', 'leave_pending')
-    )`;
+    // CTE: 预先计算每个队伍的当前成员数（approved + leave_pending），避免相关子查询 N+1
+    const teamMemberCounts = db.$with("team_member_counts").as(
+      db
+        .select({
+          teamId: schema.teamMembers.teamId,
+          count: sql<number>`count(*)`.as("count"),
+        })
+        .from(schema.teamMembers)
+        .where(inArray(schema.teamMembers.status, ["approved", "leave_pending"]))
+        .groupBy(schema.teamMembers.teamId)
+    );
+
+    const currentMembersColumn = sql<number>`COALESCE(${teamMemberCounts.count}, 0)`.as("currentMembers");
 
     const teamColumns = {
       id: schema.teams.id,
@@ -64,7 +72,7 @@ queries.get("/", async (c) => {
       status: schema.teams.status,
       createdAt: schema.teams.createdAt,
       updatedAt: schema.teams.updatedAt,
-      currentMembers: currentMembersSubquery,
+      currentMembers: currentMembersColumn,
       leaderImage: schema.users.image,
       leaderName: schema.users.name,
       leaderNickname: schema.users.nickname,
@@ -97,11 +105,13 @@ queries.get("/", async (c) => {
         conditions.push(ne(schema.teams.status, "cancelled"));
       }
       result = await db
+        .with(teamMemberCounts)
         .select(teamColumns)
         .from(schema.teams)
         .innerJoin(schema.teamMembers, eq(schema.teamMembers.teamId, schema.teams.id))
         .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
         .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+        .leftJoin(teamMemberCounts, eq(teamMemberCounts.teamId, schema.teams.id))
         .where(and(...conditions))
         .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
       return c.json({
@@ -128,10 +138,12 @@ queries.get("/", async (c) => {
         }
 
         const rows = await db
+          .with(teamMemberCounts)
           .select(teamColumns)
           .from(schema.teams)
           .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
           .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+          .leftJoin(teamMemberCounts, eq(teamMemberCounts.teamId, schema.teams.id))
           .where(and(...conditions))
           .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
         return {
@@ -254,11 +266,13 @@ queries.get("/", async (c) => {
 
       // 查询列表
       const rows = await db
+        .with(teamMemberCounts)
         .select(teamColumns)
         .from(schema.teams)
         .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
         .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
         .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
+        .leftJoin(teamMemberCounts, eq(teamMemberCounts.teamId, schema.teams.id))
         .where(finalWhereClause)
         .orderBy(desc(schema.teams.startTime))
         .limit(pageSize)
