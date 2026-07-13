@@ -1,5 +1,7 @@
 import { Hono } from "hono";
+import { logger } from "../lib/logger";
 import { eq, and, sql } from "drizzle-orm";
+import { logger } from "../lib/logger";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
@@ -75,7 +77,7 @@ cities.get("/", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Get cities error:", error);
+    logger.error("Get cities error:", error);
     return c.json(APIErrors.internalError("获取城市列表失败"), 500);
   }
 });
@@ -114,7 +116,7 @@ cities.post("/", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Create city error:", error);
+    logger.error("Create city error:", error);
     return c.json(APIErrors.internalError("创建城市失败"), 500);
   }
 });

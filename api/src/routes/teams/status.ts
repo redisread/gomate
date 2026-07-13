@@ -51,7 +51,7 @@ status.post("/leave", async (c) => {
 
     return c.json({ success: true, message: "已成功退出队伍" });
   } catch (error) {
-    console.error("Leave team error:", error);
+    logger.error("Leave team error:", error);
     return c.json(APIErrors.internalError("退出队伍失败"), 500);
   }
 });
@@ -85,7 +85,7 @@ status.post("/cancel-application", async (c) => {
 
     return c.json({ success: true, message: "申请已取消" });
   } catch (error) {
-    console.error("Cancel application error:", error);
+    logger.error("Cancel application error:", error);
     return c.json(APIErrors.internalError("取消申请失败"), 500);
   }
 });
@@ -130,7 +130,7 @@ status.post("/members/:userId/approve-leave", requireTeamLeader(), async (c) => 
 
     return c.json({ success: true, message: "已批准退出申请" });
   } catch (error) {
-    console.error("Approve leave error:", error);
+    logger.error("Approve leave error:", error);
     return c.json(APIErrors.internalError("批准退出申请失败"), 500);
   }
 });
@@ -165,7 +165,7 @@ status.post("/members/:userId/reject-leave", requireTeamLeader(), async (c) => {
 
     return c.json({ success: true, message: "已拒绝退出申请" });
   } catch (error) {
-    console.error("Reject leave error:", error);
+    logger.error("Reject leave error:", error);
     return c.json(APIErrors.internalError("拒绝退出申请失败"), 500);
   }
 });

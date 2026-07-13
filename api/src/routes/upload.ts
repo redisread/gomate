@@ -1,4 +1,5 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
@@ -47,7 +48,7 @@ function validateMagicNumber(buffer: ArrayBuffer): boolean {
  */
 function getPublicUrl(env: Env, key: string): string | null {
   if (!env.R2_PUBLIC_URL) {
-    console.error("[Upload] R2_PUBLIC_URL not configured");
+    logger.error("[Upload] R2_PUBLIC_URL not configured");
     return null;
   }
   return `${env.R2_PUBLIC_URL}/${key}`;
@@ -119,7 +120,7 @@ upload.post("/avatar", async (c) => {
     if ("error" in result) return c.json(result.error, result.status);
     return c.json(result.data);
   } catch (error) {
-    console.error("Avatar upload error:", error);
+    logger.error("Avatar upload error:", error);
     return c.json(APIErrors.internalError("Failed to upload avatar"), 500);
   }
 });
@@ -155,7 +156,7 @@ upload.delete("/avatar", async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
-    console.error("Avatar delete error:", error);
+    logger.error("Avatar delete error:", error);
     return c.json(APIErrors.internalError("Failed to delete avatar"), 500);
   }
 });
@@ -192,7 +193,7 @@ upload.post("/location", async (c) => {
     if ("error" in result) return c.json(result.error, result.status);
     return c.json(result.data);
   } catch (error) {
-    console.error("Location image upload error:", error);
+    logger.error("Location image upload error:", error);
     return c.json(APIErrors.internalError("Failed to upload location image"), 500);
   }
 });
@@ -221,7 +222,7 @@ upload.post("/story", async (c) => {
     if ("error" in result) return c.json(result.error, result.status);
     return c.json(result.data);
   } catch (error) {
-    console.error("Story image upload error:", error);
+    logger.error("Story image upload error:", error);
     return c.json(APIErrors.internalError("Failed to upload story image"), 500);
   }
 });

@@ -1,5 +1,7 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
+import { logger } from "../lib/logger";
 import { z } from "zod";
 import { sendFeedbackEmail } from "../lib/email";
 import type { Env } from "../lib/auth";
@@ -54,7 +56,7 @@ feedback.post("/", async (c) => {
     );
 
     if (!result.success) {
-      console.error("Failed to send feedback email:", result.error);
+      logger.error("Failed to send feedback email:", result.error);
       return c.json(APIErrors.internalError("发送失败，请稍后重试"), 500);
     }
 
@@ -63,7 +65,7 @@ feedback.post("/", async (c) => {
       message: "感谢您的反馈！我们会认真查看每一条反馈，持续改进产品。"
     });
   } catch (error) {
-    console.error("Feedback API error:", error);
+    logger.error("Feedback API error:", error);
     return c.json(APIErrors.internalError("服务器错误，请稍后重试"), 500);
   }
 });

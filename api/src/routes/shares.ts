@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { logger } from "../lib/logger";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -34,7 +35,7 @@ shares.post("/track", async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
-    console.error("Track share error:", error);
+    logger.error("Track share error:", error);
     return c.json(APIErrors.internalError("Internal error"), 500);
   }
 });

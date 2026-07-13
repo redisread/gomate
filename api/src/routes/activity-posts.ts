@@ -1,5 +1,7 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
+import { logger } from "../lib/logger";
 import { eq, desc, and } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
@@ -79,7 +81,7 @@ activityPosts.get("/teams/:id/activity-posts", async (c) => {
 
     return c.json(result);
   } catch (error) {
-    console.error("Get activity posts error:", error);
+    logger.error("Get activity posts error:", error);
     return c.json(APIErrors.internalError("获取分享列表失败"), 500);
   }
 });
@@ -165,7 +167,7 @@ activityPosts.post("/teams/:id/activity-posts", async (c) => {
       data: { id: postId },
     });
   } catch (error) {
-    console.error("Create activity post error:", error);
+    logger.error("Create activity post error:", error);
     return c.json(APIErrors.internalError("发布失败"), 500);
   }
 });
@@ -219,7 +221,7 @@ activityPosts.delete("/activity-posts/:id", async (c) => {
       message: "删除成功",
     });
   } catch (error) {
-    console.error("Delete activity post error:", error);
+    logger.error("Delete activity post error:", error);
     return c.json(APIErrors.internalError("删除失败"), 500);
   }
 });
@@ -293,7 +295,7 @@ activityPosts.get("/locations/:id/activity-posts", async (c) => {
       data: formattedPosts,
     });
   } catch (error) {
-    console.error("Get location activity posts error:", error);
+    logger.error("Get location activity posts error:", error);
     return c.json(APIErrors.internalError("获取分享列表失败"), 500);
   }
 });

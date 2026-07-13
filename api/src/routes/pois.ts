@@ -1,4 +1,5 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
 import { like, eq } from "drizzle-orm";
 import { createDb } from "../db";
@@ -55,7 +56,7 @@ poisRoute.get("/", async (c) => {
 
     return c.json({ success: true, pois });
   } catch (error) {
-    console.error("Get pois error:", error);
+    logger.error("Get pois error:", error);
     return c.json(APIErrors.internalError("获取打卡点列表失败"), 500);
   }
 });
@@ -94,7 +95,7 @@ poisRoute.get("/:id", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Get poi error:", error);
+    logger.error("Get poi error:", error);
     return c.json(APIErrors.internalError("获取打卡点详情失败"), 500);
   }
 });
@@ -133,7 +134,7 @@ poisRoute.post("/", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Create poi error:", error);
+    logger.error("Create poi error:", error);
     return c.json(APIErrors.internalError("创建打卡点失败"), 500);
   }
 });
@@ -196,7 +197,7 @@ poisRoute.put("/:id", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Update poi error:", error);
+    logger.error("Update poi error:", error);
     return c.json(APIErrors.internalError("更新打卡点失败"), 500);
   }
 });
@@ -237,7 +238,7 @@ poisRoute.delete("/:id", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Delete poi error:", error);
+    logger.error("Delete poi error:", error);
     return c.json(APIErrors.internalError("删除打卡点失败"), 500);
   }
 });

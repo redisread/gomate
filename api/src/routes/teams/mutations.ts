@@ -99,7 +99,7 @@ mutations.post("/", async (c) => {
 
     return c.json({ success: true, team: { id: teamId, locationId, routeId, leaderId: userId, title, description, startTime: startTime.toISOString(), endTime: endTime.toISOString(), durationMin: durationMinutes, maxMembers, currentMembers: 1, requirements, icon: teamIcon, status: "recruiting", createdAt: now.toISOString() } });
   } catch (error) {
-    console.error("Create team error:", error);
+    logger.error("Create team error:", error);
     return c.json(APIErrors.internalError("创建队伍失败"), 500);
   }
 });
@@ -177,7 +177,7 @@ mutations.put("/:id", async (c) => {
 
     return c.json({ success: true, message: "队伍信息已更新" });
   } catch (error) {
-    console.error("Update team error:", error);
+    logger.error("Update team error:", error);
     return c.json(APIErrors.internalError("更新队伍失败"), 500);
   }
 });
@@ -214,7 +214,7 @@ mutations.delete("/:id", async (c) => {
 
     return c.json({ success: true, message: "队伍已删除" });
   } catch (error) {
-    console.error("Delete team error:", error);
+    logger.error("Delete team error:", error);
     return c.json(APIErrors.internalError("删除队伍失败"), 500);
   }
 });
@@ -258,7 +258,7 @@ mutations.post("/:id/form", async (c) => {
 
     return c.json({ success: true, message: "队伍已组建", isUnderfilled });
   } catch (error) {
-    console.error("Form team error:", error);
+    logger.error("Form team error:", error);
     return c.json(APIErrors.internalError("组建队伍失败"), 500);
   }
 });
@@ -293,7 +293,7 @@ mutations.post("/:id/cancel", async (c) => {
 
     return c.json({ success: true, message: "队伍已取消" });
   } catch (error) {
-    console.error("Cancel team error:", error);
+    logger.error("Cancel team error:", error);
     return c.json(APIErrors.internalError("取消队伍失败"), 500);
   }
 });

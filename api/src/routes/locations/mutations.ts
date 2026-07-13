@@ -47,7 +47,7 @@ mutations.post("/", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Create location error:", error);
+    logger.error("Create location error:", error);
     return c.json(APIErrors.internalError("创建地点失败"), 500);
   }
 });
@@ -92,7 +92,7 @@ mutations.put("/", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Update location error:", error);
+    logger.error("Update location error:", error);
     return c.json(APIErrors.internalError("更新地点失败"), 500);
   }
 });
@@ -117,7 +117,7 @@ mutations.delete("/:id", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Delete location error:", error);
+    logger.error("Delete location error:", error);
     return c.json(APIErrors.internalError("删除地点失败"), 500);
   }
 });
@@ -161,7 +161,7 @@ mutations.put("/:id/tags", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Update location tags error:", error);
+    logger.error("Update location tags error:", error);
     return c.json(APIErrors.internalError("更新标签失败"), 500);
   }
 });
@@ -209,7 +209,7 @@ mutations.put("/:id/pois", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Update location pois error:", error);
+    logger.error("Update location pois error:", error);
     return c.json(APIErrors.internalError("更新打卡点失败"), 500);
   }
 });
