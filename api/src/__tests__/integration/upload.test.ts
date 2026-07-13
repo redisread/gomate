@@ -56,6 +56,25 @@ function createFormDataRequest(formData: FormData, headers: Record<string, strin
   };
 }
 
+/** 创建带有正确 Magic Number 的测试图片 Blob */
+function createTestImageBlob(type: "jpeg" | "png" | "webp" | "gif" = "jpeg"): Blob {
+  const magicNumbers = {
+    jpeg: [0xFF, 0xD8, 0xFF],
+    png: [0x89, 0x50, 0x4E, 0x47],
+    webp: [0x52, 0x49, 0x46, 0x46],
+    gif: [0x47, 0x49, 0x46, 0x38],
+  };
+  const mimeTypes = {
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif",
+  };
+  const magic = magicNumbers[type];
+  const content = new Uint8Array([...magic, ...Array.from({ length: 20 }, (_, i) => i)]);
+  return new Blob([content], { type: mimeTypes[type] });
+}
+
 /** 设置登录会话 */
 function loginAs(user: { id: string; email: string; name: string }) {
   currentSession = { user };
@@ -124,7 +143,7 @@ describe("上传 API 集成测试", () => {
       const user = await seedUser(testDb);
       loginAs(user);
       const formData = new FormData();
-      const imageBlob = new Blob(["fake-image-data"], { type: "image/jpeg" });
+      const imageBlob = createTestImageBlob("jpeg");
       formData.append("file", imageBlob, "avatar.jpg");
       formData.append("userId", user.id);
 
@@ -206,7 +225,7 @@ describe("上传 API 集成测试", () => {
       const otherUser = await seedUser(testDb, { id: "other_user" });
       loginAs(admin);
       const formData = new FormData();
-      formData.append("file", new Blob(["test"], { type: "image/jpeg" }), "avatar.jpg");
+      formData.append("file", createTestImageBlob("jpeg"), "avatar.jpg");
       formData.append("userId", otherUser.id);
 
       // Act
@@ -311,7 +330,7 @@ describe("上传 API 集成测试", () => {
       const admin = await seedUser(testDb, { role: "admin" });
       loginAs(admin);
       const formData = new FormData();
-      formData.append("file", new Blob(["test"], { type: "image/png" }), "location.png");
+      formData.append("file", createTestImageBlob("png"), "location.png");
 
       // Act
       const res = await req(app, bindings, "/upload/location", createFormDataRequest(formData));
@@ -378,7 +397,7 @@ describe("上传 API 集成测试", () => {
       const user = await seedUser(testDb);
       loginAs(user);
       const formData = new FormData();
-      formData.append("file", new Blob(["fake-story-cover"], { type: "image/webp" }), "cover.webp");
+      formData.append("file", createTestImageBlob("webp"), "cover.webp");
 
       const res = await req(app, bindings, "/upload/story", createFormDataRequest(formData));
 
