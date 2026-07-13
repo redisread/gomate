@@ -1,4 +1,5 @@
 import { cors } from "hono/cors";
+import { logger } from "../lib/logger";
 import type { Env } from "../lib/auth";
 
 /**
@@ -38,7 +39,7 @@ export const corsMiddleware = cors({
     if (isDev && /^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin)) return origin;
 
     // 解析失败或无匹配时记录警告
-    console.warn("[CORS] Rejected origin:", origin, "Allowed:", allowed);
+    logger.warn(`[CORS] Rejected origin: ${origin}, allowed: ${allowed.join(", ")}`);
     return null;
   },
   credentials: true,

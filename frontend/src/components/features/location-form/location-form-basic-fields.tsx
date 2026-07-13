@@ -84,7 +84,7 @@ function styledInput(hasError?: boolean) {
    LocationFormBasicFields
    ================================================================ */
 
-const LOCATION_TYPE_OPTIONS = (t: (key: any) => string) => [
+const LOCATION_TYPE_OPTIONS = (t: (key: string) => string) => [
   { value: "hiking", label: t("admin.locationTypeHiking") }, { value: "explore", label: t("admin.locationTypeExplore") },
   { value: "leisure", label: t("admin.locationTypeLeisure") }, { value: "travel", label: t("admin.locationTypeTravel") },
 ] as const;

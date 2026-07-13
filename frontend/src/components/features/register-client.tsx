@@ -401,7 +401,7 @@ function FormField({
 
 /* ── 密码强度指示器 ── */
 function PasswordStrength({ password }: { password: string }) {
-  const getStrength = (pwd: string, t: (key: any, vars?: Record<string, string | number>) => string): { level: number; label: string; color: string } => {
+  const getStrength = (pwd: string, t: (key: string, vars?: Record<string, string | number>) => string): { level: number; label: string; color: string } => {
     let score = 0;
     if (pwd.length >= 6) score++;
     if (pwd.length >= 10) score++;

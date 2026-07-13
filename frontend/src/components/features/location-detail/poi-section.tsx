@@ -43,7 +43,7 @@ export function PoiSection({ locationId }: PoiSectionProps) {
             const roleType = poi.roleType as string;
             const colors = POI_COLOR_MAP[roleType] ?? POI_COLOR_MAP.poi;
             const icon = POI_ICON_MAP[roleType] ?? POI_ICON_MAP.poi;
-            const roleLabel = t(`locations.poiRoleTypes.${roleType}` as any) || roleType;
+            const roleLabel = t(`locations.poiRoleTypes.${roleType}` as string) || roleType;
 
             return (
               <div key={poi.id} className="flex items-start gap-3">

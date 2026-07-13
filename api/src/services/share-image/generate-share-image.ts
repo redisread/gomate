@@ -1,6 +1,7 @@
 import * as resvgWasm from "@resvg/resvg-wasm";
 import resvgWasmModule from "./resvg.wasm";
 import QRCode from "qrcode";
+import { logger } from "../../lib/logger";
 import type { Env } from "../../lib/auth";
 import { loadFonts } from "./load-fonts";
 import { renderTestTemplate } from "../../templates/share-image/test-poster";
@@ -172,7 +173,7 @@ export async function generateLocationImage(
         return { png, cacheKey, coverLoaded: true };
       }
     } catch (e) {
-      console.error("[ShareImage] Cache check failed:", e);
+      logger.error("[ShareImage] Cache check failed:", e);
     }
   }
 
@@ -190,9 +191,9 @@ export async function generateLocationImage(
     try {
       coverImageBase64 = await loadImageAsBase64(location.coverImage, env, 8000);
       if (coverImageBase64) coverLoaded = true;
-      else console.warn("[ShareImage] Cover image returned null:", location.coverImage);
+      else logger.warn("[ShareImage] Cover image returned null:", location.coverImage);
     } catch (e) {
-      console.error("[ShareImage] Failed to load cover image:", e);
+      logger.error("[ShareImage] Failed to load cover image:", e);
     }
   }
 
@@ -200,12 +201,12 @@ export async function generateLocationImage(
   if (!coverImageBase64 && location.images) {
     const images = safeJsonParse<string[]>(location.images, []);
     if (images.length > 0) {
-      console.log("[ShareImage] Trying fallback image:", images[0]);
+      logger.info("[ShareImage] Trying fallback image:", images[0]);
       try {
         coverImageBase64 = await loadImageAsBase64(images[0], env, 8000);
         if (coverImageBase64) coverLoaded = true;
       } catch (e) {
-        console.error("[ShareImage] Failed to load fallback image:", e);
+        logger.error("[ShareImage] Failed to load fallback image:", e);
       }
     }
   }
@@ -271,7 +272,7 @@ export async function generateLocationImage(
         },
       });
     } catch (e) {
-      console.error("[ShareImage] Cache save failed:", e);
+      logger.error("[ShareImage] Cache save failed:", e);
     }
   }
 
@@ -334,7 +335,7 @@ async function loadImageAsBase64(
         }
       } catch (e) {
         clearTimeout(timeout);
-        console.error("[ShareImage] Load image timeout/error:", imageUrl, e);
+        logger.error(`[ShareImage] Load image timeout/error: ${imageUrl}, ${e}`);
       }
     }
 
@@ -367,13 +368,13 @@ async function loadImageAsBase64(
             },
           });
       } catch (e) {
-        console.error("[ShareImage] Cache write failed:", e);
+        logger.error("[ShareImage] Cache write failed:", e);
       }
     }
 
     return base64Result;
   } catch (e) {
-    console.error("[ShareImage] Load image error:", e);
+    logger.error("[ShareImage] Load image error:", e);
     return null;
   }
 }
@@ -441,7 +442,7 @@ export async function generateTeamImage(
         return { png, cacheKey };
       }
     } catch (e) {
-      console.error("[ShareImage] Cache check failed:", e);
+      logger.error("[ShareImage] Cache check failed:", e);
     }
   }
 
@@ -498,7 +499,7 @@ export async function generateTeamImage(
         },
       });
     } catch (e) {
-      console.error("[ShareImage] Cache save failed:", e);
+      logger.error("[ShareImage] Cache save failed:", e);
     }
   }
 
@@ -560,7 +561,7 @@ export async function generateStoryImage(
         const png = new Uint8Array(await cached.arrayBuffer());
         return { png, cacheKey };
       }
-    } catch (e) { console.error("[ShareImage] Cache check failed:", e); }
+    } catch (e) { logger.error("[ShareImage] Cache check failed:", e); }
   }
 
   // 4. 初始化 WASM + 加载字体
@@ -598,7 +599,7 @@ export async function generateStoryImage(
       await env.R2.put(cacheKey, png, {
         httpMetadata: { contentType: "image/png", cacheControl: "public, max-age=86400" },
       });
-    } catch (e) { console.error("[ShareImage] Cache save failed:", e); }
+    } catch (e) { logger.error("[ShareImage] Cache save failed:", e); }
   }
 
   return { png, cacheKey };
@@ -622,7 +623,7 @@ export async function generateQRCode(text: string): Promise<string> {
     });
     return `data:image/svg+xml;base64,${btoa(svg)}`;
   } catch (e) {
-    console.error("[QRCode] Failed to generate QR code:", e);
+    logger.error("[QRCode] Failed to generate QR code:", e);
     // 降级：返回占位符 SVG
     const qrSvg = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25">

@@ -48,7 +48,7 @@ function styledInput(hasError?: boolean) {
   );
 }
 
-const POI_ROLE_OPTIONS = (t: (key: any) => string) => [
+const POI_ROLE_OPTIONS = (t: (key: string) => string) => [
   { value: "waypoint", label: t("admin.poiRoleWaypoint") }, { value: "checkpoint", label: t("admin.poiRoleCheckpoint") },
   { value: "viewpoint", label: t("admin.poiRoleViewpoint") }, { value: "facility", label: t("admin.poiRoleFacility") },
   { value: "poi", label: t("admin.poiRolePoi") },

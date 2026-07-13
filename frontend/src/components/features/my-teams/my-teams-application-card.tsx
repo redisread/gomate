@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { formatTimeAgo } from "@/lib/date-utils";
 import type { ApplicationRecord, PendingApproval } from "./my-teams-types";
 
-function getAppStatusConfig(t: (key: any, vars?: Record<string, string | number>) => string): Record<string, { label: string; color: string; icon: React.ElementType }> {
+function getAppStatusConfig(t: (key: string, vars?: Record<string, string | number>) => string): Record<string, { label: string; color: string; icon: React.ElementType }> {
   return {
     pending: { label: t("myTeams.appStatusPending"), color: "bg-amber-50 text-amber-700 border border-amber-200", icon: Hourglass },
     approved: { label: t("myTeams.appStatusApproved"), color: "bg-amber-50 text-amber-700 border border-amber-200", icon: CheckCircle },
@@ -12,7 +12,7 @@ function getAppStatusConfig(t: (key: any, vars?: Record<string, string | number>
   };
 }
 
-function getLevelConfig(t: (key: any, vars?: Record<string, string | number>) => string): Record<string, { label: string; emoji: string; color: string }> {
+function getLevelConfig(t: (key: string, vars?: Record<string, string | number>) => string): Record<string, { label: string; emoji: string; color: string }> {
   return {
     beginner: { label: t("myTeams.levelBeginner"), emoji: "🌱", color: "bg-green-50 text-green-700 border border-green-200" },
     intermediate: { label: t("myTeams.levelIntermediate"), emoji: "🥾", color: "bg-blue-50 text-blue-700 border border-blue-200" },

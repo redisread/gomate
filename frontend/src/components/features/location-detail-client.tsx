@@ -596,10 +596,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   const [parallaxOffset, setParallaxOffset] = React.useState(0);
   const heroRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    loadLocation();
-  }, [loadLocation]);
-
   // 视差滚动
   React.useEffect(() => {
     const handleScroll = () => {
@@ -656,6 +652,10 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       setIsLoading(false);
     }
   }, [locationId, t]);
+
+  React.useEffect(() => {
+    loadLocation();
+  }, [loadLocation]);
 
   const loadTeams = async (locId: string) => {
     try {

@@ -1,3 +1,4 @@
+import { logger } from "./lib/logger";
 import { Hono } from "hono";
 import { corsMiddleware } from "./middleware/cors";
 import { authRoute } from "./routes/auth";
@@ -131,7 +132,7 @@ app.get("/proxy-image", async (c) => {
 
     // 告警阈值检查
     if (remaining <= RATE_LIMIT_WARNING_THRESHOLD) {
-      console.warn(`[RateLimit] IP ${clientIP} 即将达到速率限制，剩余 ${remaining - 1} 次请求`);
+      logger.warn(`[RateLimit] IP ${clientIP} 即将达到速率限制，剩余 ${remaining - 1} 次请求`);
     }
 
     // 使用 KV TTL（1小时）
@@ -160,7 +161,7 @@ app.notFound((c) => c.json(APIErrors.notFound("Not found"), 404));
 
 // 全局错误处理
 app.onError((err, c) => {
-  console.error("Unhandled error:", err);
+  logger.error("Unhandled error:", err);
   return c.json(APIErrors.internalError("Internal server error"), 500);
 });
 
@@ -171,9 +172,9 @@ export default {
     try {
       const db = createDb(env.DB);
       const updatedIds = await updateExpiredTeams(db);
-      console.log(`[Cron] 已更新 ${updatedIds.length} 个过期队伍:`, updatedIds);
+      logger.info(`[Cron] 已更新 ${updatedIds.length} 个过期队伍:`, updatedIds);
     } catch (error) {
-      console.error("[Cron] 更新过期队伍失败:", error);
+      logger.error("[Cron] 更新过期队伍失败:", error);
       // 可考虑上报到监控系统
       // 注意：Cron 任务失败不会重试，错误仅用于日志记录
     }
