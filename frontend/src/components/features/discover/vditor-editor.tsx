@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import type Vditor from "vditor";
-import "vditor/dist/index.css";
 import { useI18n } from "@/hooks/useI18n";
 
 interface VditorEditorProps {
@@ -18,6 +17,24 @@ interface VditorEditorProps {
 function detectDark(): boolean {
   return document.documentElement.classList.contains("dark") ||
     window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+/**
+ * 确保 Vditor 基础 CSS 已加载
+ * 生产构建时 Vite/Astro 未能正确打包 node_modules 中的 CSS import，
+ * 因此通过动态注入 link 标签作为可靠 fallback。
+ */
+function ensureVditorCSS(): void {
+  const linkId = "vditor-base-css";
+  if (document.getElementById(linkId)) {
+    return;
+  }
+  const link = document.createElement("link");
+  link.id = linkId;
+  link.rel = "stylesheet";
+  link.type = "text/css";
+  link.href = `${VDITOR_CDN}/dist/index.css`;
+  document.head.appendChild(link);
 }
 
 /**
@@ -59,6 +76,9 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
 
     let cancelled = false;
     let vditorInstance: Vditor | null = null;
+
+    // 动态注入基础样式（兼容生产构建 CSS 未打包的情况）
+    ensureVditorCSS();
 
     (async () => {
       const Vditor = (await import("vditor")).default;
@@ -125,6 +145,12 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
         after: () => {
           if (vditorInstance) {
             vditorInstance.setValue(valueRef.current);
+            // 确保代码高亮主题 CSS 被加载（初始化时 setCodeTheme 不会自动调用）
+            vditorInstance.setTheme(
+              dark ? "dark" : "classic",
+              dark ? "dark" : "light",
+              dark ? "atom-one-dark" : "github"
+            );
             // 初始化时应用 readOnly 状态
             if (readOnly) {
               try { vditorInstance.disabled(); } catch { /* ignore */ }
@@ -163,7 +189,11 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
   React.useEffect(() => {
     if (instanceRef.current && isDark !== (instanceRef.current.vditor?.options?.theme === "dark")) {
       try {
-        instanceRef.current.setTheme(isDark ? "dark" : "classic");
+        instanceRef.current.setTheme(
+          isDark ? "dark" : "classic",
+          isDark ? "dark" : "light",
+          isDark ? "atom-one-dark" : "github"
+        );
       } catch (_e) {
         console.warn("[VditorEditor] Theme switch failed:", _e);
       }
