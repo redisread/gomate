@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from "../../db/schema";
+import { APIErrors } from "../../lib/api-errors";
 
 /**
  * 创建测试用认证 app
@@ -35,12 +36,12 @@ function createAuthTestApp(sqlite: ReturnType<typeof createTestDb>["sqlite"]) {
       const { email } = body;
 
       if (!email || typeof email !== "string") {
-        return c.json({ error: "请提供邮箱地址" }, 400);
+        return c.json(APIErrors.badRequest("请提供邮箱地址"), 400);
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        return c.json({ error: "请输入有效的邮箱地址" }, 400);
+        return c.json(APIErrors.badRequest("请输入有效的邮箱地址"), 400);
       }
 
       const existingUser = await db
@@ -50,12 +51,12 @@ function createAuthTestApp(sqlite: ReturnType<typeof createTestDb>["sqlite"]) {
         .limit(1);
 
       if (existingUser.length === 0) {
-        return c.json({ error: "该邮箱未注册" }, 400);
+        return c.json(APIErrors.badRequest("该邮箱未注册"), 400);
       }
 
       return c.json({ success: true, message: "重置密码邮件已发送，请检查您的邮箱" });
     } catch {
-      return c.json({ error: "发送重置邮件失败，请稍后重试" }, 500);
+      return c.json(APIErrors.internalError("发送重置邮件失败，请稍后重试"), 500);
     }
   });
 

@@ -7,6 +7,7 @@ import type { Env } from "../../lib/auth";
 import { getTimeFilterRange, parseRequirements, getRouteTags } from "./utils";
 import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../../lib/cache";
 import { updateExpiredTeams } from "../../lib/team-status";
+import { APIErrors } from "../../lib/api-errors";
 
 const queries = new Hono<{ Bindings: Env }>();
 
@@ -288,7 +289,7 @@ queries.get("/", async (c) => {
     return c.json(body);
   } catch (error) {
     console.error("Get teams error:", error);
-    return c.json({ success: false, error: "获取队伍列表失败" }, 500);
+    return c.json(APIErrors.internalError("获取队伍列表失败"), 500);
   }
 });
 
@@ -352,7 +353,7 @@ queries.get("/:id", async (c) => {
       with: { leader: true, members: { with: { user: true } }, route: true, location: true },
     });
 
-    if (!teamWithRelations) return c.json({ success: false, error: "队伍不存在" }, 404);
+    if (!teamWithRelations) return c.json(APIErrors.notFound("队伍不存在"), 404);
 
     let routeTags: { id: string; name: string; type: string }[] = [];
     if (teamWithRelations.routeId) {
@@ -462,7 +463,7 @@ queries.get("/:id", async (c) => {
     });
   } catch (error) {
     console.error("Get team error:", error);
-    return c.json({ success: false, error: "获取队伍详情失败" }, 500);
+    return c.json(APIErrors.internalError("获取队伍详情失败"), 500);
   }
 });
 
@@ -474,15 +475,15 @@ queries.get("/:id/applications", async (c) => {
   try {
     const authInstance = createAuth(c.env);
     const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ success: false, error: "请先登录" }, 401);
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
 
     const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
-    if (!team) return c.json({ success: false, error: "队伍不存在" }, 404);
+    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (team.leaderId !== session.user.id)
-      return c.json({ success: false, error: "只有队长可以查看申请列表" }, 403);
+      return c.json(APIErrors.forbidden("只有队长可以查看申请列表"), 403);
 
     // 支持 status 查询参数过滤；不传则返回全部成员（管理页面需要）
     const statusFilter = c.req.query("status");
@@ -507,7 +508,7 @@ queries.get("/:id/applications", async (c) => {
     });
   } catch (error) {
     console.error("Get applications error:", error);
-    return c.json({ success: false, error: "获取申请列表失败" }, 500);
+    return c.json(APIErrors.internalError("获取申请列表失败"), 500);
   }
 });
 
@@ -533,7 +534,7 @@ queries.get("/:id/my-status", async (c) => {
     return c.json({ success: true, status: membership ? membership.status : null });
   } catch (error) {
     console.error("Get my status error:", error);
-    return c.json({ success: false, error: "获取状态失败" }, 500);
+    return c.json(APIErrors.internalError("获取状态失败"), 500);
   }
 });
 

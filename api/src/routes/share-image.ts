@@ -24,7 +24,7 @@ shareImageRoute.get("/preview", async (c) => {
   } catch (error) {
     console.error("[ShareImage] Preview generation failed:", error);
     return c.json(
-      { error: "Failed to generate preview image", details: String(error) },
+      APIErrors.internalError("Failed to generate preview image", String(error)),
       500
     );
   }
@@ -76,7 +76,7 @@ shareImageRoute.get("/location/:locationId", async (c) => {
     console.error("[ShareImage] Location image generation failed:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return c.json(
-      { error: "Failed to generate location image", details: errorMessage },
+      APIErrors.internalError("Failed to generate location image", errorMessage),
       500
     );
   }
@@ -126,7 +126,7 @@ shareImageRoute.get("/team/:teamId", async (c) => {
     console.error("[ShareImage] Team image generation failed:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return c.json(
-      { error: "Failed to generate team image", details: errorMessage },
+      APIErrors.internalError("Failed to generate team image", errorMessage),
       500
     );
   }
@@ -182,7 +182,7 @@ shareImageRoute.get("/story/:storyId", async (c) => {
     console.error("[ShareImage] Story image generation failed:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return c.json(
-      { error: "Failed to generate story image", details: errorMessage },
+      APIErrors.internalError("Failed to generate story image", errorMessage),
       500
     );
   }
