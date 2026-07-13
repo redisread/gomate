@@ -1,3 +1,5 @@
+import type { TeamStatus } from "@gomate/types";
+
 // GoMate 前端类型定义
 
 // 城市信息
@@ -192,7 +194,7 @@ export interface Team {
     birthday?: Date | number | string | null; // 生日（可能是 Date、时间戳或字符串）
     extra?: string | null; // 扩展信息（JSON 字符串）
   };
-  status: 'recruiting' | 'full' | 'formed' | 'cancelled' | 'completed';
+  status: TeamStatus;
   createdAt: string;
   members?: TeamMember[]; // 已加入的成员列表
   route?: Route; // 关联的路线信息

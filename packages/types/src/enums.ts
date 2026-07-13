@@ -19,7 +19,8 @@ export type TeamMemberStatus =
   | "pending"
   | "approved"
   | "rejected"
-  | "leave_pending";
+  | "leave_pending"
+  | "cancelled";
 
 /** 用户角色 */
 export type UserRole = "user" | "admin";
