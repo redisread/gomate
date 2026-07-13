@@ -88,7 +88,7 @@
        const link = screen.getByRole("link", { name: "测试链接" });
        expect(link).toHaveAttribute("href", "https://example.com");
        expect(link).toHaveAttribute("target", "_blank");
-       expect(link).toHaveAttribute("rel", "noopener noreferrer");
+       expect(link).toHaveAttribute("rel", "noopener noreferrer nofollow");
      });
 
      it("渲染自动链接", () => {
