@@ -12,5 +12,5 @@ const { id } = Astro.params;
 ---
 
 <Layout title="编辑故事 - GoMate" showNavbar={true} showFooter={false}>
-  <StoryEditClient storyId={id!} client:load />
+  <StoryEditClient storyId={id!} client:only="react" />
 </Layout>
