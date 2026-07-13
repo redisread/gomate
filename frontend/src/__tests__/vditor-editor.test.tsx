@@ -59,7 +59,9 @@ class MockVditor {
     // setValue 会触发 input 回调（与真实 Vditor 行为一致）
     if (mockState.inputCb) mockState.inputCb(v);
   }
-  setTheme(theme: "classic" | "dark") { mockState.theme = theme; }
+  setTheme(theme: "classic" | "dark", _contentTheme?: string, _codeTheme?: string) {
+    mockState.theme = theme;
+  }
   disabled() { mockState.disabled = true; }
   enable() { mockState.disabled = false; }
   destroy() {
@@ -113,17 +115,35 @@ function resetMockState() {
   mockState.lastSetValue = "";
 }
 
+/** 预先注入 Vditor CSS link，使 ensureVditorCSS() 在测试中立即 resolve */
+function ensureVditorCSSLinkInHead() {
+  const linkId = "vditor-base-css";
+  if (!document.getElementById(linkId)) {
+    const link = document.createElement("link");
+    link.id = linkId;
+    document.head.appendChild(link);
+  }
+}
+
+/** 清理测试中注入的 Vditor CSS link */
+function cleanupVditorCSSLink() {
+  const link = document.getElementById("vditor-base-css");
+  if (link) link.remove();
+}
+
 describe("VditorEditor", () => {
   beforeEach(() => {
     resetMockState();
     window.matchMedia = createMatchMedia(false);
     document.documentElement.classList.remove("dark");
     vi.useRealTimers();
+    ensureVditorCSSLinkInHead();
   });
 
   afterEach(() => {
     vi.useRealTimers();
     resetMockState();
+    cleanupVditorCSSLink();
   });
 
   it("用正确的配置初始化 Vditor（sv 分屏模式）", async () => {
