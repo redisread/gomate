@@ -130,7 +130,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
   const [isLoadingMap, setIsLoadingMap] = React.useState(true);
 
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [searchSuggestions, setSearchSuggestions] = React.useState<Array<{ name: string; location?: string }>>([]);
+  const [searchSuggestions, setSearchSuggestions] = React.useState<Array<{ name: string; location?: string; district?: string }>>([]);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [searchLoading, setSearchLoading] = React.useState(false);
   const searchDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -164,7 +164,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
     }, 350);
   }
 
-  function handleSearchSelect(tip: { name: string; location?: string }) {
+  function handleSearchSelect(tip: { name: string; location?: string; district?: string }) {
     setSearchQuery(tip.name); setSearchOpen(false); setSearchSuggestions([]);
     if (!tip.location || tip.location === "[]") return;
     const parts = tip.location.split(","); if (parts.length !== 2) return;

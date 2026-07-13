@@ -346,8 +346,8 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
     }
   }, [teamId, showToast, t]);
 
-  const members = team?.members || [];
   const allMembers = React.useMemo(() => {
+    const members = team?.members || [];
     if (!team?.leader) return members;
     const leaderInMembers = members.find(m => m.userId === team.leader?.id);
     if (leaderInMembers) return members;
@@ -366,7 +366,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       extra: team.leader.extra ?? null,
     };
     return [leaderAsMember, ...members];
-  }, [members, team?.leader, team?.createdAt]);
+  }, [team?.members, team?.leader, team?.createdAt]);
 
   const isLeader = !!(userId && team?.leader?.id === userId);
   const isMember = memberStatus === "approved";

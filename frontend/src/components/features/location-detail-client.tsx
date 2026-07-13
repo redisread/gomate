@@ -596,10 +596,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   const [parallaxOffset, setParallaxOffset] = React.useState(0);
   const heroRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    loadLocation();
-  }, [loadLocation]);
-
   // 视差滚动
   React.useEffect(() => {
     const handleScroll = () => {
@@ -680,6 +676,10 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       console.error("[LocationDetail] 获取相关地点失败:", err);
     }
   };
+
+  React.useEffect(() => {
+    loadLocation();
+  }, [loadLocation]);
 
   /** 图片切换（淡入淡出）*/
   const switchImage = (index: number) => {

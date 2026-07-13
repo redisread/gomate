@@ -150,7 +150,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
         setUploadState({ phase: "error", message: msg });
       }
     },
-    [onChange]
+    [onChange, t]
   );
 
   /* ----------------------------------------------------------------
