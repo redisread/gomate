@@ -178,6 +178,64 @@ describe("上传 API 集成测试", () => {
     });
 
     /**
+     * 测试场景：上传没有扩展名的文件
+     * 预期结果：返回 400
+     */
+    it("上传没有扩展名的文件 → 400", async () => {
+      // Arrange
+      const user = await seedUser(testDb);
+      loginAs(user);
+      const formData = new FormData();
+      formData.append("file", new Blob(["test"], { type: "image/jpeg" }), "avatar");
+      formData.append("userId", user.id);
+
+      // Act
+      const res = await req(app, bindings, "/upload/avatar", createFormDataRequest(formData));
+
+      // Assert
+      expect(res.status).toBe(400);
+    });
+
+    /**
+     * 测试场景：上传 MIME 类型和扩展名不匹配的文件
+     * 预期结果：返回 400
+     */
+    it("上传 MIME 类型和扩展名不匹配的文件 → 400", async () => {
+      // Arrange
+      const user = await seedUser(testDb);
+      loginAs(user);
+      const formData = new FormData();
+      // 客户端声称是 PNG，但文件名是 .jpg
+      formData.append("file", createTestImageBlob("png"), "avatar.jpg");
+      formData.append("userId", user.id);
+
+      // Act
+      const res = await req(app, bindings, "/upload/avatar", createFormDataRequest(formData));
+
+      // Assert
+      expect(res.status).toBe(400);
+    });
+
+    /**
+     * 测试场景：上传不支持的扩展名（合法 MIME 但非法扩展名）
+     * 预期结果：返回 400
+     */
+    it("上传不支持的扩展名 → 400", async () => {
+      // Arrange
+      const user = await seedUser(testDb);
+      loginAs(user);
+      const formData = new FormData();
+      formData.append("file", new Blob(["test"], { type: "image/jpeg" }), "avatar.bmp");
+      formData.append("userId", user.id);
+
+      // Act
+      const res = await req(app, bindings, "/upload/avatar", createFormDataRequest(formData));
+
+      // Assert
+      expect(res.status).toBe(400);
+    });
+
+    /**
      * 测试场景：未提供文件
      * 预期结果：返回 400
      */
