@@ -356,11 +356,19 @@ queries.get("/created-teams", async (c) => {
     const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
     const pageSize = Math.min(100, parseInt(c.req.query("pageSize") || "10", 10));
 
-    const currentMembersSubquery = sql<number>`(
-      SELECT COUNT(*) FROM team_members
-      WHERE team_members.team_id = ${schema.teams.id}
-      AND team_members.status = 'approved'
-    )`;
+    // CTE: 预先计算每个队伍的 approved 成员数，避免相关子查询 N+1
+    const teamMemberCounts = db.$with("team_member_counts").as(
+      db
+        .select({
+          teamId: schema.teamMembers.teamId,
+          count: sql<number>`count(*)`.as("count"),
+        })
+        .from(schema.teamMembers)
+        .where(eq(schema.teamMembers.status, "approved"))
+        .groupBy(schema.teamMembers.teamId)
+    );
+
+    const currentMembersColumn = sql<number>`COALESCE(${teamMemberCounts.count}, 0)`.as("currentMembers");
 
     const [{ total }] = await db
       .select({ total: sql<number>`count(*)` })
@@ -371,19 +379,21 @@ queries.get("/created-teams", async (c) => {
     const hasMore = page < totalPages;
 
     const result = await db
+      .with(teamMemberCounts)
       .select({
         id: schema.teams.id, locationId: schema.teams.locationId, routeId: schema.teams.routeId,
         leaderId: schema.teams.leaderId, title: schema.teams.title, description: schema.teams.description,
         startTime: schema.teams.startTime, endTime: schema.teams.endTime, durationMin: schema.teams.durationMin,
         maxMembers: schema.teams.maxMembers, requirements: schema.teams.requirements,
         icon: schema.teams.icon, status: schema.teams.status, createdAt: schema.teams.createdAt,
-        updatedAt: schema.teams.updatedAt, currentMembers: currentMembersSubquery,
+        updatedAt: schema.teams.updatedAt, currentMembers: currentMembersColumn,
         leaderImage: schema.users.image, leaderName: schema.users.name, leaderLevel: schema.users.level,
         locationName: schema.locations.name, locationCoverImage: schema.locations.coverImage,
       })
       .from(schema.teams)
       .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
       .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+      .leftJoin(teamMemberCounts, eq(teamMemberCounts.teamId, schema.teams.id))
       .where(eq(schema.teams.leaderId, session.user.id))
       .orderBy(desc(schema.teams.createdAt))
       .limit(pageSize)
