@@ -10,7 +10,7 @@ import { LocaleToggle } from "@/components/layout/locale-toggle";
 import { useI18n } from "@/hooks/useI18n";
 import { useUnreadCount } from "@/hooks/useMessages";
 
-const navLinks = (t: (key: any) => string) => [
+const navLinks = (t: (key: string) => string) => [
   { href: "/",          label: t("nav.home") },
   { href: "/locations", label: t("nav.locations") },
   { href: "/teams",     label: t("nav.teams") },

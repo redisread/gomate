@@ -653,6 +653,10 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     }
   }, [locationId, t]);
 
+  React.useEffect(() => {
+    loadLocation();
+  }, [loadLocation]);
+
   const loadTeams = async (locId: string) => {
     try {
       const res = await fetchAPI(`/api/teams?locationId=${locId}&status=recruiting&pageSize=5`);

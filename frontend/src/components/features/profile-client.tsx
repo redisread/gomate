@@ -212,7 +212,7 @@ export function ProfileClient() {
                 levelConfig.badge
               )}>
                 <span>{levelConfig.emoji}</span>
-                {t(`profile.levelTitle.${user.level}` as any) ?? t("profile.levelTitle.beginner")}
+                {t(`profile.levelTitle.${user.level}` as string) ?? t("profile.levelTitle.beginner")}
               </span>
 
               {/* 邮箱 */}

@@ -106,7 +106,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
 
   const joinDate = user.createdAt ? formatJoinDate(user.createdAt) : null;
 
-  const levelLabel = t(`enums.level.${user.level}` as any) ?? t("enums.level.beginner");
+  const levelLabel = t(`enums.level.${user.level}` as string) ?? t("enums.level.beginner");
 
   return (
     <main className="min-h-screen bg-stone-50 dark:bg-stone-900">
@@ -191,7 +191,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
                 {/* 性别 */}
                 {user.gender && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
-                    {user.gender === "male" ? "♂ " : "♀ "}{t(`enums.gender.${user.gender}` as any) ?? t("enums.gender.other")}
+                    {user.gender === "male" ? "♂ " : "♀ "}{t(`enums.gender.${user.gender}` as string) ?? t("enums.gender.other")}
                   </span>
                 )}
 
