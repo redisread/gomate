@@ -598,7 +598,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
   React.useEffect(() => {
     loadLocation();
-  }, [locationId]);
+  }, [loadLocation]);
 
   // 视差滚动
   React.useEffect(() => {
@@ -638,7 +638,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       .catch(() => {});
   }, [resolvedLocationId, userId]);
 
-  const loadLocation = async () => {
+  const loadLocation = React.useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await fetchAPI(`/api/locations/${locationId}`);
@@ -655,7 +655,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [locationId, t]);
 
   const loadTeams = async (locId: string) => {
     try {

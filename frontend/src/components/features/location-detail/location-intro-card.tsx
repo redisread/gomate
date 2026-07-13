@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
+import { openExternalLink } from "@/lib/open-external";
 import { cn } from "@/lib/utils";
 import type { Location, Tag } from "@/lib/types";
 
@@ -62,7 +63,7 @@ export function LocationIntroCard({
     if (!coordinates) return;
     const dest = encodeURIComponent(location.name || address || "");
     const url = `https://uri.amap.com/navigation?to=${coordinates.lng},${coordinates.lat},${dest}&callnative=0`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    openExternalLink(url);
   };
 
   React.useEffect(() => {

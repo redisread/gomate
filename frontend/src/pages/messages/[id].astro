@@ -157,10 +157,32 @@ const { id } = Astro.params;
 
         currentUserId = sessionData.user.id;
         await loadMessages({ forceScroll: true });
-        pollTimer = window.setInterval(() => loadMessages(), 5000);
+        startPolling();
+
+        // 页面可见性变化时暂停/恢复轮询
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) {
+            stopPolling();
+          } else {
+            loadMessages();
+            startPolling();
+          }
+        });
       } catch (err) {
         console.error("Auth check failed:", err);
         window.location.href = "/login?redirect=/messages";
+      }
+    }
+
+    function startPolling() {
+      if (pollTimer) return;
+      pollTimer = window.setInterval(() => loadMessages(), 5000);
+    }
+
+    function stopPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
       }
     }
 

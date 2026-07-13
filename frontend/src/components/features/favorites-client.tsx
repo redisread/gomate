@@ -33,18 +33,7 @@ export function FavoritesClient() {
   const [error, setError] = React.useState<string | null>(null);
   const [removingId, setRemovingId] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    (async () => {
-      const user = await fetchCurrentUser();
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
-      await loadFavorites();
-    })();
-  }, []);
-
-  const loadFavorites = async () => {
+  const loadFavorites = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     const data = await safeFetch<{ favorites: FavoriteLocation[] }>("/favorites?entityType=location");
@@ -55,7 +44,18 @@ export function FavoritesClient() {
       setFavorites([]);
     }
     setIsLoading(false);
-  };
+  }, [t]);
+
+  React.useEffect(() => {
+    (async () => {
+      const user = await fetchCurrentUser();
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+      await loadFavorites();
+    })();
+  }, [loadFavorites]);
 
   const handleRemove = async (entityId: string) => {
     setRemovingId(entityId);

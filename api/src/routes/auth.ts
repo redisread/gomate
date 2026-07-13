@@ -1,7 +1,6 @@
 import { APIErrors } from "../lib/api-errors";
 import { logger } from "../lib/logger";
 import { Hono } from "hono";
-import { logger } from "../lib/logger";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { createAuth, type Env } from "../lib/auth";

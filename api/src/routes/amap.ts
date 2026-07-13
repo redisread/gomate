@@ -1,7 +1,6 @@
 import { APIErrors } from "../lib/api-errors";
 import { logger } from "../lib/logger";
 import { Hono } from "hono";
-import { logger } from "../lib/logger";
 import type { Env } from "../lib/auth";
 import { fetchWithTimeout } from "../lib/timeout";
 

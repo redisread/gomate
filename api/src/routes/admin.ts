@@ -1,7 +1,6 @@
 import { APIErrors } from "../lib/api-errors";
 import { logger } from "../lib/logger";
 import { Hono } from "hono";
-import { logger } from "../lib/logger";
 import { eq, sql } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";

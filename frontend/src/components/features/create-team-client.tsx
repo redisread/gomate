@@ -132,7 +132,7 @@ export function CreateTeamClient() {
     if (!durationManuallyEditedRef.current) {
       setFormData((prev) => ({ ...prev, durationMin: String(recommended) }));
     }
-  }, [selectedRoute?.id]);
+  }, [selectedRoute]);
 
   // 当用户手动修改时长时，标记为已手动编辑
   const handleDurationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

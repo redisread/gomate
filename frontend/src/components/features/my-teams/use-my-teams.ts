@@ -137,13 +137,13 @@ export function useMyTeams() {
   }, [currentUser?.id]);
 
   // Initial loads
-  React.useEffect(() => { if (currentUser?.id && createdPage === 1) loadCreatedTeams(1); }, [currentUser?.id, loadCreatedTeams]);
+  React.useEffect(() => { if (currentUser?.id && createdPage === 1) loadCreatedTeams(1); }, [currentUser?.id, createdPage, loadCreatedTeams]);
   React.useEffect(() => { if (createdPage > 1) loadCreatedTeams(createdPage, true); }, [createdPage, loadCreatedTeams]);
-  React.useEffect(() => { if (currentUser?.id && joinedPage === 1) loadJoinedTeams(1); }, [currentUser?.id, loadJoinedTeams]);
+  React.useEffect(() => { if (currentUser?.id && joinedPage === 1) loadJoinedTeams(1); }, [currentUser?.id, joinedPage, loadJoinedTeams]);
   React.useEffect(() => { if (joinedPage > 1) loadJoinedTeams(joinedPage, true); }, [joinedPage, loadJoinedTeams]);
-  React.useEffect(() => { if (currentUser?.id && applicationsPage === 1) loadApplications(1); }, [currentUser?.id, loadApplications]);
+  React.useEffect(() => { if (currentUser?.id && applicationsPage === 1) loadApplications(1); }, [currentUser?.id, applicationsPage, loadApplications]);
   React.useEffect(() => { if (applicationsPage > 1) loadApplications(applicationsPage, true); }, [applicationsPage, loadApplications]);
-  React.useEffect(() => { if (currentUser?.id && pendingPage === 1) loadPendingApprovals(1); }, [currentUser?.id, loadPendingApprovals]);
+  React.useEffect(() => { if (currentUser?.id && pendingPage === 1) loadPendingApprovals(1); }, [currentUser?.id, pendingPage, loadPendingApprovals]);
   React.useEffect(() => { if (pendingPage > 1) loadPendingApprovals(pendingPage, true); }, [pendingPage, loadPendingApprovals]);
 
   const refreshPendingApprovals = async () => {
