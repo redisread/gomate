@@ -4,6 +4,7 @@ import { useTeamDetail } from "./use-team-detail";
 import { getStatusInfo } from "./team-detail-utils";
 import { MemberAvatarGrid } from "./team-detail-members";
 import { TeamActivityPosts } from "@/components/features/activity-posts";
+import type { Location, Team } from "@/lib/types";
 
 export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   const { team, location, allMembers, canJoin, isFull, isLeader, isMember, isPending, userId } = ctx;
@@ -41,7 +42,7 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
   );
 }
 
-function LocationCover({ location, statusInfo }: { location: any; statusInfo: { label: string }; }) {
+function LocationCover({ location, statusInfo }: { location: Location; statusInfo: { label: string }; }) {
   const { t } = useI18n(["teams"]);
   return (
     <a href={`/locations/${location.id}`} className="group block">
@@ -90,7 +91,7 @@ function LocationCover({ location, statusInfo }: { location: any; statusInfo: { 
   );
 }
 
-function LocationRouteInfo({ location }: { location: any; }) {
+function LocationRouteInfo({ location }: { location: Location; }) {
   const route = location.routes?.[0];
   if (!route) return null;
   return (
@@ -111,7 +112,7 @@ function LocationRouteInfo({ location }: { location: any; }) {
   );
 }
 
-function RequirementsList({ requirements }: { requirements: any; }) {
+function RequirementsList({ requirements }: { requirements: string[]; }) {
   const { t } = useI18n(["teams"]);
   if (!Array.isArray(requirements) || requirements.length === 0) return null;
   return (
@@ -135,7 +136,7 @@ function RequirementsList({ requirements }: { requirements: any; }) {
 }
 
 function JoinSection({ ctx, team, canJoin, isFull, isLeader, isMember, isPending, userId }: {
-  ctx: ReturnType<typeof useTeamDetail>; team: any;
+  ctx: ReturnType<typeof useTeamDetail>; team: Team;
   canJoin: boolean; isFull: boolean; isLeader: boolean; isMember: boolean; isPending: boolean; userId: string | null;
 }) {
   const { t } = useI18n(["teams"]);

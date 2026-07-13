@@ -112,19 +112,6 @@ export function useTeams(initialData?: TeamsInitialData) {
       .catch(() => {});
   }, [initialData?.availableTags]);
 
-  // 搜索防抖
-  React.useEffect(() => {
-    if (skipInitialFilterFetchRef.current) {
-      skipInitialFilterFetchRef.current = false;
-      return;
-    }
-    const timer = setTimeout(() => {
-      loadTeams({ page: 1, search: searchQuery, difficulty: selectedDifficulty, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
-      updateURL();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, selectedDifficulty, startDate, endDate, selectedTags]);
-
   const updateURL = React.useCallback(() => {
     const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
@@ -145,6 +132,21 @@ export function useTeams(initialData?: TeamsInitialData) {
     const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     window.history.replaceState({}, "", newUrl);
   }, [searchQuery, currentPage, selectedDifficulty, startDate, endDate, selectedTags]);
+
+  // 搜索防抖
+  React.useEffect(() => {
+    if (skipInitialFilterFetchRef.current) {
+      skipInitialFilterFetchRef.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      loadTeams({ page: 1, search: searchQuery, difficulty: selectedDifficulty, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
+      updateURL();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedDifficulty, startDate, endDate, selectedTags, loadTeams, updateURL]);
+
+
 
   const handleDifficultyToggle = React.useCallback((id: string) => {
     const next = selectedDifficulty.includes(id) ? selectedDifficulty.filter((d) => d !== id) : [...selectedDifficulty, id];

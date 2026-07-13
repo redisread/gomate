@@ -525,7 +525,7 @@ export function CreateTeamClient() {
 /**
  * Build duration option labels with translation
  */
-function getDurationOptions(t: (key: any, vars?: Record<string, string | number>) => string) {
+function getDurationOptions(t: (key: string, vars?: Record<string, string | number>) => string) {
   return [
     { value: 60, label: t("teams.duration1h") },
     { value: 90, label: t("teams.duration1_5h") },

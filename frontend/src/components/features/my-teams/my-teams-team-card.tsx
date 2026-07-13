@@ -4,7 +4,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { TeamItem } from "./my-teams-types";
 
-function getStatusLabels(t: (key: any, vars?: Record<string, string | number>) => string): Record<string, { label: string; color: string; dot: string }> {
+function getStatusLabels(t: (key: string, vars?: Record<string, string | number>) => string): Record<string, { label: string; color: string; dot: string }> {
   return {
     recruiting: { label: t("myTeams.statusRecruiting"), color: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-500" },
     full: { label: t("myTeams.statusFull"), color: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-500" },
