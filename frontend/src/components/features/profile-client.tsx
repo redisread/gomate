@@ -70,11 +70,7 @@ export function ProfileClient() {
   const [joinedTotal, setJoinedTotal] = React.useState(0);
   const [completedTotal, setCompletedTotal] = React.useState(0);
 
-  React.useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
+  const loadProfile = React.useCallback(async () => {
     setIsLoading(true);
     try {
       const u = await fetchCurrentUser("/login?redirect=/profile");
@@ -84,7 +80,11 @@ export function ProfileClient() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  React.useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   const loadTeams = async (_userId: string) => {
     try {

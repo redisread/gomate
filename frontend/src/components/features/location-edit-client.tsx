@@ -207,7 +207,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
       });
     }).catch(() => { if (!destroyed) { setIsLoadingMap(false); setMapError(t("locations.mapLoadFailed")); } });
     return () => { destroyed = true; };
-  }, [initialLat, initialLng]);
+  }, [initialLat, initialLng, t]);
 
   function reverseGeocode(AMap: AMapInstance, lng: number, lat: number, callback: (addr: string) => void) {
     if (!AMap.Geocoder) { callback(`${lat.toFixed(6)}, ${lng.toFixed(6)}`); return; }

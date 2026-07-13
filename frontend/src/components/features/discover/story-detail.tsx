@@ -42,7 +42,7 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
       storyIdRef.current = story.id;
       setLiked(story.isLiked ?? false);
     }
-  }, [story?.id, story?.isLiked]);
+  }, [story]);
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);

@@ -90,6 +90,19 @@ const copy = {
     const refreshIcon = document.getElementById("refreshIcon");
 
     let conversationsRequestInFlight = false;
+    let pollTimer = null;
+
+    function startPolling() {
+      if (pollTimer) return;
+      pollTimer = window.setInterval(() => loadConversations(), 30000);
+    }
+
+    function stopPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
 
     async function init() {
       try {
@@ -379,6 +392,15 @@ const copy = {
     init();
 
     refreshBtn?.addEventListener("click", () => loadConversations());
-    setInterval(() => loadConversations(), 30000);
+    startPolling();
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        loadConversations();
+        startPolling();
+      }
+    });
   </script>
 </Layout>

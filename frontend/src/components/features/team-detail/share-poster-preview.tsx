@@ -115,6 +115,7 @@ export function SharePosterPreview({
 
       if (isIOS) {
         // Open image in new tab for iOS (user can long press to save)
+        // eslint-disable-next-line no-restricted-properties -- iOS Safari requires blank window for image saving
         const newWindow = window.open();
         if (newWindow) {
           newWindow.document.write(`

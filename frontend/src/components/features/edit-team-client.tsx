@@ -79,7 +79,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
         setIsLoading(false);
       }
     })();
-  }, [teamId]);
+  }, [teamId, t]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

@@ -22,6 +22,7 @@ export function LocationsClient({ initialData }: { initialData?: LocationsListIn
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctx.setShowCityDropdown]);
 
   // Sync page to URL
