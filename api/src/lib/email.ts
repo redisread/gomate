@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { getEmailField, EmailLocale } from "./email-i18n";
 import { withTimeout } from "./timeout";
+import { logger } from "./logger";
 
 /**
  * 发送密码重置邮件
@@ -14,7 +15,7 @@ export async function sendPasswordResetEmail(
 ): Promise<{ success: boolean; error?: string }> {
   const apiKey = env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn("[Email] RESEND_API_KEY not configured");
+    logger.warn("[Email] RESEND_API_KEY not configured");
     return { success: false, error: "Email service not configured" };
   }
 
@@ -46,7 +47,7 @@ export async function sendPasswordResetEmail(
 
     return { success: true };
   } catch (error) {
-    console.error("[Email] Failed to send password reset email:", error);
+    logger.error("[Email] Failed to send password reset email:", error);
     return { success: false, error: (error as Error).message };
   }
 }
@@ -94,7 +95,7 @@ export async function sendWelcomeEmail(
 
     return { success: true };
   } catch (error) {
-    console.error("[Email] Failed to send welcome email:", error);
+    logger.error("[Email] Failed to send welcome email:", error);
     return { success: false, error: (error as Error).message };
   }
 }
@@ -137,7 +138,7 @@ export async function sendContactFormEmail(
 
     return { success: true };
   } catch (error) {
-    console.error("[Email] Failed to send contact form email:", error);
+    logger.error("[Email] Failed to send contact form email:", error);
     return { success: false, error: (error as Error).message };
   }
 }
@@ -192,7 +193,7 @@ export async function sendTeamJoinApplicationEmail(
 
     return { success: true };
   } catch (error) {
-    console.error("[Email] Failed to send team join application email:", error);
+    logger.error("[Email] Failed to send team join application email:", error);
     return { success: false, error: (error as Error).message };
   }
 }
@@ -276,7 +277,7 @@ export async function sendFeedbackEmail(
 
     return { success: true };
   } catch (error) {
-    console.error("[Email] Failed to send feedback email:", error);
+    logger.error("[Email] Failed to send feedback email:", error);
     return { success: false, error: (error as Error).message };
   }
 }

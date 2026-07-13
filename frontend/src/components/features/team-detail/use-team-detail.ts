@@ -195,7 +195,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
 
   React.useEffect(() => {
     if (team && userId && team.leader?.id === userId) fetchApplications();
-  }, [team?.id, userId, fetchApplications]);
+  }, [team, userId, fetchApplications]);
 
   const handleJoin = React.useCallback(async () => {
     if (!userId) {
@@ -231,7 +231,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
     } finally {
       setJoining(false);
     }
-  }, [userId, teamId, joinMsg, showToast, loadTeam]);
+  }, [userId, teamId, joinMsg, showToast, loadTeam, t]);
 
   const handleSaveWechat = React.useCallback(async (wechat: string) => {
     if (!wechat.trim()) {
@@ -253,7 +253,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
     } catch {
       showToast({ type: "error", message: t("teams.toast.wechatSaveFailed") });
     }
-  }, [userId, showToast]);
+  }, [userId, showToast, t]);
 
   const handleLeave = React.useCallback(async () => {
     setShowLeave(false);
@@ -270,7 +270,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
     } catch {
       showToast({ type: "error", message: t('errors.leaveFailed') });
     }
-  }, [teamId, showToast, loadTeam]);
+  }, [teamId, showToast, loadTeam, t]);
 
   const handleApprove = React.useCallback(async (uid: string) => {
     try {
@@ -286,7 +286,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
     } catch {
       showToast({ type: "error", message: t('errors.reviewFailed') });
     }
-  }, [teamId, showToast, loadTeam]);
+  }, [teamId, showToast, loadTeam, t]);
 
   const handleReject = React.useCallback(async (uid: string) => {
     try {
@@ -301,7 +301,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
     } catch {
       showToast({ type: "error", message: t('errors.reviewFailed') });
     }
-  }, [teamId, showToast]);
+  }, [teamId, showToast, t]);
 
   const handleFormTeam = React.useCallback(async () => {
     setIsForming(true);
@@ -325,7 +325,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       setIsForming(false);
       setShowFormConfirm(false);
     }
-  }, [teamId, team, showToast, loadTeam]);
+  }, [teamId, team, showToast, loadTeam, t]);
 
   const handleDelete = React.useCallback(async () => {
     setIsDeleting(true);
@@ -344,7 +344,7 @@ export function useTeamDetail(teamId: string): UseTeamDetailReturn {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
     }
-  }, [teamId, showToast]);
+  }, [teamId, showToast, t]);
 
   const members = team?.members || [];
   const allMembers = React.useMemo(() => {

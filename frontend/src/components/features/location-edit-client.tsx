@@ -130,7 +130,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
   const [isLoadingMap, setIsLoadingMap] = React.useState(true);
 
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [searchSuggestions, setSearchSuggestions] = React.useState<any[]>([]);
+  const [searchSuggestions, setSearchSuggestions] = React.useState<Array<{ name: string; location?: string }>>([]);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [searchLoading, setSearchLoading] = React.useState(false);
   const searchDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -156,7 +156,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
           .then((r) => r.json()).then((data) => {
             setSearchLoading(false);
             if (data.status === "1" && data.tips?.length > 0) {
-              const valid = data.tips.filter((t: any) => t.location && t.location !== "[]").slice(0, 8);
+              const valid = data.tips.filter((t: { location?: string }) => t.location && t.location !== "[]").slice(0, 8);
               setSearchSuggestions(valid); setSearchOpen(valid.length > 0);
             } else { setSearchSuggestions([]); setSearchOpen(false); }
           }).catch(() => { setSearchLoading(false); setSearchSuggestions([]); setSearchOpen(false); })
@@ -164,7 +164,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
     }, 350);
   }
 
-  function handleSearchSelect(tip: any) {
+  function handleSearchSelect(tip: { name: string; location?: string }) {
     setSearchQuery(tip.name); setSearchOpen(false); setSearchSuggestions([]);
     if (!tip.location || tip.location === "[]") return;
     const parts = tip.location.split(","); if (parts.length !== 2) return;
@@ -198,7 +198,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
         const marker = new AMap.Marker({ position: [parsedLng, parsedLat] });
         marker.setMap(map); markerRef.current = marker;
       }
-      map.on("click", (e: any) => {
+      map.on("click", (e: { lnglat: { lng: number; lat: number } }) => {
         const { lng, lat } = e.lnglat;
         setPickedLat(lat); setPickedLng(lng); setPickedAddress("");
         if (markerRef.current) { markerRef.current.setPosition([lng, lat]); }

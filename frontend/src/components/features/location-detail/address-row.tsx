@@ -2,6 +2,7 @@ import * as React from "react";
 import { MapPin, Navigation, Check, Copy } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { openExternalLink } from "@/lib/open-external";
+import { cn } from "@/lib/utils";
 
 interface AddressRowProps {
   address: string;
