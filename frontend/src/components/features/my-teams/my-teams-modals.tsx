@@ -4,7 +4,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { formatTimeAgo } from "@/lib/date-utils";
 import type { PendingApproval } from "./my-teams-types";
 
-function getLevelConfig(t: (key: any, vars?: Record<string, string | number>) => string): Record<string, { label: string; emoji: string; color: string }> {
+function getLevelConfig(t: (key: string, vars?: Record<string, string | number>) => string): Record<string, { label: string; emoji: string; color: string }> {
   return {
     beginner: { label: t("myTeams.levelBeginner"), emoji: "🌱", color: "bg-green-50 text-green-700 border border-green-200" },
     intermediate: { label: t("myTeams.levelIntermediate"), emoji: "🥾", color: "bg-blue-50 text-blue-700 border border-blue-200" },
