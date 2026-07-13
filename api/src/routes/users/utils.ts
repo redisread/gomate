@@ -86,7 +86,7 @@ export async function getUserStats(db: Db, id: string) {
 /** 查询用户正在进行中的队伍（作为队长或已批准成员），最多 8 条 */
 export async function getUserOngoingTeams(db: Db, id: string) {
   const now = new Date();
-  const activeStatuses = ["recruiting", "full", "formed"];
+  const activeStatuses = ["recruiting", "full", "formed"] as schema.TeamStatus[];
   const { sql } = await import("drizzle-orm");
 
   // CTE: 预先计算每个队伍的 approved 成员数，避免相关子查询 N+1

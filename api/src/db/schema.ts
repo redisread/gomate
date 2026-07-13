@@ -546,7 +546,7 @@ export type NewActivityPost = typeof activityPosts.$inferInsert;
 
 export type Difficulty = "easy" | "moderate" | "hard" | "expert";
 export type TeamStatus = "recruiting" | "full" | "formed" | "cancelled" | "completed";
-export type TeamMemberStatus = "pending" | "approved" | "rejected" | "leave_pending";
+export type TeamMemberStatus = "pending" | "approved" | "rejected" | "leave_pending" | "cancelled";
 export type UserRole = "user" | "admin";
 export type UserLevel = "beginner" | "intermediate" | "advanced" | "expert";
 export type UserStatus = "active" | "suspended" | "banned" | "deleted";

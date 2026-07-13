@@ -189,7 +189,7 @@ queries.get("/", async (c) => {
       const conditions = [];
 
       if (statusParam) {
-        const statuses = statusParam.split(",").filter(Boolean);
+        const statuses = statusParam.split(",").filter(Boolean) as schema.TeamStatus[];
         if (statuses.length === 1) {
           conditions.push(eq(schema.teams.status, statuses[0]));
         } else if (statuses.length > 1) {
@@ -498,7 +498,7 @@ queries.get("/:id/applications", async (c) => {
     // 支持 status 查询参数过滤；不传则返回全部成员（管理页面需要）
     const statusFilter = c.req.query("status");
     const whereClause = statusFilter
-      ? and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, statusFilter))
+      ? and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, statusFilter as schema.TeamMemberStatus))
       : eq(schema.teamMembers.teamId, teamId);
 
     const applications = await db.query.teamMembers.findMany({
