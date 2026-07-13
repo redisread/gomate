@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type Vditor from "vditor";
+import "vditor/dist/index.css";
 import { useI18n } from "@/hooks/useI18n";
 
 interface VditorEditorProps {
