@@ -1,4 +1,5 @@
 import type { Env } from "../../lib/auth";
+import { logger } from "../../lib/logger";
 
 interface FontData {
   name: string;
@@ -46,7 +47,7 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
         }
         return null;
       } catch (e) {
-        console.error(`[Fonts] Failed to load ${path}:`, e);
+        logger.error(`[Fonts] Failed to load ${path}:`, e);
         return null;
       }
     });
@@ -79,7 +80,7 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
           });
         }
       } catch (e) {
-        console.error("[Fonts] Failed to load fallback font:", e);
+        logger.error("[Fonts] Failed to load fallback font:", e);
       }
     }
 
@@ -94,7 +95,7 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
 
     return fonts;
   } catch (error) {
-    console.error("[Fonts] Failed to load fonts:", error);
+    logger.error("[Fonts] Failed to load fonts:", error);
     throw error;
   }
 }
