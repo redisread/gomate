@@ -89,7 +89,7 @@ function AddButton({ label, onAdd }: AddButtonProps) {
   );
 }
 
-const FACILITY_OPTIONS = (t: (key: any) => string) => [
+const FACILITY_OPTIONS = (t: (key: string) => string) => [
   { value: "parking", label: `🅿️ ${t("admin.facilityParking")}` }, { value: "restroom", label: `🚻 ${t("admin.facilityRestroom")}` },
   { value: "water", label: `💧 ${t("admin.facilityWater")}` }, { value: "food", label: `🍱 ${t("admin.facilityFood")}` },
 ];
