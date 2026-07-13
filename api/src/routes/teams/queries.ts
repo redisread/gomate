@@ -6,6 +6,7 @@ import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { getTimeFilterRange, parseRequirements, getRouteTags } from "./utils";
+import { formatBeijingDateTime } from "../../lib/date-utils";
 import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../../lib/cache";
 import { updateExpiredTeams } from "../../lib/team-status";
 import { APIErrors } from "../../lib/api-errors";
@@ -321,10 +322,7 @@ function formatTeams(result: {
   return result.map((row) => {
     const startDate = new Date(row.startTime);
     const endDate = new Date(row.endTime);
-    // 使用北京时间（UTC+8）格式化日期和时间
-    const beijingDate = new Date(startDate.getTime() + 8 * 60 * 60 * 1000);
-    const date = beijingDate.toISOString().split("T")[0];
-    const time = beijingDate.toISOString().slice(11, 16);
+    const { date, time } = formatBeijingDateTime(startDate);
     const durationHours = Math.round(
       (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
     );
@@ -400,10 +398,7 @@ queries.get("/:id", async (c) => {
       : false;
 
     const startDate = new Date(teamWithRelations.startTime);
-    // 使用北京时间（UTC+8）格式化日期和时间
-    const beijingDate = new Date(startDate.getTime() + 8 * 60 * 60 * 1000);
-    const date = beijingDate.toISOString().split("T")[0];
-    const time = beijingDate.toISOString().slice(11, 16);
+    const { date, time } = formatBeijingDateTime(startDate);
     const durationMinutes = teamWithRelations.durationMin ||
       Math.round((new Date(teamWithRelations.endTime).getTime() - startDate.getTime()) / 60000);
     const durationHours = Math.round(durationMinutes / 60);
