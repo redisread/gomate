@@ -95,56 +95,57 @@ PrefetchLink.displayName = "PrefetchLink";
  * 内联到 Layout.astro 中，尽早执行预加载逻辑
  */
 export function RoutePreloaderScript() {
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `
-          (function() {
-            // 关键路由预加载（延迟执行，避免阻塞首屏）
-            var criticalRoutes = ["/locations", "/teams"];
-            var prefetchQueue = [];
+  React.useEffect(() => {
+    const scriptContent = `(function() {
+      var criticalRoutes = ["/locations", "/teams"];
 
-            // 使用 requestIdleCallback 在空闲时预加载
-            function prefetchWhenIdle(routes) {
-              if (typeof requestIdleCallback !== "undefined") {
-                requestIdleCallback(function() {
-                  routes.forEach(function(route, i) {
-                    setTimeout(function() {
-                      var link = document.createElement("link");
-                      link.rel = "prefetch";
-                      link.href = route;
-                      document.head.appendChild(link);
-                    }, i * 100);
-                  });
-                }, { timeout: 3000 });
-              } else {
-                // 降级：setTimeout
-                setTimeout(function() {
-                  routes.forEach(function(route, i) {
-                    setTimeout(function() {
-                      var link = document.createElement("link");
-                      link.rel = "prefetch";
-                      link.href = route;
-                      document.head.appendChild(link);
-                    }, i * 100 + 2000);
-                  });
-                }, 2000);
-              }
-            }
+      function prefetchWhenIdle(routes) {
+        if (typeof requestIdleCallback !== "undefined") {
+          requestIdleCallback(function() {
+            routes.forEach(function(route, i) {
+              setTimeout(function() {
+                var link = document.createElement("link");
+                link.rel = "prefetch";
+                link.href = route;
+                document.head.appendChild(link);
+              }, i * 100);
+            });
+          }, { timeout: 3000 });
+        } else {
+          setTimeout(function() {
+            routes.forEach(function(route, i) {
+              setTimeout(function() {
+                var link = document.createElement("link");
+                link.rel = "prefetch";
+                link.href = route;
+                document.head.appendChild(link);
+              }, i * 100 + 2000);
+            });
+          }, 2000);
+        }
+      }
 
-            // 启动预加载
-            if (document.readyState === "complete") {
-              prefetchWhenIdle(criticalRoutes);
-            } else {
-              window.addEventListener("load", function() {
-                prefetchWhenIdle(criticalRoutes);
-              });
-            }
-          })();
-        `,
-      }}
-    />
-  );
+      if (document.readyState === "complete") {
+        prefetchWhenIdle(criticalRoutes);
+      } else {
+        window.addEventListener("load", function() {
+          prefetchWhenIdle(criticalRoutes);
+        });
+      }
+    })();`;
+
+    const script = document.createElement("script");
+    script.textContent = scriptContent;
+    document.head.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
+
+  return null;
 }
 
 /**

@@ -95,7 +95,10 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
               if (parent) {
                 const fallback = document.createElement('div');
                 fallback.className = 'w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-50 to-stone-100';
-                fallback.innerHTML = '<span class="text-3xl">🏔️</span>';
+                const span = document.createElement('span');
+                span.className = 'text-3xl';
+                span.textContent = '🏔️';
+                fallback.appendChild(span);
                 parent.appendChild(fallback);
               }
             }}

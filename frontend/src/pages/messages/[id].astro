@@ -255,7 +255,7 @@ const { id } = Astro.params;
 
     function renderStatusMessage(message, tone = "muted", role = "status") {
       if (!chatContainer) return;
-      chatContainer.innerHTML = "";
+      chatContainer.replaceChildren();
       const status = document.createElement("div");
       status.setAttribute("role", role);
       status.className = [
@@ -320,7 +320,7 @@ const { id } = Astro.params;
         headerMeta.classList.remove("hidden");
       }
       if (headerAvatar) {
-        headerAvatar.innerHTML = "";
+        headerAvatar.replaceChildren();
         headerAvatar.className = "flex";
         headerAvatar.appendChild(createAvatar(otherUser, "h-10 w-10 text-sm"));
       }
@@ -334,7 +334,7 @@ const { id } = Astro.params;
       }
 
       const grouped = groupByDate(messages);
-      chatContainer.innerHTML = "";
+      chatContainer.replaceChildren("");
 
       const list = document.createElement("div");
       list.className = "mx-auto flex max-w-2xl flex-col gap-5";
