@@ -1,10 +1,11 @@
 import { eq, and, lt } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { DrizzleD1Database } from "drizzle-orm/d1/driver";
 import * as schema from "../db/schema";
 import { teams } from "../db/schema";
 
-type AnyDb = BetterSQLite3Database<typeof schema> | DrizzleD1Database<typeof schema>;
+// 兼容 D1 和 better-sqlite3 的数据库类型
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyDb = BetterSQLite3Database<typeof schema> | any;
 
 // 查询结果类型
 type TeamIdRow = { id: string };

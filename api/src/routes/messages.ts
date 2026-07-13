@@ -437,11 +437,14 @@ app.get("/:id", async (c) => {
     );
 
     if (cursor) {
-      const cursorDate = new Date(parseInt(cursor));
-      whereConditions = and(
-        whereConditions,
-        sql`${messages.createdAt} < ${cursorDate}`
-      );
+      const cursorMs = parseInt(cursor, 10);
+      if (!isNaN(cursorMs)) {
+        const cursorDate = new Date(cursorMs);
+        whereConditions = and(
+          whereConditions,
+          sql`${messages.createdAt} < ${cursorDate}`
+        );
+      }
     }
 
     const list = await db
