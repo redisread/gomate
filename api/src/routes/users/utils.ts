@@ -94,27 +94,44 @@ export async function getUserOngoingTeams(db: Db, id: string) {
   const now = new Date();
   const activeStatuses = ["recruiting", "full", "formed"];
   const { sql } = await import("drizzle-orm");
-  const currentMembersSubquery = sql<number>`(SELECT COUNT(*) FROM team_members WHERE team_members.team_id = ${schema.teams.id} AND team_members.status = 'approved')`;
+
+  // CTE: 预先计算每个队伍的 approved 成员数，避免相关子查询 N+1
+  const teamMemberCounts = db.$with("team_member_counts").as(
+    db
+      .select({
+        teamId: schema.teamMembers.teamId,
+        count: sql<number>`count(*)`.as("count"),
+      })
+      .from(schema.teamMembers)
+      .where(eq(schema.teamMembers.status, "approved"))
+      .groupBy(schema.teamMembers.teamId)
+  );
+
+  const currentMembersColumn = sql<number>`COALESCE(${teamMemberCounts.count}, 0)`.as("currentMembers");
 
   const ongoingSelect = {
     id: schema.teams.id, title: schema.teams.title, startTime: schema.teams.startTime,
     endTime: schema.teams.endTime, maxMembers: schema.teams.maxMembers, status: schema.teams.status,
     locationName: schema.locations.name, locationCoverImage: schema.locations.coverImage,
-    currentMembers: currentMembersSubquery,
+    currentMembers: currentMembersColumn,
   };
 
   const createdOngoingTeams = await db
+    .with(teamMemberCounts)
     .select(ongoingSelect)
     .from(schema.teams)
     .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+    .leftJoin(teamMemberCounts, eq(teamMemberCounts.teamId, schema.teams.id))
     .where(and(eq(schema.teams.leaderId, id), inArray(schema.teams.status, activeStatuses), gt(schema.teams.endTime, now)))
     .limit(5);
 
   const joinedOngoingTeams = await db
+    .with(teamMemberCounts)
     .select(ongoingSelect)
     .from(schema.teams)
     .innerJoin(schema.teamMembers, eq(schema.teamMembers.teamId, schema.teams.id))
     .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+    .leftJoin(teamMemberCounts, eq(teamMemberCounts.teamId, schema.teams.id))
     .where(
       and(
         eq(schema.teamMembers.userId, id),
