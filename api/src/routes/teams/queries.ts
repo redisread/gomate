@@ -146,7 +146,7 @@ queries.get("/", async (c) => {
 
         // 添加 status 过滤
         if (statusParam) {
-          const statuses = statusParam.split(",").filter(Boolean);
+          const statuses = statusParam.split(",").filter(Boolean) as schema.TeamStatus[];
           if (statuses.length === 1) {
             conditions.push(eq(schema.teams.status, statuses[0]));
           } else if (statuses.length > 1) {
