@@ -1,6 +1,7 @@
 import * as React from "react";
 import { MapPin, Navigation, Check, Copy } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
+import { openExternalLink } from "@/lib/open-external";
 import { cn } from "@/lib/utils";
 
 interface AddressRowProps {
@@ -28,7 +29,7 @@ export function AddressRow({ address, coordinates, locationName, className }: Ad
     e.stopPropagation();
     const dest = encodeURIComponent(locationName || address);
     const url = `https://uri.amap.com/navigation?to=${coordinates!.lng},${coordinates!.lat},${dest}&callnative=0`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    openExternalLink(url);
   };
 
   return (
