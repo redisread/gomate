@@ -1,3 +1,4 @@
+import { requestLogger } from "./middleware/request-logger";
 import { logger } from "./lib/logger";
 import { Hono } from "hono";
 import { corsMiddleware } from "./middleware/cors";
@@ -30,6 +31,12 @@ const app = new Hono<{ Bindings: Env }>();
 
 // 全局 CORS 中间件
 app.use("*", corsMiddleware);
+
+// 请求日志中间件（排除健康检查端点，避免噪音）
+app.use("*", async (c, next) => {
+  if (c.req.path === "/health") return next();
+  return requestLogger(c, next);
+});
 
 // 健康检查端点
 app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
