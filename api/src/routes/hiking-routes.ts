@@ -1,4 +1,5 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
 import { eq, and, inArray, asc, sql } from "drizzle-orm";
 import { createDb } from "../db";
@@ -144,7 +145,7 @@ hikingRoutes.get("/", async (c) => {
 
     return c.json(result);
   } catch (error) {
-    console.error("Get routes error:", error);
+    logger.error("Get routes error:", error);
     return c.json(APIErrors.internalError("获取路线列表失败"), 500);
   }
 });
@@ -202,7 +203,7 @@ hikingRoutes.post("/", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Create route error:", error);
+    logger.error("Create route error:", error);
     return c.json(APIErrors.internalError("创建路线失败"), 500);
   }
 });
@@ -283,7 +284,7 @@ hikingRoutes.get("/:id", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Get route error:", error);
+    logger.error("Get route error:", error);
     return c.json(APIErrors.internalError("获取路线详情失败"), 500);
   }
 });
@@ -345,7 +346,7 @@ hikingRoutes.put("/:id", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Update route error:", error);
+    logger.error("Update route error:", error);
     return c.json(APIErrors.internalError("更新路线失败"), 500);
   }
 });
@@ -370,7 +371,7 @@ hikingRoutes.delete("/:id", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Delete route error:", error);
+    logger.error("Delete route error:", error);
     return c.json(APIErrors.internalError("删除路线失败"), 500);
   }
 });

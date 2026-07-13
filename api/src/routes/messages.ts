@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { logger } from "../lib/logger";
 import { z } from "zod";
 import { createDb } from "../db";
 import { createAuth, type Env } from "../lib/auth";
@@ -261,7 +262,7 @@ app.get("/", async (c) => {
 
     return c.json({ success: true, data: result });
   } catch (error) {
-    console.error("Failed to get conversations:", error);
+    logger.error("Failed to get conversations:", error);
     return c.json(APIErrors.internalError("Failed to get conversations"), 500);
   }
 });
@@ -329,7 +330,7 @@ app.post("/", async (c) => {
     if (error instanceof z.ZodError) {
       return c.json(APIErrors.validationError("Invalid input", error.errors), 400);
     }
-    console.error("Failed to create conversation:", error);
+    logger.error("Failed to create conversation:", error);
     return c.json(APIErrors.internalError("Failed to create conversation"), 500);
   }
 });
@@ -378,7 +379,7 @@ app.get("/unread-count", async (c) => {
       data: { count: result?.count || 0 },
     });
   } catch (error) {
-    console.error("Failed to get unread count:", error);
+    logger.error("Failed to get unread count:", error);
     return c.json(APIErrors.internalError("Failed to get unread count"), 500);
   }
 });
@@ -508,7 +509,7 @@ app.get("/:id", async (c) => {
             )
           );
       } catch (err) {
-        console.error("Failed to mark messages as read:", err);
+        logger.error("Failed to mark messages as read:", err);
       }
     });
 
@@ -528,7 +529,7 @@ app.get("/:id", async (c) => {
           : null,
     });
   } catch (error) {
-    console.error("Failed to get messages:", error);
+    logger.error("Failed to get messages:", error);
     return c.json(APIErrors.internalError("Failed to get messages"), 500);
   }
 });
@@ -598,7 +599,7 @@ app.post("/:id", async (c) => {
     if (error instanceof z.ZodError) {
       return c.json(APIErrors.validationError("Invalid input", error.errors), 400);
     }
-    console.error("Failed to send message:", error);
+    logger.error("Failed to send message:", error);
     return c.json(APIErrors.internalError("Failed to send message"), 500);
   }
 });

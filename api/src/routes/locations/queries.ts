@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { logger } from "../../lib/logger";
 import { eq, like, and, sql, inArray, asc } from "drizzle-orm";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
@@ -249,7 +250,7 @@ queries.get("/", async (c) => {
     setPublicCacheHeaders(c);
     return c.json(body);
   } catch (error) {
-    console.error("Get locations error:", error);
+    logger.error("Get locations error:", error);
     return c.json(APIErrors.internalError("获取地点列表失败"), 500);
   }
 });
@@ -321,7 +322,7 @@ queries.get("/:id", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Get location error:", error);
+    logger.error("Get location error:", error);
     return c.json(APIErrors.internalError("获取地点详情失败"), 500);
   }
 });
@@ -379,7 +380,7 @@ queries.get("/:id/pois", async (c) => {
 
     return c.json({ success: true, pois });
   } catch (error) {
-    console.error("Get location pois error:", error);
+    logger.error("Get location pois error:", error);
     return c.json(APIErrors.internalError("获取打卡点失败"), 500);
   }
 });
@@ -406,7 +407,7 @@ queries.get("/:id/tags", async (c) => {
 
     return c.json({ success: true, tags: rows.map((r) => r.tag) });
   } catch (error) {
-    console.error("Get location tags error:", error);
+    logger.error("Get location tags error:", error);
     return c.json(APIErrors.internalError("获取标签失败"), 500);
   }
 });

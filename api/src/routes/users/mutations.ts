@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { logger } from "../../lib/logger";
 import { eq } from "drizzle-orm";
 import { createAuth } from "../../lib/auth";
 import { createDb } from "../../db";
@@ -86,7 +87,7 @@ mutations.patch("/update", async (c) => {
 
     return c.json({ success: true, user: sanitizeUser(updatedUser) });
   } catch (error) {
-    console.error("User update error:", error);
+    logger.error("User update error:", error);
     return c.json(APIErrors.internalError("Failed to update user"), 500);
   }
 });

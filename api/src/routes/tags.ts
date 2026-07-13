@@ -1,4 +1,5 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
 import { eq, sql } from "drizzle-orm";
 import { createDb } from "../db";
@@ -68,7 +69,7 @@ tags.get("/", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Get tags error:", error);
+    logger.error("Get tags error:", error);
     return c.json(APIErrors.internalError("获取标签列表失败"), 500);
   }
 });
@@ -115,7 +116,7 @@ tags.post("/", async (c) => {
     const message = (error as Error).message;
     if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
     if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Create tag error:", error);
+    logger.error("Create tag error:", error);
     return c.json(APIErrors.internalError("创建标签失败"), 500);
   }
 });

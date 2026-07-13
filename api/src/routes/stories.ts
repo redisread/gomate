@@ -1,4 +1,5 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
 import { eq, desc, count, sql, inArray, and } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
@@ -82,7 +83,7 @@ stories.get("/stats", async (c) => {
       data,
     });
   } catch (error) {
-    console.error("Get stories stats error:", error);
+    logger.error("Get stories stats error:", error);
     return c.json(APIErrors.internalError("获取统计数据失败"), 500);
   }
 });
@@ -208,7 +209,7 @@ stories.get("/", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Get stories error:", error);
+    logger.error("Get stories error:", error);
     return c.json(APIErrors.internalError("获取故事列表失败"), 500);
   }
 });
@@ -266,7 +267,7 @@ stories.get("/tags", async (c) => {
       tags: formattedTags,
     });
   } catch (error) {
-    console.error("Get story tags error:", error);
+    logger.error("Get story tags error:", error);
     return c.json(APIErrors.internalError("获取标签失败"), 500);
   }
 });
@@ -357,7 +358,7 @@ stories.get("/:id", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Get story detail error:", error);
+    logger.error("Get story detail error:", error);
     return c.json(APIErrors.internalError("获取故事详情失败"), 500);
   }
 });
@@ -442,7 +443,7 @@ stories.post("/", async (c) => {
       data: { id: storyId },
     });
   } catch (error) {
-    console.error("Create story error:", error);
+    logger.error("Create story error:", error);
     return c.json(APIErrors.internalError("发布失败"), 500);
   }
 });
@@ -552,7 +553,7 @@ stories.put("/:id", async (c) => {
       message: "更新成功",
     });
   } catch (error) {
-    console.error("Update story error:", error);
+    logger.error("Update story error:", error);
     return c.json(APIErrors.internalError("更新失败"), 500);
   }
 });
@@ -612,7 +613,7 @@ stories.delete("/:id", async (c) => {
       message: "删除成功",
     });
   } catch (error) {
-    console.error("Delete story error:", error);
+    logger.error("Delete story error:", error);
     return c.json(APIErrors.internalError("删除失败"), 500);
   }
 });
@@ -703,7 +704,7 @@ stories.post("/:id/like", async (c) => {
       message: liked ? "点赞成功" : "取消点赞成功",
     });
   } catch (error) {
-    console.error("Like story error:", error);
+    logger.error("Like story error:", error);
     return c.json(APIErrors.internalError("点赞失败"), 500);
   }
 });
@@ -751,7 +752,7 @@ stories.get("/:id/share-stats", async (c) => {
 
     return c.json({ success: true, total, byChannel });
   } catch (error) {
-    console.error("Get share stats error:", error);
+    logger.error("Get share stats error:", error);
     return c.json(APIErrors.internalError("获取分享统计失败"), 500);
   }
 });
