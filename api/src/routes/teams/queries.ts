@@ -106,6 +106,18 @@ queries.get("/", async (c) => {
         conditions.push(ne(schema.teams.status, "completed"));
         conditions.push(ne(schema.teams.status, "cancelled"));
       }
+
+      // 统计总数
+      const [{ cnt }] = await db
+        .select({ cnt: sql<number>`count(distinct ${schema.teams.id})` })
+        .from(schema.teams)
+        .innerJoin(schema.teamMembers, eq(schema.teamMembers.teamId, schema.teams.id))
+        .where(and(...conditions));
+      const total = cnt;
+      const totalPages = Math.ceil(total / pageSize);
+      const hasMore = page < totalPages;
+      const offset = (page - 1) * pageSize;
+
       result = await db
         .with(teamMemberCounts)
         .select(teamColumns)
@@ -115,11 +127,13 @@ queries.get("/", async (c) => {
         .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
         .leftJoin(teamMemberCounts, eq(teamMemberCounts.teamId, schema.teams.id))
         .where(and(...conditions))
-        .orderBy(desc(schema.teams.createdAt)) as TeamRow[];
+        .orderBy(desc(schema.teams.createdAt))
+        .limit(pageSize)
+        .offset(offset) as TeamRow[];
       return c.json({
         success: true,
         teams: formatTeams(result),
-        pagination: { page: 1, pageSize: result.length, total: result.length, totalPages: 1, hasMore: false }
+        pagination: { page, pageSize, total, totalPages, hasMore }
       });
     }
 
