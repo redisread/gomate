@@ -1,4 +1,5 @@
 import { APIErrors } from "../../lib/api-errors";
+import { logger } from "../../lib/logger";
 import { Hono } from "hono";
 import { eq, and, sql } from "drizzle-orm";
 import { createAuth } from "../../lib/auth";
@@ -61,7 +62,7 @@ membership.post("/join", async (c) => {
           .where(eq(schema.teamMembers.id, existing.id));
         // 异步发送通知邮件（在 Cloudflare Workers 环境中使用 waitUntil，否则直接执行）
         const notifyPromise = notifyLeaderOfApplication(db, team, userId, c.env).catch((err) => {
-          console.error("[Email] Team join notification failed:", err);
+          logger.error("[Email] Team join notification failed:", err);
         });
         try {
           if (c.executionCtx?.waitUntil) {
@@ -80,7 +81,7 @@ membership.post("/join", async (c) => {
     });
     // 异步发送通知邮件（在 Cloudflare Workers 环境中使用 waitUntil，否则直接执行）
     const notifyPromise = notifyLeaderOfApplication(db, team, userId, c.env).catch((err) => {
-      console.error("[Email] Team join notification failed:", err);
+      logger.error("[Email] Team join notification failed:", err);
     });
     try {
       if (c.executionCtx?.waitUntil) {
@@ -92,7 +93,7 @@ membership.post("/join", async (c) => {
 
     return c.json({ success: true, message: "申请已提交，等待队长审核" });
   } catch (error) {
-    console.error("Join team error:", error);
+    logger.error("Join team error:", error);
     return c.json(APIErrors.internalError("申请加入失败"), 500);
   }
 });
@@ -144,7 +145,7 @@ membership.post("/members/:userId/approve", requireTeamLeader(), async (c) => {
 
     return c.json({ success: true, message: "已通过申请" });
   } catch (error) {
-    console.error("Approve member error:", error);
+    logger.error("Approve member error:", error);
     return c.json(APIErrors.internalError("批准申请失败"), 500);
   }
 });
@@ -195,7 +196,7 @@ membership.post("/members/:userId/reject", requireTeamLeader(), async (c) => {
 
     return c.json({ success: true, message: "已拒绝申请" });
   } catch (error) {
-    console.error("Reject member error:", error);
+    logger.error("Reject member error:", error);
     return c.json(APIErrors.internalError("拒绝申请失败"), 500);
   }
 });
@@ -242,7 +243,7 @@ membership.post("/members/:userId/remove", async (c) => {
 
     return c.json({ success: true, message: "已移除成员" });
   } catch (error) {
-    console.error("Remove member error:", error);
+    logger.error("Remove member error:", error);
     return c.json(APIErrors.internalError("移除成员失败"), 500);
   }
 });
@@ -286,7 +287,7 @@ membership.post("/leave-request", async (c) => {
 
     return c.json({ success: true, message: "退出申请已提交，等待队长审批" });
   } catch (error) {
-    console.error("Request leave error:", error);
+    logger.error("Request leave error:", error);
     return c.json(APIErrors.internalError("提交退出申请失败"), 500);
   }
 });

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { logger } from "../../lib/logger";
 import { and, eq } from "drizzle-orm";
 import { createAuth } from "../../lib/auth";
 import { createDb } from "../../db";
@@ -42,7 +43,7 @@ queries.get("/", async (c) => {
       },
     });
   } catch (error) {
-    console.error("[API /users] Error:", error);
+    logger.error("[API /users] Error:", error);
     return c.json(APIErrors.internalError("Failed to get user"), 500);
   }
 });
@@ -117,7 +118,7 @@ queries.get("/pending-approvals", async (c) => {
 
     return c.json({ success: true, approvals: formattedApprovals, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
-    console.error("Get pending approvals error:", error);
+    logger.error("Get pending approvals error:", error);
     return c.json(APIErrors.internalError("获取待审批列表失败"), 500);
   }
 });
@@ -248,7 +249,7 @@ const totalPages = Math.ceil(total / pageSize);
 
     return c.json({ success: true, applications, stats, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
-    console.error("Get user applications error:", error);
+    logger.error("Get user applications error:", error);
     return c.json(APIErrors.internalError("获取申请列表失败"), 500);
   }
 });
@@ -334,7 +335,7 @@ queries.get("/teams/joined", async (c) => {
 
     return c.json({ success: true, teams, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
-    console.error("Get joined teams error:", error);
+    logger.error("Get joined teams error:", error);
     return c.json(APIErrors.internalError("获取加入的队伍失败"), 500);
   }
 });
@@ -408,7 +409,7 @@ queries.get("/created-teams", async (c) => {
 
     return c.json({ success: true, teams, pagination: { page, pageSize, total, totalPages, hasMore } });
   } catch (error) {
-    console.error("Get created teams error:", error);
+    logger.error("Get created teams error:", error);
     return c.json(APIErrors.internalError("获取创建的队伍失败"), 500);
   }
 });
@@ -457,7 +458,7 @@ queries.get("/:id", async (c) => {
       ongoingTeams,
     });
   } catch (error) {
-    console.error("Get user profile error:", error);
+    logger.error("Get user profile error:", error);
     return c.json(APIErrors.internalError("Failed to get user profile"), 500);
   }
 });

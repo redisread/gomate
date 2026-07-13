@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { logger } from "../../lib/logger";
 import { eq, desc, and, ne, sql, like, inArray, gte, lte } from "drizzle-orm";
 import { createAuth } from "../../lib/auth";
 import { createDb } from "../../db";
@@ -288,7 +289,7 @@ queries.get("/", async (c) => {
     setPublicCacheHeaders(c);
     return c.json(body);
   } catch (error) {
-    console.error("Get teams error:", error);
+    logger.error("Get teams error:", error);
     return c.json(APIErrors.internalError("获取队伍列表失败"), 500);
   }
 });
@@ -462,7 +463,7 @@ queries.get("/:id", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Get team error:", error);
+    logger.error("Get team error:", error);
     return c.json(APIErrors.internalError("获取队伍详情失败"), 500);
   }
 });
@@ -507,7 +508,7 @@ queries.get("/:id/applications", async (c) => {
       })),
     });
   } catch (error) {
-    console.error("Get applications error:", error);
+    logger.error("Get applications error:", error);
     return c.json(APIErrors.internalError("获取申请列表失败"), 500);
   }
 });
@@ -533,7 +534,7 @@ queries.get("/:id/my-status", async (c) => {
 
     return c.json({ success: true, status: membership ? membership.status : null });
   } catch (error) {
-    console.error("Get my status error:", error);
+    logger.error("Get my status error:", error);
     return c.json(APIErrors.internalError("获取状态失败"), 500);
   }
 });

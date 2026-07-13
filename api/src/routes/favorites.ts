@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { logger } from "../lib/logger";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -109,7 +110,7 @@ favorites.get("/", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Get favorites error:", error);
+    logger.error("Get favorites error:", error);
     return c.json(APIErrors.internalError("获取收藏列表失败"), 500);
   }
 });
@@ -164,7 +165,7 @@ favorites.post("/", async (c) => {
 
     return c.json({ success: true, favorite: { id, entityType, entityId, createdAt: now } });
   } catch (error) {
-    console.error("Add favorite error:", error);
+    logger.error("Add favorite error:", error);
     return c.json(APIErrors.internalError("添加收藏失败"), 500);
   }
 });
@@ -195,7 +196,7 @@ favorites.delete("/", async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
-    console.error("Delete favorite error:", error);
+    logger.error("Delete favorite error:", error);
     return c.json(APIErrors.internalError("取消收藏失败"), 500);
   }
 });

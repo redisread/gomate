@@ -1,4 +1,5 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
 import { eq, sql } from "drizzle-orm";
 import { createDb } from "../db";
@@ -60,7 +61,7 @@ admin.post("/clear-rate-limit", async (c) => {
   } catch (error) {
     if (error instanceof AuthenticationError) return c.json(APIErrors.unauthorized("未登录"), 401);
     if (error instanceof AuthorizationError) return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Clear rate limit error:", error);
+    logger.error("Clear rate limit error:", error);
     return c.json(APIErrors.internalError("清除失败"), 500);
   }
 });
@@ -85,7 +86,7 @@ admin.post("/cron/update-expired-teams", async (c) => {
   } catch (error) {
     if (error instanceof AuthenticationError) return c.json(APIErrors.unauthorized("未登录"), 401);
     if (error instanceof AuthorizationError) return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Manual cron trigger error:", error);
+    logger.error("Manual cron trigger error:", error);
     return c.json(APIErrors.internalError("执行失败"), 500);
   }
 });
@@ -155,7 +156,7 @@ admin.get("/share-analytics", async (c) => {
   } catch (error) {
     if (error instanceof AuthenticationError) return c.json(APIErrors.unauthorized("未登录"), 401);
     if (error instanceof AuthorizationError) return c.json(APIErrors.forbidden("无权限访问"), 403);
-    console.error("Get share analytics error:", error);
+    logger.error("Get share analytics error:", error);
     return c.json(APIErrors.internalError("获取分享分析失败"), 500);
   }
 });

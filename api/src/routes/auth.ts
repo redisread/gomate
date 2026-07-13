@@ -1,4 +1,5 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
@@ -57,7 +58,7 @@ auth.post("/forgot-password", async (c) => {
 
     return c.json({ success: true, message: "如果该邮箱已注册，重置密码邮件已发送" });
   } catch (error) {
-    console.error("Forgot password error:", error);
+    logger.error("Forgot password error:", error);
     return c.json(APIErrors.internalError("发送重置邮件失败，请稍后重试"), 500);
   }
 });
@@ -87,7 +88,7 @@ auth.all("/*", async (c) => {
       }
     }
   } catch (err) {
-    console.warn("[Auth] Rate limit check failed, allowing request:", err);
+    logger.warn("[Auth] Rate limit check failed, allowing request:", err);
   }
 
   const authInstance = createAuth(c.env);

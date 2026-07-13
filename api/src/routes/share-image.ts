@@ -1,4 +1,5 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
 import type { Env } from "../lib/auth";
 import { generatePreviewImage, generateLocationImage, generateTeamImage, generateStoryImage } from "../services/share-image/generate-share-image";
@@ -22,7 +23,7 @@ shareImageRoute.get("/preview", async (c) => {
       },
     });
   } catch (error) {
-    console.error("[ShareImage] Preview generation failed:", error);
+    logger.error("[ShareImage] Preview generation failed:", error);
     return c.json(
       APIErrors.internalError("Failed to generate preview image", String(error)),
       500
@@ -53,7 +54,7 @@ shareImageRoute.get("/location/:locationId", async (c) => {
           await c.env.R2.delete(object.key);
         }
       } catch (e) {
-        console.error("[ShareImage] Cache clear failed:", e);
+        logger.error("[ShareImage] Cache clear failed:", e);
       }
     }
 
@@ -73,7 +74,7 @@ shareImageRoute.get("/location/:locationId", async (c) => {
 
     return new Response(png, { headers });
   } catch (error) {
-    console.error("[ShareImage] Location image generation failed:", error);
+    logger.error("[ShareImage] Location image generation failed:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return c.json(
       APIErrors.internalError("Failed to generate location image", errorMessage),
@@ -105,7 +106,7 @@ shareImageRoute.get("/team/:teamId", async (c) => {
           await c.env.R2.delete(object.key);
         }
       } catch (e) {
-        console.error("[ShareImage] Cache clear failed:", e);
+        logger.error("[ShareImage] Cache clear failed:", e);
       }
     }
 
@@ -123,7 +124,7 @@ shareImageRoute.get("/team/:teamId", async (c) => {
 
     return new Response(png, { headers });
   } catch (error) {
-    console.error("[ShareImage] Team image generation failed:", error);
+    logger.error("[ShareImage] Team image generation failed:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return c.json(
       APIErrors.internalError("Failed to generate team image", errorMessage),
@@ -154,7 +155,7 @@ shareImageRoute.get("/story/:storyId", async (c) => {
           await c.env.R2.delete(object.key);
         }
       } catch (e) {
-        console.error("[ShareImage] Cache clear failed:", e);
+        logger.error("[ShareImage] Cache clear failed:", e);
       }
     }
 
@@ -179,7 +180,7 @@ shareImageRoute.get("/story/:storyId", async (c) => {
 
     return new Response(png, { headers });
   } catch (error) {
-    console.error("[ShareImage] Story image generation failed:", error);
+    logger.error("[ShareImage] Story image generation failed:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return c.json(
       APIErrors.internalError("Failed to generate story image", errorMessage),

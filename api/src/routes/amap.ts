@@ -1,4 +1,5 @@
 import { APIErrors } from "../lib/api-errors";
+import { logger } from "../lib/logger";
 import { Hono } from "hono";
 import type { Env } from "../lib/auth";
 import { fetchWithTimeout } from "../lib/timeout";
@@ -20,7 +21,7 @@ amapRoute.get("/inputtips", async (c) => {
     const data = await resp.json();
     return c.json(data);
   } catch (error) {
-    console.error("[Amap] inputtips timeout:", error);
+    logger.error("[Amap] inputtips timeout:", error);
     return c.json(APIErrors.internalError("Request timeout", { status: "0", tips: [] }), 504);
   }
 });
@@ -39,7 +40,7 @@ amapRoute.get("/geocode", async (c) => {
     const data = await resp.json();
     return c.json(data);
   } catch (error) {
-    console.error("[Amap] geocode timeout:", error);
+    logger.error("[Amap] geocode timeout:", error);
     return c.json(APIErrors.internalError("Request timeout", { status: "0", geocodes: [] }), 504);
   }
 });
@@ -58,7 +59,7 @@ amapRoute.get("/regeo", async (c) => {
     const data = await resp.json();
     return c.json(data);
   } catch (error) {
-    console.error("[Amap] regeo timeout:", error);
+    logger.error("[Amap] regeo timeout:", error);
     return c.json(APIErrors.internalError("Request timeout", { status: "0" }), 504);
   }
 });
