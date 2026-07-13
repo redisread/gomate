@@ -82,7 +82,10 @@ export function FeaturedStoryCard({ story, onClick, className }: FeaturedStoryCa
               if (parent) {
                 const fallback = document.createElement('div');
                 fallback.className = 'w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/30 to-muted';
-                fallback.innerHTML = '<span class="text-4xl">🏔️</span>';
+                const span = document.createElement('span');
+                span.className = 'text-4xl';
+                span.textContent = '🏔️';
+                fallback.appendChild(span);
                 parent.appendChild(fallback);
               }
             }}
