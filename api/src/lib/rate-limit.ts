@@ -3,7 +3,7 @@
  *
  * Usage:
  *   const result = await checkRateLimit(kv, "rate:auth:login:<ip>", 20, 60);
- *   if (!result.allowed) return c.json({ error: "Too many requests" }, 429);
+ *   if (!result.allowed) return c.json(APIErrors.tooManyRequests("Too many requests"), 429);
  *
  * NOTE: Cloudflare KV has no atomic increment, so concurrent requests within
  * the same window may both read the same count and both be allowed — the

@@ -35,7 +35,7 @@ shares.post("/track", async (c) => {
     return c.json({ success: true });
   } catch (error) {
     console.error("Track share error:", error);
-    return c.json({ success: false, error: "Internal error" }, 500);
+    return c.json(APIErrors.internalError("Internal error"), 500);
   }
 });
 
