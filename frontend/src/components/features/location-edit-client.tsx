@@ -156,7 +156,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
           .then((r) => r.json()).then((data) => {
             setSearchLoading(false);
             if (data.status === "1" && data.tips?.length > 0) {
-              const valid = data.tips.filter((t: { location?: string }) => t.location && t.location !== "[]").slice(0, 8);
+              const valid = data.tips.filter((t: { location?: string; district?: string }) => t.location && t.location !== "[]").slice(0, 8);
               setSearchSuggestions(valid); setSearchOpen(valid.length > 0);
             } else { setSearchSuggestions([]); setSearchOpen(false); }
           }).catch(() => { setSearchLoading(false); setSearchSuggestions([]); setSearchOpen(false); })

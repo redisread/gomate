@@ -2,7 +2,7 @@ import { MapPin, ArrowRight, Calendar, Clock, Timer, AlertCircle, CheckCircle, C
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useI18n } from "@/hooks/useI18n";
-import type { Team, Location, User } from "@/lib/types";
+import type { Team, Location } from "@/lib/types";
 import { useTeamDetail } from "./use-team-detail";
 import { formatDuration } from "./team-detail-utils";
 import { TeamApplicationsSection } from "./team-detail-applications";
@@ -169,7 +169,7 @@ function TeamCapacity({ team, canJoin, remaining }: { team: Team; canJoin: boole
   );
 }
 
-function LeaderCard({ leader, teamId, canMessage }: { leader: User; teamId: string; canMessage: boolean; }) {
+function LeaderCard({ leader, teamId, canMessage }: { leader: Team["leader"]; teamId: string; canMessage: boolean; }) {
   const { t } = useI18n(["teams"]);
   const [isStarting, setIsStarting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
