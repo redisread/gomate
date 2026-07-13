@@ -1,18 +1,12 @@
 import * as schema from "../../db/schema";
 import { and, eq, ne, gt, inArray } from "drizzle-orm";
 import type { createDb } from "../../db";
+import { formatBeijingDateTime } from "../../lib/date-utils";
 
 type Db = ReturnType<typeof createDb>;
 
-/** 格式化日期为北京时间（UTC+8）的 date 和 time 字符串 */
-export function formatBeijingDateTime(date: Date | null): { date: string | null; time: string | null } {
-  if (!date) return { date: null, time: null };
-  const beijingDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-  return {
-    date: beijingDate.toISOString().split("T")[0],
-    time: beijingDate.toISOString().slice(11, 16),
-  };
-}
+// Re-export for backward compatibility
+export { formatBeijingDateTime };
 
 /** 返回安全的用户对象（时间戳格式） */
 export function sanitizeUser(user: typeof schema.users.$inferSelect) {
