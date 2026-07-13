@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { logger } from "../lib/logger";
 import { z } from "zod";
+import { logger } from "../lib/logger";
 import { sendContactFormEmail } from "../lib/email";
 import type { Env } from "../lib/auth";
 import type { EmailLocale } from "../lib/email-i18n";

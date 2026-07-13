@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { logger } from "../lib/logger";
 import { eq, and, sql, desc } from "drizzle-orm";
+import { logger } from "../lib/logger";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
