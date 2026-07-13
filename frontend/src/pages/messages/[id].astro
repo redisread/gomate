@@ -171,7 +171,13 @@ const { id } = Astro.params;
       const shouldStayAtBottom = options.forceScroll || isNearBottom();
 
       try {
-        const res = await fetch(`${API_BASE}/messages/${conversationId}?limit=50`, {
+        const isIncremental = !options.forceScroll && messages.length > 0;
+        const lastMessage = messages[messages.length - 1];
+        const sinceParam = isIncremental && lastMessage?.createdAt
+          ? `&since=${new Date(lastMessage.createdAt).getTime()}`
+          : "";
+
+        const res = await fetch(`${API_BASE}/messages/${conversationId}?limit=50${sinceParam}`, {
           credentials: "include",
         });
         const data = await res.json().catch(() => ({}));
@@ -197,26 +203,43 @@ const { id } = Astro.params;
         }
 
         clearChatError();
-        const nextMessages = Array.isArray(data.data) ? data.data : [];
-        const nextSignature = getMessagesSignature(nextMessages);
+        const fetchedMessages = Array.isArray(data.data) ? data.data : [];
 
-        messages = nextMessages;
-        if (data.conversation?.otherUser) {
-          otherUser = data.conversation.otherUser;
-          updateHeader();
-        } else if (!otherUser && messages.length > 0) {
-          const firstMsg = messages[0];
-          otherUser = firstMsg.senderId === currentUserId
-            ? messages.find((message) => message.senderId !== currentUserId)?.sender
-            : firstMsg.sender;
-          updateHeader();
-        }
+        if (isIncremental && fetchedMessages.length > 0) {
+          messages = messages.concat(fetchedMessages);
+          if (data.conversation?.otherUser) {
+            otherUser = data.conversation.otherUser;
+            updateHeader();
+          }
+          const nextSignature = getMessagesSignature(messages);
+          if (nextSignature !== lastRenderedSignature) {
+            renderMessages();
+            lastRenderedSignature = nextSignature;
+            if (shouldStayAtBottom) {
+              scrollToBottom({ smooth: true });
+            }
+          }
+        } else if (!isIncremental) {
+          messages = fetchedMessages;
+          const nextSignature = getMessagesSignature(messages);
 
-        if (nextSignature !== lastRenderedSignature) {
-          renderMessages();
-          lastRenderedSignature = nextSignature;
-          if (shouldStayAtBottom) {
-            scrollToBottom({ smooth: !options.forceScroll });
+          if (data.conversation?.otherUser) {
+            otherUser = data.conversation.otherUser;
+            updateHeader();
+          } else if (!otherUser && messages.length > 0) {
+            const firstMsg = messages[0];
+            otherUser = firstMsg.senderId === currentUserId
+              ? messages.find((message) => message.senderId !== currentUserId)?.sender
+              : firstMsg.sender;
+            updateHeader();
+          }
+
+          if (nextSignature !== lastRenderedSignature) {
+            renderMessages();
+            lastRenderedSignature = nextSignature;
+            if (shouldStayAtBottom) {
+              scrollToBottom({ smooth: !options.forceScroll });
+            }
           }
         }
       } catch (err) {

@@ -394,6 +394,7 @@ app.get("/:id", async (c) => {
   const user = session.user;
   const conversationId = c.req.param("id");
   const cursor = c.req.query("cursor");
+  const since = c.req.query("since");
   const limit = Math.min(parseInt(c.req.query("limit") || "20"), 50);
   const db = createDb(c.env.DB);
 
@@ -436,7 +437,18 @@ app.get("/:id", async (c) => {
       eq(messages.conversationId, conversationId)
     );
 
-    if (cursor) {
+    const isIncremental = !!since;
+
+    if (isIncremental) {
+      const sinceMs = parseInt(since, 10);
+      if (!isNaN(sinceMs)) {
+        const sinceDate = new Date(sinceMs);
+        whereConditions = and(
+          whereConditions,
+          sql`${messages.createdAt} > ${sinceDate}`
+        );
+      }
+    } else if (cursor) {
       const cursorMs = parseInt(cursor, 10);
       if (!isNaN(cursorMs)) {
         const cursorDate = new Date(cursorMs);
@@ -458,7 +470,7 @@ app.get("/:id", async (c) => {
       })
       .from(messages)
       .where(whereConditions)
-      .orderBy(desc(messages.createdAt))
+      .orderBy(isIncremental ? messages.createdAt : desc(messages.createdAt))
       .limit(limit);
 
     const senderIds = [...new Set(list.map((msg) => msg.senderId))];
@@ -502,7 +514,7 @@ app.get("/:id", async (c) => {
 
     return c.json({
       success: true,
-      data: messagesWithSender.reverse(),
+      data: isIncremental ? messagesWithSender : messagesWithSender.reverse(),
       conversation: conversation
         ? {
             id: conversation.id,
@@ -511,7 +523,7 @@ app.get("/:id", async (c) => {
           }
         : null,
       nextCursor:
-        list.length === limit && list.length > 0
+        !isIncremental && list.length === limit && list.length > 0
           ? String(list[list.length - 1]?.createdAt?.getTime() || Date.now())
           : null,
     });
