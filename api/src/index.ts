@@ -88,8 +88,9 @@ const RATE_LIMIT_WINDOW = 3600; // 1小时（秒）
 function isDomainAllowed(hostname: string): boolean {
   return ALLOWED_IMAGE_PATTERNS.some(pattern => {
     if (pattern.startsWith("*.")) {
-      const suffix = pattern.slice(1); // 移除开头的 "*"，保留 ".example.com"
-      return hostname.endsWith(suffix);
+      const suffix = pattern.slice(1); // ".githubusercontent.com"
+      const idx = hostname.lastIndexOf(suffix);
+      return idx > 0 && hostname[idx - 1] === ".";
     }
     return hostname === pattern;
   });

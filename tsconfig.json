@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -17,15 +13,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
     "baseUrl": ".",
     "forceConsistentCasingInFileNames": true,
@@ -34,22 +23,6 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": [
-    "**/*.mts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/dev/types/**/*.ts",
-    ".next/types/**/*.ts",
-    "dist/dev/types/**/*.ts",
-    "dist/types/**/*.ts",
-    "next-env.d.ts",
-    ".vercel/output/static/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "api",
-    "frontend",
-    "mobile",
-    "packages"
-  ]
+  "include": ["**/*.mts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "api", "frontend", "mobile", "packages"]
 }

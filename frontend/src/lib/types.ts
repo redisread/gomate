@@ -63,10 +63,10 @@ export interface RoutePoi {
   description?: string | null;
   coordinates: { lat: number; lng: number };
   images?: string[];
-  extra?: Record<string, any> | null;
+  extra?: Record<string, unknown> | null;
   order?: number | null;
   roleType: 'waypoint' | 'checkpoint' | 'viewpoint' | 'facility' | 'poi';
-  roleSpecificData?: Record<string, any> | null;
+  roleSpecificData?: Record<string, unknown> | null;
 }
 
 // POI 类型从共享包导入
