@@ -29,7 +29,7 @@ declare module "vditor" {
     vditor: { options: IOptions };
     getValue(): string;
     setValue(value: string, clearStack?: boolean): void;
-    setTheme(theme: "dark" | "classic"): void;
+    setTheme(theme: "dark" | "classic", contentTheme?: string, codeTheme?: string, contentThemePath?: string): void;
     disabled(): void;
     enable(): void;
     focus(): void;

@@ -20,6 +20,30 @@ function detectDark(): boolean {
 }
 
 /**
+ * 确保 Vditor 基础 CSS 已加载
+ * 生产构建时 Vite/Astro 未能正确打包 node_modules 中的 CSS import，
+ * 因此通过动态注入 link 标签作为可靠 fallback。
+ * 返回 Promise，确保 CSS 加载完成后再初始化 Vditor。
+ */
+function ensureVditorCSS(): Promise<void> {
+  const linkId = "vditor-base-css";
+  const existing = document.getElementById(linkId);
+  if (existing) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve, reject) => {
+    const link = document.createElement("link");
+    link.id = linkId;
+    link.rel = "stylesheet";
+    link.type = "text/css";
+    link.href = `${VDITOR_CDN}/dist/index.css`;
+    link.onload = () => resolve();
+    link.onerror = () => reject(new Error(`Failed to load Vditor CSS: ${link.href}`));
+    document.head.appendChild(link);
+  });
+}
+
+/**
  * Vditor SV（分屏）编辑器组件
  * 左侧编辑 Markdown 源码，右侧实时预览渲染结果
  * 支持暗色主题
@@ -60,80 +84,95 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
     let vditorInstance: Vditor | null = null;
 
     (async () => {
-      const Vditor = (await import("vditor")).default;
+      try {
+        // 等待 CSS 加载完成后再初始化 Vditor
+        await ensureVditorCSS();
 
-      if (cancelled || !vditorRef.current) return;
+        if (cancelled || !vditorRef.current) return;
 
-      // 在初始化时重新读取主题，避免闭包捕获到旧值
-      const dark = detectDark();
+        const Vditor = (await import("vditor")).default;
 
-      vditorInstance = new Vditor(vditorRef.current, {
-        mode: "sv",
-        height: "100%",
-        minHeight: 400,
-        placeholder: placeholderRef.current ?? t("content.writeStories"),
-        theme: dark ? "dark" : "classic",
-        cdn: VDITOR_CDN,
-        toolbar: readOnly
-          ? []
-          : [
-              "headings",
-              "bold",
-              "italic",
-              "strike",
-              "|",
-              "link",
-              "list",
-              "ordered-list",
-              "check",
-              "|",
-              "quote",
-              "line",
-              "code",
-              "inline-code",
-              "|",
-              "table",
-              "undo",
-              "redo",
-              "|",
-              "preview",
-              "fullscreen",
-              "|",
-              "outline",
-            ],
-        preview: {
-          mode: "both",
-          delay: 300,
-          // @ts-expect-error IPreview 类型不含 theme，但运行时支持
-          theme: {
-            current: dark ? "dark" : "light",
+        if (cancelled || !vditorRef.current) return;
+
+        // 在初始化时重新读取主题，避免闭包捕获到旧值
+        const dark = detectDark();
+
+        vditorInstance = new Vditor(vditorRef.current, {
+          mode: "sv",
+          height: "100%",
+          minHeight: 400,
+          placeholder: placeholderRef.current ?? t("content.writeStories"),
+          theme: dark ? "dark" : "classic",
+          cdn: VDITOR_CDN,
+          toolbar: readOnly
+            ? []
+            : [
+                "headings",
+                "bold",
+                "italic",
+                "strike",
+                "|",
+                "link",
+                "list",
+                "ordered-list",
+                "check",
+                "|",
+                "quote",
+                "line",
+                "code",
+                "inline-code",
+                "|",
+                "table",
+                "undo",
+                "redo",
+                "|",
+                "preview",
+                "fullscreen",
+                "|",
+                "outline",
+              ],
+          preview: {
+            mode: "both",
+            delay: 300,
+            // @ts-expect-error IPreview 类型不含 theme，但运行时支持
+            theme: {
+              current: dark ? "dark" : "light",
+            },
+            hljs: {
+              style: dark ? "atom-one-dark" : "github",
+            },
           },
-          hljs: {
-            style: dark ? "atom-one-dark" : "github",
+          resize: {
+            enable: !readOnly,
+            position: "bottom",
           },
-        },
-        resize: {
-          enable: !readOnly,
-          position: "bottom",
-        },
-        input: (md: string) => {
-          if (md !== valueRef.current) {
-            onChangeRef.current(md);
-          }
-        },
-        after: () => {
-          if (vditorInstance) {
-            vditorInstance.setValue(valueRef.current);
-            // 初始化时应用 readOnly 状态
-            if (readOnly) {
-              try { vditorInstance.disabled(); } catch { /* ignore */ }
+          input: (md: string) => {
+            if (md !== valueRef.current) {
+              onChangeRef.current(md);
             }
-          }
-        },
-      });
+          },
+          after: () => {
+            if (vditorInstance) {
+              vditorInstance.setValue(valueRef.current);
+              // 确保代码高亮主题 CSS 被加载（初始化时 setCodeTheme 不会自动调用）
+              vditorInstance.setTheme(
+                dark ? "dark" : "classic",
+                dark ? "dark" : "light",
+                dark ? "atom-one-dark" : "github"
+              );
+              // 初始化时应用 readOnly 状态
+              if (readOnly) {
+                try { vditorInstance.disabled(); } catch { /* ignore */ }
+              }
+            }
+          },
+        });
 
-      if (!cancelled) {
-        instanceRef.current = vditorInstance;
+        if (!cancelled) {
+          instanceRef.current = vditorInstance;
+        }
+      } catch (error) {
+        console.error("[VditorEditor] Failed to initialize Vditor:", error);
       }
     })();
 
@@ -162,7 +201,11 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
   React.useEffect(() => {
     if (instanceRef.current && isDark !== (instanceRef.current.vditor?.options?.theme === "dark")) {
       try {
-        instanceRef.current.setTheme(isDark ? "dark" : "classic");
+        instanceRef.current.setTheme(
+          isDark ? "dark" : "classic",
+          isDark ? "dark" : "light",
+          isDark ? "atom-one-dark" : "github"
+        );
       } catch (_e) {
         console.warn("[VditorEditor] Theme switch failed:", _e);
       }
