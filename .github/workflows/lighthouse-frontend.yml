@@ -1,0 +1,70 @@
+name: Lighthouse CI (Frontend)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/lighthouse-frontend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  lighthouse:
+    name: Lighthouse (frontend only)
+    runs-on: ubuntu-latest
+    # 评估期：仅 warning 不阻塞 PR；如需阻塞改 strict。
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate i18n locales
+        run: pnpm i18n:build
+
+      - name: Build frontend
+        run: pnpm --filter @gomate/frontend build
+        env:
+          PUBLIC_API_URL: https://api.gomate.live
+
+      - name: Serve preview
+        run: |
+          pnpm --filter @gomate/frontend preview --port 4321 &
+          sleep 8
+
+      - name: Run Lighthouse audit
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: .github/lighthouserc.json
+          uploadArtifacts: true
+          artifactName: lighthouse-report
+          # 保存原始 LH 报告 / html / json artifact 14 天（事后回溯分数趋势）
+          temporaryPublicStorage: false
+
+      - name: Soft-fail summary
+        if: always()
+        run: |
+          echo "Lighthouse artifacts uploaded. See PR Summary → Checks → Artifact."
+          # 评估期不强制 gate；阈值失败时仅 PR comment 提示，不阻塞 merge
+          # 如需升为硬 gate，把本 workflow 的 continue-on-error 改为 false 并加下方校验脚本
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: |
+            .lighthouseci/**
+          retention-days: 14
