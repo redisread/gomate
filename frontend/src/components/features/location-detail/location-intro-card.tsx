@@ -157,7 +157,7 @@ export function LocationIntroCard({
         {isOverflow && (
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="mt-2.5 inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-semibold transition-colors"
+            className="mt-2.5 inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-semibold transition-colors"
           >
             {expanded ? (
               <> {t("common.collapse")} <ChevronUp className="h-3.5 w-3.5" /></>
@@ -184,7 +184,7 @@ export function LocationIntroCard({
           <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
             {address && (
               <div className="flex items-start gap-2.5 mb-3">
-                <MapPin className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                <MapPin className="h-4 w-4 text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed flex-1">{address}</span>
                 <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
                   {coordinates && (
@@ -193,7 +193,7 @@ export function LocationIntroCard({
                       onClick={handleNavigate}
                       title={t('locations.navigateTooltip')}
                       aria-label={t('locations.navigateTooltip')}
-                      className="text-amber-400 hover:text-amber-600 transition-colors"
+                      className="text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
                     >
                       <Navigation className="h-4 w-4" />
                     </button>
@@ -208,7 +208,7 @@ export function LocationIntroCard({
                     {copied ? (
                       <Check className="h-4 w-4 text-emerald-500" />
                     ) : (
-                      <Copy className="h-4 w-4 text-amber-400" />
+                      <Copy className="h-4 w-4 text-amber-700 dark:text-amber-400" />
                     )}
                   </button>
                 </div>
@@ -216,8 +216,8 @@ export function LocationIntroCard({
             )}
             {location.bestSeason && location.bestSeason.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
-                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                <span className="text-xs text-stone-400 dark:text-stone-500">{t('locations.detailSeasonsLabel')}：</span>
+                <Sparkles className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
+                <span className="text-xs text-stone-600 dark:text-stone-400">{t('locations.detailSeasonsLabel')}：</span>
                 {location.bestSeason.map((s) => (
                   <span
                     key={s}

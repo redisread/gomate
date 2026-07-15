@@ -35,7 +35,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
+        className="h-9 w-9 flex items-center justify-center rounded-lg text-stone-600 dark:text-stone-400 hover:bg-accent hover:text-foreground transition-colors duration-150"
         aria-label={t('common.toggleLabel')}
       >
         <Sun className="h-4 w-4" />
@@ -63,7 +63,7 @@ export function ThemeToggle() {
     <div className="relative" data-theme-toggle>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
+        className="h-9 w-9 flex items-center justify-center rounded-lg text-stone-600 dark:text-stone-400 hover:bg-accent hover:text-foreground transition-colors duration-150"
         aria-label={t('common.toggleLabel')}
       >
         {getCurrentIcon()}

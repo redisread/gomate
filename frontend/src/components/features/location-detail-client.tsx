@@ -277,7 +277,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
               ))}
             </div>
           )}
-          <p className="text-xs font-medium text-muted-foreground">
+          <p className="text-xs font-medium text-stone-600 dark:text-stone-400">
             {socialProofText}
           </p>
         </div>
@@ -297,7 +297,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
         {/* 主 CTA */}
         <a href={`/teams/create?locationId=${location.id}`} className="block mb-3">
           <button
-            className="w-full py-3.5 rounded-xl text-sm font-bold text-primary-foreground bg-primary shadow-[0_8px_18px_rgba(217,119,6,0.20)] hover:shadow-[0_10px_22px_rgba(217,119,6,0.26)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
+            className="w-full py-3.5 rounded-xl text-sm font-bold text-white dark:text-stone-950 bg-amber-700 dark:bg-amber-500 shadow-[0_8px_18px_rgba(217,119,6,0.20)] hover:shadow-[0_10px_22px_rgba(217,119,6,0.26)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
           >
             <span className="flex items-center justify-center gap-2">
               <Users className="h-4 w-4" />
@@ -349,7 +349,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
         </h3>
         <a
           href="/locations"
-          className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold transition-colors flex items-center gap-0.5"
+          className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-semibold transition-colors flex items-center gap-0.5"
         >
           {t("common.viewAll")}
           <ChevronRight className="h-3.5 w-3.5" />
@@ -444,7 +444,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
       <div className="max-w-7xl mx-auto px-3 py-3 flex items-center gap-2.5 sm:px-4 sm:gap-3 max-[360px]:px-2 max-[360px]:gap-2">
         {/* 地点信息 */}
         <div className="flex-1 min-w-0 max-[360px]:hidden">
-          <p className="text-[10px] text-stone-400 dark:text-stone-500 font-semibold uppercase tracking-wide">{t("locationDetail.destination")}</p>
+          <p className="text-[10px] text-stone-500 dark:text-stone-500 font-semibold uppercase tracking-wide">{t("locationDetail.destination")}</p>
           <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight">{location.name}</p>
         </div>
 
@@ -460,7 +460,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
         {/* 主 CTA */}
         <a href={`/teams/create?locationId=${location.id}`} className="flex-shrink-0 max-[360px]:flex-1">
           <button
-            className="flex w-full items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-bold text-primary-foreground bg-primary shadow-[0_6px_16px_rgba(217,119,6,0.24)] active:scale-[0.96] transition-transform duration-150 whitespace-nowrap max-[360px]:px-2"
+            className="flex w-full items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-bold text-white dark:text-stone-950 bg-amber-700 dark:bg-amber-500 shadow-[0_6px_16px_rgba(217,119,6,0.24)] active:scale-[0.96] transition-transform duration-150 whitespace-nowrap max-[360px]:px-2"
           >
             <span className="flex items-center gap-1.5">
               <Users className="h-4 w-4" />
@@ -740,7 +740,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             <h1 className="text-xl font-bold text-stone-700 dark:text-stone-300 mb-3">
               {error || t("errors.locationNotFound")}
             </h1>
-            <a href="/locations" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium underline underline-offset-2 transition-colors">
+            <a href="/locations" className="text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium underline underline-offset-2 transition-colors">
               {t("common.back")}
             </a>
           </div>

@@ -110,7 +110,7 @@ export function LocaleToggle() {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "h-9 flex items-center gap-1.5 px-2 rounded-lg text-muted-foreground",
+          "h-9 flex items-center gap-1.5 px-2 rounded-lg text-stone-600 dark:text-stone-400",
           "hover:bg-accent hover:text-foreground transition-colors duration-150"
         )}
         aria-label={getLocaleName(current)}

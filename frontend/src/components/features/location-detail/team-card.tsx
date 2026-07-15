@@ -29,8 +29,8 @@ export function TeamCard({ team }: TeamCardProps) {
         <div className="flex items-start gap-3 mb-3">
           {dateInfo ? (
             <div className="flex-shrink-0 w-12 rounded-xl overflow-hidden border border-stone-100 dark:border-stone-800 shadow-sm group-hover:shadow-md group-hover:border-amber-100 transition-all duration-200">
-              <div className="bg-amber-500 group-hover:bg-amber-600 py-0.5 text-center transition-colors">
-                <span className="text-[9px] font-bold text-white tracking-widest uppercase">
+              <div className="bg-amber-700 dark:bg-amber-500 group-hover:bg-amber-800 dark:group-hover:bg-amber-400 py-0.5 text-center transition-colors">
+                <span className="text-[9px] font-bold text-white dark:text-stone-950 tracking-widest uppercase">
                   {dateInfo.month}
                 </span>
               </div>
@@ -61,7 +61,7 @@ export function TeamCard({ team }: TeamCardProps) {
               date={team.date}
               variant="badge"
             />
-            <ArrowRight className="h-3.5 w-3.5 text-stone-300 dark:text-stone-600 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
+            <ArrowRight className="h-3.5 w-3.5 text-stone-400 dark:text-stone-600 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
           </div>
         </div>
 

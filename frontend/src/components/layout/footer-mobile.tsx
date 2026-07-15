@@ -72,7 +72,7 @@ export function FooterMobile() {
           href={`mailto:${t("common.contactEmail")}`}
           className="flex items-center gap-2 mt-6 py-3 px-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/30 dark:border-amber-900/30"
         >
-          <Mail className="h-4 w-4 text-amber-600" />
+          <Mail className="h-4 w-4 text-amber-700" />
           <span className="text-sm text-amber-700 dark:text-amber-400 font-medium">
             {t("common.contactEmail")}
           </span>
@@ -84,7 +84,7 @@ export function FooterMobile() {
         {/* 回到顶部 */}
         <button
           onClick={scrollToTop}
-          className="flex items-center gap-2 text-xs text-muted-foreground mb-4 hover:text-foreground transition-colors"
+          className="flex items-center gap-2 text-xs text-stone-600 dark:text-stone-400 mb-4 hover:text-foreground transition-colors"
         >
           <ArrowUp className="h-3.5 w-3.5" />
           {t("common.backToTop")}
@@ -92,12 +92,12 @@ export function FooterMobile() {
 
         {/* 版权信息 */}
         <div className="flex flex-col gap-1.5">
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-stone-600/70 dark:text-stone-400/70">
             © {year} {t("common.copyright")}
           </p>
-          <p className="text-xs flex items-center gap-1 text-muted-foreground/60">
+          <p className="text-xs flex items-center gap-1 text-stone-600/60 dark:text-stone-400/60">
             Made with
-            <Heart className="h-3 w-3 text-amber-500" fill="currentColor" />
+            <Heart className="h-3 w-3 text-amber-700 dark:text-amber-400" fill="currentColor" />
             {t("common.madeWithLove")}
           </p>
         </div>
@@ -129,13 +129,12 @@ function FooterSection({ title, links }: FooterSectionProps) {
         aria-expanded={isOpen}
       >
         <span
-          className="text-sm font-semibold tracking-wide"
-          style={{ color: "#D97706" }}
+          className="text-sm font-semibold tracking-wide text-stone-700 dark:text-stone-300"
         >
           {title}
         </span>
         <svg
-          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+          className={`h-4 w-4 text-stone-600 dark:text-stone-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
           fill="none"
@@ -162,7 +161,7 @@ function FooterSection({ title, links }: FooterSectionProps) {
             <li key={href}>
               <a
                 href={href}
-                className="flex items-center gap-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+                className="flex items-center gap-2.5 text-sm text-stone-600 dark:text-stone-400 hover:text-foreground transition-colors py-1"
               >
                 {Icon && <Icon className="h-3.5 w-3.5 opacity-60" />}
                 <span>{label}</span>

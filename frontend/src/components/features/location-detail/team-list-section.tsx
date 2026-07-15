@@ -22,7 +22,7 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
             <span className="w-1 h-4 rounded-full bg-emerald-400 flex-shrink-0" />
             {t('locations.detailWaiting')}
           </h2>
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5 pl-3">
+          <p className="text-xs text-stone-500 dark:text-stone-500 mt-0.5 pl-3">
             {teams.length > 0
               ? `${teams.length} ${t('locations.teamsWaitingDesc')}`
               : t('locations.detailNoTeamsDesc')}
@@ -30,7 +30,7 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
         </div>
         <a
           href={`/teams/create?locationId=${locationId}`}
-          className="text-xs text-amber-600 hover:text-amber-700 font-semibold transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
+          className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-semibold transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
         >
           {t('locations.detailCreateTeam')}
           <ArrowRight className="h-3.5 w-3.5" />
@@ -85,7 +85,7 @@ function EmptyTeamsState({ locationId }: { locationId: string }) {
       </p>
 
       <a href={`/teams/create?locationId=${locationId}`}>
-        <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-semibold transition-all duration-200 shadow-[0_6px_16px_rgba(217,119,6,0.22)] hover:shadow-[0_8px_20px_rgba(217,119,6,0.28)] active:scale-[0.97]">
+        <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-700 dark:bg-amber-500 text-white dark:text-stone-950 rounded-full text-sm font-semibold transition-all duration-200 shadow-[0_6px_16px_rgba(217,119,6,0.22)] hover:shadow-[0_8px_20px_rgba(217,119,6,0.28)] active:scale-[0.97]">
           <Users className="h-4 w-4" />
           {t('locations.detailNoTeamsBtn')}
         </button>

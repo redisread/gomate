@@ -39,7 +39,7 @@ export function AddressRow({ address, coordinates, locationName, className }: Ad
         className
       )}
     >
-      <MapPin className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+      <MapPin className="h-4 w-4 text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
       <span className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed flex-1">{address}</span>
       <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
         {coordinates && (
@@ -48,7 +48,7 @@ export function AddressRow({ address, coordinates, locationName, className }: Ad
             onClick={handleNavigate}
             title={t('locations.navigateTooltip')}
             aria-label={t('locations.navigateTooltip')}
-            className="text-amber-400 hover:text-amber-600 transition-colors"
+            className="text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
           >
             <Navigation className="h-4 w-4" />
           </button>
@@ -63,7 +63,7 @@ export function AddressRow({ address, coordinates, locationName, className }: Ad
           {copied ? (
             <Check className="h-4 w-4 text-emerald-500" />
           ) : (
-            <Copy className="h-4 w-4 text-amber-400" />
+            <Copy className="h-4 w-4 text-amber-700 dark:text-amber-400" />
           )}
         </button>
       </div>

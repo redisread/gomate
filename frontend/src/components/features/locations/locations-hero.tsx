@@ -66,7 +66,7 @@ export function LocationsHero({
           {t("locations.pageTitle")}
         </h1>
         <div className="flex justify-center">
-          <p className="text-stone-400 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed w-full max-w-xl text-center" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}>
+          <p className="text-stone-500 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed w-full max-w-xl text-center" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}>
             {t("locations.pageSubtitle")}
           </p>
         </div>
@@ -92,7 +92,7 @@ export function LocationsHero({
                       <span className="text-sm font-semibold leading-tight" style={{ color: isActive ? "#fff" : "#1c1917" }}>{cfg.label}</span>
                       {isActive && <span className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.25)" }}><X className="h-2.5 w-2.5 text-white" /></span>}
                     </div>
-                    <p className="text-[11px] leading-tight mt-0.5 truncate" style={{ color: isActive ? "rgba(255,255,255,0.75)" : "#a8a29e" }}>{cfg.desc}</p>
+                    <p className="text-[11px] leading-tight mt-0.5 truncate" style={{ color: isActive ? "rgba(255,255,255,0.75)" : "#78716c" }}>{cfg.desc}</p>
                   </div>
                 </button>
               );
@@ -102,16 +102,16 @@ export function LocationsHero({
 
         {/* 搜索框 */}
         <div className="relative" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 220ms both" }}>
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 dark:text-stone-500 pointer-events-none" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500 dark:text-stone-500 pointer-events-none" />
           <input
             ref={searchInputRef} type="text" placeholder={t("locations.searchPlaceholder")}
             value={searchQuery} onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-11 pr-12 py-3.5 bg-stone-50 dark:bg-stone-900 text-foreground placeholder-stone-400 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 transition-all duration-200 text-sm shadow-sm"
+            className="w-full pl-11 pr-12 py-3.5 bg-stone-50 dark:bg-stone-900 text-foreground placeholder-stone-500 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 transition-all duration-200 text-sm shadow-sm"
           />
           {searchQuery && (
             <button type="button" onClick={() => onSearchChange("")}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-stone-100 dark:bg-stone-800 rounded-full transition-colors">
-              <X className="h-3.5 w-3.5 text-stone-400 dark:text-stone-500" />
+              <X className="h-3.5 w-3.5 text-stone-500 dark:text-stone-500" />
             </button>
           )}
         </div>
@@ -129,7 +129,7 @@ export function LocationsHero({
                   onToggleCityDropdown();
                 }}
                 className={cn("flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
-                  selectedCityId ? "bg-amber-500 text-white border-amber-500 shadow-sm" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
+                  selectedCityId ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
                 <MapPin className="w-3 h-3" />
                 {selectedCityName || t("locations.allCities")}
@@ -142,14 +142,14 @@ export function LocationsHero({
             {popularTags.slice(0, 8).map((tag) => (
               <button key={tag.id} type="button" onClick={() => onTagToggle(tag.id)}
                 className={cn("flex-shrink-0 px-3 py-1.5 text-xs rounded-full border transition-all duration-200 active:scale-95",
-                  selectedTags.includes(tag.id) ? "bg-amber-500 text-white border-amber-500 shadow-sm" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
+                  selectedTags.includes(tag.id) ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
                 {tag.name}
               </button>
             ))}
             {hasActiveFilters && (
               <button type="button" onClick={onClearAll}
-                className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors rounded-full">
+                className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs text-stone-500 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors rounded-full">
                 <X className="w-3 h-3" />{t("locations.clearBtn")}
               </button>
             )}
@@ -163,14 +163,14 @@ export function LocationsHero({
             style={{ top: cityDropdownPos.top, left: cityDropdownPos.left, animation: "scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both" }}>
             <button type="button" onClick={() => onCitySelect("")}
               className={cn("w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
-                !selectedCityId ? "text-amber-600 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
+                !selectedCityId ? "text-amber-700 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
               )}>
               <MapPin className="w-3 h-3 flex-shrink-0" />{t("locations.allCities")}
             </button>
             {cities.map((city) => (
               <button key={city.id} type="button" onClick={() => onCitySelect(city.id)}
                 className={cn("w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
-                  selectedCityId === city.id ? "text-amber-600 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
+                  selectedCityId === city.id ? "text-amber-700 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
                 <MapPin className="w-3 h-3 flex-shrink-0" />{city.name}
               </button>
@@ -233,7 +233,7 @@ export function LocationsResultBar({
       </div>
       {hasActiveFilters && !isLoading && (
         <button onClick={onClearAll}
-          className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800">
+          className="text-xs text-stone-500 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800">
           <X className="h-3.5 w-3.5" />
           {t("locations.clearFilter")}
         </button>
@@ -258,15 +258,15 @@ export function LocationsCtaSection() {
               {/* Left: Text Content */}
               <div className="flex-1 text-center lg:text-left">
                 {/* Badge */}
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100/80 text-amber-800 text-sm font-medium mb-5 border border-amber-200/60">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-sm font-medium mb-5 border border-amber-200/60 dark:border-amber-800/60">
                   <Compass className="w-4 h-4" />
                   <span>{t("locations.ctaBadge")}</span>
                 </div>
 
                 {/* Title */}
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-3 leading-tight">
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-3 leading-tight">
                   {t("locations.ctaTitle")}
-                </h2>
+                </h3>
 
                 {/* Description */}
                 <p className="text-base sm:text-lg text-stone-500 dark:text-stone-400 mb-7 max-w-lg mx-auto lg:mx-0 leading-relaxed">
@@ -276,7 +276,7 @@ export function LocationsCtaSection() {
                 {/* Button Group */}
                 <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
                   <a href="/teams/create" className="group">
-                    <button className="inline-flex items-center gap-2 bg-amber-600 text-white px-7 py-3.5 rounded-2xl text-base font-semibold transition-all duration-200 hover:bg-amber-700 hover:shadow-lg hover:shadow-amber-200/40 active:scale-[0.98]">
+                    <button className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-950 px-7 py-3.5 rounded-2xl text-base font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-amber-200/40 active:scale-[0.98]">
                       <Sparkles className="w-5 h-5" />
                       {t("locations.ctaBtn")}
                       <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -295,7 +295,7 @@ export function LocationsCtaSection() {
                   <div className="absolute inset-0 rounded-full border-2 border-dashed border-amber-200/60" />
                   {/* Inner circle */}
                   <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center shadow-warm-md">
-                    <Compass className="w-10 h-10 sm:w-12 sm:h-12 text-amber-600" />
+                    <Compass className="w-10 h-10 sm:w-12 sm:h-12 text-amber-700 dark:text-amber-500" />
                   </div>
                   {/* Small decorative dots */}
                   <div className="absolute top-2 right-6 w-3 h-3 rounded-full bg-amber-300/60" />
