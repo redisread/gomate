@@ -30,6 +30,8 @@
   "safetyNotice": "安全须知",
   "prevImage": "上一张图片",
   "nextImage": "下一张图片",
+  "paginationPrev": "上一页",
+  "paginationNext": "下一页",
   "coordinatesHint": "通过地址搜索自动获取坐标",
   "allCities": "全部城市",
   "cityFilter": "按城市筛选",

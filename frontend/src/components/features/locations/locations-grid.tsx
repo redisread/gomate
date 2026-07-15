@@ -60,9 +60,9 @@ function LocationCard({ location, index }: { location: Location; index: number }
             </div>
           )}
           <div className="absolute bottom-0 left-0 right-0 p-4">
-            <h3 className="font-bold text-white text-lg leading-tight drop-shadow-sm">
+            <h2 className="font-bold text-white text-lg leading-tight drop-shadow-sm">
               {location.name}
-            </h3>
+            </h2>
             {route && (
               <div className="flex items-center gap-3 mt-1.5 text-white/75 text-xs">
                 {route.duration && (
@@ -99,7 +99,7 @@ function LocationCard({ location, index }: { location: Location; index: number }
             </div>
           )}
           <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-800">
-            <span className="text-xs text-stone-400 dark:text-stone-500 flex items-center gap-1">
+            <span className="text-xs text-stone-500 dark:text-stone-500 flex items-center gap-1">
               <MapPin className="w-3 h-3" />
               {location.address || location.cityName || t("locations.defaultCity")}
             </span>
@@ -121,15 +121,15 @@ export function EmptyState({ onClear }: { onClear: () => void }) {
       <div className="relative mb-6">
         <div className="w-20 h-20 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
           <TreePine
-            className="h-9 w-9 text-stone-400 dark:text-stone-500 motion-reduce:animate-none"
+            className="h-9 w-9 text-stone-500 dark:text-stone-500 motion-reduce:animate-none"
             style={{ animation: "float 3s ease-in-out infinite" }}
           />
         </div>
         <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-200" />
         <div className="absolute -bottom-1 -left-1 w-3 h-3 rounded-full bg-amber-200" />
       </div>
-      <h3 className="text-lg font-semibold text-foreground dark:text-stone-300 mb-2">{t("locations.emptyTitle")}</h3>
-      <p className="text-stone-400 dark:text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-6">
+      <h2 className="text-lg font-semibold text-foreground dark:text-stone-300 mb-2">{t("locations.emptyTitle")}</h2>
+      <p className="text-stone-500 dark:text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-6">
         {t("locations.emptyDesc")}
       </p>
       <button
@@ -164,6 +164,7 @@ export function LocationsGrid({
   onPageChange: (page: number) => void;
   getPageNumbers: () => (number | "...")[];
 }) {
+  const { t } = useI18n(["locations"]);
   return (
     <div>
       <div
@@ -190,14 +191,15 @@ export function LocationsGrid({
           <button
             onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 text-stone-400 dark:text-stone-500 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+            aria-label={t("locations.paginationPrev")}
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-500 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
 
           {getPageNumbers().map((page, idx) =>
             page === "..." ? (
-              <span key={`e-${idx}`} className="w-9 h-9 flex items-center justify-center text-stone-400 dark:text-stone-500 text-sm">···</span>
+              <span key={`e-${idx}`} className="w-9 h-9 flex items-center justify-center text-stone-500 dark:text-stone-500 text-sm">···</span>
             ) : (
               <button
                 key={page}
@@ -217,7 +219,8 @@ export function LocationsGrid({
           <button
             onClick={() => currentPage < pagination.totalPages && onPageChange(currentPage + 1)}
             disabled={currentPage === pagination.totalPages}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 text-stone-400 dark:text-stone-500 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+            aria-label={t("locations.paginationNext")}
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-500 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

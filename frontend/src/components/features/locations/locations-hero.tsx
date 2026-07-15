@@ -66,7 +66,7 @@ export function LocationsHero({
           {t("locations.pageTitle")}
         </h1>
         <div className="flex justify-center">
-          <p className="text-stone-400 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed w-full max-w-xl text-center" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}>
+          <p className="text-stone-500 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed w-full max-w-xl text-center" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 150ms both" }}>
             {t("locations.pageSubtitle")}
           </p>
         </div>
@@ -92,7 +92,7 @@ export function LocationsHero({
                       <span className="text-sm font-semibold leading-tight" style={{ color: isActive ? "#fff" : "#1c1917" }}>{cfg.label}</span>
                       {isActive && <span className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.25)" }}><X className="h-2.5 w-2.5 text-white" /></span>}
                     </div>
-                    <p className="text-[11px] leading-tight mt-0.5 truncate" style={{ color: isActive ? "rgba(255,255,255,0.75)" : "#a8a29e" }}>{cfg.desc}</p>
+                    <p className="text-[11px] leading-tight mt-0.5 truncate" style={{ color: isActive ? "rgba(255,255,255,0.75)" : "#78716c" }}>{cfg.desc}</p>
                   </div>
                 </button>
               );
@@ -102,16 +102,16 @@ export function LocationsHero({
 
         {/* 搜索框 */}
         <div className="relative" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 220ms both" }}>
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 dark:text-stone-500 pointer-events-none" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500 dark:text-stone-500 pointer-events-none" />
           <input
             ref={searchInputRef} type="text" placeholder={t("locations.searchPlaceholder")}
             value={searchQuery} onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-11 pr-12 py-3.5 bg-stone-50 dark:bg-stone-900 text-foreground placeholder-stone-400 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 transition-all duration-200 text-sm shadow-sm"
+            className="w-full pl-11 pr-12 py-3.5 bg-stone-50 dark:bg-stone-900 text-foreground placeholder-stone-500 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 transition-all duration-200 text-sm shadow-sm"
           />
           {searchQuery && (
             <button type="button" onClick={() => onSearchChange("")}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-stone-100 dark:bg-stone-800 rounded-full transition-colors">
-              <X className="h-3.5 w-3.5 text-stone-400 dark:text-stone-500" />
+              <X className="h-3.5 w-3.5 text-stone-500 dark:text-stone-500" />
             </button>
           )}
         </div>
@@ -149,7 +149,7 @@ export function LocationsHero({
             ))}
             {hasActiveFilters && (
               <button type="button" onClick={onClearAll}
-                className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors rounded-full">
+                className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs text-stone-500 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors rounded-full">
                 <X className="w-3 h-3" />{t("locations.clearBtn")}
               </button>
             )}
@@ -233,7 +233,7 @@ export function LocationsResultBar({
       </div>
       {hasActiveFilters && !isLoading && (
         <button onClick={onClearAll}
-          className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800">
+          className="text-xs text-stone-500 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800">
           <X className="h-3.5 w-3.5" />
           {t("locations.clearFilter")}
         </button>

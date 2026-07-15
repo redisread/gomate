@@ -30,6 +30,8 @@
   "safetyNotice": "Safety Notice",
   "prevImage": "Previous Image",
   "nextImage": "Next Image",
+  "paginationPrev": "Previous page",
+  "paginationNext": "Next page",
   "coordinatesHint": "Coordinates auto-filled via address search",
   "allCities": "All Cities",
   "cityFilter": "Filter by City",
