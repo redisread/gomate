@@ -160,7 +160,7 @@ function getMetricItems(
       icon: <Clock className="h-4 w-4" />,
       label: t("locations.estimatedTime"),
       value: metricValue(route.duration, t),
-      accent: "text-sky-600 dark:text-sky-400",
+      accent: "text-sky-700 dark:text-sky-400",
       bg: "bg-sky-50 dark:bg-sky-950/30",
     },
     {
@@ -174,7 +174,7 @@ function getMetricItems(
       icon: <TrendingUp className="h-4 w-4" />,
       label: t("locations.totalElevation"),
       value: metricValue(route.elevation, t),
-      accent: "text-emerald-600 dark:text-emerald-400",
+      accent: "text-emerald-700 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-950/30",
     },
   ];
@@ -236,7 +236,7 @@ function RouteNoteBlock({
       <p
         className={cn(
           "mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase",
-          tone === "warning" ? "text-orange-600 dark:text-orange-400" : "text-stone-500 dark:text-stone-400"
+          tone === "warning" ? "text-orange-700 dark:text-orange-400" : "text-stone-500 dark:text-stone-400"
         )}
       >
         {icon}
