@@ -310,11 +310,11 @@ export function Footer() {
 
             {/* 探索 */}
             <div>
-              <h3
+              <p
                 className="text-sm font-semibold mb-5 sm:mb-4 tracking-wide text-stone-700 dark:text-stone-300"
               >
                 {t("common.explore")}
-              </h3>
+              </p>
               <ul className="space-y-4 sm:space-y-3">
                 {exploreLinks.map(({ href, label, icon: Icon }) => (
                   <li key={href}>
@@ -332,11 +332,11 @@ export function Footer() {
 
             {/* 支持 */}
             <div>
-              <h3
+              <p
                 className="text-sm font-semibold mb-5 sm:mb-4 tracking-wide text-stone-700 dark:text-stone-300"
               >
                 {t("common.support")}
-              </h3>
+              </p>
               <ul className="space-y-4 sm:space-y-3">
                 {supportLinks.map(({ href, label }) => (
                   <li key={href}>
@@ -353,11 +353,11 @@ export function Footer() {
 
             {/* 法律/联系 */}
             <div>
-              <h3
+              <p
                 className="text-sm font-semibold mb-5 sm:mb-4 tracking-wide text-stone-700 dark:text-stone-300"
               >
                 {t("common.legal")}
-              </h3>
+              </p>
               <ul className="space-y-4 sm:space-y-3 mb-6">
                 {legalLinks.map(({ href, label }) => (
                   <li key={href}>

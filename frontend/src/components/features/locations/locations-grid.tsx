@@ -167,6 +167,7 @@ export function LocationsGrid({
   const { t } = useI18n(["locations"]);
   return (
     <div>
+      <h2 className="sr-only">{t("locations.locationList")}</h2>
       <div
         className="transition-opacity duration-200"
         style={{ opacity: gridFading ? 0 : 1 }}
@@ -192,9 +193,11 @@ export function LocationsGrid({
             onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
             aria-label={t("locations.paginationPrev")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-all duration-200"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <span className={cn("text-stone-900 dark:text-stone-100", currentPage === 1 && "text-stone-500 dark:text-stone-500")}>
+              <ChevronLeft className="h-4 w-4" />
+            </span>
           </button>
 
           {getPageNumbers().map((page, idx) =>
@@ -220,9 +223,11 @@ export function LocationsGrid({
             onClick={() => currentPage < pagination.totalPages && onPageChange(currentPage + 1)}
             disabled={currentPage === pagination.totalPages}
             aria-label={t("locations.paginationNext")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-all duration-200"
           >
-            <ChevronRight className="h-4 w-4" />
+            <span className={cn("text-stone-900 dark:text-stone-100", currentPage === pagination.totalPages && "text-stone-500 dark:text-stone-500")}>
+              <ChevronRight className="h-4 w-4" />
+            </span>
           </button>
         </div>
       )}
