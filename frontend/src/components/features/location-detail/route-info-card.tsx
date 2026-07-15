@@ -49,7 +49,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
             <span className="w-1 h-4 rounded-full bg-emerald-400 flex-shrink-0" />
             {t("locations.routeInfo")}
           </h2>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          <p className="mt-1 text-xs sm:text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
             {t("locationDetail.routeSummarySubtitle")}
           </p>
         </div>
@@ -80,7 +80,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
                 )}
               >
                 <span className="block text-sm font-bold leading-snug line-clamp-1">{route.name}</span>
-                <span className="mt-1 block text-[11px] font-medium text-muted-foreground">
+                <span className="mt-1 block text-[11px] font-medium text-stone-600 dark:text-stone-400">
                   {index === 0 ? t("locationDetail.recommendedRoute") : getRouteDifficulty(route, t)}
                 </span>
               </button>
@@ -207,7 +207,7 @@ function MetricTile({
       <div className={cn("mb-2 flex h-8 w-8 items-center justify-center rounded-lg", bg)}>
         <span className={accent}>{icon}</span>
       </div>
-      <p className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</p>
+      <p className="text-[10px] font-semibold uppercase text-stone-600 dark:text-stone-400">{label}</p>
       <p className={cn("mt-1 text-sm font-black leading-tight", accent)}>{value}</p>
     </div>
   );

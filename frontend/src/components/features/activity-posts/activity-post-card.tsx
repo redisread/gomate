@@ -69,7 +69,7 @@ export function ActivityPostCard({
             <span className="text-sm font-medium text-foreground">
               {post.author?.name || t("common.unknown")}
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-stone-600 dark:text-stone-400">
               {post.createdAt
                 ? formatTimeAgo(post.createdAt)
                 : t("common.unknown")}
@@ -80,7 +80,7 @@ export function ActivityPostCard({
         {showDelete && onDelete && (
           <button
             onClick={handleDelete}
-            className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+            className="p-1.5 text-stone-600 dark:text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
             aria-label={t("teams.activityPosts.delete")}
           >
             <Trash2 className="h-4 w-4" />
@@ -107,7 +107,7 @@ export function ActivityPostCard({
         <div className="pt-3 border-t border-border">
           <a
             href={`/teams/${post.team.id}`}
-            className="text-xs text-muted-foreground hover:text-amber-600 transition-colors"
+            className="text-xs text-stone-600 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
           >
             {t("teams.activityPosts.fromTeam")}: {post.team.title}
           </a>

@@ -59,7 +59,7 @@ export function LocationActivityPosts({ locationId, className }: LocationActivit
             <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mb-4">
               <Mountain className="h-8 w-8 text-stone-400" />
             </div>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-stone-600 dark:text-stone-400 text-sm">
               {t("teams.activityPosts.locationEmpty")}
             </p>
           </div>
