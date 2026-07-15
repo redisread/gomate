@@ -183,7 +183,7 @@ export function Navbar({ className }: NavbarProps) {
               {session?.isAdmin && (
                 <a
                   href="/admin/locations"
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
+                  className="flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
                 >
                   <Settings className="h-4 w-4" />
                   {t("nav.admin")}
@@ -197,7 +197,7 @@ export function Navbar({ className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => setShowUserMenu(!showUserMenu)}
-                      className="flex items-center gap-1.5 text-sm text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
+                      className="flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
                     >
                       {/* 用户头像 */}
                       <Avatar
