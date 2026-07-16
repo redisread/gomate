@@ -1,4 +1,5 @@
 import satori from "satori";
+import { POSTER_TOKENS } from "./poster-tokens";
 
 interface TeamPosterData {
   title: string;
@@ -24,16 +25,12 @@ const POSTER_HEIGHT = 468;
 const CARD_WIDTH = 343;
 const COVER_HEIGHT = 108;
 
-// 设计规范配色
-const COLORS = {
-  primary: "#d97706",      // amber-600
-  primaryDark: "#b45309", // amber-700
-  bg: "#fafaf9",           // stone-50
-  title: "#1c1917",      // stone-900
-  body: "#44403c",       // stone-700
-  muted: "#78716c",      // stone-500
+const T = POSTER_TOKENS;
+const C = {
+  ...T,
+  primaryDark: "#B45309",
   white: "#ffffff",
-  border: "#e7e5e4",     // stone-200
+  border: "#e7e5e4",
 };
 
 function clampText(text: string, maxLength: number): string {
@@ -50,7 +47,7 @@ function CalendarIcon() {
       height: 12,
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: COLORS.primaryDark,
+      stroke: C.primaryDark,
       strokeWidth: 2,
       strokeLinecap: "round",
       strokeLinejoin: "round",
@@ -74,7 +71,7 @@ function LocationIcon() {
       height: 12,
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: COLORS.primaryDark,
+      stroke: C.primaryDark,
       strokeWidth: 2,
       strokeLinecap: "round",
       strokeLinejoin: "round",
@@ -96,7 +93,7 @@ function UsersIcon() {
       height: 12,
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: COLORS.body,
+      stroke: C.body,
       strokeWidth: 2,
       strokeLinecap: "round",
       strokeLinejoin: "round",
@@ -122,7 +119,7 @@ function gradientPill(label: string) {
         justifyContent: "center",
         padding: "5px 10px",
         borderRadius: 999,
-        background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.primaryDark} 100%)`,
+        background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primaryDark} 100%)`,
       },
       children: {
         type: "span",
@@ -131,7 +128,7 @@ function gradientPill(label: string) {
             display: "flex",
             fontSize: 11,
             fontWeight: 700,
-            color: COLORS.white,
+            color: C.white,
           },
           children: label,
         },
@@ -152,8 +149,8 @@ function infoCard(label: string, value: string, icon?: unknown) {
         minWidth: 0,
         padding: "10px 12px",
         borderRadius: 12,
-        backgroundColor: "#ffffff",
-        border: "1px solid #e7e5e4",
+        backgroundColor: C.surface,
+        border: `1px solid ${C.border}`,
       },
       children: [
         {
@@ -174,7 +171,7 @@ function infoCard(label: string, value: string, icon?: unknown) {
                     display: "flex",
                     fontSize: 10,
                     fontWeight: 600,
-                    color: "#78716c",
+                    color: C.muted,
                   },
                   children: label,
                 },
@@ -190,7 +187,7 @@ function infoCard(label: string, value: string, icon?: unknown) {
               fontSize: 13,
               fontWeight: 600,
               lineHeight: 1.3,
-              color: "#44403c",
+              color: C.body,
               maxHeight: 34,
               overflow: "hidden",
             },
@@ -269,7 +266,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   position: "absolute",
                   inset: 0,
                   background:
-                    "linear-gradient(180deg, rgba(28, 25, 23, 0.05) 0%, rgba(28, 25, 23, 0.46) 100%)",
+                    "linear-gradient(180deg, rgba(42,59,92,0.45) 0%, rgba(26,37,64,0.65) 100%)",
                 },
               },
             },
@@ -324,7 +321,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
             width: POSTER_WIDTH,
             height: 84,
             padding: "16px 20px 0 20px",
-            background: "linear-gradient(135deg, #fef3c7 0%, #fed7aa 56%, #fff7ed 100%)",
+            background: `linear-gradient(135deg, ${C.skyDeep} 0%, ${C.sky} 100%)`,
           },
           children: [
             {
@@ -343,7 +340,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                     props: {
                       style: {
                         display: "flex",
-                        color: "#92400e",
+                        color: C.white,
                         fontSize: 12,
                         fontWeight: 800,
                       },
@@ -361,7 +358,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   marginTop: 12,
                   fontSize: 14,
                   fontWeight: 700,
-                  color: "#92400e",
+                  color: C.white,
                 },
                 children: "找到同行的人，出发就不远",
               },
@@ -380,7 +377,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
           flexDirection: "column",
           width: POSTER_WIDTH,
           height: POSTER_HEIGHT,
-          backgroundColor: "#fafaf9",
+          backgroundColor: C.bg,
           fontFamily,
           overflow: "hidden",
           position: "relative",
@@ -397,8 +394,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                 margin: "8px 16px 0 16px",
                 padding: "10px 14px",
                 borderRadius: 18,
-                backgroundColor: "#ffffff",
-                border: "1px solid rgba(214, 211, 209, 0.84)",
+                backgroundColor: C.surface,
+                border: `1px solid ${C.border}`,
               },
               children: [
                 {
@@ -410,7 +407,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       fontSize: 20,
                       fontWeight: 800,
                       lineHeight: 1.25,
-                      color: "#1c1917",
+                      color: C.title,
                       maxHeight: 52,
                       overflow: "hidden",
                       letterSpacing: "-0.2px",
@@ -445,8 +442,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       marginTop: 8,
                       padding: "8px 10px",
                       borderRadius: 14,
-                      backgroundColor: "#fafaf9",
-                      border: "1px solid #e7e5e4",
+                      backgroundColor: C.bg,
+                      border: `1px solid ${C.border}`,
                     },
                     children: [
                       {
@@ -477,7 +474,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                         display: "flex",
                                         fontSize: 12,
                                         fontWeight: 700,
-                                        color: "#57534e",
+                                        color: C.muted,
                                       },
                                       children: "同行伙伴",
                                     },
@@ -492,7 +489,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   display: "flex",
                                   fontSize: 18,
                                   fontWeight: 800,
-                                  color: "#0f766e",
+                                  color: C.primary,
                                 },
                                 children: `${currentMembers}/${safeMaxMembers} 人`,
                               },
@@ -507,7 +504,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                             display: "flex",
                             width: 190,
                             height: 8,
-                            backgroundColor: "#e7e5e4",
+                            backgroundColor: C.border,
                             borderRadius: 999,
                             overflow: "hidden",
                           },
@@ -519,7 +516,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                 width: progressWidth,
                                 height: 8,
                                 borderRadius: 999,
-                                background: "linear-gradient(90deg, #10b981 0%, #14b8a6 100%)",
+                                background: `linear-gradient(90deg, ${C.primary} 0%, ${C.sunGlow} 100%)`,
                               },
                             },
                           },
@@ -531,7 +528,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                           style: {
                             display: "flex",
                             fontSize: 11,
-                            color: "#78716c",
+                            color: C.muted,
                           },
                           children:
                             spotsToForm && spotsToForm > 0
@@ -557,8 +554,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                 margin: "8px 16px 0 16px",
                 padding: "8px 14px",
                 borderRadius: 18,
-                backgroundColor: "#ffffff",
-                border: "1px solid rgba(214, 211, 209, 0.84)",
+                backgroundColor: C.surface,
+                border: `1px solid ${C.border}`,
               },
               children: [
                 {
@@ -583,7 +580,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                 height: 38,
                                 borderRadius: 19,
                                 objectFit: "cover",
-                                border: "2px solid #d97706",
+                                border: `2px solid ${C.primary}`,
                               },
                             },
                           }
@@ -595,13 +592,13 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                 width: 38,
                                 height: 38,
                                 borderRadius: 19,
-                                background: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
+                                background: `linear-gradient(135deg, ${C.primary} 0%, ${C.sunGlow} 100%)`,
                                 alignItems: "center",
                                 justifyContent: "center",
                                 fontSize: 14,
                                 fontWeight: 800,
                                 color: "#ffffff",
-                                border: "2px solid #d97706",
+                                border: `2px solid ${C.primary}`,
                               },
                               children: leaderInitial,
                             },
@@ -622,7 +619,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   display: "flex",
                                   fontSize: 10,
                                   fontWeight: 700,
-                                  color: "#b45309",
+                                  color: "#B45309",
                                 },
                                 children: "发起人",
                               },
@@ -634,7 +631,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   display: "flex",
                                   fontSize: 13,
                                   fontWeight: 700,
-                                  color: "#292524",
+                                  color: "#1C1917",
                                   maxHeight: 18,
                                   overflow: "hidden",
                                 },
@@ -648,7 +645,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   display: "flex",
                                   marginTop: 2,
                                   fontSize: 10,
-                                  color: "#78716c",
+                                  color: C.muted,
                                 },
                                 children: "邀请你一起出发",
                               },
@@ -676,7 +673,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                             display: "flex",
                             fontSize: 10,
                             fontWeight: 800,
-                            color: "#92400e",
+                            color: "#B45309",
                           },
                           children: "扫码加入",
                         },
@@ -689,7 +686,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                             padding: 4,
                             backgroundColor: "#ffffff",
                             borderRadius: 12,
-                            border: "1px solid #d6d3d1",
+                            border: `1px solid ${C.border}`,
                             boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                           },
                           children: qrCodeDataUrl
@@ -711,11 +708,11 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                     display: "flex",
                                     width: 88,
                                     height: 88,
-                                    backgroundColor: "#f5f5f4",
+                                    backgroundColor: "#FAF7F2",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     fontSize: 11,
-                                    color: "#a8a29e",
+                                    color: "#A8A29E",
                                   },
                                   children: "QR",
                                 },
@@ -747,7 +744,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       display: "flex",
                       fontSize: 11,
                       fontWeight: 800,
-                      color: "#b45309",
+                      color: "#B45309",
                     },
                     children: "GoMate",
                   },
@@ -758,7 +755,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                     style: {
                       display: "flex",
                       fontSize: 11,
-                      color: "#78716c",
+                      color: C.muted,
                     },
                     children: "找到同行的人，出发就不远",
                   },

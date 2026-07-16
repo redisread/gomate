@@ -1,6 +1,7 @@
 import satori from "satori";
 import type { PosterLocale } from "../../services/share-image/poster-i18n";
 import { localizeDifficulty } from "../../services/share-image/poster-i18n";
+import { POSTER_TOKENS } from "./poster-tokens";
 
 interface RouteMetrics {
   difficulty?: string | null;
@@ -44,14 +45,10 @@ interface LocationPosterData {
 }
 
 // ─── 调色板 ──────────────────────────────────────────────────────────────────
+const T = POSTER_TOKENS;
 const C = {
-  bg: "#FAF7F2",
-  surface: "#FFFFFF",
-  primary: "#D97706",
+  ...T,
   primaryDark: "#B45309",
-  title: "#1C1917",
-  body: "#57534E",
-  muted: "#A8A29E",
   border: "#E7E5E4",
   amber50: "#FFFBEB",
   amber100: "#FEF3C7",
@@ -96,9 +93,14 @@ function formatElevation(m: number): string {
  * 地点分享海报 — Hero 封面 + 信息卡 + 路线指标 + Tags + QR
  *
  * 设计思路：
- * 1) 顶部封面 16:9，底部叠加深色渐变 + 品牌条纹 + 标题，右下贴季节胶囊
+ * 1) 顶部封面 16:9，叠加热区渐变 + 品牌条纹 + 标题，右下贴季节胶囊
  * 2) 信息卡：路线指标三栏（距离/耗时/爬升）+ 副标题 + 描述 + 标签 + 地址
  * 3) 底栏：二维码 + Slogan + 品牌域名
+ *
+ * 黄昏户外视觉：
+ * - 封面采用 3 个绝对定位 div 堆叠（cover-img → sky 冷色蒙版 → sun-glow 暖光蒙版）
+ * - 标题保留白色并增加 sun-glow 微光晕
+ * - QR 区域使用极淡 sun-glow 底色，像被晨光打亮
  *
  * 高度固定 696px（展示信息密度足够、且不超过一般朋友圈一屏）
  */
@@ -176,7 +178,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                 backgroundColor: "#E7E5E4",
               },
               children: [
-                // 封面图
+                // 1. 封面图
                 coverImage
                   ? {
                       type: "img",
@@ -184,6 +186,9 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                         src: coverImage,
                         style: {
                           display: "flex",
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
                           width: W,
                           height: COVER_H,
                           objectFit: "cover",
@@ -195,6 +200,9 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                       props: {
                         style: {
                           display: "flex",
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
                           width: W,
                           height: COVER_H,
                           background: "linear-gradient(135deg, #FEF3C7 0%, #FED7AA 100%)",
@@ -210,7 +218,22 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                         },
                       },
                     },
-                // 底部渐变
+                // 2. 中层：sky 顶部冷色蒙版
+                {
+                  type: "div",
+                  props: {
+                    style: {
+                      display: "flex",
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: "linear-gradient(180deg, rgba(42,59,92,0.45) 0%, transparent 60%)",
+                    },
+                  },
+                },
+                // 3. 上层：sun-glow 底部暖光蒙版
                 {
                   type: "div",
                   props: {
@@ -220,8 +243,8 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      height: 110,
-                      background: "linear-gradient(180deg, rgba(28,25,23,0) 0%, rgba(28,25,23,0.65) 100%)",
+                      height: 240,
+                      background: "linear-gradient(180deg, rgba(28,25,23,0) 0%, rgba(42,59,92,0.30) 45%, rgba(232,144,48,0.55) 100%)",
                     },
                   },
                 },
@@ -262,7 +285,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                             lineHeight: "28px",
                             fontWeight: 800,
                             color: "#FFFFFF",
-                            textShadow: "0 1px 4px rgba(0,0,0,0.4)",
+                            textShadow: "0 0 16px rgba(232,144,48,0.5)",
                             maxHeight: 56,
                             overflow: "hidden",
                           },
@@ -464,7 +487,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                 justifyContent: "space-between",
                 margin: "0 14px",
                 padding: "12px 14px",
-                backgroundColor: C.surface,
+                backgroundColor: "rgba(232,144,48,0.04)",
                 borderRadius: 14,
                 border: `1px solid ${C.border}`,
                 flex: 1,
