@@ -239,7 +239,9 @@ export function Footer() {
                 </div>
 
                 {/* 标语 */}
-                <p className="text-sm leading-relaxed mb-5 text-stone-600 dark:text-stone-400">{t("common.tagline")}</p>
+                <p className="text-sm leading-relaxed mb-5 text-stone-600 dark:text-stone-400">
+                  {t("common.tagline")}
+                </p>
 
                 {/* 邮箱按钮 */}
                 <a
