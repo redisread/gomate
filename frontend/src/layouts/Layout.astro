@@ -9,7 +9,7 @@
 import "../styles/globals.css";
 import { Navbar } from "../components/layout/navbar";
 import { Footer } from "../components/layout/footer";
-import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, getSSRT } from "../i18n";
+import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, getSSRT, hydrateSSRData } from "../i18n";
 import { loadLocaleData } from "../i18n/ssr-loader.server";
 
 interface Props {
@@ -48,6 +48,8 @@ try {
   const origin = Astro.url.origin;
   ssrLoadedData = await loadLocaleData(nsList, locale, origin);
   ssrLocaleData = { [locale]: ssrLoadedData } as Record<Locale, Record<string, Record<string, unknown>>>;
+  // 把 SSR 翻译数据注入全局内存缓存，避免 client islands 在 SSR 阶段取不到翻译而空渲染
+  hydrateSSRData(ssrLocaleData);
 } catch {
   // SSR 加载失败，客户端会 fallback 到 fetch
 }

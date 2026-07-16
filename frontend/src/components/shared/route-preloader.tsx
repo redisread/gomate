@@ -212,7 +212,8 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
         height={height}
         loading={priority ? "eager" : "lazy"}
         decoding="async"
-        fetchPriority={priority ? "high" : "auto"}
+        // @ts-expect-error lowercase `fetchpriority` is the HTML DOM attribute name; React warns about `fetchPriority`
+        fetchpriority={priority ? "high" : "auto"}
         srcSet={srcSet}
         className={className}
         style={{
