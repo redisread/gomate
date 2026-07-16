@@ -33,8 +33,8 @@ const ogImage = locationData
   : undefined;
 
 const title = locationData?.name
-  ? `${locationData.name} - GoMate`
-  : "地点详情 - GoMate";
+  ? locationData.name
+  : "地点详情";
 
 const description = locationData?.description
   ? locationData.description.slice(0, 160)

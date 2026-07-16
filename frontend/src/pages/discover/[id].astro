@@ -26,8 +26,8 @@ try {
 }
 
 const title = storyData?.title
-  ? `${storyData.title} - GoMate发现`
-  : "故事详情 - GoMate发现";
+  ? storyData.title
+  : "故事详情";
 
 const description = storyData?.summary
   ? storyData.summary.slice(0, 160)

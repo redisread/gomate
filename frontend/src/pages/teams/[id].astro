@@ -32,8 +32,8 @@ const ogImage = teamData
   : undefined;
 
 const title = teamData?.title
-  ? `${teamData.title} - GoMate`
-  : "队伍详情 - GoMate";
+  ? teamData.title
+  : "队伍详情";
 
 const description = teamData?.description
   ? teamData.description.slice(0, 160)

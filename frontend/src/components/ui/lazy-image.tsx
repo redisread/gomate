@@ -165,7 +165,8 @@ export function LocationCoverImage({
           alt={alt}
           loading={priority ? "eager" : "lazy"}
           decoding={priority ? "sync" : "async"}
-          fetchPriority={priority ? "high" : "auto"}
+          // @ts-expect-error lowercase `fetchpriority` is the HTML DOM attribute name; React warns about `fetchPriority`
+          fetchpriority={priority ? "high" : "auto"}
           onLoad={() => setLoaded(true)}
           className={cn(
             "w-full h-full object-cover",
