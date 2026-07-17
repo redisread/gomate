@@ -36,6 +36,8 @@ const localsLocale = (Astro.locals as any)?.locale as Locale | undefined;
 const cookieLocale = Astro.cookies.get("gomate_locale")?.value as Locale | undefined;
 const resolvedLocale = localsLocale || cookieLocale;
 const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale)) ? resolvedLocale : DEFAULT_LOCALE;
+// 尽早同步 SSR locale，保证 islands 服务端渲染与客户端 hydrate 一致（即使 i18n 数据加载失败也要一致）
+globalThis.__SSR_LOCALE__ = locale;
 
 // ─── SSR i18n 数据加载 ──────────────────────────────────────────────
 // 从 locals 读取页面声明的 namespaces

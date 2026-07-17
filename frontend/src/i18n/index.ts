@@ -303,10 +303,22 @@ export function getNamespaceData(ns: string, locale: Locale): Record<string, unk
 // ─── Locale 管理 ──────────────────────────────────────────────────────────────
 
 /**
+ * SSR 期间由 Layout.astro 设置，确保 islands 服务端渲染时
+ * 与客户端 hydration 使用同一 locale，避免 hydration mismatch
+ */
+declare global {
+   
+  var __SSR_LOCALE__: Locale | undefined;
+}
+
+/**
  * 获取当前 locale（从 URL 或 cookie 读取）
  */
 export function getLocale(): Locale {
-  if (typeof document === "undefined") return DEFAULT_LOCALE;
+  // SSR 环境（无 document）：优先使用 Layout 注入的 locale
+  if (typeof document === "undefined") {
+    return globalThis.__SSR_LOCALE__ ?? DEFAULT_LOCALE;
+  }
 
   const match = document.cookie.match(/gomate_locale=(zh-CN|en)/);
   if (match) return match[1] as Locale;
