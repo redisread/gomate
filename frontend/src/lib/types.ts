@@ -18,7 +18,7 @@ export interface City {
 export interface Tag {
   id: string;
   name: string;
-  type: 'location' | 'route' | 'activity';
+  type: 'location' | 'activity';
 }
 
 // 地点信息（基础信息）
@@ -60,45 +60,8 @@ export interface Location {
     } | null;
   };
 
-  // 关联的路线数组
-  routes?: Route[];
   tags?: Tag[];
 
-  createdAt: string;
-  updatedAt: string;
-}
-
-// 路线信息
-export interface Route {
-  id: string;
-  locationId: string;
-  cityId: string;
-  name: string;
-  description?: string;
-  difficulty: 'easy' | 'moderate' | 'hard' | 'expert';
-  duration?: string;
-  durationMin?: number;
-  durationMax?: number;
-  distance?: string | number;
-  elevation?: string | number;
-  routeGuide?: {
-    overview: string;
-    tips: string[];
-  } | string;
-  waypoints?: {
-    name: string;
-    lat: number;
-    lng: number;
-    description: string;
-  }[];
-  equipmentNeeded?: string[];
-  warnings?: string[];
-  extra?: {
-    equipmentNeeded?: string[];
-    warnings?: string[];
-  } | string | null;
-  tags?: Tag[]; // 关联的标签
-  location?: Location; // 关联的地点
   createdAt: string;
   updatedAt: string;
 }
@@ -162,7 +125,6 @@ export interface UserPublicProfile {
 export interface Team {
   id: string;
   locationId: string;
-  routeId?: string; // 关联路线 ID（可选）
   title: string;
   description: string;
   date: string;
@@ -190,7 +152,6 @@ export interface Team {
   status: TeamStatus;
   createdAt: string;
   members?: TeamMember[]; // 已加入的成员列表
-  route?: Route; // 关联的路线信息
   location?: Location; // 关联的地点信息
 }
 

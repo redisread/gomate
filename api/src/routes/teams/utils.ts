@@ -1,7 +1,3 @@
-import { eq, and } from "drizzle-orm";
-import { createDb } from "../../db";
-import * as schema from "../../db/schema";
-
 /** 随机队伍图标 */
 export const TEAM_ICONS = ["⛰️", "🥾", "🌲", "🏕️", "🧗", "🌄", "🏞️", "🗺️"];
 
@@ -61,29 +57,4 @@ export function parseRequirements(value: string | null | undefined): string[] {
   } catch {
     return [];
   }
-}
-
-/** 获取单个路线的标签 */
-export async function getRouteTags(
-  db: ReturnType<typeof createDb>,
-  routeId: string
-): Promise<{ id: string; name: string; type: string }[]> {
-  const tagResults = await db
-    .select({ tag: schema.tags })
-    .from(schema.entityToTags)
-    .leftJoin(schema.tags, eq(schema.entityToTags.tagId, schema.tags.id))
-    .where(
-      and(
-        eq(schema.entityToTags.entityId, routeId),
-        eq(schema.entityToTags.entityType, "route")
-      )
-    );
-
-  return tagResults
-    .filter((result) => result.tag)
-    .map((result) => ({
-      id: result.tag!.id,
-      name: result.tag!.name,
-      type: result.tag!.type,
-    }));
 }

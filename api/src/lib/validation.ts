@@ -81,7 +81,7 @@ export const updateTagSchema = createTagSchema.partial().extend({
  * Favorite validation schemas
  */
 export const createFavoriteSchema = z.object({
-  entityType: z.enum(["location", "route", "story"], { message: "实体类型必须是 location、route 或 story" }),
+  entityType: z.enum(["location", "story"], { message: "实体类型必须是 location 或 story" }),
   entityId: z.string().min(1, "实体ID不能为空"),
 });
 

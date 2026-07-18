@@ -108,7 +108,6 @@ export async function renderSvgToPng(svg: string): Promise<Uint8Array> {
  * Phase 2: 生成地点分享图片
  * 查询地点数据，生成分享海报
  *
- * 查询优化：一次性拉取 routes，避免 N+1
  * 图片加载：主 cover → images[0] 兜底，预加载使用短超时避免阻塞
  */
 export async function generateLocationImage(
@@ -118,16 +117,14 @@ export async function generateLocationImage(
 ): Promise<{ png: Uint8Array; cacheKey: string; coverLoaded: boolean }> {
   const db = createDb(env.DB);
 
-  // 1. 查询地点数据，兼容 id 和 slug
+  // 1. 查询地点数据，兼容 id 和 slug（task #154：徒步参数读 location 自身字段，不再 join routes）
   let location = await db.query.locations.findFirst({
     where: eq(schema.locations.id, locationId),
-    with: { routes: true },
   });
 
   if (!location) {
     location = await db.query.locations.findFirst({
       where: eq(schema.locations.slug, locationId),
-      with: { routes: true },
     });
   }
 
@@ -216,15 +213,16 @@ export async function generateLocationImage(
   const locationUrl = `https://gomate.live/locations/${slugOrId}`;
   const qrCodeDataUrl = await generateQRCode(locationUrl);
 
-  // 9. 解析路线数据（取第一条）
-  const primaryRoute = location.routes?.[0] ?? null;
-  const routeMetrics = primaryRoute
+  // 9. 徒步参数（task #154 切源：读 location 自身字段，0010 已回填）
+  const hasMetrics = location.difficulty != null || location.durationMin != null
+    || location.durationMax != null || location.distance != null || location.elevation != null;
+  const routeMetrics = hasMetrics
     ? {
-        difficulty: primaryRoute.difficulty,
-        durationMin: primaryRoute.durationMin,
-        durationMax: primaryRoute.durationMax,
-        distance: primaryRoute.distance,
-        elevation: primaryRoute.elevation,
+        difficulty: location.difficulty,
+        durationMin: location.durationMin,
+        durationMax: location.durationMax,
+        distance: location.distance,
+        elevation: location.elevation,
       }
     : null;
 

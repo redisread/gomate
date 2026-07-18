@@ -32,7 +32,7 @@ import {
   AddressRow,
 } from "@/components/features/location-detail-main-content";
 import { LocationActivityPosts } from "@/components/features/activity-posts";
-import { normalizeLocationRoutes, type RouteMetric } from "@/components/features/location-detail/route-utils";
+import { normalizeLocationHiking, type RouteMetric } from "@/components/features/location-detail/route-utils";
 
 // 动态导入 SharePosterModal
 const SharePosterModal = React.lazy(() => import("./share-poster-modal").then(m => ({ default: m.SharePosterModal })));
@@ -749,9 +749,9 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     );
   }
 
-  const normalizedRoutes = normalizeLocationRoutes(location);
-  const primaryRoute = normalizedRoutes[0];
-  const heroDifficulty = location.difficulty ?? primaryRoute?.difficulty;
+  // task #154：hero 徒步参数直读 location 字段（normalizeLocationRoutes 随 routes 删除退场）
+  const heroHiking = normalizeLocationHiking(location);
+  const heroDifficulty = location.difficulty;
   const diffInfo = getDifficultyInfo(t)[heroDifficulty as keyof ReturnType<typeof getDifficultyInfo>] ?? {
     label: heroDifficulty || "",
     dot: "bg-stone-400",
@@ -906,19 +906,19 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             )}
 
             {/* 快速数据条 */}
-            {primaryRoute && (
+            {heroHiking && (
               <div className="flex items-center gap-2 flex-wrap mb-3">
                 <HeroMetricPill
                   icon={<Clock className="h-3 w-3 text-amber-300" />}
-                  value={formatRouteMetric(primaryRoute.duration, t)}
+                  value={formatRouteMetric(heroHiking.duration, t)}
                 />
                 <HeroMetricPill
                   icon={<Ruler className="h-3 w-3 text-sky-300" />}
-                  value={formatRouteMetric(primaryRoute.distance, t)}
+                  value={formatRouteMetric(heroHiking.distance, t)}
                 />
                 <HeroMetricPill
                   icon={<TrendingUp className="h-3 w-3 text-emerald-300" />}
-                  value={formatRouteMetric(primaryRoute.elevation, t)}
+                  value={formatRouteMetric(heroHiking.elevation, t)}
                 />
               </div>
             )}

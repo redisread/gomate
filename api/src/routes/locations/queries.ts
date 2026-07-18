@@ -147,7 +147,6 @@ queries.get("/", async (c) => {
 
       const formattedLocations = locationList.map((loc) => {
         const tag = firstTagByLocation[loc.id];
-        const hasParams = loc.difficulty != null || loc.durationMin != null || loc.distance != null;
         return {
           id: loc.id,
           name: loc.name,
@@ -164,14 +163,6 @@ queries.get("/", async (c) => {
           distance: loc.distance ?? null,
           elevation: loc.elevation ?? null,
           tags: tag ? [{ name: tag.name, type: tag.type }] : [],
-          // 兼容字段：保持 routes[0] 形状与键不变，值改由 location 字段提供（值与 0010 回填的主路线一致）
-          routes: hasParams ? [{
-            difficulty: loc.difficulty,
-            durationMin: loc.durationMin,
-            durationMax: loc.durationMax,
-            distance: loc.distance,
-            elevation: loc.elevation,
-          }] : [],
           createdAt: loc.createdAt,
         };
       });
@@ -183,7 +174,7 @@ queries.get("/", async (c) => {
     // 查询地点列表
     const locationList = await db.query.locations.findMany({
       where: whereClause,
-      with: { city: true, routes: true },
+      with: { city: true },
       limit: pageSize,
       offset,
     });
@@ -219,15 +210,6 @@ queries.get("/", async (c) => {
         bestSeason: safeJsonParse(location.bestSeason, [] as string[]),
         coordinates: safeJsonParse(location.coordinates, { lat: 0, lng: 0 }),
         extra: safeJsonParse(location.extra, undefined),
-        routes: location.routes?.map((route: typeof schema.routes.$inferSelect) => ({
-          id: route.id, locationId: route.locationId, cityId: route.cityId,
-          name: route.name, description: route.description, difficulty: route.difficulty,
-          durationMin: route.durationMin, durationMax: route.durationMax,
-          distance: route.distance, elevation: route.elevation,
-          routeGuide: safeJsonParse(route.routeGuide, undefined),
-          extra: safeJsonParse(route.extra, undefined),
-          createdAt: route.createdAt, updatedAt: route.updatedAt,
-        })) || [],
         tags: tagsByLocation[location.id] || [],
         // task #152 切源：徒步参数读 location 自身字段（0010 已回填，与主路线一致）
         difficulty: location.difficulty,
@@ -261,18 +243,12 @@ queries.get("/:id", async (c) => {
     // 先尝试按 id 查询
     let location = await db.query.locations.findFirst({
       where: eq(schema.locations.id, idOrSlug),
-      with: {
-        routes: true,
-      },
     });
 
     // 如果未找到，尝试按 slug 查询
     if (!location) {
       location = await db.query.locations.findFirst({
         where: eq(schema.locations.slug, idOrSlug),
-        with: {
-          routes: true,
-        },
       });
     }
 
@@ -292,17 +268,6 @@ queries.get("/:id", async (c) => {
 
     const tags = tagRelations.map((r) => ({ id: r.tagId, name: r.tagName, type: r.tagType }));
 
-    // 格式化路线数据
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const formattedRoutes = (location.routes || []).map((route: any) => ({
-      ...route,
-      coordinates: route.coordinates ? safeJsonParse(route.coordinates, { lat: 0, lng: 0 }) : undefined,
-      waypoints: route.waypoints ? safeJsonParse(route.waypoints, []) : undefined,
-      equipmentNeeded: route.equipmentNeeded ? safeJsonParse(route.equipmentNeeded, []) : undefined,
-      warnings: route.warnings ? safeJsonParse(route.warnings, []) : undefined,
-      tags: route.tags ? safeJsonParse(route.tags, []) : undefined,
-    }));
-
     return c.json({
       success: true,
       location: {
@@ -312,7 +277,6 @@ queries.get("/:id", async (c) => {
         coordinates: safeJsonParse(location.coordinates, { lat: 0, lng: 0 }),
         extra: safeJsonParse(location.extra, undefined),
         tags,
-        routes: formattedRoutes,
       },
     });
   } catch (error) {

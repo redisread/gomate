@@ -129,27 +129,6 @@ function normalizeRoute(route: RouteRecord): NormalizedLocationRoute {
   };
 }
 
-export function normalizeLocationRoutes(location: Location): NormalizedLocationRoute[] {  const routes = location.routes?.map((route) => normalizeRoute(route as RouteRecord)) ?? [];
-  if (routes.length > 0) return routes;
-
-  const fallback: RouteRecord = {
-    id: `${location.id}-fallback-route`,
-    locationId: location.id,
-    name: location.name,
-    description: location.description,
-    difficulty: location.difficulty,
-    duration: location.duration,
-    distance: location.distance,
-    elevation: location.elevation,
-    equipmentNeeded: location.equipmentNeeded,
-    extra: location.extra,
-  };
-  const normalized = normalizeRoute(fallback);
-  const hasAnyMetric = normalized.difficulty || normalized.duration || normalized.distance || normalized.elevation
-    || normalized.equipmentNeeded.length > 0 || normalized.warnings.length > 0;
-  return hasAnyMetric ? [normalized] : [];
-}
-
 /**
  * task #152：从 location 自身字段构造「徒步攻略」区块数据（数据源已从 routes 切到 location）。
  * 4 参数读 location 扁平化字段（0010 回填）；overview/tips/装备/注意事项读 extra.hiking（0011 回填）。

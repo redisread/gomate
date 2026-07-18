@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
-import type { Location, Route } from "@/lib/types";
+import type { Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -28,7 +28,6 @@ export function CreateTeamClient() {
   const { t } = useI18n(["teams", "errors", "common"]);
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [_selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
-  const [_routes, setRoutes] = React.useState<Route[]>([]);
   const [recommendedDuration, setRecommendedDuration] = React.useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
   const [hasWechat, setHasWechat] = React.useState(false);
@@ -46,7 +45,6 @@ export function CreateTeamClient() {
   const [formData, setFormData] = React.useState({
     title: "",
     locationId: "",
-    routeId: "",
     date: defaultDate,
     time: defaultTime,
     durationMin: "240",
@@ -78,29 +76,19 @@ export function CreateTeamClient() {
   React.useEffect(() => {
     if (!formData.locationId) {
       setSelectedLocation(null);
-      setRoutes([]);
       setRecommendedDuration(null);
       durationManuallyEditedRef.current = false;
       return;
     }
 
-    // 获取地点详情（包含 routes）
+    // 获取地点详情
     fetchAPI(`/api/locations/${formData.locationId}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.success && data.location) {
           const loc = data.location;
           setSelectedLocation(loc);
-          setRoutes(loc.routes || []);
           durationManuallyEditedRef.current = false; // 新地点，重置手动编辑标记
-
-          // routeId 仍默认第一条路线（teams.routeId 移除在 #154，选择器当前隐藏）
-          if (loc.routes && loc.routes.length > 0) {
-            const firstRoute = loc.routes[0];
-            setFormData((prev) => ({ ...prev, routeId: firstRoute.id }));
-          } else {
-            setFormData((prev) => ({ ...prev, routeId: "" }));
-          }
 
           // task #152 切源：时长推荐改读 location 自身字段（0010 回填）
           const recommended = calculateRecommendedDuration(loc);
@@ -167,7 +155,6 @@ export function CreateTeamClient() {
         body: JSON.stringify({
           title: formData.title,
           locationId: formData.locationId,
-          routeId: formData.routeId || undefined,
           date: formData.date,
           time: formData.time,
           durationMin: parseInt(formData.durationMin, 10),

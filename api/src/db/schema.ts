@@ -159,32 +159,6 @@ export const locations = sqliteTable(
   })
 );
 
-// 路线表
-export const routes = sqliteTable(
-  "routes",
-  {
-    id: text("id").primaryKey(),
-    locationId: text("location_id").references(() => locations.id, { onDelete: "cascade" }).notNull(),
-    cityId: text("city_id").references(() => cities.id, { onDelete: "restrict" }).notNull(),
-    name: text("name").notNull(),
-    description: text("description"),
-    difficulty: text("difficulty").notNull(),
-    durationMin: integer("duration_min").notNull(),
-    durationMax: integer("duration_max").notNull(),
-    distance: real("distance").notNull(),
-    elevation: integer("elevation"),
-    routeGuide: text("route_guide"),
-    extra: text("extra"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-  },
-  (table) => ({
-    locationIdx: index("routes_location_idx").on(table.locationId),
-    cityIdx: index("routes_city_idx").on(table.cityId),
-    difficultyIdx: index("routes_difficulty_idx").on(table.difficulty),
-  })
-);
-
 // 标签表
 export const tags = sqliteTable(
   "tags",
@@ -224,7 +198,6 @@ export const teams = sqliteTable(
   {
     id: text("id").primaryKey(),
     locationId: text("location_id").references(() => locations.id, { onDelete: "cascade" }).notNull(),
-    routeId: text("route_id").references(() => routes.id, { onDelete: "set null" }),
     leaderId: text("leader_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
     title: text("title").notNull(),
     description: text("description"),
@@ -240,7 +213,6 @@ export const teams = sqliteTable(
   },
   (table) => ({
     locationIdx: index("teams_location_idx").on(table.locationId),
-    routeIdx: index("teams_route_idx").on(table.routeId),
     leaderIdx: index("teams_leader_idx").on(table.leaderId),
     statusIdx: index("teams_status_idx").on(table.status),
     startTimeIdx: index("teams_start_time_idx").on(table.startTime),
@@ -330,18 +302,10 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
 
 export const citiesRelations = relations(cities, ({ many }) => ({
   locations: many(locations),
-  routes: many(routes),
 }));
 
 export const locationsRelations = relations(locations, ({ one, many }) => ({
   city: one(cities, { fields: [locations.cityId], references: [cities.id] }),
-  routes: many(routes),
-  teams: many(teams),
-}));
-
-export const routesRelations = relations(routes, ({ one, many }) => ({
-  location: one(locations, { fields: [routes.locationId], references: [locations.id] }),
-  city: one(cities, { fields: [routes.cityId], references: [cities.id] }),
   teams: many(teams),
 }));
 
@@ -355,7 +319,6 @@ export const entityToTagsRelations = relations(entityToTags, ({ one }) => ({
 
 export const teamsRelations = relations(teams, ({ one, many }) => ({
   location: one(locations, { fields: [teams.locationId], references: [locations.id] }),
-  route: one(routes, { fields: [teams.routeId], references: [routes.id] }),
   leader: one(users, { fields: [teams.leaderId], references: [users.id], relationName: "leaderTeams" }),
   members: many(teamMembers),
   activityPosts: many(activityPosts),
@@ -381,8 +344,6 @@ export type City = typeof cities.$inferSelect;
 export type NewCity = typeof cities.$inferInsert;
 export type Location = typeof locations.$inferSelect;
 export type NewLocation = typeof locations.$inferInsert;
-export type Route = typeof routes.$inferSelect;
-export type NewRoute = typeof routes.$inferInsert;
 export type Tag = typeof tags.$inferSelect;
 export type NewTag = typeof tags.$inferInsert;
 export type EntityToTag = typeof entityToTags.$inferSelect;
@@ -503,8 +464,8 @@ export type UserLevel = "beginner" | "intermediate" | "advanced" | "expert";
 export type UserStatus = "active" | "suspended" | "banned" | "deleted";
 export type UserGender = "male" | "female" | "other";
 export type CityLevel = "city" | "district";
-export type TagType = "location" | "route" | "activity";
-export type EntityType = "location" | "route" | "activity" | "story";
+export type TagType = "location" | "activity";
+export type EntityType = "location" | "activity" | "story";
 
 // 活动后分享状态
 export type ActivityPostStatus = "visible" | "hidden" | "deleted";

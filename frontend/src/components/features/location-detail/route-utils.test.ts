@@ -1,37 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { normalizeLocationRoutes } from "./route-utils";
+import { formatRouteMetric, normalizeLocationHiking } from "./route-utils";
 import type { Location } from "@/lib/types";
 
-describe("normalizeLocationRoutes", () => {
-  it("normalizes API route metrics and parses stringified extra data", () => {
-    const routes = normalizeLocationRoutes({
+describe("normalizeLocationHiking", () => {
+  it("从 location 五字段 + extra.hiking 构造徒步攻略数据", () => {
+    const hiking = normalizeLocationHiking({
       id: "loc-1",
       name: "梧桐山",
-      routes: [
-        {
-          id: "route-1",
-          name: "泰山涧线路",
-          difficulty: "moderate",
-          durationMin: 120,
-          durationMax: 180,
-          distance: 5.5,
-          elevation: 700,
-          extra: JSON.stringify({
-            equipmentNeeded: ["登山鞋", "登山杖"],
-            warnings: ["雨天路滑"],
-          }),
-          routeGuide: JSON.stringify({
-            overview: "沿泰山涧步道上山。",
-            tips: ["后半段较陡"],
-          }),
+      difficulty: "moderate",
+      durationMin: 120,
+      durationMax: 180,
+      distance: 5.5,
+      elevation: 700,
+      extra: {
+        hiking: {
+          overview: "沿泰山涧步道上山。",
+          tips: ["后半段较陡"],
+          equipmentNeeded: ["登山鞋", "登山杖"],
+          warnings: ["雨天路滑"],
         },
-      ],
+      },
     } as unknown as Location);
 
-    expect(routes).toHaveLength(1);
-    expect(routes[0]).toMatchObject({
-      id: "route-1",
-      name: "泰山涧线路",
+    expect(hiking).toMatchObject({
+      id: "loc-1-hiking",
+      name: "梧桐山",
       difficulty: "moderate",
       duration: { value: "2-3", unit: "hour" },
       distance: { value: "5.5", unit: "kilometer" },
@@ -45,30 +38,49 @@ describe("normalizeLocationRoutes", () => {
     });
   });
 
-  it("falls back to location-level route facts when route records are missing", () => {
-    const routes = normalizeLocationRoutes({
+  it("时长换算：不足 1 小时用分钟单位，单值不重复", () => {
+    const hiking = normalizeLocationHiking({
       id: "loc-2",
-      name: "临时地点",
-      difficulty: "easy",
-      duration: "约 1 小时",
-      distance: "3 km",
-      elevation: "120 m",
-      equipmentNeeded: ["运动鞋"],
+      name: "莲花山",
+      durationMin: 45,
+      durationMax: 45,
+    } as unknown as Location);
+
+    expect(hiking?.duration).toEqual({ value: "45", unit: "minute" });
+  });
+
+  it("无参数且无 hiking 内容时返回 null（区块整体不渲染）", () => {
+    const hiking = normalizeLocationHiking({
+      id: "loc-3",
+      name: "昆明",
+      extra: { facilities: ["停车场"] },
+    } as unknown as Location);
+
+    expect(hiking).toBeNull();
+  });
+
+  it("extra.hiking 键显式为 null 时按无内容处理", () => {
+    const hiking = normalizeLocationHiking({
+      id: "loc-4",
+      name: "空攻略山",
       extra: {
-        warnings: ["注意防晒"],
+        hiking: { overview: null, tips: null, equipmentNeeded: null, warnings: null },
       },
     } as unknown as Location);
 
-    expect(routes).toHaveLength(1);
-    expect(routes[0]).toMatchObject({
-      id: "loc-2-fallback-route",
-      name: "临时地点",
-      difficulty: "easy",
-      duration: { value: "约 1 小时" },
-      distance: { value: "3", unit: "kilometer" },
-      elevation: { value: "120", unit: "meter" },
-      equipmentNeeded: ["运动鞋"],
-      warnings: ["注意防晒"],
-    });
+    expect(hiking).toBeNull();
+  });
+});
+
+describe("formatRouteMetric", () => {
+  const t = (key: string) => ({ "locationDetail.metricUnits.hour": "小时" })[key] ?? key;
+
+  it("拼接值与 i18n 单位", () => {
+    expect(formatRouteMetric({ value: "2-3", unit: "hour" }, t)).toBe("2-3 小时");
+  });
+
+  it("无单位时只返回值；metric 为空返回 undefined", () => {
+    expect(formatRouteMetric({ value: "约 1 小时" }, t)).toBe("约 1 小时");
+    expect(formatRouteMetric(undefined, t)).toBeUndefined();
   });
 });

@@ -15,7 +15,6 @@ const mutations = new Hono<{ Bindings: Env }>();
 
 const createTeamSchema = z.object({
   locationId: z.string().min(1),
-  routeId: z.string().optional(),
   title: z.string().min(1).max(100),
   description: z.string().max(2000).optional(),
   date: z.string().min(1),
@@ -65,7 +64,7 @@ mutations.post("/", async (c) => {
       return c.json(APIErrors.validationError("输入无效", parsed.error.errors), 400);
     }
 
-    const { locationId, routeId, title, description, date, time, duration, durationMin, maxMembers, requirements } = parsed.data;
+    const { locationId, title, description, date, time, duration, durationMin, maxMembers, requirements } = parsed.data;
 
     const startTime = new Date(`${date}T${time}`);
     if (isNaN(startTime.getTime())) {
@@ -82,7 +81,7 @@ mutations.post("/", async (c) => {
     const teamIcon = getRandomTeamIcon();
 
     await db.insert(schema.teams).values({
-      id: teamId, locationId, routeId, leaderId: userId, title,
+      id: teamId, locationId, leaderId: userId, title,
       description: description || null, startTime, endTime,
       durationMin: durationMinutes, maxMembers,
       requirements: requirements ? JSON.stringify(requirements) : null,
@@ -98,7 +97,7 @@ mutations.post("/", async (c) => {
     void invalidateCache(buildListCacheKey("teams", { locationId, status: "recruiting" }));
     void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
 
-    return c.json({ success: true, team: { id: teamId, locationId, routeId, leaderId: userId, title, description, startTime: startTime.toISOString(), endTime: endTime.toISOString(), durationMin: durationMinutes, maxMembers, currentMembers: 1, requirements, icon: teamIcon, status: "recruiting", createdAt: now.toISOString() } });
+    return c.json({ success: true, team: { id: teamId, locationId, leaderId: userId, title, description, startTime: startTime.toISOString(), endTime: endTime.toISOString(), durationMin: durationMinutes, maxMembers, currentMembers: 1, requirements, icon: teamIcon, status: "recruiting", createdAt: now.toISOString() } });
   } catch (error) {
     logger.error("Create team error:", error);
     return c.json(APIErrors.internalError("创建队伍失败"), 500);

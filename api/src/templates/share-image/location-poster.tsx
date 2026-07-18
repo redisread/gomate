@@ -5,9 +5,9 @@ import { POSTER_TOKENS } from "./poster-tokens";
 
 interface RouteMetrics {
   difficulty?: string | null;
-  durationMin: number;
-  durationMax: number;
-  distance: number;
+  durationMin?: number | null;
+  durationMax?: number | null;
+  distance?: number | null;
   elevation?: number | null;
 }
 
@@ -138,8 +138,10 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
     : description;
 
   // 路线三栏
-  const distanceText = routeMetrics ? formatDistance(routeMetrics.distance) : "";
-  const durationText = routeMetrics ? formatDuration(routeMetrics.durationMin, routeMetrics.durationMax) : "";
+  const distanceText = routeMetrics?.distance != null ? formatDistance(routeMetrics.distance) : "";
+  const durationText = routeMetrics?.durationMin != null
+    ? formatDuration(routeMetrics.durationMin, routeMetrics.durationMax ?? routeMetrics.durationMin)
+    : "";
   const elevationText = routeMetrics?.elevation ? formatElevation(routeMetrics.elevation) : "";
   const hasRouteMetric = !!(distanceText || durationText || elevationText || routeMetrics?.difficulty);
 
