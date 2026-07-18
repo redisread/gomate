@@ -9,6 +9,7 @@ import { FormField, Input, Select, Textarea } from "@/components/ui/form-input";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import { VditorEditor } from "./vditor-editor";
 import { StoryToast } from "./story-detail-toast";
+import { StoryEditErrorBoundary } from "./story-edit-error-boundary";
 import { useStoryForm } from "./use-story-form";
 import type { FormFields } from "./use-story-form";
 
@@ -24,10 +25,24 @@ function areFormsEqual(a: FormFields, b: FormFields): boolean {
 }
 
 export function StoryEditClient({ storyId }: StoryEditClientProps) {
+  const { t } = useI18n(["content"]);
+  // task #149 ②：island 渲染异常兜底，不再白屏
+  return (
+    <StoryEditErrorBoundary
+      title={t("content.discover.edit.errorBoundaryTitle")}
+      description={t("content.discover.edit.errorBoundaryDesc")}
+      reloadLabel={t("content.discover.edit.errorBoundaryReload")}
+    >
+      <StoryEditClientInner storyId={storyId} />
+    </StoryEditErrorBoundary>
+  );
+}
+
+function StoryEditClientInner({ storyId }: StoryEditClientProps) {
   const { t } = useI18n(["content", "common", "ui"]);
   const { toast, show: showToast, isExiting } = useToast();
   const {
-    form, initialForm, isLoading, isSaving, saveMessage, error,
+    form, initialForm, isLoading, isSaving, saveResult, uploadMessage, error,
     allTags, locationSearch, locationResults, isSearchingLocation, isUploadingCover, draftAvailable,
     updateField, handleCoverUpload, handleLocationSearch, handleSave,
     handleDiscardDraft, handleRestoreDraft,
@@ -41,6 +56,28 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
   const closeCancelConfirm = React.useCallback(() => setShowCancelConfirm(false), []);
   // spec §4.1：role=alertdialog + 焦点 trap + Esc + 焦点还原
   useModalA11y(showCancelConfirm, cancelPanelRef, closeCancelConfirm);
+
+  // task #149 ③：字段级校验（与发布页 spec §6.2 同一套规则：标题/摘要/正文必填，onBlur 即时校验）
+  const [fieldErrors, setFieldErrors] = React.useState<{ title?: string; summary?: string; content?: string }>({});
+  // task #149 ①：保存失败 banner 的本地关闭态（新一次失败时重新弹出）
+  const [saveErrorDismissed, setSaveErrorDismissed] = React.useState(false);
+
+  const validateRequiredOnBlur = (field: "title" | "summary" | "content") => {
+    const errorKey = {
+      title: "content.discover.create.titleRequired",
+      summary: "content.discover.create.summaryRequired",
+      content: "content.discover.create.contentRequired",
+    }[field];
+    setFieldErrors((prev) => ({ ...prev, [field]: form[field].trim() ? undefined : t(errorKey) }));
+  };
+
+  const changeField = (key: "title" | "summary" | "content", value: string) => {
+    updateField(key, value);
+    setFieldErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
+  };
+
+  // spec §6.3 对齐发布页：必填项（标题/摘要/正文）为空时保存按钮 disabled
+  const isRequiredEmpty = !form.title.trim() || !form.summary.trim() || !form.content.trim();
 
   // Dirty detection
   const isDirty = React.useMemo(() => {
@@ -56,15 +93,21 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
 
-  // Sync saveMessage to toast
+  // 保存成功 → toast；失败 → 内联 banner（持续可见 + 重试，不用易消失的 toast）
   React.useEffect(() => {
-    if (saveMessage) {
-      showToast({
-        type: saveMessage.includes("成功") ? "success" : "error",
-        message: saveMessage,
-      });
+    if (saveResult?.type === "success") {
+      showToast({ type: "success", message: saveResult.message });
+    } else if (saveResult?.type === "error") {
+      setSaveErrorDismissed(false);
     }
-  }, [saveMessage, showToast]);
+  }, [saveResult, showToast]);
+
+  // 封面上传提示 → toast
+  React.useEffect(() => {
+    if (uploadMessage) {
+      showToast({ type: "error", message: uploadMessage });
+    }
+  }, [uploadMessage, showToast]);
 
   const handleBack = () => {
     if (isDirty) {
@@ -90,7 +133,7 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">{error}</p>
+        <p className="text-muted-foreground">{t(error)}</p>
       </div>
     );
   }
@@ -107,7 +150,7 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
             {t("common.back")}
           </button>
           <div className="flex flex-1 items-center justify-end gap-3 sm:flex-none">
-            <button onClick={handleSave} disabled={isSaving}
+            <button onClick={handleSave} disabled={isSaving || isRequiredEmpty}
               className="btn-primary flex-1 justify-center gap-1.5 px-4 py-2 text-sm disabled:opacity-50 sm:flex-none">
               {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
               {isDirty && !isSaving && (
@@ -134,23 +177,36 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
           </div>
         )}
 
+        {/* task #149 ①：保存失败内联 banner（DS v2.0 bg-accent 草稿条同款）+ 重试；内容保留在表单中不丢失 */}
+        {saveResult?.type === "error" && !saveErrorDismissed && !isSaving && (
+          <div className="mb-6 flex items-center justify-between gap-3 rounded-md border border-border bg-accent px-4 py-3">
+            <p className="text-sm text-accent-foreground">{saveResult.message}</p>
+            <div className="flex gap-2">
+              <button onClick={handleSave} className="btn-primary px-3 py-1 text-xs">{t("content.discover.edit.saveRetry")}</button>
+              <button onClick={() => setSaveErrorDismissed(true)} className="btn-ghost px-3 py-1 text-xs">{t("common.close")}</button>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left: Form fields */}
           <div className="lg:col-span-4 space-y-6">
-            <FormField label={t("content.discover.create.titleLabel")} htmlFor="story-edit-title">
+            <FormField label={t("content.discover.create.titleLabel")} htmlFor="story-edit-title" error={fieldErrors.title}>
               <Input
                 id="story-edit-title"
                 type="text"
                 value={form.title}
-                onChange={(e) => updateField("title", e.target.value)}
+                onChange={(e) => changeField("title", e.target.value)}
+                onBlur={() => validateRequiredOnBlur("title")}
                 placeholder={t("content.discover.edit.titlePlaceholder")}
               />
             </FormField>
-            <FormField label={t("content.discover.create.summaryLabel")} htmlFor="story-edit-summary" hint={`${form.summary.length}/150`}>
+            <FormField label={t("content.discover.create.summaryLabel")} htmlFor="story-edit-summary" hint={`${form.summary.length}/150`} error={fieldErrors.summary}>
               <Textarea
                 id="story-edit-summary"
                 value={form.summary}
-                onChange={(e) => updateField("summary", e.target.value)}
+                onChange={(e) => changeField("summary", e.target.value)}
+                onBlur={() => validateRequiredOnBlur("summary")}
                 maxLength={150}
                 rows={3}
                 placeholder={t("content.discover.edit.summaryPlaceholder")}
@@ -277,13 +333,20 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
 
           {/* Right: VditorEditor (SV 分屏自带预览) */}
           <div className="lg:col-span-8">
-            <div className="sticky top-20 rounded-lg border border-border bg-card shadow-card overflow-hidden" style={{ height: "calc(100vh - 7rem)" }}>
+            <div
+              className="sticky top-20 rounded-lg border border-border bg-card shadow-card overflow-hidden"
+              style={{ height: "calc(100vh - 7rem)" }}
+              onBlur={() => validateRequiredOnBlur("content")}
+            >
               <VditorEditor
                 value={form.content}
-                onChange={(v) => updateField("content", v)}
+                onChange={(v) => changeField("content", v)}
                 placeholder={t("content.discover.edit.contentPlaceholder")}
               />
             </div>
+            {fieldErrors.content && (
+              <p className="mt-2 text-xs text-destructive">{fieldErrors.content}</p>
+            )}
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
+import { useI18n } from "@/hooks/useI18n";
 import type { SessionUser } from "@/lib/types";
 
 export interface FormFields {
@@ -40,13 +41,22 @@ interface StoryEditData {
   author: { id: string } | null;
 }
 
+/** task #149：保存结果结构化，替代旧的字符串 saveMessage（旧实现把 API error 对象塞进字符串，下游 .includes 直接 TypeError 白屏） */
+export interface SaveResult {
+  type: "success" | "error";
+  message: string;
+}
+
 export interface UseStoryFormReturn {
   form: FormFields;
   initialForm: React.MutableRefObject<FormFields | null>;
   currentUser: SessionUser | null;
   isLoading: boolean;
   isSaving: boolean;
-  saveMessage: string | null;
+  /** 仅由 handleSave 产生；成功 → toast，失败 → 内联 banner + 重试 */
+  saveResult: SaveResult | null;
+  /** 封面上传相关提示（走 toast） */
+  uploadMessage: string | null;
   error: string | null;
   canEdit: boolean;
   allTags: TagOption[];
@@ -87,10 +97,12 @@ function clearDraft(storyId: string): void {
 }
 
 export function useStoryForm(storyId: string): UseStoryFormReturn {
+  const { t } = useI18n(["content"]);
   const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
-  const [saveMessage, setSaveMessage] = React.useState<string | null>(null);
+  const [saveResult, setSaveResult] = React.useState<SaveResult | null>(null);
+  const [uploadMessage, setUploadMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   const [form, setForm] = React.useState<FormFields>({
@@ -134,7 +146,8 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
         setAllTags(tagsRes.tags ?? []);
 
         if (!storyRes.success || !storyRes.data) {
-          setError("故事不存在");
+          // 存 i18n key，渲染层 t()（避免 load effect 依赖 t 重复拉取）
+          setError("content.discover.storyNotFound");
           return;
         }
 
@@ -173,7 +186,7 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
         initialForm.current = { ...f };
       } catch (err) {
         if (!cancelled) {
-          setError("加载故事失败");
+          setError("content.discover.loadStoryError");
           console.error("Load story error:", err);
         }
       } finally {
@@ -220,12 +233,13 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
   }, []);
 
   const handleCoverUpload = React.useCallback(async (file: File) => {
+    setUploadMessage(null);
     if (file.size > 2 * 1024 * 1024) {
-      setSaveMessage("图片不能超过 2MB");
+      setUploadMessage(t("content.discover.edit.coverTooLarge"));
       return;
     }
     if (!["image/jpeg", "image/png"].includes(file.type)) {
-      setSaveMessage("仅支持 JPG 或 PNG 格式");
+      setUploadMessage(t("content.discover.edit.coverTypeError"));
       return;
     }
     try {
@@ -237,19 +251,19 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
       if (data.success && data.url) {
         setForm((prev) => ({ ...prev, coverImage: data.url }));
       } else {
-        setSaveMessage("上传失败");
+        setUploadMessage(t("content.discover.create.uploadFailed"));
       }
     } catch {
-      setSaveMessage("上传失败");
+      setUploadMessage(t("content.discover.create.uploadFailed"));
     } finally {
       setIsUploadingCover(false);
     }
-  }, []);
+  }, [t]);
 
   const handleSave = React.useCallback(async () => {
     try {
       setIsSaving(true);
-      setSaveMessage(null);
+      setSaveResult(null);
 
       const res = await fetchAPI(`/stories/${storyId}`, {
         method: "PUT",
@@ -266,18 +280,26 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
       });
       const data = await res.json();
       if (data.success) {
-        setSaveMessage("保存成功");
+        setSaveResult({ type: "success", message: t("content.discover.edit.saveSuccess") });
         clearDraft(storyId);
         initialForm.current = { ...form };
       } else {
-        setSaveMessage(data.error || "保存失败");
+        // API 错误契约 {success:false, error:{code,message}}；容错 string 形 error
+        const apiMessage =
+          typeof data.error === "string"
+            ? data.error
+            : data.error?.message;
+        setSaveResult({
+          type: "error",
+          message: apiMessage || t("content.discover.edit.saveFailed"),
+        });
       }
     } catch {
-      setSaveMessage("保存失败: 网络错误");
+      setSaveResult({ type: "error", message: t("content.discover.edit.saveNetworkError") });
     } finally {
       setIsSaving(false);
     }
-  }, [storyId, form]);
+  }, [storyId, form, t]);
 
   const handleDiscardDraft = React.useCallback(() => {
     clearDraft(storyId);
@@ -294,7 +316,7 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
   }, [storyId]);
 
   return {
-    form, initialForm, currentUser, isLoading, isSaving, saveMessage, error, canEdit,
+    form, initialForm, currentUser, isLoading, isSaving, saveResult, uploadMessage, error, canEdit,
     allTags, locationSearch, locationResults, isSearchingLocation, isUploadingCover, draftAvailable,
     updateField, handleCoverUpload, handleLocationSearch, handleSave, handleDiscardDraft, handleRestoreDraft,
   };
