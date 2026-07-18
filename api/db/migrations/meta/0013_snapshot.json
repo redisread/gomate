@@ -1586,7 +1586,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'⭿️'"
+          "default": "'⛰️'"
         },
         "status": {
           "name": "status",
