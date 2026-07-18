@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
+import { DURATION_OPTION_VALUES, snapToDurationOption } from "@/lib/duration-options";
 import type { Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
@@ -122,22 +123,26 @@ export function CreateTeamClient() {
    * 无任何参数时返回 null（回退默认值 4 小时）
    */
   const calculateRecommendedDuration = (loc: Location): number | null => {
+    let raw: number | null = null;
     if (loc.durationMin && loc.durationMax) {
       // 取平均值
-      return Math.round((loc.durationMin + loc.durationMax) / 2);
+      raw = Math.round((loc.durationMin + loc.durationMax) / 2);
+    } else if (loc.durationMin) {
+      raw = loc.durationMin;
+    } else {
+      // 根据难度推荐
+      const difficultyDuration: Record<string, number> = {
+        easy: 180,      // 简单：3 小时
+        moderate: 300,  // 中等：5 小时
+        hard: 420,      // 困难：7 小时
+        expert: 600,    // 专家：10 小时
+      };
+      raw = (loc.difficulty && difficultyDuration[loc.difficulty]) || null;
     }
-    if (loc.durationMin) {
-      return loc.durationMin;
-    }
-
-    // 根据难度推荐
-    const difficultyDuration: Record<string, number> = {
-      easy: 180,      // 简单：3 小时
-      moderate: 300,  // 中等：5 小时
-      hard: 420,      // 困难：7 小时
-      expert: 600,    // 专家：10 小时
-    };
-    return (loc.difficulty && difficultyDuration[loc.difficulty]) || null;
+    // task #160（Steven 口径）：推荐值 snap 到最近下拉选项，并列取较长档（徒步宁多勿少）。
+    // 否则受控 select 无匹配项——DOM 显示第一项「1 hour」但 state 是推荐值，
+    // 用户看到 1 小时、实际提交推荐值，且「（推荐）」标记永不出现
+    return raw == null ? null : snapToDurationOption(raw);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -478,22 +483,13 @@ export function CreateTeamClient() {
  * Build duration option labels with translation
  */
 function getDurationOptions(t: (key: string, vars?: Record<string, string | number>) => string) {
-  return [
-    { value: 60, label: t("teams.duration1h") },
-    { value: 90, label: t("teams.duration1_5h") },
-    { value: 120, label: t("teams.duration2h") },
-    { value: 180, label: t("teams.duration3h") },
-    { value: 240, label: t("teams.duration4h") },
-    { value: 300, label: t("teams.duration5h") },
-    { value: 360, label: t("teams.duration6h") },
-    { value: 420, label: t("teams.duration7h") },
-    { value: 480, label: t("teams.duration8h") },
-    { value: 540, label: t("teams.duration9h") },
-    { value: 600, label: t("teams.duration10h") },
-    { value: 720, label: t("teams.duration12h") },
-    { value: 900, label: t("teams.duration15h") },
-    { value: 1200, label: t("teams.duration20h") },
+  const labelKeys = [
+    "teams.duration1h", "teams.duration1_5h", "teams.duration2h", "teams.duration3h",
+    "teams.duration4h", "teams.duration5h", "teams.duration6h", "teams.duration7h",
+    "teams.duration8h", "teams.duration9h", "teams.duration10h", "teams.duration12h",
+    "teams.duration15h", "teams.duration20h",
   ];
+  return DURATION_OPTION_VALUES.map((value, i) => ({ value, label: t(labelKeys[i]) }));
 }
 
 
