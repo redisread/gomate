@@ -182,6 +182,30 @@ describe("Stories API 集成测试", () => {
 
       expect(res.status).toBe(404);
     });
+
+    it("详情返回 tags 关联，编辑表单可回显（task #155 回归用例）", async () => {
+      const tagA = await seedTag(testDb, { name: "徒步", type: "activity" });
+      const tagB = await seedTag(testDb, { name: "露营", type: "activity" });
+      const story = await seedStory(testDb, user.id, { title: "带标签故事", status: "published" });
+      await seedEntityTag(testDb, story.id, "story", tagA.id);
+      await seedEntityTag(testDb, story.id, "story", tagB.id);
+
+      const res = await req(app, `/stories/${story.id}`);
+
+      expect(res.status).toBe(200);
+      const json = await res.json() as { success: boolean; data: { tags: { id: string; name: string }[] } };
+      expect(json.data.tags.map((t) => t.name).sort()).toEqual(["徒步", "露营"]);
+    });
+
+    it("无标签故事详情 tags 返回空数组", async () => {
+      const story = await seedStory(testDb, user.id, { title: "无标签故事", status: "published" });
+
+      const res = await req(app, `/stories/${story.id}`);
+
+      expect(res.status).toBe(200);
+      const json = await res.json() as { success: boolean; data: { tags: unknown[] } };
+      expect(json.data.tags).toEqual([]);
+    });
   });
 
   describe("GET /stories/stats - 故事统计", () => {
