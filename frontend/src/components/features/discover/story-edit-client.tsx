@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-input";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { VditorEditor } from "./vditor-editor";
 import { StoryToast } from "./story-detail-toast";
 import { useStoryForm } from "./use-story-form";
@@ -34,6 +35,10 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
 
   const coverInputRef = React.useRef<HTMLInputElement>(null);
   const [showCancelConfirm, setShowCancelConfirm] = React.useState(false);
+  const cancelPanelRef = React.useRef<HTMLDivElement>(null);
+  const closeCancelConfirm = React.useCallback(() => setShowCancelConfirm(false), []);
+  // spec §4.1：role=alertdialog + 焦点 trap + Esc + 焦点还原
+  useModalA11y(showCancelConfirm, cancelPanelRef, closeCancelConfirm);
 
   // Dirty detection
   const isDirty = React.useMemo(() => {
@@ -263,19 +268,27 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
 
       {/* Cancel Confirmation Dialog */}
       {showCancelConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCancelConfirm(false)}>
-          <div className="mx-4 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeCancelConfirm}>
+          <div
+            ref={cancelPanelRef}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="cancel-edit-title"
+            aria-describedby="cancel-edit-desc"
+            className="mx-4 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">放弃编辑？</h3>
-                <p className="text-sm text-muted-foreground">当前修改将不会保存</p>
+                <h3 id="cancel-edit-title" className="font-semibold text-foreground">放弃编辑？</h3>
+                <p id="cancel-edit-desc" className="text-sm text-muted-foreground">当前修改将不会保存</p>
               </div>
             </div>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowCancelConfirm(false)} className="px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors">
+              <button onClick={closeCancelConfirm} className="px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors">
                 继续编辑
               </button>
               <button onClick={confirmDiscard} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors">

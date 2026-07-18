@@ -3,7 +3,7 @@
 > 需求：task #138（@Steven）
 > 拆分：task #139（P0 DS v2.0 统一）、#140（P0 弹窗 a11y）、#141（P1 详情页层级）、#142（P1 移动端）、#143（P2 验证放宽）
 > 范围：`/discover/[id]` 详情、`/discover/[id]/edit` 编辑、`/discover/create` 发布
-> 设计者：@Steven · 2026-07-18 · v1.1（§6 补 #143 设计定义）
+> 设计者：@Steven · 2026-07-18 · v1.2（§6 补 #143 设计定义；表单元素以共享套件 form-input.tsx 为准）
 > 问题清单：`notes/gomate-story-pages-ux-analysis.md`
 
 ---
@@ -20,26 +20,27 @@
 
 所有替换必须走 token / 语义类，禁止再写死 amber hex 或 Tailwind amber 色阶。
 
-| 旧写法（编辑页/发布页）                                  | DS v2.0 替换                                                   | 说明                                        |
-| -------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------- |
-| `bg-gradient-to-b from-amber-50/30 to-white`（整页背景） | `bg-background`（`#faf8f5`）                                   | 禁止任何页面级渐变                          |
-| `bg-amber-500` / `bg-amber-600`（主按钮、标签）          | `bg-primary`（`#D97706`，dark `#F59E0B`）                      | hover 用 `#B45309`（.btn-primary 已含）     |
-| `text-amber-600` / `text-amber-700`                      | `text-primary` 或 `text-accent-foreground`（`#92400E`）        | 小字提示用 accent-foreground 保证对比度     |
-| `bg-amber-50` / `bg-amber-100`（提示条、tag 底）         | `bg-accent`（`#FFFBEB`）或 `bg-secondary`（`#f2ede7`）         | 提示条用 bg-accent + text-accent-foreground |
-| `rounded-xl`（卡片/输入框）                              | `rounded-lg`（16px，卡片）/ `rounded-md`（12px，按钮、输入框） | 见 §4 圆角规则                              |
-| `focus:ring-amber-200`                                   | `focus:ring-ring`（`--ring: #D97706`）                         |                                             |
-| `border-amber-200` 等                                    | `border-border`（`#e8e0d7`）                                   |                                             |
-| 自定义阴影                                               | `shadow-card` / `shadow-card-hover` / `shadow-warm-sm`         | 禁止新造阴影值                              |
+| 旧写法（编辑页/发布页）                                  | DS v2.0 替换                                                                                | 说明                                        |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `bg-gradient-to-b from-amber-50/30 to-white`（整页背景） | `bg-background`（`#faf8f5`）                                                                | 禁止任何页面级渐变                          |
+| `bg-amber-500` / `bg-amber-600`（主按钮、标签）          | `bg-primary`（`#D97706`，dark `#F59E0B`）                                                   | hover 用 `#B45309`（.btn-primary 已含）     |
+| `text-amber-600` / `text-amber-700`                      | `text-primary` 或 `text-accent-foreground`（`#92400E`）                                     | 小字提示用 accent-foreground 保证对比度     |
+| `bg-amber-50` / `bg-amber-100`（提示条、tag 底）         | `bg-accent`（`#FFFBEB`）或 `bg-secondary`（`#f2ede7`）                                      | 提示条用 bg-accent + text-accent-foreground |
+| `rounded-xl`（卡片/输入框）                              | 卡片 `rounded-lg`（16px）；输入框走共享套件（rounded-lg）；按钮 `rounded-md`（12px）        | 见 §4 圆角规则（v1.2：输入框以套件为准）    |
+| `focus:ring-amber-200`                                   | 表单字段走套件 `focus:ring-brand/30`；非表单交互元素 `focus:ring-ring`（`--ring: #D97706`） | v1.2 修订                                   |
+| `border-amber-200` 等                                    | `border-border`（`#e8e0d7`）                                                                |                                             |
+| 自定义阴影                                               | `shadow-card` / `shadow-card-hover` / `shadow-warm-sm`                                      | 禁止新造阴影值                              |
 
 ### 圆角规则（全模块统一）
 
-| 元素                 | token           | 值     |
-| -------------------- | --------------- | ------ |
-| 按钮、输入框、select | `--radius-md`   | 12px   |
-| 卡片、封面容器       | `--radius-lg`   | 16px   |
-| 弹窗（dialog）       | `--radius-2xl`  | 24px   |
-| 标签 pill、头像      | `--radius-full` | 9999px |
-| 徽章内小圆点         | `--radius-xs`   | 4px    |
+| 元素                         | token                                              | 值                             |
+| ---------------------------- | -------------------------------------------------- | ------------------------------ |
+| 按钮                         | `--radius-md`                                      | 12px                           |
+| **输入框、select、textarea** | **以共享套件 `form-input.tsx` 为准：`rounded-lg`** | **16px（v1.2 修订，见 §3.1）** |
+| 卡片、封面容器               | `--radius-lg`                                      | 16px                           |
+| 弹窗（dialog）               | `--radius-2xl`                                     | 24px                           |
+| 标签 pill、头像              | `--radius-full`                                    | 9999px                         |
+| 徽章内小圆点                 | `--radius-xs`                                      | 4px                            |
 
 **禁用**：`rounded-xl`（20px 仅限大展示卡片，本模块不用）、任何写死 px 的圆角。
 
@@ -62,7 +63,7 @@
 - **取消按钮**：`.btn-ghost` 或 `bg-secondary text-secondary-foreground`
 - **草稿恢复横幅**：`bg-accent text-accent-foreground` + `border border-border` + `rounded-md`，不再用 amber-50 整块突兀横幅；按钮用 `.btn-primary` 小号
 - **未保存提示**：移动端不得 `hidden`（见 §5 移动端）
-- **输入框（标题/摘要/地点）**：`bg-card` + `border border-input` + `rounded-md` + `focus:ring-2 focus:ring-ring focus:border-transparent`
+- **输入框（标题/摘要/地点）**：**一律使用共享套件 `frontend/src/components/ui/form-input.tsx`（FormField/Input/Textarea/Select），不另写样式**（v1.2 修订）。套件即 DS v2.0 表单唯一来源：`rounded-lg` + `focus:ring-2 focus:ring-brand/30 focus:border-brand` + `aria-invalid` 错误态（border/ring destructive）+ `shadow-warm-xs`。错误文案走 FormField 的 error 槽位（自带 AlertCircle 图标 + animate-fade-down），hint 走 hint 槽位
 - **标签选择**：选中态 `bg-primary text-primary-foreground`，未选中 `bg-secondary text-secondary-foreground`，均 `rounded-full`
 - **Vditor 编辑器容器**：`bg-card` + `border border-border` + `rounded-lg` + `shadow-card`
 - **三态一致**：loading 骨架、草稿提示条、正常编辑态全部按上述 token（Wen 验收会逐态测）
@@ -189,4 +190,4 @@
 
 ---
 
-_spec v1.1。核心：三个页面一套 DS v2.0 token，视觉零断裂。_
+_spec v1.2。核心：三个页面一套 DS v2.0 token，视觉零断裂；表单元素以共享套件 form-input.tsx 为唯一来源。_
