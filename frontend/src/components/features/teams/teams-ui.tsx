@@ -82,7 +82,7 @@ export function StatusBadge({ status }: { status: string }) {
 
 // ─── TeamCard ───────────────────────────────────────────────────────
 export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
-  const { t } = useI18n(["teams", "filter", "common"]);
+  const { t } = useI18n(["teams", "filter", "common", "enums"]);
   const location = team.location;
   const diff = location?.difficulty ? DIFFICULTY_CONFIG[location.difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const gradient = getCardGradient(team.id);
@@ -116,7 +116,7 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
               <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-amber-500" />
               <span className="text-sm font-semibold text-foreground">
                 {location.name}
-                {diff && <span className="text-muted-foreground font-normal"><span className="mx-1">·</span>{diff.emoji} {diff.label}</span>}
+                {diff && <span className="text-muted-foreground font-normal"><span className="mx-1">·</span>{t(diff.labelKey)}</span>}
               </span>
             </div>
           )}
@@ -228,7 +228,7 @@ export function FilterPanel({
   startDate, endDate, selectedDifficulty, availableTags, selectedTags, activeFiltersCount, activeDateQuickType,
   onDateQuickSelect, onDifficultyToggle, onTagToggle, onClearAll,
 }: FilterPanelProps) {
-  const { t } = useI18n(["teams", "filter", "common"]);
+  const { t } = useI18n(["teams", "filter", "common", "enums"]);
   return (
     <div className="mt-4 pt-4 pb-1 border-t border-border space-y-4 animate-in slide-in-from-top-2 duration-200">
       <div>
@@ -271,7 +271,7 @@ export function FilterPanel({
                 className={cn("px-3 py-1.5 text-xs rounded-full border transition-all duration-200 active:scale-95",
                   isSelected ? opt.activeColor : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
                 )}>
-                {opt.emoji} {opt.label}
+                {t(opt.labelKey)}
               </button>
             );
           })}

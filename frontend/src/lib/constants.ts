@@ -10,10 +10,12 @@ export type TeamStatus = "recruiting" | "full" | "formed" | "cancelled" | "compl
 export type Difficulty = "easy" | "moderate" | "hard" | "expert";
 
 // 难度配置（全局统一）
+// task #158：标签统一以 enums.json 为唯一出处（Steven 定稿），此处只留 labelKey + 样式，
+// 渲染处用 t(config.labelKey) 取多语言文案（enums 值自带 emoji，无需再拼 config.emoji）
 export const DIFFICULTY_CONFIG: Record<
   Difficulty,
   {
-    label: string;
+    labelKey: string;
     emoji: string;
     badgeColor: string;
     bg: string;
@@ -22,7 +24,7 @@ export const DIFFICULTY_CONFIG: Record<
   }
 > = {
   easy: {
-    label: "轻松",
+    labelKey: "enums.difficulty.easy",
     emoji: "🌿",
     badgeColor: "bg-amber-500/80 text-white",
     bg: "rgba(217,119,6,0.85)",
@@ -30,7 +32,7 @@ export const DIFFICULTY_CONFIG: Record<
     activeColor: "bg-amber-600 border-amber-600 text-white",
   },
   moderate: {
-    label: "适中",
+    labelKey: "enums.difficulty.moderate",
     emoji: "⛰",
     badgeColor: "bg-amber-500/80 text-white",
     bg: "rgba(217,119,6,0.88)",
@@ -38,7 +40,7 @@ export const DIFFICULTY_CONFIG: Record<
     activeColor: "bg-amber-500 border-amber-500 text-white",
   },
   hard: {
-    label: "困难",
+    labelKey: "enums.difficulty.hard",
     emoji: "🧗",
     badgeColor: "bg-orange-500/80 text-white",
     bg: "rgba(255,122,101,0.90)",
@@ -46,7 +48,7 @@ export const DIFFICULTY_CONFIG: Record<
     activeColor: "bg-orange-500 border-orange-500 text-white",
   },
   expert: {
-    label: "专家",
+    labelKey: "enums.difficulty.expert",
     emoji: "🏔",
     badgeColor: "bg-red-500/80 text-white",
     bg: "rgba(109,40,217,0.85)",
@@ -55,11 +57,11 @@ export const DIFFICULTY_CONFIG: Record<
   },
 };
 
-// 难度选项（用于筛选面板）
+// 难度选项（用于筛选面板，label 渲染处 t(labelKey)）
 export const DIFFICULTY_OPTIONS = Object.entries(DIFFICULTY_CONFIG).map(([id, config]) => ({
   id,
   emoji: config.emoji,
-  label: config.label,
+  labelKey: config.labelKey,
   activeColor: config.activeColor,
 }));
 

@@ -10,7 +10,7 @@ import { getDateRangeByQuickType } from "../../lib/date-beijing";
 import type { TeamsInitialData } from "../../components/features/teams/use-teams";
 import type { Team } from "../../lib/types";
 
-declareI18nNs(Astro.locals, ["teams", "filter", "content"]);
+declareI18nNs(Astro.locals, ["teams", "filter", "enums", "content"]); // task #158：TeamCard/FilterPanel 难度标签走 enums
 
 async function fetchJson<T>(path: string): Promise<T | null> {
   try {
