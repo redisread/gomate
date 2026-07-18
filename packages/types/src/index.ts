@@ -86,7 +86,6 @@ export interface TeamMember {
 export interface Team {
   id: string;
   locationId: string;
-  routeId?: string;
   title: string;
   description: string;
   date: string;

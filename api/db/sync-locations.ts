@@ -7,7 +7,7 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "../src/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
 
@@ -34,57 +34,73 @@ function findDbFile(): string {
 
 const genId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-async function fetchRemoteLocations() {
+interface RemoteCity {
+  id: string;
+  adcode: string;
+  name: string;
+  pinyin: string;
+  province: string;
+  level: "province" | "city" | "district";
+  isHot: boolean;
+  createdAt: string;
+}
+
+interface RemoteLocation {
+  id: string;
+  name: string;
+  slug: string;
+  type?: string | null;
+  subtitle?: string | null;
+  description: string;
+  address?: string | null;
+  cityId: string;
+  cityName?: string | null;
+  bestSeason?: string[];
+  coverImage: string;
+  images?: string[];
+  coordinates?: { lat: number; lng: number };
+  difficulty?: string | null;
+  durationMin?: number | null;
+  durationMax?: number | null;
+  distance?: number | null;
+  elevation?: number | null;
+  extra?: unknown;
+  createdAt: string;
+  tags?: { id: string; name: string; type?: string }[];
+}
+
+async function fetchRemoteLocations(): Promise<RemoteLocation[]> {
   console.log("Fetching locations from remote API...");
-  
+
   const response = await fetch(`${REMOTE_API}/locations?pageSize=200`);
   if (!response.ok) {
     throw new Error(`Failed to fetch locations: ${response.status} ${response.statusText}`);
   }
-  
-  const data = await response.json();
+
+  const data = (await response.json()) as { success: boolean; locations?: RemoteLocation[] };
   if (!data.success || !data.locations) {
     throw new Error("Invalid response format from remote API");
   }
-  
+
   console.log(`Fetched ${data.locations.length} locations`);
   return data.locations;
 }
 
-async function fetchRemoteCities() {
+async function fetchRemoteCities(): Promise<RemoteCity[]> {
   console.log("Fetching cities from remote API...");
-  
+
   const response = await fetch(`${REMOTE_API}/cities`);
   if (!response.ok) {
     throw new Error(`Failed to fetch cities: ${response.status} ${response.statusText}`);
   }
-  
-  const data = await response.json();
+
+  const data = (await response.json()) as { success: boolean; cities?: RemoteCity[] };
   if (!data.success || !data.cities) {
     throw new Error("Invalid response format from remote API");
   }
-  
+
   console.log(`Fetched ${data.cities.length} cities`);
   return data.cities;
-}
-
-async function fetchRemoteRoutes() {
-  console.log("Fetching routes from remote API...");
-  
-  const response = await fetch(`${REMOTE_API}/hiking-routes`);
-  if (!response.ok) {
-    console.warn(`Failed to fetch routes: ${response.status}, skipping routes sync`);
-    return [];
-  }
-  
-  const data = await response.json();
-  if (!data.success || !data.routes) {
-    console.warn("Invalid response format for routes, skipping routes sync");
-    return [];
-  }
-  
-  console.log(`Fetched ${data.routes.length} routes`);
-  return data.routes;
 }
 
 async function main() {
@@ -100,7 +116,6 @@ async function main() {
     // 1. Fetch remote data
     const remoteLocations = await fetchRemoteLocations();
     const remoteCities = await fetchRemoteCities();
-    const remoteRoutes = await fetchRemoteRoutes();
     
     // 2. Sync cities first (locations depend on cities)
     console.log("\n=== Syncing Cities ===");
@@ -141,45 +156,7 @@ async function main() {
       }
     }
     
-    // 3. Sync routes
-    console.log("\n=== Syncing Routes ===");
-    
-    // Get existing route IDs
-    const existingRoutes = await db.select({ id: schema.routes.id }).from(schema.routes);
-    const existingRouteIds = existingRoutes.map(r => r.id);
-    
-    for (const route of remoteRoutes) {
-      const routeData = {
-        id: route.id,
-        locationId: route.locationId,
-        cityId: route.cityId,
-        name: route.name,
-        description: route.description,
-        difficulty: route.difficulty,
-        durationMin: route.durationMin,
-        durationMax: route.durationMax,
-        distance: route.distance,
-        elevation: route.elevation,
-        routeGuide: route.routeGuide ? JSON.stringify(route.routeGuide) : null,
-        extra: route.extra ? JSON.stringify(route.extra) : null,
-        updatedAt: now,
-      };
-      
-      if (existingRouteIds.includes(route.id)) {
-        await db.update(schema.routes)
-          .set(routeData)
-          .where(eq(schema.routes.id, route.id));
-        console.log(`Updated route: ${route.name}`);
-      } else {
-        await db.insert(schema.routes).values({
-          ...routeData,
-          createdAt: new Date(route.createdAt),
-        });
-        console.log(`Inserted route: ${route.name}`);
-      }
-    }
-    
-    // 4. Sync locations
+    // 3. Sync locations
     console.log("\n=== Syncing Locations ===");
     
     // Get existing location IDs
@@ -201,6 +178,12 @@ async function main() {
         coverImage: loc.coverImage,
         images: JSON.stringify(loc.images || []),
         coordinates: JSON.stringify(loc.coordinates || { lat: 0, lng: 0 }),
+        // task #154：徒步五字段 + extra 平移同步（对齐 prod 0010/0011）
+        difficulty: loc.difficulty || null,
+        durationMin: loc.durationMin ?? null,
+        durationMax: loc.durationMax ?? null,
+        distance: loc.distance ?? null,
+        elevation: loc.elevation ?? null,
         extra: loc.extra ? JSON.stringify(loc.extra) : null,
         updatedAt: now,
       };
@@ -260,7 +243,6 @@ async function main() {
     
     console.log("\n=== Sync Complete ===");
     console.log(`Synced ${remoteCities.length} cities`);
-    console.log(`Synced ${remoteRoutes.length} routes`);
     console.log(`Synced ${remoteLocations.length} locations`);
     
   } catch (error) {
