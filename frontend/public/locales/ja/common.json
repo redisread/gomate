@@ -150,5 +150,10 @@
   "footer": {
     "expand": "展開",
     "collapse": "折りたたむ"
-  }
+  },
+  "share": "シェア",
+  "optional": "（任意）",
+  "languageChangedTo": "言語を{lang}に切り替えました",
+  "selectLanguage": "言語を選択",
+  "close": "閉じる"
 }

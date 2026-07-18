@@ -18,7 +18,7 @@ interface LocationCardProps {
  * 仅当 location.id 变化时重新渲染
  */
 export const LocationCard = memo(function LocationCard({ location, index = 0 }: LocationCardProps) {
-  const { t } = useI18n(["locations", "locationDetail"]);
+  const { t } = useI18n(["locations", "locationDetail", "enums"]);
   // task #152 切源：徒步参数读 location 自身字段（0010 回填），不再读 routes[0]
   const difficulty = location.difficulty;
   const diffConfig = difficulty ? DIFFICULTY_CONFIG[difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
@@ -77,7 +77,7 @@ export const LocationCard = memo(function LocationCard({ location, index = 0 }: 
 
           <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
             {diffConfig && (
-              <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: diffConfig.bg, color: diffConfig.color, backdropFilter: "blur(4px)" }}>{diffConfig.label}</span>
+              <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: diffConfig.bg, color: diffConfig.color, backdropFilter: "blur(4px)" }}>{t(diffConfig.labelKey)}</span>
             )}
             {firstTag && (
               <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: "rgba(255,255,255,0.90)", color: "#92400E", backdropFilter: "blur(4px)" }}>{firstTag.name}</span>

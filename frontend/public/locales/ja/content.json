@@ -340,7 +340,40 @@
       "removeTag": "{tag} タグを削除",
       "submit": "ストーリーを投稿",
       "submitting": "投稿中...",
-      "submitFailed": "ストーリーの投稿に失敗しました"
+      "submitFailed": "ストーリーの投稿に失敗しました",
+      "coverPlaceholder": "クリックしてカバー画像をアップロード",
+      "coverEmptyTitle": "カバーをアップロード（任意）",
+      "coverEmptyHint": "アップロードしない場合はデフォルトスタイルで表示されます"
+    },
+    "edit": {
+      "titlePlaceholder": "ストーリータイトル",
+      "summaryPlaceholder": "短い説明...",
+      "contentPlaceholder": "Markdownでストーリーを書いてください...",
+      "statusLabel": "ステータス",
+      "statusPublished": "公開済み",
+      "statusDraft": "下書き",
+      "coverFormatHint": "JPG/PNG、≤2MB",
+      "locationSearchPlaceholder": "場所を検索...",
+      "removeLocation": "関連場所を削除",
+      "tagsCountHint": "{count}/10 まで",
+      "draftBanner": "未保存の下書きが検出されました",
+      "restoreDraft": "下書きを復元",
+      "discardDraft": "破棄",
+      "cancelTitle": "編集を破棄しますか？",
+      "cancelDesc": "現在の変更は保存されません",
+      "continueEditing": "編集を続ける",
+      "discardConfirm": "破棄",
+      "expandMore": "さらに表示（ステータス/カバー/場所/タグ）",
+      "collapseMore": "折りたたむ",
+      "saveSuccess": "保存しました",
+      "saveFailed": "保存に失敗しました",
+      "saveNetworkError": "保存に失敗しました：ネットワークエラー",
+      "saveRetry": "再試行",
+      "coverTooLarge": "画像は2MB以下にしてください",
+      "coverTypeError": "JPGまたはPNG形式のみ対応しています",
+      "errorBoundaryTitle": "ページでエラーが発生しました",
+      "errorBoundaryDesc": "変更はローカル下書きとして自動保存されている可能性があります。再読み込み後に復元できます",
+      "errorBoundaryReload": "再読み込み"
     }
   },
   "title": "GoMate - スポットを発見し、チームで同行",
@@ -369,6 +402,9 @@
     "help": "ヘルプセンター",
     "privacy": "プライバシーポリシー",
     "terms": "利用規約",
-    "adminLocations": "スポットを管理"
-  }
+    "adminLocations": "スポットを管理",
+    "storyCreate": "ストーリーを公開 - GoMate",
+    "storyEdit": "ストーリーを編集 - GoMate"
+  },
+  "writeStories": "Markdownでストーリーを書いてください..."
 }
