@@ -507,6 +507,7 @@ R2 文件代理（本地开发专用）
 
 - **认证：** 否
 - **Query：** `page`（默认 1）、`limit`（默认 10，最大 20）、`status`（默认 `published`）、`tag`
+- **status 可见性（task #156）：** 仅 `published` / `draft` 有效（其他值按 `published` 处理）；`draft` 需登录且只返回本人草稿，未登录返回空列表
 - **响应：** `{ "success": true, "data": [{ "id", "title", "summary", "content", "coverImage", "locationId", "viewCount", "likeCount", "author": {...} }], "pagination": { "page", "limit", "total", "hasMore" } }`
 
 ### POST `/stories`
@@ -538,6 +539,7 @@ R2 文件代理（本地开发专用）
 
 - **认证：** 否
 - **响应：** `data` 含故事字段 + `author` + `location` + `isLiked` + `tags: [{ id, name }]`（标签关联，编辑表单回显依赖此字段；无标签时为 `[]`）
+- **可见性（task #156）：** `published` 公开可读；`draft` 仅作者本人或管理员可读（其余 404，不泄露存在性），且 draft 访问不计浏览数；`hidden` 一律 404
 
 ### PUT `/stories/:id`
 

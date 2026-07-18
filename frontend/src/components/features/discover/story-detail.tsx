@@ -228,7 +228,11 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
       </div>
 
       <header className={cn(CONTENT_WIDTH, "space-y-6")}>
-        <StoryEyebrow story={story} t={t} />
+        <StoryEyebrow
+          story={story}
+          showDraftBadge={story.status === "draft" && currentUser?.id === story.author?.id}
+          t={t}
+        />
 
         <div className="space-y-4">
           <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">
