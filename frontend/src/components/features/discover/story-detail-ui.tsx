@@ -2,12 +2,12 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Eye,
   FileText,
   Heart,
   Loader2,
   MapPin,
   Share2,
-  Trash2,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -20,8 +20,7 @@ export const SHELL_WIDTH = "mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8";
 export function StoryEyebrow({ story, t }: { story: Story; t: TFunction }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-        <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+      <span className="text-sm font-medium text-primary">
         {story.location?.name || t("content.discover.outdoorStory")}
       </span>
     </div>
@@ -100,6 +99,7 @@ export function StoryActions({
   isLiking,
   onLike,
   onShare,
+  viewsText,
   t,
 }: {
   liked: boolean;
@@ -107,6 +107,7 @@ export function StoryActions({
   isLiking: boolean;
   onLike: () => void;
   onShare: () => void;
+  viewsText?: string;
   t: TFunction;
 }) {
   return (
@@ -138,6 +139,12 @@ export function StoryActions({
           {t("content.discover.share")}
         </button>
       </div>
+      {viewsText && (
+        <p className="mt-4 flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
+          <Eye className="h-4 w-4" aria-hidden="true" />
+          {viewsText}
+        </p>
+      )}
     </div>
   );
 }
@@ -153,9 +160,8 @@ export function StoryDeleteButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-destructive transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
-      <Trash2 className="h-4 w-4" aria-hidden="true" />
       <span className="hidden sm:inline">{t("content.discover.deleteStory")}</span>
     </button>
   );
