@@ -9,6 +9,6 @@ import { declareI18nNs } from "../../middleware";
 declareI18nNs(Astro.locals, ["content", "common", "ui"]);
 ---
 
-<Layout title="发布故事 - GoMate" showNavbar={true} showFooter={true}>
+<Layout title="发布故事" showNavbar={true} showFooter={true}>
   <CreateStoryClient client:load />
 </Layout>

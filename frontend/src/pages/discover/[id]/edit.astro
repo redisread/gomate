@@ -11,6 +11,6 @@ declareI18nNs(Astro.locals, ["content", "common", "ui"]);
 const { id } = Astro.params;
 ---
 
-<Layout title="编辑故事 - GoMate" showNavbar={true} showFooter={false}>
+<Layout title="编辑故事" showNavbar={true} showFooter={false}>
   <StoryEditClient storyId={id!} client:only="react" />
 </Layout>
