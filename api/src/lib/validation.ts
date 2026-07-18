@@ -57,7 +57,8 @@ export const createStorySchema = z.object({
   title: z.string().min(1, "标题不能为空").max(100, "标题不能超过100字"),
   summary: z.string().min(1, "摘要不能为空").max(150, "摘要不能超过150字"),
   content: z.string().min(1, "内容不能为空").max(10000, "内容不能超过10000字"),
-  coverImage: z.string().url("封面图片必须是有效URL"),
+  // spec §6（task #143）：封面改可选，无封面时下游用默认样式展示
+  coverImage: z.string().url("封面图片必须是有效URL").optional(),
   locationId: z.string().min(1, "地点ID不能为空"),
   tags: z.array(z.string()).max(10, "最多10个标签").optional(),
 });
