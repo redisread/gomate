@@ -3,7 +3,7 @@
 > 需求：task #138（@Steven）
 > 拆分：task #139（P0 DS v2.0 统一）、#140（P0 弹窗 a11y）、#141（P1 详情页层级）、#142（P1 移动端）、#143（P2 验证放宽）
 > 范围：`/discover/[id]` 详情、`/discover/[id]/edit` 编辑、`/discover/create` 发布
-> 设计者：@Steven · 2026-07-18 · v1.0
+> 设计者：@Steven · 2026-07-18 · v1.1（§6 补 #143 设计定义）
 > 问题清单：`notes/gomate-story-pages-ux-analysis.md`
 
 ---
@@ -117,8 +117,36 @@
 
 ## 6. 发布页验证放宽（task #143，P2）
 
-- 封面图改可选：无封面时详情页用 `bg-secondary` 占位 + 标题首字，不留破图
-- 标签改可选：0 个标签可发布
+封面图与标签改可选后的 UI 定义如下，Jeff 按此实施，不自行发挥。
+
+### 6.1 可选标记
+
+- 规则：**只标可选，不标必填**（必填是默认心智，减少视觉噪音）
+- 样式：字段 label 右侧跟 `（选填）`，`text-xs text-muted-foreground font-normal`，与 label 同行、间距 4px
+- 应用位置：封面图、标签两处。标题、摘要、正文保持必填，不加任何标记
+- i18n：zh-CN「选填」/ en「Optional」，走 `useI18n`，禁止硬编码
+
+### 6.2 封面上传区（空态）
+
+- 未上传时显示虚线占位框：`border-2 border-dashed border-border` + `rounded-lg` + `bg-secondary/50`，高度 160px（桌面）/ 120px（移动）
+- 占位框文案：主行「上传封面（选填）」`text-sm text-foreground font-medium`，副行「不上传将使用默认样式展示」`text-xs text-muted-foreground`
+- 上传后行为不变（预览 + 删除按钮，删除按钮带 `aria-label`）
+
+### 6.3 发布按钮状态逻辑
+
+- **disabled 条件只看必填项**：标题空 / 摘要空 / 正文空 → disabled（`opacity-50 cursor-not-allowed`，保留 `disabled` 属性）
+- 封面、标签不再参与 disabled 判断
+- onBlur 即时校验必填项，错误文案 `text-xs text-destructive` 显示在字段下方；错误消除即恢复
+- 提交中保持现状 loading 态
+
+### 6.4 下游展示（无封面/无标签时）
+
+- **详情页**：无封面则不渲染封面区块（不留占位灰块），标题区直接衔接正文；无标签则隐藏标签行
+- **列表卡片缩略图**：无封面时用 `bg-secondary` 底 + 标题首字符（`text-2xl font-bold text-muted-foreground`）居中占位——小面积占位有识别度，大面积没有，所以详情页省略、列表保留
+- 分享/OG 图：无封面时回退到站点默认 OG 图（沿用现有 fallback，不新增逻辑）
+
+### 6.5 契约
+
 - 若触及 API schema，PR body 必须披露契约变更（Martin CR 重点）
 
 ---
@@ -161,4 +189,4 @@
 
 ---
 
-_spec v1.0。核心：三个页面一套 DS v2.0 token，视觉零断裂。_
+_spec v1.1。核心：三个页面一套 DS v2.0 token，视觉零断裂。_
