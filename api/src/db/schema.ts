@@ -206,7 +206,7 @@ export const teams = sqliteTable(
     durationMin: integer("duration_min").notNull().default(240),
     maxMembers: integer("max_members").notNull().default(10),
     requirements: text("requirements"),
-    icon: text("icon").default("⭿️").notNull(),
+    icon: text("icon").default("⛰️").notNull(),
     status: text("status").notNull().default("recruiting"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),

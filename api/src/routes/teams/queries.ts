@@ -335,7 +335,7 @@ function formatTeams(result: {
       date, time, duration: `${durationHours}小时`,
       durationMin: row.durationMin || durationHours * 60,
       maxMembers: row.maxMembers, currentMembers: row.currentMembers,
-      icon: row.icon || "⭿️", requirements, status: row.status,
+      icon: row.icon || "⛰️", requirements, status: row.status,
       createdAt: row.createdAt,
       location: row.locationName ? {
         name: row.locationName,
