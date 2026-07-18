@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, ImagePlus, Loader2, MapPin, Search, X, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, ImagePlus, Loader2, MapPin, Search, X, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
@@ -35,6 +35,8 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
 
   const coverInputRef = React.useRef<HTMLInputElement>(null);
   const [showCancelConfirm, setShowCancelConfirm] = React.useState(false);
+  // spec §5：移动端「基本信息」区折叠（默认只展开标题+摘要），桌面端始终全部展开
+  const [basicExpanded, setBasicExpanded] = React.useState(false);
   const cancelPanelRef = React.useRef<HTMLDivElement>(null);
   const closeCancelConfirm = React.useCallback(() => setShowCancelConfirm(false), []);
   // spec §4.1：role=alertdialog + 焦点 trap + Esc + 焦点还原
@@ -104,12 +106,16 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
             <ArrowLeft className="h-4 w-4" />
             {t("common.back")}
           </button>
-          <div className="flex items-center gap-3">
-            {isDirty && <span className="text-xs text-accent-foreground hidden sm:inline">有未保存的修改</span>}
+          <div className="flex flex-1 items-center justify-end gap-3 sm:flex-none">
             <button onClick={handleSave} disabled={isSaving}
-              className="btn-primary gap-1.5 px-4 py-2 text-sm disabled:opacity-50">
+              className="btn-primary flex-1 justify-center gap-1.5 px-4 py-2 text-sm disabled:opacity-50 sm:flex-none">
               {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isDirty && !isSaving && (
+                // spec §5：未保存提示改为保存按钮上的状态点（移动端不得 hidden）
+                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-primary-foreground" />
+              )}
               {t("common.save")}
+              {isDirty && <span className="sr-only">{t("common.unsavedChanges")}</span>}
             </button>
           </div>
         </div>
@@ -120,10 +126,10 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
         {/* Draft Banner */}
         {draftAvailable && (
           <div className="mb-6 flex items-center justify-between gap-3 rounded-md border border-border bg-accent px-4 py-3">
-            <p className="text-sm text-accent-foreground">检测到未保存的草稿</p>
+            <p className="text-sm text-accent-foreground">{t("content.discover.edit.draftBanner")}</p>
             <div className="flex gap-2">
-              <button onClick={handleRestoreDraft} className="btn-primary px-3 py-1 text-xs">恢复草稿</button>
-              <button onClick={handleDiscardDraft} className="btn-ghost px-3 py-1 text-xs">丢弃</button>
+              <button onClick={handleRestoreDraft} className="btn-primary px-3 py-1 text-xs">{t("content.discover.edit.restoreDraft")}</button>
+              <button onClick={handleDiscardDraft} className="btn-ghost px-3 py-1 text-xs">{t("content.discover.edit.discardDraft")}</button>
             </div>
           </div>
         )}
@@ -131,38 +137,53 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left: Form fields */}
           <div className="lg:col-span-4 space-y-6">
-            <FormField label="标题" htmlFor="story-edit-title">
+            <FormField label={t("content.discover.create.titleLabel")} htmlFor="story-edit-title">
               <Input
                 id="story-edit-title"
                 type="text"
                 value={form.title}
                 onChange={(e) => updateField("title", e.target.value)}
-                placeholder="故事标题"
+                placeholder={t("content.discover.edit.titlePlaceholder")}
               />
             </FormField>
-            <FormField label="摘要" htmlFor="story-edit-summary" hint={`${form.summary.length}/150`}>
+            <FormField label={t("content.discover.create.summaryLabel")} htmlFor="story-edit-summary" hint={`${form.summary.length}/150`}>
               <Textarea
                 id="story-edit-summary"
                 value={form.summary}
                 onChange={(e) => updateField("summary", e.target.value)}
                 maxLength={150}
                 rows={3}
-                placeholder="简短描述..."
+                placeholder={t("content.discover.edit.summaryPlaceholder")}
                 className="min-h-[84px]"
               />
             </FormField>
-            <FormField label="状态" htmlFor="story-edit-status">
+            {/* spec §5：移动端折叠开关（桌面端隐藏，始终全展开） */}
+            <button
+              type="button"
+              aria-expanded={basicExpanded}
+              aria-controls="story-edit-basic-more"
+              onClick={() => setBasicExpanded((v) => !v)}
+              className="flex w-full items-center justify-between rounded-md border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden"
+            >
+              {basicExpanded ? t("content.discover.edit.collapseMore") : t("content.discover.edit.expandMore")}
+              {basicExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            <div
+              id="story-edit-basic-more"
+              className={cn("space-y-6", !basicExpanded && "max-lg:hidden")}
+            >
+            <FormField label={t("content.discover.edit.statusLabel")} htmlFor="story-edit-status">
               <Select
                 id="story-edit-status"
                 value={form.status}
                 onChange={(e) => updateField("status", e.target.value)}
                 options={[
-                  { value: "published", label: "已发布" },
-                  { value: "draft", label: "草稿" },
+                  { value: "published", label: t("content.discover.edit.statusPublished") },
+                  { value: "draft", label: t("content.discover.edit.statusDraft") },
                 ]}
               />
             </FormField>
-            <FormField label="封面图" htmlFor="story-edit-cover">
+            <FormField label={t("content.discover.create.coverLabel")} htmlFor="story-edit-cover">
               {form.coverImage ? (
                 <div className="relative rounded-lg overflow-hidden border border-border">
                   <img src={form.coverImage} alt="Cover" className="w-full aspect-video object-cover" />
@@ -184,18 +205,18 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
                   {isUploadingCover
                     ? <Loader2 className="h-6 w-6 animate-spin" />
                     : <ImagePlus className="h-6 w-6" />}
-                  <span className="text-sm">点击上传封面图</span>
-                  <span className="text-xs">JPG/PNG，≤2MB</span>
+                  <span className="text-sm">{t("content.discover.create.coverPlaceholder")}</span>
+                  <span className="text-xs">{t("content.discover.edit.coverFormatHint")}</span>
                 </button>
               )}
               <input ref={coverInputRef} id="story-edit-cover" type="file" accept="image/jpeg,image/png" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f); }} />
             </FormField>
-            <FormField label="关联地点" htmlFor="story-edit-location">
+            <FormField label={t("content.discover.create.locationLabel")} htmlFor="story-edit-location">
               {form.locationName ? (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-accent border border-border">
                   <MapPin className="h-4 w-4 text-primary" />
                   <span className="flex-1 text-sm text-accent-foreground">{form.locationName}</span>
-                  <button onClick={() => { updateField("locationId", ""); updateField("locationName", ""); }} className="text-muted-foreground hover:text-destructive" aria-label="移除关联地点">
+                  <button onClick={() => { updateField("locationId", ""); updateField("locationName", ""); }} className="text-muted-foreground hover:text-destructive" aria-label={t("content.discover.edit.removeLocation")}>
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -206,7 +227,7 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
                     type="text"
                     value={locationSearch}
                     onChange={(e) => handleLocationSearch(e.target.value)}
-                    placeholder="搜索地点..."
+                    placeholder={t("content.discover.edit.locationSearchPlaceholder")}
                     leftIcon={<Search className="h-4 w-4" />}
                     rightIcon={isSearchingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
                   />
@@ -228,7 +249,7 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
                 </div>
               )}
             </FormField>
-            <FormField label="标签" hint={`${form.tags.length}/10 最多`}>
+            <FormField label={t("content.discover.create.tagsLabel")} hint={t("content.discover.edit.tagsCountHint", { count: form.tags.length })}>
               <div className="flex flex-wrap gap-2">
                 {allTags.map((tag) => {
                   const selected = form.tags.includes(tag.name);
@@ -251,6 +272,7 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
                 })}
               </div>
             </FormField>
+            </div>
           </div>
 
           {/* Right: VditorEditor (SV 分屏自带预览) */}
@@ -259,7 +281,7 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
               <VditorEditor
                 value={form.content}
                 onChange={(v) => updateField("content", v)}
-                placeholder="用 Markdown 写下你的故事..."
+                placeholder={t("content.discover.edit.contentPlaceholder")}
               />
             </div>
           </div>
@@ -283,16 +305,16 @@ export function StoryEditClient({ storyId }: StoryEditClientProps) {
                 <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
               <div>
-                <h3 id="cancel-edit-title" className="font-semibold text-foreground">放弃编辑？</h3>
-                <p id="cancel-edit-desc" className="text-sm text-muted-foreground">当前修改将不会保存</p>
+                <h3 id="cancel-edit-title" className="font-semibold text-foreground">{t("content.discover.edit.cancelTitle")}</h3>
+                <p id="cancel-edit-desc" className="text-sm text-muted-foreground">{t("content.discover.edit.cancelDesc")}</p>
               </div>
             </div>
             <div className="flex gap-2 justify-end">
               <button onClick={closeCancelConfirm} className="px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors">
-                继续编辑
+                {t("content.discover.edit.continueEditing")}
               </button>
               <button onClick={confirmDiscard} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors">
-                放弃
+                {t("content.discover.edit.discardConfirm")}
               </button>
             </div>
           </div>

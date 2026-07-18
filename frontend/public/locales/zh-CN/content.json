@@ -339,12 +339,35 @@
       "removeTag": "移除 {tag} 标签",
       "submit": "发布故事",
       "submitting": "发布中...",
-      "submitFailed": "发布故事失败"
+      "submitFailed": "发布故事失败",
+      "coverPlaceholder": "点击上传封面图"
+    },
+    "edit": {
+      "titlePlaceholder": "故事标题",
+      "summaryPlaceholder": "简短描述...",
+      "contentPlaceholder": "用 Markdown 写下你的故事...",
+      "statusLabel": "状态",
+      "statusPublished": "已发布",
+      "statusDraft": "草稿",
+      "coverFormatHint": "JPG/PNG，≤2MB",
+      "locationSearchPlaceholder": "搜索地点...",
+      "removeLocation": "移除关联地点",
+      "tagsCountHint": "{count}/10 最多",
+      "draftBanner": "检测到未保存的草稿",
+      "restoreDraft": "恢复草稿",
+      "discardDraft": "丢弃",
+      "cancelTitle": "放弃编辑？",
+      "cancelDesc": "当前修改将不会保存",
+      "continueEditing": "继续编辑",
+      "discardConfirm": "放弃",
+      "expandMore": "展开更多（状态/封面/地点/标签）",
+      "collapseMore": "收起"
     }
   },
   "title": "GoMate - 发现趣处，组队同行",
   "description": "GoMate 是一个极简的「地点组队」平台，帮助户外爱好者找到志同道合的徒步伙伴。",
   "titleSuffix": " - GoMate",
+  "writeStories": "用 Markdown 写下你的故事...",
   "seo_pages": {
     "home": "首页",
     "locations": "探索地点",
@@ -368,6 +391,8 @@
     "help": "帮助中心",
     "privacy": "隐私政策",
     "terms": "服务条款",
-    "adminLocations": "管理地点"
+    "adminLocations": "管理地点",
+    "storyCreate": "发布故事 - GoMate",
+    "storyEdit": "编辑故事 - GoMate"
   }
 }
