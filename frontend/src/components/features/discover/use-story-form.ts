@@ -75,6 +75,28 @@ export interface UseStoryFormReturn {
 
 const DRAFT_KEY_PREFIX = "story-edit-draft-";
 
+/**
+ * task #157：草稿 shape 校验。损坏草稿（tags 为对象/字符串、字段类型错、
+ * 混入未知字段）duck-type 渲染会出滑稽计数或触发错误边界——恢复前校验，
+ * 非法草稿丢弃并提示重新编辑（Steven 裁决）。
+ */
+const DRAFT_STRING_FIELDS = ["title", "summary", "content", "coverImage", "locationId", "locationName", "status", "authorId"] as const;
+
+export function isValidDraftShape(draft: unknown): draft is Partial<FormFields> {
+  if (typeof draft !== "object" || draft === null || Array.isArray(draft)) return false;
+  const d = draft as Record<string, unknown>;
+  for (const key of Object.keys(d)) {
+    if ((DRAFT_STRING_FIELDS as readonly string[]).includes(key)) {
+      if (typeof d[key] !== "string") return false;
+    } else if (key === "tags") {
+      if (!Array.isArray(d.tags) || d.tags.some((x) => typeof x !== "string")) return false;
+    } else {
+      return false; // 未知字段：spread 进 form 会污染 state
+    }
+  }
+  return true;
+}
+
 function loadDraft(storyId: string): Partial<FormFields> | null {
   try {
     const raw = localStorage.getItem(`${DRAFT_KEY_PREFIX}${storyId}`);
@@ -97,7 +119,7 @@ function clearDraft(storyId: string): void {
 }
 
 export function useStoryForm(storyId: string): UseStoryFormReturn {
-  const { t } = useI18n(["content"]);
+  const { t } = useI18n(["content", "errors"]);
   const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -176,10 +198,15 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
           return;
         }
 
-        // 检查草稿
+        // 检查草稿（shape 非法 → 丢弃并提示重新编辑，走 toast 通道）
         const draft = loadDraft(storyId);
         if (draft) {
-          setDraftAvailable(true);
+          if (isValidDraftShape(draft)) {
+            setDraftAvailable(true);
+          } else {
+            clearDraft(storyId);
+            setUploadMessage(t("content.discover.edit.draftInvalid"));
+          }
         }
 
         setForm(f);
@@ -285,13 +312,27 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
         initialForm.current = { ...form };
       } else {
         // API 错误契约 {success:false, error:{code,message}}；容错 string 形 error
+        // task #157：error.code 优先映射 i18n 文案（en 界面不再显示中文 server message），
+        // 映射不到才 fallback server message（有信息 > 无信息）
+        const apiCode =
+          typeof data.error === "object" && data.error !== null
+            ? (data.error as { code?: string }).code
+            : undefined;
         const apiMessage =
           typeof data.error === "string"
             ? data.error
             : data.error?.message;
+        const ERROR_CODE_I18N: Record<string, string> = {
+          UNAUTHORIZED: "errors.loginRequired",
+          FORBIDDEN: "errors.noPermission",
+          NOT_FOUND: "content.discover.storyNotFound",
+          VALIDATION_ERROR: "errors.validationFailed",
+          INTERNAL_ERROR: "content.discover.edit.saveFailed",
+        };
+        const mapped = apiCode ? ERROR_CODE_I18N[apiCode] : undefined;
         setSaveResult({
           type: "error",
-          message: apiMessage || t("content.discover.edit.saveFailed"),
+          message: (mapped && t(mapped)) || apiMessage || t("content.discover.edit.saveFailed"),
         });
       }
     } catch {
@@ -309,11 +350,18 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
   const handleRestoreDraft = React.useCallback(() => {
     const draft = loadDraft(storyId);
     if (draft) {
+      if (!isValidDraftShape(draft)) {
+        // 与 load 时校验同源：load 后草稿被写坏（其他 tab/手动改 storage）的兜底
+        clearDraft(storyId);
+        setDraftAvailable(false);
+        setUploadMessage(t("content.discover.edit.draftInvalid"));
+        return;
+      }
       setForm((prev) => ({ ...prev, ...draft }));
       clearDraft(storyId);
       setDraftAvailable(false);
     }
-  }, [storyId]);
+  }, [storyId, t]);
 
   return {
     form, initialForm, currentUser, isLoading, isSaving, saveResult, uploadMessage, error, canEdit,

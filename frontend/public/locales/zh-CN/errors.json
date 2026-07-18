@@ -69,5 +69,6 @@
   "getTeamDetailFailed": "获取队伍详情失败",
   "networkRetry": "网络错误，请稍后重试",
   "getStatusFailed": "获取状态失败",
-  "fetchApplicationsFailed": "获取申请列表失败"
+  "fetchApplicationsFailed": "获取申请列表失败",
+  "validationFailed": "输入验证失败，请检查填写内容"
 }

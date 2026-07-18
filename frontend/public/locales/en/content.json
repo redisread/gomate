@@ -373,7 +373,8 @@
       "coverTypeError": "Only JPG or PNG images are supported",
       "errorBoundaryTitle": "Something went wrong",
       "errorBoundaryDesc": "Your changes may have been auto-saved as a local draft. Reload the page to restore them.",
-      "errorBoundaryReload": "Reload"
+      "errorBoundaryReload": "Reload",
+      "draftInvalid": "The local draft was corrupted and has been discarded. Please re-edit based on the current content."
     }
   },
   "title": "GoMate - Discover Places, Team Up Together",

@@ -6,7 +6,7 @@ import Layout from "../../../layouts/Layout.astro";
 import { StoryEditClient } from "../../../components/features/discover/story-edit-client";
 import { declareI18nNs } from "../../../middleware";
 
-declareI18nNs(Astro.locals, ["content", "common", "ui"]);
+declareI18nNs(Astro.locals, ["content", "common", "ui", "errors"]); // task #157：保存错误 error.code 映射走 errors ns
 
 const { id } = Astro.params;
 ---

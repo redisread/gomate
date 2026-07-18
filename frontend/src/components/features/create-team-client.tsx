@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
-import { DURATION_OPTION_VALUES, snapToDurationOption } from "@/lib/duration-options";
+import { DURATION_OPTION_DEFS, snapToDurationOption } from "@/lib/duration-options";
 import type { Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
@@ -354,7 +354,7 @@ export function CreateTeamClient() {
                   >
                     {getDurationOptions(t).map((opt) => (
                       <option key={opt.value} value={opt.value}>
-                        {opt.label} {recommendedDuration === opt.value ? `（${t("teams.durationRecommended")}）` : ""}
+                        {opt.label} {recommendedDuration === opt.value ? t("teams.durationRecommendedMarked") : ""}
                       </option>
                     ))}
                   </select>
@@ -483,13 +483,7 @@ export function CreateTeamClient() {
  * Build duration option labels with translation
  */
 function getDurationOptions(t: (key: string, vars?: Record<string, string | number>) => string) {
-  const labelKeys = [
-    "teams.duration1h", "teams.duration1_5h", "teams.duration2h", "teams.duration3h",
-    "teams.duration4h", "teams.duration5h", "teams.duration6h", "teams.duration7h",
-    "teams.duration8h", "teams.duration9h", "teams.duration10h", "teams.duration12h",
-    "teams.duration15h", "teams.duration20h",
-  ];
-  return DURATION_OPTION_VALUES.map((value, i) => ({ value, label: t(labelKeys[i]) }));
+  return DURATION_OPTION_DEFS.map(([value, key]) => ({ value, label: t(key) }));
 }
 
 

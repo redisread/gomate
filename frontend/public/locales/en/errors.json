@@ -69,5 +69,6 @@
   "getTeamDetailFailed": "Failed to get team details",
   "networkRetry": "Network error, please try again later",
   "getStatusFailed": "Failed to get status",
-  "fetchApplicationsFailed": "Failed to get application list"
+  "fetchApplicationsFailed": "Failed to get application list",
+  "validationFailed": "Validation failed. Please check your input."
 }

@@ -441,5 +441,6 @@
   "posterMemberCount": "{current}/{max} people",
   "posterLeaderLabel": "Leader",
   "posterQrHint": "Scan to join team",
-  "posterGeneratingDesc": "Generating beautiful poster..."
+  "posterGeneratingDesc": "Generating beautiful poster...",
+  "durationRecommendedMarked": "(Recommended)"
 }
