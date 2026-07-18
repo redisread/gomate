@@ -266,6 +266,14 @@ export function createTestDb() {
   `);
 
   const db = drizzle(sqlite, { schema });
+
+  // D1 batch shim：路由在 prod 用 db.batch（D1 唯一原子写入原语，BEGIN 在 D1 被拒）。
+  // better-sqlite3 驱动没有 batch API，这里用事务包一层保持语义一致，
+  // 否则测试环境会因 db.batch is not a function 误炸。
+  (db as unknown as Record<string, unknown>).batch = async (
+    items: Array<{ run: () => unknown }>,
+  ) => db.transaction(() => items.map((item) => item.run()));
+
   return { db, sqlite };
 }
 
