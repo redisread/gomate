@@ -80,7 +80,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
         className
       )}
     >
-      {/* 封面图 */}
+      {/* 封面图（spec §6.4：无封面/加载失败用 bg-secondary + 标题首字符占位） */}
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         {story.coverImage ? (
           <img
@@ -94,18 +94,18 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
               const parent = target.parentElement;
               if (parent) {
                 const fallback = document.createElement('div');
-                fallback.className = 'w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-50 to-stone-100';
+                fallback.className = 'w-full h-full flex items-center justify-center bg-secondary';
                 const span = document.createElement('span');
-                span.className = 'text-3xl';
-                span.textContent = '🏔️';
+                span.className = 'text-2xl font-bold text-muted-foreground';
+                span.textContent = story.title.trim().charAt(0);
                 fallback.appendChild(span);
                 parent.appendChild(fallback);
               }
             }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-50 to-stone-100">
-            <span className="text-3xl">🏔️</span>
+          <div className="w-full h-full flex items-center justify-center bg-secondary">
+            <span className="text-2xl font-bold text-muted-foreground">{story.title.trim().charAt(0)}</span>
           </div>
         )}
         {/* 地点标签 */}

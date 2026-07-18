@@ -340,7 +340,9 @@
       "submit": "发布故事",
       "submitting": "发布中...",
       "submitFailed": "发布故事失败",
-      "coverPlaceholder": "点击上传封面图"
+      "coverPlaceholder": "点击上传封面图",
+      "coverEmptyTitle": "上传封面（选填）",
+      "coverEmptyHint": "不上传将使用默认样式展示"
     },
     "edit": {
       "titlePlaceholder": "故事标题",

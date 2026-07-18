@@ -340,7 +340,9 @@
       "submit": "Publish story",
       "submitting": "Publishing...",
       "submitFailed": "Failed to publish story",
-      "coverPlaceholder": "Click to upload cover image"
+      "coverPlaceholder": "Click to upload cover image",
+      "coverEmptyTitle": "Upload cover (optional)",
+      "coverEmptyHint": "A default style will be shown if no cover is uploaded"
     },
     "edit": {
       "titlePlaceholder": "Story title",

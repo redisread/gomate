@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertCircle, ArrowLeft, ImagePlus, Loader2, Plus, Send, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Plus, Send, X } from "lucide-react";
 import { API_BASE, fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-input";
 import { useI18n } from "@/hooks/useI18n";
@@ -120,17 +120,29 @@ export function CreateStoryClient() {
     }
   };
 
+  // spec §6.3：封面/标签不再参与校验；disabled 只看标题/摘要/正文
   const validate = () => {
     const nextErrors: StoryFormErrors = {};
     if (!form.title.trim()) nextErrors.title = t("content.discover.create.titleRequired");
     if (!form.summary.trim()) nextErrors.summary = t("content.discover.create.summaryRequired");
     if (!form.content.trim()) nextErrors.content = t("content.discover.create.contentRequired");
-    if (!form.coverImage.trim()) nextErrors.coverImage = t("content.discover.create.coverRequired");
     if (!form.locationId) nextErrors.locationId = t("content.discover.create.locationRequired");
     if (tags.length > 10) nextErrors.tags = t("content.discover.create.tagsMax");
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
+
+  // spec §6.3：onBlur 即时校验必填项，错误消除即恢复（恢复由 updateField 负责）
+  const validateRequiredOnBlur = (field: "title" | "summary" | "content") => {
+    const errorKey = {
+      title: "content.discover.create.titleRequired",
+      summary: "content.discover.create.summaryRequired",
+      content: "content.discover.create.contentRequired",
+    }[field];
+    setErrors((prev) => ({ ...prev, [field]: form[field].trim() ? undefined : t(errorKey) }));
+  };
+
+  const isRequiredEmpty = !form.title.trim() || !form.summary.trim() || !form.content.trim();
 
   const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -176,10 +188,6 @@ export function CreateStoryClient() {
     setFormError("");
 
     if (!validate()) return;
-    if (tags.length === 0) {
-      setErrors((prev) => ({ ...prev, tags: t("content.discover.create.tagsRequired") }));
-      return;
-    }
 
     setIsSubmitting(true);
 
@@ -248,13 +256,13 @@ export function CreateStoryClient() {
             <FormField
               label={t("content.discover.create.titleLabel")}
               htmlFor="story-title"
-              required
               error={errors.title}
             >
               <Input
                 id="story-title"
                 value={form.title}
                 onChange={(event) => updateField("title", event.target.value)}
+                onBlur={() => validateRequiredOnBlur("title")}
                 placeholder={t("content.discover.create.titlePlaceholder")}
                 disabled={isSubmitting}
               />
@@ -263,26 +271,33 @@ export function CreateStoryClient() {
             <FormField
               label={t("content.discover.create.coverLabel")}
               htmlFor="story-cover"
-              required
+              optional
               error={errors.coverImage}
               hint={t("content.discover.create.coverHint")}
             >
-              <div className="space-y-2">
-                {form.coverImage && (
-                  <div className="relative rounded-lg overflow-hidden border border-border">
-                    <img src={form.coverImage} alt="Cover" className="w-full aspect-video object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => updateField("coverImage", "")}
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-                <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-background text-sm text-muted-foreground cursor-pointer hover:bg-accent hover:text-foreground transition-colors">
-                  <ImagePlus className="h-4 w-4" />
-                  {isUploading ? t("content.discover.create.uploading") : t("content.discover.create.coverPlaceholder")}
+              {form.coverImage ? (
+                <div className="relative rounded-lg overflow-hidden border border-border">
+                  <img src={form.coverImage} alt="Cover" className="w-full aspect-video object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => updateField("coverImage", "")}
+                    aria-label={t("content.discover.create.removeCover")}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                /* spec §6.2：空态虚线占位框，120px 移动 / 160px 桌面 */
+                <label className="flex h-[120px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-border bg-secondary/50 transition-colors hover:border-primary/40 sm:h-40">
+                  {isUploading ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  ) : (
+                    <>
+                      <span className="text-sm font-medium text-foreground">{t("content.discover.create.coverEmptyTitle")}</span>
+                      <span className="text-xs text-muted-foreground">{t("content.discover.create.coverEmptyHint")}</span>
+                    </>
+                  )}
                   <input
                     id="story-cover"
                     type="file"
@@ -292,13 +307,12 @@ export function CreateStoryClient() {
                     disabled={isUploading || isSubmitting}
                   />
                 </label>
-              </div>
+              )}
             </FormField>
 
             <FormField
               label={t("content.discover.create.summaryLabel")}
               htmlFor="story-summary"
-              required
               error={errors.summary}
               hint={t("content.discover.create.summaryHint")}
             >
@@ -306,6 +320,7 @@ export function CreateStoryClient() {
                 id="story-summary"
                 value={form.summary}
                 onChange={(event) => updateField("summary", event.target.value)}
+                onBlur={() => validateRequiredOnBlur("summary")}
                 maxLength={150}
                 className="min-h-[84px]"
                 placeholder={t("content.discover.create.summaryPlaceholder")}
@@ -316,7 +331,6 @@ export function CreateStoryClient() {
             <FormField
               label={t("content.discover.create.locationLabel")}
               htmlFor="story-location"
-              required
               error={errors.locationId}
             >
               <Select
@@ -332,7 +346,7 @@ export function CreateStoryClient() {
             <FormField
               label={t("content.discover.create.tagsLabel")}
               htmlFor="story-tags"
-              required
+              optional
               error={errors.tags}
               hint={t("content.discover.create.tagsHint")}
             >
@@ -387,7 +401,7 @@ export function CreateStoryClient() {
               </a>
               <button
                 type="submit"
-                disabled={isSubmitting || isUploading}
+                disabled={isSubmitting || isUploading || isRequiredEmpty}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -401,11 +415,10 @@ export function CreateStoryClient() {
             <FormField
               label={t("content.discover.create.contentLabel")}
               htmlFor="story-content"
-              required
               error={errors.content}
               hint={t("content.discover.create.contentHint")}
             >
-              <div className="rounded-lg border border-border overflow-hidden" style={{ height: "calc(100vh - 10rem)", minHeight: "500px" }}>
+              <div className="rounded-lg border border-border overflow-hidden" style={{ height: "calc(100vh - 10rem)", minHeight: "500px" }} onBlur={() => validateRequiredOnBlur("content")}>
                 <VditorEditor
                   value={form.content}
                   onChange={(v) => updateField("content", v)}

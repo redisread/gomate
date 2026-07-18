@@ -20,6 +20,8 @@ interface FormFieldProps {
   error?: string;
   hint?: string;
   required?: boolean;
+  /** spec §6.1：只标可选不标必填，label 右侧跟（选填） */
+  optional?: boolean;
   children: React.ReactNode;
   className?: string;
 }
@@ -30,9 +32,11 @@ export function FormField({
   error,
   hint,
   required,
+  optional,
   children,
   className,
 }: FormFieldProps) {
+  const { t } = useI18n(["common"]);
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
@@ -43,6 +47,9 @@ export function FormField({
           {label}
           {required && (
             <span className="ml-1 text-destructive" aria-hidden="true">*</span>
+          )}
+          {optional && (
+            <span className="ml-1 text-xs font-normal text-muted-foreground">{t("common.optional")}</span>
           )}
         </label>
       )}

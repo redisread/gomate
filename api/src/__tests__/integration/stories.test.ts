@@ -257,6 +257,48 @@ describe("Stories API 集成测试", () => {
       expect(story?.status).toBe("published");
     });
 
+    it("不带 coverImage/tags 也可创建（spec §6 契约放宽）", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      const res = await req(app, "/stories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "无封面无标签故事",
+          summary: "验证封面与标签改可选后的契约。",
+          content: "正文内容满足必填要求。",
+          locationId: location.id,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json() as { success: boolean; data: { id: string } };
+      expect(json.success).toBe(true);
+
+      const story = await testDb.query.stories.findFirst({
+        where: eq(schema.stories.id, json.data.id),
+      });
+      expect(story?.coverImage).toBeNull();
+    });
+
+    it("非法 coverImage（非 URL）仍返回 400", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      const res = await req(app, "/stories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "非法封面故事",
+          summary: "optional 不等于不校验格式。",
+          content: "正文内容满足必填要求。",
+          coverImage: "not-a-url",
+          locationId: location.id,
+        }),
+      });
+
+      expect(res.status).toBe(400);
+    });
+
     it("创建带标签故事后可通过标签筛选并出现在热门标签", async () => {
       currentSession = { user: { id: user.id, email: user.email, name: user.name } };
 
