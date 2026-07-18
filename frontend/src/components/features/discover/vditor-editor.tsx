@@ -104,6 +104,10 @@ export function VditorEditor({ value, onChange, placeholder, readOnly = false }:
           placeholder: placeholderRef.current ?? t("content.writeStories"),
           theme: dark ? "dark" : "classic",
           cdn: VDITOR_CDN,
+          // vditor 3.11+ 默认启用 localStorage 缓存且要求显式 cache.id，
+          // 缺失时报 "need options.cache.id" 导致编辑器初始化失败（线上发布/编辑瘫痪）。
+          // 草稿由 useStoryForm 自行管理，这里直接禁用 vditor 缓存。
+          cache: { enable: false },
           toolbar: readOnly
             ? []
             : [
