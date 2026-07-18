@@ -6,7 +6,7 @@ import Layout from "../../layouts/Layout.astro";
 import { CreateTeamClient } from "../../components/features/create-team-client";
 import { declareI18nNs } from "../../middleware";
 
-declareI18nNs(Astro.locals, ["teams", "content"]);
+declareI18nNs(Astro.locals, ["teams", "errors", "content"]);
 ---
 
 <Layout title="创建队伍 - GoMate" showNavbar={false} showFooter={false}>
