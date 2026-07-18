@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, FileText, Share2 } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { apiDelete, apiGet, apiPost, fetchCurrentUser } from "@/lib/api";
 import type { SessionUser } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ import {
   StoryDetailError,
   StoryEyebrow,
 } from "./story-detail-ui";
-import { getStoryMetrics } from "./story-detail-utils";
+import { getStoryMetrics, getViewCountText } from "./story-detail-utils";
 
 export function StoryDetail({ storyId }: StoryDetailProps) {
   const { t, locale } = useI18n(["content", "common"]);
@@ -101,25 +101,6 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
       showToast({ type: "error", message: t("content.discover.shareFailed") });
     }
   }, [showToast, t]);
-
-  const handleShare = React.useCallback(async () => {
-    if (!story) return;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: story.title,
-          text: story.summary,
-          url: window.location.href,
-        });
-        return;
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-      }
-    }
-
-    await copyCurrentUrl();
-  }, [copyCurrentUrl, story]);
 
   const handleLike = React.useCallback(async () => {
     if (isLiking) return;
@@ -242,15 +223,6 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
                 />
               </>
             )}
-            <button
-              type="button"
-              onClick={() => setShowShareSheet(true)}
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              aria-label={t("content.discover.share")}
-            >
-              <Share2 className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">{t("content.discover.share")}</span>
-            </button>
           </div>
         </div>
       </div>
@@ -259,11 +231,11 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
         <StoryEyebrow story={story} t={t} />
 
         <div className="space-y-4">
-          <h1 className="text-3xl font-bold leading-tight text-foreground sm:text-4xl lg:text-5xl">
+          <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">
             {story.title}
           </h1>
           {story.summary && (
-            <p className="border-l-2 border-primary/50 pl-4 text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+            <p className="text-lg leading-relaxed text-muted-foreground">
               {story.summary}
             </p>
           )}
@@ -273,7 +245,7 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
       </header>
 
       {story.coverImage && (
-        <figure className={cn(SHELL_WIDTH, "mt-8")}>
+        <figure className={cn(CONTENT_WIDTH, "mt-8")}>
           <div className="overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
             <img
               src={story.coverImage}
@@ -299,7 +271,8 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
           likeCount={story.likeCount}
           isLiking={isLiking}
           onLike={handleLike}
-          onShare={handleShare}
+          onShare={() => setShowShareSheet(true)}
+          viewsText={getViewCountText(story, locale, t)}
           t={t}
         />
       </main>

@@ -1,4 +1,4 @@
-import { Clock, Eye, FileText, Heart, type LucideIcon } from "lucide-react";
+import { Clock, type LucideIcon } from "lucide-react";
 import type { Story, TFunction } from "./story-detail-types";
 
 export interface StoryMetric {
@@ -7,8 +7,9 @@ export interface StoryMetric {
   value: string;
 }
 
+// spec v1.1 §3.3：byline 只保留「作者 · 日期 · 阅读时长」，
+// 浏览量/点赞数下移到文章底部操作区（见 StoryActions）
 export function getStoryMetrics(story: Story, locale: string, t: TFunction): StoryMetric[] {
-  const numberFormatter = new Intl.NumberFormat(locale);
   const publishedDate = new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "long",
@@ -24,30 +25,16 @@ export function getStoryMetrics(story: Story, locale: string, t: TFunction): Sto
       value: publishedDate,
     },
     {
-      icon: Eye,
-      label: t("content.discover.views"),
-      value: t("content.discover.viewCount", {
-        count: numberFormatter.format(story.viewCount),
-      }),
-    },
-    {
-      icon: Heart,
-      label: t("content.discover.likes"),
-      value: t("content.discover.likeCount", {
-        count: numberFormatter.format(story.likeCount),
-      }),
-    },
-    {
       icon: Clock,
       label: t("content.discover.readingTime"),
       value: t("content.discover.readTime", { minutes: readMinutes }),
     },
-    {
-      icon: FileText,
-      label: t("content.discover.characters"),
-      value: t("content.discover.characterCount", {
-        count: numberFormatter.format(characterCount),
-      }),
-    },
   ];
+}
+
+export function getViewCountText(story: Story, locale: string, t: TFunction): string {
+  const numberFormatter = new Intl.NumberFormat(locale);
+  return t("content.discover.viewCount", {
+    count: numberFormatter.format(story.viewCount),
+  });
 }
