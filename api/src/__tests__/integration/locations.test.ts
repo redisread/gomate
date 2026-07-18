@@ -129,4 +129,66 @@ describe("Locations API 集成测试", () => {
       expect(res.status).toBe(404);
     });
   });
+
+  describe("task #152 切源：徒步参数读 location 字段", () => {
+    it("view=card 返回 location 扁平化字段，routes[0] 镜像同值", async () => {
+      await seedLocation(testDb, city.id, {
+        name: "梧桐山",
+        difficulty: "moderate",
+        durationMin: 120,
+        durationMax: 180,
+        distance: 5.5,
+        elevation: 700,
+      });
+      await seedLocation(testDb, city.id, { name: "昆明湖" }); // 无参数
+
+      const res = await req(app, "/locations?view=card");
+      expect(res.status).toBe(200);
+      const json = await res.json() as {
+        locations: {
+          name: string; difficulty: string | null;
+          durationMin: number | null; durationMax: number | null;
+          distance: number | null; elevation: number | null;
+          routes: { difficulty: string | null; durationMin: number | null }[];
+        }[];
+      };
+      const wts = json.locations.find((l) => l.name === "梧桐山")!;
+      expect(wts.difficulty).toBe("moderate");
+      expect(wts.durationMin).toBe(120);
+      expect(wts.durationMax).toBe(180);
+      expect(wts.distance).toBe(5.5);
+      expect(wts.elevation).toBe(700);
+      expect(wts.routes).toHaveLength(1);
+      expect(wts.routes[0].difficulty).toBe("moderate");
+      expect(wts.routes[0].durationMin).toBe(120);
+
+      const km = json.locations.find((l) => l.name === "昆明湖")!;
+      expect(km.difficulty).toBeNull();
+      expect(km.durationMin).toBeNull();
+      expect(km.routes).toHaveLength(0);
+    });
+
+    it("完整列表 difficulty 读 location 字段而非 routes join", async () => {
+      const loc = await seedLocation(testDb, city.id, {
+        name: "切源山", difficulty: "hard", durationMin: 300, durationMax: 420,
+      });
+      // 故意插入一条 difficulty 不同的路线，证明数据源是 location 而非 routes
+      const ts = new Date();
+      await testDb.insert(schema.routes).values({
+        id: "route_distractor", locationId: loc.id, cityId: city.id, name: "干扰路线",
+        difficulty: "easy", durationMin: 10, durationMax: 20, distance: 1,
+        createdAt: ts, updatedAt: ts,
+      });
+
+      const res = await req(app, "/locations");
+      expect(res.status).toBe(200);
+      const json = await res.json() as {
+        locations: { name: string; difficulty: string; durationMin: number; durationMax: number }[];
+      };
+      const item = json.locations.find((l) => l.name === "切源山")!;
+      expect(item.difficulty).toBe("hard");
+      expect(item.durationMin).toBe(300);
+      expect(item.durationMax).toBe(420);
+    });
+  });
 });

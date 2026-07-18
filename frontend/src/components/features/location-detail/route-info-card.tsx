@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import type { Location } from "@/lib/types";
 import { DIFFICULTY_CONFIG } from "./constants";
 import {
-  normalizeLocationRoutes,
+  normalizeLocationHiking,
   type NormalizedLocationRoute,
   type RouteMetric,
 } from "./route-utils";
@@ -22,24 +22,24 @@ interface RouteInfoCardProps {
   location: Location;
 }
 
+/**
+ * 「徒步攻略」区块（task #152：原 RouteInfoCard 改读 location 字段，多路线选择器删除）。
+ * 布局（Steven 定稿）：标题 + 4 参数 tiles + overview 引导段 + tips/装备/注意事项 notes。
+ * 数据：4 参数 = location 扁平化字段（0010 回填）；notes = location.extra.hiking（0011 回填）。
+ * 空态：4 参数全空且无 hiking 内容 → 整区块不渲染。
+ */
 export function RouteInfoCard({ location }: RouteInfoCardProps) {
   const { t } = useI18n(["enums", "locations", "common", "locationDetail"]);
-  const routes = React.useMemo(() => normalizeLocationRoutes(location), [location]);
-  const [selectedRouteId, setSelectedRouteId] = React.useState<string | null>(null);
+  const hiking = React.useMemo(() => normalizeLocationHiking(location), [location]);
 
-  React.useEffect(() => {
-    setSelectedRouteId(routes[0]?.id ?? null);
-  }, [routes]);
+  if (!hiking) return null;
 
-  if (routes.length === 0) return null;
-
-  const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
-  const metrics = getMetricItems(selectedRoute, t);
+  const metrics = getMetricItems(hiking, t);
+  const tips = hiking.routeGuide?.tips ?? [];
   const hasRouteNotes =
-    selectedRoute.equipmentNeeded.length > 0 ||
-    selectedRoute.warnings.length > 0 ||
-    Boolean(selectedRoute.routeGuide?.overview) ||
-    (selectedRoute.routeGuide?.tips.length ?? 0) > 0;
+    hiking.equipmentNeeded.length > 0 ||
+    hiking.warnings.length > 0 ||
+    tips.length > 0;
 
   return (
     <section className="bg-card rounded-xl border border-stone-100 dark:border-stone-800 p-4 sm:p-5 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
@@ -53,41 +53,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
             {t("locationDetail.routeSummarySubtitle")}
           </p>
         </div>
-        {routes.length > 1 && (
-          <span className="inline-flex w-fit items-center rounded-full border border-emerald-100 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-            {t("locationDetail.routeOptions", { count: routes.length })}
-          </span>
-        )}
       </div>
-
-      {routes.length > 1 && (
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="listbox" aria-label={t("locations.routeInfo")}>
-          {routes.map((route, index) => {
-            const selected = route.id === selectedRoute.id;
-            return (
-              <button
-                key={route.id}
-                type="button"
-                role="option"
-                aria-selected={selected}
-                aria-label={t("locationDetail.routeCardAria", { name: route.name })}
-                onClick={() => setSelectedRouteId(route.id)}
-                className={cn(
-                  "min-w-[132px] rounded-xl border px-3 py-2.5 text-left transition-all duration-150",
-                  selected
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-950 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-100"
-                    : "border-stone-100 bg-stone-50/70 text-stone-700 hover:border-stone-200 hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900/60 dark:text-stone-300 dark:hover:bg-stone-800"
-                )}
-              >
-                <span className="block text-sm font-bold leading-snug line-clamp-1">{route.name}</span>
-                <span className="mt-1 block text-[11px] font-medium text-stone-600 dark:text-stone-400">
-                  {index === 0 ? t("locationDetail.recommendedRoute") : getRouteDifficulty(route, t)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {metrics.map((item) => (
@@ -95,35 +61,35 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
         ))}
       </div>
 
-      {(selectedRoute.description || selectedRoute.routeGuide?.overview) && (
+      {hiking.routeGuide?.overview && (
         <p className="mt-4 rounded-xl border border-stone-100 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/50 px-3.5 py-3 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-          {selectedRoute.routeGuide?.overview || selectedRoute.description}
+          {hiking.routeGuide.overview}
         </p>
       )}
 
       {hasRouteNotes && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {selectedRoute.equipmentNeeded.length > 0 && (
+          {hiking.equipmentNeeded.length > 0 && (
             <RouteNoteBlock
               icon={<Backpack className="h-3.5 w-3.5" />}
               title={t("common.recommendedGear")}
-              items={selectedRoute.equipmentNeeded}
+              items={hiking.equipmentNeeded}
               tone="stone"
             />
           )}
-          {(selectedRoute.routeGuide?.tips.length ?? 0) > 0 && (
+          {tips.length > 0 && (
             <RouteNoteBlock
               icon={<Lightbulb className="h-3.5 w-3.5" />}
               title={t("locationDetail.routeTips")}
-              items={selectedRoute.routeGuide?.tips ?? []}
+              items={tips}
               tone="stone"
             />
           )}
-          {selectedRoute.warnings.length > 0 && (
+          {hiking.warnings.length > 0 && (
             <RouteNoteBlock
               icon={<AlertTriangle className="h-3.5 w-3.5" />}
               title={t("common.precautions")}
-              items={selectedRoute.warnings}
+              items={hiking.warnings}
               tone="warning"
             />
           )}
@@ -131,13 +97,6 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
       )}
     </section>
   );
-}
-
-function getRouteDifficulty(
-  route: NormalizedLocationRoute,
-  t: (key: string, vars?: Record<string, string | number>) => string
-) {
-  return route.difficulty ? t(`enums.difficulty.${route.difficulty}`) : t("common.unknown");
 }
 
 function getMetricItems(

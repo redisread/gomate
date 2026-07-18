@@ -5,7 +5,7 @@
   "locationList": "Locations",
   "defaultCity": "All",
   "viewDetail": "View Details",
-  "routeInfo": "Route Info",
+  "routeInfo": "Hiking Guide",
   "routeTags": "Route Tags",
   "facilities": "Facilities",
   "estimatedTime": "Estimated Time",
@@ -83,13 +83,37 @@
     "campsite": "Campsite"
   },
   "seasons": {
-    "spring": { "label": "Spring", "months": "Mar-May" },
-    "summer": { "label": "Summer", "months": "Jun-Aug" },
-    "autumn": { "label": "Autumn", "months": "Sep-Nov" },
-    "winter": { "label": "Winter", "months": "Dec-Feb" },
-    "春季": { "label": "Spring", "months": "Mar-May" },
-    "夏季": { "label": "Summer", "months": "Jun-Aug" },
-    "秋季": { "label": "Autumn", "months": "Sep-Nov" },
-    "冬季": { "label": "Winter", "months": "Dec-Feb" }
+    "spring": {
+      "label": "Spring",
+      "months": "Mar-May"
+    },
+    "summer": {
+      "label": "Summer",
+      "months": "Jun-Aug"
+    },
+    "autumn": {
+      "label": "Autumn",
+      "months": "Sep-Nov"
+    },
+    "winter": {
+      "label": "Winter",
+      "months": "Dec-Feb"
+    },
+    "春季": {
+      "label": "Spring",
+      "months": "Mar-May"
+    },
+    "夏季": {
+      "label": "Summer",
+      "months": "Jun-Aug"
+    },
+    "秋季": {
+      "label": "Autumn",
+      "months": "Sep-Nov"
+    },
+    "冬季": {
+      "label": "Winter",
+      "months": "Dec-Feb"
+    }
   }
 }

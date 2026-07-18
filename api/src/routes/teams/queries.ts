@@ -82,6 +82,7 @@ queries.get("/", async (c) => {
       leaderLevel: schema.users.level,
       locationName: schema.locations.name,
       locationCoverImage: schema.locations.coverImage,
+      locationDifficulty: schema.locations.difficulty,
     };
 
     type TeamRow = {
@@ -92,6 +93,7 @@ queries.get("/", async (c) => {
       currentMembers: number; leaderImage: string | null; leaderName: string;
       leaderNickname: string | null; leaderLevel: string | null;
       locationName: string | null; locationCoverImage: string | null;
+      locationDifficulty: string | null;
     };
 
     let result: TeamRow[];
@@ -261,7 +263,8 @@ queries.get("/", async (c) => {
         const allConditions = [];
         if (whereClause) allConditions.push(whereClause);
         if (difficultyList.length > 0) {
-          allConditions.push(inArray(schema.routes.difficulty, difficultyList));
+          // task #152 切源：难度筛选改指 location 字段（0010 已回填，与主路线一致）
+          allConditions.push(inArray(schema.locations.difficulty, difficultyList));
         }
         if (filteredTeamIds) {
           allConditions.push(inArray(schema.teams.id, filteredTeamIds));
@@ -273,7 +276,7 @@ queries.get("/", async (c) => {
       const [{ cnt }] = await db
         .select({ cnt: sql<number>`count(distinct ${schema.teams.id})` })
         .from(schema.teams)
-        .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
+        .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
         .where(finalWhereClause);
       const total = cnt;
 
@@ -288,7 +291,6 @@ queries.get("/", async (c) => {
         .from(schema.teams)
         .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
         .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-        .leftJoin(schema.routes, eq(schema.routes.id, schema.teams.routeId))
         .leftJoin(teamMemberCounts, eq(teamMemberCounts.teamId, schema.teams.id))
         .where(finalWhereClause)
         .orderBy(desc(schema.teams.startTime))
@@ -318,6 +320,7 @@ function formatTeams(result: {
   currentMembers: number; leaderImage: string | null; leaderName: string;
   leaderNickname: string | null; leaderLevel: string | null;
   locationName: string | null; locationCoverImage: string | null;
+  locationDifficulty: string | null;
 }[]) {
   return result.map((row) => {
     const startDate = new Date(row.startTime);
@@ -338,6 +341,7 @@ function formatTeams(result: {
       location: row.locationName ? {
         name: row.locationName,
         coverImage: row.locationCoverImage || "",
+        difficulty: row.locationDifficulty ?? undefined,
       } : undefined,
       leader: {
         id: row.leaderId, name: row.leaderName,
@@ -459,6 +463,12 @@ queries.get("/:id", async (c) => {
           id: teamWithRelations.location.id,
           name: teamWithRelations.location.name,
           coverImage: teamWithRelations.location.coverImage,
+          // task #152 切源：徒步参数随 location 下发（0010 已回填）
+          difficulty: teamWithRelations.location.difficulty,
+          durationMin: teamWithRelations.location.durationMin,
+          durationMax: teamWithRelations.location.durationMax,
+          distance: teamWithRelations.location.distance,
+          elevation: teamWithRelations.location.elevation,
         } : undefined,
         leader: leader ? {
           id: leader.id, name: leader.name, nickname: leader.nickname || null,

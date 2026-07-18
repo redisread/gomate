@@ -5,7 +5,7 @@
   "locationList": "スポット一覧",
   "defaultCity": "すべて",
   "viewDetail": "詳細を見る",
-  "routeInfo": "ルート情報",
+  "routeInfo": "ハイキング攻略",
   "routeTags": "ルートタグ",
   "facilities": "付帯施設",
   "estimatedTime": "所要時間の目安",
@@ -83,13 +83,37 @@
     "campsite": "キャンプ場"
   },
   "seasons": {
-    "spring": { "label": "春", "months": "3〜5月" },
-    "summer": { "label": "夏", "months": "6〜8月" },
-    "autumn": { "label": "秋", "months": "9〜11月" },
-    "winter": { "label": "冬", "months": "12〜2月" },
-    "春季": { "label": "春", "months": "3〜5月" },
-    "夏季": { "label": "夏", "months": "6〜8月" },
-    "秋季": { "label": "秋", "months": "9〜11月" },
-    "冬季": { "label": "冬", "months": "12〜2月" }
+    "spring": {
+      "label": "春",
+      "months": "3〜5月"
+    },
+    "summer": {
+      "label": "夏",
+      "months": "6〜8月"
+    },
+    "autumn": {
+      "label": "秋",
+      "months": "9〜11月"
+    },
+    "winter": {
+      "label": "冬",
+      "months": "12〜2月"
+    },
+    "春季": {
+      "label": "春",
+      "months": "3〜5月"
+    },
+    "夏季": {
+      "label": "夏",
+      "months": "6〜8月"
+    },
+    "秋季": {
+      "label": "秋",
+      "months": "9〜11月"
+    },
+    "冬季": {
+      "label": "冬",
+      "months": "12〜2月"
+    }
   }
 }

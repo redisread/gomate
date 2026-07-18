@@ -4,6 +4,7 @@ import { useTeamDetail } from "./use-team-detail";
 import { getStatusInfo } from "./team-detail-utils";
 import { MemberAvatarGrid } from "./team-detail-members";
 import { TeamActivityPosts } from "@/components/features/activity-posts";
+import { formatRouteMetric, normalizeLocationHiking } from "@/components/features/location-detail/route-utils";
 import type { Location, Team } from "@/lib/types";
 
 export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
@@ -92,20 +93,24 @@ function LocationCover({ location, statusInfo }: { location: Location; statusInf
 }
 
 function LocationRouteInfo({ location }: { location: Location; }) {
-  const route = location.routes?.[0];
-  if (!route) return null;
+  const { t } = useI18n(["locationDetail"]);
+  // task #152 切源：徒步参数读 location 自身字段（0010 回填），不再读 routes[0]
+  const hiking = normalizeLocationHiking(location);
+  const durationText = formatRouteMetric(hiking?.duration, t);
+  const distanceText = hiking?.distance?.value;
+  if (!durationText && !distanceText) return null;
   return (
     <div className="flex items-center gap-4 text-white/70 text-sm mb-3">
-      {route.duration && (
+      {durationText && (
         <span className="flex items-center gap-1">
           <Clock className="w-4 h-4" />
-          {route.duration}
+          {durationText}
         </span>
       )}
-      {route.distance && (
+      {distanceText && (
         <span className="flex items-center gap-1">
           <TrendingUp className="w-4 h-4" />
-          {route.distance}
+          {distanceText}
         </span>
       )}
     </div>

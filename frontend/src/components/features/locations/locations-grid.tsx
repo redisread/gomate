@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import type { Location, Tag } from "@/lib/types";
 import { tagColorClasses } from "./constants";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
+import { formatRouteMetric, normalizeLocationHiking } from "@/components/features/location-detail/route-utils";
 
 function ShimmerCard() {
   return (
@@ -26,8 +27,11 @@ function ShimmerCard() {
 }
 
 function LocationCard({ location, index }: { location: Location; index: number }) {
-  const { t } = useI18n(["locations", "common"]);
-  const route = location.routes?.[0];
+  const { t } = useI18n(["locations", "common", "locationDetail"]);
+  // task #152 切源：徒步参数读 location 自身字段（0010 回填），不再读 routes[0]
+  const hiking = normalizeLocationHiking(location);
+  const durationText = formatRouteMetric(hiking?.duration, t);
+  const distanceText = hiking?.distance?.value;
   const delayMs = Math.min(index, 5) * 60;
 
   return (
@@ -63,18 +67,18 @@ function LocationCard({ location, index }: { location: Location; index: number }
             <h3 className="font-bold text-white text-lg leading-tight drop-shadow-sm">
               {location.name}
             </h3>
-            {route && (
+            {(durationText || distanceText) && (
               <div className="flex items-center gap-3 mt-1.5 text-white/75 text-xs">
-                {route.duration && (
+                {durationText && (
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {route.duration}
+                    {durationText}
                   </span>
                 )}
-                {route.distance && (
+                {distanceText && (
                   <span className="flex items-center gap-1">
                     <TrendingUp className="w-3 h-3" />
-                    {route.distance}
+                    {distanceText}
                   </span>
                 )}
               </div>
