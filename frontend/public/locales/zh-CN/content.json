@@ -363,7 +363,16 @@
       "continueEditing": "继续编辑",
       "discardConfirm": "放弃",
       "expandMore": "展开更多（状态/封面/地点/标签）",
-      "collapseMore": "收起"
+      "collapseMore": "收起",
+      "saveSuccess": "保存成功",
+      "saveFailed": "保存失败",
+      "saveNetworkError": "保存失败：网络错误",
+      "saveRetry": "重试",
+      "coverTooLarge": "图片不能超过 2MB",
+      "coverTypeError": "仅支持 JPG 或 PNG 格式",
+      "errorBoundaryTitle": "页面出现异常",
+      "errorBoundaryDesc": "你的修改可能已自动保存为本地草稿，重新加载后可恢复",
+      "errorBoundaryReload": "重新加载"
     }
   },
   "title": "GoMate - 发现趣处，组队同行",

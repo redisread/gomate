@@ -363,7 +363,16 @@
       "continueEditing": "Keep editing",
       "discardConfirm": "Discard",
       "expandMore": "Show more (status/cover/location/tags)",
-      "collapseMore": "Show less"
+      "collapseMore": "Show less",
+      "saveSuccess": "Saved",
+      "saveFailed": "Save failed",
+      "saveNetworkError": "Save failed: network error",
+      "saveRetry": "Retry",
+      "coverTooLarge": "Image must be under 2MB",
+      "coverTypeError": "Only JPG or PNG images are supported",
+      "errorBoundaryTitle": "Something went wrong",
+      "errorBoundaryDesc": "Your changes may have been auto-saved as a local draft. Reload the page to restore them.",
+      "errorBoundaryReload": "Reload"
     }
   },
   "title": "GoMate - Discover Places, Team Up Together",
