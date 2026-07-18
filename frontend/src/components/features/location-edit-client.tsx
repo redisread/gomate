@@ -19,7 +19,6 @@ import {
   useLocationForm,
   LocationFormBasicFields,
   LocationFormContentFields,
-  LocationFormRouteFields,
   LocationFormSettingsFields,
   LocationActionBar,
 } from "./location-form";
@@ -470,15 +469,6 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
               updateField={form.updateField} touch={form.touch} onOpenMapPicker={() => setShowMapPicker(true)} />
             <LocationFormContentFields formData={form.formData} isSaving={form.isSaving} updateField={form.updateField} />
             <LocationFormSettingsFields formData={form.formData} allTags={form.allTags} updateField={form.updateField} />
-            <LocationFormRouteFields formData={form.formData} allPois={form.allPois}
-              poiModalOpen={form.poiModalOpen} poiModalMode={form.poiModalMode} editingPoi={form.editingPoi}
-              deleteConfirmOpen={form.deleteConfirmOpen} deletingPoi={form.deletingPoi}
-              deletingPoiAssociations={form.deletingPoiAssociations} isDeletingPoi={form.isDeletingPoi}
-              poiSearch={form.poiSearch} poiSearchResults={form.poiSearchResults}
-              updateField={form.updateField} handlePoiSearch={form.handlePoiSearch}
-              handleOpenCreatePoi={form.handleOpenCreatePoi} handleOpenEditPoi={form.handleOpenEditPoi}
-              handlePoiModalSuccess={form.handlePoiModalSuccess} handleOpenDeletePoi={form.handleOpenDeletePoi}
-              handleConfirmDeletePoi={form.handleConfirmDeletePoi} clearPoiSearchResults={form.clearPoiSearchResults} isSearchingPois={form.isSearchingPois} />
             <LocationActionBar isDirty={form.isDirty} isSaving={form.isSaving} onSave={form.handleSave} onDiscard={form.handleDiscard} />
           </div>
 

@@ -46,10 +46,3 @@ export type EntityType = "location" | "route" | "activity";
 /** 地点类型 */
 export type LocationType = "hiking" | "explore" | "leisure" | "travel";
 
-/** POI 角色类型 */
-export type PoiRoleType =
-  | "waypoint"
-  | "checkpoint"
-  | "viewpoint"
-  | "facility"
-  | "poi";

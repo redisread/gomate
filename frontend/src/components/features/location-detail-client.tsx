@@ -29,7 +29,6 @@ import {
   LocationIntroCard,
   RouteInfoCard,
   TeamListSection,
-  PoiSection,
   AddressRow,
 } from "@/components/features/location-detail-main-content";
 import { LocationActivityPosts } from "@/components/features/activity-posts";
@@ -980,7 +979,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               <TeamListSection teams={teams} locationId={location.id} />
             </div>
             <div className="order-5">
-              <PoiSection locationId={location.id} />
             </div>
             <div className="order-6">
               <LocationActivityPosts locationId={location.id} />

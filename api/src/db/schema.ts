@@ -290,53 +290,6 @@ export const passwordResets = sqliteTable(
   })
 );
 
-// POI 表
-// POI（Point of Interest）用于标记地点/路线上的关键节点
-// 通过 entityToPois 关联表与地点或路线建立关系，每次关联可指定不同的角色类型
-export const pois = sqliteTable(
-  "pois",
-  {
-    id: text("id").primaryKey(),
-    name: text("name").notNull(),
-    description: text("description"),
-    coordinates: text("coordinates").notNull(),
-    // POI 内部分类标识，不对外暴露
-    // 默认值为 "poi"，用于未来扩展或内部统计分析
-    // 用户无需关心此字段，系统自动填充
-    category: text("category").default("poi"),
-    images: text("images"),
-    extra: text("extra"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-  },
-  (table) => ({
-    nameIdx: index("pois_name_idx").on(table.name),
-  })
-);
-
-// 实体-POI 角色关联表
-export const entityToPois = sqliteTable(
-  "entity_to_pois",
-  {
-    id: text("id").primaryKey(),
-    poiId: text("poi_id").references(() => pois.id, { onDelete: "cascade" }).notNull(),
-    entityType: text("entity_type").notNull(),
-    entityId: text("entity_id").notNull(),
-    roleType: text("role_type").notNull(),
-    order: integer("order"),
-    roleSpecificData: text("role_specific_data"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-  },
-  (table) => ({
-    poiIdx: index("entity_to_pois_poi_idx").on(table.poiId),
-    entityIdx: index("entity_to_pois_entity_idx").on(table.entityType, table.entityId),
-    roleIdx: index("entity_to_pois_role_idx").on(table.roleType),
-    uniquePoiEntityRole: uniqueIndex("entity_to_pois_unique_idx").on(
-      table.poiId, table.entityType, table.entityId, table.roleType
-    ),
-  })
-);
-
 // 用户收藏表
 export const userFavorites = sqliteTable(
   "user_favorites",
@@ -411,14 +364,6 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
 export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
   team: one(teams, { fields: [teamMembers.teamId], references: [teams.id] }),
   user: one(users, { fields: [teamMembers.userId], references: [users.id] }),
-}));
-
-export const poisRelations = relations(pois, ({ many }) => ({
-  entityToPois: many(entityToPois),
-}));
-
-export const entityToPoisRelations = relations(entityToPois, ({ one }) => ({
-  poi: one(pois, { fields: [entityToPois.poiId], references: [pois.id] }),
 }));
 
 export const userFavoritesRelations = relations(userFavorites, ({ one }) => ({
@@ -539,9 +484,6 @@ export const activityPostsRelations = relations(activityPosts, ({ one }) => ({
 
 // Update teams relations to include activity posts
 // (Need to update existing teamsRelations)
-export type Poi = typeof pois.$inferSelect;
-export type NewPoi = typeof pois.$inferInsert;
-export type EntityToPoi = typeof entityToPois.$inferSelect;
 export type UserFavorite = typeof userFavorites.$inferSelect;
 export type NewUserFavorite = typeof userFavorites.$inferInsert;
 export type Conversation = typeof conversations.$inferSelect;
@@ -563,10 +505,6 @@ export type UserGender = "male" | "female" | "other";
 export type CityLevel = "city" | "district";
 export type TagType = "location" | "route" | "activity";
 export type EntityType = "location" | "route" | "activity" | "story";
-// POI 内部分类标识，不对外暴露，默认值为 "poi"
-export type PoiCategory = "poi";
-export type PoiEntityType = "route" | "location" | "city";
-export type PoiRoleType = "waypoint" | "checkpoint" | "viewpoint" | "facility" | "poi";
 
 // 活动后分享状态
 export type ActivityPostStatus = "visible" | "hidden" | "deleted";

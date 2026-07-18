@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { fetchAPI, apiPut } from "@/lib/api";
-import type { Location, City, PoiDetail } from "@/lib/types";
+import type { Location, City } from "@/lib/types";
 
 /* ================================================================
    类型
@@ -22,7 +22,6 @@ export interface FormData {
   lng: number | string;
   extra: { facilities: string[]; tips: string[]; warnings: string[] };
   tagIds: string[];
-  poiLinks: Array<{ poiId: string; roleType: string; order: number }>;
 }
 
 interface UseLocationFormReturn {
@@ -30,7 +29,6 @@ interface UseLocationFormReturn {
   location: Location | null;
   cities: City[];
   allTags: Array<{ id: string; name: string; type: string }>;
-  allPois: Array<{ id: string; name: string; description?: string | null }>;
   // Form state
   formData: FormData;
   errors: Record<string, string | undefined>;
@@ -47,24 +45,6 @@ interface UseLocationFormReturn {
   handleDiscard: () => void;
   handleRestoreDraft: () => void;
   handleDiscardDraft: () => void;
-  // POI
-  poiModalOpen: boolean;
-  poiModalMode: "create" | "edit";
-  editingPoi: PoiDetail | null;
-  deleteConfirmOpen: boolean;
-  deletingPoi: { id: string; name: string } | null;
-  deletingPoiAssociations: number;
-  isDeletingPoi: boolean;
-  poiSearch: string;
-  poiSearchResults: Array<{ id: string; name: string; description?: string | null }>;
-  handleOpenCreatePoi: () => void;
-  handleOpenEditPoi: (poiId: string) => Promise<void>;
-  handlePoiModalSuccess: (poi: { id: string; name: string; coordinates: { lat: number; lng: number } }) => void;
-  handleOpenDeletePoi: (poiId: string, poiName: string) => Promise<void>;
-  handleConfirmDeletePoi: () => Promise<void>;
-  handlePoiSearch: (value: string) => void;
-  clearPoiSearchResults: () => void;
-  isSearchingPois: boolean;
 }
 
 /* ================================================================
@@ -83,7 +63,7 @@ const DEFAULT_FORM: FormData = {
   name: "", type: "", subtitle: "", description: "", address: "",
   cityId: "", bestSeason: [], coverImage: "", images: [],
   lat: "", lng: "", extra: { facilities: [], tips: [], warnings: [] },
-  tagIds: [], poiLinks: [],
+  tagIds: [],
 };
 
 const VALIDATION_RULES: Record<string, (v: string) => string | undefined> = {
@@ -116,7 +96,6 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
   const [location, setLocation] = React.useState<Location | null>(null);
   const [cities, setCities] = React.useState<City[]>([]);
   const [allTags, setAllTags] = React.useState<Array<{ id: string; name: string; type: string }>>([]);
-  const [allPois, setAllPois] = React.useState<Array<{ id: string; name: string; description?: string | null }>>([]);
   const [formData, setFormData] = React.useState<FormData>(DEFAULT_FORM);
   const [errors, setErrors] = React.useState<Record<string, string | undefined>>({});
   const [isSaving, setIsSaving] = React.useState(false);
@@ -124,18 +103,6 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
   const [saveMessage, setSaveMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showDraftBanner, setShowDraftBanner] = React.useState(false);
   const [pendingDraft, setPendingDraft] = React.useState<FormData | null>(null);
-
-  // POI state
-  const [poiModalOpen, setPoiModalOpen] = React.useState(false);
-  const [poiModalMode, setPoiModalMode] = React.useState<"create" | "edit">("create");
-  const [editingPoi, setEditingPoi] = React.useState<PoiDetail | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
-  const [deletingPoi, setDeletingPoi] = React.useState<{ id: string; name: string } | null>(null);
-  const [deletingPoiAssociations, setDeletingPoiAssociations] = React.useState(0);
-  const [isDeletingPoi, setIsDeletingPoi] = React.useState(false);
-  const [poiSearch, setPoiSearch] = React.useState("");
-  const [poiSearchResults, setPoiSearchResults] = React.useState<typeof allPois>([]);
-  const [isSearchingPois, setIsSearchingPois] = React.useState(false);
 
   // Auth guard
   React.useEffect(() => {
@@ -151,23 +118,15 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
       fetchAPI(`/api/locations/${locationId}`).then((r) => r.json()),
       fetchAPI("/api/cities").then((r) => r.json()),
       fetchAPI(`/api/locations/${locationId}/tags`).then((r) => r.json()).catch(() => ({ tags: [] })),
-      fetchAPI(`/api/locations/${locationId}/pois`).then((r) => r.json()).catch(() => ({ pois: [] })),
       fetchAPI("/api/tags?type=location&limit=200").then((r) => r.json()).catch(() => ({ tags: [] })),
-      fetchAPI("/pois?limit=200").then((r) => r.json()).catch(() => ({ pois: [] })),
     ])
-      .then(([locData, cityData, locTagsData, locPoisData, allTagsData, allPoisData]) => {
+      .then(([locData, cityData, locTagsData, allTagsData]) => {
         if (locData.location) {
           const loc: Location = locData.location;
           setLocation(loc);
           setAllTags(allTagsData.tags ?? []);
-          setAllPois(allPoisData.pois ?? []);
 
           const currentTagIds: string[] = (locTagsData.tags ?? []).map((t: { id: string }) => t.id);
-          const currentPoiLinks: FormData["poiLinks"] = (locPoisData.pois ?? []).map(
-            (p: { id: string; roleType: string; order?: number }, idx: number) => ({
-              poiId: p.id, roleType: p.roleType ?? "poi", order: p.order ?? idx,
-            })
-          );
 
           const serverData: FormData = {
             name: loc.name, type: loc.type ?? "", subtitle: loc.subtitle ?? "",
@@ -179,7 +138,7 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
               tips: Array.isArray(loc.extra?.tips) ? loc.extra.tips : [],
               warnings: Array.isArray(loc.extra?.warnings) ? loc.extra.warnings : [],
             },
-            tagIds: currentTagIds, poiLinks: currentPoiLinks,
+            tagIds: currentTagIds,
           };
 
           // Check for draft
@@ -292,7 +251,6 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
           extra: hasExtra ? extraPayload : null,
         }),
         apiPut(`/api/locations/${location.id}/tags`, { tagIds: formData.tagIds }),
-        apiPut(`/api/locations/${location.id}/pois`, { pois: formData.poiLinks }),
       ]);
 
       clearDraft();
@@ -321,13 +279,13 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
         tips: Array.isArray(location.extra?.tips) ? location.extra.tips : [],
         warnings: Array.isArray(location.extra?.warnings) ? location.extra.warnings : [],
       },
-      tagIds: formData.tagIds, poiLinks: formData.poiLinks,
+      tagIds: formData.tagIds,
     });
     clearDraft();
     setIsDirty(false);
     setErrors({});
     setSaveMessage(null);
-  }, [location, formData.tagIds, formData.poiLinks, clearDraft]);
+  }, [location, formData.tagIds, clearDraft]);
 
   // Draft restore/discard
   const handleRestoreDraft = React.useCallback(() => {
@@ -342,94 +300,9 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
     setPendingDraft(null);
   }, [clearDraft]);
 
-  // POI handlers
-  const handleOpenCreatePoi = React.useCallback(() => {
-    setPoiModalMode("create"); setEditingPoi(null); setPoiModalOpen(true);
-  }, []);
-
-  const handleOpenEditPoi = React.useCallback(async (poiId: string) => {
-    try {
-      const res = await fetchAPI(`/api/pois/${poiId}`);
-      const data = await res.json();
-      if (data.success && data.poi) { setEditingPoi(data.poi); setPoiModalMode("edit"); setPoiModalOpen(true); }
-    } catch (err) { console.error("获取 POI 详情失败:", err); }
-  }, []);
-
-  const handlePoiModalSuccess = React.useCallback((poi: { id: string; name: string; coordinates: { lat: number; lng: number } }) => {
-    setAllPois((prev) => {
-      const exists = prev.find((p) => p.id === poi.id);
-      if (exists) return prev.map((p) => (p.id === poi.id ? { ...p, name: poi.name } : p));
-      return [...prev, { id: poi.id, name: poi.name }];
-    });
-    if (poiModalMode === "create") {
-      setFormData((prev) => ({
-        ...prev,
-        poiLinks: [...prev.poiLinks, { poiId: poi.id, roleType: "poi", order: prev.poiLinks.length }],
-      }));
-    }
-    setPoiModalOpen(false);
-    setEditingPoi(null);
-  }, [poiModalMode]);
-
-  const handleOpenDeletePoi = React.useCallback(async (poiId: string, poiName: string) => {
-    try {
-      const res = await fetchAPI(`/api/locations/${locationId}/pois`);
-      const data = await res.json();
-      const count = (data.pois ?? []).filter((p: { id: string }) => p.id === poiId).length;
-      setDeletingPoiAssociations(count);
-    } catch { setDeletingPoiAssociations(0); }
-    setDeletingPoi({ id: poiId, name: poiName });
-    setDeleteConfirmOpen(true);
-  }, [locationId]);
-
-  const handleConfirmDeletePoi = React.useCallback(async () => {
-    if (!deletingPoi) return;
-    setIsDeletingPoi(true);
-    try {
-      const res = await fetchAPI(`/api/pois/${deletingPoi.id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        setAllPois((prev) => prev.filter((p) => p.id !== deletingPoi.id));
-        setFormData((prev) => ({ ...prev, poiLinks: prev.poiLinks.filter((l) => l.poiId !== deletingPoi.id) }));
-        setDeleteConfirmOpen(false);
-        setDeletingPoi(null);
-      } else {
-        throw new Error(data.error || "删除失败");
-      }
-    } catch (err) { console.error("删除 POI 失败:", err); }
-    finally { setIsDeletingPoi(false); }
-  }, [deletingPoi]);
-
-  const poiSearchTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // cleanup timer on unmount
-  React.useEffect(() => {
-    return () => { if (poiSearchTimer.current) clearTimeout(poiSearchTimer.current); };
-  }, []);
-
-  const handlePoiSearch = React.useCallback((value: string) => {
-    setPoiSearch(value);
-    if (poiSearchTimer.current) clearTimeout(poiSearchTimer.current);
-    if (!value.trim()) { setPoiSearchResults([]); return; }
-    setIsSearchingPois(true);
-    poiSearchTimer.current = setTimeout(() => {
-      fetchAPI(`/pois?search=${encodeURIComponent(value)}&limit=8`)
-        .then((r) => r.json())
-        .then((data) => setPoiSearchResults(data.pois ?? []))
-        .catch(() => setPoiSearchResults([]))
-        .finally(() => setIsSearchingPois(false));
-    }, 350);
-  }, []);
-
   return {
-    location, cities, allTags, allPois, formData, errors, isSaving, isDirty, saveMessage,
+    location, cities, allTags, formData, errors, isSaving, isDirty, saveMessage,
     showDraftBanner, pendingDraft, updateField, touch, handleSave, handleDiscard,
     handleRestoreDraft, handleDiscardDraft,
-    poiModalOpen, poiModalMode, editingPoi, deleteConfirmOpen, deletingPoi,
-    deletingPoiAssociations, isDeletingPoi, poiSearch, poiSearchResults,
-    handleOpenCreatePoi, handleOpenEditPoi, handlePoiModalSuccess,
-    handleOpenDeletePoi, handleConfirmDeletePoi, handlePoiSearch,
-    clearPoiSearchResults: () => setPoiSearchResults([]),
-    isSearchingPois,
   };
 }

@@ -68,22 +68,6 @@ export interface Location {
   updatedAt: string;
 }
 
-// 路线 POI 类型
-export interface RoutePoi {
-  id: string;
-  name: string;
-  description?: string | null;
-  coordinates: { lat: number; lng: number };
-  images?: string[];
-  extra?: Record<string, unknown> | null;
-  order?: number | null;
-  roleType: 'waypoint' | 'checkpoint' | 'viewpoint' | 'facility' | 'poi';
-  roleSpecificData?: Record<string, unknown> | null;
-}
-
-// POI 类型从共享包导入
-export type { PoiDetail, PoiCreateInput, PoiUpdateInput } from "@gomate/types";
-
 // 路线信息
 export interface Route {
   id: string;
@@ -115,7 +99,6 @@ export interface Route {
   } | string | null;
   tags?: Tag[]; // 关联的标签
   location?: Location; // 关联的地点
-  pois?: RoutePoi[]; // 关联的 POI
   createdAt: string;
   updatedAt: string;
 }
