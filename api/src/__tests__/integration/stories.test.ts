@@ -154,6 +154,47 @@ describe("Stories API 集成测试", () => {
       expect(json2.data).toHaveLength(1);
       expect(json2.pagination.hasMore).toBe(false);
     });
+
+    it("?status=draft 未登录返回空数组，不泄露草稿（task #156）", async () => {
+      await seedStory(testDb, user.id, { title: "草稿", status: "draft" });
+
+      const res = await req(app, "/stories?status=draft");
+      expect(res.status).toBe(200);
+      const json = await res.json() as { data: unknown[] };
+      expect(json.data).toHaveLength(0);
+    });
+
+    it("?status=draft 登录只返回自己的草稿（task #156）", async () => {
+      const other = await seedUser(testDb, { name: "其他用户", email: "other@example.com" });
+      await seedStory(testDb, user.id, { title: "我的草稿", status: "draft" });
+      await seedStory(testDb, other.id, { title: "别人的草稿", status: "draft" });
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      const res = await req(app, "/stories?status=draft");
+      const json = await res.json() as { data: { title: string }[] };
+      expect(json.data.map((s) => s.title)).toEqual(["我的草稿"]);
+    });
+
+    it("?status=hidden 按 published 处理，不泄露已删故事（task #156）", async () => {
+      await seedStory(testDb, user.id, { title: "公开故事", status: "published" });
+      await seedStory(testDb, user.id, { title: "已删故事", status: "hidden" });
+
+      const res = await req(app, "/stories?status=hidden");
+      const json = await res.json() as { data: { title: string }[] };
+      expect(json.data.map((s) => s.title)).toEqual(["公开故事"]);
+    });
+
+    it("?status=draft&tag= 组合过滤不丢条件（task #156 回归）", async () => {
+      const tag = await seedTag(testDb, { name: "徒步", type: "activity" });
+      const myDraft = await seedStory(testDb, user.id, { title: "带标签草稿", status: "draft" });
+      await seedEntityTag(testDb, myDraft.id, "story", tag.id);
+      await seedStory(testDb, user.id, { title: "无标签草稿", status: "draft" });
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      const res = await req(app, "/stories?status=draft&tag=徒步");
+      const json = await res.json() as { data: { title: string }[] };
+      expect(json.data.map((s) => s.title)).toEqual(["带标签草稿"]);
+    });
   });
 
   describe("GET /stories/:id - 故事详情", () => {
@@ -205,6 +246,55 @@ describe("Stories API 集成测试", () => {
       expect(res.status).toBe(200);
       const json = await res.json() as { success: boolean; data: { tags: unknown[] } };
       expect(json.data.tags).toEqual([]);
+    });
+
+    it("draft 故事作者本人可查看且不计浏览（task #156）", async () => {
+      const story = await seedStory(testDb, user.id, { title: "我的草稿", status: "draft" });
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      const res = await req(app, `/stories/${story.id}`);
+
+      expect(res.status).toBe(200);
+      const json = await res.json() as { success: boolean; data: { status: string; viewCount: number; title: string } };
+      expect(json.data.status).toBe("draft");
+      expect(json.data.title).toBe("我的草稿");
+      expect(json.data.viewCount).toBe(0);
+    });
+
+    it("draft 故事未登录返回 404，不泄露存在性（task #156）", async () => {
+      const story = await seedStory(testDb, user.id, { title: "私密草稿", status: "draft" });
+
+      const res = await req(app, `/stories/${story.id}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it("draft 故事非作者登录同样 404（task #156）", async () => {
+      const other = await seedUser(testDb, { name: "其他用户", email: "other@example.com" });
+      const story = await seedStory(testDb, user.id, { title: "私密草稿", status: "draft" });
+      currentSession = { user: { id: other.id, email: other.email, name: other.name } };
+
+      const res = await req(app, `/stories/${story.id}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it("draft 故事管理员可查看（task #156）", async () => {
+      const story = await seedStory(testDb, user.id, { title: "待审草稿", status: "draft" });
+      currentSession = { user: { id: "admin-id", email: "admin@example.com", name: "管理员", role: "admin" } };
+
+      const res = await req(app, `/stories/${story.id}`);
+
+      expect(res.status).toBe(200);
+    });
+
+    it("hidden 故事作者本人也返回 404（task #156）", async () => {
+      const story = await seedStory(testDb, user.id, { title: "已删故事", status: "hidden" });
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      const res = await req(app, `/stories/${story.id}`);
+
+      expect(res.status).toBe(404);
     });
   });
 

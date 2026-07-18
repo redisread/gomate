@@ -17,12 +17,18 @@ import type { StoryMetric } from "./story-detail-utils";
 export const CONTENT_WIDTH = "mx-auto w-full max-w-3xl px-4 sm:px-6";
 export const SHELL_WIDTH = "mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8";
 
-export function StoryEyebrow({ story, t }: { story: Story; t: TFunction }) {
+export function StoryEyebrow({ story, showDraftBadge, t }: { story: Story; showDraftBadge?: boolean; t: TFunction }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-sm font-medium text-primary">
         {story.location?.name || t("content.discover.outdoorStory")}
       </span>
+      {/* task #156（Steven 设计稿）：作者查看自己的 draft 时渲染草稿 badge */}
+      {showDraftBadge && (
+        <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">
+          {t("content.discover.draftBadge")}
+        </span>
+      )}
     </div>
   );
 }

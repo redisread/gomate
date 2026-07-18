@@ -1,7 +1,7 @@
 import { APIErrors } from "../lib/api-errors";
 import { logger } from "../lib/logger";
 import { Hono } from "hono";
-import { eq, desc, count, sql, inArray, and } from "drizzle-orm";
+import { eq, ne, desc, count, sql, inArray, and } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -98,16 +98,31 @@ stories.get("/", async (c) => {
     const db = createDb(c.env.DB);
     const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
     const limit = Math.min(20, parseInt(c.req.query("limit") || "10", 10));
-    const status = c.req.query("status") || "published";
+    // task #156：status 参数白名单——此前 ?status=draft/hidden 匿名可读全部草稿/已删故事（泄露）
+    const rawStatus = c.req.query("status") || "published";
+    const status = rawStatus === "draft" ? "draft" : "published";
     const tag = c.req.query("tag");
     const offset = (page - 1) * limit;
 
-    // 获取当前登录用户（可选），用于 isLiked 判断
+    // 获取当前登录用户（可选），用于 isLiked 判断 + draft 可见性
     const auth = createAuth(c.env);
     const session = await auth.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
 
     // 基础过滤条件：状态
     const whereConditions = [eq(schema.stories.status, status)];
+
+    // draft 列表仅返回本人的草稿；未登录请求 draft → 空结果（不泄露存在性）
+    if (status === "draft") {
+      if (!session) {
+        c.header("Cache-Control", "no-store");
+        return c.json({
+          success: true,
+          data: [],
+          pagination: { page, limit, total: 0, hasMore: false },
+        });
+      }
+      whereConditions.push(eq(schema.stories.authorId, session.user.id));
+    }
 
     // 如果指定了标签，先查询该标签对应的故事ID列表
     let storyIdsWithTag: string[] = [];
@@ -151,9 +166,9 @@ stories.get("/", async (c) => {
       whereConditions.push(inArray(schema.stories.id, storyIdsWithTag));
     }
 
-    // 组合过滤条件
+    // 组合过滤条件（task #156：draft 作者条件 + tag 条件可能并存，spread 全量组合，避免静默丢条件）
     const whereClause = whereConditions.length > 1
-      ? and(whereConditions[0], whereConditions[1])
+      ? and(...whereConditions)
       : whereConditions[0];
 
     const items = await db
@@ -281,6 +296,10 @@ stories.get("/:id", async (c) => {
     const db = createDb(c.env.DB);
     const id = c.req.param("id");
 
+    // 当前用户（可选）：draft 可见性判定 + isLiked
+    const authInstance = createAuth(c.env);
+    const session = await authInstance.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
+
     const result = await db
       .select({
         story: schema.stories,
@@ -302,7 +321,8 @@ stories.get("/:id", async (c) => {
       .where(
         and(
           eq(schema.stories.id, id),
-          eq(schema.stories.status, "published")
+          // task #156：hidden 永远 404；draft 在下方按作者鉴权放行
+          ne(schema.stories.status, "hidden")
         )
       )
       .limit(1);
@@ -313,17 +333,27 @@ stories.get("/:id", async (c) => {
 
     const { story, author, location } = result[0];
 
-    // Increment view count
+    // task #156：draft 仅作者本人或管理员可见，其余 404（不泄露草稿存在性）
+    if (story.status !== "published") {
+      const canViewDraft = Boolean(
+        session && (session.user.id === story.authorId || session.user.role === "admin")
+      );
+      if (!canViewDraft) {
+        return c.json(APIErrors.notFound("故事不存在"), 404);
+      }
+    }
+
+    // Increment view count（draft 不计，避免作者编辑时自增）
     const currentViewCount = story.viewCount ?? 0;
-    await db
-      .update(schema.stories)
-      .set({ viewCount: currentViewCount + 1 })
-      .where(eq(schema.stories.id, id));
+    if (story.status === "published") {
+      await db
+        .update(schema.stories)
+        .set({ viewCount: currentViewCount + 1 })
+        .where(eq(schema.stories.id, id));
+    }
 
     // 检查当前用户是否已点赞（仅登录用户）
     let isLiked = false;
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
     if (session) {
       const likeRecord = await db.query.userStoryLikes.findFirst({
         where: and(
@@ -351,7 +381,7 @@ stories.get("/:id", async (c) => {
       success: true,
       data: {
         ...story,
-        viewCount: currentViewCount + 1,
+        viewCount: story.status === "published" ? currentViewCount + 1 : currentViewCount,
         isLiked,
         tags: tagRows,
         author: author
