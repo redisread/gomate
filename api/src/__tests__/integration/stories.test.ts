@@ -343,6 +343,88 @@ describe("Stories API 集成测试", () => {
     });
   });
 
+  describe("PUT /stories/:id - 更新故事", () => {
+    it("带 tags 更新成功并替换标签关联（task #147 回归用例）", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+      const story = await seedStory(testDb, user.id, { title: "原标题" });
+      const oldTag = await seedTag(testDb, { name: "旧标签", type: "activity" });
+      await seedEntityTag(testDb, story.id, "story", oldTag.id);
+
+      const res = await req(app, `/stories/${story.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "新标题", tags: ["新标签", "旧标签"] }),
+      });
+
+      expect(res.status).toBe(200);
+
+      const updated = await testDb.query.stories.findFirst({
+        where: eq(schema.stories.id, story.id),
+      });
+      expect(updated?.title).toBe("新标题");
+
+      // 旧关联被替换：新标签 + 旧标签各一条，无残留重复
+      const links = await testDb.query.entityToTags.findMany({
+        where: and(
+          eq(schema.entityToTags.entityId, story.id),
+          eq(schema.entityToTags.entityType, "story")
+        ),
+      });
+      expect(links).toHaveLength(2);
+
+      const newTag = await testDb.query.tags.findFirst({
+        where: eq(schema.tags.name, "新标签"),
+      });
+      expect(newTag).toBeDefined();
+    });
+
+    it("tags 传空数组清除全部标签关联（task #147 回归用例）", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+      const story = await seedStory(testDb, user.id, { title: "带标签故事" });
+      const tag = await seedTag(testDb, { name: "待清除", type: "activity" });
+      await seedEntityTag(testDb, story.id, "story", tag.id);
+
+      const res = await req(app, `/stories/${story.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "带标签故事", tags: [] }),
+      });
+
+      expect(res.status).toBe(200);
+
+      const links = await testDb.query.entityToTags.findMany({
+        where: and(
+          eq(schema.entityToTags.entityId, story.id),
+          eq(schema.entityToTags.entityType, "story")
+        ),
+      });
+      expect(links).toHaveLength(0);
+    });
+
+    it("不传 tags 字段只更新正文，标签关联保持不变", async () => {
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+      const story = await seedStory(testDb, user.id, { title: "保留标签故事" });
+      const tag = await seedTag(testDb, { name: "保留", type: "activity" });
+      await seedEntityTag(testDb, story.id, "story", tag.id);
+
+      const res = await req(app, `/stories/${story.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "保留标签故事（改）" }),
+      });
+
+      expect(res.status).toBe(200);
+
+      const links = await testDb.query.entityToTags.findMany({
+        where: and(
+          eq(schema.entityToTags.entityId, story.id),
+          eq(schema.entityToTags.entityType, "story")
+        ),
+      });
+      expect(links).toHaveLength(1);
+    });
+  });
+
   describe("POST /stories/:id/like - 点赞 toggle", () => {
     it("未登录点赞 → 401", async () => {
       const story = await seedStory(testDb, user.id, { title: "测试故事", status: "published" });

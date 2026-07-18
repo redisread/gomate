@@ -501,51 +501,50 @@ stories.put("/:id", async (c) => {
     if (data.locationId !== undefined) updateData.locationId = data.locationId;
     if (data.status !== undefined) updateData.status = data.status;
 
-    await db.update(schema.stories).set(updateData).where(eq(schema.stories.id, id));
-
-    // 如果传了 tags，在事务内更新标签关联
+    // 如果传了 tags，故事更新 + 标签关联放进同一个 D1 batch 保证原子性。
+    // 注意：D1 不支持 SQL BEGIN/COMMIT（drizzle db.transaction 在 D1 上会发 BEGIN 被
+    // 拒绝，code 7500），batch 是 D1 唯一的原子写入原语。
     if (data.tags !== undefined) {
-      const newTags = data.tags;
-      await db.transaction(async (tx) => {
+      const newTags = normalizeStoryTags(data.tags);
+
+      // find-or-create：先查已存在的 tag，再补插缺失的（与 POST 创建路径同一模式）
+      const existingTags = newTags.length > 0
+        ? await db.select().from(schema.tags).where(inArray(schema.tags.name, newTags))
+        : [];
+      const existingNames = new Set(existingTags.map((tag) => tag.name));
+      const missingTags = newTags
+        .filter((name) => !existingNames.has(name))
+        .map((name) => ({ id: generateId(), name, type: "activity", createdAt: new Date() }));
+      if (missingTags.length > 0) {
+        await db.insert(schema.tags).values(missingTags);
+      }
+      const tagIdByName = new Map(
+        [...existingTags, ...missingTags].map((tag) => [tag.name, tag.id] as const)
+      );
+
+      await db.batch([
+        db.update(schema.stories).set(updateData).where(eq(schema.stories.id, id)),
         // 先删除旧关联
-        await tx
+        db
           .delete(schema.entityToTags)
           .where(
             and(
               eq(schema.entityToTags.entityId, id),
               eq(schema.entityToTags.entityType, "story")
             )
-          );
-
-        // 插入新关联（空数组则清除所有）
-        if (newTags.length > 0) {
-          const tagEntries: (typeof schema.entityToTags.$inferInsert)[] = [];
-          for (const tagName of newTags) {
-            let tag = await tx.query.tags.findFirst({
-              where: eq(schema.tags.name, tagName),
-            });
-            if (!tag) {
-              const tagId = generateId();
-              await tx.insert(schema.tags).values({
-                id: tagId,
-                name: tagName,
-                type: "activity",
-                createdAt: new Date(),
-              });
-              tag = { id: tagId, name: tagName, type: "activity", createdAt: new Date() };
-            }
-            tagEntries.push({
-              id: generateId(),
-              entityId: id,
-              entityType: "story",
-              tagId: tag.id,
-            });
-          }
-          if (tagEntries.length > 0) {
-            await tx.insert(schema.entityToTags).values(tagEntries);
-          }
-        }
-      });
+          ),
+        // 插入新关联（空数组则只清除）
+        ...newTags.map((name) =>
+          db.insert(schema.entityToTags).values({
+            id: generateId(),
+            entityId: id,
+            entityType: "story",
+            tagId: tagIdByName.get(name)!,
+          })
+        ),
+      ]);
+    } else {
+      await db.update(schema.stories).set(updateData).where(eq(schema.stories.id, id));
     }
 
     return c.json({
