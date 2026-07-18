@@ -6,8 +6,29 @@
  * 用户看到 1 小时、实际提交推荐值，且「（推荐）」标记永不出现。
  */
 
-/** 下拉选项值（分钟）——推荐值 snap 的目标集 */
-export const DURATION_OPTION_VALUES = [60, 90, 120, 180, 240, 300, 360, 420, 480, 540, 600, 720, 900, 1200];
+/**
+ * [分钟, labelKey] 元组——选项渲染与 snap 目标集的唯一出处。
+ * 加档只改一行，不会出现 values/labelKeys 位置错位（task #157，Martin CR 建议）。
+ */
+export const DURATION_OPTION_DEFS: ReadonlyArray<readonly [number, string]> = [
+  [60, "teams.duration1h"],
+  [90, "teams.duration1_5h"],
+  [120, "teams.duration2h"],
+  [180, "teams.duration3h"],
+  [240, "teams.duration4h"],
+  [300, "teams.duration5h"],
+  [360, "teams.duration6h"],
+  [420, "teams.duration7h"],
+  [480, "teams.duration8h"],
+  [540, "teams.duration9h"],
+  [600, "teams.duration10h"],
+  [720, "teams.duration12h"],
+  [900, "teams.duration15h"],
+  [1200, "teams.duration20h"],
+];
+
+/** 下拉选项值（分钟）——推荐值 snap 的目标集，由 DURATION_OPTION_DEFS 派生 */
+export const DURATION_OPTION_VALUES = DURATION_OPTION_DEFS.map(([v]) => v);
 
 /** snap 到时间上最接近的选项，并列时取较长一档 */
 export function snapToDurationOption(minutes: number): number {

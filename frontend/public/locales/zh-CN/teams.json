@@ -441,5 +441,6 @@
   "posterMemberCount": "{current}/{max} 人",
   "posterLeaderLabel": "领队",
   "posterQrHint": "扫码加入队伍",
-  "posterGeneratingDesc": "正在生成精美海报..."
+  "posterGeneratingDesc": "正在生成精美海报...",
+  "durationRecommendedMarked": "（推荐）"
 }
