@@ -335,12 +335,25 @@ stories.get("/:id", async (c) => {
       isLiked = !!likeRecord;
     }
 
+    // task #155：详情必须返回 tags 关联——编辑表单据此回显，缺失会导致保存时 tags:[] 静默清空全部关联
+    const tagRows = await db
+      .select({ id: schema.tags.id, name: schema.tags.name })
+      .from(schema.entityToTags)
+      .innerJoin(schema.tags, eq(schema.entityToTags.tagId, schema.tags.id))
+      .where(
+        and(
+          eq(schema.entityToTags.entityId, id),
+          eq(schema.entityToTags.entityType, "story")
+        )
+      );
+
     return c.json({
       success: true,
       data: {
         ...story,
         viewCount: currentViewCount + 1,
         isLiked,
+        tags: tagRows,
         author: author
           ? {
               id: author.id,
