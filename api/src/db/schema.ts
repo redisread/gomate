@@ -135,6 +135,13 @@ export const locations = sqliteTable(
     address: text("address"),
     cityId: text("city_id").references(() => cities.id, { onDelete: "restrict" }).notNull(),
     cityName: text("city_name"),
+    // task #151（简化 Phase 1）：徒步参数扁平化到地点，从主路线回填（多路线取 MIN(created_at)）
+    // 均可空——无路线的地点（城市探索类等）天然无徒步参数
+    difficulty: text("difficulty"),
+    durationMin: integer("duration_min"),
+    durationMax: integer("duration_max"),
+    distance: real("distance"),
+    elevation: integer("elevation"),
     bestSeason: text("best_season").notNull(),
     coverImage: text("cover_image").notNull(),
     images: text("images").notNull(),
