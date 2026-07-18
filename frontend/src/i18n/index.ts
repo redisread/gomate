@@ -312,7 +312,7 @@ declare global {
 }
 
 /**
- * 获取当前 locale（从 URL 或 cookie 读取）
+ * 获取当前 locale（从 cookie 读取；无 cookie 时与 SSR 渲染保持一致）
  */
 export function getLocale(): Locale {
   // SSR 环境（无 document）：优先使用 Layout 注入的 locale
@@ -323,8 +323,12 @@ export function getLocale(): Locale {
   const match = document.cookie.match(/gomate_locale=(zh-CN|en)/);
   if (match) return match[1] as Locale;
 
-  const browserLang = navigator.language;
-  if (browserLang.startsWith("en")) return "en";
+  // task #162：无 cookie 时回退到 SSR 渲染的 locale（html lang 由 Layout 按
+  // middleware 决议写入），而非 navigator.language——后者在 Accept-Language
+  // 缺失/不一致时会与 SSR locale 分叉，造成整树 hydration mismatch
+  const htmlLang = document.documentElement.lang;
+  if ((SUPPORTED_LOCALES as string[]).includes(htmlLang)) return htmlLang as Locale;
+
   return DEFAULT_LOCALE;
 }
 

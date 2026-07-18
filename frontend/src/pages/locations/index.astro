@@ -9,7 +9,7 @@ import { API_BASE } from "../../lib/api";
 import type { LocationsListInitialData } from "../../components/features/locations/use-locations-list";
 import type { Location } from "../../lib/types";
 
-declareI18nNs(Astro.locals, ["locations", "filter", "content"]);
+declareI18nNs(Astro.locals, ["locations", "locationDetail", "filter", "content"]);
 
 async function fetchJson<T>(path: string): Promise<T | null> {
   try {
