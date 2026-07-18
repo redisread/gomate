@@ -34,8 +34,11 @@ export interface Location {
   cityName: string;
   difficulty?: "easy" | "moderate" | "hard" | "expert";
   duration?: string;
-  distance?: string;
-  elevation?: string;
+  /** task #152：徒步参数扁平化到 location（API 下发 number，单位：分钟/公里/米） */
+  durationMin?: number | null;
+  durationMax?: number | null;
+  distance?: string | number | null;
+  elevation?: string | number | null;
   equipmentNeeded?: string[];
   bestSeason: string[];
   coverImage: string;
@@ -48,6 +51,13 @@ export interface Location {
     facilities?: string[];  // ["parking", "restroom", "water", "food"]
     tips?: string | string[];
     warnings?: string[];
+    /** task #152：主路线攻略回填（0011 迁移），缺省字段为显式 null，按 falsy 隐藏 */
+    hiking?: {
+      overview?: string | null;
+      tips?: string[] | null;
+      equipmentNeeded?: string[] | null;
+      warnings?: string[] | null;
+    } | null;
   };
 
   // 关联的路线数组

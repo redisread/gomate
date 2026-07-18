@@ -29,7 +29,6 @@ export function CreateTeamClient() {
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [_selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
   const [_routes, setRoutes] = React.useState<Route[]>([]);
-  const [selectedRoute, setSelectedRoute] = React.useState<Route | null>(null);
   const [recommendedDuration, setRecommendedDuration] = React.useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
   const [hasWechat, setHasWechat] = React.useState(false);
@@ -80,7 +79,6 @@ export function CreateTeamClient() {
     if (!formData.locationId) {
       setSelectedLocation(null);
       setRoutes([]);
-      setSelectedRoute(null);
       setRecommendedDuration(null);
       durationManuallyEditedRef.current = false;
       return;
@@ -96,43 +94,27 @@ export function CreateTeamClient() {
           setRoutes(loc.routes || []);
           durationManuallyEditedRef.current = false; // 新地点，重置手动编辑标记
 
-          // 如果有路线，根据路线难度推荐时长
+          // routeId 仍默认第一条路线（teams.routeId 移除在 #154，选择器当前隐藏）
           if (loc.routes && loc.routes.length > 0) {
-            // 默认选择第一条路线
             const firstRoute = loc.routes[0];
-            setSelectedRoute(firstRoute);
             setFormData((prev) => ({ ...prev, routeId: firstRoute.id }));
+          } else {
+            setFormData((prev) => ({ ...prev, routeId: "" }));
+          }
 
-            // 计算推荐时长
-            const recommended = calculateRecommendedDuration(firstRoute);
+          // task #152 切源：时长推荐改读 location 自身字段（0010 回填）
+          const recommended = calculateRecommendedDuration(loc);
+          if (recommended != null) {
             setRecommendedDuration(recommended);
             setFormData((prev) => ({ ...prev, durationMin: String(recommended) }));
           } else {
-            // 无路线时，重置为默认值
             setRecommendedDuration(null);
-            setFormData((prev) => ({ ...prev, durationMin: String(defaultDuration), routeId: "" }));
-            setSelectedRoute(null);
+            setFormData((prev) => ({ ...prev, durationMin: String(defaultDuration) }));
           }
         }
       })
       .catch(() => {});
   }, [formData.locationId]);
-
-  // 当路线变化时，重新计算推荐时长
-  React.useEffect(() => {
-    if (!selectedRoute) {
-      durationManuallyEditedRef.current = false;
-      return;
-    }
-
-    const recommended = calculateRecommendedDuration(selectedRoute);
-    setRecommendedDuration(recommended);
-
-    // 如果用户没有手动修改时长，则自动更新为推荐值
-    if (!durationManuallyEditedRef.current) {
-      setFormData((prev) => ({ ...prev, durationMin: String(recommended) }));
-    }
-  }, [selectedRoute]);
 
   // 当用户手动修改时长时，标记为已手动编辑
   const handleDurationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -147,34 +129,17 @@ export function CreateTeamClient() {
   };
 
   /**
-   * 根据路线难度和时长推荐合适的活动时长（分钟）
+   * 根据地点的徒步参数推荐合适的活动时长（分钟）
+   * task #152 切源：读 location.durationMin/durationMax/difficulty（0010 回填）
+   * 无任何参数时返回 null（回退默认值 4 小时）
    */
-  const calculateRecommendedDuration = (route: Route): number => {
-    // 优先使用 durationMin/durationMax（如果有）
-    const routeWithDuration = route as Route & { durationMin?: number; durationMax?: number };
-    if (routeWithDuration.durationMin && routeWithDuration.durationMax) {
+  const calculateRecommendedDuration = (loc: Location): number | null => {
+    if (loc.durationMin && loc.durationMax) {
       // 取平均值
-      return Math.round((routeWithDuration.durationMin + routeWithDuration.durationMax) / 2);
+      return Math.round((loc.durationMin + loc.durationMax) / 2);
     }
-    if (routeWithDuration.durationMin) {
-      return routeWithDuration.durationMin;
-    }
-
-    // 从 route.duration 解析（格式如 "2-3 小时" 或 "4 小时"）
-    const durationStr = route.duration;
-    if (durationStr) {
-      const match = durationStr.match(/(\d+(?:\.\d+)?)\s*(-|~|至)\s*(\d+(?:\.\d+)?)\s*小时/);
-      if (match) {
-        const minHours = parseFloat(match[1]);
-        const maxHours = parseFloat(match[3]);
-        // 取平均值，转换为分钟
-        return Math.round(((minHours + maxHours) / 2) * 60);
-      }
-      // 单一值格式
-      const singleMatch = durationStr.match(/(\d+(?:\.\d+)?)\s*小时/);
-      if (singleMatch) {
-        return Math.round(parseFloat(singleMatch[1]) * 60);
-      }
+    if (loc.durationMin) {
+      return loc.durationMin;
     }
 
     // 根据难度推荐
@@ -184,7 +149,7 @@ export function CreateTeamClient() {
       hard: 420,      // 困难：7 小时
       expert: 600,    // 专家：10 小时
     };
-    return difficultyDuration[route.difficulty] || 240;
+    return (loc.difficulty && difficultyDuration[loc.difficulty]) || null;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

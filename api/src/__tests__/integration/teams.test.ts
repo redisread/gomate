@@ -513,4 +513,43 @@ describe("Teams API 集成测试", () => {
       expect(json.status).toBeNull();
     });
   });
+
+  describe("task #152 切源：teams 难度筛选读 location 字段", () => {
+    it("?difficulty= 按 location.difficulty 过滤", async () => {
+      const locModerate = await seedLocation(testDb, city.id, { name: "适中山", difficulty: "moderate" });
+      const locEasy = await seedLocation(testDb, city.id, { name: "轻松山", difficulty: "easy" });
+      await seedTeam(testDb, leader.id, locModerate.id, { title: "适中队" });
+      await seedTeam(testDb, leader.id, locEasy.id, { title: "轻松队" });
+
+      const res = await req(app, "/teams?difficulty=moderate");
+      expect(res.status).toBe(200);
+      const json = await res.json() as { teams: { title: string }[] };
+      expect(json.teams).toHaveLength(1);
+      expect(json.teams[0].title).toBe("适中队");
+    });
+
+    it("队伍详情 location 携带徒步参数字段", async () => {
+      const loc = await seedLocation(testDb, city.id, {
+        name: "参数山", difficulty: "hard", durationMin: 300, durationMax: 420,
+        distance: 8.5, elevation: 1200,
+      });
+      const team = await seedTeam(testDb, leader.id, loc.id, { title: "参数队" });
+
+      const res = await req(app, `/teams/${team.id}`);
+      expect(res.status).toBe(200);
+      const json = await res.json() as {
+        team: {
+          location: {
+            name: string; difficulty: string; durationMin: number;
+            durationMax: number; distance: number; elevation: number;
+          };
+        };
+      };
+      expect(json.team.location.difficulty).toBe("hard");
+      expect(json.team.location.durationMin).toBe(300);
+      expect(json.team.location.durationMax).toBe(420);
+      expect(json.team.location.distance).toBe(8.5);
+      expect(json.team.location.elevation).toBe(1200);
+    });
+  });
 });

@@ -98,7 +98,7 @@ queries.get("/", async (c) => {
 
     // ==================== view=card 轻量模式 ====================
     if (view === "card") {
-      // 只查询卡片需要的字段，不 join city/routes
+      // 只查询卡片需要的字段，不 join city；徒步参数读 location 自身字段（task #152 切源，不再 join routes）
       const locationList = await db
         .select({
           id: schema.locations.id,
@@ -110,6 +110,11 @@ queries.get("/", async (c) => {
           address: schema.locations.address,
           cityName: schema.locations.cityName,
           coverImage: schema.locations.coverImage,
+          difficulty: schema.locations.difficulty,
+          durationMin: schema.locations.durationMin,
+          durationMax: schema.locations.durationMax,
+          distance: schema.locations.distance,
+          elevation: schema.locations.elevation,
           createdAt: schema.locations.createdAt,
         })
         .from(schema.locations)
@@ -118,26 +123,6 @@ queries.get("/", async (c) => {
         .offset(offset);
 
       const locationIds = locationList.map((l) => l.id);
-
-      // 只取每个地点的第一条路线（难度和耗时用）
-      const firstRoutes = locationIds.length > 0
-        ? await db
-            .select({
-              locationId: schema.routes.locationId,
-              difficulty: schema.routes.difficulty,
-              durationMin: schema.routes.durationMin,
-              durationMax: schema.routes.durationMax,
-              distance: schema.routes.distance,
-              elevation: schema.routes.elevation,
-            })
-            .from(schema.routes)
-            .where(inArray(schema.routes.locationId, locationIds))
-        : [];
-
-      const routeByLocation: Record<string, typeof firstRoutes[0]> = {};
-      for (const r of firstRoutes) {
-        if (!routeByLocation[r.locationId]) routeByLocation[r.locationId] = r;
-      }
 
       // 只取每个地点第一个标签
       const firstTags = locationIds.length > 0
@@ -161,8 +146,8 @@ queries.get("/", async (c) => {
       }
 
       const formattedLocations = locationList.map((loc) => {
-        const route = routeByLocation[loc.id];
         const tag = firstTagByLocation[loc.id];
+        const hasParams = loc.difficulty != null || loc.durationMin != null || loc.distance != null;
         return {
           id: loc.id,
           name: loc.name,
@@ -173,14 +158,19 @@ queries.get("/", async (c) => {
           address: loc.address,
           cityName: loc.cityName,
           coverImage: loc.coverImage,
-          difficulty: route?.difficulty ?? null,
+          difficulty: loc.difficulty ?? null,
+          durationMin: loc.durationMin ?? null,
+          durationMax: loc.durationMax ?? null,
+          distance: loc.distance ?? null,
+          elevation: loc.elevation ?? null,
           tags: tag ? [{ name: tag.name, type: tag.type }] : [],
-          routes: route ? [{
-            difficulty: route.difficulty,
-            durationMin: route.durationMin,
-            durationMax: route.durationMax,
-            distance: route.distance,
-            elevation: route.elevation,
+          // 兼容字段：保持 routes[0] 形状与键不变，值改由 location 字段提供（值与 0010 回填的主路线一致）
+          routes: hasParams ? [{
+            difficulty: loc.difficulty,
+            durationMin: loc.durationMin,
+            durationMax: loc.durationMax,
+            distance: loc.distance,
+            elevation: loc.elevation,
           }] : [],
           createdAt: loc.createdAt,
         };
@@ -218,7 +208,6 @@ queries.get("/", async (c) => {
     }
 
     const formattedLocations = locationList.map((location) => {
-      const firstRoute = location.routes?.[0];
       return {
         id: location.id, name: location.name, slug: location.slug,
         type: location.type,
@@ -240,7 +229,12 @@ queries.get("/", async (c) => {
           createdAt: route.createdAt, updatedAt: route.updatedAt,
         })) || [],
         tags: tagsByLocation[location.id] || [],
-        difficulty: firstRoute?.difficulty,
+        // task #152 切源：徒步参数读 location 自身字段（0010 已回填，与主路线一致）
+        difficulty: location.difficulty,
+        durationMin: location.durationMin,
+        durationMax: location.durationMax,
+        distance: location.distance,
+        elevation: location.elevation,
         createdAt: location.createdAt, updatedAt: location.updatedAt,
       };
     });

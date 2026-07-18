@@ -3,6 +3,7 @@ import { MapPin, Mountain, ArrowRight, Clock, Route } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { DIFFICULTY_CONFIG } from "@/lib/constants";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
+import { formatRouteMetric, normalizeLocationHiking } from "@/components/features/location-detail/route-utils";
 import type { Location } from "@/lib/types";
 
 interface LocationCardProps {
@@ -17,8 +18,9 @@ interface LocationCardProps {
  * 仅当 location.id 变化时重新渲染
  */
 export const LocationCard = memo(function LocationCard({ location, index = 0 }: LocationCardProps) {
-  const { t } = useI18n(["locations"]);
-  const difficulty = location.difficulty ?? location.routes?.[0]?.difficulty;
+  const { t } = useI18n(["locations", "locationDetail"]);
+  // task #152 切源：徒步参数读 location 自身字段（0010 回填），不再读 routes[0]
+  const difficulty = location.difficulty;
   const diffConfig = difficulty ? DIFFICULTY_CONFIG[difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
   const firstTag = location.tags?.[0];
 
@@ -27,14 +29,14 @@ export const LocationCard = memo(function LocationCard({ location, index = 0 }: 
 
   // 使用 useMemo 缓存复杂计算
   const routeInfo = useMemo(() => {
-    const route = location.routes?.[0];
-    if (!route) return null;
+    const hiking = normalizeLocationHiking(location);
+    if (!hiking) return null;
     return {
-      duration: route.duration,
-      distance: route.distance,
-      elevation: route.elevation,
+      duration: formatRouteMetric(hiking.duration, t),
+      distance: hiking.distance?.value,
+      elevation: hiking.elevation?.value,
     };
-  }, [location.routes]);
+  }, [location, t]);
 
   return (
     <a href={`/locations/${location.id}`} className="block group">

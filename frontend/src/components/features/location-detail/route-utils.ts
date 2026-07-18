@@ -1,4 +1,4 @@
-import type { Location, Route } from "@/lib/types";
+import type { Location } from "@/lib/types";
 
 export type RouteMetricUnit = "hour" | "minute" | "kilometer" | "meter";
 
@@ -23,11 +23,20 @@ export interface NormalizedLocationRoute {
   };
 }
 
-type RouteRecord = Partial<Route> & {
+type RouteRecord = {
+  id?: string;
+  locationId?: string;
+  name?: string;
+  description?: string;
+  difficulty?: Location["difficulty"];
+  duration?: string;
   durationMin?: number | null;
   durationMax?: number | null;
   distance?: string | number | null;
   elevation?: string | number | null;
+  equipmentNeeded?: string[] | null;
+  warnings?: string[] | null;
+  routeGuide?: unknown;
   extra?: unknown;
 };
 
@@ -120,8 +129,7 @@ function normalizeRoute(route: RouteRecord): NormalizedLocationRoute {
   };
 }
 
-export function normalizeLocationRoutes(location: Location): NormalizedLocationRoute[] {
-  const routes = location.routes?.map((route) => normalizeRoute(route as RouteRecord)) ?? [];
+export function normalizeLocationRoutes(location: Location): NormalizedLocationRoute[] {  const routes = location.routes?.map((route) => normalizeRoute(route as RouteRecord)) ?? [];
   if (routes.length > 0) return routes;
 
   const fallback: RouteRecord = {
@@ -140,4 +148,40 @@ export function normalizeLocationRoutes(location: Location): NormalizedLocationR
   const hasAnyMetric = normalized.difficulty || normalized.duration || normalized.distance || normalized.elevation
     || normalized.equipmentNeeded.length > 0 || normalized.warnings.length > 0;
   return hasAnyMetric ? [normalized] : [];
+}
+
+/**
+ * task #152：从 location 自身字段构造「徒步攻略」区块数据（数据源已从 routes 切到 location）。
+ * 4 参数读 location 扁平化字段（0010 回填）；overview/tips/装备/注意事项读 extra.hiking（0011 回填）。
+ * 无任何内容时返回 null（区块整体不渲染）。
+ */
+export function normalizeLocationHiking(location: Location): NormalizedLocationRoute | null {
+  const hiking = location.extra?.hiking ?? undefined;
+  const normalized = normalizeRoute({
+    id: `${location.id}-hiking`,
+    locationId: location.id,
+    name: location.name,
+    difficulty: location.difficulty,
+    durationMin: location.durationMin,
+    durationMax: location.durationMax,
+    distance: location.distance,
+    elevation: location.elevation,
+    routeGuide: hiking ? { overview: hiking.overview ?? undefined, tips: hiking.tips ?? [] } : undefined,
+    equipmentNeeded: hiking?.equipmentNeeded ?? undefined,
+    warnings: hiking?.warnings ?? undefined,
+  });
+  const hasAnyMetric = normalized.difficulty || normalized.duration || normalized.distance || normalized.elevation;
+  const hasAnyNote = Boolean(normalized.routeGuide?.overview) || (normalized.routeGuide?.tips.length ?? 0) > 0
+    || normalized.equipmentNeeded.length > 0 || normalized.warnings.length > 0;
+  return hasAnyMetric || hasAnyNote ? normalized : null;
+}
+
+/** 把 RouteMetric 渲染为带单位的文本（单位走 locationDetail.metricUnits.* i18n） */
+export function formatRouteMetric(
+  metric: RouteMetric | undefined,
+  t: (key: string, vars?: Record<string, string | number>) => string
+): string | undefined {
+  if (!metric) return undefined;
+  const unit = metric.unit ? t(`locationDetail.metricUnits.${metric.unit}`) : "";
+  return unit ? `${metric.value} ${unit}` : metric.value;
 }
