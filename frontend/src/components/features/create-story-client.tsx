@@ -223,7 +223,7 @@ export function CreateStoryClient() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-40 border-b border-border/60 bg-white/95 backdrop-blur-sm">
+      <div className="sticky top-0 z-40 border-b border-border bg-card backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <a href="/discover" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" />
