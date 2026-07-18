@@ -52,11 +52,6 @@
   },
   "coverHint": "Click image to set as cover",
   "selectFromAlbum": "Or select from album below",
-  "poi": {
-    "createFailed": "Failed to create check-in point",
-    "updateFailed": "Failed to update check-in point",
-    "missingId": "Missing check-in point ID"
-  },
   "emptyState": {
     "teams": {
       "title": "No teams have set off yet",

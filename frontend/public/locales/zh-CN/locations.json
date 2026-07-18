@@ -71,8 +71,6 @@
   "navigateTooltip": "在高德地图中导航",
   "navigateBtn": "导航",
   "mapLoadFailed": "地图加载失败，请检查网络",
-  "poiEmpty": "暂无打卡点信息",
-  "poiLoading": "加载打卡点中...",
   "seasons": {
     "spring": {
       "label": "春季",

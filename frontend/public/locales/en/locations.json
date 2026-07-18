@@ -71,8 +71,6 @@
   "navigateTooltip": "Navigate in Amap",
   "navigateBtn": "Navigate",
   "mapLoadFailed": "Map failed to load, please check your network",
-  "poiEmpty": "No check-in point info yet",
-  "poiLoading": "Loading check-in points...",
   "seasons": {
     "spring": {
       "label": "Spring",
