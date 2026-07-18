@@ -18,7 +18,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const LOCALES_DIR = path.join(PROJECT_ROOT, "frontend", "public", "locales");
-const LOCALES = ["zh-CN", "en"];
+// task #158：ja 纳入 key 一致性校验（此前仅 zh-CN/en，漏 ja 的 key  CI 不拦截）
+const LOCALES = ["zh-CN", "en", "ja"];
 const BASE_LOCALE = "zh-CN";
 
 let errors = 0;
