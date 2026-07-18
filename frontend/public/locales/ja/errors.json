@@ -69,5 +69,6 @@
   "getTeamDetailFailed": "チーム詳細の取得に失敗しました",
   "networkRetry": "ネットワークエラー。後でもう一度お試しください",
   "getStatusFailed": "ステータスの取得に失敗しました",
-  "fetchApplicationsFailed": "申請リストの取得に失敗しました"
+  "fetchApplicationsFailed": "申請リストの取得に失敗しました",
+  "validationFailed": "入力検証に失敗しました。内容をご確認ください"
 }

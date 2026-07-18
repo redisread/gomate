@@ -373,7 +373,8 @@
       "coverTypeError": "JPGまたはPNG形式のみ対応しています",
       "errorBoundaryTitle": "ページでエラーが発生しました",
       "errorBoundaryDesc": "変更はローカル下書きとして自動保存されている可能性があります。再読み込み後に復元できます",
-      "errorBoundaryReload": "再読み込み"
+      "errorBoundaryReload": "再読み込み",
+      "draftInvalid": "ローカルの下書きが破損していたため破棄しました。現在の内容をもとに編集し直してください"
     }
   },
   "title": "GoMate - スポットを発見し、チームで同行",
