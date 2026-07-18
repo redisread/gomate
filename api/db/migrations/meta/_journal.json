@@ -36,6 +36,48 @@
       "when": 1779816000000,
       "tag": "0004_add_image_caches",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1783908801000,
+      "tag": "0005_add_stories",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1783908801000,
+      "tag": "0006_perf_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1783908801000,
+      "tag": "0007_add_user_story_likes",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1783908801000,
+      "tag": "0008_add_share_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1783908801000,
+      "tag": "0009_perf_composite_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1784372927000,
+      "tag": "0010_locations_hiking_fields",
+      "breakpoints": true
     }
   ]
 }

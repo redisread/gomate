@@ -7,7 +7,7 @@ import {
   uniqueIndex,
   primaryKey,
 } from "drizzle-orm/sqlite-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ==================== Tables ====================
 
@@ -351,6 +351,8 @@ export const userFavorites = sqliteTable(
     userIdx: index("user_favorites_user_idx").on(table.userId),
     entityIdx: index("user_favorites_entity_idx").on(table.entityType, table.entityId),
     uniqueFavorite: uniqueIndex("user_favorites_unique_idx").on(table.userId, table.entityType, table.entityId),
+    // 0009 已建的复合索引（补充声明，对齐 DB 现状，零 DB 变更）
+    userCreatedIdx: index("user_favorites_user_created_idx").on(table.userId, table.createdAt),
   })
 );
 
@@ -592,6 +594,8 @@ export const stories = sqliteTable(
     locationIdx: index("stories_location_idx").on(table.locationId),
     statusIdx: index("stories_status_idx").on(table.status),
     createdAtIdx: index("stories_created_at_idx").on(table.createdAt),
+    // 0009 已建的复合索引（补充声明，对齐 DB 现状，零 DB 变更）
+    statusCreatedAtIdx: index("stories_status_created_at_idx").on(table.status, table.createdAt),
   })
 );
 
@@ -614,7 +618,9 @@ export const userStoryLikes = sqliteTable(
   {
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
     storyId: text("story_id").references(() => stories.id, { onDelete: "cascade" }).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.storyId] }),
@@ -664,7 +670,9 @@ export const shareEvents = sqliteTable(
     entityId: text("entity_id").notNull(),
     shareChannel: text("share_channel").notNull(),
     userId: text("user_id"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
   },
   (table) => ({
     entityIdx: index("share_events_entity_idx").on(table.entityType, table.entityId),
