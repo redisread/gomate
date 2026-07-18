@@ -5,7 +5,7 @@ import { createAuth } from "../../lib/auth";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
-import { getTimeFilterRange, parseRequirements, getRouteTags } from "./utils";
+import { getTimeFilterRange, parseRequirements } from "./utils";
 import { formatBeijingDateTime } from "../../lib/date-utils";
 import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../../lib/cache";
 import { updateExpiredTeams } from "../../lib/team-status";
@@ -62,7 +62,6 @@ queries.get("/", async (c) => {
     const teamColumns = {
       id: schema.teams.id,
       locationId: schema.teams.locationId,
-      routeId: schema.teams.routeId,
       leaderId: schema.teams.leaderId,
       title: schema.teams.title,
       description: schema.teams.description,
@@ -86,7 +85,7 @@ queries.get("/", async (c) => {
     };
 
     type TeamRow = {
-      id: string; locationId: string; routeId: string | null; leaderId: string;
+      id: string; locationId: string; leaderId: string;
       title: string; description: string | null; startTime: Date; endTime: Date;
       durationMin: number | null; maxMembers: number; requirements: string | null;
       icon: string; status: string; createdAt: Date; updatedAt: Date;
@@ -313,7 +312,7 @@ queries.get("/", async (c) => {
 
 /** 格式化队伍行数据为前端所需格式 */
 function formatTeams(result: {
-  id: string; locationId: string; routeId: string | null; leaderId: string;
+  id: string; locationId: string; leaderId: string;
   title: string; description: string | null; startTime: Date; endTime: Date;
   durationMin: number | null; maxMembers: number; requirements: string | null;
   icon: string; status: string; createdAt: Date; updatedAt: Date;
@@ -331,7 +330,7 @@ function formatTeams(result: {
     );
     const requirements = parseRequirements(row.requirements);
     return {
-      id: row.id, locationId: row.locationId, routeId: row.routeId,
+      id: row.id, locationId: row.locationId,
       title: row.title, description: row.description || "",
       date, time, duration: `${durationHours}小时`,
       durationMin: row.durationMin || durationHours * 60,
@@ -367,15 +366,10 @@ queries.get("/:id", async (c) => {
 
     const teamWithRelations = await db.query.teams.findFirst({
       where: eq(schema.teams.id, teamId),
-      with: { leader: true, members: { with: { user: true } }, route: true, location: true },
+      with: { leader: true, members: { with: { user: true } }, location: true },
     });
 
     if (!teamWithRelations) return c.json(APIErrors.notFound("队伍不存在"), 404);
-
-    let routeTags: { id: string; name: string; type: string }[] = [];
-    if (teamWithRelations.routeId) {
-      routeTags = await getRouteTags(db, teamWithRelations.routeId);
-    }
 
     // 获取当前登录用户（可选）
     let currentUserId: string | null = null;
@@ -441,24 +435,12 @@ queries.get("/:id", async (c) => {
       success: true,
       team: {
         id: teamWithRelations.id, locationId: teamWithRelations.locationId,
-        routeId: teamWithRelations.routeId, title: teamWithRelations.title,
+        title: teamWithRelations.title,
         description: teamWithRelations.description || "", date, time,
         duration: `${durationHours}小时`, durationMin: durationMinutes,
         maxMembers: teamWithRelations.maxMembers, currentMembers,
         requirements: parseRequirements(teamWithRelations.requirements),
         status: teamWithRelations.status, createdAt: teamWithRelations.createdAt,
-        route: teamWithRelations.route
-          ? {
-              id: teamWithRelations.route.id,
-              name: teamWithRelations.route.name,
-              difficulty: teamWithRelations.route.difficulty,
-              durationMin: teamWithRelations.route.durationMin,
-              durationMax: teamWithRelations.route.durationMax,
-              distance: teamWithRelations.route.distance,
-              elevation: teamWithRelations.route.elevation,
-              tags: routeTags,
-            }
-          : undefined,
         location: teamWithRelations.location ? {
           id: teamWithRelations.location.id,
           name: teamWithRelations.location.name,

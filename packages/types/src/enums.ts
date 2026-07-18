@@ -38,10 +38,10 @@ export type UserGender = "male" | "female" | "other";
 export type CityLevel = "city" | "district";
 
 /** 标签类型 */
-export type TagType = "location" | "route" | "activity";
+export type TagType = "location" | "activity";
 
 /** 实体类型 */
-export type EntityType = "location" | "route" | "activity";
+export type EntityType = "location" | "activity";
 
 /** 地点类型 */
 export type LocationType = "hiking" | "explore" | "leisure" | "travel";

@@ -32,7 +32,7 @@ export interface City {
 export interface Tag {
   id: string;
   name: string;
-  type: "location" | "route" | "activity";
+  type: "location" | "activity";
 }
 
 /** 地点基础信息 */
@@ -59,42 +59,11 @@ export interface Location {
     tips?: string;
     warnings?: string[];
   };
-  routes?: Route[];
   tags?: Tag[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-/** 路线信息 */
-export interface Route {
-  id: string;
-  locationId: string;
-  cityId: string;
-  name: string;
-  description?: string;
-  difficulty: "easy" | "moderate" | "hard" | "expert";
-  duration: string;
-  durationMin?: number;
-  durationMax?: number;
-  distance: string;
-  elevation?: string;
-  routeGuide?: {
-    overview: string;
-    tips: string[];
-  };
-  waypoints?: {
-    name: string;
-    lat: number;
-    lng: number;
-    description: string;
-  }[];
-  equipmentNeeded?: string[];
-  warnings?: string[];
-  tags?: Tag[];
-  location?: Location;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
 
 /** 队伍成员 */
 export interface TeamMember {
@@ -117,7 +86,6 @@ export interface TeamMember {
 export interface Team {
   id: string;
   locationId: string;
-  routeId?: string;
   title: string;
   description: string;
   date: string;
@@ -144,7 +112,6 @@ export interface Team {
   status: "recruiting" | "full" | "formed" | "cancelled" | "completed";
   createdAt: Timestamp;
   members?: TeamMember[];
-  route?: Route;
   location?: Location;
 }
 

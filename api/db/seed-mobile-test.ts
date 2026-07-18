@@ -14,7 +14,7 @@
  * 
  * 功能覆盖：
  * - 认证：登录、注册、忘记密码、重置密码
- * - 地点：地点列表、地点详情、收藏、分享、POI 打卡点
+ * - 地点：地点列表、地点详情、收藏、分享
  * - 队伍：队伍列表、队伍详情、创建队伍、队伍管理、我的队伍
  * - 个人资料：个人资料、编辑资料、我的收藏、用户公开资料
  * - 反馈建议、信息页模块
@@ -228,34 +228,14 @@ async function main() {
     console.log(`Created city: ${city.name}`);
   }
   
-  // ==================== 创建标签 ====================
-  console.log("\n=== Creating Tags ===");
-  
-  const tags = [
-    { id: genId("tag_seaside"), name: "海边", type: "location" as const },
-    { id: genId("tag_mountain"), name: "山地", type: "location" as const },
-    { id: genId("tag_forest"), name: "森林", type: "location" as const },
-    { id: genId("tag_city"), name: "城市探索", type: "location" as const },
-    { id: genId("tag_easy"), name: "入门级", type: "route" as const },
-    { id: genId("tag_hard"), name: "挑战级", type: "route" as const },
-    { id: genId("tag_sunrise"), name: "日出", type: "activity" as const },
-    { id: genId("tag_night"), name: "夜徒", type: "activity" as const },
-  ];
-  
-  for (const tag of tags) {
-    await db.insert(schema.tags).values({
-      ...tag,
-      createdAt: now,
-    });
-    console.log(`Created tag: ${tag.name} (${tag.type})`);
-  }
-  
   // ==================== 创建地点 ====================
   console.log("\n=== Creating Locations ===");
-  
+
   const shenzhenCity = cities.find(c => c.name === "深圳")!;
   const guangzhouCity = cities.find(c => c.name === "广州")!;
-  
+
+  // task #154：徒步参数直接挂 location 扁平字段（对齐 prod 0010）+ extra.hiking（对齐 0011）
+  // 银梅湖无参数 = 空态样本
   const locations = [
     {
       id: genId("loc_qingshuiwan"),
@@ -274,6 +254,19 @@ async function main() {
         "https://gomate.cos.jiahongw.com/locations/qingshuiwan-2.jpg",
       ]),
       coordinates: JSON.stringify({ lat: 22.5, lng: 113.9 }),
+      difficulty: "easy" as const,
+      durationMin: 60,
+      durationMax: 90,
+      distance: 3.5,
+      elevation: 50,
+      extra: JSON.stringify({
+        hiking: {
+          overview: "沿着清水湾海岸线漫步，欣赏海景，体验海风拂面。",
+          tips: ["穿防滑鞋", "注意潮汐"],
+          equipmentNeeded: ["防滑鞋", "防晒霜", "水"],
+          warnings: ["注意潮汐变化", "海边风大"],
+        },
+      }),
     },
     {
       id: genId("loc_wutongshan"),
@@ -292,6 +285,19 @@ async function main() {
         "https://gomate.cos.jiahongw.com/locations/wutongshan-2.jpg",
       ]),
       coordinates: JSON.stringify({ lat: 22.6, lng: 114.2 }),
+      difficulty: "moderate" as const,
+      durationMin: 120,
+      durationMax: 300,
+      distance: 8,
+      elevation: 900,
+      extra: JSON.stringify({
+        hiking: {
+          overview: "南门半山亭线坡度平缓适合新手；北门直达山顶为挑战线，需要体力。",
+          tips: ["坡度平缓线沿途有休息点", "挑战线坡度陡峭", "注意天气", "带够水"],
+          equipmentNeeded: ["登山鞋", "登山杖", "充足的水", "食物"],
+          warnings: ["陡峭路段", "天气变化快", "建议结伴"],
+        },
+      }),
     },
     {
       id: genId("loc_yinmeihu"),
@@ -326,9 +332,22 @@ async function main() {
         "https://gomate.cos.jiahongw.com/locations/baiyunshan-1.jpg",
       ]),
       coordinates: JSON.stringify({ lat: 23.2, lng: 113.3 }),
+      difficulty: "moderate" as const,
+      durationMin: 180,
+      durationMax: 240,
+      distance: 6,
+      elevation: 350,
+      extra: JSON.stringify({
+        hiking: {
+          overview: "白云山主路线，沿途有多个观景点，步道完善。",
+          tips: ["步道完善", "沿途有商店"],
+          equipmentNeeded: ["运动鞋", "水"],
+          warnings: ["周末人多"],
+        },
+      }),
     },
   ];
-  
+
   for (const loc of locations) {
     await db.insert(schema.locations).values({
       ...loc,
@@ -337,104 +356,29 @@ async function main() {
     });
     console.log(`Created location: ${loc.name} (${loc.cityName})`);
   }
-  
-  // ==================== 创建路线 ====================
-  console.log("\n=== Creating Routes ===");
-  
+
   const qingshuiwanLoc = locations.find(l => l.name === "清水湾")!;
   const wutongshanLoc = locations.find(l => l.name === "梧桐山")!;
   const baiyunshanLoc = locations.find(l => l.name === "白云山")!;
+
+  // ==================== 创建标签 ====================
+  console.log("\n=== Creating Tags ===");
   
-  const routes = [
-    {
-      id: genId("route_qingshuiwan_coast"),
-      locationId: qingshuiwanLoc.id,
-      cityId: shenzhenCity.id,
-      name: "清水湾海岸线徒步",
-      description: "沿着清水湾海岸线漫步，欣赏海景，体验海风拂面。",
-      difficulty: "easy" as const,
-      durationMin: 60,
-      durationMax: 90,
-      distance: 3.5,
-      elevation: 50,
-      routeGuide: JSON.stringify({
-        waypoints: ["起点", "海滩", "观景点", "终点"],
-        notes: ["穿防滑鞋", "注意潮汐"],
-      }),
-      extra: JSON.stringify({
-        equipmentNeeded: ["防滑鞋", "防晒霜", "水"],
-        warnings: ["注意潮汐变化", "海边风大"],
-      }),
-    },
-    {
-      id: genId("route_wutongshan_easy"),
-      locationId: wutongshanLoc.id,
-      cityId: shenzhenCity.id,
-      name: "梧桐山轻松线",
-      description: "梧桐山的入门路线，适合新手和亲子徒步。",
-      difficulty: "easy" as const,
-      durationMin: 120,
-      durationMax: 150,
-      distance: 5,
-      elevation: 200,
-      routeGuide: JSON.stringify({
-        waypoints: ["梧桐山南门", "半山亭", "观景台"],
-        notes: ["坡度平缓", "沿途有休息点"],
-      }),
-      extra: JSON.stringify({
-        equipmentNeeded: ["登山鞋", "水", "零食"],
-        warnings: ["注意天气", "带够水"],
-      }),
-    },
-    {
-      id: genId("route_wutongshan_hard"),
-      locationId: wutongshanLoc.id,
-      cityId: shenzhenCity.id,
-      name: "梧桐山挑战线",
-      description: "梧桐山的挑战路线，直达山顶，适合有经验的徒步者。",
-      difficulty: "hard" as const,
-      durationMin: 240,
-      durationMax: 300,
-      distance: 8,
-      elevation: 900,
-      routeGuide: JSON.stringify({
-        waypoints: ["梧桐山北门", "瀑布", "山顶"],
-        notes: ["坡度陡峭", "需要体力"],
-      }),
-      extra: JSON.stringify({
-        equipmentNeeded: ["登山鞋", "登山杖", "充足的水", "食物"],
-        warnings: ["陡峭路段", "天气变化快", "建议结伴"],
-      }),
-    },
-    {
-      id: genId("route_baiyunshan_main"),
-      locationId: baiyunshanLoc.id,
-      cityId: guangzhouCity.id,
-      name: "白云山主路线",
-      description: "白云山的主路线，沿途有多个观景点。",
-      difficulty: "moderate" as const,
-      durationMin: 180,
-      durationMax: 240,
-      distance: 6,
-      elevation: 350,
-      routeGuide: JSON.stringify({
-        waypoints: ["白云山南门", "摩星岭", "山顶公园"],
-        notes: ["步道完善", "沿途有商店"],
-      }),
-      extra: JSON.stringify({
-        equipmentNeeded: ["运动鞋", "水"],
-        warnings: ["周末人多"],
-      }),
-    },
+  const tags = [
+    { id: genId("tag_seaside"), name: "海边", type: "location" as const },
+    { id: genId("tag_mountain"), name: "山地", type: "location" as const },
+    { id: genId("tag_forest"), name: "森林", type: "location" as const },
+    { id: genId("tag_city"), name: "城市探索", type: "location" as const },
+    { id: genId("tag_sunrise"), name: "日出", type: "activity" as const },
+    { id: genId("tag_night"), name: "夜徒", type: "activity" as const },
   ];
   
-  for (const route of routes) {
-    await db.insert(schema.routes).values({
-      ...route,
+  for (const tag of tags) {
+    await db.insert(schema.tags).values({
+      ...tag,
       createdAt: now,
-      updatedAt: now,
     });
-    console.log(`Created route: ${route.name} (${route.difficulty})`);
+    console.log(`Created tag: ${tag.name} (${tag.type})`);
   }
   
   // ==================== 创建队伍 ====================
@@ -443,10 +387,6 @@ async function main() {
   const leaderA = users.find(u => u.email === "leader_a@test.com")!;
   const leaderB = users.find(u => u.email === "leader_b@test.com")!;
   
-  const qingshuiwanRoute = routes.find(r => r.name === "清水湾海岸线徒步")!;
-  const wutongshanEasyRoute = routes.find(r => r.name === "梧桐山轻松线")!;
-  const wutongshanHardRoute = routes.find(r => r.name === "梧桐山挑战线")!;
-  const baiyunshanRoute = routes.find(r => r.name === "白云山主路线")!;
   
   // 创建不同状态的队伍
   const teams = [
@@ -454,7 +394,6 @@ async function main() {
     {
       id: genId("team_recruiting_1"),
       locationId: qingshuiwanLoc.id,
-      routeId: qingshuiwanRoute.id,
       leaderId: leaderA.id,
       title: "周末清水湾海岸线徒步",
       description: "本周六一起去清水湾徒步，感受海风拂面的惬意，适合新手参加。",
@@ -470,7 +409,6 @@ async function main() {
     {
       id: genId("team_recruiting_2"),
       locationId: wutongshanLoc.id,
-      routeId: wutongshanEasyRoute.id,
       leaderId: leaderB.id,
       title: "梧桐山轻松线体验",
       description: "梧桐山入门路线，适合新手和家庭，路线平缓风景优美。",
@@ -486,7 +424,6 @@ async function main() {
     {
       id: genId("team_full_1"),
       locationId: wutongshanLoc.id,
-      routeId: wutongshanHardRoute.id,
       leaderId: leaderB.id,
       title: "梧桐山挑战线登山",
       description: "挑战梧桐山山顶，适合有经验的徒步者，需要一定体力。",
@@ -502,7 +439,6 @@ async function main() {
     {
       id: genId("team_formed_1"),
       locationId: baiyunshanLoc.id,
-      routeId: baiyunshanRoute.id,
       leaderId: leaderA.id,
       title: "白云山周末徒步",
       description: "已组建队伍，准备出发白云山。",
@@ -518,7 +454,6 @@ async function main() {
     {
       id: genId("team_completed_1"),
       locationId: qingshuiwanLoc.id,
-      routeId: qingshuiwanRoute.id,
       leaderId: leaderA.id,
       title: "上周清水湾徒步",
       description: "已完成的清水湾徒步活动。",
@@ -534,7 +469,6 @@ async function main() {
     {
       id: genId("team_cancelled_1"),
       locationId: wutongshanLoc.id,
-      routeId: wutongshanEasyRoute.id,
       leaderId: leaderB.id,
       title: "梧桐山徒步（已取消）",
       description: "因天气原因取消的梧桐山徒步活动。",

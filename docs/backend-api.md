@@ -103,7 +103,6 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 ```json
 {
   "locationId": "loc-xxx",
-  "routeId": "route-xxx",
   "title": "周末徒步",
   "description": "一起体验自然",
   "date": "2026-03-28",
@@ -121,7 +120,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 获取队伍详情
 
 - **认证：** 否（已登录则返回用户权限信息）
-- **响应：** 完整队伍数据 + 成员列表 + 路线详情
+- **响应：** 完整队伍数据 + 成员列表 + 地点详情
 
 ### PUT `/teams/:id`
 
@@ -274,9 +273,13 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
       "images": ["url1", "url2"],
       "bestSeason": ["春", "秋"],
       "coordinates": { "lat": 22.5, "lng": 113.9 },
-      "routes": [{ "id", "name", "difficulty", "distance" }],
       "tags": [{ "id", "name", "type" }],
-      "difficulty": "moderate"
+      "difficulty": "moderate",
+      "durationMin": 120,
+      "durationMax": 180,
+      "distance": 5.5,
+      "elevation": 700,
+      "extra": { "hiking": { "overview": "...", "tips": ["..."], "equipmentNeeded": ["..."], "warnings": ["..."] } }
     }
   ],
   "pagination": { "page": 1, "pageSize": 12, "total": 50, "totalPages": 5 }
@@ -403,66 +406,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 
 ---
 
-## 5. 登山路线 `/routes`（别名 `/hiking-routes`）
-
-### GET `/routes`
-
-获取路线列表
-
-- **认证：** 否
-- **Query 参数：** `locationId`、`cityId`、`difficulty`、`limit`、`offset`
-- **响应：**
-
-```json
-{
-  "success": true,
-  "routes": [
-    {
-      "id": "route-xxx",
-      "locationId": "loc-xxx",
-      "name": "东冲西冲穿越",
-      "difficulty": "moderate",
-      "durationMin": 180,
-      "durationMax": 240,
-      "distance": 12.5,
-      "elevation": 450,
-      "equipmentNeeded": ["登山鞋", "防晒"],
-      "warnings": ["陡峭路段", "无信号"],
-      "tags": [...],
-      "pois": [{ "id", "name", "category", "roleType", "order", "coordinates" }]
-    }
-  ]
-}
-```
-
-### POST `/routes`
-
-创建路线
-
-- **认证：** 是（仅管理员）
-- **Body：** `{ "locationId", "cityId", "name", "description", "difficulty", "durationMin", "durationMax", "distance", "elevation", "routeGuide", "equipmentNeeded", "warnings", "tagIds" }`
-
-### GET `/routes/:id`
-
-获取路线详情（含 POI 列表 + 标签）
-
-- **认证：** 否
-
-### PUT `/routes/:id`
-
-更新路线
-
-- **认证：** 是（仅管理员）
-
-### DELETE `/routes/:id`
-
-删除路线
-
-- **认证：** 是（仅管理员）
-
----
-
-## 6. 文件上传 `/upload`
+## 5. 文件上传 `/upload`
 
 ### POST `/upload/avatar`
 
@@ -499,7 +443,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 7. 发现故事 `/stories`
+## 6. 发现故事 `/stories`
 
 ### GET `/stories`
 
@@ -564,14 +508,14 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 8. 收藏管理 `/favorites`
+## 7. 收藏管理 `/favorites`
 
 ### GET `/favorites`
 
 获取收藏列表
 
 - **认证：** 是
-- **Query：** `entityType`（location\|route，可选）
+- **Query：** `entityType`（location\|story，可选）
 - **响应：** `{ "success": true, "favorites": [{ "id", "entityType", "entityId", "createdAt", "location": {...} }] }`
 
 ### POST `/favorites`
@@ -589,7 +533,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 9. 城市管理 `/cities`
+## 8. 城市管理 `/cities`
 
 ### GET `/cities`
 
@@ -608,14 +552,14 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 10. 标签管理 `/tags`
+## 9. 标签管理 `/tags`
 
 ### GET `/tags`
 
 获取标签列表
 
 - **认证：** 否
-- **Query：** `type`（location\|route\|activity）、`limit`、`offset`
+- **Query：** `type`（location\|activity）、`limit`、`offset`
 - **响应：** `{ "success": true, "tags": [{ "id", "name", "type" }] }`
 
 ### POST `/tags`
@@ -628,98 +572,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 11. 打卡点管理 `/pois`
-
-### GET `/pois`
-
-获取打卡点列表（支持搜索）
-
-- **认证：** 否
-- **Query：** `search`（关键词，模糊匹配名称和分类）、`limit`（默认 50，最大 200）
-- **响应：**
-
-```json
-{
-  "success": true,
-  "pois": [
-    {
-      "id": "poi-xxx",
-      "name": "山顶观景台",
-      "description": "可俯瞰整个海湾",
-      "category": "观景点",
-      "coordinates": { "lat": 22.5431, "lng": 114.0579 }
-    }
-  ]
-}
-```
-
-### GET `/pois/:id`
-
-获取单个打卡点详情
-
-- **认证：** 否
-- **响应：**
-
-```json
-{
-  "success": true,
-  "poi": {
-    "id": "poi-xxx",
-    "name": "山顶观景台",
-    "description": "可俯瞰整个海湾",
-    "category": "观景点",
-    "coordinates": { "lat": 22.5431, "lng": 114.0579 },
-    "images": [],
-    "extra": null,
-    "createdAt": "2026-03-28T10:00:00Z",
-    "updatedAt": "2026-03-28T10:00:00Z"
-  }
-}
-```
-
-### POST `/pois`
-
-创建打卡点
-
-- **认证：** 是（仅管理员）
-- **Body：**
-
-```json
-{
-  "name": "山顶观景台",
-  "coordinates": { "lat": 22.5431, "lng": 114.0579 },
-  "description": "可俯瞰整个海湾",
-  "category": "观景点",
-  "images": []
-}
-```
-
-- **验证：**
-  - `name`: 必填，最大 50 字符
-  - `coordinates`: 必填，格式 `{ lat: number, lng: number }`，纬度 -90~90，经度 -180~180
-  - `description`: 可选，最大 500 字符
-  - `category`: 可选，最大 30 字符
-- **响应：** `{ "success": true, "poiId": "poi-xxx" }`
-
-### PUT `/pois/:id`
-
-更新打卡点
-
-- **认证：** 是（仅管理员）
-- **Body：** `{ "name", "coordinates", "description", "category", "images" }`（所有字段可选）
-- **响应：** `{ "success": true }`
-
-### DELETE `/pois/:id`
-
-删除打卡点
-
-- **认证：** 是（仅管理员）
-- **行为：** 级联删除 `entityToPois` 表中所有关联记录
-- **响应：** `{ "success": true, "removedAssociations": 3 }`
-
----
-
-## 12. 联系表单 `/contact`
+## 10. 联系表单 `/contact`
 
 ### POST `/contact`
 
@@ -732,7 +585,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 13. 管理工具 `/admin`
+## 11. 管理工具 `/admin`
 
 ### POST `/admin/clear-rate-limit`
 
@@ -743,7 +596,7 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 14. 健康检查
+## 12. 健康检查
 
 ### GET `/health`
 

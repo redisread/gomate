@@ -15,9 +15,6 @@
   "favorite": "お気に入り",
   "unfavorite": "お気に入りを解除",
   "routeSummarySubtitle": "ルート、所要時間、強度を確認してから一緒に出発するか決めましょう",
-  "routeOptions": "{count} ルート",
-  "recommendedRoute": "おすすめ",
-  "routeCardAria": "ルート {name} を選択",
   "routeTips": "ルートのヒント",
   "addressAndRelated": "住所とおすすめ",
   "metricUnits": {

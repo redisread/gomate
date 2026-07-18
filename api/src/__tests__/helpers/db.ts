@@ -107,23 +107,6 @@ export function createTestDb() {
       updated_at INTEGER NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS routes (
-      id TEXT PRIMARY KEY,
-      location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
-      city_id TEXT NOT NULL REFERENCES cities(id) ON DELETE RESTRICT,
-      name TEXT NOT NULL,
-      description TEXT,
-      difficulty TEXT NOT NULL,
-      duration_min INTEGER NOT NULL,
-      duration_max INTEGER NOT NULL,
-      distance REAL NOT NULL,
-      elevation INTEGER,
-      route_guide TEXT,
-      extra TEXT,
-      created_at INTEGER NOT NULL,
-      updated_at INTEGER NOT NULL
-    );
-
     CREATE TABLE IF NOT EXISTS tags (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL UNIQUE,
@@ -143,7 +126,6 @@ export function createTestDb() {
     CREATE TABLE IF NOT EXISTS teams (
       id TEXT PRIMARY KEY,
       location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
-      route_id TEXT REFERENCES routes(id) ON DELETE SET NULL,
       leader_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
       description TEXT,

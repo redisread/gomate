@@ -15,9 +15,6 @@
   "favorite": "Favorite",
   "unfavorite": "Unfavorite",
   "routeSummarySubtitle": "Choose the route, time, and intensity before deciding how to go together",
-  "routeOptions": "{count} routes",
-  "recommendedRoute": "Recommended",
-  "routeCardAria": "Select route {name}",
   "routeTips": "Route Tips",
   "addressAndRelated": "Address & Recommendations",
   "metricUnits": {

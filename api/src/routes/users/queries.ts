@@ -307,7 +307,7 @@ queries.get("/teams/joined", async (c) => {
     const result = await db
       .with(teamMemberCounts)
       .select({
-        id: schema.teams.id, locationId: schema.teams.locationId, routeId: schema.teams.routeId,
+        id: schema.teams.id, locationId: schema.teams.locationId,
         leaderId: schema.teams.leaderId, title: schema.teams.title, description: schema.teams.description,
         startTime: schema.teams.startTime, endTime: schema.teams.endTime, durationMin: schema.teams.durationMin,
         maxMembers: schema.teams.maxMembers, requirements: schema.teams.requirements,
@@ -333,7 +333,7 @@ queries.get("/teams/joined", async (c) => {
       let requirements: string[] = [];
       try { if (row.requirements) requirements = JSON.parse(row.requirements); } catch { /* ignore */ }
       return {
-        id: row.id, locationId: row.locationId, routeId: row.routeId, title: row.title,
+        id: row.id, locationId: row.locationId, title: row.title,
         description: row.description || "", date, time, duration: `${durationHours}小时`,
         durationMin: row.durationMin || durationHours * 60, maxMembers: row.maxMembers,
         currentMembers: row.currentMembers, icon: row.icon || "⛰️", requirements,
@@ -391,7 +391,7 @@ queries.get("/created-teams", async (c) => {
     const result = await db
       .with(teamMemberCounts)
       .select({
-        id: schema.teams.id, locationId: schema.teams.locationId, routeId: schema.teams.routeId,
+        id: schema.teams.id, locationId: schema.teams.locationId,
         leaderId: schema.teams.leaderId, title: schema.teams.title, description: schema.teams.description,
         startTime: schema.teams.startTime, endTime: schema.teams.endTime, durationMin: schema.teams.durationMin,
         maxMembers: schema.teams.maxMembers, requirements: schema.teams.requirements,
@@ -417,7 +417,7 @@ queries.get("/created-teams", async (c) => {
       let requirements: string[] = [];
       try { if (row.requirements) requirements = JSON.parse(row.requirements); } catch { /* ignore */ }
       return {
-        id: row.id, locationId: row.locationId, routeId: row.routeId, title: row.title,
+        id: row.id, locationId: row.locationId, title: row.title,
         description: row.description || "", date, time, duration: `${durationHours}小时`,
         durationMin: row.durationMin || durationHours * 60, maxMembers: row.maxMembers,
         currentMembers: row.currentMembers, icon: row.icon || "⛰️", requirements,

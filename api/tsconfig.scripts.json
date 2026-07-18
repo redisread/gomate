@@ -1,0 +1,9 @@
+{
+  "//": "db/ 脚本（seed/sync 等）专用——task #154 盲区根治：db 脚本不在主 tsconfig include 内，逃出类型检查已咬三次（#153 seed、#154 seed locations 段、sync-locations routes 残留）",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "include": ["db/**/*.ts"]
+}
