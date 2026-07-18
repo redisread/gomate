@@ -339,12 +339,35 @@
       "removeTag": "Remove {tag} tag",
       "submit": "Publish story",
       "submitting": "Publishing...",
-      "submitFailed": "Failed to publish story"
+      "submitFailed": "Failed to publish story",
+      "coverPlaceholder": "Click to upload cover image"
+    },
+    "edit": {
+      "titlePlaceholder": "Story title",
+      "summaryPlaceholder": "Short description...",
+      "contentPlaceholder": "Write your story in Markdown...",
+      "statusLabel": "Status",
+      "statusPublished": "Published",
+      "statusDraft": "Draft",
+      "coverFormatHint": "JPG/PNG, ≤2MB",
+      "locationSearchPlaceholder": "Search locations...",
+      "removeLocation": "Remove related location",
+      "tagsCountHint": "{count}/10 max",
+      "draftBanner": "Unsaved draft detected",
+      "restoreDraft": "Restore draft",
+      "discardDraft": "Discard",
+      "cancelTitle": "Discard changes?",
+      "cancelDesc": "Your current changes will not be saved",
+      "continueEditing": "Keep editing",
+      "discardConfirm": "Discard",
+      "expandMore": "Show more (status/cover/location/tags)",
+      "collapseMore": "Show less"
     }
   },
   "title": "GoMate - Discover Places, Team Up Together",
   "description": "GoMate is a minimalist \"location team-up\" platform, helping outdoor enthusiasts find like-minded hiking companions.",
   "titleSuffix": " - GoMate",
+  "writeStories": "Write your story in Markdown...",
   "seo_pages": {
     "home": "Home",
     "locations": "Explore Locations",
@@ -368,6 +391,8 @@
     "help": "Help Center",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "adminLocations": "Manage Locations"
+    "adminLocations": "Manage Locations",
+    "storyCreate": "Publish Story - GoMate",
+    "storyEdit": "Edit Story - GoMate"
   }
 }
