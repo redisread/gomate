@@ -52,11 +52,6 @@
   },
   "coverHint": "点击图片可设为封面",
   "selectFromAlbum": "或从下方相册选择",
-  "poi": {
-    "createFailed": "创建打卡点失败",
-    "updateFailed": "更新打卡点失败",
-    "missingId": "缺少打卡点 ID"
-  },
   "emptyState": {
     "teams": {
       "title": "还没有队伍出发",

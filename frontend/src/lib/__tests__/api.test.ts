@@ -249,43 +249,4 @@ describe("API 客户端封装", () => {
       await expect(apiDelete("/items/1")).rejects.toThrow("API DELETE /items/1 failed: 403");
     });
   });
-
-  describe("getLocationPois", () => {
-    it("成功时返回 POI 列表", async () => {
-      // Arrange
-      mockFetch.mockResolvedValue(new Response(JSON.stringify({ pois: [{ id: "1", name: "POI" }] }), { status: 200 }));
-      const { getLocationPois } = await import("@/lib/api");
-
-      // Act
-      const result = await getLocationPois("loc1");
-
-      // Assert
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe("POI");
-    });
-
-    it("失败时返回空数组", async () => {
-      // Arrange
-      mockFetch.mockResolvedValue(new Response("", { status: 500 }));
-      const { getLocationPois } = await import("@/lib/api");
-
-      // Act
-      const result = await getLocationPois("loc1");
-
-      // Assert
-      expect(result).toEqual([]);
-    });
-
-    it("异常时也返回空数组", async () => {
-      // Arrange
-      mockFetch.mockRejectedValue(new Error("network error"));
-      const { getLocationPois } = await import("@/lib/api");
-
-      // Act
-      const result = await getLocationPois("loc1");
-
-      // Assert
-      expect(result).toEqual([]);
-    });
-  });
 });

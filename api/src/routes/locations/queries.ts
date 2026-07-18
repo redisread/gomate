@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { logger } from "../../lib/logger";
-import { eq, like, and, sql, inArray, asc } from "drizzle-orm";
+import { eq, like, and, sql, inArray } from "drizzle-orm";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
@@ -318,64 +318,6 @@ queries.get("/:id", async (c) => {
   } catch (error) {
     logger.error("Get location error:", error);
     return c.json(APIErrors.internalError("获取地点详情失败"), 500);
-  }
-});
-
-/**
- * GET /locations/:id/pois
- * 获取地点关联的打卡点（POI）列表
- */
-queries.get("/:id/pois", async (c) => {
-  try {
-    const idOrSlug = c.req.param("id");
-    const db = createDb(c.env.DB);
-
-    // 验证地点存在
-    let location = await db.query.locations.findFirst({
-      where: eq(schema.locations.id, idOrSlug),
-      columns: { id: true },
-    });
-
-    if (!location) {
-      location = await db.query.locations.findFirst({
-        where: eq(schema.locations.slug, idOrSlug),
-        columns: { id: true },
-      });
-    }
-
-    if (!location) return c.json(APIErrors.notFound("地点不存在"), 404);
-
-    // 查询地点关联的 POI（entityType = "location"）
-    const locationPois = await db
-      .select({ poi: schema.pois, role: schema.entityToPois })
-      .from(schema.entityToPois)
-      .innerJoin(schema.pois, eq(schema.entityToPois.poiId, schema.pois.id))
-      .where(
-        and(
-          eq(schema.entityToPois.entityType, "location"),
-          eq(schema.entityToPois.entityId, location.id)
-        )
-      )
-      .orderBy(asc(schema.entityToPois.order));
-
-    const pois = locationPois.map(({ poi, role }) => ({
-      id: poi.id,
-      name: poi.name,
-      description: poi.description,
-      coordinates: poi.coordinates ? JSON.parse(poi.coordinates) : null,
-      images: poi.images ? JSON.parse(poi.images) : [],
-      extra: poi.extra ? JSON.parse(poi.extra) : null,
-      order: role.order,
-      roleType: role.roleType,
-      roleSpecificData: role.roleSpecificData
-        ? JSON.parse(role.roleSpecificData)
-        : null,
-    }));
-
-    return c.json({ success: true, pois });
-  } catch (error) {
-    logger.error("Get location pois error:", error);
-    return c.json(APIErrors.internalError("获取打卡点失败"), 500);
   }
 });
 

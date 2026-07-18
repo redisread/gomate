@@ -1,7 +1,7 @@
 import { APIErrors } from "../lib/api-errors";
 import { logger } from "../lib/logger";
 import { Hono } from "hono";
-import { eq, and, inArray, asc, sql } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { createAuth, type Env } from "../lib/auth";
@@ -236,26 +236,6 @@ hikingRoutes.get("/:id", async (c) => {
     // 获取标签
     const tagsMap = await getRoutesTags(db, [id]);
 
-    // 获取 POI
-    const routePois = await db
-      .select({ poi: schema.pois, role: schema.entityToPois })
-      .from(schema.entityToPois)
-      .innerJoin(schema.pois, eq(schema.entityToPois.poiId, schema.pois.id))
-      .where(and(eq(schema.entityToPois.entityType, "route"), eq(schema.entityToPois.entityId, id)))
-      .orderBy(asc(schema.entityToPois.order));
-
-    const formattedPois = routePois.map(({ poi, role }) => ({
-      id: poi.id,
-      name: poi.name,
-      description: poi.description,
-      coordinates: poi.coordinates ? JSON.parse(poi.coordinates) : null,
-      images: poi.images ? JSON.parse(poi.images) : [],
-      extra: poi.extra ? JSON.parse(poi.extra) : null,
-      order: role.order,
-      roleType: role.roleType,
-      roleSpecificData: role.roleSpecificData ? JSON.parse(role.roleSpecificData) : null,
-    }));
-
     const extra = route.extra ? JSON.parse(route.extra) : {};
 
     return c.json({
@@ -278,7 +258,6 @@ hikingRoutes.get("/:id", async (c) => {
         tags: tagsMap[id] || [],
         location,
         city,
-        pois: formattedPois,
         createdAt: route.createdAt,
         updatedAt: route.updatedAt,
       },

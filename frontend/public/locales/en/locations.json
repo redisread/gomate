@@ -71,17 +71,6 @@
   "navigateTooltip": "Navigate in Amap",
   "navigateBtn": "Navigate",
   "mapLoadFailed": "Map failed to load, please check your network",
-  "poiSection": "Check-in Points",
-  "poiEmpty": "No check-in point info yet",
-  "poiLoading": "Loading check-in points...",
-  "poiRoleTypes": {
-    "waypoint": "Waypoint",
-    "checkpoint": "Checkpoint",
-    "viewpoint": "Viewpoint",
-    "facility": "Facility",
-    "poi": "Point of Interest",
-    "campsite": "Campsite"
-  },
   "seasons": {
     "spring": {
       "label": "Spring",

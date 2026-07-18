@@ -118,6 +118,12 @@ API：
 - 不执行生产 D1 / R2 / KV 数据变更、数据库修复。
 - 数据库变更使用 migration 文件或文档化 SQL；没有授权不执行临时生产 SQL。
 
+### drizzle-kit generate 使用约束（task #159 决策）
+
+- `stories` / `share_events` 两表存在已知的 PK NOT NULL introspection 噪音：SQLite 内省对 `id TEXT PRIMARY KEY`（未显式写 NOT NULL）报告 notnull=0，导致 generate 每次输出这两表的整表重建段（`__new_stories` / `__new_share_events`）。这是假漂移，不是真实 schema 差异，已决策不重建表。
+- 因此 generate 的输出**必须人工剔除** stories / share*events 的 PRAGMA + `\_\_new*\*` 重建 + 索引重建段，只保留真实变更后再提交；提交前对 generate 结果逐行审。
+- 参照样本：`db/migrations/0012_drop_pois.sql`（generate 原始输出含两表重建噪音，人工剔除后仅保留两个 DROP TABLE）。
+
 ### 遇到问题就顺手修
 
 改代码时遇到**离当前改动点很近、风险明显可控**的问题，应当顺手修复，遵循：

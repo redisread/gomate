@@ -78,6 +78,20 @@
       "when": 1784372927000,
       "tag": "0010_locations_hiking_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1784379256000,
+      "tag": "0011_locations_extra_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1784379256086,
+      "tag": "0012_drop_pois",
+      "breakpoints": true
     }
   ]
 }

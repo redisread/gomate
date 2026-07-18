@@ -65,47 +65,6 @@ export interface Location {
   updatedAt: Timestamp;
 }
 
-/** 路线 POI */
-export interface RoutePoi {
-  id: string;
-  name: string;
-  description?: string | null;
-  coordinates: Coordinates;
-  images?: string[];
-  extra?: Record<string, unknown> | null;
-  order?: number | null;
-  roleType: "waypoint" | "checkpoint" | "viewpoint" | "facility" | "poi";
-  roleSpecificData?: Record<string, unknown> | null;
-}
-
-/** POI 详情（完整实体） */
-export interface PoiDetail {
-  id: string;
-  name: string;
-  description?: string | null;
-  coordinates: Coordinates;
-  images?: string[];
-  extra?: Record<string, unknown> | null;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-/** POI 创建输入 */
-export interface PoiCreateInput {
-  name: string;
-  coordinates: Coordinates;
-  description?: string;
-  images?: string[];
-}
-
-/** POI 更新输入 */
-export interface PoiUpdateInput {
-  name?: string;
-  coordinates?: Coordinates;
-  description?: string;
-  images?: string[];
-}
-
 /** 路线信息 */
 export interface Route {
   id: string;
@@ -133,7 +92,6 @@ export interface Route {
   warnings?: string[];
   tags?: Tag[];
   location?: Location;
-  pois?: RoutePoi[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

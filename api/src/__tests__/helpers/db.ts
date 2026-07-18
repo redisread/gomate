@@ -180,30 +180,6 @@ export function createTestDb() {
       created_at INTEGER NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS pois (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      description TEXT,
-      coordinates TEXT NOT NULL,
-      category TEXT,
-      images TEXT,
-      extra TEXT,
-      created_at INTEGER NOT NULL,
-      updated_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS entity_to_pois (
-      id TEXT PRIMARY KEY,
-      poi_id TEXT NOT NULL REFERENCES pois(id) ON DELETE CASCADE,
-      entity_type TEXT NOT NULL,
-      entity_id TEXT NOT NULL,
-      role_type TEXT NOT NULL,
-      "order" INTEGER,
-      role_specific_data TEXT,
-      created_at INTEGER NOT NULL,
-      UNIQUE(poi_id, entity_type, entity_id, role_type)
-    );
-
     CREATE TABLE IF NOT EXISTS user_favorites (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

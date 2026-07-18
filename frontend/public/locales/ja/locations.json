@@ -71,17 +71,6 @@
   "navigateTooltip": "Gaode地図でナビ",
   "navigateBtn": "ナビ",
   "mapLoadFailed": "地図の読み込みに失敗しました。ネットワークを確認してください",
-  "poiSection": "チェックポイント",
-  "poiEmpty": "チェックポイント情報がありません",
-  "poiLoading": "チェックポイントを読み込み中...",
-  "poiRoleTypes": {
-    "waypoint": "経由地",
-    "checkpoint": "チェックポイント",
-    "viewpoint": "展望スポット",
-    "facility": "施設",
-    "poi": "ポイントオブインタレスト",
-    "campsite": "キャンプ場"
-  },
   "seasons": {
     "spring": {
       "label": "春",

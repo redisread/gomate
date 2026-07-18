@@ -34,23 +34,6 @@ export const updateLocationSchema = createLocationSchema.partial().extend({
 });
 
 /**
- * POI (Point of Interest) validation schemas
- */
-export const createPoiSchema = z.object({
-  name: z.string().trim().min(1, "打卡点名称不能为空").max(50, "打卡点名称不能超过50字"),
-  description: z.string().max(500, "描述不能超过500字").optional(),
-  coordinates: z.object({
-    lat: z.number().min(-90).max(90, "纬度必须在-90到90之间"),
-    lng: z.number().min(-180).max(180, "经度必须在-180到180之间"),
-  }, { message: "坐标格式无效" }),
-  images: z.array(z.string().url("图片必须是有效URL")).max(10, "最多10张图片").optional(),
-});
-
-export const updatePoiSchema = createPoiSchema.partial().extend({
-  id: z.string().min(1, "打卡点ID不能为空"),
-});
-
-/**
  * Story validation schemas
  */
 export const createStorySchema = z.object({
