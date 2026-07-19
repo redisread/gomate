@@ -9,6 +9,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Footer } from "@/components/layout/footer";
+import { TeamActionbookForm } from "./team-detail/team-actionbook-form";
 
 interface EditTeamClientProps {
   teamId: string;
@@ -405,6 +406,15 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               </SubmitButton>
             </div>
           </form>
+        </div>
+
+        {/* task #166 P0-A T3：行动本编辑（独立保存，不与基本信息表单混淆） */}
+        <div className="mt-6">
+          <TeamActionbookForm
+            teamId={teamId}
+            initialChecklist={team.checklist}
+            isLeader={isLeader}
+          />
         </div>
       </div>
 

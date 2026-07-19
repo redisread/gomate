@@ -1,4 +1,4 @@
-import type { TeamStatus } from "@gomate/types";
+import type { TeamStatus, TeamChecklist } from "@gomate/types";
 
 // GoMate 前端类型定义
 
@@ -153,6 +153,8 @@ export interface Team {
   createdAt: string;
   members?: TeamMember[]; // 已加入的成员列表
   location?: Location; // 关联的地点信息
+  /** task #163：行动本 checklist（未填 = undefined） */
+  checklist?: TeamChecklist;
 }
 
 // 入队申请
