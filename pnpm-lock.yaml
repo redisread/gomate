@@ -31,6 +31,9 @@ importers:
 
   api:
     dependencies:
+      "@gomate/lib":
+        specifier: workspace:*
+        version: link:../packages/lib
       "@gomate/types":
         specifier: workspace:*
         version: link:../packages/types
@@ -221,6 +224,12 @@ importers:
         version: 4.100.0(@cloudflare/workers-types@4.20260530.1)
 
   packages/config: {}
+
+  packages/lib:
+    devDependencies:
+      typescript:
+        specifier: ^5
+        version: 5.9.3
 
   packages/types:
     devDependencies:
