@@ -230,6 +230,76 @@ describe("Teams checklist API 集成测试", () => {
       });
       expect(res.status).toBe(400);
     });
+
+    // B1（Martin CR）：spec §2.3 明确「PUT 是队长覆盖式更新整个 checklist」，
+    // 未传字段 → 清空。第一版用条件展开会保留旧值，破坏覆盖式语义。此处回归。
+    it("PUT 覆盖式：不传字段应清空旧值（B1 回归）", async () => {
+      setSession({ id: leader.id, email: "l@x.com", name: "l" });
+
+      // 第一次：写入完整 checklist（有 meetingPoint / transport / gear / assignments / notes）
+      const first = await req(app, `/teams/${team.id}/checklist`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          meetingPoint: { name: "地铁北门", time: "07:30" },
+          transport: { mode: "self_drive" as const, detail: "拼车" },
+          gear: { essential: ["水"], optional: [] },
+          assignments: [{ task: "买水", assigneeIds: [] }],
+          notes: "旧口令",
+        }),
+      });
+      expect(first.status).toBe(200);
+      const firstJson = (await first.json()) as { checklist: TeamChecklist };
+      expect(firstJson.checklist.meetingPoint?.name).toBe("地铁北门");
+      expect(firstJson.checklist.assignments).toHaveLength(1);
+
+      // 第二次：只传 notes，其他字段全部缺省 → 应清空
+      const second = await req(app, `/teams/${team.id}/checklist`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ notes: "新口令" }),
+      });
+      expect(second.status).toBe(200);
+      const secondJson = (await second.json()) as { checklist: TeamChecklist };
+      expect(secondJson.checklist.notes).toBe("新口令");
+      expect(secondJson.checklist.meetingPoint).toBeUndefined();
+      expect(secondJson.checklist.transport).toBeUndefined();
+      expect(secondJson.checklist.gear).toBeUndefined();
+      // assignments：既然全没传，normalize 后是 []（server 视为「清空」）
+      expect(secondJson.checklist.assignments).toEqual([]);
+
+      // DB 落盘一致
+      const saved = await readChecklist(team.id);
+      expect(saved?.notes).toBe("新口令");
+      expect(saved?.meetingPoint).toBeUndefined();
+      expect(saved?.transport).toBeUndefined();
+      expect(saved?.gear).toBeUndefined();
+      expect(saved?.assignments).toEqual([]);
+    });
+
+    it("PUT 覆盖式：显式传空 assignments 也应清空", async () => {
+      setSession({ id: leader.id, email: "l@x.com", name: "l" });
+
+      await req(app, `/teams/${team.id}/checklist`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          assignments: [
+            { task: "买水", assigneeIds: [member.id] },
+            { task: "买餐", assigneeIds: [] },
+          ],
+        }),
+      });
+
+      const res = await req(app, `/teams/${team.id}/checklist`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ assignments: [] }),
+      });
+      expect(res.status).toBe(200);
+      const json = (await res.json()) as { checklist: TeamChecklist };
+      expect(json.checklist.assignments).toEqual([]);
+    });
   });
 
   // ===== POST /teams/:id/checklist/assignments/:assignmentId/claim =====

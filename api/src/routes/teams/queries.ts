@@ -10,6 +10,7 @@ import { formatBeijingDateTime } from "../../lib/date-utils";
 import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../../lib/cache";
 import { updateExpiredTeams } from "../../lib/team-status";
 import { APIErrors } from "../../lib/api-errors";
+import { parseChecklist } from "../../lib/team-checklist-utils";
 
 const queries = new Hono<{ Bindings: Env }>();
 
@@ -462,16 +463,8 @@ queries.get("/:id", async (c) => {
         } : { id: "unknown", name: "未知用户", avatar: "", level: "beginner", completedHikes: 0, bio: "" },
         members: relevantMembers,
         // task #163：Team「行动本」checklist（未填 = undefined）
-        // DB 里可能是 JSON 字符串（driver 差异），此处不 parse——由 API 消费者/前端做，或后续统一到 checklist 路由
-        checklist: (() => {
-          const raw = teamWithRelations.checklist as unknown;
-          if (raw === null || raw === undefined) return undefined;
-          if (typeof raw === "string") {
-            if (!raw) return undefined;
-            try { return JSON.parse(raw); } catch { return undefined; }
-          }
-          return raw;
-        })(),
+        // driver 差异 parse 兜底统一到 parseChecklist（api/src/lib/team-checklist-utils.ts）
+        checklist: parseChecklist(teamWithRelations.checklist) ?? undefined,
       },
     });
   } catch (error) {

@@ -9,6 +9,7 @@ import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { generateId } from "../../lib/id";
 import { emitTeamActionbookEvent } from "../../lib/team-events";
+import { parseChecklist } from "../../lib/team-checklist-utils";
 import type { TeamChecklist, ActionbookAssignment } from "@gomate/types";
 
 /**
@@ -59,35 +60,18 @@ const assignmentInputSchema = z.object({
   assigneeIds: z.array(z.string().min(1).max(100)).max(50).optional(),
 });
 
-const checklistPutSchema = z
-  .object({
-    meetingPoint: meetingPointSchema,
-    transport: transportSchema,
-    gear: gearSchema,
-    assignments: z.array(assignmentInputSchema).max(50).optional(),
-    notes: z.string().max(2000).optional(),
-  })
-  .refine(
-    // task #163 v1.1 spec §2.1：checklist 序列化后单字段 <2KB（软上限，防滥用）
-    (v) => JSON.stringify(v).length <= 2048,
-    { message: "checklist 内容过大（超过 2KB 上限）" },
-  );
+const checklistPutSchema = z.object({
+  meetingPoint: meetingPointSchema,
+  transport: transportSchema,
+  gear: gearSchema,
+  assignments: z.array(assignmentInputSchema).max(50).optional(),
+  notes: z.string().max(2000).optional(),
+});
+
+/** spec §2.1：checklist 序列化后单字段 <2KB（软上限，防滥用） */
+const CHECKLIST_MAX_BYTES = 2048;
 
 // ==================== 工具 ====================
-
-/** DB 里 checklist 可能是 JSON 字符串（driver 不同表现不同）；统一 parse 成对象 */
-function parseChecklist(raw: unknown): TeamChecklist | null {
-  if (raw === null || raw === undefined) return null;
-  if (typeof raw === "string") {
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as TeamChecklist;
-    } catch {
-      return null;
-    }
-  }
-  return raw as TeamChecklist;
-}
 
 /**
  * 合并入参 assignments 与已有 assignments 的 id：
@@ -167,13 +151,31 @@ checklist.put("/:id/checklist", async (c) => {
       existing?.assignments,
     );
 
+    // B1（Martin CR）：spec 是「队长覆盖式更新整个 checklist」，未传字段视为清空。
+    // 之前用条件展开会保留旧值 → 与 spec 矛盾。这里改为无条件字段赋值。
     const next: TeamChecklist = {
-      ...(parsed.data.meetingPoint ? { meetingPoint: parsed.data.meetingPoint } : {}),
-      ...(parsed.data.transport ? { transport: parsed.data.transport } : {}),
-      ...(parsed.data.gear ? { gear: parsed.data.gear } : {}),
-      ...(normalizedAssignments.length ? { assignments: normalizedAssignments } : {}),
-      ...(parsed.data.notes ? { notes: parsed.data.notes } : {}),
+      meetingPoint: parsed.data.meetingPoint,
+      transport: parsed.data.transport,
+      gear: parsed.data.gear,
+      assignments: normalizedAssignments,
+      notes: parsed.data.notes,
     };
+
+    // S1（Martin CR）：<2KB 软上限从 zod refine 挪到落盘前显式校验，
+    // 返回 validationError 带明确 message，前端能落到 error.code 映射链路。
+    const serialized = JSON.stringify(next);
+    if (serialized.length > CHECKLIST_MAX_BYTES) {
+      return c.json(
+        APIErrors.validationError("checklist 内容过大（超过 2KB 上限）", [
+          {
+            code: "custom",
+            path: [],
+            message: `序列化后 ${serialized.length} 字节，上限 ${CHECKLIST_MAX_BYTES}`,
+          },
+        ]),
+        400,
+      );
+    }
 
     await db
       .update(schema.teams)
