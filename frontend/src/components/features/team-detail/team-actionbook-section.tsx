@@ -59,7 +59,10 @@ export function TeamActionbookSection({
     t,
   });
 
-  const visitor = isVisitor(isLeader, isMember);
+  // task #165 CR B1：spec §3.1 隐私红线 —— server 已剥掉非成员的 checklist（API 返回 null）
+  // 这里再兜底一次：checklist 为 null 强制走 visitor 路径（即使前端 props 误传 isLeader/isMember 也走 visitor）
+  // 与 UI isVisitor 并联做 OR：身份判定的 visitor + 数据缺失的 visitor 都会落到 visitor 渲染分支
+  const visitor = !checklist || isVisitor(isLeader, isMember);
   const startTimeIso = team.startTime;
 
   // 若没有 startTime，则整个区块降级为不渲染（防御性——正常 API 有此字段）

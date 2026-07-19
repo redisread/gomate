@@ -235,6 +235,77 @@ describe("Teams API 集成测试", () => {
       const res = await req(app, "/teams/nonexistent-id");
       expect(res.status).toBe(404);
     });
+
+    // task #165 CR B1：spec §3.1 隐私红线 —— 访客拿不到 checklist
+    // server 端必须按身份判定，非成员时剥掉 checklist 字段
+    describe("checklist 隐私隔离（task #165 CR B1）", () => {
+      const SECRET_CHECKLIST = {
+        meetingPoint: { name: "深山老林集合点", time: "05:30" },
+        gear: { essential: ["登山鞋", "急救包"], optional: [] as string[] },
+        assignments: [{ id: "a1", task: "带路", assigneeIds: ["u-member"] }],
+        notes: "队内暗号",
+      };
+
+      it("leader → response.checklist 有完整数据", async () => {
+        const team = await seedTeam(testDb, leader.id, location.id);
+        await testDb
+          .update(schema.teams)
+          .set({ checklist: SECRET_CHECKLIST })
+          .where(eq(schema.teams.id, team.id));
+
+        setSession({ id: leader.id, email: leader.email ?? "", name: leader.name });
+        const res = await req(app, `/teams/${team.id}`);
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as { team: { checklist: typeof SECRET_CHECKLIST } };
+        expect(json.team.checklist).toEqual(SECRET_CHECKLIST);
+      });
+
+      it("approved member → response.checklist 有完整数据", async () => {
+        const team = await seedTeam(testDb, leader.id, location.id);
+        await seedTeamMember(testDb, team.id, member.id, "approved");
+        await testDb
+          .update(schema.teams)
+          .set({ checklist: SECRET_CHECKLIST })
+          .where(eq(schema.teams.id, team.id));
+
+        setSession({ id: member.id, email: member.email ?? "", name: member.name });
+        const res = await req(app, `/teams/${team.id}`);
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as { team: { checklist: typeof SECRET_CHECKLIST } };
+        expect(json.team.checklist).toEqual(SECRET_CHECKLIST);
+      });
+
+      it("已登录但非成员非队长 → response.checklist 为 null（隐私剥除）", async () => {
+        const team = await seedTeam(testDb, leader.id, location.id);
+        await seedTeamMember(testDb, team.id, member.id, "approved");
+        await testDb
+          .update(schema.teams)
+          .set({ checklist: SECRET_CHECKLIST })
+          .where(eq(schema.teams.id, team.id));
+
+        // 第三个用户 outsider —— 已登录但与该 team 无关
+        const outsider = await seedUser(testDb, { name: "路人甲" });
+        setSession({ id: outsider.id, email: outsider.email ?? "", name: outsider.name });
+        const res = await req(app, `/teams/${team.id}`);
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as { team: { checklist: unknown } };
+        expect(json.team.checklist).toBeNull();
+      });
+
+      it("未登录用户 → response.checklist 为 null（隐私剥除）", async () => {
+        const team = await seedTeam(testDb, leader.id, location.id);
+        await testDb
+          .update(schema.teams)
+          .set({ checklist: SECRET_CHECKLIST })
+          .where(eq(schema.teams.id, team.id));
+
+        setSession(null);
+        const res = await req(app, `/teams/${team.id}`);
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as { team: { checklist: unknown } };
+        expect(json.team.checklist).toBeNull();
+      });
+    });
   });
 
   // ===== POST /teams/:id/join - 申请加入 =====

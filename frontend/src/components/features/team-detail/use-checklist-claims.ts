@@ -23,17 +23,24 @@ type ClaimAction = "claim" | "unclaim";
 interface UseChecklistClaimsOpts {
   teamId: string;
   currentUserId: string | null;
-  initialChecklist: TeamChecklist | undefined;
+  /**
+   * task #165 CR B1：server 可能返回 null（访客剥除隐私字段）
+   * island 端把它当作「无 checklist」处理 —— hook 不会 reject，会按空清单初始化
+   */
+  initialChecklist: TeamChecklist | null | undefined;
   /** 认领 / 取消认领结果通知，用于 toast 反馈 */
   onError: (message: string) => void;
-  /** 完整重取 team 数据（409 静默失败或非幂等失败时使用） */
+  /**
+   * 重取整 team —— 保证 island 与父组件 checklist 视图一致（cascading fail 的兜底）。
+   * 不止 refetch checklist 单端点：team 其他字段（如 member 状态）变化也要拉齐
+   */
   refetch: () => Promise<void>;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }
 
 interface UseChecklistClaimsReturn {
-  /** 当前视图使用的 checklist（含 optimistic 局部覆盖） */
-  checklist: TeamChecklist | undefined;
+  /** 当前视图使用的 checklist（含 optimistic 局部覆盖；null = 访客剥除，undefined = 未填） */
+  checklist: TeamChecklist | null | undefined;
   /** 认领 / 取消认领 */
   toggleClaim: (assignment: ActionbookAssignment) => Promise<void>;
   /** 该 assignment 当前是否处于 pending（用于按钮 loading） */
@@ -42,10 +49,10 @@ interface UseChecklistClaimsReturn {
 
 /** 把某个 assignment 的 assigneeIds 换掉，其他保持不变 */
 function replaceAssignment(
-  checklist: TeamChecklist | undefined,
+  checklist: TeamChecklist | null | undefined,
   assignmentId: string,
   updater: (a: ActionbookAssignment) => ActionbookAssignment,
-): TeamChecklist | undefined {
+): TeamChecklist | null | undefined {
   if (!checklist?.assignments) return checklist;
   const next = checklist.assignments.map((a) => (a.id === assignmentId ? updater(a) : a));
   return { ...checklist, assignments: next };
@@ -59,7 +66,7 @@ export function useChecklistClaims({
   refetch,
   t,
 }: UseChecklistClaimsOpts): UseChecklistClaimsReturn {
-  const [override, setOverride] = React.useState<TeamChecklist | undefined>(undefined);
+  const [override, setOverride] = React.useState<TeamChecklist | null | undefined>(undefined);
   const [pending, setPending] = React.useState<Set<string>>(() => new Set());
 
   // 每次 initialChecklist 变化就重置 override —— server 数据到位后 optimistic 让位
