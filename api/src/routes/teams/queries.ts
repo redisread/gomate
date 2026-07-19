@@ -10,6 +10,7 @@ import { formatBeijingDateTime } from "../../lib/date-utils";
 import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../../lib/cache";
 import { updateExpiredTeams } from "../../lib/team-status";
 import { APIErrors } from "../../lib/api-errors";
+import { parseChecklist } from "../../lib/team-checklist-utils";
 
 const queries = new Hono<{ Bindings: Env }>();
 
@@ -461,6 +462,9 @@ queries.get("/:id", async (c) => {
           extra: leader.extra || null,
         } : { id: "unknown", name: "未知用户", avatar: "", level: "beginner", completedHikes: 0, bio: "" },
         members: relevantMembers,
+        // task #163：Team「行动本」checklist（未填 = undefined）
+        // driver 差异 parse 兜底统一到 parseChecklist（api/src/lib/team-checklist-utils.ts）
+        checklist: parseChecklist(teamWithRelations.checklist) ?? undefined,
       },
     });
   } catch (error) {

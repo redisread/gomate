@@ -5,6 +5,7 @@ import queries from "./queries";
 import mutations from "./mutations";
 import membership from "./membership";
 import status from "./status";
+import checklist from "./checklist";
 
 const teams = new Hono<{ Bindings: Env }>();
 
@@ -37,6 +38,12 @@ teams.route("/:id", membership);
 // POST /teams/:id/members/:userId/approve-leave
 // POST /teams/:id/members/:userId/reject-leave
 teams.route("/:id", status);
+
+// Mount checklist routes (task #163 Team「行动本」)
+// PUT    /teams/:id/checklist
+// POST   /teams/:id/checklist/assignments/:assignmentId/claim
+// DELETE /teams/:id/checklist/assignments/:assignmentId/claim
+teams.route("/", checklist);
 
 export default teams;
 export { teams as teamsRoute };

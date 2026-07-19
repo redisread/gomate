@@ -8,6 +8,7 @@ import {
   primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
+import type { TeamChecklist } from "@gomate/types";
 
 // ==================== Tables ====================
 
@@ -208,6 +209,9 @@ export const teams = sqliteTable(
     requirements: text("requirements"),
     icon: text("icon").default("⛰️").notNull(),
     status: text("status").notNull().default("recruiting"),
+    // task #163：Team「行动本」checklist（JSON，nullable = 队长未填）
+    // 结构见 packages/types TeamChecklist；单字段 <2KB，D1 batch 写入简单
+    checklist: text("checklist", { mode: "json" }).$type<TeamChecklist>(),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
   },

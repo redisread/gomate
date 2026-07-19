@@ -136,6 +136,8 @@ export function createTestDb() {
       requirements TEXT,
       icon TEXT NOT NULL DEFAULT '⛰️',
       status TEXT NOT NULL DEFAULT 'recruiting',
+      -- task #163：Team「行动本」checklist（TEXT JSON，nullable）
+      checklist TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
