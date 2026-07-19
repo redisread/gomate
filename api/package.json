@@ -15,6 +15,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
+    "@gomate/lib": "workspace:*",
     "@gomate/types": "workspace:*",
     "@hono/zod-validator": "^0.4.0",
     "@resvg/resvg-wasm": "^2.6.2",
