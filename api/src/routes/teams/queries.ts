@@ -461,6 +461,17 @@ queries.get("/:id", async (c) => {
           extra: leader.extra || null,
         } : { id: "unknown", name: "未知用户", avatar: "", level: "beginner", completedHikes: 0, bio: "" },
         members: relevantMembers,
+        // task #163：Team「行动本」checklist（未填 = undefined）
+        // DB 里可能是 JSON 字符串（driver 差异），此处不 parse——由 API 消费者/前端做，或后续统一到 checklist 路由
+        checklist: (() => {
+          const raw = teamWithRelations.checklist as unknown;
+          if (raw === null || raw === undefined) return undefined;
+          if (typeof raw === "string") {
+            if (!raw) return undefined;
+            try { return JSON.parse(raw); } catch { return undefined; }
+          }
+          return raw;
+        })(),
       },
     });
   } catch (error) {

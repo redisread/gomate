@@ -4,6 +4,9 @@
  */
 
 export * from "./enums";
+export * from "./team-checklist";
+// 显式 import 以便本文件 Team 接口的 checklist 字段可引用（export * 不引入 local scope）
+import type { TeamChecklist } from "./team-checklist";
 
 /** ISO 格式时间戳 */
 export type Timestamp = string;
@@ -113,6 +116,8 @@ export interface Team {
   createdAt: Timestamp;
   members?: TeamMember[];
   location?: Location;
+  /** task #163：行动本 checklist（未填 = undefined） */
+  checklist?: TeamChecklist;
 }
 
 /** 用户公开资料 */
