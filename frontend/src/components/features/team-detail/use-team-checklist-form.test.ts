@@ -97,8 +97,8 @@ describe("checklistToForm", () => {
     expect(f.gearEssential).toEqual(["登山鞋", "水"]);
     expect(f.gearOptional).toEqual(["登山杖"]);
     expect(f.assignments).toEqual([
-      { id: "a1", task: "带急救包" },
-      { id: "a2", task: "开车" },
+      { id: "a1", task: "带急救包", assigneeIds: ["u1"] },
+      { id: "a2", task: "开车", assigneeIds: [] },
     ]);
     expect(f.notes).toBe("有小孩");
   });
@@ -141,15 +141,41 @@ describe("formToChecklistPayload", () => {
     const payload = formToChecklistPayload({
       ...EMPTY_FORM,
       assignments: [
-        { id: "a1", task: "带急救包" },
-        { id: "a2", task: "  " },
-        { id: "a3", task: "开车" },
+        { id: "a1", task: "带急救包", assigneeIds: [] },
+        { id: "a2", task: "  ", assigneeIds: [] },
+        { id: "a3", task: "开车", assigneeIds: [] },
       ],
     });
     expect(payload.assignments).toEqual([
       { id: "a1", task: "带急救包", assigneeIds: [] },
       { id: "a3", task: "开车", assigneeIds: [] },
     ]);
+  });
+
+  // task #166 CR B1：队长编辑其他字段并保存时，已有 assigneeIds 必须原样送回
+  it("已有 assigneeIds 透传到 payload（CR B1 数据丢失修复）", () => {
+    const payload = formToChecklistPayload({
+      ...EMPTY_FORM,
+      meetingPointName: "A", // 只改集合点
+      assignments: [
+        { id: "a1", task: "带急救包", assigneeIds: ["u-alice", "u-bob"] },
+        { id: "a2", task: "开车", assigneeIds: ["u-carol"] },
+      ],
+    });
+    expect(payload.assignments).toEqual([
+      { id: "a1", task: "带急救包", assigneeIds: ["u-alice", "u-bob"] },
+      { id: "a2", task: "开车", assigneeIds: ["u-carol"] },
+    ]);
+  });
+
+  it("assigneeIds 自动去重", () => {
+    const payload = formToChecklistPayload({
+      ...EMPTY_FORM,
+      assignments: [
+        { id: "a1", task: "带急救包", assigneeIds: ["u-alice", "u-alice", "u-bob"] },
+      ],
+    });
+    expect(payload.assignments?.[0].assigneeIds).toEqual(["u-alice", "u-bob"]);
   });
 
   it("notes trim 后为空 → notes 不产出", () => {
@@ -166,7 +192,7 @@ describe("formToChecklistPayload", () => {
       gearEssential: ["水"],
       gearOptional: ["杖"],
       gearNote: "备注",
-      assignments: [{ id: "x", task: "T" }],
+      assignments: [{ id: "x", task: "T", assigneeIds: ["u-1"] }],
       notes: "N",
     };
     const payload = formToChecklistPayload(form);
@@ -174,7 +200,7 @@ describe("formToChecklistPayload", () => {
       meetingPoint: { name: "A", note: "note" },
       transport: { mode: "public", detail: "detail" },
       gear: { essential: ["水"], optional: ["杖"], note: "备注" },
-      assignments: [{ id: "x", task: "T", assigneeIds: [] }],
+      assignments: [{ id: "x", task: "T", assigneeIds: ["u-1"] }],
       notes: "N",
     });
   });

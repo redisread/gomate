@@ -11,7 +11,7 @@ import { fetchAPI } from "@/lib/api";
 // task #166 P0-A T3: Team checklist edit hook
 // spec: notes/gomate-p0a-team-actionbook-spec.md section 5
 //
-// draft key: team-checklist-draft-{teamId}; 30s debounce
+// draft key: team-checklist-draft-{teamId}; 3s debounce + unmount flush
 // draft shape validated on load (aligned with PR #388 isValidDraftShape)
 // pre-check <2KB before save (mirrors server CHECKLIST_MAX_BYTES)
 // error.code 3-tier fallback: mapped i18n / apiMessage / default saveFailed
@@ -25,8 +25,12 @@ export interface FormChecklist {
   gearEssential: string[];
   gearOptional: string[];
   gearNote: string;
-  /** local client id; server may reuse or issue uuid v4 on PUT */
-  assignments: Array<{ id: string; task: string }>;
+  /**
+   * local client id; server may reuse or issue uuid v4 on PUT.
+   * assigneeIds 由 form 持有 —— 队长编辑其他字段并保存时，把已有认领原样送回，
+   * server 覆盖语义（normalizeAssignments）才不会把认领关系抹掉（task #166 CR B1）
+   */
+  assignments: Array<{ id: string; task: string; assigneeIds: string[] }>;
   notes: string;
 }
 
@@ -88,9 +92,16 @@ export function isValidChecklistDraftShape(draft: unknown): draft is Partial<For
         if (typeof item !== "object" || item === null || Array.isArray(item)) return false;
         const o = item as Record<string, unknown>;
         if (typeof o.id !== "string" || typeof o.task !== "string") return false;
+        if (
+          o.assigneeIds !== undefined &&
+          (!Array.isArray(o.assigneeIds) ||
+            o.assigneeIds.some((x) => typeof x !== "string"))
+        ) {
+          return false;
+        }
         // unknown extra keys on assignment => reject
         for (const k of Object.keys(o)) {
-          if (k !== "id" && k !== "task") return false;
+          if (k !== "id" && k !== "task" && k !== "assigneeIds") return false;
         }
       }
     } else {
@@ -115,7 +126,11 @@ export function checklistToForm(cl: TeamChecklist | null | undefined): FormCheck
     gearEssential: cl.gear?.essential ? [...cl.gear.essential] : [],
     gearOptional: cl.gear?.optional ? [...cl.gear.optional] : [],
     gearNote: cl.gear?.note ?? "",
-    assignments: (cl.assignments ?? []).map((a) => ({ id: a.id, task: a.task })),
+    assignments: (cl.assignments ?? []).map((a) => ({
+      id: a.id,
+      task: a.task,
+      assigneeIds: [...a.assigneeIds],
+    })),
     notes: cl.notes ?? "",
   };
 }
@@ -131,8 +146,14 @@ export function formToChecklistPayload(form: FormChecklist): TeamChecklist {
   const gearOptional = form.gearOptional.map((s) => s.trim()).filter(Boolean);
   const gearNote = form.gearNote.trim();
   const notes = form.notes.trim();
+  // task #166 CR B1：保留已有认领 —— server normalizeAssignments 会按入参覆盖，
+  // 把 form 里持有的 assigneeIds 原样送回，避免队长编辑其他字段时抹掉认领关系。
   const assignments = form.assignments
-    .map((a) => ({ id: a.id, task: a.task.trim(), assigneeIds: [] as string[] }))
+    .map((a) => ({
+      id: a.id,
+      task: a.task.trim(),
+      assigneeIds: Array.from(new Set(a.assigneeIds)),
+    }))
     .filter((a) => a.task);
 
   const payload: TeamChecklist = {};
@@ -255,8 +276,16 @@ export function useTeamChecklistForm({
   const [saveResult, setSaveResult] = React.useState<SaveResult | null>(null);
   const [draftAvailable, setDraftAvailable] = React.useState(false);
   const initialFormRef = React.useRef<FormChecklist>(checklistToForm(initialChecklist ?? null));
-  const draftTimer = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  // task #166 CR B2：spec §5「pre-submit + 3s debounce」—— 单次 setTimeout 替换 30s setInterval
+  // unmount 时如果 timer 未 fire 主动 flush 一次，避免用户敲完就关页面丢改动
+  const draftTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const formRef = React.useRef<FormChecklist>(form);
   const invalidToastRef = React.useRef(false);
+
+  // 保持 formRef 与最新 form 同步（debounce 回调读 formRef，避免闭包陈旧）
+  React.useEffect(() => {
+    formRef.current = form;
+  }, [form]);
 
   // Detect draft once on mount (guard against React 18 strict-mode double-invoke)
   React.useEffect(() => {
@@ -274,15 +303,34 @@ export function useTeamChecklistForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamId]);
 
-  // 30s debounce draft flush (interval clears on unmount)
+  // task #166 CR B2：3s debounce 草稿写入 —— 表单变化时重置计时器，
+  // 用户停止输入 3s 后才落 localStorage。
   React.useEffect(() => {
-    draftTimer.current = setInterval(() => {
-      saveDraftToStorage(teamId, form);
-    }, 30000);
+    if (draftTimer.current) clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(() => {
+      saveDraftToStorage(teamId, formRef.current);
+      draftTimer.current = null;
+    }, 3000);
     return () => {
-      if (draftTimer.current) clearInterval(draftTimer.current);
+      // 表单变化触发 effect 重入：清掉旧 timer 即可，不要 flush（避免每次重渲染都写一次）
+      if (draftTimer.current) {
+        clearTimeout(draftTimer.current);
+        draftTimer.current = null;
+      }
     };
   }, [teamId, form]);
+
+  // task #166 CR B2：组件卸载时同步 flush 一次 —— 避免用户敲完就关页面丢改动
+  // 不论 timer 是否还在排队都 flush（last-known-good 永远是有用的），并把 timer 清掉避免 effect 1 重入时混淆
+  React.useEffect(() => {
+    return () => {
+      if (draftTimer.current) {
+        clearTimeout(draftTimer.current);
+        draftTimer.current = null;
+      }
+      saveDraftToStorage(teamId, formRef.current);
+    };
+  }, [teamId]);
 
   const setField = React.useCallback(
     <K extends keyof FormChecklist>(key: K, value: FormChecklist[K]) => {
@@ -299,7 +347,10 @@ export function useTeamChecklistForm({
         typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
           : `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      return { ...prev, assignments: [...prev.assignments, { id, task: "" }] };
+      return {
+        ...prev,
+        assignments: [...prev.assignments, { id, task: "", assigneeIds: [] }],
+      };
     });
   }, []);
 
