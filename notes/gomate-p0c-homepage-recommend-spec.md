@@ -1,10 +1,17 @@
-# gomate P0-C：首页「本周三个选择」推荐位设计规范 v1.0
+# gomate P0-C：首页「本周三个选择」推荐位设计规范 v1.1
 
 > 需求：@Victor 2026-07-20 DM（继续推进 P0 全套）
 > 依据：`notes/gomate-ux-experience-analysis.md` §三-P0-3
 > 设计者：@Steven
 > 范围：首页 `/`（改造）—— 在 Hero 与 Locations 之间插入「本周三个选择」推荐位
 > 交付给：Martin 拆任务
+
+> **v1.1 变更**（2026-07-20 Martin CR PR #393）：
+>
+> - §5.2 seed 不放前端 cookie（隐私）→ 服务端按 IP/UA hash + time bucket 长期 cache（5 分钟内所有 seed 共享候选池）
+> - §6.4 性能预算 50ms 偏紧 → 4 source 信号改单 SQL UNION + GROUP BY，加 EXPLAIN PLAN benchmark
+> - §11 验收第 4 条：「连续 5 次点击 2 次不同」 → 改为「连续 10 次点击 5 次不同」（保证 seed 池足够）
+> - T1 实施增加：一次返回 10 个候选（前端 seed 选 3），减少 cache miss 重算流量
 
 ---
 
@@ -170,8 +177,13 @@
 **端点**：`GET /api/recommendations/home?seed=<random>&locale=<zh|en|ja>`
 
 - **输入**：`seed`（可选，前端随机生成）、`locale`
-- **输出**：`{ recommendations: Recommendation[3], nextSeed: string }`
-- **缓存**：server-side 用 `seed` 作为 cache key，TTL 5 分钟（同一 seed 返回相同结果）
+- **输出**：`{ recommendations: Recommendation[3], candidatePoolSize: 10, nextSeed: string }`
+- **v1.1 缓存策略**：
+  - **seed 不放前端 cookie**（隐私，不持久化用户偏好）
+  - **服务端按 IP/UA hash + 5min time bucket 长期 cache**候选池（10 条候选）
+  - **同一用户 5 分钟内所有 seed 共享一个候选池**，seed 只用于从池中随机选 3
+  - 减少 cache miss 重算流量
+- **实现**：`api/src/services/recommendations.ts` 用 `cf-connecting-ip` + `user-agent` hash + `Math.floor(Date.now() / 300000)` 作 cache key
 
 ### 5.3 「换一批」边界
 
@@ -216,8 +228,11 @@ function recommend(seed):
 
 ### 6.4 性能
 
-- 候选全集 35 条 + 多个 N+1 join → 整体 SQL 在 50ms 内
-- 缓存策略：seed-keyed cache，TTL 5 分钟
+- 候选全集 35 条 + 多个 N+1 join → 整体 SQL 在 50ms 内（v1.1 偏紧需 benchmark）
+- **v1.1 单 SQL UNION + GROUP BY**：4 个 source 信号用 UNION ALL 合并，按 location_id GROUP BY + SUM(score)，避免循环 N+1
+- **v1.1 EXPLAIN PLAN**：T1 验收必须 `EXPLAIN QUERY PLAN` 通过，确认使用索引而非全表扫描
+- **v1.1 cache miss 一次算 10 候选**：避免每次 seed miss 都重算全集
+- 缓存策略：服务端按 IP/UA hash + time bucket 长期 cache（5 分钟内所有 seed 共享候选池）
 - 不需要预计算（数据量小）
 
 ---
@@ -341,11 +356,12 @@ Wen 测试用例覆盖：
 1. 首页首次加载显示三张推荐卡（steady / worthy / fresh）
 2. 三张卡指向不同 location（无重复）
 3. 「换一批」点击后三张卡全部变化
-4. 5 分钟内连续点击「换一批」超过 5 次，至少有 2 次结果不同（seed 库足够）
+4. **v1.1**：连续点击「换一批」10 次，至少有 5 次结果不同（保证 seed 池足够）
 5. 三语言渲染（zh/en/ja），无溢出
 6. 移动端竖排 + 「换一批」sticky 底部
 7. 三类规则全无候选时整块不渲染
-8. 性能：API 响应 ≤ 100ms（包含 KV cache hit）
+8. **v1.1 性能**：API 响应 ≤ 100ms（包含 KV cache hit），单 SQL UNION EXPLAIN PLAN 通过索引使用
+9. **v1.1 隐私**：seed 不写入 cookie / localStorage
 
 ---
 
@@ -367,4 +383,4 @@ Wen 测试用例覆盖：
 
 ---
 
-_spec v1.0 完成，等 Victor 对 §4 推荐理由规则覆盖度 + §5 「换一批」交互的边界决策确认后提 Martin 拆任务。_
+_spec v1.1 完成（Martin CR PR #393 pass + Victor 拍板 fallback 不细化），等 Victor 对 §4 推荐理由规则覆盖度 + §5 「换一批」交互的边界决策确认后提 Martin 拆任务。_
