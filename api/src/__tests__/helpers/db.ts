@@ -27,6 +27,7 @@ export function createTestDb() {
       role TEXT NOT NULL DEFAULT 'user',
       status TEXT NOT NULL DEFAULT 'active',
       extra TEXT,
+      city TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL,
       deleted_at INTEGER
@@ -102,6 +103,10 @@ export function createTestDb() {
       cover_image TEXT NOT NULL,
       images TEXT NOT NULL,
       coordinates TEXT NOT NULL,
+      parking_available INTEGER,
+      parking_info TEXT,
+      gear_essential TEXT,
+      gear_optional TEXT,
       extra TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
