@@ -461,7 +461,7 @@
       "other": "Other"
     },
     "transportDetailPlaceholder": "Detail: 3 cars available to share, exit D of the metro...",
-    "gearTitle": "Gear Checklist",
+    "gearTitle": "Gear",
     "gearEssentialLabel": "Essential (Enter / comma to add)",
     "gearOptionalLabel": "Optional (Enter / comma to add)",
     "gearChipPlaceholder": "Type and press Enter",
@@ -471,7 +471,7 @@
     "assignmentPlaceholder": "e.g. First-aid kit / Stove / Driver",
     "assignmentAdd": "+ Add task",
     "assignmentRemove": "Remove",
-    "notesTitle": "Other Notes",
+    "notesTitle": "Other notes",
     "notesPlaceholder": "e.g. Kids in the team, please keep a relaxed pace",
     "sizeIndicator": "{bytes} / {max} bytes",
     "overflowHint": "Content too large — please trim before saving",
@@ -483,6 +483,51 @@
     "draftAvailable": "Unsaved draft detected — restore it?",
     "draftRestore": "Restore draft",
     "draftDiscard": "Discard",
-    "draftInvalid": "Last draft was invalid and has been discarded. Please edit again."
+    "draftInvalid": "Last draft was invalid and has been discarded. Please edit again.",
+    "empty": {
+      "leader": "The action book is empty. Where do you meet? What to bring? Fill it once so everyone knows.",
+      "member": "The leader hasn't filled the action book yet. Feel free to ping them.",
+      "visitor": "Join the team to see the meeting point, gear list and assignments."
+    },
+    "cta": {
+      "complete": "Complete the action book"
+    },
+    "countdown": {
+      "today": "Today {time}",
+      "tomorrow": "Tomorrow {time}",
+      "dayOfWeek": "{weekday} {time}",
+      "dateLong": "{month}/{day} {time}",
+      "remainingHours": "{h}h {m}m to go",
+      "remainingDays": "{d} days to go",
+      "startedMinutes": "Started · {n}m ago",
+      "startedHours": "Started · {n}h ago",
+      "ended": "Ended"
+    },
+    "meeting": {
+      "timeLabel": "Meet at {time}",
+      "copyHint": "Click to copy address",
+      "copied": "Address copied"
+    },
+    "gear": {
+      "essentialLabel": "Essential",
+      "optionalLabel": "Optional"
+    },
+    "weekday": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "claim": {
+      "claim": "Claim",
+      "unclaim": "Unclaim",
+      "loginRequired": "Please log in first",
+      "failed": "Claim failed",
+      "unclaimFailed": "Unclaim failed",
+      "networkError": "Network error, please retry"
+    }
   }
 }

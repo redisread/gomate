@@ -153,8 +153,13 @@ export interface Team {
   createdAt: string;
   members?: TeamMember[]; // 已加入的成员列表
   location?: Location; // 关联的地点信息
-  /** task #163：行动本 checklist（未填 = undefined） */
-  checklist?: TeamChecklist;
+  /**
+   * task #163 + #165 CR B1：行动本 checklist
+   * - 队长/成员：下发完整数据
+   * - 访客（未登录或非成员）：server 返回 null —— 走 visitor 渲染路径
+   * - 未填：undefined
+   */
+  checklist?: TeamChecklist | null;
 }
 
 // 入队申请
