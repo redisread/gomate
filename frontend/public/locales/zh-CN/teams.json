@@ -483,6 +483,51 @@
     "draftAvailable": "检测到未保存的草稿，是否恢复？",
     "draftRestore": "恢复草稿",
     "draftDiscard": "丢弃",
-    "draftInvalid": "上次的草稿格式不正确，已丢弃。请重新填写"
+    "draftInvalid": "上次的草稿格式不正确，已丢弃。请重新填写",
+    "empty": {
+      "leader": "行动本还没填。集合点在哪？带什么？队员想知道这些。填一次，一劳永逸。",
+      "member": "队长还没填写行动本。可以留言催队长。",
+      "visitor": "加入队伍后可查看集合点、装备清单和分工。"
+    },
+    "cta": {
+      "complete": "完善行动本"
+    },
+    "countdown": {
+      "today": "今天 {time}",
+      "tomorrow": "明天 {time}",
+      "dayOfWeek": "{weekday} {time}",
+      "dateLong": "{month} 月 {day} 日 {time}",
+      "remainingHours": "距集合 {h} 小时 {m} 分",
+      "remainingDays": "距集合 {d} 天",
+      "startedMinutes": "已开始 · {n} 分钟前",
+      "startedHours": "已开始 · {n} 小时前",
+      "ended": "已结束"
+    },
+    "meeting": {
+      "timeLabel": "集合时间 {time}",
+      "copyHint": "点击复制地址",
+      "copied": "地址已复制"
+    },
+    "gear": {
+      "essentialLabel": "必带",
+      "optionalLabel": "选带"
+    },
+    "weekday": {
+      "sun": "周日",
+      "mon": "周一",
+      "tue": "周二",
+      "wed": "周三",
+      "thu": "周四",
+      "fri": "周五",
+      "sat": "周六"
+    },
+    "claim": {
+      "claim": "认领",
+      "unclaim": "取消认领",
+      "loginRequired": "请先登录",
+      "failed": "认领失败",
+      "unclaimFailed": "取消认领失败",
+      "networkError": "网络错误，请重试"
+    }
   }
 }

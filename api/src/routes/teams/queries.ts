@@ -438,6 +438,8 @@ queries.get("/:id", async (c) => {
         id: teamWithRelations.id, locationId: teamWithRelations.locationId,
         title: teamWithRelations.title,
         description: teamWithRelations.description || "", date, time,
+        // task #165：detail 页倒计时 island 需要原始 startTime（ISO），date/time 仅供 SSR 静态显示
+        startTime: startDate.toISOString(),
         duration: `${durationHours}小时`, durationMin: durationMinutes,
         maxMembers: teamWithRelations.maxMembers, currentMembers,
         requirements: parseRequirements(teamWithRelations.requirements),
@@ -462,9 +464,15 @@ queries.get("/:id", async (c) => {
           extra: leader.extra || null,
         } : { id: "unknown", name: "未知用户", avatar: "", level: "beginner", completedHikes: 0, bio: "" },
         members: relevantMembers,
-        // task #163：Team「行动本」checklist（未填 = undefined）
+        // task #163 + task #165 CR B1：Team「行动本」checklist 仅队长/成员可见
         // driver 差异 parse 兜底统一到 parseChecklist（api/src/lib/team-checklist-utils.ts）
-        checklist: parseChecklist(teamWithRelations.checklist) ?? undefined,
+        // 访客拿到 null —— island 端通过 team.checklist 为 null 自动走 visitor 渲染路径
+        // （spec §3.1 隐私红线：集合点/装备/分工 不能进 SSR response，SEO 抓取/SPA view-source 都不能泄露）
+        checklist:
+          currentUserId &&
+          (isTeamMember || currentUserId === teamWithRelations.leaderId)
+            ? (parseChecklist(teamWithRelations.checklist) ?? undefined)
+            : null,
       },
     });
   } catch (error) {

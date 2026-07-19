@@ -461,7 +461,7 @@
       "other": "その他"
     },
     "transportDetailPlaceholder": "詳細：3台あり相乗り可・地下鉄D出口 など",
-    "gearTitle": "装備リスト",
+    "gearTitle": "装備",
     "gearEssentialLabel": "必携（Enter・カンマで追加）",
     "gearOptionalLabel": "任意（Enter・カンマで追加）",
     "gearChipPlaceholder": "入力してEnter",
@@ -483,6 +483,51 @@
     "draftAvailable": "未保存の下書きがあります。復元しますか？",
     "draftRestore": "下書きを復元",
     "draftDiscard": "破棄",
-    "draftInvalid": "前回の下書きが不正なため破棄しました。もう一度入力してください"
+    "draftInvalid": "前回の下書きが不正なため破棄しました。もう一度入力してください",
+    "empty": {
+      "leader": "行動本はまだ空です。集合場所、装備、当日必要な情報を一度書けば、みんなに伝わります。",
+      "member": "リーダーはまだ行動本を書いていません。声をかけてみましょう。",
+      "visitor": "チームに参加すると、集合場所・装備・分担が確認できます。"
+    },
+    "cta": {
+      "complete": "行動本を完成させる"
+    },
+    "countdown": {
+      "today": "今日 {time}",
+      "tomorrow": "明日 {time}",
+      "dayOfWeek": "{weekday} {time}",
+      "dateLong": "{month}月{day}日 {time}",
+      "remainingHours": "集合まで {h} 時間 {m} 分",
+      "remainingDays": "集合まで {d} 日",
+      "startedMinutes": "開始済み · {n} 分前",
+      "startedHours": "開始済み · {n} 時間前",
+      "ended": "終了"
+    },
+    "meeting": {
+      "timeLabel": "集合時刻 {time}",
+      "copyHint": "クリックで住所コピー",
+      "copied": "住所をコピーしました"
+    },
+    "gear": {
+      "essentialLabel": "必携",
+      "optionalLabel": "任意"
+    },
+    "weekday": {
+      "sun": "日曜",
+      "mon": "月曜",
+      "tue": "火曜",
+      "wed": "水曜",
+      "thu": "木曜",
+      "fri": "金曜",
+      "sat": "土曜"
+    },
+    "claim": {
+      "claim": "引き受ける",
+      "unclaim": "取り消す",
+      "loginRequired": "ログインしてください",
+      "failed": "引き受けに失敗しました",
+      "unclaimFailed": "取り消しに失敗しました",
+      "networkError": "通信エラー、再試行してください"
+    }
   }
 }

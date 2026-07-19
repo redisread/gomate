@@ -3,12 +3,13 @@ import { useI18n } from "@/hooks/useI18n";
 import { useTeamDetail } from "./use-team-detail";
 import { getStatusInfo } from "./team-detail-utils";
 import { MemberAvatarGrid } from "./team-detail-members";
+import { TeamActionbookSection } from "./team-actionbook-section";
 import { TeamActivityPosts } from "@/components/features/activity-posts";
 import { formatRouteMetric, normalizeLocationHiking } from "@/components/features/location-detail/route-utils";
 import type { Location, Team } from "@/lib/types";
 
 export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
-  const { team, location, allMembers, canJoin, isFull, isLeader, isMember, isPending, userId } = ctx;
+  const { team, location, allMembers, canJoin, isFull, isLeader, isMember, isPending, userId, show, loadTeam } = ctx;
   const { t } = useI18n(["enums", "teams"]);
 
   if (!team) return null;
@@ -18,6 +19,16 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
   return (
     <div className="space-y-6">
       {location && <LocationCover location={location} statusInfo={statusInfo} />}
+      {/* task #165：Team「行动本」区块——放主内容顶部，spec §3 */}
+      <TeamActionbookSection
+        team={team}
+        currentUserId={userId}
+        isLeader={isLeader}
+        isMember={isMember}
+        members={allMembers}
+        onToast={show}
+        refetchTeam={loadTeam}
+      />
       <RequirementsList requirements={team.requirements} />
       {allMembers.length > 0 && (
         <div className="bg-muted rounded-2xl p-6 space-y-4">
