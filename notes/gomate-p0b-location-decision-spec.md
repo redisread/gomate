@@ -1,4 +1,4 @@
-# gomate P0-B：地点详情页决策信息设计规范 v1.0
+# gomate P0-B：地点详情页决策信息设计规范 v1.1
 
 > 需求：@Victor 2026-07-19/20（认同「体验的另一半」后，要求继续推进 P0 全套）
 > 依据：`notes/gomate-ux-experience-analysis.md` §三-P0-2
@@ -6,7 +6,14 @@
 > 范围：地点详情页 `/locations/[id]`（改造）
 > 交付给：Martin 拆任务
 
-> **v1.0 范围说明**：Victor 2026-07-20 拍板「天气先不加」，故本 spec 不包含「本周天气条件」卡片。**三块**：①怎么到（amap 已接入，需显式化为决策信息块）②季节适宜度（schema 已有 bestSeason 字段，需可视化呈现）③分级装备清单（schema 已有 tips 字段，需拆出 essential/optional）
+> **v1.1 变更**（2026-07-20 Martin CR PR #393 + Victor DM 拍板）：
+>
+> - §3.4 加 `parkingAvailable: boolean` 派生字段（与 parkingInfo 双轨，UI 区分「无停车信息」vs「无停车」）✅ **Victor 拍板接受**
+> - §4.5 匿名访客 fallback 深圳 → 与 P0-D §6.4 共用 helper（`packages/lib/geo-fallback.ts`）
+> - §3.6 amap 5xx 降级具体化：cache 24h ISR + 失败回退到「📍 在地图打开」单链接（坐标自 locations 表）+ 7 天 stale 标注
+> - §6 schema 变更汇总变 4 字段（含 parkingAvailable）✅ **Victor 拍板接受**
+
+> **范围说明**：Victor 2026-07-20 拍板「天气先不加」，故本 spec 不包含「本周天气条件」卡片。**三块**：①怎么到（amap 已接入，需显式化为决策信息块）②季节适宜度（schema 已有 bestSeason 字段，需可视化呈现）③分级装备清单（schema 已有 tips 字段，需拆出 essential/optional）
 
 ---
 
@@ -83,12 +90,15 @@
 
 两条路：
 
-**A. 新加 `parkingInfo: text` 字段**（推荐）
+**A. 新加 `parkingInfo: text` + `parkingAvailable: boolean` 双轨**（推荐 v1.1）
 
-- 字段简短（<100 字），运营手动填
-- 与 description/tips 字段结构对齐
-- 数据真实，无「自动推断」风险
-- **需要 Victor 同意 schema 变更**（CLAUDE.md 红线）
+- `parkingInfo`：自由文本（<100 字），运营手动填，例：「山下停车场 5 元/小时，周末紧张」
+- `parkingAvailable`：boolean 派生字段，UI 区分三种状态：
+  - `true`：有停车 → 显示 `parkingInfo` 详情
+  - `false`：明确无停车 → 显示「建议公共交通」
+  - `null`：信息缺失 → 显示「停车信息待补」
+- 避免 UI 上「无停车信息」与「无停车」混淆
+- **需要 Victor 同意 2 个 schema 字段**（CLAUDE.md 红线）
 
 **B. 用 description 中关键词自动抽取**
 
@@ -104,6 +114,18 @@
 - **地铁站步行时间**：调 amap 步行路径规划 API，超 800 米时显示「建议骑车/打车接驳」
 - **自驾时长**：调 amap 驾车路径规划 API，**默认算非高峰时段**（早 10 点出发），hover 显示「高峰时段约 X 分钟」
 - **未填字段不渲染**：停车未填时只显示公共交通建议，不显示空白
+
+### 3.6 amap 5xx 降级策略（v1.1 具体化）
+
+Martin CR 确认三段式降级：
+
+1. **关键路径缓存**：amap 路径规划结果（地铁站 + 自驾时长）走 SSR + ISR `revalidate: 86400`（24h）。Cloudflare edge 命中，零调用
+2. **失败回退**：cache miss + amap 5xx → 整块「怎么到」降级为「📍 在地图打开」单链接（坐标来自 `locations.lat/lng`，无 amap 依赖）
+3. **stale 标注**：cache 数据超过 7 天显示「信息更新于 X 天前」灰色小字
+
+**实现位置**：`api/src/utils/amap.ts` 扩展 `safeAmapCall()` 包装器，统一处理 cache + 5xx + stale 标注写入 metadata。
+
+**前端**：组件从 API 读 `meta.stale_days` 字段，超过 7 显示 stale 提示。
 
 ### 3.6 i18n
 
@@ -175,6 +197,18 @@ gomate 当前只有 `bestSeason` 一个字段，**没有「avoidSeason」或「s
 - 当前季节 = 推荐季节 → 整块用 `bg-emerald-50` 标记「**现在去正好**」
 - 当前季节非推荐 → 显示「**当前非最佳季节，建议春季/秋季前往**」副标题
 - 季节判断用本地时间，不调远程 API
+- **匿名访客 fallback 深圳**：与 P0-D §6.4「匿名 fallback 深圳」共用 helper（v1.1）
+
+**共享 helper 位置**：`packages/lib/geo-fallback.ts`，导出 `getCurrentCity(request): string`，P0-B 和 P0-D 都用同一份。
+
+```ts
+// packages/lib/geo-fallback.ts
+export function getCurrentCity(request: Request): string {
+  // 1. 优先取 session 中的 users.city
+  // 2. 其次取 Cloudflare CF-IPCity header
+  // 3. 最后 fallback "shenzhen"（gomate 主战场）
+}
+```
 
 ### 4.6 i18n
 
@@ -265,19 +299,20 @@ gear.notes = "注意事项" / "Notes" / "注意事項"
 
 ## 6. schema 变更请求汇总（需 Victor 一次性拍板）
 
-如果 Victor 接受 §3.4-A / §5.4-A，P0-B 需要 3 个新字段（一次性加）：
+如果 Victor 接受 §3.4-A / §5.4-A，P0-B 需要 **4 个新字段**（v1.1 含 parkingAvailable 派生字段）：
 
-| 表          | 字段             | 类型           | 说明                        |
-| ----------- | ---------------- | -------------- | --------------------------- |
-| `locations` | `parking_info`   | text, nullable | 停车信息，自由文本，<100 字 |
-| `locations` | `gear_essential` | text, nullable | 必带装备，comma-separated   |
-| `locations` | `gear_optional`  | text, nullable | 选带装备，comma-separated   |
+| 表          | 字段                | 类型              | 说明                                         |
+| ----------- | ------------------- | ----------------- | -------------------------------------------- |
+| `locations` | `parking_available` | boolean, nullable | 停车状态：true=有 / false=无 / null=信息缺失 |
+| `locations` | `parking_info`      | text, nullable    | 停车信息，自由文本，<100 字                  |
+| `locations` | `gear_essential`    | text, nullable    | 必带装备，comma-separated                    |
+| `locations` | `gear_optional`     | text, nullable    | 选带装备，comma-separated                    |
 
 **保留**：`tips` 字段做「注意事项」自由文本，不替换。
 
 **风险评估**：
 
-- 3 个字段全部 nullable，旧数据自动兼容
+- 4 个字段全部 nullable（boolean nullable 三态），旧数据自动兼容
 - Drizzle migration 新增字段无破坏性
 - 可与 P0-A 的 `teams.checklist` / `users.city` migration 一起做（独立表）
 - 不需要数据回填（旧 location 字段全 null，前端按未填处理）
@@ -368,4 +403,4 @@ Wen 测试用例覆盖：
 
 ---
 
-_spec v1.0 完成，等 Victor 对 §3.4 / §5.4 schema 变更 + §7 「amap 5xx 降级」决策确认后提 Martin 拆任务。_
+_spec v1.1 完成（Martin CR PR #393 pass + Victor 拍板 4 字段 schema 全部通过），等提 Martin 拆任务。_
