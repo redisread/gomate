@@ -148,13 +148,15 @@ export function formToChecklistPayload(form: FormChecklist): TeamChecklist {
   const notes = form.notes.trim();
   // task #166 CR B1：保留已有认领 —— server normalizeAssignments 会按入参覆盖，
   // 把 form 里持有的 assigneeIds 原样送回，避免队长编辑其他字段时抹掉认领关系。
+  // M1：filter 改为「空 task 且无认领」才丢 —— task 被误清空时保留行 + 认领，
+  // 避免「编辑一次整个分工就没了连带认领」（误编辑不毁数据原则）。
   const assignments = form.assignments
     .map((a) => ({
       id: a.id,
       task: a.task.trim(),
       assigneeIds: Array.from(new Set(a.assigneeIds)),
     }))
-    .filter((a) => a.task);
+    .filter((a) => a.task || a.assigneeIds.length > 0);
 
   const payload: TeamChecklist = {};
   if (meetingName) {

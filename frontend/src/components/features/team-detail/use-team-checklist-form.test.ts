@@ -178,6 +178,23 @@ describe("formToChecklistPayload", () => {
     expect(payload.assignments?.[0].assigneeIds).toEqual(["u-alice", "u-bob"]);
   });
 
+  // task #166 CR M1：误编辑不毁数据 —— 空 task + 已认领的行必须保留行+认领；
+  // 只有「空 task 且无认领」才视为用户主动删除。
+  it("空 task + 已认领保留行 + 认领（CR M1 误编辑保护）", () => {
+    const payload = formToChecklistPayload({
+      ...EMPTY_FORM,
+      assignments: [
+        { id: "a1", task: "带急救包", assigneeIds: ["u-alice"] },
+        { id: "a2", task: "  ", assigneeIds: ["u-bob"] }, // 误清空但有人认领
+        { id: "a3", task: "  ", assigneeIds: [] }, // 真的空
+      ],
+    });
+    expect(payload.assignments).toEqual([
+      { id: "a1", task: "带急救包", assigneeIds: ["u-alice"] },
+      { id: "a2", task: "", assigneeIds: ["u-bob"] },
+    ]);
+  });
+
   it("notes trim 后为空 → notes 不产出", () => {
     expect(formToChecklistPayload({ ...EMPTY_FORM, notes: "   " }).notes).toBeUndefined();
   });
