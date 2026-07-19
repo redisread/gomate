@@ -1,10 +1,18 @@
-# gomate P0-D：首页「本地圈子」设计规范 v1.0
+# gomate P0-D：首页「本地圈子」设计规范 v1.1
 
 > 需求：@Victor 2026-07-20 DM（继续推进 P0 全套） + Victor 反问「B 方案是否用户体验良好」后确认 B 修正版
 > 依据：`notes/gomate-ux-experience-analysis.md` §三-P0-4
 > 设计者：@Steven
 > 范围：首页 `/`（改造）—— 在 P0-C 推荐位下、Locations 区块上插入「本地圈子」 + 队伍卡「邻居 X 人参加」
 > 交付给：Martin 拆任务
+
+> **v1.1 变更**（2026-07-20 Martin CR PR #393）：
+>
+> - §3.3 加单 user 对单 location score 上限 3.0（防刷分）
+> - §3.5 加复合索引清单（team_members / stories / activity_posts / user_favorites）
+> - §4.3 `user.showCity` P1 延后，本 spec 不实现
+> - §5.1 tooltip + A/B 测试留口子（不强制 P0 内做）—— Victor 拍板 P0 不做 A/B
+> - §11 #175 blocker 明确标注：依赖 #164 users.city 字段落地
 
 ---
 
@@ -91,11 +99,14 @@
 
 **最终 visit_score = sum(信号 × 权重)**，按 score 排序取 top 3。
 
+**v1.1 防刷分**：单一用户对单个 location 的总 score 上限 **3.0**（防止单 user 发多篇故事 → 1 人贡献 5 × 1.5 = 7.5 score 顶替 7 个 approved 成员）
+
 **关键修正**（§三 提到）：
 
 - ✅ 排除 cancelled 成员（用 `team_members.status='approved'` 限定）
 - ✅ 强制 7 天窗口（所有 source 都有时间过滤）
 - ✅ 信号分级（PRIMARY/SECONDARY/SUPPLEMENTARY 反映真实度差异）
+- ✅ **v1.1 防刷分**：单 user 单 location score 上限 3.0
 
 ### 3.4 API 设计
 
@@ -129,8 +140,16 @@
 
 ### 3.5 性能
 
-- 查询：单 SQL with subquery（4 个 source union 后聚合），预计 100ms 内
+- 查询：**v1.1 单 SQL UNION + GROUP BY + JOIN cities + JOIN users 取 city**，预计 100ms 内
+- **v1.1 复合索引清单**：
+  - `team_members(team_id, status)`
+  - `team_members(user_id)`
+  - `stories(location_id, status, published_at)`
+  - `activity_posts(location_id, published_at)`
+  - `user_favorites(location_id, created_at)`
+- **v1.1 EXPLAIN PLAN**：T1 验收必须 `EXPLAIN QUERY PLAN` 走索引扫描
 - 缓存：city-keyed，TTL 30 分钟（数据不需要实时）
+- **v1.1 cache miss 时一次预算 30 分钟数据**（不是按请求实时算），减少冷启动延迟
 - 头像堆叠：只在 response 中返回 ≤ 5 个 URL，前端不再请求
 
 ---
@@ -365,6 +384,8 @@ Wen 测试用例覆盖：
 
 P0-D T1 等 P0-A #164 done 才能启动——这是清晰的串行依赖。
 
+**v1.1 Martin 任务编号预分配**：#175（API+信号计算，**blocker = #164**）→ #176（前端本地圈子）→ #177（队伍卡邻居+i18n）。Jeff 起手 #175 时必须等 #164 done。
+
 ---
 
 ## 12. 一句话总结
@@ -373,4 +394,4 @@ P0-D T1 等 P0-A #164 done 才能启动——这是清晰的串行依赖。
 
 ---
 
-_spec v1.0 完成，等 Victor 对 §5「在行动 vs 去过」措辞策略确认后提 Martin 拆任务。_
+_spec v1.1 完成（Martin CR PR #393 pass + Victor 拍板 P0 不做 A/B 测试），等 Victor 对 §5「在行动 vs 去过」措辞策略确认后提 Martin 拆任务。_
