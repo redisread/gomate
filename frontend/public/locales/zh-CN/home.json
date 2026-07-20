@@ -58,18 +58,18 @@
       "futureTeams": "{n} 个队伍招人"
     },
     "reason": {
-      "steady_season_close": "这周天气正合适，距离约 {km} km",
+      "steady_season_close": "这周末天气正合适，距离约 {km} km",
       "steady_season_teams": "正适合现在去，已有 {n} 个队伍在招人",
-      "steady_easy_close": "难度轻松、距离约 {km} km，新手友好",
+      "steady_easy_close": "难度低、距离约 {km} km，新手友好",
       "steady_close_social": "距离近 + 有人一起，本周 {n} 个队伍出发",
       "steady_fallback": "距离约 {km} km，稳稳出发",
-      "worthy_favorites": "{n} 人收藏过，值得一去",
-      "worthy_stories": "{n} 篇故事写过，值得一探",
-      "worthy_favorites_stories": "共 {n} 次收藏 / 故事沉淀，值得优先安排",
+      "worthy_favorites": "{n} 人收藏，值得一去",
+      "worthy_stories": "{n} 个真实故事，值得一探",
+      "worthy_favorites_stories": "收藏 + 故事共 {n} 次，值得优先安排",
       "worthy_fallback": "值得抽时间去一次",
-      "fresh_new_location": "上架 {n} 天内的新地点",
-      "fresh_trending_signups": "近 7 天已有 {n} 人报名，热度上涨",
-      "fresh_new_teams": "本周新开 {n} 支队伍，抢先加入",
+      "fresh_new_location": "本周刚加入的新地点，上架 {n} 天",
+      "fresh_trending_signups": "本周突然火了，{n} 人加入",
+      "fresh_new_teams": "{n} 支新队伍下周走，抢先加入",
       "fresh_fallback": "本周新面孔，先睹为快"
     },
     "empty": {
