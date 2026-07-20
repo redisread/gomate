@@ -286,3 +286,26 @@ describe("local-circle service — getLocalCircleHome", () => {
     expect(result.activePeopleCount).toBe(0);
   });
 });
+
+// ==================== Route 层：cityId 校验 400 ====================
+// Wen msg=d84aa69d 顾虑「hono `.optional()` 陷阱」—— 手动 `if (!cityId)` 已覆盖 falsy 空串，
+// route 层加一层 unit-lock 防未来 refactor 换 zod validator 时误让 cityId= 空串通过。
+describe("local-circle route — GET /local-circle/home", () => {
+  it("无 cityId 参数 → 400", async () => {
+    const { Hono } = await import("hono");
+    const { localCircleHomeRoute } = await import("../../routes/local-circle/home");
+    const app = new Hono();
+    app.route("/", localCircleHomeRoute);
+    const res = await app.fetch(new Request("http://localhost/?"), { DB: {}, GOMATE_KV: null } as never);
+    expect(res.status).toBe(400);
+  });
+
+  it("cityId= 空串 → 400（防 hono .optional() 陷阱）", async () => {
+    const { Hono } = await import("hono");
+    const { localCircleHomeRoute } = await import("../../routes/local-circle/home");
+    const app = new Hono();
+    app.route("/", localCircleHomeRoute);
+    const res = await app.fetch(new Request("http://localhost/?cityId="), { DB: {}, GOMATE_KV: null } as never);
+    expect(res.status).toBe(400);
+  });
+});
