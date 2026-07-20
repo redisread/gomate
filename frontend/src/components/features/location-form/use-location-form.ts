@@ -239,6 +239,14 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
       if (err) { allValid = false; }
       setErrors((prev) => ({ ...prev, [key]: err }));
     }
+    // P0-B T4：UI required + API optional —— UI 层强制 gearEssential ≥ 1 项
+    const essentialFilled = formData.gearEssential.filter((v) => v.trim()).length;
+    if (essentialFilled === 0) {
+      setErrors((prev) => ({ ...prev, gearEssential: "至少填 1 项必带装备" }));
+      allValid = false;
+    } else {
+      setErrors((prev) => ({ ...prev, gearEssential: undefined }));
+    }
     if (!allValid || !location) return;
 
     setIsSaving(true);
