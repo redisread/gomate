@@ -331,6 +331,9 @@ interface Candidate {
  * 从而同时兼容中文 label 数据和未来的英文 key 数据。
  *
  * Martin CR PR #395 blocker-1：修复 prod 数据 100% miss。
+ *
+ * spec v1.2 §4.1 A 补充：bestSeason 含 "全年" / "all" / "year-round" 视为**任意季节均命中**
+ * （prod 有 6 个 loc 是全年可去，如阳台山/梅沙尖，之前统一被归一到 null 拿不到 seasonMatch 加分）。
  */
 function seasonMatches(bestSeasonJson: string, season: Season): boolean {
   try {
@@ -338,6 +341,11 @@ function seasonMatches(bestSeasonJson: string, season: Season): boolean {
     if (!Array.isArray(arr)) return false;
     return arr.some((label) => {
       if (typeof label !== "string") return false;
+      // 全年 / all / year-round → 任意季节命中
+      const trimmed = label.trim().toLowerCase();
+      if (trimmed === "全年" || trimmed === "all" || trimmed === "year-round") {
+        return true;
+      }
       return normalizeSeasonLabel(label) === season;
     });
   } catch {
@@ -355,9 +363,12 @@ function buildCandidate(row: SignalRow, now: number, season: Season): Candidate 
   const closeDistance = row.distance !== null && row.distance <= 50;
   const hasTeams = row.future_teams >= 1;
   const manyTeams = row.future_teams >= 2;
-  const manyFavorites = row.fav_count >= 5;
-  const manyStories = row.story_count >= 3;
-  const isNew = ageDays >= 0 && ageDays <= 7;
+  // spec v1.2 §4.2/§4.3 数据饥荒版阈值降级（P0-C MVP）：
+  //   manyFavorites 5→3、manyStories 3→1、isNew 7d→30d
+  //   等 favorites/stories 有真实业务量后，Martin 通过 spec v1.3 回收到 spec §4.2 原阈值。
+  const manyFavorites = row.fav_count >= 3;
+  const manyStories = row.story_count >= 1;
+  const isNew = ageDays >= 0 && ageDays <= 30;
   const trendingSignups = row.signup_7d >= 5;
   const newTeams = row.new_teams_7d >= 1;
 
@@ -498,6 +509,13 @@ function pickFromKind(pool: Candidate[], rand: () => number): Candidate | null {
 /**
  * 冲突解决（spec §6.3）：worthy 优先，其次 steady，最后 fresh
  * 三张卡必须不同 location；若某 kind 池内候选都冲突 → 该 kind 空
+ *
+ * spec v1.2 §6.4 跨 kind 兜底填充（Martin 2026-07-20 blocker 修复）：
+ *   worthy/fresh 池天然为空时，从 steady 剩余次优（未被 steady slot 选走且未被本轮选走）补位；
+ *   kind 标签保持（前端仍显示 worthy/fresh 徽章 + 边框色），reason 用 kind.fallback；
+ *   chosenIds 依然生效，保证三张不同 loc。
+ *
+ * 保证任意时刻返 3 张（除非全 35 loc 都不通过 steady 5-way OR，几乎不可能）。
  */
 function selectThree(pool: Pool, seed: string): Recommendation[] {
   const rand = mulberry32(seedToUint32(seed));
@@ -506,24 +524,13 @@ function selectThree(pool: Pool, seed: string): Recommendation[] {
   const chosenIds = new Set<string>();
   const results: (Recommendation | null)[] = [null, null, null]; // [steady, worthy, fresh]
 
-  const takeFromKind = (
-    kind: RecommendationKind,
-    kindPool: Candidate[],
-    slot: number,
-  ) => {
-    if (kindPool.length === 0) return;
-    // 从池中过滤未被占用的候选
-    const remaining = kindPool.filter((c) => !chosenIds.has(c.locationId));
-    if (remaining.length === 0) return; // 全冲突 → 该 kind 空
-    const picked = pickFromKind(remaining, rand);
-    if (!picked) return;
-    chosenIds.add(picked.locationId);
+  const buildRecord = (kind: RecommendationKind, picked: Candidate): Recommendation => {
     const d = picked.data;
     // km 保留 1 位小数（P0-C T2 契约：避免前端二次换算）
     const distanceKm = d.distanceKm === null ? null : Math.round(d.distanceKm * 10) / 10;
     // difficulty 归一小写（DB 存自由文本；前端 DIFFICULTY_CONFIG key 小写）
     const difficulty = d.difficulty === null ? null : d.difficulty.toLowerCase();
-    results[slot] = {
+    return {
       kind,
       locationId: picked.locationId,
       reason: pickReason(kind, picked),
@@ -542,10 +549,40 @@ function selectThree(pool: Pool, seed: string): Recommendation[] {
     };
   };
 
+  const takeFromKind = (
+    kind: RecommendationKind,
+    kindPool: Candidate[],
+    slot: number,
+  ) => {
+    if (kindPool.length === 0) return;
+    // 从池中过滤未被占用的候选
+    const remaining = kindPool.filter((c) => !chosenIds.has(c.locationId));
+    if (remaining.length === 0) return; // 全冲突 → 该 kind 空
+    const picked = pickFromKind(remaining, rand);
+    if (!picked) return;
+    chosenIds.add(picked.locationId);
+    results[slot] = buildRecord(kind, picked);
+  };
+
   // 顺序：worthy(idx=1) → steady(idx=0) → fresh(idx=2)
   takeFromKind("worthy", pool.worthy, 1);
   takeFromKind("steady", pool.steady, 0);
   takeFromKind("fresh", pool.fresh, 2);
+
+  // spec v1.2 §6.4：worthy / fresh 空槽 → 从 steady 剩余次优补位
+  // 保持 kind 标签，reason 走 fallback（前端 kind 徽章 + 边框 + fallback 文案）
+  const fillEmptySlot = (kind: RecommendationKind, slot: number) => {
+    if (results[slot] !== null) return;
+    const remaining = pool.steady.filter((c) => !chosenIds.has(c.locationId));
+    if (remaining.length === 0) return; // steady 也用完，只能返少于 3
+    const picked = pickFromKind(remaining, rand);
+    if (!picked) return;
+    chosenIds.add(picked.locationId);
+    // buildRecord 用传入的 kind → pickReason(kind, ...) 命中 kind.fallback（无 hits 加分）
+    results[slot] = buildRecord(kind, picked);
+  };
+  fillEmptySlot("worthy", 1);
+  fillEmptySlot("fresh", 2);
 
   // payload 顺序 [steady, worthy, fresh]（UI 期望）
   return results.filter((r): r is Recommendation => r !== null);

@@ -112,6 +112,21 @@ describe("recommendations: seasonMatches", () => {
   it("非数组 → false", () => {
     expect(seasonMatches('"spring"', "spring")).toBe(false);
   });
+
+  // spec v1.2 §4.1 A 补充：全年 / all / year-round → 任意季节命中
+  it('"全年" label → 任意季节都命中', () => {
+    expect(seasonMatches('["全年"]', "spring")).toBe(true);
+    expect(seasonMatches('["全年"]', "summer")).toBe(true);
+    expect(seasonMatches('["全年"]', "autumn")).toBe(true);
+    expect(seasonMatches('["全年"]', "winter")).toBe(true);
+  });
+
+  it('"all" / "year-round" 英文 sentinel → 任意季节都命中', () => {
+    expect(seasonMatches('["all"]', "summer")).toBe(true);
+    expect(seasonMatches('["year-round"]', "winter")).toBe(true);
+    // 混数组仍然命中
+    expect(seasonMatches('["spring","全年"]', "winter")).toBe(true);
+  });
 });
 
 // ==================== buildCandidate / computePool ====================
@@ -209,8 +224,8 @@ describe("recommendations: buildCandidate hit 位", () => {
     expect(c.hits.isNew).toBe(true);
   });
 
-  it("ageDays >7 → 非 isNew", () => {
-    const c = buildCandidate(makeRow(now, { id: "l1", ageDays: 15 }), now, "summer");
+  it("ageDays >30 → 非 isNew（spec v1.2 阈值 30d）", () => {
+    const c = buildCandidate(makeRow(now, { id: "l1", ageDays: 45 }), now, "summer");
     expect(c.hits.isNew).toBe(false);
   });
 
@@ -340,6 +355,45 @@ describe("recommendations: selectThree 冲突解决 + 排序", () => {
     const pool = makePool([], [], []);
     const res = selectThree(pool, "seed-x");
     expect(res).toEqual([]);
+  });
+
+  // spec v1.2 §6.4 跨 kind 兜底：worthy / fresh 空 → steady 剩余次优补位
+  it("worthy 空 + steady 有余量 → worthy slot 用 steady 兜底，kind=worthy reason=fallback", () => {
+    const pool = makePool(["s1", "s2"], [], []);
+    const res = selectThree(pool, "seed-x");
+    // steady 只有 2 个，一个占 steady slot 一个填 worthy slot；fresh 无兜底源
+    expect(res.length).toBe(2);
+    const worthySlot = res.find((r) => r.kind === "worthy");
+    expect(worthySlot).toBeDefined();
+    expect(worthySlot!.reason.key).toBe<ReasonKey>("worthy.fallback");
+  });
+
+  it("fresh 空 + steady 有余量 → fresh slot 用 steady 兜底，kind=fresh reason=fallback", () => {
+    const pool = makePool(["s1", "s2"], ["w1"], []);
+    const res = selectThree(pool, "seed-x");
+    expect(res.length).toBe(3);
+    const freshSlot = res.find((r) => r.kind === "fresh");
+    expect(freshSlot).toBeDefined();
+    expect(freshSlot!.reason.key).toBe<ReasonKey>("fresh.fallback");
+  });
+
+  it("worthy + fresh 都空 + steady 有 3 个 → 三张全出，两张 fallback", () => {
+    const pool = makePool(["s1", "s2", "s3"], [], []);
+    const res = selectThree(pool, "seed-x");
+    expect(res.length).toBe(3);
+    expect(res.map((r) => r.kind).sort()).toEqual(["fresh", "steady", "worthy"]);
+    const ids = new Set(res.map((r) => r.locationId));
+    expect(ids.size).toBe(3); // 三张不同 loc
+    // steady slot 用 steady reason（有 season+distance 双命中→season_close），worthy/fresh 用 fallback
+    expect(res.find((r) => r.kind === "worthy")!.reason.key).toBe<ReasonKey>("worthy.fallback");
+    expect(res.find((r) => r.kind === "fresh")!.reason.key).toBe<ReasonKey>("fresh.fallback");
+  });
+
+  it("兜底不违反去重：steady 只有 1 个 → 三个 slot 只能填 1 张", () => {
+    const pool = makePool(["only"], [], []);
+    const res = selectThree(pool, "seed-x");
+    expect(res.length).toBe(1);
+    expect(res[0]!.kind).toBe("steady");
   });
 
   it("同池 3+ 条，不同 seed 选出不同 candidate", () => {
@@ -523,8 +577,8 @@ describe("recommendations: pickReason fresh", () => {
   });
 
   it("均未命中 → fresh.fallback", () => {
-    // ageDays=30 → 非 isNew；无 signup7d/newTeams7d
-    const c = mk({ id: "l1", ageDays: 30 });
+    // ageDays=60 → 非 isNew（spec v1.2 阈值 30d）；无 signup7d/newTeams7d
+    const c = mk({ id: "l1", ageDays: 60 });
     expect(pickReason("fresh", c).key).toBe<ReasonKey>("fresh.fallback");
   });
 });
