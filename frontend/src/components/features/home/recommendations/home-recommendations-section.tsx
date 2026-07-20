@@ -7,6 +7,7 @@
  *  - 「换一批」按钮 → 用返回的 nextSeed 再打一次
  *  - 移动端竖排堆叠 + 「换一批」sticky 底部（本 section 内 sticky，不做全屏）
  *  - 整块三类全空 → 不渲染整个 section（P0-A 空态一致）
+ *  - error 态展示手动重试（不静默 return null，spec §7.4 空态 !== error 态）
  *  - seed 只在内存态，不入 cookie / localStorage（spec §5.2 v1.1 隐私）
  */
 
@@ -40,8 +41,9 @@ export function HomeRecommendationsSection() {
   const [state, setState] = React.useState<FetchState>({ status: "loading" });
   const [refreshing, setRefreshing] = React.useState(false);
 
-  // 首次挂载 fetch（seed 由服务端生成）
-  React.useEffect(() => {
+  // 抽出首次/重试共用的加载逻辑
+  const loadInitial = React.useCallback(() => {
+    setState({ status: "loading" });
     let cancelled = false;
     fetchRecommendations()
       .then((data) => {
@@ -61,6 +63,11 @@ export function HomeRecommendationsSection() {
       cancelled = true;
     };
   }, []);
+
+  React.useEffect(() => {
+    const cleanup = loadInitial();
+    return cleanup;
+  }, [loadInitial]);
 
   const handleRefresh = React.useCallback(async () => {
     if (state.status !== "ready" || refreshing) return;
@@ -85,9 +92,26 @@ export function HomeRecommendationsSection() {
     return null;
   }
 
-  // Error 初次即失败 → 也不渲染（避免打乱首屏）；开发环境可从 console 看到
+  // Error 态：Martin CR B2 —— 不静默 return null，展示 error banner + 手动重试
+  // spec §7.4 明确「整块空 → 不渲染」是空态，与 fetch error 不同语义
   if (state.status === "error") {
-    return null;
+    return (
+      <section
+        className="py-6 text-center text-sm text-muted-foreground"
+        data-testid="home-recommendations-error"
+      >
+        <span>{t("home.recommendations.error")}</span>
+        <button
+          type="button"
+          onClick={loadInitial}
+          className="ml-2 inline-flex items-center gap-1 underline hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
+          data-testid="recommendation-retry-btn"
+          aria-label={t("home.recommendations.error")}
+        >
+          <RefreshCw className="w-3.5 h-3.5" strokeWidth={2.2} />
+        </button>
+      </section>
+    );
   }
 
   return (
@@ -126,14 +150,15 @@ export function HomeRecommendationsSection() {
           </div>
         )}
 
-        {/* Refresh CTA — 桌面居中；移动端 sticky 底部 */}
+        {/* Refresh CTA — 桌面居中；移动端 sticky 底部
+            Martin CR B1: 用 w-fit + mx-auto 让容器只覆盖按钮宽度，避免 sticky 容器矩形挡住卡片点击 */}
         {state.status === "ready" && (
-          <div className="mt-6 sm:mt-8 flex justify-center md:static sticky bottom-4 z-10 pointer-events-none">
+          <div className="mt-6 sm:mt-8 md:static sticky bottom-4 z-10 w-fit mx-auto">
             <button
               type="button"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="pointer-events-auto inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/95 dark:bg-neutral-900/95 border border-border shadow-md hover:shadow-lg backdrop-blur text-sm font-medium text-foreground hover:text-amber-700 dark:hover:text-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/95 dark:bg-neutral-900/95 border border-border shadow-md hover:shadow-lg backdrop-blur text-sm font-medium text-foreground hover:text-amber-700 dark:hover:text-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               data-testid="recommendation-refresh-btn"
             >
               <RefreshCw

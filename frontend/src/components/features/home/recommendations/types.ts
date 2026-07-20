@@ -8,7 +8,13 @@
 
 export type RecommendationKind = "steady" | "worthy" | "fresh";
 
-/** api reason.key union（12 + 3 fallback）；前端 i18n key 走 `steady_season_close` 等 flat 形式 */
+/** api reason.key union（12 + 3 fallback）；前端 i18n key 走 `steady_season_close` 等 flat 形式
+ *
+ * TODO(P1): 与 api/src/services/recommendations.ts 的 ReasonKey 手动同步。
+ *   若将来建立 `packages/api-contract` shared 包，将本 union + ReasonParams + RecommendationLocationSummary
+ *   一并迁移过去，避免漂移风险（api 加第 13 个 reason.key 时前端 union 落后一版）。
+ *   当前保持独立复制 —— shared type 迁移是大动作，本次 T2 不做。
+ */
 export type ReasonKey =
   | "steady.season_close"
   | "steady.season_teams"
