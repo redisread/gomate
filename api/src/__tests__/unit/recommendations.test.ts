@@ -75,13 +75,33 @@ describe("recommendations: seedToUint32", () => {
 // ==================== seasonMatches ====================
 
 describe("recommendations: seasonMatches", () => {
-  it("bestSeason 包含目标 season → true", () => {
+  it("英文 key bestSeason 包含目标 season → true", () => {
     expect(seasonMatches('["spring","summer"]', "spring")).toBe(true);
     expect(seasonMatches('["spring","summer"]', "summer")).toBe(true);
   });
 
+  // Martin CR PR #395 blocker-1：prod 数据 bestSeason 是中文 label
+  it("中文 label bestSeason 归一化后匹配 season → true", () => {
+    expect(seasonMatches('["春季","秋季"]', "spring")).toBe(true);
+    expect(seasonMatches('["春季","秋季"]', "autumn")).toBe(true);
+    expect(seasonMatches('["夏季"]', "summer")).toBe(true);
+    expect(seasonMatches('["冬季"]', "winter")).toBe(true);
+  });
+
+  it("中英文混合 bestSeason 同样归一化匹配", () => {
+    // 兼容未来存储层迁移过程中的过渡期数据
+    expect(seasonMatches('["春季","summer"]', "spring")).toBe(true);
+    expect(seasonMatches('["春季","summer"]', "summer")).toBe(true);
+  });
+
   it("不包含 → false", () => {
     expect(seasonMatches('["spring"]', "winter")).toBe(false);
+    expect(seasonMatches('["春季"]', "winter")).toBe(false);
+  });
+
+  it("未知 label（非 zh label 也非 Season key）→ 该项被忽略", () => {
+    expect(seasonMatches('["unknown","spring"]', "spring")).toBe(true);
+    expect(seasonMatches('["unknown"]', "spring")).toBe(false);
   });
 
   it("非法 JSON → false（不抛）", () => {
