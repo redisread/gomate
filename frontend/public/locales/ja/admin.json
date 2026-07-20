@@ -76,7 +76,7 @@
   "formGearEssentialLabel": "必須装備",
   "formGearEssentialPlaceholder": "例：登山靴",
   "formGearEssentialRequired": "必須装備を 1 項目以上入力してください",
-  "formGearMaxError": "最大 10 項目",
+  "formGearMaxError": "最大 8 項目",
   "formGearOptionalHint": "ドラッグで並び替え、最大 8 項目、各 12 文字以内",
   "formGearOptionalLabel": "任意装備",
   "formGearOptionalPlaceholder": "例：トレッキングポール",

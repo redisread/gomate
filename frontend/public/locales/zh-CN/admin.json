@@ -76,7 +76,7 @@
   "formGearEssentialLabel": "必带装备",
   "formGearEssentialPlaceholder": "例：登山鞋",
   "formGearEssentialRequired": "至少填 1 项必带装备",
-  "formGearMaxError": "最多 10 项",
+  "formGearMaxError": "最多 8 项",
   "formGearOptionalHint": "拖动排序，最多 8 项，每项 12 字以内",
   "formGearOptionalLabel": "选带装备",
   "formGearOptionalPlaceholder": "例：登山杖",

@@ -76,7 +76,7 @@
   "formGearEssentialLabel": "Essential Gear",
   "formGearEssentialPlaceholder": "e.g., Hiking shoes",
   "formGearEssentialRequired": "At least 1 essential item required",
-  "formGearMaxError": "Up to 10 items",
+  "formGearMaxError": "Up to 8 items",
   "formGearOptionalHint": "Drag to reorder, up to 8 items, ≤12 chars each",
   "formGearOptionalLabel": "Optional Gear",
   "formGearOptionalPlaceholder": "e.g., Trekking poles",
