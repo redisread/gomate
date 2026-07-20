@@ -22,5 +22,35 @@
     "minute": "分",
     "kilometer": "km",
     "meter": "m"
+  },
+  "decision": {
+    "title": "行き方と装備",
+    "subtitle": "先にアクセス方法と持ち物を確認しましょう"
+  },
+  "transport": {
+    "title": "行き方",
+    "subwayLabel": "最寄り駅",
+    "subwayLine": "{station} · 徒歩 {n} 分",
+    "subwayWithLines": "{lines} · {station} · 徒歩 {n} 分",
+    "subwayTransferHint": "所要時間は目安です。自転車やタクシーもご検討ください",
+    "drivingLabel": "車",
+    "drivingDistance": "{landmark} から約 {km} km",
+    "drivingDuration": "約 {n} 分",
+    "openInMap": "高德地図で開く",
+    "fallbackHint": "リアルタイムの交通データを取得できません",
+    "stale": "更新から {n} 日経過",
+    "loading": "交通情報を取得中…",
+    "retry": "再試行"
+  },
+  "parking": {
+    "title": "駐車場",
+    "available": "駐車場あり",
+    "noParking": "駐車場なし · 公共交通機関推奨"
+  },
+  "gear": {
+    "title": "装備リスト",
+    "essential": "必携",
+    "optional": "任意",
+    "notes": "注意事項"
   }
 }

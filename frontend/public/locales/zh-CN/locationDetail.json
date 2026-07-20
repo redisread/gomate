@@ -22,5 +22,35 @@
     "minute": "分钟",
     "kilometer": "km",
     "meter": "m"
+  },
+  "decision": {
+    "title": "决策信息",
+    "subtitle": "先看清楚怎么到、要带什么"
+  },
+  "transport": {
+    "title": "怎么到",
+    "subwayLabel": "最近地铁",
+    "subwayLine": "{station} · 步行 {n} 分钟",
+    "subwayWithLines": "{lines} · {station} · 步行 {n} 分钟",
+    "subwayTransferHint": "步行时间为估算值，可考虑骑行/打车",
+    "drivingLabel": "自驾 / 打车",
+    "drivingDistance": "距{landmark}约 {km} km",
+    "drivingDuration": "约 {n} 分钟",
+    "openInMap": "在高德地图打开",
+    "fallbackHint": "暂无实时公交/驾车数据",
+    "stale": "信息更新于 {n} 天前",
+    "loading": "正在获取实时交通信息…",
+    "retry": "重试"
+  },
+  "parking": {
+    "title": "停车",
+    "available": "有停车",
+    "noParking": "无停车 · 建议公共交通"
+  },
+  "gear": {
+    "title": "装备清单",
+    "essential": "必带",
+    "optional": "选带",
+    "notes": "注意事项"
   }
 }
