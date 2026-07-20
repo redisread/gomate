@@ -155,9 +155,11 @@ export function Navbar({ className }: NavbarProps) {
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "relative px-3.5 py-2 text-sm font-medium rounded-lg transition-colors duration-150",
+                      // task #180 a11y：active text-primary (#D97706) on bg-accent (#fffbeb) = ~3.07:1 挂；amber-800 = ~6.8:1
+                      // inactive muted-foreground 14px 挂；stone-700 dark:stone-300 稳过
                       active
-                        ? "text-primary bg-accent"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        ? "text-amber-800 dark:text-amber-300 bg-accent"
+                        : "text-stone-700 dark:text-stone-300 hover:text-foreground hover:bg-accent"
                     )}
                   >
                     {link.label}
@@ -279,7 +281,8 @@ export function Navbar({ className }: NavbarProps) {
                   <a
                     href="/login"
                     data-testid="nav-login"
-                    className="text-sm font-medium text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
+                    // task #180 a11y：muted-foreground 14px 挂门禁；stone-700 dark:stone-300
+                    className="text-sm font-medium text-stone-700 dark:text-stone-300 px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
                   >
                     {t("nav.login")}
                   </a>
@@ -484,7 +487,9 @@ function CtaButton({
     <a
       href={href}
       data-testid={dataTestId}
-      className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.97] bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
+      // task #180 a11y：`bg-primary` (#D97706 amber-600) on cream `#FFFBEB` primary-foreground = ~3.3:1 挂 WCAG AA 4.5:1
+      // 走 amber-700 (#B45309) + text-white = ~5.5:1 稳过；不改 --primary token 避免全站隐性回归
+      className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.97] bg-amber-700 text-white hover:bg-amber-800 shadow-md hover:shadow-lg transition-shadow"
     >
       {icon}
       {label}

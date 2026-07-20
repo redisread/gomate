@@ -70,7 +70,8 @@ export function RecommendationCard({ reco }: RecommendationCardProps) {
         <div className="flex items-center justify-between gap-2">
           <RecommendationBadge kind={kind} />
           {(difficultyLabel || location.durationMin) && (
-            <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+            /* task #180 a11y：11px meta 小字体 muted 挂门禁；stone-700 dark:stone-300 = ~7.5:1/8:1 */
+            <div className="text-[11px] text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
               {difficultyLabel && <span>{difficultyLabel}</span>}
               {difficultyLabel && location.durationMin ? <span>·</span> : null}
               {location.durationMin && (
@@ -85,14 +86,14 @@ export function RecommendationCard({ reco }: RecommendationCardProps) {
           {location.name}
         </h3>
 
-        {/* Row 3: 一句话理由 */}
-        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 flex-1">
+        {/* Row 3: 一句话理由 — task #180 a11y：text-sm muted 挂门禁；stone-700/stone-300 */}
+        <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed line-clamp-3 flex-1">
           {reasonText}
         </p>
 
-        {/* Row 4: 二级数据 */}
+        {/* Row 4: 二级数据 — task #180 a11y：11px muted 挂门禁 */}
         {metaLine.length > 0 && (
-          <div className="pt-2 mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground border-t border-border/50">
+          <div className="pt-2 mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-stone-700 dark:text-stone-300 border-t border-border/50">
             {metaLine.map((m, i) => (
               <span key={i}>{m}</span>
             ))}

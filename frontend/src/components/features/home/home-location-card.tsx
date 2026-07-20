@@ -94,7 +94,8 @@ export const LocationCard = memo(function LocationCard({ location, index = 0 }: 
 
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
+            {/* task #180 a11y：location card address 小字体 muted 挂门禁 */}
+            <p className="text-xs text-stone-700 dark:text-stone-300 flex items-center gap-1">
               <MapPin className="h-3 w-3 flex-shrink-0" />{location.address || t("locations.defaultCity")}
             </p>
             {routeInfo && (

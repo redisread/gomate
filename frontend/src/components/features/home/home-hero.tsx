@@ -23,7 +23,8 @@ export function HomeHero({ data }: { data: HomeData }) {
         </h1>
 
         <div className="flex justify-center">
-          <p className={`text-lg md:text-xl text-muted-foreground mb-10 w-full max-w-xl leading-relaxed text-center ${animate.subtitle}`}>{t("content.hero.description")}</p>
+          {/* task #180 a11y：muted-foreground (#8f7f6e) on #faf8f5 = ~3.7:1，小字体挂门禁；改 stone-700/dark:stone-300 = ~7.5:1/8:1 */}
+          <p className={`text-lg md:text-xl text-stone-700 dark:text-stone-300 mb-10 w-full max-w-xl leading-relaxed text-center ${animate.subtitle}`}>{t("content.hero.description")}</p>
         </div>
 
         <div className={`relative max-w-2xl mx-auto mb-8 group ${animate.search}`}>
@@ -40,14 +41,16 @@ export function HomeHero({ data }: { data: HomeData }) {
             </button>
           )}
           <button onClick={() => handleSearch(search.value)}
-            className={`absolute right-3 top-1/2 -translate-y-1/2 px-4 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl text-white transition-colors duration-150 bg-amber-600 hover:bg-amber-700 shadow-brand-glow ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}>
+            /* task #180 a11y：amber-600 (#D97706) on white = ~3.3:1 挂门禁；amber-700 (#B45309) = ~5.5:1 稳过 */
+            className={`absolute right-3 top-1/2 -translate-y-1/2 px-4 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl text-white transition-colors duration-150 bg-amber-700 hover:bg-amber-800 shadow-brand-glow ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}>
             {t("common.search")}
           </button>
         </div>
 
         <div className={`flex flex-col sm:flex-row gap-3 justify-center mb-14 ${animate.cta}`}>
           <a href="/locations"
-            className="inline-block px-8 py-3.5 text-white font-semibold rounded-full text-base transition-all duration-150 bg-amber-600 hover:bg-amber-700 shadow-brand-glow hover:shadow-brand-glow-lg hover:-translate-y-0.5">
+            /* task #180 a11y：同上，amber-700 + text-white = ~5.5:1 */
+            className="inline-block px-8 py-3.5 text-white font-semibold rounded-full text-base transition-all duration-150 bg-amber-700 hover:bg-amber-800 shadow-brand-glow hover:shadow-brand-glow-lg hover:-translate-y-0.5">
             {t("content.hero.exploreBtn")}
           </a>
           <a href="/teams"
@@ -68,7 +71,8 @@ export function HomeHero({ data }: { data: HomeData }) {
                 <Icon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 <div>
                   <div className="text-sm font-semibold text-foreground">{item.title}</div>
-                  <div className="text-xs text-muted-foreground">{item.desc}</div>
+                  {/* task #180 a11y：stats desc 小字体（text-xs）muted 挂对比；换 stone-700 dark:stone-300 */}
+                  <div className="text-xs text-stone-700 dark:text-stone-300">{item.desc}</div>
                 </div>
               </div>
             );

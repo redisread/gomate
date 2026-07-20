@@ -97,7 +97,8 @@ export function HomeRecommendationsSection() {
   if (state.status === "error") {
     return (
       <section
-        className="py-6 text-center text-sm text-muted-foreground"
+        /* task #180 a11y：error banner muted 14px 挂门禁 */
+        className="py-6 text-center text-sm text-stone-700 dark:text-stone-300"
         data-testid="home-recommendations-error"
       >
         <span>{t("home.recommendations.error")}</span>
@@ -121,12 +122,13 @@ export function HomeRecommendationsSection() {
       data-testid="home-recommendations-section"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Title */}
+        {/* Title — task #180 a11y：补 <h2> 语义，避免 <h1>→<h3> heading-order 跳级；视觉保留 badge 样式 */}
         <div className="text-center mb-8 sm:mb-10">
-          <span className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">
+          <h2 className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">
             {t("home.recommendations.title")}
-          </span>
-          <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed text-base sm:text-lg">
+          </h2>
+          {/* task #180 a11y：subtitle muted 小字体挂门禁；换 stone-700 dark:stone-300 = ~7.5:1/8:1 */}
+          <p className="text-stone-700 dark:text-stone-300 max-w-xl mx-auto leading-relaxed text-base sm:text-lg">
             {t("home.recommendations.subtitle")}
           </p>
         </div>

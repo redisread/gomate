@@ -91,8 +91,10 @@ export function LocaleToggle() {
               className={cn(
                 "px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-accent text-muted-foreground hover:text-foreground"
+                  // task #180 a11y：active state bg-primary #D97706 + cream text = ~3.3:1 挂门禁；amber-700 + white 稳过
+                  ? "bg-amber-700 text-white hover:bg-amber-800"
+                  // task #180 a11y：inactive muted-foreground on accent 小字体挂门禁；stone-700/stone-300
+                  : "bg-accent text-stone-700 hover:text-foreground dark:text-stone-300"
               )}
             >
               {getLocaleName(locale)}
