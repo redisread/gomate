@@ -26,7 +26,7 @@ export const createLocationSchema = z.object({
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180),
   }).optional(),
-  extra: z.record(z.unknown()).optional(),
+  extra: z.record(z.unknown()).nullable().optional(),
   // P0-B T4（task #171）§8：决策信息 · 停车 tri-state + 装备清单
   // 后端存 CSV，前端传 string[]；tri-state：true / false / null
   parkingAvailable: z.boolean().nullable().optional(),
