@@ -47,6 +47,16 @@ export interface Location {
     lat: number;
     lng: number;
   };
+  /**
+   * P0-B T2/T3（spec §3.4 / §5.4）：详情页决策信息 4 字段
+   * - `parkingAvailable` boolean 三态：true=有停车 / false=无停车 / null=信息缺失（不渲染）
+   * - `parkingInfo` 自由文本 (<100)
+   * - `gearEssential/gearOptional` API 层已切好 string[]（源自 CSV 存储）
+   */
+  parkingAvailable?: boolean | null;
+  parkingInfo?: string | null;
+  gearEssential?: string[] | null;
+  gearOptional?: string[] | null;
   extra?: {
     facilities?: string[];  // ["parking", "restroom", "water", "food"]
     tips?: string | string[];
@@ -174,5 +184,44 @@ export interface Application {
     avatar: string | null;
     bio: string | null;
     level: string;
+  };
+}
+
+// ─── P0-B T2/T3：交通决策 API 响应 ─────────────────────────────────────────────
+// 与 api/src/routes/locations/transportation.ts 契约同步
+// spec: notes/gomate-p0b-location-decision-spec.md §7
+
+export interface TransportationSubway {
+  station: string;
+  lines: string[];
+  distanceMeters: number;
+  walkMinutes: number;
+  /** true 时前端加"建议骑车/打车接驳"提示（>800m 或 amap walking direction 挂了走匀速兜底）*/
+  approximate: boolean;
+}
+
+export interface TransportationDriving {
+  distanceKm: number;
+  durationMinutes: number;
+  referencePointLabel: { zh: string; en: string; ja: string };
+}
+
+export interface TransportationData {
+  /** 始终可用（无 amap 依赖）；空字符串 = 无坐标，前端整块不渲染 */
+  mapUrl: string;
+  subway: TransportationSubway | null;
+  driving: TransportationDriving | null;
+  /** true = subway/driving 都空，前端切换为「单一 mapUrl 链接」视觉 */
+  amapAllFailed: boolean;
+}
+
+export interface TransportationResponse {
+  success: boolean;
+  locationId: string;
+  transportation: TransportationData;
+  meta: {
+    cacheHit: boolean;
+    /** >=7 时前端展示「信息更新于 X 天前」灰字 */
+    staleDays: number | null;
   };
 }

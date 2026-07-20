@@ -30,6 +30,7 @@ import {
   RouteInfoCard,
   TeamListSection,
   AddressRow,
+  DecisionBlock,
 } from "@/components/features/location-detail-main-content";
 import { LocationActivityPosts } from "@/components/features/activity-posts";
 import { normalizeLocationHiking, type RouteMetric } from "@/components/features/location-detail/route-utils";
@@ -960,6 +961,10 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               <RouteInfoCard location={location} />
             </div>
             <div className="order-3 lg:order-2">
+              {/* P0-B T3: 决策信息（交通/停车/装备）。桌面端紧跟 Route，移动端排在 Teams 之后。 */}
+              <DecisionBlock location={location} />
+            </div>
+            <div className="order-4 lg:order-3">
               <LocationIntroCard
                 location={location}
                 showGallery={false}
@@ -967,7 +972,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               />
             </div>
             {location.address && (
-              <div className="order-4 lg:hidden">
+              <div className="order-5 lg:hidden">
                 <AddressRow
                   address={location.address}
                   coordinates={location.coordinates}
@@ -975,12 +980,12 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                 />
               </div>
             )}
-            <div className="order-2 lg:order-3">
+            <div className="order-2 lg:order-4">
               <TeamListSection teams={teams} locationId={location.id} />
             </div>
-            <div className="order-5">
-            </div>
             <div className="order-6">
+            </div>
+            <div className="order-7">
               <LocationActivityPosts locationId={location.id} />
             </div>
           </div>

@@ -22,5 +22,35 @@
     "minute": "min",
     "kilometer": "km",
     "meter": "m"
+  },
+  "decision": {
+    "title": "Decision Info",
+    "subtitle": "See how to get there and what to bring first"
+  },
+  "transport": {
+    "title": "Getting There",
+    "subwayLabel": "Nearest Subway",
+    "subwayLine": "{station} · {n}-min walk",
+    "subwayWithLines": "{lines} · {station} · {n}-min walk",
+    "subwayTransferHint": "It's a bit far — consider a bike or taxi transfer",
+    "drivingLabel": "Driving",
+    "drivingDistance": "~{km} km from {landmark}",
+    "drivingDuration": "~{n} min",
+    "openInMap": "Open in Amap",
+    "fallbackHint": "Live transit/driving data unavailable",
+    "stale": "Updated {n} days ago",
+    "loading": "Loading live transit info…",
+    "retry": "Retry"
+  },
+  "parking": {
+    "title": "Parking",
+    "available": "Parking available",
+    "noParking": "No parking · Public transit recommended"
+  },
+  "gear": {
+    "title": "Gear List",
+    "essential": "Essential",
+    "optional": "Optional",
+    "notes": "Notes"
   }
 }

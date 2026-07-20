@@ -5,3 +5,4 @@ export { RouteInfoCard } from "./location-detail/route-info-card";
 export { TeamCard } from "./location-detail/team-card";
 export { TeamListSection } from "./location-detail/team-list-section";
 export { AddressRow } from "./location-detail/address-row";
+export { DecisionBlock } from "./location-detail/decision-block";
