@@ -201,6 +201,10 @@ export async function getLocalCircleHome(params: LocalCircleParams): Promise<Loc
   `);
 
   // ---- activePeopleCount：本城内 7d unique users（用 capped + city join，与 top 逻辑口径一致）----
+  // 注意：这里 signals 用 UNION（隐式 DISTINCT），与主 SQL 的 UNION ALL 不同。
+  // 主 SQL 要 score 累加（同 (user,location) 多源要各自计分再 cap 3.0），
+  // activePeopleCount 只算「有 signal 的 unique user」，UNION 提前 dedup 可减少 outer COUNT DISTINCT 工作量。
+  // 未来 refactor 时勿误统一为 UNION ALL —— 语义不同。
   const activeRows = await db.all<{ active_count: number }>(sql`
     WITH signals AS (
       SELECT tm.user_id AS user_id, t.location_id AS location_id
