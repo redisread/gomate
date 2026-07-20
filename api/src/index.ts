@@ -19,6 +19,7 @@ import activityPostsRoute from "./routes/activity-posts";
 import storiesRoute from "./routes/stories";
 import { shareImageRoute } from "./routes/share-image";
 import { recommendationsHomeRoute } from "./routes/recommendations/home";
+import { localCircleHomeRoute } from "./routes/local-circle/home";
 import { updateExpiredTeams } from "./lib/team-status";
 import { createDb } from "./db";
 import { fetchWithTimeout } from "./lib/timeout";
@@ -52,6 +53,7 @@ app.route("/activity-posts", activityPostsRoute);
 app.route("/stories", storiesRoute);
 app.route("/share-image", shareImageRoute);
 app.route("/recommendations/home", recommendationsHomeRoute);
+app.route("/local-circle/home", localCircleHomeRoute);
 
 // R2 本地代理（挂在顶层，对齐原 Next.js /api/r2/* 路径）
 app.get("/r2/*", async (c) => {
