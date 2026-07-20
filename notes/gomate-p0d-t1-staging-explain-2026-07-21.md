@@ -58,11 +58,15 @@ LIMIT 3;
 | ----------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------- |
 | `team_members_team_status_idx`                        | pre-existing  | ✅ `SEARCH tm USING INDEX team_members_team_status_idx (team_id=? AND status=?)`                           |
 | `user_favorites_entity_type_entity_id_created_at_idx` | **0016 新增** | ✅ `SEARCH user_favorites USING INDEX user_favorites_entity_type_entity_id_created_at_idx (entity_type=?)` |
-| `stories_status_created_at_idx`                       | **0016 新增** | ✅ `SEARCH stories USING INDEX stories_status_created_at_idx (status=? AND created_at>?)`                  |
+| `stories_status_created_at_idx`                       | pre-existing  | ✅ `SEARCH stories USING INDEX stories_status_created_at_idx (status=? AND created_at>?)`                  |
 | `activity_posts_status_idx`                           | pre-existing  | ✅ `SEARCH activity_posts USING INDEX activity_posts_status_idx (status=?)`                                |
 
-> 注意：`teams` 表仍 SCAN（无 end_time 索引），但 0016 不涉及 teams；
-> spec §5.3 §「未来优化」已挂 P2 backlog：若 7d 窗口 team 数 > 100K 再加 `idx_teams_end_time`。
+> **0016 新增 3 索引中 1/3 命中本 EXPLAIN**；另 2/3 命中其他 SQL 路径或等 P2 backlog 触发：
+>
+> - `activity_posts_location_created_at_idx` 暂时 planner 不走（pre-existing `activity_posts_status_idx` 在 `status='visible'` 路径更优）；该索引为 `/locations/:id/activity-posts` route 保留，详情页 route 落地时启用
+> - `teams_status_end_time_idx` 暂时 planner 不走（team_members drive + PK lookup 比 7d 索引更优），spec §5.3 已挂 P2 backlog：7d 窗口 team 数 > 100K 再加 `idx_teams_end_time`
+>
+> **结论**：3 新索引在主 SQL 中 1/3 命中是 expected（planner 选择最优），不影响本 PR 价值。
 
 ### 2.3 完整 EXPLAIN 行（id/parent/detail 缩略）
 
