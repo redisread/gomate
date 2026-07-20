@@ -74,7 +74,12 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
    * task #170 CR Nit 1（Martin）：加 AbortController 防 race。
    * client-side navigation 快切两个 location 时，旧请求可能覆盖新数据；
    * unmount 时 AbortError 静默 return，不 setState。
+   *
+   * CR re-CR nit（Martin，非阻塞已捎带修）：retry 也走 currentAbortRef，
+   * 用户连点 3 次 retry 时前 2 个 in-flight 会被 abort，只保留最新一次。
    */
+  const currentAbortRef = React.useRef<AbortController | null>(null);
+
   const fetchTransport = React.useCallback(
     async (signal?: AbortSignal) => {
       setTransport({ kind: "loading" });
@@ -95,7 +100,7 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
           staleDays: json.meta ? json.meta.staleDays ?? null : null,
         });
       } catch (err) {
-        // AbortError: 用户切走 location / unmount，静默丢弃
+        // AbortError: 用户切走 location / unmount / 连点 retry，静默丢弃
         if (
           (err instanceof DOMException && err.name === "AbortError") ||
           signal?.aborted
@@ -109,9 +114,17 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
     [location.id],
   );
 
+  const retry = React.useCallback(() => {
+    currentAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    currentAbortRef.current = ctrl;
+    void fetchTransport(ctrl.signal);
+  }, [fetchTransport]);
+
   React.useEffect(() => {
     if (!hasCoords) return;
     const ctrl = new AbortController();
+    currentAbortRef.current = ctrl;
     void fetchTransport(ctrl.signal);
     return () => ctrl.abort();
   }, [hasCoords, fetchTransport]);
@@ -135,7 +148,7 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
           <TransportSubBlock
             location={location}
             state={transport}
-            onRetry={fetchTransport}
+            onRetry={retry}
             locale={locale}
             t={t}
           />
