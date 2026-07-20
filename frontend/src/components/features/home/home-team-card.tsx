@@ -124,7 +124,8 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
           <h3 className="font-bold text-foreground line-clamp-1 mb-2 leading-snug text-[15px] group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors duration-200">{team.title}</h3>
 
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
+            {/* task #180 a11y：team card date 小字体 muted 挂门禁 */}
+            <span className="text-xs text-stone-700 dark:text-stone-300 flex items-center gap-1">
               <Calendar className="h-3 w-3 flex-shrink-0 text-amber-600" />{team.date}{team.time && <span className="ml-0.5 font-medium">{team.time}</span>}
             </span>
             {!hasCover && departureLabel && (

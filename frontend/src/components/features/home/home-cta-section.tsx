@@ -24,14 +24,16 @@ export function HomeCtaSection({ data }: { data: Omit<HomeData, "isLoggedIn"> & 
         </h2>
 
         {/* 简洁副标题 */}
-        <p className="text-muted-foreground text-base mb-8">
+        {/* task #180 a11y：cta subtitle muted 16px 挂门禁 */}
+        <p className="text-stone-700 dark:text-stone-300 text-base mb-8">
           <strong className="text-foreground">200+</strong> 伙伴已找到同行的人
         </p>
 
         {/* 统一按钮样式 - rounded-lg */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {/* task #180 a11y：bg-primary (#D97706 amber-600) + primary-foreground (cream) = ~3.3:1 挂；amber-700 + white = ~5.5:1 稳过 */}
           <a href="/teams/create"
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+            className="px-6 py-3 bg-amber-700 text-white rounded-lg font-medium hover:bg-amber-800 transition-colors">
             {t("home.cta.createTeamBtn")}
           </a>
           <a href="/teams"

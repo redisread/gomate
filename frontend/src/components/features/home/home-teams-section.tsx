@@ -22,7 +22,8 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
             {t("teams.pageTitle")}
           </h2>
-          <p className="text-muted-foreground max-w-2xl leading-relaxed text-base sm:text-lg mb-2">
+          {/* task #180 a11y：teams subtitle muted 16-18px 挂门禁 */}
+          <p className="text-stone-700 dark:text-stone-300 max-w-2xl leading-relaxed text-base sm:text-lg mb-2">
             {t("teams.pageSubtitle")}
           </p>
         </div>
@@ -42,11 +43,13 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
             <h3 className="text-xl font-bold text-foreground mb-2">
               {t("home.noTeams") || "暂无活跃队伍"}
             </h3>
-            <p className="text-muted-foreground text-center max-w-md mb-6">
+            {/* task #180 a11y：empty state desc muted 挂门禁 */}
+            <p className="text-stone-700 dark:text-stone-300 text-center max-w-md mb-6">
               {t("home.noTeamsDescription") || "目前还没有活跃的队伍，成为第一个创建队伍的人吧！"}
             </p>
             <a href="/teams/create">
-              <button className="group bg-amber-600 hover:bg-amber-700 text-white px-7 py-3.5 rounded-2xl text-base font-semibold transition-all duration-200 inline-flex items-center gap-2.5 hover:shadow-lg hover:shadow-amber-200/40 active:scale-[0.98]">
+              {/* task #180 a11y：amber-600 (#D97706) on white = ~3.2:1 挂门禁；amber-700 + white = ~5.5:1 */}
+              <button className="group bg-amber-700 hover:bg-amber-800 text-white px-7 py-3.5 rounded-2xl text-base font-semibold transition-all duration-200 inline-flex items-center gap-2.5 hover:shadow-lg hover:shadow-amber-200/40 active:scale-[0.98]">
                 <MapPin className="w-5 h-5" />
                 {t("home.createFirstTeam") || "创建第一个队伍"}
               </button>

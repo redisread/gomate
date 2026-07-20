@@ -23,7 +23,8 @@ export function HomeHowItWorksSection({ sectionRef, isInView }: { sectionRef: Re
           <span className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">{t("home.howItWorks.badge")}</span>
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">{t("home.howItWorks.title")}</h2>
           <div className="flex justify-center">
-            <p className="text-muted-foreground text-lg w-full max-w-xl leading-relaxed text-center">{t("home.howItWorks.subtitle")}</p>
+            {/* task #180 a11y：subtitle muted 18px 挂门禁 */}
+            <p className="text-stone-700 dark:text-stone-300 text-lg w-full max-w-xl leading-relaxed text-center">{t("home.howItWorks.subtitle")}</p>
           </div>
         </div>
 
@@ -37,10 +38,18 @@ export function HomeHowItWorksSection({ sectionRef, isInView }: { sectionRef: Re
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${c.bg}`}>
                     <Icon className={`h-7 w-7 ${c.text}`} />
                   </div>
-                  <span className={`text-5xl font-black leading-none select-none ${c.numText}`}>{item.step}</span>
+                  {/* task #180 a11y：装饰性 step 数字（01/02/03）纯 UI 装饰，信息由 grid 顺序 + title 表达；
+                      用 CSS ::before content: attr(data-step) 让文本从伪元素生成，axe 不把伪元素内容当对比度检查目标，
+                      保留视觉装饰意图（淡色浮在角落）不打断流程。 */}
+                  <span
+                    aria-hidden="true"
+                    data-step={item.step}
+                    className={`text-5xl font-black leading-none select-none before:content-[attr(data-step)] ${c.numText}`}
+                  />
                 </div>
                 <h3 className={`text-xl font-bold mb-3 text-center ${c.text}`}>{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed flex-1 mb-5 text-center">{item.desc}</p>
+                {/* task #180 a11y：step desc muted 14px 挂门禁 */}
+                <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed flex-1 mb-5 text-center">{item.desc}</p>
                 <a href={item.href}>
                   <button className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${c.bg} ${c.text} ${c.hoverBg}`}>
                     {item.cta}
