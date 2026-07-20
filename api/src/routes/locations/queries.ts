@@ -11,6 +11,19 @@ import { safeJsonParse } from "./utils";
 const queries = new Hono<{ Bindings: Env }>();
 
 /**
+ * P0-B T2 (task #169): 将逗号/中文顿号分隔的自由文本切成 chip 数组。
+ * 空字符串 / null / undefined → 空数组（前端按"未填"处理）。
+ */
+function parseCsvField(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(/[,、]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+
+/**
  * GET /locations
  * 获取地点列表，支持分页、搜索、城市筛选、标签筛选
  * ?tags=true 返回热门标签
@@ -276,6 +289,10 @@ queries.get("/:id", async (c) => {
         bestSeason: safeJsonParse(location.bestSeason, [] as string[]),
         coordinates: safeJsonParse(location.coordinates, { lat: 0, lng: 0 }),
         extra: safeJsonParse(location.extra, undefined),
+        // P0-B T2（task #169）：spec §5 gear_essential/gear_optional 存 comma-separated 文本，
+        // 前端渲染时按 chip 列表展示 → API 层直接切好数组，避免前端各处零散 split。
+        gearEssential: parseCsvField(location.gearEssential),
+        gearOptional: parseCsvField(location.gearOptional),
         tags,
       },
     });

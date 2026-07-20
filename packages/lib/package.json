@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./season": "./src/season.ts",
-    "./geo-fallback": "./src/geo-fallback.ts"
+    "./geo-fallback": "./src/geo-fallback.ts",
+    "./geo-city-center": "./src/geo-city-center.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit"
