@@ -27,6 +27,12 @@ export const createLocationSchema = z.object({
     lng: z.number().min(-180).max(180),
   }).optional(),
   extra: z.record(z.unknown()).optional(),
+  // P0-B T4（task #171）§8：决策信息 · 停车 tri-state + 装备清单
+  // 后端存 CSV，前端传 string[]；tri-state：true / false / null
+  parkingAvailable: z.boolean().nullable().optional(),
+  parkingInfo: z.string().max(100, "停车说明不能超过100字").optional(),
+  gearEssential: z.array(z.string().min(1).max(20, "每项装备不能超过20字")).max(10, "最多10项").optional(),
+  gearOptional: z.array(z.string().min(1).max(20, "每项装备不能超过20字")).max(10, "最多10项").optional(),
 });
 
 export const updateLocationSchema = createLocationSchema.partial().extend({

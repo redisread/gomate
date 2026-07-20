@@ -40,6 +40,11 @@ mutations.post("/", async (c) => {
       images: JSON.stringify(data.images || []),
       coordinates: JSON.stringify(data.coordinates || { lat: 0, lng: 0 }),
       extra: data.extra ? JSON.stringify(data.extra) : null,
+      // P0-B T4（task #171）§8：停车 tri-state + 装备 CSV（后端存储格式，前端传数组）
+      parkingAvailable: data.parkingAvailable ?? null,
+      parkingInfo: data.parkingInfo || null,
+      gearEssential: data.gearEssential && data.gearEssential.length > 0 ? data.gearEssential.join(",") : null,
+      gearOptional: data.gearOptional && data.gearOptional.length > 0 ? data.gearOptional.join(",") : null,
       createdAt: new Date(), updatedAt: new Date(),
     });
 
@@ -85,6 +90,15 @@ mutations.put("/", async (c) => {
     if (updateData.images !== undefined) dataToUpdate.images = JSON.stringify(updateData.images);
     if (updateData.coordinates !== undefined) dataToUpdate.coordinates = JSON.stringify(updateData.coordinates);
     if (updateData.extra !== undefined) dataToUpdate.extra = updateData.extra ? JSON.stringify(updateData.extra) : null;
+    // P0-B T4（task #171）§8：4 字段独立处理；parkingAvailable 允许 null（信息缺失），gear[] 传 [] 时清空
+    if (updateData.parkingAvailable !== undefined) dataToUpdate.parkingAvailable = updateData.parkingAvailable;
+    if (updateData.parkingInfo !== undefined) dataToUpdate.parkingInfo = updateData.parkingInfo || null;
+    if (updateData.gearEssential !== undefined) {
+      dataToUpdate.gearEssential = updateData.gearEssential.length > 0 ? updateData.gearEssential.join(",") : null;
+    }
+    if (updateData.gearOptional !== undefined) {
+      dataToUpdate.gearOptional = updateData.gearOptional.length > 0 ? updateData.gearOptional.join(",") : null;
+    }
 
     await db.update(schema.locations).set(dataToUpdate).where(eq(schema.locations.id, id));
 

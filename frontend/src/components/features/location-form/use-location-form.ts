@@ -22,6 +22,11 @@ export interface FormData {
   lng: number | string;
   extra: { facilities: string[]; tips: string[]; warnings: string[] };
   tagIds: string[];
+  // P0-B T4（task #171）§8：决策信息 · 停车 tri-state + 装备清单（前端结构，后端 CSV）
+  parkingAvailable: boolean | null;
+  parkingInfo: string;
+  gearEssential: string[];
+  gearOptional: string[];
 }
 
 interface UseLocationFormReturn {
@@ -64,6 +69,7 @@ const DEFAULT_FORM: FormData = {
   cityId: "", bestSeason: [], coverImage: "", images: [],
   lat: "", lng: "", extra: { facilities: [], tips: [], warnings: [] },
   tagIds: [],
+  parkingAvailable: null, parkingInfo: "", gearEssential: [], gearOptional: [],
 };
 
 const VALIDATION_RULES: Record<string, (v: string) => string | undefined> = {
@@ -139,6 +145,11 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
               warnings: Array.isArray(loc.extra?.warnings) ? loc.extra.warnings : [],
             },
             tagIds: currentTagIds,
+            // P0-B T4：GET 已通过 parseCsvField 返回 string[]，null → 空表单
+            parkingAvailable: loc.parkingAvailable ?? null,
+            parkingInfo: loc.parkingInfo ?? "",
+            gearEssential: loc.gearEssential ?? [],
+            gearOptional: loc.gearOptional ?? [],
           };
 
           // Check for draft
@@ -228,6 +239,14 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
       if (err) { allValid = false; }
       setErrors((prev) => ({ ...prev, [key]: err }));
     }
+    // P0-B T4：UI required + API optional —— UI 层强制 gearEssential ≥ 1 项
+    const essentialFilled = formData.gearEssential.filter((v) => v.trim()).length;
+    if (essentialFilled === 0) {
+      setErrors((prev) => ({ ...prev, gearEssential: "至少填 1 项必带装备" }));
+      allValid = false;
+    } else {
+      setErrors((prev) => ({ ...prev, gearEssential: undefined }));
+    }
     if (!allValid || !location) return;
 
     setIsSaving(true);
@@ -249,6 +268,11 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
           images: formData.images,
           coordinates: { lat: parseFloat(String(formData.lat)) || 0, lng: parseFloat(String(formData.lng)) || 0 },
           extra: hasExtra ? extraPayload : null,
+          // P0-B T4：4 字段透传（前端 boolean|null / string / string[] → 后端 CSV/nullable boolean）
+          parkingAvailable: formData.parkingAvailable,
+          parkingInfo: formData.parkingInfo.trim() || undefined,
+          gearEssential: formData.gearEssential,
+          gearOptional: formData.gearOptional,
         }),
         apiPut(`/api/locations/${location.id}/tags`, { tagIds: formData.tagIds }),
       ]);
@@ -280,6 +304,10 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
         warnings: Array.isArray(location.extra?.warnings) ? location.extra.warnings : [],
       },
       tagIds: formData.tagIds,
+      parkingAvailable: location.parkingAvailable ?? null,
+      parkingInfo: location.parkingInfo ?? "",
+      gearEssential: location.gearEssential ?? [],
+      gearOptional: location.gearOptional ?? [],
     });
     clearDraft();
     setIsDirty(false);

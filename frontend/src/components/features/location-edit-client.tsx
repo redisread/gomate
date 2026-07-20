@@ -20,6 +20,7 @@ import {
   LocationFormBasicFields,
   LocationFormContentFields,
   LocationFormSettingsFields,
+  LocationFormDecisionFields,
   LocationActionBar,
 } from "./location-form";
 
@@ -469,6 +470,8 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
               updateField={form.updateField} touch={form.touch} onOpenMapPicker={() => setShowMapPicker(true)} />
             <LocationFormContentFields formData={form.formData} isSaving={form.isSaving} updateField={form.updateField} />
             <LocationFormSettingsFields formData={form.formData} allTags={form.allTags} updateField={form.updateField} />
+            {/* P0-B T4 (task #171)：决策信息 · 停车 + 装备（独立 SectionCard 放在设置之后） */}
+            <LocationFormDecisionFields formData={form.formData} updateField={form.updateField} />
             <LocationActionBar isDirty={form.isDirty} isSaving={form.isSaving} onSave={form.handleSave} onDiscard={form.handleDiscard} />
           </div>
 
