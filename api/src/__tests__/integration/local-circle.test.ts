@@ -273,4 +273,16 @@ describe("local-circle service — getLocalCircleHome", () => {
     // 仅 favorite 0.1（story 因 IS NULL 未计）
     expect(result.topLocations[0].visitScore).toBeCloseTo(0.1, 6);
   });
+
+  // ==================== Case 9: cityName fallback「你的城市」====================
+  it("Case 9 — assertion：cityId 不存在 → 200 空态 + cityName='你的城市' fallback（Martin+Steven N3 拍板）", async () => {
+    const { getLocalCircleHome } = await loadService();
+    const result = await getLocalCircleHome({
+      db: testDb as never, cityId: "city_does_not_exist", currentUserId: null, now: NOW,
+    });
+    expect(result.cityName).toBe("你的城市");
+    expect(result.topLocations).toEqual([]);
+    expect(result.neighborTeams).toEqual([]);
+    expect(result.activePeopleCount).toBe(0);
+  });
 });

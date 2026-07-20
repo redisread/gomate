@@ -119,8 +119,10 @@ export async function getLocalCircleHome(params: LocalCircleParams): Promise<Loc
     .limit(1);
 
   if (cityRow.length === 0) {
-    // city 不存在 → 空态返回，前端整块不渲染（spec §6.4）
-    return emptyResult(cityId, "");
+    // city 不存在 → 200 空态（Martin+Steven msg=309a8dd0/0da0adfe 拍板）：
+    // 前端 UX 走中性提示「你所在的城市还没有本地圈子数据」，不走 404；
+    // cityName fallback 在 route 层收敛（比前端 || 更早，让 CDN cache payload 自洽）。
+    return emptyResult(cityId, "你的城市");
   }
   const cityName = cityRow[0].name;
 
