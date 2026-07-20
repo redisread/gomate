@@ -1,0 +1,70 @@
+name: D1 ANALYZE staging
+
+# 一过式 workflow：dispatch 触发，对 staging D1 跑 ANALYZE + EXPLAIN QUERY PLAN 存档。
+# 触发原因：本地 CLOUDFLARE_API_TOKEN token 在 Jeff shell 不一定有 D1 访问权限；
+# 走 GH secrets 一过式 workflow 验证 staging DB 状态最稳。
+#
+# 使用方法：GitHub UI Actions → "D1 ANALYZE staging" → Run workflow（main 分支）
+#
+# 关联：gomate P0-D T1 (task #175) spec §5.3 性能基线（local-circle SQL）
+# 决策：Martin msg=a540cdf5 路线 D 拍板（2026-07-21）
+
+on:
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+
+      - name: ANALYZE staging D1
+        run: pnpm --filter @gomate/api exec wrangler d1 execute gomate-db-staging --env staging --remote --command "ANALYZE"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: EXPLAIN QUERY PLAN — local-circle 主 SQL（spec §5.3）
+        run: |
+          pnpm --filter @gomate/api exec wrangler d1 execute gomate-db-staging \
+            --env staging --remote \
+            --command "EXPLAIN QUERY PLAN
+            WITH signals AS (
+              SELECT tm.user_id AS user_id, t.location_id AS location_id, 1.0 AS weight, t.end_time AS signal_ts
+              FROM team_members tm
+              JOIN teams t ON t.id = tm.team_id
+              WHERE tm.status = 'approved' AND t.status != 'cancelled'
+                AND t.end_time > 1700000000000 AND t.end_time <= 1700000000000
+              UNION ALL
+              SELECT user_id, entity_id AS location_id, 0.1 AS weight, created_at AS signal_ts
+              FROM user_favorites
+              WHERE entity_type = 'location' AND created_at > 1700000000000
+              UNION ALL
+              SELECT author_id AS user_id, location_id, 1.5 AS weight, created_at AS signal_ts
+              FROM stories
+              WHERE status = 'published' AND created_at > 1700000000000 AND location_id IS NOT NULL
+              UNION ALL
+              SELECT author_id AS user_id, location_id, 1.0 AS weight, created_at AS signal_ts
+              FROM activity_posts
+              WHERE status = 'visible' AND created_at > 1700000000000 AND location_id IS NOT NULL
+            ),
+            capped AS (
+              SELECT user_id, location_id, MIN(SUM(weight), 3.0) AS contribution
+              FROM signals GROUP BY user_id, location_id
+            )
+            SELECT la.location_id, SUM(la.contribution) AS visit_score, COUNT(DISTINCT la.user_id) AS visitor_count
+            FROM capped la
+            JOIN locations loc ON loc.id = la.location_id
+            WHERE loc.city_id = 'bzP28N9PIhLhe5n41CUuG'
+            GROUP BY la.location_id
+            ORDER BY visit_score DESC, visitor_count DESC
+            LIMIT 3"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
