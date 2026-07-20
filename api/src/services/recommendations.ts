@@ -75,10 +75,34 @@ export interface RecommendationReason {
   params: ReasonParams;
 }
 
+/**
+ * P0-C T2 契约扩展（Martin CR 2026-07-20 dm:@Martin msg 66cf9186）：
+ *
+ * 前端渲染卡片需要一次性拿到 location 展示数据 + 二级数据，避免 N+1 waterfall。
+ * 字段全部来自 fetchSignals 已计算的 SignalRow / Candidate.data，不新增 SQL 成本。
+ * 类型 additive，旧 caller 不消费不影响。
+ */
+export interface RecommendationLocationSummary {
+  name: string;
+  coverImage: string | null;
+  /** union 对齐前端 DIFFICULTY_CONFIG key；DB 存自由文本，此处仅归一小写后透传 */
+  difficulty: string | null;
+  durationMin: number | null;
+  /** 已折算 km，避免前端做单位换算 */
+  distanceKm: number | null;
+  // 二级数据（卡片右下角小字）
+  favCount: number;
+  storyCount: number;
+  ageDays: number;
+  futureTeams: number;
+}
+
 export interface Recommendation {
   kind: RecommendationKind;
   locationId: string;
   reason: RecommendationReason;
+  /** P0-C T2：一次性带回卡片渲染所需字段，前端零 waterfall */
+  location: RecommendationLocationSummary;
   /** debug 用：命中的规则位（不返回前端消费，仅测试断言） */
   score: number;
 }
@@ -183,7 +207,9 @@ function normalizeSeed(seed?: string | null): string {
 interface SignalRow {
   id: string;
   name: string;
+  cover_image: string; // NOT NULL in schema
   difficulty: string | null;
+  duration_min: number | null;
   distance: number | null;
   best_season: string; // JSON text
   city_id: string;
@@ -206,7 +232,9 @@ async function fetchSignals(db: Db, now: number): Promise<SignalRow[]> {
     SELECT
       l.id AS id,
       l.name AS name,
+      l.cover_image AS cover_image,
       l.difficulty AS difficulty,
+      l.duration_min AS duration_min,
       l.distance AS distance,
       l.best_season AS best_season,
       l.city_id AS city_id,
@@ -278,8 +306,13 @@ interface Candidate {
     newTeams: boolean; // 7d 内新建的队伍 ≥1（K）
   };
   data: {
+    // 展示字段（P0-C T2 契约扩展）
+    name: string;
+    coverImage: string;
     difficulty: string | null;
+    durationMin: number | null;
     distanceKm: number | null;
+    // 信号 / 二级数据
     futureTeams: number;
     favCount: number;
     storyCount: number;
@@ -359,7 +392,10 @@ function buildCandidate(row: SignalRow, now: number, season: Season): Candidate 
       newTeams,
     },
     data: {
+      name: row.name,
+      coverImage: row.cover_image,
       difficulty: row.difficulty,
+      durationMin: row.duration_min,
       distanceKm: row.distance,
       futureTeams: row.future_teams,
       favCount: row.fav_count,
@@ -482,10 +518,26 @@ function selectThree(pool: Pool, seed: string): Recommendation[] {
     const picked = pickFromKind(remaining, rand);
     if (!picked) return;
     chosenIds.add(picked.locationId);
+    const d = picked.data;
+    // km 保留 1 位小数（P0-C T2 契约：避免前端二次换算）
+    const distanceKm = d.distanceKm === null ? null : Math.round(d.distanceKm * 10) / 10;
+    // difficulty 归一小写（DB 存自由文本；前端 DIFFICULTY_CONFIG key 小写）
+    const difficulty = d.difficulty === null ? null : d.difficulty.toLowerCase();
     results[slot] = {
       kind,
       locationId: picked.locationId,
       reason: pickReason(kind, picked),
+      location: {
+        name: d.name,
+        coverImage: d.coverImage || null,
+        difficulty,
+        durationMin: d.durationMin,
+        distanceKm,
+        favCount: d.favCount,
+        storyCount: d.storyCount,
+        ageDays: d.ageDays,
+        futureTeams: d.futureTeams,
+      },
       score: picked.score,
     };
   };
@@ -564,7 +616,9 @@ async function rehydratePool(
     SELECT
       l.id AS id,
       l.name AS name,
+      l.cover_image AS cover_image,
       l.difficulty AS difficulty,
+      l.duration_min AS duration_min,
       l.distance AS distance,
       l.best_season AS best_season,
       l.city_id AS city_id,

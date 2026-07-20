@@ -37,5 +37,46 @@
     "teamJoined": "{count}人已组队",
     "dayDepart": "周{day}出发",
     "saturdayLabel": "六"
+  },
+  "recommendations": {
+    "title": "本周去这三个",
+    "subtitle": "不是你挑，是产品先给建议",
+    "cta": {
+      "refresh": "换一批"
+    },
+    "kind": {
+      "steady": "稳的",
+      "worthy": "值得的",
+      "fresh": "本周新的"
+    },
+    "meta": {
+      "distance": "{km} km",
+      "duration": "{n} 分钟",
+      "favorites": "{n} 人收藏",
+      "stories": "{n} 篇故事",
+      "ageDays": "新建 {n} 天",
+      "futureTeams": "{n} 个队伍招人"
+    },
+    "reason": {
+      "steady_season_close": "这周天气正合适，距离约 {km} km",
+      "steady_season_teams": "正适合现在去，已有 {n} 个队伍在招人",
+      "steady_easy_close": "难度轻松、距离约 {km} km，新手友好",
+      "steady_close_social": "距离近 + 有人一起，本周 {n} 个队伍出发",
+      "steady_fallback": "距离约 {km} km，稳稳出发",
+      "worthy_favorites": "{n} 人收藏过，值得一去",
+      "worthy_stories": "{n} 篇故事写过，值得一探",
+      "worthy_favorites_stories": "共 {n} 次收藏 / 故事沉淀，值得优先安排",
+      "worthy_fallback": "值得抽时间去一次",
+      "fresh_new_location": "上架 {n} 天内的新地点",
+      "fresh_trending_signups": "近 7 天已有 {n} 人报名，热度上涨",
+      "fresh_new_teams": "本周新开 {n} 支队伍，抢先加入",
+      "fresh_fallback": "本周新面孔，先睹为快"
+    },
+    "empty": {
+      "steady": "这周没特别稳的",
+      "worthy": "这周没特别值得的",
+      "fresh": "这周没新的"
+    },
+    "error": "推荐加载失败，稍后重试"
   }
 }

@@ -118,8 +118,11 @@ describe("recommendations: seasonMatches", () => {
 
 interface RowInput {
   id: string;
+  name?: string;
+  coverImage?: string;
   bestSeason?: string;
   difficulty?: string | null;
+  durationMin?: number | null;
   distance?: number | null;
   futureTeams?: number;
   favCount?: number;
@@ -135,8 +138,10 @@ function makeRow(now: number, o: RowInput) {
     o.createdAt ?? (o.ageDays !== undefined ? now - o.ageDays * 24 * 60 * 60 * 1000 : now);
   return {
     id: o.id,
-    name: o.id,
+    name: o.name ?? o.id,
+    cover_image: o.coverImage ?? `https://example.com/${o.id}.jpg`,
     difficulty: o.difficulty ?? null,
+    duration_min: o.durationMin ?? null,
     distance: o.distance ?? null,
     best_season: o.bestSeason ?? "[]",
     city_id: "c1",
@@ -349,6 +354,85 @@ describe("recommendations: selectThree 冲突解决 + 排序", () => {
     }
     // 30 次至少 5 种组合（spec §11 验收 4 v1.1）
     expect(results.size).toBeGreaterThanOrEqual(5);
+  });
+});
+
+// ==================== T2 契约扩展：Recommendation.location ====================
+
+/**
+ * P0-C T2（Martin CR 2026-07-20 dm:@Martin msg 66cf9186）：
+ * API 契约扩展 —— Recommendation 增加 `location` 字段，前端零 waterfall。
+ * 覆盖 steady / worthy / fresh 三类 kind 都必须带 location 且字段完整。
+ */
+describe("recommendations: Recommendation.location（T2 契约）", () => {
+  const now = 1_700_000_000_000;
+
+  function makePool(steady: string[], worthy: string[], fresh: string[]) {
+    const mk = (id: string, kind: "steady" | "worthy" | "fresh") => {
+      const row = makeRow(now, {
+        id,
+        name: `${id}-name`,
+        coverImage: `https://cdn.example.com/${id}.jpg`,
+        difficulty: kind === "steady" ? "Easy" : null, // 测大小写归一
+        durationMin: kind === "steady" ? 180 : null,
+        distance: kind === "steady" ? 12.345 : null, // 测 1 位小数四舍五入
+        bestSeason: kind === "steady" ? '["spring"]' : "[]",
+        favCount: kind === "worthy" ? 10 : 0,
+        storyCount: kind === "worthy" ? 5 : 0,
+        futureTeams: kind === "steady" ? 3 : 0,
+        ageDays: kind === "fresh" ? 2 : 100,
+      });
+      return buildCandidate(row, now, "spring");
+    };
+    return {
+      steady: steady.map((id) => mk(id, "steady")),
+      worthy: worthy.map((id) => mk(id, "worthy")),
+      fresh: fresh.map((id) => mk(id, "fresh")),
+    };
+  }
+
+  it("每条 Recommendation 都带 location（三类 kind 都覆盖）", () => {
+    const pool = makePool(["s1"], ["w1"], ["f1"]);
+    const res = selectThree(pool, "abcd0001");
+    expect(res).toHaveLength(3);
+    for (const r of res) {
+      expect(r.location).toBeDefined();
+      expect(typeof r.location.name).toBe("string");
+      expect(r.location.name.length).toBeGreaterThan(0);
+      expect(typeof r.location.favCount).toBe("number");
+      expect(typeof r.location.storyCount).toBe("number");
+      expect(typeof r.location.ageDays).toBe("number");
+      expect(typeof r.location.futureTeams).toBe("number");
+    }
+  });
+
+  it("location.name / coverImage 从 signal row 透传", () => {
+    const pool = makePool(["s1"], [], []);
+    const [steady] = selectThree(pool, "abcd0001");
+    expect(steady!.location.name).toBe("s1-name");
+    expect(steady!.location.coverImage).toBe("https://cdn.example.com/s1.jpg");
+  });
+
+  it("location.distanceKm 保留 1 位小数（避免前端二次换算）", () => {
+    const pool = makePool(["s1"], [], []);
+    const [steady] = selectThree(pool, "abcd0001");
+    // 12.345 → 12.3（Math.round(12.345 * 10) / 10）
+    expect(steady!.location.distanceKm).toBe(12.3);
+  });
+
+  it("location.difficulty 归一为小写（DB 存自由文本，前端 DIFFICULTY_CONFIG key 小写）", () => {
+    const pool = makePool(["s1"], [], []);
+    const [steady] = selectThree(pool, "abcd0001");
+    // makeRow 传 "Easy"，应归一为 "easy"
+    expect(steady!.location.difficulty).toBe("easy");
+  });
+
+  it("distance / duration / difficulty 全 null 时 location 字段也为 null（不 throw）", () => {
+    const pool = makePool([], ["w1"], []); // worthy 分支所有可空字段都是 null
+    const [worthy] = selectThree(pool, "abcd0001");
+    expect(worthy!.location.difficulty).toBeNull();
+    expect(worthy!.location.durationMin).toBeNull();
+    expect(worthy!.location.distanceKm).toBeNull();
   });
 });
 
