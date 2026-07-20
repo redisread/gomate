@@ -32,14 +32,26 @@ interface DecisionBlockProps {
   location: Location;
 }
 
+/**
+ * task #170 CR B1（Martin）：sentinel {0,0} 必须拦住。`Number.isFinite(0)===true`
+ * 会让占位坐标漏过 hasCoords 校验 → transport fetch 触发 → mapUrl 指向非洲外海。
+ * `buildFallbackMapUrl` 走同一 helper，保证 error fallback 也不生成 (0,0) 链接。
+ */
+function hasValidCoords(
+  c: { lat: number; lng: number } | undefined | null,
+): boolean {
+  return (
+    !!c &&
+    Number.isFinite(c.lat) &&
+    Number.isFinite(c.lng) &&
+    !(c.lat === 0 && c.lng === 0)
+  );
+}
+
 export function DecisionBlock({ location }: DecisionBlockProps) {
   const { t, locale } = useI18n(["locationDetail", "common"]);
 
-  const hasCoords = Boolean(
-    location.coordinates &&
-      Number.isFinite(location.coordinates.lat) &&
-      Number.isFinite(location.coordinates.lng),
-  );
+  const hasCoords = hasValidCoords(location.coordinates);
 
   const parkingAvailable = location.parkingAvailable ?? null;
   const parkingInfo = (location.parkingInfo ?? "").trim();
@@ -58,31 +70,50 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
     kind: "loading",
   });
 
-  const fetchTransport = React.useCallback(async () => {
-    setTransport({ kind: "loading" });
-    try {
-      const res = await fetchAPI(
-        "/api/locations/" + location.id + "/transportation",
-      );
-      if (!res.ok) throw new Error("status=" + res.status);
-      const json = (await res.json()) as TransportationResponse;
-      if (!json || !json.success || !json.transportation) {
-        throw new Error("bad payload");
+  /**
+   * task #170 CR Nit 1（Martin）：加 AbortController 防 race。
+   * client-side navigation 快切两个 location 时，旧请求可能覆盖新数据；
+   * unmount 时 AbortError 静默 return，不 setState。
+   */
+  const fetchTransport = React.useCallback(
+    async (signal?: AbortSignal) => {
+      setTransport({ kind: "loading" });
+      try {
+        const res = await fetchAPI(
+          "/api/locations/" + location.id + "/transportation",
+          { signal },
+        );
+        if (!res.ok) throw new Error("status=" + res.status);
+        const json = (await res.json()) as TransportationResponse;
+        if (!json || !json.success || !json.transportation) {
+          throw new Error("bad payload");
+        }
+        if (signal?.aborted) return;
+        setTransport({
+          kind: "ready",
+          data: json.transportation,
+          staleDays: json.meta ? json.meta.staleDays ?? null : null,
+        });
+      } catch (err) {
+        // AbortError: 用户切走 location / unmount，静默丢弃
+        if (
+          (err instanceof DOMException && err.name === "AbortError") ||
+          signal?.aborted
+        ) {
+          return;
+        }
+        console.warn("[DecisionBlock] transport fetch failed", err);
+        setTransport({ kind: "error" });
       }
-      setTransport({
-        kind: "ready",
-        data: json.transportation,
-        staleDays: json.meta ? json.meta.staleDays ?? null : null,
-      });
-    } catch (err) {
-      console.warn("[DecisionBlock] transport fetch failed", err);
-      setTransport({ kind: "error" });
-    }
-  }, [location.id]);
+    },
+    [location.id],
+  );
 
   React.useEffect(() => {
     if (!hasCoords) return;
-    void fetchTransport();
+    const ctrl = new AbortController();
+    void fetchTransport(ctrl.signal);
+    return () => ctrl.abort();
   }, [hasCoords, fetchTransport]);
 
   if (!hasCoords && !hasParking && !hasGear) return null;
@@ -325,12 +356,12 @@ function TransportErrorFallback({
 
 function buildFallbackMapUrl(location: Location): string {
   const c = location.coordinates;
-  if (!c || !Number.isFinite(c.lat) || !Number.isFinite(c.lng)) return "";
+  if (!hasValidCoords(c)) return "";
   return (
     "https://uri.amap.com/marker?position=" +
-    c.lng +
+    c!.lng +
     "," +
-    c.lat +
+    c!.lat +
     "&callnative=1"
   );
 }

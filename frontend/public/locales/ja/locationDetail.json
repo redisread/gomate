@@ -32,7 +32,7 @@
     "subwayLabel": "最寄り駅",
     "subwayLine": "{station} · 徒歩 {n} 分",
     "subwayWithLines": "{lines} · {station} · 徒歩 {n} 分",
-    "subwayTransferHint": "少し遠いので、自転車やタクシーでの乗り継ぎがおすすめ",
+    "subwayTransferHint": "所要時間は目安です。自転車やタクシーもご検討ください",
     "drivingLabel": "車",
     "drivingDistance": "{landmark} から約 {km} km",
     "drivingDuration": "約 {n} 分",

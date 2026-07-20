@@ -75,6 +75,29 @@ describe("DecisionBlock", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  // task #170 CR B1（Martin）：sentinel {0,0} 不能通过 hasCoords，否则占位
+  // 坐标漏过校验会触发 amap fetch → mapUrl 指向 (0,0) 非洲外海
+  it("sentinel {0,0} 坐标 → hasCoords=false，transport sub-block 不渲染 + fetch 不发起", () => {
+    const location = makeLocation({
+      coordinates: { lat: 0, lng: 0 },
+    });
+    const { container } = render(<DecisionBlock location={location} />);
+    // 无 parking / gear，整块空态
+    expect(container.firstChild).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sentinel {0,0} 坐标 + parking 数据 → parking 渲染但 transport 不发起 + 不显 CTA", () => {
+    const location = makeLocation({
+      coordinates: { lat: 0, lng: 0 },
+      parkingAvailable: false,
+    });
+    render(<DecisionBlock location={location} />);
+    expect(screen.getByText("locationDetail.parking.title")).toBeInTheDocument();
+    expect(screen.queryByText("locationDetail.transport.title")).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("只有 parking 数据 → 只渲染 parking sub-block，不发起 transport 请求", () => {
     const location = makeLocation({
       coordinates: { lat: Number.NaN, lng: Number.NaN },
@@ -136,7 +159,7 @@ describe("DecisionBlock", () => {
     expect(screen.getByText("locationDetail.transport.drivingLabel")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/locations/loc-1/transportation",
-      undefined,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
   });
 
@@ -198,5 +221,39 @@ describe("DecisionBlock", () => {
     await waitFor(() => {
       expect(screen.getByText("locationDetail.transport.stale")).toBeInTheDocument();
     });
+  });
+
+  // task #170 CR Nit 1（Martin）：AbortController — unmount 时 fetch 应被 abort
+  // 且 AbortError 不能触发 error setState
+  it("组件 unmount → useEffect cleanup 调 ctrl.abort() + AbortError 静默不 setState", async () => {
+    // 用一个手动可控的 Promise 模拟 in-flight fetch
+    let rejectFetch: ((err: unknown) => void) | null = null;
+    const abortError = new DOMException("aborted", "AbortError");
+    fetchMock.mockImplementationOnce(
+      (_path: string, opts?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          rejectFetch = reject;
+          // 模拟 signal.aborted → 抛 AbortError
+          opts?.signal?.addEventListener("abort", () => reject(abortError));
+        }),
+    );
+
+    const { unmount } = render(<DecisionBlock location={makeLocation()} />);
+    // fetch 已发出但还挂着
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const signal = (fetchMock.mock.calls[0]?.[1] as RequestInit | undefined)?.signal;
+    expect(signal).toBeInstanceOf(AbortSignal);
+    expect(signal?.aborted).toBe(false);
+
+    unmount();
+    // cleanup 已触发 abort
+    expect(signal?.aborted).toBe(true);
+    // 等一 tick 确保 Promise reject 已 propagate
+    await new Promise((r) => setTimeout(r, 0));
+    // 没有 error state（unmount 后无法断言渲染，但 fetchMock 只调用了一次
+    // 且没抛出未捕获错误就够了）
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // 避免 unused-var lint
+    if (rejectFetch) void rejectFetch;
   });
 });

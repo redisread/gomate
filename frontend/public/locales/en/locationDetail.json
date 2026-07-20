@@ -32,7 +32,7 @@
     "subwayLabel": "Nearest Subway",
     "subwayLine": "{station} · {n}-min walk",
     "subwayWithLines": "{lines} · {station} · {n}-min walk",
-    "subwayTransferHint": "It's a bit far — consider a bike or taxi transfer",
+    "subwayTransferHint": "Walk time is estimated — consider biking or taxi",
     "drivingLabel": "Driving",
     "drivingDistance": "~{km} km from {landmark}",
     "drivingDuration": "~{n} min",

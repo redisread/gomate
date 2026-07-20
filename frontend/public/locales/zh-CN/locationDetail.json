@@ -32,7 +32,7 @@
     "subwayLabel": "最近地铁",
     "subwayLine": "{station} · 步行 {n} 分钟",
     "subwayWithLines": "{lines} · {station} · 步行 {n} 分钟",
-    "subwayTransferHint": "距离较远，建议骑车/打车接驳",
+    "subwayTransferHint": "步行时间为估算值，可考虑骑行/打车",
     "drivingLabel": "自驾 / 打车",
     "drivingDistance": "距{landmark}约 {km} km",
     "drivingDuration": "约 {n} 分钟",
