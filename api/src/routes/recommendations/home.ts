@@ -70,10 +70,6 @@ home.get("/", async (c) => {
       recommendations: result.recommendations,
       candidatePoolSize: result.candidatePoolSize,
       nextSeed: result.nextSeed,
-      _meta: {
-        cacheHit: result.cache.hit,
-        bucket: result.cache.bucket,
-      },
     });
   } catch (err) {
     logger.error("[recommendations/home] failed", err);

@@ -18,7 +18,7 @@
 
 import { sql } from "drizzle-orm";
 import type { Db } from "../db";
-import { getCurrentSeason, type Season, getCurrentCity } from "@gomate/lib";
+import { getCurrentSeason, type Season, getCurrentCity, normalizeSeasonLabel } from "@gomate/lib";
 
 // ==================== 常量 ====================
 
@@ -250,6 +250,7 @@ async function fetchSignals(db: Db, now: number): Promise<SignalRow[]> {
       SELECT location_id, COUNT(*) AS cnt
       FROM teams
       WHERE created_at >= ${sevenDaysAgo}
+        AND status = 'recruiting'
       GROUP BY location_id
     ) nt ON nt.location_id = l.id
   `);
@@ -288,11 +289,24 @@ interface Candidate {
   };
 }
 
-/** JSON best_season 是否包含目标季节（TEXT 存 '["spring","summer"]' 样式） */
+/**
+ * JSON best_season 是否包含目标季节。
+ *
+ * gomate prod 数据里 bestSeason 存中文 label（`["春季","秋季"]`），
+ * 但推荐算法内部用 Season key（`"spring"` 等）。
+ * 通过 `normalizeSeasonLabel` 双向归一化：每个元素 zh→en 后再与 season key 比对，
+ * 从而同时兼容中文 label 数据和未来的英文 key 数据。
+ *
+ * Martin CR PR #395 blocker-1：修复 prod 数据 100% miss。
+ */
 function seasonMatches(bestSeasonJson: string, season: Season): boolean {
   try {
     const arr = JSON.parse(bestSeasonJson);
-    return Array.isArray(arr) && arr.includes(season);
+    if (!Array.isArray(arr)) return false;
+    return arr.some((label) => {
+      if (typeof label !== "string") return false;
+      return normalizeSeasonLabel(label) === season;
+    });
   } catch {
     return false;
   }
@@ -526,7 +540,13 @@ function cachedToLocationIds(cached: CachedPool): string[] {
   return Array.from(new Set([...cached.steady, ...cached.worthy, ...cached.fresh]));
 }
 
-/** 读缓存时，用 cached id 重建 pool（重新查那些 id 的 signals） */
+/**
+ * 读缓存时，用 cached id 重建 pool（重新查那些 id 的 signals）
+ *
+ * TODO(P1): 直接从 KV 反序列化完整 Candidate（含 hits/data）避免二次 SQL 查询；
+ * spec §6.4 v2 优化。当前 MVP 阶段 35 条数据量小，二次查询开销可接受。
+ * Ref: Martin CR PR #395 观察-1。
+ */
 async function rehydratePool(
   db: Db,
   cached: CachedPool,
@@ -577,7 +597,7 @@ async function rehydratePool(
     ) sg ON sg.location_id = l.id
     LEFT JOIN (
       SELECT location_id, COUNT(*) AS cnt FROM teams
-      WHERE created_at >= ${sevenDaysAgo} GROUP BY location_id
+      WHERE created_at >= ${sevenDaysAgo} AND status = 'recruiting' GROUP BY location_id
     ) nt ON nt.location_id = l.id
     WHERE l.id IN (${sql.join(ids, sql`, `)})
   `);
