@@ -7,6 +7,7 @@ import { HomeLocationsSection } from "./home-locations-section";
 import { HomeHowItWorksSection } from "./home-how-it-works";
 import { HomeTeamsSection } from "./home-teams-section";
 import { HomeCtaSection } from "./home-cta-section";
+import { HomeRecommendationsSection } from "./recommendations/home-recommendations-section";
 import { PreloadImages } from "./preload-images";
 
 export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
@@ -19,6 +20,8 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
       <main className="min-h-screen bg-background">
         <Navbar />
         <HomeHero data={data} />
+        {/* P0-C T2：本周三个选择（Hero 之后 / Locations 之前） */}
+        <HomeRecommendationsSection />
         <HomeLocationsSection data={data} />
         <HomeHowItWorksSection sectionRef={data.howItWorksRef} isInView={data.howItWorksInView} />
         <HomeTeamsSection data={data} />

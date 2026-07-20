@@ -37,5 +37,46 @@
     "teamJoined": "{count} people teamed",
     "dayDepart": "Departing {day}",
     "saturdayLabel": "Sat"
+  },
+  "recommendations": {
+    "title": "This Week's Three Picks",
+    "subtitle": "Picked for you, swap anytime",
+    "cta": {
+      "refresh": "Show New Three"
+    },
+    "kind": {
+      "steady": "Steady Pick",
+      "worthy": "Worthy Pick",
+      "fresh": "Fresh Pick"
+    },
+    "meta": {
+      "distance": "{km} km",
+      "duration": "{n} min",
+      "favorites": "{n} favorites",
+      "stories": "{n} stories",
+      "ageDays": "New · {n} days",
+      "futureTeams": "{n} teams recruiting"
+    },
+    "reason": {
+      "steady_season_close": "Great weather this weekend, about {km} km away",
+      "steady_season_teams": "Perfect season now, {n} teams recruiting",
+      "steady_easy_close": "Easy hike, about {km} km, beginner-friendly",
+      "steady_close_social": "Close + social, {n} teams this week",
+      "steady_fallback": "About {km} km — a steady choice",
+      "worthy_favorites": "Favorited by {n} — worth a visit",
+      "worthy_stories": "{n} stories written — worth exploring",
+      "worthy_favorites_stories": "{n} favorites & stories — prioritize this",
+      "worthy_fallback": "Worth carving out time for",
+      "fresh_new_location": "New location, added {n} days ago",
+      "fresh_trending_signups": "{n} people signed up in 7 days — trending",
+      "fresh_new_teams": "{n} new teams this week — join early",
+      "fresh_fallback": "New this week — check it out"
+    },
+    "empty": {
+      "steady": "No steady pick this week",
+      "worthy": "No worthy pick this week",
+      "fresh": "Nothing new this week"
+    },
+    "error": "Failed to load recommendations. Try again later."
   }
 }

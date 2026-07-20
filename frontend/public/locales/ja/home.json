@@ -37,5 +37,46 @@
     "teamJoined": "{count}人がチーム結成済み",
     "dayDepart": "{day}出発",
     "saturdayLabel": "土"
+  },
+  "recommendations": {
+    "title": "今週の 3 選",
+    "subtitle": "おすすめ、入れ替え自由",
+    "cta": {
+      "refresh": "別の 3 つ"
+    },
+    "kind": {
+      "steady": "安定",
+      "worthy": "価値あり",
+      "fresh": "新着"
+    },
+    "meta": {
+      "distance": "{km} km",
+      "duration": "{n} 分",
+      "favorites": "{n} 人がお気に入り",
+      "stories": "{n} 件のストーリー",
+      "ageDays": "登録から {n} 日",
+      "futureTeams": "{n} チーム募集中"
+    },
+    "reason": {
+      "steady_season_close": "今週末の天気にぴったり、約 {km} km",
+      "steady_season_teams": "今がベストシーズン、{n} チームが募集中",
+      "steady_easy_close": "難易度低、約 {km} km、初心者に優しい",
+      "steady_close_social": "近くて仲間も見つかる、今週 {n} チーム出発",
+      "steady_fallback": "約 {km} km、安定の選択",
+      "worthy_favorites": "{n} 人がお気に入り、一度は行きたい",
+      "worthy_stories": "{n} 件のストーリー、探索の価値あり",
+      "worthy_favorites_stories": "お気に入り・ストーリー合計 {n}、優先度高め",
+      "worthy_fallback": "時間を作って行く価値あり",
+      "fresh_new_location": "登録から {n} 日以内の新スポット",
+      "fresh_trending_signups": "直近 7 日で {n} 人が参加、注目度上昇",
+      "fresh_new_teams": "今週 {n} チーム新設、早めに参加",
+      "fresh_fallback": "今週の新顔、まずは覗いてみて"
+    },
+    "empty": {
+      "steady": "今週は安定なし",
+      "worthy": "今週は特選なし",
+      "fresh": "今週は新着なし"
+    },
+    "error": "おすすめの読み込みに失敗しました。後で再試行してください。"
   }
 }
