@@ -267,7 +267,7 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
           bestSeason: formData.bestSeason, coverImage: formData.coverImage,
           images: formData.images,
           coordinates: { lat: parseFloat(String(formData.lat)) || 0, lng: parseFloat(String(formData.lng)) || 0 },
-          extra: hasExtra ? extraPayload : null,
+          extra: hasExtra ? extraPayload : undefined,
           // P0-B T4：4 字段透传（前端 boolean|null / string / string[] → 后端 CSV/nullable boolean）
           parkingAvailable: formData.parkingAvailable,
           parkingInfo: formData.parkingInfo.trim() || undefined,

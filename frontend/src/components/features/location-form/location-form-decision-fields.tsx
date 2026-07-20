@@ -200,7 +200,9 @@ export function LocationFormDecisionFields({ formData, updateField }: LocationFo
                     }
                   }}
                   className={cn("px-3 py-1.5 rounded-xl text-xs font-medium border transition-all",
-                    selected ? "bg-amber-500 text-white border-amber-500" : "bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-amber-300")}>
+                    selected
+                      ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800"
+                      : "bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-amber-300")}>
                   {t(`admin.${opt.key}`)}
                 </button>
               );
@@ -217,7 +219,7 @@ export function LocationFormDecisionFields({ formData, updateField }: LocationFo
             className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-all duration-150 border placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:ring-2 focus:ring-amber-200 focus:border-amber-400",
               parkingInfoEditable
                 ? "bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700"
-                : "bg-stone-100 dark:bg-stone-800/40 text-stone-400 dark:text-stone-500 border-stone-200 dark:border-stone-800 cursor-not-allowed")} />
+                : "bg-stone-100 dark:bg-stone-800/40 text-stone-400 dark:text-stone-500 border-stone-200 dark:border-stone-800 opacity-50 cursor-not-allowed")} />
         </Field>
 
         {/* 必带装备 gearEssential — UI required 1-8 项 */}
