@@ -1,0 +1,34 @@
+-- Migration: task #175（P0-D T1）本地圈子 API 复合索引
+-- 依据 spec §3.5 v1.2（Jeff T1 摸底 + Martin msg=82a5ffff CR 决议）
+--
+-- 目的：为 GET /api/local-circle/home?cityId= 主 SQL 的 4-source 子查询 + 邻居队伍 SQL 提供
+--       索引扫描路径，避免 full table scan。EXPLAIN QUERY PLAN 已本地验证走索引。
+--
+-- 3 新增复合索引（+ 2 已存在于 schema，仅 doc 对齐）：
+--   ✅ 已存在：team_members(team_id, status)     — teamStatusIdx (schema.ts:254)
+--   ✅ 已存在：team_members(user_id)              — userIdx (schema.ts:253)
+--   ➕ 新增：teams(status, end_time)              — 7 天内 non-cancelled 已结束队伍 + 邻居 SQL status IN
+--   ➕ 新增：activity_posts(location_id, created_at) — 服务现有 `GET /locations/:id/activity-posts` route（非本 SQL）
+--   ➕ 新增：user_favorites(entity_type, entity_id, created_at) — SECONDARY 收藏源（泛型 entity）
+--
+-- 撤销索引记录：
+--   ❌ `stories(location_id, status, created_at)` — Martin 决议撤销
+--      现有 `stories.ts:47-58` 的 `WHERE location_id IS NOT NULL GROUP BY location_id` 前缀是 IS NOT NULL 不是 =?，
+--      3 列索引边际收益不足以抵消 write 成本；未来 P1 地点详情页故事列表上线（`WHERE location_id=? AND status='published'`）
+--      时补一条 0017 migration。
+--
+-- 规则：
+--   1. 全部 CREATE INDEX IF NOT EXISTS，幂等
+--   2. 零 DDL 破坏性变更（纯索引，不改列/表）
+--   3. 索引名按 gomate convention：<table>_<col1>_<col2>_..._idx
+--   4. 支持覆盖查询：SQL 层 SELECT 常用列前缀命中，避免二次表查
+--
+-- 部署 SOP（T5 落地）：
+--   1. wrangler d1 migrations apply（本 migration）
+--   2. wrangler d1 execute --command 'ANALYZE'（手动跑，不入 migration —— 避免 migration 幂等契约破坏）
+--   3. 复跑 EXPLAIN QUERY PLAN 主 SQL，log 存档验 planner 换驱动
+--
+-- 参考：db/migrations/0009_perf_composite_indexes.sql（同 pattern 批量复合索引）
+CREATE INDEX IF NOT EXISTS `teams_status_end_time_idx` ON `teams` (`status`, `end_time`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `activity_posts_location_created_at_idx` ON `activity_posts` (`location_id`, `created_at`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `user_favorites_entity_type_entity_id_created_at_idx` ON `user_favorites` (`entity_type`, `entity_id`, `created_at`);
