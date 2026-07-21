@@ -169,6 +169,7 @@ pnpm --filter @gomate/frontend build
 
 - 遵循 `api/src/` 下现有路由、lib、schema 组织方式。
 - **D1 环境禁止 `db.transaction()`**：D1 拒绝 SQL `BEGIN`/`COMMIT`（code 7500），多步原子写入一律用 `db.batch([...])`（D1 唯一原子原语）。集成测试的 better-sqlite3 mock 不会暴露此问题，CR 时必须人工核对。（task #147 教训）
+- **D1 wrangler 命令报 7403 unauthorized**：本地 `~/.config/cloudflare/env.sh` 里的 `CLOUDFLARE_API_TOKEN=cfat_*` 不覆盖 D1 权限（只有 R2/Workers 部分作用域）。修复：先 `unset CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID`，再跑 `wrangler d1 ...`——wrangler fallback 到本地 OAuth session（`wrangler whoami` 应显示 `- d1 (write)` scope）。（task #175 教训）
 - API 请求、响应、认证或数据库行为变化时，同步更新 `docs/backend-api.md`。
 - API 变更的最低检查通常是：
 
