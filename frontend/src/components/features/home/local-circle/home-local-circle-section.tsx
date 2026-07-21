@@ -20,6 +20,7 @@ import * as React from "react";
 import { useI18n } from "@/hooks/useI18n";
 import { useLocalCircle } from "./use-local-circle";
 import { LocalCircleCard } from "./local-circle-card";
+import { NeighborTeamRow } from "./neighbor-team-row";
 
 export function HomeLocalCircleSection() {
   const { t } = useI18n(["home"]);
@@ -54,10 +55,11 @@ export function HomeLocalCircleSection() {
   // 错误态 or 空态：整块不渲染（spec §6.4 + Martin CR 降级不阻塞首页）
   if (state.status === "error") return null;
 
-  const { cityName, activePeopleCount, topLocations } = state.data;
+  const { cityName, activePeopleCount, topLocations, neighborTeams } = state.data;
 
-  // 空态：无地点数据 → 整块不渲染（非占位）
-  if (topLocations.length === 0) return null;
+  // 空态：地点 + 邻居队伍都空 → 整块不渲染（非占位，spec §6.4）
+  // 两者独立空态：主区块随 topLocations，子区块随 neighborTeams
+  if (topLocations.length === 0 && neighborTeams.length === 0) return null;
 
   return (
     <section
@@ -79,12 +81,29 @@ export function HomeLocalCircleSection() {
           </p>
         </div>
 
-        {/* Top 3 地点卡：移动端竖排，md+ 三列 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-          {topLocations.map((loc, i) => (
-            <LocalCircleCard key={loc.locationId} location={loc} index={i} />
-          ))}
-        </div>
+        {/* 主区块：Top 3 地点卡（移动端竖排，md+ 三列）—— topLocations 非空才渲染 */}
+        {topLocations.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+            {topLocations.map((loc, i) => (
+              <LocalCircleCard key={loc.locationId} location={loc} index={i} />
+            ))}
+          </div>
+        )}
+
+        {/* 子区块：邻居队伍「你的邻居参加了这些队伍」（T3 A-1）——
+            neighborTeams 非空才渲染，行式布局视觉层级次于主区块地点卡 */}
+        {neighborTeams.length > 0 && (
+          <div className="mt-8 sm:mt-10">
+            <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-4">
+              {t("home.localCircle.neighborTeams.title")}
+            </h3>
+            <div className="flex flex-col gap-3">
+              {neighborTeams.map((team) => (
+                <NeighborTeamRow key={team.teamId} team={team} cityName={cityName} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

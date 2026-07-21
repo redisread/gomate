@@ -86,6 +86,11 @@
     "avatarStack": {
       "tooltip": "過去 7 日間に活動"
     },
-    "empty": "今週は街の活動なし"
+    "empty": "今週は街の活動なし",
+    "neighborTeams": {
+      "title": "ご近所さんも参加中"
+    },
+    "neighborCount": "{city} {n} 人ご近所",
+    "neighborCountMany": "ご近所 4+"
   }
 }
