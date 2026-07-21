@@ -287,25 +287,46 @@ describe("local-circle service — getLocalCircleHome", () => {
   });
 });
 
-// ==================== Route 层：cityId 校验 400 ====================
-// Wen msg=d84aa69d 顾虑「hono `.optional()` 陷阱」—— 手动 `if (!cityId)` 已覆盖 falsy 空串，
-// route 层加一层 unit-lock 防未来 refactor 换 zod validator 时误让 cityId= 空串通过。
-describe("local-circle route — GET /local-circle/home", () => {
-  it("无 cityId 参数 → 400", async () => {
+// ==================== Route 层：cityId 缺省 fallback 深圳（方案 a）====================
+// Martin PR #406 NIT 方案 a：cityId 可选，缺省/空串 → 服务端 fallback 深圳（省前端 /cities 往返）。
+// service mock createDb 返回 testDb，route 走真实 fallback 查询。
+describe("local-circle route — GET /local-circle/home（cityId 缺省 fallback）", () => {
+  beforeEach(() => {
+    // 每个 route case 独立 fresh DB（不依赖 service describe 的 beforeEach）
+    const fresh = createTestDb();
+    testDb = fresh.db;
+    localCounter = 1;
+  });
+
+  it("无 cityId 参数 → fallback 深圳 → 200", async () => {
+    await seedCity(testDb, { name: "深圳", adcode: "440300" });
     const { Hono } = await import("hono");
     const { localCircleHomeRoute } = await import("../../routes/local-circle/home");
     const app = new Hono();
     app.route("/", localCircleHomeRoute);
     const res = await app.fetch(new Request("http://localhost/?"), { DB: {}, GOMATE_KV: null } as never);
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { cityName: string };
+    expect(body.cityName).toBe("深圳");
   });
 
-  it("cityId= 空串 → 400（防 hono .optional() 陷阱）", async () => {
+  it("cityId= 空串 → fallback 深圳 → 200（方案 a：空串与缺省一视同仁）", async () => {
+    await seedCity(testDb, { name: "深圳", adcode: "440300" });
     const { Hono } = await import("hono");
     const { localCircleHomeRoute } = await import("../../routes/local-circle/home");
     const app = new Hono();
     app.route("/", localCircleHomeRoute);
     const res = await app.fetch(new Request("http://localhost/?cityId="), { DB: {}, GOMATE_KV: null } as never);
+    expect(res.status).toBe(200);
+  });
+
+  it("无 cityId 且无默认城市（深圳不存在）→ 400", async () => {
+    // testDb 此 case 无深圳 city → fallback 查询空 → 400
+    const { Hono } = await import("hono");
+    const { localCircleHomeRoute } = await import("../../routes/local-circle/home");
+    const app = new Hono();
+    app.route("/", localCircleHomeRoute);
+    const res = await app.fetch(new Request("http://localhost/?"), { DB: {}, GOMATE_KV: null } as never);
     expect(res.status).toBe(400);
   });
 });

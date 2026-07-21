@@ -8,6 +8,7 @@ import { HomeHowItWorksSection } from "./home-how-it-works";
 import { HomeTeamsSection } from "./home-teams-section";
 import { HomeCtaSection } from "./home-cta-section";
 import { HomeRecommendationsSection } from "./recommendations/home-recommendations-section";
+import { HomeLocalCircleSection } from "./local-circle/home-local-circle-section";
 import { PreloadImages } from "./preload-images";
 
 export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
@@ -22,6 +23,8 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
         <HomeHero data={data} />
         {/* P0-C T2：本周三个选择（Hero 之后 / Locations 之前） */}
         <HomeRecommendationsSection />
+        {/* P0-D T2：首页本地圈子模块（推荐位之后 / Locations 之前） */}
+        <HomeLocalCircleSection />
         <HomeLocationsSection data={data} />
         <HomeHowItWorksSection sectionRef={data.howItWorksRef} isInView={data.howItWorksInView} />
         <HomeTeamsSection data={data} />
