@@ -22,6 +22,8 @@ export function sanitizeUser(user: typeof schema.users.$inferSelect) {
     level: user.level || "beginner",
     completedHikes: user.completedHikes ?? 0,
     wechat: user.wechat,
+    // #181: city = cityId（非城市名）；前端 profile 回填城市选择器 + 首页 use-local-circle 默认 cityId
+    city: user.city,
     extra: user.extra,
     role: user.role || "user",
     status: user.status,

@@ -12,6 +12,8 @@
   "nicknameLabel": "昵称",
   "nicknamePlaceholder": "请输入昵称（为空则显示用户名）",
   "nicknameHint": "用于展示的昵称，可以随时修改",
+  "cityLabel": "所在城市",
+  "cityHint": "设置后可在本地圈子看到你的邻居",
   "bio": "个人简介",
   "bioPlaceholder": "介绍一下你自己，让更多人了解你...",
   "bioHint": "简短介绍你的兴趣爱好和玩法偏好",

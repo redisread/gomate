@@ -12,6 +12,8 @@
   "nicknameLabel": "ニックネーム",
   "nicknamePlaceholder": "ニックネームを入力（空の場合はユーザー名が表示されます）",
   "nicknameHint": "表示用ニックネーム。いつでも変更可能",
+  "cityLabel": "所在都市",
+  "cityHint": "近所の仲間が見えます",
   "bio": "自己紹介",
   "bioPlaceholder": "あなた自身を紹介して、更多人に知ってもらいましょう...",
   "bioHint": "趣味やプレイスタイルを簡単に紹介",

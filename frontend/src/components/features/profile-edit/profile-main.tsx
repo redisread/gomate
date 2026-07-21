@@ -64,6 +64,9 @@ export function ProfileEditClient() {
               bioNearLimit={ctx.bioNearLimit}
               bioAtLimit={ctx.bioAtLimit}
               onChange={ctx.handleChange}
+              city={ctx.formData.city}
+              cities={ctx.cities}
+              onCityChange={ctx.handleCityChange}
             />
           </Card>
           <Card>

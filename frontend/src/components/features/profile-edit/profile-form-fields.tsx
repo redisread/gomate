@@ -2,6 +2,8 @@ import * as React from "react";
 import { Loader2, Camera, X, Check, MessageCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
+import { CitySelect } from "@/components/ui/city-select";
+import type { City } from "@/lib/types";
 import { inputCls, LEVEL_OPTIONS, PRESET_EQUIPMENT_KEYS } from "./constants";
 
 // ─── FieldLabel ─────────────────────────────────────────────────────
@@ -90,9 +92,13 @@ interface BasicInfoFieldsProps {
   bioNearLimit: boolean;
   bioAtLimit: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  // #181: 城市选择器（CitySelect onChange 产出 cityId，非 DOM event）
+  city: string;
+  cities: City[];
+  onCityChange: (cityId: string) => void;
 }
 
-export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLimit, bioAtLimit, onChange }: BasicInfoFieldsProps) {
+export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLimit, bioAtLimit, onChange, city, cities, onCityChange }: BasicInfoFieldsProps) {
   const { t } = useI18n(["profile", "common"]);
   return (
     <div className="space-y-5">
@@ -105,6 +111,12 @@ export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLim
         <FieldLabel>{t('profile.nicknameLabel')}</FieldLabel>
         <input name="nickname" type="text" value={nickname} onChange={onChange} maxLength={20} placeholder={t('profile.nicknamePlaceholder')} className={inputCls} />
         <p className="text-xs text-stone-400">{t('profile.nicknameHint')}</p>
+      </div>
+      {/* #181: 所在城市（非必填）—— 设置后本地圈子可见邻居维度 */}
+      <div className="space-y-1.5">
+        <FieldLabel>{t('profile.cityLabel')}</FieldLabel>
+        <CitySelect value={city} onChange={onCityChange} cities={cities} />
+        <p className="text-xs text-stone-400">{t('profile.cityHint')}</p>
       </div>
       <div className="space-y-1.5">
         <FieldLabel>{t('profile.bio')}</FieldLabel>

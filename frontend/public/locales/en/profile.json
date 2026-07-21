@@ -12,6 +12,8 @@
   "nicknameLabel": "Nickname",
   "nicknamePlaceholder": "Enter your nickname (shows username if empty)",
   "nicknameHint": "Display nickname, can be changed anytime",
+  "cityLabel": "Your City",
+  "cityHint": "See neighbors in your local circle",
   "bio": "Bio",
   "bioPlaceholder": "Tell people about yourself...",
   "bioHint": "Briefly describe your interests and activity preferences",
