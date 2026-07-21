@@ -91,6 +91,10 @@
       "title": "ご近所さんも参加中"
     },
     "neighborCount": "{city} {n} 人ご近所",
-    "neighborCountMany": "ご近所 4+"
+    "neighborCountMany": "ご近所 4+",
+    "setCityCta": {
+      "title": "👋 都市を設定してご近所さんを見る",
+      "button": "設定する →"
+    }
   }
 }

@@ -91,6 +91,10 @@
       "title": "Your neighbors are joining"
     },
     "neighborCount": "{n} from {city}",
-    "neighborCountMany": "4+ from your city"
+    "neighborCountMany": "4+ from your city",
+    "setCityCta": {
+      "title": "👋 Set your city to see what neighbors are up to",
+      "button": "Set up →"
+    }
   }
 }

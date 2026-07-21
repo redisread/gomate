@@ -56,10 +56,16 @@ export function HomeLocalCircleSection() {
   if (state.status === "error") return null;
 
   const { cityName, activePeopleCount, topLocations, neighborTeams } = state.data;
+  const { loggedIn, userCity } = state;
+
+  // #185 T2 引导卡：登录 + 未设 city + 邻居子区块空 → 显示「设置城市看邻居」CTA（替代邻居空态）
+  // 匿名（loggedIn=false）不显示；已设 city 走正常 neighborTeams 渲染/空态不渲染
+  const showGuideCard = loggedIn && !userCity && neighborTeams.length === 0;
 
   // 空态：地点 + 邻居队伍都空 → 整块不渲染（非占位，spec §6.4）
   // 两者独立空态：主区块随 topLocations，子区块随 neighborTeams
-  if (topLocations.length === 0 && neighborTeams.length === 0) return null;
+  // #185：引导卡视为子区块内容——登录未设 city 用户即使双空也保留 section 给引导入口
+  if (topLocations.length === 0 && neighborTeams.length === 0 && !showGuideCard) return null;
 
   return (
     <section
@@ -87,6 +93,23 @@ export function HomeLocalCircleSection() {
             {topLocations.map((loc, i) => (
               <LocalCircleCard key={loc.locationId} location={loc} index={i} />
             ))}
+          </div>
+        )}
+
+        {/* #185 T2 引导卡：登录未设 city 用户「设置城市看邻居」（替代邻居空态，spec §2.2） */}
+        {showGuideCard && (
+          <div className="mt-8 sm:mt-10 flex justify-center" data-testid="city-guide-card">
+            <div className="w-full max-w-md rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 px-6 py-6 text-center">
+              <p className="text-base font-medium text-stone-800 dark:text-stone-200 leading-relaxed">
+                {t("home.localCircle.setCityCta.title")}
+              </p>
+              <a
+                href="/profile/edit"
+                className="mt-4 inline-flex items-center gap-1 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 transition-colors"
+              >
+                {t("home.localCircle.setCityCta.button")}
+              </a>
+            </div>
           </div>
         )}
 

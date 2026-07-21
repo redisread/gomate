@@ -19,10 +19,11 @@ import type { LocalCircle } from "./types";
 
 export type LocalCircleState =
   | { status: "loading" }
-  | { status: "ready"; data: LocalCircle }
+  // #185：引导卡显隐判定用 —— loggedIn 区分匿名（不显示）与登录未设 city（显示）
+  | { status: "ready"; data: LocalCircle; loggedIn: boolean; userCity: string | null }
   | { status: "error"; message: string };
 
-async function fetchLocalCircle(): Promise<LocalCircle> {
+async function fetchLocalCircle(): Promise<{ data: LocalCircle; loggedIn: boolean; userCity: string | null }> {
   // #181 §3.4：登录用户 user.city 非空 → ?cityId= 看自己城市圈子；
   // 未登录 / 未设城市 → cityId 缺省，后端 fallback 深圳（方案 a）
   const user = await fetchCurrentUser(); // 静默失败，不跳转
@@ -32,7 +33,7 @@ async function fetchLocalCircle(): Promise<LocalCircle> {
     : "/local-circle/home";
   const res = await fetchPublicAPI(url);
   if (!res.ok) throw new Error(`local-circle HTTP ${res.status}`);
-  return (await res.json()) as LocalCircle;
+  return { data: (await res.json()) as LocalCircle, loggedIn: !!user, userCity: cityId };
 }
 
 export function useLocalCircle(): LocalCircleState {
@@ -42,9 +43,9 @@ export function useLocalCircle(): LocalCircleState {
     let cancelled = false;
 
     fetchLocalCircle()
-      .then((data) => {
+      .then(({ data, loggedIn, userCity }) => {
         if (cancelled) return;
-        setState({ status: "ready", data });
+        setState({ status: "ready", data, loggedIn, userCity });
       })
       .catch((err) => {
         if (cancelled) return;
