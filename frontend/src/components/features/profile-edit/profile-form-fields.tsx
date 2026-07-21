@@ -115,7 +115,7 @@ export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLim
       {/* #181: 所在城市（非必填）—— 设置后本地圈子可见邻居维度 */}
       <div className="space-y-1.5">
         <FieldLabel>{t('profile.cityLabel')}</FieldLabel>
-        <CitySelect value={city} onChange={onCityChange} cities={cities} />
+        <CitySelect value={city} onChange={onCityChange} cities={cities} clearable />
         <p className="text-xs text-stone-400">{t('profile.cityHint')}</p>
       </div>
       <div className="space-y-1.5">

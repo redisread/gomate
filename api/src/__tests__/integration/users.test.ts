@@ -211,5 +211,27 @@ describe("用户 API 集成测试", () => {
       const [u2] = await testDb.select().from(schema.users).where(eq(schema.users.id, user.id));
       expect(u2.city).toBeNull();
     });
+
+    /**
+     * 测试场景：task #181 CR N2 — city: "" 空串归一为 NULL（不写空串落库）
+     */
+    it("city 传空串 → 归一为 NULL", async () => {
+      // Arrange
+      const user = await seedUser(testDb);
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      // Act
+      const res = await req(app, "/users/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, city: "" }),
+      });
+
+      // Assert
+      expect(res.status).toBe(200);
+      const { eq } = await import("drizzle-orm");
+      const [u] = await testDb.select().from(schema.users).where(eq(schema.users.id, user.id));
+      expect(u.city).toBeNull();
+    });
   });
 });

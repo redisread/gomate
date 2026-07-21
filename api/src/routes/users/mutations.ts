@@ -43,7 +43,7 @@ mutations.patch("/update", async (c) => {
     }
     // #181: city = cityId（CitySelect 产出），非城市名；格式一致性见 schema.ts users.city 注释
     // （防休眠 2.0：绕过 CitySelect 的写入也必须存 cityId，否则 neighbor query u.city=userCity 相等失效）
-    if (city !== undefined) updateData.city = city;
+    if (city !== undefined) updateData.city = city || null; // CR N2：空串归一 NULL，避免 city="" 落库
     if (extra !== undefined) {
       if (!validateUserExtra(extra)) return c.json(APIErrors.badRequest("Invalid extra field format"), 400);
       updateData.extra = JSON.stringify(extra);
