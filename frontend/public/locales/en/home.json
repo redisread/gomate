@@ -78,5 +78,14 @@
       "fresh": "Nothing new this week"
     },
     "error": "Failed to load recommendations. Try again later."
+  },
+  "localCircle": {
+    "title": "What Your City Did This Week",
+    "subtitle": "Not what you pick — what your city's already doing",
+    "inAction": "{n} in action",
+    "avatarStack": {
+      "tooltip": "Active here in the last 7 days"
+    },
+    "empty": "No local action this week"
   }
 }

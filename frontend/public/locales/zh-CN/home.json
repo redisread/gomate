@@ -78,5 +78,14 @@
       "fresh": "这周没新的"
     },
     "error": "推荐加载失败，稍后重试"
+  },
+  "localCircle": {
+    "title": "本周本地圈子在去哪",
+    "subtitle": "不是你去过，是本地圈子已经在做的事",
+    "inAction": "{n} 人在行动",
+    "avatarStack": {
+      "tooltip": "过去 7 天参与过此地点行动"
+    },
+    "empty": "这周本城还没人行动"
   }
 }
