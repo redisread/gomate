@@ -160,6 +160,8 @@ export function createAuth(env: Env) {
         gender: { type: "string", required: false },
         birthday: { type: "date", required: false },
         wechat: { type: "string", required: false },
+        // #181 热修（Wen 锚点 2 FAIL）：get-session 透 city（cityId），否则前端 fetchCurrentUser 合并后仍无 city
+        city: { type: "string", required: false },
         completedHikes: { type: "number", required: false, defaultValue: 0 },
         status: { type: "string", required: false, defaultValue: "active" },
         extra: { type: "string", required: false },

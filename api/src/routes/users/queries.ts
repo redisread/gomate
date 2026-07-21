@@ -37,6 +37,7 @@ queries.get("/", async (c) => {
         level: user.level || "beginner",
         completedHikes: user.completedHikes ?? 0,
         wechat: user.wechat, extra: user.extra,
+        city: user.city, // #181: cityId（防休眠 2.0，与 sanitizeUser 对称透出）
         role: user.role || "user", status: user.status,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,

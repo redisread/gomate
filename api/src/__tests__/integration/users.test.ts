@@ -102,6 +102,23 @@ describe("用户 API 集成测试", () => {
       const data = await res.json() as { user: Record<string, unknown> };
       expect(data.user.wechat).toBe("my-wechat");
     });
+
+    /**
+     * 测试场景：task #181 热修 — GET /users?id= 透出 city（Wen 锚点 2 FAIL：
+     * 内联响应对象不消费 sanitizeUser，city 缺失致前端 fetchCurrentUser 拿不到）
+     */
+    it("获取用户信息 → 包含 city 字段（cityId）", async () => {
+      // Arrange
+      const user = await seedUser(testDb, { city: "test-city-id-456" });
+
+      // Act
+      const res = await req(app, `/users?id=${user.id}`);
+
+      // Assert
+      expect(res.status).toBe(200);
+      const data = await res.json() as { user: Record<string, unknown> };
+      expect(data.user.city).toBe("test-city-id-456");
+    });
   });
 
   describe("PATCH /users/update - 更新用户信息", () => {
