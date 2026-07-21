@@ -30,6 +30,8 @@ export const users = sqliteTable(
     wechat: text("wechat"),
     // P0-A T4（task #164）：用户所属城市，用于本地圈子/推荐位/季节判定 fallback
     // nullable：旧用户默认 null，UI 走 CF-IPCity + 深圳 fallback
+    // #181: 存 cityId（非城市名），与 local-circle neighbor query u.city=userCity 一致性依赖
+    //   —— 任何绕过 CitySelect 的写入（admin 导入/迁移/脚本）也必须存 cityId，否则邻居匹配失效（防休眠 2.0）
     city: text("city"),
     role: text("role").default("user").notNull(),
     status: text("status").default("active").notNull(),

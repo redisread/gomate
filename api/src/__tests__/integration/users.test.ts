@@ -176,5 +176,62 @@ describe("用户 API 集成测试", () => {
       const [updatedUser] = await testDb.select().from(schema.users).where(eq(schema.users.id, user.id));
       expect(updatedUser.level).toBe("advanced");
     });
+
+    /**
+     * 测试场景：task #181 — PATCH city 写入 cityId + null 清空
+     * 预期结果：cityId 正常落库；传 null 清空回 NULL
+     */
+    it("更新 city 字段（cityId）→ 200；再传 null → 清空", async () => {
+      // Arrange
+      const user = await seedUser(testDb);
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+      const { eq } = await import("drizzle-orm");
+
+      // Act 1: 写入 cityId
+      const res1 = await req(app, "/users/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, city: "test-city-id-123" }),
+      });
+
+      // Assert 1
+      expect(res1.status).toBe(200);
+      const [u1] = await testDb.select().from(schema.users).where(eq(schema.users.id, user.id));
+      expect(u1.city).toBe("test-city-id-123");
+
+      // Act 2: 传 null 清空
+      const res2 = await req(app, "/users/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, city: null }),
+      });
+
+      // Assert 2
+      expect(res2.status).toBe(200);
+      const [u2] = await testDb.select().from(schema.users).where(eq(schema.users.id, user.id));
+      expect(u2.city).toBeNull();
+    });
+
+    /**
+     * 测试场景：task #181 CR N2 — city: "" 空串归一为 NULL（不写空串落库）
+     */
+    it("city 传空串 → 归一为 NULL", async () => {
+      // Arrange
+      const user = await seedUser(testDb);
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      // Act
+      const res = await req(app, "/users/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, city: "" }),
+      });
+
+      // Assert
+      expect(res.status).toBe(200);
+      const { eq } = await import("drizzle-orm");
+      const [u] = await testDb.select().from(schema.users).where(eq(schema.users.id, user.id));
+      expect(u.city).toBeNull();
+    });
   });
 });

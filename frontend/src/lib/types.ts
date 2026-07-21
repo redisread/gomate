@@ -91,6 +91,7 @@ export interface SessionUser {
   gender?: string | null;
   birthday?: string | null;
   extra?: string | null;
+  city?: string | null; // #181: 用户所属城市 cityId（本地圈子邻居维度 + 默认城市）
 }
 
 export interface TeamMember {

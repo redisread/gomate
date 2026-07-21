@@ -24,9 +24,9 @@ mutations.patch("/update", async (c) => {
     const body = await c.req.json<{
       userId?: string; name?: string; nickname?: string; bio?: string;
       level?: string; image?: string; wechat?: string; gender?: string;
-      birthday?: string | number; extra?: unknown;
+      birthday?: string | number; extra?: unknown; city?: string | null;
     }>();
-    const { userId, name, nickname, bio, level, image, wechat, gender, birthday, extra } = body;
+    const { userId, name, nickname, bio, level, image, wechat, gender, birthday, extra, city } = body;
 
     if (!userId) return c.json(APIErrors.badRequest("User ID is required"), 400);
 
@@ -41,6 +41,9 @@ mutations.patch("/update", async (c) => {
     if (birthday !== undefined) {
       updateData.birthday = birthday === null ? null : new Date(birthday as number);
     }
+    // #181: city = cityId（CitySelect 产出），非城市名；格式一致性见 schema.ts users.city 注释
+    // （防休眠 2.0：绕过 CitySelect 的写入也必须存 cityId，否则 neighbor query u.city=userCity 相等失效）
+    if (city !== undefined) updateData.city = city || null; // CR N2：空串归一 NULL，避免 city="" 落库
     if (extra !== undefined) {
       if (!validateUserExtra(extra)) return c.json(APIErrors.badRequest("Invalid extra field format"), 400);
       updateData.extra = JSON.stringify(extra);

@@ -3,10 +3,10 @@
  *
  * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §3.4 / §6.4
  *
- * cityId 来源（v1 首版 + Martin PR #406 NIT 方案 a）：
- *   - 后端 `/local-circle/home` cityId 缺省时服务端 fallback 深圳
- *   - 前端不传 cityId → 一个 request 搞定（消除 /cities → /local-circle 串行瀑布）
- *   - 未来接入 user.city / 城市选择器后，传 `?cityId=` 即可（本 hook 加参数即可，无需改后端）
+ * cityId 来源（#181 §3.4 起）：
+ *   - 登录用户 `user.city` 非空 → `?cityId=${user.city}`（看自己城市圈子，地点维度个性化）
+ *   - 未登录 / 未设城市 → 不传 cityId，后端 fallback 深圳（P0-D 方案 a 现状保留）
+ *   - user.city 读取走 fetchCurrentUser 两步（get-session + /api/users），与 navbar 同口径
  *
  * 错误 / 空态：
  *   - fetch 失败 or topLocations & neighborTeams 都空 → 消费方整块不渲染（spec §6.4）
@@ -14,7 +14,7 @@
  */
 
 import * as React from "react";
-import { fetchPublicAPI } from "@/lib/api";
+import { fetchPublicAPI, fetchCurrentUser } from "@/lib/api";
 import type { LocalCircle } from "./types";
 
 export type LocalCircleState =
@@ -23,8 +23,14 @@ export type LocalCircleState =
   | { status: "error"; message: string };
 
 async function fetchLocalCircle(): Promise<LocalCircle> {
-  // cityId 缺省 → 后端 fallback 深圳（方案 a）
-  const res = await fetchPublicAPI("/local-circle/home");
+  // #181 §3.4：登录用户 user.city 非空 → ?cityId= 看自己城市圈子；
+  // 未登录 / 未设城市 → cityId 缺省，后端 fallback 深圳（方案 a）
+  const user = await fetchCurrentUser(); // 静默失败，不跳转
+  const cityId = user?.city || null;
+  const url = cityId
+    ? `/local-circle/home?cityId=${encodeURIComponent(cityId)}`
+    : "/local-circle/home";
+  const res = await fetchPublicAPI(url);
   if (!res.ok) throw new Error(`local-circle HTTP ${res.status}`);
   return (await res.json()) as LocalCircle;
 }

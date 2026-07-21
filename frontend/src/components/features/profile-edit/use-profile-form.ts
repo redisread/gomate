@@ -1,7 +1,7 @@
 import * as React from "react";
-import { fetchAPI, fetchCurrentUser, API_BASE } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser, fetchPublicAPI, API_BASE } from "@/lib/api";
 import { parseExtra, formatBirthday, birthdayToTimestamp } from "@/lib/user-utils";
-import type { SessionUser } from "@/lib/types";
+import type { SessionUser, City } from "@/lib/types";
 import { useI18n } from "@/hooks/useI18n";
 import type { MessageState } from "./constants";
 
@@ -14,6 +14,7 @@ interface ProfileFormData {
   birthday: string;
   experience: string;
   equipment: string[];
+  city: string; // #181: cityId（CitySelect 产出），空串 = 未设
 }
 
 export function useProfileForm() {
@@ -27,12 +28,27 @@ export function useProfileForm() {
   const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [equipmentInput, setEquipmentInput] = React.useState("");
+  const [cities, setCities] = React.useState<City[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null!);
 
   const [formData, setFormData] = React.useState<ProfileFormData>({
     nickname: "", bio: "", level: "beginner", wechat: "",
-    gender: "", birthday: "", experience: "", equipment: [],
+    gender: "", birthday: "", experience: "", equipment: [], city: "",
   });
+
+  // #181: 拉城市列表（CitySelect 数据源，GET /cities 已有）
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetchPublicAPI("/cities?pageSize=100");
+        if (!res.ok) return;
+        const json = (await res.json()) as { cities?: City[] };
+        setCities(json.cities ?? []);
+      } catch {
+        // 城市列表拉取失败不阻塞表单，CitySelect 空列表降级
+      }
+    })();
+  }, []);
 
   // Load user data
   React.useEffect(() => {
@@ -54,6 +70,7 @@ export function useProfileForm() {
           birthday: birthdayStr,
           experience: experience || "",
           equipment: equipment || [],
+          city: user.city || "", // #181: 回填城市（cityId）
         });
       } catch {
         window.location.href = "/login?redirect=/profile/edit";
@@ -66,6 +83,12 @@ export function useProfileForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setMessage(null);
+  };
+
+  // #181: CitySelect onChange(cityId) —— 非 DOM event，单独 handler
+  const handleCityChange = (cityId: string) => {
+    setFormData((prev) => ({ ...prev, city: cityId }));
     setMessage(null);
   };
 
@@ -149,6 +172,7 @@ export function useProfileForm() {
           userId: user!.id, nickname: formData.nickname || null, image: avatarUrl,
           bio: formData.bio, level: formData.level, wechat: formData.wechat,
           gender: formData.gender || null, birthday: birthdayToTimestamp(formData.birthday), extra,
+          city: formData.city || null, // #181: cityId，空串 → null（清空城市）
         }),
       });
       const result = await res.json();
@@ -174,10 +198,10 @@ export function useProfileForm() {
 
   return {
     user, isLoading, isSaving, isUploading, savedDone, message,
-    avatarPreview, selectedFile, equipmentInput, fileInputRef,
+    avatarPreview, selectedFile, equipmentInput, fileInputRef, cities,
     formData, bioLength, bioNearLimit, bioAtLimit,
     setEquipmentInput, setAvatarPreview, setMessage,
-    handleChange, handleEquipmentKeyDown, handleRemoveEquipment,
+    handleChange, handleCityChange, handleEquipmentKeyDown, handleRemoveEquipment,
     handleAddPresetEquipment, handleFileChange, handleSubmit, cancelSelectedFile,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { ChevronDown, Check, Search } from "lucide-react";
+import { ChevronDown, Check, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { City } from "@/lib/types";
 import { useI18n } from "@/hooks/useI18n";
@@ -17,6 +17,8 @@ interface CitySelectProps {
   cities: City[];
   error?: string;
   disabled?: boolean;
+  /** #181 CR R1：opt-in 清空按钮（trigger X → onChange("")），仅 profile-edit 传入 */
+  clearable?: boolean;
 }
 
 /**
@@ -29,6 +31,7 @@ export function CitySelect({
   cities,
   error,
   disabled = false,
+  clearable = false,
 }: CitySelectProps) {
   const { t } = useI18n(["common"]);
   const [open, setOpen] = useState(false);
@@ -152,7 +155,8 @@ export function CitySelect({
       className="relative"
       onKeyDown={handleKeyDown}
     >
-      {/* 触发区：输入框样式 */}
+      {/* 触发区：输入框样式（clearable 时右侧挂清空按钮，button 不嵌套） */}
+      <div className="flex items-center gap-1">
       <button
         type="button"
         onClick={handleOpen}
@@ -186,6 +190,20 @@ export function CitySelect({
           )}
         />
       </button>
+      {clearable && selectedCity && !disabled && (
+        <button
+          type="button"
+          aria-label={t("common.clear")}
+          onClick={(e) => {
+            e.stopPropagation();
+            onChange(""); // 空串 → 表单层 PATCH 归一为 null（清空城市）
+          }}
+          className="h-10 w-8 flex-shrink-0 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+      </div>
 
       {/* 错误提示 */}
       {error && (
