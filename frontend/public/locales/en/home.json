@@ -86,6 +86,11 @@
     "avatarStack": {
       "tooltip": "Active here in the last 7 days"
     },
-    "empty": "No local action this week"
+    "empty": "No local action this week",
+    "neighborTeams": {
+      "title": "Your neighbors are joining"
+    },
+    "neighborCount": "{n} from {city}",
+    "neighborCountMany": "4+ from your city"
   }
 }
