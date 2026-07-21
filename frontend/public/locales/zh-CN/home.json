@@ -91,6 +91,10 @@
       "title": "你的邻居参加了这些队伍"
     },
     "neighborCount": "{city}邻居 {n} 人",
-    "neighborCountMany": "你的邻居 4+"
+    "neighborCountMany": "你的邻居 4+",
+    "setCityCta": {
+      "title": "👋 设置你的城市，看看邻居在做什么",
+      "button": "去设置 →"
+    }
   }
 }
