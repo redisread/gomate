@@ -6,7 +6,7 @@ import { createAuth } from "../../lib/auth";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
-import { sendTeamJoinApplicationEmail } from "../../lib/email";
+import { sendTeamJoinApplicationEmail, sendApplicationApprovedEmail } from "../../lib/email";
 import { requireTeamLeader } from "../../lib/team-permissions";
 import { generateId } from "../../lib/id";
 
@@ -142,6 +142,18 @@ membership.post("/members/:userId/approve", requireTeamLeader(), async (c) => {
     await db.update(schema.teams)
       .set({ status: newStatus, updatedAt: now })
       .where(eq(schema.teams.id, teamId));
+
+    // task #186：异步通知申请人审核通过（waitUntil 不阻塞响应，失败不影响审批结果）
+    const notifyPromise = notifyApplicantOfApproval(db, team, targetUserId, c.env).catch((err) => {
+      logger.error("[Email] Application approved notification failed:", err);
+    });
+    try {
+      if (c.executionCtx?.waitUntil) {
+        c.executionCtx.waitUntil(notifyPromise);
+      }
+    } catch {
+      // 非 Cloudflare 环境，直接执行不阻塞
+    }
 
     return c.json({ success: true, message: "已通过申请" });
   } catch (error) {
@@ -314,6 +326,37 @@ async function notifyLeaderOfApplication(
     {
       leaderEmail: leaderRow.email,
       leaderName: leaderRow.nickname || leaderRow.name,
+      applicantName: applicantRow.nickname || applicantRow.name,
+      teamTitle: team.title,
+      locationName: locationRow.name,
+      teamUrl: `${frontendUrl}/teams/${team.id}`,
+    },
+    env,
+  );
+}
+
+/**
+ * task #186：通知申请人审核通过（查申请人邮箱 + 地点名，发 applicationApproved 邮件）
+ */
+async function notifyApplicantOfApproval(
+  db: ReturnType<typeof createDb>,
+  team: typeof schema.teams.$inferSelect,
+  applicantUserId: string,
+  env: Env,
+) {
+  const [applicantRow, locationRow] = await Promise.all([
+    db.select({ email: schema.users.email, name: schema.users.name, nickname: schema.users.nickname })
+      .from(schema.users).where(eq(schema.users.id, applicantUserId)).then((r) => r[0]),
+    db.select({ name: schema.locations.name })
+      .from(schema.locations).where(eq(schema.locations.id, team.locationId)).then((r) => r[0]),
+  ]);
+
+  if (!applicantRow?.email || !locationRow) return;
+
+  const frontendUrl = env.FRONTEND_URL || "https://gomate.live";
+  await sendApplicationApprovedEmail(
+    {
+      applicantEmail: applicantRow.email,
       applicantName: applicantRow.nickname || applicantRow.name,
       teamTitle: team.title,
       locationName: locationRow.name,

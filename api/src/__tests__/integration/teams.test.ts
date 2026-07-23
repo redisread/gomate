@@ -24,6 +24,15 @@ vi.mock("../../db", () => ({
   createDb: (_d1: unknown) => testDb,
 }));
 
+// task #186：邮件发送器 mock（断言 approve 通知接线，避免依赖 Resend）
+const mockSendJoinApplication = vi.fn(async (..._args: unknown[]) => ({ success: true }));
+const mockSendApplicationApproved = vi.fn(async (..._args: unknown[]) => ({ success: true }));
+
+vi.mock("../../lib/email", () => ({
+  sendTeamJoinApplicationEmail: (...args: unknown[]) => mockSendJoinApplication(...args),
+  sendApplicationApprovedEmail: (...args: unknown[]) => mockSendApplicationApproved(...args),
+}));
+
 // 在 mock 之后导入路由
 const { teamsRoute } = await import("../../routes/teams");
 
@@ -61,6 +70,8 @@ describe("Teams API 集成测试", () => {
     testDb = fresh.db;
     app = createApp();
     currentSession = null;
+    mockSendJoinApplication.mockClear();
+    mockSendApplicationApproved.mockClear();
 
     leader = await seedUser(testDb, { name: "队长", wechat: "leader_wechat" });
     member = await seedUser(testDb, { name: "成员", wechat: "member_wechat" });
@@ -377,6 +388,46 @@ describe("Teams API 集成测试", () => {
   // ===== POST /teams/:id/members/:userId/approve - 批准申请 =====
   describe("POST /teams/:id/members/:userId/approve - 批准申请", () => {
     it("队长批准申请成功", async () => {
+      const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 5 });
+      await seedTeamMember(testDb, team.id, leader.id, "approved");
+      await seedTeamMember(testDb, team.id, member.id, "pending");
+      setSession({ id: leader.id, email: leader.email, name: leader.name });
+
+      const res = await req(app, `/teams/${team.id}/members/${member.id}/approve`, {
+        method: "POST",
+      });
+      expect(res.status).toBe(200);
+
+      const [membership] = await testDb.select().from(schema.teamMembers)
+        .where(and(eq(schema.teamMembers.teamId, team.id), eq(schema.teamMembers.userId, member.id)));
+      expect(membership.status).toBe("approved");
+    });
+
+    it("task #186：批准申请后异步通知申请人（sendApplicationApprovedEmail 被调用，payload 正确）", async () => {
+      const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 5 });
+      await seedTeamMember(testDb, team.id, leader.id, "approved");
+      await seedTeamMember(testDb, team.id, member.id, "pending");
+      setSession({ id: leader.id, email: leader.email, name: leader.name });
+
+      const res = await req(app, `/teams/${team.id}/members/${member.id}/approve`, {
+        method: "POST",
+      });
+      expect(res.status).toBe(200);
+
+      // 通知走 waitUntil 异步触发，waitFor 等 floating promise 落地
+      await vi.waitFor(() => expect(mockSendApplicationApproved).toHaveBeenCalledTimes(1));
+      const payload = mockSendApplicationApproved.mock.calls[0]![0] as Record<string, unknown>;
+      expect(payload).toMatchObject({
+        applicantEmail: member.email,
+        applicantName: member.name,
+        teamTitle: team.title,
+        locationName: location.name,
+        teamUrl: expect.stringContaining(`/teams/${team.id}`),
+      });
+    });
+
+    it("task #186：邮件发送失败不影响审批结果（通知 .catch 兜底）", async () => {
+      mockSendApplicationApproved.mockRejectedValueOnce(new Error("Resend down"));
       const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 5 });
       await seedTeamMember(testDb, team.id, leader.id, "approved");
       await seedTeamMember(testDb, team.id, member.id, "pending");
