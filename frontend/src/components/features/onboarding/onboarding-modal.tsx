@@ -268,7 +268,7 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
                   {formatStartTime(candidate.startTime, t)}
                 </p>
                 <p className="text-sm text-stone-600 dark:text-stone-400 mb-4">
-                  {candidate.cityName} · {candidate.approvedCount}/{candidate.maxMembers} {t("common.people")}
+                  {candidate.cityName} · {t("common.memberCount", { current: candidate.approvedCount, max: candidate.maxMembers })}
                 </p>
 
                 {showWechatForm ? (
