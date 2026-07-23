@@ -10,7 +10,7 @@ import type { HomeInitialData } from "../components/features/home/use-home-data"
 import type { LocationsResponse } from "../hooks/use-locations";
 import type { Team } from "../lib/types";
 
-declareI18nNs(Astro.locals, ["home", "locations", "locationDetail", "teams", "enums", "content"]);
+declareI18nNs(Astro.locals, ["home", "locations", "locationDetail", "teams", "enums", "content", "onboarding"]);
 
 async function fetchJson<T>(path: string): Promise<T | null> {
   try {
