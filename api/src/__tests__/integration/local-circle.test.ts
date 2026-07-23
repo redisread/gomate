@@ -330,3 +330,93 @@ describe("local-circle route — GET /local-circle/home（cityId 缺省 fallback
     expect(res.status).toBe(400);
   });
 });
+
+// ==================== #184：KV cache SWR 复评 ====================
+describe("local-circle cache — #184 SWR（fresh 5min / stale 60min）", () => {
+  const NOW = 1_700_000_000_000;
+  const MIN = 60 * 1000;
+
+  /** Map 版 fake KV（仅实现本测试用到的 get/put） */
+  function fakeKv() {
+    const store = new Map<string, string>();
+    return {
+      store,
+      get: async (key: string) => store.get(key) ?? null,
+      put: async (key: string, value: string) => void store.set(key, value),
+    } as unknown as KVNamespace & { store: Map<string, string> };
+  }
+
+  function cachedEntry(cityId: string, storedAt: number, cityName = "缓存城") {
+    return JSON.stringify({
+      data: { cityId, cityName, activePeopleCount: 99, topLocations: [], neighborTeams: [] },
+      storedAt,
+    });
+  }
+
+  beforeEach(async () => {
+    const fresh = createTestDb();
+    testDb = fresh.db;
+  });
+
+  it("fresh 窗口内（<5min）→ 直接返回缓存，不重算", async () => {
+    const svc = await loadService();
+    const kv = fakeKv();
+    const city = await seedCity(testDb, { name: "深圳", adcode: "440300" });
+    kv.store.set(`local-circle:v2:${city.id}`, cachedEntry(city.id, NOW - 1 * MIN));
+
+    const result = await svc.getLocalCircleHome({ db: testDb as never, kv, cityId: city.id, now: NOW });
+
+    expect(result.cityName).toBe("缓存城"); // 缓存值而非 DB 值
+    expect(result.activePeopleCount).toBe(99);
+  });
+
+  it("stale 窗口（5~60min）+ waitUntil → 先返回 stale，后台重算回写新数据", async () => {
+    const svc = await loadService();
+    const kv = fakeKv();
+    const city = await seedCity(testDb, { name: "深圳", adcode: "440300" });
+    const key = `local-circle:v2:${city.id}`;
+    kv.store.set(key, cachedEntry(city.id, NOW - 10 * MIN));
+
+    const background: Promise<unknown>[] = [];
+    const result = await svc.getLocalCircleHome({
+      db: testDb as never, kv, cityId: city.id, now: NOW,
+      waitUntil: (p) => background.push(p),
+    });
+
+    // 先返回 stale 数据
+    expect(result.cityName).toBe("缓存城");
+    expect(background.length).toBe(1);
+
+    // 后台重算完成 → 缓存被刷新为 DB 实算值 + 新 storedAt
+    await Promise.all(background);
+    const refreshed = JSON.parse(kv.store.get(key)!) as { data: { cityName: string }; storedAt: number };
+    expect(refreshed.data.cityName).toBe("深圳");
+    expect(refreshed.storedAt).toBe(NOW);
+  });
+
+  it("stale 窗口但无 waitUntil → 同步重算返回新数据", async () => {
+    const svc = await loadService();
+    const kv = fakeKv();
+    const city = await seedCity(testDb, { name: "深圳", adcode: "440300" });
+    kv.store.set(`local-circle:v2:${city.id}`, cachedEntry(city.id, NOW - 10 * MIN));
+
+    const result = await svc.getLocalCircleHome({ db: testDb as never, kv, cityId: city.id, now: NOW });
+
+    expect(result.cityName).toBe("深圳"); // 实算而非 stale
+  });
+
+  it("cache miss → 同步实算 + 写入 SWR entry 格式 {data, storedAt}", async () => {
+    const svc = await loadService();
+    const kv = fakeKv();
+    const city = await seedCity(testDb, { name: "深圳", adcode: "440300" });
+
+    const result = await svc.getLocalCircleHome({ db: testDb as never, kv, cityId: city.id, now: NOW });
+
+    expect(result.cityName).toBe("深圳");
+    const written = JSON.parse(kv.store.get(`local-circle:v2:${city.id}`)!) as {
+      data: { cityName: string }; storedAt: number;
+    };
+    expect(written.data.cityName).toBe("深圳");
+    expect(written.storedAt).toBe(NOW);
+  });
+});

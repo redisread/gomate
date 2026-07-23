@@ -62,6 +62,8 @@ home.get("/", async (c) => {
       kv: c.env.GOMATE_KV,
       cityId,
       currentUserId,
+      // #184：SWR 后台重算（stale 命中时返回旧数据 + 后台刷新）
+      waitUntil: (promise) => c.executionCtx.waitUntil(promise),
     });
 
     return c.json(result);
