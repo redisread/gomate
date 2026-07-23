@@ -37,6 +37,15 @@
     "viewApplicationBtn": "View Application",
     "signature": "The GoMate Team"
   },
+  "applicationApproved": {
+    "subject": "Your application has been approved: {teamTitle}",
+    "title": "Application Approved!",
+    "greeting": "Congratulations {applicantName}!",
+    "body": "You have successfully joined the team \"{teamTitle}\" at {locationName}.",
+    "prompt": "Click the button below to view the team and get in touch with your teammates.",
+    "viewTeamBtn": "View Team",
+    "signature": "The GoMate Team"
+  },
   "feedback": {
     "bugSubject": "[GoMate Bug Report] from {name}",
     "suggestionSubject": "[GoMate Suggestion] from {name}",

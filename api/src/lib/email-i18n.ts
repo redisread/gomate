@@ -9,7 +9,7 @@ import emailEn from "./locales/email.en.json";
 import emailJa from "./locales/email.ja.json";
 
 export type EmailLocale = "zh-CN" | "en" | "ja";
-export type EmailType = "passwordReset" | "welcome" | "contactForm" | "feedback" | "teamJoinApplication";
+export type EmailType = "passwordReset" | "welcome" | "contactForm" | "feedback" | "teamJoinApplication" | "applicationApproved";
 
 const EMAIL_TEMPLATES: Record<EmailLocale, Record<string, unknown>> = {
   "zh-CN": emailZhCn as unknown as Record<string, unknown>,
