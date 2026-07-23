@@ -17,7 +17,10 @@
  *   - SUPPLEMENTARY: activity_posts status='visible' 7d 内 location_id NOT NULL = 1.0
  *   - per-(user, location) cap 3.0 防刷分（spec §5.1 / SQL `MIN(SUM(w), 3.0)`）
  *
- * KV cache：key = `local-circle:v1:<cityId>` TTL 30min（spec §3.5 v1.1）
+ * KV cache（task #184 SWR 复评）：key = `local-circle:v2:<cityId>`
+ *   - fresh 窗口 5min 内直接命中；5min~60min 返回 stale + waitUntil 后台重算（SWR）
+ *   - 30min 无 invalidation 的 ghost card / 缓存自污染窗口从 30min 降到 5min
+ *   - 写路径失效被否：数据源 7 处分散写路径（teams CRUD / team_members / favorites / stories / activity_posts / PATCH city）≥6，部分失效的过期不对称比短 TTL 更难排查（Martin msg=b111422e 决策准则）
  *
  * 假设：D1 3.44+，`MIN(SUM(x), 3.0)` scalar 版本可用（已本地 EXPLAIN 验证）。
  */
@@ -33,11 +36,14 @@ import { logger } from "../lib/logger";
 /** 7 天窗口（毫秒） */
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** KV cache TTL（秒），30min */
-const CACHE_TTL_SECONDS = 30 * 60;
+/** #184：fresh 窗口（秒）—— 5min 内直接返回缓存 */
+const CACHE_FRESH_SECONDS = 5 * 60;
 
-/** KV key 前缀，含 v1 版本号方便未来无痛升级 */
-const CACHE_KEY_PREFIX = "local-circle:v1:";
+/** #184：KV 物理 TTL（秒）—— stale 服务窗口上限 60min，过期则同步重算 */
+const CACHE_STALE_SECONDS = 60 * 60;
+
+/** KV key 前缀（v2 = #184 SWR entry 格式 {data, storedAt}，v1 旧 key 30min 自然过期） */
+const CACHE_KEY_PREFIX = "local-circle:v2:";
 
 /** top locations 上限 */
 const TOP_LOCATIONS = 3;
@@ -87,29 +93,83 @@ export interface LocalCircleParams {
   currentUserId?: string | null;
   /** 时间基准（默认 Date.now()，测试注入用） */
   now?: number;
+  /** #184：SWR 后台重算调度（route 层传 c.executionCtx.waitUntil）；不传则 stale 时同步重算 */
+  waitUntil?: (promise: Promise<unknown>) => void;
+}
+
+/** #184：SWR cache entry 包装格式 */
+interface CacheEntry {
+  data: LocalCircle;
+  storedAt: number;
 }
 
 // ==================== 主入口 ====================
 
 export async function getLocalCircleHome(params: LocalCircleParams): Promise<LocalCircle> {
-  const { db, kv, cityId, currentUserId = null, now = Date.now() } = params;
-  const windowStart = now - WINDOW_MS;
+  const { kv, cityId, now = Date.now(), waitUntil } = params;
 
-  // ---- cache read ----
+  // ---- cache read（#184 SWR）----
   const cacheKey = `${CACHE_KEY_PREFIX}${cityId}`;
   if (kv) {
     try {
       const raw = await kv.get(cacheKey);
       if (raw) {
-        const cached = JSON.parse(raw) as LocalCircle;
-        // 邻居队伍是「按当前用户 city 关联」，city 相同的所有登录用户共享同一份邻居集合，
-        // 匿名用户也只 hide neighborTeams（前端根据是否登录决定渲染）—— 因此邻居数据依然可以走 cache。
-        return cached;
+        const entry = JSON.parse(raw) as CacheEntry;
+        const ageSeconds = (now - entry.storedAt) / 1000;
+        if (ageSeconds < CACHE_FRESH_SECONDS) {
+          // fresh 窗口内直接命中
+          return entry.data;
+        }
+        // stale 窗口：先返回旧数据（邻居集合同城共享，匿名 hide 由前端决定，stale 语义同 v1），
+        // 后台重算刷新（waitUntil 缺失时退化为同步重算）
+        if (waitUntil) {
+          waitUntil(
+            refreshLocalCircleCache(params, cacheKey).catch((err) =>
+              logger.warn("[local-circle] SWR refresh failed", err)
+            )
+          );
+          return entry.data;
+        }
+        // 无 waitUntil → 落到下方同步重算
       }
     } catch (err) {
       logger.warn("[local-circle] KV cache read failed", err);
     }
   }
+
+  const result = await computeLocalCircleHome(params);
+  await writeLocalCircleCache(kv, cacheKey, result, now);
+  return result;
+}
+
+/** #184：SWR 后台重算 —— 跳过 cache read 直算并回写（避免递归触发 SWR） */
+async function refreshLocalCircleCache(params: LocalCircleParams, cacheKey: string): Promise<void> {
+  const { kv, now = Date.now() } = params;
+  if (!kv) return;
+  const result = await computeLocalCircleHome(params);
+  await writeLocalCircleCache(kv, cacheKey, result, now);
+}
+
+async function writeLocalCircleCache(
+  kv: KVNamespace | null | undefined,
+  cacheKey: string,
+  result: LocalCircle,
+  now: number
+): Promise<void> {
+  if (!kv) return;
+  try {
+    const entry: CacheEntry = { data: result, storedAt: now };
+    await kv.put(cacheKey, JSON.stringify(entry), {
+      expirationTtl: CACHE_STALE_SECONDS,
+    });
+  } catch (err) {
+    logger.warn("[local-circle] KV cache write failed", err);
+  }
+}
+
+async function computeLocalCircleHome(params: LocalCircleParams): Promise<LocalCircle> {
+  const { db, cityId, currentUserId = null, now = Date.now() } = params;
+  const windowStart = now - WINDOW_MS;
 
   // ---- city name lookup ----
   const cityRow = await db
@@ -369,17 +429,6 @@ export async function getLocalCircleHome(params: LocalCircleParams): Promise<Loc
     neighborTeams,
   };
 
-  // ---- cache write ----
-  if (kv) {
-    try {
-      await kv.put(cacheKey, JSON.stringify(result), {
-        expirationTtl: CACHE_TTL_SECONDS,
-      });
-    } catch (err) {
-      logger.warn("[local-circle] KV cache write failed", err);
-    }
-  }
-
   return result;
 }
 
@@ -398,6 +447,7 @@ function emptyResult(cityId: string, cityName: string): LocalCircle {
 /** 仅测试用；生产不消费 */
 export const __test = {
   WINDOW_MS,
-  CACHE_TTL_SECONDS,
+  CACHE_FRESH_SECONDS,
+  CACHE_STALE_SECONDS,
   CACHE_KEY_PREFIX,
 };
