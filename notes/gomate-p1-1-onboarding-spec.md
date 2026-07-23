@@ -323,7 +323,7 @@ P0-C `GET /recommendations/home` **不可复用**——它推荐的是 location�
 
 - 改动：`api/src/routes/teams/queries.ts` 或独立路由文件 + service
 - 候选池：未来 14 天 + 同城（缺省深圳 fallback）+ recruiting + 有空位；type 可选过滤 + 死胡同自动去过滤
-- `hasAnyMembership`：count(team_members where userId=me) > 0
+- `hasAnyMembership`：count(team_members where userId=me AND status IN ('approved','pending')) > 0（v1.2.1：Martin PR #413 CR R1 裁定——全状态计数会把「只有被拒绝记录」的用户永久挡在引导流外，与 §3.1 行为定义对齐）
 - 验收：4 种 type 命中 / 深圳 fallback / 满员排除 / fallbackNoType 标记 / hasAnyMembership 真假两态 / ≤ 50ms
 
 ### T2：引导流 modal + 三步 UI + wechat 内联（前端）

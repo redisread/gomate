@@ -1,0 +1,47 @@
+{
+  "title": {
+    "step1": "What kind of weekend trip?",
+    "step2": "Picked for you this week",
+    "step3": "Application Submitted"
+  },
+  "subtitle": {
+    "step1": "We'll find a team leaving this week."
+  },
+  "preference": {
+    "any": "Anything, just browsing"
+  },
+  "step2": {
+    "fallbackNoType": "No same-type team this week. How about this?"
+  },
+  "recommend": {
+    "cta": {
+      "join": "Apply to Join",
+      "swap": "Swap"
+    },
+    "empty": "No teams leaving nearby this week. Browse around?"
+  },
+  "empty": {
+    "cta": {
+      "locations": "Browse all locations"
+    }
+  },
+  "wechat": {
+    "title": "The team leader needs your WeChat to reach you",
+    "privacy": "Once you join, the leader and teammates can reach you",
+    "cta": "Save & Apply"
+  },
+  "success": {
+    "subtitle": "Keep an eye on the team page while your application is reviewed.",
+    "next": "While you wait:",
+    "cta": {
+      "team": "View Team",
+      "home": "Back to Home"
+    }
+  },
+  "teamFull": {
+    "toast": "That team just filled up. Here's another"
+  },
+  "skip": "Skip",
+  "back": "Back",
+  "dismiss": "Don't show again?"
+}

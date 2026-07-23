@@ -12,7 +12,8 @@
  *     .sort(startTime asc, approvedCount desc)
  *   偏好死胡同：type 过滤后为空 → 自动去 type 重查一次，标 fallbackNoType: true
  *
- * hasAnyMembership：count(team_members where userId=me) > 0（spec §9.3 字面口径，不分状态）
+ * hasAnyMembership：count(team_members where userId=me AND status IN ('approved','pending')) > 0
+ * （spec v1.2.1 §11 T1，Martin CR R1 裁定与 §3.1 行为定义对齐）
  *
  * 不做 KV（spec §9.3：一次性场景，复用价值低）
  */
@@ -64,11 +65,15 @@ export async function getRecommendOnboarding(params: {
   const now = params.now ?? new Date();
   const windowEnd = new Date(now.getTime() + WINDOW_DAYS * 24 * 60 * 60 * 1000);
 
-  // hasAnyMembership（spec §9.3：count(team_members where userId=me) > 0，不分状态）
+  // hasAnyMembership（spec v1.2.1 §3.1 行为定义：status IN ('approved','pending')——
+  // 全状态计数会把「只有被拒绝记录」的用户永久挡在引导流外，而这类用户恰是引导目标；Martin CR R1 裁定）
   const [{ membershipCount }] = await db
     .select({ membershipCount: sql<number>`count(*)` })
     .from(schema.teamMembers)
-    .where(eq(schema.teamMembers.userId, userId));
+    .where(and(
+      eq(schema.teamMembers.userId, userId),
+      sql`${schema.teamMembers.status} in ('approved', 'pending')`,
+    ));
 
   // cityId 解析：用户 city 优先，缺省 fallback 深圳（spec §5.1 主路径）
   let cityId = userCityId;

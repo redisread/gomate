@@ -173,17 +173,24 @@ describe("GET /teams/recommend-onboarding (task #187)", () => {
     expect(body.candidates).toEqual([]);
   });
 
-  it("Case 7 — hasAnyMembership 真假两态（任何状态都算，spec §9.3 字面）", async () => {
+  it("Case 7 — hasAnyMembership 真假两态（v1.2.1：approved/pending 算，rejected 不算）", async () => {
     login();
     const before = await callApi();
     expect(before.hasAnyMembership).toBe(false);
 
     const loc = await seedLocation(testDb, shenzhen.id, { name: "塘朗山", type: "hiking" });
     const team = await seedTeam(testDb, user.id, loc.id);
-    await seedTeamMember(testDb, team.id, user.id, "pending");
 
-    const after = await callApi();
-    expect(after.hasAnyMembership).toBe(true);
+    // rejected 记录不算（这类用户正是引导目标，Martin CR R1）
+    await seedTeamMember(testDb, team.id, user.id, "rejected");
+    const afterRejected = await callApi();
+    expect(afterRejected.hasAnyMembership).toBe(false);
+
+    // pending 记录算
+    const team2 = await seedTeam(testDb, user.id, loc.id, { title: "另一队" });
+    await seedTeamMember(testDb, team2.id, user.id, "pending");
+    const afterPending = await callApi();
+    expect(afterPending.hasAnyMembership).toBe(true);
   });
 
   it("Case 8 — 窗口与状态：过去 / >14d / 非 recruiting 全排除", async () => {
