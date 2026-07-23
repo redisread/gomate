@@ -6,8 +6,14 @@ import mutations from "./mutations";
 import membership from "./membership";
 import status from "./status";
 import checklist from "./checklist";
+import recommendOnboarding from "./recommend-onboarding";
 
 const teams = new Hono<{ Bindings: Env }>();
+
+// Mount onboarding recommend route FIRST (task #187 P1-1 T1)
+// GET /teams/recommend-onboarding — 必须先于 queries 的 GET /:id 挂载，
+// 否则 "recommend-onboarding" 被 :id 参数段吃掉返回 404
+teams.route("/", recommendOnboarding);
 
 // Mount query routes (GET endpoints)
 // GET /teams
