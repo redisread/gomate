@@ -135,9 +135,18 @@ export async function apiDelete<T>(path: string): Promise<T> {
  * 1. /auth/get-session → 验证登录状态，取 userId
  * 2. /api/users?id=xxx → 直接读数据库，取最新字段
  *
+ * task #183：模块级 promise memo —— 同页并发 dedupe + 会话内复用。
+ * 首页 navbar + use-local-circle 同时调用时只打一轮 2 RTT（此前各打一轮，且
+ * local-circle 串行等其完成后才发请求，共 3 串行 RTT）。
+ * Astro MPA 整页刷新天然重置 memo，无跨页脏读面；
+ * profile 保存走 PATCH 后 location.replace 整页跳转，memo 同样重置（无同页脏读）。
+ * redirect 副作用在 memo 外层处理，缓存值保持纯净（不含跳转行为）。
+ *
  * @param redirectOnFail 未登录或出错时跳转的 URL，不传则静默返回 null
  */
-export async function fetchCurrentUser(redirectOnFail?: string): Promise<import("./types").SessionUser | null> {
+let currentUserMemo: Promise<import("./types").SessionUser | null> | null = null;
+
+async function loadCurrentUser(): Promise<import("./types").SessionUser | null> {
   try {
     const sessionRes = await fetchAPI("/auth/get-session");
     const sessionData = await sessionRes.json();
@@ -152,9 +161,16 @@ export async function fetchCurrentUser(redirectOnFail?: string): Promise<import(
       image: userData.user?.avatar ?? sessionData.user.image,
     };
   } catch {
-    if (redirectOnFail) window.location.href = redirectOnFail;
     return null;
   }
+}
+
+export function fetchCurrentUser(redirectOnFail?: string): Promise<import("./types").SessionUser | null> {
+  if (!currentUserMemo) currentUserMemo = loadCurrentUser();
+  return currentUserMemo.then((user) => {
+    if (!user && redirectOnFail) window.location.href = redirectOnFail;
+    return user;
+  });
 }
 
 /**
