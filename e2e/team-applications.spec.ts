@@ -1,21 +1,55 @@
 import { test, expect } from "@playwright/test";
-import { loginAs, gotoTeamByTitle } from "./helpers";
+import { loginAs } from "./helpers";
+import {
+  signUpUser,
+  patchWechat,
+  createTeamAs,
+  applyToTeamAs,
+  getFirstLocationId,
+  type FixtureUser,
+} from "./fixtures";
 
-const EXPERT = { email: "expert@test.com", password: "test1234" };
-const ADMIN = { email: "admin@test.com", password: "test1234" };
-const LEADER_A = { email: "leader_a@test.com", password: "test1234" };
-const LEADER_B = { email: "leader_b@test.com", password: "test1234" };
+/**
+ * 队伍申请流 E2E —— 每次运行自构造隔离 fixture。
+ *
+ * 历史版本依赖 seed 预置的 expert/admin/leader_a/leader_b@test.com + 特定队伍的
+ * 特定 pending 申请：旧种子账号在 staging D1 已不存在（E2E 因此全红 18+ 次），
+ * 且 approve/reject 消耗 pending 状态，预置种子天然不幂等。
+ * 现改为每个用例自建 leader/member/team/application，UI 只走被测主路径。
+ */
 
-const TEAM_1_TITLE = "周末清水湾海岸线徒步";
-const TEAM_2_TITLE = "梧桐山轻松线体验";
-const EXPERT_NICKNAME = "Expert Hiker";
-const ADMIN_NICKNAME = "Admin";
+const RUN_ID = Date.now().toString(36);
+const PASSWORD = "test1234";
+
+async function makeUser(role: string): Promise<FixtureUser> {
+  const user = await signUpUser(`e2e-app-${RUN_ID}-${role}@e2e.gomate.test`, PASSWORD, `E2E ${RUN_ID} ${role}`);
+  // 建队 / 申请加入都强制要求已填微信号
+  await patchWechat(user, `e2e${RUN_ID}${role}`);
+  return user;
+}
+
+/** leader 建一支未来 7 天出发的招募中队，返回 teamId */
+async function makeTeam(leader: FixtureUser, suffix: string): Promise<string> {
+  const locationId = await getFirstLocationId();
+  const start = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  return createTeamAs(leader, {
+    locationId,
+    title: `E2E 申请流 ${RUN_ID} ${suffix}`,
+    date: start.toISOString().split("T")[0]!,
+    time: "10:00",
+    maxMembers: 5,
+    description: "E2E 自构造 fixture 队伍，可安全忽略",
+  });
+}
 
 test.describe("Team Application Flow", () => {
   test("member can apply to join a recruiting team", async ({ page }) => {
-    // expert 不是队伍 1 的成员，可以提交加入申请
-    await loginAs(page, EXPERT.email, EXPERT.password);
-    await gotoTeamByTitle(page, TEAM_1_TITLE);
+    const leader = await makeUser("leader-apply");
+    const teamId = await makeTeam(leader, "申请");
+    const member = await makeUser("applicant-apply");
+
+    await loginAs(page, member.email, member.password);
+    await page.goto(`/teams/${teamId}`);
 
     await page.locator("[data-testid='team-join-button']").click();
     await expect(page.locator("[data-testid='team-join-message']")).toBeVisible();
@@ -27,16 +61,22 @@ test.describe("Team Application Flow", () => {
   });
 
   test("leader can approve a pending application", async ({ page }) => {
-    await loginAs(page, LEADER_A.email, LEADER_A.password);
-    await gotoTeamByTitle(page, TEAM_1_TITLE);
+    const leader = await makeUser("leader-approve");
+    const teamId = await makeTeam(leader, "审批");
+    const member = await makeUser("applicant-approve");
+    // pending 申请由 API 构造，UI 只走审批主路径
+    await applyToTeamAs(member, teamId);
+
+    await loginAs(page, leader.email, leader.password);
+    await page.goto(`/teams/${teamId}`);
 
     const applicationsSection = page.locator("[data-testid='team-applications-section']");
     await expect(applicationsSection).toBeVisible();
 
-    // 找到 expert 的申请卡片并点击通过
+    // 找到该成员的申请卡片并点击通过
     const appCard = applicationsSection
       .locator("[data-testid='team-application-card']")
-      .filter({ hasText: EXPERT_NICKNAME });
+      .filter({ hasText: member.name });
     await appCard.locator("[data-testid='team-application-approve']").click();
 
     // 审批后该申请卡片应消失
@@ -44,16 +84,20 @@ test.describe("Team Application Flow", () => {
   });
 
   test("leader can reject a pending application", async ({ page }) => {
-    await loginAs(page, LEADER_B.email, LEADER_B.password);
-    await gotoTeamByTitle(page, TEAM_2_TITLE);
+    const leader = await makeUser("leader-reject");
+    const teamId = await makeTeam(leader, "拒绝");
+    const member = await makeUser("applicant-reject");
+    await applyToTeamAs(member, teamId);
+
+    await loginAs(page, leader.email, leader.password);
+    await page.goto(`/teams/${teamId}`);
 
     const applicationsSection = page.locator("[data-testid='team-applications-section']");
     await expect(applicationsSection).toBeVisible();
 
-    // 种子数据中 admin 在队伍 2 有一条待审核申请，找到后点击拒绝
     const appCard = applicationsSection
       .locator("[data-testid='team-application-card']")
-      .filter({ hasText: ADMIN_NICKNAME });
+      .filter({ hasText: member.name });
     await appCard.locator("[data-testid='team-application-reject']").click();
 
     // 拒绝后该申请卡片应消失

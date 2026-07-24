@@ -1,6 +1,26 @@
 import type { Page } from "@playwright/test";
 
 /**
+ * staging 种子账号（scripts/seed-staging.mjs 07-06 起创建，密码均为 test1234）。
+ * 旧账号体系（admin@test.com / leader_a@test.com 等）在 staging D1 已不存在，勿再引用。
+ * 可用环境变量覆盖以指向其他环境。
+ */
+export const STAGING_ACCOUNTS = {
+  admin: {
+    email: process.env.E2E_ADMIN_EMAIL || "admin-staging@gomate.test",
+    password: process.env.E2E_ADMIN_PASSWORD || "test1234",
+  },
+  leader: {
+    email: process.env.E2E_LEADER_EMAIL || "leader-staging@gomate.test",
+    password: process.env.E2E_LEADER_PASSWORD || "test1234",
+  },
+  member: {
+    email: process.env.E2E_MEMBER_EMAIL || "member-staging@gomate.test",
+    password: process.env.E2E_MEMBER_PASSWORD || "test1234",
+  },
+} as const;
+
+/**
  * 等待登录页 React island hydration 完成，然后填写邮箱/密码。
  *
  * 登录表单的 input 是 React controlled component；如果在 hydration 完成前 fill，
@@ -29,7 +49,7 @@ export async function loginAs(page: Page, email: string, password: string) {
 
 /** 使用 admin 测试账号登录 */
 export async function loginAsAdmin(page: Page) {
-  await loginAs(page, "admin@test.com", "test1234");
+  await loginAs(page, STAGING_ACCOUNTS.admin.email, STAGING_ACCOUNTS.admin.password);
 }
 
 /** 在队伍列表页通过标题找到队伍，点击进入详情页，返回队伍 ID */
