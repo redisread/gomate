@@ -1,21 +1,25 @@
 import type { Page } from "@playwright/test";
 
 /**
- * staging 种子账号（scripts/seed-staging.mjs 07-06 起创建，密码均为 test1234）。
- * 旧账号体系（admin@test.com / leader_a@test.com 等）在 staging D1 已不存在，勿再引用。
- * 可用环境变量覆盖以指向其他环境。
+ * 测试账号按环境切换：
+ * - staging（E2E_BASE_URL 指向 staging.gomate.live）：seed-staging.mjs 07-06 起创建的
+ *   *-staging@gomate.test 账号（密码 test1234）
+ * - 本地（默认）：api/db/seed-mobile-test.ts 创建的 admin/leader_a/member_a@test.com
+ * 均可用环境变量覆盖。
  */
+const IS_STAGING = (process.env.E2E_BASE_URL || "").includes("staging.gomate.live");
+
 export const STAGING_ACCOUNTS = {
   admin: {
-    email: process.env.E2E_ADMIN_EMAIL || "admin-staging@gomate.test",
+    email: process.env.E2E_ADMIN_EMAIL || (IS_STAGING ? "admin-staging@gomate.test" : "admin@test.com"),
     password: process.env.E2E_ADMIN_PASSWORD || "test1234",
   },
   leader: {
-    email: process.env.E2E_LEADER_EMAIL || "leader-staging@gomate.test",
+    email: process.env.E2E_LEADER_EMAIL || (IS_STAGING ? "leader-staging@gomate.test" : "leader_a@test.com"),
     password: process.env.E2E_LEADER_PASSWORD || "test1234",
   },
   member: {
-    email: process.env.E2E_MEMBER_EMAIL || "member-staging@gomate.test",
+    email: process.env.E2E_MEMBER_EMAIL || (IS_STAGING ? "member-staging@gomate.test" : "member_a@test.com"),
     password: process.env.E2E_MEMBER_PASSWORD || "test1234",
   },
 } as const;

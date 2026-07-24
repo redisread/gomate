@@ -1,20 +1,22 @@
 /**
- * E2E fixture 自构造工具（staging 用）
+ * E2E fixture 自构造工具
  *
  * 背景：team-applications 等用例历史上依赖 seed 脚本预置的账号 + 队伍 + pending 申请，
- * 但 seed 体系 07-06 更换后旧账号（admin@test.com 等）在 staging D1 已不存在，
- * 且「申请 → 审批」是消耗性状态（approve/reject 一次即消失），预置种子天然不幂等。
+ * 但「申请 → 审批」是消耗性状态（approve/reject 一次即消失），预置种子天然不幂等；
+ * staging 侧旧种子账号（admin@test.com 等）在 staging D1 也已不存在。
  *
  * 本模块让每个用例自行构造隔离 fixture：
  *   signUpUser → patchWechat（建队/申请的前置条件）→ createTeamAs / applyToTeamAs
  * 用户名/队名带 RUN_ID 时间戳，多次运行互不干扰，无需清理。
  *
+ * 环境自适应：staging 打 api-staging.gomate.live，本地打 localhost:8799（可用 env 覆盖）。
  * HTTP 模式与 scripts/seed-staging.mjs 一致（Origin 头 + set-cookie 会话），
  * 已在 staging 实证可用。
  */
 
-const API_BASE = process.env.E2E_API_URL || "https://api-staging.gomate.live";
-const STAGING_ORIGIN = process.env.E2E_ORIGIN || "https://staging.gomate.live";
+const IS_STAGING = (process.env.E2E_BASE_URL || "").includes("staging.gomate.live");
+const API_BASE = process.env.E2E_API_URL || (IS_STAGING ? "https://api-staging.gomate.live" : "http://localhost:8799");
+const FRONTEND_ORIGIN = process.env.E2E_ORIGIN || (IS_STAGING ? "https://staging.gomate.live" : "http://localhost:5432");
 
 export interface FixtureUser {
   email: string;
@@ -41,7 +43,7 @@ async function apiFetch(
   const headers: Record<string, string> = {
     Accept: "application/json",
     "Content-Type": "application/json",
-    Origin: STAGING_ORIGIN,
+    Origin: FRONTEND_ORIGIN,
   };
   if (cookie) headers.Cookie = cookie;
 
