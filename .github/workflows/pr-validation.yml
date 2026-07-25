@@ -11,7 +11,7 @@ permissions:
 jobs:
   # API Package Validation
   api-checks:
-    name: API Checks
+    name: api-checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
 
   # Frontend Package Validation
   frontend-checks:
-    name: Frontend Checks
+    name: frontend-checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
         run: pnpm --filter @gomate/frontend lint
   # E2E Tests (local dev server)
   e2e-tests:
-    name: E2E Tests (Local)
+    name: e2e-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
