@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { fillLoginForm } from "./helpers";
+import { fillLoginForm, STAGING_ACCOUNTS } from "./helpers";
 
 test.describe("Auth", () => {
   test("login page loads and form is interactive", async ({ page }) => {
@@ -8,14 +8,14 @@ test.describe("Auth", () => {
     await expect(page.locator("form")).toBeVisible();
     await expect(page.locator("[data-testid='login-email']")).toBeVisible();
     await expect(page.locator("[data-testid='login-password']")).toBeVisible();
-    await fillLoginForm(page, "leader_a@test.com", "test1234");
+    await fillLoginForm(page, STAGING_ACCOUNTS.leader.email, STAGING_ACCOUNTS.leader.password);
     await page.locator("[data-testid='login-submit']").click();
     await expect(page.locator("body")).toBeVisible();
   });
 
   test("successful login redirects to home", async ({ page }) => {
     await page.goto("/login");
-    await fillLoginForm(page, "admin@test.com", "test1234");
+    await fillLoginForm(page, STAGING_ACCOUNTS.admin.email, STAGING_ACCOUNTS.admin.password);
     await page.locator("[data-testid='login-submit']").click();
     // Deterministic assertion: wait for navigation to home
     await page.waitForURL(/\/$/, { timeout: 30000 });

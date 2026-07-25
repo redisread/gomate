@@ -1,6 +1,30 @@
 import type { Page } from "@playwright/test";
 
 /**
+ * 测试账号按环境切换：
+ * - staging（E2E_BASE_URL 指向 staging.gomate.live）：seed-staging.mjs 07-06 起创建的
+ *   *-staging@gomate.test 账号（密码 test1234）
+ * - 本地（默认）：api/db/seed-mobile-test.ts 创建的 admin/leader_a/member_a@test.com
+ * 均可用环境变量覆盖。
+ */
+const IS_STAGING = (process.env.E2E_BASE_URL || "").includes("staging.gomate.live");
+
+export const STAGING_ACCOUNTS = {
+  admin: {
+    email: process.env.E2E_ADMIN_EMAIL || (IS_STAGING ? "admin-staging@gomate.test" : "admin@test.com"),
+    password: process.env.E2E_ADMIN_PASSWORD || "test1234",
+  },
+  leader: {
+    email: process.env.E2E_LEADER_EMAIL || (IS_STAGING ? "leader-staging@gomate.test" : "leader_a@test.com"),
+    password: process.env.E2E_LEADER_PASSWORD || "test1234",
+  },
+  member: {
+    email: process.env.E2E_MEMBER_EMAIL || (IS_STAGING ? "member-staging@gomate.test" : "member_a@test.com"),
+    password: process.env.E2E_MEMBER_PASSWORD || "test1234",
+  },
+} as const;
+
+/**
  * 等待登录页 React island hydration 完成，然后填写邮箱/密码。
  *
  * 登录表单的 input 是 React controlled component；如果在 hydration 完成前 fill，
@@ -29,7 +53,7 @@ export async function loginAs(page: Page, email: string, password: string) {
 
 /** 使用 admin 测试账号登录 */
 export async function loginAsAdmin(page: Page) {
-  await loginAs(page, "admin@test.com", "test1234");
+  await loginAs(page, STAGING_ACCOUNTS.admin.email, STAGING_ACCOUNTS.admin.password);
 }
 
 /** 在队伍列表页通过标题找到队伍，点击进入详情页，返回队伍 ID */
