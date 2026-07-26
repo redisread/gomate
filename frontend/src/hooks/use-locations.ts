@@ -13,12 +13,16 @@ export interface LocationsResponse {
     total: number;
     totalPages: number;
   };
+  _meta?: {
+    cityMatch: 'exact' | 'mixed' | 'fallback';
+  };
 }
 
 /**
- * 获取地点列表，支持分页
+ * 获取地点列表，支持分页和城市筛选
+ * @param cityId 可选 cityId，登录用户已设城市时传入（P1 city 个性化 #193 T3）
  */
-export function useLocations(page = 1, pageSize = 6, initialData?: LocationsResponse | null) {
+export function useLocations(page = 1, pageSize = 6, initialData?: LocationsResponse | null, cityId?: string | null) {
   const [data, setData] = useState<LocationsResponse | null>(initialData ?? null);
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<Error | null>(null);
@@ -30,7 +34,8 @@ export function useLocations(page = 1, pageSize = 6, initialData?: LocationsResp
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetchPublicAPI(`/api/locations?page=${page}&pageSize=${pageSize}&view=card`);
+      const cityParam = cityId ? `&cityId=${encodeURIComponent(cityId)}` : "";
+      const res = await fetchPublicAPI(`/api/locations?page=${page}&pageSize=${pageSize}&view=card${cityParam}`);
       const json = await res.json();
       if (!json.success) {
         throw new Error(json.error || "获取地点列表失败");
@@ -41,7 +46,7 @@ export function useLocations(page = 1, pageSize = 6, initialData?: LocationsResp
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, cityId]);
 
   useEffect(() => {
     const key = `${page}:${pageSize}`;
@@ -59,6 +64,7 @@ export function useLocations(page = 1, pageSize = 6, initialData?: LocationsResp
   return {
     locations: data?.locations ?? [],
     pagination: data?.pagination ?? { page, pageSize, total: 0, totalPages: 0 },
+    cityMatch: data?._meta?.cityMatch ?? null,
     isLoading,
     error,
     mutate,

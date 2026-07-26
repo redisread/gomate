@@ -22,7 +22,7 @@ import type { Recommendation, RecommendationsResponse } from "./types";
 
 type FetchState =
   | { status: "loading" }
-  | { status: "ready"; recommendations: Recommendation[]; nextSeed: string }
+  | { status: "ready"; recommendations: Recommendation[]; nextSeed: string; cityMatch: 'exact' | 'mixed' | 'fallback' | null }
   | { status: "error"; message: string };
 
 async function fetchRecommendations(seed?: string): Promise<RecommendationsResponse> {
@@ -36,7 +36,14 @@ async function fetchRecommendations(seed?: string): Promise<RecommendationsRespo
   return (await res.json()) as RecommendationsResponse;
 }
 
-export function HomeRecommendationsSection() {
+interface HomeRecommendationsSectionProps {
+  /** P1 city 个性化 #193 T3: 用户 cityId */
+  userCity?: string | null;
+  /** userCity 对应的城市名（来自探索地点首个 location.cityName），用于异地明示文案插值 */
+  cityName?: string | null;
+}
+
+export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommendationsSectionProps) {
   const { t } = useI18n(["home", "enums"]);
   const [state, setState] = React.useState<FetchState>({ status: "loading" });
   const [refreshing, setRefreshing] = React.useState(false);
@@ -52,6 +59,7 @@ export function HomeRecommendationsSection() {
           status: "ready",
           recommendations: data.recommendations,
           nextSeed: data.nextSeed,
+          cityMatch: data._meta?.cityMatch ?? null,
         });
       })
       .catch((err) => {
@@ -78,6 +86,7 @@ export function HomeRecommendationsSection() {
         status: "ready",
         recommendations: data.recommendations,
         nextSeed: data.nextSeed,
+        cityMatch: data._meta?.cityMatch ?? null,
       });
     } catch (err) {
       console.error("[HomeRecommendations] refresh failed:", err);
@@ -170,6 +179,17 @@ export function HomeRecommendationsSection() {
               ))}
             </div>
           </>
+        )}
+
+        {/* P1 city 个性化 #193 T3: cityMatch 非 exact 时异地明示 */}
+        {state.status === "ready" && userCity && state.cityMatch && state.cityMatch !== "exact" && (
+          <div className="mt-4 text-center">
+            <p className="text-xs text-stone-500 dark:text-stone-400" data-testid="recommendation-city-hint">
+              {state.cityMatch === "mixed"
+                ? t("home.recommendations.cityHint.mixed", { city: cityName ?? "" })
+                : t("home.recommendations.cityHint.fallback", { city: cityName ?? "" })}
+            </p>
+          </div>
         )}
 
         {/* Refresh CTA — 桌面居右标题行（弱化为文字按钮）；移动端居中可见
