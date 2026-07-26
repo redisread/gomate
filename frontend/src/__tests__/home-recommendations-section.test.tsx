@@ -115,12 +115,12 @@ describe("HomeRecommendationsSection", () => {
     expect(within(desktopContainer).getAllByTestId("recommendation-card-skeleton")).toHaveLength(3);
 
     resolveFn?.(okResponse(makeResponse()));
-    const desktopReadyContainer = screen.getByTestId("recommendation-cards-desktop");
     await waitFor(() => {
+      const desktopReadyContainer = screen.getByTestId("recommendation-cards-desktop");
       expect(within(desktopReadyContainer).getByTestId("recommendation-card-steady")).toBeTruthy();
+      expect(within(desktopReadyContainer).getByTestId("recommendation-card-worthy")).toBeTruthy();
+      expect(within(desktopReadyContainer).getByTestId("recommendation-card-fresh")).toBeTruthy();
     });
-    expect(within(desktopReadyContainer).getByTestId("recommendation-card-worthy")).toBeTruthy();
-    expect(within(desktopReadyContainer).getByTestId("recommendation-card-fresh")).toBeTruthy();
   });
 
   it("首次挂载 fetch 一次，路径不带 seed", async () => {
@@ -162,8 +162,8 @@ describe("HomeRecommendationsSection", () => {
     // 点击重试 → 再 fetch 一次并恢复到 ready（desktop container）
     mockFetch.mockResolvedValueOnce(okResponse(makeResponse()));
     fireEvent.click(screen.getByTestId("recommendation-retry-btn"));
-    const desktopContainer = screen.getByTestId("recommendation-cards-desktop");
     await waitFor(() => {
+      const desktopContainer = screen.getByTestId("recommendation-cards-desktop");
       expect(within(desktopContainer).getByTestId("recommendation-card-steady")).toBeTruthy();
     });
     errSpy.mockRestore();
