@@ -21,15 +21,31 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-72 rounded-2xl bg-muted animate-pulse" />
-            ))}
-          </div>
+          <>
+            {/* Mobile skeleton */}
+            <div className="lg:hidden flex flex-col gap-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-[88px] rounded-xl bg-muted animate-pulse" />
+              ))}
+            </div>
+            {/* Desktop skeleton */}
+            <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-72 rounded-2xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          </>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {locations.map((location, index) => <LocationCard key={location.id} location={location} index={index} />)}
-          </div>
+          <>
+            {/* Mobile: compact list */}
+            <div className="lg:hidden flex flex-col gap-2">
+              {locations.map((location, index) => <LocationCard key={location.id} location={location} index={index} compact />)}
+            </div>
+            {/* Desktop: 3-col grid */}
+            <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {locations.map((location, index) => <LocationCard key={location.id} location={location} index={index} />)}
+            </div>
+          </>
         )}
 
       </div>

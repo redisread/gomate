@@ -133,29 +133,53 @@ export function HomeRecommendationsSection() {
           </p>
         </div>
 
-        {/* Cards grid */}
+        {/* Cards grid — mobile: horizontal snap; desktop: 3-col grid */}
         {state.status === "loading" ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-48 rounded-lg border bg-muted animate-pulse"
-                data-testid="recommendation-card-skeleton"
-              />
-            ))}
+          <div className="md:grid md:grid-cols-3 md:gap-4 sm:gap-5">
+            {/* Mobile skeleton: single card visible at a time */}
+            <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 scrollbar-hide">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 w-[68%] snap-center h-48 rounded-lg border bg-muted animate-pulse"
+                  data-testid="recommendation-card-skeleton"
+                />
+              ))}
+            </div>
+            {/* Desktop skeleton */}
+            <div className="hidden md:grid grid-cols-3 gap-4 sm:gap-5">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-48 rounded-lg border bg-muted animate-pulse"
+                  data-testid="recommendation-card-skeleton"
+                />
+              ))}
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-            {state.recommendations.map((reco) => (
-              <RecommendationCard key={reco.locationId} reco={reco} />
-            ))}
+          <div className="md:grid md:grid-cols-3 md:gap-4 sm:gap-5">
+            {/* Mobile: horizontal scroll snap, card width ~68% viewport */}
+            <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 scrollbar-hide">
+              {state.recommendations.map((reco) => (
+                <div key={reco.locationId} className="flex-shrink-0 w-[68%] snap-center">
+                  <RecommendationCard reco={reco} />
+                </div>
+              ))}
+            </div>
+            {/* Desktop: 3-col grid */}
+            <div className="hidden md:grid grid-cols-3 gap-4 sm:gap-5">
+              {state.recommendations.map((reco) => (
+                <RecommendationCard key={reco.locationId} reco={reco} />
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Refresh CTA — 桌面居右标题行；移动端 sticky 底部
-            Martin CR B1: 用 w-fit + mx-auto 让容器只覆盖按钮宽度，避免 sticky 容器矩形挡住卡片点击 */}
+        {/* Refresh CTA — 桌面居右标题行（弱化为文字按钮）；移动端居中可见
+            Martin CR R2: 换一批保留，spec §3 无移动端隐藏口径 */}
         {state.status === "ready" && (
-          <div className="mt-5 sm:mt-6 text-right md:text-right">
+          <div className="mt-5 sm:mt-6 flex justify-center md:justify-end">
             <button
               type="button"
               onClick={handleRefresh}

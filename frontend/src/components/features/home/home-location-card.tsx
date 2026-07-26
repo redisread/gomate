@@ -10,6 +10,8 @@ interface LocationCardProps {
   location: Location;
   /** 卡片索引，前3张为首屏图片，优先加载 */
   index?: number;
+  /** 紧凑模式：左图右文，适合移动端列表 */
+  compact?: boolean;
 }
 
 /**
@@ -17,7 +19,7 @@ interface LocationCardProps {
  * 使用 React.memo 避免不必要重渲染
  * 仅当 location.id 变化时重新渲染
  */
-export const LocationCard = memo(function LocationCard({ location, index = 0 }: LocationCardProps) {
+export const LocationCard = memo(function LocationCard({ location, index = 0, compact = false }: LocationCardProps) {
   const { t } = useI18n(["locations", "locationDetail", "enums"]);
   // task #152 切源：徒步参数读 location 自身字段（0010 回填），不再读 routes[0]
   const difficulty = location.difficulty;
@@ -37,6 +39,51 @@ export const LocationCard = memo(function LocationCard({ location, index = 0 }: 
       elevation: hiking.elevation?.value,
     };
   }, [location, t]);
+
+  // Compact mode: horizontal card, left image ~80px square, right side name+params, ~95px height
+  if (compact) {
+    return (
+      <a href={`/locations/${location.id}`} className="block group">
+        <article className="flex items-center gap-3 px-3 py-2.5 bg-card rounded-xl shadow-[var(--shadow-card)] transition-all duration-200 hover:shadow-[var(--shadow-card-hover)] will-change-transform">
+          {/* Left: square thumbnail ~80px */}
+          <div className="flex-shrink-0 w-[72px] h-[72px] rounded-lg overflow-hidden bg-muted">
+            {location.coverImage ? (
+              <img src={location.coverImage} alt={location.name} className="w-full h-full object-cover" loading="lazy" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-100 dark:from-amber-950/40 to-teal-100 dark:to-teal-950/40">
+                <Mountain className="h-7 w-7 text-primary/30" />
+              </div>
+            )}
+          </div>
+          {/* Right: name + params */}
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+            <h3 className="font-semibold text-foreground text-sm leading-snug line-clamp-1 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
+              {location.name}
+            </h3>
+            <p className="text-xs text-stone-700 dark:text-stone-300 flex items-center gap-1">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              {location.address || t("locations.defaultCity")}
+            </p>
+            {routeInfo && (
+              <p className="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-2">
+                {routeInfo.duration && (
+                  <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{routeInfo.duration}</span>
+                )}
+                {routeInfo.distance && (
+                  <span className="inline-flex items-center gap-1"><Route className="h-3 w-3" />{routeInfo.distance}</span>
+                )}
+              </p>
+            )}
+          </div>
+          {/* Arrow */}
+          <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 group-hover:bg-brand group-hover:text-white flex-shrink-0"
+            style={{ background: "var(--brand-subtle)", color: "var(--brand)" }}>
+            <ArrowRight className="h-3 w-3" />
+          </div>
+        </article>
+      </a>
+    );
+  }
 
   return (
     <a href={`/locations/${location.id}`} className="block group">
@@ -116,5 +163,6 @@ export const LocationCard = memo(function LocationCard({ location, index = 0 }: 
 }, (prevProps, nextProps) => {
   // 比较 id 和 index，确保首屏加载状态变化时重新渲染
   return prevProps.location.id === nextProps.location.id &&
-         prevProps.index === nextProps.index;
+         prevProps.index === nextProps.index &&
+         prevProps.compact === nextProps.compact;
 });
