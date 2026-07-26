@@ -37,15 +37,6 @@
     "viewApplicationBtn": "申請を確認",
     "signature": "GoMate チーム"
   },
-  "applicationApproved": {
-    "subject": "申請が承認されました：{teamTitle}",
-    "title": "申請が承認されました！",
-    "greeting": "{applicantName}さん、おめでとうございます！",
-    "body": "{locationName}のチーム「{teamTitle}」への参加が完了しました。",
-    "prompt": "下のボタンからチームを確認し、メンバーと連絡を取りましょう。",
-    "viewTeamBtn": "チームを見る",
-    "signature": "GoMate チーム"
-  },
   "feedback": {
     "bugSubject": "[GoMate バグ報告] {name}より",
     "suggestionSubject": "[GoMate 提案] {name}より",

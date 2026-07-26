@@ -37,15 +37,6 @@
     "viewApplicationBtn": "查看申请",
     "signature": "GoMate 团队"
   },
-  "applicationApproved": {
-    "subject": "您的申请已通过：{teamTitle}",
-    "title": "申请已通过！",
-    "greeting": "恭喜 {applicantName}！",
-    "body": "您已成功加入 {locationName} 的队伍「{teamTitle}」。",
-    "prompt": "点击下方按钮查看队伍详情，与队友取得联系。",
-    "viewTeamBtn": "查看队伍",
-    "signature": "GoMate 团队"
-  },
   "feedback": {
     "bugSubject": "[GoMate Bug反馈] 来自 {name}",
     "suggestionSubject": "[GoMate 建议反馈] 来自 {name}",
