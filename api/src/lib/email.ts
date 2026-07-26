@@ -199,59 +199,6 @@ export async function sendTeamJoinApplicationEmail(
 }
 
 /**
- * 发送申请通过通知邮件给申请人（task #186）
- */
-export async function sendApplicationApprovedEmail(
-  data: {
-    applicantEmail: string;
-    applicantName: string;
-    teamTitle: string;
-    locationName: string;
-    teamUrl: string;
-  },
-  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string },
-  locale: EmailLocale = "zh-CN",
-): Promise<{ success: boolean; error?: string }> {
-  const apiKey = env.RESEND_API_KEY;
-  if (!apiKey) return { success: false, error: "Email service not configured" };
-
-  try {
-    const resend = new Resend(apiKey);
-    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
-    const vars = {
-      applicantName: data.applicantName,
-      teamTitle: data.teamTitle,
-      locationName: data.locationName,
-    };
-
-    await withTimeout(
-      () => resend.emails.send({
-        from: fromEmail,
-        to: data.applicantEmail,
-        subject: getEmailField(locale, "applicationApproved", "subject", vars),
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #16a34a;">${getEmailField(locale, "applicationApproved", "title")}</h2>
-            <p>${getEmailField(locale, "applicationApproved", "greeting", vars)}</p>
-            <p>${getEmailField(locale, "applicationApproved", "body", vars)}</p>
-            <p>${getEmailField(locale, "applicationApproved", "prompt")}</p>
-            <a href="${data.teamUrl}" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "applicationApproved", "viewTeamBtn")}</a>
-            <p style="color:#6b7280;font-size:14px;">${getEmailField(locale, "applicationApproved", "signature")}</p>
-          </div>
-        `,
-      }),
-      10000,
-      "Send application approved email timeout"
-    );
-
-    return { success: true };
-  } catch (error) {
-    logger.error("[Email] Failed to send application approved email:", error);
-    return { success: false, error: (error as Error).message };
-  }
-}
-
-/**
  * 发送用户反馈邮件（功能建议 / Bug 反馈）
  */
 export async function sendFeedbackEmail(
