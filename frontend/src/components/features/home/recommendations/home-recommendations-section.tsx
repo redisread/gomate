@@ -135,7 +135,7 @@ export function HomeRecommendationsSection() {
 
         {/* Cards grid — mobile: horizontal snap; desktop: 3-col grid */}
         {state.status === "loading" ? (
-          <div className="md:grid md:grid-cols-3 md:gap-4 sm:gap-5">
+          <>
             {/* Mobile skeleton: single card visible at a time */}
             <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 scrollbar-hide">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -156,9 +156,9 @@ export function HomeRecommendationsSection() {
                 />
               ))}
             </div>
-          </div>
+          </>
         ) : (
-          <div className="md:grid md:grid-cols-3 md:gap-4 sm:gap-5">
+          <>
             {/* Mobile: horizontal scroll snap, card width ~68% viewport */}
             <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 scrollbar-hide">
               {state.recommendations.map((reco) => (
@@ -173,7 +173,7 @@ export function HomeRecommendationsSection() {
                 <RecommendationCard key={reco.locationId} reco={reco} />
               ))}
             </div>
-          </div>
+          </>
         )}
 
         {/* Refresh CTA — 桌面居右标题行（弱化为文字按钮）；移动端居中可见

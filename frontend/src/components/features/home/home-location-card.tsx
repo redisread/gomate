@@ -76,7 +76,7 @@ export const LocationCard = memo(function LocationCard({ location, index = 0, co
             )}
           </div>
           {/* Arrow */}
-          <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 group-hover:bg-brand group-hover:text-white flex-shrink-0"
+          <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 group-hover:bg-brand group-hover:text-white"
             style={{ background: "var(--brand-subtle)", color: "var(--brand)" }}>
             <ArrowRight className="h-3 w-3" />
           </div>

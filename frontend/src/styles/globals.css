@@ -419,6 +419,15 @@
     scrollbar-color: var(--border) transparent;
   }
 
+  /* Hide scrollbar but keep functionality (for horizontal snap scrollers) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
     line-height: 1.6;
