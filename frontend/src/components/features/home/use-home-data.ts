@@ -38,9 +38,7 @@ export function useHomeData(initialData?: HomeInitialData) {
 
   // Section refs
   const [locationsRef, locationsInView] = useInView(0.08);
-  const [howItWorksRef, howItWorksInView] = useInView(0.08);
   const [teamsRef, teamsInView] = useInView(0.08);
-  const [ctaRef, ctaInView] = useInView(0.15);
 
   // Data fetchers
   const fetchTeams = React.useCallback(async () => {
@@ -88,8 +86,8 @@ export function useHomeData(initialData?: HomeInitialData) {
     locations, teams, teamsLoading, isLoading, currentPage, pagination, isDark,
     preloadImages,
     animate, parallaxY, search,
-    locationsRef, locationsInView, howItWorksRef, howItWorksInView,
-    teamsRef, teamsInView, ctaRef, ctaInView,
+    locationsRef, locationsInView,
+    teamsRef, teamsInView,
     setCurrentPage, fetchLocations, handleSearch,
   };
 }

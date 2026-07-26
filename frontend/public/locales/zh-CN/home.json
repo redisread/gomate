@@ -1,30 +1,5 @@
 {
-  "featuredLocations": "精选地点",
   "recentTeams": "近期队伍",
-  "noTeams": "暂无活跃队伍",
-  "noTeamsDescription": "目前还没有活跃的队伍，成为第一个创建队伍的人吧！",
-  "createFirstTeam": "创建第一个队伍",
-  "cta": {
-    "title": "准备好了吗",
-    "subtitle": "找到同行的人，出发就不远",
-    "description": "已有 {count}+ 伙伴在这里找到了同行的人，你也可以",
-    "createTeamBtn": "创建队伍",
-    "viewAllTeamsLink": "查看所有队伍"
-  },
-  "howItWorks": {
-    "badge": "使用流程",
-    "title": "三步开启户外之旅",
-    "subtitle": "极简流程，从发现到出发，最快 5 分钟",
-    "discoverTitle": "发现心仪地点",
-    "discoverDesc": "浏览精选目的地，咖啡馆、公园、山野、海岸一网打尽。查看路线信息和最佳季节，找到下一个想去的地方",
-    "discoverCta": "浏览地点",
-    "findTeamTitle": "找到同行伙伴",
-    "findTeamDesc": "按地点筛选招募中的队伍，看看谁在等你。查看领队信息和成员构成，申请加入志同道合的小队",
-    "findTeamCta": "找队伍",
-    "departTitle": "一起出发",
-    "departDesc": "加入审批通过后，与队友约定集合时间，背起背包出发。或者自己发起一支，带领伙伴去你想去的地方",
-    "departCta": "发起队伍"
-  },
   "teamCard": {
     "departingToday": "今天出发",
     "departingTomorrow": "明天出发",

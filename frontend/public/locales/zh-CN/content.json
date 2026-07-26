@@ -1,17 +1,8 @@
 {
   "hero": {
-    "badge": "探索城市 · 连接伙伴",
     "titleLine1": "发现趣处",
     "titleLine2": "组队同行",
-    "description": "极简「地点组队」平台，找到同行的人，出发就不远。",
-    "exploreBtn": "探索地点",
-    "findTeamBtn": "找队伍",
-    "statRoutes": "精选地点",
-    "statRoutesDesc": "吃饭、喝咖啡、旅行，都有好去处",
-    "statPlayers": "结构化组队",
-    "statPlayersDesc": "组队从未如此简单",
-    "statSafety": "极简体验",
-    "statSafetyDesc": "找到人，出发就不远"
+    "description": "极简「地点组队」平台，找到同行的人，出发就不远。"
   },
   "blog": {
     "pageTitle": "GoMate 博客",
