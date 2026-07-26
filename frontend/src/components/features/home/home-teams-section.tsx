@@ -21,13 +21,9 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Title area */}
         <div className="flex flex-col items-center text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground leading-tight">
             {t("teams.pageTitle")}
           </h2>
-          {/* task #180 a11y：teams subtitle muted 16-18px 挂门禁 */}
-          <p className="text-stone-700 dark:text-stone-300 max-w-2xl leading-relaxed text-base sm:text-lg mb-2">
-            {t("teams.pageSubtitle")}
-          </p>
         </div>
 
         {/* Grid */}
