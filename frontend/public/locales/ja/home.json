@@ -1,30 +1,5 @@
 {
-  "featuredLocations": "厳選スポット",
   "recentTeams": "最近のチーム",
-  "noTeams": "アクティブなチームはありません",
-  "noTeamsDescription": "まだアクティブなチームがありません。最初のチームを作成しましょう！",
-  "createFirstTeam": "最初のチームを作成",
-  "cta": {
-    "title": "準備はできましたか",
-    "subtitle": "同行者を見つければ、旅は遠くない",
-    "description": "{count}人以上のパートナーがここで同行者を見つけました。あなたもできます。",
-    "createTeamBtn": "チームを作成",
-    "viewAllTeamsLink": "すべてのチームを見る"
-  },
-  "howItWorks": {
-    "badge": "利用の流れ",
-    "title": "3ステップでアウトドアの旅を始めよう",
-    "subtitle": "シンプルなフロー、発見から出発まで最短5分",
-    "discoverTitle": "気になるスポットを発見",
-    "discoverDesc": "厳選された目的地を閲覧。カフェ、公園、山、海岸を網羅。ルート情報とベストシーズンを確認して、次の行きたい場所を見つけよう",
-    "discoverCta": "スポットを閲覧",
-    "findTeamTitle": "同行パートナーを見つける",
-    "findTeamDesc": "スポットで募集中のチームをフィルター。誰が待っているか確認。リーダー情報とメンバー構成を見て、気の合う小隊に参加申請",
-    "findTeamCta": "チームを探す",
-    "departTitle": "一緒に出発",
-    "departDesc": "参加申請が承認されたら、チームメイトと集合時間を決めて、バックパックを背けて出発。または自分でチームを立ち上げ、パートナーを連れて行きたい場所へ",
-    "departCta": "チームを立ち上げる"
-  },
   "teamCard": {
     "departingToday": "今日出発",
     "departingTomorrow": "明日出発",

@@ -13,7 +13,6 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
       className={`py-12 sm:py-16 lg:py-20 bg-background section-hidden ${locationsInView ? "section-visible" : ""}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">{t("home.featuredLocations")}</span>
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">{t("locations.pageTitle")}</h2>
           <div className="flex justify-center">
             {/* task #180 a11y：subtitle muted 18px 挂门禁；stone-700 dark:stone-300 = ~7.5:1/8:1 */}

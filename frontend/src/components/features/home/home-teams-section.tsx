@@ -1,4 +1,4 @@
-import { ArrowRight, Users, MapPin } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 import { TeamCard } from "./home-team-card";
@@ -10,15 +10,17 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
   const { teams, teamsLoading, teamsRef, teamsInView } = data;
   const { t } = useI18n(["home", "teams", "common"]);
 
+  // 条件渲染：teams.length === 0 时整区不渲染（spec §5）
+  if (!teamsLoading && teams.length === 0) {
+    return null;
+  }
+
   return (
     <section id="teams" ref={teamsRef}
       className={`py-16 sm:py-20 lg:py-24 bg-background section-hidden ${teamsInView ? "section-visible" : ""}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Title area */}
         <div className="flex flex-col items-center text-center mb-12">
-          <span className="inline-block mb-4 px-4 py-1.5 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">
-            {t("home.recentTeams")}
-          </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
             {t("teams.pageTitle")}
           </h2>
@@ -34,26 +36,6 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
             {Array.from({ length: 6 }).map((_, i) => (
               <TeamCardSkeleton key={i} />
             ))}
-          </div>
-        ) : teams.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="w-20 h-20 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center mb-5">
-              <Users className="w-10 h-10 text-amber-600 dark:text-amber-400" />
-            </div>
-            <h3 className="text-xl font-bold text-foreground mb-2">
-              {t("home.noTeams") || "暂无活跃队伍"}
-            </h3>
-            {/* task #180 a11y：empty state desc muted 挂门禁 */}
-            <p className="text-stone-700 dark:text-stone-300 text-center max-w-md mb-6">
-              {t("home.noTeamsDescription") || "目前还没有活跃的队伍，成为第一个创建队伍的人吧！"}
-            </p>
-            <a href="/teams/create">
-              {/* task #180 a11y：amber-600 (#D97706) on white = ~3.2:1 挂门禁；amber-700 + white = ~5.5:1 */}
-              <button className="group bg-amber-700 hover:bg-amber-800 text-white px-7 py-3.5 rounded-2xl text-base font-semibold transition-all duration-200 inline-flex items-center gap-2.5 hover:shadow-lg hover:shadow-amber-200/40 active:scale-[0.98]">
-                <MapPin className="w-5 h-5" />
-                {t("home.createFirstTeam") || "创建第一个队伍"}
-              </button>
-            </a>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

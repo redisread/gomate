@@ -1,17 +1,8 @@
 {
   "hero": {
-    "badge": "街を探索 · パートナーとつながる",
     "titleLine1": "面白い場所を発見",
     "titleLine2": "チームで同行",
-    "description": "ミニマルな「場所チームアップ」プラットフォーム。同行者を見つけよう、旅は遠くない。",
-    "exploreBtn": "スポットを探索",
-    "findTeamBtn": "チームを探す",
-    "statRoutes": "厳選スポット",
-    "statRoutesDesc": "食事、コーヒー、旅行、良い場所がいっぱい",
-    "statPlayers": "構造化チーム",
-    "statPlayersDesc": "チーム作りがこんなに簡単に",
-    "statSafety": "ミニマルな体験",
-    "statSafetyDesc": "一緒に行く人を見つければ、旅は遠くない"
+    "description": "ミニマルな「場所チームアップ」プラットフォーム。同行者を見つけよう、旅は遠くない。"
   },
   "blog": {
     "pageTitle": "GoMate ブログ",

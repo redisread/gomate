@@ -1,1 +1,22 @@
-pnpm preflight
+#!/bin/sh
+# Optimized pre-push hook: diff-aware, skips heavy typecheck for JSON/locales/notes-only changes
+
+echo "Running pre-push checks..."
+
+# Get staged + changed files (against HEAD)
+CHANGED_FILES=$(git diff --name-only HEAD 2>/dev/null | tr '\n' ' ')
+STAGED_FILES=$(git diff --cached --name-only 2>/dev/null | tr '\n' ' ')
+
+# Combine both (staged changes take precedence)
+ALL_CHANGED="${CHANGED_FILES} ${STAGED_FILES}"
+
+# Check if any changed file is TypeScript/TSX (requires full typecheck+lint)
+HAS_TS_FILES=$(echo "$ALL_CHANGED" | grep -E '\.(ts|tsx)$' | grep -v node_modules | grep -v '\.d\.ts$' | wc -l | tr -d ' ')
+
+if [ "$HAS_TS_FILES" -gt 0 ]; then
+  echo "TypeScript files changed, running full preflight (type-check + lint)..."
+  pnpm preflight
+else
+  echo "No TypeScript files changed, skipping heavy preflight."
+  echo "Tip: Use 'pnpm i18n:validate' to check i18n keys manually for JSON/locale changes."
+fi

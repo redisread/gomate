@@ -1,17 +1,8 @@
 {
   "hero": {
-    "badge": "Explore Cities · Connect Companions",
     "titleLine1": "Discover Interesting Places",
     "titleLine2": "Team Up Together",
-    "description": "A minimalist \"location team-up\" platform — find your travel companions, the journey is not far.",
-    "exploreBtn": "Explore Locations",
-    "findTeamBtn": "Find Teams",
-    "statRoutes": "Featured Locations",
-    "statRoutesDesc": "Great places for dining, coffee, and travel",
-    "statPlayers": "Structured Team-Up",
-    "statPlayersDesc": "Team-up has never been easier",
-    "statSafety": "Minimalist Experience",
-    "statSafetyDesc": "Find someone to go with, the journey is not far"
+    "description": "A minimalist \"location team-up\" platform — find your travel companions, the journey is not far."
   },
   "blog": {
     "pageTitle": "GoMate Blog",

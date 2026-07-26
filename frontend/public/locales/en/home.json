@@ -1,30 +1,4 @@
 {
-  "featuredLocations": "Featured Locations",
-  "recentTeams": "Recent Teams",
-  "noTeams": "No Active Teams",
-  "noTeamsDescription": "There are no active teams yet. Be the first to create one!",
-  "createFirstTeam": "Create First Team",
-  "cta": {
-    "title": "Ready to Go?",
-    "subtitle": "Find your travel companions, the journey is not far",
-    "description": "Over {count}+ companions have already found their travel partners here, and you can too",
-    "createTeamBtn": "Create a Team",
-    "viewAllTeamsLink": "View all teams"
-  },
-  "howItWorks": {
-    "badge": "How It Works",
-    "title": "Three Steps to Your Outdoor Adventure",
-    "subtitle": "Simple process, from discovery to departure in as fast as 5 minutes",
-    "discoverTitle": "Discover Your Destination",
-    "discoverDesc": "Browse curated destinations, from cafes to parks, mountains to coastlines. Check route details and the best season to find your next getaway",
-    "discoverCta": "Browse Locations",
-    "findTeamTitle": "Find Your Companions",
-    "findTeamDesc": "Filter recruiting teams by location and see who's waiting for you. Check leader info and team composition, apply to join like-minded groups",
-    "findTeamCta": "Find Teams",
-    "departTitle": "Set Off Together",
-    "departDesc": "Once approved, coordinate a meeting time with your teammates, grab your backpack, and go. Or create your own team and lead companions where you want to go",
-    "departCta": "Create a Team"
-  },
   "teamCard": {
     "departingToday": "Departing Today",
     "departingTomorrow": "Departing Tomorrow",
