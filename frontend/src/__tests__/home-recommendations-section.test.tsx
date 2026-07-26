@@ -163,8 +163,8 @@ describe("HomeRecommendationsSection", () => {
     mockFetch.mockResolvedValueOnce(okResponse(makeResponse()));
     fireEvent.click(screen.getByTestId("recommendation-retry-btn"));
     await waitFor(() => {
-      const desktopContainer = screen.getByTestId("recommendation-cards-desktop");
-      expect(within(desktopContainer).getByTestId("recommendation-card-steady")).toBeTruthy();
+      const desktopReadyContainer = screen.getByTestId("recommendation-cards-desktop");
+      expect(within(desktopReadyContainer).getByTestId("recommendation-card-steady")).toBeTruthy();
     });
     errSpy.mockRestore();
   });
