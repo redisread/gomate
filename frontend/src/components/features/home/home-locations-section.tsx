@@ -5,15 +5,29 @@ import { LocationCard } from "./home-location-card";
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeLocationsSection({ data }: { data: HomeData }) {
-  const { locations, isLoading, locationsRef, locationsInView } = data;
+  const { locations, isLoading, locationsRef, locationsInView, userCity, cityMatch } = data;
   const { t } = useI18n(["home", "locations", "common"]);
+
+  // P1 city 个性化 #193 T3: 标题右侧城市 chip（仅已设 city + exact/mixed 可识别城市名时）
+  const showCityChip = userCity && cityMatch && cityMatch !== "fallback" && locations[0]?.cityName;
+  const cityChipName = showCityChip ? locations[0].cityName : null;
 
   return (
     <section id="locations" ref={locationsRef}
       className={`py-12 sm:py-16 lg:py-20 bg-background section-hidden ${locationsInView ? "section-visible" : ""}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground">{t("locations.pageTitle")}</h2>
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground inline-flex items-center gap-3 justify-center">
+            {t("locations.pageTitle")}
+            {cityChipName && (
+              <span
+                className="inline-flex items-center text-base font-normal text-stone-500 dark:text-stone-400"
+                data-testid="locations-city-chip"
+              >
+                {t("home.locations.cityChip", { city: cityChipName })}
+              </span>
+            )}
+          </h2>
         </div>
 
         {isLoading ? (

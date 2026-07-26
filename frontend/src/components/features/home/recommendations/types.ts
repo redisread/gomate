@@ -65,4 +65,7 @@ export interface RecommendationsResponse {
   recommendations: Recommendation[];
   candidatePoolSize: number;
   nextSeed: string;
+  _meta?: {
+    cityMatch: 'exact' | 'mixed' | 'fallback';
+  };
 }

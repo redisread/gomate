@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Navbar } from "@/components/layout/navbar";
 import { useHomeData, type HomeInitialData } from "./use-home-data";
 import { HomeHero } from "./home-hero";
@@ -9,9 +10,19 @@ import { HomeRecommendationsSection } from "./recommendations/home-recommendatio
 import { HomeLocalCircleSection } from "./local-circle/home-local-circle-section";
 import { OnboardingModal } from "@/components/features/onboarding/onboarding-modal";
 import { PreloadImages } from "./preload-images";
+import { fetchCurrentUser } from "@/lib/api";
 
 export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
-  const data = useHomeData(initialData);
+  const [userCity, setUserCity] = React.useState<string | null | undefined>(undefined);
+
+  // P1 city 个性化 #193 T3: 获取用户 city，用于探索地点城市筛选
+  React.useEffect(() => {
+    fetchCurrentUser()
+      .then((user) => setUserCity(user?.city ?? null))
+      .catch(() => setUserCity(null));
+  }, []);
+
+  const data = useHomeData(initialData, userCity);
 
   return (
     <>
@@ -21,7 +32,7 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
         <Navbar />
         <HomeHero data={data} />
         {/* P0-C T2：本周三个选择（Hero 之后 / Locations 之前） */}
-        <HomeRecommendationsSection />
+        <HomeRecommendationsSection userCity={data.userCity} cityName={data.locations.length > 0 ? data.locations[0].cityName : null} />
         {/* P0-D T2：首页本地圈子模块（推荐位之后 / Locations 之前） */}
         <HomeLocalCircleSection />
         <HomeLocationsSection data={data} />

@@ -12,10 +12,15 @@ export interface HomeInitialData {
   teams?: Team[];
 }
 
-export function useHomeData(initialData?: HomeInitialData) {
-  // 使用 SWR 获取地点列表（带缓存）
+/**
+ * @param userCity 用户的 cityId（P1 city 个性化 #193 T3），空/null 时不传
+ */
+export function useHomeData(initialData?: HomeInitialData, userCity?: string | null) {
+  // 使用 SWR 获取地点列表（带缓存 + city 维度）
   const [currentPage, setCurrentPage] = React.useState(1);
-  const { locations, pagination, isLoading, error: _error } = useLocations(currentPage, 6, initialData?.locations);
+  const { locations, pagination, cityMatch, isLoading, error: _error } = useLocations(
+    currentPage, 6, initialData?.locations, userCity,
+  );
 
   const [teams, setTeams] = React.useState<Team[]>(initialData?.teams ?? []);
   const [teamsLoading, setTeamsLoading] = React.useState(!initialData?.teams);
@@ -83,11 +88,12 @@ export function useHomeData(initialData?: HomeInitialData) {
   };
 
   return {
-    locations, teams, teamsLoading, isLoading, currentPage, pagination, isDark,
+    locations, teams, teamsLoading, isLoading, currentPage, pagination, cityMatch, isDark,
     preloadImages,
     animate, parallaxY, search,
     locationsRef, locationsInView,
     teamsRef, teamsInView,
+    userCity: userCity ?? null,
     setCurrentPage, fetchLocations, handleSearch,
   };
 }
