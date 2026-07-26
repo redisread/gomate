@@ -1,6 +1,5 @@
 {
   "pageTitle": "Explore Locations",
-  "pageSubtitle": "Cafes, parks, mountains, coastlines — find your next destination",
   "locationIntro": "Location Intro",
   "locationList": "Locations",
   "defaultCity": "All",
@@ -103,5 +102,6 @@
       "label": "Winter",
       "months": "Dec-Feb"
     }
-  }
+  },
+  "pageSubtitle": "Cafes, parks, mountains, coastlines — find your next destination"
 }

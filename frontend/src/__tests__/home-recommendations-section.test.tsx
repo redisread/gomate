@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HomeRecommendationsSection } from "../components/features/home/recommendations/home-recommendations-section";
 import type { RecommendationsResponse } from "../components/features/home/recommendations/types";
@@ -110,15 +110,17 @@ describe("HomeRecommendationsSection", () => {
     );
 
     render(<HomeRecommendationsSection />);
-    // loading skeleton × 3
-    expect(screen.getAllByTestId("recommendation-card-skeleton")).toHaveLength(3);
+    // 双布局（mobile+desktop 都在 DOM），scoped to desktop container
+    const desktopContainer = screen.getByTestId("recommendation-skeleton-desktop");
+    expect(within(desktopContainer).getAllByTestId("recommendation-card-skeleton")).toHaveLength(3);
 
     resolveFn?.(okResponse(makeResponse()));
     await waitFor(() => {
-      expect(screen.getByTestId("recommendation-card-steady")).toBeTruthy();
+      const desktopReadyContainer = screen.getByTestId("recommendation-cards-desktop");
+      expect(within(desktopReadyContainer).getByTestId("recommendation-card-steady")).toBeTruthy();
+      expect(within(desktopReadyContainer).getByTestId("recommendation-card-worthy")).toBeTruthy();
+      expect(within(desktopReadyContainer).getByTestId("recommendation-card-fresh")).toBeTruthy();
     });
-    expect(screen.getByTestId("recommendation-card-worthy")).toBeTruthy();
-    expect(screen.getByTestId("recommendation-card-fresh")).toBeTruthy();
   });
 
   it("首次挂载 fetch 一次，路径不带 seed", async () => {
@@ -157,11 +159,12 @@ describe("HomeRecommendationsSection", () => {
     expect(document.body.textContent).toContain("home.recommendations.error");
     expect(screen.getByTestId("recommendation-retry-btn")).toBeTruthy();
 
-    // 点击重试 → 再 fetch 一次并恢复到 ready
+    // 点击重试 → 再 fetch 一次并恢复到 ready（desktop container）
     mockFetch.mockResolvedValueOnce(okResponse(makeResponse()));
     fireEvent.click(screen.getByTestId("recommendation-retry-btn"));
     await waitFor(() => {
-      expect(screen.getByTestId("recommendation-card-steady")).toBeTruthy();
+      const desktopContainer = screen.getByTestId("recommendation-cards-desktop");
+      expect(within(desktopContainer).getByTestId("recommendation-card-steady")).toBeTruthy();
     });
     errSpy.mockRestore();
   });

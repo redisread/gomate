@@ -14,7 +14,6 @@
   },
   "recommendations": {
     "title": "This Week's Three Picks",
-    "subtitle": "Picked for you, swap anytime",
     "cta": {
       "refresh": "Show New Three"
     },

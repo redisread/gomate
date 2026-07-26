@@ -124,13 +124,9 @@ export function HomeRecommendationsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Title — eyebrow badge removed per spec §3 item 7 */}
         <div className="text-center mb-8 sm:mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
             {t("home.recommendations.title")}
           </h2>
-          {/* task #180 a11y：subtitle muted 小字体挂门禁；换 stone-700 dark:stone-300 = ~7.5:1/8:1 */}
-          <p className="text-stone-700 dark:text-stone-300 max-w-xl mx-auto leading-relaxed text-base sm:text-lg">
-            {t("home.recommendations.subtitle")}
-          </p>
         </div>
 
         {/* Cards grid — mobile: horizontal snap; desktop: 3-col grid */}
@@ -147,7 +143,7 @@ export function HomeRecommendationsSection() {
               ))}
             </div>
             {/* Desktop skeleton */}
-            <div className="hidden md:grid grid-cols-3 gap-4 sm:gap-5">
+            <div className="hidden md:grid grid-cols-3 gap-4 sm:gap-5" data-testid="recommendation-skeleton-desktop">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
@@ -168,7 +164,7 @@ export function HomeRecommendationsSection() {
               ))}
             </div>
             {/* Desktop: 3-col grid */}
-            <div className="hidden md:grid grid-cols-3 gap-4 sm:gap-5">
+            <div className="hidden md:grid grid-cols-3 gap-4 sm:gap-5" data-testid="recommendation-cards-desktop">
               {state.recommendations.map((reco) => (
                 <RecommendationCard key={reco.locationId} reco={reco} />
               ))}

@@ -1,6 +1,5 @@
 {
   "pageTitle": "スポットを探索",
-  "pageSubtitle": "カフェ、公園、山、海岸。あなたに合った次の目的地を見つけよう",
   "locationIntro": "スポット紹介",
   "locationList": "スポット一覧",
   "defaultCity": "すべて",
@@ -103,5 +102,6 @@
       "label": "冬",
       "months": "12〜2月"
     }
-  }
+  },
+  "pageSubtitle": "カフェ、公園、山、海岸。あなたに合った次の目的地を見つけよう"
 }

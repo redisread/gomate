@@ -1,6 +1,5 @@
 {
   "pageTitle": "探索地点",
-  "pageSubtitle": "咖啡馆、公园、山野、海岸，找到适合你的下一个目的地",
   "locationIntro": "地点介绍",
   "locationList": "地点列表",
   "defaultCity": "全部",
@@ -103,5 +102,6 @@
       "label": "冬季",
       "months": "12-2月"
     }
-  }
+  },
+  "pageSubtitle": "咖啡馆、公园、山野、海岸，找到适合你的下一个目的地"
 }
