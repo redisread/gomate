@@ -116,6 +116,9 @@ export interface RecommendationsResult {
     bucket: number;
     key: string;
   };
+  _meta: {
+    cityMatch: 'exact' | 'mixed' | 'fallback';
+  };
 }
 
 export interface RecommendInput {
@@ -123,6 +126,8 @@ export interface RecommendInput {
   kv?: KVNamespace;
   request: Request;
   sessionCity?: string | null;
+  /** P1 city 个性化 #195 T1：SQL 过滤用的原始 city ID（如 city_sz），非归一化名 */
+  cityIdFilter?: string | null;
   seed?: string | null;
   now?: number; // 测试注入
   salt?: string; // env.RECOMMEND_CACHE_SALT
@@ -222,13 +227,13 @@ interface SignalRow {
   new_teams_7d: number;
 }
 
-async function fetchSignals(db: Db, now: number): Promise<SignalRow[]> {
+async function fetchSignals(db: Db, now: number, cityFilter?: string | null): Promise<SignalRow[]> {
   const nowMs = now;
   const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
   const sevenDaysAhead = now + 7 * 24 * 60 * 60 * 1000;
 
   // Drizzle sql`` — 参数化 timestamps，防止 SQL 注入且让 SQLite planner 用 prepared cache
-  const rows = await db.all<SignalRow>(sql`
+  const query = sql`
     SELECT
       l.id AS id,
       l.name AS name,
@@ -281,9 +286,14 @@ async function fetchSignals(db: Db, now: number): Promise<SignalRow[]> {
         AND status = 'recruiting'
       GROUP BY location_id
     ) nt ON nt.location_id = l.id
-  `);
+  `;
 
-  return rows;
+  // P1 city 个性化 #195 T1: 按 cityId 软过滤
+  const fullQuery = cityFilter
+    ? sql`${query} WHERE l.city_id = ${cityFilter}`
+    : query;
+
+  return await db.all<SignalRow>(fullQuery);
 }
 
 // ==================== 候选评分 ====================
@@ -717,53 +727,100 @@ export async function recommendHome(input: RecommendInput): Promise<Recommendati
   const { city } = getCurrentCity(input.request, input.sessionCity);
   const season = getCurrentSeason(new Date(now), city);
 
-  // cache key
+  // IP + UA（cache key 成分，不存数据库）
   const ip = input.request.headers.get("cf-connecting-ip") || "unknown-ip";
   const ua = input.request.headers.get("user-agent") || "unknown-ua";
-  const cacheKey = await buildCacheKey({ salt, ip, ua, city, bucket });
 
-  // 读 KV
   let pool: Pool | null = null;
   let cacheHit = false;
+  let cityMatch: 'exact' | 'mixed' | 'fallback' = 'fallback';
+  let cacheCity = city; // cache key 中的 city 段（含纯/混后缀）
+
+  // ==================== KV cache 读取（含 pure/mixed 分桶）====================
   if (input.kv) {
-    try {
-      const raw = await input.kv.get(cacheKey);
-      if (raw) {
-        const cached = JSON.parse(raw) as CachedPool;
-        if (
-          cached &&
-          cached.version === 1 &&
-          cached.bucket === bucket &&
-          cached.season === season
-        ) {
-          pool = await rehydratePool(input.db, cached, now, season);
-          cacheHit = true;
+    if (input.cityIdFilter) {
+      // P1 city 个性化 #195 T1：先试 pure 桶，再试 mixed 桶
+      const pureKey = await buildCacheKey({ salt, ip, ua, city: `${city}:pure`, bucket });
+      const mixedKey = await buildCacheKey({ salt, ip, ua, city: `${city}:mixed`, bucket });
+      for (const [key, label] of [[pureKey, 'exact' as const], [mixedKey, 'mixed' as const]]) {
+        try {
+          const raw = await input.kv.get(key);
+          if (raw) {
+            const cached = JSON.parse(raw) as CachedPool;
+            if (cached && cached.version === 1 && cached.bucket === bucket && cached.season === season) {
+              pool = await rehydratePool(input.db, cached, now, season);
+              cacheHit = true;
+              cacheCity = label === 'exact' ? `${city}:pure` : `${city}:mixed`;
+              cityMatch = label as typeof cityMatch;
+              break;
+            }
+          }
+        } catch {
+          continue;
         }
       }
-    } catch {
-      // KV 失败不阻断，静默回退到重算
-      pool = null;
+    } else {
+      // 无 city 过滤 — 老路径（单桶）
+      try {
+        const cacheKey = await buildCacheKey({ salt, ip, ua, city, bucket });
+        const raw = await input.kv.get(cacheKey);
+        if (raw) {
+          const cached = JSON.parse(raw) as CachedPool;
+          if (cached && cached.version === 1 && cached.bucket === bucket && cached.season === season) {
+            pool = await rehydratePool(input.db, cached, now, season);
+            cacheHit = true;
+          }
+        }
+      } catch {
+        pool = null;
+      }
     }
   }
 
-  // 未命中 → 从 DB 全表算
+  // ==================== 计算（cache miss 时）====================
   if (!pool) {
-    const rows = await fetchSignals(input.db, now);
-    const cands = rows.map((r) => buildCandidate(r, now, season));
-    pool = computePool(cands);
+    if (input.cityIdFilter) {
+      // 1. 按 city 过滤取候选
+      const cityRows = await fetchSignals(input.db, now, input.cityIdFilter);
+      const cityCands = cityRows.map((r) => buildCandidate(r, now, season));
+      const cityPool = computePool(cityCands);
+      const cityTotal = cityPool.steady.length + cityPool.worthy.length + cityPool.fresh.length;
+
+      if (cityTotal >= 3) {
+        // 纯 city 池，足够出 3 卡
+        pool = cityPool;
+        cityMatch = 'exact';
+        cacheCity = `${city}:pure`;
+      } else {
+        // 候选不足 → 混搭深圳热门兜底（两池合并去重再跑 computePool）
+        const allRows = await fetchSignals(input.db, now);
+        const cityIdSet = new Set(cityRows.map((r) => r.id));
+        const mergedRows = [...cityRows, ...allRows.filter((r) => !cityIdSet.has(r.id))];
+        const mergedCands = mergedRows.map((r) => buildCandidate(r, now, season));
+        pool = computePool(mergedCands);
+        cityMatch = cityTotal > 0 ? 'mixed' : 'fallback';
+        cacheCity = `${city}:mixed`;
+      }
+    } else {
+      // 无 city 过滤 — 全表
+      const rows = await fetchSignals(input.db, now);
+      const cands = rows.map((r) => buildCandidate(r, now, season));
+      pool = computePool(cands);
+      cityMatch = 'fallback';
+      cacheCity = city;
+    }
 
     // 异步写 KV（不 await；即便失败也不影响响应）
     if (input.kv) {
+      const cacheKey = await buildCacheKey({ salt, ip, ua, city: cacheCity, bucket });
       const cached = poolToCached(pool, bucket, season);
-      // 用 waitUntil 场景在 route 层再处理，这里直接 fire-and-forget
       void input.kv
         .put(cacheKey, JSON.stringify(cached), { expirationTtl: CACHE_TTL_SECONDS })
-        .catch(() => {
-          /* silent */
-        });
+        .catch(() => { /* silent */ });
     }
   }
 
+  const cacheKey = await buildCacheKey({ salt, ip, ua, city: cacheCity, bucket });
   const recommendations = selectThree(pool, seed);
   const poolSize = pool.steady.length + pool.worthy.length + pool.fresh.length;
 
@@ -776,6 +833,7 @@ export async function recommendHome(input: RecommendInput): Promise<Recommendati
       bucket,
       key: cacheKey,
     },
+    _meta: { cityMatch },
   };
 }
 

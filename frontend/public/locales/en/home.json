@@ -45,12 +45,19 @@
       "fresh_new_teams": "{n} new teams heading out — join early",
       "fresh_fallback": "New this week — check it out"
     },
+    "cityHint": {
+      "mixed": "Mixed with {city} popular picks",
+      "fallback": "No picks for {city} yet — see other popular"
+    },
     "empty": {
       "steady": "No steady pick this week",
       "worthy": "No worthy pick this week",
       "fresh": "Nothing new this week"
     },
     "error": "Failed to load recommendations. Try again later."
+  },
+  "locations": {
+    "cityChip": "📍 {city}"
   },
   "localCircle": {
     "title": "What Your City Did This Week",

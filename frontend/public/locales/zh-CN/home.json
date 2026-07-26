@@ -45,12 +45,19 @@
       "fresh_new_teams": "{n} 支新队伍下周走，抢先加入",
       "fresh_fallback": "本周新面孔，先睹为快"
     },
+    "cityHint": {
+      "mixed": "混搭{city}热门",
+      "fallback": "{city}暂无推荐，看看其他热门"
+    },
     "empty": {
       "steady": "这周没特别稳的",
       "worthy": "这周没特别值得的",
       "fresh": "这周没新的"
     },
     "error": "推荐加载失败，稍后重试"
+  },
+  "locations": {
+    "cityChip": "📍 {city}"
   },
   "localCircle": {
     "title": "本周本地圈子在去哪",

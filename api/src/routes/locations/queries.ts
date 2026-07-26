@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { logger } from "../../lib/logger";
-import { eq, like, and, sql, inArray } from "drizzle-orm";
+import { eq, like, and, sql, inArray, not } from "drizzle-orm";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
@@ -180,7 +180,59 @@ queries.get("/", async (c) => {
         };
       });
 
-      return { success: true, locations: formattedLocations, pagination: { page, pageSize, total, totalPages } };
+      // P1 (city 个性化 #192 T2): city 过滤不足 → 以 hot 补位（仅首页 view=card 走此路径）
+      let cityMatch: 'exact' | 'mixed' | 'fallback' | null = null;
+      if (cityId && view === 'card' && total >= pageSize) {
+        cityMatch = 'exact';
+      } else if (cityId && view === 'card' && formattedLocations.length < pageSize) {
+        const existingIds = new Set(formattedLocations.map(l => l.id));
+        const needed = pageSize - formattedLocations.length;
+        const hotRows = await db
+          .select({
+            id: schema.locations.id,
+            name: schema.locations.name,
+            slug: schema.locations.slug,
+            type: schema.locations.type,
+            subtitle: schema.locations.subtitle,
+            description: schema.locations.description,
+            address: schema.locations.address,
+            cityName: schema.locations.cityName,
+            coverImage: schema.locations.coverImage,
+            difficulty: schema.locations.difficulty,
+            durationMin: schema.locations.durationMin,
+            durationMax: schema.locations.durationMax,
+            distance: schema.locations.distance,
+            elevation: schema.locations.elevation,
+            createdAt: schema.locations.createdAt,
+          })
+          .from(schema.locations)
+          .where(existingIds.size > 0 ? not(inArray(schema.locations.id, Array.from(existingIds))) : undefined)
+          .orderBy(sql`created_at DESC`)
+          .limit(needed);
+        for (const h of hotRows) {
+          formattedLocations.push({
+            id: h.id, name: h.name, slug: h.slug,
+            type: h.type, subtitle: h.subtitle,
+            description: h.description, address: h.address,
+            cityName: h.cityName, coverImage: h.coverImage,
+            difficulty: h.difficulty ?? null,
+            durationMin: h.durationMin ?? null,
+            durationMax: h.durationMax ?? null,
+            distance: h.distance ?? null,
+            elevation: h.elevation ?? null,
+            tags: [],
+            createdAt: h.createdAt,
+          });
+        }
+        cityMatch = total > 0 ? 'mixed' : 'fallback';
+      }
+
+      return {
+        success: true,
+        locations: formattedLocations,
+        pagination: { page, pageSize, total, totalPages },
+        ...(cityMatch ? { _meta: { cityMatch } } : {}),
+      };
     }
 
     // ==================== 完整模式（默认） ====================

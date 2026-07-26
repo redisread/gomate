@@ -45,12 +45,19 @@
       "fresh_new_teams": "{n} チーム新設、早めに参加",
       "fresh_fallback": "今週の新顔、まずは覗いてみて"
     },
+    "cityHint": {
+      "mixed": "{city}の人気とミックス",
+      "fallback": "{city}のおすすめはまだありません — 他の人気をチェック"
+    },
     "empty": {
       "steady": "今週は安定なし",
       "worthy": "今週は特選なし",
       "fresh": "今週は新着なし"
     },
     "error": "おすすめの読み込みに失敗しました。後で再試行してください。"
+  },
+  "locations": {
+    "cityChip": "📍 {city}"
   },
   "localCircle": {
     "title": "今週、あなたの街で",
