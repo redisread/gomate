@@ -85,22 +85,6 @@
     "winter": {
       "label": "Winter",
       "months": "Dec-Feb"
-    },
-    "春季": {
-      "label": "Spring",
-      "months": "Mar-May"
-    },
-    "夏季": {
-      "label": "Summer",
-      "months": "Jun-Aug"
-    },
-    "秋季": {
-      "label": "Autumn",
-      "months": "Sep-Nov"
-    },
-    "冬季": {
-      "label": "Winter",
-      "months": "Dec-Feb"
     }
   },
   "pageSubtitle": "Cafes, parks, mountains, coastlines — find your next destination"
