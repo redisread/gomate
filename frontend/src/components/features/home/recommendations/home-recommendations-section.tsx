@@ -122,9 +122,9 @@ export function HomeRecommendationsSection() {
       data-testid="home-recommendations-section"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Title — task #180 a11y：补 <h2> 语义，避免 <h1>→<h3> heading-order 跳级；视觉保留 badge 样式 */}
+        {/* Title — eyebrow badge removed per spec §3 item 7 */}
         <div className="text-center mb-8 sm:mb-10">
-          <h2 className="inline-block mb-4 px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-widest bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
             {t("home.recommendations.title")}
           </h2>
           {/* task #180 a11y：subtitle muted 小字体挂门禁；换 stone-700 dark:stone-300 = ~7.5:1/8:1 */}
@@ -152,19 +152,19 @@ export function HomeRecommendationsSection() {
           </div>
         )}
 
-        {/* Refresh CTA — 桌面居中；移动端 sticky 底部
+        {/* Refresh CTA — 桌面居右标题行；移动端 sticky 底部
             Martin CR B1: 用 w-fit + mx-auto 让容器只覆盖按钮宽度，避免 sticky 容器矩形挡住卡片点击 */}
         {state.status === "ready" && (
-          <div className="mt-6 sm:mt-8 md:static sticky bottom-4 z-10 w-fit mx-auto">
+          <div className="mt-5 sm:mt-6 text-right md:text-right">
             <button
               type="button"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/95 dark:bg-neutral-900/95 border border-border shadow-md hover:shadow-lg backdrop-blur text-sm font-medium text-foreground hover:text-amber-700 dark:hover:text-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed underline-offset-2 hover:underline"
               data-testid="recommendation-refresh-btn"
             >
               <RefreshCw
-                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+                className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}
                 strokeWidth={2.2}
               />
               {t("home.recommendations.cta.refresh")}
