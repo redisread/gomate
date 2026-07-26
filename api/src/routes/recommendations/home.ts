@@ -62,6 +62,7 @@ home.get("/", async (c) => {
       kv: c.env.GOMATE_KV,
       request: c.req.raw,
       sessionCity,
+      cityIdFilter: sessionCity, // P1: 原始 city ID（如 city_sz）传给 SQL filter
       seed,
       salt: c.env.RECOMMEND_CACHE_SALT,
     });
@@ -70,6 +71,7 @@ home.get("/", async (c) => {
       recommendations: result.recommendations,
       candidatePoolSize: result.candidatePoolSize,
       nextSeed: result.nextSeed,
+      _meta: result._meta,
     });
   } catch (err) {
     logger.error("[recommendations/home] failed", err);
