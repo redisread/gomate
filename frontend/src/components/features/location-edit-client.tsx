@@ -61,7 +61,6 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
   const { t } = useI18n(["admin", "common", "locations"]);
   const form = useLocationForm(locationId);
   const [showPreview, setShowPreview] = React.useState(false);
-  const [showMapPicker, setShowMapPicker] = React.useState(false);
 
   const currentCityName = React.useMemo(
     () => form.cities.find((c) => c.id === form.formData.cityId)?.name ?? "",
@@ -130,7 +129,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
           <div className={cn("space-y-4", showPreview && "hidden lg:block")}>
             <LocationFormBasicFields formData={form.formData} errors={form.errors} cities={form.cities}
-              updateField={form.updateField} touch={form.touch} onOpenMapPicker={() => setShowMapPicker(true)} />
+              updateField={form.updateField} touch={form.touch}  />
             <LocationFormContentFields formData={form.formData} isSaving={form.isSaving} updateField={form.updateField} />
             <LocationFormSettingsFields formData={form.formData} allTags={form.allTags} updateField={form.updateField} />
             {/* P0-B T4 (task #171)：决策信息 · 停车 + 装备（独立 SectionCard 放在设置之后） */}

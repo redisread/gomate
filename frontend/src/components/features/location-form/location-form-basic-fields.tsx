@@ -95,10 +95,9 @@ interface LocationFormBasicFieldsProps {
   cities: City[];
   updateField: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
   touch: (key: string, value: string) => void;
-  onOpenMapPicker: () => void;
-}
+  }
 
-export function LocationFormBasicFields({ formData, errors, cities, updateField, touch, onOpenMapPicker }: LocationFormBasicFieldsProps) {
+export function LocationFormBasicFields({ formData, errors, cities, updateField, touch }: LocationFormBasicFieldsProps) {
   const { t } = useI18n(["admin"]);
   const locationTypeOptions = LOCATION_TYPE_OPTIONS(t);
   return (
@@ -171,11 +170,7 @@ export function LocationFormBasicFields({ formData, errors, cities, updateField,
                 {errors.lng && <p className="text-xs text-red-500 mt-1">{errors.lng}</p>}
               </div>
             </div>
-            <button type="button" onClick={onOpenMapPicker} title={t("admin.formMapPicker")}
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium border transition-colors"
-              style={{ borderColor: "#D97706", color: "#D97706", background: "rgba(217,119,6,0.05)" }}>
-              <MapPin className="h-4 w-4" /><span className="hidden sm:inline">{t("admin.formMapPicker")}</span>
-            </button>
+
           </div>
         </Field>
       </SectionCard>
