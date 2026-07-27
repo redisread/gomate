@@ -3,7 +3,6 @@ import type { Env } from "../../lib/auth";
 
 import queries from "./queries";
 import mutations from "./mutations";
-import { locationsTransportationRoute } from "./transportation";
 
 const locations = new Hono<{ Bindings: Env }>();
 
@@ -20,9 +19,7 @@ locations.route("/", queries);
 // PUT /locations/:id/tags
 locations.route("/", mutations);
 
-// P0-B T2 (task #169): GET /locations/:id/transportation
-// task #203: Transportation — 仅返回静态 mapUrl
-locations.route("/", locationsTransportationRoute);
+// task #203: GET /locations/:id/transportation deleted (amap removed)
 
 export default locations;
 export { locations as locationsRoute };

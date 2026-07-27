@@ -55,7 +55,6 @@ function EditSkeleton() {
    地图选点弹窗（独立组件，因其复杂度高）
    ================================================================ */
 
-const AMAP_KEY = (import.meta.env.PUBLIC_AMAP_KEY as string | undefined) || "";
 
 // AMap 类型声明
 interface AMapMap {
@@ -152,7 +151,7 @@ function MapPickerModal({ initialLat, initialLng, onConfirm, onClose }: MapPicke
     searchDebounceRef.current = setTimeout(() => {
       setSearchLoading(true);
       import("@/lib/api").then(({ fetchAPI }) =>
-        fetchAPI(`/amap/inputtips?keywords=${encodeURIComponent(value)}&city=全国`)
+        null /* task #203: amap inputtips deleted */
           .then((r) => r.json()).then((data) => {
             setSearchLoading(false);
             if (data.status === "1" && data.tips?.length > 0) {
