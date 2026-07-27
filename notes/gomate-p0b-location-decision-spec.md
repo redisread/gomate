@@ -9,6 +9,7 @@
 > - 「怎么到」区块终态 = 保留文字链形态（Transport 子区块保留静态深度链 CTA，不再 fetch amap）
 > - 性质 = 代码层追认：prod 自 2026-07-20 无 key 起即此态，prod 视觉零变化
 > - (a) 整块移除「怎么到」属独立产品决策，未提议未拍板，不在本变更内
+> - 连带移除：编辑页地图选点弹窗（MapPickerModal，AMap JS SDK 集成 + inputtips 搜索）——prod 从未配置 PUBLIC_AMAP_KEY 弹窗本不可用，坐标录入口径保持 prod 现状 = 手动 lat/lng 数字输入（location-form-basic-fields.tsx:163/169 已存在）；移除的死按钮本身是坏 affordance 清理（设计核定 @Steven）
 > 交付给：Martin 拆任务
 
 > **v1.1 变更**（2026-07-20 Martin CR PR #393 + Victor DM 拍板）：
