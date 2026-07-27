@@ -1,23 +1,18 @@
 import * as React from "react";
 import {
-  AlertCircle,
   AlertTriangle,
   Backpack,
-  Car,
   ExternalLink,
-  Loader2,
   MapPin,
   Navigation,
-  RotateCcw,
-  Train,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type {
   Location,
+
 } from "@/lib/types";
 import { normalizeLocationHiking } from "./route-utils";
-
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -80,8 +75,8 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
         {hasCoords && (() => {
           const transportMapUrl = buildFallbackMapUrl(location);
           return (
-            <div className="rounded-xl border border-stone-100 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-900/50 p-3.5 space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
                 <Navigation className="h-3.5 w-3.5" />
                 {t("locationDetail.transport.title")}
               </p>
@@ -112,3 +107,175 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
   );
 }
 
+function OpenInMapButton({ href, t }: { href: string; t: Translate }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-sky-200 dark:border-sky-800/60 bg-sky-50/70 dark:bg-sky-950/30 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300 transition-colors hover:bg-sky-100 dark:hover:bg-sky-900/40"
+    >
+      <ExternalLink className="h-3.5 w-3.5" />
+      {t("locationDetail.transport.openInMap")}
+    </a>
+  );
+}
+
+function buildFallbackMapUrl(location: Location): string {
+  const c = location.coordinates;
+  if (!hasValidCoords(c)) return "";
+  return (
+    "https://uri.amap.com/marker?position=" +
+    c!.lng +
+    "," +
+    c!.lat +
+    "&callnative=1"
+  );
+}
+
+function pickLocaleString(
+  label: { zh: string; en: string; ja: string } | undefined | null,
+  locale: string,
+): string {
+  if (!label) return "";
+  if (locale === "en" && label.en) return label.en;
+  if (locale === "ja" && label.ja) return label.ja;
+  return label.zh || label.en || label.ja || "";
+}
+
+// ─── Parking ──────────────────────────────────────────────────────────────────
+
+interface ParkingSubBlockProps {
+  available: boolean | null;
+  info: string;
+  t: Translate;
+}
+
+function ParkingSubBlock({ available, info, t }: ParkingSubBlockProps) {
+  const showStatus = available !== null;
+  return (
+    <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5">
+      <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase text-stone-500 dark:text-stone-400">
+        <MapPin className="h-3.5 w-3.5" />
+        {t("locationDetail.parking.title")}
+      </p>
+      {showStatus && (
+        <p
+          className={cn(
+            "text-sm font-semibold",
+            available
+              ? "text-emerald-700 dark:text-emerald-400"
+              : "text-amber-700 dark:text-amber-400",
+          )}
+        >
+          {available
+            ? t("locationDetail.parking.available")
+            : t("locationDetail.parking.noParking")}
+        </p>
+      )}
+      {info && (
+        <p className="mt-1.5 text-xs leading-relaxed text-stone-600 dark:text-stone-400">
+          {info}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Gear ─────────────────────────────────────────────────────────────────────
+
+interface GearSubBlockProps {
+  essential: string[];
+  optional: string[];
+  notes: string[];
+  t: Translate;
+}
+
+function GearSubBlock({ essential, optional, notes, t }: GearSubBlockProps) {
+  return (
+    <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5">
+      <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase text-stone-500 dark:text-stone-400">
+        <Backpack className="h-3.5 w-3.5" />
+        {t("locationDetail.gear.title")}
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {essential.length > 0 && (
+          <GearList
+            title={t("locationDetail.gear.essential")}
+            items={essential}
+            tone="essential"
+          />
+        )}
+        {optional.length > 0 && (
+          <GearList
+            title={t("locationDetail.gear.optional")}
+            items={optional}
+            tone="optional"
+          />
+        )}
+      </div>
+      {notes.length > 0 && (
+        <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/20 px-3 py-2.5">
+          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase text-amber-700 dark:text-amber-400">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {t("locationDetail.gear.notes")}
+          </p>
+          <ul className="space-y-1">
+            {notes.map((note, idx) => (
+              <li
+                key={note + "-" + idx}
+                className="flex items-start gap-1.5 text-xs leading-relaxed text-stone-700 dark:text-stone-300"
+              >
+                <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-amber-400" />
+                {note}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GearList({
+  title,
+  items,
+  tone,
+}: {
+  title: string;
+  items: string[];
+  tone: "essential" | "optional";
+}) {
+  return (
+    <div>
+      <p
+        className={cn(
+          "mb-1.5 text-[11px] font-bold uppercase",
+          tone === "essential"
+            ? "text-emerald-700 dark:text-emerald-400"
+            : "text-stone-500 dark:text-stone-400",
+        )}
+      >
+        {title}
+      </p>
+      <ul className="space-y-1">
+        {items.map((item, idx) => (
+          <li
+            key={item + "-" + idx}
+            className="flex items-start gap-1.5 text-xs leading-relaxed text-stone-700 dark:text-stone-300"
+          >
+            <span
+              className={cn(
+                "mt-1.5 h-1 w-1 flex-shrink-0 rounded-full",
+                tone === "essential"
+                  ? "bg-emerald-400"
+                  : "bg-stone-400 dark:bg-stone-500",
+              )}
+            />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
