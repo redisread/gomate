@@ -18,7 +18,7 @@ import { Footer } from "@/components/layout/footer";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import { formatBirthday, getAgeNumber } from "@/lib/user-utils";
-import type { SessionUser, Team } from "@/lib/types";
+import type { SessionUser, Team, City } from "@/lib/types";
 
 const LEVEL_CONFIG: Record<string, {
   badge: string;
@@ -69,6 +69,7 @@ export function ProfileClient() {
   const [createdTotal, setCreatedTotal] = React.useState(0);
   const [joinedTotal, setJoinedTotal] = React.useState(0);
   const [completedTotal, setCompletedTotal] = React.useState(0);
+  const [cityName, setCityName] = React.useState<string | null>(null);
 
   const loadProfile = React.useCallback(async () => {
     setIsLoading(true);
@@ -77,6 +78,15 @@ export function ProfileClient() {
       if (!u) return;
       setUser((u as unknown) as SessionUser);
       loadTeams(u.id as string);
+      // 解析 cityId → cityName
+      if ((u as unknown as SessionUser).city) {
+        try {
+          const res = await fetchAPI("/api/cities?pageSize=100");
+          const json = await res.json() as { cities?: City[] };
+          const match = json.cities?.find((c) => c.id === (u as unknown as SessionUser).city);
+          if (match) setCityName(match.name);
+        } catch { /* silent */ }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -251,6 +261,12 @@ export function ProfileClient() {
             <section className="space-y-5">
               {/* 徽章行 */}
               <div className="flex flex-wrap gap-1.5">
+                {cityName && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-50 dark:bg-zinc-800 text-stone-600 dark:text-zinc-400 border border-stone-100 dark:border-zinc-700">
+                    <MapPin className="h-3 w-3" />
+                    {cityName}
+                  </span>
+                )}
                 {(user.completedHikes ?? 0) > 0 && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-50 dark:bg-zinc-800 text-stone-600 dark:text-zinc-400 border border-stone-100 dark:border-zinc-700">
                     <Mountain className="h-3 w-3" />
