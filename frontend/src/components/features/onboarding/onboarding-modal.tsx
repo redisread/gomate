@@ -102,14 +102,16 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
     });
   }, [animateOut, animatingOut]);
 
-  // 放弃并永久隐藏；marker 延迟到出场后写入
+  // 放弃并永久隐藏（§7）：先 confirm → 通过才 animateOut + marker 延迟写入
   const confirmDismiss = React.useCallback(() => {
     if (animatingOut) return;
-    animateOut(() => {
-      markOnboardingDismissed();
-      setClosed(true);
-    });
-  }, [animateOut, animatingOut]);
+    if (window.confirm(t("onboarding.dismiss"))) {
+      animateOut(() => {
+        markOnboardingDismissed();
+        setClosed(true);
+      });
+    }
+  }, [animateOut, animatingOut, t]);
 
   // Esc / focus trap / 焦点还原（Esc = 跳过语义）
   useModalA11y(!closed && !animatingOut, panelRef, closeAsSkip);
