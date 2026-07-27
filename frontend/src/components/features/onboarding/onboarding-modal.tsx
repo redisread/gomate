@@ -113,6 +113,12 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
     }
   }, [animateOut, animatingOut, t]);
 
+  /** 第 3 步关闭：出场动画后关闭（marker 已在 join 时写入） */
+  const closeStep3 = React.useCallback(() => {
+    if (animatingOut) return;
+    animateOut(() => setClosed(true));
+  }, [animateOut, animatingOut]);
+
   // Esc / focus trap / 焦点还原（Esc = 跳过语义）
   useModalA11y(!closed && !animatingOut, panelRef, closeAsSkip);
 
@@ -191,12 +197,6 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
       setSubmitting(false);
     }
   };
-
-  /** 第 3 步关闭：出场动画后关闭（marker 已在 join 时写入） */
-  const closeStep3 = React.useCallback(() => {
-    if (animatingOut) return;
-    animateOut(() => setClosed(true));
-  }, [animateOut, animatingOut]);
 
   const dots = (active: number) => (
     <div className="flex justify-center gap-1.5 mb-4" aria-hidden="true">
