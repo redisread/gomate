@@ -20,16 +20,6 @@ vi.mock("../../db", () => ({
   createDb: (_d1: unknown) => testDb,
 }));
 
-// P0-B T2 (#169): mock computeTransportation 避免真调 amap
-const computeTransportationMock = vi.fn();
-vi.mock("../../lib/amap-decision", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../lib/amap-decision")>();
-  return {
-    ...actual,
-    computeTransportation: (input: unknown) => computeTransportationMock(input),
-  };
-});
-
 const { locationsRoute } = await import("../../routes/locations");
 
 function createApp() {
@@ -203,13 +193,12 @@ describe("Locations API 集成测试", () => {
   // ==================== P0-B T2 (task #169): GET /locations/:id/transportation ====================
   describe("GET /locations/:id/transportation - 交通决策数据", () => {
     beforeEach(() => {
-      computeTransportationMock.mockReset();
+      // task #203: amap removed, no mock needed
     });
 
     it("不存在的地点返回 404", async () => {
       const res = await req(app, "/locations/does-not-exist/transportation");
       expect(res.status).toBe(404);
-      expect(computeTransportationMock).not.toHaveBeenCalled();
     });
 
     it("无效坐标 {lat:0,lng:0} → amapAllFailed=true 且不调 amap", async () => {
@@ -232,7 +221,6 @@ describe("Locations API 集成测试", () => {
       expect(json.transportation.subway).toBeNull();
       expect(json.transportation.driving).toBeNull();
       expect(json.meta.cacheHit).toBe(false);
-      expect(computeTransportationMock).not.toHaveBeenCalled();
     });
 
     it("有坐标 + 无 AMAP_SERVER_KEY → 只返 mapUrl", async () => {
@@ -250,7 +238,6 @@ describe("Locations API 集成测试", () => {
       expect(json.transportation.subway).toBeNull();
       expect(json.transportation.driving).toBeNull();
       expect(json.transportation.amapAllFailed).toBe(true);
-      expect(computeTransportationMock).not.toHaveBeenCalled();
     });
 
     it("支持 slug 访问", async () => {
@@ -309,7 +296,6 @@ describe("Locations API 集成测试", () => {
       expect(json.transportation.amapAllFailed).toBe(false);
       expect(json.meta.cacheHit).toBe(false);
       expect(json.meta.staleDays).toBeNull();
-      expect(computeTransportationMock).toHaveBeenCalledTimes(1);
     });
 
     it("KV 新鲜命中（<24h）→ cacheHit=true 且不调 amap", async () => {
@@ -351,7 +337,6 @@ describe("Locations API 集成测试", () => {
       expect(json.meta.cacheHit).toBe(true);
       expect(json.meta.staleDays).toBeNull();
       expect(json.transportation.subway?.station).toBe("凤凰");
-      expect(computeTransportationMock).not.toHaveBeenCalled();
     });
 
     it("KV 陈旧（>7d）+ amap 全挂 → 返回旧缓存 + staleDays 提示", async () => {
@@ -402,7 +387,6 @@ describe("Locations API 集成测试", () => {
       expect(json.transportation.subway?.station).toBe("南山");
       expect(json.meta.cacheHit).toBe(true);
       expect(json.meta.staleDays).toBeGreaterThanOrEqual(10);
-      expect(computeTransportationMock).toHaveBeenCalledTimes(1);
     });
 
     it("KV 陈旧（>24h < 7d）+ amap 成功 → 走回源并覆盖，staleDays=null", async () => {
@@ -454,7 +438,6 @@ describe("Locations API 集成测试", () => {
       expect(json.transportation.subway?.station).toBe("笔架"); // 回源结果
       expect(json.meta.cacheHit).toBe(false);
       expect(json.meta.staleDays).toBeNull();
-      expect(computeTransportationMock).toHaveBeenCalledTimes(1);
       // 新数据被写回 KV
       expect(putCalls.length).toBe(1);
       expect(putCalls[0].key).toBe(`p0b:transport:v1:${loc.id}`);

@@ -21,7 +21,7 @@ locations.route("/", queries);
 locations.route("/", mutations);
 
 // P0-B T2 (task #169): GET /locations/:id/transportation
-// amap 决策数据聚合（地铁/自驾/mapUrl）+ KV cache 24h + 7d stale
+// task #203: Transportation — 仅返回静态 mapUrl
 locations.route("/", locationsTransportationRoute);
 
 export default locations;
