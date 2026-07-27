@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 import { LocationCard } from "./home-location-card";
@@ -6,6 +7,10 @@ type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeLocationsSection({ data }: { data: HomeData }) {
   const { locations, isLoading, locationsRef, locationsInView, userCity, cityMatch } = data;
+
+  // Round 3 §A：探索地点「查看全部」出口（与 showCityChip 同条件时带 cityId）
+  const showViewAllCity = userCity && cityMatch && cityMatch !== "fallback" && locations[0]?.cityName;
+  const locationsUrl = showViewAllCity ? `/locations?cityId=${encodeURIComponent(userCity)}` : "/locations";
   const { t } = useI18n(["home", "locations", "common"]);
 
   // P1 city 个性化 #193 T3: 标题右侧城市 chip（仅已设 city + exact/mixed 可识别城市名时）
@@ -54,6 +59,14 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
             {/* Desktop: 3-col grid */}
             <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {locations.map((location, index) => <LocationCard key={location.id} location={location} index={index} />)}
+            </div>
+
+            {/* Round 3 §A：探索地点「查看全部」出口 — 复用 teams viewAll 按钮结构 */}
+            <div className="text-center mt-14">
+              <a href={locationsUrl} className="group inline-flex items-center gap-2 px-7 py-3.5 border border-border rounded-2xl text-base font-semibold text-foreground transition-all duration-200 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 hover:shadow-warm-sm active:scale-[0.98]">
+                {t("common.viewAll")}
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+              </a>
             </div>
           </>
         )}
