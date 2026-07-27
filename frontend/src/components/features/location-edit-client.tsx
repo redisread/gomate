@@ -148,12 +148,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
       <StickyActionBar isDirty={form.isDirty} isSaving={form.isSaving} lastSaved={null}
         onSave={form.handleSave} onDiscard={form.handleDiscard} />
 
-      {/* Map picker */}
-      {showMapPicker && (
-        <MapPickerModal initialLat={form.formData.lat} initialLng={form.formData.lng}
-          onConfirm={(address, lat, lng) => { form.updateField("address", address); form.updateField("lat", lat); form.updateField("lng", lng); setShowMapPicker(false); }}
-          onClose={() => setShowMapPicker(false)} />
-      )}
+
     </div>
   );
 }
