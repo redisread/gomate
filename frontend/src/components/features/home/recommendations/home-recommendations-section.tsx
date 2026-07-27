@@ -97,8 +97,7 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
   }, [state, refreshing]);
 
   // 空态：三类全空 → 不渲染整个 section（spec §7.4）
-  // 也：设了 city 但 0 候选（fallback）→ 不兜底热门，直接隐藏
-  if (state.status === "ready" && (state.recommendations.length === 0 || (userCity && state.cityMatch === "fallback"))) {
+  if (state.status === "ready" && state.recommendations.length === 0) {
     return null;
   }
 

@@ -791,15 +791,28 @@ export async function recommendHome(input: RecommendInput): Promise<Recommendati
         pool = cityPool;
         cityMatch = 'exact';
         cacheCity = `${city}:pure`;
-      } else {
-        // 候选不足 → 混搭深圳热门兜底（两池合并去重再跑 computePool）
+      } else if (cityTotal > 0) {
+        // 候选不足（1-2 条）→ 混搭热门兜底
         const allRows = await fetchSignals(input.db, now);
         const cityIdSet = new Set(cityRows.map((r) => r.id));
         const mergedRows = [...cityRows, ...allRows.filter((r) => !cityIdSet.has(r.id))];
         const mergedCands = mergedRows.map((r) => buildCandidate(r, now, season));
         pool = computePool(mergedCands);
-        cityMatch = cityTotal > 0 ? 'mixed' : 'fallback';
+        cityMatch = 'mixed';
         cacheCity = `${city}:mixed`;
+      } else {
+        // city 0 候选 → 不兜底热门，直接返回空（#198）
+        return {
+          recommendations: [],
+          candidatePoolSize: 0,
+          nextSeed,
+          cache: {
+            hit: false,
+            bucket,
+            key: await buildCacheKey({ salt, ip, ua, city: `${city}:fallback`, bucket }),
+          },
+          _meta: { cityMatch: 'fallback' },
+        };
       }
     } else {
       // 无 city 过滤 — 全表
