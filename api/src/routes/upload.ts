@@ -269,4 +269,36 @@ upload.post("/story", async (c) => {
   }
 });
 
+/**
+ * POST /upload/activity-post
+ * 上传活动动态图片（需要登录）
+ */
+upload.post("/activity-post", async (c) => {
+  try {
+    const authInstance = createAuth(c.env);
+    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+
+    const formData = await c.req.formData();
+    const file = formData.get("file") as File | null;
+    if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
+
+    // 速率限制
+    const rateLimit = await checkRateLimit(c.env.GOMATE_KV, `rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
+    if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
+
+    const extValidation = validateFileExtension(file);
+    if (!extValidation.valid) return c.json(APIErrors.badRequest(extValidation.error || "Invalid file"), 400);
+
+    const ext = extValidation.ext;
+    const key = `activity-posts/${session.user.id}-${Date.now()}.${ext}`;
+    const result = await uploadImageFile(c, file, key);
+    if ("error" in result) return c.json(result.error, result.status);
+    return c.json(result.data);
+  } catch (error) {
+    logger.error("Activity post image upload error:", error);
+    return c.json(APIErrors.internalError("Failed to upload activity post image"), 500);
+  }
+});
+
 export { upload as uploadRoute };
