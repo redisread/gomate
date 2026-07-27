@@ -20,10 +20,6 @@ import type {
 } from "@/lib/types";
 import { normalizeLocationHiking } from "./route-utils";
 
-type TransportState =
-  | { kind: "loading" }
-  | { kind: "ready"; data: TransportationData; staleDays: number | null }
-  | { kind: "error" };
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -65,39 +61,8 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
     gearOptional.length > 0 ||
     gearWarnings.length > 0;
 
-  const [transport, setTransport] = React.useState<TransportState>({
-    kind: "loading",
-  });
-
-  /**
-   * task #170 CR Nit 1（Martin）：加 AbortController 防 race。
-   * client-side navigation 快切两个 location 时，旧请求可能覆盖新数据；
-   * unmount 时 AbortError 静默 return，不 setState。
-   *
-   * CR re-CR nit（Martin，非阻塞已捎带修）：retry 也走 currentAbortRef，
-   * 用户连点 3 次 retry 时前 2 个 in-flight 会被 abort，只保留最新一次。
-   */
-  const currentAbortRef = React.useRef<AbortController | null>(null);
-
-  // task #203: transportation endpoint deleted (amap removed)
-  const fetchTransport = React.useCallback(async () => {
-    setTransport(null);
-  }, []);
-
-  const retry = React.useCallback(() => {
-    currentAbortRef.current?.abort();
-    const ctrl = new AbortController();
-    currentAbortRef.current = ctrl;
-    void fetchTransport(ctrl.signal);
-  }, [fetchTransport]);
-
-  React.useEffect(() => {
-    if (!hasCoords) return;
-    const ctrl = new AbortController();
-    currentAbortRef.current = ctrl;
-    void fetchTransport(ctrl.signal);
-    return () => ctrl.abort();
-  }, [hasCoords, fetchTransport]);
+  // task #203: transportation endpoint deleted, always null (static fallback CTA)
+  const transport = null;
 
   if (!hasCoords && !hasParking && !hasGear) return null;
 
@@ -114,15 +79,21 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
       </header>
 
       <div className="flex flex-col gap-4">
-        {hasCoords && (
-          <TransportSubBlock
-            location={location}
-            state={transport}
-            onRetry={retry}
-            locale={locale}
-            t={t}
-          />
-        )}
+        {hasCoords && (() => {
+          const transportMapUrl = buildFallbackMapUrl(location);
+          return (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                <Navigation className="h-3.5 w-3.5" />
+                {t("locationDetail.transport.title")}
+              </p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">
+                {t("locationDetail.transport.fallbackHint")}
+              </p>
+              {transportMapUrl && <OpenInMapButton href={transportMapUrl} t={t} />}
+            </div>
+          );
+        })()}
         {hasParking && (
           <ParkingSubBlock
             available={parkingAvailable}

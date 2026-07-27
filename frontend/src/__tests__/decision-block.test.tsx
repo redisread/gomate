@@ -125,43 +125,7 @@ describe("DecisionBlock", () => {
     expect(screen.getByText("登山杖")).toBeInTheDocument();
   });
 
-  it("有坐标 + fetch ready（subway+driving）→ 渲染两条路线 + openInMap", async () => {
-    const payload: TransportationResponse = {
-      success: true,
-      locationId: "loc-1",
-      transportation: {
-        mapUrl: "https://uri.amap.com/marker?position=114.06,22.54",
-        subway: {
-          station: "市民中心",
-          lines: ["4号线"],
-          distanceMeters: 500,
-          walkMinutes: 8,
-          approximate: false,
-        },
-        driving: {
-          distanceKm: 12,
-          durationMinutes: 25,
-          referencePointLabel: { zh: "福田市民中心", en: "Futian Civic Center", ja: "" },
-        },
-        amapAllFailed: false,
-      },
-      meta: { cacheHit: false, staleDays: null },
-    };
-    fetchMock.mockResolvedValueOnce(jsonResponse(payload));
-
-    const location = makeLocation();
-    render(<DecisionBlock location={location} />);
-
-    await waitFor(() => {
-      expect(screen.getByText("locationDetail.transport.openInMap")).toBeInTheDocument();
-    });
-    expect(screen.getByText("locationDetail.transport.subwayLabel")).toBeInTheDocument();
-    expect(screen.getByText("locationDetail.transport.drivingLabel")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/locations/loc-1/transportation",
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
-    );
-  });
+;
 
   it("amapAllFailed → 只渲染 fallbackHint + openInMap", async () => {
     const payload: TransportationResponse = {
