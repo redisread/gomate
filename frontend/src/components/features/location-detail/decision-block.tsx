@@ -12,12 +12,11 @@ import {
   Train,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type {
   Location,
   TransportationData,
-  TransportationResponse,
+
 } from "@/lib/types";
 import { normalizeLocationHiking } from "./route-utils";
 
@@ -80,39 +79,10 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
    */
   const currentAbortRef = React.useRef<AbortController | null>(null);
 
-  const fetchTransport = React.useCallback(
-    async (signal?: AbortSignal) => {
-      setTransport({ kind: "loading" });
-      try {
-        const res = await fetchAPI(
-          "/api/locations/" + location.id + "/transportation",
-          { signal },
-        );
-        if (!res.ok) throw new Error("status=" + res.status);
-        const json = (await res.json()) as TransportationResponse;
-        if (!json || !json.success || !json.transportation) {
-          throw new Error("bad payload");
-        }
-        if (signal?.aborted) return;
-        setTransport({
-          kind: "ready",
-          data: json.transportation,
-          staleDays: json.meta ? json.meta.staleDays ?? null : null,
-        });
-      } catch (err) {
-        // AbortError: 用户切走 location / unmount / 连点 retry，静默丢弃
-        if (
-          (err instanceof DOMException && err.name === "AbortError") ||
-          signal?.aborted
-        ) {
-          return;
-        }
-        console.warn("[DecisionBlock] transport fetch failed", err);
-        setTransport({ kind: "error" });
-      }
-    },
-    [location.id],
-  );
+  // task #203: transportation endpoint deleted (amap removed)
+  const fetchTransport = React.useCallback(async () => {
+    setTransport(null);
+  }, []);
 
   const retry = React.useCallback(() => {
     currentAbortRef.current?.abort();

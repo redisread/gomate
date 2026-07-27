@@ -73,7 +73,6 @@ export interface Env {
   FRONTEND_URL?: string;
   R2_PUBLIC_URL?: string;
   CORS_ALLOWED_ORIGINS?: string;
-  AMAP_SERVER_KEY?: string;
 }
 
 /**
