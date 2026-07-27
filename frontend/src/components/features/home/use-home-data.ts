@@ -5,7 +5,7 @@ import { fetchPublicAPI } from "@/lib/api";
 import { effectiveThemeStore } from "@/stores/theme";
 import type { Team } from "@/lib/types";
 import { useLocations, type LocationsResponse } from "@/hooks/use-locations";
-import { useInView, useAnimateIn, useParallax, useSearchInteraction } from "@/hooks/use-animations";
+import { useInView, useAnimateIn, useSearchInteraction } from "@/hooks/use-animations";
 
 export interface HomeInitialData {
   locations?: LocationsResponse | null;
@@ -38,7 +38,6 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
 
   // Animation hooks
   const animate = useAnimateIn();
-  const { y: parallaxY } = useParallax(0.015);
   const search = useSearchInteraction();
 
   // Section refs
@@ -90,7 +89,7 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
   return {
     locations, teams, teamsLoading, isLoading, currentPage, pagination, cityMatch, isDark,
     preloadImages,
-    animate, parallaxY, search,
+    animate, search,
     locationsRef, locationsInView,
     teamsRef, teamsInView,
     userCity: userCity ?? null,
