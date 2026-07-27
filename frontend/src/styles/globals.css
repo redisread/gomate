@@ -424,6 +424,15 @@
 /* ============================================================
    Base Layer — 全局基础样式
    ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-overlay-in,
+  .animate-overlay-out,
+  .animate-panel-in,
+  .animate-panel-out {
+    animation: none !important;
+  }
+}
+
 @layer base {
   *, *::before, *::after {
     @apply border-border box-border;
