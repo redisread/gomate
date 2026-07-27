@@ -74,7 +74,12 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
   // phase === fadingIn 时 snap 回首张
   React.useEffect(() => {
     if (phase === "fadingIn" && scrollRef.current) {
-      scrollRef.current.scrollTo({ left: 0 });
+      if (typeof scrollRef.current.scrollTo === "function") {
+        scrollRef.current.scrollTo({ left: 0 });
+      } else {
+        // jsdom / 老浏览器 fallback
+        scrollRef.current.scrollLeft = 0;
+      }
     }
   }, [phase]);
 
