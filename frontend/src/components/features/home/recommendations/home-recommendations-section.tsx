@@ -14,7 +14,7 @@
  * Round 3 §C 过渡动效：
  *  - 点击换一批 → fade-out(150ms) → skeleton → fade-in(200ms)
  *  - 快取门控：fade-out 完成时数据已 ready → 跳过骨架直接 fade-in
- *  - reduced-motion：全部瞬时（由全局 CSS handles）
+ *  - reduced-motion：matchMedia JS gate，跳过相位机直接 fetch+swap（旧硬切行为）
  *  - 失败：旧卡复原（fade-in 200ms 自然淡回 opacity-100）
  *  - skeleton 复用现有 testid，测试断言零改动
  *  - 移动端换一批后 snap 回首张
@@ -121,6 +121,19 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
 
     const currentSeed = state.nextSeed;
 
+    // §C.3 reduced-motion：瞬时 = 旧硬切，不跑相位机
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const data = await fetchRecommendations(currentSeed).catch((err) => {
+        console.error("[HomeRecommendations] refresh failed:", err);
+        return null;
+      });
+      if (data) {
+        setState({ status: "ready", recommendations: data.recommendations, nextSeed: data.nextSeed, cityMatch: data._meta?.cityMatch ?? null });
+        setDisplayedData(data.recommendations);
+      }
+      return;
+    }
+
     // --- fade-out 阶段（150ms）---
     setPhase("fadingOut");
 
@@ -191,7 +204,7 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
   const showSkeleton = isLoading && (phase === "showingSkeleton" || state.status === "loading");
 
   // opacity 类：idle=opacity-100 / fadingOut=opacity-0(150ms) / fadingIn=opacity-100(200ms)
-  // reduced-motion 瞬时：全局 CSS .transition-none 覆盖
+  // reduced-motion 由 handleRefresh 入口 JS gate 处理，此处不介入
   const containerClass = [
     "transition-opacity",
     phase === "idle" ? "opacity-100" : "",
