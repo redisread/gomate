@@ -69,7 +69,13 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
   const roleConfig = getRoleConfig(t);
 
   const [closed, setClosed] = React.useState(false);
+  const [animatingOut, setAnimatingOut] = React.useState(false);
+  const [reducedMotion, setReducedMotion] = React.useState(false);
   const [step, setStep] = React.useState<1 | 2 | 3>(1);
+
+  React.useEffect(() => {
+    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
   const [pool, setPool] = React.useState<RecommendOnboardingResponse>(initial);
   const [poolIndex, setPoolIndex] = React.useState(0);
   const [loadingPool, setLoadingPool] = React.useState(false);
@@ -79,13 +85,41 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
 
   const panelRef = React.useRef<HTMLDivElement | null>(null);
 
-  const closeAsSkip = React.useCallback(() => {
-    markOnboardingSeen(); // §7：跳过 = 本设备已看过，不再弹
-    setClosed(true);
+  // Round 3 §D: 出场动画后关闭（延迟 marker 写入，与 #185 共存条款对齐）
+  const animateOut = React.useCallback((onComplete: () => void) => {
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      // reduced-motion 下瞬时：marker 写入无延迟窗口
+      onComplete();
+      return;
+    }
+    setAnimatingOut(true);
+    setTimeout(() => {
+      setAnimatingOut(false);
+      onComplete();
+    }, 200); // 出场动画 150ms + 缓冲
   }, []);
 
+  // §7：跳过 = 本设备已看过，不再弹；marker 延迟到出场后写入
+  const closeAsSkip = React.useCallback(() => {
+    animateOut(() => {
+      markOnboardingSeen();
+      setClosed(true);
+    });
+  }, [animateOut]);
+
+  // 放弃并永久隐藏（不再显示此引导）；marker 延迟到出场后写入
+  const confirmDismiss = React.useCallback(() => {
+    if (window.confirm(t("onboarding.dismiss"))) {
+      animateOut(() => {
+        markOnboardingDismissed();
+        setClosed(true);
+      });
+    }
+  }, [animateOut, t]);
+
   // Esc / focus trap / 焦点还原（Esc = 跳过语义）
-  useModalA11y(!closed, panelRef, closeAsSkip);
+  useModalA11y(!closed && !animatingOut, panelRef, closeAsSkip);
 
   if (closed) return null;
 
@@ -163,12 +197,10 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
     }
   };
 
-  const confirmDismiss = () => {
-    if (window.confirm(t("onboarding.dismiss"))) {
-      markOnboardingDismissed();
-      setClosed(true);
-    }
-  };
+  /** 第 3 步关闭：出场动画后关闭（marker 已在 join 时写入，此处仅动画） */
+  const closeStep3 = React.useCallback(() => {
+    animateOut(() => setClosed(true));
+  }, [animateOut]);
 
   const dots = (active: number) => (
     <div className="flex justify-center gap-1.5 mb-4" aria-hidden="true">
@@ -192,12 +224,17 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 sm:p-4" data-testid="onboarding-modal">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 sm:p-4 ${reducedMotion ? "" : animatingOut ? "animate-overlay-out" : "animate-overlay-in"}`}
+      data-testid="onboarding-modal"
+      style={{ animationFillMode: "both" }}
+    >
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        className="w-full h-full sm:h-auto sm:max-w-md bg-white dark:bg-stone-900 sm:rounded-2xl shadow-xl p-6 sm:p-8 overflow-y-auto"
+        className={`w-full h-full sm:h-auto sm:max-w-md bg-white dark:bg-stone-900 sm:rounded-2xl shadow-xl p-6 sm:p-8 overflow-y-auto ${reducedMotion ? "" : animatingOut ? "animate-panel-out" : "animate-panel-in"}`}
+        style={{ animationFillMode: "both", animationDuration: reducedMotion ? "0ms" : animatingOut ? "150ms" : "200ms" }}
       >
         {/* ─── 第 1 步：偏好 ─── */}
         {step === 1 && (
@@ -363,7 +400,7 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
                 </a>
                 <button
                   type="button"
-                  onClick={() => setClosed(true)}
+                  onClick={closeStep3}
                   className="w-full py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                 >
                   {t("onboarding.success.cta.home")}
