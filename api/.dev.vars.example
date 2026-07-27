@@ -8,4 +8,3 @@ BETTER_AUTH_SECRET=local-dev-secret-key-32chars-long-12345
 RESEND_API_KEY=
 
 # 高德地图服务端 key（可选）
-AMAP_SERVER_KEY=
