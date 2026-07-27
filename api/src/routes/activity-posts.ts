@@ -16,7 +16,7 @@ const activityPosts = new Hono<{ Bindings: Env }>();
  * GET /teams/:id/activity-posts
  * 获取队伍的活动后分享列表
  */
-activityPosts.get("/teams/:id/activity-posts", async (c) => {
+activityPosts.get("teams/:id/activity-posts", async (c) => {
   try {
     const db = createDb(c.env.DB);
     const teamId = c.req.param("id");
@@ -90,7 +90,7 @@ activityPosts.get("/teams/:id/activity-posts", async (c) => {
  * 创建活动后分享
  * 权限：登录用户 + 队伍成员 + 队伍已完成
  */
-activityPosts.post("/teams/:id/activity-posts", async (c) => {
+activityPosts.post("teams/:id/activity-posts", async (c) => {
   try {
     const auth = createAuth(c.env);
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
@@ -176,7 +176,7 @@ activityPosts.post("/teams/:id/activity-posts", async (c) => {
  * 删除活动后分享
  * 权限：作者或管理员
  */
-activityPosts.delete("/activity-posts/:id", async (c) => {
+activityPosts.delete("activity-posts/:id", async (c) => {
   try {
     const auth = createAuth(c.env);
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
@@ -229,7 +229,7 @@ activityPosts.delete("/activity-posts/:id", async (c) => {
  * GET /locations/:id/activity-posts
  * 获取地点的活动后分享列表
  */
-activityPosts.get("/locations/:id/activity-posts", async (c) => {
+activityPosts.get("locations/:id/activity-posts", async (c) => {
   try {
     const db = createDb(c.env.DB);
     const locationId = c.req.param("id");

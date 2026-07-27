@@ -49,7 +49,7 @@ app.route("/favorites", favoritesRoute);
 app.route("/admin", adminRoute);
 app.route("/amap", amapRoute);
 app.route("/messages", messagesRoute);
-app.route("/activity-posts", activityPostsRoute);
+app.route("/", activityPostsRoute);
 app.route("/stories", storiesRoute);
 app.route("/share-image", shareImageRoute);
 app.route("/recommendations/home", recommendationsHomeRoute);

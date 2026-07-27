@@ -49,7 +49,7 @@ export function ActivityPostForm({ teamId, onSuccess, onCancel, className }: Act
         const formData = new FormData();
         formData.append("file", file);
 
-        const res = await fetchAPI("/api/upload", {
+        const res = await fetchAPI("/upload/activity-post", {
           method: "POST",
           body: formData,
         });

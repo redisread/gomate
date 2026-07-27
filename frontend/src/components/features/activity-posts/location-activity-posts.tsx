@@ -21,7 +21,7 @@ export function LocationActivityPosts({ locationId, className }: LocationActivit
     const loadPosts = async () => {
       setIsLoading(true);
       try {
-        const res = await fetchAPI(`/activity-posts/locations/${locationId}/activity-posts?limit=6`);
+        const res = await fetchAPI(`/locations/${locationId}/activity-posts?limit=6`);
         const data = await res.json();
         if (data.success) {
           setPosts(data.data || []);
