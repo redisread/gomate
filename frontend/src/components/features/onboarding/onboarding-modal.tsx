@@ -69,6 +69,7 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
   const roleConfig = getRoleConfig(t);
 
   const [closed, setClosed] = React.useState(false);
+  const [animatingOut, setAnimatingOut] = React.useState(false);
   const [step, setStep] = React.useState<1 | 2 | 3>(1);
   const [pool, setPool] = React.useState<RecommendOnboardingResponse>(initial);
   const [poolIndex, setPoolIndex] = React.useState(0);
@@ -79,13 +80,47 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
 
   const panelRef = React.useRef<HTMLDivElement | null>(null);
 
-  const closeAsSkip = React.useCallback(() => {
-    markOnboardingSeen(); // §7：跳过 = 本设备已看过，不再弹
-    setClosed(true);
+  // Round 3 §D: 出场动画后关闭（延迟 marker 写入）
+  const animateOut = React.useCallback((onComplete: () => void) => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onComplete();
+      return;
+    }
+    setAnimatingOut(true);
+    setTimeout(() => {
+      setAnimatingOut(false);
+      onComplete();
+    }, 200);
   }, []);
 
+  // §7：跳过 = 本设备已看过；marker 延迟到出场后写入
+  const closeAsSkip = React.useCallback(() => {
+    if (animatingOut) return;
+    animateOut(() => {
+      markOnboardingSeen();
+      setClosed(true);
+    });
+  }, [animateOut, animatingOut]);
+
+  // 放弃并永久隐藏（§7）：先 confirm → 通过才 animateOut + marker 延迟写入
+  const confirmDismiss = React.useCallback(() => {
+    if (animatingOut) return;
+    if (window.confirm(t("onboarding.dismiss"))) {
+      animateOut(() => {
+        markOnboardingDismissed();
+        setClosed(true);
+      });
+    }
+  }, [animateOut, animatingOut, t]);
+
+  /** 第 3 步关闭：出场动画后关闭（marker 已在 join 时写入） */
+  const closeStep3 = React.useCallback(() => {
+    if (animatingOut) return;
+    animateOut(() => setClosed(true));
+  }, [animateOut, animatingOut]);
+
   // Esc / focus trap / 焦点还原（Esc = 跳过语义）
-  useModalA11y(!closed, panelRef, closeAsSkip);
+  useModalA11y(!closed && !animatingOut, panelRef, closeAsSkip);
 
   if (closed) return null;
 
@@ -163,13 +198,6 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
     }
   };
 
-  const confirmDismiss = () => {
-    if (window.confirm(t("onboarding.dismiss"))) {
-      markOnboardingDismissed();
-      setClosed(true);
-    }
-  };
-
   const dots = (active: number) => (
     <div className="flex justify-center gap-1.5 mb-4" aria-hidden="true">
       {[1, 2, 3].map((n) => (
@@ -192,12 +220,15 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 sm:p-4" data-testid="onboarding-modal">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 sm:p-4 ${animatingOut ? "animate-overlay-out" : "animate-overlay-in"}`}
+      data-testid="onboarding-modal"
+    >
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        className="w-full h-full sm:h-auto sm:max-w-md bg-white dark:bg-stone-900 sm:rounded-2xl shadow-xl p-6 sm:p-8 overflow-y-auto"
+        className={`w-full h-full sm:h-auto sm:max-w-md bg-white dark:bg-stone-900 sm:rounded-2xl shadow-xl p-6 sm:p-8 overflow-y-auto ${animatingOut ? "animate-panel-out" : "animate-panel-in"}`}
       >
         {/* ─── 第 1 步：偏好 ─── */}
         {step === 1 && (
@@ -363,7 +394,7 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
                 </a>
                 <button
                   type="button"
-                  onClick={() => setClosed(true)}
+                  onClick={closeStep3}
                   className="w-full py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-sm text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                 >
                   {t("onboarding.success.cta.home")}

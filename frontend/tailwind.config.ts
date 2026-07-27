@@ -187,6 +187,10 @@ const config: Config = {
         "float":          "float 3s ease-in-out infinite",
         "pulse-soft":     "pulse-soft 2s ease-in-out infinite",
         "shimmer":        "shimmer 1.8s ease-in-out infinite",
+        "overlay-in":     "overlay-in 150ms ease-out both",
+        "overlay-out":    "overlay-out 150ms ease-in both",
+        "panel-in":       "panel-in 200ms ease-out both",
+        "panel-out":      "panel-out 150ms ease-in both",
       },
 
       /* ---- 阴影 ---- */

@@ -3,6 +3,7 @@
 > 需求：@Victor 2026-07-20 DM（「先出 spec」+ P1 重新评估中强推项）
 > 依据：`notes/gomate-ux-experience-analysis.md` §三-P1-1
 > 设计者：@Steven
+> **v1.2.2**（2026-07-27）：modal 进出场动效条款归 Round 3 spec §D 管辖（`notes/gomate-home-round3-ux-spec.md`），本 spec 不做双写
 > 范围：注册流程尾部 + 首页 `/`（新增 modal）+ 队伍详情页（无变更）
 > 交付给：Martin CR + 拆任务
 > v1.1（2026-07-24）：P0 全线收官后按现行代码事实刷新——三处 v1.0 与代码冲突修正（§4.1 偏好枚举 / §6 审核制 join / §6.4 wechat 门槛），砍 T3
