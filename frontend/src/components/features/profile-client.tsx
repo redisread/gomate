@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {
+  Key,
   Mountain,
   Edit3,
   LogOut,
@@ -235,6 +236,12 @@ export function ProfileClient() {
                 <button className="w-full inline-flex items-center justify-center gap-1.5 bg-[var(--anthropic-accent)] hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors">
                   <Edit3 className="h-3.5 w-3.5" />
                   {t("profile.editProfileBtn")}
+                </button>
+              </a>
+              <a href="/settings/api-keys">
+                <button className="w-full inline-flex items-center justify-center gap-1.5 border border-stone-200 dark:border-zinc-700 text-stone-500 dark:text-zinc-400 px-4 py-2 rounded-lg text-xs font-medium hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-200 dark:hover:border-amber-800 transition-colors">
+                  <Key className="h-3.5 w-3.5" />
+                  {t("profile.apiKeysBtn")}
                 </button>
               </a>
               <button
