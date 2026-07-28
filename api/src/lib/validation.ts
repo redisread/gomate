@@ -66,10 +66,6 @@ export const createActivityPostSchema = z.object({
   images: z.array(z.string().url("图片必须是有效URL")).max(3, "最多3张图片").optional(),
 });
 
-export const updateActivityPostSchema = createActivityPostSchema.partial().extend({
-  id: z.string().min(1, "分享ID不能为空"),
-});
-
 /**
  * Tag validation schemas
  */
@@ -77,10 +73,6 @@ export const createTagSchema = z.object({
   name: z.string().min(1, "标签名称不能为空").max(50, "标签名称不能超过50字"),
   type: z.string().min(1, "标签类型不能为空").max(50, "标签类型不能超过50字"),
   icon: z.string().max(100, "图标不能超过100字").optional(),
-});
-
-export const updateTagSchema = createTagSchema.partial().extend({
-  id: z.string().min(1, "标签ID不能为空"),
 });
 
 /**
@@ -102,30 +94,6 @@ export const createCitySchema = z.object({
   isHot: z.boolean().optional(),
 });
 
-export const updateCitySchema = createCitySchema.partial().extend({
-  id: z.string().min(1, "城市ID不能为空"),
-});
-
-/**
- * Hiking Route validation schemas
- */
-export const createHikingRouteSchema = z.object({
-  name: z.string().min(1, "路线名称不能为空").max(200, "路线名称不能超过200字"),
-  description: z.string().max(5000, "描述不能超过5000字").optional(),
-  locationId: z.string().min(1, "地点ID不能为空"),
-  cityId: z.string().min(1, "城市ID不能为空"),
-  difficulty: z.enum(["easy", "medium", "hard"], { message: "难度必须是 easy、medium 或 hard" }),
-  durationMin: z.number().int().min(1, "最小时长必须大于0"),
-  durationMax: z.number().int().min(1, "最大时长必须大于0"),
-  distance: z.number().min(0, "距离不能为负"),
-  elevation: z.number().min(0, "海拔不能为负").optional(),
-  tags: z.array(z.string()).max(20, "最多20个标签").optional(),
-});
-
-export const updateHikingRouteSchema = createHikingRouteSchema.partial().extend({
-  id: z.string().min(1, "路线ID不能为空"),
-});
-
 /**
  * Common validation patterns
  */
@@ -138,22 +106,3 @@ export const idParamSchema = z.object({
   id: z.string().min(1, "ID不能为空"),
 });
 
-/**
- * Sanitization helpers
- */
-export function sanitizeString(input: string): string {
-  return input
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .replace(/\//g, "&#x2F;");
-}
-
-export function sanitizeHtml(input: string): string {
-  // Remove script tags and event handlers
-  return input
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/on\w+="[^"]*"/g, "")
-    .replace(/on\w+='[^']*'/g, "");
-}

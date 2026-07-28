@@ -1,9 +1,0 @@
-export { HomeClient } from "./home-main";
-export { useHomeData } from "./use-home-data";
-export { LocationCard } from "./home-location-card";
-export { TeamCard } from "./home-team-card";
-export { HomeHero } from "./home-hero";
-export { HomeLocationsSection } from "./home-locations-section";
-export { HomeTeamsSection } from "./home-teams-section";
-export { HomeRecommendationsSection } from "./recommendations/home-recommendations-section";
-export { HomeLocalCircleSection } from "./local-circle/home-local-circle-section";
