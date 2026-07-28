@@ -1,10 +1,7 @@
 {
   "ongoingTab": "正在进行中",
-  "historyTab": "历史活动",
   "emptyOngoing": "暂无进行中的活动",
   "emptyOngoingDesc": "该用户暂时没有正在参与的活动",
-  "emptyHistory": "暂无历史活动",
-  "emptyHistoryDesc": "该用户还没有活动记录",
   "viewTeamBtn": "查看队伍",
   "memberCount": "人",
   "teamDateLabel": "出发日期",

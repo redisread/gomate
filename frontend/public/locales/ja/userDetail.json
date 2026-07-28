@@ -1,10 +1,7 @@
 {
   "ongoingTab": "進行中",
-  "historyTab": "過去のアクティビティ",
   "emptyOngoing": "現在進行中のアクティビティはありません",
   "emptyOngoingDesc": "このユーザーは現在、参加中のアクティビティがありません",
-  "emptyHistory": "過去のアクティビティはありません",
-  "emptyHistoryDesc": "このユーザーはまだアクティビティの記録がありません",
   "viewTeamBtn": "チームを見る",
   "memberCount": "人",
   "teamDateLabel": "出發日",

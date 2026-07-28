@@ -25,14 +25,12 @@
   "ctaTrust2": "すぐに集まる",
   "ctaTrust3": "安心安全",
   "contactLink": "または新しいスポットを推薦 →",
-  "waypoints": "経由地",
   "tips": "ご注意",
   "safetyNotice": "安全须知",
   "prevImage": "前の画像",
   "nextImage": "次の画像",
   "paginationPrev": "前のページ",
   "paginationNext": "次のページ",
-  "coordinatesHint": "住所検索から自動で座標を取得",
   "allCities": "すべての都市",
   "cityFilter": "都市でフィルター",
   "heroTagline": "カフェ、街歩き、ショートトリップ…一緒にいく人を見つけよう",
@@ -87,6 +85,5 @@
       "label": "冬",
       "months": "12〜2月"
     }
-  },
-  "pageSubtitle": "カフェ、公園、山、海岸。あなたに合った次の目的地を見つけよう"
+  }
 }
