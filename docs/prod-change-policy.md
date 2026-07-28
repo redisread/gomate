@@ -69,7 +69,30 @@ staging 保持自由度，但破坏性操作（清数据/覆盖部署）同样�
 
 ## 三、分支预部署 staging SOP
 
-涉及 D1 schema 变更的 PR：
+### ⚠️ 头号条款：前端禁止在 redirected config 路径下用 `--env` 部署
+
+`frontend/wrangler.toml` 的 `main` 指向 `@astrojs/cloudflare/entrypoints/server`，wrangler 部署时会 redirected 到构建产物 `dist/server/wrangler.json`——该产物**只有顶层配置，env 块不随生成**。此时 `wrangler deploy --env staging` 会**静默回退到顶层（prod）配置**，把代码部署到 prod worker `gomate-frontend`，全程无警告（2026-07-28 已实证一次，~2 分钟回滚）。prod 部署没出事纯属巧合：顶层 name 本来就是 prod。
+
+**在验证出其他安全路径之前，手工 `wrangler deploy` 前端一律冻结；staging 部署只许走下述显式配置。**
+
+### 前端 staging 部署（Workers，实证安全路径）
+
+```bash
+pnpm --filter @gomate/frontend build
+npx wrangler deploy --config frontend/wrangler.staging.toml
+```
+
+`frontend/wrangler.staging.toml` 是显式配置：字面 `name = "gomate-frontend-staging"`、staging KV id、`PUBLIC_API_URL=https://api-staging.gomate.live`、路由 `staging.gomate.live`（custom domain）。无 `--env`、无 redirect，不存在回退机制。
+
+### API staging 部署（Workers）
+
+`deploy-staging.yml`（push:main）自动执行；手工触发用 `pnpm --filter @gomate/api exec wrangler deploy --env staging`（API 的 wrangler.toml 无 adapter redirect，`--env` 安全）。
+
+### Pages 项目
+
+Pages 项目（非本仓库前端）走 Git integration preview 部署，wrangler CLI 不触达。
+
+### D1 schema 变更的 PR
 
 1. migration 文件随 PR 提交（幂等写法 + journal entry 齐全）
 2. 合并到 main → pipeline 自动对 staging 和 prod 应用迁移（staging 先行验证）

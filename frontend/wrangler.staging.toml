@@ -1,0 +1,30 @@
+# Staging 前端 Worker 部署配置（显式、无 --env、无 redirected config 陷阱）
+# 背景：frontend/wrangler.toml 的 main 指向 @astrojs/cloudflare entrypoint，
+# wrangler 会 redirected 到 dist/server/wrangler.json（无 env 块），
+# `wrangler deploy --env staging` 会静默回退到顶层（prod）配置。
+# 因此 staging 部署必须使用本显式配置：wrangler deploy --config wrangler.staging.toml
+# 注意：main/assets 指向构建产物，部署前必须先 pnpm --filter @gomate/frontend build
+name = "gomate-frontend-staging"
+account_id = "e3afbb613458022947cd9dc9f5bd6334"
+compatibility_date = "2026-02-26"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+main = "./dist/server/entry.mjs"
+
+[assets]
+directory = "./dist/client"
+binding = "ASSETS"
+
+[observability]
+enabled = true
+
+[vars]
+PUBLIC_API_URL = "https://api-staging.gomate.live"
+
+[[kv_namespaces]]
+binding = "SESSION"
+id = "f8480fa769054962ab59333aa7015ff6"
+
+[[routes]]
+pattern = "staging.gomate.live"
+custom_domain = true
