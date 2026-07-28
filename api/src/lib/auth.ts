@@ -101,6 +101,7 @@ export function createAuth(env: Env) {
         session: schema.sessions,
         account: schema.accounts,
         verification: schema.verifications,
+        apikey: schema.apiKeys,
       },
     }),
     secondaryStorage: buildKvSecondaryStorage(env.GOMATE_KV),
@@ -182,6 +183,20 @@ export function createAuth(env: Env) {
       "https://gomate.live",
       "https://api.gomate.live",
     ],
-    plugins: [apiKey()],
+    plugins: [
+      apiKey({
+        defaultPrefix: "gm_live_",
+        defaultKeyLength: 48,
+        // rate limit：读 scope 每小时 1000 次（插件内部 per-key enforce）
+        rateLimit: {
+          enabled: true,
+          timeWindow: 1000 * 60 * 60, // 1 hour
+          maxRequests: 1000,
+        },
+        keyExpiration: {
+          defaultExpiresIn: 365 * 24 * 60 * 60, // 1 year
+        },
+      }),
+    ],
   });
 }
