@@ -8,20 +8,20 @@
 
 GoMate 是一个**地点组队平台**，解决「想出门但找不到伙伴」的问题：
 
-| 功能            | 描述                                           |
-| --------------- | ---------------------------------------------- |
-| 🗺️ **发现地点** | 城市及周边户外地点推荐，含难度、标签、POI 标记 |
-| 👥 **组建队伍** | 一键发布组队信息，设定人数、时间、要求         |
-| ✅ **便捷参与** | 申请加入队伍，队长审核，组队出发               |
+| 功能            | 描述                                       |
+| --------------- | ------------------------------------------ |
+| 🗺️ **发现地点** | 城市及周边户外地点推荐，含标签、交通等信息 |
+| 👥 **组建队伍** | 一键发布组队信息，设定人数、时间、要求     |
+| ✅ **便捷参与** | 申请加入队伍，队长审核，组队出发           |
 
 ## 在线体验
 
 **网站：** https://gomate.live
 
-**测试账号：**
+**测试账号（本地）：**
 
-- 邮箱：`1427298683@qq.com`
-- 密码：`11111111`
+- 邮箱：`admin@test.com` / `leader_a@test.com` / `member_a@test.com`
+- 密码：`test1234`
 
 **核心流程：**
 浏览地点 → 查看详情 → 加入/创建队伍 → 等待确认 → 一起出发
@@ -29,7 +29,7 @@ GoMate 是一个**地点组队平台**，解决「想出门但找不到伙伴」
 ## 技术架构
 
 ```
-前端: Astro 4 + React 18 + Tailwind CSS
+前端: Astro 6 + React 18 + Tailwind CSS
 后端: Hono + Cloudflare Workers + D1 数据库
 部署: Cloudflare（全球边缘节点）
 ```
@@ -52,15 +52,12 @@ pnpm dev:fresh
 # 仅重置本地数据库并灌入测试数据
 pnpm db:reset
 
-# 提升指定用户为 admin（本地验证用，远程环境会二次确认）
-pnpm db:promote-admin --email admin@test.com --env local --yes
-
 # 本地测试账号（由 db:reset 自动生成）
 # 邮箱：admin@test.com / leader_a@test.com / leader_b@test.com / member_a@test.com
 # 密码：test1234
 ```
 
-# 提升用户为 admin
+## 提升用户为 Admin
 
 地点/路线/城市管理等接口需要 `role = 'admin'`。如果注册账号默认是 `user`，可用以下脚本提升：
 
@@ -69,15 +66,15 @@ pnpm db:promote-admin --email admin@test.com --env local --yes
 pnpm db:promote-admin --email admin@test.com --env local --yes
 
 # staging / production（会二次确认）
-pnpm db:promote-admin --email victor@example.com --env production
 pnpm db:promote-admin --user-id <user-id> --env staging --yes
+pnpm db:promote-admin --email victor@example.com --env production
 ```
 
 ## E2E 测试
 
 ### Playwright（推荐）
 
-覆盖范围：登录/注册、地点浏览、队伍创建、**队伍申请与审批**。
+覆盖范围：登录/注册、地点浏览、队伍创建、队伍申请与审批、首页浏览等核心路径。
 
 ```bash
 # 安装浏览器（首次运行）
@@ -104,10 +101,8 @@ pnpm e2e:staging
   --remote-debugging-port=9222 \
   --user-data-dir=/tmp/browser-use-profile
 
-# 运行 AI 驱动测试
-BU_CDP_URL=http://localhost:9222 browser-use <<'PY'
-exec(open("e2e/browser-use/login_flow.py").read())
-PY
+# 运行 AI 驱动测试（home_smoke.py）
+BU_CDP_URL=http://localhost:9222 pnpm e2e:browser-use
 ```
 
 ## 本地环境配置
@@ -134,17 +129,6 @@ pnpm env:check
 | `api/.dev.vars` 缺失            | 本地 secrets 未配置                          | 复制 `api/.dev.vars.example` 并填入              |
 
 如果排查后仍无法解决，请附带 `pnpm env:check` 输出和错误日志提 issue。
-
-## E2E CI 观察期
-
-PR Validation 中已启用本地 E2E 测试，当前处于 **2 周观察期**：
-
-- E2E 测试会执行，但 **不阻塞 PR 合并**（`continue-on-error: true`）
-- 每次运行都会自动生成 `e2e-health-report.json` 并上传 artifact
-- 观察指标：flaky rate、failure rate、平均耗时、失败原因分类
-- 目标：连续运行 flaky rate < 5% 后，进入软阻塞期（required 但可 override）
-
-作为开发者，**请在提交 PR 前本地运行 `pnpm e2e:ci` 并确保通过**，减少 CI 噪音。
 
 ## 部署
 
