@@ -193,9 +193,11 @@
     50%       { transform: translateY(-4px); }
   }
 
-
-
-
+  /* section 进入动画：fade + 轻微上移 */
+  @keyframes section-in {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
   /* 清空按钮旋转出现（简化版） */
   @keyframes spin-in {
@@ -204,11 +206,6 @@
   }
 
   /* section 进入动画：fade + 轻微上移 */
-  @keyframes section-in {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
   /* shimmer 扫光骨架屏 */
   @keyframes shimmer {
     from { background-position: -200% 0; }
@@ -219,20 +216,10 @@
   --animate-bounce-in: bounce-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 
   /* 清空按钮旋转消失 */
-  @keyframes spin-out {
-    from { transform: rotate(0deg) scale(1); opacity: 1; }
-    to   { transform: rotate(90deg) scale(0.6); opacity: 0; }
-  }
-
   /* 清空按钮旋转出现（CSS 变量版） */
   --animate-spin-in: spin-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 
   /* 卡片 overlay 从底部滑入 */
-  @keyframes slide-up-in {
-    from { transform: translateY(100%); opacity: 0; }
-    to   { transform: translateY(0); opacity: 1; }
-  }
-
   /* section 进入动画（CSS 变量版） */
 
   /* 状态切换：fade + scale 入场 */
@@ -258,8 +245,6 @@
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-
-
 
   /* Toast 退出淡出（fade-out） */
   --animate-fade-out: fade-out 0.2s ease-in both;
@@ -711,9 +696,7 @@
 
   /* ---- 微交互动画工具类 ---- */
   .animate-bounce-in  { animation: var(--animate-bounce-in); }
-  .animate-spin-out   { animation: var(--animate-spin-out); }
-  .animate-spin-in    { animation: var(--animate-spin-in); }
-  .animate-slide-up-in { animation: var(--animate-slide-up-in); }
+    .animate-spin-in    { animation: var(--animate-spin-in); }
 
   /* Profile staggered fade-up (slower, more deliberate) */
   @keyframes fade-up-slow {
