@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "check:migrations": "node scripts/check-migrations-sync.mjs"
   },
   "dependencies": {
     "@gomate/lib": "workspace:*",
