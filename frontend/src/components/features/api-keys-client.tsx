@@ -20,8 +20,15 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
-import { fetchAPI } from "@/lib/api";
+import { authClient } from "@/lib/auth-client";
+
+/** authClient.$fetch 类型声明 */
+interface AuthClientWithFetch {
+  $fetch: <T = unknown>(url: string, options?: RequestInit) => Promise<T>;
+}
+const client = authClient as unknown as AuthClientWithFetch;
 
 // ==================== Types ====================
 
@@ -53,12 +60,8 @@ interface ApiKeyRevokeResponse {
 
 // ==================== Constants ====================
 
-// P1a 配置后由服务端下发，UI 不做硬编码
+/** 每用户 Key 上限（与后端 P1a 配置对齐） */
 const USER_KEY_LIMIT = 10;
-const SCOPE_OPTIONS = [
-  { value: "read", label: "读取", enabled: true },
-  { value: "write", label: "写入", enabled: false },
-] as const;
 
 // ==================== Helpers ====================
 
@@ -90,7 +93,6 @@ export function ApiKeysClient() {
   // Create modal state
   const [showCreate, setShowCreate] = React.useState(false);
   const [newKeyName, setNewKeyName] = React.useState("");
-  const [showScopeRead] = React.useState(true);
   const [creating, setCreating] = React.useState(false);
 
   // Success state - showing the key value once
@@ -106,8 +108,7 @@ export function ApiKeysClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetchAPI("/auth/api-key/list", { method: "GET" });
-      const json = (await res.json()) as ApiKeyListResponse;
+      const json = await client.$fetch<ApiKeyListResponse>("/auth/api-key/list", { method: "GET" });
       if (json.success) {
         setKeys(json.keys.filter((k) => k.status === "active"));
       } else {
@@ -131,13 +132,13 @@ export function ApiKeysClient() {
     setCreating(true);
     try {
       const scope: string[] = [];
-      if (showScopeRead) scope.push("read");
-      const res = await fetchAPI("/auth/api-key/create", {
+      // P1b 只开放读 scope
+      scope.push("read");
+      const json = await client.$fetch<ApiKeyCreateResponse>("/auth/api-key/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newKeyName.trim(), scope }),
       });
-      const json = (await res.json()) as ApiKeyCreateResponse;
       if (json.success && json.key) {
         setCreatedKey({ name: json.key.name, value: json.key.key ?? "" });
         setShowCreate(false);
@@ -159,12 +160,11 @@ export function ApiKeysClient() {
   const handleRevoke = async (id: string) => {
     setRevoking(true);
     try {
-      const res = await fetchAPI("/auth/api-key/revoke", {
+      const json = await client.$fetch<ApiKeyRevokeResponse>("/auth/api-key/revoke", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-      const json = (await res.json()) as ApiKeyRevokeResponse;
       if (json.success) {
         setKeys((prev) => prev.filter((k) => k.id !== id));
         showToast({ type: "success", message: "API Key 已撤销" });
@@ -334,25 +334,20 @@ export function ApiKeysClient() {
                 />
               </div>
 
-              {/* Scope */}
+              {/* Scope — P1b 只开放读 scope，写 scope UI 预留 */}
               <div>
                 <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">权限范围</label>
                 <div className="space-y-2">
-                  {SCOPE_OPTIONS.map((opt) => (
-                    <label key={opt.value} className={`flex items-center gap-3 p-3 rounded-xl border ${!opt.enabled ? "border-stone-100 dark:border-zinc-800 opacity-50" : "border-stone-200 dark:border-zinc-700"} cursor-pointer`}>
-                      <input
-                        type="checkbox"
-                        checked={opt.value === "read" ? showScopeRead : false}
-                        onChange={() => {}}
-                        disabled={!opt.enabled}
-                        className="h-4 w-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500"
-                      />
-                      <span className="text-sm text-foreground">{opt.label}</span>
-                      {!opt.enabled && (
-                        <span className="text-xs text-stone-400 ml-auto">即将开放</span>
-                      )}
-                    </label>
-                  ))}
+                  <div className="flex items-center gap-3 p-3 rounded-xl border border-stone-200 dark:border-zinc-700 bg-stone-50/60 dark:bg-zinc-800/40">
+                    <Check className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm text-foreground">读取</span>
+                    <span className="text-xs text-stone-400 ml-auto">默认开启</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl border border-stone-100 dark:border-zinc-800 opacity-50">
+                    <X className="h-4 w-4 text-stone-300" />
+                    <span className="text-sm text-stone-400">写入</span>
+                    <span className="text-xs text-stone-400 ml-auto">即将开放</span>
+                  </div>
                 </div>
               </div>
             </div>
