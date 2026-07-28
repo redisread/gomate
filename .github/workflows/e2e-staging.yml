@@ -3,9 +3,10 @@ name: E2E Staging
 on:
   # 手动触发
   workflow_dispatch:
-  # 每天北京时间早上 8 点自动跑一次（UTC 00:00）
-  schedule:
-    - cron: "0 0 * * *"
+  # staging 部署成功后自动回归（事件驱动，替代每日 cron）
+  workflow_run:
+    workflows: ["Deploy Staging"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -13,6 +14,8 @@ permissions:
 jobs:
   e2e-staging:
     name: e2e-staging
+    # 手动触发直接跑；部署触发仅在部署成功时跑
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

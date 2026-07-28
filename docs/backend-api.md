@@ -1,14 +1,15 @@
 # GoMate 后端 API 文档
 
-> 最后更新：2026-03-26
+> 最后更新：2026-07-28
 > 框架：Hono 4 + Cloudflare Workers + Drizzle ORM
 
 ## 基础信息
 
-| 环境     | 地址                                                      |
-| -------- | --------------------------------------------------------- |
-| 本地开发 | `http://localhost:8799`                                   |
-| 生产环境 | `https://gomate-api-production.wujiahong2013.workers.dev` |
+| 环境       | 地址                              |
+| ---------- | --------------------------------- |
+| 本地开发   | `http://localhost:8799`           |
+| 生产环境   | `https://api.gomate.live`         |
+| 预发布环境 | `https://api-staging.gomate.live` |
 
 **认证方式：** Better Auth（基于 Session Cookie）
 

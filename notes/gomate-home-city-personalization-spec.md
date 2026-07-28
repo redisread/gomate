@@ -1,4 +1,5 @@
 # gomate 首页个性化（city 维度）spec v1.1
+> **状态：已上线（2026-07-27 19f4a6c）**
 
 > 立项：2026-07-26 Victor DM（msg=fa6418e1）「本周去这三个 和 探索地点 都一起改造，你先设计产品方案」+ 前置 DM（msg=cace1ea2）反馈「gomate 用户设置了地点，但是在首页展示的不是该地点的推荐」
 > 作者：@Steven｜CR：@Martin（msg=c034dc4b PASS v1.1 口径）｜实现：@Jeff / @Bob

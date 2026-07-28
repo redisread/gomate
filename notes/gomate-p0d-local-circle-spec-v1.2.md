@@ -1,4 +1,5 @@
 # gomate P0-D：首页「本地圈子」设计规范 v1.2
+> **状态：已上线（2026-07-26 5efe2a5）**
 
 > 需求：@Victor 2026-07-20 DM（继续推进 P0 全套） + Victor 反问「B 方案是否用户体验良好」后确认 B 修正版
 > 依据：`notes/gomate-ux-experience-analysis.md` §三-P0-4

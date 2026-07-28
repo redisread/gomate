@@ -80,12 +80,6 @@ export function getBeijingNextNDaysRange(n: number): { start: string; end: strin
 }
 
 /** Check if a date is this weekend in Beijing time */
-export function isBeijingWeekend(dateStr: string): boolean {
-  const date = new Date(dateStr);
-  const beijingDate = toBeijingDate(date);
-  const dayOfWeek = beijingDate.getUTCDay();
-  return dayOfWeek === 0 || dayOfWeek === 6;
-}
 
 /** Get quick select type based on current date range */
 export function getActiveDateQuickType(
@@ -131,25 +125,3 @@ export function getDateRangeByQuickType(type: string): { start: string; end: str
 }
 
 /** Get display summary for date filter */
-export function getDateFilterSummary(
-  startDate: string,
-  endDate: string,
-  t: (key: string, options?: { count?: number }) => string
-): string {
-  const quickType = getActiveDateQuickType(startDate, endDate);
-
-  switch (quickType) {
-    case "today":
-      return t("filter.dateQuickToday");
-    case "tomorrow":
-      return t("filter.dateQuickTomorrow");
-    case "weekend":
-      return t("filter.dateQuickWeekend");
-    case "7days":
-      return t("filter.dateQuick7Days");
-    case "30days":
-      return t("filter.dateQuick30Days");
-    default:
-      return `${startDate} - ${endDate}`;
-  }
-}

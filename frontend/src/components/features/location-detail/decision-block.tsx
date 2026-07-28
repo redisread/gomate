@@ -1,30 +1,18 @@
 import * as React from "react";
 import {
-  AlertCircle,
   AlertTriangle,
   Backpack,
-  Car,
   ExternalLink,
-  Loader2,
   MapPin,
   Navigation,
-  RotateCcw,
-  Train,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type {
   Location,
-  TransportationData,
-  TransportationResponse,
+
 } from "@/lib/types";
 import { normalizeLocationHiking } from "./route-utils";
-
-type TransportState =
-  | { kind: "loading" }
-  | { kind: "ready"; data: TransportationData; staleDays: number | null }
-  | { kind: "error" };
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -49,7 +37,7 @@ function hasValidCoords(
 }
 
 export function DecisionBlock({ location }: DecisionBlockProps) {
-  const { t, locale } = useI18n(["locationDetail", "common"]);
+  const { t } = useI18n(["locationDetail", "common"]);
 
   const hasCoords = hasValidCoords(location.coordinates);
 
@@ -66,68 +54,6 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
     gearOptional.length > 0 ||
     gearWarnings.length > 0;
 
-  const [transport, setTransport] = React.useState<TransportState>({
-    kind: "loading",
-  });
-
-  /**
-   * task #170 CR Nit 1（Martin）：加 AbortController 防 race。
-   * client-side navigation 快切两个 location 时，旧请求可能覆盖新数据；
-   * unmount 时 AbortError 静默 return，不 setState。
-   *
-   * CR re-CR nit（Martin，非阻塞已捎带修）：retry 也走 currentAbortRef，
-   * 用户连点 3 次 retry 时前 2 个 in-flight 会被 abort，只保留最新一次。
-   */
-  const currentAbortRef = React.useRef<AbortController | null>(null);
-
-  const fetchTransport = React.useCallback(
-    async (signal?: AbortSignal) => {
-      setTransport({ kind: "loading" });
-      try {
-        const res = await fetchAPI(
-          "/api/locations/" + location.id + "/transportation",
-          { signal },
-        );
-        if (!res.ok) throw new Error("status=" + res.status);
-        const json = (await res.json()) as TransportationResponse;
-        if (!json || !json.success || !json.transportation) {
-          throw new Error("bad payload");
-        }
-        if (signal?.aborted) return;
-        setTransport({
-          kind: "ready",
-          data: json.transportation,
-          staleDays: json.meta ? json.meta.staleDays ?? null : null,
-        });
-      } catch (err) {
-        // AbortError: 用户切走 location / unmount / 连点 retry，静默丢弃
-        if (
-          (err instanceof DOMException && err.name === "AbortError") ||
-          signal?.aborted
-        ) {
-          return;
-        }
-        console.warn("[DecisionBlock] transport fetch failed", err);
-        setTransport({ kind: "error" });
-      }
-    },
-    [location.id],
-  );
-
-  const retry = React.useCallback(() => {
-    currentAbortRef.current?.abort();
-    const ctrl = new AbortController();
-    currentAbortRef.current = ctrl;
-    void fetchTransport(ctrl.signal);
-  }, [fetchTransport]);
-
-  React.useEffect(() => {
-    if (!hasCoords) return;
-    const ctrl = new AbortController();
-    currentAbortRef.current = ctrl;
-    void fetchTransport(ctrl.signal);
-    return () => ctrl.abort();
-  }, [hasCoords, fetchTransport]);
 
   if (!hasCoords && !hasParking && !hasGear) return null;
 
@@ -144,15 +70,21 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
       </header>
 
       <div className="flex flex-col gap-4">
-        {hasCoords && (
-          <TransportSubBlock
-            location={location}
-            state={transport}
-            onRetry={retry}
-            locale={locale}
-            t={t}
-          />
-        )}
+        {hasCoords && (() => {
+          const transportMapUrl = buildFallbackMapUrl(location);
+          return (
+            <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5 space-y-2">
+              <p className="mb-3 text-[11px] font-bold uppercase text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+                <Navigation className="h-3.5 w-3.5" />
+                {t("locationDetail.transport.title")}
+              </p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">
+                {t("locationDetail.transport.fallbackHint")}
+              </p>
+              {transportMapUrl && <OpenInMapButton href={transportMapUrl} t={t} />}
+            </div>
+          );
+        })()}
         {hasParking && (
           <ParkingSubBlock
             available={parkingAvailable}
@@ -173,146 +105,6 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
   );
 }
 
-// ─── Transport ────────────────────────────────────────────────────────────────
-
-interface TransportSubBlockProps {
-  location: Location;
-  state: TransportState;
-  onRetry: () => void;
-  locale: string;
-  t: Translate;
-}
-
-function TransportSubBlock({ location, state, onRetry, locale, t }: TransportSubBlockProps) {
-  return (
-    <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5">
-      <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase text-stone-500 dark:text-stone-400">
-        <Navigation className="h-3.5 w-3.5" />
-        {t("locationDetail.transport.title")}
-      </p>
-
-      {state.kind === "loading" && (
-        <div className="flex items-center gap-2 py-2 text-xs text-stone-500 dark:text-stone-400">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          {t("locationDetail.transport.loading")}
-        </div>
-      )}
-
-      {state.kind === "error" && (
-        <TransportErrorFallback location={location} onRetry={onRetry} t={t} />
-      )}
-
-      {state.kind === "ready" && (
-        <TransportReadyView data={state.data} staleDays={state.staleDays} locale={locale} t={t} />
-      )}
-    </div>
-  );
-}
-
-interface TransportReadyViewProps {
-  data: TransportationData;
-  staleDays: number | null;
-  locale: string;
-  t: Translate;
-}
-
-function TransportReadyView({ data, staleDays, locale, t }: TransportReadyViewProps) {
-  const showStale = typeof staleDays === "number" && staleDays >= 7;
-
-  // amap 全挂：只显示 mapUrl CTA
-  if (data.amapAllFailed) {
-    return (
-      <div className="space-y-2">
-        <p className="text-xs text-stone-500 dark:text-stone-400">
-          {t("locationDetail.transport.fallbackHint")}
-        </p>
-        {data.mapUrl && <OpenInMapButton href={data.mapUrl} t={t} />}
-        {showStale && <StaleHint days={staleDays as number} t={t} />}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2.5">
-      {data.subway && <SubwayRow subway={data.subway} t={t} />}
-      {data.driving && <DrivingRow driving={data.driving} locale={locale} t={t} />}
-      {data.mapUrl && <OpenInMapButton href={data.mapUrl} t={t} />}
-      {showStale && <StaleHint days={staleDays as number} t={t} />}
-    </div>
-  );
-}
-
-function SubwayRow({
-  subway,
-  t,
-}: {
-  subway: NonNullable<TransportationData["subway"]>;
-  t: Translate;
-}) {
-  const hasLines = Array.isArray(subway.lines) && subway.lines.length > 0;
-  const lineText = hasLines
-    ? t("locationDetail.transport.subwayWithLines", {
-        lines: subway.lines.join(" / "),
-        station: subway.station,
-        n: subway.walkMinutes,
-      })
-    : t("locationDetail.transport.subwayLine", {
-        station: subway.station,
-        n: subway.walkMinutes,
-      });
-
-  return (
-    <div className="flex items-start gap-2 text-sm text-foreground">
-      <Train className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-500" />
-      <div className="flex-1">
-        <p className="text-[11px] font-semibold uppercase text-stone-500 dark:text-stone-400">
-          {t("locationDetail.transport.subwayLabel")}
-        </p>
-        <p className="mt-0.5 leading-relaxed text-stone-700 dark:text-stone-300">
-          {lineText}
-        </p>
-        {subway.approximate && (
-          <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-            {t("locationDetail.transport.subwayTransferHint")}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function DrivingRow({
-  driving,
-  locale,
-  t,
-}: {
-  driving: NonNullable<TransportationData["driving"]>;
-  locale: string;
-  t: Translate;
-}) {
-  const label = pickLocaleString(driving.referencePointLabel, locale);
-  return (
-    <div className="flex items-start gap-2 text-sm text-foreground">
-      <Car className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
-      <div className="flex-1">
-        <p className="text-[11px] font-semibold uppercase text-stone-500 dark:text-stone-400">
-          {t("locationDetail.transport.drivingLabel")}
-        </p>
-        <p className="mt-0.5 leading-relaxed text-stone-700 dark:text-stone-300">
-          {t("locationDetail.transport.drivingDistance", {
-            landmark: label,
-            km: driving.distanceKm,
-          })}
-          {" · "}
-          {t("locationDetail.transport.drivingDuration", {
-            n: driving.durationMinutes,
-          })}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function OpenInMapButton({ href, t }: { href: string; t: Translate }) {
   return (
     <a
@@ -327,46 +119,6 @@ function OpenInMapButton({ href, t }: { href: string; t: Translate }) {
   );
 }
 
-function StaleHint({ days, t }: { days: number; t: Translate }) {
-  return (
-    <p className="mt-1 flex items-center gap-1 text-[11px] text-stone-500 dark:text-stone-500">
-      <AlertCircle className="h-3 w-3" />
-      {t("locationDetail.transport.stale", { n: days })}
-    </p>
-  );
-}
-
-function TransportErrorFallback({
-  location,
-  onRetry,
-  t,
-}: {
-  location: Location;
-  onRetry: () => void;
-  t: Translate;
-}) {
-  const mapUrl = buildFallbackMapUrl(location);
-  return (
-    <div className="space-y-2">
-      <p className="flex items-start gap-1.5 text-xs text-stone-500 dark:text-stone-400">
-        <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-        {t("locationDetail.transport.fallbackHint")}
-      </p>
-      <div className="flex items-center gap-2">
-        {mapUrl && <OpenInMapButton href={mapUrl} t={t} />}
-        <button
-          type="button"
-          onClick={onRetry}
-          className="inline-flex items-center gap-1 rounded-lg border border-stone-200 dark:border-stone-700 bg-transparent px-2.5 py-1.5 text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-        >
-          <RotateCcw className="h-3 w-3" />
-          {t("locationDetail.transport.retry")}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function buildFallbackMapUrl(location: Location): string {
   const c = location.coordinates;
   if (!hasValidCoords(c)) return "";
@@ -377,16 +129,6 @@ function buildFallbackMapUrl(location: Location): string {
     c!.lat +
     "&callnative=1"
   );
-}
-
-function pickLocaleString(
-  label: { zh: string; en: string; ja: string } | undefined | null,
-  locale: string,
-): string {
-  if (!label) return "";
-  if (locale === "en" && label.en) return label.en;
-  if (locale === "ja" && label.ja) return label.ja;
-  return label.zh || label.en || label.ja || "";
 }
 
 // ─── Parking ──────────────────────────────────────────────────────────────────

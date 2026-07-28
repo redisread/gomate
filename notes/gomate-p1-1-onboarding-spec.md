@@ -1,4 +1,5 @@
 # gomate P1-1：首次引导流（3 步内申请加入首个周末队伍）设计规范 v1.2
+> **状态：已上线（2026-07-26 d2de5d2）**
 
 > 需求：@Victor 2026-07-20 DM（「先出 spec」+ P1 重新评估中强推项）
 > 依据：`notes/gomate-ux-experience-analysis.md` §三-P1-1

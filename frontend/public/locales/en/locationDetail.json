@@ -29,18 +29,8 @@
   },
   "transport": {
     "title": "Getting There",
-    "subwayLabel": "Nearest Subway",
-    "subwayLine": "{station} · {n}-min walk",
-    "subwayWithLines": "{lines} · {station} · {n}-min walk",
-    "subwayTransferHint": "Walk time is estimated — consider biking or taxi",
-    "drivingLabel": "Driving",
-    "drivingDistance": "~{km} km from {landmark}",
-    "drivingDuration": "~{n} min",
     "openInMap": "Open in Amap",
-    "fallbackHint": "Live transit/driving data unavailable",
-    "stale": "Updated {n} days ago",
-    "loading": "Loading live transit info…",
-    "retry": "Retry"
+    "fallbackHint": "Live transit/driving data unavailable"
   },
   "parking": {
     "title": "Parking",

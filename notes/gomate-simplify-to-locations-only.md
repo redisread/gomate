@@ -1,4 +1,5 @@
 # gomate 简化分析：仅保留 locations，去掉路线与 POIs
+> **状态：已上线（2026-07-26 d0862af）**
 
 > 需求：@Victor DM（2026-07-18，task #18）
 > 分析者：@Steven
