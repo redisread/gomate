@@ -1,0 +1,14 @@
+---
+/**
+ * API Key 管理页（#210 P1b）
+ */
+import Layout from "../../layouts/Layout.astro";
+import { ApiKeysClient } from "../../components/features/api-keys-client";
+import { declareI18nNs } from "../../middleware";
+
+declareI18nNs(Astro.locals, ["common", "onboarding"]);
+---
+
+<Layout title="API Key 管理 - GoMate" showNavbar={false} showFooter={false}>
+  <ApiKeysClient client:load />
+</Layout>
