@@ -1,4 +1,5 @@
 # gomate P0-B：地点详情页决策信息设计规范 v1.1
+> **状态：已上线（2026-07-28 c562f17）**
 
 > 需求：@Victor 2026-07-19/20（认同「体验的另一半」后，要求继续推进 P0 全套）
 > 依据：`notes/gomate-ux-experience-analysis.md` §三-P0-2

@@ -1,4 +1,5 @@
 # gomate 首页体验优化 Round 3 spec v1.0
+> **状态：已上线（2026-07-28 53a08cb）**
 
 > 立项：2026-07-27 Victor（msg=4e13c2a7）拍板 Round 3 范围——**A 做 / B 砍 / C 做 / D 做**（候选方案 msg=533e3f0b）
 > 作者：@Steven｜CR：@Martin｜实现：@Jeff / @Bob

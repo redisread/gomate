@@ -1,4 +1,5 @@
 # gomate P0-C：首页「本周三个选择」推荐位设计规范 v1.1
+> **状态：已上线（2026-07-25 7a5b1c9）**
 
 > 需求：@Victor 2026-07-20 DM（继续推进 P0 全套）
 > 依据：`notes/gomate-ux-experience-analysis.md` §三-P0-3

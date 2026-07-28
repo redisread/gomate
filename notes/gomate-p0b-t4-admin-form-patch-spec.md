@@ -1,4 +1,5 @@
 # gomate P0-B T4: admin form field layout patch spec v1.0
+> **状态：已上线（2026-07-22 e2e7d73）**
 
 > 触发: Martin msg=b73c46d3 ask - 为 Jeff 起手 P0-B T4 admin 录入 UI 提供字段布局视觉参考
 > 依据: notes/gomate-p0b-location-decision-spec.md (现有 4 字段: parkingAvailable / parkingInfo / gearEssential[] / gearOptional[]) + 现有 admin 编辑页 (location-edit-client.tsx + location-form/\*)

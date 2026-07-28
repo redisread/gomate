@@ -1,4 +1,5 @@
 # gomate P0-A：Team 行动本设计规范 v1.1
+> **状态：已上线（2026-07-22 3864a21）**
 
 > 需求：@Victor 2026-07-19 DM（认同「主题另一半」判断后要求推进）
 > 依据：`notes/gomate-ux-experience-analysis.md` §P0-1
