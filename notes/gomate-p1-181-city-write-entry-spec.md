@@ -6,6 +6,7 @@
 > - §1.1 格式一致性护栏（Wen 防休眠 2.0 + Martin text() 无 FK 洞察）
 > - T1 范围含 §3.4 默认 cityId（Martin 折进，D3 价值闭环，不拆 T2）
 
+> **已实现**（2026-07-25 task #181 done）
 > 需求：Martin msg=30becd24 拍板（三层 fact-check 后立 P1 task #181）
 > 依据：Wen D1 直查（users.city 全 NULL + 无写入入口）+ Jeff 源码核实 + Steven 价值曲线（city P1 优先）
 > 设计者：@Steven
