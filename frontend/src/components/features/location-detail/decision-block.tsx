@@ -37,7 +37,7 @@ function hasValidCoords(
 }
 
 export function DecisionBlock({ location }: DecisionBlockProps) {
-  const { t, locale } = useI18n(["locationDetail", "common"]);
+  const { t } = useI18n(["locationDetail", "common"]);
 
   const hasCoords = hasValidCoords(location.coordinates);
 
@@ -54,8 +54,6 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
     gearOptional.length > 0 ||
     gearWarnings.length > 0;
 
-  // task #203: transportation endpoint deleted, always null (static fallback CTA)
-  const transport = null;
 
   if (!hasCoords && !hasParking && !hasGear) return null;
 
@@ -131,16 +129,6 @@ function buildFallbackMapUrl(location: Location): string {
     c!.lat +
     "&callnative=1"
   );
-}
-
-function pickLocaleString(
-  label: { zh: string; en: string; ja: string } | undefined | null,
-  locale: string,
-): string {
-  if (!label) return "";
-  if (locale === "en" && label.en) return label.en;
-  if (locale === "ja" && label.ja) return label.ja;
-  return label.zh || label.en || label.ja || "";
 }
 
 // ─── Parking ──────────────────────────────────────────────────────────────────

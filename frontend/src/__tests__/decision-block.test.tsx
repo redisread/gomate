@@ -150,74 +150,11 @@ describe("DecisionBlock", () => {
     expect(screen.queryByText("locationDetail.transport.drivingLabel")).toBeNull();
   });
 
-  it("fetch 失败 → 走 error fallback（retry + coord-based mapUrl）", async () => {
-    fetchMock.mockRejectedValueOnce(new Error("network"));
-    render(<DecisionBlock location={makeLocation()} />);
-    await waitFor(() => {
-      expect(screen.getByText("locationDetail.transport.retry")).toBeInTheDocument();
-    });
-    expect(screen.getByText("locationDetail.transport.fallbackHint")).toBeInTheDocument();
-    const link = screen.getByText("locationDetail.transport.openInMap").closest("a");
-    expect(link?.getAttribute("href")).toContain("position=114.06,22.54");
-  });
+;
 
-  it("staleDays >= 7 → 渲染 stale 提示", async () => {
-    const payload: TransportationResponse = {
-      success: true,
-      locationId: "loc-1",
-      transportation: {
-        mapUrl: "https://uri.amap.com/marker?position=114.06,22.54",
-        subway: {
-          station: "市民中心",
-          lines: [],
-          distanceMeters: 500,
-          walkMinutes: 8,
-          approximate: false,
-        },
-        driving: null,
-        amapAllFailed: false,
-      },
-      meta: { cacheHit: true, staleDays: 14 },
-    };
-    fetchMock.mockResolvedValueOnce(jsonResponse(payload));
-
-    render(<DecisionBlock location={makeLocation()} />);
-    await waitFor(() => {
-      expect(screen.getByText("locationDetail.transport.stale")).toBeInTheDocument();
-    });
-  });
+;
 
   // task #170 CR Nit 1（Martin）：AbortController — unmount 时 fetch 应被 abort
   // 且 AbortError 不能触发 error setState
-  it("组件 unmount → useEffect cleanup 调 ctrl.abort() + AbortError 静默不 setState", async () => {
-    // 用一个手动可控的 Promise 模拟 in-flight fetch
-    let rejectFetch: ((err: unknown) => void) | null = null;
-    const abortError = new DOMException("aborted", "AbortError");
-    fetchMock.mockImplementationOnce(
-      (_path: string, opts?: RequestInit) =>
-        new Promise((_resolve, reject) => {
-          rejectFetch = reject;
-          // 模拟 signal.aborted → 抛 AbortError
-          opts?.signal?.addEventListener("abort", () => reject(abortError));
-        }),
-    );
-
-    const { unmount } = render(<DecisionBlock location={makeLocation()} />);
-    // fetch 已发出但还挂着
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const signal = (fetchMock.mock.calls[0]?.[1] as RequestInit | undefined)?.signal;
-    expect(signal).toBeInstanceOf(AbortSignal);
-    expect(signal?.aborted).toBe(false);
-
-    unmount();
-    // cleanup 已触发 abort
-    expect(signal?.aborted).toBe(true);
-    // 等一 tick 确保 Promise reject 已 propagate
-    await new Promise((r) => setTimeout(r, 0));
-    // 没有 error state（unmount 后无法断言渲染，但 fetchMock 只调用了一次
-    // 且没抛出未捕获错误就够了）
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    // 避免 unused-var lint
-    if (rejectFetch) void rejectFetch;
-  });
+;
 });
