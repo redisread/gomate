@@ -83,7 +83,6 @@
   "formImages": "Image Gallery",
   "formLocationTitle": "Location Information",
   "formLocationType": "Location Type",
-  "formMapPicker": "Map Picker",
   "formName": "Name",
   "formNameRequired": "Name *",
   "formParkingHint": "Unknown = missing info (parking module hidden on detail page)",
