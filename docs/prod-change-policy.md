@@ -75,6 +75,10 @@ staging 保持自由度，但破坏性操作（清数据/覆盖部署）同样�
 
 **在验证出其他安全路径之前，手工 `wrangler deploy` 前端一律冻结；staging 部署只许走下述显式配置。**
 
+### rollback 版本选择必须核实 lineage
+
+`wrangler deployments list` 只给版本号和时间，不给内容。事故回滚时**必须核实目标版本的 lineage**（对应哪次 CI 部署/哪个 commit），不能凭列表位置猜——2026-07-28 实证：回滚目标 7fc8740f 看似「事故前版本」，实际是上一起误部署的事故版本，prod 因此一直在跑分支代码。核实方法：对照 CI deploy run 的时间与版本号，或让 CR owner 确认。
+
 ### 前端 staging 部署（Workers，实证安全路径）
 
 ```bash
