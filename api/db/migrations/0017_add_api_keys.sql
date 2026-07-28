@@ -1,5 +1,5 @@
 --> statement-breakpoint
-CREATE TABLE `apikey` (
+CREATE TABLE IF NOT EXISTS `apikey` (
 	`id` text PRIMARY KEY NOT NULL,
 	`config_id` text NOT NULL,
 	`name` text,
@@ -24,8 +24,8 @@ CREATE TABLE `apikey` (
 	`metadata` text
 );
 --> statement-breakpoint
-CREATE INDEX `apikey_config_id_idx` ON `apikey` (`config_id`);
+CREATE INDEX IF NOT EXISTS `apikey_config_id_idx` ON `apikey` (`config_id`);
 --> statement-breakpoint
-CREATE INDEX `apikey_reference_id_idx` ON `apikey` (`reference_id`);
+CREATE INDEX IF NOT EXISTS `apikey_reference_id_idx` ON `apikey` (`reference_id`);
 --> statement-breakpoint
-CREATE INDEX `apikey_key_idx` ON `apikey` (`key`);
+CREATE INDEX IF NOT EXISTS `apikey_key_idx` ON `apikey` (`key`);
