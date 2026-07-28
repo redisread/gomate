@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { authClient } from "@/lib/auth-client";
 import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchCurrentUser, API_BASE } from "@/lib/api";
+import { fetchCurrentUser } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleToggle } from "@/components/layout/locale-toggle";
@@ -93,10 +94,7 @@ export function Navbar({ className }: NavbarProps) {
   }, [showUserMenu]);
 
   const handleLogout = async () => {
-    await fetch(
-      `${API_BASE}/auth/sign-out`,
-      { method: "POST", credentials: "include" }
-    );
+    await authClient.signOut();
     setSession(null);
     window.location.href = "/";
   };
