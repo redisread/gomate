@@ -167,10 +167,6 @@ const config: Config = {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%":      { transform: "translateY(-4px)" },
         },
-        "pulse-soft": {
-          "0%, 100%": { opacity: "1" },
-          "50%":      { opacity: "0.5" },
-        },
         "shimmer": {
           from: { backgroundPosition: "-200% 0" },
           to:   { backgroundPosition: "200% 0" },
