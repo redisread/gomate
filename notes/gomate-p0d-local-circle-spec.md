@@ -1,6 +1,6 @@
 # gomate P0-D：首页「本地圈子」设计规范 v1.1（已归档）
 
-> **状态：已被 gomate-p0d-local-circle-spec-v1.2.md 取代（2026-07-2x）**
+> **状态：已被 gomate-p0d-local-circle-spec-v1.2.md 取代（2026-07-26）**
 
 
 > 需求：@Victor 2026-07-20 DM（继续推进 P0 全套） + Victor 反问「B 方案是否用户体验良好」后确认 B 修正版
