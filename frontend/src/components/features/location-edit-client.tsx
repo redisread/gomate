@@ -7,7 +7,7 @@
  */
 
 import * as React from "react";
-import { ArrowLeft, Eye, EyeOff, Map } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, MapPin as MapPinIcon, Image as ImageIcon, Navigation } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -15,6 +15,7 @@ import { StickyActionBar } from "@/components/ui/sticky-action-bar";
 import { EditProgressBar } from "@/components/ui/season-picker";
 import { cn } from "@/lib/utils";
 
+import type { FormData } from "./location-form";
 import {
   useLocationForm,
   LocationFormBasicFields,
@@ -56,6 +57,59 @@ function EditSkeleton() {
    ================================================================ */
 
 
+
+interface PreviewPanelProps { data: FormData; cityName: string; }
+
+function PreviewPanel({ data, cityName }: PreviewPanelProps) {
+  const { t } = useI18n(["admin", "common", "locations"]);
+  const seasonEmojis: Record<string, string> = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: "❄️" };
+  return (
+    <div className="sticky top-20">
+      <div className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-stone-50 dark:border-stone-800">
+          <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <span className="text-xs font-semibold text-stone-600 dark:text-stone-400">{t("admin.previewEffect")}</span>
+        </div>
+        <div className="w-full bg-stone-100 dark:bg-stone-800" style={{ aspectRatio: "16/9" }}>
+          {data.coverImage ? <img src={data.coverImage} alt={t("admin.coverImagePreview")} className="w-full h-full object-cover" />
+            : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-8 w-8 text-stone-300 dark:text-stone-600" /></div>}
+        </div>
+        <div className="p-4 space-y-3">
+          <div>
+            <h3 className="font-bold text-stone-900 dark:text-stone-100 text-base leading-snug">
+              {data.name || <span className="text-stone-300 dark:text-stone-600">{t("admin.locationNamePlaceholder")}</span>}
+            </h3>
+            {data.subtitle && <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">{data.subtitle}</p>}
+          </div>
+          {(cityName || data.address) && (
+            <div className="flex items-start gap-1.5 text-xs text-stone-500 dark:text-stone-400">
+              <MapPinIcon className="h-3.5 w-3.5 mt-0.5 text-amber-500 dark:text-amber-400 shrink-0" />
+              <span>{[cityName, data.address].filter(Boolean).join(" · ")}</span>
+            </div>
+          )}
+          {data.description && <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed line-clamp-3">{data.description}</p>}
+          {data.bestSeason.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {data.bestSeason.map((s) => (
+                <span key={s} className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50">
+                  {seasonEmojis[s]} {s}
+                </span>
+              ))}
+            </div>
+          )}
+          {(data.lat || data.lng) && (
+            <div className="flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500">
+              <Navigation className="h-3 w-3" /><span>{data.lat}, {data.lng}</span>
+            </div>
+          )}
+        </div>
+      </div>
+      <p className="text-xs text-stone-400 dark:text-stone-500 text-center mt-2">{t("admin.previewAutoSync")}</p>
+    </div>
+  );
+}
+
+interface LocationEditClientProps { locationId: string; }
 
 export function LocationEditClient({ locationId }: LocationEditClientProps) {
   const { t } = useI18n(["admin", "common", "locations"]);
@@ -147,7 +201,6 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
       <Footer />
       <StickyActionBar isDirty={form.isDirty} isSaving={form.isSaving} lastSaved={null}
         onSave={form.handleSave} onDiscard={form.handleDiscard} />
-
 
     </div>
   );
