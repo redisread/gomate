@@ -1,26 +1,13 @@
-# gomate P0-D：首页「本地圈子」设计规范 v1.2
-> **状态：已上线（2026-07-26 5efe2a5）**
+# gomate P0-D：首页「本地圈子」设计规范 v1.1（已归档）
+
+> **状态：已被 gomate-p0d-local-circle-spec-v1.2.md 取代（2026-07-2x）**
+
 
 > 需求：@Victor 2026-07-20 DM（继续推进 P0 全套） + Victor 反问「B 方案是否用户体验良好」后确认 B 修正版
 > 依据：`notes/gomate-ux-experience-analysis.md` §三-P0-4
 > 设计者：@Steven
 > 范围：首页 `/`（改造）—— 在 P0-C 推荐位下、Locations 区块上插入「本地圈子」 + 队伍卡「邻居 X 人参加」
 > 交付给：Martin 拆任务
-
-> **v1.2 变更**（2026-07-21 Jeff T1 #175 摸底反馈 msg=df697452 + msg=f56f5749 + msg=6e953cca + Martin msg=7776fa59 拍板）：
->
-> - §3.3 时间字段 `publishedAt` → `createdAt` (schema fact-check, gomate 里发布状态是独立 `status` 列而非时间列)
-> - §3.3 SECONDARY 收藏源: 明确 favorites 泛型 `(entityType='location', entityId)` 定位
-> - §3.3 stories 状态过滤: `status='published'` (draft/published/hidden 三态)
-> - §3.3 activity_posts 状态过滤: `status='visible'` (visible/hidden/deleted 三态, 非 `published`)
-> - §3.3 cancelled **窄义**: 仅 PRIMARY 层 `team_members` 排除 cancelled teams, 其他 3 源不 join teams (业务语义独立)
-> - §3.3 score cap 3.0 语义澄清: **per-(user, location) 聚合后 cap**, 非单信号源 clamp; SQL 建议方案 (subquery raw → MIN → SUM)
-> - §3.3 top 3 tie-breaker 4 档 (Steven msg=06447826 + Martin msg=6d046a06): `visit_score DESC → visitor_count DESC → MAX(signal_ts) DESC → location_id ASC`; `signal_ts` = 任一信号源时间字段 (PRIMARY=`teams.end_time`, 其他=`createdAt`), 每行 signal 自带列, 外层 MAX 聚合
-> - §3.5 复合索引清单更新: 2 已存在 + 3 新增 (Martin msg=82a5ffff 拍板: `teams(status, end_time)` + `user_favorites(entity_type, entity_id, created_at)` + `activity_posts(location_id, created_at)` 服务现有 route; **撤销** `stories(location_id, status, created_at)` — 本 SQL 前缀不匹配, 未来 P1 地点故事列表上线再补 0017)
-> - §3.5 ANALYZE 部署 SOP: 不入 migration, 运维 checklist 手动跑 (数据大增长后重跑)
-> - §4.2 **邻居 tm.status='approved' only** (不含 pending/rejected/left/removed)
-> - §4.2 **邻居 pool 与地点 pool 不同源**: 地点 pool 按 `locations.cityId` 过滤, 邻居 pool 按 `users.cityId` 过滤 (team.locationId 不限, 跨城行为允许)
-> - §8.1 依赖表: users.city 状态 done, 时间列对齐 createdAt
 
 > **v1.1 变更**（2026-07-20 Martin CR PR #393）：
 >
@@ -109,68 +96,13 @@
 | 来源                                    | 权重    | 条件                                                                                                                            |
 | --------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | **PRIMARY**：已结束队伍的 approved 成员 | **1.0** | `team_members.status='approved'` AND `teams.endTime < now()` AND `teams.endTime > now() - 7d` AND `teams.status != 'cancelled'` |
-| **SECONDARY**：收藏                     | **0.1** | `user_favorites.entityType='location'` AND `user_favorites.entityId` 匹配 AND `user_favorites.createdAt > now() - 7d`           |
-| **SUPPLEMENTARY**：故事                 | **1.5** | `stories.createdAt > now() - 7d` AND `stories.status='published'` AND `stories.locationId` 匹配                                 |
-| **SUPPLEMENTARY**：活动动态             | **1.0** | `activity_posts.createdAt > now() - 7d` AND `activity_posts.status='visible'` AND `activity_posts.locationId` 匹配              |
-
-> **v1.2 note (2026-07-21, Jeff T1 摸底后修正)**:
->
-> - **时间字段**以 schema 现状 `createdAt` 为准 (spec 初稿的 `publishedAt` 是笔误; gomate schema 里发布状态是独立 `status` 列, 不是时间字段)
-> - **Favorites 泛型定位**: `(entityType='location', entityId)`
-> - **状态过滤按 schema 各自枚举**: stories `status='published'` (draft/published/hidden 三态), activity_posts `status='visible'` (visible/hidden/deleted 三态, deleted=软删/hidden=管理员隐藏皆不计入信号)
-> - **cancelled 窄义**: 仅 PRIMARY 层 `team_members` 排除 `teams.status='cancelled'`, 其他 3 源不 join teams 反查 cancelled (stories/activity_posts 业务语义独立于 team 存在; activity_posts 虽有 teamId 但业务上 cancelled team 不会有活动后分享, 可加数据 assertion 验证「无 activity_posts 挂 cancelled team」)
+| **SECONDARY**：收藏                     | **0.1** | `user_favorites.createdAt > now() - 7d` AND location_id 匹配                                                                    |
+| **SUPPLEMENTARY**：故事                 | **1.5** | `stories.publishedAt > now() - 7d` AND status='published' AND location_id 匹配                                                  |
+| **SUPPLEMENTARY**：活动动态             | **1.0** | `activity_posts.publishedAt > now() - 7d` AND location_id 匹配                                                                  |
 
 **最终 visit_score = sum(信号 × 权重)**，按 score 排序取 top 3。
 
-> **v1.2 tie-breaker 4 档 (Steven msg=06447826 起手 + Martin msg=6d046a06 clarify)**: `visit_score` 相同时的 top 3 排序:
->
-> 1. **一档**: `visitor_count DESC` (`COUNT(DISTINCT user_id)`, 不同真人数越多越活跃)
-> 2. **二档**: `MAX(signal_ts) DESC` — 见下 signal_ts 定义
-> 3. **三档**: `location_id ASC` (稳定字典序兜底, 保证 cache 30min 内同 key 结果确定性)
->
-> **signal_ts 定义 (Martin msg=6d046a06 采纳 A 方案)**: 任一信号源的时间字段, 每行信号自带 `signal_ts` 列, 外层聚合 `MAX`:
->
-> - PRIMARY: `teams.end_time`
-> - SECONDARY: `user_favorites.created_at`
-> - SUPPLEMENTARY story: `stories.created_at`
-> - SUPPLEMENTARY activity_post: `activity_posts.created_at`
->
-> **SQL 结构** (signals CTE 每行加 `signal_ts` 列, MAX 提到最外层 location_agg, 避开 capped CTE 聚合掉时间戳):
->
-> ```sql
-> -- signals CTE
-> SELECT user_id, location_id, 1.0 AS weight, t.end_time AS signal_ts FROM team_members tm JOIN teams t ... -- PRIMARY
-> UNION ALL
-> SELECT user_id, entity_id AS location_id, 0.1, created_at AS signal_ts FROM user_favorites WHERE entity_type='location' ... -- SECONDARY
-> UNION ALL
-> SELECT author_id AS user_id, location_id, 1.5, created_at AS signal_ts FROM stories WHERE status='published' ... -- SUP story
-> UNION ALL
-> SELECT author_id AS user_id, location_id, 1.0, created_at AS signal_ts FROM activity_posts WHERE status='visible' ... -- SUP activity_post
->
-> -- location_agg (跳过 capped CTE 或与 capped 并列; MAX 对 cap 无感, 语义等价)
-> SELECT location_id,
->        SUM(contribution) AS visit_score,
->        COUNT(DISTINCT user_id) AS visitor_count,
->        MAX(signal_ts) AS latest_signal_ts
-> FROM capped_or_signals
-> GROUP BY location_id
-> ORDER BY visit_score DESC, visitor_count DESC, latest_signal_ts DESC, location_id ASC
-> LIMIT 3
-> ```
->
-> **实现细节 (Jeff 二选一, 语义等价)**:
->
-> - 方案 A: 把 `signal_ts` 从 signals 直接聚合到最外层 (跳过 capped, capped 只算 score)
-> - 方案 B: capped CTE 里 `MAX(signal_ts)` 一并保留 (per-user-location 的最新), 外层再 `MAX` 聚合
-> - 拍板: A 更简洁 (cap 只是 score 的行为, 与时间戳解耦)
->
-> **Cache key 一致性**: tie-breaker 4 档全定 → 同 `cityId` 30min TTL 内 top 3 顺序完全确定, cache miss 重算不飘.
->
-> 不用 `location.createdAt`/`location.name` 作 tie-breaker (与信号活跃度无关).
-
 **v1.1 防刷分**：单一用户对单个 location 的总 score 上限 **3.0**（防止单 user 发多篇故事 → 1 人贡献 5 × 1.5 = 7.5 score 顶替 7 个 approved 成员）
-
-> **v1.2 note (2026-07-21)**: cap 语义是 **per-(user, location) 聚合后 cap**, 不是单信号源 clamp. 单 user 在同一 location 撞满 PRIMARY (1.0) + SECONDARY (0.1) + SUPPLEMENTARY 故事 (1.5) + SUPPLEMENTARY 动态 (1.0) = 3.6 → cap 到 3.0 计入该 location 的 visit_score. SQL 建议: subquery 算每 (user, location) raw score → `MIN(raw, 3.0)` → 外层 SUM 得 location visit_score.
 
 **关键修正**（§三 提到）：
 
@@ -212,20 +144,12 @@
 ### 3.5 性能
 
 - 查询：**v1.1 单 SQL UNION + GROUP BY + JOIN cities + JOIN users 取 city**，预计 100ms 内
-- **v1.2 复合索引清单** (2 已存在 + 3 新增, Martin msg=82a5ffff 拍板):
-  - `team_members(team_id, status)` — **已存在** (`teamStatusIdx`)
-  - `team_members(user_id)` — **已存在** (`userIdx`)
-  - `teams(status, end_time)` — **新增** (用于「7 天内已结束 non-cancelled」PRIMARY 过滤 + 邻居 SQL)
-  - `user_favorites(entity_type, entity_id, created_at)` — **新增** (泛型 favorites 前缀 entity_type 定位 location)
-  - `activity_posts(location_id, created_at)` — **新增** (服务 P0-A 现有 `GET /locations/:id/activity-posts` route, 非本 SQL 命中; 本 SQL 里 `activity_posts` 走 status_idx)
-
-> **v1.2 索引撤销 note (Jeff EXPLAIN msg=f207c63c + Martin msg=82a5ffff 拍板)**:
->
-> - **撤销 `stories(location_id, status, created_at)` 3 列索引**: 本 SQL 里 stories 子查询 location_id 非 predicate (被 SELECT 出而非过滤), 走已存的 `stories_status_created_at_idx (status, created_at)` 已够. 现有 `api/src/routes/stories.ts` 的 `GROUP BY location_id` 查询前缀是 `IS NOT NULL` 而非 `=?`, 3 列索引边际收益不足以抵消 write 成本. **未来 P1 地点详情页故事列表上线时** (`WHERE location_id=? AND status='published' ORDER BY created_at DESC`) 补一条 0017 migration
-> - **保留 `activity_posts(location_id, created_at)`**: 服务 P0-A 现有 `GET /locations/:id/activity-posts` (SQL `WHERE locationId=? AND status='visible' ORDER BY createdAt DESC LIMIT 6`), 非未来场景 — 当前生产就在用, 撤了是性能倒退
-> - **ANALYZE 不入 0016 migration** (Martin Q1): migration 幂等 DDL / ANALYZE 是运行时统计采样, 冲突. 部署 SOP: `wrangler d1 migrations apply` → `wrangler d1 execute --command 'ANALYZE'`. 数据大增长后 (P0-D 上线 +1 周 / 每季度) 重跑, 落运维 checklist
-> - **PRIMARY `SCAN tm` 部署后验证**: ANALYZE 跑完 EXPLAIN 复跑, 若仍 `SCAN tm` 才加 `INDEXED BY teams_status_end_time_idx` hint 兜底
-
+- **v1.1 复合索引清单**：
+  - `team_members(team_id, status)`
+  - `team_members(user_id)`
+  - `stories(location_id, status, published_at)`
+  - `activity_posts(location_id, published_at)`
+  - `user_favorites(location_id, created_at)`
 - **v1.1 EXPLAIN PLAN**：T1 验收必须 `EXPLAIN QUERY PLAN` 走索引扫描
 - 缓存：city-keyed，TTL 30 分钟（数据不需要实时）
 - **v1.1 cache miss 时一次预算 30 分钟数据**（不是按请求实时算），减少冷启动延迟
@@ -257,14 +181,6 @@
 - 「**深圳邻居 X 人**」副标签，紧跟人数后
 - 「邻居」= 当前用户 cityId 与队伍成员中 ≥ 1 个成员的 `users.city`（P0-A #164 加的字段）匹配
 - X = 实际邻居数（1-3 显示数字，≥4 显示「你的邻居 4+」）
-
-> **v1.2 邻居 pool 语义澄清 (Martin msg=7776fa59 拍板)**:
->
-> - **邻居 tm.status 过滤**: 仅计 `team_members.status='approved'`, **不含 pending/rejected/left/removed**. 语义: 邻居 = 已确认入队的团员, 意向未确认不给用户「邻居 X 人」的心理承诺 (避免 pending 变 rejected 后信任损失)
-> - **邻居 pool 与地点 pool 不同源**:
->   - **地点 pool** (top 3 candidate locations): `locations.cityId = user.cityId` (本地圈范围)
->   - **邻居 pool** (推荐邻居队伍): `users.cityId = target user.cityId` matched via team_members, **team.locationId 不限** (跨城行为允许 — 邻居去外地也是邻居信号, 更有价值)
-> - team 状态过滤: `teams.status IN ('recruiting', 'confirmed')` (未结束未取消), 具体枚举以 schema 现有为准 (recruiting/confirmed/ongoing/ended/cancelled)
 
 ### 4.3 边界
 
@@ -364,15 +280,15 @@ home.teamCard.neighbor.many = "邻居 4+" / "4+ neighbors" / "ご近所 4+"
 
 **P0-D 不直接加新字段**，但**依赖 P0-A #164 加的 `users.city` 字段**：
 
-| 依赖项                                      | 来源                                 | 状态 |
-| ------------------------------------------- | ------------------------------------ | ---- |
-| `users.city`                                | P0-A #164（已 done）                 | ✅   |
-| `team_members.status='approved'` 过滤       | 现有 schema                          | ✅   |
-| `teams.endTime` / `teams.status`            | 现有 schema                          | ✅   |
-| `user_favorites` 泛型 (entityType/entityId) | 现有 schema                          | ✅   |
-| `stories.createdAt` + `stories.status`      | 现有 schema (published/draft/hidden) | ✅   |
-| `activity_posts.createdAt` + `.status`      | 现有 schema (visible/hidden/deleted) | ✅   |
-| `cities` 表 + `locations.cityId`            | 现有 schema                          | ✅   |
+| 依赖项                                | 来源                              | 状态           |
+| ------------------------------------- | --------------------------------- | -------------- |
+| `users.city`                          | P0-A #164（已立项，待 Jeff 实施） | 🟡 in_progress |
+| `team_members.status='approved'` 过滤 | 现有 schema                       | ✅             |
+| `teams.endTime`                       | 现有 schema                       | ✅             |
+| `user_favorites.createdAt`            | 现有 schema                       | ✅             |
+| `stories.publishedAt`                 | 现有 schema                       | ✅             |
+| `activity_posts.publishedAt`          | 现有 schema                       | ✅             |
+| `cities` 表 + `locations.cityId`      | 现有 schema                       | ✅             |
 
 ### 8.2 新 API 端点
 
@@ -456,7 +372,6 @@ Wen 测试用例覆盖：
 10. 移动端响应式（堆叠 + sm 头像）
 11. 数据全空时整块不渲染
 12. 性能：API 响应 ≤ 200ms
-13. **tie-breaker 边界 (v1.2 新增, Martin msg=6d046a06)**: 两 location 同 `visit_score=1.5`、同 `visitor_count=1` (各 1 个 favorite), location A 的 favorite `created_at` 更晚 → top-1 是 A。Jeff seed fixture 覆盖。
 
 ---
 
@@ -482,4 +397,4 @@ P0-D T1 等 P0-A #164 done 才能启动——这是清晰的串行依赖。
 
 ---
 
-_spec v1.2 完成（2026-07-21 Jeff T1 #175 摸底 6 点 + Martin msg=7776fa59 拍板 2 点邻居 pool 语义: createdAt 时间列 / favorites 泛型 / stories.status='published' / activity_posts.status='visible' / cancelled 窄义 / score cap per-(user, location) 聚合后 / 索引 4 新增 / 邻居 tm.status='approved' only / 邻居 pool 与地点 pool 不同源）, v1.1 CR 结论沿用, Jeff T1 SQL 草图按 v1.2 落码._
+_spec v1.1 完成（Martin CR PR #393 pass + Victor 拍板 P0 不做 A/B 测试），等 Victor 对 §5「在行动 vs 去过」措辞策略确认后提 Martin 拆任务。_
