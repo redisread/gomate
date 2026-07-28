@@ -23,6 +23,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm --filter @gomate/api lint
+      - name: Migrations Sync Check
+        run: pnpm --filter @gomate/api check:migrations
       - name: Type Check
         run: pnpm --filter @gomate/api type-check
       - name: Build
