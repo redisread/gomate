@@ -177,5 +177,10 @@
   "readScope": "读取",
   "writeScope": "写入",
   "active": "活跃",
-  "retry": "重试"
+  "retry": "重试",
+  "loadFailed": "加载失败，请稍后重试",
+  "createFailed": "创建失败",
+  "revokeFailed": "撤销失败",
+  "revoke": "撤销",
+  "apiKeyNamePlaceholder": "例如：我的应用"
 }

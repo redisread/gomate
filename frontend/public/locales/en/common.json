@@ -169,7 +169,7 @@
   "copyKey": "Copy Key",
   "copied": "Copied",
   "revokeApiKey": "Revoke API Key?",
-  "revokeApiKeyDesc": "Apps using this key will immediately lose access to gomate data.",
+  "revokeApiKeyDesc": "Apps using this key will immediately lose access to gomate data. This action cannot be undone.",
   "confirmRevoke": "Confirm Revoke",
   "scope": "Scope",
   "comingSoon": "Coming Soon",
@@ -177,5 +177,10 @@
   "readScope": "Read",
   "writeScope": "Write",
   "active": "Active",
-  "retry": "Retry"
+  "retry": "Retry",
+  "loadFailed": "Load failed, please retry",
+  "createFailed": "Create failed",
+  "revokeFailed": "Revoke failed",
+  "revoke": "Revoke",
+  "apiKeyNamePlaceholder": "e.g. My App"
 }

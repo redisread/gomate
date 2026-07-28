@@ -71,13 +71,13 @@ export function ApiKeysClient() {
     try {
       const { data, error: err } = await authClient.apiKey.list({});
       if (err) {
-        setError(err.message || "无法加载 API Key 列表");
+        setError(err.message || t("common.loadFailed"));
         return;
       }
       setKeys((data?.apiKeys ?? data ?? []).filter((k: Record<string, unknown>) => k.enabled !== false));
     } catch (err) {
       console.error("[ApiKeys] load failed:", err);
-      setError("加载失败，请稍后重试");
+      setError(t("common.loadFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +96,7 @@ export function ApiKeysClient() {
         name: newKeyName.trim(),
       });
       if (err) {
-        showToast({ type: "error", message: err.message || "创建失败" });
+        showToast({ type: "error", message: err.message || t("common.createFailed") });
         return;
       }
       if (data) {
@@ -107,7 +107,7 @@ export function ApiKeysClient() {
       }
     } catch (err) {
       console.error("[ApiKeys] create failed:", err);
-      showToast({ type: "error", message: "创建失败，请稍后重试" });
+      showToast({ type: "error", message: t("common.createFailed") });
     } finally {
       setCreating(false);
     }
@@ -119,13 +119,13 @@ export function ApiKeysClient() {
     try {
       const { error: err } = await authClient.apiKey.delete({ keyId });
       if (err) {
-        showToast({ type: "error", message: err.message || "撤销失败" });
+        showToast({ type: "error", message: err.message || t("common.revokeFailed") });
         return;
       }
       setKeys((prev) => prev.filter((k) => k.id !== keyId));
       showToast({ type: "success", message: t("common.apiKeyRevoked") || "API Key 已撤销" });
     } catch {
-      showToast({ type: "error", message: "撤销失败" });
+      showToast({ type: "error", message: t("common.revokeFailed") });
     } finally {
       setRevoking(false);
       setRevokingId(null);
@@ -243,7 +243,7 @@ export function ApiKeysClient() {
                   type="button"
                   onClick={() => setRevokingId(key.id)}
                   className="flex-shrink-0 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-stone-400 hover:text-red-500 transition-colors"
-                  title="撤销"
+                  title={t("common.revoke")}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -274,7 +274,7 @@ export function ApiKeysClient() {
                   type="text"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
-                  placeholder="例如：我的应用"
+                  placeholder={t("common.apiKeyNamePlaceholder")}
                   maxLength={50}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />

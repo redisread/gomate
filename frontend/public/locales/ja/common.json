@@ -169,7 +169,7 @@
   "copyKey": "Key をコピー",
   "copied": "コピーしました",
   "revokeApiKey": "API Key を取り消しますか？",
-  "revokeApiKeyDesc": "この Key を使用しているアプリは直ちにアクセスできなくなります。",
+  "revokeApiKeyDesc": "この Key を使用しているアプリは直ちにアクセスできなくなります。この操作は元に戻せません。",
   "confirmRevoke": "取り消しを確認",
   "scope": "権限範囲",
   "comingSoon": "近日公開",
@@ -177,5 +177,10 @@
   "readScope": "読み取り",
   "writeScope": "書き込み",
   "active": "アクティブ",
-  "retry": "再試行"
+  "retry": "再試行",
+  "loadFailed": "読み込みに失敗しました",
+  "createFailed": "作成に失敗しました",
+  "revokeFailed": "取り消しに失敗しました",
+  "revoke": "取り消し",
+  "apiKeyNamePlaceholder": "例：マイアプリ"
 }
