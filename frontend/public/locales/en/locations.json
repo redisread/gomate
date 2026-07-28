@@ -25,14 +25,12 @@
   "ctaTrust2": "Quick to gather",
   "ctaTrust3": "Safe & reliable",
   "contactLink": "Or recommend a new location →",
-  "waypoints": "Waypoints",
   "tips": "Tips",
   "safetyNotice": "Safety Notice",
   "prevImage": "Previous Image",
   "nextImage": "Next Image",
   "paginationPrev": "Previous page",
   "paginationNext": "Next page",
-  "coordinatesHint": "Coordinates auto-filled via address search",
   "allCities": "All Cities",
   "cityFilter": "Filter by City",
   "heroTagline": "Cafes, city walks, day trips… find someone to go with",
@@ -87,6 +85,5 @@
       "label": "Winter",
       "months": "Dec-Feb"
     }
-  },
-  "pageSubtitle": "Cafes, parks, mountains, coastlines — find your next destination"
+  }
 }

@@ -1,10 +1,7 @@
 {
   "ongoingTab": "In Progress",
-  "historyTab": "Past Activities",
   "emptyOngoing": "No activities in progress",
   "emptyOngoingDesc": "This user doesn't have any ongoing activities",
-  "emptyHistory": "No past activities",
-  "emptyHistoryDesc": "This user hasn't recorded any activities yet",
   "viewTeamBtn": "View Team",
   "memberCount": "people",
   "teamDateLabel": "Departure Date",
