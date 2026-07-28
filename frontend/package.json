@@ -19,6 +19,7 @@
   "dependencies": {
     "@astrojs/cloudflare": "^13.7.0",
     "@astrojs/react": "^5.0.7",
+    "@better-auth/api-key": "^1.6.25",
     "@gomate/types": "workspace:*",
     "@nanostores/persistent": "^1.3.3",
     "@nanostores/react": "^1.1.0",
@@ -31,10 +32,10 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
-    "vditor": "^3.11.2",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^2.5.0",
     "tailwindcss": "^4.0.0",
+    "vditor": "^3.11.2",
     "zod": "^3.23.0"
   },
   "devDependencies": {

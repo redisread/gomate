@@ -1,7 +1,7 @@
 /**
  * P1b API Key 管理 UI（#210）
  *
- * 对接 better-auth api-key 插件端点（/auth/api-key/*），
+ * 使用 authClient.apiKey SDK 方法对接 better-auth api-key 插件，
  * 不依赖 P1a /v1/ 端点。
  */
 
@@ -18,56 +18,18 @@ import {
   AlertCircle,
   X,
 } from "lucide-react";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
 import { authClient } from "@/lib/auth-client";
 
-/** authClient.$fetch 类型声明 */
-interface AuthClientWithFetch {
-  $fetch: <T = unknown>(url: string, options?: RequestInit) => Promise<T>;
-}
-const client = authClient as unknown as AuthClientWithFetch;
-
-// ==================== Types ====================
-
-interface ApiKey {
-  id: string;
-  name: string;
-  prefix: string;
-  /** 完整 key 值，仅在创建时返回 */
-  key?: string;
-  scope: string[];
-  createdAt: string;
-  lastUsedAt: string | null;
-  status: "active" | "revoked";
-}
-
-interface ApiKeyListResponse {
-  success: boolean;
-  keys: ApiKey[];
-}
-
-interface ApiKeyCreateResponse {
-  success: boolean;
-  key: ApiKey;
-}
-
-interface ApiKeyRevokeResponse {
-  success: boolean;
-}
-
-// ==================== Constants ====================
 
 /** 每用户 Key 上限（与后端 P1a 配置对齐） */
 const USER_KEY_LIMIT = 10;
 
-// ==================== Helpers ====================
-
-function formatDate(iso: string): string {
+function formatDate(date: Date | string | undefined | null): string {
+  if (!date) return "-";
   try {
-    const d = new Date(iso);
+    const d = new Date(date);
     return d.toLocaleDateString("zh-CN", {
       year: "numeric",
       month: "2-digit",
@@ -76,17 +38,16 @@ function formatDate(iso: string): string {
       minute: "2-digit",
     });
   } catch {
-    return iso;
+    return String(date ?? "-");
   }
 }
 
-// ==================== Component ====================
-
 export function ApiKeysClient() {
-
+  const { t } = useI18n(["common"]);
   const { show: showToast } = useToast();
 
-  const [keys, setKeys] = React.useState<ApiKey[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [keys, setKeys] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -95,7 +56,7 @@ export function ApiKeysClient() {
   const [newKeyName, setNewKeyName] = React.useState("");
   const [creating, setCreating] = React.useState(false);
 
-  // Success state - showing the key value once
+  // Success state
   const [createdKey, setCreatedKey] = React.useState<{ name: string; value: string } | null>(null);
   const [copied, setCopied] = React.useState(false);
 
@@ -108,12 +69,12 @@ export function ApiKeysClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const json = await client.$fetch<ApiKeyListResponse>("/auth/api-key/list", { method: "GET" });
-      if (json.success) {
-        setKeys(json.keys.filter((k) => k.status === "active"));
-      } else {
-        setError("无法加载 API Key 列表");
+      const { data, error: err } = await authClient.apiKey.list({});
+      if (err) {
+        setError(err.message || "无法加载 API Key 列表");
+        return;
       }
+      setKeys((data?.apiKeys ?? data ?? []).filter((k: Record<string, unknown>) => k.enabled !== false));
     } catch (err) {
       console.error("[ApiKeys] load failed:", err);
       setError("加载失败，请稍后重试");
@@ -131,22 +92,18 @@ export function ApiKeysClient() {
     if (!newKeyName.trim()) return;
     setCreating(true);
     try {
-      const scope: string[] = [];
-      // P1b 只开放读 scope
-      scope.push("read");
-      const json = await client.$fetch<ApiKeyCreateResponse>("/auth/api-key/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newKeyName.trim(), scope }),
+      const { data, error: err } = await authClient.apiKey.create({
+        name: newKeyName.trim(),
       });
-      if (json.success && json.key) {
-        setCreatedKey({ name: json.key.name, value: json.key.key ?? "" });
+      if (err) {
+        showToast({ type: "error", message: err.message || "创建失败" });
+        return;
+      }
+      if (data) {
+        setCreatedKey({ name: data.name ?? "", value: data.key ?? "" });
         setShowCreate(false);
         setNewKeyName("");
-        // Reload key list
         await loadKeys();
-      } else {
-        showToast({ type: "error", message: "创建失败" });
       }
     } catch (err) {
       console.error("[ApiKeys] create failed:", err);
@@ -156,21 +113,17 @@ export function ApiKeysClient() {
     }
   };
 
-  // Revoke key
-  const handleRevoke = async (id: string) => {
+  // Delete key
+  const handleDelete = async (keyId: string) => {
     setRevoking(true);
     try {
-      const json = await client.$fetch<ApiKeyRevokeResponse>("/auth/api-key/revoke", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (json.success) {
-        setKeys((prev) => prev.filter((k) => k.id !== id));
-        showToast({ type: "success", message: "API Key 已撤销" });
-      } else {
-        showToast({ type: "error", message: "撤销失败" });
+      const { error: err } = await authClient.apiKey.delete({ keyId });
+      if (err) {
+        showToast({ type: "error", message: err.message || "撤销失败" });
+        return;
       }
+      setKeys((prev) => prev.filter((k) => k.id !== keyId));
+      showToast({ type: "success", message: t("common.apiKeyRevoked") || "API Key 已撤销" });
     } catch {
       showToast({ type: "error", message: "撤销失败" });
     } finally {
@@ -185,7 +138,6 @@ export function ApiKeysClient() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard API not available, silently fail
       console.warn("[ApiKeys] clipboard write failed");
     }
   };
@@ -196,16 +148,12 @@ export function ApiKeysClient() {
 
   return (
     <main className="min-h-screen bg-[var(--anthropic-bg)]">
-      <Navbar />
-
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">API Key 管理</h1>
-            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-              管理你的 API Key，用于第三方应用访问 gomate 数据
-            </p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">{t("common.apiKeys")}</h1>
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t("common.apiKeysDesc")}</p>
           </div>
           <button
             type="button"
@@ -214,7 +162,7 @@ export function ApiKeysClient() {
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-stone-300 dark:disabled:bg-stone-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:cursor-not-allowed"
           >
             <Plus className="h-4 w-4" />
-            创建 Key
+            {t("common.createKey")}
           </button>
         </div>
 
@@ -234,7 +182,7 @@ export function ApiKeysClient() {
               {error}
             </span>
             <button type="button" onClick={() => void loadKeys()} className="underline hover:no-underline">
-              重试
+              {t("common.retry")}
             </button>
           </div>
         )}
@@ -254,9 +202,9 @@ export function ApiKeysClient() {
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-50 dark:bg-amber-950/30 mb-4">
               <Key className="h-6 w-6 text-amber-600 dark:text-amber-400" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">还没有 API Key</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t("common.noApiKeys")}</h3>
             <p className="text-sm text-stone-500 dark:text-stone-400 mb-6 max-w-md mx-auto">
-              API Key 可以让你的第三方应用安全地访问 gomate 数据。创建第一个 Key 即可开始集成。
+              {t("common.apiKeysEmptyDesc")}
             </p>
             <button
               type="button"
@@ -264,7 +212,7 @@ export function ApiKeysClient() {
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-semibold transition-colors"
             >
               <Plus className="h-4 w-4" />
-              创建第一个 Key
+              {t("common.createFirstKey")}
             </button>
           </div>
         )}
@@ -285,9 +233,9 @@ export function ApiKeysClient() {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
                     <span>{key.prefix}...</span>
                     <span>创建于 {formatDate(key.createdAt)}</span>
-                    {key.lastUsedAt && <span>最后使用 {formatDate(key.lastUsedAt)}</span>}
+                    {key.lastRequest && <span>最后使用 {formatDate(key.lastRequest)}</span>}
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 font-medium">
-                      活跃
+                      {t("common.active")}
                     </span>
                   </div>
                 </div>
@@ -305,14 +253,12 @@ export function ApiKeysClient() {
         )}
       </div>
 
-      <Footer />
-
       {/* ─── Create Modal ─── */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-foreground">创建 API Key</h2>
+              <h2 className="text-lg font-bold text-foreground">{t("common.createApiKey")}</h2>
               <button type="button" onClick={() => { setShowCreate(false); setNewKeyName(""); }} className="p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors">
                 <X className="h-5 w-5 text-stone-400" />
               </button>
@@ -322,7 +268,7 @@ export function ApiKeysClient() {
               {/* Name */}
               <div>
                 <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
-                  名称 <span className="text-red-400">*</span>
+                  {t("common.name")} <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -334,19 +280,19 @@ export function ApiKeysClient() {
                 />
               </div>
 
-              {/* Scope — P1b 只开放读 scope，写 scope UI 预留 */}
+              {/* Scope — P1b 只开放读 scope */}
               <div>
-                <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">权限范围</label>
+                <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">{t("common.scope")}</label>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 p-3 rounded-xl border border-stone-200 dark:border-zinc-700 bg-stone-50/60 dark:bg-zinc-800/40">
                     <Check className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm text-foreground">读取</span>
-                    <span className="text-xs text-stone-400 ml-auto">默认开启</span>
+                    <span className="text-sm text-foreground">{t("common.readScope")}</span>
+                    <span className="text-xs text-stone-400 ml-auto">{t("common.defaultEnabled")}</span>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-xl border border-stone-100 dark:border-zinc-800 opacity-50">
                     <X className="h-4 w-4 text-stone-300" />
-                    <span className="text-sm text-stone-400">写入</span>
-                    <span className="text-xs text-stone-400 ml-auto">即将开放</span>
+                    <span className="text-sm text-stone-400">{t("common.writeScope")}</span>
+                    <span className="text-xs text-stone-400 ml-auto">{t("common.comingSoon")}</span>
                   </div>
                 </div>
               </div>
@@ -354,7 +300,7 @@ export function ApiKeysClient() {
 
             <div className="flex gap-3 mt-6">
               <button type="button" onClick={() => { setShowCreate(false); setNewKeyName(""); }} className="flex-1 py-2.5 rounded-xl border border-stone-200 dark:border-zinc-700 text-sm font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-zinc-800 transition-colors">
-                取消
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -363,7 +309,7 @@ export function ApiKeysClient() {
                 className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:bg-stone-300 dark:disabled:bg-zinc-700 text-white text-sm font-semibold transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {creating && <Loader2 className="h-4 w-4 animate-spin" />}
-                创建
+                {t("common.create")}
               </button>
             </div>
           </div>
@@ -377,12 +323,12 @@ export function ApiKeysClient() {
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center">
               <Key className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
-            <h2 className="text-lg font-bold text-center text-foreground mb-2">API Key 已创建</h2>
+            <h2 className="text-lg font-bold text-center text-foreground mb-2">{t("common.apiKeyCreated")}</h2>
             <p className="text-sm text-center text-stone-500 dark:text-stone-400 mb-1">
               "{createdKey.name}" 的密钥如下
             </p>
             <p className="text-xs text-center text-amber-600 dark:text-amber-400 mb-4 font-medium">
-              ⚠ 关闭后不再可见。请立即复制并妥善保存。
+              {t("common.apiKeyOnceWarning")}
             </p>
 
             <div className="bg-stone-50 dark:bg-zinc-800 rounded-xl border border-stone-200 dark:border-zinc-700 p-4 mb-4">
@@ -397,7 +343,7 @@ export function ApiKeysClient() {
               className="w-full py-2.5 rounded-xl border border-stone-200 dark:border-zinc-700 text-sm font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 mb-2"
             >
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-              {copied ? "已复制" : "复制密钥"}
+              {copied ? t("common.copied") : t("common.copyKey")}
             </button>
 
             <button
@@ -405,7 +351,7 @@ export function ApiKeysClient() {
               onClick={() => setCreatedKey(null)}
               className="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-colors"
             >
-              关闭
+              {t("common.close")}
             </button>
           </div>
         </div>
@@ -418,22 +364,20 @@ export function ApiKeysClient() {
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center">
               <AlertCircle className="h-6 w-6 text-red-500" />
             </div>
-            <h2 className="text-lg font-bold text-center text-foreground mb-2">撤销 API Key？</h2>
-            <p className="text-sm text-center text-stone-500 dark:text-stone-400 mb-6">
-              使用此 Key 的应用将立即无法访问 gomate 数据。此操作不可撤销。
-            </p>
+            <h2 className="text-lg font-bold text-center text-foreground mb-2">{t("common.revokeApiKey")}</h2>
+            <p className="text-sm text-center text-stone-500 dark:text-stone-400 mb-6">{t("common.revokeApiKeyDesc")}</p>
             <div className="flex gap-3">
               <button type="button" onClick={() => setRevokingId(null)} className="flex-1 py-2.5 rounded-xl border border-stone-200 dark:border-zinc-700 text-sm font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-zinc-800 transition-colors">
-                取消
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
-                onClick={() => void handleRevoke(revokingId)}
+                onClick={() => void handleDelete(revokingId)}
                 disabled={revoking}
                 className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {revoking && <Loader2 className="h-4 w-4 animate-spin" />}
-                确认撤销
+                {t("common.confirmRevoke")}
               </button>
             </div>
           </div>
