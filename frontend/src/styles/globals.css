@@ -137,9 +137,7 @@
   --animate-scale-in:       scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-slide-in-right: slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-float:          float 3s ease-in-out infinite;
-  --animate-pulse-soft:     pulse-soft 2s ease-in-out infinite;
   --animate-heartbeat:      heartbeat 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  --animate-success-bounce: success-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   --animate-overlay-in:     overlay-in 150ms ease-out forwards;
   --animate-overlay-out:    overlay-out 150ms ease-in forwards;
   --animate-panel-in:       panel-in 200ms ease-out forwards;
@@ -195,10 +193,6 @@
     50%       { transform: translateY(-4px); }
   }
 
-  @keyframes pulse-soft {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.5; }
-  }
 
 
 
@@ -225,7 +219,6 @@
   --animate-bounce-in: bounce-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 
   /* 清空按钮旋转消失 */
-  --animate-spin-out: spin-out 0.2s ease-in forwards;
   @keyframes spin-out {
     from { transform: rotate(0deg) scale(1); opacity: 1; }
     to   { transform: rotate(90deg) scale(0.6); opacity: 0; }
@@ -235,14 +228,12 @@
   --animate-spin-in: spin-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 
   /* 卡片 overlay 从底部滑入 */
-  --animate-slide-up-in: slide-up-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   @keyframes slide-up-in {
     from { transform: translateY(100%); opacity: 0; }
     to   { transform: translateY(0); opacity: 1; }
   }
 
   /* section 进入动画（CSS 变量版） */
-  --animate-section-in: section-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
   /* 状态切换：fade + scale 入场 */
   @keyframes fadeScaleIn {
