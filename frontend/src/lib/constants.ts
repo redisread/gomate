@@ -65,59 +65,6 @@ export const DIFFICULTY_OPTIONS = Object.entries(DIFFICULTY_CONFIG).map(([id, co
   activeColor: config.activeColor,
 }));
 
-// 队伍状态配置
-export const STATUS_CONFIG: Record<
-  TeamStatus,
-  {
-    label: string;
-    dot: string;
-    pill: { bg: string; color: string };
-    bar: string;
-    glow: string;
-    pulse: boolean;
-  }
-> = {
-  recruiting: {
-    label: "招募中",
-    dot: "#16a34a",
-    pill: { bg: "rgba(22,163,74,0.10)", color: "#15803d" },
-    bar: "linear-gradient(90deg, #D97706 0%, #FCD34D 100%)",
-    glow: "rgba(217,119,6,0.18)",
-    pulse: true,
-  },
-  full: {
-    label: "已满员",
-    dot: "#ef4444",
-    pill: { bg: "rgba(239,68,68,0.10)", color: "#b91c1c" },
-    bar: "linear-gradient(90deg, #ef4444 0%, #f97316 100%)",
-    glow: "rgba(239,68,68,0.18)",
-    pulse: false,
-  },
-  formed: {
-    label: "已成行",
-    dot: "#92400E",
-    pill: { bg: "rgba(146,64,14,0.10)", color: "#92400E" },
-    bar: "linear-gradient(90deg, #92400E 0%, #D97706 100%)",
-    glow: "rgba(146,64,14,0.15)",
-    pulse: false,
-  },
-  cancelled: {
-    label: "已取消",
-    dot: "#9ca3af",
-    pill: { bg: "rgba(156,163,175,0.10)", color: "#6b7280" },
-    bar: "linear-gradient(90deg, #9ca3af 0%, #d1d5db 100%)",
-    glow: "rgba(156,163,175,0.10)",
-    pulse: false,
-  },
-  completed: {
-    label: "已完成",
-    dot: "#6b7280",
-    pill: { bg: "rgba(107,114,128,0.10)", color: "#4b5563" },
-    bar: "linear-gradient(90deg, #6b7280 0%, #9ca3af 100%)",
-    glow: "rgba(107,114,128,0.10)",
-    pulse: false,
-  },
-};
 
 // 卡片渐变色池（用于无封面时的占位）
 export const CARD_GRADIENTS = [
