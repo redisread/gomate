@@ -54,7 +54,6 @@
     "avatarStack": {
       "tooltip": "过去 7 天参与过此地点行动"
     },
-    "empty": "这周本城还没人行动",
     "neighborTeams": {
       "title": "你的邻居参加了这些队伍"
     },
