@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { nanoid } from "nanoid";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { apiKey } from "@better-auth/api-key";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { sendPasswordResetEmail, sendWelcomeEmail } from "./email";
@@ -181,5 +182,6 @@ export function createAuth(env: Env) {
       "https://gomate.live",
       "https://api.gomate.live",
     ],
+    plugins: [apiKey()],
   });
 }
