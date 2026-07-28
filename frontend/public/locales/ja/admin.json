@@ -83,7 +83,6 @@
   "formImages": "画像リスト",
   "formLocationTitle": "位置情報",
   "formLocationType": "スポットタイプ",
-  "formMapPicker": "地図で選択",
   "formName": "名前",
   "formNameRequired": "名前 *",
   "formParkingHint": "「不明」= 情報未入力（詳細ページで駐車場モジュール非表示）",

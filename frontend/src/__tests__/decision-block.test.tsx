@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DecisionBlock } from "../components/features/location-detail/decision-block";
-import type { Location, TransportationResponse } from "../lib/types";
+import type { Location } from "../lib/types";
 
 /**
  * task #170（P0-B T3）DecisionBlock 状态机测试
@@ -128,7 +128,7 @@ describe("DecisionBlock", () => {
 ;
 
   it("amapAllFailed → 只渲染 fallbackHint + openInMap", async () => {
-    const payload: TransportationResponse = {
+    const payload = {
       success: true,
       locationId: "loc-1",
       transportation: {
