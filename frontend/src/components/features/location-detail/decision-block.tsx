@@ -73,8 +73,8 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
         {hasCoords && (() => {
           const transportMapUrl = buildFallbackMapUrl(location);
           return (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+            <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5 space-y-2">
+              <p className="mb-3 text-[11px] font-bold uppercase text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
                 <Navigation className="h-3.5 w-3.5" />
                 {t("locationDetail.transport.title")}
               </p>
