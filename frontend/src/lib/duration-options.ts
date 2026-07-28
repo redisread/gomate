@@ -28,7 +28,7 @@ export const DURATION_OPTION_DEFS: ReadonlyArray<readonly [number, string]> = [
 ];
 
 /** 下拉选项值（分钟）——推荐值 snap 的目标集，由 DURATION_OPTION_DEFS 派生 */
-export const DURATION_OPTION_VALUES = DURATION_OPTION_DEFS.map(([v]) => v);
+const DURATION_OPTION_VALUES = DURATION_OPTION_DEFS.map(([v]) => v);
 
 /** snap 到时间上最接近的选项，并列时取较长一档 */
 export function snapToDurationOption(minutes: number): number {
