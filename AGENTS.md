@@ -194,6 +194,7 @@ main = "@astrojs/cloudflare/entrypoints/server"
 - 未明确要求时，不要重新引入 Cloudflare Images binding。
 - 请求合并前，提供 PR 链接、变更范围、本地验证命令和结果、GitHub Checks 状态、部署影响、风险变更的回滚说明。
 - 合并后验证本次变更触达的生产路径。构建成功不等于生产验证完成。
+- **D1 迁移与 prod 变更规约**：见 [docs/prod-change-policy.md](./docs/prod-change-policy.md)（DDL 只走 migration、迁移幂等、双账本同步 CI 门禁、prod 变更声明制），所有实现者必读。
 
 ## 已知坑点
 
