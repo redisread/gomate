@@ -597,3 +597,42 @@ export const shareEvents = sqliteTable(
 
 export type ShareEvent = typeof shareEvents.$inferSelect;
 export type NewShareEvent = typeof shareEvents.$inferInsert;
+
+// ==================== Better Auth API Key 表（@better-auth/api-key 插件）====================
+// 表由 0017_add_api_keys.sql 创建（IF NOT EXISTS 幂等），Drizzle schema 供 drizzleAdapter 使用。
+// config_id 列由 better-auth apiKey 插件内部自动填充（单配置部署无需命名 configId）
+export const apiKeys = sqliteTable(
+  "apikey",
+  {
+    id: text("id").primaryKey(),
+    configId: text("config_id").notNull(),
+    name: text("name"),
+    start: text("start"),
+    referenceId: text("reference_id").notNull(), // userId
+    key: text("key").notNull(), // hashed
+    prefix: text("prefix"),
+    refillInterval: integer("refill_interval"),
+    refillAmount: integer("refill_amount"),
+    lastRefillAt: integer("last_refill_at", { mode: "timestamp_ms" }),
+    enabled: integer("enabled", { mode: "boolean" }).default(true).notNull(),
+    rateLimitEnabled: integer("rate_limit_enabled", { mode: "boolean" }).default(true).notNull(),
+    rateLimitTimeWindow: integer("rate_limit_time_window"),
+    rateLimitMax: integer("rate_limit_max"),
+    requestCount: integer("request_count").default(0).notNull(),
+    remaining: integer("remaining"),
+    lastRequest: integer("last_request", { mode: "timestamp_ms" }),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+    permissions: text("permissions"), // JSON string
+    metadata: text("metadata"), // JSON string
+  },
+  (table) => ({
+    configIdIdx: index("apikey_config_id_idx").on(table.configId),
+    referenceIdIdx: index("apikey_reference_id_idx").on(table.referenceId),
+    keyIdx: index("apikey_key_idx").on(table.key),
+  })
+);
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;
