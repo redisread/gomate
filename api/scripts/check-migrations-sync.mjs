@@ -61,11 +61,41 @@ for (let i = 0; i < idxes.length; i++) {
   }
 }
 
+// 6. schema.ts ↔ migration 一致性（规则 3 扩展，2026-07-29）
+// 背景：0017 在 D1 建了 apikey 表但 schema.ts 无定义，adapter 运行时 500。
+// drizzle-kit check 只抓「schema 超前 migration」，抓不到反向，故自研：
+// 按迁移文件顺序依次应用 CREATE/DROP/RENAME 事件算出 live 表集合，
+// 校验每张 live 表在 schema.ts 均有 sqliteTable 定义。
+const schemaPath = join(apiRoot, "src", "db", "schema.ts");
+const schemaSrc = readFileSync(schemaPath, "utf8");
+const schemaTables = new Set(
+  [...schemaSrc.matchAll(/sqliteTable\(\s*["'`]([^"'`]+)["'`]/gs)].map((m) => m[1])
+);
+
+const SYSTEM_TABLES = new Set(["d1_migrations", "sqlite_sequence"]);
+const live = new Set();
+const EVENT_RE = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["'`]?([\w]+)["'`]?|DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?["'`]?([\w]+)["'`]?|ALTER\s+TABLE\s+["'`]?([\w]+)["'`]?\s+RENAME\s+TO\s+["'`]?([\w]+)["'`]?/gis;
+for (const f of readdirSync(migrationsDir).filter((f) => f.endsWith(".sql")).sort()) {
+  const sql = readFileSync(join(migrationsDir, f), "utf8");
+  for (const m of sql.matchAll(EVENT_RE)) {
+    if (m[1]) live.add(m[1]);                       // CREATE TABLE
+    else if (m[2]) live.delete(m[2]);               // DROP TABLE
+    else { live.delete(m[3]); live.add(m[4]); }     // RENAME old -> new
+  }
+}
+const liveTables = [...live].filter((t) => !SYSTEM_TABLES.has(t));
+
+for (const t of liveTables) {
+  if (!schemaTables.has(t)) {
+    errors.push(`迁移创建的表 "${t}" 在 api/src/db/schema.ts 中无 sqliteTable 定义（schema 落后于 migration，运行时 adapter 会 500）`);
+  }
+}
+
 if (errors.length > 0) {
-  console.error("✗ 迁移文件与 journal 不一致：");
+  console.error("✗ 迁移一致性校验失败：");
   for (const e of errors) console.error(`  - ${e}`);
-  console.error("\n修复：补齐缺失的 .sql 或 journal entry（参见 docs/d1-migrations.md 规则 4 急救 SOP）");
+  console.error("\n修复：补齐缺失的 .sql / journal entry / schema.ts 表定义（参见 docs/prod-change-policy.md）");
   process.exit(1);
 }
 
-console.log(`✓ 迁移同步校验通过：${sqlTags.length} 个 .sql 文件 ↔ ${journalTags.length} 条 journal entry`);
+console.log(`✓ 迁移同步校验通过：${sqlTags.length} 个 .sql 文件 ↔ ${journalTags.length} 条 journal entry；${liveTables.length} 张 live 表在 schema.ts 均有定义`);
