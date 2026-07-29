@@ -161,6 +161,8 @@ export const locations = sqliteTable(
     extra: text("extra"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    // #219 P2-3：API key 创建地点时记录来源 key
+    actorApiKeyId: text("actor_api_key_id"),
   },
   (table) => ({
     slugIdx: uniqueIndex("locations_slug_idx").on(table.slug),
@@ -225,6 +227,8 @@ export const teams = sqliteTable(
     checklist: text("checklist", { mode: "json" }).$type<TeamChecklist>(),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    // #219 P2-3：API key 创建/加入时记录来源 key（nullable，session 用户无 key）
+    actorApiKeyId: text("actor_api_key_id"),
   },
   (table) => ({
     locationIdx: index("teams_location_idx").on(table.locationId),
@@ -249,6 +253,8 @@ export const teamMembers = sqliteTable(
     statusUpdatedAt: integer("status_updated_at", { mode: "timestamp_ms" }),
     extra: text("extra"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    // #219 P2-3：API key 申请加入时记录来源 key
+    actorApiKeyId: text("actor_api_key_id"),
   },
   (table) => ({
     teamIdx: index("team_members_team_idx").on(table.teamId),
@@ -502,6 +508,8 @@ export const stories = sqliteTable(
     likeCount: integer("like_count").default(0),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    // #219 P2-3：API key 发故事时记录来源 key
+    actorApiKeyId: text("actor_api_key_id"),
   },
   (table) => ({
     authorIdx: index("stories_author_idx").on(table.authorId),

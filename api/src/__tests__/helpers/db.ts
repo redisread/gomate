@@ -108,6 +108,7 @@ export function createTestDb() {
       gear_essential TEXT,
       gear_optional TEXT,
       extra TEXT,
+      actor_api_key_id TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
@@ -143,6 +144,7 @@ export function createTestDb() {
       status TEXT NOT NULL DEFAULT 'recruiting',
       -- task #163：Team「行动本」checklist（TEXT JSON，nullable）
       checklist TEXT,
+      actor_api_key_id TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
@@ -155,6 +157,7 @@ export function createTestDb() {
       joined_at INTEGER,
       status_updated_at INTEGER,
       extra TEXT,
+      actor_api_key_id TEXT,
       created_at INTEGER NOT NULL,
       UNIQUE(team_id, user_id)
     );
@@ -189,6 +192,7 @@ export function createTestDb() {
       status TEXT NOT NULL DEFAULT 'published',
       view_count INTEGER NOT NULL DEFAULT 0,
       like_count INTEGER NOT NULL DEFAULT 0,
+      actor_api_key_id TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
