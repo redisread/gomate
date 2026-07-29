@@ -196,6 +196,10 @@ export function createAuth(env: Env) {
         keyExpiration: {
           defaultExpiresIn: 365 * 24 * 60 * 60, // 1 year
         },
+        // enableSessionForAPIKeys: API key 自动注入 session
+        // 安全前提：gomate 每用户自建 key，key→userId 一一对应，无跨用户风险
+        // 10-key cap 由 auth.ts 自定义 wrapper 处理，不受此影响
+        enableSessionForAPIKeys: true,
       }),
     ],
   });
