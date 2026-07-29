@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 import { LocationCard } from "./home-location-card";
@@ -33,11 +33,14 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
               </span>
             )}
           </h2>
-          {/* #213 B路线：cityMatch=fallback 时显示降级提示（用户有 city 但该城市无地点） */}
+          {/* #215 方案B：cityMatch=fallback 时显示降级提示（MapPin icon + 左对齐） */}
           {userCity && cityMatch === "fallback" && locations.length > 0 && (
-            <p className="mt-3 text-sm font-medium text-amber-700 dark:text-amber-400">
-              {t("home.locations.fallbackHint")}
-            </p>
+            <div className="mt-3 flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400 flex-shrink-0" />
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                {t("home.locations.fallbackHint")}
+              </p>
+            </div>
           )}
         </div>
 

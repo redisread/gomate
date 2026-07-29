@@ -174,8 +174,24 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
 
   // --- 渲染分支 ---
 
-  // 空态：三类全空 → 不渲染整个 section（spec §7.4）
+  // #216：推荐位 fallback + 0 候选时只显示 hint，不渲染卡片（Victor 反馈）
   if (state.status === "ready" && state.recommendations.length === 0) {
+    if (state.cityMatch === "fallback" && userCity) {
+      return (
+        <section id="recommendations" className="py-12 sm:py-16 lg:py-20 bg-background" data-testid="home-recommendations-section">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8 sm:mb-10">
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+                {t("home.recommendations.title")}
+              </h2>
+            </div>
+            <p className="text-sm text-stone-500 dark:text-stone-400 text-center" data-testid="recommendation-city-hint">
+              {t("home.recommendations.cityHint.fallback", { city: cityName ?? "" })}
+            </p>
+          </div>
+        </section>
+      );
+    }
     return null;
   }
 
