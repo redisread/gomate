@@ -8,7 +8,7 @@ import { storiesRoute } from "./stories";
 const v1 = new Hono<{ Bindings: Env }>();
 
 // Serve openapi.json for tooling discovery (GET /v1/openapi.json)
-import openapiSpec from "./openapi.json" with { type: "json" };
+import openapiSpec from "./openapi.json";
 v1.get("/openapi.json", (c) => c.json(openapiSpec));
 
 v1.route("/teams", teamsRoute);
