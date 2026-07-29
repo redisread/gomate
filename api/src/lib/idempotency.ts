@@ -10,7 +10,6 @@
  */
 
 import { Context, Next } from "hono";
-import type { StatusCode } from "hono/utils/http-status";
 import type { Env } from "./auth";
 
 const IDEM_KEY_PREFIX = "idem";
