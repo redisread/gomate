@@ -33,6 +33,12 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
               </span>
             )}
           </h2>
+          {/* #213 B路线：cityMatch=fallback 时显示降级提示（用户有 city 但该城市无地点） */}
+          {userCity && cityMatch === "fallback" && locations.length > 0 && (
+            <p className="mt-3 text-sm font-medium text-amber-700 dark:text-amber-400">
+              {t("home.locations.fallbackHint")}
+            </p>
+          )}
         </div>
 
         {isLoading ? (

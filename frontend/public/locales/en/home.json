@@ -45,7 +45,8 @@
     "error": "Failed to load recommendations. Try again later."
   },
   "locations": {
-    "cityChip": "📍 {city}"
+    "cityChip": "📍 {city}",
+    "fallbackHint": "No spots in your city yet — here are some popular picks"
   },
   "localCircle": {
     "title": "What Your City Did This Week",
