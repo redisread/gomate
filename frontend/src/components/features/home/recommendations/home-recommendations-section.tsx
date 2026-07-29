@@ -276,13 +276,11 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
           {showSkeleton ? skeleton : cards}
         </div>
 
-        {/* P1 city 个性化 #193 T3: cityMatch 非 exact 时异地明示 */}
-        {state.status === "ready" && userCity && state.cityMatch && state.cityMatch !== "exact" && (
+        {/* P1 city 个性化 #193 T3: cityMatch=mixed 时异地明示（fallback 整块 return null，#216 Option B） */}
+        {state.status === "ready" && userCity && state.cityMatch === "mixed" && (
           <div className="mt-4 text-center">
             <p className="text-xs text-stone-500 dark:text-stone-400" data-testid="recommendation-city-hint">
-              {state.cityMatch === "mixed"
-                ? t("home.recommendations.cityHint.mixed", { city: cityName ?? "" })
-                : t("home.recommendations.cityHint.fallback", { city: cityName ?? "" })}
+              {t("home.recommendations.cityHint.mixed", { city: cityName ?? "" })}
             </p>
           </div>
         )}
