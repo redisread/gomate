@@ -39,8 +39,7 @@
       "fresh_fallback": "New this week — check it out"
     },
     "cityHint": {
-      "mixed": "Mixed with {city} popular picks",
-      "fallback": "No picks for {city} yet — see other popular"
+      "mixed": "Mixed with {city} popular picks"
     },
     "error": "Failed to load recommendations. Try again later."
   },
