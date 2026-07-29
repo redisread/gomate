@@ -45,7 +45,8 @@
     "error": "推荐加载失败，稍后重试"
   },
   "locations": {
-    "cityChip": "📍 {city}"
+    "cityChip": "📍 {city}",
+    "fallbackHint": "你所在的城市还没有可探索的地点，下面是热门推荐"
   },
   "localCircle": {
     "title": "本周本地圈子在去哪",

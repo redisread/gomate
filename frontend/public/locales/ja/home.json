@@ -45,7 +45,8 @@
     "error": "おすすめの読み込みに失敗しました。後で再試行してください。"
   },
   "locations": {
-    "cityChip": "📍 {city}"
+    "cityChip": "📍 {city}",
+    "fallbackHint": "あなたの地域にはまだスポットがありません — 人気のおすすめです"
   },
   "localCircle": {
     "title": "今週、あなたの街で",
