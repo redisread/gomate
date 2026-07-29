@@ -6,8 +6,14 @@
     "version": "1.0.0"
   },
   "servers": [
-    { "url": "https://api.gomate.live", "description": "生产环境" },
-    { "url": "https://api-staging.gomate.live", "description": "Staging 环境" }
+    {
+      "url": "https://api.gomate.live",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://api-staging.gomate.live",
+      "description": "Staging 环境"
+    }
   ],
   "components": {
     "securitySchemes": {
@@ -21,49 +27,112 @@
         "type": "http",
         "scheme": "bearer",
         "description": "Web 端 session cookie（登录后自动携带）"
+      },
+      "apiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      },
+      "sessionCookie": {
+        "type": "http",
+        "scheme": "bearer"
       }
     },
     "schemas": {
       "Error": {
         "type": "object",
         "properties": {
-          "success": { "type": "boolean", "example": false },
-          "error": { "type": "string" },
-          "message": { "type": "string" }
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
         }
       },
       "Pagination": {
         "type": "object",
         "properties": {
-          "page": { "type": "integer" },
-          "pageSize": { "type": "integer" },
-          "total": { "type": "integer" },
-          "totalPages": { "type": "integer" },
-          "hasMore": { "type": "boolean" }
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
         }
       },
       "TeamCard": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "locationId": { "type": "string" },
-          "leaderId": { "type": "string" },
-          "title": { "type": "string" },
-          "description": { "type": "string", "nullable": true },
-          "startTime": { "type": "string", "format": "date-time" },
-          "endTime": { "type": "string", "format": "date-time" },
-          "durationMin": { "type": "integer", "nullable": true },
-          "maxMembers": { "type": "integer" },
-          "requirements": { "type": "string", "nullable": true },
-          "icon": { "type": "string" },
+          "id": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "leaderId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "durationMin": {
+            "type": "integer",
+            "nullable": true
+          },
+          "maxMembers": {
+            "type": "integer"
+          },
+          "requirements": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string"
+          },
           "status": {
             "type": "string",
             "enum": ["recruiting", "ongoing", "completed", "cancelled"]
           },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" },
-          "currentMembers": { "type": "integer" },
-          "leader": { "$ref": "#/components/schemas/Leader" },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currentMembers": {
+            "type": "integer"
+          },
+          "leader": {
+            "$ref": "#/components/schemas/Leader"
+          },
           "location": {
             "$ref": "#/components/schemas/LocationSummary",
             "nullable": true
@@ -72,7 +141,9 @@
       },
       "TeamDetail": {
         "allOf": [
-          { "$ref": "#/components/schemas/TeamCard" },
+          {
+            "$ref": "#/components/schemas/TeamCard"
+          },
           {
             "type": "object",
             "properties": {
@@ -80,7 +151,9 @@
                 "type": "string",
                 "enum": ["none", "pending", "approved", "rejected", "member"]
               },
-              "currentMembers": { "type": "integer" }
+              "currentMembers": {
+                "type": "integer"
+              }
             }
           }
         ]
@@ -88,119 +161,251 @@
       "Leader": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "nickname": { "type": "string", "nullable": true },
-          "level": { "type": "string", "nullable": true },
-          "image": { "type": "string", "nullable": true }
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string",
+            "nullable": true
+          },
+          "level": {
+            "type": "string",
+            "nullable": true
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          }
         }
       },
       "LocationSummary": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string", "nullable": true },
-          "coverImage": { "type": "string", "nullable": true },
-          "difficulty": { "type": "string", "nullable": true }
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "coverImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "difficulty": {
+            "type": "string",
+            "nullable": true
+          }
         }
       },
       "LocationDetail": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "slug": { "type": "string", "nullable": true },
-          "coverImage": { "type": "string", "nullable": true },
-          "cityId": { "type": "string", "nullable": true },
-          "difficulty": { "type": "string", "nullable": true },
-          "durationMin": { "type": "integer", "nullable": true },
-          "description": { "type": "string", "nullable": true },
-          "images": { "type": "array", "items": { "type": "string" } },
-          "bestSeason": { "type": "array", "items": { "type": "string" } },
-          "coordinates": { "$ref": "#/components/schemas/Coordinates" },
-          "gearEssential": { "type": "array", "items": { "type": "string" } },
-          "gearOptional": { "type": "array", "items": { "type": "string" } },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "coverImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "cityId": {
+            "type": "string",
+            "nullable": true
+          },
+          "difficulty": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMin": {
+            "type": "integer",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bestSeason": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "coordinates": {
+            "$ref": "#/components/schemas/Coordinates"
+          },
+          "gearEssential": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "gearOptional": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "tags": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/Tag" }
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
           }
         }
       },
       "Coordinates": {
         "type": "object",
         "properties": {
-          "lat": { "type": "number" },
-          "lng": { "type": "number" }
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          }
         }
       },
       "Tag": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "type": { "type": "string", "nullable": true }
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          }
         }
       },
       "City": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" }
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
         }
       },
       "Duration": {
         "type": "object",
         "properties": {
-          "value": { "type": "integer", "description": "分钟数" },
-          "label": { "type": "string" }
+          "value": {
+            "type": "integer",
+            "description": "分钟数"
+          },
+          "label": {
+            "type": "string"
+          }
         }
       },
       "Difficulty": {
         "type": "object",
         "properties": {
-          "value": { "type": "string" },
-          "label": { "type": "string" }
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
         }
       },
       "TeamStatus": {
         "type": "object",
         "properties": {
-          "value": { "type": "string" },
-          "label": { "type": "string" }
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
         }
       },
       "StoryCard": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "title": { "type": "string" },
-          "coverImage": { "type": "string", "nullable": true },
-          "summary": { "type": "string" },
-          "content": { "type": "string" },
-          "viewCount": { "type": "integer" },
-          "likeCount": { "type": "integer" },
-          "status": { "type": "string" },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "coverImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "viewCount": {
+            "type": "integer"
+          },
+          "likeCount": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
           "publishedAt": {
             "type": "string",
             "format": "date-time",
             "nullable": true
           },
-          "createdAt": { "type": "string", "format": "date-time" },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "author": {
             "type": "object",
             "properties": {
-              "id": { "type": "string" },
-              "name": { "type": "string" },
-              "image": { "type": "string", "nullable": true }
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string",
+                "nullable": true
+              }
             },
             "nullable": true
           },
           "location": {
             "type": "object",
             "properties": {
-              "id": { "type": "string" },
-              "name": { "type": "string" },
-              "slug": { "type": "string", "nullable": true }
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string",
+                "nullable": true
+              }
             },
             "nullable": true
           }
@@ -208,14 +413,20 @@
       },
       "StoryDetail": {
         "allOf": [
-          { "$ref": "#/components/schemas/StoryCard" },
+          {
+            "$ref": "#/components/schemas/StoryCard"
+          },
           {
             "type": "object",
             "properties": {
-              "isLiked": { "type": "boolean" },
+              "isLiked": {
+                "type": "boolean"
+              },
               "tags": {
                 "type": "array",
-                "items": { "$ref": "#/components/schemas/Tag" }
+                "items": {
+                  "$ref": "#/components/schemas/Tag"
+                }
               }
             }
           }
@@ -233,37 +444,52 @@
           {
             "name": "page",
             "in": "query",
-            "schema": { "type": "integer", "default": 1 },
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
             "description": "页码（从 1 开始）"
           },
           {
             "name": "pageSize",
             "in": "query",
-            "schema": { "type": "integer", "default": 12, "maximum": 100 },
+            "schema": {
+              "type": "integer",
+              "default": 12,
+              "maximum": 100
+            },
             "description": "每页条数"
           },
           {
             "name": "cityId",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "按城市 ID 过滤"
           },
           {
             "name": "tagId",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "按标签 ID 过滤"
           },
           {
             "name": "status",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "状态过滤（recruiting/ongoing/completed/cancelled），逗号分隔多个"
           },
           {
             "name": "keyword",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "标题/描述关键词搜索"
           }
         ],
@@ -275,16 +501,98 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "teams": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/TeamCard" }
+                      "items": {
+                        "$ref": "#/components/schemas/TeamCard"
+                      }
                     },
-                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
                   }
                 }
               }
             }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTeam",
+        "summary": "创建队伍",
+        "description": "认证端点（session 或 x-api-key），需要 Idempotency-Key header。返回 201 创建成功，400 缺少 Idempotency-Key，401 未认证。",
+        "security": [
+          {
+            "apiKeyAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "locationId": {
+                    "type": "string",
+                    "description": "地点ID"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "队伍名称",
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "描述",
+                    "maxLength": 2000
+                  },
+                  "startTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "开始时间 ISO8601"
+                  },
+                  "durationMin": {
+                    "type": "integer",
+                    "description": "时长（分钟）"
+                  },
+                  "maxMembers": {
+                    "type": "integer",
+                    "description": "最大成员数",
+                    "minimum": 2,
+                    "maximum": 50
+                  },
+                  "requirements": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "要求清单"
+                  }
+                },
+                "required": ["locationId", "title", "startTime"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "队伍创建成功"
+          },
+          "400": {
+            "description": "缺少 Idempotency-Key 或输入无效"
+          },
+          "401": {
+            "description": "未认证"
+          },
+          "404": {
+            "description": "地点不存在"
           }
         }
       }
@@ -294,13 +602,22 @@
         "operationId": "getTeamDetail",
         "summary": "获取队伍详情",
         "description": "公开读端点。认证后可获取当前用户的 myStatus。",
-        "security": [{ "ApiKeyAuth": [] }, { "SessionCookie": [] }],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "队伍 ID"
           }
         ],
@@ -312,8 +629,12 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
-                    "team": { "$ref": "#/components/schemas/TeamDetail" }
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "team": {
+                      "$ref": "#/components/schemas/TeamDetail"
+                    }
                   }
                 }
               }
@@ -323,7 +644,9 @@
             "description": "队伍不存在",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -335,13 +658,22 @@
         "operationId": "getMyTeamStatus",
         "summary": "获取当前用户在本队伍的身份",
         "description": "需认证。未加入返回 {status:\"none\"}；pending 时返回 pollAfterSeconds=300（5分钟轮询建议）。",
-        "security": [{ "ApiKeyAuth": [] }, { "SessionCookie": [] }],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "队伍 ID"
           }
         ],
@@ -384,23 +716,34 @@
           {
             "name": "page",
             "in": "query",
-            "schema": { "type": "integer", "default": 1 }
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
           },
           {
             "name": "pageSize",
             "in": "query",
-            "schema": { "type": "integer", "default": 12, "maximum": 100 }
+            "schema": {
+              "type": "integer",
+              "default": 12,
+              "maximum": 100
+            }
           },
           {
             "name": "keyword",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "地点名称搜索"
           },
           {
             "name": "cityId",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "按城市 ID 过滤"
           }
         ],
@@ -412,16 +755,131 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "locations": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/LocationDetail" }
+                      "items": {
+                        "$ref": "#/components/schemas/LocationDetail"
+                      }
                     },
-                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
                   }
                 }
               }
             }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createLocation",
+        "summary": "创建地点",
+        "description": "认证端点（session 或 x-api-key），需要 Idempotency-Key header。",
+        "security": [
+          {
+            "apiKeyAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "地点名称"
+                  },
+                  "slug": {
+                    "type": "string",
+                    "description": "slug（可选）"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "subtitle": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "描述"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "cityId": {
+                    "type": "string",
+                    "description": "城市ID"
+                  },
+                  "cityName": {
+                    "type": "string"
+                  },
+                  "coverImage": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "封面图 URL"
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "coordinates": {
+                    "type": "object",
+                    "properties": {
+                      "lat": {
+                        "type": "number"
+                      },
+                      "lng": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "bestSeason": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "gearEssential": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "gearOptional": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["name", "description", "cityId", "coverImage"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "地点创建成功"
+          },
+          "400": {
+            "description": "缺少 Idempotency-Key 或输入无效"
+          },
+          "401": {
+            "description": "未认证"
+          },
+          "404": {
+            "description": "城市不存在"
           }
         }
       }
@@ -436,7 +894,9 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "地点 ID 或 slug"
           }
         ],
@@ -448,7 +908,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "location": {
                       "$ref": "#/components/schemas/LocationDetail"
                     }
@@ -461,7 +923,9 @@
             "description": "地点不存在",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -481,29 +945,41 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "enums": {
                       "type": "object",
                       "properties": {
                         "cities": {
                           "type": "array",
-                          "items": { "$ref": "#/components/schemas/City" }
+                          "items": {
+                            "$ref": "#/components/schemas/City"
+                          }
                         },
                         "tags": {
                           "type": "array",
-                          "items": { "$ref": "#/components/schemas/Tag" }
+                          "items": {
+                            "$ref": "#/components/schemas/Tag"
+                          }
                         },
                         "durations": {
                           "type": "array",
-                          "items": { "$ref": "#/components/schemas/Duration" }
+                          "items": {
+                            "$ref": "#/components/schemas/Duration"
+                          }
                         },
                         "difficulties": {
                           "type": "array",
-                          "items": { "$ref": "#/components/schemas/Difficulty" }
+                          "items": {
+                            "$ref": "#/components/schemas/Difficulty"
+                          }
                         },
                         "teamStatuses": {
                           "type": "array",
-                          "items": { "$ref": "#/components/schemas/TeamStatus" }
+                          "items": {
+                            "$ref": "#/components/schemas/TeamStatus"
+                          }
                         }
                       }
                     }
@@ -524,17 +1000,26 @@
           {
             "name": "page",
             "in": "query",
-            "schema": { "type": "integer", "default": 1 }
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
           },
           {
             "name": "pageSize",
             "in": "query",
-            "schema": { "type": "integer", "default": 10, "maximum": 20 }
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "maximum": 20
+            }
           },
           {
             "name": "locationId",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "按地点 ID 过滤"
           }
         ],
@@ -546,16 +1031,92 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "stories": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/StoryCard" }
+                      "items": {
+                        "$ref": "#/components/schemas/StoryCard"
+                      }
                     },
-                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
                   }
                 }
               }
             }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createStory",
+        "summary": "发布故事",
+        "description": "认证端点（session 或 x-api-key），需要 Idempotency-Key header。",
+        "security": [
+          {
+            "apiKeyAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "标题",
+                    "maxLength": 100
+                  },
+                  "summary": {
+                    "type": "string",
+                    "description": "摘要",
+                    "maxLength": 150
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "内容",
+                    "maxLength": 10000
+                  },
+                  "coverImage": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "locationId": {
+                    "type": "string",
+                    "description": "关联地点ID"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 10
+                  }
+                },
+                "required": ["title", "summary", "content", "locationId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "故事发布成功"
+          },
+          "400": {
+            "description": "缺少 Idempotency-Key 或输入无效"
+          },
+          "401": {
+            "description": "未认证"
+          },
+          "404": {
+            "description": "地点不存在"
           }
         }
       }
@@ -565,13 +1126,22 @@
         "operationId": "getStoryDetail",
         "summary": "获取故事详情",
         "description": "公开读端点。认证用户可看到 isLiked 状态；draft/hidden 仅对作者本人或 admin 可见。",
-        "security": [{ "ApiKeyAuth": [] }, { "SessionCookie": [] }],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "故事 ID"
           }
         ],
@@ -583,8 +1153,12 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
-                    "story": { "$ref": "#/components/schemas/StoryDetail" }
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "story": {
+                      "$ref": "#/components/schemas/StoryDetail"
+                    }
                   }
                 }
               }
@@ -594,7 +1168,9 @@
             "description": "故事不存在",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -606,7 +1182,14 @@
         "operationId": "createApiKey",
         "summary": "创建 API Key",
         "description": "需认证。每位用户最多 10 个 Key，超额返回 403。",
-        "security": [{ "ApiKeyAuth": [] }, { "SessionCookie": [] }],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -634,20 +1217,32 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "id": { "type": "string" },
-                    "name": { "type": "string", "nullable": true },
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "key": {
                       "type": "string",
                       "description": "明文 Key，仅此次返回，请妥善保存"
                     },
-                    "prefix": { "type": "string" },
-                    "startsAt": { "type": "string", "format": "date-time" },
+                    "prefix": {
+                      "type": "string"
+                    },
+                    "startsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "expiresAt": {
                       "type": "string",
                       "format": "date-time",
                       "nullable": true
                     },
-                    "enabled": { "type": "boolean" }
+                    "enabled": {
+                      "type": "boolean"
+                    }
                   }
                 }
               }
@@ -657,7 +1252,9 @@
             "description": "未认证",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -668,16 +1265,64 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": false },
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
                     "error": {
                       "type": "string",
                       "example": "MAX_API_KEYS_EXCEEDED"
                     },
-                    "message": { "type": "string" }
+                    "message": {
+                      "type": "string"
+                    }
                   }
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/v1/teams/{teamId}/members": {
+      "post": {
+        "operationId": "joinTeam",
+        "summary": "申请加入队伍",
+        "description": "认证端点（session 或 x-api-key），需要 Idempotency-Key header。",
+        "security": [
+          {
+            "apiKeyAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "队伍ID"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "申请已提交"
+          },
+          "200": {
+            "description": "重新申请成功"
+          },
+          "400": {
+            "description": "缺少 Idempotency-Key 或已在队伍中"
+          },
+          "401": {
+            "description": "未认证"
+          },
+          "404": {
+            "description": "队伍不存在"
           }
         }
       }
