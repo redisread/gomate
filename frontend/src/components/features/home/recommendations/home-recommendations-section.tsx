@@ -269,6 +269,10 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
             {t("home.recommendations.title")}
           </h2>
+          {/* Subtitle — spec v1.0 §4: stone-500 neutral, no icon, no bg block (#190/#191 装饰归零) */}
+          <p className="mt-2 text-sm text-stone-500 dark:text-stone-400 text-center max-w-2xl mx-auto" data-testid="recommendation-subtitle">
+            {t("home.recommendations.subtitle")}
+          </p>
         </div>
 
         {/* Cards / skeleton layer — opacity driven by phase */}
