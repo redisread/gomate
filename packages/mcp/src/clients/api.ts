@@ -1,5 +1,5 @@
 // API client for gomate MCP — fetches @gomate/api with x-api-key auth
-// Stub: returns mock data. Real implementation in #230/#231.
+// Real implementation: #230 read tools + #231 write tools.
 
 export interface ApiClientOptions {
   baseUrl: string;
@@ -28,11 +28,20 @@ export function createApiClient(options: ApiClientOptions) {
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      const text = await response.text().catch(() => '');
+      throw new Error(`API error ${response.status}: ${response.statusText}${text ? ' — ' + text : ''}`);
     }
 
     return response.json() as Promise<T>;
   }
 
   return { request };
+}
+
+// Default client from env (used in Worker context)
+export function createClientFromEnv(env: { API_BASE_URL?: string; API_KEY?: string }) {
+  const baseUrl = env.API_BASE_URL;
+  const apiKey = env.API_KEY;
+  if (!baseUrl || !apiKey) return null;
+  return createApiClient({ baseUrl, apiKey });
 }
