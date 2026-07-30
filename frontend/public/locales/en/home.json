@@ -6,7 +6,8 @@
     "viewDetails": "View Details"
   },
   "recommendations": {
-    "title": "This Week's Three Picks",
+    "title": "Your Top 3 Near You This Week",
+    "subtitle": "Curated by weather, distance & team activity — tuned to your city",
     "cta": {
       "refresh": "Show New Three"
     },
