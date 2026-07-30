@@ -15,6 +15,7 @@ import type { Env } from "../../../lib/auth";
 import { APIErrors } from "../../../lib/api-errors";
 import { generateId } from "../../../lib/id";
 import { idempotencyMiddleware } from "../../../lib/idempotency";
+import { resolveAuditActor } from "../../../lib/audit";
 
 const writeTeams = new Hono<{ Bindings: Env }>();
 
@@ -37,7 +38,9 @@ writeTeams.post("/", idempotencyMiddleware, async (c) => {
       return c.json(APIErrors.unauthorized("请先登录"), 401);
     }
     const actorId = session.user.id;
-    const actorApiKeyId = null; // TODO #219: extract from better-auth session.extra
+    const audit = await resolveAuditActor(c);
+    const actorApiKeyId = audit.apiKeyId;
+    const actorType = audit.actorType;
 
     // 2. Parse and validate body (idempotencyMiddleware already cloned/read the body)
     const body = await c.req.json().catch(() => null);
@@ -128,6 +131,7 @@ writeTeams.post("/", idempotencyMiddleware, async (c) => {
         status: "recruiting",
         createdAt: now.toISOString(),
       },
+      actorType,
     }, 201);
   } catch (error) {
     console.error("[v1/teams POST] error:", error);

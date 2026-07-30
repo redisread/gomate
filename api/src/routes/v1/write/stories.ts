@@ -15,6 +15,7 @@ import type { Env } from "../../../lib/auth";
 import { APIErrors } from "../../../lib/api-errors";
 import { generateId } from "../../../lib/id";
 import { idempotencyMiddleware } from "../../../lib/idempotency";
+import { resolveAuditActor } from "../../../lib/audit";
 
 const writeStories = new Hono<{ Bindings: Env }>();
 
@@ -43,7 +44,8 @@ writeStories.post("/", idempotencyMiddleware, async (c) => {
       return c.json(APIErrors.unauthorized("请先登录"), 401);
     }
     const actorId = session.user.id;
-    const actorApiKeyId = null; // TODO #219
+    const audit = await resolveAuditActor(c);
+    const actorApiKeyId = audit.apiKeyId;
 
     // 2. Parse body
     const body = await c.req.json().catch(() => null);
@@ -122,6 +124,7 @@ writeStories.post("/", idempotencyMiddleware, async (c) => {
         status: "published",
         createdAt: now.toISOString(),
       },
+      actorType: audit.actorType,
     }, 201);
   } catch (error) {
     console.error("[v1/stories POST] error:", error);
