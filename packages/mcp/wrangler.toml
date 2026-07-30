@@ -1,9 +1,6 @@
 name = "gomate-mcp"
-main = "src/index.ts"
+main = "src/worker.ts"
 compatibility_date = "2024-01-01"
 
 [observability]
 enabled = true
-
-# Workers.dev deployment for MCP HTTP transport
-# Route: /v1/mcp
