@@ -5,6 +5,7 @@ import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { APIErrors } from "../../lib/api-errors";
 import { safeJsonParse } from "../locations/utils";
+import { apiRateLimitMiddleware } from "../../lib/rate-limit";
 
 const locations = new Hono<{ Bindings: Env }>();
 
@@ -12,7 +13,7 @@ const locations = new Hono<{ Bindings: Env }>();
  * GET /v1/locations
  * 公开读端点：地点列表，支持分页、cityId、keyword 过滤。
  */
-locations.get("/", async (c) => {
+locations.get("/", apiRateLimitMiddleware("read", 600), async (c) => {
   try {
     const db = createDb(c.env.DB);
 
@@ -91,10 +92,10 @@ locations.get("/", async (c) => {
  * GET /v1/locations/:id
  * 公开读端点：地点详情，含坐标/交通/标签。
  */
-locations.get("/:id", async (c) => {
+locations.get("/:id", apiRateLimitMiddleware("read", 600), async (c) => {
   try {
     const db = createDb(c.env.DB);
-    const idOrSlug = c.req.param("id");
+    const idOrSlug: string = c.req.param("id") ?? "";
 
     // Try by id first, then by slug
     let location = await db.query.locations.findFirst({

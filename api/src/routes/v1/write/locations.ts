@@ -16,6 +16,7 @@ import { APIErrors } from "../../../lib/api-errors";
 import { generateId } from "../../../lib/id";
 import { idempotencyMiddleware } from "../../../lib/idempotency";
 import { resolveAuditActor } from "../../../lib/audit";
+import { apiRateLimitMiddleware } from "../../../lib/rate-limit";
 
 const writeLocations = new Hono<{ Bindings: Env }>();
 
@@ -39,7 +40,7 @@ const createLocationSchema = z.object({
   gearOptional: z.array(z.string().min(1).max(20)).max(10).optional(),
 });
 
-writeLocations.post("/", idempotencyMiddleware, async (c) => {
+writeLocations.post("/", apiRateLimitMiddleware("write", 30), idempotencyMiddleware, async (c) => {
   try {
     // 1. Authenticate
     const auth = createAuth(c.env);
