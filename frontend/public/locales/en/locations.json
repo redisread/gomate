@@ -40,9 +40,32 @@
   "totalResultPrefix": "{count} places total",
   "clearFilter": "Clear Filters",
   "clearBtn": "Clear",
-  "emptyTitle": "No locations found",
-  "emptyDesc": "Try broadening your search — there might be more great places waiting for you",
-  "emptyBtn": "Explore Again",
+  "empty": {
+    "noSearch": {
+      "title": "No results for「{query}」",
+      "desc": "Try a different keyword or browse all locations",
+      "clearBtn": "Clear Search",
+      "browseBtn": "Browse All"
+    },
+    "noCity": {
+      "title": "No recommendations in「{cityName}」yet",
+      "desc": "No locations here yet — check out other cities",
+      "browseBtn": "Explore Other Cities",
+      "changeBtn": "Change City"
+    },
+    "noCitySet": {
+      "title": "City not set",
+      "desc": "Set your city to get personalized location recommendations",
+      "setBtn": "Set My City",
+      "browseFirstBtn": "Browse All"
+    },
+    "tooNarrow": {
+      "title": "Filters are too narrow",
+      "desc": "Try broadening your filters to see more locations",
+      "resetBtn": "Reset Filters",
+      "homeBtn": "Go Home"
+    }
+  },
   "ctaHeroBadge": "Cafes · Exploring · Outdoors · More",
   "roleHiking": "Outdoor Hiking",
   "roleHikingDesc": "Mountain trails · Hill crossings",

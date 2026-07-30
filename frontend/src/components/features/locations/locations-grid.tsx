@@ -1,4 +1,4 @@
-import { MapPin, TreePine, Compass, ChevronLeft, ChevronRight, Clock, TrendingUp, ArrowRight } from "lucide-react";
+import { MapPin, TreePine, ChevronLeft, ChevronRight, Clock, TrendingUp, ArrowRight, Search, Map, Filter } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location, Tag } from "@/lib/types";
@@ -118,13 +118,108 @@ function LocationCard({ location, index }: { location: Location; index: number }
   );
 }
 
-export function EmptyState({ onClear }: { onClear: () => void }) {
-  const { t } = useI18n(["locations", "common"]);
+/**
+ * EmptyState variants (spec v1.1 §3 / #222 T1).
+ *
+ * Primary button per variant:
+ * - noSearch:  清除搜索  (onClearSearch)
+ * - noCity:    切换城市  (onChangeCity)
+ * - noCitySet: 设置城市  (onSetCity)
+ * - tooNarrow: 放宽筛选  (onClearSearch)
+ *
+ * T3 will add i18n keys (locations.empty.{variant}.title / desc / primaryBtn / secondaryBtn).
+ * Placeholder text used until T3 merges.
+ */
+export type EmptyStateVariant = "noSearch" | "noCity" | "noCitySet" | "tooNarrow";
+
+export interface EmptyStateProps {
+  variant: EmptyStateVariant;
+  onClearSearch?: () => void;
+  onClearAll?: () => void;
+  onChangeCity?: () => void;
+  onSetCity?: () => void;
+}
+
+const VARIANT_META: Record<
+  EmptyStateVariant,
+  {
+    Icon: React.ElementType;
+    title: string;
+    desc: string;
+    primaryLabel: string;
+    primaryIcon: React.ElementType;
+    primaryAction?: () => void;
+    secondaryLabel?: string;
+    secondaryAction?: () => void;
+  }
+> = {
+  noSearch: {
+    Icon: Search,
+    title: "未找到相关地点",
+    desc: "没有找到匹配的探索地点，试试换个关键词",
+    primaryLabel: "清除搜索",
+    primaryIcon: Search,
+    primaryAction: undefined, // filled by caller
+    secondaryLabel: "查看全部",
+    secondaryAction: undefined, // filled by caller
+  },
+  noCity: {
+    Icon: Map,
+    title: "该城市暂无探索地点",
+    desc: "暂无符合条件的探索地点，试试切换城市",
+    primaryLabel: "切换城市",
+    primaryIcon: Map,
+    primaryAction: undefined,
+    secondaryLabel: "查看全部",
+    secondaryAction: undefined,
+  },
+  noCitySet: {
+    Icon: MapPin,
+    title: "你还没设置探索城市",
+    desc: "设置你的探索城市，发现附近的精彩地点",
+    primaryLabel: "设置城市",
+    primaryIcon: MapPin,
+    primaryAction: undefined,
+    secondaryLabel: "查看全部",
+    secondaryAction: undefined,
+  },
+  tooNarrow: {
+    Icon: Filter,
+    title: "筛选条件太严格了",
+    desc: "试试放宽筛选条件，发现更多地点",
+    primaryLabel: "放宽筛选",
+    primaryIcon: Filter,
+    primaryAction: undefined,
+    secondaryLabel: "查看全部",
+    secondaryAction: undefined,
+  },
+};
+
+export function EmptyState({
+  variant,
+  onClearSearch,
+  onClearAll,
+  onChangeCity,
+  onSetCity,
+}: EmptyStateProps) {
+  const meta = VARIANT_META[variant];
+  const { Icon } = meta;
+
+  // Route primary/secondary actions based on variant
+  const primaryAction = (() => {
+    if (variant === "noSearch" || variant === "tooNarrow") return onClearSearch;
+    if (variant === "noCity") return onChangeCity;
+    if (variant === "noCitySet") return onSetCity;
+    return undefined;
+  })();
+
+  
   return (
     <div className="flex flex-col items-center justify-center py-24 px-4">
+      {/* Icon container — TreePine float animation + amber dots PRESERVED (#222 T1) */}
       <div className="relative mb-6">
         <div className="w-20 h-20 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
-          <TreePine
+          <Icon
             className="h-9 w-9 text-stone-500 dark:text-stone-500 motion-reduce:animate-none"
             style={{ animation: "float 3s ease-in-out infinite" }}
           />
@@ -132,17 +227,30 @@ export function EmptyState({ onClear }: { onClear: () => void }) {
         <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-200" />
         <div className="absolute -bottom-1 -left-1 w-3 h-3 rounded-full bg-amber-200" />
       </div>
-      <h3 className="text-lg font-semibold text-foreground dark:text-stone-300 mb-2">{t("locations.emptyTitle")}</h3>
+      <h3 className="text-lg font-semibold text-foreground dark:text-stone-300 mb-2">{meta.title}</h3>
       <p className="text-stone-500 dark:text-stone-500 text-sm text-center max-w-xs leading-relaxed mb-6">
-        {t("locations.emptyDesc")}
+        {meta.desc}
       </p>
-      <button
-        onClick={onClear}
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-700 hover:bg-amber-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-950 rounded-full text-sm font-medium transition-all duration-200 shadow-md shadow-amber-200 hover:-translate-y-0.5 active:scale-95"
-      >
-        <Compass className="h-4 w-4" />
-        {t("locations.emptyBtn")}
-      </button>
+      {/* Primary button — amber rounded-full shadow-md hover:-translate-y-0.5 active:scale-95 PRESERVED */}
+      {primaryAction && (
+        <button
+          onClick={primaryAction}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-700 hover:bg-amber-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-950 rounded-full text-sm font-medium transition-all duration-200 shadow-md shadow-amber-200 hover:-translate-y-0.5 active:scale-95"
+        >
+          <meta.primaryIcon className="h-4 w-4" />
+          {meta.primaryLabel}
+        </button>
+      )}
+      {/* Secondary button */}
+      {meta.secondaryLabel && onClearAll && (
+        <button
+          onClick={onClearAll}
+          className="mt-3 inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300 transition-colors"
+        >
+          {meta.secondaryLabel}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   );
 }
@@ -154,6 +262,7 @@ export function LocationsGrid({
   gridFading,
   pagination,
   onClear,
+  emptyVariant,
   currentPage,
   onPageChange,
   getPageNumbers,
@@ -164,6 +273,8 @@ export function LocationsGrid({
   gridFading: boolean;
   pagination: { total: number; totalPages: number };
   onClear: () => void;
+  /** @default "noSearch" */
+  emptyVariant?: EmptyStateVariant;
   currentPage: number;
   onPageChange: (page: number) => void;
   getPageNumbers: () => (number | "...")[];
@@ -181,7 +292,11 @@ export function LocationsGrid({
             {Array.from({ length: 6 }).map((_, i) => <ShimmerCard key={i} />)}
           </div>
         ) : locations.length === 0 ? (
-          <EmptyState onClear={onClear} />
+          <EmptyState
+            variant={emptyVariant ?? "noSearch"}
+            onClearSearch={onClear}
+            onClearAll={onClear}
+          />
         ) : (
           <div key={gridKey} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {locations.map((location, index) => (
