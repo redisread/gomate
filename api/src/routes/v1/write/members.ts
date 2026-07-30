@@ -14,6 +14,7 @@ import type { Env } from "../../../lib/auth";
 import { APIErrors } from "../../../lib/api-errors";
 import { generateId } from "../../../lib/id";
 import { idempotencyMiddleware } from "../../../lib/idempotency";
+import { resolveAuditActor } from "../../../lib/audit";
 
 const writeMembers = new Hono<{ Bindings: Env }>();
 
@@ -26,7 +27,8 @@ writeMembers.post("/:teamId/members", idempotencyMiddleware, async (c) => {
       return c.json(APIErrors.unauthorized("请先登录"), 401);
     }
     const actorId = session.user.id;
-    const actorApiKeyId = null; // TODO #219
+    const audit = await resolveAuditActor(c);
+    const actorApiKeyId = audit.apiKeyId;
 
     const teamId = c.req.param("teamId");
     if (!teamId) {
@@ -85,7 +87,7 @@ writeMembers.post("/:teamId/members", idempotencyMiddleware, async (c) => {
         .set({ status: "pending", createdAt: new Date() })
         .where(eq(schema.teamMembers.id, existing.id));
 
-      return c.json({ success: true, message: "重新申请已提交" });
+      return c.json({ success: true, message: "重新申请已提交", actorType: "user" });
     }
 
     // 6. Create membership application
@@ -99,7 +101,7 @@ writeMembers.post("/:teamId/members", idempotencyMiddleware, async (c) => {
       actorApiKeyId: actorApiKeyId ?? null,
     });
 
-    return c.json({ success: true, message: "申请已提交", memberId }, 201);
+    return c.json({ success: true, message: "申请已提交", memberId, actorType: audit.actorType }, 201);
   } catch (error) {
     console.error("[v1/teams/:teamId/members POST] error:", error);
     return c.json(APIErrors.internalError("申请加入队伍失败"), 500);

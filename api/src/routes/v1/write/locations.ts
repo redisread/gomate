@@ -15,6 +15,7 @@ import type { Env } from "../../../lib/auth";
 import { APIErrors } from "../../../lib/api-errors";
 import { generateId } from "../../../lib/id";
 import { idempotencyMiddleware } from "../../../lib/idempotency";
+import { resolveAuditActor } from "../../../lib/audit";
 
 const writeLocations = new Hono<{ Bindings: Env }>();
 
@@ -46,7 +47,8 @@ writeLocations.post("/", idempotencyMiddleware, async (c) => {
     if (!session) {
       return c.json(APIErrors.unauthorized("请先登录"), 401);
     }
-    const actorApiKeyId = null; // TODO #219
+    const audit = await resolveAuditActor(c);
+    const actorApiKeyId = audit.apiKeyId;
 
     // 2. Parse body
     const body = await c.req.json().catch(() => null);
@@ -96,7 +98,7 @@ writeLocations.post("/", idempotencyMiddleware, async (c) => {
       actorApiKeyId: actorApiKeyId ?? null,
     });
 
-    return c.json({ success: true, location: { id, slug } }, 201);
+    return c.json({ success: true, location: { id, slug }, actorType: audit.actorType }, 201);
   } catch (error) {
     console.error("[v1/locations POST] error:", error);
     return c.json(APIErrors.internalError("创建地点失败"), 500);
