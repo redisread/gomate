@@ -6,9 +6,21 @@ import { useLocationsList, type LocationsListInitialData } from "./use-locations
 import { LocationsHero, LocationsResultBar, LocationsCtaSection } from "./locations-hero";
 import { LocationsGrid } from "./locations-grid";
 
+type EmptyVariant = "noSearch" | "noCity" | "noCitySet" | "tooNarrow";
+
 export function LocationsClient({ initialData }: { initialData?: LocationsListInitialData }) {
   const ctx = useLocationsList(initialData);
   const { loading: _i18nLoading } = useI18n(["locations", "filter"]);
+
+  // 计算空态 variant（待 T1 EmptyState 4 variant 完成后透传）
+  const _emptyVariant: EmptyVariant =
+    ctx.searchQuery.length > 0
+      ? "noSearch"
+      : ctx.selectedCityId && ctx.locations.length === 0 && !ctx.searchQuery
+      ? "noCity"
+      : !ctx.userCity && !ctx.selectedCityId && !ctx.hasActiveFilters && ctx.locations.length === 0
+      ? "noCitySet"
+      : "tooNarrow";
 
   // 点击外部关闭城市下拉
   useEffect(() => {

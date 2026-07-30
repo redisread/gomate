@@ -35,6 +35,8 @@ queries.get("/", async (c) => {
     const search = c.req.query("search") || "";
     const statusParam = c.req.query("status") || "";
     const difficultyParam = c.req.query("difficulty") || "";
+    // #221 / #193 T3 follow-up: cityId filter via locations join
+    const cityIdParam = c.req.query("cityId") || "";
 
     // 日期范围筛选参数
     const startDateFrom = c.req.query("startDateFrom"); // ISO 日期格式 YYYY-MM-DD
@@ -182,6 +184,7 @@ queries.get("/", async (c) => {
       search,
       status: statusParam,
       difficulty: difficultyParam,
+      cityId: cityIdParam,
       startDateFrom,
       startDateTo,
       timeFilter,
@@ -265,6 +268,10 @@ queries.get("/", async (c) => {
         if (difficultyList.length > 0) {
           // task #152 切源：难度筛选改指 location 字段（0010 已回填，与主路线一致）
           allConditions.push(inArray(schema.locations.difficulty, difficultyList));
+        }
+        // #221: filter teams by city (via locations join)
+        if (cityIdParam) {
+          allConditions.push(eq(schema.locations.cityId, cityIdParam));
         }
         if (filteredTeamIds) {
           allConditions.push(inArray(schema.teams.id, filteredTeamIds));

@@ -6,7 +6,8 @@
     "viewDetails": "查看详情"
   },
   "recommendations": {
-    "title": "本周去这三个",
+    "title": "这周就近去这三个",
+    "subtitle": "结合天气、距离、组队动态，按你所在的城市精选",
     "cta": {
       "refresh": "换一批"
     },

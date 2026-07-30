@@ -1,6 +1,6 @@
 import * as React from "react";
 import type { Location } from "@/lib/types";
-import { fetchPublicAPI } from "@/lib/api";
+import { fetchPublicAPI, fetchCurrentUser } from "@/lib/api";
 import type { RoleKey } from "./constants";
 
 interface LocationsPagination {
@@ -34,6 +34,7 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
   const [showCityDropdown, setShowCityDropdown] = React.useState(false);
   const [cityDropdownPos, setCityDropdownPos] = React.useState({ top: 0, left: 0 });
   const [gridFading, setGridFading] = React.useState(false);
+  const [userCity, setUserCity] = React.useState<string | null | undefined>(undefined);
   const hasInitialDataRef = React.useRef(Boolean(initialData));
   const skipInitialFilterFetchRef = React.useRef(true);
 
@@ -100,6 +101,13 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
       .then((data) => { if (data.success && data.cities) setCities(data.cities); })
       .catch(() => {});
   }, [initialData?.cities]);
+
+  // 取 userCity
+  React.useEffect(() => {
+    fetchCurrentUser()
+      .then((user) => setUserCity(user?.city ?? null))
+      .catch(() => setUserCity(null));
+  }, []);
 
   // 搜索防抖
   React.useEffect(() => {
@@ -183,6 +191,7 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
     gridFading,
     selectedCityName,
     hasActiveFilters,
+    userCity,
     setSearchQuery,
     setShowCityDropdown,
     setCityDropdownPos,
@@ -193,5 +202,9 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
     handlePageChange,
     handleClearAll,
     getPageNumbers,
+    onClearSearch: () => setSearchQuery(""),
+    onClearAll: handleClearAll,
+    onChangeCity: () => setShowCityDropdown(true),
+    onSetCity: () => { window.location.href = "/profile/edit"; },
   };
 }
