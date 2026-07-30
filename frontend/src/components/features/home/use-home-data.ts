@@ -25,7 +25,6 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
   const [teams, setTeams] = React.useState<Team[]>(initialData?.teams ?? []);
   const [teamsLoading, setTeamsLoading] = React.useState(!initialData?.teams);
   const [isDark, setIsDark] = React.useState(false);
-  const hasInitialTeamsRef = React.useRef(Boolean(initialData?.teams));
 
   // Theme - 只在客户端检测，避免 SSR/CSR 不一致
   React.useEffect(() => {
@@ -48,7 +47,8 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
   const fetchTeams = React.useCallback(async () => {
     try {
       setTeamsLoading(true);
-      const res = await fetchPublicAPI("/api/teams?status=recruiting&pageSize=4");
+      const cityParam = userCity ? `&cityId=${encodeURIComponent(userCity)}` : "";
+      const res = await fetchPublicAPI(`/api/teams?status=recruiting&pageSize=4${cityParam}`);
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
     } catch (error) {
@@ -56,13 +56,11 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
     } finally {
       setTeamsLoading(false);
     }
-  }, []);
+  }, [userCity]);
 
+  // #221: always fetch on mount (hasInitialTeamsRef removed — SSR data is unfiltered,
+  // we need client to override with correct cityId-filtered data after hydration)
   React.useEffect(() => {
-    if (hasInitialTeamsRef.current) {
-      hasInitialTeamsRef.current = false;
-      return;
-    }
     fetchTeams();
   }, [fetchTeams]);
 
