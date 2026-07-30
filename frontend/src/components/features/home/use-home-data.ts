@@ -48,7 +48,8 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
   const fetchTeams = React.useCallback(async () => {
     try {
       setTeamsLoading(true);
-      const res = await fetchPublicAPI("/api/teams?status=recruiting&pageSize=4");
+      const cityParam = userCity ? `&cityId=${encodeURIComponent(userCity)}` : "";
+      const res = await fetchPublicAPI(`/v1/teams?status=recruiting&pageSize=4${cityParam}`);
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
     } catch (error) {
@@ -56,7 +57,7 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
     } finally {
       setTeamsLoading(false);
     }
-  }, []);
+  }, [userCity]);
 
   React.useEffect(() => {
     if (hasInitialTeamsRef.current) {
