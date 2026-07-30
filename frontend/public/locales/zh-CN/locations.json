@@ -40,9 +40,32 @@
   "totalResultPrefix": "共 {count} 个地方",
   "clearFilter": "清除筛选",
   "clearBtn": "清除",
-  "emptyTitle": "暂时没有找到相关地点",
-  "emptyDesc": "试试放宽条件，也许有更多意想不到的好地方等着你",
-  "emptyBtn": "重新探索",
+  "empty": {
+    "noSearch": {
+      "title": "没有找到「{query}」相关地点",
+      "desc": "换个关键词试试，或者看看其他地点",
+      "clearBtn": "清除搜索",
+      "browseBtn": "随便看看"
+    },
+    "noCity": {
+      "title": "「{cityName}」暂无推荐地点",
+      "desc": "这个城市还没有地点信息，看看其他城市吧",
+      "browseBtn": "看看其他地方",
+      "changeBtn": "换个城市"
+    },
+    "noCitySet": {
+      "title": "还没设置城市",
+      "desc": "设置你的城市，获取更精准的地点推荐",
+      "setBtn": "去设置城市",
+      "browseFirstBtn": "随便看看"
+    },
+    "tooNarrow": {
+      "title": "筛选条件太严格了",
+      "desc": "试试放宽筛选，找到更多地点",
+      "resetBtn": "重置筛选",
+      "homeBtn": "回首页"
+    }
+  },
   "ctaHeroBadge": "咖啡 · 探店 · 户外 · 更多",
   "roleHiking": "户外徒步",
   "roleHikingDesc": "山野步道 · 登山穿越",
