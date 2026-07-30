@@ -40,9 +40,32 @@
   "totalResultPrefix": "合計 {count} か所",
   "clearFilter": "フィルターをクリア",
   "clearBtn": "クリア",
-  "emptyTitle": "関連するスポットが見つかりませんでした",
-  "emptyDesc": "条件を緩めてみてください。思いがけない良い場所が待っているかも",
-  "emptyBtn": "もう一度探索",
+  "empty": {
+    "noSearch": {
+      "title": "「{query}」に該当するスポットが見つかりません",
+      "desc": "別のキーワードに変えて見るか、すべてのスポットを眺めてみる",
+      "clearBtn": "検索をクリア",
+      "browseBtn": "すべて見る"
+    },
+    "noCity": {
+      "title": "「{cityName}」のおすすめスポットはまだありません",
+      "desc": "この都市にはまだスポット情報がありません。他の都市看一看",
+      "browseBtn": "他の都市を見る",
+      "changeBtn": "都市を変える"
+    },
+    "noCitySet": {
+      "title": "都市が未設定です",
+      "desc": "都市を設定すると、より的確なスポット推薦が届きます",
+      "setBtn": "都市を設定する",
+      "browseFirstBtn": "すべて見る"
+    },
+    "tooNarrow": {
+      "title": "フィルターが厳しすぎます",
+      "desc": "フィルターを緩めると、もっと多くのスポットが見つかります",
+      "resetBtn": "フィルターをリセット",
+      "homeBtn": "ホームへ"
+    }
+  },
   "ctaHeroBadge": "カフェ · 探店 · アウトドア · その他",
   "roleHiking": "アウトドアハイキング",
   "roleHikingDesc": "山の遊歩道 · 登山穿越",
