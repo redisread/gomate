@@ -18,13 +18,13 @@ interface Env {
 }
 
 export default {
-  async fetch(request: Request, _env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method !== 'POST' || !request.url.endsWith('/v1/mcp')) {
       return new Response('Not Found', { status: 404 });
     }
 
     const rpc = await request.json() as { id: unknown; method: string; params?: { name?: string; arguments?: Record<string, unknown> } };
-    const response = await handleJsonRpc(rpc);
+    const response = await handleJsonRpc(rpc, env);
 
     return new Response(JSON.stringify(response), {
       headers: { 'Content-Type': 'application/json' },
@@ -32,7 +32,10 @@ export default {
   },
 };
 
-async function handleJsonRpc(rpc: { id: unknown; method: string; params?: { name?: string; arguments?: Record<string, unknown> } }) {
+async function handleJsonRpc(
+  rpc: { id: unknown; method: string; params?: { name?: string; arguments?: Record<string, unknown> } },
+  env: Env
+) {
   const { id, method, params } = rpc;
 
   try {
@@ -42,7 +45,7 @@ async function handleJsonRpc(rpc: { id: unknown; method: string; params?: { name
 
     if (method === 'tools/call') {
       const { name, arguments: args } = params ?? {};
-      const result = await callTool(name!, args ?? {});
+      const result = await callTool(name!, args ?? {}, env);
       return { jsonrpc: '2.0', id, result };
     }
 
@@ -69,20 +72,24 @@ function getToolList() {
   };
 }
 
-async function callTool(name: string, args: Record<string, unknown>) {
+async function callTool(name: string, args: Record<string, unknown>, env: Env) {
+  const client = env.API_BASE_URL && env.API_KEY
+    ? { baseUrl: env.API_BASE_URL, apiKey: env.API_KEY }
+    : null;
+
   let result: unknown;
 
   switch (name) {
-    case 'list_teams': result = await listTeams(args as Parameters<typeof listTeams>[0]); break;
-    case 'get_team': result = await getTeam(args as Parameters<typeof getTeam>[0]); break;
-    case 'list_locations': result = await listLocations(args as Parameters<typeof listLocations>[0]); break;
-    case 'get_location': result = await getLocation(args as Parameters<typeof getLocation>[0]); break;
-    case 'list_stories': result = await listStories(args as Parameters<typeof listStories>[0]); break;
-    case 'my_status': result = await myStatus(args as Parameters<typeof myStatus>[0]); break;
-    case 'create_team': result = await createTeam(args as Parameters<typeof createTeam>[0]); break;
-    case 'join_team': result = await joinTeam(args as Parameters<typeof joinTeam>[0]); break;
-    case 'create_location': result = await createLocation(args as Parameters<typeof createLocation>[0]); break;
-    case 'publish_story': result = await publishStory(args as Parameters<typeof publishStory>[0]); break;
+    case 'list_teams': result = await listTeams(args as Parameters<typeof listTeams>[0], client); break;
+    case 'get_team': result = await getTeam(args as Parameters<typeof getTeam>[0], client); break;
+    case 'list_locations': result = await listLocations(args as Parameters<typeof listLocations>[0], client); break;
+    case 'get_location': result = await getLocation(args as Parameters<typeof getLocation>[0], client); break;
+    case 'list_stories': result = await listStories(args as Parameters<typeof listStories>[0], client); break;
+    case 'my_status': result = await myStatus(args as Parameters<typeof myStatus>[0], client); break;
+    case 'create_team': result = await createTeam(args as Parameters<typeof createTeam>[0], client); break;
+    case 'join_team': result = await joinTeam(args as Parameters<typeof joinTeam>[0], client); break;
+    case 'create_location': result = await createLocation(args as Parameters<typeof createLocation>[0], client); break;
+    case 'publish_story': result = await publishStory(args as Parameters<typeof publishStory>[0], client); break;
     default: throw new Error(`Unknown tool: ${name}`);
   }
 

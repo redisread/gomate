@@ -170,34 +170,34 @@ export function createServer() {
 
       switch (name) {
         case 'list_teams':
-          result = await listTeams(args as Parameters<typeof listTeams>[0]);
+          result = await listTeams(args as Parameters<typeof listTeams>[0], null);
           break;
         case 'get_team':
-          result = await getTeam(args as Parameters<typeof getTeam>[0]);
+          result = await getTeam(args as Parameters<typeof getTeam>[0], null);
           break;
         case 'list_locations':
-          result = await listLocations(args as Parameters<typeof listLocations>[0]);
+          result = await listLocations(args as Parameters<typeof listLocations>[0], null);
           break;
         case 'get_location':
-          result = await getLocation(args as Parameters<typeof getLocation>[0]);
+          result = await getLocation(args as Parameters<typeof getLocation>[0], null);
           break;
         case 'list_stories':
-          result = await listStories(args as Parameters<typeof listStories>[0]);
+          result = await listStories(args as Parameters<typeof listStories>[0], null);
           break;
         case 'my_status':
-          result = await myStatus(args as Parameters<typeof myStatus>[0]);
+          result = await myStatus(args as Parameters<typeof myStatus>[0], null);
           break;
         case 'create_team':
-          result = await createTeam(args as Parameters<typeof createTeam>[0]);
+          result = await createTeam(args as Parameters<typeof createTeam>[0], null);
           break;
         case 'join_team':
-          result = await joinTeam(args as Parameters<typeof joinTeam>[0]);
+          result = await joinTeam(args as Parameters<typeof joinTeam>[0], null);
           break;
         case 'create_location':
-          result = await createLocation(args as Parameters<typeof createLocation>[0]);
+          result = await createLocation(args as Parameters<typeof createLocation>[0], null);
           break;
         case 'publish_story':
-          result = await publishStory(args as Parameters<typeof publishStory>[0]);
+          result = await publishStory(args as Parameters<typeof publishStory>[0], null);
           break;
         default:
           throw new Error(`Unknown tool: ${name}`);
