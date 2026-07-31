@@ -7,10 +7,12 @@ import { listLocations } from './tools/read/list-locations.js';
 import { getLocation } from './tools/read/get-location.js';
 import { listStories } from './tools/read/list-stories.js';
 import { myStatus } from './tools/read/my-status.js';
+import { discoverEnums } from './tools/read/discover-enums.js';
 import { createTeam } from './tools/write/create-team.js';
 import { joinTeam } from './tools/write/join-team.js';
 import { createLocation } from './tools/write/create-location.js';
 import { publishStory } from './tools/write/publish-story.js';
+import { dryRunPreview } from './tools/write/dry-run-preview.js';
 
 interface Env {
   API_BASE_URL?: string;
@@ -63,7 +65,9 @@ function getToolList() {
       { name: 'list_locations', description: 'List locations with optional filters', inputSchema: { type: 'object', properties: { cityId: { type: 'string' }, tags: { type: 'array', items: { type: 'string' } }, difficulty: { type: 'string' }, pageSize: { type: 'number' }, cursor: { type: 'string' } } } },
       { name: 'get_location', description: 'Get a single location by ID', inputSchema: { type: 'object', properties: { locationId: { type: 'string' } }, required: ['locationId'] } },
       { name: 'list_stories', description: 'List stories for a team', inputSchema: { type: 'object', properties: { teamId: { type: 'string' }, pageSize: { type: 'number' }, cursor: { type: 'string' } } } },
-      { name: 'my_status', description: "Get current user's status", inputSchema: { type: 'object', properties: {} } },
+      { name: 'my_status', description: "Get current user's membership status in a team", inputSchema: { type: 'object', properties: { teamId: { type: 'string' } }, required: ['teamId'] } },
+      { name: 'discover_enums', description: 'Discover valid enum values (cities, difficulty, team_status, tags)', inputSchema: { type: 'object', properties: { enumType: { type: 'string', enum: ['city', 'difficulty', 'team_status', 'tag'] } }, required: ['enumType'] } },
+      { name: 'dry_run_preview', description: 'Validate write action parameters without executing', inputSchema: { type: 'object', properties: { action: { type: 'string', enum: ['create_team', 'join_team', 'create_location', 'publish_story'] }, parameters: { type: 'object' } }, required: ['action', 'parameters'] } },
       { name: 'create_team', description: 'Create a new team', inputSchema: { type: 'object', properties: { name: { type: 'string' }, description: { type: 'string' }, locationId: { type: 'string' }, scheduledDate: { type: 'string' }, maxMembers: { type: 'number' }, tags: { type: 'array', items: { type: 'string' } } }, required: ['name', 'locationId', 'scheduledDate'] } },
       { name: 'join_team', description: 'Join an existing team', inputSchema: { type: 'object', properties: { teamId: { type: 'string' }, message: { type: 'string' } }, required: ['teamId'] } },
       { name: 'create_location', description: 'Create a new location', inputSchema: { type: 'object', properties: { name: { type: 'string' }, cityId: { type: 'string' }, address: { type: 'string' }, latitude: { type: 'number' }, longitude: { type: 'number' }, difficulty: { type: 'string', enum: ['easy', 'moderate', 'hard'] }, tags: { type: 'array', items: { type: 'string' } } }, required: ['name', 'cityId', 'latitude', 'longitude', 'difficulty'] } },
@@ -86,6 +90,8 @@ async function callTool(name: string, args: Record<string, unknown>, env: Env) {
     case 'get_location': result = await getLocation(args as Parameters<typeof getLocation>[0], client); break;
     case 'list_stories': result = await listStories(args as Parameters<typeof listStories>[0], client); break;
     case 'my_status': result = await myStatus(args as Parameters<typeof myStatus>[0], client); break;
+    case 'discover_enums': result = await discoverEnums(args as Parameters<typeof discoverEnums>[0], client); break;
+    case 'dry_run_preview': result = await dryRunPreview(args as Parameters<typeof dryRunPreview>[0]); break;
     case 'create_team': result = await createTeam(args as Parameters<typeof createTeam>[0], client); break;
     case 'join_team': result = await joinTeam(args as Parameters<typeof joinTeam>[0], client); break;
     case 'create_location': result = await createLocation(args as Parameters<typeof createLocation>[0], client); break;
