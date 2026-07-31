@@ -60,7 +60,9 @@ export const PublishStorySchema = z.object({
   images: z.array(z.string()).optional(),
 });
 
-export const MyStatusSchema = z.object({});
+export const MyStatusSchema = z.object({
+  teamId: z.string().describe('Team ID to check membership status'),
+});
 
 export const DiscoverEnumsSchema = z.object({
   enumType: z.enum(['city', 'difficulty', 'team_status', 'tag']).describe('Type of enum to discover'),

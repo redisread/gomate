@@ -99,8 +99,14 @@ export function createServer() {
         },
         {
           name: 'my_status',
-          description: "Get current user's status (teams count, stories count, etc.)",
-          inputSchema: { type: 'object', properties: {} },
+          description: "Get current user's membership status in a team",
+          inputSchema: {
+            type: 'object',
+            properties: {
+              teamId: { type: 'string', description: 'Team ID to check membership status' },
+            },
+            required: ['teamId'],
+          },
         },
         {
           name: 'discover_enums',

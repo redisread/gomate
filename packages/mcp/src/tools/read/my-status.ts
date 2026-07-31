@@ -5,20 +5,34 @@ interface ApiClient {
   apiKey: string;
 }
 
-// my_status requires session auth — real implementation in #232 (anti-hallucination)
-export async function myStatus(
-  _input: MyStatusInput,
-  _client: ApiClient | null
-) {
+async function apiRequest<T>(client: ApiClient, path: string): Promise<T> {
+  const response = await fetch(`${client.baseUrl}${path}`, {
+    headers: { 'Content-Type': 'application/json', 'x-api-key': client.apiKey },
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`API error ${response.status}: ${response.statusText}${text ? ' — ' + text : ''}`);
+  }
+  return response.json() as Promise<T>;
+}
+
+export async function myStatus(input: MyStatusInput, client: ApiClient | null) {
+  if (!client || !input.teamId) {
+    return {
+      status: 'none',
+      _stub: true,
+      _note: 'Requires API key + teamId',
+    };
+  }
+
+  // Call GET /v1/teams/{teamId}/my-status
+  const data = await apiRequest<{
+    status: 'none' | 'pending' | 'approved' | 'rejected' | 'member';
+    pollAfterSeconds?: number;
+  }>(client, `/v1/teams/${input.teamId}/my-status`);
+
   return {
-    userId: 'stub-user',
-    name: '需要登录',
-    cityId: null,
-    cityName: null,
-    memberSince: null,
-    teamsCount: 0,
-    storiesCount: 0,
-    _stub: true,
-    _note: 'my_status requires session auth — implement with #232 anti-hallucination gate',
+    status: data.status,
+    ...(data.pollAfterSeconds && { pollAfterSeconds: data.pollAfterSeconds }),
   };
 }
