@@ -139,26 +139,19 @@ export function apiRateLimitMiddleware(scope: "read" | "write", limit: number) {
 
     const result = await checkApiRateLimit(c.env.GOMATE_KV, scope, actorId, actorType, limit);
 
-    const headers: Record<string, string> = {
-      "X-RateLimit-Limit": String(limit),
-      "X-RateLimit-Remaining": String(result.remaining),
-      "X-RateLimit-Reset": String(result.retryAfter),
-    };
+    // 头必须在 await next() 之前 set（Hono 在 next 之后 flush response，post-next set 无效）
+    c.header("X-RateLimit-Limit", String(limit));
+    c.header("X-RateLimit-Remaining", String(result.remaining));
+    c.header("X-RateLimit-Reset", String(result.retryAfter));
 
     if (!result.allowed) {
-      headers["Retry-After"] = String(result.retryAfter);
+      c.header("Retry-After", String(result.retryAfter));
       return c.json(
         { success: false, error: "RATE_LIMIT_EXCEEDED", message: "Too many requests", retryAfter: result.retryAfter },
         429,
-        headers,
       );
     }
 
     await next();
-    if (c.res) {
-      for (const [k, v] of Object.entries(headers)) {
-        c.res.headers.set(k, v);
-      }
-    }
   };
 }
