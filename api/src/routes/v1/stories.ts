@@ -5,6 +5,7 @@ import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { APIErrors } from "../../lib/api-errors";
+import { apiRateLimitMiddleware } from "../../lib/rate-limit";
 
 const stories = new Hono<{ Bindings: Env }>();
 
@@ -12,7 +13,7 @@ const stories = new Hono<{ Bindings: Env }>();
  * GET /v1/stories
  * 公开读端点：已发布故事列表。
  */
-stories.get("/", async (c) => {
+stories.get("/", apiRateLimitMiddleware("read", 600), async (c) => {
   try {
     const db = createDb(c.env.DB);
 
@@ -93,11 +94,11 @@ stories.get("/", async (c) => {
  * GET /v1/stories/:id
  * 公开读端点：已发布故事详情，draft/hidden 不可见。
  */
-stories.get("/:id", async (c) => {
+stories.get("/:id", apiRateLimitMiddleware("read", 600), async (c) => {
   try {
     const db = createDb(c.env.DB);
     const auth = createAuth(c.env);
-    const id = c.req.param("id");
+    const id: string = c.req.param("id") ?? "";
 
     const session = await auth.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
 

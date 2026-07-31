@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { createDb } from "../../db";
 import type { Env } from "../../lib/auth";
+import { apiRateLimitMiddleware } from "../../lib/rate-limit";
 
 const enums = new Hono<{ Bindings: Env }>();
 
@@ -8,7 +9,7 @@ const enums = new Hono<{ Bindings: Env }>();
  * GET /v1/enums
  * Agent 合法值发现入口：一次性返回所有枚举/选项值。
  */
-enums.get("/", async (c) => {
+enums.get("/", apiRateLimitMiddleware("read", 600), async (c) => {
   try {
     const db = createDb(c.env.DB);
 
