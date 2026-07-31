@@ -62,6 +62,15 @@ export const PublishStorySchema = z.object({
 
 export const MyStatusSchema = z.object({});
 
+export const DiscoverEnumsSchema = z.object({
+  enumType: z.enum(['city', 'difficulty', 'team_status', 'tag']).describe('Type of enum to discover'),
+});
+
+export const DryRunPreviewSchema = z.object({
+  action: z.enum(['create_team', 'join_team', 'create_location', 'publish_story']),
+  parameters: z.record(z.unknown()),
+});
+
 export type ListTeamsInput = z.infer<typeof ListTeamsSchema>;
 export type GetTeamInput = z.infer<typeof GetTeamSchema>;
 export type ListLocationsInput = z.infer<typeof ListLocationsSchema>;

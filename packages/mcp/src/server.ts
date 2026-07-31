@@ -12,10 +12,12 @@ import { listLocations } from './tools/read/list-locations.js';
 import { getLocation } from './tools/read/get-location.js';
 import { listStories } from './tools/read/list-stories.js';
 import { myStatus } from './tools/read/my-status.js';
+import { discoverEnums } from './tools/read/discover-enums.js';
 import { createTeam } from './tools/write/create-team.js';
 import { joinTeam } from './tools/write/join-team.js';
 import { createLocation } from './tools/write/create-location.js';
 import { publishStory } from './tools/write/publish-story.js';
+import { dryRunPreview } from './tools/write/dry-run-preview.js';
 
 export function createServer() {
   const server = new Server(
@@ -99,6 +101,29 @@ export function createServer() {
           name: 'my_status',
           description: "Get current user's status (teams count, stories count, etc.)",
           inputSchema: { type: 'object', properties: {} },
+        },
+        {
+          name: 'discover_enums',
+          description: 'Discover valid enum values (cities, difficulty, team_status, tags) to prevent hallucinated values',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              enumType: { type: 'string', enum: ['city', 'difficulty', 'team_status', 'tag'] },
+            },
+            required: ['enumType'],
+          },
+        },
+        {
+          name: 'dry_run_preview',
+          description: 'Validate write action parameters without executing — returns validation errors or preview',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              action: { type: 'string', enum: ['create_team', 'join_team', 'create_location', 'publish_story'] },
+              parameters: { type: 'object' },
+            },
+            required: ['action', 'parameters'],
+          },
         },
         {
           name: 'create_team',
@@ -186,6 +211,12 @@ export function createServer() {
           break;
         case 'my_status':
           result = await myStatus(args as Parameters<typeof myStatus>[0], null);
+          break;
+        case 'discover_enums':
+          result = await discoverEnums(args as Parameters<typeof discoverEnums>[0], null);
+          break;
+        case 'dry_run_preview':
+          result = await dryRunPreview(args as Parameters<typeof dryRunPreview>[0]);
           break;
         case 'create_team':
           result = await createTeam(args as Parameters<typeof createTeam>[0], null);
