@@ -1,5 +1,5 @@
 /**
- * e2e: /v1/* P2-4 rate limit contract (#220)
+ * e2e: /v1/* P2-4 rate limit contract (#220 + #236)
  *
  * Targets: api-staging.gomate.live
  * Spec: read=600/min, write=30/min per actor (apiKey or user). Anonymous → no limit.
@@ -8,7 +8,8 @@
  * 约束：
  * - 不写 idempotency-key 测试（#218 单独覆盖）
  * - 不跨用例 actorId（每用例自建 fixture 隔离）
- * - 仅验证写端点（30/min）— 读端点 #220 没挂 middleware 暂不测
+ * - 写端点 30/min 实际触发 429（4 用例覆盖）
+ * - 读端点 600/min 不实际触发 429（用 5 次循环验证 X-RateLimit 头 + 计数机制），避免 600+ 次循环拖垮 staging
  */
 
 import { test, expect, request as pwRequest } from "@playwright/test";
@@ -49,6 +50,36 @@ async function apiPost(
     headers,
     body: JSON.stringify(body),
   });
+  let data: Record<string, unknown>;
+  try {
+    data = (await res.json()) as Record<string, unknown>;
+  } catch {
+    data = {};
+  }
+  const limit = res.headers.get("x-ratelimit-limit");
+  const remaining = res.headers.get("x-ratelimit-remaining");
+  const reset = res.headers.get("x-ratelimit-reset");
+  const retryAfter = res.headers.get("retry-after");
+  return {
+    status: res.status,
+    body: data,
+    rateLimitHeaders: {
+      limit: limit === null ? null : parseInt(limit, 10),
+      remaining: remaining === null ? null : parseInt(remaining, 10),
+      reset: reset === null ? null : parseInt(reset, 10),
+      retryAfter: retryAfter === null ? null : parseInt(retryAfter, 10),
+    },
+  };
+}
+
+async function apiGet(path: string, cookie?: string): Promise<ApiResult> {
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    Origin: FRONTEND_ORIGIN,
+  };
+  if (cookie) headers.Cookie = cookie;
+
+  const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
   let data: Record<string, unknown>;
   try {
     data = (await res.json()) as Record<string, unknown>;
@@ -232,4 +263,76 @@ test.describe("P2-4 rate limit (write 30/min)", () => {
       expect(r.rateLimitHeaders.remaining).toBe(29);
     });
   }, { timeout: 90_000 });
+});
+
+// ─── Read endpoints 600/min (#236) ─────────────────────────────────────────
+
+test.describe("P2-4 rate limit (read 600/min)", () => {
+  test("read endpoints include X-RateLimit-Limit=600 + X-RateLimit-Remaining decrements", async () => {
+    const RUN_ID = `rl-read-${Date.now()}`;
+    const cookie = await signUp(`${RUN_ID}@gomate.test`, "TestPass123", `RL read ${RUN_ID}`);
+
+    // 抽样 4 个读端点
+    const endpoints = [
+      "/v1/teams?pageSize=1",
+      "/v1/locations?pageSize=1",
+      "/v1/enums",
+      "/v1/stories?pageSize=1",
+    ];
+
+    await test.step("first 5 GETs per endpoint: X-RateLimit-Limit=600 + Remaining 递减", async () => {
+      // 单 actor 共享一个 read 计数器（key: rl:user:<userId>:read），4 端点 × 5 次 = 20 次都计入同一 read 计数
+      for (let i = 1; i <= 5; i++) {
+        for (let j = 0; j < endpoints.length; j++) {
+          const ep = endpoints[j];
+          const r = await apiGet(ep, cookie);
+          expect(r.status, `${ep} #${i} 应 200, 实际 ${r.status} body=${JSON.stringify(r.body)}`).toBe(200);
+          expect(r.rateLimitHeaders.limit, `${ep} #${i} 应带 X-RateLimit-Limit=600`).toBe(600);
+          // i=1 时 5 端点 × 4 = 第 1/2/3/4 次请求，remaining = 600-1, 600-2, 600-3, 600-4
+          const expectedRemaining = 600 - ((i - 1) * endpoints.length + j + 1);
+          expect(r.rateLimitHeaders.remaining, `${ep} #${i} expected Remaining=${expectedRemaining}`).toBe(expectedRemaining);
+        }
+      }
+    });
+  }, { timeout: 30_000 });
+
+  test("read and write counters are independent for same actor", async () => {
+    const RUN_ID = `rl-iso-rw-${Date.now()}`;
+    const cookie = await signUp(`${RUN_ID}@gomate.test`, "TestPass123", `RL iso RW ${RUN_ID}`);
+    const userId = await getSessionUserId(cookie);
+    await setWechat(cookie, userId, `wx_${RUN_ID}`);
+    const locationId = await getFirstLocationId(cookie);
+
+    await test.step("用户已写 5 次（write counter=5），读端点计数器独立从 1 开始", async () => {
+      for (let i = 1; i <= 5; i++) {
+        const w = await apiPost(
+          "/v1/teams",
+          { locationId, title: `iso RW ${i}`, startTime: new Date(Date.now() + 86400000).toISOString(), durationMin: 60, maxMembers: 4 },
+          cookie,
+        );
+        if (w.status === 429) throw new Error(`write #${i} 提前 429`);
+        expect(w.rateLimitHeaders.remaining, `write #${i} remaining`).toBe(30 - i);
+      }
+      // 读 1 次 → read counter 应独立 = 600 - 1 = 599
+      const r = await apiGet("/v1/teams?pageSize=1", cookie);
+      expect(r.status).toBe(200);
+      expect(r.rateLimitHeaders.limit).toBe(600);
+      expect(r.rateLimitHeaders.remaining, "read counter 应独立，从 599 起").toBe(599);
+    });
+  }, { timeout: 30_000 });
+
+  test("anonymous read requests NOT rate-limited (5 anon GETs all 200)", async () => {
+    for (let i = 1; i <= 5; i++) {
+      const r = await apiGet("/v1/teams?pageSize=1");
+      expect(r.status, `匿名 read #${i} 应 200`).toBe(200);
+    }
+  });
+
+  test("my-status read endpoint includes X-RateLimit-Limit=600", async () => {
+    const RUN_ID = `rl-mystatus-${Date.now()}`;
+    const cookie = await signUp(`${RUN_ID}@gomate.test`, "TestPass123", `RL mystatus ${RUN_ID}`);
+    const r = await apiGet("/v1/teams/000000000000000000000000/my-status", cookie);
+    expect(r.status, "my-status 应 200 即便队伍不存在").toBe(200);
+    expect(r.rateLimitHeaders.limit, "my-status 应挂 read 600/min middleware").toBe(600);
+  });
 });
