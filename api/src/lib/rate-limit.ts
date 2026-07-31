@@ -16,6 +16,10 @@
  * tracks the real window boundary, so rate-limit decisions stay correct.
  */
 
+import { Context, Next } from "hono";
+import type { Env } from "./auth";
+import { resolveAuditActor } from "./audit";
+
 /** Cloudflare KV minimum TTL (seconds). */
 const KV_MIN_TTL = 60;
 
@@ -25,11 +29,6 @@ export interface RateLimitResult {
   retryAfter: number; // seconds until the window resets (0 if under limit)
 }
 
-/**
- * Internal value stored in KV.
- * `ts` is the window start timestamp (seconds since epoch) — lets us compute
- * retryAfter without depending on KV TTL metadata.
- */
 interface RateLimitEntry {
   count: number;
   ts: number;
@@ -42,7 +41,6 @@ export async function checkRateLimit(
   windowSeconds: number,
 ): Promise<RateLimitResult> {
   if (!kv) {
-    // KV not available (e.g. local dev without binding) — allow all
     return { allowed: true, remaining: maxRequests, retryAfter: 0 };
   }
 
@@ -53,7 +51,6 @@ export async function checkRateLimit(
   if (raw) {
     try {
       entry = JSON.parse(raw as string) as RateLimitEntry;
-      // If the window has expired, reset
       if (entry.ts + windowSeconds <= now) {
         entry = null;
       }
@@ -62,11 +59,9 @@ export async function checkRateLimit(
     }
   }
 
-  // TTL must be ≥ 60s (Cloudflare KV minimum)
   const safeTtl = (seconds: number) => Math.max(KV_MIN_TTL, seconds);
 
   if (!entry) {
-    // New window
     const newEntry: RateLimitEntry = { count: 1, ts: now };
     await kv.put(key, JSON.stringify(newEntry), { expirationTtl: safeTtl(windowSeconds) });
     return { allowed: true, remaining: maxRequests - 1, retryAfter: 0 };
@@ -79,7 +74,6 @@ export async function checkRateLimit(
     return { allowed: false, remaining: 0, retryAfter: Math.max(1, retryAfter) };
   }
 
-  // Increment counter within existing window
   entry.count += 1;
   await kv.put(key, JSON.stringify(entry), { expirationTtl: safeTtl(retryAfter) });
   return { allowed: true, remaining: remaining - 1, retryAfter: 0 };
@@ -92,4 +86,79 @@ export function getClientIP(req: Request): string {
     req.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ||
     "unknown"
   );
+}
+
+// ---------- Per-key API rate limiting (#220) ----------
+
+/**
+ * Build a rate limit key for API endpoints.
+ * key = "rl:{actorType}:{actorId}:{scope}"
+ */
+export function buildApiRateLimitKey(
+  scope: "read" | "write",
+  actorId: string,
+  actorType: "apiKey" | "user",
+): string {
+  return `rl:${actorType}:${actorId}:${scope}`;
+}
+
+/**
+ * Check rate limit for a v1 API request.
+ */
+export async function checkApiRateLimit(
+  kv: KVNamespace | undefined,
+  scope: "read" | "write",
+  actorId: string,
+  actorType: "apiKey" | "user",
+  limit: number,
+  windowSeconds = 60,
+): Promise<RateLimitResult> {
+  const key = buildApiRateLimitKey(scope, actorId, actorType);
+  return checkRateLimit(kv, key, limit, windowSeconds);
+}
+
+/**
+ * Hono middleware: enforce API rate limit for a given scope.
+ * Must run after auth (session resolved).
+ *
+ * Usage:
+ *   writeTeams.post("/", apiRateLimitMiddleware("write", 30), idempotencyMiddleware, async (c) => {...})
+ */
+export function apiRateLimitMiddleware(scope: "read" | "write", limit: number) {
+  return async (c: Context<{ Bindings: Env }>, next: Next): Promise<Response | void> => {
+    const audit = await resolveAuditActor(c);
+
+    if (!audit.userId) {
+      // Unauthenticated — no rate limit
+      await next();
+      return;
+    }
+
+    const actorId = audit.apiKeyId ?? audit.userId;
+    const actorType: "apiKey" | "user" = audit.apiKeyId ? "apiKey" : "user";
+
+    const result = await checkApiRateLimit(c.env.GOMATE_KV, scope, actorId, actorType, limit);
+
+    const headers: Record<string, string> = {
+      "X-RateLimit-Limit": String(limit),
+      "X-RateLimit-Remaining": String(result.remaining),
+      "X-RateLimit-Reset": String(result.retryAfter),
+    };
+
+    if (!result.allowed) {
+      headers["Retry-After"] = String(result.retryAfter);
+      return c.json(
+        { success: false, error: "RATE_LIMIT_EXCEEDED", message: "Too many requests", retryAfter: result.retryAfter },
+        429,
+        headers,
+      );
+    }
+
+    await next();
+    if (c.res) {
+      for (const [k, v] of Object.entries(headers)) {
+        c.res.headers.set(k, v);
+      }
+    }
+  };
 }

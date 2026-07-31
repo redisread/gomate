@@ -15,10 +15,11 @@ import { APIErrors } from "../../../lib/api-errors";
 import { generateId } from "../../../lib/id";
 import { idempotencyMiddleware } from "../../../lib/idempotency";
 import { resolveAuditActor } from "../../../lib/audit";
+import { apiRateLimitMiddleware } from "../../../lib/rate-limit";
 
 const writeMembers = new Hono<{ Bindings: Env }>();
 
-writeMembers.post("/:teamId/members", idempotencyMiddleware, async (c) => {
+writeMembers.post("/:teamId/members", apiRateLimitMiddleware("write", 30), idempotencyMiddleware, async (c) => {
   try {
     // 1. Authenticate
     const auth = createAuth(c.env);

@@ -16,6 +16,7 @@ import { APIErrors } from "../../../lib/api-errors";
 import { generateId } from "../../../lib/id";
 import { idempotencyMiddleware } from "../../../lib/idempotency";
 import { resolveAuditActor } from "../../../lib/audit";
+import { apiRateLimitMiddleware } from "../../../lib/rate-limit";
 
 const writeStories = new Hono<{ Bindings: Env }>();
 
@@ -35,7 +36,7 @@ function normalizeStoryTags(tags: string[] | undefined): string[] {
     .filter((v, i, a) => a.indexOf(v) === i);
 }
 
-writeStories.post("/", idempotencyMiddleware, async (c) => {
+writeStories.post("/", apiRateLimitMiddleware("write", 30), idempotencyMiddleware, async (c) => {
   try {
     // 1. Authenticate
     const auth = createAuth(c.env);
