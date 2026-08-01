@@ -134,6 +134,11 @@ export function createAuth(env: Env) {
         }
       },
     },
+    verification: {
+      // 2026-08-01 P0：verification token（forgot-password）默认只存 secondaryStorage（KV），
+      // KV 额度耗尽时同样会挂。改为落库，KV 仅缓存。
+      storeInDatabase: true,
+    },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,

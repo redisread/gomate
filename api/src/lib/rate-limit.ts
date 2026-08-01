@@ -29,10 +29,23 @@ export interface RateLimitResult {
 interface RateLimitEntry {
   count: number;
   ts: number;
+  windowSeconds: number;
 }
 
-/** 进程内计数表；过期条目惰性清理（下次访问同 key 时删除） */
+/** 进程内计数表；过期条目惰性清理（下次访问同 key 时删除）。
+ * 上限 RATE_STORE_MAX_ENTRIES 防内存膨胀（攻击者用海量不同 key 撑爆 isolate 内存的 DoS 面）。 */
+const RATE_STORE_MAX_ENTRIES = 10_000;
+let lastRateStorePrune = 0;
 const rateStore = new Map<string, RateLimitEntry>();
+
+/** Map 超过上限时清理已过期条目（每分钟至多一次）；均为活跃条目时让出（防御性降级放行） */
+function pruneRateStore(now: number) {
+  if (rateStore.size < RATE_STORE_MAX_ENTRIES || now - lastRateStorePrune < 60) return;
+  lastRateStorePrune = now;
+  for (const [k, v] of rateStore) {
+    if (v.ts + v.windowSeconds <= now) rateStore.delete(k);
+  }
+}
 
 export async function checkRateLimit(
   key: string,
@@ -40,6 +53,7 @@ export async function checkRateLimit(
   windowSeconds: number,
 ): Promise<RateLimitResult> {
   const now = Math.floor(Date.now() / 1000);
+  pruneRateStore(now);
   const existing = rateStore.get(key);
 
   let entry: RateLimitEntry | null = null;
@@ -52,7 +66,7 @@ export async function checkRateLimit(
   }
 
   if (!entry) {
-    rateStore.set(key, { count: 1, ts: now });
+    rateStore.set(key, { count: 1, ts: now, windowSeconds });
     return { allowed: true, remaining: maxRequests - 1, retryAfter: 0 };
   }
 
