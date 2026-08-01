@@ -207,6 +207,8 @@ main = "@astrojs/cloudflare/entrypoints/server"
 - `session: false` 不是修复 Astro 6 session KV provisioning 的有效方案。
 - 如果部署因 KV namespace 创建失败，先检查现有 Cloudflare KV namespaces，再改代码。
 - 前端 lint/test 在 PR validation 中可能因为历史债务是非阻塞项；type-check、build、i18n validation 仍是阻塞项。
+- **Workers Free 账号 KV 每日 1000 次写入额度（账号级共享）**：rate-limit 已内存化、session/verification 已落 D1（#492），但 local-circle/recommendations SWR 缓存仍写 KV，额度耗尽时仅缓存 miss 回源、不影响认证。
+- **不要设 `NODE_ENV=production` 环境变量**：better-auth 内置 rate limiter 在 `isProduction` 时启用且默认 storage 为 secondary-storage（KV），每个 `/auth/*` 请求写 KV，会快速耗尽每日写入额度（#492 CR 发现，定时炸弹）。
 
 ## 文档与图表
 
