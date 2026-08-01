@@ -28,13 +28,17 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
               : t('locations.detailNoTeamsDesc')}
           </p>
         </div>
-        <a
-          href={`/teams/create?locationId=${locationId}`}
-          className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-semibold transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
-        >
-          {t('locations.detailCreateTeam')}
-          <ArrowRight className="h-3.5 w-3.5" />
-        </a>
+        {/* 有队伍时 header 提供「再发起一个」快捷入口；空态收敛到下方唯一 CTA，
+            避免「召集伙伴出发」在详情页出现 3 次（UX 审计发现） */}
+        {teams.length > 0 && (
+          <a
+            href={`/teams/create?locationId=${locationId}`}
+            className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-semibold transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
+          >
+            {t('locations.detailCreateTeam')}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </a>
+        )}
       </div>
 
       {teams.length === 0 ? (

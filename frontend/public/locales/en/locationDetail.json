@@ -30,7 +30,7 @@
   "transport": {
     "title": "Getting There",
     "openInMap": "Open in Amap",
-    "fallbackHint": "Live transit/driving data unavailable"
+    "fallbackHint": "Open the map to view the location & get directions"
   },
   "parking": {
     "title": "Parking",
