@@ -48,7 +48,10 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      // 本地 e2e 不依赖 staging 环境健康：v1 契约测试硬编码打 api-staging.gomate.live，
+      // 归入 chromium-staging（pnpm e2e:staging），避免本地 CI 被 staging 抖动阻塞。
       use: { ...devices["Desktop Chrome"] },
+      testIgnore: ["**/v1-rate-limit.spec.ts", "**/v1-read-endpoints.spec.ts"],
     },
     {
       name: "chromium-staging",

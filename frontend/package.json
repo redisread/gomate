@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/copy-vditor-assets.mjs && astro dev",
+    "dev": "node scripts/copy-vditor-assets.mjs && astro dev --port ${GOMATE_WEB_PORT:-5432}",
     "i18n:build": "cd .. && pnpm i18n:build",
     "build": "pnpm i18n:build && node scripts/copy-vditor-assets.mjs && astro build && cp .assetsignore dist/",
     "preview": "astro preview",

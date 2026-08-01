@@ -210,25 +210,31 @@ function checkEnvFilesExistence() {
 }
 
 async function checkPort(port, name) {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-    server.once("error", (err) => {
-      if (err.code === "EADDRINUSE") {
-        error(`端口 ${port} 已被占用（${name}），请先关闭占用该端口的进程`);
-        resolve(false);
-      } else {
-        error(`检查端口 ${port} 时出错：${err.message}`);
-        resolve(false);
-      }
-    });
-    server.once("listening", () => {
-      server.close(() => {
-        ok(`端口 ${port} 可用（${name}）`);
-        resolve(true);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    error(`无效端口值 ${port}（${name}），请检查 GOMATE_API_PORT / GOMATE_WEB_PORT`);
+    return false;
+  }
+  // 同时探测 IPv4 / IPv6（astro dev 默认绑 [::1]，仅查 127.0.0.1 会漏报占用）
+  const probe = (address) =>
+    new Promise((resolve) => {
+      const server = net.createServer();
+      server.once("error", (err) => {
+        if (err.code === "EADDRNOTAVAIL" || err.code === "EAFNOSUPPORT") {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
       });
+      server.once("listening", () => server.close(() => resolve(true)));
+      server.listen(port, address);
     });
-    server.listen(port, "127.0.0.1");
-  });
+  const okBoth = await Promise.all([probe("127.0.0.1"), probe("::1")]);
+  if (okBoth.every(Boolean)) {
+    ok(`端口 ${port} 可用（${name}）`);
+    return true;
+  }
+  error(`端口 ${port} 已被占用（${name}），请先关闭占用该端口的进程`);
+  return false;
 }
 
 function checkPlaywrightBrowsers() {
@@ -328,8 +334,10 @@ async function main() {
     CHECKS.push(checkPlaywrightBrowsers());
 
     log("检查端口占用...");
-    CHECKS.push(await checkPort(5432, "frontend dev"));
-    CHECKS.push(await checkPort(8799, "api dev"));
+    const webPort = process.env.GOMATE_WEB_PORT || "5432";
+    const apiPort = process.env.GOMATE_API_PORT || "8799";
+    CHECKS.push(await checkPort(Number(webPort), "frontend dev"));
+    CHECKS.push(await checkPort(Number(apiPort), "api dev"));
 
     log("检查 wrangler 登录状态...");
     CHECKS.push(checkWranglerLogin());
