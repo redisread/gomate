@@ -56,16 +56,3 @@ export async function loginAsAdmin(page: Page) {
   await loginAs(page, STAGING_ACCOUNTS.admin.email, STAGING_ACCOUNTS.admin.password);
 }
 
-/** 在队伍列表页通过标题找到队伍，点击进入详情页，返回队伍 ID */
-export async function gotoTeamByTitle(page: Page, title: string) {
-  await page.goto("/teams");
-  await page.waitForLoadState("domcontentloaded");
-  // 等待骨架屏消失、真实卡片渲染
-  await page.waitForSelector("[class*='skeleton']", { state: "detached", timeout: 10000 }).catch(() => null);
-  const card = page.locator("a[href^='/teams/']").filter({ hasText: title });
-  await card.first().waitFor({ state: "visible", timeout: 10000 });
-  await card.first().click();
-  await page.waitForURL(/\/teams\/.+/, { timeout: 5000 });
-  const match = page.url().match(/\/teams\/([^/]+)/);
-  return match ? match[1] : "";
-}
