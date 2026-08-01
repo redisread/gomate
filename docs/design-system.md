@@ -148,3 +148,100 @@ className="shadow-card-hover"
 - PR #495: this doc created
 - PR #496: motion / interaction polish (rules §9)
 - `/better-ui` skill: `~/.codex/skills/better-ui/SKILL.md`
+
+## 10. Typography
+
+Six `better-typography` skill rules, PR-enforced since PR #498 (2026-08-02).
+
+### 10.1 Type scale — use semantic tokens, not magic numbers
+
+The scale lives in `globals.css` `@theme inline`. Never reach for `text-[Xpx]` arbitrary values.
+
+| Token | Size | Use |
+| --- | --- | --- |
+| `text-3xs` | 10px / 0.875rem lh | status badge text, avatar initial hints, indicator dots |
+| `text-2xs` | 11px / 1rem lh | small chip / notification badge counters |
+| `xs` … `5xl` | Tailwind default scale | body text and standard headings (unchanged) |
+| `text-page-h1` | 24px / 1.2 / 700 / -0.02em | **page-title `<h1>`** only |
+| `text-section-h2` | 18px / 1.3 / 600 / -0.01em | section headings inside a page |
+| `text-card-h3` | 16px / 1.4 / 600 | card heading inside a card |
+
+For `<h2>` / `<h3>` in marketing-hero / profile-card sub-section roles: keep them size-customizable, but stay on the standard `text-2xl … text-base` ramp.
+
+### 10.2 Heading semantics — one `<h1>` per render
+
+Each render-path of a page owns exactly one `<h1>`. Multiple `<h1>` on the same route breaks the document outline and screen-reader landmark count.
+
+```tsx
+// ❌ duplicate h1 — loading state + active state both render
+if (isLoading) return <Loading />;          // <h1>Title</h1>
+return <Active />;                          // <h1>Title</h1>
+
+// ✅ subordinate <h2> in loading / empty / error states
+if (isLoading) return <Loading h1As="h2" />;
+return <Active />;                          // <h1>Title</h1>
+```
+
+Owned by the `better-accessibility` skill's landmark-counting rule. Just don't reach for `<h1>` twice on the same logical page.
+
+### 10.3 `text-wrap` for headings & body
+
+```css
+/* in @layer base */
+h1, h2, h3 { text-wrap: balance; }   /* orphan-aware balance on multi-line headings */
+.story-prose :where(p) { text-wrap: pretty; }  /* body paragraphs */
+```
+
+`balance` makes 2-line and 3-line headings look deliberate instead of lopsided. `pretty` for long-form reading avoids the worst-line-with-orphan feel. Both fall back gracefully on older browsers (no-op).
+
+### 10.4 Properties over raw tags
+
+Always use the high-level CSS property if one exists for the feature.
+
+| ❌ Don't | ✅ Use |
+| --- | --- |
+| `font-feature-settings: "liga" 1, "calt" 1` | `font-variant-ligatures: common-ligatures contextual` |
+| `font-variation-settings: "wght" 650` | `font-weight: 650` |
+| `font-variation-settings: "opsz" auto` | `font-optical-sizing: auto` |
+| `font-feature-settings: "tnum" 1` | `font-variant-numeric: tabular-nums` |
+
+The high-level property preserves fallback behavior when a non-variable / older-rendered stack takes over. Reserve raw tags for custom axes (`"GRAD" 80`) and niche features (`"ss01" 1`) that have no property of their own.
+
+### 10.5 Truncated text — keep full text reachable
+
+Every `line-clamp-N` heading needs a `title={full}` attribute so keyboard / screen-reader users can read the unclamped text.
+
+```tsx
+// ❌ no fallback content for truncated text
+<h3 className="… line-clamp-1">{team.title}</h3>
+
+// ✅ tooltip on hover + exposed to assistive tech
+<h3 title={team.title} className="… line-clamp-1">{team.title}</h3>
+```
+
+Use the **same field** as the inner content (no rewriting / no truncation in `title`). Should match `text-card-h3` token.
+
+### 10.6 iOS input zoom (always ≥ 16px text-size in inputs)
+
+iOS Safari zooms the viewport when an `<input>` receives focus with computed font-size < 16px. Rule:
+
+```tsx
+// ✅ always 16px or larger in <input> / <textarea>
+className="text-base"                              // always 16px
+className="text-sm sm:text-base"                   // mobile-xs then ≥md
+className="text-base sm:text-sm"                   // wrong: starts <16px
+
+// ❌
+className="text-xs" / "text-sm" / "text-[13px]"    // forces iOS zoom
+```
+
+`text-base` is the safest default. `text-sm sm:text-base` is fine if you want smaller text on mobile but it must cross 16px by `sm:`.
+
+## Related
+
+- PR #494: OKLCH + WCAG fixes (color tokens §1-§8)
+- PR #495: this doc created
+- PR #496: motion polish (rules §9)
+- PR #498: typography polish (rules §10)
+- `/better-typography` skill: `~/.codex/skills/better-typography/SKILL.md`
+- `/better-accessibility` skill (heading semantics): `~/.codex/skills/better-accessibility/SKILL.md`
