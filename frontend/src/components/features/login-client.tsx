@@ -269,7 +269,7 @@ export function LoginClient() {
                   href="/register"
                   className="font-semibold text-primary hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-150"
                 >
-                  {t("auth.loginNow")} →
+                  {t("auth.registerNow")} →
                 </a>
               </p>
             </form>

@@ -149,6 +149,35 @@ describe("RecommendationCard", () => {
     expect(document.body.textContent).toContain("home.recommendations.meta.futureTeams");
   });
 
+
+  it("fresh fallback → 徽章用 fresh_fallback 文案 + 不展示 ageDays（避免「本周新面孔/新建 146 天」矛盾）", () => {
+    render(
+      <RecommendationCard
+        reco={makeReco({
+          kind: "fresh",
+          reason: { key: "fresh.fallback", params: {} },
+          location: {
+            name: "阳台山",
+            coverImage: null,
+            difficulty: "easy",
+            durationMin: 90,
+            distanceKm: 8,
+            favCount: 0,
+            storyCount: 0,
+            ageDays: 146,
+            futureTeams: 0,
+          },
+        })}
+      />,
+    );
+    // 徽章 label 走 fresh_fallback key（而非 fresh）
+    const badge = screen.getByTestId("recommendation-badge-fresh");
+    expect(badge.textContent).toBe("home.recommendations.kind.fresh_fallback");
+    // reason 文案 key
+    expect(document.body.textContent).toContain("home.recommendations.reason.fresh_fallback");
+    // ageDays 不展示
+    expect(document.body.textContent).not.toContain("meta.ageDays");
+  });
   it("difficulty=null / durationMin=null 时上方 meta 行不渲染", () => {
     render(
       <RecommendationCard

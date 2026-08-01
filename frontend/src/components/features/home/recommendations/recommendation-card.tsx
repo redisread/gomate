@@ -45,13 +45,17 @@ export function RecommendationCard({ reco }: RecommendationCardProps) {
     days: reason.params.days ?? 0,
   });
 
+  // fresh 类别 fallback（无新地点时的兜底）：不显示「本周新的」徽章与「新建 N 天」，
+  // 避免「本周新面孔 / 新建 146 天」这类自相矛盾文案（UX 审计发现）
+  const isFreshFallback = kind === "fresh" && reason.key === "fresh.fallback";
+
   const difficultyLabel =
     location.difficulty !== null
       ? t(`enums.difficulty.${location.difficulty}`)
       : null;
 
   // 二级数据（根据 kind 优先展示不同维度）
-  const metaLine = buildMetaLine(kind, location, t);
+  const metaLine = buildMetaLine(kind, location, t, { hideAgeDays: isFreshFallback });
 
   return (
     <a
@@ -68,7 +72,10 @@ export function RecommendationCard({ reco }: RecommendationCardProps) {
       >
         {/* Row 1: badge + difficulty/duration */}
         <div className="flex items-center justify-between gap-2">
-          <RecommendationBadge kind={kind} />
+          <RecommendationBadge
+            kind={kind}
+            labelKey={isFreshFallback ? "home.recommendations.kind.fresh_fallback" : undefined}
+          />
           {(difficultyLabel || location.durationMin) && (
             /* task #180 a11y：11px meta 小字体 muted 挂门禁；stone-700 dark:stone-300 = ~7.5:1/8:1 */
             <div className="text-[11px] text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
@@ -115,6 +122,7 @@ function buildMetaLine(
   kind: RecommendationKind,
   loc: Recommendation["location"],
   t: (key: string, vars?: Record<string, string | number>) => string,
+  opts: { hideAgeDays?: boolean } = {},
 ): string[] {
   const out: string[] = [];
   if (kind === "steady") {
@@ -132,7 +140,10 @@ function buildMetaLine(
       out.push(t("home.recommendations.meta.stories", { n: loc.storyCount }));
     }
   } else {
-    out.push(t("home.recommendations.meta.ageDays", { n: loc.ageDays }));
+    // fresh fallback 命中的不是新地点：ageDays 无「新」语义，隐藏避免误导
+    if (!opts.hideAgeDays) {
+      out.push(t("home.recommendations.meta.ageDays", { n: loc.ageDays }));
+    }
     if (loc.futureTeams > 0) {
       out.push(t("home.recommendations.meta.futureTeams", { n: loc.futureTeams }));
     }
