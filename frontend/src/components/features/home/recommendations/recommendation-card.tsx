@@ -65,7 +65,7 @@ export function RecommendationCard({ reco }: RecommendationCardProps) {
     >
       <Card
         className={cn(
-          "h-full p-5 flex flex-col gap-3 border-l-4 transition-all duration-200",
+          "h-full p-5 flex flex-col gap-3 border-l-4 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
           "hover:shadow-lg hover:-translate-y-0.5",
           KIND_BORDER[kind],
         )}

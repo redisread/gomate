@@ -93,7 +93,7 @@ export function ForgotPasswordClient() {
 
               <a
                 href="/login"
-                className="inline-block w-full py-3 rounded-xl text-sm font-semibold text-white text-center transition-all duration-200"
+                className="inline-block w-full py-3 rounded-xl text-sm font-semibold text-white text-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
                 style={{
                   background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",
                   boxShadow: "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",
@@ -151,7 +151,7 @@ export function ForgotPasswordClient() {
                         setError("");
                       }}
                       required
-                      className="w-full pl-11 pr-4 py-3 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                      className="w-full pl-11 pr-4 py-3 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                     />
                   </div>
                 </div>
@@ -170,7 +170,7 @@ export function ForgotPasswordClient() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{
                     background: isLoading ? "var(--primary)" : "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",
                     boxShadow: isLoading ? "none" : "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",

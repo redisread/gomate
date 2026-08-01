@@ -53,12 +53,12 @@ export function StatCard({
 }) {
   const inner = (
     <div className={cn(
-      "bg-card rounded-2xl border border-border p-5 transition-all duration-200 group",
+      "bg-card rounded-2xl border border-border p-5 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 group",
       href && "hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-100/60 hover:border-amber-200/60 cursor-pointer"
     )}>
       <div className="flex items-start justify-between mb-3">
         <div className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200",
+          "w-10 h-10 rounded-xl flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
           accent
             ? "bg-amber-50 group-hover:bg-amber-100"
             : "bg-muted group-hover:bg-secondary"
@@ -66,7 +66,7 @@ export function StatCard({
           <Icon className={cn("h-5 w-5", accent ? "text-amber-600" : "text-muted-foreground")} />
         </div>
         {href && (
-          <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all duration-150" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150" />
         )}
       </div>
       <p className={cn(

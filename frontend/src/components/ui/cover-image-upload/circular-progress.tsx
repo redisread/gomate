@@ -38,7 +38,7 @@ export function CircularProgress({ progress, size = 56, strokeWidth = 4 }: Circu
         strokeDasharray={circumference}
         strokeDashoffset={offset}
         strokeLinecap="round"
-        className="text-primary transition-all duration-300 ease-out"
+        className="text-primary transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 ease-out"
       />
       {/* 百分比文字 */}
       <text

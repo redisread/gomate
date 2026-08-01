@@ -29,10 +29,10 @@ export function HomeHero({ data }: { data: HomeData }) {
             onChange={(e) => search.setValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleSearch(search.value); }}
             onFocus={() => search.setFocused(true)} onBlur={() => search.setFocused(false)}
-            className="w-full pl-11 sm:pl-14 pr-28 sm:pr-32 py-3 sm:py-4 bg-card/95 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground text-sm sm:text-base transition-all duration-250 focus:outline-none focus:ring-4 focus:ring-amber-400/15 focus:border-amber-400"
+            className="w-full pl-11 sm:pl-14 pr-28 sm:pr-32 py-3 sm:py-4 bg-card/95 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground text-sm sm:text-base transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-250 focus:outline-none focus:ring-4 focus:ring-amber-400/15 focus:border-amber-400"
             style={{ boxShadow: search.isFocused ? "0 6px 28px color-mix(in oklab, var(--primary) 20%, transparent)" : "0 4px 20px color-mix(in oklab, var(--foreground) 8%, transparent)", backdropFilter: "blur(8px)" }} />
           {search.value && (
-            <button onClick={search.clear} className="absolute right-20 sm:right-28 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 animate-spin-in">
+            <button onClick={search.clear} className="absolute right-20 sm:right-28 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 animate-spin-in">
               <X className="h-3.5 w-3.5" />
             </button>
           )}

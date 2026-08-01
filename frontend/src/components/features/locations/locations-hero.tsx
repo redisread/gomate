@@ -79,7 +79,7 @@ export function LocationsHero({
               const isActive = activeRole === key;
               return (
                 <button key={key} type="button" onClick={() => onRoleSelect(key)}
-                  className="relative group flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-all duration-250 active:scale-[0.97] overflow-hidden"
+                  className="relative group flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-250 active:scale-[0.96] overflow-hidden"
                   style={isActive ? { background: cfg.activeBg, borderColor: "transparent", boxShadow: `0 6px 20px ${cfg.iconColor}35` } : { background: `linear-gradient(135deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`, borderColor: "rgba(231,229,228,0.8)" }}
                 >
                   {isActive && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `radial-gradient(circle at 80% 20%, rgba(255,255,255,0.6) 0%, transparent 60%)` }} />}
@@ -106,7 +106,7 @@ export function LocationsHero({
           <input
             ref={searchInputRef} type="text" placeholder={t("locations.searchPlaceholder")}
             value={searchQuery} onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-11 pr-12 py-3.5 bg-stone-50 dark:bg-stone-900 text-foreground placeholder-stone-500 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 transition-all duration-200 text-sm shadow-sm"
+            className="w-full pl-11 pr-12 py-3.5 bg-stone-50 dark:bg-stone-900 text-foreground placeholder-stone-500 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 text-sm shadow-sm"
           />
           {searchQuery && (
             <button type="button" onClick={() => onSearchChange("")}
@@ -128,7 +128,7 @@ export function LocationsHero({
                   }
                   onToggleCityDropdown();
                 }}
-                className={cn("flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
+                className={cn("flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
                   selectedCityId ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
                 <MapPin className="w-3 h-3" />
@@ -141,7 +141,7 @@ export function LocationsHero({
             )}
             {popularTags.slice(0, 8).map((tag) => (
               <button key={tag.id} type="button" onClick={() => onTagToggle(tag.id)}
-                className={cn("flex-shrink-0 px-3 py-1.5 text-xs rounded-full border transition-all duration-200 active:scale-95",
+                className={cn("flex-shrink-0 px-3 py-1.5 text-xs rounded-full border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96]",
                   selectedTags.includes(tag.id) ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
                 {tag.name}
@@ -276,7 +276,7 @@ export function LocationsCtaSection() {
                 {/* Button Group */}
                 <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
                   <a href="/teams/create" className="group">
-                    <button className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-950 px-7 py-3.5 rounded-2xl text-base font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-amber-200/40 active:scale-[0.98]">
+                    <button className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-950 px-7 py-3.5 rounded-2xl text-base font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:shadow-lg hover:shadow-amber-200/40 active:scale-[0.96]">
                       <Sparkles className="w-5 h-5" />
                       {t("locations.ctaBtn")}
                       <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />

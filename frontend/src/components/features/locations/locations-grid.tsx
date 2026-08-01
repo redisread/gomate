@@ -40,7 +40,7 @@ function LocationCard({ location, index }: { location: Location; index: number }
       className="group block"
       style={{ animation: `fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms both` }}
     >
-      <article className="bg-card rounded-2xl overflow-hidden border border-border hover:border-amber-200/50 dark:hover:border-amber-800/50 hover:shadow-xl hover:shadow-amber-100/40 dark:hover:shadow-amber-900/20 hover:ring-1 hover:ring-amber-200/40 dark:hover:ring-amber-700/40 transition-all duration-300 hover:-translate-y-1">
+      <article className="bg-card rounded-2xl overflow-hidden border border-border hover:border-amber-200/50 dark:hover:border-amber-800/50 hover:shadow-xl hover:shadow-amber-100/40 dark:hover:shadow-amber-900/20 hover:ring-1 hover:ring-amber-200/40 dark:hover:ring-amber-700/40 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 hover:-translate-y-1">
         <div className="relative h-52 overflow-hidden bg-stone-100 dark:bg-stone-800">
           {location.coverImage ? (
             <LocationCoverImage
@@ -198,11 +198,11 @@ export function EmptyState({
         {desc}
       </p>
 
-      {/* Primary button — amber rounded-full shadow-md hover:-translate-y-0.5 active:scale-95 PRESERVED */}
+      {/* Primary button — amber rounded-full shadow-md hover:-translate-y-0.5 active:scale-[0.96] PRESERVED */}
       {primaryAction && (
         <button
           onClick={primaryAction}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-700 hover:bg-amber-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-950 rounded-full text-sm font-medium transition-all duration-200 shadow-md shadow-amber-200 hover:-translate-y-0.5 active:scale-95"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-700 hover:bg-amber-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-950 rounded-full text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 shadow-md shadow-amber-200 hover:-translate-y-0.5 active:scale-[0.96]"
         >
           <Icon className="h-4 w-4" />
           {primaryLabel}
@@ -280,7 +280,7 @@ export function LocationsGrid({
             onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
             aria-label={t("locations.paginationPrev")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
           >
             <span className={cn("text-stone-900 dark:text-stone-100", currentPage === 1 && "text-stone-500 dark:text-stone-500")}>
               <ChevronLeft className="h-4 w-4" />
@@ -295,7 +295,7 @@ export function LocationsGrid({
                 key={page}
                 onClick={() => onPageChange(page as number)}
                 className={cn(
-                  "w-9 h-9 rounded-xl text-sm font-medium transition-all duration-200",
+                  "w-9 h-9 rounded-xl text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
                   page === currentPage
                     ? "bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white shadow-sm"
                     : "bg-card text-stone-600 dark:text-stone-400 border border-border hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
@@ -310,7 +310,7 @@ export function LocationsGrid({
             onClick={() => currentPage < pagination.totalPages && onPageChange(currentPage + 1)}
             disabled={currentPage === pagination.totalPages}
             aria-label={t("locations.paginationNext")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
           >
             <span className={cn("text-stone-900 dark:text-stone-100", currentPage === pagination.totalPages && "text-stone-500 dark:text-stone-500")}>
               <ChevronRight className="h-4 w-4" />

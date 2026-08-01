@@ -112,7 +112,7 @@ export function Navbar({ className }: NavbarProps) {
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50",
-          "transition-all duration-300 ease-out",
+          "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 ease-out",
           isScrolled ? "navbar-glass shadow-warm-sm" : "bg-transparent",
           className
         )}
@@ -487,7 +487,7 @@ function CtaButton({
       data-testid={dataTestId}
       // task #180 a11y：`bg-primary` (#D97706 amber-600) on cream `#FFFBEB` primary-foreground = ~3.3:1 挂 WCAG AA 4.5:1
       // 走 amber-700 (#B45309) + text-white = ~5.5:1 稳过；不改 --primary token 避免全站隐性回归
-      className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.97] bg-amber-700 text-white hover:bg-amber-800 shadow-md hover:shadow-lg transition-shadow"
+      className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg transition-[transform,background-color,border-color,color,opacity,box-shadow] hover:scale-[1.02] active:scale-[0.96] bg-amber-700 text-white hover:bg-amber-800 shadow-md hover:shadow-lg transition-shadow"
     >
       {icon}
       {label}

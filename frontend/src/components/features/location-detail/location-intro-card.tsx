@@ -143,7 +143,7 @@ export function LocationIntroCard({
           <p
             ref={descRef}
             className={cn(
-              "text-sm text-stone-500 dark:text-stone-400 leading-[1.9] tracking-wide transition-all duration-300",
+              "text-sm text-stone-500 dark:text-stone-400 leading-[1.9] tracking-wide transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300",
               !expanded && "line-clamp-4"
             )}
           >

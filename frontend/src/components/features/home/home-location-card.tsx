@@ -44,7 +44,7 @@ export const LocationCard = memo(function LocationCard({ location, index = 0, co
   if (compact) {
     return (
       <a href={`/locations/${location.id}`} className="block group">
-        <article className="flex items-center gap-3 px-3 py-2.5 bg-card rounded-xl shadow-[var(--shadow-card)] transition-all duration-200 hover:shadow-[var(--shadow-card-hover)] will-change-transform">
+        <article className="flex items-center gap-3 px-3 py-2.5 bg-card rounded-xl shadow-[var(--shadow-card)] transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:shadow-[var(--shadow-card-hover)] will-change-transform">
           {/* Left: square thumbnail ~80px */}
           <div className="flex-shrink-0 w-[72px] h-[72px] rounded-lg overflow-hidden bg-muted">
             {location.coverImage ? (
@@ -76,7 +76,7 @@ export const LocationCard = memo(function LocationCard({ location, index = 0, co
             )}
           </div>
           {/* Arrow */}
-          <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 group-hover:bg-brand group-hover:text-white"
+          <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 group-hover:bg-brand group-hover:text-white"
             style={{ background: "var(--brand-subtle)", color: "var(--brand)" }}>
             <ArrowRight className="h-3 w-3" />
           </div>
@@ -90,7 +90,7 @@ export const LocationCard = memo(function LocationCard({ location, index = 0, co
       <article
         className="overflow-hidden rounded-2xl cursor-pointer bg-card
           shadow-[var(--shadow-card)]
-          transition-all duration-200 ease-out
+          transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 ease-out
           hover:shadow-[var(--shadow-card-hover)]
           hover:-translate-y-1
           will-change-transform"
@@ -152,7 +152,7 @@ export const LocationCard = memo(function LocationCard({ location, index = 0, co
               </div>
             )}
           </div>
-          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ml-3 transition-all duration-150 group-hover:bg-brand group-hover:text-white"
+          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ml-3 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 group-hover:bg-brand group-hover:text-white"
             style={{ background: "var(--brand-subtle)", color: "var(--brand)" }}>
             <ArrowRight className="h-3.5 w-3.5" />
           </div>

@@ -152,7 +152,7 @@ function FooterSection({ title, links }: FooterSectionProps) {
 
       {/* 可折叠内容 */}
       <div
-        className={`overflow-hidden transition-all duration-200 ${
+        className={`overflow-hidden transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 ${
           isOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"
         }`}
       >

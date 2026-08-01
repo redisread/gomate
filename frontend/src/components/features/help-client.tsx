@@ -39,7 +39,7 @@ function FaqAccordionItem({
 
       {/* 展开区域，使用 max-height 过渡实现动画 */}
       <div
-        className="overflow-hidden transition-all duration-300 ease-in-out"
+        className="overflow-hidden transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 ease-in-out"
         style={{ maxHeight: isOpen ? "300px" : "0px" }}
       >
         <p className="px-6 pb-5 pt-1 text-muted-foreground leading-relaxed border-t border-border">

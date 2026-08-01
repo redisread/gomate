@@ -77,11 +77,11 @@ export function ApprovalDetailModal({ approval, isProcessing, onApprove, onRejec
           </p>
           <div className="flex gap-3">
             <button onClick={onReject} disabled={isProcessing}
-              className="flex-1 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-3 rounded-2xl font-semibold transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2">
+              className="flex-1 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-3 rounded-2xl font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 disabled:opacity-50 flex items-center justify-center gap-2">
               <XCircle className="h-4 w-4" />{t("myTeams.rejectBtn")}
             </button>
             <button onClick={onApprove} disabled={isProcessing}
-              className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-2xl font-semibold transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-amber-200">
+              className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-2xl font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-amber-200">
               {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
               {t("myTeams.approveBtn")}
             </button>

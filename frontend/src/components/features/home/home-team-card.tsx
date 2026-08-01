@@ -53,7 +53,7 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <article className={`overflow-hidden rounded-2xl cursor-pointer bg-card relative transition-all duration-300 hover:-translate-y-1.5 hover:shadow-warm-md ${featured ? 'ring-2 ring-amber-500/50' : ''}`}>
+      <article className={`overflow-hidden rounded-2xl cursor-pointer bg-card relative transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 hover:-translate-y-1.5 hover:shadow-warm-md ${featured ? 'ring-2 ring-amber-500/50' : ''}`}>
 
         {/* Featured badge */}
         {featured && (
@@ -157,7 +157,7 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
         </div>
 
         {/* Simplified bottom bar: text link instead of gradient bar */}
-        <div className="sm:absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-stone-400 dark:text-stone-500 sm:translate-y-full sm:group-hover:translate-y-0 transition-all duration-300 ease-out rounded-b-lg sm:rounded-none opacity-100 sm:opacity-0 sm:group-hover:opacity-100 mt-2 sm:mt-0 static sm:static group-hover:text-amber-600 dark:group-hover:text-amber-400">
+        <div className="sm:absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-stone-400 dark:text-stone-500 sm:translate-y-full sm:group-hover:translate-y-0 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 ease-out rounded-b-lg sm:rounded-none opacity-100 sm:opacity-0 sm:group-hover:opacity-100 mt-2 sm:mt-0 static sm:static group-hover:text-amber-600 dark:group-hover:text-amber-400">
           <span>{t("home.teamCard.viewDetails")}</span><ArrowRight className="h-3.5 w-3.5" />
         </div>
       </article>

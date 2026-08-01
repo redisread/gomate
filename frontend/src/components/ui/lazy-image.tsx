@@ -170,7 +170,7 @@ export function LocationCoverImage({
           onLoad={() => setLoaded(true)}
           className={cn(
             "w-full h-full object-cover",
-            "transition-all duration-500 ease-out",
+            "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-500 ease-out",
             "group-hover:scale-[1.06]",
             loaded || priority ? "opacity-100" : "opacity-0",
             className

@@ -265,7 +265,7 @@ export function MultiImageUpload({
       {/* 图片网格 */}
       <div
         className={cn(
-          "grid grid-cols-3 gap-2 rounded-xl p-2 transition-all duration-200",
+          "grid grid-cols-3 gap-2 rounded-xl p-2 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
           isDraggingOver && "ring-2 ring-amber-400 bg-amber-50/50"
         )}
         onDragEnter={handleDragEnter}
@@ -390,7 +390,7 @@ export function MultiImageUpload({
             className={cn(
               "aspect-square rounded-xl border-2 border-dashed",
               "flex flex-col items-center justify-center gap-1",
-              "transition-all duration-150 select-none",
+              "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 select-none",
               isDraggingOver
                 ? "border-amber-500 bg-amber-50"
                 : "border-stone-200 bg-stone-50 hover:border-amber-400 hover:bg-amber-50/50",

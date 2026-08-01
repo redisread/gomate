@@ -75,7 +75,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
         "border border-border/60",
         "shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
         "hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-[2px]",
-        "transition-all duration-300",
+        "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300",
         "break-inside-avoid mb-4",
         className
       )}
