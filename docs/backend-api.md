@@ -710,12 +710,15 @@ R2 文件代理（本地开发专用，顶层挂载）
 
 | 端点 | 说明 |
 | ---- | ---- |
-| `GET /share-image/preview` | 固定数据预览图 |
-| `GET /share-image/location/:locationId` | 地点分享图 |
-| `GET /share-image/team/:teamId` | 队伍分享图 |
-| `GET /share-image/story/:storyId` | 故事分享图（未发布/不存在返回 404） |
+| `GET /share-image/:kind/:id` | 统一端点：`kind` ∈ `location \| team \| story`。`id` 是对应 ID（location/team）或故事 ID（story）；location 支持 `slug` 作为后备。 |
+| `GET /share-image/locales` | 服务端支持的海报 locale 列表（`["zh-CN", "en", "ja"]`）。 |
 
-- **Query：** `download=1`（Content-Disposition attachment）、`refresh=1`（清 R2 缓存后重新生成）
+- **Path params:** `:kind` 限定三种 kind；`:id` 自由但已校验存在（不存在 → 404）。
+- **Query:**
+  - `locale=zh-CN | en | ja`（仅在前端调用，未匹配则按 Accept-Language header 回退；默认 `zh-CN`）—— **所有 kinds 现在都按 locale 渲染**（之前只有 location 支持 team/story 忽略）
+  - `refresh=1` —— 清 R2 缓存后强制重新生成
+
+**原多端点已合并为 `GET /share-image/:kind/:id` 一个端点。** 客户端 `useShareImage({ type, id })` 现在支持 `kind: "location" | "team" | "story"`，重定向分发到此单一端点。早期 `GET /share-image/preview`（仅 Phase 1 验证用）已删除。
 
 ---
 

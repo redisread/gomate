@@ -4,7 +4,7 @@ import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { APIErrors } from "../../lib/api-errors";
-import { safeJsonParse } from "../locations/utils";
+import { safeJsonParse } from "../../lib/safe-json";
 import { apiRateLimitMiddleware } from "../../lib/rate-limit";
 
 const locations = new Hono<{ Bindings: Env }>();

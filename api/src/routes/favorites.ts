@@ -8,15 +8,10 @@ import { APIErrors } from "../lib/api-errors";
 import { createFavoriteSchema } from "../lib/validation";
 import { generateId } from "../lib/id";
 
-/** 安全解析 JSON 字符串 */
-function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
-  if (!value) return fallback;
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
-  }
-}
+import { safeJsonParse } from "../lib/safe-json";
+
+// re-export for backwards-compat with anything that imported safeJsonParse from this file
+export { safeJsonParse };
 
 const favorites = new Hono<{ Bindings: Env }>();
 
