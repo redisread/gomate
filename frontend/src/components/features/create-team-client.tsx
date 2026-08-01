@@ -206,7 +206,7 @@ export function CreateTeamClient() {
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="h-5 w-5" style={{ color: "var(--primary)" }} />
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-page-h1">
               {t("teams.createTitle")}
             </h1>
           </div>

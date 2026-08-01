@@ -31,7 +31,7 @@ export function TermsClient() {
             <span className="mx-2">/</span>
             <span className="text-stone-600 dark:text-stone-400">{t("content.terms.pageTitle")}</span>
           </nav>
-          <h1 className="text-3xl font-bold text-foreground mb-3">{t("content.terms.pageTitle")}</h1>
+          <h1 className="text-page-h1 mb-3">{t("content.terms.pageTitle")}</h1>
           <p className="text-stone-500 dark:text-stone-400 mb-2">{t("content.terms.pageSubtitle")}</p>
           <p className="text-sm text-stone-400 dark:text-stone-500">{t("content.terms.lastUpdated")}</p>
         </div>

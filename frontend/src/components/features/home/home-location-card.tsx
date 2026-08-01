@@ -57,7 +57,7 @@ export const LocationCard = memo(function LocationCard({ location, index = 0, co
           </div>
           {/* Right: name + params */}
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
-            <h3 className="font-semibold text-foreground text-sm leading-snug line-clamp-1 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
+            <h3 title={location.name} className="font-semibold text-foreground text-sm leading-snug line-clamp-1 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
               {location.name}
             </h3>
             <p className="text-xs text-stone-700 dark:text-stone-300 flex items-center gap-1">

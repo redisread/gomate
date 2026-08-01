@@ -32,7 +32,7 @@ export function AvatarStack({ urls, max = 5, size = "sm", tooltip }: AvatarStack
   const shown = urls.slice(0, max);
   const extra = Math.max(0, urls.length - max);
   const boxSize = SIZE_PX[size];
-  const fontSize = size === "sm" ? "text-[9px]" : "text-[10px]";
+  const fontSize = size === "sm" ? "text-[9px]" : "text-3xs";
 
   if (urls.length === 0) return null;
 

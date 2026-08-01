@@ -362,11 +362,11 @@ export function MultiImageUpload({
               /* 错误态 */
               <div className="flex flex-col items-center gap-1 p-2 text-center">
                 <AlertCircle className="h-5 w-5 text-red-400" />
-                <span className="text-[10px] text-red-500 leading-tight">{item.error}</span>
+                <span className="text-3xs text-red-500 leading-tight">{item.error}</span>
                 <button
                   type="button"
                   onClick={() => handleClearError(item.key)}
-                  className="text-[10px] underline text-red-400 hover:text-red-600"
+                  className="text-3xs underline underline-offset-2 text-red-400 hover:text-red-600"
                 >
                   {t("ui.upload.removeItem")}
                 </button>
@@ -375,7 +375,7 @@ export function MultiImageUpload({
               /* 上传中态 */
               <div className="flex flex-col items-center gap-1">
                 <CircularProgress progress={item.progress ?? 0} />
-                <span className="text-[10px] text-stone-400">{item.progress}%</span>
+                <span className="text-3xs text-stone-400">{item.progress}%</span>
               </div>
             )}
           </div>
@@ -398,7 +398,7 @@ export function MultiImageUpload({
             )}
           >
             <Plus className="h-5 w-5 text-stone-400" />
-            <span className="text-[10px] text-stone-400">{t('ui.upload.addImage')}</span>
+            <span className="text-3xs text-stone-400">{t('ui.upload.addImage')}</span>
           </button>
         )}
       </div>

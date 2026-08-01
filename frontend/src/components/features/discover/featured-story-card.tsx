@@ -105,7 +105,7 @@ export function FeaturedStoryCard({ story, onClick, className }: FeaturedStoryCa
       {/* 内容区 */}
       <div className="p-4 sm:p-5">
         {/* 标题 - 18px 加粗 */}
-        <h3 className="text-lg font-bold text-foreground line-clamp-2 mb-3 group-hover:text-primary transition-colors">
+        <h3 title={story.title} className="text-lg font-bold text-foreground line-clamp-2 mb-3 group-hover:text-primary transition-colors">
           {story.title}
         </h3>
 

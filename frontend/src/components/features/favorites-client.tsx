@@ -87,7 +87,7 @@ export function FavoritesClient() {
               <ArrowLeft className="h-4 w-4" />
               {t("favorites.backBtn")}
             </a>
-            <h1 className="text-2xl font-bold text-[var(--foreground)]">{t("favorites.pageTitle")}</h1>
+            <h1 className="text-page-h1">{t("favorites.pageTitle")}</h1>
             {!isLoading && favorites.length > 0 && (
               <p className="text-sm text-[var(--muted-foreground)] mt-1">
                 {favorites.length} {t("favorites.locationCount")}
@@ -241,7 +241,7 @@ export function FavoritesClient() {
 
                     {/* 卡片内容 */}
                     <a href={`/locations/${loc.id}`} className="block p-4">
-                      <h3 className="font-semibold text-[var(--foreground)] text-sm leading-snug mb-1.5 line-clamp-1">
+                      <h3 title={loc.name} className="font-semibold text-[var(--foreground)] text-sm leading-snug mb-1.5 line-clamp-1">
                         {loc.name}
                       </h3>
                       {(loc.address || loc.cityName) && (

@@ -288,7 +288,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
             className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50"
           >
             <Flame className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
-            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+            <span className="text-2xs font-semibold text-emerald-700 dark:text-emerald-400">
               {t("locationDetail.activeRecruiting")}
             </span>
           </div>
@@ -386,7 +386,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
                   {loc.name}
                 </h4>
                 {diff && diffLabel && (
-                  <span className={cn("inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold", diff.bg, diff.text)}>
+                  <span className={cn("inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-3xs font-semibold", diff.bg, diff.text)}>
                     <span className={cn("w-1.5 h-1.5 rounded-full", diff.dot)} />
                     {diffLabel}
                   </span>
@@ -444,8 +444,8 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
       <div className="max-w-7xl mx-auto px-3 py-3 flex items-center gap-2.5 sm:px-4 sm:gap-3 max-[360px]:px-2 max-[360px]:gap-2">
         {/* 地点信息 */}
         <div className="flex-1 min-w-0 max-[360px]:hidden">
-          <p className="text-[10px] text-stone-500 dark:text-stone-500 font-semibold uppercase tracking-wide">{t("locationDetail.destination")}</p>
-          <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight">{location.name}</p>
+          <p className="text-3xs text-stone-500 dark:text-stone-500 font-semibold uppercase tracking-wide">{t("locationDetail.destination")}</p>
+          <p title={location.name} className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight">{location.name}</p>
         </div>
 
         {/* 浏览队伍 */}
@@ -941,7 +941,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                   />
                 ))}
                 {galleryImages.length > 8 && (
-                  <span className="text-white/50 text-[10px] ml-0.5">+{galleryImages.length - 8}</span>
+                  <span className="text-white/50 text-3xs ml-0.5">+{galleryImages.length - 8}</span>
                 )}
               </div>
             )}

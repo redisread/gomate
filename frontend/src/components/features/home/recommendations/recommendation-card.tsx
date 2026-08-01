@@ -78,7 +78,7 @@ export function RecommendationCard({ reco }: RecommendationCardProps) {
           />
           {(difficultyLabel || location.durationMin) && (
             /* task #180 a11y：11px meta 小字体 muted 挂门禁；stone-700 dark:stone-300 = ~7.5:1/8:1 */
-            <div className="text-[11px] text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+            <div className="text-2xs text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
               {difficultyLabel && <span>{difficultyLabel}</span>}
               {difficultyLabel && location.durationMin ? <span>·</span> : null}
               {location.durationMin && (
@@ -89,7 +89,7 @@ export function RecommendationCard({ reco }: RecommendationCardProps) {
         </div>
 
         {/* Row 2: 地点名 */}
-        <h3 className="text-lg font-semibold text-foreground leading-snug group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
+        <h3 title={location.name} className="text-lg font-semibold text-foreground leading-snug group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
           {location.name}
         </h3>
 
@@ -100,7 +100,7 @@ export function RecommendationCard({ reco }: RecommendationCardProps) {
 
         {/* Row 4: 二级数据 — task #180 a11y：11px muted 挂门禁 */}
         {metaLine.length > 0 && (
-          <div className="pt-2 mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-stone-700 dark:text-stone-300 border-t border-border/50">
+          <div className="pt-2 mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-stone-700 dark:text-stone-300 border-t border-border/50">
             {metaLine.map((m, i) => (
               <span key={i}>{m}</span>
             ))}

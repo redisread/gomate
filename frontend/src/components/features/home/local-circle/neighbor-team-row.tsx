@@ -51,7 +51,7 @@ export const NeighborTeamRow = memo(function NeighborTeamRow({ team, cityName }:
       data-testid="neighbor-team-row"
     >
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-sm sm:text-base text-card-foreground line-clamp-1">
+        <h4 title={team.teamTitle} className="font-medium text-sm sm:text-base text-card-foreground line-clamp-1">
           {team.teamTitle}
         </h4>
         <div className="mt-1 flex items-center gap-3 text-xs text-stone-600 dark:text-stone-400">

@@ -119,7 +119,7 @@ export function MemberAvatarGrid({
                 +{hidden}
               </span>
             </div>
-            <p className="text-[10px] text-muted-foreground/60">{t('teams.viewAll')}</p>
+            <p className="text-3xs text-muted-foreground/60">{t('teams.viewAll')}</p>
           </button>
         )}
       </div>

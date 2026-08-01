@@ -223,9 +223,9 @@ export function DiscoverMain() {
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Compass className="w-4 h-4 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold text-foreground">
+              <h2 className="text-lg font-semibold text-foreground tracking-tight">
                 {t("content.discover.title")}
-              </h1>
+              </h2>
             </div>
           </div>
         </div>
@@ -280,7 +280,7 @@ export function DiscoverMain() {
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Compass className="w-4 h-4 text-primary" />
                 </div>
-                <h1 className="text-2xl font-bold text-foreground">
+                <h1 className="text-page-h1">
                   {t("content.discover.title")}
                 </h1>
               </div>

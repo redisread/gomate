@@ -337,7 +337,7 @@ export function TeamsHeader({
             )}>
             <Filter className="h-4 w-4" />
             {activeFiltersCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold">{activeFiltersCount}</span>
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-600 text-white text-3xs rounded-full flex items-center justify-center font-bold">{activeFiltersCount}</span>
             )}
           </button>
         </div>

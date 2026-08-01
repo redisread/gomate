@@ -139,7 +139,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
                 className="w-5 h-5 rounded-full object-cover"
               />
             ) : (
-              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-medium text-primary">
+              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-3xs font-medium text-primary">
                 {story.author?.name?.charAt(0) || "?"}
               </div>
             )}
@@ -162,7 +162,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
         </div>
 
         {/* 日期 */}
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
+        <div className="flex items-center gap-1 text-3xs text-muted-foreground/50">
           <Clock className="w-3 h-3" />
           <span suppressHydrationWarning>{formatDate(story.createdAt)}</span>
         </div>
