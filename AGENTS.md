@@ -37,6 +37,9 @@ gomate/
 ```bash
 pnpm install
 pnpm dev
+pnpm dev:wt             # 多 worktree：自动分配空闲端口并启动 API + 前端
+pnpm init:worktree      # 多 worktree：补齐 secrets / env / i18n / 共享 D1（幂等）
+pnpm db:sync            # 从 prod API 同步地点数据到本地 D1
 pnpm api:dev
 pnpm web:dev
 pnpm type-check
@@ -62,12 +65,18 @@ lsof -ti:5432
 
 ### 本地全栈测试环境（数据对齐 prod，Wen 验收配方）
 
-需要本地数据与 prod 对齐做验收时（而非空库/纯 seed）：
+多 worktree 并行开发时的端口 / 数据方案见 `docs/local-dev-worktrees.md`，要点：
+
+- **共享本地 D1**：默认 `~/.gomate/wrangler-state`，所有 worktree 共用一份，初始化一次即可（migrations + `pnpm db:sync` 从 prod 拉地点数据 + 注册 QA 用户）
+- **动态端口**：`GOMATE_API_PORT` / `GOMATE_WEB_PORT`，`pnpm dev:wt` 自动分配空闲端口；CORS 对 localhost 任意端口放行
+- **一键初始化**：`pnpm init:worktree` 补齐 `api/.dev.vars`（gitignored，找团队索取，勿入库）、`frontend/.env.local`、i18n 生成文件、共享 D1
+
+手动配方（不自动初始化时）：
 
 1. API 用 `wrangler dev` 起本地 D1（需要 `api/.dev.vars`，gitignored，找团队索取，勿入库）
 2. 同步 prod 地点数据：`cd api && tsx db/sync-locations.ts`（从远程 API 拉 cities/locations/tags 写本地 D1）
 3. 本地注册 QA 用户；需要微信号字段的用例用 `PATCH /api/users/update` 补 wechat
-4. 前端必须跑 `5432`——API 的 CORS 白名单只放行该端口，其他端口（如 5436）会被拒
+4. 前端默认跑 `5432`（动态端口下 CORS 已放行任意 localhost 端口）
 
 ## 架构入口
 

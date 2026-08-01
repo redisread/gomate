@@ -30,7 +30,7 @@
   "transport": {
     "title": "怎么到",
     "openInMap": "在高德地图打开",
-    "fallbackHint": "暂无实时公交/驾车数据"
+    "fallbackHint": "打开地图，查看具体位置和导航路线"
   },
   "parking": {
     "title": "停车",

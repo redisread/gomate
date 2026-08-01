@@ -24,6 +24,23 @@ function parseAllowedOrigins(env: Env, _origin: string): string[] {
   return [...new Set([...configured, ...localhostOrigins])];
 }
 
+/**
+ * 判断是否为回环地址 origin（localhost / 127.0.0.1 / [::1]，http/https）。
+ * 多 worktree 并行开发时端口不固定（GOMATE_API_PORT / GOMATE_WEB_PORT），
+ * 固定白名单会误拒动态端口，这里按主机名匹配（仅限本机回环地址）。
+ * URL 解析同时校验端口合法（>65535 / 非数字端口会被拒绝）。
+ */
+function isLocalhostOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+    const host = url.hostname.replace(/^\[|\]$/g, "");
+    return ["localhost", "127.0.0.1", "::1"].includes(host);
+  } catch {
+    return false;
+  }
+}
+
 /** CORS 中间件，允许前端和移动端跨域请求 */
 export const corsMiddleware = cors({
   origin: (origin, c) => {
@@ -33,8 +50,10 @@ export const corsMiddleware = cors({
     const allowed = parseAllowedOrigins(c.env, origin);
     if (allowed.includes(origin)) return origin;
 
-    // 仅开发环境允许局域网 IP（移动端调试）— 通过 APP_URL 判断，避免匹配生产域名中的子串
+    // 仅开发环境放行回环地址（localhost / 127.0.0.1 / [::1]）任意端口 + 局域网 IP（移动端调试）
+    // 通过 APP_URL 判断，避免生产环境反射本机任意页面 Origin（credentials: true 下有 CSRF 面）
     const isDev = (c.env.APP_URL ?? "").includes("localhost");
+    if (isDev && isLocalhostOrigin(origin)) return origin;
     if (isDev && /^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin)) return origin;
     if (isDev && /^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin)) return origin;
 

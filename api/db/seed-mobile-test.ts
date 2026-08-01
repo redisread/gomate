@@ -26,10 +26,17 @@ import { randomBytes, scryptSync } from "node:crypto";
 import * as schema from "../src/db/schema";
 import path from "path";
 import fs from "fs";
+import os from "node:os";
 
+// 本地 D1 状态目录：多 worktree 共享同一份（GOMATE_LOCAL_STATE，默认 ~/.gomate/wrangler-state）
 const DB_PATH = path.join(
-  process.cwd(),
-  ".wrangler/state/v3/d1/miniflare-D1DatabaseObject"
+  path.resolve(
+    process.env.GOMATE_LOCAL_STATE ||
+      path.join(os.homedir(), ".gomate", "wrangler-state"),
+  ),
+  "v3",
+  "d1",
+  "miniflare-D1DatabaseObject"
 );
 
 function findDbFile(): string {
@@ -696,4 +703,7 @@ async function main() {
   sqlite.close();
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

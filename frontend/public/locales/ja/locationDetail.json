@@ -30,7 +30,7 @@
   "transport": {
     "title": "行き方",
     "openInMap": "高德地図で開く",
-    "fallbackHint": "リアルタイムの交通データを取得できません"
+    "fallbackHint": "地図を開いて、場所とナビルートを確認"
   },
   "parking": {
     "title": "駐車場",
