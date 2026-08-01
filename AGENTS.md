@@ -6,36 +6,6 @@
 - `CLAUDE.md` 只引用本文件，不维护重复规则。
 - 新增或修改项目级规则时，更新 `AGENTS.md`；长示例、产品说明、接口细节放到 `docs/` 或专门规则文件。
 
-## 思维原则
-
-- 所有决策从问题本质出发，不因惯例照搬。先问要解决什么问题，最直接路径是什么，如果从零设计会怎么做。
-- 不要谄媚。不要夸用户的想法，不要用空泛开场。给真实判断，方案有问题直接指出，发现更直接的做法就说明。
-- 工程判断服务结果。能小改解决的问题不要大改；确实需要重构时，先定义边界、风险、回滚和验收标准。
-- 默认使用中文处理项目内协作、规则、评审和报告类任务；用户明确要求其他语言时按用户要求执行。
-
-## 代理工作规则
-
-- 会话开始时，默认加载 `using-agent-skills` 技能：`.codex/skills/using-agent-skills/SKILL.md`。
-- 开始任务前先判断适用技能，并按对应技能流程执行；多个技能适用时，选择覆盖当前任务的最小集合。
-- 遇到需求冲突、上下文冲突或高影响不确定性时，先说明冲突和取舍，不要静默猜测。
-- 遇到与当前任务直接相关的明显问题（typo、过期 import、类型断言错误、已废弃 API），应当顺手修复；修复前先评估改动范围，超过 1 个文件或改动量明显超出任务时，拆成独立任务再修。
-- 不要回滚自己未创建的无关 worktree 改动。
-- 创建 PR 后，必须执行 CR（代码评审）和流水线检查：
-  - 使用 code reviewer agent 对 PR diff 进行五维度评审（correctness, readability, architecture, security, performance），并验证每个发现
-  - 使用 `gh pr checks` 检查 CI 状态，确认所有阻塞项通过
-  - 如有失败或阻塞，先通知失败项，再修复、推送并重复检查，直到通过或明确存在外部阻塞
-  - 合并后进行生产路径回归验证（构建成功不等于生产验证完成）
-
-## Addy 子 Agent 持续迭代规则
-
-项目级 Addy 子 Agent 定义位于 `.claude/agents/Addy.md`，是规格/架构/实现/审查/调试/发布全链路工程工作的主入口。
-
-- **必走 Addy**：代码改动和功能实现统一使用 Addy 子 Agent 执行（`Agent(subagent_type="Addy", prompt=...)`），主 agent 不直接落地实现代码；小到单文件 bug fix、大到跨包架构调整，均通过 Addy 委派。文档/CI 配置/纯命令类任务可由主 agent 直接处理，不强制走 Addy。
-- **持续迭代**：每次跑 Addy、每次对 Addy prompt 做改动、每次发现 Addy 行为与项目现状不符（skill 命名空间错配、token 开销过大、与 AGENTS.md 不一致、描述触发不准等），都要主动提出来。
-- **优化方案**：提问题时一并给出具体改动（行号、删除/新增内容、原因、预期收益），不要只指出问题。
-- **确认后才动手**：所有 Addy prompt 改动必须先让用户确认，再修改 `.claude/agents/Addy.md`，不得自行落地。
-- **同步 AGENTS.md**：如果发现 Addy prompt 与本文件规则冲突，优先更新 AGENTS.md 再说（约束先行，文档先于实践）。
-
 ## 项目概览
 
 GoMate 是一个极简地点组队平台。用户可以发现地点、创建或加入队伍，并通过轻量社交证明和分享流程协调出行。
@@ -119,6 +89,26 @@ API：
 - i18n 数据：`frontend/src/i18n/` 和生成后的 locale 数据
 - Content collections：`frontend/src/content.config.ts`
 
+## 思维原则
+
+- 所有决策从问题本质出发，不因惯例照搬。先问要解决什么问题，最直接路径是什么，如果从零设计会怎么做。
+- 不要谄媚。不要夸用户的想法，不要用空泛开场。给真实判断，方案有问题直接指出，发现更直接的做法就说明。
+- 工程判断服务结果。能小改解决的问题不要大改；确实需要重构时，先定义边界、风险、回滚和验收标准。
+- 默认使用中文处理项目内协作、规则、评审和报告类任务；用户明确要求其他语言时按用户要求执行。
+
+## 代理工作规则
+
+- **每次会话必须加载 `using-agent-skills` 技能**（`.codex/skills/using-agent-skills/SKILL.md`），按其中的技能发现与调用流程执行当前任务，不依赖任何项目级子 Agent。
+- 开始任务前先判断适用技能，并按对应技能流程执行；多个技能适用时，选择覆盖当前任务的最小集合。
+- 遇到需求冲突、上下文冲突或高影响不确定性时，先说明冲突和取舍，不要静默猜测。
+- 遇到与当前任务直接相关的明显问题（typo、过期 import、类型断言错误、已废弃 API），应当顺手修复；修复前先评估改动范围，超过 1 个文件或改动量明显超出任务时，拆成独立任务再修。
+- 不要回滚自己未创建的无关 worktree 改动。
+- 创建 PR 后，必须执行 CR（代码评审）和流水线检查：
+  - 使用 code reviewer agent 对 PR diff 进行五维度评审（correctness, readability, architecture, security, performance），并验证每个发现
+  - 使用 `gh pr checks` 检查 CI 状态，确认所有阻塞项通过
+  - 如有失败或阻塞，先通知失败项，再修复、推送并重复检查，直到通过或明确存在外部阻塞
+  - 合并后进行生产路径回归验证（构建成功不等于生产验证完成）
+
 ## 工作边界
 
 ### 硬红线（除非获得明确授权，绝对不动）
@@ -126,6 +116,7 @@ API：
 - 不提交密钥、`.env` 文件、生产凭据。
 - 不执行生产 D1 / R2 / KV 数据变更、数据库修复。
 - 数据库变更使用 migration 文件或文档化 SQL；没有授权不执行临时生产 SQL。
+- **D1 迁移与 prod 变更规约**：见 [docs/prod-change-policy.md](./docs/prod-change-policy.md)（DDL 只走 migration、迁移幂等、双账本同步 CI 门禁、prod 变更声明制），所有实现者必读。
 
 ### drizzle-kit generate 使用约束（task #159 决策）
 
@@ -193,8 +184,7 @@ main = "@astrojs/cloudflare/entrypoints/server"
 
 - 未明确要求时，不要重新引入 Cloudflare Images binding。
 - 请求合并前，提供 PR 链接、变更范围、本地验证命令和结果、GitHub Checks 状态、部署影响、风险变更的回滚说明。
-- 合并后验证本次变更触达的生产路径。构建成功不等于生产验证完成。
-- **D1 迁移与 prod 变更规约**：见 [docs/prod-change-policy.md](./docs/prod-change-policy.md)（DDL 只走 migration、迁移幂等、双账本同步 CI 门禁、prod 变更声明制），所有实现者必读。
+- 合并后执行生产路径回归验证（见「代理工作规则」）。
 
 ## 已知坑点
 
@@ -207,7 +197,6 @@ main = "@astrojs/cloudflare/entrypoints/server"
 ## 文档与图表
 
 - 页面或 UI 行为变化时，更新 `docs/frontend-pages.md`。
-- API 请求、响应、认证或数据库行为变化时，更新 `docs/backend-api.md`。
 - 字体流水线变化时，更新 `docs/font-subsetting.md`。
 - Mermaid 图表默认使用 Hand-Drawn 涂鸦风格，优先把这一行放在代码块第一行：
 
