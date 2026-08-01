@@ -136,7 +136,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
   }, [formData.extra, moveItem, updateField]);
   return (<>
     <SectionCard icon={<Settings className="h-4 w-4" />} title={t("admin.formSettingsTitleRecommended")} collapsible defaultOpen={true}
-      badge={<span className="text-[10px] text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">{t("admin.optionalBadge")}</span>}>
+      badge={<span className="text-3xs text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">{t("admin.optionalBadge")}</span>}>
       <div className="space-y-2">
       <SubSectionCard title={t("admin.formFacilitiesTitle")} defaultOpen={true}>
         <Field label="" hint="">{/* label 在 SubSectionCard title 中 */}

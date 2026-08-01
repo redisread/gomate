@@ -435,7 +435,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 e.stopPropagation();
                 setUploadState({ phase: "idle" });
               }}
-              className="mt-1 text-xs underline text-destructive hover:text-destructive/80"
+              className="mt-1 text-xs underline underline-offset-2 text-destructive hover:text-destructive/80"
             >
               {t("ui.upload.uploadRetry")}
             </button>

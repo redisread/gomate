@@ -74,7 +74,7 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
           const transportMapUrl = buildFallbackMapUrl(location);
           return (
             <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5 space-y-2">
-              <p className="mb-3 text-[11px] font-bold uppercase text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+              <p className="mb-3 text-2xs font-bold uppercase text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
                 <Navigation className="h-3.5 w-3.5" />
                 {t("locationDetail.transport.title")}
               </p>
@@ -143,7 +143,7 @@ function ParkingSubBlock({ available, info, t }: ParkingSubBlockProps) {
   const showStatus = available !== null;
   return (
     <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5">
-      <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase text-stone-500 dark:text-stone-400">
+      <p className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase text-stone-500 dark:text-stone-400">
         <MapPin className="h-3.5 w-3.5" />
         {t("locationDetail.parking.title")}
       </p>
@@ -182,7 +182,7 @@ interface GearSubBlockProps {
 function GearSubBlock({ essential, optional, notes, t }: GearSubBlockProps) {
   return (
     <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5">
-      <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase text-stone-500 dark:text-stone-400">
+      <p className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase text-stone-500 dark:text-stone-400">
         <Backpack className="h-3.5 w-3.5" />
         {t("locationDetail.gear.title")}
       </p>
@@ -204,7 +204,7 @@ function GearSubBlock({ essential, optional, notes, t }: GearSubBlockProps) {
       </div>
       {notes.length > 0 && (
         <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/20 px-3 py-2.5">
-          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase text-amber-700 dark:text-amber-400">
+          <p className="mb-1.5 flex items-center gap-1.5 text-2xs font-bold uppercase text-amber-700 dark:text-amber-400">
             <AlertTriangle className="h-3.5 w-3.5" />
             {t("locationDetail.gear.notes")}
           </p>
@@ -238,7 +238,7 @@ function GearList({
     <div>
       <p
         className={cn(
-          "mb-1.5 text-[11px] font-bold uppercase",
+          "mb-1.5 text-2xs font-bold uppercase",
           tone === "essential"
             ? "text-emerald-700 dark:text-emerald-400"
             : "text-stone-500 dark:text-stone-400",

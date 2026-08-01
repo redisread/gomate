@@ -136,7 +136,7 @@ export function LocationFormBasicFields({ formData, errors, cities, updateField,
                   formData.description.length < 50 ? "bg-stone-300" : formData.description.length < 100 ? "bg-amber-400" : "bg-emerald-400")}
                   style={{ width: `${Math.min((formData.description.length / 500) * 100, 100)}%` }} />
               </div>
-              <span className={cn("text-[10px] tabular-nums", formData.description.length > 450 ? "text-amber-500" : "text-stone-300")}>
+              <span className={cn("text-3xs tabular-nums", formData.description.length > 450 ? "text-amber-500" : "text-stone-300")}>
                 {formData.description.length}
               </span>
             </div>
@@ -158,13 +158,13 @@ export function LocationFormBasicFields({ formData, errors, cities, updateField,
           <div className="flex items-end gap-2">
             <div className="flex-1 grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] text-stone-400 mb-1">{t("admin.latLabel")}</label>
+                <label className="block text-2xs text-stone-400 mb-1">{t("admin.latLabel")}</label>
                 <input type="number" step="any" value={formData.lat} onChange={(e) => updateField("lat", e.target.value)}
                   onBlur={(e) => touch("lat", e.target.value)} placeholder="22.5619" className={cn(styledInput(!!errors.lat))} />
                 {errors.lat && <p className="text-xs text-red-500 mt-1">{errors.lat}</p>}
               </div>
               <div>
-                <label className="block text-[11px] text-stone-400 dark:text-stone-500 mb-1">{t("admin.lngLabel")}</label>
+                <label className="block text-2xs text-stone-400 dark:text-stone-500 mb-1">{t("admin.lngLabel")}</label>
                 <input type="number" step="any" value={formData.lng} onChange={(e) => updateField("lng", e.target.value)}
                   onBlur={(e) => touch("lng", e.target.value)} placeholder="114.1985" className={cn(styledInput(!!errors.lng))} />
                 {errors.lng && <p className="text-xs text-red-500 mt-1">{errors.lng}</p>}

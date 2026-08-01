@@ -166,7 +166,7 @@ function MetricTile({
       <div className={cn("mb-2 flex h-8 w-8 items-center justify-center rounded-lg", bg)}>
         <span className={accent}>{icon}</span>
       </div>
-      <p className="text-[10px] font-semibold uppercase text-stone-600 dark:text-stone-400">{label}</p>
+      <p className="text-3xs font-semibold uppercase text-stone-600 dark:text-stone-400">{label}</p>
       <p className={cn("mt-1 text-sm font-black leading-tight", accent)}>{value}</p>
     </div>
   );
@@ -194,7 +194,7 @@ function RouteNoteBlock({
     >
       <p
         className={cn(
-          "mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase",
+          "mb-2 flex items-center gap-1.5 text-2xs font-bold uppercase",
           tone === "warning" ? "text-orange-700 dark:text-orange-400" : "text-stone-500 dark:text-stone-400"
         )}
       >

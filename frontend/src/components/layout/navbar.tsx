@@ -245,7 +245,7 @@ export function Navbar({ className }: NavbarProps) {
                             {t("nav.messages")}
                           </span>
                           {unreadCount > 0 && (
-                            <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-medium leading-none text-white">
+                            <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-2xs font-medium leading-none text-white">
                               {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
                           )}
@@ -412,7 +412,7 @@ export function Navbar({ className }: NavbarProps) {
                     <MessageCircle className="h-4 w-4 text-muted-foreground" />
                     {t("nav.messages")}
                     {unreadCount > 0 && (
-                      <span className="ml-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-medium leading-none text-white">
+                      <span className="ml-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-2xs font-medium leading-none text-white">
                         {unreadCount > 99 ? "99+" : unreadCount}
                       </span>
                     )}

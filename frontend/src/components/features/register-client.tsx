@@ -202,7 +202,7 @@ export function RegisterClient() {
           <div className="w-full max-w-sm">
             {/* 标题 */}
             <div className="mb-7">
-              <h1 className="text-2xl font-bold mb-1.5 text-foreground">
+              <h1 className="text-page-h1 mb-1.5">
                 {t("auth.registerTitle")}
               </h1>
               <p className="text-sm text-muted-foreground">

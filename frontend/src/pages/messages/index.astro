@@ -259,7 +259,7 @@ const copy = {
 
         if (unreadCount > 0) {
           const badge = document.createElement("span");
-          badge.className = "inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold leading-none text-white dark:text-neutral-900";
+          badge.className = "inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-destructive px-1.5 text-2xs font-semibold leading-none text-white dark:text-neutral-900";
           badge.setAttribute("aria-label", `${unreadCount} ${copy.unreadMessages}`);
           badge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
           footerDiv.appendChild(badge);

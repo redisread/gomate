@@ -41,7 +41,7 @@ export const LocalCircleCard = memo(function LocalCircleCard({ location, index =
           />
         </div>
         <div className="p-4 sm:p-5">
-          <h3 className="font-semibold text-base sm:text-lg text-card-foreground line-clamp-1">
+          <h3 title={location.locationName} className="font-semibold text-base sm:text-lg text-card-foreground line-clamp-1">
             {location.locationName}
           </h3>
           <div className="mt-3 flex items-center justify-between gap-2">
