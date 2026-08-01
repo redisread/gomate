@@ -63,7 +63,7 @@ export function FeaturedStoryCard({ story, onClick, className }: FeaturedStoryCa
         "border border-border/60",
         "shadow-[0_1px_3px_rgba(0,0,0,0.05)]",
         "hover:shadow-md hover:border-primary/20",
-        "transition-all duration-300",
+        "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300",
         className
       )}
     >

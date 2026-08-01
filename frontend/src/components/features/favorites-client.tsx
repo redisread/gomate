@@ -186,7 +186,7 @@ export function FavoritesClient() {
                 return (
                   <div
                     key={fav.id}
-                    className="bg-card rounded-2xl overflow-hidden group transition-all duration-200 hover:-translate-y-0.5"
+                    className="bg-card rounded-2xl overflow-hidden group transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:-translate-y-0.5"
                     style={{
                       boxShadow: "0 1px 4px color-mix(in oklab, var(--foreground) 6%, transparent)",
                     }}
@@ -223,7 +223,7 @@ export function FavoritesClient() {
                           handleRemove(loc.id);
                         }}
                         disabled={removingId === loc.id}
-                        className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150"
+                        className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150"
                         style={{
                           background: "color-mix(in oklab, white 92%, transparent)",
                           backdropFilter: "blur(4px)",

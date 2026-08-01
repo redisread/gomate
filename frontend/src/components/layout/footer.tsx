@@ -106,7 +106,7 @@ function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: Tran
           <div className="flex gap-3">
             <button
               onClick={handleCopyWechatId}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96]"
               style={{ background: "linear-gradient(135deg, var(--primary-400) 0%, var(--primary) 100%)", color: "white" }}
             >
               {copied ? (
@@ -123,7 +123,7 @@ function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: Tran
             </button>
             <button
               onClick={handleSaveQRCode}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium text-sm border border-border text-stone-600 dark:text-stone-400 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium text-sm border border-border text-stone-600 dark:text-stone-400 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96]"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -246,7 +246,7 @@ export function Footer() {
                 {/* 邮箱按钮 */}
                 <a
                   href={`mailto:${t("common.contactEmail")}`}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] mt-auto bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96] mt-auto bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700"
                 >
                   <Mail className="h-4 w-4 flex-shrink-0" />
                   {t("common.contactEmail")}
@@ -257,7 +257,7 @@ export function Footer() {
                   {/* 微信 */}
                   <button
                     onClick={() => setShowWechatQR(true)}
-                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:scale-105 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
                     title={t("common.socials.wechat")}
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -270,7 +270,7 @@ export function Footer() {
                     href="https://web.okjike.com/u/e991c442-72ff-4522-8559-d5dff7c541cf"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:scale-105 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
                     title={t("common.socials.jike")}
                   >
                     <svg width="20" height="20" viewBox="0 0 38 37" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -284,7 +284,7 @@ export function Footer() {
                     href="https://t.me/gomate111"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:scale-105 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
                     title={t("common.socials.telegram")}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -297,7 +297,7 @@ export function Footer() {
                     href="https://xhslink.com/m/4nG6kEejTq3"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:scale-105 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
                     title={t("common.socials.xiaohongshu")}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -374,7 +374,7 @@ export function Footer() {
               {/* 回到顶部按钮 */}
               <button
                 onClick={scrollToTop}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 dark:text-stone-400 transition-all duration-200 hover:text-primary hover:scale-105"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 dark:text-stone-400 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:text-primary hover:scale-105"
               >
                 <ArrowUp className="h-3.5 w-3.5" />
                 {t("common.backToTop")}

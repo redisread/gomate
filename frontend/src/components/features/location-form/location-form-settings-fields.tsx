@@ -146,7 +146,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
               return (
                 <button key={f.value} type="button"
                   onClick={() => updateField("extra", { ...formData.extra, facilities: selected ? formData.extra.facilities.filter((v) => v !== f.value) : [...formData.extra.facilities, f.value] })}
-                  className={cn("px-3 py-1.5 rounded-xl text-xs font-medium border transition-all",
+                  className={cn("px-3 py-1.5 rounded-xl text-xs font-medium border transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                     selected ? "bg-amber-500 text-white border-amber-500" : "bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-amber-300")}>
                   {f.label}
                 </button>
@@ -178,7 +178,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
                       updateField("extra", { ...formData.extra, tips: next });
                     }
                   }}
-                  placeholder={t("admin.tipsPlaceholder")} className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-all duration-150 border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
+                  placeholder={t("admin.tipsPlaceholder")} className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
                 <button type="button" onClick={() => {
                   const next = formData.extra.tips.filter((_, i) => i !== idx);
                   updateField("extra", { ...formData.extra, tips: next });
@@ -224,7 +224,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
                       updateField("extra", { ...formData.extra, warnings: next });
                     }
                   }}
-                  placeholder={t("admin.warningsPlaceholder")} className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-all duration-150 border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
+                  placeholder={t("admin.warningsPlaceholder")} className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
                 <button type="button" onClick={() => {
                   const next = formData.extra.warnings.filter((_, i) => i !== idx);
                   updateField("extra", { ...formData.extra, warnings: next });
@@ -262,7 +262,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
                 return (
                   <button key={tag.id} type="button"
                     onClick={() => updateField("tagIds", selected ? formData.tagIds.filter((id) => id !== tag.id) : [...formData.tagIds, tag.id])}
-                    className={cn("px-3 py-1 rounded-full text-xs font-medium border transition-all",
+                    className={cn("px-3 py-1 rounded-full text-xs font-medium border transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                       selected ? "bg-amber-500 text-white border-amber-500" : "bg-white text-stone-600 border-stone-200 hover:border-amber-300")}>
                     {tag.name}
                   </button>

@@ -123,7 +123,7 @@ function GearList({ items, onChange, placeholder, chipTone, inputSlotId, showToa
               }
             }}
             placeholder={placeholder}
-            className="w-full px-3 py-2 rounded-xl text-sm outline-none transition-all duration-150 border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1" />
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1" />
           <button type="button" onClick={() => {
             onChange(items.filter((_, i) => i !== idx));
             showToast("success", deletedText);
@@ -199,7 +199,7 @@ export function LocationFormDecisionFields({ formData, updateField }: LocationFo
                       updateField("parkingInfo", "");
                     }
                   }}
-                  className={cn("px-3 py-1.5 rounded-xl text-xs font-medium border transition-all",
+                  className={cn("px-3 py-1.5 rounded-xl text-xs font-medium border transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                     selected
                       ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800"
                       : "bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-amber-300")}>
@@ -216,7 +216,7 @@ export function LocationFormDecisionFields({ formData, updateField }: LocationFo
             disabled={!parkingInfoEditable}
             onChange={(e) => updateField("parkingInfo", e.target.value)}
             placeholder={t("admin.formParkingInfoPlaceholder")}
-            className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-all duration-150 border placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:ring-2 focus:ring-amber-200 focus:border-amber-400",
+            className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:ring-2 focus:ring-amber-200 focus:border-amber-400",
               parkingInfoEditable
                 ? "bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700"
                 : "bg-stone-100 dark:bg-stone-800/40 text-stone-400 dark:text-stone-500 border-stone-200 dark:border-stone-800 opacity-50 cursor-not-allowed")} />

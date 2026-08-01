@@ -54,7 +54,7 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
           {hasMore && (
             <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
               <a href={`/teams?locationId=${locationId}`} className="block">
-                <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-1.5 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 hover:border-amber-300 dark:hover:border-amber-700">
+                <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 active:scale-[0.96] flex items-center justify-center gap-1.5 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 hover:border-amber-300 dark:hover:border-amber-700">
                   {t("common.viewAllTeams").replace("{count}", String(teams.length))}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
@@ -89,7 +89,7 @@ function EmptyTeamsState({ locationId }: { locationId: string }) {
       </p>
 
       <a href={`/teams/create?locationId=${locationId}`}>
-        <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-700 dark:bg-amber-500 text-white dark:text-stone-950 rounded-full text-sm font-semibold transition-all duration-200 shadow-[0_6px_16px_rgba(217,119,6,0.22)] hover:shadow-[0_8px_20px_rgba(217,119,6,0.28)] active:scale-[0.97]">
+        <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-700 dark:bg-amber-500 text-white dark:text-stone-950 rounded-full text-sm font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 shadow-glow hover:shadow-warm-md active:scale-[0.96]">
           <Users className="h-4 w-4" />
           {t('locations.detailNoTeamsBtn')}
         </button>

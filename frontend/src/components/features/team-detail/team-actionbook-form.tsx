@@ -135,7 +135,7 @@ export function TeamActionbookForm({ teamId, initialChecklist, isLeader }: Props
                 onChange={(e) => setField("meetingPointName", e.target.value)}
                 placeholder={t("teams.actionbook.meetingNamePlaceholder")}
                 maxLength={200}
-                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
               <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input
@@ -144,7 +144,7 @@ export function TeamActionbookForm({ teamId, initialChecklist, isLeader }: Props
                   onChange={(e) => setField("meetingPointTime", e.target.value)}
                   placeholder={t("teams.actionbook.meetingTimePlaceholder")}
                   maxLength={50}
-                  className="w-full px-4 py-2.5 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                  className="w-full px-4 py-2.5 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                 />
                 <input
                   type="text"
@@ -152,7 +152,7 @@ export function TeamActionbookForm({ teamId, initialChecklist, isLeader }: Props
                   onChange={(e) => setField("meetingPointNote", e.target.value)}
                   placeholder={t("teams.actionbook.meetingNotePlaceholder")}
                   maxLength={500}
-                  className="w-full px-4 py-2.5 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                  className="w-full px-4 py-2.5 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                 />
               </div>
             </FieldGroup>
@@ -165,7 +165,7 @@ export function TeamActionbookForm({ teamId, initialChecklist, isLeader }: Props
                   onChange={(e) =>
                     setField("transportMode", e.target.value as typeof form.transportMode)
                   }
-                  className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                  className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                 >
                   <option value="">{t("teams.actionbook.transportModePlaceholder")}</option>
                   {TRANSPORT_MODES.map((m) => (
@@ -180,7 +180,7 @@ export function TeamActionbookForm({ teamId, initialChecklist, isLeader }: Props
                   onChange={(e) => setField("transportDetail", e.target.value)}
                   placeholder={t("teams.actionbook.transportDetailPlaceholder")}
                   maxLength={500}
-                  className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                  className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                 />
               </div>
             </FieldGroup>
@@ -217,7 +217,7 @@ export function TeamActionbookForm({ teamId, initialChecklist, isLeader }: Props
                 onChange={(e) => setField("gearNote", e.target.value)}
                 placeholder={t("teams.actionbook.gearNotePlaceholder")}
                 maxLength={500}
-                className="w-full mt-3 px-4 py-2.5 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                className="w-full mt-3 px-4 py-2.5 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
             </FieldGroup>
 
@@ -239,7 +239,7 @@ export function TeamActionbookForm({ teamId, initialChecklist, isLeader }: Props
                       onChange={(e) => updateAssignment(a.id, e.target.value)}
                       placeholder={t("teams.actionbook.assignmentPlaceholder")}
                       maxLength={200}
-                      className="flex-1 px-3 py-2 rounded-lg border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
+                      className="flex-1 px-3 py-2 rounded-lg border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
                     />
                     <button
                       type="button"
@@ -256,7 +256,7 @@ export function TeamActionbookForm({ teamId, initialChecklist, isLeader }: Props
                 <button
                   type="button"
                   onClick={addAssignment}
-                  className="w-full mt-2 py-2.5 rounded-lg border text-sm font-medium transition-all duration-150 flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted hover:border-primary hover:text-primary"
+                  className="w-full mt-2 py-2.5 rounded-lg border text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted hover:border-primary hover:text-primary"
                 >
                   {t("teams.actionbook.assignmentAdd")}
                 </button>
@@ -271,7 +271,7 @@ export function TeamActionbookForm({ teamId, initialChecklist, isLeader }: Props
                 placeholder={t("teams.actionbook.notesPlaceholder")}
                 rows={4}
                 maxLength={2000}
-                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
             </FieldGroup>
 

@@ -527,7 +527,7 @@
   /* ---- 按钮基础动效 ---- */
   .btn-base {
     @apply inline-flex items-center justify-center font-medium rounded-md;
-    @apply transition-all;
+    @apply transition-[transform,background-color,border-color,color,opacity,box-shadow];
     transition-duration: var(--duration-fast);
   }
   .btn-base:hover  { transform: scale(1.02); }
@@ -535,7 +535,7 @@
 
   /* 主色按钮 */
   .btn-primary {
-    @apply inline-flex items-center justify-center font-medium rounded-md transition-all;
+    @apply inline-flex items-center justify-center font-medium rounded-md transition-[transform,background-color,border-color,color,opacity,box-shadow];
     transition-duration: var(--duration-fast);
     background: var(--primary);
     color: var(--primary-foreground);
@@ -546,7 +546,7 @@
 
   /* 幽灵按钮 */
   .btn-ghost {
-    @apply inline-flex items-center justify-center font-medium rounded-md transition-all;
+    @apply inline-flex items-center justify-center font-medium rounded-md transition-[transform,background-color,border-color,color,opacity,box-shadow];
     transition-duration: var(--duration-fast);
     color: var(--muted-foreground);
   }

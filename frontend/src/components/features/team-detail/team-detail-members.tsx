@@ -59,7 +59,7 @@ export function MemberAvatarGrid({
               <a href={`/users/${m.userId}`} className="relative flex flex-col items-center gap-1.5 cursor-pointer">
                 <div
                   className={cn(
-                    "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-150",
+                    "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150",
                     isLeader
                       ? "ring-2 ring-amber-400 ring-offset-1 bg-gradient-to-br from-amber-500 to-amber-300 group-hover:ring-amber-300"
                       : "bg-secondary ring-1 ring-secondary/50 group-hover:scale-105 group-hover:ring-amber-300"

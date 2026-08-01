@@ -69,7 +69,7 @@ export function RecommendationBadge({
       style={{ background: s.bg, color: s.text, borderColor: s.border }}
       data-testid={`recommendation-badge-${kind}`}
     >
-      <Icon className={cn(size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5")} strokeWidth={2.4} />
+      <Icon className={cn(size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5")} strokeWidth={2} />
       {label}
     </span>
   );

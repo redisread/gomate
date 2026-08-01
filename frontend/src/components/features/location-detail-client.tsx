@@ -224,7 +224,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
                 else { for (let j = 0; j < -diff; j++) onPrev(); }
               }}
               className={cn(
-                "w-10 h-10 rounded-lg overflow-hidden border-2 transition-all duration-200",
+                "w-10 h-10 rounded-lg overflow-hidden border-2 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
                 i === index ? "border-white scale-110" : "border-white/30 hover:border-white/60"
               )}
             >
@@ -254,7 +254,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
 
   return (
     <div
-      className="rounded-xl overflow-hidden bg-card border border-stone-100 dark:border-stone-800 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"
+      className="rounded-xl overflow-hidden bg-card border border-stone-100 dark:border-stone-800 shadow-warm-sm"
     >
       <div className="p-5">
         {/* 情感标题 */}
@@ -297,7 +297,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
         {/* 主 CTA */}
         <a href={`/teams/create?locationId=${location.id}`} className="block mb-3">
           <button
-            className="w-full py-3.5 rounded-xl text-sm font-bold text-white dark:text-stone-950 bg-amber-700 dark:bg-amber-500 shadow-[0_8px_18px_rgba(217,119,6,0.20)] hover:shadow-[0_10px_22px_rgba(217,119,6,0.26)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
+            className="w-full py-3.5 rounded-xl text-sm font-bold text-white dark:text-stone-950 bg-amber-700 dark:bg-amber-500 shadow-card-hover hover:-translate-y-0.5 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96]"
           >
             <span className="flex items-center justify-center gap-2">
               <Users className="h-4 w-4" />
@@ -309,7 +309,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
         {/* 次要 CTA */}
         <a href={`/teams?locationId=${location.id}`} className="block">
           <button
-            className="w-full py-2.5 rounded-xl text-sm font-semibold text-foreground border border-stone-200 dark:border-stone-700 bg-transparent hover:bg-stone-50 dark:hover:bg-stone-800 transition-all duration-150 active:scale-[0.97]"
+            className="w-full py-2.5 rounded-xl text-sm font-semibold text-foreground border border-stone-200 dark:border-stone-700 bg-transparent hover:bg-stone-50 dark:hover:bg-stone-800 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 active:scale-[0.96]"
           >
               {t("locations.detailBrowseTeams")}
           </button>
@@ -342,7 +342,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
   };
 
   return (
-    <div className="bg-card rounded-xl p-5 border border-stone-100 dark:border-stone-800 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+    <div className="bg-card rounded-xl p-5 border border-stone-100 dark:border-stone-800 shadow-warm-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">
           {t("locations.relatedTitle")}
@@ -365,7 +365,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
             <a
               key={loc.id}
               href={`/locations/${loc.id}`}
-              className="flex items-center gap-3 group rounded-xl p-2 -mx-2 transition-all duration-200 hover:bg-stone-50 dark:hover:bg-stone-800"
+              className="flex items-center gap-3 group rounded-xl p-2 -mx-2 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:bg-stone-50 dark:hover:bg-stone-800"
             >
               <div className="w-[68px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 dark:bg-stone-800">
                 {loc.coverImage ? (
@@ -433,7 +433,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
   return (
     <div
       className={cn(
-        "lg:hidden fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 bg-white/96 dark:bg-stone-900/96 backdrop-blur-md",
+        "lg:hidden fixed bottom-0 left-0 right-0 z-40 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 bg-white/96 dark:bg-stone-900/96 backdrop-blur-md",
         heroLeft ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
       )}
       style={{
@@ -451,7 +451,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
         {/* 浏览队伍 */}
         <a href={`/teams?locationId=${location.id}`} className="flex-shrink-0 max-[360px]:flex-1">
           <button
-            className="px-3 sm:px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-all duration-150 active:scale-[0.96] whitespace-nowrap max-[360px]:w-full max-[360px]:px-2"
+            className="px-3 sm:px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 active:scale-[0.96] whitespace-nowrap max-[360px]:w-full max-[360px]:px-2"
           >
             {t("locationDetail.browseTeams")}
           </button>
@@ -460,7 +460,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
         {/* 主 CTA */}
         <a href={`/teams/create?locationId=${location.id}`} className="flex-shrink-0 max-[360px]:flex-1">
           <button
-            className="flex w-full items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-bold text-white dark:text-stone-950 bg-amber-700 dark:bg-amber-500 shadow-[0_6px_16px_rgba(217,119,6,0.24)] active:scale-[0.96] transition-transform duration-150 whitespace-nowrap max-[360px]:px-2"
+            className="flex w-full items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-bold text-white dark:text-stone-950 bg-amber-700 dark:bg-amber-500 shadow-glow active:scale-[0.96] transition-transform duration-150 whitespace-nowrap max-[360px]:px-2"
           >
             <span className="flex items-center gap-1.5">
               <Users className="h-4 w-4" />
@@ -548,7 +548,7 @@ function HeroActions({
       >
         <Heart
           className={cn(
-            "h-4 w-4 transition-all duration-200",
+            "h-4 w-4 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
             isFavorited ? "fill-red-400 text-red-400 scale-110" : "text-white"
           )}
           style={
@@ -826,7 +826,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
           <button
             onClick={() => setLightboxIndex(activeImageIndex)}
             className={cn(
-              "absolute bottom-6 right-5 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md text-white text-xs font-medium transition-all duration-200 border border-white/15",
+              "absolute bottom-6 right-5 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md text-white text-xs font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 border border-white/15",
               showArrows ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
           >
@@ -843,7 +843,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               className={cn(
                 "absolute left-4 top-1/2 -translate-y-1/2 z-10",
                 "w-11 h-11 rounded-full bg-black/35 hover:bg-black/55 backdrop-blur-md",
-                "flex items-center justify-center transition-all duration-200 border border-white/10",
+                "flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 border border-white/10",
                 showArrows ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-3 pointer-events-none"
               )}
               aria-label={t("locationDetail.prevImage")}
@@ -855,7 +855,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               className={cn(
                 "absolute right-4 top-1/2 -translate-y-1/2 z-10",
                 "w-11 h-11 rounded-full bg-black/35 hover:bg-black/55 backdrop-blur-md",
-                "flex items-center justify-center transition-all duration-200 border border-white/10",
+                "flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 border border-white/10",
                 showArrows ? "opacity-100 translate-x-0" : "opacity-0 translate-x-3 pointer-events-none"
               )}
               aria-label={t("locationDetail.nextImage")}
@@ -932,7 +932,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                     key={idx}
                     onClick={() => switchImage(idx)}
                     className={cn(
-                      "rounded-full transition-all duration-200",
+                      "rounded-full transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
                       idx === activeImageIndex
                         ? "w-6 h-2 bg-white shadow-sm"
                         : "w-2 h-2 bg-white/35 hover:bg-white/60"

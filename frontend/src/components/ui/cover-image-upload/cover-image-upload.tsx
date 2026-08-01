@@ -307,7 +307,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               className={cn(
                 "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium",
                 "bg-card/90 backdrop-blur-sm text-foreground/80",
-                "hover:bg-white hover:text-amber-700 transition-all duration-150",
+                "hover:bg-white hover:text-amber-700 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "shadow-sm"
               )}
@@ -325,7 +325,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               className={cn(
                 "flex items-center justify-center w-7 h-7 rounded-lg",
                 "bg-card/90 backdrop-blur-sm text-muted-foreground",
-                "hover:bg-red-50 hover:text-red-600 transition-all duration-150",
+                "hover:bg-red-50 hover:text-red-600 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "shadow-sm"
               )}
@@ -376,7 +376,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
         onDrop={handleDrop}
         className={cn(
           "relative w-full rounded-xl cursor-pointer",
-          "border-2 border-dashed transition-all duration-200",
+          "border-2 border-dashed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
           "flex flex-col items-center justify-center gap-3",
           "select-none outline-none",
           // 焦点环
@@ -506,7 +506,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 disabled={disabled}
                 className={cn(
                   "flex-1 min-w-0 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-foreground/80 placeholder:text-muted-foreground/50",
-                  "outline-none transition-all duration-150",
+                  "outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150",
                   "focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20",
                   "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}

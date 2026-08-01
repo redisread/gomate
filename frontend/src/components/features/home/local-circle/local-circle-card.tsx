@@ -27,7 +27,7 @@ export const LocalCircleCard = memo(function LocalCircleCard({ location, index =
       <article
         className="overflow-hidden rounded-2xl cursor-pointer bg-card
           shadow-[var(--shadow-card)]
-          transition-all duration-200 ease-out
+          transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 ease-out
           hover:shadow-[var(--shadow-card-hover)]
           hover:-translate-y-1
           will-change-transform"
@@ -57,7 +57,7 @@ export const LocalCircleCard = memo(function LocalCircleCard({ location, index =
             </div>
             <ArrowRight
               className="w-4 h-4 flex-shrink-0 text-amber-700 dark:text-amber-400 transition-transform group-hover:translate-x-0.5"
-              strokeWidth={2.2}
+              strokeWidth={2}
             />
           </div>
         </div>

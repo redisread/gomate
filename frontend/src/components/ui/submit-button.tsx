@@ -28,7 +28,7 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={isDisabled}
-      className={`py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-allowed ${className ?? ""}`}
+      className={`py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-allowed ${className ?? ""}`}
       style={{
         background: isDisabled ? "var(--primary)" : GRADIENT_BG,
         boxShadow: isDisabled ? "none" : "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",

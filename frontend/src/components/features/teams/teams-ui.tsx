@@ -50,7 +50,7 @@ export function MemberProgress({ current, max, showUrgency = true }: { current: 
       )}
       <div className={cn("bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden", isUrgent ? "h-2.5" : "h-2")}>
         <div
-          className={cn("h-full rounded-full transition-all duration-700 ease-out", isUrgent && "animate-pulse")}
+          className={cn("h-full rounded-full transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-700 ease-out", isUrgent && "animate-pulse")}
           style={{ width: `${pct}%`, background: getProgressGradient(pct), boxShadow: isUrgent ? "0 0 8px rgba(239, 68, 68, 0.4)" : undefined }}
         />
       </div>
@@ -90,7 +90,7 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
 
   return (
     <a href={`/teams/${team.id}`} className="group block">
-      <article className={cn("bg-card rounded-3xl border border-border overflow-hidden transition-all duration-300 hover:border-amber-200 hover:shadow-2xl hover:shadow-amber-100/40 dark:hover:border-amber-800 dark:hover:shadow-amber-900/20 hover:-translate-y-1.5")}>
+      <article className={cn("bg-card rounded-3xl border border-border overflow-hidden transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 hover:border-amber-200 hover:shadow-2xl hover:shadow-amber-100/40 dark:hover:border-amber-800 dark:hover:shadow-amber-900/20 hover:-translate-y-1.5")}>
         <div className="relative h-40 overflow-hidden">
           {location?.coverImage ? (
             <img src={location.coverImage} alt={location.name ?? t('common.unknown')} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -199,7 +199,7 @@ export function Pagination({ current, total, onChange }: { current: number; tota
     <div className="flex justify-center items-center gap-2 mt-12">
       {Array.from({ length: total }, (_, i) => i + 1).map((page) => (
         <button key={page} onClick={() => onChange(page)} aria-current={page === current ? "page" : undefined}
-          className={cn("w-10 h-10 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105",
+          className={cn("w-10 h-10 rounded-full text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:scale-105",
             page === current ? "bg-amber-600 text-white shadow-md shadow-amber-200 dark:shadow-amber-900/30" : "bg-card text-stone-500 dark:text-stone-400 border border-border hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400"
           )}>
           {page}
@@ -244,7 +244,7 @@ export function FilterPanel({
             return (
               <button key={opt.key} onClick={() => onDateQuickSelect(opt.key)}
                 className={cn(
-                  "px-3 py-1.5 text-xs rounded-full border transition-all duration-200",
+                  "px-3 py-1.5 text-xs rounded-full border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
                   isSelected
                     ? "bg-amber-100 dark:bg-amber-900/30 border-amber-400 dark:border-amber-700 text-amber-800 dark:text-amber-300"
                     : "border-border bg-card text-stone-600 dark:text-stone-400 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400"
@@ -268,7 +268,7 @@ export function FilterPanel({
             const isSelected = selectedDifficulty.includes(opt.id);
             return (
               <button key={opt.id} onClick={() => onDifficultyToggle(opt.id)}
-                className={cn("px-3 py-1.5 text-xs rounded-full border transition-all duration-200 active:scale-95",
+                className={cn("px-3 py-1.5 text-xs rounded-full border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96]",
                   isSelected ? opt.activeColor : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
                 )}>
                 {t(opt.labelKey)}
@@ -285,7 +285,7 @@ export function FilterPanel({
               const isSelected = selectedTags.includes(tag.id);
               return (
                 <button key={tag.id} onClick={() => onTagToggle(tag.id)}
-                  className={cn("px-3 py-1.5 text-xs rounded-full border transition-all duration-200",
+                  className={cn("px-3 py-1.5 text-xs rounded-full border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
                     isSelected ? "bg-amber-100 dark:bg-amber-900/30 border-amber-400 dark:border-amber-700 text-amber-800 dark:text-amber-300" : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
                   )}>
                   {tag.name}
@@ -332,7 +332,7 @@ export function TeamsHeader({
             )}
           </div>
           <button onClick={onToggleFilters} aria-expanded={showFilters}
-            className={cn("relative flex items-center justify-center w-10 h-10 border rounded-xl transition-all duration-200",
+            className={cn("relative flex items-center justify-center w-10 h-10 border rounded-xl transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
               showFilters || activeFiltersCount > 0 ? "bg-amber-50 border-amber-300 text-amber-700 shadow-sm" : "bg-card border-border text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600"
             )}>
             <Filter className="h-4 w-4" />
@@ -344,7 +344,7 @@ export function TeamsHeader({
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
           <input type="text" placeholder={t("teams.searchPlaceholder")} value={searchQuery} onChange={(e) => onSearchChange(e.target.value)} aria-label={t("teams.searchAriaLabel")}
-            className={cn("w-full pl-12 pr-10 py-3 rounded-xl text-foreground placeholder-muted-foreground bg-muted border border-border transition-all duration-200 focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-400/15")}
+            className={cn("w-full pl-12 pr-10 py-3 rounded-xl text-foreground placeholder-muted-foreground bg-muted border border-border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-400/15")}
           />
           {searchQuery && (
             <button onClick={() => onSearchChange("")} aria-label={t("teams.clearSearchAriaLabel")} className="absolute right-4 top-1/2 -translate-y-1/2 p-0.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full transition-colors">
@@ -393,7 +393,7 @@ export function TeamsCtaSection() {
                 {/* Button Group */}
                 <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
                   <a href="/teams/create" className="group">
-                    <button className="inline-flex items-center gap-2 bg-orange-600 text-white px-7 py-3.5 rounded-2xl text-base font-semibold transition-all duration-200 hover:bg-orange-700 hover:shadow-lg hover:shadow-orange-200/40 active:scale-[0.98]">
+                    <button className="inline-flex items-center gap-2 bg-orange-600 text-white px-7 py-3.5 rounded-2xl text-base font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:bg-orange-700 hover:shadow-lg hover:shadow-orange-200/40 active:scale-[0.96]">
                       <Sparkles className="w-5 h-5" />
                       {t("teams.createBtn")}
                       <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />

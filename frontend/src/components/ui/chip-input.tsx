@@ -117,7 +117,7 @@ export function ChipInput({
       className={cn(
         "flex flex-wrap items-center gap-1.5 rounded-xl border bg-muted px-3 py-2.5",
         "focus-within:border-primary focus-within:bg-card focus-within:ring-3 focus-within:ring-primary/10",
-        "transition-all duration-200",
+        "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
         disabled && "opacity-60 pointer-events-none",
         className,
       )}

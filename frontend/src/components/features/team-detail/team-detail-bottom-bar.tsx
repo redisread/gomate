@@ -351,11 +351,11 @@ function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
   return (
     <>
       <div className="flex items-center gap-2">
-        <button onClick={share.openShare} className="w-11 h-11 rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground hover:bg-amber-50 hover:text-amber-600 border border-border hover:border-amber-200 transition-all flex-shrink-0">
+        <button onClick={share.openShare} className="w-11 h-11 rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground hover:bg-amber-50 hover:text-amber-600 border border-border hover:border-amber-200 transition-[transform,background-color,border-color,color,opacity,box-shadow] flex-shrink-0">
           <Share2 className="h-4 w-4" />
         </button>
         <button onClick={() => ctx.setShowJoinModal(true)}
-          className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all min-h-[44px]">
+          className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-[transform,background-color,border-color,color,opacity,box-shadow] min-h-[44px]">
           {t('teams.joinTeam')}
         </button>
       </div>

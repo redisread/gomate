@@ -47,7 +47,7 @@ export function MyTeamsClient() {
             </div>
           </div>
           <a href="/teams/create" className="flex-shrink-0">
-            <button className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm active:scale-95">
+            <button className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 text-sm active:scale-[0.96]">
               <Plus className="h-4 w-4" />{t("myTeams.createTeamBtn")}
             </button>
           </a>
@@ -75,7 +75,7 @@ export function MyTeamsClient() {
             ].map(({ id, label, icon: Icon, count }) => (
               <button key={id} onClick={() => ctx.handleTabChange(id)}
                 className={cn(
-                  "flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-all duration-200 whitespace-nowrap relative",
+                  "flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 whitespace-nowrap relative",
                   ctx.activeTab === id ? "text-amber-700 border-b-2 border-amber-500" : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 border-b-2 border-transparent"
                 )}>
                 <Icon className="h-4 w-4" />{label}
@@ -95,7 +95,7 @@ export function MyTeamsClient() {
               ].map(({ id, label, count }) => (
                 <button key={id} onClick={() => ctx.handleRoleFilterChange(id as "all" | "leader" | "member")}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                     ctx.roleFilter === id ? "bg-amber-500 text-white" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
                   )}>
                   {label}
@@ -138,14 +138,14 @@ export function MyTeamsClient() {
           <div className="mt-6 space-y-4">
             <div className="flex gap-2 bg-stone-100 dark:bg-stone-800 rounded-xl p-1">
               <button onClick={() => ctx.handleSubTabChange("my")}
-                className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
+                className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                   ctx.applicationSubTab === "my" ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
                 <ClipboardCheck className="h-4 w-4" />{t("myTeams.subTabMyApplications")}
                 {ctx.pendingApplicationsCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
               </button>
               <button onClick={() => ctx.handleSubTabChange("pending")}
-                className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
+                className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                   ctx.applicationSubTab === "pending" ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
                 <Hourglass className="h-4 w-4" />{t("myTeams.subTabPendingApprovals")}

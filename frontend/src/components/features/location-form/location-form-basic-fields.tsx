@@ -73,7 +73,7 @@ function Field({ label, required, hint, error, children }: FieldProps) {
 
 function styledInput(hasError?: boolean) {
   return cn(
-    "w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all duration-150",
+    "w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150",
     "border focus:ring-2",
     "bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500",
     hasError ? "border-red-300 dark:border-red-800 focus:ring-red-200 focus:border-red-400" : "border-stone-200 dark:border-stone-700 focus:ring-amber-200 focus:border-amber-400"
@@ -117,7 +117,7 @@ export function LocationFormBasicFields({ formData, errors, cities, updateField,
             {locationTypeOptions.map((opt) => (
               <button key={opt.value} type="button"
                 onClick={() => updateField("type", formData.type === opt.value ? "" : opt.value)}
-                className={cn("px-3.5 py-1.5 rounded-full text-sm font-medium transition-all",
+                className={cn("px-3.5 py-1.5 rounded-full text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                   formData.type === opt.value ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700")}>
                 {opt.label}
               </button>
@@ -132,7 +132,7 @@ export function LocationFormBasicFields({ formData, errors, cities, updateField,
               className={cn(styledInput(!!errors.description), "resize-none leading-relaxed")} />
             <div className="absolute bottom-2.5 right-3 flex items-center gap-1.5">
               <div className="h-1 w-16 rounded-full bg-stone-100 overflow-hidden">
-                <div className={cn("h-full rounded-full transition-all duration-300",
+                <div className={cn("h-full rounded-full transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300",
                   formData.description.length < 50 ? "bg-stone-300" : formData.description.length < 100 ? "bg-amber-400" : "bg-emerald-400")}
                   style={{ width: `${Math.min((formData.description.length / 500) * 100, 100)}%` }} />
               </div>

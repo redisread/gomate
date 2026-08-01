@@ -99,7 +99,7 @@ export function TeamProgress({
       )}
       <div
         className={cn(
-          "rounded-full overflow-hidden transition-all duration-300",
+          "rounded-full overflow-hidden transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300",
           colors.track,
           size === "md" ? "h-2" : "h-1.5",
           isUrgent && "h-2.5"
@@ -107,7 +107,7 @@ export function TeamProgress({
       >
         <div
           className={cn(
-            "h-full rounded-full transition-all duration-700 ease-out",
+            "h-full rounded-full transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-700 ease-out",
             colors.bar,
             isUrgent && "animate-pulse"
           )}

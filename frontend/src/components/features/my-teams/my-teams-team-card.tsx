@@ -30,7 +30,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-all duration-200">
+      <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200">
         <div className="flex items-start gap-4">
           <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
             {team.location?.coverImage ? (
@@ -77,7 +77,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
               </span>
             </div>
           </div>
-          <ChevronRight className="h-5 w-5 text-stone-300 dark:text-stone-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
+          <ChevronRight className="h-5 w-5 text-stone-300 dark:text-stone-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-[transform,background-color,border-color,color,opacity,box-shadow] flex-shrink-0 self-center" />
         </div>
         {(canCancel || canForm) && (
           <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-end gap-2">

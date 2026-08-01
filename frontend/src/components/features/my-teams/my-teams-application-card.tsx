@@ -32,7 +32,7 @@ export function ApplicationCard({ application }: { application: ApplicationRecor
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-all duration-200">
+      <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200">
         <div className="flex items-start gap-4">
           <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
             {team.location?.coverImage ? (
@@ -80,7 +80,7 @@ export function ApplicationCard({ application }: { application: ApplicationRecor
               <p className="text-xs text-stone-400 dark:text-stone-500 ml-auto">{formatTimeAgo(application.createdAt)}</p>
             </div>
           </div>
-          <ChevronRight className="h-5 w-5 text-stone-300 dark:text-stone-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 self-center" />
+          <ChevronRight className="h-5 w-5 text-stone-300 dark:text-stone-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-[transform,background-color,border-color,color,opacity,box-shadow] flex-shrink-0 self-center" />
         </div>
       </div>
     </a>
@@ -98,7 +98,7 @@ export function PendingApprovalCard({ approval, onClick }: {
   const lv = levelConfig[applicant.level];
 
   return (
-    <button className="w-full text-left bg-card rounded-2xl border-l-4 border-l-amber-400 border-y border-r border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-50 transition-all duration-200 group"
+    <button className="w-full text-left bg-card rounded-2xl border-l-4 border-l-amber-400 border-y border-r border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-50 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 group"
       onClick={() => onClick(approval)}>
       <div className="flex items-start justify-between gap-2 mb-3">
         <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5">
@@ -143,7 +143,7 @@ export function PendingApprovalCard({ approval, onClick }: {
         </div>
       </div>
       <div className="mt-3 flex items-center justify-end">
-        <span className="text-sm text-amber-600 font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+        <span className="text-sm text-amber-600 font-medium flex items-center gap-1 group-hover:gap-2 transition-[transform,background-color,border-color,color,opacity,box-shadow]">
           {t("myTeams.viewDetail")}<ChevronRight className="h-4 w-4" />
         </span>
       </div>

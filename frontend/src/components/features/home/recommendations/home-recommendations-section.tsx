@@ -194,7 +194,7 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
           data-testid="recommendation-retry-btn"
           aria-label={t("home.recommendations.error")}
         >
-          <RefreshCw className="w-3.5 h-3.5" strokeWidth={2.2} />
+          <RefreshCw className="w-3.5 h-3.5" strokeWidth={2} />
         </button>
       </section>
     );
@@ -298,7 +298,7 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
               className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors underline-offset-2 hover:underline"
               data-testid="recommendation-refresh-btn"
             >
-              <RefreshCw className="w-3.5 h-3.5" strokeWidth={2.2} />
+              <RefreshCw className="w-3.5 h-3.5" strokeWidth={2} />
               {t("home.recommendations.cta.refresh")}
             </button>
           </div>

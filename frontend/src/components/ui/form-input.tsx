@@ -79,7 +79,7 @@ const inputBase = cn(
   "border border-input rounded-lg px-3 py-2.5",
   "placeholder:text-muted-foreground/60",
   // 焦点：品牌色环
-  "outline-none transition-all duration-150",
+  "outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150",
   "focus:ring-2 focus:ring-brand/30 focus:border-brand",
   // 错误状态
   "aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:focus:ring-destructive/30",

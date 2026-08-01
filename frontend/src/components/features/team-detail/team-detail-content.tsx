@@ -58,7 +58,7 @@ function LocationCover({ location, statusInfo }: { location: Location; statusInf
   const { t } = useI18n(["teams"]);
   return (
     <a href={`/locations/${location.id}`} className="group block">
-      <div className="relative h-[300px] lg:h-[400px] rounded-2xl overflow-hidden bg-secondary hover:shadow-xl hover:shadow-amber-100/30 transition-all duration-300">
+      <div className="relative h-[300px] lg:h-[400px] rounded-2xl overflow-hidden bg-secondary hover:shadow-xl hover:shadow-amber-100/30 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300">
         {location.coverImage ? (
           <img
             src={location.coverImage}
@@ -93,7 +93,7 @@ function LocationCover({ location, statusInfo }: { location: Location; statusInf
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">{location.name}</h2>
           <LocationRouteInfo location={location} />
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur-sm border border-amber-400/30 text-amber-200 hover:text-white text-sm font-medium transition-all duration-150">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur-sm border border-amber-400/30 text-amber-200 hover:text-white text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150">
             <span>{t('teams.viewLocationDetail')}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
           </div>

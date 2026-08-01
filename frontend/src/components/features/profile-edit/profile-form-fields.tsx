@@ -153,7 +153,7 @@ export function OutdoorInfoFields({ level, experience, equipment, equipmentInput
           {LEVEL_OPTIONS.map((opt) => {
             const isSelected = level === opt.value;
             return (
-              <label key={opt.value} className={cn("relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all",
+              <label key={opt.value} className={cn("relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                 isSelected ? "border-amber-500 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/50 dark:to-amber-900/30 shadow-md shadow-amber-100 dark:shadow-amber-950/30" : "border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-amber-200 dark:hover:border-amber-900 hover:bg-amber-50/30 dark:hover:bg-amber-950/20"
               )}>
                 <input type="radio" name="level" value={opt.value} checked={isSelected} onChange={onChange} className="sr-only" />
@@ -179,7 +179,7 @@ export function OutdoorInfoFields({ level, experience, equipment, equipmentInput
             const isSelected = equipment.includes(label);
             return (
               <button key={key} type="button" onClick={() => onAddPresetEquipment(label)} disabled={isSelected}
-                className={cn("px-2.5 py-1 rounded-full text-xs font-medium transition-all",
+                className={cn("px-2.5 py-1 rounded-full text-xs font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                   isSelected ? "bg-amber-100 dark:bg-amber-900/40 text-amber-400 dark:text-amber-600 cursor-not-allowed" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-200 dark:hover:border-amber-900 border border-transparent"
                 )}>
                 {label}
@@ -275,7 +275,7 @@ export function ActionBar({ isSaving, isUploading, savedDone }: ActionBarProps) 
           {t('common.cancel')}
         </button>
       </a>
-      <button type="submit" disabled={loading} className={cn("flex-1 py-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed",
+      <button type="submit" disabled={loading} className={cn("flex-1 py-3 rounded-xl font-medium text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] flex items-center justify-center gap-2 disabled:cursor-not-allowed",
         savedDone ? "bg-amber-500 text-white shadow-md shadow-amber-100 dark:shadow-amber-950/30" : "bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 dark:shadow-amber-900/30 disabled:opacity-50"
       )}>
         {loading ? (

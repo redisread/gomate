@@ -231,7 +231,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 onChange={handleChange}
                 required
                 maxLength={60}
-                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
             </FieldGroup>
 
@@ -270,7 +270,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                     type="time"
                     value={formData.time}
                     onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   />
                 </div>
               </FieldGroup>
@@ -283,7 +283,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                     name="durationMin"
                     value={formData.durationMin}
                     onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-all duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   >
                     {[120, 180, 240, 300, 360, 420, 480, 540, 600, 720].map((m) => (
                       <option key={m} value={m}>{t("teams.editDurationHours", { hours: m / 60 })}</option>
@@ -306,7 +306,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                   value={formData.maxMembers}
                   onChange={handleChange}
                   required
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
@@ -323,7 +323,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
             </FieldGroup>
 
@@ -342,7 +342,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                       onChange={(e) => updateRequirement(i, e.target.value)}
                       placeholder={t("teams.editRequirementPlaceholder")}
                       maxLength={100}
-                      className="flex-1 px-3 py-2 rounded-lg border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
+                      className="flex-1 px-3 py-2 rounded-lg border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
                     />
                     <button
                       type="button"
@@ -358,7 +358,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 <button
                   type="button"
                   onClick={addRequirement}
-                  className="w-full mt-2 py-2.5 rounded-lg border text-sm font-medium transition-all duration-150 flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted hover:border-primary hover:text-primary"
+                  className="w-full mt-2 py-2.5 rounded-lg border text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted hover:border-primary hover:text-primary"
                 >
                   <span>{t("teams.editAddRequirement")}</span>
                 </button>
@@ -393,7 +393,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               <button
                 type="button"
                 onClick={() => window.location.href = `/teams/${teamId}`}
-                className="flex-1 py-3 rounded-xl border text-sm font-medium transition-all duration-150 border-border text-muted-foreground hover:bg-muted"
+                className="flex-1 py-3 rounded-xl border text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border-border text-muted-foreground hover:bg-muted"
               >
                 {t("common.cancel")}
               </button>

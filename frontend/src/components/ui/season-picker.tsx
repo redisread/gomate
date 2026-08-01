@@ -60,14 +60,14 @@ export function SeasonPicker({ value, onChange, disabled = false }: SeasonPicker
             className={cn(
               // 基础样式
               "relative flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-center",
-              "transition-all duration-150 select-none",
+              "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 select-none",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2",
               // 未选中
               !isSelected && "border-border bg-card hover:scale-[1.03] hover:border-border/70",
               // 选中
               isSelected && [season.selected.border, season.selected.bg],
               // 点击缩放反馈
-              "active:scale-95",
+              "active:scale-[0.96]",
               // 禁用
               disabled && "cursor-not-allowed opacity-50",
             )}
@@ -145,7 +145,7 @@ export function EditProgressBar({ steps, className }: EditProgressBarProps) {
               {/* 步骤圆圈 */}
               <div
                 className={cn(
-                  "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-300",
+                  "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300",
                   isDone && "border-amber-400 bg-amber-400 text-white",
                   isCurrent && "border-amber-400 bg-card text-amber-500 animate-pulse",
                   !isDone && !isCurrent && "border-border bg-card text-muted-foreground",

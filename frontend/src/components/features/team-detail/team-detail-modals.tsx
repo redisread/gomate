@@ -57,12 +57,12 @@ export function JoinBottomSheet({
             value={joinMessage}
             onChange={(e) => setJoinMessage(e.target.value)}
             rows={3}
-            className="w-full px-4 py-3 rounded-2xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none resize-none mb-4 bg-muted border border-border focus:border-amber-400 transition-all"
+            className="w-full px-4 py-3 rounded-2xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none resize-none mb-4 bg-muted border border-border focus:border-amber-400 transition-[transform,background-color,border-color,color,opacity,box-shadow]"
           />
           <button
             onClick={onJoin}
             disabled={isJoining}
-            className="w-full py-3.5 font-semibold text-white rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full py-3.5 font-semibold text-white rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-[transform,background-color,border-color,color,opacity,box-shadow] disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('teams.joinTeam')}
@@ -113,13 +113,13 @@ export function JoinDesktopModal({
           value={joinMessage}
           onChange={(e) => setJoinMessage(e.target.value)}
           rows={4}
-          className="w-full px-4 py-3 rounded-2xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none resize-none mb-4 bg-muted border border-border focus:border-amber-400 transition-all"
+          className="w-full px-4 py-3 rounded-2xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none resize-none mb-4 bg-muted border border-border focus:border-amber-400 transition-[transform,background-color,border-color,color,opacity,box-shadow]"
         />
         <button
           data-testid="team-join-submit"
           onClick={onJoin}
           disabled={isJoining}
-          className="w-full py-3.5 font-semibold text-white rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+          className="w-full py-3.5 font-semibold text-white rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-[transform,background-color,border-color,color,opacity,box-shadow] disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
           {t('teams.joinTeam')}

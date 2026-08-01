@@ -252,7 +252,7 @@ export function RegisterClient() {
                     onChange={handleInputChange}
                     required
                     minLength={6}
-                    className="w-full px-4 py-3 pr-11 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
+                    className="w-full px-4 py-3 pr-11 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
                   />
                   <button
                     type="button"
@@ -296,7 +296,7 @@ export function RegisterClient() {
                 data-testid="register-submit"
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
                   background: isLoading ? "var(--primary)" : "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",
                   boxShadow: isLoading ? "none" : "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",
@@ -390,7 +390,7 @@ function FormField({
         value={value}
         onChange={onChange}
         required={required}
-        className={`w-full px-4 py-3 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-all duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 ${hasError ? "border-destructive ring-3 ring-destructive/10" : ""}`}
+        className={`w-full px-4 py-3 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 ${hasError ? "border-destructive ring-3 ring-destructive/10" : ""}`}
       />
       {hint && (
         <p className="text-xs text-muted-foreground">{hint}</p>
@@ -423,7 +423,7 @@ function PasswordStrength({ password }: { password: string }) {
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="h-1 flex-1 rounded-full transition-all duration-300"
+            className="h-1 flex-1 rounded-full transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300"
             style={{ background: i <= level ? color : "var(--border)" }}
           />
         ))}
