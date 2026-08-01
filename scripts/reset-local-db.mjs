@@ -19,9 +19,10 @@ import path from "node:path";
 
 const ROOT = process.cwd();
 // 多 worktree 共享同一份本地 D1 状态（GOMATE_LOCAL_STATE，默认 ~/.gomate/wrangler-state）
-const LOCAL_STATE =
+const LOCAL_STATE = path.resolve(
   process.env.GOMATE_LOCAL_STATE ||
-  path.join(os.homedir(), ".gomate", "wrangler-state");
+    path.join(os.homedir(), ".gomate", "wrangler-state"),
+);
 const D1_STATE_DIR = path.join(LOCAL_STATE, "v3", "d1", "miniflare-D1DatabaseObject");
 
 function log(message) {

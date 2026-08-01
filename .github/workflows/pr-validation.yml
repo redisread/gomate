@@ -89,7 +89,7 @@ jobs:
       - name: Reset and verify local D1 database
         run: |
           pnpm db:reset
-          dbfile=$(find api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject -maxdepth 1 -name '*.sqlite' ! -name 'metadata.sqlite' -print -quit)
+          dbfile=$(find "$HOME/.gomate/wrangler-state/v3/d1/miniflare-D1DatabaseObject" -maxdepth 1 -name '*.sqlite' ! -name 'metadata.sqlite' -print -quit)
           echo "D1 database file: $dbfile"
           sqlite3 "$dbfile" "SELECT COUNT(*) AS users_count FROM users;"
           sqlite3 "$dbfile" "SELECT email, role FROM users ORDER BY email LIMIT 10;"

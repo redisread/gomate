@@ -27,9 +27,10 @@ const API_DIR = path.join(ROOT, "api");
 const FRONTEND_DIR = path.join(ROOT, "frontend");
 const API_DEV_VARS = path.join(API_DIR, ".dev.vars");
 const FRONTEND_ENV_LOCAL = path.join(FRONTEND_DIR, ".env.local");
-const LOCAL_STATE =
+const LOCAL_STATE = path.resolve(
   process.env.GOMATE_LOCAL_STATE ||
-  path.join(os.homedir(), ".gomate", "wrangler-state");
+    path.join(os.homedir(), ".gomate", "wrangler-state"),
+);
 const D1_STATE_DIR = path.join(LOCAL_STATE, "v3", "d1", "miniflare-D1DatabaseObject");
 const API_PORT = process.env.GOMATE_API_PORT || "8799";
 
