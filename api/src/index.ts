@@ -1,4 +1,5 @@
 import { logger } from "./lib/logger";
+import { checkRateLimit } from "./lib/rate-limit";
 import { Hono } from "hono";
 import { corsMiddleware } from "./middleware/cors";
 import { authRoute } from "./routes/auth";
@@ -116,27 +117,18 @@ app.get("/proxy-image", async (c) => {
     return c.json(APIErrors.forbidden("Domain not allowed"), 403);
   }
 
-  // 速率限制检查
+  // 速率限制检查（2026-08-01 P0：改为内存计数，不再写 KV——KV 每日写入额度耗尽会连带认证事故）
   const clientIP = c.req.header("CF-Connecting-IP") || "unknown";
   const RATE_LIMIT_KEY = `rate:proxy:${clientIP}`;
-  const kv = c.env.GOMATE_KV;
+  const rateResult = await checkRateLimit(RATE_LIMIT_KEY, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW);
 
-  if (kv) {
-    const current = await kv.get(RATE_LIMIT_KEY);
-    const count = current ? parseInt(current as string, 10) : 0;
-    const remaining = RATE_LIMIT_MAX - count;
+  if (!rateResult.allowed) {
+    return c.json(APIErrors.tooManyRequests("Rate limit exceeded"), 429);
+  }
 
-    if (remaining <= 0) {
-      return c.json(APIErrors.tooManyRequests("Rate limit exceeded"), 429);
-    }
-
-    // 告警阈值检查
-    if (remaining <= RATE_LIMIT_WARNING_THRESHOLD) {
-      logger.warn(`[RateLimit] IP ${clientIP} 即将达到速率限制，剩余 ${remaining - 1} 次请求`);
-    }
-
-    // 使用 KV TTL（1小时）
-    await kv.put(RATE_LIMIT_KEY, String(count + 1), { expirationTtl: RATE_LIMIT_WINDOW });
+  // 告警阈值检查
+  if (rateResult.remaining <= RATE_LIMIT_WARNING_THRESHOLD) {
+    logger.warn(`[RateLimit] IP ${clientIP} 即将达到速率限制，剩余 ${rateResult.remaining} 次请求`);
   }
 
   try {

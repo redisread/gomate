@@ -23,7 +23,7 @@ const forgotPasswordSchema = z.object({
 auth.post("/forgot-password", async (c) => {
   try {
     const ip = getClientIP(c.req.raw);
-    const rateResult = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:forgot:${ip}`, 5, 60);
+    const rateResult = await checkRateLimit(`rate:auth:forgot:${ip}`, 5, 60);
     if (!rateResult.allowed) {
       return c.json(APIErrors.badRequest("请求过于频繁，请稍后再试", { retryAfter: rateResult.retryAfter }), 429);
     }
@@ -113,12 +113,12 @@ auth.all("/*", async (c) => {
   try {
     const ip = getClientIP(c.req.raw);
     if (path.endsWith("/sign-in/email") || path.endsWith("/sign-in")) {
-      const result = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:signin:${ip}`, 20, 60);
+      const result = await checkRateLimit(`rate:auth:signin:${ip}`, 20, 60);
       if (!result.allowed) {
         return c.json(APIErrors.badRequest("登录尝试过于频繁，请稍后再试", { retryAfter: result.retryAfter }), 429);
       }
     } else if (path.endsWith("/sign-up/email") || path.endsWith("/sign-up")) {
-      const result = await checkRateLimit(c.env.GOMATE_KV, `rate:auth:signup:${ip}`, 10, 60);
+      const result = await checkRateLimit(`rate:auth:signup:${ip}`, 10, 60);
       if (!result.allowed) {
         return c.json(APIErrors.badRequest("注册请求过于频繁，请稍后再试", { retryAfter: result.retryAfter }), 429);
       }

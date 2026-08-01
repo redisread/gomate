@@ -131,7 +131,7 @@ upload.post("/avatar", async (c) => {
     if (!userId) return c.json(APIErrors.badRequest("User ID is required"), 400);
 
     // 速率限制
-    const rateLimit = await checkRateLimit(c.env.GOMATE_KV, `rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
+    const rateLimit = await checkRateLimit(`rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
     if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
 
     // 鉴权：只允许上传自己的头像（管理员除外）
@@ -220,7 +220,7 @@ upload.post("/location", async (c) => {
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
 
     // 速率限制
-    const rateLimit = await checkRateLimit(c.env.GOMATE_KV, `rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
+    const rateLimit = await checkRateLimit(`rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
     if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
 
     const extValidation = validateFileExtension(file);
@@ -252,7 +252,7 @@ upload.post("/story", async (c) => {
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
 
     // 速率限制
-    const rateLimit = await checkRateLimit(c.env.GOMATE_KV, `rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
+    const rateLimit = await checkRateLimit(`rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
     if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
 
     const extValidation = validateFileExtension(file);
@@ -284,7 +284,7 @@ upload.post("/activity-post", async (c) => {
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
 
     // 速率限制
-    const rateLimit = await checkRateLimit(c.env.GOMATE_KV, `rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
+    const rateLimit = await checkRateLimit(`rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
     if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
 
     const extValidation = validateFileExtension(file);
