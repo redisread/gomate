@@ -89,3 +89,62 @@ style={{ background: "color-mix(in oklab, var(--primary) 10%, transparent)" }}
 - `AGENTS.md`：项目级代理工作规则（含 minimum checks）；不含 design tokens
 - PR #494：https://github.com/redisread/gomate/pull/494 — `feat(frontend): OKLCH-ify tokens, fix HIGH WCAG, and switch inline-style to var(--token)`
 - `/better-colors` skill：user-level `~/.codex/skills/better-colors/SKILL.md`，做对比度 / palette 决策时加载
+
+## 9. Motion & Interaction Polish
+
+Five `better-ui` skill rules, all PR-enforced since PR #496 (2026-08-02).
+
+### 9.1 Canonical press feedback
+
+Always `active:scale-[0.96]`. Never `< 0.95` (exaggerated). Other values (0.97 / 0.98) give inconsistent tactile feel.
+
+```tsx
+// ✅
+className="... active:scale-[0.96] transition-transform duration-150"
+// ❌
+className="... active:scale-95 hover:scale-[1.02] ..."
+```
+
+### 9.2 Hover scale restricted to primary CTAs
+
+`hover:scale-[1.02+]` only on the **single decision-per-page primary CTA**. Forbidden on:
+
+- footer share-row (Wechat / Contact / Share)
+- navigation tabs
+- repeat social actions (Principle #15 — motion restraint on high-frequency interactions).
+
+### 9.3 `transition-all` is never correct
+
+The compositor over-paints every property on every state change. Specify the exact list:
+
+```tsx
+// ✅ canonical list (covers ~95% of GoMate use cases)
+className="transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
+// ✅ narrow subsets when only 1-2 props actually change
+className="transition-colors duration-150"          // hover color
+className="transition-transform duration-150"       // hover scale/translate
+// ❌
+className="transition-all duration-200"
+```
+
+### 9.4 Icon stroke = 2 default
+
+Lucide icons paired with `font-medium` (500) / `font-semibold` (600) use `strokeWidth={2}` (default). Heavier (2.2 / 2.4) makes small icons read visibly heavier next to semibold text. Bump to 2.5 only when paired with `font-bold` (700+) text. Circular-progress SVGs (3-5px) are intentionally thick ring strokes — not icon weight.
+
+### 9.5 Shadow tokens over inline `rgba`
+
+Always use `shadow-warm-sm` / `shadow-card-hover` / `shadow-glow` from `globals.css`. Don't inline `shadow-[rgba(...)]` — these duplicate the design-system palette and drift over time.
+
+```tsx
+// ❌ duplicate (also legacy: pure rgba can't follow --shadow-* semantic change)
+className="shadow-[0_8px_18px_rgba(217,119,6,0.20)]"
+// ✅
+className="shadow-card-hover"
+```
+
+## Related
+
+- PR #494: OKLCH + WCAG fixes (color tokens)
+- PR #495: this doc created
+- PR #496: motion / interaction polish (rules §9)
+- `/better-ui` skill: `~/.codex/skills/better-ui/SKILL.md`
