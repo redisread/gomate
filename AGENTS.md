@@ -18,8 +18,13 @@ gomate/
 ├── frontend/     # Astro 6 SSR + React 18 islands + Tailwind CSS 4
 ├── packages/
 │   ├── types/    # shared TypeScript types
-│   └── config/   # shared tsconfig
-└── docs/         # feature/API documentation
+│   ├── lib/      # 跨 api/frontend 复用的纯函数 helper
+│   ├── config/   # shared tsconfig
+│   └── mcp/      # GoMate MCP server（stub 阶段，见 packages/mcp/README.md）
+├── e2e/          # Playwright 跨端测试（root playwright.config.ts）
+├── scripts/      # 根级共享脚本（i18n 构建/校验、db reset、env check、seed）
+├── docs/         # 现行文档（feature/API/deploy/policy）
+└── notes/        # 设计 spec 与过程性决策记录（历史溯源，见「文档与图表」）
 ```
 
 移动端代码在 `redisread/gomate-mobile`；不要把移动端实现加回这个仓库。
@@ -30,7 +35,7 @@ gomate/
 - 运行时：Node `>=22.12.0`，以根目录 `package.json` 为准。
 - API：Hono、Cloudflare Workers、D1、Drizzle、Better Auth、R2、KV。
 - 前端：Astro 6、`@astrojs/cloudflare` v13、React 18 islands、Tailwind CSS 4、Vitest。
-- 共享包：`@gomate/types` 和 `packages/config` 下的共享 TypeScript 配置。
+- 共享包：`@gomate/types`（共享类型）、`@gomate/lib`（跨端纯函数 helper）、`packages/config`（共享 TypeScript 配置）、`packages/mcp`（MCP server，stub 阶段）。
 
 ## 常用命令
 
@@ -205,6 +210,9 @@ main = "@astrojs/cloudflare/entrypoints/server"
 
 ## 文档与图表
 
+- `docs/` = 现行文档（API、页面、部署、策略），随代码变化持续更新。
+- `notes/` = 设计 spec 与过程性决策记录，是历史溯源，不是现行文档。
+- 已上线的 spec 保留在 `notes/` 顶层，**不要**因「已完成」移入 `notes/archive/`：大量代码注释引用 `notes/gomate-*.md` 路径（如 `api/src/routes/teams/checklist.ts`、`frontend/src/components/features/onboarding/*`）。`notes/archive/` 只放明确废弃或被取代的内容。
 - 页面或 UI 行为变化时，更新 `docs/frontend-pages.md`。
 - 字体流水线变化时，更新 `docs/font-subsetting.md`。
 - Mermaid 图表默认使用 Hand-Drawn 涂鸦风格，优先把这一行放在代码块第一行：
