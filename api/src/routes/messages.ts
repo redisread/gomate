@@ -546,9 +546,7 @@ app.post("/:id", async (c) => {
   const conversationId = c.req.param("id");
 
   // 速率限制：每用户每分钟最多 30 条消息
-  const rateLimit = await checkRateLimit(
-    c.env.GOMATE_KV,
-    `rate:msg:${user.id}`,
+  const rateLimit = await checkRateLimit(`rate:msg:${user.id}`,
     30,
     60
   );

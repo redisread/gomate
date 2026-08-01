@@ -1,27 +1,24 @@
 /**
- * KV-based rate limiter for Cloudflare Workers.
+ * In-memory rate limiter for Cloudflare Workers.
  *
  * Usage:
- *   const result = await checkRateLimit(kv, "rate:auth:login:<ip>", 20, 60);
+ *   const result = await checkRateLimit("rate:auth:login:<ip>", 20, 60);
  *   if (!result.allowed) return c.json(APIErrors.tooManyRequests("Too many requests"), 429);
  *
- * NOTE: Cloudflare KV has no atomic increment, so concurrent requests within
- * the same window may both read the same count and both be allowed — the
- * effective limit can briefly exceed `maxRequests` under burst traffic. This
- * is acceptable for auth rate limiting (soft barrier, IP-keyed, short window).
- * For stricter limits, consider a Durable Object with single-threaded state.
+ * 2026-08-01 P0 修复：原实现每次请求 kv.put 写 Cloudflare KV 计数。Workers Free
+ * 账号 KV 每日写入限额（1000 次/天，账号级共享）被 e2e rate-limit 契约测试打爆后，
+ * 连带 better-auth session 写入 KV 失败（try/catch 吞错），导致 staging + production
+ * 认证全部 401（get-session 读不到 session）。本实现改为进程内 Map 计数：
  *
- * NOTE: Cloudflare KV enforces a minimum TTL of 60 seconds. When the remaining
- * window is shorter than 60s we clamp to 60. The timestamp in the entry still
- * tracks the real window boundary, so rate-limit decisions stay correct.
+ * - 不写 KV：不再消耗每日写入额度，session 等关键 KV 写入不再被连带拖垮
+ * - 单 isolate 下计数精确；smart placement 多 isolate 下计数分散（限制放宽）。
+ *   原 KV 方案也无原子递增（并发 burst 下同样超限），属可接受的软屏障
+ * - Worker 重启（部署）后计数清零，限制重置
  */
 
 import { Context, Next } from "hono";
 import type { Env } from "./auth";
 import { resolveAuditActor } from "./audit";
-
-/** Cloudflare KV minimum TTL (seconds). */
-const KV_MIN_TTL = 60;
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -34,36 +31,28 @@ interface RateLimitEntry {
   ts: number;
 }
 
+/** 进程内计数表；过期条目惰性清理（下次访问同 key 时删除） */
+const rateStore = new Map<string, RateLimitEntry>();
+
 export async function checkRateLimit(
-  kv: KVNamespace | undefined,
   key: string,
   maxRequests: number,
   windowSeconds: number,
 ): Promise<RateLimitResult> {
-  if (!kv) {
-    return { allowed: true, remaining: maxRequests, retryAfter: 0 };
-  }
-
   const now = Math.floor(Date.now() / 1000);
-  const raw = await kv.get(key);
+  const existing = rateStore.get(key);
 
   let entry: RateLimitEntry | null = null;
-  if (raw) {
-    try {
-      entry = JSON.parse(raw as string) as RateLimitEntry;
-      if (entry.ts + windowSeconds <= now) {
-        entry = null;
-      }
-    } catch {
-      entry = null;
+  if (existing) {
+    if (existing.ts + windowSeconds <= now) {
+      rateStore.delete(key);
+    } else {
+      entry = existing;
     }
   }
 
-  const safeTtl = (seconds: number) => Math.max(KV_MIN_TTL, seconds);
-
   if (!entry) {
-    const newEntry: RateLimitEntry = { count: 1, ts: now };
-    await kv.put(key, JSON.stringify(newEntry), { expirationTtl: safeTtl(windowSeconds) });
+    rateStore.set(key, { count: 1, ts: now });
     return { allowed: true, remaining: maxRequests - 1, retryAfter: 0 };
   }
 
@@ -75,7 +64,6 @@ export async function checkRateLimit(
   }
 
   entry.count += 1;
-  await kv.put(key, JSON.stringify(entry), { expirationTtl: safeTtl(retryAfter) });
   return { allowed: true, remaining: remaining - 1, retryAfter: 0 };
 }
 
@@ -106,7 +94,6 @@ export function buildApiRateLimitKey(
  * Check rate limit for a v1 API request.
  */
 export async function checkApiRateLimit(
-  kv: KVNamespace | undefined,
   scope: "read" | "write",
   actorId: string,
   actorType: "apiKey" | "user",
@@ -114,7 +101,7 @@ export async function checkApiRateLimit(
   windowSeconds = 60,
 ): Promise<RateLimitResult> {
   const key = buildApiRateLimitKey(scope, actorId, actorType);
-  return checkRateLimit(kv, key, limit, windowSeconds);
+  return checkRateLimit(key, limit, windowSeconds);
 }
 
 /**
@@ -137,7 +124,7 @@ export function apiRateLimitMiddleware(scope: "read" | "write", limit: number) {
     const actorId = audit.apiKeyId ?? audit.userId;
     const actorType: "apiKey" | "user" = audit.apiKeyId ? "apiKey" : "user";
 
-    const result = await checkApiRateLimit(c.env.GOMATE_KV, scope, actorId, actorType, limit);
+    const result = await checkApiRateLimit(scope, actorId, actorType, limit);
 
     const headers: Record<string, string> = {
       "X-RateLimit-Limit": String(limit),

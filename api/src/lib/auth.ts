@@ -137,6 +137,10 @@ export function createAuth(env: Env) {
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
+      // 2026-08-01 P0 修复：配置 secondaryStorage 后 better-auth 默认把 session 只存 KV，
+      // KV 每日写入限额耗尽时 session 写入失败（被 try/catch 吞掉）导致认证全 401。
+      // 改为 session 落 D1（数据库权威），KV 仅作缓存；KV 写失败只丢缓存，不影响认证。
+      storeSessionInDatabase: true,
     },
     advanced: {
       generateId: () => nanoid(),
