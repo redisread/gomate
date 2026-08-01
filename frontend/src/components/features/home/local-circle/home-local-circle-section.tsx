@@ -81,10 +81,13 @@ export function HomeLocalCircleSection() {
           <p className="text-stone-700 dark:text-stone-300 max-w-xl mx-auto leading-relaxed text-base sm:text-lg">
             {t("home.localCircle.subtitle")}
           </p>
-          {/* 城市 dynamic 前缀「{city} {n} 人在行动」 */}
-          <p className="mt-2 text-sm font-medium text-amber-800 dark:text-amber-300">
-            {cityName} · {t("home.localCircle.inAction", { n: activePeopleCount })}
-          </p>
+          {/* 城市 dynamic 前缀「{city} {n} 人在行动」——0 人时不显示，避免
+              「深圳 · 0 人在行动」这类负向空态文案劝退（UX 审计发现） */}
+          {activePeopleCount > 0 && (
+            <p className="mt-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+              {cityName} · {t("home.localCircle.inAction", { n: activePeopleCount })}
+            </p>
+          )}
         </div>
 
         {/* 主区块：Top 3 地点卡（移动端竖排，md+ 三列）—— topLocations 非空才渲染 */}
