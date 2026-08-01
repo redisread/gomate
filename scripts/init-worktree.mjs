@@ -110,6 +110,16 @@ if (existsSync(LOCALES_DATA)) {
 
 // 4. 共享本地 D1（多 worktree 共用一份，初始化一次即可）
 log(`本地 D1 状态目录：${LOCAL_STATE}`);
+if (!hasD1Data()) {
+  // 旧工作流（wrangler 默认 .wrangler/state）的本地数据不跟随 worktree，也不在共享目录
+  const LEGACY_STATE_DIR = path.join(ROOT, "api", ".wrangler", "state", "v3", "d1", "miniflare-D1DatabaseObject");
+  if (existsSync(LEGACY_STATE_DIR) && readdirSync(LEGACY_STATE_DIR).some((f) => f.endsWith(".sqlite") && f !== "metadata.sqlite")) {
+    warn(
+      "检测到旧本地 D1 数据（api/.wrangler/state）。如需迁移到共享目录：\n" +
+        `  mkdir -p ${D1_STATE_DIR} && cp -R ${LEGACY_STATE_DIR}/* ${D1_STATE_DIR}/`,
+    );
+  }
+}
 if (hasD1Data()) {
   ok("共享本地 D1 已有数据，跳过初始化");
 } else if (process.exitCode) {
