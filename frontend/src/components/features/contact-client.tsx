@@ -161,7 +161,7 @@ export function ContactClient() {
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{
                       background:
-                        "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+                        "linear-gradient(135deg, oklch(0.666 0.157 58.3) 0%, oklch(0.769 0.165 70.1) 100%)",
                     }}
                   >
                     <Mountain className="h-5 w-5 text-white" />

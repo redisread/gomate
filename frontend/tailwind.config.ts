@@ -175,7 +175,10 @@ const config: Config = {
 
 
 
-      /* ---- 阴影 ---- */
+      /* ---- 阴影 ----
+       * Tailwind v4 主源是 globals.css 中的 @theme inline (.shadow-* class)。
+       * 本节是 v3 风格 fallback 与 IDE 提示；H 值与 --primary 主色对齐 (H≈65°)。
+       */
       boxShadow: {
         // 温暖色调阴影（替代默认冷灰阴影）
         "warm-xs": "0 1px 2px oklch(0.5 0.05 75 / 0.08)",
@@ -185,13 +188,13 @@ const config: Config = {
         "warm-lg": "0 10px 25px oklch(0.5 0.05 75 / 0.12), 0 4px 10px oklch(0.5 0.05 75 / 0.08)",
         "warm-xl": "0 20px 40px oklch(0.5 0.05 75 / 0.14), 0 8px 16px oklch(0.5 0.05 75 / 0.1)",
         // 品牌色发光效果（主 CTA 按钮 hover）
-        "brand-glow": "0 4px 15px oklch(0.48 0.13 195 / 0.35)",
-        "brand-glow-lg": "0 8px 25px oklch(0.48 0.13 195 / 0.4)",
+        "brand-glow": "0 4px 15px oklch(0.48 0.13 65 / 0.35)",
+        "brand-glow-lg": "0 8px 25px oklch(0.48 0.13 65 / 0.4)",
         // 卡片浮起阴影
-        "card":    "0 1px 3px oklch(0.18 0.008 250 / 0.06), 0 1px 2px oklch(0.18 0.008 250 / 0.04), 0 0 0 1px oklch(0.88 0.01 75 / 0.5)",
-        "card-hover": "0 8px 24px oklch(0.18 0.008 250 / 0.1), 0 3px 8px oklch(0.18 0.008 250 / 0.06), 0 0 0 1px oklch(0.88 0.01 75 / 0.5)",
+        "card":    "0 1px 3px oklch(0.18 0.008 65 / 0.06), 0 1px 2px oklch(0.18 0.008 65 / 0.04), 0 0 0 1px oklch(0.88 0.01 75 / 0.5)",
+        "card-hover": "0 8px 24px oklch(0.18 0.008 65 / 0.1), 0 3px 8px oklch(0.18 0.008 65 / 0.06), 0 0 0 1px oklch(0.88 0.01 75 / 0.5)",
         // 内阴影（输入框聚焦）
-        "inner-brand": "inset 0 0 0 2px oklch(0.48 0.13 195 / 0.4)",
+        "inner-brand": "inset 0 0 0 2px oklch(0.48 0.13 65 / 0.4)",
       },
 
       /* ---- 模糊值 ---- */

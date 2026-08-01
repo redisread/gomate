@@ -83,9 +83,9 @@ export function RegisterClient() {
         <div className="text-center space-y-4">
           <div
             className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
-            style={{ background: "linear-gradient(135deg, rgba(217,119,6,0.15) 0%, rgba(252,211,77,0.20) 100%)" }}
+            style={{ background: "linear-gradient(135deg, oklch(0.666 0.157 58.3 / 0.15) 0%, oklch(0.879 0.153 91.6 / 0.20) 100%)" }}
           >
-            <CheckCircle2 className="h-10 w-10" style={{ color: "#D97706" }} />
+            <CheckCircle2 className="h-10 w-10" style={{ color: "oklch(0.666 0.157 58.3)" }} />
           </div>
           <h2 className="text-2xl font-bold text-foreground">
             {t("auth.registerSuccess")}
@@ -102,18 +102,18 @@ export function RegisterClient() {
       <div
         className="hidden lg:flex lg:w-[480px] xl:w-[560px] flex-col justify-between p-12 relative overflow-hidden flex-shrink-0"
         style={{
-          background: "linear-gradient(160deg, #92400E 0%, #D97706 45%, #F59E0B 100%)",
+          background: "linear-gradient(160deg, oklch(0.473 0.125 46.2) 0%, oklch(0.666 0.157 58.3) 45%, oklch(0.769 0.165 70.1) 100%)",
         }}
       >
         {/* 背景装饰 */}
         <div
           className="absolute -top-32 -right-32 w-96 h-96 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, oklch(1 0 89.9 / 0.08) 0%, transparent 70%)" }}
           aria-hidden="true"
         />
         <div
           className="absolute bottom-20 -left-16 w-64 h-64 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(255,122,101,0.12) 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, oklch(0.731 0.166 30.7 / 0.12) 0%, transparent 70%)" }}
           aria-hidden="true"
         />
 
@@ -121,7 +121,7 @@ export function RegisterClient() {
         <a href="/" className="flex items-center gap-2.5 relative z-10">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.20)" }}
+            style={{ background: "oklch(1 0 89.9 / 0.20)" }}
           >
             <Mountain className="h-5 w-5 text-white" />
           </div>
@@ -156,7 +156,7 @@ export function RegisterClient() {
               <div key={index} className="flex items-center gap-3">
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0"
-                  style={{ background: "rgba(255,255,255,0.15)" }}
+                  style={{ background: "oklch(1 0 89.9 / 0.15)" }}
                 >
                   {item.icon}
                 </div>
@@ -176,11 +176,11 @@ export function RegisterClient() {
         >
           <path
             d="M0 120L80 80L160 100L240 55L320 75L400 30L480 55L560 20V120H0Z"
-            fill="rgba(255,255,255,0.06)"
+            fill="oklch(1 0 89.9 / 0.06)"
           />
           <path
             d="M0 120L100 90L200 110L300 65L420 85L520 45L560 60V120H0Z"
-            fill="rgba(255,255,255,0.04)"
+            fill="oklch(1 0 89.9 / 0.04)"
           />
         </svg>
       </div>
@@ -192,7 +192,7 @@ export function RegisterClient() {
         {/* 移动端顶部 Logo */}
         <div className="lg:hidden px-6 pt-6">
           <a href="/" className="flex items-center gap-2">
-            <Mountain className="h-6 w-6" style={{ color: "#D97706" }} />
+            <Mountain className="h-6 w-6" style={{ color: "oklch(0.666 0.157 58.3)" }} />
             <span className="text-lg font-bold text-foreground">GoMate</span>
           </a>
         </div>
@@ -298,20 +298,20 @@ export function RegisterClient() {
                 disabled={isLoading}
                 className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
-                  background: isLoading ? "#D97706" : "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
-                  boxShadow: isLoading ? "none" : "0 4px 18px rgba(217,119,6,0.35)",
+                  background: isLoading ? "oklch(0.666 0.157 58.3)" : "linear-gradient(135deg, oklch(0.666 0.157 58.3) 0%, oklch(0.769 0.165 70.1) 100%)",
+                  boxShadow: isLoading ? "none" : "0 4px 18px oklch(0.666 0.157 58.3 / 0.35)",
                 }}
                 onMouseEnter={(e) => {
                   if (!isLoading) {
                     const el = e.currentTarget as HTMLButtonElement;
                     el.style.transform = "translateY(-1px)";
-                    el.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
+                    el.style.boxShadow = "0 6px 24px oklch(0.666 0.157 58.3 / 0.45)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   const el = e.currentTarget as HTMLButtonElement;
                   el.style.transform = "translateY(0)";
-                  el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
+                  el.style.boxShadow = "0 4px 18px oklch(0.666 0.157 58.3 / 0.35)";
                 }}
               >
                 {isLoading ? (
@@ -408,10 +408,10 @@ function PasswordStrength({ password }: { password: string }) {
     if (/[A-Z]/.test(pwd) || /[0-9]/.test(pwd)) score++;
     if (/[^a-zA-Z0-9]/.test(pwd)) score++;
 
-    if (score <= 1) return { level: 1, label: t("auth.passwordStrengthWeak"), color: "#ff7a65" };
-    if (score === 2) return { level: 2, label: t("auth.passwordStrengthFair"), color: "#fbbf24" };
-    if (score === 3) return { level: 3, label: t("auth.passwordStrengthGood"), color: "#D97706" };
-    return { level: 4, label: t("auth.passwordStrengthStrong"), color: "#92400E" };
+    if (score <= 1) return { level: 1, label: t("auth.passwordStrengthWeak"), color: "oklch(0.731 0.166 30.7)" };
+    if (score === 2) return { level: 2, label: t("auth.passwordStrengthFair"), color: "oklch(0.837 0.164 84.4)" };
+    if (score === 3) return { level: 3, label: t("auth.passwordStrengthGood"), color: "oklch(0.666 0.157 58.3)" };
+    return { level: 4, label: t("auth.passwordStrengthStrong"), color: "oklch(0.473 0.125 46.2)" };
   };
 
   const { t } = useI18n(["auth"]);

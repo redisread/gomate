@@ -15,48 +15,48 @@ const STATUS_STYLES: Record<TeamStatus, {
   ping: boolean;  // recruiting 时圆点闪烁
 }> = {
   recruiting: {
-    bg:       "rgba(217, 119, 6, 0.10)",
-    text:     "#92400E",
-    border:   "rgba(217, 119, 6, 0.25)",
-    dotColor: "#D97706",
+    bg:       "oklch(0.666 0.157 58.3 / 0.10)",
+    text:     "oklch(0.473 0.125 46.2)",
+    border:   "oklch(0.666 0.157 58.3 / 0.25)",
+    dotColor: "oklch(0.666 0.157 58.3)",
     ping:     true,
   },
   full: {
-    bg:       "rgba(217, 119, 6, 0.10)",
-    text:     "#92400e",
-    border:   "rgba(217, 119, 6, 0.25)",
-    dotColor: "#d97706",
+    bg:       "oklch(0.666 0.157 58.3 / 0.10)",
+    text:     "oklch(0.473 0.125 46.2)",
+    border:   "oklch(0.666 0.157 58.3 / 0.25)",
+    dotColor: "oklch(0.666 0.157 58.3)",
     ping:     false,
   },
   formed: {
-    bg:       "rgba(252, 211, 77, 0.12)",
-    text:     "#D97706",
-    border:   "rgba(252, 211, 77, 0.30)",
-    dotColor: "#F59E0B",
+    bg:       "oklch(0.879 0.153 91.6 / 0.12)",
+    text:     "oklch(0.666 0.157 58.3)",
+    border:   "oklch(0.879 0.153 91.6 / 0.30)",
+    dotColor: "oklch(0.769 0.165 70.1)",
     ping:     false,
   },
   completed: {
-    bg:       "rgba(143, 127, 110, 0.10)",
-    text:     "#8f7f6e",
-    border:   "rgba(143, 127, 110, 0.20)",
-    dotColor: "#8f7f6e",
+    bg:       "oklch(0.606 0.032 68.9 / 0.10)",
+    text:     "oklch(0.606 0.032 68.9)",
+    border:   "oklch(0.606 0.032 68.9 / 0.20)",
+    dotColor: "oklch(0.606 0.032 68.9)",
     ping:     false,
   },
   cancelled: {
-    bg:       "rgba(229, 62, 62, 0.08)",
-    text:     "#c53030",
-    border:   "rgba(229, 62, 62, 0.20)",
-    dotColor: "#e53e3e",
+    bg:       "oklch(0.614 0.204 25.6 / 0.08)",
+    text:     "oklch(0.544 0.186 26)",
+    border:   "oklch(0.614 0.204 25.6 / 0.20)",
+    dotColor: "oklch(0.614 0.204 25.6)",
     ping:     false,
   },
 };
 
 /* 难度颜色方案 */
 const DIFFICULTY_STYLES: Record<Difficulty, { bg: string; text: string }> = {
-  easy:     { bg: "rgba(217, 119, 6, 0.10)",  text: "#92400E" },
-  moderate: { bg: "rgba(217, 119, 6, 0.10)",   text: "#92400e" },
-  hard:     { bg: "rgba(255, 122, 101, 0.12)", text: "#c2410c" },
-  expert:   { bg: "rgba(229, 62, 62, 0.10)",   text: "#9b1c1c" },
+  easy:     { bg: "oklch(0.666 0.157 58.3 / 0.10)",  text: "oklch(0.473 0.125 46.2)" },
+  moderate: { bg: "oklch(0.666 0.157 58.3 / 0.10)",   text: "oklch(0.473 0.125 46.2)" },
+  hard:     { bg: "oklch(0.731 0.166 30.7 / 0.12)", text: "oklch(0.553 0.174 38.4)" },
+  expert:   { bg: "oklch(0.614 0.204 25.6 / 0.10)",   text: "oklch(0.448 0.162 26.8)" },
 };
 
 /* ============================================================
