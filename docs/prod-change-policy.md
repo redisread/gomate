@@ -103,6 +103,20 @@ Pages 项目（非本仓库前端）走 Git integration preview 部署，wrangle
 3. 如需在合并前验证迁移效果，用 `wrangler d1 migrations apply gomate-db-staging --env staging --remote`（走账本，允许）并在 thread 报备
 4. 验证通过后按正常 PR 流程合并
 
+## 四、运行期与代码层硬约束
+
+### 1. D1 多步原子写入必须用 `db.batch`，禁止 `db.transaction()`
+
+D1 拒绝 SQL `BEGIN`/`COMMIT`（code 7500），禁止使用 `db.transaction()`。多步原子写入一律用 `db.batch([...])`（D1 唯一原子原语）。集成测试的 better-sqlite3 mock 不会暴露此问题，CR 必须人工核对。（task #147 教训）
+
+### 2. Workers Free 账号 KV 每日 1000 次写入（账号级共享）
+
+rate-limit / session / verification 必须避免写 KV。部署时**不要**设 `NODE_ENV=production`——better-auth 在 `isProduction` 时启用内置 rate limiter 且默认 storage 为 secondary-storage（KV），每个 `/auth/*` 请求写 KV，会快速耗尽每日写入额度。（#492）
+
+### 3. drizzle-kit generate 输出含 `stories` / `share_events` 假漂移
+
+SQLite introspection 对 `id TEXT PRIMARY KEY`（未显式写 NOT NULL）报告 notnull=0，导致 generate 每次输出两表的整表重建段（`__new_stories` / `__new_share_events`）。这是假漂移，已决策不重建表。提交前必须人工剔除两表的 PRAGMA + `__new_*` + 索引重建段，仅保留真实变更。参照 `db/migrations/0012_drop_pois.sql`。（task #159）
+
 ## 附：问题域三个实证（2026-07）
 
 1. **双账本**：pipeline 用 wrangler `d1_migrations` 表，drizzle-kit 用 `_journal.json`，手工 `d1 execute` 两边都绕过
