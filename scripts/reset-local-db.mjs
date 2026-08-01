@@ -14,10 +14,15 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, rmSync, readdirSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const D1_STATE_DIR = path.join(ROOT, "api", ".wrangler", "state", "v3", "d1", "miniflare-D1DatabaseObject");
+// 多 worktree 共享同一份本地 D1 状态（GOMATE_LOCAL_STATE，默认 ~/.gomate/wrangler-state）
+const LOCAL_STATE =
+  process.env.GOMATE_LOCAL_STATE ||
+  path.join(os.homedir(), ".gomate", "wrangler-state");
+const D1_STATE_DIR = path.join(LOCAL_STATE, "v3", "d1", "miniflare-D1DatabaseObject");
 
 function log(message) {
   console.log(`[db:reset] ${message}`);
@@ -46,7 +51,7 @@ async function main() {
   }
 
   // 2. 应用 migrations
-  run("pnpm exec wrangler d1 migrations apply gomate-db --local", {
+  run(`pnpm exec wrangler d1 migrations apply gomate-db --local --persist-to "${LOCAL_STATE}"`, {
     cwd: path.join(ROOT, "api"),
   });
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev --ip 0.0.0.0 --port 8799",
+    "dev": "wrangler dev --ip 0.0.0.0 --port ${GOMATE_API_PORT:-8799} --persist-to ${GOMATE_LOCAL_STATE:-$HOME/.gomate/wrangler-state} --var APP_URL:http://localhost:${GOMATE_API_PORT:-8799} --var BETTER_AUTH_URL:http://localhost:${GOMATE_API_PORT:-8799} --var FRONTEND_URL:http://localhost:${GOMATE_WEB_PORT:-5432} --var CORS_ALLOWED_ORIGINS:http://localhost:${GOMATE_WEB_PORT:-5432},http://localhost:${GOMATE_API_PORT:-8799}",
     "build": "tsc",
     "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
     "deploy": "wrangler deploy --env production",

@@ -24,6 +24,15 @@ function parseAllowedOrigins(env: Env, _origin: string): string[] {
   return [...new Set([...configured, ...localhostOrigins])];
 }
 
+/**
+ * 本地开发放行 localhost / 127.0.0.1 任意端口。
+ * 多 worktree 并行开发时端口不固定（GOMATE_API_PORT / GOMATE_WEB_PORT），
+ * 固定白名单会误拒动态端口，这里按主机名匹配（仅限本机回环地址，不影响生产域名）。
+ */
+function isLocalhostOrigin(origin: string): boolean {
+  return /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
+}
+
 /** CORS 中间件，允许前端和移动端跨域请求 */
 export const corsMiddleware = cors({
   origin: (origin, c) => {
@@ -32,6 +41,9 @@ export const corsMiddleware = cors({
 
     const allowed = parseAllowedOrigins(c.env, origin);
     if (allowed.includes(origin)) return origin;
+
+    // 本地开发：放行回环地址任意端口（多 worktree 动态端口场景）
+    if (isLocalhostOrigin(origin)) return origin;
 
     // 仅开发环境允许局域网 IP（移动端调试）— 通过 APP_URL 判断，避免匹配生产域名中的子串
     const isDev = (c.env.APP_URL ?? "").includes("localhost");

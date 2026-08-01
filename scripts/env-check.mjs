@@ -328,8 +328,10 @@ async function main() {
     CHECKS.push(checkPlaywrightBrowsers());
 
     log("检查端口占用...");
-    CHECKS.push(await checkPort(5432, "frontend dev"));
-    CHECKS.push(await checkPort(8799, "api dev"));
+    const webPort = process.env.GOMATE_WEB_PORT || "5432";
+    const apiPort = process.env.GOMATE_API_PORT || "8799";
+    CHECKS.push(await checkPort(Number(webPort), "frontend dev"));
+    CHECKS.push(await checkPort(Number(apiPort), "api dev"));
 
     log("检查 wrangler 登录状态...");
     CHECKS.push(checkWranglerLogin());

@@ -33,7 +33,10 @@
     "i18n:validate": "node scripts/validate-i18n-keys.mjs",
     "i18n:gen-types": "node scripts/gen-i18n-types.mjs",
     "i18n:build": "tsx scripts/build-locales.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "dev:wt": "node scripts/init-worktree.mjs && node scripts/start-worktree.mjs",
+    "init:worktree": "node scripts/init-worktree.mjs",
+    "db:sync": "cd api && tsx db/sync-locations.ts"
   },
   "lint-staged": {
     "frontend/**/*.{ts,tsx}": [
