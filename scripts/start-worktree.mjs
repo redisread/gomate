@@ -96,7 +96,8 @@ async function main() {
       shutdown(1);
     });
     child.on("exit", (code) => {
-      if (!shuttingDown && code !== 0) shutdown(code ?? 1);
+      // 任一子进程退出（无论 code）都收掉另一个并退出，避免脚本挂住
+      if (!shuttingDown) shutdown(code ?? 0);
     });
   });
 }

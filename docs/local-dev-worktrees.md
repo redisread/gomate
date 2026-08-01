@@ -18,13 +18,13 @@
 
 ## 环境变量
 
-| 变量                     | 默认值                     | 说明                                                       |
-| ------------------------ | -------------------------- | ---------------------------------------------------------- |
-| `GOMATE_API_PORT`        | `8799`                     | API dev 端口                                               |
-| `GOMATE_WEB_PORT`        | `5432`                     | 前端 dev 端口                                              |
-| `GOMATE_LOCAL_STATE`     | `~/.gomate/wrangler-state` | wrangler 本地持久化目录（D1/KV/R2 状态），多 worktree 共享 |
-| `GOMATE_DEV_VARS_SOURCE` | 无                         | `api/.dev.vars` 缺失时的复制来源路径                       |
-| `GOMATE_SKIP_SYNC`       | 无                         | `=1` 时跳过 prod 地点数据同步（离线调试）                  |
+| 变量                     | 默认值                     | 说明                                                                                                                        |
+| ------------------------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `GOMATE_API_PORT`        | `8799`                     | API dev 端口                                                                                                                |
+| `GOMATE_WEB_PORT`        | `5432`                     | 前端 dev 端口                                                                                                               |
+| `GOMATE_LOCAL_STATE`     | `~/.gomate/wrangler-state` | wrangler 本地持久化目录（D1/KV/R2 状态），多 worktree 共享；显式设置时**请用绝对路径**（wrangler dev 与各脚本解析基准不同） |
+| `GOMATE_DEV_VARS_SOURCE` | 无                         | `api/.dev.vars` 缺失时的复制来源路径                                                                                        |
+| `GOMATE_SKIP_SYNC`       | 无                         | `=1` 时跳过 prod 地点数据同步（离线调试）                                                                                   |
 
 ## 快速开始（推荐）
 
@@ -60,6 +60,8 @@ QA 用户仍需手动注册（见 AGENTS.md「本地全栈测试环境」）。
 pnpm db:reset      # 清空共享 D1 并应用 migrations + seed（移动端测试角色）
 pnpm db:sync       # 从 prod API 重新同步地点数据到共享 D1（cd api && tsx db/sync-locations.ts）
 ```
+
+⚠️ `db:reset` 会直接删除共享 D1 目录：**先停掉所有正在运行的 dev 实例再执行**，否则运行中实例会持有已删除的 SQLite inode，后续写入丢失、数据分裂。
 
 注意：`db:reset` 作用于共享目录，会清掉所有 worktree 的本地数据；需要 prod 对齐数据时先 `db:reset` 再 `db:sync`（或直接 `init:worktree` 里的 sync 步骤）。
 
