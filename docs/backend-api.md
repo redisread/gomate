@@ -427,6 +427,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 获取待审批申请列表（队长视角，支持分页）
 
 - **认证：** 是
+- **Query：** `page`（默认 1）、`pageSize`（默认 10，最大 100）
 - **响应：**
 
 ```json
@@ -442,7 +443,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
       "applicant": { "id", "name", "nickname", "avatar", "bio", "level" }
     }
   ],
-  "total": 3
+  "pagination": { "page": 1, "pageSize": 10, "total": 3, "totalPages": 1, "hasMore": false }
 }
 ```
 
@@ -622,7 +623,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 获取城市列表
 
 - **认证：** 否
-- **Query：** `hot`（boolean）、`province`、`level`、`limit`、`offset`
+- **Query：** `hot`（boolean）、`province`、`level`、`page`（默认 1）、`pageSize`（默认 20，最大 100）
 - **响应：** `{ "success": true, "cities": [{ "id", "adcode", "name", "level", "province", "isHot" }] }`
 
 ### POST `/cities`
@@ -641,7 +642,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 获取标签列表
 
 - **认证：** 否
-- **Query：** `type`（location\|activity）、`limit`、`offset`
+- **Query：** `type`（location\|activity）、`page`（默认 1）、`pageSize`（默认 50，最大 100）
 - **响应：** `{ "success": true, "tags": [{ "id", "name", "type" }] }`
 
 ### POST `/tags`
