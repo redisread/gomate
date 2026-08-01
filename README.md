@@ -20,7 +20,7 @@ GoMate 是一个**地点组队平台**，解决「想出门但找不到伙伴」
 
 **测试账号（本地）：**
 
-- 邮箱：`admin@test.com` / `leader_a@test.com` / `member_a@test.com`
+- 邮箱：`admin@test.com` / `leader_a@test.com` / `leader_b@test.com` / `member_a@test.com`
 - 密码：`test1234`
 
 **核心流程：**
@@ -54,7 +54,7 @@ pnpm db:reset
 
 # 本地测试账号（由 db:reset 自动生成）
 # 邮箱：admin@test.com / leader_a@test.com / leader_b@test.com / member_a@test.com
-# 密码：test1234
+# 密码：test1234（另有 member_b@test.com / expert@test.com / beginner@test.com）
 ```
 
 ## 提升用户为 Admin
@@ -91,6 +91,9 @@ pnpm e2e:ui
 
 # 测试 staging 环境
 pnpm e2e:staging
+
+# 向 staging API 灌入测试数据（管理员/队长/队员 + 城市/地点/队伍）
+pnpm seed:staging
 ```
 
 ### browser-use（AI 驱动探索式测试）
