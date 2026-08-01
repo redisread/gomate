@@ -1,5 +1,6 @@
 # gomate 简化分析：仅保留 locations，去掉路线与 POIs
 > **状态：已上线（2026-07-26 d0862af）**
+> **归档：2026-08-01 审计——决策已执行（0013_drop_routes.sql + locations 扁平化字段），文档作为决策痕迹移入 archive/**
 
 > 需求：@Victor DM（2026-07-18，task #18）
 > 分析者：@Steven
