@@ -273,7 +273,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
         {isUploading && (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center gap-2"
-            style={{ background: "rgba(0,0,0,0.55)" }}
+            style={{ background: "color-mix(in oklab, black 55%, transparent)" }}
           >
             <CircularProgress progress={(uploadState as { phase: "uploading"; progress: number }).progress} />
             <span className="text-white text-sm font-medium">
@@ -286,7 +286,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
         {uploadState.phase === "success" && (
           <div
             className="absolute bottom-0 inset-x-0 flex items-center gap-2 px-4 py-2"
-            style={{ background: "rgba(0,0,0,0.45)" }}
+            style={{ background: "color-mix(in oklab, black 45%, transparent)" }}
           >
             <Check className="h-4 w-4 text-green-400 shrink-0" />
             <span className="text-white text-xs truncate">
@@ -392,10 +392,10 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
         style={{
           aspectRatio: "16/9",
           backgroundColor: isDraggingOver
-            ? "#FFFBEB"
+            ? "var(--primary-foreground)"
             : uploadState.phase === "error"
             ? undefined // 已由 Tailwind 处理
-            : "#FAF7F4",
+            : "var(--background)",
         }}
       >
         {/* 上传中：进度覆盖层 */}
@@ -406,7 +406,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               size={64}
               strokeWidth={5}
             />
-            <p className="text-sm font-medium" style={{ color: "#D97706" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--primary)" }}>
               {t("ui.upload.uploadProgressText").replace("{progress}", String((uploadState as { phase: "uploading"; progress: number }).progress))}
             </p>
           </div>
@@ -415,11 +415,11 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
           <div className="flex flex-col items-center gap-2 pointer-events-none">
             <div
               className="flex h-12 w-12 items-center justify-center rounded-full"
-              style={{ background: "rgba(217,119,6,0.15)" }}
+              style={{ background: "color-mix(in oklab, var(--primary) 15%, transparent)" }}
             >
-              <Upload className="h-6 w-6" style={{ color: "#D97706" }} />
+              <Upload className="h-6 w-6" style={{ color: "var(--primary)" }} />
             </div>
-            <p className="text-sm font-semibold" style={{ color: "#D97706" }}>
+            <p className="text-sm font-semibold" style={{ color: "var(--primary)" }}>
               {t("ui.upload.dropPrompt")}
             </p>
           </div>
@@ -445,14 +445,14 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
           <div className="flex flex-col items-center gap-2 px-6 text-center pointer-events-none">
             <div
               className="flex h-12 w-12 items-center justify-center rounded-full"
-              style={{ background: "rgba(217,119,6,0.10)" }}
+              style={{ background: "color-mix(in oklab, var(--primary) 10%, transparent)" }}
             >
               <ImageIcon className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
                 {t("ui.upload.dropZoneText")}{" "}
-                <span style={{ color: "#D97706" }} className="font-semibold">
+                <span style={{ color: "var(--primary)" }} className="font-semibold">
                   {t("ui.upload.dropZoneHighlight")}
                 </span>
               </p>

@@ -27,7 +27,7 @@ function AvatarStack({ members, extra = 0 }: { members: { name: string; avatar: 
                 <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white"
-                  style={{ background: "linear-gradient(135deg, #D97706 0%, #FCD34D 100%)" }}>{initial}</div>
+                  style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-300) 100%)" }}>{initial}</div>
               )}
             </div>
           );
@@ -66,7 +66,7 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
         {hasCover ? (
           <div className="relative h-36 overflow-hidden">
             <img src={team.location!.coverImage} alt={team.location!.name ?? ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(10,8,5,0.72) 0%, rgba(10,8,5,0.12) 50%, transparent 100%)" }} />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, color-mix(in oklab, var(--foreground) 72%, transparent) 0%, color-mix(in oklab, var(--foreground) 12%, transparent) 50%, transparent 100%)" }} />
 
             <div className="absolute top-3 left-3">
               <TeamUrgencyLabel
@@ -81,7 +81,7 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
             {departureLabel && (
               <div className="absolute top-3 right-3">
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold"
-                  style={{ background: departureLabel.urgent ? "rgba(239,68,68,0.80)" : "rgba(217,119,6,0.80)", color: "#fff", backdropFilter: "blur(8px)" }}>
+                  style={{ background: departureLabel.urgent ? "color-mix(in oklab, var(--destructive) 80%, transparent)" : "color-mix(in oklab, var(--primary) 80%, transparent)", color: "#fff", backdropFilter: "blur(8px)" }}>
                   {departureLabel.urgent ? "🔥" : ""} {departureLabel.text}
                 </span>
               </div>
@@ -130,7 +130,7 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
             </span>
             {!hasCover && departureLabel && (
               <span className="ml-auto flex-shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full"
-                style={{ background: departureLabel.urgent ? "rgba(239,68,68,0.10)" : "rgba(217,119,6,0.08)", color: departureLabel.urgent ? "#b91c1c" : "#D97706" }}>
+                style={{ background: departureLabel.urgent ? "color-mix(in oklab, var(--destructive) 10%, transparent)" : "color-mix(in oklab, var(--primary) 8%, transparent)", color: departureLabel.urgent ? "oklch(0.505 0.19 27.5)" : "var(--primary)" }}>
                 {departureLabel.urgent ? "" : "⏱"} {departureLabel.text}</span>
             )}
           </div>

@@ -82,14 +82,14 @@ export function FavoritesClient() {
           <div className="py-8">
             <a
               href="/locations"
-              className="inline-flex items-center gap-1.5 text-sm text-[#8f7f6e] hover:text-[#1e1812] transition-colors mb-4"
+              className="inline-flex items-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors mb-4"
             >
               <ArrowLeft className="h-4 w-4" />
               {t("favorites.backBtn")}
             </a>
-            <h1 className="text-2xl font-bold text-[#1e1812]">{t("favorites.pageTitle")}</h1>
+            <h1 className="text-2xl font-bold text-[var(--foreground)]">{t("favorites.pageTitle")}</h1>
             {!isLoading && favorites.length > 0 && (
-              <p className="text-sm text-[#8f7f6e] mt-1">
+              <p className="text-sm text-[var(--muted-foreground)] mt-1">
                 {favorites.length} {t("favorites.locationCount")}
               </p>
             )}
@@ -102,7 +102,7 @@ export function FavoritesClient() {
                 <div
                   key={i}
                   className="bg-card rounded-2xl overflow-hidden animate-pulse"
-                  style={{ boxShadow: "0 1px 4px rgba(30,24,18,0.06)" }}
+                  style={{ boxShadow: "0 1px 4px color-mix(in oklab, var(--foreground) 6%, transparent)" }}
                 >
                   <div className="h-48 bg-stone-200 dark:bg-stone-700" />
                   <div className="p-4 space-y-2">
@@ -160,7 +160,7 @@ export function FavoritesClient() {
                     <div
                       key={fav.id}
                       className="bg-card rounded-2xl overflow-hidden opacity-60"
-                      style={{ boxShadow: "0 1px 4px rgba(30,24,18,0.06)" }}
+                      style={{ boxShadow: "0 1px 4px color-mix(in oklab, var(--foreground) 6%, transparent)" }}
                     >
                       <div className="h-48 bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
                         <div className="text-center">
@@ -188,15 +188,15 @@ export function FavoritesClient() {
                     key={fav.id}
                     className="bg-card rounded-2xl overflow-hidden group transition-all duration-200 hover:-translate-y-0.5"
                     style={{
-                      boxShadow: "0 1px 4px rgba(30,24,18,0.06)",
+                      boxShadow: "0 1px 4px color-mix(in oklab, var(--foreground) 6%, transparent)",
                     }}
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLDivElement).style.boxShadow =
-                        "0 8px 24px rgba(30,24,18,0.12)";
+                        "0 8px 24px color-mix(in oklab, var(--foreground) 12%, transparent)";
                     }}
                     onMouseLeave={(e) => {
                       (e.currentTarget as HTMLDivElement).style.boxShadow =
-                        "0 1px 4px rgba(30,24,18,0.06)";
+                        "0 1px 4px color-mix(in oklab, var(--foreground) 6%, transparent)";
                     }}
                   >
                     {/* 封面图 */}
@@ -210,7 +210,7 @@ export function FavoritesClient() {
                       ) : (
                         <div
                           className="w-full h-full flex items-center justify-center fav-placeholder-gradient"
-                          style={{ background: "linear-gradient(135deg, #FEF3C7, #FDE68A)" }}
+                          style={{ background: "linear-gradient(135deg, var(--anthropic-accent-soft), var(--accent-foreground))" }}
                         >
                           <Mountain className="h-12 w-12 text-amber-400" />
                         </div>
@@ -225,27 +225,27 @@ export function FavoritesClient() {
                         disabled={removingId === loc.id}
                         className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150"
                         style={{
-                          background: "rgba(255,255,255,0.92)",
+                          background: "color-mix(in oklab, white 92%, transparent)",
                           backdropFilter: "blur(4px)",
-                          boxShadow: "0 2px 8px rgba(30,24,18,0.12)",
+                          boxShadow: "0 2px 8px color-mix(in oklab, var(--foreground) 12%, transparent)",
                         }}
                         aria-label={t("favorites.removeSuccess")}
                       >
                         <Heart
                           className="h-4 w-4 transition-colors"
-                          style={{ color: "#D97706" }}
-                          fill={removingId === loc.id ? "transparent" : "#D97706"}
+                          style={{ color: "var(--primary)" }}
+                          fill={removingId === loc.id ? "transparent" : "var(--primary)"}
                         />
                       </button>
                     </a>
 
                     {/* 卡片内容 */}
                     <a href={`/locations/${loc.id}`} className="block p-4">
-                      <h3 className="font-semibold text-[#1e1812] text-sm leading-snug mb-1.5 line-clamp-1">
+                      <h3 className="font-semibold text-[var(--foreground)] text-sm leading-snug mb-1.5 line-clamp-1">
                         {loc.name}
                       </h3>
                       {(loc.address || loc.cityName) && (
-                        <div className="flex items-center gap-1 text-xs text-[#8f7f6e]">
+                        <div className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
                           <MapPin className="h-3 w-3 flex-shrink-0" />
                           <span className="line-clamp-1">
                             {[loc.cityName, loc.address].filter(Boolean).join(" · ")}

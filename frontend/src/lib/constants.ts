@@ -27,7 +27,7 @@ export const DIFFICULTY_CONFIG: Record<
     labelKey: "enums.difficulty.easy",
     emoji: "🌿",
     badgeColor: "bg-amber-500/80 text-white",
-    bg: "rgba(217,119,6,0.85)",
+    bg: "color-mix(in oklab, var(--primary) 85%, transparent)",
     color: "#fff",
     activeColor: "bg-amber-600 border-amber-600 text-white",
   },
@@ -35,7 +35,7 @@ export const DIFFICULTY_CONFIG: Record<
     labelKey: "enums.difficulty.moderate",
     emoji: "⛰",
     badgeColor: "bg-amber-500/80 text-white",
-    bg: "rgba(217,119,6,0.88)",
+    bg: "color-mix(in oklab, var(--primary) 88%, transparent)",
     color: "#fff",
     activeColor: "bg-amber-500 border-amber-500 text-white",
   },
@@ -43,7 +43,7 @@ export const DIFFICULTY_CONFIG: Record<
     labelKey: "enums.difficulty.hard",
     emoji: "🧗",
     badgeColor: "bg-orange-500/80 text-white",
-    bg: "rgba(255,122,101,0.90)",
+    bg: "oklch(0.731 0.166 30.7 / 0.90)",
     color: "#fff",
     activeColor: "bg-orange-500 border-orange-500 text-white",
   },
@@ -51,7 +51,7 @@ export const DIFFICULTY_CONFIG: Record<
     labelKey: "enums.difficulty.expert",
     emoji: "🏔",
     badgeColor: "bg-red-500/80 text-white",
-    bg: "rgba(109,40,217,0.85)",
+    bg: "oklch(0.491 0.241 292.6 / 0.85)",
     color: "#fff",
     activeColor: "bg-red-500 border-red-500 text-white",
   },
@@ -84,7 +84,7 @@ export function getCardGradient(id: string): string {
 
 // 进度条颜色分级
 export function getProgressGradient(pct: number): string {
-  if (pct >= 81) return "linear-gradient(to right, #f87171, #ef4444)"; // red
-  if (pct >= 51) return "linear-gradient(to right, #fbbf24, #d97706)"; // amber
-  return "linear-gradient(to right, #34d399, #059669)"; // emerald
+  if (pct >= 81) return "linear-gradient(to right, oklch(0.711 0.166 22.2), var(--destructive))"; // red
+  if (pct >= 51) return "linear-gradient(to right, var(--warning), var(--primary))"; // amber
+  return "linear-gradient(to right, oklch(0.773 0.153 163.2), oklch(0.596 0.127 163.2))"; // emerald
 }

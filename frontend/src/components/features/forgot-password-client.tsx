@@ -48,7 +48,7 @@ export function ForgotPasswordClient() {
       {/* 顶部 Logo 栏 */}
       <div className="px-6 pt-6 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2 group">
-          <Mountain className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" style={{ color: "#D97706" }} />
+          <Mountain className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" style={{ color: "var(--primary)" }} />
           <span className="text-lg font-bold text-foreground">GoMate</span>
         </a>
         <a
@@ -68,9 +68,9 @@ export function ForgotPasswordClient() {
             <div className="text-center space-y-5">
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
-                style={{ background: "linear-gradient(135deg, rgba(217,119,6,0.15) 0%, rgba(252,211,77,0.20) 100%)" }}
+                style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--primary) 15%, transparent) 0%, color-mix(in oklab, var(--primary-300) 20%, transparent) 100%)" }}
               >
-                <CheckCircle2 className="h-10 w-10" style={{ color: "#D97706" }} />
+                <CheckCircle2 className="h-10 w-10" style={{ color: "var(--primary)" }} />
               </div>
 
               <div>
@@ -95,18 +95,18 @@ export function ForgotPasswordClient() {
                 href="/login"
                 className="inline-block w-full py-3 rounded-xl text-sm font-semibold text-white text-center transition-all duration-200"
                 style={{
-                  background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
-                  boxShadow: "0 4px 18px rgba(217,119,6,0.35)",
+                  background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",
+                  boxShadow: "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",
                 }}
                 onMouseEnter={(e) => {
                   const el = e.currentTarget as HTMLAnchorElement;
                   el.style.transform = "translateY(-1px)";
-                  el.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
+                  el.style.boxShadow = "0 6px 24px color-mix(in oklab, var(--primary) 45%, transparent)";
                 }}
                 onMouseLeave={(e) => {
                   const el = e.currentTarget as HTMLAnchorElement;
                   el.style.transform = "translateY(0)";
-                  el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
+                  el.style.boxShadow = "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)";
                 }}
               >
                 {t("common.backLogin")}
@@ -119,9 +119,9 @@ export function ForgotPasswordClient() {
               <div className="text-center mb-8">
                 <div
                   className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                  style={{ background: "rgba(217,119,6,0.10)" }}
+                  style={{ background: "color-mix(in oklab, var(--primary) 10%, transparent)" }}
                 >
-                  <Mail className="h-8 w-8" style={{ color: "#D97706" }} />
+                  <Mail className="h-8 w-8" style={{ color: "var(--primary)" }} />
                 </div>
                 <h1 className="text-2xl font-bold mb-1.5 text-foreground">
                   {t("auth.forgotPasswordTitle")}
@@ -172,20 +172,20 @@ export function ForgotPasswordClient() {
                   disabled={isLoading}
                   className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{
-                    background: isLoading ? "#D97706" : "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
-                    boxShadow: isLoading ? "none" : "0 4px 18px rgba(217,119,6,0.35)",
+                    background: isLoading ? "var(--primary)" : "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",
+                    boxShadow: isLoading ? "none" : "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",
                   }}
                   onMouseEnter={(e) => {
                     if (!isLoading) {
                       const el = e.currentTarget as HTMLButtonElement;
                       el.style.transform = "translateY(-1px)";
-                      el.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
+                      el.style.boxShadow = "0 6px 24px color-mix(in oklab, var(--primary) 45%, transparent)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     const el = e.currentTarget as HTMLButtonElement;
                     el.style.transform = "translateY(0)";
-                    el.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
+                    el.style.boxShadow = "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)";
                   }}
                 >
                   {isLoading ? (

@@ -161,7 +161,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
   if (isLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#D97706" }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--primary)" }} />
       </main>
     );
   }
@@ -206,7 +206,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
 
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
-            <Pencil className="h-5 w-5" style={{ color: "#D97706" }} />
+            <Pencil className="h-5 w-5" style={{ color: "var(--primary)" }} />
             <h1 className="text-2xl font-bold text-foreground">
               {t("teams.editTitle")}
             </h1>
@@ -295,7 +295,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
 
             <FieldGroup icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.editMaxSizeHint", { current: team.currentMembers })}>
               <div className="relative">
-                <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "#8f7f6e" }} />
+                <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "var(--muted-foreground)" }} />
                 <input
                   id="maxMembers"
                   name="maxMembers"

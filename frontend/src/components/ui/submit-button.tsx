@@ -12,7 +12,7 @@ export interface SubmitButtonProps extends React.ButtonHTMLAttributes<HTMLButton
   children: React.ReactNode;
 }
 
-const GRADIENT_BG = "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)";
+const GRADIENT_BG = "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)";
 
 export function SubmitButton({
   loading = false,
@@ -30,19 +30,19 @@ export function SubmitButton({
       disabled={isDisabled}
       className={`py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-allowed ${className ?? ""}`}
       style={{
-        background: isDisabled ? "#D97706" : GRADIENT_BG,
-        boxShadow: isDisabled ? "none" : "0 4px 18px rgba(217,119,6,0.35)",
+        background: isDisabled ? "var(--primary)" : GRADIENT_BG,
+        boxShadow: isDisabled ? "none" : "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",
       }}
       onMouseEnter={(e) => {
         if (!isDisabled) {
           e.currentTarget.style.transform = "translateY(-1px)";
-          e.currentTarget.style.boxShadow = "0 6px 24px rgba(217,119,6,0.45)";
+          e.currentTarget.style.boxShadow = "0 6px 24px color-mix(in oklab, var(--primary) 45%, transparent)";
         }
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = "translateY(0)";
         if (!isDisabled) {
-          e.currentTarget.style.boxShadow = "0 4px 18px rgba(217,119,6,0.35)";
+          e.currentTarget.style.boxShadow = "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)";
         }
       }}
       {...rest}

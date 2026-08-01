@@ -183,7 +183,7 @@ export function CreateTeamClient() {
   if (isAuthenticated === null) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#D97706" }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--primary)" }} />
       </main>
     );
   }
@@ -205,7 +205,7 @@ export function CreateTeamClient() {
         {/* 页面标题 */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-5 w-5" style={{ color: "#D97706" }} />
+            <Sparkles className="h-5 w-5" style={{ color: "var(--primary)" }} />
             <h1 className="text-2xl font-bold text-foreground">
               {t("teams.createTitle")}
             </h1>

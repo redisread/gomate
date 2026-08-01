@@ -131,7 +131,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
           <div
             className="relative h-40 overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, #78350F 0%, #92400E 30%, #D97706 65%, #5bbfac 90%, #8dd5c8 100%)",
+              background: "linear-gradient(135deg, oklch(0.414 0.105 45.9) 0%, var(--accent-foreground) 30%, var(--primary) 65%, oklch(0.739 0.098 179.3) 90%, oklch(0.822 0.075 181.8) 100%)",
             }}
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
@@ -161,7 +161,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
                   {user.avatar ? (
                     <img src={user.avatar} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-4xl font-bold text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
+                    <span className="text-4xl font-bold text-white" style={{ textShadow: "0 2px 8px color-mix(in oklab, black 20%, transparent)" }}>
                       {displayName?.[0]?.toUpperCase()}
                     </span>
                   )}

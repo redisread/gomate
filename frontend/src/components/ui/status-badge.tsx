@@ -15,48 +15,48 @@ const STATUS_STYLES: Record<TeamStatus, {
   ping: boolean;  // recruiting 时圆点闪烁
 }> = {
   recruiting: {
-    bg:       "rgba(217, 119, 6, 0.10)",
-    text:     "#92400E",
-    border:   "rgba(217, 119, 6, 0.25)",
-    dotColor: "#D97706",
+    bg:       "color-mix(in oklab, var(--primary) 10%, transparent)",
+    text:     "var(--accent-foreground)",
+    border:   "color-mix(in oklab, var(--primary) 25%, transparent)",
+    dotColor: "var(--primary)",
     ping:     true,
   },
   full: {
-    bg:       "rgba(217, 119, 6, 0.10)",
-    text:     "#92400e",
-    border:   "rgba(217, 119, 6, 0.25)",
-    dotColor: "#d97706",
+    bg:       "color-mix(in oklab, var(--primary) 10%, transparent)",
+    text:     "var(--accent-foreground)",
+    border:   "color-mix(in oklab, var(--primary) 25%, transparent)",
+    dotColor: "var(--primary)",
     ping:     false,
   },
   formed: {
-    bg:       "rgba(252, 211, 77, 0.12)",
-    text:     "#D97706",
-    border:   "rgba(252, 211, 77, 0.30)",
-    dotColor: "#F59E0B",
+    bg:       "color-mix(in oklab, var(--primary-300) 12%, transparent)",
+    text:     "var(--primary)",
+    border:   "color-mix(in oklab, var(--primary-300) 30%, transparent)",
+    dotColor: "var(--primary-400)",
     ping:     false,
   },
   completed: {
-    bg:       "rgba(143, 127, 110, 0.10)",
-    text:     "#8f7f6e",
-    border:   "rgba(143, 127, 110, 0.20)",
-    dotColor: "#8f7f6e",
+    bg:       "color-mix(in oklab, var(--muted-foreground) 10%, transparent)",
+    text:     "var(--muted-foreground)",
+    border:   "color-mix(in oklab, var(--muted-foreground) 20%, transparent)",
+    dotColor: "var(--muted-foreground)",
     ping:     false,
   },
   cancelled: {
-    bg:       "rgba(229, 62, 62, 0.08)",
-    text:     "#c53030",
-    border:   "rgba(229, 62, 62, 0.20)",
-    dotColor: "#e53e3e",
+    bg:       "color-mix(in oklab, var(--destructive) 8%, transparent)",
+    text:     "var(--destructive)",
+    border:   "color-mix(in oklab, var(--destructive) 20%, transparent)",
+    dotColor: "var(--destructive)",
     ping:     false,
   },
 };
 
 /* 难度颜色方案 */
 const DIFFICULTY_STYLES: Record<Difficulty, { bg: string; text: string }> = {
-  easy:     { bg: "rgba(217, 119, 6, 0.10)",  text: "#92400E" },
-  moderate: { bg: "rgba(217, 119, 6, 0.10)",   text: "#92400e" },
-  hard:     { bg: "rgba(255, 122, 101, 0.12)", text: "#c2410c" },
-  expert:   { bg: "rgba(229, 62, 62, 0.10)",   text: "#9b1c1c" },
+  easy:     { bg: "color-mix(in oklab, var(--primary) 10%, transparent)",  text: "var(--accent-foreground)" },
+  moderate: { bg: "color-mix(in oklab, var(--primary) 10%, transparent)",   text: "var(--accent-foreground)" },
+  hard:     { bg: "color-mix(in oklab, var(--warm) 12%, transparent)", text: "var(--destructive)" },
+  expert:   { bg: "color-mix(in oklab, var(--destructive) 10%, transparent)",   text: "var(--destructive)" },
 };
 
 /* ============================================================

@@ -24,7 +24,8 @@ export function Avatar({ src, name, size = "sm", className, style }: AvatarProps
     ? /[\u4e00-\u9fa5]/.test(name[0]) ? name[0] : name[0].toUpperCase()
     : "?";
 
-  // 根据姓名哈希生成一致背景色（使用品牌蓝绿色域 hue 150~220）
+  // 根据姓名哈希生成一致背景色。OKLCH 给出感知均匀的 vividness：
+  // 同样 L/C 值在不同 hue 看起来同样鲜艳；hue 域 155–215 用于身份识别（与品牌色解耦）。
   const hue = (name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % 60) + 155;
 
   if (src) {
@@ -51,7 +52,7 @@ export function Avatar({ src, name, size = "sm", className, style }: AvatarProps
         sizeClass,
         className
       )}
-      style={{ background: `hsl(${hue}, 45%, 42%)`, ...style }}
+      style={{ background: `oklch(0.55 0.11 ${hue})`, ...style }}
       aria-label={name}
     >
       {initials}

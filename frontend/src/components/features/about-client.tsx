@@ -45,7 +45,7 @@ export function AboutClient() {
             <div className="flex items-center gap-3 mb-5">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)" }}
+                style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)" }}
               >
                 <Mountain className="h-5 w-5 text-white" />
               </div>

@@ -50,7 +50,7 @@ export function AvatarStack({ urls, max = 5, size = "sm", tooltip }: AvatarStack
             ) : (
               <div
                 className={`w-full h-full flex items-center justify-center ${fontSize} font-bold text-white`}
-                style={{ background: "linear-gradient(135deg, #D97706 0%, #FCD34D 100%)" }}
+                style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-300) 100%)" }}
                 aria-hidden="true"
               >
                 ·

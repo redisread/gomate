@@ -25,9 +25,9 @@ interface NavbarProps {
 /**
  * 响应式导航栏（Design System v3.0）
  * - 滚动前透明；滚动后毛玻璃（暖白 + blur）
- * - 活跃链接：品牌绿下划线 + 高亮文字
- * - Logo：Mountain 图标 + 品牌绿渐变文字
- * - 主 CTA：品牌绿按钮 + 绿色光晕
+ * - 活跃链接：品牌琥珀下划线 + 高亮文字
+ * - Logo：Mountain 图标 + 品牌琥珀渐变文字
+ * - 主 CTA：品牌琥珀按钮 + 琥珀色光晕
  * - 移动端：从右侧 slide-in 抽屉
  * - 用户菜单：hover 展开下拉
  */
@@ -469,7 +469,7 @@ export function Navbar({ className }: NavbarProps) {
   );
 }
 
-/* ---- 品牌绿主 CTA 按钮 ---- */
+/* ---- 品牌琥珀主 CTA 按钮 ---- */
 function CtaButton({
   href,
   label,
