@@ -49,11 +49,11 @@ function CircularProgress({ progress, size = 40, strokeWidth = 3 }: {
     >
       <circle
         cx={size / 2} cy={size / 2} r={radius}
-        fill="none" stroke="oklch(1 0 89.9 / 0.30)" strokeWidth={strokeWidth}
+        fill="none" stroke="color-mix(in oklab, white 30%, transparent)" strokeWidth={strokeWidth}
       />
       <circle
         cx={size / 2} cy={size / 2} r={radius}
-        fill="none" stroke="oklch(0.666 0.157 58.3)" strokeWidth={strokeWidth}
+        fill="none" stroke="var(--primary)" strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={offset}

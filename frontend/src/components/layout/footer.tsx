@@ -40,7 +40,7 @@ function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: Tran
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200"
-      style={{ backgroundColor: "oklch(0 0 0 / 0.50)" }}
+      style={{ backgroundColor: "color-mix(in oklab, black 50%, transparent)" }}
       onClick={onClose}
     >
       <div
@@ -52,7 +52,7 @@ function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: Tran
         <div
           className="h-1.5"
           style={{
-            background: "linear-gradient(90deg, oklch(0.769 0.165 70.1) 0%, oklch(0.666 0.157 58.3) 100%)",
+            background: "linear-gradient(90deg, var(--primary-400) 0%, var(--primary) 100%)",
           }}
         />
 
@@ -69,8 +69,8 @@ function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: Tran
         <div className="p-5">
           {/* 标题 */}
           <div className="text-center mb-5">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3" style={{ background: "oklch(0.666 0.157 58.3 / 0.10)" }}>
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="oklch(0.666 0.157 58.3)">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3" style={{ background: "color-mix(in oklab, var(--primary) 10%, transparent)" }}>
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="var(--primary)">
                 <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.045c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z"/>
               </svg>
             </div>
@@ -82,7 +82,7 @@ function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: Tran
           {/* 二维码展示区 */}
           <div
             className="rounded-xl p-3 mb-4"
-            style={{ background: "oklch(0.666 0.157 58.3 / 0.04)" }}
+            style={{ background: "color-mix(in oklab, var(--primary) 4%, transparent)" }}
           >
             <img
               src="/wechat-qr.png"
@@ -107,7 +107,7 @@ function WechatContactModal({ onClose, t }: { onClose: () => void; t: (key: Tran
             <button
               onClick={handleCopyWechatId}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-              style={{ background: "linear-gradient(135deg, oklch(0.769 0.165 70.1) 0%, oklch(0.666 0.157 58.3) 100%)", color: "white" }}
+              style={{ background: "linear-gradient(135deg, var(--primary-400) 0%, var(--primary) 100%)", color: "white" }}
             >
               {copied ? (
                 <>
@@ -211,7 +211,7 @@ export function Footer() {
         >
           <path
             d="M0 120L180 80L360 100L540 50L720 70L900 20L1080 45L1260 10L1440 30V120H0Z"
-            fill="oklch(0.234 0.036 42.5)"
+            fill="var(--warm-foreground)"
           />
         </svg>
       </div>
@@ -229,7 +229,7 @@ export function Footer() {
                 <div className="flex items-center gap-2 mb-4">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg, oklch(0.666 0.157 58.3) 0%, oklch(0.769 0.165 70.1) 100%)" }}
+                    style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)" }}
                   >
                     <Mountain className="h-5 w-5 text-white" />
                   </div>

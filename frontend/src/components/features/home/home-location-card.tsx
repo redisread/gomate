@@ -108,10 +108,10 @@ export const LocationCard = memo(function LocationCard({ location, index = 0, co
             </div>
           )}
 
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, oklch(0.167 0.006 107 / 0.72) 0%, oklch(0.167 0.006 107 / 0.18) 45%, transparent 70%)" }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, color-mix(in oklab, var(--foreground) 72%, transparent) 0%, color-mix(in oklab, var(--foreground) 18%, transparent) 45%, transparent 70%)" }} />
 
           <div className="absolute inset-0 flex flex-col justify-end p-4 pb-16 sm:pb-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-            style={{ background: "linear-gradient(to top, oklch(0.473 0.125 46.2 / 0.90) 0%, oklch(0.473 0.125 46.2 / 0.55) 55%, transparent 100%)", transition: "opacity 0.3s ease" }}>
+            style={{ background: "linear-gradient(to top, color-mix(in oklab, var(--accent-foreground) 90%, transparent) 0%, color-mix(in oklab, var(--accent-foreground) 55%, transparent) 55%, transparent 100%)", transition: "opacity 0.3s ease" }}>
             <p className="text-white/90 text-xs sm:text-sm line-clamp-1 sm:line-clamp-2 leading-relaxed mb-2">{location.description}</p>
             {routeInfo && (
               <div className="flex flex-wrap gap-2 text-white/75 text-xs">
@@ -127,7 +127,7 @@ export const LocationCard = memo(function LocationCard({ location, index = 0, co
               <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: diffConfig.bg, color: diffConfig.color, backdropFilter: "blur(4px)" }}>{t(diffConfig.labelKey)}</span>
             )}
             {firstTag && (
-              <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: "oklch(1 0 89.9 / 0.90)", color: "oklch(0.473 0.125 46.2)", backdropFilter: "blur(4px)" }}>{firstTag.name}</span>
+              <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: "color-mix(in oklab, white 90%, transparent)", color: "var(--accent-foreground)", backdropFilter: "blur(4px)" }}>{firstTag.name}</span>
             )}
           </div>
 

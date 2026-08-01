@@ -15,48 +15,48 @@ const STATUS_STYLES: Record<TeamStatus, {
   ping: boolean;  // recruiting 时圆点闪烁
 }> = {
   recruiting: {
-    bg:       "oklch(0.666 0.157 58.3 / 0.10)",
-    text:     "oklch(0.473 0.125 46.2)",
-    border:   "oklch(0.666 0.157 58.3 / 0.25)",
-    dotColor: "oklch(0.666 0.157 58.3)",
+    bg:       "color-mix(in oklab, var(--primary) 10%, transparent)",
+    text:     "var(--accent-foreground)",
+    border:   "color-mix(in oklab, var(--primary) 25%, transparent)",
+    dotColor: "var(--primary)",
     ping:     true,
   },
   full: {
-    bg:       "oklch(0.666 0.157 58.3 / 0.10)",
-    text:     "oklch(0.473 0.125 46.2)",
-    border:   "oklch(0.666 0.157 58.3 / 0.25)",
-    dotColor: "oklch(0.666 0.157 58.3)",
+    bg:       "color-mix(in oklab, var(--primary) 10%, transparent)",
+    text:     "var(--accent-foreground)",
+    border:   "color-mix(in oklab, var(--primary) 25%, transparent)",
+    dotColor: "var(--primary)",
     ping:     false,
   },
   formed: {
-    bg:       "oklch(0.879 0.153 91.6 / 0.12)",
-    text:     "oklch(0.666 0.157 58.3)",
-    border:   "oklch(0.879 0.153 91.6 / 0.30)",
-    dotColor: "oklch(0.769 0.165 70.1)",
+    bg:       "color-mix(in oklab, var(--primary-300) 12%, transparent)",
+    text:     "var(--primary)",
+    border:   "color-mix(in oklab, var(--primary-300) 30%, transparent)",
+    dotColor: "var(--primary-400)",
     ping:     false,
   },
   completed: {
-    bg:       "oklch(0.606 0.032 68.9 / 0.10)",
-    text:     "oklch(0.606 0.032 68.9)",
-    border:   "oklch(0.606 0.032 68.9 / 0.20)",
-    dotColor: "oklch(0.606 0.032 68.9)",
+    bg:       "color-mix(in oklab, var(--muted-foreground) 10%, transparent)",
+    text:     "var(--muted-foreground)",
+    border:   "color-mix(in oklab, var(--muted-foreground) 20%, transparent)",
+    dotColor: "var(--muted-foreground)",
     ping:     false,
   },
   cancelled: {
-    bg:       "oklch(0.614 0.204 25.6 / 0.08)",
-    text:     "oklch(0.544 0.186 26)",
-    border:   "oklch(0.614 0.204 25.6 / 0.20)",
-    dotColor: "oklch(0.614 0.204 25.6)",
+    bg:       "color-mix(in oklab, var(--destructive) 8%, transparent)",
+    text:     "var(--destructive)",
+    border:   "color-mix(in oklab, var(--destructive) 20%, transparent)",
+    dotColor: "var(--destructive)",
     ping:     false,
   },
 };
 
 /* 难度颜色方案 */
 const DIFFICULTY_STYLES: Record<Difficulty, { bg: string; text: string }> = {
-  easy:     { bg: "oklch(0.666 0.157 58.3 / 0.10)",  text: "oklch(0.473 0.125 46.2)" },
-  moderate: { bg: "oklch(0.666 0.157 58.3 / 0.10)",   text: "oklch(0.473 0.125 46.2)" },
-  hard:     { bg: "oklch(0.731 0.166 30.7 / 0.12)", text: "oklch(0.553 0.174 38.4)" },
-  expert:   { bg: "oklch(0.614 0.204 25.6 / 0.10)",   text: "oklch(0.448 0.162 26.8)" },
+  easy:     { bg: "color-mix(in oklab, var(--primary) 10%, transparent)",  text: "var(--accent-foreground)" },
+  moderate: { bg: "color-mix(in oklab, var(--primary) 10%, transparent)",   text: "var(--accent-foreground)" },
+  hard:     { bg: "color-mix(in oklab, var(--warm) 12%, transparent)", text: "var(--destructive)" },
+  expert:   { bg: "color-mix(in oklab, var(--destructive) 10%, transparent)",   text: "var(--destructive)" },
 };
 
 /* ============================================================

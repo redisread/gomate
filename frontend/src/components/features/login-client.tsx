@@ -53,18 +53,18 @@ export function LoginClient() {
       <div
         className="hidden lg:flex lg:w-[480px] xl:w-[560px] flex-col justify-between p-12 relative overflow-hidden flex-shrink-0"
         style={{
-          background: "linear-gradient(160deg, oklch(0.473 0.125 46.2) 0%, oklch(0.666 0.157 58.3) 45%, oklch(0.769 0.165 70.1) 100%)",
+          background: "linear-gradient(160deg, var(--accent-foreground) 0%, var(--primary) 45%, var(--primary-400) 100%)",
         }}
       >
         {/* 背景装饰光斑 */}
         <div
           className="absolute -top-32 -right-32 w-96 h-96 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, oklch(1 0 89.9 / 0.08) 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, color-mix(in oklab, white 8%, transparent) 0%, transparent 70%)" }}
           aria-hidden="true"
         />
         <div
           className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, oklch(0.731 0.166 30.7 / 0.15) 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, color-mix(in oklab, var(--warm) 15%, transparent) 0%, transparent 70%)" }}
           aria-hidden="true"
         />
 
@@ -72,7 +72,7 @@ export function LoginClient() {
         <a href="/" className="flex items-center gap-2.5 relative z-10 group">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "oklch(1 0 89.9 / 0.20)" }}
+            style={{ background: "color-mix(in oklab, white 20%, transparent)" }}
           >
             <Mountain className="h-5 w-5 text-white" />
           </div>
@@ -96,7 +96,7 @@ export function LoginClient() {
           {/* 用户见证小卡片 */}
           <div
             className="rounded-2xl p-4 space-y-3"
-            style={{ background: "oklch(1 0 89.9 / 0.12)", backdropFilter: "blur(8px)" }}
+            style={{ background: "color-mix(in oklab, white 12%, transparent)", backdropFilter: "blur(8px)" }}
           >
             {[
               { avatar: "🧗", name: t("auth.testimonial1Name"), text: t("auth.testimonial1Text") },
@@ -105,7 +105,7 @@ export function LoginClient() {
               <div key={item.name} className="flex items-center gap-3">
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0"
-                  style={{ background: "oklch(1 0 89.9 / 0.20)" }}
+                  style={{ background: "color-mix(in oklab, white 20%, transparent)" }}
                 >
                   {item.avatar}
                 </div>
@@ -128,11 +128,11 @@ export function LoginClient() {
         >
           <path
             d="M0 120L80 80L160 100L240 55L320 75L400 30L480 55L560 20V120H0Z"
-            fill="oklch(1 0 89.9 / 0.06)"
+            fill="color-mix(in oklab, white 6%, transparent)"
           />
           <path
             d="M0 120L100 90L200 110L300 65L420 85L520 45L560 60V120H0Z"
-            fill="oklch(1 0 89.9 / 0.04)"
+            fill="color-mix(in oklab, white 4%, transparent)"
           />
         </svg>
       </div>
@@ -144,7 +144,7 @@ export function LoginClient() {
         {/* 移动端顶部 Logo */}
         <div className="lg:hidden px-6 pt-6">
           <a href="/" className="flex items-center gap-2 group">
-            <Mountain className="h-6 w-6" style={{ color: "oklch(0.666 0.157 58.3)" }} />
+            <Mountain className="h-6 w-6" style={{ color: "var(--primary)" }} />
             <span className="text-lg font-bold text-foreground">GoMate</span>
           </a>
         </div>
@@ -233,20 +233,20 @@ export function LoginClient() {
                 disabled={isLoading}
                 className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
-                  background: isLoading ? "oklch(0.666 0.157 58.3)" : "linear-gradient(135deg, oklch(0.666 0.157 58.3) 0%, oklch(0.769 0.165 70.1) 100%)",
-                  boxShadow: isLoading ? "none" : "0 4px 18px oklch(0.666 0.157 58.3 / 0.35)",
+                  background: isLoading ? "var(--primary)" : "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",
+                  boxShadow: isLoading ? "none" : "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",
                 }}
                 onMouseEnter={(e) => {
                   if (!isLoading) {
                     const el = e.currentTarget as HTMLButtonElement;
                     el.style.transform = "translateY(-1px)";
-                    el.style.boxShadow = "0 6px 24px oklch(0.666 0.157 58.3 / 0.45)";
+                    el.style.boxShadow = "0 6px 24px color-mix(in oklab, var(--primary) 45%, transparent)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   const el = e.currentTarget as HTMLButtonElement;
                   el.style.transform = "translateY(0)";
-                  el.style.boxShadow = "0 4px 18px oklch(0.666 0.157 58.3 / 0.35)";
+                  el.style.boxShadow = "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)";
                 }}
               >
                 {isLoading ? (

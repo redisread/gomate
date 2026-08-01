@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import typography from "@tailwindcss/typography";
 
 /**
  * GoMate Tailwind CSS 4 配置
@@ -208,7 +209,7 @@ const config: Config = {
     },
   },
 
-  plugins: [require('@tailwindcss/typography')],
+  plugins: [typography],
 };
 
 export default config;

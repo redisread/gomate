@@ -53,7 +53,7 @@ export function FooterMobile() {
         <div className="flex items-center gap-2.5 mb-6">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, oklch(0.666 0.157 58.3) 0%, oklch(0.769 0.165 70.1) 100%)" }}
+            style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)" }}
           >
             <Mountain className="h-4.5 w-4.5 text-white" />
           </div>

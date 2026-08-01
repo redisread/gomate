@@ -27,7 +27,7 @@ export const DIFFICULTY_CONFIG: Record<
     labelKey: "enums.difficulty.easy",
     emoji: "🌿",
     badgeColor: "bg-amber-500/80 text-white",
-    bg: "oklch(0.666 0.157 58.3 / 0.85)",
+    bg: "color-mix(in oklab, var(--primary) 85%, transparent)",
     color: "#fff",
     activeColor: "bg-amber-600 border-amber-600 text-white",
   },
@@ -35,7 +35,7 @@ export const DIFFICULTY_CONFIG: Record<
     labelKey: "enums.difficulty.moderate",
     emoji: "⛰",
     badgeColor: "bg-amber-500/80 text-white",
-    bg: "oklch(0.666 0.157 58.3 / 0.88)",
+    bg: "color-mix(in oklab, var(--primary) 88%, transparent)",
     color: "#fff",
     activeColor: "bg-amber-500 border-amber-500 text-white",
   },
@@ -84,7 +84,7 @@ export function getCardGradient(id: string): string {
 
 // 进度条颜色分级
 export function getProgressGradient(pct: number): string {
-  if (pct >= 81) return "linear-gradient(to right, oklch(0.711 0.166 22.2), oklch(0.637 0.208 25.3))"; // red
-  if (pct >= 51) return "linear-gradient(to right, oklch(0.837 0.164 84.4), oklch(0.666 0.157 58.3))"; // amber
+  if (pct >= 81) return "linear-gradient(to right, oklch(0.711 0.166 22.2), var(--destructive))"; // red
+  if (pct >= 51) return "linear-gradient(to right, var(--warning), var(--primary))"; // amber
   return "linear-gradient(to right, oklch(0.773 0.153 163.2), oklch(0.596 0.127 163.2))"; // emerald
 }
