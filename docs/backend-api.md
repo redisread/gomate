@@ -1,6 +1,6 @@
 # GoMate 后端 API 文档
 
-> 最后更新：2026-07-28
+> 最后更新：2026-08-01
 > 框架：Hono 4 + Cloudflare Workers + Drizzle ORM
 
 ## 基础信息
@@ -11,15 +11,17 @@
 | 生产环境   | `https://api.gomate.live`         |
 | 预发布环境 | `https://api-staging.gomate.live` |
 
-**认证方式：** Better Auth（基于 Session Cookie）
+**认证方式：** Better Auth（基于 Session Cookie）；`/v1/*` 公开 API 另支持 API Key（`x-api-key` 请求头，格式 `gm_live_<key>`，通过 `POST /auth/api-key/create` 创建）。
 
-## 认证中间件
+## 认证与权限
 
-| 中间件         | 作用                           | 未通过时返回 |
-| -------------- | ------------------------------ | ------------ |
-| `requireAuth`  | 要求登录                       | 401          |
-| `optionalAuth` | 可选登录，已登录则注入 session | —            |
-| `requireAdmin` | 要求管理员权限                 | 401 / 403    |
+绝大多数受保护端点都是逐路由调用 `getSession()` 校验会话，未登录返回 401。集中封装：
+
+| 工具                         | 位置                                     | 作用                               | 未通过时返回 |
+| ---------------------------- | ---------------------------------------- | ---------------------------------- | ------------ |
+| `requireAdmin`               | `api/src/routes/locations/utils.ts`      | 管理员专属操作（地点/城市/标签写入等） | 401 / 403    |
+| `requireTeamLeader()`        | `api/src/lib/team-permissions.ts`        | 仅队长（审批、修改、组建/取消、移除） | 401 / 403    |
+| `requireTeamMember()`        | `api/src/lib/team-permissions.ts`        | 仅已批准成员（行动本认领等）          | 401 / 403    |
 
 ---
 
@@ -31,11 +33,19 @@
 
 - **认证：** 否
 - **Body：** `{ "email": "user@example.com" }`
-- **响应：** `{ "success": true, "message": "重置密码邮件已发送" }`
+- **限流：** 5 次/分钟/IP
+- **响应：** `{ "success": true, "message": "如果该邮箱已注册，重置密码邮件已发送" }`（不暴露邮箱是否注册）
+
+### POST `/auth/api-key/create`
+
+创建 API Key（放行到 Better Auth `apiKey.create`）
+
+- **认证：** 是（登录用户）
+- **限制：** 每位用户最多 10 个 key，超出返回 403 `MAX_API_KEYS_EXCEEDED`
 
 ### ALL `/auth/*`
 
-Better Auth 代理，处理注册、登录、登出、会话刷新等所有认证操作。
+Better Auth 代理，处理注册、登录、登出、会话刷新等所有认证操作。`sign-in` / `sign-up` 端点分别限流 20 / 10 次每分钟每 IP。
 
 ---
 
@@ -54,11 +64,16 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 | `pageSize`      | int     | 每页数量，默认 12，最大 100                                      |
 | `search`        | string  | 搜索队伍标题                                                     |
 | `status`        | string  | 逗号分隔的状态（recruiting\|full\|formed\|completed\|cancelled） |
-| `difficulty`    | string  | 逗号分隔的难度（easy\|moderate\|hard\|expert）                   |
+| `difficulty`    | string  | 逗号分隔的难度（easy\|moderate\|hard\|expert，按地点难度过滤）   |
 | `locationId`    | string  | 地点 ID，返回该地点下的所有队伍                                  |
 | `userId`        | string  | 配合 `includeJoined=true` 获取用户加入的队伍                     |
 | `includeJoined` | boolean | true 时仅返回已加入的队伍                                        |
 | `activeOnly`    | boolean | true 时排除已完成/已取消的队伍                                   |
+| `cityId`        | string  | 城市 ID（经地点 join 过滤）                                      |
+| `startDateFrom` | string  | 起始日期范围（YYYY-MM-DD）                                       |
+| `startDateTo`   | string  | 结束日期范围（YYYY-MM-DD）                                       |
+| `timeFilter`    | string  | 时间快捷筛选：`today` \| `tomorrow` \| `weekend` \| `7days`      |
+| `tagIds`        | string  | 逗号分隔的标签 ID（`entityType=activity`）                       |
 
 - **响应：**
 
@@ -73,32 +88,43 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
       "description": "体验南山海边风景",
       "date": "2026-03-28",
       "time": "09:00",
+      "duration": "3小时",
       "durationMin": 180,
       "maxMembers": 6,
       "currentMembers": 3,
       "icon": "⛰️",
       "status": "recruiting",
       "requirements": ["防晒", "登山鞋"],
-      "location": { "name": "清水湾", "coverImage": "url" },
+      "location": { "name": "清水湾", "coverImage": "url", "difficulty": "moderate" },
       "leader": {
         "id": "user-xxx",
         "name": "张三",
         "nickname": "登山达人",
         "avatar": "url",
-        "level": "advanced"
+        "level": "advanced",
+        "completedHikes": 0,
+        "bio": ""
       },
       "createdAt": "2026-03-20T10:00:00Z"
     }
   ],
-  "pagination": { "page": 1, "pageSize": 12, "total": 45, "totalPages": 4 }
+  "pagination": { "page": 1, "pageSize": 12, "total": 45, "totalPages": 4, "hasMore": true }
 }
 ```
+
+### GET `/teams/recommend-onboarding`
+
+获取新手引导推荐队伍（task #187）
+
+- **认证：** 是
+- **Query：** `type`（hiking\|explore\|leisure\|travel，可选，偏好过滤）
+- **响应：** `{ "hasAnyMembership": boolean, "candidates": [...], "fallbackNoType": boolean, "cityId": string|null }`（cityId 缺省时服务端 fallback 深圳）
 
 ### POST `/teams`
 
 创建队伍
 
-- **认证：** 是（需填写微信号）
+- **认证：** 是（需填写微信号，否则 400）
 - **Body：**
 
 ```json
@@ -108,42 +134,47 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
   "description": "一起体验自然",
   "date": "2026-03-28",
   "time": "09:00",
+  "duration": "3小时",
   "durationMin": 180,
   "maxMembers": 6,
   "requirements": ["防晒", "登山鞋"]
 }
 ```
 
-- **响应：** `{ "success": true, "team": { "id": "team-xxx", ... } }`
+- **说明：** `duration` / `durationMin` 至少提供一个（都缺省时默认 240 分钟）；队长自动成为 approved 成员
+- **响应：** `{ "success": true, "team": { "id": "team-xxx", "startTime": "ISO", "endTime": "ISO", ... } }`
 
 ### GET `/teams/:id`
 
 获取队伍详情
 
-- **认证：** 否（已登录则返回用户权限信息）
-- **响应：** 完整队伍数据 + 成员列表 + 地点详情
+- **认证：** 否（已登录则返回与当前用户相关的字段）
+- **响应：** 队伍完整数据 + `leader` + `members`（approved/leave_pending）+ `location`；`checklist`（行动本）仅队长/成员可见，访客为 `null`（隐私红线，不泄漏到 SSR 响应）
+- **说明：** 访问时先执行过期状态更新（recruiting→cancelled、formed→completed）
 
 ### PUT `/teams/:id`
 
 更新队伍信息
 
 - **认证：** 是（仅队长）
-- **Body：** `{ "title", "description", "maxMembers", "requirements", "time", "durationMin" }`
+- **Body：** `{ "title", "description", "maxMembers", "requirements", "icon", "time", "durationMin" }`（均可选）
 - **响应：** `{ "success": true, "message": "队伍信息已更新" }`
 
 ### POST `/teams/:id/join`
 
 申请加入队伍
 
-- **认证：** 是（需填写微信号）
+- **认证：** 是（需填写微信号，否则 400）
+- **条件：** 仅 `recruiting` 状态可申请；已满返回 400；被拒后可重新申请
 - **响应：** `{ "success": true, "message": "申请已提交，等待队长审核" }`
 
 ### GET `/teams/:id/applications`
 
-获取待审核申请列表
+获取成员/申请列表
 
 - **认证：** 是（仅队长）
-- **响应：** `{ "success": true, "applications": [{ "id", "userId", "user": {...}, "createdAt" }] }`
+- **Query：** `status`（可选，如 `pending`；不传返回该队伍全部成员）
+- **响应：** `{ "success": true, "applications": [{ "id", "userId", "status", "createdAt", "userName", "wechat", "user": {...} }] }`
 
 ### POST `/teams/:id/members/:userId/approve`
 
@@ -151,7 +182,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 
 - **认证：** 是（仅队长）
 - **响应：** `{ "success": true, "message": "已通过申请" }`
-- **说明：** 人满时自动更新队伍状态为 `full`
+- **说明：** 人满时队伍状态自动置为 `full`（反之保持 `recruiting`）；已满拒绝批准返回 400
 
 ### POST `/teams/:id/members/:userId/reject`
 
@@ -160,33 +191,35 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 - **认证：** 是（仅队长）
 - **响应：** `{ "success": true, "message": "已拒绝申请" }`
 
+### POST `/teams/:id/members/:userId/remove`
+
+移除成员（队长操作）
+
+- **认证：** 是（仅队长，不能移除自己）
+- **响应：** `{ "success": true, "message": "已移除成员" }`
+- **说明：** 移除后人数低于上限时队伍状态自动回 `recruiting`
+
 ### POST `/teams/:id/leave`
 
 成员退出队伍
 
-- **认证：** 是
+- **认证：** 是（队长不能退出）
+- **说明：** `recruiting`/`full` 状态直接退出；已组建（`formed`）的队伍需走退出申请流程
 - **响应：** `{ "success": true, "message": "已成功退出队伍" }`
-- **说明：** 已组建的队伍需通过退出申请流程
 
 ### POST `/teams/:id/cancel-application`
 
 取消入队申请
 
 - **认证：** 是
+- **说明：** 仅 `pending` 状态可取消，取消后状态记为 `cancelled`（保留历史）
 - **响应：** `{ "success": true, "message": "申请已取消" }`
-
-### POST `/teams/:id/members/:userId/remove`
-
-移除成员（队长操作）
-
-- **认证：** 是（仅队长）
-- **响应：** `{ "success": true, "message": "已移除成员" }`
 
 ### POST `/teams/:id/leave-request`
 
 申请退出已组建队伍
 
-- **认证：** 是
+- **认证：** 是（仅 `formed` 状态；队长不能退出）
 - **响应：** `{ "success": true, "message": "退出申请已提交，等待队长审批" }`
 
 ### POST `/teams/:id/members/:userId/approve-leave`
@@ -207,8 +240,8 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 
 获取当前用户在队伍中的状态
 
-- **认证：** 否（未登录返回 null）
-- **响应：** `{ "success": true, "status": "pending|approved|rejected|leave_pending|null" }`
+- **认证：** 否（未登录返回 `null`）
+- **响应：** `{ "success": true, "status": "pending|approved|rejected|leave_pending|cancelled|null" }`
 
 ### POST `/teams/:id/form`
 
@@ -217,6 +250,14 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 - **认证：** 是（仅队长）
 - **Body：** `{ "isUnderfilled": boolean }`
 - **响应：** `{ "success": true, "message": "队伍已组建", "isUnderfilled": boolean }`
+
+### POST `/teams/:id/cancel`
+
+取消队伍（队长操作）
+
+- **认证：** 是（仅队长）
+- **条件：** 仅 `recruiting` / `full` 状态可取消
+- **响应：** `{ "success": true, "message": "队伍已取消" }`
 
 ### DELETE `/teams/:id`
 
@@ -232,6 +273,14 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
   - 404：队伍不存在
 - **说明：** 删除操作会先清除所有成员记录，再删除队伍记录，不可恢复
 
+### 行动本 Checklist（task #163）
+
+| 端点                                                           | 认证   | 说明                                   |
+| -------------------------------------------------------------- | ------ | -------------------------------------- |
+| `PUT /teams/:id/checklist`                                     | 是（仅队长）     | 覆盖式保存行动本（集合点/装备/分工，≤2KB） |
+| `POST /teams/:id/checklist/assignments/:assignmentId/claim`    | 是（成员） | 认领分工                             |
+| `DELETE /teams/:id/checklist/assignments/:assignmentId/claim`  | 是（成员） | 取消认领（幂等，未认领返回 204）       |
+
 ---
 
 ## 3. 地点管理 `/locations`
@@ -246,11 +295,12 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 | 参数           | 类型   | 说明                                             |
 | -------------- | ------ | ------------------------------------------------ |
 | `page`         | int    | 页码，默认 1                                     |
-| `pageSize`     | int    | 每页数量，默认 12，最大 200                      |
+| `pageSize`     | int    | 每页数量，默认 12，最大 100                      |
 | `search`       | string | 搜索地点名称                                     |
 | `cityId`       | string | 城市 ID                                          |
 | `tagIds`       | string | 逗号分隔的标签 ID                                |
 | `type`         | string | 地点类型筛选（hiking\|explore\|leisure\|travel） |
+| `view`         | string | `card` 轻量卡片模式（不 join 城市，徒步参数直读地点字段） |
 | `tags=true`    | —      | 返回热门标签（15 条）                            |
 | `allTags=true` | —      | 返回所有标签（按类型分组）                       |
 
@@ -287,12 +337,19 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 }
 ```
 
+### GET `/locations/:id`
+
+获取地点详情（支持 id 或 slug）
+
+- **认证：** 否
+- **响应：** 地点完整信息 + `tags` + `gearEssential` / `gearOptional`（数组）+ `extra`
+
 ### POST `/locations`
 
 创建地点
 
 - **认证：** 是（仅管理员）
-- **Body：** `{ "name", "slug", "subtitle", "description", "address", "cityId", "type", "coverImage", "images", "bestSeason", "coordinates" }`
+- **Body：** `{ "name", "slug", "subtitle", "description", "address", "cityId", "cityName", "type", "coverImage", "images", "bestSeason", "coordinates", "extra", "parkingAvailable", "parkingInfo", "gearEssential", "gearOptional" }`
 - **响应：** `{ "success": true, "location": { "id", "slug" } }`
 
 ### PUT `/locations`
@@ -302,24 +359,31 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 - **认证：** 是（仅管理员）
 - **Body：** 与创建相同，需包含 `id` 字段（`type` 可选，nullable）
 
-### GET `/locations/:id`
-
-获取地点详情
-
-- **认证：** 否
-- **响应：** 单个地点完整信息
-
 ### DELETE `/locations/:id`
 
 删除地点
 
 - **认证：** 是（仅管理员）
 
+### GET `/locations/:id/tags`
+
+获取地点当前关联的标签
+
+- **认证：** 否
+- **响应：** `{ "success": true, "tags": [...] }`
+
+### PUT `/locations/:id/tags`
+
+全量替换地点标签
+
+- **认证：** 是（仅管理员）
+- **Body：** `{ "tagIds": ["tag-1", "tag-2"] }`
+
 ---
 
 ## 4. 用户管理 `/users`
 
-### GET `/users?id={userId}` 或 `/user?id={userId}`
+### GET `/users?id={userId}`
 
 获取用户信息
 
@@ -341,8 +405,11 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
     "completedHikes": 15,
     "wechat": "user_wechat",
     "extra": { "equipment": [], "experience": "..." },
+    "city": "city-xxx",
     "role": "user",
-    "status": "active"
+    "status": "active",
+    "createdAt": "...",
+    "updatedAt": "..."
   }
 }
 ```
@@ -351,15 +418,16 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 
 更新用户信息
 
-- **认证：** 是（普通用户只能改自己，管理员可改他人）
-- **Body：** `{ "userId", "name", "nickname", "bio", "level", "image", "wechat", "gender", "birthday", "extra" }`
+- **认证：** 是（普通用户只能改自己；`userId` 必填，支持 id 或邮箱；管理员可改他人）
+- **Body：** `{ "userId", "name", "nickname", "bio", "level", "image", "wechat", "gender", "birthday", "extra", "city" }`（`city` 为 cityId）
 - **响应：** `{ "success": true, "user": {...} }`
 
 ### GET `/users/pending-approvals`
 
-获取待审批申请列表（队长视角）
+获取待审批申请列表（队长视角，支持分页）
 
 - **认证：** 是
+- **Query：** `page`（默认 1）、`pageSize`（默认 10，最大 100）
 - **响应：**
 
 ```json
@@ -375,20 +443,21 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
       "applicant": { "id", "name", "nickname", "avatar", "bio", "level" }
     }
   ],
-  "total": 3
+  "pagination": { "page": 1, "pageSize": 10, "total": 3, "totalPages": 1, "hasMore": false }
 }
 ```
 
 ### GET `/users/applications`
 
-获取当前用户的申请记录
+获取当前用户的申请记录（不含自己创建的队伍）
 
 - **认证：** 是
-- **响应：** `{ "success": true, "applications": [...], "stats": { "pending": 1, "approved": 5, "rejected": 0 } }`
+- **Query：** `page`、`pageSize`（默认 10，最大 100）
+- **响应：** `{ "success": true, "applications": [{ "id", "status", "createdAt", "joinedAt", "team": {...} }], "stats": { "pending": 1, "approved": 5, "rejected": 0 }, "pagination": {...} }`
 
 ### GET `/users/teams/joined`
 
-获取用户加入的队伍（不含自己创建的）
+获取用户加入的队伍（已审批通过，不含自己创建的）
 
 - **认证：** 是
 
@@ -398,22 +467,24 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 
 - **认证：** 是
 
-### GET `/users/:id` 或 `/user/:id`
+### GET `/users/:id`
 
 获取用户公开资料
 
-- **认证：** 否（已登录可见更多信息）
-- **响应：** 用户公开信息 + 统计数据（创建/加入/完成队伍数）
+- **认证：** 否（`email`/`wechat`/`role`/`status` 仅本人可见）
+- **响应：** 用户公开信息 + `stats`（创建/加入/完成队伍数）+ `ongoingTeams`
 
 ---
 
 ## 5. 文件上传 `/upload`
 
+所有上传端点统一走 R2（`https://gomate.cos.jiahongw.com/...`），有速率限制（429 时带 `retryAfter`）。
+
 ### POST `/upload/avatar`
 
 上传用户头像
 
-- **认证：** 否
+- **认证：** 是（只能上传自己的头像，管理员除外）
 - **Form-Data：** `file`（JPEG/PNG/GIF/WebP，最大 5MB）、`userId`
 - **响应：** `{ "success": true, "key": "avatars/...", "url": "https://gomate.cos.jiahongw.com/...", "size": 123456, "type": "image/jpeg" }`
 
@@ -428,19 +499,22 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 上传地点图片
 
 - **认证：** 是（仅管理员）
-- **Form-Data：** `file`（同上）
 
 ### POST `/upload/story`
 
 上传故事封面图
 
 - **认证：** 是（登录用户）
-- **Form-Data：** `file`（JPEG/PNG/GIF/WebP，最大 5MB）
-- **响应：** `{ "success": true, "key": "stories/...", "url": "https://gomate.cos.jiahongw.com/...", "size": 123456, "type": "image/jpeg" }`
+
+### POST `/upload/activity-post`
+
+上传活动动态图片
+
+- **认证：** 是（登录用户）
 
 ### GET `/r2/*`
 
-R2 文件代理（本地开发专用）
+R2 文件代理（本地开发专用，顶层挂载）
 
 ---
 
@@ -460,7 +534,7 @@ R2 文件代理（本地开发专用）
 发布故事
 
 - **认证：** 是（登录用户）
-- **Body：** `{ "title", "summary", "content", "coverImage", "locationId", "tags": ["徒步", "露营"] }`
+- **Body：** `{ "title", "summary", "content", "coverImage", "locationId", "tags": ["徒步", "露营"] }`（`coverImage` 可选；`tags` ≤ 10）
 - **行为：** 使用当前登录用户作为作者，故事状态直接写入 `published`；`tags` 会 trim、去空、去重并限制最多 10 个，不存在的标签自动创建为 `type="activity"`，同时写入 `entity_to_tags(entityType="story")`。
 - **响应：** `{ "success": true, "message": "发布成功", "data": { "id": "story-xxx" } }`
 
@@ -491,6 +565,7 @@ R2 文件代理（本地开发专用）
 更新故事
 
 - **认证：** 是（作者或管理员）
+- **Body：** 同创建（可选字段）+ `status`（draft\|published\|hidden）
 
 ### DELETE `/stories/:id`
 
@@ -506,6 +581,13 @@ R2 文件代理（本地开发专用）
 - **行为：** 已点赞 → 取消点赞；未点赞 → 点赞
 - **响应：** `{ "success": true, "liked": boolean, "likeCount": number, "message": string }`
 - **错误：** 401 未登录 / 404 故事不存在 / 500 服务器错误
+
+### GET `/stories/:id/share-stats`
+
+获取故事分享统计
+
+- **认证：** 否
+- **响应：** `{ "success": true, "total": number, "byChannel": { "wechat": 3, ... } }`
 
 ---
 
@@ -541,7 +623,7 @@ R2 文件代理（本地开发专用）
 获取城市列表
 
 - **认证：** 否
-- **Query：** `hot`（boolean）、`province`、`level`、`limit`、`offset`
+- **Query：** `hot`（boolean）、`province`、`level`、`page`（默认 1）、`pageSize`（默认 20，最大 100）
 - **响应：** `{ "success": true, "cities": [{ "id", "adcode", "name", "level", "province", "isHot" }] }`
 
 ### POST `/cities`
@@ -560,7 +642,7 @@ R2 文件代理（本地开发专用）
 获取标签列表
 
 - **认证：** 否
-- **Query：** `type`（location\|activity）、`limit`、`offset`
+- **Query：** `type`（location\|activity）、`page`（默认 1）、`pageSize`（默认 50，最大 100）
 - **响应：** `{ "success": true, "tags": [{ "id", "name", "type" }] }`
 
 ### POST `/tags`
@@ -586,18 +668,143 @@ R2 文件代理（本地开发专用）
 
 ---
 
-## 11. 管理工具 `/admin`
+## 11. 反馈 `/feedback`
 
-### POST `/admin/clear-rate-limit`
+### POST `/feedback`
 
-清除速率限制
+提交用户反馈（发送邮件）
 
-- **认证：** 是（仅管理员）
-- **Body：** `{ "identifier": "user@example.com" }`
+- **认证：** 否
+- **Body：** `{ "type": "suggestion"|"bug", "name", "email", "content", "device"?, "browser"?, "steps"?, "pageUrl"? }`（content ≤ 5000 字，steps ≤ 2000，pageUrl ≤ 500）
 
 ---
 
-## 12. 健康检查
+## 12. 消息 `/messages`
+
+队伍内一对一私信（仅队长与 approved 成员可互发）。
+
+| 端点 | 认证 | 说明 |
+| ---- | ---- | ---- |
+| `GET /messages` | 是 | 会话列表（`limit`，默认 20，最大 50） |
+| `POST /messages` | 是 | 创建会话，Body `{ "teamId", "userId"? }`（队长可指定目标成员；成员只能找队长） |
+| `GET /messages/unread-count` | 是 | 未读数 |
+| `GET /messages/:id` | 是 | 会话消息（`cursor` / `since` / `limit` 分页） |
+| `POST /messages/:id` | 是 | 发送消息，Body `{ "content" }`（≤1000 字，限流 30 条/分钟/用户） |
+
+---
+
+## 13. 分享事件 `/shares`
+
+### POST `/shares/track`
+
+记录分享事件
+
+- **认证：** 否（有 session 则记录 userId）
+- **Body：** `{ "entity_type": "story", "entity_id": "story-xxx", "share_channel": "wechat" }`
+
+---
+
+## 14. 分享图 `/share-image`
+
+服务端 Satori + resvg 生成分享图（PNG），R2 缓存（`Cache-Control: public, max-age=86400`）。
+
+| 端点 | 说明 |
+| ---- | ---- |
+| `GET /share-image/preview` | 固定数据预览图 |
+| `GET /share-image/location/:locationId` | 地点分享图 |
+| `GET /share-image/team/:teamId` | 队伍分享图 |
+| `GET /share-image/story/:storyId` | 故事分享图（未发布/不存在返回 404） |
+
+- **Query：** `download=1`（Content-Disposition attachment）、`refresh=1`（清 R2 缓存后重新生成）
+
+---
+
+## 15. 首页推荐 `/recommendations/home`
+
+### GET `/recommendations/home`
+
+首页个性化推荐（task #172）
+
+- **认证：** 否（登录用户附加 `users.city` 作 fallback）
+- **Query：** `seed`（可选，不传服务端生成并返回 `nextSeed`）、`locale`（保留字段）
+- **响应：** `{ "recommendations": [{ "kind", "locationId", "reason": { "key", "params" } }], "candidatePoolSize": number, "nextSeed": string }`
+
+---
+
+## 16. 附近圈 `/local-circle/home`
+
+### GET `/local-circle/home`
+
+本地（同城）动态汇总（task #184）
+
+- **认证：** 否
+- **Query：** `cityId`（可选，缺省 fallback 深圳）
+- **响应：** `{ "success": true, ... }`（同城推荐数据，KV SWR 缓存）
+
+---
+
+## 17. 活动动态 `/activity-posts`
+
+挂在根路由（`api/src/index.ts` 的 `app.route("/", activityPostsRoute)`）。
+
+| 端点 | 认证 | 说明 |
+| ---- | ---- | ---- |
+| `GET /teams/:id/activity-posts` | 否 | 队伍活动后分享列表（`limit`，默认 10，最大 50） |
+| `POST /teams/:id/activity-posts` | 是（队伍成员 + 队伍已完成） | Body `{ "content", "images"? }`（≤3 张） |
+| `DELETE /activity-posts/:id` | 是（作者） | 删除动态 |
+| `GET /locations/:id/activity-posts` | 否 | 地点活动动态列表 |
+
+---
+
+## 18. 管理工具 `/admin`
+
+| 端点 | 认证 | 说明 |
+| ---- | ---- | ---- |
+| `POST /admin/clear-rate-limit` | 是（仅管理员） | 清除速率限制，Body `{ "identifier": "user@example.com" }` |
+| `POST /admin/cron/update-expired-teams` | 是（仅管理员） | 手动触发过期队伍状态更新（recruiting→cancelled、formed→completed） |
+| `GET /admin/share-analytics` | 是（仅管理员） | 分享分析（渠道分布、7 日趋势、Top 10 被分享故事） |
+
+---
+
+## 19. 公开 API `/v1/*`（API Key / Session）
+
+面向外部工具与移动端的稳定公开 API。认证二选一：`x-api-key` 请求头（`gm_live_<key>`）或 Session Cookie。OpenAPI 契约：`GET /v1/openapi.json`。
+
+**限流：** 读端点 600 次/分钟；写端点 30 次/分钟（`429` 带 `retryAfter`）。写端点需 `Idempotency-Key` 请求头（UUID v4），重复 key + 相同 body 幂等重放。
+
+### 读端点
+
+| 端点 | 说明 |
+| ---- | ---- |
+| `GET /v1/teams` | 队伍列表（`page`/`pageSize`/`cityId`/`tagId`/`status`/`keyword`） |
+| `GET /v1/teams/:id` | 队伍详情 |
+| `GET /v1/teams/:id/my-status` | 我的队伍状态 |
+| `GET /v1/locations` | 地点列表（`page`/`pageSize`/`cityId`/`keyword`） |
+| `GET /v1/locations/:id` | 地点详情 |
+| `GET /v1/stories` | 故事列表 |
+| `GET /v1/stories/:id` | 故事详情 |
+| `GET /v1/enums` | 枚举数据（队伍状态、难度等） |
+
+### 写端点
+
+| 端点 | 认证要求 | 说明 |
+| ---- | ---- | ---- |
+| `POST /v1/teams` | 登录（需微信号） | 创建队伍 |
+| `POST /v1/teams/:teamId/members` | 登录（需微信号） | 申请加入队伍 |
+| `POST /v1/locations` | 登录 + admin | 创建地点 |
+| `POST /v1/stories` | 登录 | 发布故事 |
+
+---
+
+## 20. 图片代理与健康检查
+
+### GET `/proxy-image?url={url}`
+
+图片代理（供前端 Canvas 绘图绕过跨域，域名白名单：gomate.cos.jiahongw.com、\*.githubusercontent.com、\*.googleusercontent.com、cdn.discordapp.com）
+
+- **认证：** 否
+- **限流：** 100 次/小时/IP（KV 记录）
+- **错误：** 403 域名不在白名单 / 502 抓取失败
 
 ### GET `/health`
 
@@ -619,6 +826,7 @@ R2 文件代理（本地开发专用）
 | 403    | 无权限访问               |
 | 404    | 资源不存在               |
 | 409    | 冲突（如已收藏、已申请） |
+| 429    | 触发速率限制             |
 | 500    | 服务器内部错误           |
 
 ---
@@ -628,9 +836,11 @@ R2 文件代理（本地开发专用）
 ```
 recruiting ──→ full ──→ formed ──→ completed
      ↑           │
-     └───────────┘ (成员退出，空位释放)
+     └───────────┘ (成员退出/移除，空位释放)
 
-recruiting / full / formed ──→ cancelled (队长取消)
+recruiting / full ──→ cancelled (队长取消)
+recruiting ──────────→ cancelled (过期自动，cron/GET 详情时触发)
+formed ──────────────→ completed (过期自动)
 ```
 
 ## 成员状态枚举
@@ -640,4 +850,5 @@ recruiting / full / formed ──→ cancelled (队长取消)
 | `pending`       | 待审核                 |
 | `approved`      | 已批准                 |
 | `rejected`      | 已拒绝                 |
+| `cancelled`     | 申请已取消             |
 | `leave_pending` | 申请退出（已组建队伍） |

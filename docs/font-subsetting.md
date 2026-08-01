@@ -1,15 +1,33 @@
 # 字体子集化优化指南
 
+> 最后更新：2026-08-01（与 `api/src/services/share-image/load-fonts.ts` 实现核对）
+
 ## 问题
 
-当前字体文件较大：
+分享图（Satori + resvg，服务端生成）需要加载中文字体，文件较大：
+
 - `noto-sans-400.woff2`: ~1.2MB
 - `noto-sans-700.woff2`: ~1.2MB
 - `zpix-400.woff2`: ~0.8MB
 
 总计 ~3.2MB，每次生成分享图都要加载。
 
-## 解决方案
+## 当前实现（已落地）
+
+**字体存放在 R2 bucket `gomate` 的 `assets/fonts/` 下**（不在仓库内，仓库无字体二进制）：
+
+- `assets/fonts/zpix-400.woff2`
+- `assets/fonts/noto-sans-400.woff2`
+- `assets/fonts/noto-sans-700.woff2`
+
+加载逻辑：`api/src/services/share-image/load-fonts.ts`
+
+1. **并行加载**：三个字体从 R2 并发读取（原串行 → 并行）
+2. **内存缓存**：5 分钟 TTL（`FONT_CACHE_TTL = 5 * 60 * 1000`），大幅减少重复请求
+3. **CDN fallback**：R2 全部失败时回退到 Google Fonts Noto Sans SC TTF
+4. `clearFontCache()` 供字体更新后强制刷新
+
+## 备选方案
 
 ### 方案 1: Google Fonts 动态子集（推荐用于 CDN）
 
@@ -21,7 +39,7 @@ https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap&
 
 ### 方案 2: 手动子集化（推荐用于 R2）
 
-使用 `glyphhanger` 工具：
+使用 `glyphhanger` 工具生成本地子集后上传 R2：
 
 ```bash
 # 安装
@@ -32,11 +50,9 @@ glyphhanger \
   --subset=assets/fonts/noto-sans-400.woff2 \
   --characters="常用汉字列表" \
   --output=assets/fonts/noto-sans-400-subset.woff2
+
+# 产物上传到 R2 assets/fonts/，替换 load-fonts.ts 的 fontPaths 后部署
 ```
-
-### 方案 3: 自动按需加载（已实现）
-
-当前已实现字体并行加载和内存缓存（5分钟），可大幅减少重复请求。
 
 ## 常用字符范围
 
@@ -51,8 +67,8 @@ glyphhanger \
 
 ## 实施建议
 
-1. **短期**：使用当前并行加载 + 内存缓存（已实现）
-2. **中期**：分析实际使用字符，生成自定义子集
+1. **短期**：当前并行加载 + 内存缓存（已实现，`load-fonts.ts`）
+2. **中期**：分析实际使用字符，生成自定义子集（glyphhanger）后上传 R2，替换 `fontPaths`
 3. **长期**：接入 Google Fonts 动态子集 API
 
 ## 参考

@@ -80,7 +80,7 @@ lsof -ti:5432
 
 1. API 用 `wrangler dev` 起本地 D1（需要 `api/.dev.vars`，gitignored，找团队索取，勿入库）
 2. 同步 prod 地点数据：`cd api && tsx db/sync-locations.ts`（从远程 API 拉 cities/locations/tags 写本地 D1）
-3. 本地注册 QA 用户；需要微信号字段的用例用 `PATCH /api/users/me` 补 wechat
+3. 本地注册 QA 用户；需要微信号字段的用例用 `PATCH /api/users/update` 补 wechat
 4. 前端默认跑 `5432`（动态端口下 CORS 已放行任意 localhost 端口）
 
 ## 架构入口
