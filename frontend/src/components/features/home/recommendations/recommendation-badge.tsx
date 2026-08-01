@@ -13,6 +13,7 @@
 import { Shield, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
+import type { TranslationKey } from "@/i18n/types";
 import type { RecommendationKind } from "./types";
 
 const KIND_STYLES: Record<
@@ -43,16 +44,19 @@ interface RecommendationBadgeProps {
   kind: RecommendationKind;
   size?: "sm" | "md";
   className?: string;
+  /** 覆盖默认 kind 标签文案（如 fresh fallback 不显示「本周新的」） */
+  labelKey?: TranslationKey;
 }
 
 export function RecommendationBadge({
   kind,
   size = "md",
   className,
+  labelKey,
 }: RecommendationBadgeProps) {
   const { t } = useI18n(["home"]);
   const s = KIND_STYLES[kind];
-  const label = t(`home.recommendations.kind.${kind}`);
+  const label = labelKey ? t(labelKey) : t(`home.recommendations.kind.${kind}`);
   const Icon = s.Icon;
 
   return (

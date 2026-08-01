@@ -7,14 +7,15 @@
   },
   "recommendations": {
     "title": "这周就近去这三个",
-    "subtitle": "结合天气、距离、组队动态，按你所在的城市精选",
+    "subtitle": "结合季节、距离、组队动态，按你所在的城市精选",
     "cta": {
       "refresh": "换一批"
     },
     "kind": {
       "steady": "稳的",
       "worthy": "值得的",
-      "fresh": "本周新的"
+      "fresh": "本周新的",
+      "fresh_fallback": "值得一探"
     },
     "meta": {
       "distance": "{km} km",
@@ -25,7 +26,7 @@
       "futureTeams": "{n} 个队伍招人"
     },
     "reason": {
-      "steady_season_close": "这周末天气正合适，距离约 {km} km",
+      "steady_season_close": "这个季节正合适，距离约 {km} km",
       "steady_season_teams": "正适合现在去，已有 {n} 个队伍在招人",
       "steady_easy_close": "难度低、距离约 {km} km，新手友好",
       "steady_close_social": "距离近 + 有人一起，本周 {n} 个队伍出发",
@@ -37,7 +38,7 @@
       "fresh_new_location": "本周刚加入的新地点，上架 {n} 天",
       "fresh_trending_signups": "本周突然火了，{n} 人加入",
       "fresh_new_teams": "{n} 支新队伍下周走，抢先加入",
-      "fresh_fallback": "本周新面孔，先睹为快"
+      "fresh_fallback": "顺路值得一探"
     },
     "cityHint": {
       "mixed": "混搭{city}热门"
