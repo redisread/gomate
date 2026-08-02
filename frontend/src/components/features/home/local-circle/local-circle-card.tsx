@@ -51,7 +51,7 @@ export const LocalCircleCard = memo(function LocalCircleCard({ location, index =
                 size="sm"
                 tooltip={t("home.localCircle.avatarStack.tooltip")}
               />
-              <span className="text-sm text-stone-700 dark:text-stone-300 truncate">
+              <span title={t("home.localCircle.inAction", { n: location.uniqueVisitors })} className="text-sm text-stone-700 dark:text-stone-300 truncate">
                 {t("home.localCircle.inAction", { n: location.uniqueVisitors })}
               </span>
             </div>

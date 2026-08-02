@@ -205,7 +205,7 @@ export function Navbar({ className }: NavbarProps) {
                         name={session.user.nickname || session.user.name}
                         size="xs"
                       />
-                      <span className="max-w-[80px] truncate">{session.user.nickname || session.user.name}</span>
+                      <span title={session.user.nickname || session.user.name} className="max-w-[80px] truncate">{session.user.nickname || session.user.name}</span>
                       <ChevronDown
                         className={cn("h-3.5 w-3.5 transition-transform duration-200", showUserMenu && "rotate-180")}
                       />
@@ -350,7 +350,7 @@ export function Navbar({ className }: NavbarProps) {
                     size="md"
                   />
                   <div className="min-w-0">
-                    <p className="font-semibold text-foreground text-sm truncate">{session.user.nickname || session.user.name}</p>
+                    <p title={session.user.nickname || session.user.name} className="font-semibold text-foreground text-sm truncate">{session.user.nickname || session.user.name}</p>
                   </div>
                 </div>
               </div>

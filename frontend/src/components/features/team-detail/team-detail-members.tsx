@@ -84,7 +84,7 @@ export function MemberAvatarGrid({
                   </span>
                 )}
                 {m.wechat && (
-                  <p className="text-xs text-muted-foreground max-w-[60px] truncate text-center leading-tight">
+                  <p title={m.wechat} className="text-xs text-muted-foreground min-w-0 truncate text-center leading-tight">
                     {m.wechat}
                   </p>
                 )}

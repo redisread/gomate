@@ -77,7 +77,7 @@ export function StickyActionBar({
             type="button"
             onClick={onDiscard}
             disabled={isSaving}
-            className="text-sm text-stone-500 hover:text-stone-700 disabled:opacity-40 transition-colors px-2 py-1.5"
+            className="text-sm text-stone-500 hover:text-stone-700 hover:bg-stone-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors rounded-md px-2 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {t("common.discardChanges")}
           </button>

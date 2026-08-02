@@ -128,13 +128,13 @@ export function FeaturedStoryCard({ story, onClick, className }: FeaturedStoryCa
               {story.author?.name?.charAt(0) || "?"}
             </div>
           )}
-          <span className="text-sm text-muted-foreground truncate">
+          <span title={story.author?.name || t("content.discover.anonymous")} className="text-sm text-muted-foreground truncate">
             {story.author?.name || t("content.discover.anonymous")}
           </span>
           <span className="text-muted-foreground/40">·</span>
           <span className="text-sm text-muted-foreground shrink-0" suppressHydrationWarning>{formatDate(story.createdAt)}</span>
           {story.location && (
-            <span className="ml-auto text-xs text-primary/80 bg-primary/5 px-2 py-0.5 rounded truncate max-w-[40%]">
+            <span title={story.location.name} className="ml-auto text-xs text-primary/80 bg-primary/5 px-2 py-0.5 rounded truncate max-w-[40%]">
               {story.location.name}
             </span>
           )}

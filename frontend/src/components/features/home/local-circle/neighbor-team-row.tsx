@@ -57,7 +57,7 @@ export const NeighborTeamRow = memo(function NeighborTeamRow({ team, cityName }:
         <div className="mt-1 flex items-center gap-3 text-xs text-stone-600 dark:text-stone-400">
           <span className="inline-flex items-center gap-1 min-w-0">
             <MapPin className="w-3 h-3 flex-shrink-0" strokeWidth={2} />
-            <span className="truncate">{team.locationName}</span>
+            <span title={team.locationName} className="truncate">{team.locationName}</span>
           </span>
           {timeLabel && (
             <span className="inline-flex items-center gap-1 flex-shrink-0">

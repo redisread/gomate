@@ -67,7 +67,7 @@ export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopy
             <span className="text-sm font-medium text-muted-foreground">{t("teams.shareOptions")}</span>
             <button onClick={onClose} className="p-1 hover:bg-muted rounded-full transition-colors"><X className="w-4 h-4 text-muted-foreground" /></button>
           </div>
-          <p className="text-sm font-medium text-foreground truncate">{title}</p>
+          <p title={title} className="text-sm font-medium text-foreground truncate">{title}</p>
 
           <div className="grid grid-cols-4 gap-4 py-4">
             <button onClick={handleCopyLink} className="flex flex-col items-center gap-2">
