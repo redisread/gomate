@@ -19,20 +19,18 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
 
   return (
     <section id="locations" ref={locationsRef}
-      className={`py-12 sm:py-16 lg:py-20 bg-background section-hidden ${locationsInView ? "section-visible" : ""}`}>
+      className={`bg-background py-16 sm:py-20 lg:py-24 section-hidden ${locationsInView ? "section-visible" : ""}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground inline-flex items-center gap-3 justify-center">
-            {t("locations.pageTitle")}
+        <div className="mb-8 max-w-2xl sm:mb-10">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{t("locations.pageTitle")}</h2>
             {cityChipName && (
-              <span
-                className="inline-flex items-center text-base font-normal text-stone-500 dark:text-stone-400"
-                data-testid="locations-city-chip"
-              >
+              <span className="inline-flex items-center text-sm font-medium text-stone-600 dark:text-stone-400" data-testid="locations-city-chip">
                 {t("home.locations.cityChip", { city: cityChipName })}
               </span>
             )}
-          </h2>
+          </div>
+          <p className="mt-3 text-base leading-7 text-stone-700 dark:text-stone-300">{t("locations.pageSubtitle")}</p>
           {/* #215 方案B：cityMatch=fallback 时显示降级提示（MapPin icon + 左对齐） */}
           {userCity && cityMatch === "fallback" && locations.length > 0 && (
             <div className="mt-3 flex items-center gap-1.5">
