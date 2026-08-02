@@ -258,7 +258,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
     >
       <div className="p-5">
         {/* 情感标题 */}
-        <p className="text-[13px] font-bold mb-1 text-foreground">
+        <p className="text-sm font-bold mb-1 text-foreground">
           {t("locations.detailParticipate")}
         </p>
 
@@ -382,7 +382,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
               </div>
 
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors text-[13px] truncate leading-snug">
+                <h4 title={loc.name} className="font-semibold text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors text-sm truncate leading-snug">
                   {loc.name}
                 </h4>
                 {diff && diffLabel && (

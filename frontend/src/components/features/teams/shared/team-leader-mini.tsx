@@ -58,7 +58,7 @@ export function TeamLeaderMini({
         </div>
       )}
       <div className="flex flex-col min-w-0">
-        <span className={cn("font-medium truncate text-foreground", classes.text)}>
+        <span title={name} className={cn("font-medium truncate text-foreground", classes.text)}>
           {name}
         </span>
         {showLevel && level && (

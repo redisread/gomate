@@ -45,10 +45,10 @@ export function ApplicationCard({ application }: { application: ApplicationRecor
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="font-semibold text-foreground group-hover:text-amber-700 transition-colors truncate">{team.title}</h3>
+                <h3 title={team.title} className="font-semibold text-foreground group-hover:text-amber-700 transition-colors truncate">{team.title}</h3>
                 {team.location?.name && (
                   <p className="text-sm text-stone-500 dark:text-stone-500 mt-1 flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5 flex-shrink-0" /><span className="truncate">{team.location.name}</span>
+                    <MapPin className="h-3.5 w-3.5 flex-shrink-0" /><span title={team.location.name} className="truncate">{team.location.name}</span>
                   </p>
                 )}
               </div>
@@ -131,7 +131,7 @@ export function PendingApprovalCard({ approval, onClick }: {
         </div>
       </div>
       <div className="mt-3 bg-stone-50 dark:bg-stone-900 rounded-xl px-4 py-3 text-sm">
-        <p className="font-medium text-stone-700 dark:text-stone-300 mb-1.5 truncate">{t("myTeams.applyTeamLabel")}：{team.title}</p>
+        <p title={`${t("myTeams.applyTeamLabel")}：${team.title}`} className="font-medium text-stone-700 dark:text-stone-300 mb-1.5 truncate">{t("myTeams.applyTeamLabel")}：{team.title}</p>
         <div className="flex flex-wrap gap-3 text-stone-500 dark:text-stone-500 text-xs">
           {team.date && (
             <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{team.date}</span>

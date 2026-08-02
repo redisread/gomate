@@ -289,7 +289,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
             style={{ background: "color-mix(in oklab, black 45%, transparent)" }}
           >
             <Check className="h-4 w-4 text-green-400 shrink-0" />
-            <span className="text-white text-xs truncate">
+            <span title={uploadState.fileName} className="text-white text-xs truncate">
               {uploadState.fileName}
               <span className="ml-1 opacity-70">·{uploadState.fileSize}</span>
             </span>

@@ -63,7 +63,7 @@ export function StickyActionBar({
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
           </span>
 
-          <span className="text-sm text-stone-600 truncate">
+          <span title={lastSaved !== null ? `${t("common.draftAutoSaved")} · ${formatRelativeTime(lastSaved, t)}` : t("common.unsavedChanges")} className="text-sm text-stone-600 truncate">
             {lastSaved !== null
               ? `${t("common.draftAutoSaved")} · ${formatRelativeTime(lastSaved, t)}`
               : t("common.unsavedChanges")}

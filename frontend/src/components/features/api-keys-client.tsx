@@ -228,7 +228,7 @@ export function ApiKeysClient() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <Key className="h-4 w-4 text-stone-400" />
-                    <span className="text-sm font-semibold text-foreground truncate">{key.name}</span>
+                    <span title={key.name} className="text-sm font-semibold text-foreground truncate">{key.name}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
                     <span>{key.prefix}...</span>

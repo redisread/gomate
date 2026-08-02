@@ -44,7 +44,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold text-foreground group-hover:text-amber-700 transition-colors truncate">{team.title}</h3>
+                  <h3 title={team.title} className="font-semibold text-foreground group-hover:text-amber-700 transition-colors truncate">{team.title}</h3>
                   {isLeader && (
                     <span className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full flex items-center gap-1 flex-shrink-0">
                       <Crown className="h-3 w-3" />{t("myTeams.roleLeader")}
@@ -53,7 +53,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
                 </div>
                 {team.location?.name && (
                   <p className="text-sm text-stone-500 dark:text-stone-500 mt-1 flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5 flex-shrink-0" /><span className="truncate">{team.location.name}</span>
+                    <MapPin className="h-3.5 w-3.5 flex-shrink-0" /><span title={team.location.name} className="truncate">{team.location.name}</span>
                   </p>
                 )}
               </div>
