@@ -56,7 +56,6 @@
   "applicationCancelled": "Application cancelled",
   "resetSuccess": "Password reset successful",
   "emailSent": "Email sent",
-  "emailSentClear": "Rate limit cleared, please resend",
   "networkError": "Network error",
   "failed": "Operation failed",
   "locationNotFound": "Location not found",

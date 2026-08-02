@@ -56,7 +56,6 @@
   "applicationCancelled": "申請がキャンセルされました",
   "resetSuccess": "パスワードのリセットが完了しました",
   "emailSent": "メールを送信しました",
-  "emailSentClear": "レート制限がクリアされました。再度送信してください",
   "networkError": "ネットワークエラー",
   "failed": "操作に失敗しました",
   "locationNotFound": "スポットが見つかりません",
