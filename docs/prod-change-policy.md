@@ -41,9 +41,25 @@ CI 门禁（pr-validation → api-checks → Migrations Sync Check）双向校�
 pnpm --filter @gomate/api check:migrations
 ```
 
-### 4. 账本一致性告警（v1.1 待做）
+### 4. 账本一致性告警（v1.1，2026-08 落地）
 
-定期或 deploy 前置比对 journal 条目数 vs 远端 D1 `d1_migrations` 表，不一致则告警。当前版本依赖规则 2（幂等自愈）+ 规则 5（回补）覆盖。
+与 v1.0 三条款的 PR 阶段门禁互补，本条款针对**远端 D1 实际状态**漂移（PR 门禁看不到的运行时漂移）。
+
+**告警源**：远端 `d1_migrations` 表行数 vs 本仓 `_journal.json` entries 数。`diff > 0` 为 stale（手工 execute 未补 migration），`diff < 0` 为 future（migration 未应用），`diff === 0` 正常。
+
+**采集双轨**：
+
+1. **deploy 前置 check**（关键）：`api-deploy.yml` / `deploy-staging.yml` 在 Apply D1 migrations 步骤前执行 `check-migrations-drift.mjs`，漂移 > 0 则 abort（不退 skr deploy、不更新 Worker version）——这是 rollback lineage 条款的延伸：漂移 = 不能信任当前状态
+2. **每日定时 schedule**（兜底）：`.github/workflows/d1-drift-alert-cron.yml` 每日 UTC 19:19 对 staging 运行，首次发现即发送频道告警，同漂移 24h 升级为 daily digest。prod 漂移频次极低，当前仅 staging
+
+**告警通道**：`#proj-gomate` 频道。首次发现即时发送，之后 24h 静默。格式含 journal 数 / d1_migrations 数 / diff / 状态 / action 提示 / Cloudflare Dashboard inspect 链接。
+
+**边界限制**：
+
+- 不在 PR 门禁——与 #452/#456 职责不重叠
+- 仅 staging（prod 扩展需 Victor 拍板）
+- 告警不含表名（不暴露内部 schema 给频道所有人）
+- 远端不可达静默 skip，下次重试
 
 ### 5. 手工操作回补（急救 SOP）
 

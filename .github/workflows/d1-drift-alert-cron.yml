@@ -1,0 +1,39 @@
+name: D1 Drift Alert
+
+# v1.1 规约第 4 条每日兜底告警
+# 首次发现发送 → 频道告警；持续 >24h 升级为 daily digest
+# 仅在 staging 上运行（prod 漂移频次极低，先在 staging 跑稳再扩）
+
+on:
+  schedule:
+    - cron: "19 19 * * *" # UTC 19:19 = 北京 03:19（非整点，避开高负载）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift-check:
+    name: Drift Check (staging)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Check D1 drift
+        id: drift
+        run: node api/scripts/check-migrations-drift.mjs --quiet
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        continue-on-error: true
+      - name: Report (if drift)
+        if: steps.drift.outcome == 'failure'
+        run: node api/scripts/check-migrations-drift.mjs --env staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

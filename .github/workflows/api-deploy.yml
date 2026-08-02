@@ -2,7 +2,7 @@ name: Deploy API
 on:
   push:
     branches: [main]
-    paths: ['api/**', '.github/workflows/api-deploy.yml']
+    paths: ["api/**", ".github/workflows/api-deploy.yml"]
 
 permissions:
   contents: read
@@ -18,8 +18,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'pnpm' }
+        with: { node-version: "22", cache: "pnpm" }
       - run: pnpm install --frozen-lockfile
+      - name: Drift Check
+        run: node api/scripts/check-migrations-drift.mjs --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Lint
         run: pnpm --filter @gomate/api lint
       - name: Unit & Integration Tests
@@ -32,8 +37,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'pnpm' }
+        with: { node-version: "22", cache: "pnpm" }
       - run: pnpm install --frozen-lockfile
+      - name: Drift Check
+        run: node api/scripts/check-migrations-drift.mjs --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Apply D1 migrations
         run: pnpm --filter @gomate/api exec wrangler d1 migrations apply gomate-db --env production --remote
         env:
