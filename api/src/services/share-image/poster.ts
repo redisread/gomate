@@ -209,6 +209,7 @@ async function buildLocationPoster(
 async function buildTeamPoster(
   env: Env,
   teamId: string,
+  locale: PosterLocale,
   fonts: Awaited<ReturnType<typeof loadPosterFonts>>,
   refresh: boolean,
 ): Promise<RenderPosterResult> {
@@ -258,6 +259,7 @@ async function buildTeamPoster(
         generateQrDataUrl(`https://gomate.live/teams/${team.id}`),
       ]);
       const date = formatTeamDate(team.startTime);
+      const i18n = lookupPosterStrings(locale);
       const svg = await renderTeamPoster({
         title: team.title,
         date,
@@ -270,6 +272,7 @@ async function buildTeamPoster(
         spotsToForm,
         qrCodeDataUrl,
         fonts,
+        i18n,
       });
       return renderSvgToPng(svg);
     },
@@ -356,7 +359,7 @@ export async function renderPoster(
     return buildLocationPoster(env, id, locale, fonts, refresh);
   }
   if (kind === "team") {
-    return buildTeamPoster(env, id, fonts, refresh);
+    return buildTeamPoster(env, id, locale, fonts, refresh);
   }
   return buildStoryPoster(env, id, fonts, refresh);
 }
