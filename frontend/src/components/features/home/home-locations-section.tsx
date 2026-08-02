@@ -17,6 +17,11 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
   const showCityChip = userCity && cityMatch && cityMatch !== "fallback" && locations[0]?.cityName;
   const cityChipName = showCityChip ? locations[0].cityName : null;
 
+  // 空态交给地图探索区承接，避免只剩标题和「查看全部」的空白模块。
+  if (!isLoading && locations.length === 0) {
+    return null;
+  }
+
   return (
     <section id="locations" ref={locationsRef}
       className={`bg-background py-16 sm:py-20 lg:py-24 section-hidden ${locationsInView ? "section-visible" : ""}`}>
