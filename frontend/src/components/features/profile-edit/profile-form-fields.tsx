@@ -51,21 +51,23 @@ export function AvatarSection({ user, avatarPreview, selectedFile, isUploading, 
   const { t } = useI18n(["profile", "common"]);
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="relative group cursor-pointer" onClick={() => !isUploading && fileInputRef.current?.click()}>
-        <div className="w-28 h-28 rounded-full ring-4 ring-white dark:ring-stone-800 shadow-xl overflow-hidden bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-          {avatarPreview ? (
-            <img src={avatarPreview} alt={t("common.avatar")} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-4xl font-bold text-white select-none">{user?.name?.[0]?.toUpperCase() || "?"}</span>
-          )}
-        </div>
-        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          {isUploading ? <Loader2 className="h-6 w-6 text-white animate-spin" /> : <Camera className="h-6 w-6 text-white" />}
-        </div>
+      <div className="relative">
+        <button type="button" onClick={() => !isUploading && fileInputRef.current?.click()} aria-label={t("profile.changeAvatar")} className="group cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <div className="w-28 h-28 rounded-full ring-4 ring-white dark:ring-stone-800 shadow-xl overflow-hidden bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+            {avatarPreview ? (
+              <img src={avatarPreview} alt={t("common.avatar")} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-4xl font-bold text-white select-none">{user?.name?.[0]?.toUpperCase() || "?"}</span>
+            )}
+          </div>
+          <span aria-hidden="true" className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {isUploading ? <Loader2 className="h-6 w-6 text-white animate-spin" /> : <Camera className="h-6 w-6 text-white" />}
+          </span>
+        </button>
         {selectedFile && !isUploading && (
-          <button type="button" onClick={(ev) => { ev.stopPropagation(); onCancelFile(); }}
-            className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow transition-colors">
-            <X className="h-3 w-3" />
+          <button type="button" onClick={onCancelFile} aria-label={t("common.close")}
+            className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <X className="h-3 w-3" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -74,7 +76,7 @@ export function AvatarSection({ user, avatarPreview, selectedFile, isUploading, 
         <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-full text-xs text-amber-700 dark:text-amber-400">
           <Check className="h-3 w-3" />
           <span>{t('profile.avatarSelected')} {selectedFile.name}</span>
-          <button type="button" onClick={onCancelFile} className="text-amber-500 hover:text-amber-700 transition-colors ml-0.5"><X className="h-3 w-3" /></button>
+          <button type="button" onClick={onCancelFile} aria-label={t("common.close")} className="text-amber-500 hover:text-amber-700 transition-colors ml-0.5"><X className="h-3 w-3" aria-hidden="true" /></button>
         </div>
       ) : (
         <p className="text-xs text-stone-400">{t('profile.avatarSupportHint')}</p>

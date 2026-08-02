@@ -182,5 +182,6 @@
   "createFailed": "作成に失敗しました",
   "revokeFailed": "取り消しに失敗しました",
   "revoke": "取り消し",
-  "apiKeyNamePlaceholder": "例：マイアプリ"
+  "apiKeyNamePlaceholder": "例：マイアプリ",
+  "skipToContent": "メインコンテンツへスキップ"
 }

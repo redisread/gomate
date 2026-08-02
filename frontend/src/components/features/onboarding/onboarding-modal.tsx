@@ -228,7 +228,7 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        className={`w-full h-full sm:h-auto sm:max-w-md bg-white dark:bg-stone-900 sm:rounded-2xl shadow-xl p-6 sm:p-8 overflow-y-auto ${animatingOut ? "animate-panel-out" : "animate-panel-in"}`}
+        className={`w-full h-full sm:h-auto sm:max-w-md bg-white dark:bg-stone-900 sm:rounded-2xl shadow-xl p-6 sm:p-8 overflow-y-auto overscroll-contain ${animatingOut ? "animate-panel-out" : "animate-panel-in"}`}
       >
         {/* ─── 第 1 步：偏好 ─── */}
         {step === 1 && (
