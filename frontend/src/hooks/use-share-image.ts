@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { API_BASE } from "@/lib/api";
 
 interface UseShareImageOptions {
-  type: "location" | "team";
+  type: "location" | "team" | "story";
   id: string;
 }
 
@@ -32,10 +32,14 @@ export function useShareImage({ type, id }: UseShareImageOptions) {
       setError(null);
 
       try {
-        const endpoint =
-          type === "location"
-            ? `${API_BASE}/share-image/location/${id}${refresh ? "?refresh=1" : ""}`
-            : `${API_BASE}/share-image/team/${id}${refresh ? "?refresh=1" : ""}`;
+        const endpoint = (() => {
+          const qs = refresh ? "?refresh=1" : "";
+          switch (type) {
+            case "location": return `${API_BASE}/share-image/location/${id}${qs}`;
+            case "team":     return `${API_BASE}/share-image/team/${id}${qs}`;
+            case "story":    return `${API_BASE}/share-image/story/${id}${qs}`;
+          }
+        })();
 
         const response = await fetch(endpoint);
 
