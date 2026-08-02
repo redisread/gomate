@@ -17,8 +17,8 @@
 import * as React from "react";
 import { Check, Loader2, RefreshCw, ArrowLeft } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
+import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/hooks/useToast";
-import { useModalA11y } from "@/hooks/useModalA11y";
 import { fetchAPI } from "@/lib/api";
 import type { SessionUser } from "@/lib/types";
 import { getRoleConfig } from "@/components/features/locations/constants";
@@ -78,7 +78,6 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
   const [showWechatForm, setShowWechatForm] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
 
-  const panelRef = React.useRef<HTMLDivElement | null>(null);
 
   // Round 3 §D: 出场动画后关闭（延迟 marker 写入）
   const animateOut = React.useCallback((onComplete: () => void) => {
@@ -120,7 +119,6 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
   }, [animateOut, animatingOut]);
 
   // Esc / focus trap / 焦点还原（Esc = 跳过语义）
-  useModalA11y(!closed && !animatingOut, panelRef, closeAsSkip);
 
   if (closed) return null;
 
@@ -220,16 +218,14 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
   );
 
   return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 sm:p-4 ${animatingOut ? "animate-overlay-out" : "animate-overlay-in"}`}
+    <Modal
+      open={!closed}
+      onClose={closeAsSkip}
       data-testid="onboarding-modal"
+      backdropClassName="bg-black/50"
+      overlayClassName={`flex items-center justify-center sm:p-4 ${animatingOut ? "animate-overlay-out" : "animate-overlay-in"}`}
+      panelClassName={`w-full h-full sm:h-auto sm:max-w-md bg-white dark:bg-stone-900 sm:rounded-2xl shadow-xl p-6 sm:p-8 overflow-y-auto overscroll-contain ${animatingOut ? "animate-panel-out" : "animate-panel-in"}`}
     >
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        className={`w-full h-full sm:h-auto sm:max-w-md bg-white dark:bg-stone-900 sm:rounded-2xl shadow-xl p-6 sm:p-8 overflow-y-auto overscroll-contain ${animatingOut ? "animate-panel-out" : "animate-panel-in"}`}
-      >
         {/* ─── 第 1 步：偏好 ─── */}
         {step === 1 && (
           <div>
@@ -403,7 +399,6 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

@@ -11,8 +11,8 @@ import {
   Share2,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
-import { useModalA11y } from "@/hooks/useModalA11y";
 import { cn } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 import type { Story, TFunction } from "./story-detail-types";
 import type { StoryMetric } from "./story-detail-utils";
 
@@ -188,18 +188,16 @@ export function StoryDeleteDialog({
   onDelete: () => void;
   t: TFunction;
 }) {
-  const panelRef = React.useRef<HTMLDivElement>(null);
-  useModalA11y(true, panelRef, onCancel);
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div
-        ref={panelRef}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="delete-story-title"
-        aria-describedby="delete-story-description"
-        className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-xl"
-      >
+    <Modal
+      open={true}
+      onClose={onCancel}
+      role="alertdialog"
+      labelledBy="delete-story-title"
+      describedBy="delete-story-description"
+      overlayClassName="flex items-center justify-center p-4"
+      panelClassName="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-xl"
+    >
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
           <AlertTriangle className="h-6 w-6" aria-hidden="true" />
         </div>
@@ -231,8 +229,7 @@ export function StoryDeleteDialog({
         >
           {t("common.cancel")}
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
