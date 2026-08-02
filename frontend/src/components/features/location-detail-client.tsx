@@ -27,7 +27,6 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import {
   LocationIntroCard,
-  RouteInfoCard,
   TeamListSection,
 } from "@/components/features/location-detail-main-content";
 import { LocationActivityPosts } from "@/components/features/activity-posts";
@@ -954,7 +953,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                 showTravelMeta
               />
             </div>
-            <RouteInfoCard location={location} />
             <div>
               <TeamListSection teams={teams} locationId={location.id} />
             </div>
