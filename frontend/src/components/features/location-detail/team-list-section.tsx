@@ -15,11 +15,11 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
   const hasMore = teams.length > MAX_DISPLAY_TEAMS;
 
   return (
-    <div className="bg-card rounded-xl border border-stone-100 dark:border-stone-800 p-5 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-      <div className="flex items-center justify-between mb-5">
+    <section className="rounded-2xl bg-card p-5 shadow-warm-sm sm:p-6">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <span className="w-1 h-4 rounded-full bg-emerald-400 flex-shrink-0" />
+          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <span className="h-5 w-1 flex-shrink-0 rounded-full bg-emerald-400" />
             {t('locations.detailWaiting')}
           </h2>
           <p className="text-xs text-stone-500 dark:text-stone-500 mt-0.5 pl-3">
@@ -52,18 +52,19 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
           </div>
 
           {hasMore && (
-            <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
-              <a href={`/teams?locationId=${locationId}`} className="block">
-                <button className="w-full py-2.5 rounded-xl text-sm font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 active:scale-[0.96] flex items-center justify-center gap-1.5 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 hover:border-amber-300 dark:hover:border-amber-700">
-                  {t("common.viewAllTeams").replace("{count}", String(teams.length))}
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
+            <div className="mt-5 border-t border-stone-100 pt-5 dark:border-stone-800">
+              <a
+                href={`/teams?locationId=${locationId}`}
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 py-2.5 text-sm font-semibold text-amber-700 transition-[transform,background-color,border-color] duration-150 hover:border-amber-300 hover:bg-amber-100 active:scale-[0.96] dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:border-amber-700 dark:hover:bg-amber-900/40"
+              >
+                {t("common.viewAllTeams").replace("{count}", String(teams.length))}
+                <ArrowRight className="h-3.5 w-3.5" />
               </a>
             </div>
           )}
         </>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -88,11 +89,12 @@ function EmptyTeamsState({ locationId }: { locationId: string }) {
         {t('locations.detailNoTeamsDesc')}
       </p>
 
-      <a href={`/teams/create?locationId=${locationId}`}>
-        <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-700 dark:bg-amber-500 text-white dark:text-stone-950 rounded-full text-sm font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 shadow-glow hover:shadow-warm-md active:scale-[0.96]">
-          <Users className="h-4 w-4" />
-          {t('locations.detailNoTeamsBtn')}
-        </button>
+      <a
+        href={`/teams/create?locationId=${locationId}`}
+        className="hidden items-center gap-2 rounded-full bg-amber-700 px-6 py-2.5 text-sm font-semibold text-white shadow-glow transition-[transform,background-color,box-shadow] duration-200 hover:bg-amber-800 hover:shadow-warm-md active:scale-[0.96] dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400 sm:inline-flex"
+      >
+        <Users className="h-4 w-4" />
+        {t('locations.detailNoTeamsBtn')}
       </a>
     </div>
   );

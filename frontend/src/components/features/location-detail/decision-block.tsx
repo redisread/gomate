@@ -58,7 +58,7 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
   if (!hasCoords && !hasParking && !hasGear) return null;
 
   return (
-    <section className="bg-card rounded-xl border border-stone-100 dark:border-stone-800 p-4 sm:p-5 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+    <section className="rounded-2xl bg-card p-5 shadow-warm-sm sm:p-6">
       <header className="mb-4">
         <h2 className="text-base font-bold text-foreground flex items-center gap-2">
           <span className="w-1 h-4 rounded-full bg-sky-400 flex-shrink-0" />
@@ -69,11 +69,11 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
         </p>
       </header>
 
-      <div className="flex flex-col gap-4">
+      <div className="grid gap-3 sm:grid-cols-2">
         {hasCoords && (() => {
           const transportMapUrl = buildFallbackMapUrl(location);
           return (
-            <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5 space-y-2">
+            <div className="rounded-xl border border-stone-100 bg-stone-50/60 p-4 dark:border-stone-800 dark:bg-stone-900/50 sm:col-span-2">
               <p className="mb-3 text-2xs font-bold uppercase text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
                 <Navigation className="h-3.5 w-3.5" />
                 {t("locationDetail.transport.title")}
@@ -142,7 +142,7 @@ interface ParkingSubBlockProps {
 function ParkingSubBlock({ available, info, t }: ParkingSubBlockProps) {
   const showStatus = available !== null;
   return (
-    <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5">
+            <div className="rounded-xl border border-stone-100 bg-stone-50/60 p-4 dark:border-stone-800 dark:bg-stone-900/50">
       <p className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase text-stone-500 dark:text-stone-400">
         <MapPin className="h-3.5 w-3.5" />
         {t("locationDetail.parking.title")}
@@ -181,7 +181,7 @@ interface GearSubBlockProps {
 
 function GearSubBlock({ essential, optional, notes, t }: GearSubBlockProps) {
   return (
-    <div className="rounded-xl border border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/50 p-3.5">
+    <div className="rounded-xl border border-stone-100 bg-stone-50/60 p-4 dark:border-stone-800 dark:bg-stone-900/50 sm:col-span-2">
       <p className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase text-stone-500 dark:text-stone-400">
         <Backpack className="h-3.5 w-3.5" />
         {t("locationDetail.gear.title")}

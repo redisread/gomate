@@ -42,11 +42,11 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
     tips.length > 0;
 
   return (
-    <section className="bg-card rounded-xl border border-stone-100 dark:border-stone-800 p-4 sm:p-5 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+    <section className="rounded-2xl bg-card p-5 shadow-warm-sm sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
         <div>
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <span className="w-1 h-4 rounded-full bg-emerald-400 flex-shrink-0" />
+          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <span className="h-5 w-1 flex-shrink-0 rounded-full bg-emerald-400" />
             {t("locations.routeInfo")}
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
