@@ -92,7 +92,7 @@ export function LocationsHero({
                       <span className="text-sm font-semibold leading-tight" style={{ color: isActive ? "#fff" : "#1c1917" }}>{cfg.label}</span>
                       {isActive && <span className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.25)" }}><X className="h-2.5 w-2.5 text-white" /></span>}
                     </div>
-                    <p className="text-2xs leading-tight mt-0.5 truncate" style={{ color: isActive ? "rgba(255,255,255,0.75)" : "#78716c" }}>{cfg.desc}</p>
+                    <p title={cfg.desc} className="text-2xs leading-tight mt-0.5 truncate" style={{ color: isActive ? "rgba(255,255,255,0.75)" : "#78716c" }}>{cfg.desc}</p>
                   </div>
                 </button>
               );

@@ -48,7 +48,7 @@ function ApplicationCard({
         >
           <Avatar name={name} avatar={application.user.avatar} size="sm" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{name}</p>
+            <p title={name} className="text-sm font-medium text-foreground truncate">{name}</p>
             {timeAgo && <p className="text-xs text-muted-foreground/70">{timeAgo} {t("teams.appliedLabel")}</p>}
           </div>
         </a>

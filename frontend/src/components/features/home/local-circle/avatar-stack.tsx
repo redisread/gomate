@@ -32,7 +32,6 @@ export function AvatarStack({ urls, max = 5, size = "sm", tooltip }: AvatarStack
   const shown = urls.slice(0, max);
   const extra = Math.max(0, urls.length - max);
   const boxSize = SIZE_PX[size];
-  const fontSize = size === "sm" ? "text-[9px]" : "text-3xs";
 
   if (urls.length === 0) return null;
 
@@ -49,7 +48,7 @@ export function AvatarStack({ urls, max = 5, size = "sm", tooltip }: AvatarStack
               <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
             ) : (
               <div
-                className={`w-full h-full flex items-center justify-center ${fontSize} font-bold text-white`}
+                className={`w-full h-full flex items-center justify-center text-3xs font-bold text-white`}
                 style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-300) 100%)" }}
                 aria-hidden="true"
               >
@@ -60,7 +59,7 @@ export function AvatarStack({ urls, max = 5, size = "sm", tooltip }: AvatarStack
         ))}
         {extra > 0 && (
           <div
-            className={`${boxSize} rounded-full border-2 border-border flex items-center justify-center ${fontSize} font-bold flex-shrink-0`}
+            className={`${boxSize} rounded-full border-2 border-border flex items-center justify-center text-3xs font-bold flex-shrink-0`}
             style={{
               zIndex: 1,
               background: "var(--brand-subtle)",
