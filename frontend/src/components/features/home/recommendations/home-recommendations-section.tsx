@@ -183,7 +183,7 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
   if (state.status === "error") {
     return (
       <section
-        className="py-6 text-center text-sm text-stone-700 dark:text-stone-300"
+        className="bg-secondary/30 py-8 text-center text-sm text-stone-700 dark:text-stone-300"
         data-testid="home-recommendations-error"
       >
         <span>{t("home.recommendations.error")}</span>
@@ -260,17 +260,18 @@ export function HomeRecommendationsSection({ userCity, cityName }: HomeRecommend
   return (
     <section
       id="recommendations"
-      className="py-12 sm:py-16 lg:py-20 bg-background"
+      className="bg-secondary/30 py-16 sm:py-20 lg:py-24"
       data-testid="home-recommendations-section"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Title */}
-        <div className="text-center mb-8 sm:mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+        <div className="mb-8 max-w-2xl sm:mb-10">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-amber-800 dark:text-amber-300">{t("home.recommendations.kind.steady")}</p>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             {t("home.recommendations.title")}
           </h2>
           {/* Subtitle — spec v1.0 §4: stone-500 neutral, no icon, no bg block (#190/#191 装饰归零) */}
-          <p className="mt-2 text-sm text-stone-500 dark:text-stone-400 text-center max-w-2xl mx-auto" data-testid="recommendation-subtitle">
+          <p className="mt-3 text-base leading-7 text-stone-700 dark:text-stone-300" data-testid="recommendation-subtitle">
             {t("home.recommendations.subtitle")}
           </p>
         </div>

@@ -17,13 +17,14 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
 
   return (
     <section id="teams" ref={teamsRef}
-      className={`py-16 sm:py-20 lg:py-24 bg-background section-hidden ${teamsInView ? "section-visible" : ""}`}>
+      className={`bg-secondary/30 py-16 sm:py-20 lg:py-24 section-hidden ${teamsInView ? "section-visible" : ""}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Title area */}
-        <div className="flex flex-col items-center text-center mb-12">
+        <div className="mb-8 max-w-2xl sm:mb-10">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground leading-tight">
             {t("teams.pageTitle")}
           </h2>
+          <p className="mt-3 text-base leading-7 text-stone-700 dark:text-stone-300">{t("common.tagline")}</p>
         </div>
 
         {/* Grid */}
@@ -52,11 +53,9 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
 
         {/* View all button */}
         <div className="text-center mt-14">
-          <a href="/teams">
-            <button className="group inline-flex items-center gap-2 px-7 py-3.5 border border-border rounded-2xl text-base font-semibold text-foreground transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 hover:shadow-warm-sm active:scale-[0.96]">
-              {t("common.viewAll")}
-              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </button>
+          <a href="/teams" className="group inline-flex items-center gap-2 rounded-2xl border border-border px-7 py-3.5 text-base font-semibold text-foreground transition-[transform,background-color,border-color,color,box-shadow] duration-200 hover:border-amber-300 hover:text-amber-700 hover:shadow-warm-sm active:scale-[0.96] dark:hover:border-amber-700 dark:hover:text-amber-400">
+            {t("common.viewAll")}
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
           </a>
         </div>
       </div>
