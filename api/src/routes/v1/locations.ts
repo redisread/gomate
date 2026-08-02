@@ -5,7 +5,6 @@ import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { APIErrors } from "../../lib/api-errors";
 import { safeJsonParse } from "../../lib/safe-json";
-import { apiRateLimitMiddleware } from "../../lib/rate-limit";
 
 const locations = new Hono<{ Bindings: Env }>();
 
@@ -13,7 +12,7 @@ const locations = new Hono<{ Bindings: Env }>();
  * GET /v1/locations
  * 公开读端点：地点列表，支持分页、cityId、keyword 过滤。
  */
-locations.get("/", apiRateLimitMiddleware("read", 600), async (c) => {
+locations.get("/", async (c) => {
   try {
     const db = createDb(c.env.DB);
 
@@ -109,7 +108,7 @@ locations.get("/", apiRateLimitMiddleware("read", 600), async (c) => {
  * GET /v1/locations/stats
  * 地图聚合数据：按省统计地点数 + 有坐标的地点点（供首页中国地图渲染）。
  */
-locations.get("/stats", apiRateLimitMiddleware("read", 600), async (c) => {
+locations.get("/stats", async (c) => {
   try {
     const db = createDb(c.env.DB);
 
@@ -153,7 +152,7 @@ locations.get("/stats", apiRateLimitMiddleware("read", 600), async (c) => {
 });
 
 
-locations.get("/:id", apiRateLimitMiddleware("read", 600), async (c) => {
+locations.get("/:id", async (c) => {
   try {
     const db = createDb(c.env.DB);
     const idOrSlug: string = c.req.param("id") ?? "";

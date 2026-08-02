@@ -5,7 +5,6 @@ import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 import { APIErrors } from "../../lib/api-errors";
-import { apiRateLimitMiddleware } from "../../lib/rate-limit";
 
 const teams = new Hono<{ Bindings: Env }>();
 
@@ -14,7 +13,7 @@ const teams = new Hono<{ Bindings: Env }>();
  * 公开读端点：队伍列表，支持分页、cityId/tagId/status/keyword 过滤。
  * API key 或 session 可选传入（用于个性化，不影响公开数据返回）。
  */
-teams.get("/", apiRateLimitMiddleware("read", 600), async (c) => {
+teams.get("/", async (c) => {
   try {
     const db = createDb(c.env.DB);
     const auth = createAuth(c.env);
@@ -190,7 +189,7 @@ teams.get("/", apiRateLimitMiddleware("read", 600), async (c) => {
  * GET /v1/teams/:id
  * 公开读端点：队伍详情。
  */
-teams.get("/:id", apiRateLimitMiddleware("read", 600), async (c) => {
+teams.get("/:id", async (c) => {
   try {
     const db = createDb(c.env.DB);
     const auth = createAuth(c.env);
@@ -263,7 +262,7 @@ teams.get("/:id", apiRateLimitMiddleware("read", 600), async (c) => {
  * 返回 { status: "none"|"pending"|"approved"|"rejected"|"member", pollAfterSeconds?: number }
  * pollAfterSeconds=300（5分钟）当 status=pending 时有效。
  */
-teams.get("/:id/my-status", apiRateLimitMiddleware("read", 600), async (c) => {
+teams.get("/:id/my-status", async (c) => {
   try {
     const db = createDb(c.env.DB);
     const auth = createAuth(c.env);

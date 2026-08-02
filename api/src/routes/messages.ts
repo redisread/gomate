@@ -13,7 +13,6 @@ import {
 import { eq, and, or, desc, sql, inArray } from "drizzle-orm";
 import { generateId } from "../lib/id";
 import { APIErrors, type APIError } from "../lib/api-errors";
-import { checkRateLimit } from "../lib/rate-limit";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -544,18 +543,6 @@ app.post("/:id", async (c) => {
 
   const user = session.user;
   const conversationId = c.req.param("id");
-
-  // 速率限制：每用户每分钟最多 30 条消息
-  const rateLimit = await checkRateLimit(`rate:msg:${user.id}`,
-    30,
-    60
-  );
-  if (!rateLimit.allowed) {
-    return c.json(
-      APIErrors.badRequest(`发送过于频繁，请 ${rateLimit.retryAfter} 秒后重试`),
-      429
-    );
-  }
 
   const body = await c.req.json();
   const db = createDb(c.env.DB);

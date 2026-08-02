@@ -6,7 +6,6 @@ import { eq, sql } from "drizzle-orm";
 import { createAuth, type Env } from "../lib/auth";
 import { createDb } from "../db";
 import { users, apiKeys } from "../db/schema";
-import { checkRateLimit, getClientIP } from "../lib/rate-limit";
 
 const auth = new Hono<{ Bindings: Env }>();
 
@@ -17,17 +16,9 @@ const forgotPasswordSchema = z.object({
 /**
  * POST /auth/forgot-password
  * 发送密码重置邮件（自定义实现，需在 Better Auth 通配符之前注册）
- *
- * 限流：5 次/分钟/IP
  */
 auth.post("/forgot-password", async (c) => {
   try {
-    const ip = getClientIP(c.req.raw);
-    const rateResult = await checkRateLimit(`rate:auth:forgot:${ip}`, 5, 60);
-    if (!rateResult.allowed) {
-      return c.json(APIErrors.badRequest("请求过于频繁，请稍后再试", { retryAfter: rateResult.retryAfter }), 429);
-    }
-
     const body = await c.req.json();
     const parsed = forgotPasswordSchema.safeParse(body);
     if (!parsed.success) {
@@ -102,31 +93,9 @@ auth.post("/api-key/create", async (c) => {
  * ALL /auth/*
  * Better Auth 处理所有认证请求（登录、注册、登出、会话等）
  *
- * 对 sign-in 和 sign-up 端点应用限流。
  * 注意：/auth/api-key/create 已由上方的 post 路由处理，不会落入此处。
  */
 auth.all("/*", async (c) => {
-  const path = new URL(c.req.url).pathname;
-
-  // 针对敏感端点的限流（精确匹配 Better Auth 的路径格式）
-  // 限流失败时降级放行，不阻断认证流程
-  try {
-    const ip = getClientIP(c.req.raw);
-    if (path.endsWith("/sign-in/email") || path.endsWith("/sign-in")) {
-      const result = await checkRateLimit(`rate:auth:signin:${ip}`, 20, 60);
-      if (!result.allowed) {
-        return c.json(APIErrors.badRequest("登录尝试过于频繁，请稍后再试", { retryAfter: result.retryAfter }), 429);
-      }
-    } else if (path.endsWith("/sign-up/email") || path.endsWith("/sign-up")) {
-      const result = await checkRateLimit(`rate:auth:signup:${ip}`, 10, 60);
-      if (!result.allowed) {
-        return c.json(APIErrors.badRequest("注册请求过于频繁，请稍后再试", { retryAfter: result.retryAfter }), 429);
-      }
-    }
-  } catch (err) {
-    logger.warn("[Auth] Rate limit check failed, allowing request:", err);
-  }
-
   const authInstance = createAuth(c.env);
   return authInstance.handler(c.req.raw);
 });

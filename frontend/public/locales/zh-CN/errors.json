@@ -56,7 +56,6 @@
   "applicationCancelled": "申请已取消",
   "resetSuccess": "密码重置成功",
   "emailSent": "邮件已发送",
-  "emailSentClear": "速率限制已清除，请重新发送",
   "networkError": "网络错误",
   "failed": "操作失败",
   "locationNotFound": "地点不存在",

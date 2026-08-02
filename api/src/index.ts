@@ -1,5 +1,4 @@
 import { logger } from "./lib/logger";
-import { checkRateLimit } from "./lib/rate-limit";
 import { Hono } from "hono";
 import { corsMiddleware } from "./middleware/cors";
 import { authRoute } from "./routes/auth";
@@ -78,11 +77,6 @@ const ALLOWED_IMAGE_PATTERNS = [
   "cdn.discordapp.com",
 ];
 
-// 速率限制配置
-const RATE_LIMIT_MAX = 100; // 每小时最大请求数
-const RATE_LIMIT_WARNING_THRESHOLD = 20; // 告警阈值：剩余请求数
-const RATE_LIMIT_WINDOW = 3600; // 1小时（秒）
-
 /**
  * 验证域名是否在白名单中（支持通配符）
  * @param hostname - 要验证的域名
@@ -115,20 +109,6 @@ app.get("/proxy-image", async (c) => {
   // 验证域名白名单
   if (!isDomainAllowed(urlObj.hostname)) {
     return c.json(APIErrors.forbidden("Domain not allowed"), 403);
-  }
-
-  // 速率限制检查（2026-08-01 P0：改为内存计数，不再写 KV——KV 每日写入额度耗尽会连带认证事故）
-  const clientIP = c.req.header("CF-Connecting-IP") || "unknown";
-  const RATE_LIMIT_KEY = `rate:proxy:${clientIP}`;
-  const rateResult = await checkRateLimit(RATE_LIMIT_KEY, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW);
-
-  if (!rateResult.allowed) {
-    return c.json(APIErrors.tooManyRequests("Rate limit exceeded"), 429);
-  }
-
-  // 告警阈值检查
-  if (rateResult.remaining <= RATE_LIMIT_WARNING_THRESHOLD) {
-    logger.warn(`[RateLimit] IP ${clientIP} 即将达到速率限制，剩余 ${rateResult.remaining} 次请求`);
   }
 
   try {
