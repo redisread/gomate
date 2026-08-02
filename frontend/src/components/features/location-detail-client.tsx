@@ -957,9 +957,9 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             <div>
               <TeamListSection teams={teams} locationId={location.id} />
             </div>
-            <DecisionBlock location={location} />
+            <DecisionBlock location={location} showGear={false} />
             <div>
-              <LocationActivityPosts locationId={location.id} />
+              <LocationActivityPosts locationId={location.id} hideEmpty />
             </div>
           </div>
 
@@ -969,7 +969,9 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               <div className="hidden space-y-4 lg:block">
                 <ActionCard location={location} teams={teams} />
               </div>
-              <RelatedLocations locations={relatedLocations} />
+              <div className="hidden lg:block">
+                <RelatedLocations locations={relatedLocations} />
+              </div>
             </div>
           </div>
         </div>

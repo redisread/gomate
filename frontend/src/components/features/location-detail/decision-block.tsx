@@ -18,6 +18,10 @@ type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 interface DecisionBlockProps {
   location: Location;
+  /**
+   * 地点页的徒步攻略已经展示装备和注意事项；其他复用场景仍可保留完整决策信息。
+   */
+  showGear?: boolean;
 }
 
 /**
@@ -36,7 +40,7 @@ function hasValidCoords(
   );
 }
 
-export function DecisionBlock({ location }: DecisionBlockProps) {
+export function DecisionBlock({ location, showGear = true }: DecisionBlockProps) {
   const { t } = useI18n(["locationDetail", "common"]);
 
   const hasCoords = hasValidCoords(location.coordinates);
@@ -45,9 +49,9 @@ export function DecisionBlock({ location }: DecisionBlockProps) {
   const parkingInfo = (location.parkingInfo ?? "").trim();
   const hasParking = parkingAvailable !== null || parkingInfo.length > 0;
 
-  const gearEssential = location.gearEssential ?? [];
-  const gearOptional = location.gearOptional ?? [];
-  const hiking = normalizeLocationHiking(location);
+  const gearEssential = showGear ? location.gearEssential ?? [] : [];
+  const gearOptional = showGear ? location.gearOptional ?? [] : [];
+  const hiking = showGear ? normalizeLocationHiking(location) : null;
   const gearWarnings = hiking?.warnings ?? [];
   const hasGear =
     gearEssential.length > 0 ||
