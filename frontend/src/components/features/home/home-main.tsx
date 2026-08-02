@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Navbar } from "@/components/layout/navbar";
 import { useHomeData, type HomeInitialData } from "./use-home-data";
 import { HomeHero } from "./home-hero";
 import { HomeLocationsSection } from "./home-locations-section";
@@ -29,8 +28,7 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
     <>
       {/* 预加载首屏图片 */}
       <PreloadImages images={data.preloadImages} />
-      <main className="min-h-screen bg-background">
-        <Navbar />
+        <main className="min-h-screen bg-background">
         <HomeHero data={data} />
         {/* P0-C T2：本周三个选择（Hero 之后 / Locations 之前） */}
         <HomeRecommendationsSection userCity={data.userCity} cityName={data.locations.length > 0 ? data.locations[0].cityName : null} />

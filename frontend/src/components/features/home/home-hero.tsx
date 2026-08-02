@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+import { ArrowRight, CalendarDays, Compass, MapPin, Search, Users, X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 
@@ -6,41 +6,134 @@ type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeHero({ data }: { data: HomeData }) {
   const { animate, search, handleSearch } = data;
-  const { t } = useI18n(["common", "content"]);
+  const { t } = useI18n(["common", "content", "home", "locations"]);
+  const featuredLocation = data.locations[0];
+  const featuredTeam = data.teams[0];
 
   return (
-    <section className="relative flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-stone-50 to-orange-50/50 dark:from-stone-950 dark:via-stone-950 dark:to-amber-950/20" />
+    <section className="relative isolate overflow-hidden border-b border-border/70 bg-background">
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_28%),radial-gradient(circle_at_8%_82%,color-mix(in_oklab,var(--warm)_8%,transparent),transparent_24%)]" />
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
-      <div className="relative z-10 text-center px-4 max-w-5xl mx-auto py-12 sm:py-16">
-        <h1 className={`font-bold leading-[1.08] mb-4 ${animate.title}`} style={{ fontSize: "clamp(2.8rem, 7.5vw, 5.2rem)" }}>
-          <span className="text-foreground block">{t("content.hero.titleLine1")}</span>
-          <span className="block text-gradient-brand">{t("content.hero.titleLine2")}</span>
-        </h1>
+      <div className="relative mx-auto grid max-w-7xl gap-12 px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.82fr)] lg:items-center lg:gap-16 lg:px-8 lg:pb-24">
+        <div className="max-w-2xl">
+          <div className={`mb-5 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary-50/70 px-3 py-1.5 text-xs font-semibold tracking-wide text-amber-800 dark:bg-primary/10 dark:text-amber-300 ${animate.subtitle}`}>
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+            {t("common.tagline")}
+          </div>
 
-        <div className="flex justify-center">
-          {/* task #180 a11y：muted-foreground (var(--muted-foreground)) on var(--background) = ~3.7:1，小字体挂门禁；改 stone-700/dark:stone-300 = ~7.5:1/8:1 */}
-          <p className={`text-lg md:text-xl text-stone-700 dark:text-stone-300 mb-8 w-full max-w-xl leading-relaxed text-center ${animate.subtitle}`}>{t("content.hero.description")}</p>
+          <h1 className={`max-w-xl text-[clamp(2.75rem,7vw,5.5rem)] font-bold leading-[1.02] tracking-[-0.055em] text-foreground ${animate.title}`}>
+            <span className="block">{t("content.hero.titleLine1")}</span>
+            <span className="block text-gradient-brand">{t("content.hero.titleLine2")}</span>
+          </h1>
+
+          <p className={`mt-6 max-w-xl text-base leading-8 text-stone-700 dark:text-stone-300 sm:text-lg ${animate.subtitle}`}>
+            {t("content.hero.description")}
+          </p>
+
+          <form
+            role="search"
+            aria-label={t("common.search")}
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSearch(search.value);
+            }}
+            className={`relative mt-8 max-w-2xl ${animate.search}`}
+          >
+            <label htmlFor="home-location-search" className="sr-only">{t("common.searchPlaceholder")}</label>
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <input
+              id="home-location-search"
+              type="search"
+              placeholder={t("common.searchPlaceholder")}
+              value={search.value}
+              onChange={(event) => search.setValue(event.target.value)}
+              onFocus={() => search.setFocused(true)}
+              onBlur={() => search.setFocused(false)}
+              className="w-full rounded-2xl border border-border bg-card/95 py-4 pl-12 pr-28 text-base text-foreground shadow-warm-sm outline-none transition-[background-color,border-color,box-shadow] duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/15"
+              style={{ boxShadow: search.isFocused ? "0 8px 32px color-mix(in oklab, var(--primary) 18%, transparent)" : undefined, backdropFilter: "blur(8px)" }}
+            />
+            {search.value && (
+              <button
+                type="button"
+                onClick={search.clear}
+                aria-label={t("common.clear")}
+                className="absolute right-24 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.96]"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
+            <button
+              type="submit"
+              className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white shadow-brand-glow transition-[background-color,transform,box-shadow] duration-150 hover:bg-amber-800 hover:shadow-brand-glow-lg active:scale-[0.96] ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}
+            >
+              {t("common.search")}
+            </button>
+          </form>
+
+          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
+            <a href="/locations" className="group inline-flex items-center gap-1.5 transition-colors duration-150 hover:text-amber-700 dark:hover:text-amber-300">
+              {t("common.exploreLocations")}
+              <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+            </a>
+            <a href="/teams" className="group inline-flex items-center gap-1.5 transition-colors duration-150 hover:text-amber-700 dark:hover:text-amber-300">
+              {t("common.exploreTeams")}
+              <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+            </a>
+          </div>
         </div>
 
-        <div className={`relative max-w-2xl mx-auto group ${animate.search}`}>
-          <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 pointer-events-none transition-colors duration-200 text-muted-foreground" />
-          <input type="text" placeholder={t("common.searchPlaceholder")} value={search.value}
-            onChange={(e) => search.setValue(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSearch(search.value); }}
-            onFocus={() => search.setFocused(true)} onBlur={() => search.setFocused(false)}
-            className="w-full pl-11 sm:pl-14 pr-28 sm:pr-32 py-3 sm:py-4 bg-card/95 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground text-sm sm:text-base transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-250 focus:outline-none focus:ring-4 focus:ring-amber-400/15 focus:border-amber-400"
-            style={{ boxShadow: search.isFocused ? "0 6px 28px color-mix(in oklab, var(--primary) 20%, transparent)" : "0 4px 20px color-mix(in oklab, var(--foreground) 8%, transparent)", backdropFilter: "blur(8px)" }} />
-          {search.value && (
-            <button onClick={search.clear} className="absolute right-20 sm:right-28 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 animate-spin-in">
-              <X className="h-3.5 w-3.5" />
-            </button>
+        <div className={`relative mx-auto w-full max-w-xl lg:mx-0 ${animate.search}`}>
+          <div className="relative aspect-[0.92] overflow-hidden rounded-[2rem] bg-secondary shadow-warm-xl ring-1 ring-black/5 dark:ring-white/10">
+            {featuredLocation?.coverImage ? (
+              <img src={featuredLocation.coverImage} alt={featuredLocation.name} className="h-full w-full object-cover outline outline-1 outline-black/10 transition-transform duration-500 hover:scale-[1.02] dark:outline-white/10" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_35%,color-mix(in_oklab,var(--primary)_34%,transparent),transparent_34%),linear-gradient(145deg,var(--brand-muted),var(--secondary))]">
+                <Compass className="h-24 w-24 text-primary/40" strokeWidth={1.1} aria-hidden="true" />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" aria-hidden="true" />
+
+            <div className="absolute left-5 right-5 top-5 flex items-center justify-between gap-3 text-white">
+              <span className="inline-flex items-center gap-2 rounded-full bg-black/25 px-3 py-1.5 text-xs font-semibold backdrop-blur-md">
+                <Compass className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("common.explore")}
+              </span>
+              {featuredLocation?.address && (
+                <span className="inline-flex max-w-[55%] items-center gap-1.5 truncate rounded-full bg-black/25 px-3 py-1.5 text-xs backdrop-blur-md">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {featuredLocation.address}
+                </span>
+              )}
+            </div>
+
+            <div className="absolute inset-x-5 bottom-5 text-white">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">GoMate</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+                {featuredLocation?.name ?? t("common.exploreLocations")}
+              </h2>
+              <p className="mt-2 flex items-center gap-2 text-sm text-white/80">
+                <MapPin className="h-4 w-4" aria-hidden="true" />
+                {featuredLocation?.address ?? t("locations.defaultCity")}
+              </p>
+            </div>
+          </div>
+
+          {featuredTeam && (
+            <a href={`/teams/${featuredTeam.id}`} className="group absolute -bottom-6 left-4 right-4 flex items-center gap-3 rounded-2xl bg-card p-3.5 shadow-warm-xl ring-1 ring-black/5 transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-brand-glow-lg dark:ring-white/10 sm:left-auto sm:right-[-1.5rem] sm:w-[min(20rem,calc(100%-2rem))]">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-subtle text-brand">
+                <Users className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-foreground">{featuredTeam.title}</p>
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400">
+                  <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                  {featuredTeam.date}{featuredTeam.time ? ` · ${featuredTeam.time}` : ""}
+                </p>
+              </div>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-brand" aria-hidden="true" />
+            </a>
           )}
-          <button onClick={() => handleSearch(search.value)}
-            /* task #180 a11y：amber-600 (var(--primary)) on white = ~3.3:1 挂门禁；amber-700 (oklch(0.555 0.146 49)) = ~5.5:1 稳过 */
-            className={`absolute right-3 top-1/2 -translate-y-1/2 px-4 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl text-white transition-colors duration-150 bg-amber-700 hover:bg-amber-800 shadow-brand-glow ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}>
-            {t("common.search")}
-          </button>
         </div>
       </div>
     </section>
