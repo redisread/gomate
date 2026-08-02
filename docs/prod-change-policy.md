@@ -45,7 +45,7 @@ pnpm --filter @gomate/api check:migrations
 
 与 v1.0 三条款的 PR 阶段门禁互补，本条款针对**远端 D1 实际状态**漂移（PR 门禁看不到的运行时漂移）。
 
-**告警源**：远端 `d1_migrations` 表行数 vs 本仓 `_journal.json` entries 数。`diff > 0` 为 stale（手工 execute 未补 migration），`diff < 0` 为 future（migration 未应用），`diff === 0` 正常。
+**告警源**：远端 `d1_migrations.name` 集合 vs 本仓 `_journal.json` / migration 文件集合。远端缺少真实 migration 名称为 future（migration 未应用），远端出现本仓未登记名称为 stale（手工 execute 未补 migration）。被 `0000_bright_jackpot` 吸收的 legacy no-op migration 允许在远端缺失，避免新建环境因 baseline 补录记录而误报。
 
 **采集双轨**：
 
