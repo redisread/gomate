@@ -71,21 +71,12 @@ export function TeamListSection({ teams, locationId }: TeamListSectionProps) {
 function EmptyTeamsState({ locationId }: { locationId: string }) {
   const { t } = useI18n(["locations", "common"]);
   return (
-    <div className="flex flex-col items-center py-10">
-      <div className="relative mb-5">
-        <div className="w-16 h-16 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center">
-          <div className="w-11 h-11 rounded-full bg-amber-100/80 dark:bg-amber-900/40 flex items-center justify-center">
-            <Users
-              className="h-6 w-6 text-amber-400 motion-reduce:animate-none"
-              style={{ animation: "float 3s ease-in-out infinite" }}
-            />
-          </div>
-        </div>
-        <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-200 dark:bg-amber-800" />
-        <div className="absolute -bottom-1.5 -left-1.5 w-2.5 h-2.5 rounded-full bg-amber-200 dark:bg-amber-800" />
+    <div className="flex flex-col items-center py-6 sm:py-8">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30">
+        <Users className="h-5 w-5 text-amber-500" />
       </div>
 
-      <p className="text-stone-500 dark:text-stone-400 text-sm text-center max-w-xs leading-relaxed mb-5">
+      <p className="mb-4 max-w-xs text-center text-sm leading-relaxed text-stone-500 dark:text-stone-400">
         {t('locations.detailNoTeamsDesc')}
       </p>
 

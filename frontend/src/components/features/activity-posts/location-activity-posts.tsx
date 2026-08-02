@@ -10,9 +10,15 @@ import { Mountain, Loader2 } from "lucide-react";
 interface LocationActivityPostsProps {
   locationId: string;
   className?: string;
+  /** 不让没有内容的次要区块占据详情页首屏之后的大段空间。 */
+  hideEmpty?: boolean;
 }
 
-export function LocationActivityPosts({ locationId, className }: LocationActivityPostsProps) {
+export function LocationActivityPosts({
+  locationId,
+  className,
+  hideEmpty = false,
+}: LocationActivityPostsProps) {
   const { t } = useI18n(["teams"]);
   const [posts, setPosts] = React.useState<ActivityPost[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -47,6 +53,8 @@ export function LocationActivityPosts({ locationId, className }: LocationActivit
   }
 
   if (posts.length === 0) {
+    if (hideEmpty) return null;
+
     return (
       <div className={cn("bg-card rounded-2xl border border-border", className)}>
         <div className="p-6 border-b border-border">
