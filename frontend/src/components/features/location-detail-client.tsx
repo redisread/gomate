@@ -29,7 +29,6 @@ import {
   LocationIntroCard,
   RouteInfoCard,
   TeamListSection,
-  AddressRow,
   DecisionBlock,
 } from "@/components/features/location-detail-main-content";
 import { LocationActivityPosts } from "@/components/features/activity-posts";
@@ -125,14 +124,14 @@ function LoadingSkeleton() {
           </div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-5">
-            <div className="h-44 skeleton rounded-2xl bg-stone-200 dark:bg-stone-800" />
-            <div className="h-32 skeleton rounded-2xl bg-stone-200 dark:bg-stone-800" />
-            <div className="h-56 skeleton rounded-2xl bg-stone-200 dark:bg-stone-800" />
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8">
+          <div className="space-y-6">
+            <div className="h-48 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800" />
+            <div className="h-64 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800" />
+            <div className="h-56 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800" />
           </div>
-          <div className="h-72 skeleton rounded-2xl bg-stone-200 dark:bg-stone-800" />
+          <div className="hidden h-72 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800 lg:block" />
         </div>
       </div>
     </main>
@@ -194,7 +193,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
       <img
         src={images[index]}
         alt={t("locationDetail.imageAlt", { index: String(index + 1) })}
-        className="max-w-[90vw] max-h-[85vh] object-contain rounded-xl shadow-2xl"
+        className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain shadow-2xl outline outline-1 -outline-offset-1 outline-white/10"
         onClick={(e) => e.stopPropagation()}
       />
 
@@ -253,14 +252,15 @@ function ActionCard({ location, teams }: ActionCardProps) {
       : t("locationDetail.firstCreator");
 
   return (
-    <div
-      className="rounded-xl overflow-hidden bg-card border border-stone-100 dark:border-stone-800 shadow-warm-sm"
+    <section
+      aria-labelledby="location-action-title"
+      className="rounded-2xl bg-card p-5 shadow-warm-sm"
     >
-      <div className="p-5">
+      <div>
         {/* 情感标题 */}
-        <p className="text-sm font-bold mb-1 text-foreground">
+        <h2 id="location-action-title" className="text-base font-bold text-foreground">
           {t("locations.detailParticipate")}
-        </p>
+        </h2>
 
         {/* 社交证明 */}
         <div className="flex items-center gap-2.5 mb-4">
@@ -295,27 +295,23 @@ function ActionCard({ location, teams }: ActionCardProps) {
         )}
 
         {/* 主 CTA */}
-        <a href={`/teams/create?locationId=${location.id}`} className="block mb-3">
-          <button
-            className="w-full py-3.5 rounded-xl text-sm font-bold text-white dark:text-stone-950 bg-amber-700 dark:bg-amber-500 shadow-card-hover hover:-translate-y-0.5 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96]"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <Users className="h-4 w-4" />
-              {t("locations.detailCreateTeam")}
-            </span>
-          </button>
+        <a
+          href={`/teams/create?locationId=${location.id}`}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-700 py-3.5 text-sm font-bold text-white shadow-card-hover transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-amber-800 active:scale-[0.96] dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400"
+        >
+          <Users className="h-4 w-4" />
+          {t("locations.detailCreateTeam")}
         </a>
 
         {/* 次要 CTA */}
-        <a href={`/teams?locationId=${location.id}`} className="block">
-          <button
-            className="w-full py-2.5 rounded-xl text-sm font-semibold text-foreground border border-stone-200 dark:border-stone-700 bg-transparent hover:bg-stone-50 dark:hover:bg-stone-800 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 active:scale-[0.96]"
-          >
-              {t("locations.detailBrowseTeams")}
-          </button>
+        <a
+          href={`/teams?locationId=${location.id}`}
+          className="mt-3 flex w-full items-center justify-center rounded-xl border border-stone-200 bg-transparent py-2.5 text-sm font-semibold text-foreground transition-[transform,background-color,border-color] duration-150 hover:border-stone-300 hover:bg-stone-50 active:scale-[0.96] dark:border-stone-700 dark:hover:border-stone-600 dark:hover:bg-stone-800"
+        >
+          {t("locations.detailBrowseTeams")}
         </a>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -342,7 +338,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
   };
 
   return (
-    <div className="bg-card rounded-xl p-5 border border-stone-100 dark:border-stone-800 shadow-warm-sm">
+    <section className="rounded-2xl bg-card p-5 shadow-warm-sm sm:p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">
           {t("locations.relatedTitle")}
@@ -372,7 +368,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
                   <img
                     src={loc.coverImage}
                     alt={loc.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 transition-transform duration-300 group-hover:scale-110 dark:outline-white/10"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -398,7 +394,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -450,23 +446,17 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
 
         {/* 浏览队伍 */}
         <a href={`/teams?locationId=${location.id}`} className="flex-shrink-0 max-[360px]:flex-1">
-          <button
-            className="px-3 sm:px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 active:scale-[0.96] whitespace-nowrap max-[360px]:w-full max-[360px]:px-2"
-          >
+          <span className="flex min-h-11 items-center justify-center rounded-xl border border-stone-200 px-3 text-sm font-semibold text-foreground transition-[transform,background-color,border-color] duration-150 hover:bg-stone-50 active:scale-[0.96] dark:border-stone-700 dark:hover:bg-stone-800 sm:px-4 max-[360px]:w-full max-[360px]:px-2">
             {t("locationDetail.browseTeams")}
-          </button>
+          </span>
         </a>
 
         {/* 主 CTA */}
         <a href={`/teams/create?locationId=${location.id}`} className="flex-shrink-0 max-[360px]:flex-1">
-          <button
-            className="flex w-full items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-bold text-white dark:text-stone-950 bg-amber-700 dark:bg-amber-500 shadow-glow active:scale-[0.96] transition-transform duration-150 whitespace-nowrap max-[360px]:px-2"
-          >
-            <span className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              {t("locationDetail.gatherPartners")}
-            </span>
-          </button>
+          <span className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-amber-700 px-4 text-sm font-bold text-white shadow-glow transition-[transform,background-color] duration-150 hover:bg-amber-800 active:scale-[0.96] dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400 max-[360px]:px-2 sm:px-5">
+            <Users className="h-4 w-4" />
+            {t("locationDetail.gatherPartners")}
+          </span>
         </a>
       </div>
       {/* iOS 安全区 */}
@@ -519,15 +509,18 @@ function HeroActions({
   return (
     <div className="absolute right-4 top-20 z-20 flex items-center gap-2 sm:right-6">
       {isAdmin && (
-        <a href={`/admin/locations/${location.id}/edit`}>
-          <button
-            type="button"
-            title={t("admin.editLocation")}
-            aria-label={t("admin.editLocation")}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-md transition-colors hover:bg-black/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        <a
+          href={`/admin/locations/${location.id}/edit`}
+          title={t("admin.editLocation")}
+          aria-label={t("admin.editLocation")}
+          className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <span
+            aria-hidden="true"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-md transition-[background-color,transform] duration-150 hover:bg-black/55 active:scale-[0.96]"
           >
             <Pencil className="h-4 w-4" />
-          </button>
+          </span>
         </a>
       )}
       <button
@@ -681,10 +674,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     }
   };
 
-  React.useEffect(() => {
-    loadLocation();
-  }, [loadLocation]);
-
   /** 图片切换（淡入淡出）*/
   const switchImage = (index: number) => {
     if (index === activeImageIndex) return;
@@ -794,7 +783,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             key={currentImage}
             src={currentImage}
             alt={location.name}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
             style={{
               transform: `translateY(${parallaxOffset}px) scale(1.1)`,
               opacity: imageVisible ? 1 : 0,
@@ -952,56 +941,34 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       {/* ================================================================
           主内容区
           ================================================================ */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
 
           {/* 左/中栏 */}
-          <div className="lg:col-span-2 flex flex-col gap-5 pt-5 lg:pt-6">
-            <div className="order-1">
-              <RouteInfoCard location={location} />
-            </div>
-            <div className="order-3 lg:order-2">
-              {/* P0-B T3: 决策信息（交通/停车/装备）。桌面端紧跟 Route，移动端排在 Teams 之后。 */}
-              <DecisionBlock location={location} />
-            </div>
-            <div className="order-4 lg:order-3">
+          <div className="flex flex-col gap-6 pt-6 lg:pt-8">
+            <div>
               <LocationIntroCard
                 location={location}
                 showGallery={false}
-                showTravelMeta={false}
+                showTravelMeta
               />
             </div>
-            {location.address && (
-              <div className="order-5 lg:hidden">
-                <AddressRow
-                  address={location.address}
-                  coordinates={location.coordinates}
-                  locationName={location.name}
-                />
-              </div>
-            )}
-            <div className="order-2 lg:order-4">
+            <RouteInfoCard location={location} />
+            <div>
               <TeamListSection teams={teams} locationId={location.id} />
             </div>
-            <div className="order-6">
-            </div>
-            <div className="order-7">
+            <DecisionBlock location={location} />
+            <div>
               <LocationActivityPosts locationId={location.id} />
             </div>
           </div>
 
           {/* 右栏 sticky */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-4 lg:-mt-10 relative z-10">
-              <ActionCard location={location} teams={teams} />
-              {location.address && (
-                <AddressRow
-                  address={location.address}
-                  coordinates={location.coordinates}
-                  locationName={location.name}
-                  className="hidden lg:flex"
-                />
-              )}
+          <div>
+            <div className="relative z-10 space-y-4 lg:sticky lg:top-24 lg:-mt-12">
+              <div className="hidden space-y-4 lg:block">
+                <ActionCard location={location} teams={teams} />
+              </div>
               <RelatedLocations locations={relatedLocations} />
             </div>
           </div>

@@ -39,7 +39,7 @@ export function LocationIntroCard({
   showGallery = true,
   showTravelMeta = true,
 }: LocationIntroCardProps) {
-  const { t } = useI18n(["locations", "enums", "common", "locationDetail"]);
+  const { t } = useI18n(["locations", "enums", "common", "locationDetail", "admin"]);
   const [expanded, setExpanded] = React.useState(false);
   const [isOverflow, setIsOverflow] = React.useState(false);
   const descRef = React.useRef<HTMLParagraphElement>(null);
@@ -83,13 +83,24 @@ export function LocationIntroCard({
     return all;
   }, [location.coverImage, location.images]);
 
+  const seasonLabels: Record<string, string> = {
+    spring: t("admin.seasons.spring"),
+    "春季": t("admin.seasons.spring"),
+    summer: t("admin.seasons.summer"),
+    "夏季": t("admin.seasons.summer"),
+    autumn: t("admin.seasons.autumn"),
+    "秋季": t("admin.seasons.autumn"),
+    winter: t("admin.seasons.winter"),
+    "冬季": t("admin.seasons.winter"),
+  };
+
   const openLightbox = (idx: number) => {
     setLightboxActive(idx);
     setLightboxIndex(idx);
   };
 
   return (
-    <div className="bg-card rounded-xl border border-stone-100 dark:border-stone-800 overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+    <section className="overflow-hidden rounded-2xl bg-card shadow-warm-sm">
 
       {((showGallery && galleryImages.length > 0) || actions) && (
         <div className="px-5 pt-5 pb-0">
@@ -106,7 +117,7 @@ export function LocationIntroCard({
                 <img
                   src={img}
                   alt={t("locationDetail.imageAlt", { index: String(idx + 1) })}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-108"
+                  className="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 transition-transform duration-300 group-hover:scale-108 dark:outline-white/10"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-200 rounded-xl" />
                 {idx === 5 && galleryImages.length > 6 && (
@@ -126,10 +137,10 @@ export function LocationIntroCard({
         </div>
       )}
 
-      <div className="p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <span className="w-1 h-4 rounded-full bg-amber-400 flex-shrink-0" />
+      <div className="p-5 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <span className="h-5 w-1 rounded-full bg-amber-400" />
             {t('locations.locationIntro')}
           </h2>
           {location.type && t(`enums.locationType.${location.type}`) && (
@@ -143,7 +154,7 @@ export function LocationIntroCard({
           <p
             ref={descRef}
             className={cn(
-              "text-sm text-stone-500 dark:text-stone-400 leading-[1.9] tracking-wide transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300",
+              "max-w-3xl text-[0.9375rem] leading-8 text-stone-600 transition-[opacity,max-height] duration-200 dark:text-stone-400",
               !expanded && "line-clamp-4"
             )}
           >
@@ -168,7 +179,7 @@ export function LocationIntroCard({
         )}
 
         {location.tags && location.tags.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800 flex flex-wrap gap-1.5">
+          <div className="mt-5 flex flex-wrap gap-2 border-t border-stone-100 pt-5 dark:border-stone-800">
             {location.tags.map((tag: Tag, i: number) => (
               <span
                 key={tag?.id ?? i}
@@ -181,7 +192,7 @@ export function LocationIntroCard({
         )}
 
         {showTravelMeta && (address || (location.bestSeason && location.bestSeason.length > 0)) && (
-          <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
+          <div className="mt-5 border-t border-stone-100 pt-5 dark:border-stone-800">
             {address && (
               <div className="flex items-start gap-2.5 mb-3">
                 <MapPin className="h-4 w-4 text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
@@ -223,7 +234,7 @@ export function LocationIntroCard({
                     key={s}
                     className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50"
                   >
-                    {t(`locations.seasons.${s}.label`) ?? s}
+                    {seasonLabels[s] ?? s}
                   </span>
                 ))}
               </div>
@@ -253,7 +264,7 @@ export function LocationIntroCard({
           <img
             src={galleryImages[lightboxActive]}
             alt={t("locationDetail.imageAlt", { index: String(lightboxActive + 1) })}
-            className="max-w-[90vw] max-h-[88vh] object-contain rounded-xl shadow-2xl"
+            className="max-h-[88vh] max-w-[90vw] rounded-xl object-contain shadow-2xl outline outline-1 -outline-offset-1 outline-white/10"
             onClick={(e) => e.stopPropagation()}
           />
           {galleryImages.length > 1 && (
@@ -269,6 +280,6 @@ export function LocationIntroCard({
           <p className="absolute bottom-6 text-white/50 text-xs">{t("common.posterNavHint")}</p>
         </div>
       )}
-    </div>
+    </section>
   );
 }

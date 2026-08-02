@@ -35,7 +35,7 @@ export function AddressRow({ address, coordinates, locationName, className }: Ad
   return (
     <div
       className={cn(
-        "w-full bg-card rounded-xl border border-stone-100 dark:border-stone-800 px-5 py-4 flex items-start gap-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]",
+        "flex w-full items-start gap-3 rounded-2xl bg-card px-5 py-4 shadow-warm-sm",
         className
       )}
     >
@@ -48,7 +48,7 @@ export function AddressRow({ address, coordinates, locationName, className }: Ad
             onClick={handleNavigate}
             title={t('locations.navigateTooltip')}
             aria-label={t('locations.navigateTooltip')}
-            className="text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-amber-700 transition-[background-color,color,transform] duration-150 hover:bg-amber-50 hover:text-amber-800 active:scale-[0.96] dark:text-amber-400 dark:hover:bg-amber-950/30 dark:hover:text-amber-300"
           >
             <Navigation className="h-4 w-4" />
           </button>
@@ -58,7 +58,7 @@ export function AddressRow({ address, coordinates, locationName, className }: Ad
           onClick={handleCopy}
           title={t("common.copyAddress")}
           aria-label={t("common.copyAddress")}
-          className="opacity-60 hover:opacity-100 transition-opacity"
+          className="flex h-10 w-10 items-center justify-center rounded-xl opacity-60 transition-[background-color,opacity,transform] duration-150 hover:bg-stone-100 hover:opacity-100 active:scale-[0.96] dark:hover:bg-stone-800"
         >
           {copied ? (
             <Check className="h-4 w-4 text-emerald-500" />

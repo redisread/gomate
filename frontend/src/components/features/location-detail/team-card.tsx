@@ -25,10 +25,10 @@ export function TeamCard({ team }: TeamCardProps) {
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <div className="p-4 rounded-xl bg-card border border-stone-100 dark:border-stone-800 hover:border-amber-100 hover:shadow-[0_4px_20px_rgba(217,119,6,0.12)] hover:-translate-y-0.5 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200">
+      <div className="rounded-xl bg-stone-50/70 p-4 transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-amber-50/60 hover:shadow-[0_4px_20px_rgba(217,119,6,0.12)] dark:bg-stone-900/60 dark:hover:bg-amber-950/20">
         <div className="flex items-start gap-3 mb-3">
           {dateInfo ? (
-            <div className="flex-shrink-0 w-12 rounded-xl overflow-hidden border border-stone-100 dark:border-stone-800 shadow-sm group-hover:shadow-md group-hover:border-amber-100 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200">
+              <div className="flex-shrink-0 w-12 overflow-hidden rounded-xl shadow-sm transition-[transform,box-shadow] duration-200 group-hover:shadow-md">
               <div className="bg-amber-700 dark:bg-amber-500 group-hover:bg-amber-800 dark:group-hover:bg-amber-400 py-0.5 text-center transition-colors">
                 <span className="text-3xs font-bold text-white dark:text-stone-950 tracking-widest uppercase">
                   {dateInfo.month}
