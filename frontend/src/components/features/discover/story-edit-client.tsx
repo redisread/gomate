@@ -3,10 +3,10 @@
 import * as React from "react";
 import { ArrowLeft, ChevronDown, ChevronUp, ImagePlus, Loader2, MapPin, Search, X, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 import { useI18n } from "@/hooks/useI18n";
 import { useToast } from "@/hooks/useToast";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-input";
-import { useModalA11y } from "@/hooks/useModalA11y";
 import { VditorEditor } from "./vditor-editor";
 import { StoryToast } from "./story-detail-toast";
 import { StoryEditErrorBoundary } from "./story-edit-error-boundary";
@@ -52,10 +52,8 @@ function StoryEditClientInner({ storyId }: StoryEditClientProps) {
   const [showCancelConfirm, setShowCancelConfirm] = React.useState(false);
   // spec §5：移动端「基本信息」区折叠（默认只展开标题+摘要），桌面端始终全部展开
   const [basicExpanded, setBasicExpanded] = React.useState(false);
-  const cancelPanelRef = React.useRef<HTMLDivElement>(null);
   const closeCancelConfirm = React.useCallback(() => setShowCancelConfirm(false), []);
   // spec §4.1：role=alertdialog + 焦点 trap + Esc + 焦点还原
-  useModalA11y(showCancelConfirm, cancelPanelRef, closeCancelConfirm);
 
   // task #149 ③：字段级校验（与发布页 spec §6.2 同一套规则：标题/摘要/正文必填，onBlur 即时校验）
   const [fieldErrors, setFieldErrors] = React.useState<{ title?: string; summary?: string; content?: string }>({});
@@ -353,16 +351,15 @@ function StoryEditClientInner({ storyId }: StoryEditClientProps) {
 
       {/* Cancel Confirmation Dialog */}
       {showCancelConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeCancelConfirm}>
-          <div
-            ref={cancelPanelRef}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="cancel-edit-title"
-            aria-describedby="cancel-edit-desc"
-            className="mx-4 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <Modal
+          open={showCancelConfirm}
+          onClose={closeCancelConfirm}
+          role="alertdialog"
+          labelledBy="cancel-edit-title"
+          describedBy="cancel-edit-desc"
+          overlayClassName="flex items-center justify-center"
+          panelClassName="mx-4 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl"
+        >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -380,8 +377,7 @@ function StoryEditClientInner({ storyId }: StoryEditClientProps) {
                 {t("content.discover.edit.discardConfirm")}
               </button>
             </div>
-          </div>
-        </div>
+    </Modal>
       )}
     </div>
   );

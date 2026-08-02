@@ -3,7 +3,7 @@ import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
 import { useTeamDetail } from "./use-team-detail";
 import { ToastDisplay } from "./team-detail-ui";
-import { useModalA11y } from "@/hooks/useModalA11y";
+import { Modal } from "@/components/ui/modal";
 import {
   JoinBottomSheet, JoinDesktopModal, LeaveConfirmDialog,
   FormTeamConfirmDialog, WechatEditModal,
@@ -161,17 +161,16 @@ function ConfirmDialogs({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
 
 function WechatModals({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   const { t } = useI18n(["teams", "common"]);
-  const wechatConfirmRef = React.useRef<HTMLDivElement>(null);
-  useModalA11y(ctx.showWechatConfirm, wechatConfirmRef, () => ctx.setShowWechatConfirm(false));
   return (
     <>
       {ctx.showWechatConfirm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div
-            ref={wechatConfirmRef}
-            role="alertdialog"
-            aria-modal="true"
-            className="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
+        <Modal
+          open={ctx.showWechatConfirm}
+          onClose={() => ctx.setShowWechatConfirm(false)}
+          role="alertdialog"
+          overlayClassName="flex items-center justify-center p-4"
+          panelClassName="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+        >
             <h3 className="text-lg font-bold text-foreground mb-2">{t('teams.wechatRequiredJoinTitle')}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">{t('teams.wechatRequiredJoinDesc')}</p>
             <button onClick={() => { ctx.setShowWechatConfirm(false); ctx.setShowWechatSheet(true); }}
@@ -182,8 +181,7 @@ function WechatModals({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
               className="w-full py-3 text-muted-foreground text-sm font-medium hover:bg-accent rounded-xl transition-colors">
               {t('common.cancel')}
             </button>
-          </div>
-        </div>
+    </Modal>
       )}
       {ctx.showWechatSheet && (
         <WechatEditModal

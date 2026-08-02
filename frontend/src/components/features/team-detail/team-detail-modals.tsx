@@ -2,7 +2,7 @@ import * as React from "react";
 import { X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
-import { useModalA11y } from "@/hooks/useModalA11y";
+import { Modal } from "@/components/ui/modal";
 import { AnimatedProgress } from "./team-detail-ui";
 
 /* ── Join Bottom Sheet (Mobile) ── */
@@ -16,28 +16,17 @@ export function JoinBottomSheet({
   remaining: number; fillRatio: number; currentMembers: number; maxMembers: number;
 }) {
   const { t } = useI18n(["teams"]);
-  React.useEffect(() => {
-    if (open) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
-
-  const panelRef = React.useRef<HTMLDivElement>(null);
-  useModalA11y(open, panelRef, onClose);
-
-  if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="join-sheet-title"
-        className="absolute bottom-0 left-0 right-0 bg-popover rounded-t-3xl shadow-xl animate-[slide-up_0.3s_ease_both]"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
+    <Modal
+      open={open}
+      onClose={onClose}
+      labelledBy="join-sheet-title"
+      lockBodyScroll
+      overlayClassName="lg:hidden flex items-end"
+      panelClassName="w-full bg-popover rounded-t-3xl shadow-xl animate-[slide-up_0.3s_ease_both]"
+    >
+      <div style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 bg-secondary rounded-full" />
         </div>
@@ -77,7 +66,7 @@ export function JoinBottomSheet({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -92,19 +81,15 @@ export function JoinDesktopModal({
   remaining: number; fillRatio: number; currentMembers: number; maxMembers: number;
 }) {
   const { t } = useI18n(["teams"]);
-  const panelRef = React.useRef<HTMLDivElement>(null);
-  useModalA11y(open, panelRef, onClose);
-  if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[55] hidden lg:flex items-center justify-center p-4">
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="join-modal-title"
-        className="bg-popover rounded-3xl max-w-md w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
-      >
+    <Modal
+      open={open}
+      onClose={onClose}
+      labelledBy="join-modal-title"
+      overlayClassName="hidden lg:flex items-center justify-center p-4"
+      panelClassName="bg-popover rounded-3xl max-w-md w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+    >
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 id="join-modal-title" className="text-xl font-bold text-foreground">{t('teams.joinTeam')}</h3>
@@ -140,8 +125,7 @@ export function JoinDesktopModal({
           {isJoining && <Loader2 className="h-4 w-4 animate-spin" />}
           {t('teams.joinTeam')}
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -151,19 +135,17 @@ export function LeaveConfirmDialog({
   open, onCancel, onConfirm,
 }: { open: boolean; onCancel: () => void; onConfirm: () => void; }) {
   const { t } = useI18n(["teams", "common"]);
-  const panelRef = React.useRef<HTMLDivElement>(null);
-  useModalA11y(open, panelRef, onCancel);
-  if (!open) return null;
+
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div
-        ref={panelRef}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="leave-confirm-title"
-        className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
-      >
-        <h3 id="leave-confirm-title" className="text-lg font-bold text-foreground mb-2">{t('teams.leaveTeamConfirm')}</h3>
+    <Modal
+      open={open}
+      onClose={onCancel}
+      role="alertdialog"
+      labelledBy="leave-confirm-title"
+      overlayClassName="flex items-center justify-center p-4"
+      panelClassName="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+    >
+      <h3 id="leave-confirm-title" className="text-lg font-bold text-foreground mb-2">{t('teams.leaveTeamConfirm')}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-6">{t('teams.leaveTeamWarning')}</p>
         <button onClick={onConfirm} className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors mb-2">
           {t('teams.leaveTeam')}
@@ -171,8 +153,7 @@ export function LeaveConfirmDialog({
         <button onClick={onCancel} className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accent transition-colors">
           {t('common.cancel')}
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -182,21 +163,19 @@ export function FormTeamConfirmDialog({
   open, isFull, isLoading, onCancel, onConfirm,
 }: { open: boolean; isFull: boolean; isLoading: boolean; onCancel: () => void; onConfirm: () => void; }) {
   const { t } = useI18n(["teams", "common"]);
-  const panelRef = React.useRef<HTMLDivElement>(null);
-  useModalA11y(open, panelRef, onCancel);
-  if (!open) return null;
+
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div
-        ref={panelRef}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="form-team-confirm-title"
-        className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
-      >
-        <h3 id="form-team-confirm-title" className="text-lg font-bold text-foreground mb-2">
-          {isFull ? t('teams.formTeamConfirm') : t('teams.formTeamUnderfilledConfirm')}
-        </h3>
+    <Modal
+      open={open}
+      onClose={onCancel}
+      role="alertdialog"
+      labelledBy="form-team-confirm-title"
+      overlayClassName="flex items-center justify-center p-4"
+      panelClassName="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+    >
+      <h3 id="form-team-confirm-title" className="text-lg font-bold text-foreground mb-2">
+        {isFull ? t('teams.formTeamConfirm') : t('teams.formTeamUnderfilledConfirm')}
+      </h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-6">{t('teams.formTeamWarning')}</p>
         <button
           onClick={onConfirm}
@@ -209,8 +188,7 @@ export function FormTeamConfirmDialog({
         <button onClick={onCancel} disabled={isLoading} className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accent transition-colors">
           {t('common.cancel')}
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -221,21 +199,18 @@ export function WechatEditModal({
 }: { onClose: () => void; onSave: (wechat: string) => void; isSaving: boolean; }) {
   const { t } = useI18n(["profile", "common"]);
   const [wechatInput, setWechatInput] = React.useState("");
-  const panelRef = React.useRef<HTMLDivElement>(null);
-  useModalA11y(true, panelRef, onClose);
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="wechat-edit-title"
-        className="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 id="wechat-edit-title" className="text-lg font-bold text-foreground">{t('profile.wechat')}</h3>
+    <Modal
+      open={true}
+      onClose={onClose}
+      labelledBy="wechat-edit-title"
+      overlayClassName="flex items-center justify-center p-4"
+      panelClassName="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 id="wechat-edit-title" className="text-lg font-bold text-foreground">{t('profile.wechat')}</h3>
             <p className="text-xs text-muted-foreground/70 mt-0.5">{t('profile.wechatHint')}</p>
           </div>
           <button onClick={onClose} disabled={isSaving} className="text-muted-foreground/70 hover:text-foreground">
@@ -264,8 +239,7 @@ export function WechatEditModal({
         >
           {t('common.cancel')}
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -278,22 +252,20 @@ export function ApprovalConfirmDialog({
   isLoading: boolean; onCancel: () => void; onConfirm: () => void;
 }) {
   const { t } = useI18n(["teams", "common"]);
-  const panelRef = React.useRef<HTMLDivElement>(null);
-  useModalA11y(open, panelRef, onCancel);
-  if (!open) return null;
+
   const isApprove = type === "approve";
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div
-        ref={panelRef}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="approval-confirm-title"
-        className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
-      >
-        <h3 id="approval-confirm-title" className="text-lg font-bold text-foreground mb-2">
-          {isApprove ? t('teams.approveConfirm') : t('teams.rejectConfirm')}
-        </h3>
+    <Modal
+      open={open}
+      onClose={onCancel}
+      role="alertdialog"
+      labelledBy="approval-confirm-title"
+      overlayClassName="flex items-center justify-center p-4"
+      panelClassName="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+    >
+      <h3 id="approval-confirm-title" className="text-lg font-bold text-foreground mb-2">
+        {isApprove ? t('teams.approveConfirm') : t('teams.rejectConfirm')}
+      </h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-6">
           {isApprove ? t('teams.approveUserJoined').replace('{userName}', userName) : t('teams.rejectUserCannotJoin').replace('{userName}', userName)}
         </p>
@@ -311,7 +283,6 @@ export function ApprovalConfirmDialog({
         <button onClick={onCancel} disabled={isLoading} className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accent transition-colors">
           {t('common.cancel')}
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }
