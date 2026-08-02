@@ -62,17 +62,21 @@ function buildCacheKey(prefix: string, id: string, hash: string): string {
 }
 
 /**
- * Format a team start time the way the poster shows it.
- * Preserves the original pre-refactor output: `05月30日 周六`.
- * (locale-aware formatting is out of scope for this refactor)
+ * Format a team start time for the poster locale while keeping the compact
+ * two-part layout used by the original template.
  */
-function formatTeamDate(timestamp: number | Date | string | null | undefined): string {
+function formatTeamDate(
+  timestamp: number | Date | string | null | undefined,
+  locale: PosterLocale,
+): string {
   if (timestamp == null) return "";
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return "";
-  const months = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
-  const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-  return `${months[date.getMonth()]}${date.getDate()}日 ${weekdays[date.getDay()]}`;
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    weekday: "short",
+  }).format(date);
 }
 
 // =============================================================
@@ -114,6 +118,7 @@ async function buildLocationPoster(
   const coverPath = location.coverImage ?? safeJsonParse<string[]>(location.images, [])[0] ?? null;
   const hashSeed = {
     title: location.name,
+    locale,
     subtitle: location.subtitle,
     description: location.description,
     address: location.address,
@@ -240,6 +245,7 @@ async function buildTeamPoster(
     currentMembers,
     maxMembers,
     status: team.status,
+    locale,
     updatedAt: team.updatedAt,
   });
   const cacheKey = buildCacheKey("share/team", team.id, hash);
@@ -258,7 +264,7 @@ async function buildTeamPoster(
           : Promise.resolve(null),
         generateQrDataUrl(`https://gomate.live/teams/${team.id}`),
       ]);
-      const date = formatTeamDate(team.startTime);
+      const date = formatTeamDate(team.startTime, locale);
       const i18n = lookupPosterStrings(locale);
       const svg = await renderTeamPoster({
         title: team.title,

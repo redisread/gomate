@@ -18,6 +18,8 @@ describe("share image primitives", () => {
     const strings = lookupPosterStrings("en");
 
     expect(strings.teamStatusNeed(2)).toBe("2 more people to go");
+    expect(strings.teamMemberCount(2, 5)).toBe("2/5 members");
+    expect(strings.teamLocationPending).toBe("Destination to be confirmed");
     expect(strings.teamDepartureLabel).toBe("Departure");
     expect(strings.teamScanJoin).toBe("Scan to join");
   });
