@@ -50,7 +50,7 @@ export function StoryByline({
         <div className="flex min-w-0 items-center gap-3">
           <Avatar src={story.author?.image} name={authorName} size="md" />
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">{authorName}</p>
+            <p title={authorName} className="truncate text-sm font-medium text-foreground">{authorName}</p>
             <p className="text-sm text-muted-foreground">{metrics[0].value}</p>
           </div>
         </div>
@@ -86,7 +86,7 @@ export function RelatedLocationLink({ story, t }: { story: Story; t: TFunction }
           <span className="block text-xs font-medium uppercase text-muted-foreground">
             {t("content.discover.relatedLocation")}
           </span>
-          <span className="block truncate font-semibold text-foreground transition-colors group-hover:text-primary">
+          <span title={story.location.name} className="block truncate font-semibold text-foreground transition-colors group-hover:text-primary">
             {story.location.name}
           </span>
         </span>

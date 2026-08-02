@@ -143,7 +143,7 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
                 {story.author?.name?.charAt(0) || "?"}
               </div>
             )}
-            <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+            <span title={story.author?.name || t("content.discover.anonymous")} className="text-xs text-muted-foreground truncate max-w-[80px]">
               {story.author?.name || t("content.discover.anonymous")}
             </span>
           </div>

@@ -180,6 +180,7 @@ export function CitySelect({
             "truncate",
             selectedCity ? "text-zinc-900" : "text-zinc-400"
           )}
+          title={selectedCity?.name}
         >
           {selectedCity ? selectedCity.name : t("common.selectCity")}
         </span>

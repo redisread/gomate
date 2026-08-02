@@ -90,7 +90,7 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
             <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-3 pt-6">
               <div className="flex items-center gap-1.5 min-w-0">
                 <MapPin className="h-3.5 w-3.5 text-white/70 flex-shrink-0" />
-                <span className="text-white text-sm font-semibold drop-shadow-sm truncate">{team.location!.name}</span>
+                <span title={team.location!.name} className="text-white text-sm font-semibold drop-shadow-sm truncate">{team.location!.name}</span>
               </div>
             </div>
           </div>
@@ -108,7 +108,7 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
           {!hasCover && team.location && (
             <div className="flex items-center gap-1.5 mb-2">
               <MapPin className="h-3 w-3 flex-shrink-0 text-amber-600" />
-              <span className="text-xs font-medium truncate text-amber-800 dark:text-amber-300">{team.location.name}</span>
+              <span title={team.location.name} className="text-xs font-medium truncate text-amber-800 dark:text-amber-300">{team.location.name}</span>
               <div className="ml-auto flex-shrink-0">
                 <TeamUrgencyLabel
                   status={team.status}

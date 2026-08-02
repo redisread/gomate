@@ -227,7 +227,7 @@ export function ProfileClient() {
               </span>
 
               {/* 邮箱 */}
-              <p className="mt-1 text-xs text-stone-400 dark:text-zinc-500 truncate max-w-[200px]">{user.email}</p>
+              <p title={user.email ?? undefined} className="mt-1 text-xs text-stone-400 dark:text-zinc-500 truncate max-w-[200px]">{user.email}</p>
             </div>
 
             {/* 操作按钮 */}
@@ -371,7 +371,7 @@ export function ProfileClient() {
                     <a key={team.id} href={`/teams/${team.id}`} className="block group">
                       <div className="px-4 py-3.5 hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
                         <div className="flex items-center justify-between gap-2">
-                          <h3 className="text-sm font-medium text-stone-800 dark:text-zinc-100 truncate group-hover:text-[var(--anthropic-accent)] transition-colors">
+                          <h3 title={team.title} className="text-sm font-medium text-stone-800 dark:text-zinc-100 truncate group-hover:text-[var(--anthropic-accent)] transition-colors">
                             {team.title}
                           </h3>
                           <StatusBadge status={team.status} size="sm" />
@@ -416,7 +416,7 @@ export function ProfileClient() {
                     <a key={team.id} href={`/teams/${team.id}`} className="block group">
                       <div className="px-4 py-3.5 hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
                         <div className="flex items-center justify-between gap-2">
-                          <h3 className="text-sm font-medium text-stone-800 dark:text-zinc-100 truncate group-hover:text-[var(--anthropic-accent)] transition-colors">
+                          <h3 title={team.title} className="text-sm font-medium text-stone-800 dark:text-zinc-100 truncate group-hover:text-[var(--anthropic-accent)] transition-colors">
                             {team.title}
                           </h3>
                           <StatusBadge status={team.status} size="sm" />
