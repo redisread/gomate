@@ -108,5 +108,7 @@
       "label": "冬",
       "months": "12〜2月"
     }
-  }
+  },
+  "mapProvinceCount": "{count} 件の地点",
+  "mapNoLocations": "まだ地点はありません"
 }

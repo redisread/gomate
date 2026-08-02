@@ -108,5 +108,7 @@
       "label": "Winter",
       "months": "Dec-Feb"
     }
-  }
+  },
+  "mapProvinceCount": "{count} locations",
+  "mapNoLocations": "No locations yet"
 }
