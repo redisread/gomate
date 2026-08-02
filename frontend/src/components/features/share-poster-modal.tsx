@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
 import { getLocale } from "@/i18n";
+import { readShareImageBlob } from "@/lib/share-image-client";
 import { Loader2, ImageIcon, Link2, X, Download, RefreshCw } from "lucide-react";
 
 interface SharePosterModalProps {
@@ -63,16 +64,12 @@ export function SharePosterModal({
 
         const response = await fetch(endpoint);
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.error || `Failed to generate image: ${response.status}`
-          );
-        }
-
-        const blob = await response.blob();
+        const blob = await readShareImageBlob(response);
         const url = URL.createObjectURL(blob);
-        setImageUrl(url);
+        setImageUrl((previousUrl) => {
+          if (previousUrl) URL.revokeObjectURL(previousUrl);
+          return url;
+        });
         return url;
       } catch (err) {
         const message =
@@ -160,11 +157,14 @@ export function SharePosterModal({
       onClick={onClose}
     >
       <div
-        className="mx-4 mt-8 mb-8 w-full max-w-sm max-h-[90vh] flex flex-col rounded-2xl bg-white"
+        className="mx-4 my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col rounded-2xl bg-white"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-poster-title"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <span className="text-sm font-semibold text-foreground">
+          <span id="share-poster-title" className="text-sm font-semibold text-foreground">
             {type === "team" ? t("share.title") : t("share.locationTitle")}
           </span>
           <button
@@ -176,13 +176,13 @@ export function SharePosterModal({
           </button>
         </div>
 
-        <div className="relative px-4 pt-2 flex-1 overflow-y-auto">
+        <div className="relative min-h-0 flex-1 overflow-y-auto px-4 pt-2">
           {/* Poster Preview - 根据海报类型动态适配长宽比 */}
           <div
             className="overflow-hidden rounded-xl shadow border border-stone-200"
             style={type === "location"
-              ? { aspectRatio: "375/696", maxHeight: "min(60vh, 698px)" }
-              : { aspectRatio: "375/468", maxHeight: "min(55vh, 468px)" }}
+              ? { aspectRatio: "375 / 696", maxHeight: "min(60dvh, 698px)" }
+              : { aspectRatio: "375 / 468", maxHeight: "min(55dvh, 468px)" }}
           >
             {isLoading ? (
               <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
@@ -202,8 +202,7 @@ export function SharePosterModal({
                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-2">
                   <X className="w-6 h-6 text-red-500" />
                 </div>
-                <span className="text-sm text-red-500 mb-1">{error}</span>
-                <span className="text-xs text-stone-400">
+                <span className="text-sm text-red-500 mb-1" role="alert">
                   {t("share.generateFailed")}
                 </span>
                 {showRetry && (

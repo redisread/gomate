@@ -1,4 +1,5 @@
 import satori from "satori";
+import type { PosterStrings } from "../../services/share-image/poster-i18n";
 import { POSTER_TOKENS } from "./poster-tokens";
 
 interface TeamPosterData {
@@ -12,6 +13,7 @@ interface TeamPosterData {
   leaderAvatar?: string | null;
   spotsToForm?: number | null;
   qrCodeDataUrl?: string | null;
+  i18n?: Pick<PosterStrings, "siteSlogan" | "teamStatusNeed" | "teamStatusReady" | "teamMemberCount" | "teamDepartureLabel" | "teamLocationLabel" | "teamLocationPending" | "teamMembersLabel" | "teamNeedMoreHint" | "teamReadyHint" | "teamLeaderLabel" | "teamLeaderFallback" | "teamLeaderInvite" | "teamScanJoin">;
   fonts: Array<{
     name: string;
     data: ArrayBuffer;
@@ -227,9 +229,28 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
   const safeMaxMembers = Math.max(maxMembers || currentMembers || 1, 1);
   const progressPercent = Math.min(Math.max(currentMembers / safeMaxMembers, 0), 1);
   const progressWidth = Math.round(progressPercent * 190);
-  const statusText = spotsToForm && spotsToForm > 0 ? `还差 ${spotsToForm} 人成行` : "队伍已成行";
-  const locationText = locationName || "目的地待确认";
-  const leaderInitial = leaderName?.trim()?.charAt(0)?.toUpperCase() || "G";
+  const copy = data.i18n ?? {
+    siteSlogan: "找到同行的人，出发就不远",
+    teamStatusNeed: (count: number) => `还差 ${count} 人成行`,
+    teamStatusReady: "队伍已成行",
+    teamMemberCount: (current: number, max: number) => `${current}/${max} 人`,
+    teamDepartureLabel: "出发时间",
+    teamLocationLabel: "集合地点",
+    teamLocationPending: "目的地待确认",
+    teamMembersLabel: "同行伙伴",
+    teamNeedMoreHint: "再来几位伙伴，这趟就能出发",
+    teamReadyHint: "队伍已达到出发人数，欢迎继续加入",
+    teamLeaderLabel: "发起人",
+    teamLeaderFallback: "GoMate 用户",
+    teamLeaderInvite: "邀请你一起出发",
+    teamScanJoin: "扫码加入",
+  };
+  const statusText = spotsToForm && spotsToForm > 0
+    ? copy.teamStatusNeed(spotsToForm)
+    : copy.teamStatusReady;
+  const locationText = locationName || copy.teamLocationPending;
+  const displayLeaderName = leaderName?.trim() || copy.teamLeaderFallback;
+  const leaderInitial = displayLeaderName.charAt(0).toUpperCase() || "G";
 
   const header = hasCover
     ? {
@@ -360,7 +381,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   fontWeight: 700,
                   color: C.white,
                 },
-                children: "找到同行的人，出发就不远",
+                children: copy.siteSlogan,
               },
             },
           ],
@@ -427,8 +448,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       marginTop: 8,
                     },
                     children: [
-                      infoCard("出发时间", date, CalendarIcon()),
-                      infoCard("集合地点", locationText, LocationIcon()),
+                      infoCard(copy.teamDepartureLabel, date, CalendarIcon()),
+                      infoCard(copy.teamLocationLabel, locationText, LocationIcon()),
                     ],
                   },
                 },
@@ -476,7 +497,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                         fontWeight: 700,
                                         color: C.muted,
                                       },
-                                      children: "同行伙伴",
+                                      children: copy.teamMembersLabel,
                                     },
                                   },
                                 ],
@@ -491,7 +512,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   fontWeight: 800,
                                   color: C.primary,
                                 },
-                                children: `${currentMembers}/${safeMaxMembers} 人`,
+                                children: copy.teamMemberCount(currentMembers, safeMaxMembers),
                               },
                             },
                           ],
@@ -532,8 +553,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                           },
                           children:
                             spotsToForm && spotsToForm > 0
-                              ? "再来几位伙伴，这趟就能出发"
-                              : "队伍已达到出发人数，欢迎继续加入",
+                              ? copy.teamNeedMoreHint
+                              : copy.teamReadyHint,
                         },
                       },
                     ],
@@ -621,7 +642,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   fontWeight: 700,
                                   color: "#B45309",
                                 },
-                                children: "发起人",
+                                children: copy.teamLeaderLabel,
                               },
                             },
                             {
@@ -635,7 +656,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   maxHeight: 18,
                                   overflow: "hidden",
                                 },
-                                children: clampText(leaderName || "GoMate 用户", 14),
+                                children: clampText(displayLeaderName, 14),
                               },
                             },
                             {
@@ -647,7 +668,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   fontSize: 10,
                                   color: C.muted,
                                 },
-                                children: "邀请你一起出发",
+                                children: copy.teamLeaderInvite,
                               },
                             },
                           ],
@@ -675,7 +696,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                             fontWeight: 800,
                             color: "#B45309",
                           },
-                          children: "扫码加入",
+                          children: copy.teamScanJoin,
                         },
                       },
                       {
@@ -757,7 +778,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       fontSize: 11,
                       color: C.muted,
                     },
-                    children: "找到同行的人，出发就不远",
+                    children: copy.siteSlogan,
                   },
                 },
               ],

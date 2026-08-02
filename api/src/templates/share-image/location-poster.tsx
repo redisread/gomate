@@ -63,9 +63,14 @@ const DESC_MAX_LEN = 60; // 描述截断长度（含 3 个省略号字符）
 // 季节短标签（用于封面胶囊）
 const SEASON_SHORT: Record<string, string> = {
   spring: "春",
+  春季: "春",
   summer: "夏",
+  夏季: "夏",
   autumn: "秋",
+  秋季: "秋",
   winter: "冬",
+  冬季: "冬",
+  全年: "全年",
 };
 
 function formatDuration(min: number, max: number): string {
@@ -132,7 +137,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
   const difficultyLabel = i18n.difficultyLabel ?? "难度";
   const brandName = i18n.brandName ?? "gomate.live";
 
-  const displayTags = tags.slice(0, 4);
+  const displayTags = tags.filter(Boolean).slice(0, 4).map((tag) => clampText(tag, 12));
   const cleanDesc = description.length > DESC_MAX_LEN
     ? `${description.slice(0, DESC_MAX_LEN - 3)}...`
     : description;
@@ -147,7 +152,9 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
 
   // 季节胶囊
   const seasons = (bestSeason ?? []).filter(Boolean).slice(0, 3);
-  const seasonText = seasons.map((s) => SEASON_SHORT[s] ?? s).join(" · ");
+  const seasonText = seasons.map((s) => SEASON_SHORT[s] ?? clampText(s, 6)).join(" · ");
+  const displaySubtitle = subtitle ? clampText(subtitle, 28) : null;
+  const displayAddress = address ? clampText(address, 38) : null;
 
   // 城市/类型行
   const metaLine = [cityName, type].filter(Boolean).join(" · ");
@@ -404,7 +411,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                   : []),
 
                 // 副标题
-                ...(subtitle
+                ...(displaySubtitle
                   ? [
                       {
                         type: "span",
@@ -417,7 +424,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                             color: C.title,
                             marginBottom: 6,
                           },
-                          children: subtitle,
+                          children: displaySubtitle,
                         },
                       },
                     ]
@@ -448,7 +455,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                             display: "flex",
                             flexWrap: "wrap",
                             gap: 6,
-                            marginBottom: address ? 8 : 0,
+                            marginBottom: displayAddress ? 8 : 0,
                           },
                           children: displayTags.map((tag) => tagPill(tag)),
                         },
@@ -457,7 +464,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                   : []),
 
                 // 地址
-                ...(address
+                ...(displayAddress
                   ? [
                       {
                         type: "span",
@@ -469,7 +476,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                             alignItems: "center",
                             gap: 4,
                           },
-                          children: `📍 ${address}`,
+                          children: `📍 ${displayAddress}`,
                         },
                       },
                     ]
@@ -688,7 +695,9 @@ function metricPill(label: string, value: string) {
               fontWeight: 700,
               lineHeight: "16px",
               color: C.title,
+              maxHeight: 16,
               overflow: "hidden",
+              whiteSpace: "nowrap",
             },
             children: value,
           },
@@ -701,4 +710,9 @@ function metricPill(label: string, value: string) {
 function difficultyChip(locale: PosterLocale | undefined, d: string | null | undefined): string {
   if (!d) return "";
   return localizeDifficulty(locale ?? "zh-CN", d);
+}
+
+function clampText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 1)}…`;
 }

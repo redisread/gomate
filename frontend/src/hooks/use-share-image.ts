@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { API_BASE } from "@/lib/api";
+import { readShareImageBlob } from "@/lib/share-image-client";
 
 interface UseShareImageOptions {
   type: "location" | "team" | "story";
@@ -21,6 +22,12 @@ export function useShareImage({ type, id }: UseShareImageOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (imageUrl) URL.revokeObjectURL(imageUrl);
+    };
+  }, [imageUrl]);
 
   /**
    * 生成分享图片
@@ -43,17 +50,14 @@ export function useShareImage({ type, id }: UseShareImageOptions) {
 
         const response = await fetch(endpoint);
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.error || `Failed to generate image: ${response.status}`
-          );
-        }
-
-        const blob = await response.blob();
+        const blob = await readShareImageBlob(response);
         const url = URL.createObjectURL(blob);
 
-        setImageUrl(url);
+        setImageUrl((previousUrl) => {
+          if (previousUrl) URL.revokeObjectURL(previousUrl);
+          return url;
+        });
+
         return { blob, url };
       } catch (err) {
         const message =
@@ -72,12 +76,13 @@ export function useShareImage({ type, id }: UseShareImageOptions) {
    */
   const downloadImage = useCallback(
     async (filename?: string) => {
-      const result = await generateImage();
-      if (!result) return false;
+      const result = imageUrl ? null : await generateImage();
+      const url = imageUrl ?? result?.url;
+      if (!url) return false;
 
       try {
         const link = document.createElement("a");
-        link.href = result.url;
+        link.href = url;
         link.download =
           filename || `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.png`;
         link.click();
@@ -86,7 +91,7 @@ export function useShareImage({ type, id }: UseShareImageOptions) {
         return false;
       }
     },
-    [generateImage, type, id]
+    [generateImage, imageUrl, type, id]
   );
 
   /**
