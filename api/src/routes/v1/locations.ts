@@ -105,6 +105,54 @@ locations.get("/", apiRateLimitMiddleware("read", 600), async (c) => {
  * GET /v1/locations/:id
  * 公开读端点：地点详情，含坐标/交通/标签。
  */
+/**
+ * GET /v1/locations/stats
+ * 地图聚合数据：按省统计地点数 + 有坐标的地点点（供首页中国地图渲染）。
+ */
+locations.get("/stats", apiRateLimitMiddleware("read", 600), async (c) => {
+  try {
+    const db = createDb(c.env.DB);
+
+    const provinceRows = await db
+      .select({
+        province: schema.cities.province,
+        count: sql<number>`count(*)`,
+      })
+      .from(schema.locations)
+      .leftJoin(schema.cities, eq(schema.locations.cityId, schema.cities.id))
+      .where(isNotNull(schema.cities.province))
+      .groupBy(schema.cities.province)
+      .orderBy(sql`count(*) desc`);
+
+    const pointRows = await db.query.locations.findMany({
+      columns: { id: true, name: true, slug: true, cityId: true, coordinates: true },
+    });
+
+    const points = pointRows
+      .map((loc) => {
+        const coords = safeJsonParse<{ lat: number; lng: number } | null>(loc.coordinates, null);
+        if (!coords || !Number.isFinite(coords.lat) || !Number.isFinite(coords.lng) || (coords.lat === 0 && coords.lng === 0)) {
+          return null;
+        }
+        return {
+          id: loc.id,
+          name: loc.name,
+          slug: loc.slug,
+          cityId: loc.cityId,
+          lat: coords.lat,
+          lng: coords.lng,
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
+
+    return c.json({ provinces: provinceRows, points });
+  } catch (error) {
+    console.error("[locations/stats] failed:", error);
+    return c.json(APIErrors.internalError("Failed to load location stats"), 500);
+  }
+});
+
+
 locations.get("/:id", apiRateLimitMiddleware("read", 600), async (c) => {
   try {
     const db = createDb(c.env.DB);
@@ -157,52 +205,5 @@ function parseCsvField(raw: string | null | undefined): string[] {
   return raw.split(/[,、]/).map((s) => s.trim()).filter(Boolean);
 }
 
-
-/**
- * GET /v1/locations/stats
- * 地图聚合数据：按省统计地点数 + 有坐标的地点点（供首页中国地图渲染）。
- */
-locations.get("/stats", apiRateLimitMiddleware("read", 600), async (c) => {
-  try {
-    const db = createDb(c.env.DB);
-
-    const provinceRows = await db
-      .select({
-        province: schema.cities.province,
-        count: sql<number>`count(*)`,
-      })
-      .from(schema.locations)
-      .leftJoin(schema.cities, eq(schema.locations.cityId, schema.cities.id))
-      .where(isNotNull(schema.cities.province))
-      .groupBy(schema.cities.province)
-      .orderBy(sql`count(*) desc`);
-
-    const pointRows = await db.query.locations.findMany({
-      columns: { id: true, name: true, slug: true, cityId: true, coordinates: true },
-    });
-
-    const points = pointRows
-      .map((loc) => {
-        const coords = safeJsonParse<{ lat: number; lng: number } | null>(loc.coordinates, null);
-        if (!coords || !Number.isFinite(coords.lat) || !Number.isFinite(coords.lng) || (coords.lat === 0 && coords.lng === 0)) {
-          return null;
-        }
-        return {
-          id: loc.id,
-          name: loc.name,
-          slug: loc.slug,
-          cityId: loc.cityId,
-          lat: coords.lat,
-          lng: coords.lng,
-        };
-      })
-      .filter((p): p is NonNullable<typeof p> => p !== null);
-
-    return c.json({ provinces: provinceRows, points });
-  } catch (error) {
-    console.error("[locations/stats] failed:", error);
-    return c.json(APIErrors.internalError("Failed to load location stats"), 500);
-  }
-});
 
 export { locations as locationsRoute };
