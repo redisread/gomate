@@ -100,6 +100,9 @@ export function SharePosterPreview({
       // 降级到保存图片
       await handleSaveImage();
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
       // 用户取消分享或分享失败，尝试保存
       console.log("Share failed, falling back to save:", err);
       await handleSaveImage();
@@ -203,7 +206,7 @@ export function SharePosterPreview({
       {/* Bottom Sheet */}
       <div
         ref={sheetRef}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-2xl"
+        className="fixed bottom-0 left-0 right-0 z-50 max-h-[100dvh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl"
         style={{
           transform: `translateY(${translateY}px)`,
           transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -211,16 +214,19 @@ export function SharePosterPreview({
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
         onClick={(e) => e.stopPropagation()}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={handleTouchStart}
-        onMouseMove={handleTouchMove}
-        onMouseUp={handleTouchEnd}
-        onMouseLeave={handleTouchEnd}
       >
         {/* Header - 可拖动区域指示 */}
-        <div className="p-4 border-b border-border">
+        <div
+          className="border-b border-border p-4"
+          style={{ touchAction: "none" }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleTouchStart}
+          onMouseMove={handleTouchMove}
+          onMouseUp={handleTouchEnd}
+          onMouseLeave={handleTouchEnd}
+        >
           {/* 拖动指示条 */}
           <div className="flex justify-center mb-3">
             <div className="w-12 h-1 bg-gray-300 rounded-full" />
@@ -245,7 +251,10 @@ export function SharePosterPreview({
         <div className="p-4 flex flex-col items-center bg-gradient-to-b from-amber-50/50 to-background">
           {/* Display generated poster */}
           {isLoading ? (
-            <div className="w-[280px] h-[350px] bg-muted rounded-2xl flex flex-col items-center justify-center shadow-lg">
+            <div
+              className="flex w-full max-w-[280px] flex-col items-center justify-center rounded-2xl bg-muted shadow-lg"
+              style={{ aspectRatio: "375 / 468", maxHeight: "min(55dvh, 350px)" }}
+            >
               <Loader2 className="w-10 h-10 animate-spin text-amber-600 mb-4" />
               <p className="text-sm text-muted-foreground">
                 {t("teams.generatingPoster")}
@@ -255,11 +264,14 @@ export function SharePosterPreview({
               </p>
             </div>
           ) : imageUrl ? (
-            <div className="relative">
+            <div
+              className="relative w-full max-w-[280px] overflow-hidden rounded-2xl"
+              style={{ aspectRatio: "375 / 468", maxHeight: "min(55dvh, 350px)" }}
+            >
               <img
                 src={imageUrl}
                 alt="Team Poster"
-                className="w-[280px] rounded-2xl shadow-2xl"
+                className="block h-full w-full object-contain shadow-2xl"
               />
               {/* Decorative corner */}
               <div className="absolute -bottom-3 -right-3 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
@@ -267,11 +279,16 @@ export function SharePosterPreview({
               </div>
             </div>
           ) : error ? (
-            <div className="w-[280px] h-[350px] bg-muted rounded-2xl flex flex-col items-center justify-center p-6">
+            <div
+              className="flex w-full max-w-[280px] flex-col items-center justify-center rounded-2xl bg-muted p-6"
+              style={{ aspectRatio: "375 / 468", maxHeight: "min(55dvh, 350px)" }}
+            >
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-3">
                 <X className="w-6 h-6 text-red-500" />
               </div>
-              <p className="text-sm text-red-500 mb-2">{error}</p>
+              <p className="text-sm text-red-500 mb-2" role="alert">
+                {t("teams.posterGenerateError")}
+              </p>
               <p className="text-xs text-muted-foreground mb-4">
                 {t("teams.posterGenerateFallback")}
               </p>

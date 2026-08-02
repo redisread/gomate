@@ -58,16 +58,52 @@ export async function renderSvgToPng(svg: string): Promise<Uint8Array> {
 }
 
 /**
- * Render a QR code as a data: URL string (PNG, base64). Used as a small image
+ * Render a QR code as a data: URL string (SVG, base64). Used as a small image
  * embedded inside Satori templates.
+ *
+ * `qrcode.toDataURL()` uses a canvas-backed PNG renderer in Workers. Cloudflare
+ * Workers do not expose a canvas, so use the library's pure SVG renderer.
  */
 export async function generateQrDataUrl(text: string): Promise<string> {
-  return QRCode.toDataURL(text, {
-    errorCorrectionLevel: "M",
-    margin: 0,
-    width: 200,
-  });
+  try {
+    const svg = await QRCode.toString(text, {
+      type: "svg",
+      errorCorrectionLevel: "H",
+      margin: 2,
+      color: {
+        dark: "#1e1812",
+        light: "#ffffff",
+      },
+    });
+    return `data:image/svg+xml;base64,${stringToBase64(svg)}`;
+  } catch (error) {
+    logger.error("[QRCode] Failed to generate QR code:", error);
+    return `data:image/svg+xml;base64,${stringToBase64(FALLBACK_QR_SVG)}`;
+  }
 }
+
+function stringToBase64(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  const chunk = 8192;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunk, bytes.length)));
+  }
+  return btoa(binary);
+}
+
+const FALLBACK_QR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25">
+  <rect width="25" height="25" fill="#fff"/>
+  <rect x="2" y="2" width="7" height="7" fill="#1e1812"/>
+  <rect x="3" y="3" width="5" height="5" fill="#fff"/>
+  <rect x="4" y="4" width="3" height="3" fill="#1e1812"/>
+  <rect x="16" y="2" width="7" height="7" fill="#1e1812"/>
+  <rect x="17" y="3" width="5" height="5" fill="#fff"/>
+  <rect x="18" y="4" width="3" height="3" fill="#1e1812"/>
+  <rect x="2" y="16" width="7" height="7" fill="#1e1812"/>
+  <rect x="3" y="17" width="5" height="5" fill="#fff"/>
+  <rect x="4" y="18" width="3" height="3" fill="#1e1812"/>
+</svg>`;
 
 /**
  * Cache-get / cache-put wrapper around an SVG-render pipeline.
@@ -199,8 +235,12 @@ export async function loadImageAsBase64(
       const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${cdnBase}/${imageUrl.replace(/^\//, "")}`;
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-      const res = await fetch(fullUrl, { signal: ctrl.signal });
-      clearTimeout(timer);
+      let res: Response;
+      try {
+        res = await fetch(fullUrl, { signal: ctrl.signal });
+      } finally {
+        clearTimeout(timer);
+      }
       if (res.ok) {
         const buffer = await res.arrayBuffer();
         contentType = res.headers.get("content-type") || "image/jpeg";

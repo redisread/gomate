@@ -11,8 +11,7 @@
 
 export type PosterLocale = "zh-CN" | "en" | "ja";
 
-// 海报固定显示的爬升/距离/耗时等单位标签
-const POSTER_I18N: Record<PosterLocale, {
+export interface PosterStrings {
   scanToView: string;
   siteSlogan: string;
   bestSeasonLabel: string;
@@ -25,7 +24,23 @@ const POSTER_I18N: Record<PosterLocale, {
   difficultyModerate: string;
   difficultyHard: string;
   difficultyExpert: string;
-}> = {
+  teamStatusNeed: (count: number) => string;
+  teamStatusReady: string;
+  teamMemberCount: (current: number, max: number) => string;
+  teamDepartureLabel: string;
+  teamLocationLabel: string;
+  teamLocationPending: string;
+  teamMembersLabel: string;
+  teamNeedMoreHint: string;
+  teamReadyHint: string;
+  teamLeaderLabel: string;
+  teamLeaderFallback: string;
+  teamLeaderInvite: string;
+  teamScanJoin: string;
+}
+
+// 海报固定显示的爬升/距离/耗时等单位标签
+const POSTER_I18N: Record<PosterLocale, PosterStrings> = {
   "zh-CN": {
     scanToView: "扫码查看地点详情",
     siteSlogan: "找到同行的人，出发就不远",
@@ -39,6 +54,19 @@ const POSTER_I18N: Record<PosterLocale, {
     difficultyModerate: "中等",
     difficultyHard: "困难",
     difficultyExpert: "专家",
+    teamStatusNeed: (count) => `还差 ${count} 人成行`,
+    teamStatusReady: "队伍已成行",
+    teamMemberCount: (current, max) => `${current}/${max} 人`,
+    teamDepartureLabel: "出发时间",
+    teamLocationLabel: "集合地点",
+    teamLocationPending: "目的地待确认",
+    teamMembersLabel: "同行伙伴",
+    teamNeedMoreHint: "再来几位伙伴，这趟就能出发",
+    teamReadyHint: "队伍已达到出发人数，欢迎继续加入",
+    teamLeaderLabel: "发起人",
+    teamLeaderFallback: "GoMate 用户",
+    teamLeaderInvite: "邀请你一起出发",
+    teamScanJoin: "扫码加入",
   },
   en: {
     scanToView: "Scan to view location",
@@ -53,6 +81,19 @@ const POSTER_I18N: Record<PosterLocale, {
     difficultyModerate: "Moderate",
     difficultyHard: "Hard",
     difficultyExpert: "Expert",
+    teamStatusNeed: (count) => `${count} more people to go`,
+    teamStatusReady: "Ready to go",
+    teamMemberCount: (current, max) => `${current}/${max} members`,
+    teamDepartureLabel: "Departure",
+    teamLocationLabel: "Meeting point",
+    teamLocationPending: "Destination to be confirmed",
+    teamMembersLabel: "Group members",
+    teamNeedMoreHint: "A few more people and this trip is ready",
+    teamReadyHint: "The group is ready to go — everyone is welcome",
+    teamLeaderLabel: "Organizer",
+    teamLeaderFallback: "GoMate user",
+    teamLeaderInvite: "Inviting you to join the trip",
+    teamScanJoin: "Scan to join",
   },
   ja: {
     scanToView: "スキャンしてスポット詳細を表示",
@@ -67,6 +108,19 @@ const POSTER_I18N: Record<PosterLocale, {
     difficultyModerate: "普通",
     difficultyHard: "難しい",
     difficultyExpert: "エキスパート",
+    teamStatusNeed: (count) => `あと${count}人で出発`,
+    teamStatusReady: "出発準備完了",
+    teamMemberCount: (current, max) => `${current}/${max}人`,
+    teamDepartureLabel: "出発時間",
+    teamLocationLabel: "集合場所",
+    teamLocationPending: "目的地未定",
+    teamMembersLabel: "参加メンバー",
+    teamNeedMoreHint: "あと少し仲間が集まれば出発できます",
+    teamReadyHint: "出発人数に達しました。引き続き参加できます",
+    teamLeaderLabel: "主催者",
+    teamLeaderFallback: "GoMateユーザー",
+    teamLeaderInvite: "一緒に出発しませんか",
+    teamScanJoin: "スキャンして参加",
   },
 };
 
