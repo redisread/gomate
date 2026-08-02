@@ -2,6 +2,7 @@ import * as React from "react";
 import { X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { AnimatedProgress } from "./team-detail-ui";
 
 /* ── Join Bottom Sheet (Mobile) ── */
@@ -21,12 +22,19 @@ export function JoinBottomSheet({
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  useModalA11y(open, panelRef, onClose);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="join-sheet-title"
         className="absolute bottom-0 left-0 right-0 bg-popover rounded-t-3xl shadow-xl animate-[slide-up_0.3s_ease_both]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
@@ -36,7 +44,7 @@ export function JoinBottomSheet({
         <div className="px-5 pb-5 pt-3">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-foreground text-lg">{t('teams.joinTeam')}</h3>
+              <h3 id="join-sheet-title" className="font-bold text-foreground text-lg">{t('teams.joinTeam')}</h3>
               <p className="text-sm text-muted-foreground/70 mt-0.5">
                 {remaining === 1 ? t('teams.justNeedYou') : t('teams.stillNeedMore').replace('{remaining}', String(remaining))}
               </p>
@@ -84,14 +92,22 @@ export function JoinDesktopModal({
   remaining: number; fillRatio: number; currentMembers: number; maxMembers: number;
 }) {
   const { t } = useI18n(["teams"]);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  useModalA11y(open, panelRef, onClose);
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[55] hidden lg:flex items-center justify-center p-4">
-      <div className="bg-popover rounded-3xl max-w-md w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="join-modal-title"
+        className="bg-popover rounded-3xl max-w-md w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-xl font-bold text-foreground">{t('teams.joinTeam')}</h3>
+            <h3 id="join-modal-title" className="text-xl font-bold text-foreground">{t('teams.joinTeam')}</h3>
             <p className="text-sm text-muted-foreground/70 mt-0.5">
               {remaining === 1 ? t('teams.justNeedYou') : t('teams.stillNeedMore').replace('{remaining}', String(remaining))}
             </p>
@@ -135,11 +151,19 @@ export function LeaveConfirmDialog({
   open, onCancel, onConfirm,
 }: { open: boolean; onCancel: () => void; onConfirm: () => void; }) {
   const { t } = useI18n(["teams", "common"]);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  useModalA11y(open, panelRef, onCancel);
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
-        <h3 className="text-lg font-bold text-foreground mb-2">{t('teams.leaveTeamConfirm')}</h3>
+      <div
+        ref={panelRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="leave-confirm-title"
+        className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
+        <h3 id="leave-confirm-title" className="text-lg font-bold text-foreground mb-2">{t('teams.leaveTeamConfirm')}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-6">{t('teams.leaveTeamWarning')}</p>
         <button onClick={onConfirm} className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors mb-2">
           {t('teams.leaveTeam')}
@@ -158,11 +182,19 @@ export function FormTeamConfirmDialog({
   open, isFull, isLoading, onCancel, onConfirm,
 }: { open: boolean; isFull: boolean; isLoading: boolean; onCancel: () => void; onConfirm: () => void; }) {
   const { t } = useI18n(["teams", "common"]);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  useModalA11y(open, panelRef, onCancel);
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
-        <h3 className="text-lg font-bold text-foreground mb-2">
+      <div
+        ref={panelRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="form-team-confirm-title"
+        className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
+        <h3 id="form-team-confirm-title" className="text-lg font-bold text-foreground mb-2">
           {isFull ? t('teams.formTeamConfirm') : t('teams.formTeamUnderfilledConfirm')}
         </h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-6">{t('teams.formTeamWarning')}</p>
@@ -189,13 +221,21 @@ export function WechatEditModal({
 }: { onClose: () => void; onSave: (wechat: string) => void; isSaving: boolean; }) {
   const { t } = useI18n(["profile", "common"]);
   const [wechatInput, setWechatInput] = React.useState("");
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  useModalA11y(true, panelRef, onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-      <div className="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wechat-edit-title"
+        className="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-foreground">{t('profile.wechat')}</h3>
+            <h3 id="wechat-edit-title" className="text-lg font-bold text-foreground">{t('profile.wechat')}</h3>
             <p className="text-xs text-muted-foreground/70 mt-0.5">{t('profile.wechatHint')}</p>
           </div>
           <button onClick={onClose} disabled={isSaving} className="text-muted-foreground/70 hover:text-foreground">
@@ -238,12 +278,20 @@ export function ApprovalConfirmDialog({
   isLoading: boolean; onCancel: () => void; onConfirm: () => void;
 }) {
   const { t } = useI18n(["teams", "common"]);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  useModalA11y(open, panelRef, onCancel);
   if (!open) return null;
   const isApprove = type === "approve";
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]">
-        <h3 className="text-lg font-bold text-foreground mb-2">
+      <div
+        ref={panelRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="approval-confirm-title"
+        className="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      >
+        <h3 id="approval-confirm-title" className="text-lg font-bold text-foreground mb-2">
           {isApprove ? t('teams.approveConfirm') : t('teams.rejectConfirm')}
         </h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-6">
