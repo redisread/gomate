@@ -34,15 +34,25 @@ export async function resolveAuditActor(
   const auth = createAuth(c.env);
 
   try {
-    const session = await auth.api.getSession({
-      headers: c.req.raw.headers,
-    }).catch(() => null);
+    // 优先用 ctx.get('user')（route handler 已通过 sessionMiddleware 注入）
+    // 兜底走 auth.api.getSession（直接读 headers）
+    let sessionUserId: string | null = null;
+    const ctxVars = (c as unknown as { get: (k: string) => unknown }).get;
+    const ctxUser = (ctxVars?.("user") as { id?: string } | undefined);
+    if (ctxUser && typeof ctxUser === "object" && typeof ctxUser.id === "string") {
+      sessionUserId = ctxUser.id;
+    } else {
+      const session = await auth.api.getSession({
+        headers: c.req.raw.headers,
+      }).catch(() => null);
+      sessionUserId = session?.user?.id ?? null;
+    }
 
-    if (!session?.user?.id) {
+    if (!sessionUserId) {
       return { apiKeyId: null, actorType: "user", userId: null };
     }
 
-    const userId = session.user.id;
+    const userId = sessionUserId;
     const xApiKey = c.req.header("x-api-key");
 
     if (xApiKey) {
