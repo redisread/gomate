@@ -108,5 +108,7 @@
       "label": "冬季",
       "months": "12-2月"
     }
-  }
+  },
+  "mapProvinceCount": "{count} 个地点",
+  "mapNoLocations": "暂无地点"
 }

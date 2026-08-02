@@ -8,6 +8,7 @@ import { HomeLocationsSection } from "./home-locations-section";
 import { HomeTeamsSection } from "./home-teams-section";
 import { HomeRecommendationsSection } from "./recommendations/home-recommendations-section";
 import { HomeLocalCircleSection } from "./local-circle/home-local-circle-section";
+import { ChinaMap } from "./china-map";
 import { OnboardingModal } from "@/components/features/onboarding/onboarding-modal";
 import { PreloadImages } from "./preload-images";
 import { fetchCurrentUser } from "@/lib/api";
@@ -33,6 +34,12 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
         <HomeHero data={data} />
         {/* P0-C T2：本周三个选择（Hero 之后 / Locations 之前） */}
         <HomeRecommendationsSection userCity={data.userCity} cityName={data.locations.length > 0 ? data.locations[0].cityName : null} />
+
+        {/* 中国地图：省维度地点分布（仿 livabble WorldMap） */}
+        <section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+          <ChinaMap />
+        </section>
+
         {/* P0-D T2：首页本地圈子模块（推荐位之后 / Locations 之前） */}
         <HomeLocalCircleSection />
         <HomeLocationsSection data={data} />

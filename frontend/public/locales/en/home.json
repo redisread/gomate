@@ -65,5 +65,6 @@
       "title": "👋 Set your city to see what neighbors are up to",
       "button": "Set up →"
     }
-  }
+  },
+  "mapAriaLabel": "Map: click a province to explore locations"
 }
