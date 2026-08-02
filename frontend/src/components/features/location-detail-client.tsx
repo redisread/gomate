@@ -505,50 +505,54 @@ function HeroActions({
 }) {
   const { t } = useI18n(["locationDetail", "locations", "admin"]);
   return (
-    <div className="absolute right-4 top-20 z-20 flex items-center gap-2 sm:right-6">
-      {isAdmin && (
-        <a
-          href={`/admin/locations/${location.id}/edit`}
-          title={t("admin.editLocation")}
-          aria-label={t("admin.editLocation")}
-          className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-        >
-          <span
-            aria-hidden="true"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-md transition-[background-color,transform] duration-150 hover:bg-black/55 active:scale-[0.96]"
+    <div className="absolute inset-x-4 top-20 z-20 sm:inset-x-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-end gap-4">
+        {isAdmin && (
+          <a
+            href={`/admin/locations/${location.id}/edit`}
+            title={t("admin.editLocation")}
+            aria-label={t("admin.editLocation")}
+            className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/20"
           >
-            <Pencil className="h-4 w-4" />
-          </span>
-        </a>
-      )}
-      <button
-        type="button"
-        onClick={onShare}
-        title={t("locations.detailShareBtn")}
-        aria-label={t("locations.detailShareBtn")}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-md transition-colors hover:bg-black/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-      >
-        <Share2 className="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        onClick={onFavorite}
-        title={isFavorited ? t("locationDetail.unfavorite") : t("locationDetail.favorite")}
-        aria-label={isFavorited ? t("locationDetail.unfavorite") : t("locationDetail.favorite")}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-md transition-colors hover:bg-black/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-      >
-        <Heart
-          className={cn(
-            "h-4 w-4 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
-            isFavorited ? "fill-red-400 text-red-400 scale-110" : "text-white"
-          )}
-          style={
-            heartAnimating
-              ? { animation: "heartbeat 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards" }
-              : undefined
-          }
-        />
-      </button>
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white shadow-lg shadow-black/10 backdrop-blur-md transition-[background-color,transform] duration-150 hover:bg-black/55 active:scale-[0.96]"
+            >
+              <Pencil className="h-4 w-4" />
+            </span>
+          </a>
+        )}
+        <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/25 p-1 shadow-lg shadow-black/10 backdrop-blur-md">
+          <button
+            type="button"
+            onClick={onShare}
+            title={t("locations.detailShareBtn")}
+            aria-label={t("locations.detailShareBtn")}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-white transition-[background-color,transform] duration-150 hover:bg-white/15 active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/20"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onFavorite}
+            title={isFavorited ? t("locationDetail.unfavorite") : t("locationDetail.favorite")}
+            aria-label={isFavorited ? t("locationDetail.unfavorite") : t("locationDetail.favorite")}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-white transition-[background-color,transform] duration-150 hover:bg-white/15 active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/20"
+          >
+            <Heart
+              className={cn(
+                "h-4 w-4 transition-[transform,color,fill] duration-200",
+                isFavorited ? "fill-red-400 text-red-400" : "text-white"
+              )}
+              style={
+                heartAnimating
+                  ? { animation: "heartbeat 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards" }
+                  : undefined
+              }
+            />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
