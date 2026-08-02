@@ -43,6 +43,6 @@ describe("RecommendationBadge", () => {
     render(<RecommendationBadge kind="steady" size="sm" />);
     const badge = screen.getByTestId("recommendation-badge-steady");
     expect(badge.className).toMatch(/px-2\b/);
-    expect(badge.className).toMatch(/text-\[11px\]/);
+    expect(badge.className).toMatch(/text-2xs/);
   });
 });
