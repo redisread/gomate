@@ -182,5 +182,6 @@
   "createFailed": "Create failed",
   "revokeFailed": "Revoke failed",
   "revoke": "Revoke",
-  "apiKeyNamePlaceholder": "e.g. My App"
+  "apiKeyNamePlaceholder": "e.g. My App",
+  "skipToContent": "Skip to content"
 }

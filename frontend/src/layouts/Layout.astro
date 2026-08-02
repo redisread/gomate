@@ -364,8 +364,21 @@ function getHreflangUrl(loc: Locale) {
     </script>
   </head>
   <body class={["min-h-screen", isDark ? "dark bg-[var(--background)]" : "bg-[var(--background)]"].join(" ")}>
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-amber-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
+    >
+      {ssr.t("common.skipToContent")}
+    </a>
     {showNavbar && <Navbar client:visible />}
-    <slot />
+    {/*
+      #main-content 是 skip-link 锚点，不是 <main>：
+      各 page/组件（skeleton.tsx、create-team、home-main、story-detail 等）自带 <main> landmark，
+      Layout 层再包 <main> 会造成嵌套双 landmark。tabindex=-1 让键盘焦点可跳到内容起点。
+    */}
+    <div id="main-content" tabindex="-1" class="outline-none">
+      <slot />
+    </div>
     {showFooter && <Footer client:idle />}
   </body>
 </html>

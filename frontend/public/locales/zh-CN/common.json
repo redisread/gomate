@@ -182,5 +182,6 @@
   "createFailed": "创建失败",
   "revokeFailed": "撤销失败",
   "revoke": "撤销",
-  "apiKeyNamePlaceholder": "例如：我的应用"
+  "apiKeyNamePlaceholder": "例如：我的应用",
+  "skipToContent": "跳到主要内容"
 }

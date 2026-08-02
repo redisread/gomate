@@ -68,7 +68,7 @@ export function StoryPosterPreview({ open, storyId, storyTitle, onClose }: Story
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-muted-foreground">{t("teams.shareOptions")}</span>
-            <button onClick={onClose} className="p-1 hover:bg-muted rounded-full transition-colors"><X className="w-4 h-4 text-muted-foreground" /></button>
+            <button onClick={onClose} aria-label={t("common.close")} className="p-1 hover:bg-muted rounded-full transition-colors"><X className="w-4 h-4 text-muted-foreground" aria-hidden="true" /></button>
           </div>
 
           {isLoading && (
