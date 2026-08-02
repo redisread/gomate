@@ -181,7 +181,7 @@ export function SharePosterModal({
           <div
             className="overflow-hidden rounded-xl shadow border border-stone-200"
             style={type === "location"
-              ? { aspectRatio: "375 / 696", maxHeight: "min(60dvh, 698px)" }
+              ? { aspectRatio: "375 / 584", maxHeight: "min(60dvh, 584px)" }
               : { aspectRatio: "375 / 468", maxHeight: "min(55dvh, 468px)" }}
           >
             {isLoading ? (

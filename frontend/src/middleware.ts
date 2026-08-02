@@ -54,8 +54,10 @@ function matchAcceptLanguage(header: string): Locale {
   for (const { lang } of langs) {
     if (lang === "zh-cn" || lang === "zh") return "zh-CN";
     if (lang === "en") return "en";
+    if (lang === "ja" || lang === "jp") return "ja";
     if (lang.startsWith("zh")) return "zh-CN";
     if (lang.startsWith("en")) return "en";
+    if (lang.startsWith("ja")) return "ja";
   }
 
   return DEFAULT_LOCALE;

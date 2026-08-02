@@ -57,20 +57,42 @@ const C = {
 // 尺寸常量
 const W = 375;
 const COVER_H = 210; // 16:9 → 375/211
+export const LOCATION_POSTER_HEIGHT = 584;
+export const LOCATION_POSTER_FOOTER_MIN_HEIGHT = 112;
 const HERO_STRIP = 4;
 const DESC_MAX_LEN = 60; // 描述截断长度（含 3 个省略号字符）
 
 // 季节短标签（用于封面胶囊）
-const SEASON_SHORT: Record<string, string> = {
-  spring: "春",
-  春季: "春",
-  summer: "夏",
-  夏季: "夏",
-  autumn: "秋",
-  秋季: "秋",
-  winter: "冬",
-  冬季: "冬",
-  全年: "全年",
+const SEASON_SHORT: Record<PosterLocale, Record<string, string>> = {
+  "zh-CN": {
+    spring: "春",
+    春季: "春",
+    summer: "夏",
+    夏季: "夏",
+    autumn: "秋",
+    秋季: "秋",
+    winter: "冬",
+    冬季: "冬",
+    全年: "全年",
+  },
+  en: {
+    spring: "Spring",
+    summer: "Summer",
+    autumn: "Autumn",
+    winter: "Winter",
+    全年: "All year",
+  },
+  ja: {
+    spring: "春",
+    春季: "春",
+    summer: "夏",
+    夏季: "夏",
+    autumn: "秋",
+    秋季: "秋",
+    winter: "冬",
+    冬季: "冬",
+    全年: "通年",
+  },
 };
 
 function formatDuration(min: number, max: number): string {
@@ -107,7 +129,8 @@ function formatElevation(m: number): string {
  * - 标题保留白色并增加 sun-glow 微光晕
  * - QR 区域使用极淡 sun-glow 底色，像被晨光打亮
  *
- * 高度固定 696px（展示信息密度足够、且不超过一般朋友圈一屏）
+ * 高度固定 584px。底栏使用最小高度而不是 flex: 1，避免把剩余高度
+ * 变成二维码区域的空白。
  */
 export async function renderLocationPoster(data: LocationPosterData): Promise<string> {
   const {
@@ -152,7 +175,9 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
 
   // 季节胶囊
   const seasons = (bestSeason ?? []).filter(Boolean).slice(0, 3);
-  const seasonText = seasons.map((s) => SEASON_SHORT[s] ?? clampText(s, 6)).join(" · ");
+  const seasonText = seasons
+    .map((s) => SEASON_SHORT[locale][s] ?? clampText(s, 6))
+    .join(" · ");
   const displaySubtitle = subtitle ? clampText(subtitle, 28) : null;
   const displayAddress = address ? clampText(address, 38) : null;
 
@@ -168,7 +193,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
           display: "flex",
           flexDirection: "column",
           width: W,
-          height: 696,
+          height: LOCATION_POSTER_HEIGHT,
           backgroundColor: C.bg,
           fontFamily,
           position: "relative",
@@ -499,7 +524,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                 backgroundColor: "rgba(232,144,48,0.04)",
                 borderRadius: 14,
                 border: `1px solid ${C.border}`,
-                flex: 1,
+                minHeight: LOCATION_POSTER_FOOTER_MIN_HEIGHT,
               },
               children: [
                 // 文案
@@ -615,7 +640,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
     },
     {
       width: W,
-      height: 696,
+      height: LOCATION_POSTER_HEIGHT,
       fonts: fonts.map((f) => ({
         name: f.name,
         data: f.data,

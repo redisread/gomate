@@ -11,14 +11,15 @@
 
 // ─── 类型定义 ─────────────────────────────────────────────────────────────────
 
-export type Locale = "zh-CN" | "en";
+export type Locale = "zh-CN" | "en" | "ja";
 
-const SUPPORTED_LOCALES: Locale[] = ["zh-CN", "en"];
+const SUPPORTED_LOCALES: Locale[] = ["zh-CN", "en", "ja"];
 const DEFAULT_LOCALE: Locale = "zh-CN";
 
-// 语言回退链：en → zh-CN
+// 语言回退链：ja → en → zh-CN，en → zh-CN
 const FALLBACK_MAP: Record<Locale, Locale[]> = {
   en: ["zh-CN"],
+  ja: ["en", "zh-CN"],
   "zh-CN": [],
 };
 
@@ -320,7 +321,7 @@ export function getLocale(): Locale {
     return globalThis.__SSR_LOCALE__ ?? DEFAULT_LOCALE;
   }
 
-  const match = document.cookie.match(/gomate_locale=(zh-CN|en)/);
+  const match = document.cookie.match(/gomate_locale=(zh-CN|en|ja)/);
   if (match) return match[1] as Locale;
 
   // task #162：无 cookie 时回退到 SSR 渲染的 locale（html lang 由 Layout 按
@@ -343,7 +344,7 @@ export function setLocale(locale: Locale): void {
  * 从 cookie 字符串中提取 locale（SSR 用）
  */
 export function getLocaleFromCookie(cookieStr: string): Locale {
-  const match = cookieStr.match(/gomate_locale=(zh-CN|en)/);
+  const match = cookieStr.match(/gomate_locale=(zh-CN|en|ja)/);
   if (match) return match[1] as Locale;
   return DEFAULT_LOCALE;
 }
@@ -355,6 +356,7 @@ export function getLocaleName(locale: Locale): string {
   const names: Record<Locale, string> = {
     "zh-CN": "中文",
     en: "English",
+    ja: "日本語",
   };
   return names[locale];
 }

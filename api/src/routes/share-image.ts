@@ -3,7 +3,7 @@
  *
  * Replaces the prior four-handler shape (preview, location, team, story)
  * collapsed under one dispatcher in `services/share-image/poster.ts`.
- * Query: ?locale=zh-CN|en | ?refresh=1
+ * Query: ?locale=zh-CN|en|ja | ?refresh=1
  *
  * Skill: `zero-tech-debt` — Step 3 "Reshape around the final product surface".
  */
