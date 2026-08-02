@@ -29,7 +29,6 @@ import {
   LocationIntroCard,
   RouteInfoCard,
   TeamListSection,
-  DecisionBlock,
 } from "@/components/features/location-detail-main-content";
 import { LocationActivityPosts } from "@/components/features/activity-posts";
 import { normalizeLocationHiking, type RouteMetric } from "@/components/features/location-detail/route-utils";
@@ -949,6 +948,8 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             <div>
               <LocationIntroCard
                 location={location}
+                address={location.address}
+                coordinates={location.coordinates}
                 showGallery={false}
                 showTravelMeta
               />
@@ -957,7 +958,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             <div>
               <TeamListSection teams={teams} locationId={location.id} />
             </div>
-            <DecisionBlock location={location} showGear={false} />
             <div>
               <LocationActivityPosts locationId={location.id} hideEmpty />
             </div>

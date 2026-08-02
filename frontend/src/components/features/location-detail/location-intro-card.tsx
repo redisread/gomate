@@ -46,6 +46,15 @@ export function LocationIntroCard({
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const [lightboxActive, setLightboxActive] = React.useState(0);
   const [copied, setCopied] = React.useState(false);
+  const hasValidCoordinates = Boolean(
+    coordinates &&
+      Number.isFinite(coordinates.lat) &&
+      Number.isFinite(coordinates.lng) &&
+      !(coordinates.lat === 0 && coordinates.lng === 0),
+  );
+  const parkingAvailable = location.parkingAvailable ?? null;
+  const parkingInfo = (location.parkingInfo ?? "").trim();
+  const hasParking = parkingAvailable !== null || parkingInfo.length > 0;
 
   const handleCopy = async () => {
     if (!address) return;
@@ -60,7 +69,7 @@ export function LocationIntroCard({
 
   const handleNavigate = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!coordinates) return;
+    if (!hasValidCoordinates || !coordinates) return;
     const dest = encodeURIComponent(location.name || address || "");
     const url = `https://uri.amap.com/navigation?to=${coordinates.lng},${coordinates.lat},${dest}&callnative=0`;
     openExternalLink(url);
@@ -191,14 +200,17 @@ export function LocationIntroCard({
           </div>
         )}
 
-        {showTravelMeta && (address || (location.bestSeason && location.bestSeason.length > 0)) && (
+        {showTravelMeta &&
+          (address ||
+            (location.bestSeason && location.bestSeason.length > 0) ||
+            hasParking) && (
           <div className="mt-5 border-t border-stone-100 pt-5 dark:border-stone-800">
             {address && (
               <div className="flex items-start gap-2.5 mb-3">
                 <MapPin className="h-4 w-4 text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed flex-1">{address}</span>
                 <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
-                  {coordinates && (
+                  {hasValidCoordinates && (
                     <button
                       type="button"
                       onClick={handleNavigate}
@@ -237,6 +249,33 @@ export function LocationIntroCard({
                     {seasonLabels[s] ?? s}
                   </span>
                 ))}
+              </div>
+            )}
+            {hasParking && (
+              <div className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-stone-600 dark:text-stone-400">
+                <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-700 dark:text-amber-400" />
+                <span>
+                  <span className="font-semibold text-stone-700 dark:text-stone-300">
+                    {t("locationDetail.parking.title")}：
+                  </span>
+                  {parkingAvailable !== null && (
+                    <span
+                      className={cn(
+                        "font-semibold",
+                        parkingAvailable
+                          ? "text-emerald-700 dark:text-emerald-400"
+                          : "text-amber-700 dark:text-amber-400",
+                      )}
+                    >
+                      {parkingAvailable
+                        ? t("locationDetail.parking.available")
+                        : t("locationDetail.parking.noParking")}
+                    </span>
+                  )}
+                  {parkingInfo && (
+                    <span>{parkingAvailable !== null ? `，${parkingInfo}` : parkingInfo}</span>
+                  )}
+                </span>
               </div>
             )}
           </div>
