@@ -7,6 +7,11 @@ import { getLocale } from "@/i18n";
 import { readShareImageBlob } from "@/lib/share-image-client";
 import { Loader2, ImageIcon, Link2, X, Download, RefreshCw } from "lucide-react";
 
+// Keep the request URL in step with the server-side poster template version.
+// This also bypasses an older browser/CDN response cached under the stable
+// endpoint URL after a poster dimension change.
+const POSTER_TEMPLATE_VERSION = "v2";
+
 interface SharePosterModalProps {
   type: "team" | "location";
   id: string;
@@ -54,10 +59,10 @@ export function SharePosterModal({
 
       try {
         // 把当前语言传给后端，让海报文案跟随用户语言
-      const locale = getLocale();
-      const qs = new URLSearchParams({ locale });
-      if (refresh) qs.set("refresh", "1");
-      const endpoint =
+        const locale = getLocale();
+        const qs = new URLSearchParams({ locale, v: POSTER_TEMPLATE_VERSION });
+        if (refresh) qs.set("refresh", "1");
+        const endpoint =
           type === "location"
             ? `${API_BASE}/share-image/location/${id}?${qs.toString()}`
             : `${API_BASE}/share-image/team/${id}?${qs.toString()}`;

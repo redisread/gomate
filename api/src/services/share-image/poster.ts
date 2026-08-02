@@ -35,6 +35,13 @@ import { renderStoryPoster } from "../../templates/share-image/story-poster";
 
 export type PosterKind = "location" | "team" | "story";
 
+/**
+ * Bump this whenever a poster template's dimensions or visual structure
+ * changes. The value is part of the content hash so old R2 PNGs cannot be
+ * returned after a template deployment.
+ */
+export const POSTER_TEMPLATE_VERSION = "v2";
+
 export interface RenderPosterOptions {
   locale?: PosterLocale;
   refresh?: boolean;
@@ -117,6 +124,7 @@ async function buildLocationPoster(
   const bestSeason = safeJsonParse<string[]>(location.bestSeason, []);
   const coverPath = location.coverImage ?? safeJsonParse<string[]>(location.images, [])[0] ?? null;
   const hashSeed = {
+    templateVersion: POSTER_TEMPLATE_VERSION,
     title: location.name,
     locale,
     subtitle: location.subtitle,
@@ -239,6 +247,7 @@ async function buildTeamPoster(
   const spotsToForm = Math.max(0, maxMembers - currentMembers);
 
   const hash = await hashContent({
+    templateVersion: POSTER_TEMPLATE_VERSION,
     title: team.title,
     startTime: team.startTime,
     locationName: team.location?.name,
@@ -307,6 +316,7 @@ async function buildStoryPoster(
   }
 
   const hash = await hashContent({
+    templateVersion: POSTER_TEMPLATE_VERSION,
     title: story.title,
     summary: story.summary,
     coverImage: story.coverImage,
