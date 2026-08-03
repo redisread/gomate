@@ -262,23 +262,23 @@ export function LocationsGrid({
           </div>
         )}
         <div className={cn("transition-opacity duration-150 motion-reduce:transition-none", isRefreshing && locations.length > 0 && "opacity-60")}>
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array.from({ length: 6 }).map((_, i) => <ShimmerCard key={i} />)}
-          </div>
-        ) : locations.length === 0 ? (
-          <EmptyState
-            variant={emptyVariant ?? "noSearch"}
-            onClearSearch={onClear}
-            onClearAll={onClear}
-          />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {locations.map((location, index) => (
-              <LocationCard key={location.id} location={location} index={index} />
-            ))}
-          </div>
-        )}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {Array.from({ length: 6 }).map((_, i) => <ShimmerCard key={i} />)}
+            </div>
+          ) : locations.length === 0 ? (
+            <EmptyState
+              variant={emptyVariant ?? "noSearch"}
+              onClearSearch={onClear}
+              onClearAll={onClear}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {locations.map((location, index) => (
+                <LocationCard key={location.id} location={location} index={index} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -322,7 +322,7 @@ export function LocationsGrid({
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
           >
             <span className={cn("text-stone-900 dark:text-stone-100", currentPage === pagination.totalPages && "text-stone-500 dark:text-stone-500")}>
-            <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             </span>
           </button>
         </div>
