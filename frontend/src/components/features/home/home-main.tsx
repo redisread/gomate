@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useHomeData, type HomeInitialData } from "./use-home-data";
 import { HomeHero } from "./home-hero";
+import { HomeLocationsSection } from "./home-locations-section";
 import { HomeTeamsSection } from "./home-teams-section";
 import { HomeLocalCircleSection } from "./local-circle/home-local-circle-section";
 import { HomeExploreSection } from "./home-explore-section";
@@ -29,6 +30,7 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
       <main className="min-h-screen bg-background">
         <HomeHero data={data} />
         <HomeLocalCircleSection />
+        <HomeLocationsSection data={data} />
         <HomeExploreSection />
         <HomeTeamsSection data={data} />
         {/* P1-1 T2：首次引导流 modal（登录 + 无队伍 + 未看过才弹，gating 全在 hook 内） */}
