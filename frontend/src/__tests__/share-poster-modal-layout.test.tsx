@@ -26,7 +26,7 @@ describe("SharePosterModal layout", () => {
 
   function mockGeneratedPoster() {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(new Blob(["poster"], { type: "image/png" }), {
+      new Response("poster", {
         status: 200,
         headers: { "content-type": "image/png" },
       }),
