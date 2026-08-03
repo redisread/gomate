@@ -86,7 +86,15 @@ export function HomeHero({ data }: { data: HomeData }) {
         <div className={`relative mx-auto w-full max-w-xl lg:mx-0 ${animate.search}`}>
           <div className="relative aspect-[0.92] overflow-hidden rounded-[2rem] bg-secondary shadow-warm-xl ring-1 ring-black/5 dark:ring-white/10">
             {featuredLocation?.coverImage ? (
-              <img src={featuredLocation.coverImage} alt={featuredLocation.name} className="h-full w-full object-cover outline outline-1 outline-black/10 transition-transform duration-500 hover:scale-[1.02] dark:outline-white/10" />
+              <img
+                src={featuredLocation.coverImage}
+                alt={featuredLocation.name}
+                loading="eager"
+                decoding="async"
+                // @ts-expect-error lowercase `fetchpriority` is the HTML DOM attribute name; React warns about `fetchPriority`
+                fetchpriority="high"
+                className="h-full w-full object-cover outline outline-1 outline-black/10 transition-transform duration-150 hover:scale-[1.02] motion-reduce:transition-none dark:outline-white/10"
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_35%,color-mix(in_oklab,var(--primary)_34%,transparent),transparent_34%),linear-gradient(145deg,var(--brand-muted),var(--secondary))]">
                 <Compass className="h-24 w-24 text-primary/40" strokeWidth={1.1} aria-hidden="true" />
