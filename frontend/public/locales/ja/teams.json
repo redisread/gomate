@@ -1,6 +1,9 @@
 {
   "pageTitle": "同行パートナーを見つけよう",
   "pageBadge": "あなたを待っています",
+  "resultCount": "{count}チーム",
+  "paginationLabel": "チーム一覧のページネーション",
+  "pageLabel": "{page}ページ",
   "searchPlaceholder": "カフェ？公園？山？またはキーワードを入力",
   "noResults": "まだ誰もこのタイプのアクティビティを始めていません。あなたが始めてみませんか？",
   "noResultsTip": "フィルター条件を変えるか、自分でチームを立ち上げよう",
