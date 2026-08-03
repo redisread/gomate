@@ -125,6 +125,7 @@ locations.get("/stats", async (c) => {
 
     const pointRows = await db.query.locations.findMany({
       columns: { id: true, name: true, slug: true, cityId: true, coordinates: true },
+      with: { city: { columns: { name: true, province: true } } },
     });
 
     const points = pointRows
@@ -138,6 +139,8 @@ locations.get("/stats", async (c) => {
           name: loc.name,
           slug: loc.slug,
           cityId: loc.cityId,
+          cityName: loc.city?.name ?? "",
+          province: loc.city?.province ?? null,
           lat: coords.lat,
           lng: coords.lng,
         };
