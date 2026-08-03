@@ -21,7 +21,7 @@ export interface MapTransform {
 }
 
 export const MAP_PROVINCE_PARAM = "mapProvince";
-export const PROVINCE_ZOOM_SCALE = 2.15;
+export const PROVINCE_ZOOM_SCALE = 3;
 
 export function projectChina(lat: number, lng: number): { x: number; y: number } {
   const b = CHINA_MAP_BOUNDS;

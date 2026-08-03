@@ -66,5 +66,12 @@
       "button": "Set up →"
     }
   },
-  "mapAriaLabel": "Map: click a province to explore locations"
+  "mapAriaLabel": "Map: click a province to zoom in and explore locations",
+  "mapHint": "Click a province to zoom in and explore",
+  "mapFocusedAriaLabel": "Map: viewing {province}; click a location for details",
+  "mapBackToChina": "Back to China map",
+  "mapPointHint": "Click a location for details",
+  "mapFocusedEmptyTitle": "No locations have been added in {province} yet",
+  "mapFocusedEmptyDesc": "Browse other regions to find an adventure.",
+  "mapBrowseOtherRegions": "Browse other regions"
 }

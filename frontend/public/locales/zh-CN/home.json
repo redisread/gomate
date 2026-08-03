@@ -66,5 +66,12 @@
       "button": "去设置 →"
     }
   },
-  "mapAriaLabel": "地图：点击省份查看该地区地点"
+  "mapAriaLabel": "地图：点击省份放大查看该地区地点",
+  "mapHint": "点击省份，放大探索当地地点",
+  "mapFocusedAriaLabel": "地图：已进入 {province}，点击地点查看详情",
+  "mapBackToChina": "返回全国地图",
+  "mapPointHint": "点击地点查看详情",
+  "mapFocusedEmptyTitle": "{province} 暂时还没有收录地点",
+  "mapFocusedEmptyDesc": "可以先浏览全国其他地区的探索路线。",
+  "mapBrowseOtherRegions": "浏览其他地区"
 }

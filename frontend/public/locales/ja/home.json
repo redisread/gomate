@@ -66,5 +66,12 @@
       "button": "設定する →"
     }
   },
-  "mapAriaLabel": "地図：都道府県をクリックして地点を表示"
+  "mapAriaLabel": "地図：都道府県をクリックして拡大し、スポットを表示",
+  "mapHint": "都道府県をクリックして、周辺のスポットを探索",
+  "mapFocusedAriaLabel": "地図：{province}を表示中。スポットをクリックして詳細を表示",
+  "mapBackToChina": "全国地図に戻る",
+  "mapPointHint": "スポットをクリックして詳細を表示",
+  "mapFocusedEmptyTitle": "{province}にはまだスポットがありません",
+  "mapFocusedEmptyDesc": "ほかの地域から探索してみましょう。",
+  "mapBrowseOtherRegions": "ほかの地域を見る"
 }
