@@ -20,6 +20,7 @@
   "cityLabel": "城市",
   "downloadQRCode": "下载海报",
   "posterDownloaded": "海报已生成并下载",
+  "posterOpened": "海报已打开，请长按保存",
   "generatePosterFailed": "生成海报失败，请重试",
   "generating": "正在生成海报...",
   "generateFailed": "生成海报失败",
