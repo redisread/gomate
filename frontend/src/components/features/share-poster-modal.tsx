@@ -157,37 +157,38 @@ export function SharePosterModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4"
       style={{ background: "rgba(0,0,0,0.6)" }}
       onClick={onClose}
     >
       <div
-        className="mx-4 my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col rounded-2xl bg-white"
+        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col rounded-2xl bg-white"
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-poster-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <span id="share-poster-title" className="text-sm font-semibold text-foreground">
+        <div className="flex items-center justify-between px-4 py-2">
+          <span id="share-poster-title" className="text-base font-semibold text-foreground">
             {type === "team" ? t("share.title") : t("share.locationTitle")}
           </span>
           <button
             onClick={onClose}
-            className="text-lg leading-none text-stone-400 transition-colors hover:text-stone-600"
+            className="-me-2 flex size-11 items-center justify-center rounded-full text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
             aria-label={t("common.wechat.close")}
           >
-            ✕
+            <X className="size-5" />
           </button>
         </div>
 
         <div className="relative min-h-0 flex-1 overflow-y-auto px-4 pt-2">
           {/* Poster Preview - 根据海报类型动态适配长宽比 */}
           <div
-            className="overflow-hidden rounded-xl shadow border border-stone-200"
+            data-testid="share-poster-preview"
+            className="mx-auto w-full overflow-hidden rounded-xl border border-stone-200 shadow"
             style={type === "location"
-              ? { aspectRatio: "375 / 584", maxHeight: "min(60dvh, 584px)" }
-              : { aspectRatio: "375 / 468", maxHeight: "min(55dvh, 468px)" }}
+              ? { aspectRatio: "375 / 584" }
+              : { aspectRatio: "375 / 468" }}
           >
             {isLoading ? (
               <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
@@ -199,7 +200,7 @@ export function SharePosterModal({
             ) : imageUrl ? (
               <img
                 src={imageUrl}
-                alt="Share Poster"
+                alt={type === "team" ? t("share.title") : t("share.locationTitle")}
                 className="w-full h-full object-contain"
               />
             ) : error ? (
@@ -228,18 +229,21 @@ export function SharePosterModal({
           </div>
         </div>
 
-        <div className="mt-4 flex gap-3 px-4 pb-4 flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
+        <div
+          data-testid="share-poster-actions"
+          className="mt-4 flex flex-shrink-0 gap-3 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+        >
           <button
             onClick={handleDownload}
             disabled={isLoading || !imageUrl}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
+            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
             {t("share.download")}
           </button>
           <button
             onClick={handleCopyLink}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:border-stone-400"
+            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:border-stone-400"
           >
             <Link2 className="w-4 h-4" />
             {t("share.copyLink")}
