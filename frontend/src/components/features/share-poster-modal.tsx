@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
 import { getLocale } from "@/i18n";
 import { readShareImageBlob } from "@/lib/share-image-client";
-import { Loader2, ImageIcon, Link2, X, Download, RefreshCw } from "lucide-react";
+import { CheckCircle, Loader2, ImageIcon, Link2, X, Download, RefreshCw } from "lucide-react";
 
 // Keep the request URL in step with the server-side poster template version.
 // This also bypasses an older browser/CDN response cached under the stable
@@ -19,6 +19,53 @@ interface SharePosterModalProps {
   url: string;
   onClose: () => void;
   onToast?: (opts: { type: "success" | "error"; message: string }) => void;
+}
+
+type ActionFeedback = { type: "success" | "error"; message: string };
+
+function isIOSDevice() {
+  if (typeof navigator === "undefined") return false;
+
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
+  );
+}
+
+async function copyText(text: string) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // Clipboard permissions can be denied in embedded browsers. Continue
+      // with the synchronous fallback below.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, text.length);
+
+  let copied = false;
+  try {
+    const execCommand = (
+      document as Document & { execCommand?: (command: string) => boolean }
+    ).execCommand;
+    copied = execCommand ? execCommand.call(document, "copy") : false;
+  } finally {
+    textarea.remove();
+  }
+
+  if (!copied) {
+    throw new Error("Clipboard is unavailable");
+  }
 }
 
 /**
@@ -38,6 +85,10 @@ export function SharePosterModal({
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showRetry, setShowRetry] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback(
     (opts: { type: "success" | "error"; message: string }) => {
@@ -47,6 +98,31 @@ export function SharePosterModal({
     },
     [onToast]
   );
+
+  const notifyAction = useCallback(
+    (feedback: ActionFeedback) => {
+      showToast(feedback);
+      if (onToast) return;
+
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+      setActionFeedback(feedback);
+      feedbackTimerRef.current = setTimeout(() => {
+        setActionFeedback(null);
+        feedbackTimerRef.current = null;
+      }, 2500);
+    },
+    [onToast, showToast]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
 
   /**
    * 生成分享图片
@@ -106,46 +182,67 @@ export function SharePosterModal({
   }, [imageUrl]);
 
   const handleDownload = async () => {
-    if (!imageUrl) return;
+    if (!imageUrl || isDownloading) return;
+
+    setIsDownloading(true);
 
     try {
-      // iOS Safari special handling
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-      if (isIOS) {
-        // Open image in new tab for iOS (user can long press to save)
-        // eslint-disable-next-line no-restricted-properties -- iOS Safari requires blank window for image saving
-        const newWindow = window.open();
-        if (newWindow) {
-          newWindow.document.write(`
-            <html>
-              <head><title>长按保存图片</title></head>
-              <body style="margin:0;display:flex;justify-content:center;align-items:center;background:#000;">
-                <img src="${imageUrl}" style="max-width:100%;max-height:100vh;" />
-              </body>
-            </html>
-          `);
+      if (isIOSDevice()) {
+        // iOS Safari ignores the download attribute. Open the blob directly so
+        // users can long-press the image and save it to Photos.
+        // eslint-disable-next-line no-restricted-properties -- iOS Safari requires opening the blob in a new tab
+        const newWindow = window.open("about:blank", "_blank");
+        if (!newWindow) {
+          throw new Error("Unable to open poster");
         }
+        newWindow.opener = null;
+        const document = newWindow.document;
+        document.title = t("share.posterOpened");
+        document.body.style.cssText =
+          "margin:0;display:flex;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#1c1917;padding:16px;box-sizing:border-box;";
+
+        const hint = document.createElement("p");
+        hint.textContent = t("share.posterOpened");
+        hint.style.cssText =
+          "margin:0;color:#fff;font:16px -apple-system,BlinkMacSystemFont,sans-serif;text-align:center;";
+
+        const image = document.createElement("img");
+        image.src = imageUrl;
+        image.alt = type === "team" ? t("share.title") : t("share.locationTitle");
+        image.style.cssText =
+          "display:block;max-width:100%;max-height:calc(100vh - 72px);object-fit:contain;border-radius:12px;";
+        document.body.replaceChildren(hint, image);
+        notifyAction({ type: "success", message: t("share.posterOpened") });
       } else {
-        // Standard download for Android/PC
+        // Standard download for Android/PC. Appending the link is required by
+        // Safari and some embedded browsers before click() is dispatched.
         const link = document.createElement("a");
         link.href = imageUrl;
         link.download = `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.png`;
+        link.style.display = "none";
+        document.body.appendChild(link);
         link.click();
+        link.remove();
+        notifyAction({ type: "success", message: t("share.posterDownloaded") });
       }
-
-      showToast({ type: "success", message: t("share.posterDownloaded") });
     } catch {
-      showToast({ type: "error", message: t("share.downloadFailed") });
+      notifyAction({ type: "error", message: t("share.downloadFailed") });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
   const handleCopyLink = async () => {
+    if (isCopying) return;
+
+    setIsCopying(true);
     try {
-      await navigator.clipboard.writeText(url);
-      showToast({ type: "success", message: t("share.linkCopied") });
+      await copyText(url);
+      notifyAction({ type: "success", message: t("share.linkCopied") });
     } catch {
-      showToast({ type: "error", message: t("share.copyFailed") });
+      notifyAction({ type: "error", message: t("share.copyFailed") });
+    } finally {
+      setIsCopying(false);
     }
   };
 
@@ -229,13 +326,32 @@ export function SharePosterModal({
           </div>
         </div>
 
+        {actionFeedback && (
+          <div
+            role={actionFeedback.type === "error" ? "alert" : "status"}
+            aria-live="polite"
+            className={`mx-4 mt-3 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm ${
+              actionFeedback.type === "error"
+                ? "bg-red-50 text-red-700"
+                : "bg-amber-50 text-amber-700"
+            }`}
+          >
+            {actionFeedback.type === "success" ? (
+              <CheckCircle className="size-4" />
+            ) : (
+              <X className="size-4" />
+            )}
+            <span>{actionFeedback.message}</span>
+          </div>
+        )}
+
         <div
           data-testid="share-poster-actions"
           className="mt-4 flex flex-shrink-0 gap-3 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
           <button
             onClick={handleDownload}
-            disabled={isLoading || !imageUrl}
+            disabled={isLoading || !imageUrl || isDownloading}
             className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
@@ -243,6 +359,7 @@ export function SharePosterModal({
           </button>
           <button
             onClick={handleCopyLink}
+            disabled={isCopying}
             className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:border-stone-400"
           >
             <Link2 className="w-4 h-4" />

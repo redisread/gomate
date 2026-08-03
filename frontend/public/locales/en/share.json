@@ -20,6 +20,7 @@
   "cityLabel": "City",
   "downloadQRCode": "Download Poster",
   "posterDownloaded": "Poster generated and downloaded",
+  "posterOpened": "Poster opened — long-press to save it",
   "generatePosterFailed": "Failed to generate poster, please try again",
   "generating": "Generating poster...",
   "generateFailed": "Failed to generate poster",
