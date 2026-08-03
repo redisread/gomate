@@ -9,12 +9,52 @@ export const CHINA_MAP_BOUNDS = {
   width: 800, height: 620,
 } as const;
 
+export interface MapPointPosition {
+  x: number;
+  y: number;
+}
+
+export interface MapTransform {
+  scale: number;
+  translateX: number;
+  translateY: number;
+}
+
+export const MAP_PROVINCE_PARAM = "mapProvince";
+export const PROVINCE_ZOOM_SCALE = 3;
+
 export function projectChina(lat: number, lng: number): { x: number; y: number } {
   const b = CHINA_MAP_BOUNDS;
   return {
     x: ((lng - b.lonMin) / (b.lonMax - b.lonMin)) * b.width,
     y: ((b.latMax - lat) / (b.latMax - b.latMin)) * b.height,
   };
+}
+
+/** 返回地图 group 的变换，让选中的省份移动到画布中心。 */
+export function getMapTransform(province: string | null): MapTransform {
+  if (!province || !PROVINCE_CENTERS[province]) {
+    return { scale: 1, translateX: 0, translateY: 0 };
+  }
+
+  const center = PROVINCE_CENTERS[province];
+  return {
+    scale: PROVINCE_ZOOM_SCALE,
+    translateX: CHINA_MAP_BOUNDS.width / 2 - center.x * PROVINCE_ZOOM_SCALE,
+    translateY: CHINA_MAP_BOUNDS.height / 2 - center.y * PROVINCE_ZOOM_SCALE,
+  };
+}
+
+export function transformMapPoint(point: MapPointPosition, transform: MapTransform): MapPointPosition {
+  return {
+    x: point.x * transform.scale + transform.translateX,
+    y: point.y * transform.scale + transform.translateY,
+  };
+}
+
+export function parseMapProvince(search: string): string | null {
+  const province = new URLSearchParams(search).get(MAP_PROVINCE_PARAM);
+  return province && PROVINCE_CENTERS[province] ? province : null;
 }
 
 /** 省名 → 投影后的省中心坐标（tooltip 定位用） */

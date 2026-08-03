@@ -110,5 +110,6 @@
     }
   },
   "mapProvinceCount": "{count} 个地点",
-  "mapNoLocations": "暂无地点"
+  "mapNoLocations": "暂无地点",
+  "mapPointCity": "{city} · {province}"
 }

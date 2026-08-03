@@ -110,5 +110,6 @@
     }
   },
   "mapProvinceCount": "{count} 件の地点",
-  "mapNoLocations": "まだ地点はありません"
+  "mapNoLocations": "まだ地点はありません",
+  "mapPointCity": "{province}・{city}"
 }

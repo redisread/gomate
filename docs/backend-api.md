@@ -780,6 +780,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 | `GET /v1/teams/:id/my-status` | 我的队伍状态                                                      |
 | `GET /v1/locations`           | 地点列表（`page`/`pageSize`/`cityId`/`keyword`）                  |
 | `GET /v1/locations/:id`       | 地点详情                                                          |
+| `GET /v1/locations/stats`     | 首页地图聚合（省份数量 + 点位及其城市/省份归属）                  |
 | `GET /v1/stories`             | 故事列表                                                          |
 | `GET /v1/stories/:id`         | 故事详情                                                          |
 | `GET /v1/enums`               | 枚举数据（队伍状态、难度等）                                      |
