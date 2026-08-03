@@ -81,51 +81,24 @@ export function useAnimateIn(enabled = true): AnimateInConfig {
 export interface SearchState {
   value: string;
   isFocused: boolean;
-  /** 搜索按钮是否触发弹跳动画 */
-  isButtonBouncing: boolean;
   setValue: (v: string) => void;
   setFocused: (v: boolean) => void;
-  triggerButtonBounce: () => void;
   clear: () => void;
 }
 
 export function useSearchInteraction(initialValue = ""): SearchState {
   const [value, setValue] = useState(initialValue);
   const [isFocused, setFocused] = useState(false);
-  const [isButtonBouncing, setIsButtonBouncing] = useState(false);
-  const bounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const triggerButtonBounce = useCallback(() => {
-    setIsButtonBouncing(true);
-    if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
-    // scale-in 动画时长 200ms，动画结束后重置
-    bounceTimerRef.current = setTimeout(() => setIsButtonBouncing(false), 300);
-  }, []);
 
   const clear = useCallback(() => {
     setValue("");
   }, []);
 
-  useEffect(() => {
-    // 输入时触发按钮弹跳
-    if (value.length > 0) {
-      triggerButtonBounce();
-    }
-  }, [value, triggerButtonBounce]);
-
-  useEffect(() => {
-    return () => {
-      if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
-    };
-  }, []);
-
   return {
     value,
     isFocused,
-    isButtonBouncing,
     setValue,
     setFocused,
-    triggerButtonBounce,
     clear,
   };
 }

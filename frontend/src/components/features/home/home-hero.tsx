@@ -65,7 +65,7 @@ export function HomeHero({ data }: { data: HomeData }) {
             )}
             <button
               type="submit"
-              className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white shadow-brand-glow transition-[background-color,transform,box-shadow] duration-150 hover:bg-amber-800 hover:shadow-brand-glow-lg active:scale-[0.96] ${search.isButtonBouncing ? "animate-bounce-in" : ""}`}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white shadow-brand-glow transition-[background-color,transform,box-shadow] duration-150 motion-reduce:transition-none hover:bg-amber-800 hover:shadow-brand-glow-lg active:scale-[0.96]"
             >
               {t("common.search")}
             </button>
