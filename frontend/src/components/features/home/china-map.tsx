@@ -38,7 +38,6 @@ interface Tooltip {
   y: number;
   title: string;
   subtitle?: string;
-  href?: string;
 }
 
 function provinceFill(count: number, max: number): string {
@@ -87,9 +86,7 @@ export function ChinaMap({ className }: { className?: string }) {
   const [stats, setStats] = React.useState<StatsResponse | null>(null);
   const [tooltip, setTooltip] = React.useState<Tooltip | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [focusedProvince, setFocusedProvince] = React.useState<string | null>(() =>
-    typeof window === "undefined" ? null : parseMapProvince(window.location.search),
-  );
+  const [focusedProvince, setFocusedProvince] = React.useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const transitionTimer = React.useRef<number | null>(null);
   const pushedMapState = React.useRef(false);
@@ -134,6 +131,8 @@ export function ChinaMap({ className }: { className?: string }) {
   }, []);
 
   React.useEffect(() => {
+    setFocusedProvince(parseMapProvince(window.location.search));
+
     const handlePopState = () => {
       const province = parseMapProvince(window.location.search);
       pushedMapState.current = false;
@@ -215,7 +214,6 @@ export function ChinaMap({ className }: { className?: string }) {
       y: position.y - 12,
       title: point.name,
       subtitle: citySubtitle,
-      href: `/locations/${point.slug}`,
     });
   };
 
