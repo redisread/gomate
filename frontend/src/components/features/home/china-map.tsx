@@ -182,7 +182,7 @@ export function ChinaMap({ className }: { className?: string }) {
         )}
 
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-card/50">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-card/50">
             <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
           </div>
         )}
