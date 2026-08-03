@@ -95,7 +95,7 @@ export function LazyImage({
           onLoad={handleLoad}
           onError={handleError}
           className={cn(
-            "w-full h-full object-cover transition-opacity duration-500 ease-out",
+            "w-full h-full object-cover transition-opacity duration-150 ease-out motion-reduce:transition-none",
             loaded ? "opacity-100" : "opacity-0",
             className
           )}
@@ -164,13 +164,13 @@ export function LocationCoverImage({
           src={src}
           alt={alt}
           loading={priority ? "eager" : "lazy"}
-          decoding={priority ? "sync" : "async"}
+          decoding="async"
           // @ts-expect-error lowercase `fetchpriority` is the HTML DOM attribute name; React warns about `fetchPriority`
           fetchpriority={priority ? "high" : "auto"}
           onLoad={() => setLoaded(true)}
           className={cn(
             "w-full h-full object-cover",
-            "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-500 ease-out",
+            "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 ease-out motion-reduce:transition-none",
             "group-hover:scale-[1.06]",
             loaded || priority ? "opacity-100" : "opacity-0",
             className

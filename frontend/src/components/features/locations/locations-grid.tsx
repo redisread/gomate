@@ -1,4 +1,4 @@
-import { MapPin, TreePine, ChevronLeft, ChevronRight, Clock, TrendingUp, ArrowRight, Search, Map, Filter } from "lucide-react";
+import { MapPin, TreePine, ChevronLeft, ChevronRight, Clock, TrendingUp, ArrowRight, Search, Map, Filter, LoaderCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location, Tag } from "@/lib/types";
@@ -32,22 +32,19 @@ function LocationCard({ location, index }: { location: Location; index: number }
   const hiking = normalizeLocationHiking(location);
   const durationText = formatRouteMetric(hiking?.duration, t);
   const distanceText = hiking?.distance?.value;
-  const delayMs = Math.min(index, 5) * 60;
-
   return (
     <a
       href={`/locations/${location.id}`}
       className="group block"
-      style={{ animation: `fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms both` }}
     >
-      <article className="bg-card rounded-2xl overflow-hidden border border-border hover:border-amber-200/50 dark:hover:border-amber-800/50 hover:shadow-xl hover:shadow-amber-100/40 dark:hover:shadow-amber-900/20 hover:ring-1 hover:ring-amber-200/40 dark:hover:ring-amber-700/40 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 hover:-translate-y-1">
+      <article className="bg-card rounded-2xl overflow-hidden border border-border hover:border-amber-200/50 dark:hover:border-amber-800/50 hover:shadow-xl hover:shadow-amber-100/40 dark:hover:shadow-amber-900/20 hover:ring-1 hover:ring-amber-200/40 dark:hover:ring-amber-700/40 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 motion-reduce:transition-none hover:-translate-y-1">
         <div className="relative h-52 overflow-hidden bg-stone-100 dark:bg-stone-800">
           {location.coverImage ? (
             <LocationCoverImage
               src={location.coverImage}
               alt={location.name}
               priority={index === 0}
-              className="group-hover:scale-[1.06] transition-transform duration-500 ease-out"
+              className="group-hover:scale-[1.03] transition-transform duration-150 ease-out motion-reduce:transition-none"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-800 to-stone-900">
@@ -109,7 +106,7 @@ function LocationCard({ location, index }: { location: Location; index: number }
             </span>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 group-hover:text-amber-800 dark:group-hover:text-amber-300 transition-colors">
               {t("common.viewDetail")}
-              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1" />
+              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-150 ease-out motion-reduce:transition-none group-hover:translate-x-1" />
             </span>
           </div>
         </div>
@@ -181,12 +178,11 @@ export function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center py-24 px-4">
-      {/* Icon container — TreePine float animation + amber dots PRESERVED (#222 T1) */}
+      {/* Icon container */}
       <div className="relative mb-6">
         <div className="w-20 h-20 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
           <Icon
-            className="h-9 w-9 text-stone-500 dark:text-stone-500 motion-reduce:animate-none"
-            style={{ animation: "float 3s ease-in-out infinite" }}
+            className="h-9 w-9 text-stone-500 dark:text-stone-500"
           />
         </div>
         <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-200" />
@@ -226,8 +222,7 @@ export function EmptyState({
 export function LocationsGrid({
   locations,
   isLoading,
-  gridKey,
-  gridFading,
+  isRefreshing,
   pagination,
   onClear,
   emptyVariant,
@@ -237,8 +232,7 @@ export function LocationsGrid({
 }: {
   locations: Location[];
   isLoading: boolean;
-  gridKey: number;
-  gridFading: boolean;
+  isRefreshing: boolean;
   pagination: { total: number; totalPages: number };
   onClear: () => void;
   /** @default "noSearch" */
@@ -247,38 +241,52 @@ export function LocationsGrid({
   onPageChange: (page: number) => void;
   getPageNumbers: () => (number | "...")[];
 }) {
-  const { t } = useI18n(["locations"]);
+  const { t } = useI18n(["locations", "common"]);
   return (
     <div>
       <h2 className="sr-only">{t("locations.locationList")}</h2>
       <div
-        className="transition-opacity duration-200"
-        style={{ opacity: gridFading ? 0 : 1 }}
+        className="relative transition-opacity duration-150 motion-reduce:transition-none"
+        aria-busy={isLoading || isRefreshing}
       >
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array.from({ length: 6 }).map((_, i) => <ShimmerCard key={i} />)}
-          </div>
-        ) : locations.length === 0 ? (
-          <EmptyState
-            variant={emptyVariant ?? "noSearch"}
-            onClearSearch={onClear}
-            onClearAll={onClear}
-          />
-        ) : (
-          <div key={gridKey} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {locations.map((location, index) => (
-              <LocationCard key={location.id} location={location} index={index} />
-            ))}
+        {isRefreshing && locations.length > 0 && (
+          <div
+            role="status"
+            aria-label={t("common.loading")}
+            className="pointer-events-none absolute inset-x-0 top-5 z-10 flex justify-center"
+          >
+            <span className="inline-flex items-center gap-2 rounded-full bg-card/95 px-3 py-2 text-xs font-medium text-muted-foreground shadow-warm-md ring-1 ring-black/5 backdrop-blur-sm dark:ring-white/10">
+              <LoaderCircle className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              {t("common.loading")}
+            </span>
           </div>
         )}
+        <div className={cn("transition-opacity duration-150 motion-reduce:transition-none", isRefreshing && locations.length > 0 && "opacity-60")}>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {Array.from({ length: 6 }).map((_, i) => <ShimmerCard key={i} />)}
+            </div>
+          ) : locations.length === 0 ? (
+            <EmptyState
+              variant={emptyVariant ?? "noSearch"}
+              onClearSearch={onClear}
+              onClearAll={onClear}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {locations.map((location, index) => (
+                <LocationCard key={location.id} location={location} index={index} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {pagination.totalPages > 1 && (
         <div className="flex justify-center items-center gap-1.5 mt-12">
           <button
             onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
+            disabled={currentPage === 1 || isRefreshing}
             aria-label={t("locations.paginationPrev")}
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
           >
@@ -294,8 +302,9 @@ export function LocationsGrid({
               <button
                 key={page}
                 onClick={() => onPageChange(page as number)}
+                disabled={isRefreshing}
                 className={cn(
-                  "w-9 h-9 rounded-xl text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
+                  "w-9 h-9 rounded-xl text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 motion-reduce:transition-none",
                   page === currentPage
                     ? "bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white shadow-sm"
                     : "bg-card text-stone-600 dark:text-stone-400 border border-border hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
@@ -308,7 +317,7 @@ export function LocationsGrid({
 
           <button
             onClick={() => currentPage < pagination.totalPages && onPageChange(currentPage + 1)}
-            disabled={currentPage === pagination.totalPages}
+            disabled={currentPage === pagination.totalPages || isRefreshing}
             aria-label={t("locations.paginationNext")}
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
           >

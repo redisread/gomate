@@ -92,8 +92,7 @@ export function LocationsClient({ initialData }: { initialData?: LocationsListIn
           <LocationsGrid
             locations={ctx.locations}
             isLoading={ctx.isLoading}
-            gridKey={ctx.gridKey}
-            gridFading={ctx.gridFading}
+            isRefreshing={ctx.isRefreshing}
             pagination={ctx.pagination}
             onClear={ctx.handleClearAll}
             currentPage={ctx.currentPage}
