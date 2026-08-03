@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Clock, Users, AlertCircle, Loader2, ArrowRight, Pencil } from "lucide-react";
+import { ArrowLeft, Clock, Users, AlertCircle, Loader2, Pencil } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import type { Team, Location } from "@/lib/types";
@@ -10,6 +10,7 @@ import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Footer } from "@/components/layout/footer";
 import { TeamActionbookForm } from "./team-detail/team-actionbook-form";
+import { TeamLocationPreview } from "./teams/shared/team-location-preview";
 
 interface EditTeamClientProps {
   teamId: string;
@@ -236,14 +237,19 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             </FieldGroup>
 
             <FieldGroup icon="📍" label={t("teams.formLabel.location")}>
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-muted border border-border">
-                <span className="text-sm text-foreground">{location?.name || team.date}</span>
-                {location && (
-                  <a href={`/locations/${location.id}`} className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 flex items-center gap-1">
-                    {t("teams.viewDetailShort")} <ArrowRight className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
+              {location ? (
+                <TeamLocationPreview
+                  location={location}
+                  detailHref={`/locations/${location.id}`}
+                  selectedLabel={t("teams.locationPreviewLabel")}
+                  emptyCoverLabel={t("teams.locationCoverUnavailable")}
+                  detailLabel={t("teams.viewDetailShort")}
+                />
+              ) : (
+                <div className="flex items-center justify-between rounded-xl border border-border bg-muted px-4 py-3">
+                  <span className="text-sm text-muted-foreground">{team.date}</span>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <AlertCircle className="h-3 w-3" />
                 {t("teams.editLocationLocked")}

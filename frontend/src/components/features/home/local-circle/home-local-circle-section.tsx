@@ -2,7 +2,7 @@
  * P0-D T2 (task #176) — 首页本地圈子模块
  *
  * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §4 / §6
- *   - 挂在 P0-C 推荐位之后 / Locations 之前（home-main.tsx）
+ *   - 挂在 Hero 之后 / Locations 之前（home-main.tsx）
  *   - 消费 GET /api/local-circle/home?cityId=（useLocalCircle hook）
  *   - 标题「{cityName} {activePeopleCount} 人在行动」+ 副标题
  *   - Top 3 地点卡（LocalCircleCard）

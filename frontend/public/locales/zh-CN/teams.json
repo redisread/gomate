@@ -1,6 +1,9 @@
 {
   "pageTitle": "找到你的同行伙伴",
   "pageBadge": "等你一起",
+  "resultCount": "{count} 支队伍",
+  "paginationLabel": "队伍列表分页",
+  "pageLabel": "第 {page} 页",
   "searchPlaceholder": "咖啡馆？公园？山野？或者输入任意关键词",
   "noResults": "还没有人发起这类活动，要不要你来开头？",
   "noResultsTip": "改变筛选条件，或者干脆自己发起一支",
@@ -215,6 +218,8 @@
   "departureToday": "今天出发",
   "departureTomorrow": "明天出发",
   "viewDetailShort": "详情",
+  "locationPreviewLabel": "已选择地点",
+  "locationCoverUnavailable": "暂无封面",
   "searchAriaLabel": "搜索队伍",
   "clearSearchAriaLabel": "清除搜索",
   "defaultLeader": "领队",

@@ -5,46 +5,6 @@
     "departingInDays": "Departing in {days} days",
     "viewDetails": "View Details"
   },
-  "recommendations": {
-    "title": "Your Top 3 Near You This Week",
-    "subtitle": "Curated by season, distance & team activity — tuned to your city",
-    "cta": {
-      "refresh": "Show New Three"
-    },
-    "kind": {
-      "steady": "Steady Pick",
-      "worthy": "Worthy Pick",
-      "fresh": "Fresh Pick",
-      "fresh_fallback": "Worth a Visit"
-    },
-    "meta": {
-      "distance": "{km} km",
-      "duration": "{n} min",
-      "favorites": "{n} favorites",
-      "stories": "{n} stories",
-      "ageDays": "New · {n} days",
-      "futureTeams": "{n} teams recruiting"
-    },
-    "reason": {
-      "steady_season_close": "Great for this season, about {km} km away",
-      "steady_season_teams": "Perfect season now — {n} teams recruiting",
-      "steady_easy_close": "Easy hike, about {km} km — beginner-friendly",
-      "steady_close_social": "Close + social — {n} teams heading out this week",
-      "steady_fallback": "About {km} km — a steady choice",
-      "worthy_favorites": "Favorited by {n} — worth a visit",
-      "worthy_stories": "{n} real stories — worth exploring",
-      "worthy_favorites_stories": "{n} favorites & stories combined — prioritize this",
-      "worthy_fallback": "Worth carving out time for",
-      "fresh_new_location": "Just added this week — {n} days on the map",
-      "fresh_trending_signups": "Trending this week — {n} people joined",
-      "fresh_new_teams": "{n} new teams heading out — join early",
-      "fresh_fallback": "Worth a visit if you're nearby"
-    },
-    "cityHint": {
-      "mixed": "Mixed with {city} popular picks"
-    },
-    "error": "Failed to load recommendations. Try again later."
-  },
   "locations": {
     "cityChip": "📍 {city}",
     "fallbackHint": "No spots in your city yet — here are some popular picks"

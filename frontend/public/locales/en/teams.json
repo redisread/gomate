@@ -1,6 +1,9 @@
 {
   "pageTitle": "Find Your Travel Companions",
   "pageBadge": "Waiting for You",
+  "resultCount": "{count} teams",
+  "paginationLabel": "Team list pagination",
+  "pageLabel": "Page {page}",
   "searchPlaceholder": "Cafe? Park? Mountain? Or type any keyword",
   "noResults": "No one has started this kind of activity yet. Want to be the first?",
   "noResultsTip": "Change your filters, or just start your own team",
@@ -215,6 +218,8 @@
   "departureToday": "Departing Today",
   "departureTomorrow": "Departing Tomorrow",
   "viewDetailShort": "Details",
+  "locationPreviewLabel": "Selected location",
+  "locationCoverUnavailable": "No cover image",
   "searchAriaLabel": "Search teams",
   "clearSearchAriaLabel": "Clear search",
   "defaultLeader": "Leader",
