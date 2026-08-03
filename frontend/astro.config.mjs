@@ -44,9 +44,10 @@ export default defineConfig({
       rollupOptions: {
         output: {
           manualChunks: {
-            // 将大型依赖拆分为独立 chunk
+            // 图标库在多个 island 中复用，保持为稳定共享 chunk。
+            // Markdown 只在少数内容型页面使用，不强制注入所有页面的共享 chunk，
+            // 避免首页、地点列表和队伍列表承担无关的 React/Markdown 依赖。
             'vendor-lucide': ['lucide-react'],
-            'vendor-markdown': ['react-markdown', 'remark-gfm'],
           },
         },
       },
