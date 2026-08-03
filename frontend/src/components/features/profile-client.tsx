@@ -53,12 +53,12 @@ function StatItem({
   href?: string;
 }) {
   const inner = (
-    <div className="group cursor-pointer">
+    <div className="group">
       <p className="text-3xl font-light text-stone-800 dark:text-zinc-100 leading-none">{value}</p>
       <p className="text-xs text-stone-400 dark:text-zinc-500 mt-1 font-medium">{label}</p>
     </div>
   );
-  return href ? <a href={href} className="block py-3 px-3 rounded-lg hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">{inner}</a> : inner;
+  return href ? <a href={href} className="block rounded-lg px-3 py-3 transition-[background-color,transform] duration-150 hover:bg-stone-50 dark:hover:bg-zinc-800/50 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">{inner}</a> : inner;
 }
 
 export function ProfileClient() {
@@ -203,7 +203,7 @@ export function ProfileClient() {
                   <img
                     src={user.image}
                     alt={displayName}
-                    className="w-20 h-20 rounded-xl object-cover bg-stone-100 dark:bg-zinc-800"
+                    className="w-20 h-20 rounded-xl object-cover bg-stone-100 dark:bg-zinc-800 outline outline-1 -outline-offset-1 outline-[oklch(0_0_0_/_0.1)] dark:outline-[oklch(1_0_0_/_0.1)]"
                   />
                 ) : (
                   <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/40 dark:to-amber-950/30 flex items-center justify-center">
@@ -232,21 +232,17 @@ export function ProfileClient() {
 
             {/* 操作按钮 */}
             <div className="flex flex-col gap-2 border-t border-stone-100 dark:border-zinc-800 pt-5">
-              <a href="/profile/edit">
-                <button className="w-full inline-flex items-center justify-center gap-1.5 bg-[var(--anthropic-accent)] hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors">
-                  <Edit3 className="h-3.5 w-3.5" />
-                  {t("profile.editProfileBtn")}
-                </button>
+              <a href="/profile/edit" className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--anthropic-accent)] px-4 py-2 text-xs font-medium text-white transition-[transform,background-color] duration-150 hover:bg-amber-700 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
+                <Edit3 className="h-3.5 w-3.5" />
+                {t("profile.editProfileBtn")}
               </a>
-              <a href="/settings/api-keys">
-                <button className="w-full inline-flex items-center justify-center gap-1.5 border border-stone-200 dark:border-zinc-700 text-stone-500 dark:text-zinc-400 px-4 py-2 rounded-lg text-xs font-medium hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-200 dark:hover:border-amber-800 transition-colors">
-                  <Key className="h-3.5 w-3.5" />
-                  {t("profile.apiKeysBtn")}
-                </button>
+              <a href="/settings/api-keys" className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 px-4 py-2 text-xs font-medium text-stone-500 transition-[transform,border-color,color] duration-150 hover:border-amber-200 hover:text-amber-700 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-amber-800 dark:hover:text-amber-400">
+                <Key className="h-3.5 w-3.5" />
+                {t("profile.apiKeysBtn")}
               </a>
               <button
                 onClick={handleLogout}
-                className="w-full inline-flex items-center justify-center gap-1.5 border border-stone-200 dark:border-zinc-700 text-stone-500 dark:text-zinc-400 px-4 py-2 rounded-lg text-xs font-medium hover:text-red-500 hover:border-red-200 dark:hover:border-red-800 transition-colors"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 px-4 py-2 text-xs font-medium text-stone-500 transition-[transform,border-color,color] duration-150 hover:border-red-200 hover:text-red-500 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-red-800"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 {t("profile.logoutBtn")}
@@ -452,10 +448,8 @@ export function ProfileClient() {
                 </div>
                 <h3 className="text-base font-semibold text-stone-700 dark:text-zinc-200 mb-1">{t("profile.noTeamsTitle")}</h3>
                 <p className="text-sm text-stone-400 dark:text-zinc-500 mb-6 max-w-xs mx-auto">{t("profile.noTeamsDesc")}</p>
-                <a href="/teams/create">
-                  <button className="bg-[var(--anthropic-accent)] hover:bg-amber-700 text-white px-6 py-2 rounded-lg font-medium transition-colors text-sm">
-                    {t("profile.createTeamBtn")}
-                  </button>
+                <a href="/teams/create" className="inline-flex rounded-lg bg-[var(--anthropic-accent)] px-6 py-2 text-sm font-medium text-white transition-[transform,background-color] duration-150 hover:bg-amber-700 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
+                  {t("profile.createTeamBtn")}
                 </a>
               </section>
             )}
