@@ -159,7 +159,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
               <div className="relative">
                 <div className="h-32 w-32 rounded-full ring-4 ring-white dark:ring-stone-900 shadow-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center overflow-hidden">
                   {user.avatar ? (
-                    <img src={user.avatar} alt={displayName} className="w-full h-full object-cover" />
+                    <img src={user.avatar} alt={displayName} className="w-full h-full object-cover outline outline-1 -outline-offset-1 outline-[oklch(0_0_0_/_0.1)] dark:outline-[oklch(1_0_0_/_0.1)]" />
                   ) : (
                     <span className="text-4xl font-bold text-white" style={{ textShadow: "0 2px 8px color-mix(in oklab, black 20%, transparent)" }}>
                       {displayName?.[0]?.toUpperCase()}
@@ -222,7 +222,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
         </div>
 
         {/* 活动统计 */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
           <StatCard
             label={t("profile.statsCreatedTeams")}
             value={user.stats.createdTeams}

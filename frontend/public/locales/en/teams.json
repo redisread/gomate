@@ -215,6 +215,8 @@
   "departureToday": "Departing Today",
   "departureTomorrow": "Departing Tomorrow",
   "viewDetailShort": "Details",
+  "locationPreviewLabel": "Selected location",
+  "locationCoverUnavailable": "No cover image",
   "searchAriaLabel": "Search teams",
   "clearSearchAriaLabel": "Clear search",
   "defaultLeader": "Leader",

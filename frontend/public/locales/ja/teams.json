@@ -215,6 +215,8 @@
   "departureToday": "今日出発",
   "departureTomorrow": "明日出発",
   "viewDetailShort": "詳細",
+  "locationPreviewLabel": "選択したスポット",
+  "locationCoverUnavailable": "カバー画像なし",
   "searchAriaLabel": "チームを検索",
   "clearSearchAriaLabel": "検索をクリア",
   "defaultLeader": "リーダー",

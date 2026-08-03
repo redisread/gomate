@@ -7,7 +7,6 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./season": "./src/season.ts",
     "./geo-fallback": "./src/geo-fallback.ts",
     "./geo-city-center": "./src/geo-city-center.ts"
   },

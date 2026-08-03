@@ -5,46 +5,6 @@
     "departingInDays": "{days}日後に出発",
     "viewDetails": "詳細を見る"
   },
-  "recommendations": {
-    "title": "今週の近くて良い場所 3 選",
-    "subtitle": "季節・距離・チームの動きを考慮し、あなたのいる都市に合わせて厳選",
-    "cta": {
-      "refresh": "別の 3 つ"
-    },
-    "kind": {
-      "steady": "安定",
-      "worthy": "価値あり",
-      "fresh": "新着",
-      "fresh_fallback": "訪れる価値あり"
-    },
-    "meta": {
-      "distance": "{km} km",
-      "duration": "{n} 分",
-      "favorites": "{n} 人がお気に入り",
-      "stories": "{n} 件のストーリー",
-      "ageDays": "登録から {n} 日",
-      "futureTeams": "{n} チーム募集中"
-    },
-    "reason": {
-      "steady_season_close": "この季節にぴったり、約 {km} km",
-      "steady_season_teams": "今がベストシーズン、{n} チームが募集中",
-      "steady_easy_close": "難易度低め、約 {km} km、初心者に優しい",
-      "steady_close_social": "近くて仲間もいる、今週 {n} チーム出発",
-      "steady_fallback": "約 {km} km、安定の選択",
-      "worthy_favorites": "{n} 人がお気に入り、行く価値あり",
-      "worthy_stories": "{n} 件のリアルなストーリー、探索の価値あり",
-      "worthy_favorites_stories": "お気に入り・ストーリー合計 {n}、優先度高め",
-      "worthy_fallback": "時間を作って行く価値あり",
-      "fresh_new_location": "今週追加された新スポット、登録 {n} 日",
-      "fresh_trending_signups": "今週急上昇、{n} 人が参加",
-      "fresh_new_teams": "{n} チーム新設、早めに参加",
-      "fresh_fallback": "近くに来たら訪れる価値あり"
-    },
-    "cityHint": {
-      "mixed": "{city}の人気とミックス"
-    },
-    "error": "おすすめの読み込みに失敗しました。後で再試行してください。"
-  },
   "locations": {
     "cityChip": "📍 {city}",
     "fallbackHint": "あなたの地域にはまだスポットがありません — 人気のおすすめです"

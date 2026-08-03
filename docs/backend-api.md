@@ -731,19 +731,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 
 ---
 
-## 15. 首页推荐 `/recommendations/home`
-
-### GET `/recommendations/home`
-
-首页个性化推荐（task #172）
-
-- **认证：** 否（登录用户附加 `users.city` 作 fallback）
-- **Query：** `seed`（可选，不传服务端生成并返回 `nextSeed`）、`locale`（保留字段）
-- **响应：** `{ "recommendations": [{ "kind", "locationId", "reason": { "key", "params" } }], "candidatePoolSize": number, "nextSeed": string }`
-
----
-
-## 16. 附近圈 `/local-circle/home`
+## 15. 附近圈 `/local-circle/home`
 
 ### GET `/local-circle/home`
 
@@ -755,7 +743,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 
 ---
 
-## 17. 活动动态 `/activity-posts`
+## 16. 活动动态 `/activity-posts`
 
 挂在根路由（`api/src/index.ts` 的 `app.route("/", activityPostsRoute)`）。
 
@@ -768,7 +756,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 
 ---
 
-## 18. 管理工具 `/admin`
+## 17. 管理工具 `/admin`
 
 | 端点                                    | 认证           | 说明                                                               |
 | --------------------------------------- | -------------- | ------------------------------------------------------------------ |
@@ -777,7 +765,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 
 ---
 
-## 19. 公开 API `/v1/*`（API Key / Session）
+## 18. 公开 API `/v1/*`（API Key / Session）
 
 面向外部工具与移动端的稳定公开 API。认证二选一：`x-api-key` 请求头（`gm_live_<key>`）或 Session Cookie。OpenAPI 契约：`GET /v1/openapi.json`。
 

@@ -17,7 +17,6 @@ import messagesRoute from "./routes/messages";
 import activityPostsRoute from "./routes/activity-posts";
 import storiesRoute from "./routes/stories";
 import { shareImageRoute } from "./routes/share-image";
-import { recommendationsHomeRoute } from "./routes/recommendations/home";
 import { localCircleHomeRoute } from "./routes/local-circle/home";
 import { v1Route } from "./routes/v1/index";
 import { updateExpiredTeams } from "./lib/team-status";
@@ -51,7 +50,6 @@ app.route("/messages", messagesRoute);
 app.route("/", activityPostsRoute);
 app.route("/stories", storiesRoute);
 app.route("/share-image", shareImageRoute);
-app.route("/recommendations/home", recommendationsHomeRoute);
 app.route("/local-circle/home", localCircleHomeRoute);
 app.route("/v1", v1Route);
 
