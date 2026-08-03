@@ -52,10 +52,10 @@ export function AvatarSection({ user, avatarPreview, selectedFile, isUploading, 
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative">
-        <button type="button" onClick={() => !isUploading && fileInputRef.current?.click()} aria-label={t("profile.changeAvatar")} className="group cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+        <button type="button" onClick={() => !isUploading && fileInputRef.current?.click()} aria-label={t("profile.changeAvatar")} className="group cursor-pointer rounded-full transition-transform duration-150 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
           <div className="w-28 h-28 rounded-full ring-4 ring-white dark:ring-stone-800 shadow-xl overflow-hidden bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
             {avatarPreview ? (
-              <img src={avatarPreview} alt={t("common.avatar")} className="w-full h-full object-cover" />
+              <img src={avatarPreview} alt={t("common.avatar")} className="w-full h-full object-cover outline outline-1 -outline-offset-1 outline-[oklch(0_0_0_/_0.1)] dark:outline-[oklch(1_0_0_/_0.1)]" />
             ) : (
               <span className="text-4xl font-bold text-white select-none">{user?.name?.[0]?.toUpperCase() || "?"}</span>
             )}
@@ -73,10 +73,10 @@ export function AvatarSection({ user, avatarPreview, selectedFile, isUploading, 
       </div>
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={onFileChange} className="hidden" />
       {selectedFile ? (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-full text-xs text-amber-700 dark:text-amber-400">
+        <div className="flex max-w-full items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400">
           <Check className="h-3 w-3" />
-          <span>{t('profile.avatarSelected')} {selectedFile.name}</span>
-          <button type="button" onClick={onCancelFile} aria-label={t("common.close")} className="text-amber-500 hover:text-amber-700 transition-colors ml-0.5"><X className="h-3 w-3" aria-hidden="true" /></button>
+          <span className="min-w-0 truncate">{t('profile.avatarSelected')} {selectedFile.name}</span>
+          <button type="button" onClick={onCancelFile} aria-label={t("common.close")} className="ml-0.5 rounded-full text-amber-500 transition-[color,transform] duration-150 hover:text-amber-700 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"><X className="h-3 w-3" aria-hidden="true" /></button>
         </div>
       ) : (
         <p className="text-xs text-stone-400">{t('profile.avatarSupportHint')}</p>
@@ -251,7 +251,7 @@ export function ContactFields({ wechat, gender, birthday, onChange }: ContactFie
 export function MessageBanner({ message }: { message: { type: "success" | "error"; text: string } | null }) {
   if (!message) return null;
   return (
-    <div className={cn("flex items-center gap-3 p-4 rounded-xl border",
+    <div role={message.type === "error" ? "alert" : "status"} className={cn("flex items-center gap-3 p-4 rounded-xl border",
       message.type === "success" ? "bg-gradient-to-r from-amber-50 to-amber-100/60 dark:from-amber-950/30 dark:to-amber-900/20 border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400" : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400"
     )}>
       {message.type === "success" ? <Check className="h-4 w-4 flex-shrink-0" /> : <X className="h-4 w-4 flex-shrink-0" />}
@@ -271,13 +271,11 @@ export function ActionBar({ isSaving, isUploading, savedDone }: ActionBarProps) 
   const { t } = useI18n(["profile", "common"]);
   const loading = isSaving || isUploading;
   return (
-    <div className="flex gap-3 pt-2">
-      <a href="/profile" className="flex-1">
-        <button type="button" className="w-full border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 py-3 rounded-xl font-medium text-sm transition-colors">
-          {t('common.cancel')}
-        </button>
+    <div className="sticky bottom-3 z-10 -mx-2 flex gap-3 rounded-2xl border border-stone-200/80 bg-white/90 p-3 shadow-lg shadow-stone-900/5 backdrop-blur dark:border-stone-800/80 dark:bg-stone-950/90 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:pt-2 sm:shadow-none sm:backdrop-blur-none">
+      <a href="/profile" className="flex flex-1 items-center justify-center rounded-xl border border-stone-200 py-3 text-sm font-medium text-stone-600 transition-[transform,background-color,border-color] duration-150 hover:bg-stone-50 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-stone-800">
+        {t('common.cancel')}
       </a>
-      <button type="submit" disabled={loading} className={cn("flex-1 py-3 rounded-xl font-medium text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] flex items-center justify-center gap-2 disabled:cursor-not-allowed",
+      <button type="submit" disabled={loading} className={cn("flex-1 py-3 rounded-xl font-medium text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] flex items-center justify-center gap-2 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed",
         savedDone ? "bg-amber-500 text-white shadow-md shadow-amber-100 dark:shadow-amber-950/30" : "bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 dark:shadow-amber-900/30 disabled:opacity-50"
       )}>
         {loading ? (

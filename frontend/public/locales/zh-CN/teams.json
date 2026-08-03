@@ -218,6 +218,8 @@
   "departureToday": "今天出发",
   "departureTomorrow": "明天出发",
   "viewDetailShort": "详情",
+  "locationPreviewLabel": "已选择地点",
+  "locationCoverUnavailable": "暂无封面",
   "searchAriaLabel": "搜索队伍",
   "clearSearchAriaLabel": "清除搜索",
   "defaultLeader": "领队",
