@@ -5,10 +5,6 @@
     "departingInDays": "Departing in {days} days",
     "viewDetails": "View Details"
   },
-  "locations": {
-    "cityChip": "📍 {city}",
-    "fallbackHint": "No spots in your city yet — here are some popular picks"
-  },
   "localCircle": {
     "title": "What Your City Did This Week",
     "subtitle": "Not what you pick — what your city's already doing",
@@ -40,10 +36,6 @@
     "titleLine2": "next outing?",
     "description": "Search a place, see teams forming nearby, or start an outing of your own."
   },
-  "discoveryEmpty": {
-    "title": "No locations match yet",
-    "description": "Browse all locations and find a direction for your next outing."
-  },
   "discoveryMap": {
     "title": "Find your next stop on the map",
     "description": "Open a new starting point, from familiar cities to trails you have not walked yet."
@@ -66,10 +58,5 @@
         "description": "Confirm the meetup details, pack what you need, and go together."
       }
     }
-  },
-  "teamsEmpty": {
-    "guestTitle": "No public teams yet",
-    "memberTitle": "No public teams nearby yet",
-    "description": "Explore a location first, or be the first person to start an outing."
   }
 }

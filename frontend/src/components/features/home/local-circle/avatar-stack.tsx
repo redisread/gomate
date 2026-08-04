@@ -6,7 +6,7 @@
  *   - sm=24px / md=32px；堆叠间隔 -8px（重叠 1/3）
  *   - tooltip「过去 7 天参与过此地点行动」（由消费方传 title）
  *
- * 与 home-team-card 的 AvatarStack（member 对象版）区分：
+ * 与队伍卡片中的 AvatarStack（member 对象版）区分：
  * 本组件接受 avatar URL 数组（来自 local-circle API 的 avatarStack / neighborAvatars）。
  */
 

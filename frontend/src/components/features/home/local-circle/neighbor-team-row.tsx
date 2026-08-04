@@ -2,11 +2,11 @@
  * P0-D T3 (task #177) — 邻居队伍行「你的邻居参加了这些队伍」
  *
  * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §4 / §6 / §7（D2 拍板 A-1）
- *   - 落在本地圈子模块内子区块（不改 HomeTeamsSection 现有卡）
+ *   - 落在本地圈子模块内子区块，视觉层级次于本地圈子主卡片
  *   - 每行：队伍标题 + 地点·时间 + AvatarStack + formatNeighbor
  *   - formatNeighbor: 1-3 → 「{city}邻居 N 人」(city dynamic)，≥4 → 「你的邻居 4+」(不露具体数字)
  *   - 数据 = local-circle/home 的 neighborTeams（零额外查询）
- *   - 行式布局，视觉层级次于主区块地点卡
+ *   - 行式布局，视觉层级次于本地圈子主卡片
  */
 
 import { memo } from "react";

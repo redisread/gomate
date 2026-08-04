@@ -5,10 +5,6 @@
     "departingInDays": "{days}日後に出発",
     "viewDetails": "詳細を見る"
   },
-  "locations": {
-    "cityChip": "📍 {city}",
-    "fallbackHint": "あなたの地域にはまだスポットがありません — 人気のおすすめです"
-  },
   "localCircle": {
     "title": "今週、あなたの街で",
     "subtitle": "あなたが選ぶのではなく、あなたの街で既に起こっていること",
@@ -40,10 +36,6 @@
     "titleLine2": "出かけよう",
     "description": "場所を検索して、近くで集まるチームを見つけるか、自分で旅を始めましょう。"
   },
-  "discoveryEmpty": {
-    "title": "一致する場所がまだありません",
-    "description": "すべての場所を見て、次の旅の方向を見つけましょう。"
-  },
   "discoveryMap": {
     "title": "地図から次の場所を探す",
     "description": "身近な街からまだ歩いていない道まで、新しい出発点を開きましょう。"
@@ -66,10 +58,5 @@
         "description": "集合情報を確認して、必要なものを持って一緒に出かけます。"
       }
     }
-  },
-  "teamsEmpty": {
-    "guestTitle": "公開チームはまだありません",
-    "memberTitle": "近くに公開チームはまだありません",
-    "description": "まず場所を探すか、最初の旅を始めてみましょう。"
   }
 }

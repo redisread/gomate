@@ -894,8 +894,6 @@ export type TranslationKey =
   | "home.teamCard.departingTomorrow"
   | "home.teamCard.departingInDays"
   | "home.teamCard.viewDetails"
-  | "home.locations.cityChip"
-  | "home.locations.fallbackHint"
   | "home.localCircle.title"
   | "home.localCircle.subtitle"
   | "home.localCircle.inAction"
@@ -906,6 +904,28 @@ export type TranslationKey =
   | "home.localCircle.setCityCta.title"
   | "home.localCircle.setCityCta.button"
   | "home.mapAriaLabel"
+  | "home.mapHint"
+  | "home.mapFocusedAriaLabel"
+  | "home.mapBackToChina"
+  | "home.mapPointHint"
+  | "home.mapFocusedEmptyTitle"
+  | "home.mapFocusedEmptyDesc"
+  | "home.mapBrowseOtherRegions"
+  | "home.memberHero.kicker"
+  | "home.memberHero.titleLine1"
+  | "home.memberHero.titleLine2"
+  | "home.memberHero.description"
+  | "home.discoveryMap.title"
+  | "home.discoveryMap.description"
+  | "home.howItWorks.kicker"
+  | "home.howItWorks.title"
+  | "home.howItWorks.description"
+  | "home.howItWorks.steps.discover.title"
+  | "home.howItWorks.steps.discover.description"
+  | "home.howItWorks.steps.team.title"
+  | "home.howItWorks.steps.team.description"
+  | "home.howItWorks.steps.go.title"
+  | "home.howItWorks.steps.go.description"
   | "locationDetail.destination"
   | "locationDetail.browseTeams"
   | "locationDetail.gatherPartners"
@@ -1032,6 +1052,7 @@ export type TranslationKey =
   | "locations.seasons.winter.months"
   | "locations.mapProvinceCount"
   | "locations.mapNoLocations"
+  | "locations.mapPointCity"
   | "messages.centerTitle"
   | "messages.chatTitle"
   | "messages.loading"
@@ -1847,9 +1868,9 @@ export type NamespacedKeys = {
   favorites: "pageTitle" | "pageSubtitle" | "addSuccess" | "removeSuccess" | "addFailed" | "removeFailed" | "loginRequired" | "emptyTitle" | "emptyDesc" | "emptyBtn" | "locationCount" | "backBtn";
   feedback: "pageTitle" | "pageSubtitle" | "tabSuggestion" | "tabBug" | "nameLabel" | "namePlaceholder" | "emailLabel" | "emailPlaceholder" | "contentLabel" | "contentPlaceholderSuggestion" | "contentPlaceholderBug" | "deviceLabel" | "devicePlaceholder" | "browserLabel" | "browserPlaceholder" | "stepsLabel" | "stepsPlaceholder" | "pageUrlLabel" | "pageUrlPlaceholder" | "submitBtn" | "submitting" | "successTitle" | "successDesc" | "submitError" | "continueSubmitBtn" | "suggestionDesc" | "bugDesc" | "bugDetailHint" | "pageDesc" | "emailContact" | "wechatContact" | "wechatScanHint" | "formTitle" | "formSubtitle" | "subjectLabel" | "subjectPlaceholder" | "messageLabel" | "messagePlaceholder";
   filter: "title" | "difficulty" | "duration" | "region" | "city" | "clearAll" | "reset" | "viewResults" | "durationHalfDay" | "durationOneDay" | "durationMultiDay" | "nanshan" | "futian" | "luohu" | "dapeng" | "pingshan" | "dateRange" | "dateFrom" | "dateTo" | "datePlaceholder" | "dateQuickToday" | "dateQuickTomorrow" | "dateQuickWeekend" | "dateQuick7Days" | "dateQuick30Days" | "tags" | "tagsPlaceholder" | "clearBtn";
-  home: "teamCard.departingToday" | "teamCard.departingTomorrow" | "teamCard.departingInDays" | "teamCard.viewDetails" | "locations.cityChip" | "locations.fallbackHint" | "localCircle.title" | "localCircle.subtitle" | "localCircle.inAction" | "localCircle.avatarStack.tooltip" | "localCircle.neighborTeams.title" | "localCircle.neighborCount" | "localCircle.neighborCountMany" | "localCircle.setCityCta.title" | "localCircle.setCityCta.button" | "mapAriaLabel";
+  home: "teamCard.departingToday" | "teamCard.departingTomorrow" | "teamCard.departingInDays" | "teamCard.viewDetails" | "localCircle.title" | "localCircle.subtitle" | "localCircle.inAction" | "localCircle.avatarStack.tooltip" | "localCircle.neighborTeams.title" | "localCircle.neighborCount" | "localCircle.neighborCountMany" | "localCircle.setCityCta.title" | "localCircle.setCityCta.button" | "mapAriaLabel" | "mapHint" | "mapFocusedAriaLabel" | "mapBackToChina" | "mapPointHint" | "mapFocusedEmptyTitle" | "mapFocusedEmptyDesc" | "mapBrowseOtherRegions" | "memberHero.kicker" | "memberHero.titleLine1" | "memberHero.titleLine2" | "memberHero.description" | "discoveryMap.title" | "discoveryMap.description" | "howItWorks.kicker" | "howItWorks.title" | "howItWorks.description" | "howItWorks.steps.discover.title" | "howItWorks.steps.discover.description" | "howItWorks.steps.team.title" | "howItWorks.steps.team.description" | "howItWorks.steps.go.title" | "howItWorks.steps.go.description";
   locationDetail: "destination" | "browseTeams" | "gatherPartners" | "socialProof" | "firstCreator" | "activeRecruiting" | "imagesCount" | "viewLargeImage" | "switchImage" | "closeImage" | "prevImage" | "nextImage" | "imageAlt" | "favorite" | "unfavorite" | "routeSummarySubtitle" | "routeTips" | "addressAndRelated" | "metricUnits.hour" | "metricUnits.minute" | "metricUnits.kilometer" | "metricUnits.meter" | "decision.title" | "decision.subtitle" | "transport.title" | "transport.openInMap" | "transport.fallbackHint" | "parking.title" | "parking.available" | "parking.noParking" | "gear.title" | "gear.essential" | "gear.optional" | "gear.notes";
-  locations: "pageTitle" | "pageSubtitle" | "locationIntro" | "locationList" | "defaultCity" | "viewDetail" | "routeInfo" | "facilities" | "estimatedTime" | "routeLength" | "totalElevation" | "bestSeason" | "facilityParking" | "facilityRestroom" | "facilityWater" | "facilityFood" | "ctaBadge" | "ctaTitle" | "ctaDesc" | "ctaBtn" | "ctaCardTitle" | "ctaCardDesc" | "ctaTrust1" | "ctaTrust2" | "ctaTrust3" | "contactLink" | "tips" | "safetyNotice" | "prevImage" | "nextImage" | "paginationPrev" | "paginationNext" | "allCities" | "cityFilter" | "heroTagline" | "searchPlaceholder" | "tagsLabel" | "resultCount" | "totalResultPrefix" | "clearFilter" | "clearBtn" | "empty.noSearch.title" | "empty.noSearch.desc" | "empty.noSearch.clearBtn" | "empty.noSearch.browseBtn" | "empty.noCity.title" | "empty.noCity.desc" | "empty.noCity.browseBtn" | "empty.noCity.changeBtn" | "empty.noCitySet.title" | "empty.noCitySet.desc" | "empty.noCitySet.setBtn" | "empty.noCitySet.browseFirstBtn" | "empty.tooNarrow.title" | "empty.tooNarrow.desc" | "empty.tooNarrow.resetBtn" | "empty.tooNarrow.homeBtn" | "ctaHeroBadge" | "roleHiking" | "roleHikingDesc" | "roleExplore" | "roleExploreDesc" | "roleLeisure" | "roleLeisureDesc" | "roleTravel" | "roleTravelDesc" | "difficultyFilter" | "allDifficulty" | "detailWaiting" | "detailNoTeamsDesc" | "detailNoTeamsBtn" | "detailParticipate" | "detailCreateTeam" | "detailBrowseTeams" | "detailSeasonsLabel" | "detailShareBtn" | "difficultyLabel" | "teamsWaitingDesc" | "relatedTitle" | "navigateTooltip" | "navigateBtn" | "mapLoadFailed" | "seasons.spring.label" | "seasons.spring.months" | "seasons.summer.label" | "seasons.summer.months" | "seasons.autumn.label" | "seasons.autumn.months" | "seasons.winter.label" | "seasons.winter.months" | "mapProvinceCount" | "mapNoLocations";
+  locations: "pageTitle" | "pageSubtitle" | "locationIntro" | "locationList" | "defaultCity" | "viewDetail" | "routeInfo" | "facilities" | "estimatedTime" | "routeLength" | "totalElevation" | "bestSeason" | "facilityParking" | "facilityRestroom" | "facilityWater" | "facilityFood" | "ctaBadge" | "ctaTitle" | "ctaDesc" | "ctaBtn" | "ctaCardTitle" | "ctaCardDesc" | "ctaTrust1" | "ctaTrust2" | "ctaTrust3" | "contactLink" | "tips" | "safetyNotice" | "prevImage" | "nextImage" | "paginationPrev" | "paginationNext" | "allCities" | "cityFilter" | "heroTagline" | "searchPlaceholder" | "tagsLabel" | "resultCount" | "totalResultPrefix" | "clearFilter" | "clearBtn" | "empty.noSearch.title" | "empty.noSearch.desc" | "empty.noSearch.clearBtn" | "empty.noSearch.browseBtn" | "empty.noCity.title" | "empty.noCity.desc" | "empty.noCity.browseBtn" | "empty.noCity.changeBtn" | "empty.noCitySet.title" | "empty.noCitySet.desc" | "empty.noCitySet.setBtn" | "empty.noCitySet.browseFirstBtn" | "empty.tooNarrow.title" | "empty.tooNarrow.desc" | "empty.tooNarrow.resetBtn" | "empty.tooNarrow.homeBtn" | "ctaHeroBadge" | "roleHiking" | "roleHikingDesc" | "roleExplore" | "roleExploreDesc" | "roleLeisure" | "roleLeisureDesc" | "roleTravel" | "roleTravelDesc" | "difficultyFilter" | "allDifficulty" | "detailWaiting" | "detailNoTeamsDesc" | "detailNoTeamsBtn" | "detailParticipate" | "detailCreateTeam" | "detailBrowseTeams" | "detailSeasonsLabel" | "detailShareBtn" | "difficultyLabel" | "teamsWaitingDesc" | "relatedTitle" | "navigateTooltip" | "navigateBtn" | "mapLoadFailed" | "seasons.spring.label" | "seasons.spring.months" | "seasons.summer.label" | "seasons.summer.months" | "seasons.autumn.label" | "seasons.autumn.months" | "seasons.winter.label" | "seasons.winter.months" | "mapProvinceCount" | "mapNoLocations" | "mapPointCity";
   messages: "centerTitle" | "chatTitle" | "loading" | "loadingConversations" | "emptyTitle" | "emptyDescription" | "discover" | "unknownUser" | "noMessages" | "noMessagesPrompt" | "inputPlaceholder" | "send" | "refresh" | "conversationList" | "openConversation" | "unreadMessages" | "backToMessages" | "messageList" | "messageInputLabel" | "sendMessage" | "sending" | "privateConversation" | "retry" | "loadFailed" | "forbidden" | "centerForbidden" | "sendFailed" | "read" | "today" | "yesterday";
   myTeams: "pageTitle" | "createBtn" | "tabParticipated" | "tabApplications" | "roleFilterAll" | "roleFilterLeader" | "roleFilterMember" | "subTabMyApplications" | "subTabPendingApprovals" | "roleLeader" | "roleMember" | "backBtn" | "statusRecruiting" | "statusFull" | "statusFormed" | "statusCompleted" | "statusCancelled" | "appStatusPending" | "appStatusApproved" | "appStatusRejected" | "requirementsMore" | "levelBeginner" | "levelIntermediate" | "levelAdvanced" | "levelExpert" | "minutesAgo" | "hoursAgo" | "daysAgo" | "minutesAgoTemplate" | "hoursAgoTemplate" | "daysAgoTemplate" | "pendingReview" | "applyToJoin" | "applyTime" | "noBio" | "teamLeader" | "activeTeams" | "noActiveTeams" | "archivedTeams" | "completedCount" | "cancelledCount" | "applicantDetailTitle" | "applicantDetailDesc" | "personalBio" | "applyTeamTitle" | "teamName" | "rejectBtn" | "approveBtn" | "rejectConfirmTitle" | "rejectConfirmDesc" | "cancelBtn" | "confirmRejectBtn" | "emptyCreated" | "emptyCreatedDesc" | "emptyCreatedBtn" | "emptyJoined" | "emptyJoinedDesc" | "emptyJoinedBtn" | "emptyApplications" | "emptyApplicationsDesc" | "emptyApplicationsBtn" | "emptyPending" | "emptyPendingDesc" | "emptyPendingBtn" | "emptyFormed" | "emptyFormedDesc" | "emptyFormedBtn" | "welcomeBack" | "statCreated" | "statJoined" | "statPendingApprovals" | "createTeamBtn" | "emptyParticipatedTitle" | "emptyParticipatedDesc" | "emptyParticipatedBtn" | "emptyCreatedTitle" | "emptyJoinedTitle" | "statusOngoing" | "memberSuffix" | "teamLeaderLabel" | "viewDetail" | "wechatLabel" | "applyTeamLabel" | "skipAction" | "loadMore";
   nav: "home" | "discover" | "locations" | "teams" | "about" | "createTeam" | "login" | "register" | "profile" | "myTeams" | "messages" | "myFavorites" | "logout" | "admin";
