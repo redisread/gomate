@@ -2,10 +2,9 @@
 
 import * as React from "react";
 import { fetchPublicAPI } from "@/lib/api";
-import { effectiveThemeStore } from "@/stores/theme";
 import type { Team } from "@/lib/types";
 import { useLocations, type LocationsResponse } from "@/hooks/use-locations";
-import { useInView, useAnimateIn, useSearchInteraction } from "@/hooks/use-animations";
+import { useAnimateIn, useSearchInteraction } from "@/hooks/use-animations";
 
 export interface HomeInitialData {
   locations?: LocationsResponse | null;
@@ -17,41 +16,23 @@ export interface HomeInitialData {
  */
 export function useHomeData(initialData?: HomeInitialData, userCity?: string | null) {
   // 使用 SWR 获取地点列表（带缓存 + city 维度）
-  const { locations, cityMatch, isLoading } = useLocations(1, 6, initialData?.locations, userCity);
+  const { locations } = useLocations(1, 6, initialData?.locations, userCity);
 
   const [teams, setTeams] = React.useState<Team[]>(initialData?.teams ?? []);
-  const [teamsLoading, setTeamsLoading] = React.useState(!initialData?.teams);
-  const [isDark, setIsDark] = React.useState(false);
-
-  // Theme - 只在客户端检测，避免 SSR/CSR 不一致
-  React.useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
-    const unsubscribe = effectiveThemeStore.subscribe((effective) => {
-      setIsDark(effective === "dark");
-    });
-    return unsubscribe;
-  }, []);
 
   // Animation hooks
   const animate = useAnimateIn();
   const search = useSearchInteraction();
 
-  // Section refs
-  const [locationsRef, locationsInView] = useInView(0.08);
-  const [teamsRef, teamsInView] = useInView(0.08);
-
   // Data fetchers
   const fetchTeams = React.useCallback(async () => {
     try {
-      setTeamsLoading(true);
       const cityParam = userCity ? `&cityId=${encodeURIComponent(userCity)}` : "";
       const res = await fetchPublicAPI(`/api/teams?status=recruiting&pageSize=4${cityParam}`);
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
     } catch (error) {
       console.error("[HomeClient] 获取队伍列表失败:", error);
-    } finally {
-      setTeamsLoading(false);
     }
   }, [userCity]);
 
@@ -78,11 +59,9 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
   };
 
   return {
-    locations, teams, teamsLoading, isLoading, cityMatch, isDark,
+    locations, teams,
     preloadImages,
     animate, search,
-    locationsRef, locationsInView,
-    teamsRef, teamsInView,
     userCity: userCity ?? null,
     handleSearch,
   };

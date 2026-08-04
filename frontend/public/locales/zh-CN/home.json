@@ -5,10 +5,6 @@
     "departingInDays": "{days} 天后出发",
     "viewDetails": "查看详情"
   },
-  "locations": {
-    "cityChip": "📍 {city}",
-    "fallbackHint": "你所在的城市还没有可探索的地点，下面是热门推荐"
-  },
   "localCircle": {
     "title": "本周本地圈子在去哪",
     "subtitle": "不是你去过，是本地圈子已经在做的事",
@@ -40,10 +36,6 @@
     "titleLine2": "出发了吗",
     "description": "搜索一个地点，看看附近正在集结的队伍，或者发起一场同行。"
   },
-  "discoveryEmpty": {
-    "title": "还没有收录到合适的地点",
-    "description": "先去浏览全国地点，找到下一个想出发的方向。"
-  },
   "discoveryMap": {
     "title": "从地图找下一站",
     "description": "从熟悉的城市到还没走过的山野，按省份打开一张新的出发清单。"
@@ -66,10 +58,5 @@
         "description": "确认集合信息，带上需要的装备，一起走完这段路。"
       }
     }
-  },
-  "teamsEmpty": {
-    "guestTitle": "还没有公开队伍",
-    "memberTitle": "附近暂时没有公开队伍",
-    "description": "可以先探索地点，或者成为第一个发起同行的人。"
   }
 }

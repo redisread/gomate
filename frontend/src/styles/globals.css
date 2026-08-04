@@ -693,20 +693,6 @@
     border: 1.5px solid color-mix(in oklab, var(--foreground) 20%, transparent);
   }
 
-  .home-editorial-card {
-    border: 1px solid color-mix(in oklab, var(--foreground) 10%, var(--border));
-    box-shadow: var(--shadow-card);
-  }
-
-  .home-editorial-card:hover {
-    border-color: color-mix(in oklab, var(--primary) 34%, var(--border));
-  }
-
-  .home-empty-state {
-    background-image: radial-gradient(circle at 20% 20%, color-mix(in oklab, var(--primary) 9%, transparent) 0 1px, transparent 1px);
-    background-size: 14px 14px;
-  }
-
   @media (max-width: 767px) {
     .home-hero-shell::before {
       top: 26rem;
