@@ -53,7 +53,7 @@ export function TeamCard({ team, featured = false }: { team: Team; featured?: bo
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <article className={`overflow-hidden rounded-2xl cursor-pointer bg-card relative transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 hover:-translate-y-1.5 hover:shadow-warm-md ${featured ? 'ring-2 ring-amber-500/50' : ''}`}>
+      <article className={`home-editorial-card overflow-hidden rounded-2xl cursor-pointer bg-card relative transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 hover:-translate-y-1.5 hover:shadow-warm-md ${featured ? 'ring-2 ring-amber-500/50' : ''}`}>
 
         {/* Featured badge */}
         {featured && (

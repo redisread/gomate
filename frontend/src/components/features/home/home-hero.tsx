@@ -4,31 +4,31 @@ import type { useHomeData } from "./use-home-data";
 
 type HomeData = ReturnType<typeof useHomeData>;
 
-export function HomeHero({ data }: { data: HomeData }) {
+export function HomeHero({ data, isMember = false }: { data: HomeData; isMember?: boolean }) {
   const { animate, search, handleSearch } = data;
   const { t } = useI18n(["common", "content", "home", "locations"]);
   const featuredLocation = data.locations[0];
   const featuredTeam = data.teams[0];
 
   return (
-    <section className="relative isolate overflow-hidden border-b border-border/70 bg-background">
+    <section className={`home-hero-shell relative isolate overflow-hidden border-b border-border/70 bg-background ${isMember ? "home-hero-member" : ""}`}>
       <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_28%),radial-gradient(circle_at_8%_82%,color-mix(in_oklab,var(--warm)_8%,transparent),transparent_24%)]" />
       <div aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
-      <div className="relative mx-auto grid max-w-7xl gap-12 px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.82fr)] lg:items-center lg:gap-16 lg:px-8 lg:pb-24">
+      <div className="relative z-10 mx-auto grid max-w-7xl gap-12 px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.82fr)] lg:items-center lg:gap-16 lg:px-8 lg:pb-24">
         <div className="max-w-2xl">
-          <div className={`mb-5 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary-50/70 px-3 py-1.5 text-xs font-semibold tracking-wide text-amber-800 dark:bg-primary/10 dark:text-amber-300 ${animate.subtitle}`}>
+          <div className={`home-hero-kicker mb-5 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary-50/70 px-3 py-1.5 text-xs font-semibold tracking-wide text-amber-800 dark:bg-primary/10 dark:text-amber-300 ${animate.subtitle}`}>
             <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-            {t("common.tagline")}
+            {isMember ? t("home.memberHero.kicker") : t("common.tagline")}
           </div>
 
-          <h1 className={`max-w-xl text-[clamp(2.75rem,7vw,5.5rem)] font-bold leading-[1.02] tracking-[-0.055em] text-foreground ${animate.title}`}>
-            <span className="block">{t("content.hero.titleLine1")}</span>
-            <span className="block text-gradient-brand">{t("content.hero.titleLine2")}</span>
+          <h1 className={`home-hero-title max-w-xl text-[clamp(2.75rem,7vw,5.5rem)] font-bold leading-[1.02] tracking-[-0.055em] text-foreground ${animate.title}`}>
+            <span className="block">{isMember ? t("home.memberHero.titleLine1") : t("content.hero.titleLine1")}</span>
+            <span className="block text-gradient-brand">{isMember ? t("home.memberHero.titleLine2") : t("content.hero.titleLine2")}</span>
           </h1>
 
           <p className={`mt-6 max-w-xl text-base leading-8 text-stone-700 dark:text-stone-300 sm:text-lg ${animate.subtitle}`}>
-            {t("content.hero.description")}
+            {isMember ? t("home.memberHero.description") : t("content.hero.description")}
           </p>
 
           <form
@@ -38,7 +38,7 @@ export function HomeHero({ data }: { data: HomeData }) {
               event.preventDefault();
               handleSearch(search.value);
             }}
-            className={`relative mt-8 max-w-2xl ${animate.search}`}
+            className={`home-search relative mt-8 max-w-2xl ${animate.search}`}
           >
             <label htmlFor="home-location-search" className="sr-only">{t("common.searchPlaceholder")}</label>
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
@@ -65,26 +65,26 @@ export function HomeHero({ data }: { data: HomeData }) {
             )}
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white shadow-brand-glow transition-[background-color,transform,box-shadow] duration-150 motion-reduce:transition-none hover:bg-amber-800 hover:shadow-brand-glow-lg active:scale-[0.96]"
+              className="btn-brand-offset absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white transition-[background-color,transform,box-shadow] duration-150 motion-reduce:transition-none hover:bg-amber-800 active:scale-[0.96]"
             >
               {t("common.search")}
             </button>
           </form>
 
           <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
-            <a href="/locations" className="group inline-flex items-center gap-1.5 transition-colors duration-150 hover:text-amber-700 dark:hover:text-amber-300">
-              {t("common.exploreLocations")}
+            <a href={isMember ? "/my-teams" : "/locations"} className="group inline-flex items-center gap-1.5 transition-colors duration-150 hover:text-amber-700 dark:hover:text-amber-300">
+              {isMember ? t("common.myTeams") : t("common.exploreLocations")}
               <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
             </a>
-            <a href="/teams" className="group inline-flex items-center gap-1.5 transition-colors duration-150 hover:text-amber-700 dark:hover:text-amber-300">
-              {t("common.exploreTeams")}
+            <a href={isMember ? "/teams/create" : "/teams"} className="group inline-flex items-center gap-1.5 transition-colors duration-150 hover:text-amber-700 dark:hover:text-amber-300">
+              {isMember ? t("common.exploreCreate") : t("common.exploreTeams")}
               <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
             </a>
           </div>
         </div>
 
         <div className={`relative mx-auto w-full max-w-xl lg:mx-0 ${animate.search}`}>
-          <div className="relative aspect-[0.92] overflow-hidden rounded-[2rem] bg-secondary shadow-warm-xl ring-1 ring-black/5 dark:ring-white/10">
+          <div className="home-route-card relative aspect-[0.92] overflow-hidden rounded-[2rem] bg-secondary shadow-warm-xl ring-1 ring-black/5 dark:ring-white/10">
             {featuredLocation?.coverImage ? (
               <img
                 src={featuredLocation.coverImage}

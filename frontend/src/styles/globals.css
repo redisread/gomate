@@ -611,6 +611,125 @@
    ============================================================ */
 @layer utilities {
 
+  /* ---- Home editorial language ----
+   * A small set of expressive primitives keeps the homepage distinctive
+   * without introducing a second component library or a remote font.
+   */
+  .home-hero-shell {
+    background:
+      radial-gradient(circle at 78% 16%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 28%),
+      linear-gradient(115deg, color-mix(in oklab, var(--background) 92%, var(--warm) 8%), var(--background) 60%);
+  }
+
+  .home-hero-shell::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    top: 7rem;
+    right: -8rem;
+    width: min(44vw, 40rem);
+    height: min(44vw, 40rem);
+    border: 1px solid color-mix(in oklab, var(--primary) 25%, transparent);
+    border-radius: 58% 42% 47% 53%;
+    background: color-mix(in oklab, var(--primary) 7%, transparent);
+    transform: rotate(13deg);
+  }
+
+  .home-hero-shell::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    top: 11rem;
+    right: 13%;
+    width: min(22vw, 18rem);
+    aspect-ratio: 1;
+    border: 1px dashed color-mix(in oklab, var(--primary) 32%, transparent);
+    border-radius: 50%;
+    transform: rotate(-18deg);
+  }
+
+  .home-hero-kicker,
+  .home-section-kicker {
+    letter-spacing: 0.08em;
+  }
+
+  .home-hero-title {
+    text-wrap: balance;
+  }
+
+  .home-route-card {
+    border: 1.5px solid color-mix(in oklab, var(--foreground) 72%, transparent);
+    box-shadow: 10px 12px 0 color-mix(in oklab, var(--primary) 24%, transparent), var(--shadow-warm-xl);
+  }
+
+  .btn-brand-offset {
+    box-shadow: 3px 3px 0 color-mix(in oklab, var(--foreground) 78%, transparent), var(--shadow-brand-glow);
+  }
+
+  .home-step-card {
+    isolation: isolate;
+    overflow: hidden;
+    transition: transform var(--duration-normal) ease, box-shadow var(--duration-normal) ease, border-color var(--duration-normal) ease;
+  }
+
+  .home-step-card:hover {
+    transform: translateY(-4px) rotate(-0.4deg);
+    border-color: color-mix(in oklab, var(--primary) 48%, var(--border));
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .home-step-number {
+    position: absolute;
+    z-index: 0;
+    top: 0.4rem;
+    right: 0.9rem;
+    color: color-mix(in oklab, var(--primary) 18%, transparent);
+    font-size: 4.5rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .home-map-frame {
+    border: 1.5px solid color-mix(in oklab, var(--foreground) 20%, transparent);
+  }
+
+  .home-editorial-card {
+    border: 1px solid color-mix(in oklab, var(--foreground) 10%, var(--border));
+    box-shadow: var(--shadow-card);
+  }
+
+  .home-editorial-card:hover {
+    border-color: color-mix(in oklab, var(--primary) 34%, var(--border));
+  }
+
+  .home-empty-state {
+    background-image: radial-gradient(circle at 20% 20%, color-mix(in oklab, var(--primary) 9%, transparent) 0 1px, transparent 1px);
+    background-size: 14px 14px;
+  }
+
+  @media (max-width: 767px) {
+    .home-hero-shell::before {
+      top: 26rem;
+      right: -12rem;
+      width: 34rem;
+      height: 34rem;
+    }
+
+    .home-hero-shell::after {
+      display: none;
+    }
+
+    .home-route-card {
+      box-shadow: 6px 8px 0 color-mix(in oklab, var(--primary) 22%, transparent), var(--shadow-warm-xl);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-step-card:hover {
+      transform: none;
+    }
+  }
+
   /* ---- 文字渐变 ---- */
   .text-gradient-brand {
     background: linear-gradient(135deg, oklch(0.666 0.157 58.3) 0%, oklch(0.769 0.165 70.1) 60%, oklch(0.879 0.153 91.6) 100%);

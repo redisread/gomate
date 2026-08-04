@@ -487,7 +487,7 @@ function CtaButton({
       data-testid={dataTestId}
       // task #180 a11y：`bg-primary` (#D97706 amber-600) on cream `#FFFBEB` primary-foreground = ~3.3:1 挂 WCAG AA 4.5:1
       // 走 amber-700 (#B45309) + text-white = ~5.5:1 稳过；不改 --primary token 避免全站隐性回归
-      className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg transition-[transform,background-color,border-color,color,opacity,box-shadow] hover:scale-[1.02] active:scale-[0.96] bg-amber-700 text-white hover:bg-amber-800 shadow-md hover:shadow-lg transition-shadow"
+      className="btn-brand-offset flex items-center gap-1.5 rounded-xl border border-amber-900/15 bg-amber-700 px-4 py-2 text-sm font-semibold tracking-wide text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] hover:scale-[1.02] hover:bg-amber-800 active:scale-[0.96]"
     >
       {icon}
       {label}
@@ -537,4 +537,3 @@ function _NavbarSkeleton({ className }: { className?: string }) {
     </header>
   );
 }
-

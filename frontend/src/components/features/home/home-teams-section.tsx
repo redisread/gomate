@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, UsersRound } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 import { TeamCard } from "./home-team-card";
@@ -6,14 +6,9 @@ import { TeamCardSkeleton } from "./home-team-card-skeleton";
 
 type HomeData = ReturnType<typeof useHomeData>;
 
-export function HomeTeamsSection({ data }: { data: HomeData }) {
+export function HomeTeamsSection({ data, isMember = false }: { data: HomeData; isMember?: boolean }) {
   const { teams, teamsLoading, teamsRef, teamsInView } = data;
   const { t } = useI18n(["home", "teams", "common"]);
-
-  // 条件渲染：teams.length === 0 时整区不渲染（spec §5）
-  if (!teamsLoading && teams.length === 0) {
-    return null;
-  }
 
   return (
     <section id="teams" ref={teamsRef}
@@ -33,6 +28,22 @@ export function HomeTeamsSection({ data }: { data: HomeData }) {
             {Array.from({ length: 6 }).map((_, i) => (
               <TeamCardSkeleton key={i} />
             ))}
+          </div>
+        ) : teams.length === 0 ? (
+          <div className="home-empty-state rounded-[1.5rem] border border-dashed border-primary/35 bg-primary-50/50 px-6 py-10 text-center dark:bg-primary/10">
+            <UsersRound className="mx-auto h-9 w-9 text-primary" aria-hidden="true" />
+            <h3 className="mt-4 text-lg font-semibold text-foreground">{t(isMember ? "home.teamsEmpty.memberTitle" : "home.teamsEmpty.guestTitle")}</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-stone-700 dark:text-stone-300">{t("home.teamsEmpty.description")}</p>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <a href="/teams" className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:text-primary">
+                {t("common.exploreTeams")}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+              <a href="/teams/create" className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-primary hover:text-white">
+                {t("common.exploreCreate")}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -33,5 +33,43 @@
   "mapPointHint": "スポットをクリックして詳細を表示",
   "mapFocusedEmptyTitle": "{province}にはまだスポットがありません",
   "mapFocusedEmptyDesc": "ほかの地域から探索してみましょう。",
-  "mapBrowseOtherRegions": "ほかの地域を見る"
+  "mapBrowseOtherRegions": "ほかの地域を見る",
+  "memberHero": {
+    "kicker": "今日はどこへ行く？",
+    "titleLine1": "次の旅に",
+    "titleLine2": "出かけよう",
+    "description": "場所を検索して、近くで集まるチームを見つけるか、自分で旅を始めましょう。"
+  },
+  "discoveryEmpty": {
+    "title": "一致する場所がまだありません",
+    "description": "すべての場所を見て、次の旅の方向を見つけましょう。"
+  },
+  "discoveryMap": {
+    "title": "地図から次の場所を探す",
+    "description": "身近な街からまだ歩いていない道まで、新しい出発点を開きましょう。"
+  },
+  "howItWorks": {
+    "kicker": "思いから出発へ",
+    "title": "3ステップで仲間を見つける",
+    "description": "GoMateは場所、時間、チームをつなぎ、思いつきを旅の計画に変えます。",
+    "steps": {
+      "discover": {
+        "title": "行きたい場所を探す",
+        "description": "ルートや街、周辺の目的地を見て方向を決めます。"
+      },
+      "team": {
+        "title": "チームに参加・作成する",
+        "description": "ペースの合う仲間を見つけるか、自分で旅を始めます。"
+      },
+      "go": {
+        "title": "計画を出発に変える",
+        "description": "集合情報を確認して、必要なものを持って一緒に出かけます。"
+      }
+    }
+  },
+  "teamsEmpty": {
+    "guestTitle": "公開チームはまだありません",
+    "memberTitle": "近くに公開チームはまだありません",
+    "description": "まず場所を探すか、最初の旅を始めてみましょう。"
+  }
 }

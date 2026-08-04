@@ -33,5 +33,43 @@
   "mapPointHint": "Click a location for details",
   "mapFocusedEmptyTitle": "No locations have been added in {province} yet",
   "mapFocusedEmptyDesc": "Browse other regions to find an adventure.",
-  "mapBrowseOtherRegions": "Browse other regions"
+  "mapBrowseOtherRegions": "Browse other regions",
+  "memberHero": {
+    "kicker": "Where are you going today?",
+    "titleLine1": "Ready for your",
+    "titleLine2": "next outing?",
+    "description": "Search a place, see teams forming nearby, or start an outing of your own."
+  },
+  "discoveryEmpty": {
+    "title": "No locations match yet",
+    "description": "Browse all locations and find a direction for your next outing."
+  },
+  "discoveryMap": {
+    "title": "Find your next stop on the map",
+    "description": "Open a new starting point, from familiar cities to trails you have not walked yet."
+  },
+  "howItWorks": {
+    "kicker": "From idea to outing",
+    "title": "Three steps to find your people",
+    "description": "GoMate brings places, timing, and teams together so an idea can become a plan.",
+    "steps": {
+      "discover": {
+        "title": "Find somewhere to go",
+        "description": "Browse routes, cities, and nearby destinations to choose a direction."
+      },
+      "team": {
+        "title": "Join or start a team",
+        "description": "Find people with a matching pace, or start an outing yourself."
+      },
+      "go": {
+        "title": "Turn the plan into a start",
+        "description": "Confirm the meetup details, pack what you need, and go together."
+      }
+    }
+  },
+  "teamsEmpty": {
+    "guestTitle": "No public teams yet",
+    "memberTitle": "No public teams nearby yet",
+    "description": "Explore a location first, or be the first person to start an outing."
+  }
 }
