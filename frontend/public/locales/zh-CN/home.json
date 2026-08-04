@@ -33,5 +33,43 @@
   "mapPointHint": "点击地点查看详情",
   "mapFocusedEmptyTitle": "{province} 暂时还没有收录地点",
   "mapFocusedEmptyDesc": "可以先浏览全国其他地区的探索路线。",
-  "mapBrowseOtherRegions": "浏览其他地区"
+  "mapBrowseOtherRegions": "浏览其他地区",
+  "memberHero": {
+    "kicker": "今天想去哪儿",
+    "titleLine1": "准备下一次",
+    "titleLine2": "出发了吗",
+    "description": "搜索一个地点，看看附近正在集结的队伍，或者发起一场同行。"
+  },
+  "discoveryEmpty": {
+    "title": "还没有收录到合适的地点",
+    "description": "先去浏览全国地点，找到下一个想出发的方向。"
+  },
+  "discoveryMap": {
+    "title": "从地图找下一站",
+    "description": "从熟悉的城市到还没走过的山野，按省份打开一张新的出发清单。"
+  },
+  "howItWorks": {
+    "kicker": "从想去到出发",
+    "title": "三步，找到同行的人",
+    "description": "GoMate 把地点、时间和队伍放在一起，让一次出发从想法变成计划。",
+    "steps": {
+      "discover": {
+        "title": "先找到想去的地方",
+        "description": "浏览路线、城市和周边目的地，先确定方向。"
+      },
+      "team": {
+        "title": "加入或发起队伍",
+        "description": "按时间和节奏找到合适的同行者，也可以自己发起一场。"
+      },
+      "go": {
+        "title": "把计划变成出发",
+        "description": "确认集合信息，带上需要的装备，一起走完这段路。"
+      }
+    }
+  },
+  "teamsEmpty": {
+    "guestTitle": "还没有公开队伍",
+    "memberTitle": "附近暂时没有公开队伍",
+    "description": "可以先探索地点，或者成为第一个发起同行的人。"
+  }
 }

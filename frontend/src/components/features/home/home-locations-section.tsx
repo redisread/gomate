@@ -1,11 +1,12 @@
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, Compass, MapPin } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 import { LocationCard } from "./home-location-card";
+import { ChinaMap } from "./china-map";
 
 type HomeData = ReturnType<typeof useHomeData>;
 
-export function HomeLocationsSection({ data }: { data: HomeData }) {
+export function HomeLocationsSection({ data, showMap = false }: { data: HomeData; showMap?: boolean }) {
   const { locations, isLoading, locationsRef, locationsInView, userCity, cityMatch } = data;
   const showViewAllCity = userCity && cityMatch && cityMatch !== "fallback" && locations[0]?.cityName;
   const locationsUrl = showViewAllCity ? `/locations?cityId=${encodeURIComponent(userCity)}` : "/locations";
@@ -13,8 +14,6 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
 
   const showCityChip = userCity && cityMatch && cityMatch !== "fallback" && locations[0]?.cityName;
   const cityChipName = showCityChip ? locations[0].cityName : null;
-
-  if (!isLoading && locations.length === 0) return null;
 
   return (
     <section
@@ -50,6 +49,16 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
               {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-72 rounded-2xl bg-muted animate-pulse" />)}
             </div>
           </>
+        ) : locations.length === 0 ? (
+          <div className="home-empty-state rounded-[1.5rem] border border-dashed border-primary/35 bg-primary-50/50 px-6 py-10 text-center dark:bg-primary/10">
+            <Compass className="mx-auto h-9 w-9 text-primary" aria-hidden="true" />
+            <h3 className="mt-4 text-lg font-semibold text-foreground">{t("home.discoveryEmpty.title")}</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-stone-700 dark:text-stone-300">{t("home.discoveryEmpty.description")}</p>
+            <a href="/locations" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-primary hover:text-white">
+              {t("common.exploreLocations")}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+          </div>
         ) : (
           <>
             <div className="md:hidden flex flex-col gap-2">
@@ -65,6 +74,28 @@ export function HomeLocationsSection({ data }: { data: HomeData }) {
               </a>
             </div>
           </>
+        )}
+
+        {showMap && (
+          <div className="mt-16 border-t border-border/70 pt-16 sm:mt-20 sm:pt-20">
+            <div className="grid items-center gap-8 lg:grid-cols-[minmax(220px,0.38fr)_minmax(0,1fr)] lg:gap-14">
+              <div className="max-w-md">
+                <div className="mb-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-amber-800 dark:text-amber-300">
+                  <Compass className="h-4 w-4" aria-hidden="true" />
+                  {t("common.explore")}
+                </div>
+                <h3 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{t("home.discoveryMap.title")}</h3>
+                <p className="mt-4 text-base leading-7 text-stone-700 dark:text-stone-300">{t("home.discoveryMap.description")}</p>
+                <a href="/locations" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-semibold text-background transition-colors hover:bg-primary hover:text-white">
+                  {t("common.exploreLocations")}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </a>
+              </div>
+              <div className="home-map-frame rounded-[1.5rem] bg-card p-2 shadow-warm-xl ring-1 ring-black/5 dark:ring-white/10">
+                <ChinaMap />
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </section>
