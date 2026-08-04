@@ -5,7 +5,10 @@ import { LocationsGrid } from "./locations-grid";
 
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
-    t: (key: string) => key,
+    t: (key: string, vars?: Record<string, string | number>) => {
+      if (!vars) return key;
+      return `${key}[${Object.entries(vars).map(([name, value]) => `${name}=${value}`).join(",")}]`;
+    },
     locale: "zh-CN",
     loading: false,
     getNsData: () => null,
@@ -23,6 +26,25 @@ const location = {
 } as unknown as Location;
 
 describe("LocationsGrid", () => {
+  it("将搜索词传入无结果空态文案", () => {
+    render(
+      <LocationsGrid
+        locations={[]}
+        isLoading={false}
+        isRefreshing={false}
+        pagination={{ total: 0, totalPages: 0 }}
+        onClear={vi.fn()}
+        emptyVariant="noSearch"
+        query="咖啡馆"
+        currentPage={1}
+        onPageChange={vi.fn()}
+        getPageNumbers={() => []}
+      />,
+    );
+
+    expect(screen.getByText("locations.empty.noSearch.title[query=咖啡馆]")).toBeInTheDocument();
+  });
+
   it("刷新列表时保留现有卡片，只显示忙碌状态", () => {
     render(
       <LocationsGrid

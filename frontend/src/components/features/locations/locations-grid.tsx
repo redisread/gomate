@@ -123,6 +123,8 @@ export type EmptyStateVariant = "noSearch" | "noCity" | "noCitySet" | "tooNarrow
 
 export interface EmptyStateProps {
   variant: EmptyStateVariant;
+  /** Search query for the noSearch variant template. */
+  query?: string;
   /** City name for noCity variant template (e.g. "深圳") */
   cityName?: string;
   onClearSearch?: () => void;
@@ -157,6 +159,7 @@ const VARIANT_SECONDARY: Record<EmptyStateVariant, string> = {
 
 export function EmptyState({
   variant,
+  query,
   cityName,
   onClearSearch,
   onClearAll,
@@ -170,9 +173,9 @@ export function EmptyState({
   const primaryConfig = VARIANT_PRIMARY[variant];
   const primaryAction = actionMap[primaryConfig.action];
 
-  const cn = cityName ?? "";
-  const title = t(`locations.empty.${variant}.title`, { cityName: cn });
-  const desc = t(`locations.empty.${variant}.desc`, { cityName: cn });
+  const titleVars: Record<string, string> = variant === "noSearch" ? { query: query ?? "" } : { cityName: cityName ?? "" };
+  const title = t(`locations.empty.${variant}.title`, titleVars);
+  const desc = t(`locations.empty.${variant}.desc`, titleVars);
   const primaryLabel = t(primaryConfig.labelKey);
   const secondaryLabel = t(VARIANT_SECONDARY[variant]);
 
@@ -226,6 +229,7 @@ export function LocationsGrid({
   pagination,
   onClear,
   emptyVariant,
+  query,
   currentPage,
   onPageChange,
   getPageNumbers,
@@ -237,6 +241,8 @@ export function LocationsGrid({
   onClear: () => void;
   /** @default "noSearch" */
   emptyVariant?: EmptyStateVariant;
+  /** Search query for the noSearch empty state. */
+  query?: string;
   currentPage: number;
   onPageChange: (page: number) => void;
   getPageNumbers: () => (number | "...")[];
@@ -269,6 +275,7 @@ export function LocationsGrid({
           ) : locations.length === 0 ? (
             <EmptyState
               variant={emptyVariant ?? "noSearch"}
+              query={query}
               onClearSearch={onClear}
               onClearAll={onClear}
             />
