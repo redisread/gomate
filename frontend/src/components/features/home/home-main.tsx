@@ -3,10 +3,9 @@
 import * as React from "react";
 import { useHomeData, type HomeInitialData } from "./use-home-data";
 import { HomeHero } from "./home-hero";
-import { HomeLocationsSection } from "./home-locations-section";
-import { HomeTeamsSection } from "./home-teams-section";
 import { HomeLocalCircleSection } from "./local-circle/home-local-circle-section";
 import { HomeHowItWorksSection } from "./home-how-it-works-section";
+import { HomeMapSection } from "./home-map-section";
 import { OnboardingModal } from "@/components/features/onboarding/onboarding-modal";
 import { PreloadImages } from "./preload-images";
 import { fetchCurrentUser } from "@/lib/api";
@@ -32,9 +31,8 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
       <main className="min-h-screen bg-background">
         <HomeHero data={data} isMember={isMember} />
         <HomeLocalCircleSection />
-        <HomeLocationsSection data={data} showMap={!isMember} />
+        <HomeMapSection />
         {!isMember && currentUser === null && <HomeHowItWorksSection />}
-        <HomeTeamsSection data={data} isMember={isMember} />
         {/* P1-1 T2：首次引导流 modal（登录 + 无队伍 + 未看过才弹，gating 全在 hook 内） */}
         <OnboardingModal />
       </main>
