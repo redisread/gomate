@@ -4,16 +4,13 @@ import { Footer } from "@/components/layout/footer";
 import { useI18n } from "@/hooks/useI18n";
 import { useLocationsList, type LocationsListInitialData } from "./use-locations-list";
 import { LocationsHero, LocationsResultBar, LocationsCtaSection } from "./locations-hero";
-import { LocationsGrid } from "./locations-grid";
-
-type EmptyVariant = "noSearch" | "noCity" | "noCitySet" | "tooNarrow";
+import { LocationsGrid, type EmptyStateVariant } from "./locations-grid";
 
 export function LocationsClient({ initialData }: { initialData?: LocationsListInitialData }) {
   const ctx = useLocationsList(initialData);
   const { loading: _i18nLoading } = useI18n(["locations", "filter"]);
 
-  // 计算空态 variant（待 T1 EmptyState 4 variant 完成后透传）
-  const _emptyVariant: EmptyVariant =
+  const emptyVariant: EmptyStateVariant =
     ctx.searchQuery.length > 0
       ? "noSearch"
       : ctx.selectedCityId && ctx.locations.length === 0 && !ctx.searchQuery
@@ -95,6 +92,8 @@ export function LocationsClient({ initialData }: { initialData?: LocationsListIn
             isRefreshing={ctx.isRefreshing}
             pagination={ctx.pagination}
             onClear={ctx.handleClearAll}
+            emptyVariant={emptyVariant}
+            query={ctx.searchQuery}
             currentPage={ctx.currentPage}
             onPageChange={ctx.handlePageChange}
             getPageNumbers={ctx.getPageNumbers}
