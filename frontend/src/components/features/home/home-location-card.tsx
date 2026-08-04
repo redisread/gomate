@@ -88,7 +88,7 @@ export const LocationCard = memo(function LocationCard({ location, index = 0, co
   return (
     <a href={`/locations/${location.id}`} className="block group">
       <article
-        className="overflow-hidden rounded-2xl cursor-pointer bg-card
+        className="home-editorial-card overflow-hidden rounded-2xl cursor-pointer bg-card
           shadow-[var(--shadow-card)]
           transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 ease-out
           hover:shadow-[var(--shadow-card-hover)]

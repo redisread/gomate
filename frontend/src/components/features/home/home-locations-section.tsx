@@ -65,7 +65,11 @@ export function HomeLocationsSection({ data, showMap = false }: { data: HomeData
               {locations.map((location, index) => <LocationCard key={location.id} location={location} index={index} compact />)}
             </div>
             <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {locations.map((location, index) => <LocationCard key={location.id} location={location} index={index} />)}
+              {locations.map((location, index) => (
+                <div key={location.id} className={index === 0 ? "lg:col-span-2" : ""}>
+                  <LocationCard location={location} index={index} />
+                </div>
+              ))}
             </div>
             <div className="text-center mt-14">
               <a href={locationsUrl} className="group inline-flex items-center gap-2 px-7 py-3.5 border border-border rounded-2xl text-base font-semibold text-foreground transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400 hover:shadow-warm-sm active:scale-[0.96]">

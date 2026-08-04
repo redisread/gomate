@@ -15,7 +15,7 @@ export function HomeHero({ data, isMember = false }: { data: HomeData; isMember?
       <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_28%),radial-gradient(circle_at_8%_82%,color-mix(in_oklab,var(--warm)_8%,transparent),transparent_24%)]" />
       <div aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
-      <div className="relative mx-auto grid max-w-7xl gap-12 px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.82fr)] lg:items-center lg:gap-16 lg:px-8 lg:pb-24">
+      <div className="relative z-10 mx-auto grid max-w-7xl gap-12 px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.82fr)] lg:items-center lg:gap-16 lg:px-8 lg:pb-24">
         <div className="max-w-2xl">
           <div className={`home-hero-kicker mb-5 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary-50/70 px-3 py-1.5 text-xs font-semibold tracking-wide text-amber-800 dark:bg-primary/10 dark:text-amber-300 ${animate.subtitle}`}>
             <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />

@@ -44,4 +44,20 @@ describe("HomeLocationsSection", () => {
     expect(locationLinks.length).toBeGreaterThan(0);
     expect(locationLinks.every((link) => link.getAttribute("href") === "/locations/loc-1")).toBe(true);
   });
+
+  it("renders an actionable empty state when no locations are available", () => {
+    render(
+      <HomeLocationsSection
+        data={{
+          locations: [],
+          isLoading: false,
+          userCity: null,
+          cityMatch: null,
+        } as unknown as Parameters<typeof HomeLocationsSection>[0]["data"]}
+      />,
+    );
+
+    expect(screen.getByText("home.discoveryEmpty.title")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /common\.exploreLocations/ })).toHaveAttribute("href", "/locations");
+  });
 });
