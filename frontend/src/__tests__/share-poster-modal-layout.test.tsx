@@ -25,11 +25,12 @@ describe("SharePosterModal layout", () => {
   });
 
   function mockGeneratedPoster() {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response("poster", {
-        status: 200,
-        headers: { "content-type": "image/png" },
-      }),
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () =>
+        new Response("poster", {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        }),
     );
     Object.defineProperties(URL, {
       createObjectURL: {
@@ -130,17 +131,15 @@ describe("SharePosterModal layout", () => {
     });
   });
 
-  it("opens the poster on iOS and only reports success when the new tab opens", async () => {
+  it("uses the download link on iOS", async () => {
     mockGeneratedPoster();
     vi.stubGlobal("navigator", {
       ...navigator,
       userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
     });
-    const openedDocument = document.implementation.createHTMLDocument();
-    const open = vi.spyOn(window, "open").mockReturnValue({
-      document: openedDocument,
-      opener: window,
-    } as Window);
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
 
     render(
       <SharePosterModal
@@ -159,22 +158,26 @@ describe("SharePosterModal layout", () => {
     fireEvent.click(downloadButton);
 
     await waitFor(() => {
-      expect(open).toHaveBeenCalledWith("about:blank", "_blank");
-      expect(openedDocument.body.textContent).toContain("share.posterOpened");
-      expect(openedDocument.querySelector("img")?.getAttribute("src")).toBe(
-        "blob:poster",
-      );
-      expect(screen.getByRole("status")).toHaveTextContent("share.posterOpened");
+      expect(click).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole("status")).toHaveTextContent("share.posterDownloaded");
     });
   });
 
-  it("shows an error instead of a false success when iOS blocks the new tab", async () => {
+  it("uses iOS native file sharing when the browser supports it", async () => {
     mockGeneratedPoster();
+    const share = vi.fn().mockResolvedValue(undefined);
+    const canShare = vi.fn(() => true);
     vi.stubGlobal("navigator", {
       ...navigator,
       userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
     });
-    vi.spyOn(window, "open").mockReturnValue(null);
+    Object.defineProperties(navigator, {
+      share: { configurable: true, value: share },
+      canShare: { configurable: true, value: canShare },
+    });
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
 
     render(
       <SharePosterModal
@@ -193,8 +196,10 @@ describe("SharePosterModal layout", () => {
     fireEvent.click(downloadButton);
 
     await waitFor(() => {
-      expect(screen.getByRole("alert")).toHaveTextContent("share.downloadFailed");
-      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      expect(canShare).toHaveBeenCalledWith({ files: [expect.any(File)] });
+      expect(share).toHaveBeenCalledWith(expect.objectContaining({ files: [expect.any(File)] }));
+      expect(click).not.toHaveBeenCalled();
+      expect(screen.getByRole("status")).toHaveTextContent("share.posterDownloaded");
     });
   });
 });
