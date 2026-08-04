@@ -75,7 +75,7 @@ async function copyText(text: string) {
 export function SharePosterModal({
   type,
   id,
-  title: _title,
+  title,
   url,
   onClose,
   onToast,
@@ -187,44 +187,50 @@ export function SharePosterModal({
     setIsDownloading(true);
 
     try {
-      if (isIOSDevice()) {
-        // iOS Safari ignores the download attribute. Open the blob directly so
-        // users can long-press the image and save it to Photos.
-        // eslint-disable-next-line no-restricted-properties -- iOS Safari requires opening the blob in a new tab
-        const newWindow = window.open("about:blank", "_blank");
-        if (!newWindow) {
-          throw new Error("Unable to open poster");
+      if (
+        isIOSDevice() &&
+        typeof File !== "undefined" &&
+        typeof navigator.share === "function" &&
+        typeof navigator.canShare === "function"
+      ) {
+        try {
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          const file = new File(
+            [blob],
+            `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.png`,
+            { type: blob.type || "image/png" },
+          );
+
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title,
+              files: [file],
+            });
+            notifyAction({ type: "success", message: t("share.posterDownloaded") });
+            return;
+          }
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            return;
+          }
+          // Fall through to the regular download attempt if native sharing
+          // is unavailable or rejected by the host browser.
         }
-        newWindow.opener = null;
-        const document = newWindow.document;
-        document.title = t("share.posterOpened");
-        document.body.style.cssText =
-          "margin:0;display:flex;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#1c1917;padding:16px;box-sizing:border-box;";
-
-        const hint = document.createElement("p");
-        hint.textContent = t("share.posterOpened");
-        hint.style.cssText =
-          "margin:0;color:#fff;font:16px -apple-system,BlinkMacSystemFont,sans-serif;text-align:center;";
-
-        const image = document.createElement("img");
-        image.src = imageUrl;
-        image.alt = type === "team" ? t("share.title") : t("share.locationTitle");
-        image.style.cssText =
-          "display:block;max-width:100%;max-height:calc(100vh - 72px);object-fit:contain;border-radius:12px;";
-        document.body.replaceChildren(hint, image);
-        notifyAction({ type: "success", message: t("share.posterOpened") });
-      } else {
-        // Standard download for Android/PC. Appending the link is required by
-        // Safari and some embedded browsers before click() is dispatched.
-        const link = document.createElement("a");
-        link.href = imageUrl;
-        link.download = `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.png`;
-        link.style.display = "none";
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        notifyAction({ type: "success", message: t("share.posterDownloaded") });
       }
+
+      // Use the same user-initiated download flow on iOS as on other browsers.
+      // iOS may still choose to preview the blob instead of saving it, but the
+      // download is now attempted and the user is not silently redirected to
+      // a new tab.
+      const link = document.createElement("a");
+      link.href = imageUrl;
+      link.download = `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.png`;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      notifyAction({ type: "success", message: t("share.posterDownloaded") });
     } catch {
       notifyAction({ type: "error", message: t("share.downloadFailed") });
     } finally {
