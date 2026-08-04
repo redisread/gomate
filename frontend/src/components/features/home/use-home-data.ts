@@ -17,7 +17,7 @@ export interface HomeInitialData {
  */
 export function useHomeData(initialData?: HomeInitialData, userCity?: string | null) {
   // 使用 SWR 获取地点列表（带缓存 + city 维度）
-  const { locations, cityMatch, isLoading } = useLocations(1, 6, initialData?.locations, userCity);
+  const { locations } = useLocations(1, 6, initialData?.locations, userCity);
 
   const [teams, setTeams] = React.useState<Team[]>(initialData?.teams ?? []);
   const [teamsLoading, setTeamsLoading] = React.useState(!initialData?.teams);
@@ -37,7 +37,6 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
   const search = useSearchInteraction();
 
   // Section refs
-  const [locationsRef, locationsInView] = useInView(0.08);
   const [teamsRef, teamsInView] = useInView(0.08);
 
   // Data fetchers
@@ -78,10 +77,9 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
   };
 
   return {
-    locations, teams, teamsLoading, isLoading, cityMatch, isDark,
+    locations, teams, teamsLoading, isDark,
     preloadImages,
     animate, search,
-    locationsRef, locationsInView,
     teamsRef, teamsInView,
     userCity: userCity ?? null,
     handleSearch,
