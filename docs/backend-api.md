@@ -17,11 +17,11 @@
 
 绝大多数受保护端点都是逐路由调用 `getSession()` 校验会话，未登录返回 401。集中封装：
 
-| 工具                         | 位置                                     | 作用                               | 未通过时返回 |
-| ---------------------------- | ---------------------------------------- | ---------------------------------- | ------------ |
-| `requireAdmin`               | `api/src/routes/locations/utils.ts`      | 管理员专属操作（地点/城市/标签写入等） | 401 / 403    |
-| `requireTeamLeader()`        | `api/src/lib/team-permissions.ts`        | 仅队长（审批、修改、组建/取消、移除） | 401 / 403    |
-| `requireTeamMember()`        | `api/src/lib/team-permissions.ts`        | 仅已批准成员（行动本认领等）          | 401 / 403    |
+| 工具                  | 位置                                | 作用                                   | 未通过时返回 |
+| --------------------- | ----------------------------------- | -------------------------------------- | ------------ |
+| `requireAdmin`        | `api/src/routes/locations/utils.ts` | 管理员专属操作（地点/城市/标签写入等） | 401 / 403    |
+| `requireTeamLeader()` | `api/src/lib/team-permissions.ts`   | 仅队长（审批、修改、组建/取消、移除）  | 401 / 403    |
+| `requireTeamMember()` | `api/src/lib/team-permissions.ts`   | 仅已批准成员（行动本认领等）           | 401 / 403    |
 
 ---
 
@@ -33,7 +33,6 @@
 
 - **认证：** 否
 - **Body：** `{ "email": "user@example.com" }`
-- **限流：** 5 次/分钟/IP
 - **响应：** `{ "success": true, "message": "如果该邮箱已注册，重置密码邮件已发送" }`（不暴露邮箱是否注册）
 
 ### POST `/auth/api-key/create`
@@ -45,7 +44,7 @@
 
 ### ALL `/auth/*`
 
-Better Auth 代理，处理注册、登录、登出、会话刷新等所有认证操作。`sign-in` / `sign-up` 端点分别限流 20 / 10 次每分钟每 IP。
+Better Auth 代理，处理注册、登录、登出、会话刷新等所有认证操作。
 
 ---
 
@@ -95,7 +94,11 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
       "icon": "⛰️",
       "status": "recruiting",
       "requirements": ["防晒", "登山鞋"],
-      "location": { "name": "清水湾", "coverImage": "url", "difficulty": "moderate" },
+      "location": {
+        "name": "清水湾",
+        "coverImage": "url",
+        "difficulty": "moderate"
+      },
       "leader": {
         "id": "user-xxx",
         "name": "张三",
@@ -108,7 +111,13 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
       "createdAt": "2026-03-20T10:00:00Z"
     }
   ],
-  "pagination": { "page": 1, "pageSize": 12, "total": 45, "totalPages": 4, "hasMore": true }
+  "pagination": {
+    "page": 1,
+    "pageSize": 12,
+    "total": 45,
+    "totalPages": 4,
+    "hasMore": true
+  }
 }
 ```
 
@@ -275,11 +284,11 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 
 ### 行动本 Checklist（task #163）
 
-| 端点                                                           | 认证   | 说明                                   |
-| -------------------------------------------------------------- | ------ | -------------------------------------- |
-| `PUT /teams/:id/checklist`                                     | 是（仅队长）     | 覆盖式保存行动本（集合点/装备/分工，≤2KB） |
-| `POST /teams/:id/checklist/assignments/:assignmentId/claim`    | 是（成员） | 认领分工                             |
-| `DELETE /teams/:id/checklist/assignments/:assignmentId/claim`  | 是（成员） | 取消认领（幂等，未认领返回 204）       |
+| 端点                                                          | 认证         | 说明                                       |
+| ------------------------------------------------------------- | ------------ | ------------------------------------------ |
+| `PUT /teams/:id/checklist`                                    | 是（仅队长） | 覆盖式保存行动本（集合点/装备/分工，≤2KB） |
+| `POST /teams/:id/checklist/assignments/:assignmentId/claim`   | 是（成员）   | 认领分工                                   |
+| `DELETE /teams/:id/checklist/assignments/:assignmentId/claim` | 是（成员）   | 取消认领（幂等，未认领返回 204）           |
 
 ---
 
@@ -292,17 +301,17 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 - **认证：** 否
 - **Query 参数：**
 
-| 参数           | 类型   | 说明                                             |
-| -------------- | ------ | ------------------------------------------------ |
-| `page`         | int    | 页码，默认 1                                     |
-| `pageSize`     | int    | 每页数量，默认 12，最大 100                      |
-| `search`       | string | 搜索地点名称                                     |
-| `cityId`       | string | 城市 ID                                          |
-| `tagIds`       | string | 逗号分隔的标签 ID                                |
-| `type`         | string | 地点类型筛选（hiking\|explore\|leisure\|travel） |
+| 参数           | 类型   | 说明                                                      |
+| -------------- | ------ | --------------------------------------------------------- |
+| `page`         | int    | 页码，默认 1                                              |
+| `pageSize`     | int    | 每页数量，默认 12，最大 100                               |
+| `search`       | string | 搜索地点名称                                              |
+| `cityId`       | string | 城市 ID                                                   |
+| `tagIds`       | string | 逗号分隔的标签 ID                                         |
+| `type`         | string | 地点类型筛选（hiking\|explore\|leisure\|travel）          |
 | `view`         | string | `card` 轻量卡片模式（不 join 城市，徒步参数直读地点字段） |
-| `tags=true`    | —      | 返回热门标签（15 条）                            |
-| `allTags=true` | —      | 返回所有标签（按类型分组）                       |
+| `tags=true`    | —      | 返回热门标签（15 条）                                     |
+| `allTags=true` | —      | 返回所有标签（按类型分组）                                |
 
 - **响应：**
 
@@ -478,7 +487,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 
 ## 5. 文件上传 `/upload`
 
-所有上传端点统一走 R2（`https://gomate.cos.jiahongw.com/...`），有速率限制（429 时带 `retryAfter`）。
+所有上传端点统一走 R2（`https://gomate.cos.jiahongw.com/...`）。
 
 ### POST `/upload/avatar`
 
@@ -683,13 +692,13 @@ R2 文件代理（本地开发专用，顶层挂载）
 
 队伍内一对一私信（仅队长与 approved 成员可互发）。
 
-| 端点 | 认证 | 说明 |
-| ---- | ---- | ---- |
-| `GET /messages` | 是 | 会话列表（`limit`，默认 20，最大 50） |
-| `POST /messages` | 是 | 创建会话，Body `{ "teamId", "userId"? }`（队长可指定目标成员；成员只能找队长） |
-| `GET /messages/unread-count` | 是 | 未读数 |
-| `GET /messages/:id` | 是 | 会话消息（`cursor` / `since` / `limit` 分页） |
-| `POST /messages/:id` | 是 | 发送消息，Body `{ "content" }`（≤1000 字，限流 30 条/分钟/用户） |
+| 端点                         | 认证 | 说明                                                                           |
+| ---------------------------- | ---- | ------------------------------------------------------------------------------ |
+| `GET /messages`              | 是   | 会话列表（`limit`，默认 20，最大 50）                                          |
+| `POST /messages`             | 是   | 创建会话，Body `{ "teamId", "userId"? }`（队长可指定目标成员；成员只能找队长） |
+| `GET /messages/unread-count` | 是   | 未读数                                                                         |
+| `GET /messages/:id`          | 是   | 会话消息（`cursor` / `since` / `limit` 分页）                                  |
+| `POST /messages/:id`         | 是   | 发送消息，Body `{ "content" }`（≤1000 字）                                     |
 
 ---
 
@@ -708,10 +717,10 @@ R2 文件代理（本地开发专用，顶层挂载）
 
 服务端 Satori + resvg 生成分享图（PNG），R2 缓存（`Cache-Control: public, max-age=86400`）。
 
-| 端点 | 说明 |
-| ---- | ---- |
+| 端点                         | 说明                                                                                                                               |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /share-image/:kind/:id` | 统一端点：`kind` ∈ `location \| team \| story`。`id` 是对应 ID（location/team）或故事 ID（story）；location 支持 `slug` 作为后备。 |
-| `GET /share-image/locales` | 服务端支持的海报 locale 列表（`["zh-CN", "en", "ja"]`）。 |
+| `GET /share-image/locales`   | 服务端支持的海报 locale 列表（`["zh-CN", "en", "ja"]`）。                                                                          |
 
 - **Path params:** `:kind` 限定三种 kind；`:id` 自由但已校验存在（不存在 → 404）。
 - **Query:**
@@ -722,19 +731,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 
 ---
 
-## 15. 首页推荐 `/recommendations/home`
-
-### GET `/recommendations/home`
-
-首页个性化推荐（task #172）
-
-- **认证：** 否（登录用户附加 `users.city` 作 fallback）
-- **Query：** `seed`（可选，不传服务端生成并返回 `nextSeed`）、`locale`（保留字段）
-- **响应：** `{ "recommendations": [{ "kind", "locationId", "reason": { "key", "params" } }], "candidatePoolSize": number, "nextSeed": string }`
-
----
-
-## 16. 附近圈 `/local-circle/home`
+## 15. 附近圈 `/local-circle/home`
 
 ### GET `/local-circle/home`
 
@@ -746,56 +743,56 @@ R2 文件代理（本地开发专用，顶层挂载）
 
 ---
 
-## 17. 活动动态 `/activity-posts`
+## 16. 活动动态 `/activity-posts`
 
 挂在根路由（`api/src/index.ts` 的 `app.route("/", activityPostsRoute)`）。
 
-| 端点 | 认证 | 说明 |
-| ---- | ---- | ---- |
-| `GET /teams/:id/activity-posts` | 否 | 队伍活动后分享列表（`limit`，默认 10，最大 50） |
-| `POST /teams/:id/activity-posts` | 是（队伍成员 + 队伍已完成） | Body `{ "content", "images"? }`（≤3 张） |
-| `DELETE /activity-posts/:id` | 是（作者） | 删除动态 |
-| `GET /locations/:id/activity-posts` | 否 | 地点活动动态列表 |
+| 端点                                | 认证                        | 说明                                            |
+| ----------------------------------- | --------------------------- | ----------------------------------------------- |
+| `GET /teams/:id/activity-posts`     | 否                          | 队伍活动后分享列表（`limit`，默认 10，最大 50） |
+| `POST /teams/:id/activity-posts`    | 是（队伍成员 + 队伍已完成） | Body `{ "content", "images"? }`（≤3 张）        |
+| `DELETE /activity-posts/:id`        | 是（作者）                  | 删除动态                                        |
+| `GET /locations/:id/activity-posts` | 否                          | 地点活动动态列表                                |
 
 ---
 
-## 18. 管理工具 `/admin`
+## 17. 管理工具 `/admin`
 
-| 端点 | 认证 | 说明 |
-| ---- | ---- | ---- |
-| `POST /admin/clear-rate-limit` | 是（仅管理员） | 清除速率限制，Body `{ "identifier": "user@example.com" }` |
+| 端点                                    | 认证           | 说明                                                               |
+| --------------------------------------- | -------------- | ------------------------------------------------------------------ |
 | `POST /admin/cron/update-expired-teams` | 是（仅管理员） | 手动触发过期队伍状态更新（recruiting→cancelled、formed→completed） |
-| `GET /admin/share-analytics` | 是（仅管理员） | 分享分析（渠道分布、7 日趋势、Top 10 被分享故事） |
+| `GET /admin/share-analytics`            | 是（仅管理员） | 分享分析（渠道分布、7 日趋势、Top 10 被分享故事）                  |
 
 ---
 
-## 19. 公开 API `/v1/*`（API Key / Session）
+## 18. 公开 API `/v1/*`（API Key / Session）
 
 面向外部工具与移动端的稳定公开 API。认证二选一：`x-api-key` 请求头（`gm_live_<key>`）或 Session Cookie。OpenAPI 契约：`GET /v1/openapi.json`。
 
-**限流：** 读端点 600 次/分钟；写端点 30 次/分钟（`429` 带 `retryAfter`）。写端点需 `Idempotency-Key` 请求头（UUID v4），重复 key + 相同 body 幂等重放。
+写端点需 `Idempotency-Key` 请求头（UUID v4），重复 key + 相同 body 幂等重放。
 
 ### 读端点
 
-| 端点 | 说明 |
-| ---- | ---- |
-| `GET /v1/teams` | 队伍列表（`page`/`pageSize`/`cityId`/`tagId`/`status`/`keyword`） |
-| `GET /v1/teams/:id` | 队伍详情 |
-| `GET /v1/teams/:id/my-status` | 我的队伍状态 |
-| `GET /v1/locations` | 地点列表（`page`/`pageSize`/`cityId`/`keyword`） |
-| `GET /v1/locations/:id` | 地点详情 |
-| `GET /v1/stories` | 故事列表 |
-| `GET /v1/stories/:id` | 故事详情 |
-| `GET /v1/enums` | 枚举数据（队伍状态、难度等） |
+| 端点                          | 说明                                                              |
+| ----------------------------- | ----------------------------------------------------------------- |
+| `GET /v1/teams`               | 队伍列表（`page`/`pageSize`/`cityId`/`tagId`/`status`/`keyword`） |
+| `GET /v1/teams/:id`           | 队伍详情                                                          |
+| `GET /v1/teams/:id/my-status` | 我的队伍状态                                                      |
+| `GET /v1/locations`           | 地点列表（`page`/`pageSize`/`cityId`/`keyword`）                  |
+| `GET /v1/locations/:id`       | 地点详情                                                          |
+| `GET /v1/locations/stats`     | 首页地图聚合（省份数量 + 点位及其城市/省份归属）                  |
+| `GET /v1/stories`             | 故事列表                                                          |
+| `GET /v1/stories/:id`         | 故事详情                                                          |
+| `GET /v1/enums`               | 枚举数据（队伍状态、难度等）                                      |
 
 ### 写端点
 
-| 端点 | 认证要求 | 说明 |
-| ---- | ---- | ---- |
-| `POST /v1/teams` | 登录（需微信号） | 创建队伍 |
+| 端点                             | 认证要求         | 说明         |
+| -------------------------------- | ---------------- | ------------ |
+| `POST /v1/teams`                 | 登录（需微信号） | 创建队伍     |
 | `POST /v1/teams/:teamId/members` | 登录（需微信号） | 申请加入队伍 |
-| `POST /v1/locations` | 登录 + admin | 创建地点 |
-| `POST /v1/stories` | 登录 | 发布故事 |
+| `POST /v1/locations`             | 登录 + admin     | 创建地点     |
+| `POST /v1/stories`               | 登录             | 发布故事     |
 
 ---
 
@@ -806,7 +803,6 @@ R2 文件代理（本地开发专用，顶层挂载）
 图片代理（供前端 Canvas 绘图绕过跨域，域名白名单：gomate.cos.jiahongw.com、\*.githubusercontent.com、\*.googleusercontent.com、cdn.discordapp.com）
 
 - **认证：** 否
-- **限流：** 100 次/小时/IP（KV 记录）
 - **错误：** 403 域名不在白名单 / 502 抓取失败
 
 ### GET `/health`
@@ -829,7 +825,6 @@ R2 文件代理（本地开发专用，顶层挂载）
 | 403    | 无权限访问               |
 | 404    | 资源不存在               |
 | 409    | 冲突（如已收藏、已申请） |
-| 429    | 触发速率限制             |
 | 500    | 服务器内部错误           |
 
 ---

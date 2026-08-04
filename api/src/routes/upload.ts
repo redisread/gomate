@@ -5,7 +5,6 @@ import { eq } from "drizzle-orm";
 import { createAuth } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
-import { checkRateLimit } from "../lib/rate-limit";
 import type { Env } from "../lib/auth";
 
 const upload = new Hono<{ Bindings: Env }>();
@@ -16,10 +15,6 @@ const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
 /** 最大文件大小：5MB */
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-/** 上传速率限制：10 次/小时 */
-const UPLOAD_RATE_LIMIT_MAX = 10;
-const UPLOAD_RATE_LIMIT_WINDOW = 3600;
-
 /** MIME 类型到扩展名的映射 */
 const MIME_TO_EXT: Record<string, string[]> = {
   "image/jpeg": ["jpg", "jpeg"],
@@ -130,10 +125,6 @@ upload.post("/avatar", async (c) => {
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
     if (!userId) return c.json(APIErrors.badRequest("User ID is required"), 400);
 
-    // 速率限制
-    const rateLimit = await checkRateLimit(`rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
-    if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
-
     // 鉴权：只允许上传自己的头像（管理员除外）
     if (userId !== session.user.id) {
       const db = createDb(c.env.DB);
@@ -219,10 +210,6 @@ upload.post("/location", async (c) => {
     const file = formData.get("file") as File | null;
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
 
-    // 速率限制
-    const rateLimit = await checkRateLimit(`rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
-    if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
-
     const extValidation = validateFileExtension(file);
     if (!extValidation.valid) return c.json(APIErrors.badRequest(extValidation.error || "Invalid file"), 400);
 
@@ -251,10 +238,6 @@ upload.post("/story", async (c) => {
     const file = formData.get("file") as File | null;
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
 
-    // 速率限制
-    const rateLimit = await checkRateLimit(`rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
-    if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
-
     const extValidation = validateFileExtension(file);
     if (!extValidation.valid) return c.json(APIErrors.badRequest(extValidation.error || "Invalid file"), 400);
 
@@ -282,10 +265,6 @@ upload.post("/activity-post", async (c) => {
     const formData = await c.req.formData();
     const file = formData.get("file") as File | null;
     if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
-
-    // 速率限制
-    const rateLimit = await checkRateLimit(`rate:upload:${session.user.id}`, UPLOAD_RATE_LIMIT_MAX, UPLOAD_RATE_LIMIT_WINDOW);
-    if (!rateLimit.allowed) return c.json(APIErrors.badRequest(`上传过于频繁，请 ${rateLimit.retryAfter} 秒后重试`), 429);
 
     const extValidation = validateFileExtension(file);
     if (!extValidation.valid) return c.json(APIErrors.badRequest(extValidation.error || "Invalid file"), 400);

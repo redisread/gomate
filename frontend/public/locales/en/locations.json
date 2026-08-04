@@ -110,5 +110,6 @@
     }
   },
   "mapProvinceCount": "{count} locations",
-  "mapNoLocations": "No locations yet"
+  "mapNoLocations": "No locations yet",
+  "mapPointCity": "{city} · {province}"
 }

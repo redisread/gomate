@@ -196,12 +196,7 @@ export function createAuth(env: Env) {
       apiKey({
         defaultPrefix: "gm_live_",
         defaultKeyLength: 48,
-        // rate limit：读 scope 每小时 1000 次（插件内部 per-key enforce）
-        rateLimit: {
-          enabled: true,
-          timeWindow: 1000 * 60 * 60, // 1 hour
-          maxRequests: 1000,
-        },
+        rateLimit: { enabled: false },
         keyExpiration: {
           defaultExpiresIn: 365 * 24 * 60 * 60, // 1 year
         },

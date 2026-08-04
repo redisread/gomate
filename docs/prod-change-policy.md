@@ -127,7 +127,7 @@ D1 拒绝 SQL `BEGIN`/`COMMIT`（code 7500），禁止使用 `db.transaction()`�
 
 ### 2. Workers Free 账号 KV 每日 1000 次写入（账号级共享）
 
-rate-limit / session / verification 必须避免写 KV。部署时**不要**设 `NODE_ENV=production`——better-auth 在 `isProduction` 时启用内置 rate limiter 且默认 storage 为 secondary-storage（KV），每个 `/auth/*` 请求写 KV，会快速耗尽每日写入额度。（#492）
+session / verification 必须避免写 KV。部署时**不要**设 `NODE_ENV=production`——better-auth 在 `isProduction` 时默认使用 secondary-storage（KV），每个 `/auth/*` 请求写 KV，会快速耗尽每日写入额度。（#492）
 
 ### 3. drizzle-kit generate 输出含 `stories` / `share_events` 假漂移
 

@@ -190,7 +190,7 @@ export function useTeams(initialData?: TeamsInitialData) {
     setShowFilters(false);
   }, []);
 
-  const activeFiltersCount = selectedDifficulty.length + (startDate && endDate ? 1 : 0) + selectedTags.length;
+  const activeFiltersCount = selectedDifficulty.length + (startDate || endDate ? 1 : 0) + selectedTags.length;
 
   const activeDateQuickType = React.useMemo(
     () => getActiveDateQuickType(startDate, endDate),

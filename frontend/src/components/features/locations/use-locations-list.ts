@@ -20,7 +20,7 @@ export interface LocationsListInitialData {
 export function useLocationsList(initialData?: LocationsListInitialData) {
   const [locations, setLocations] = React.useState<Location[]>(initialData?.locations ?? []);
   const [isLoading, setIsLoading] = React.useState(!initialData);
-  const [gridKey, setGridKey] = React.useState(0);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pagination, setPagination] = React.useState<LocationsPagination>(
@@ -33,14 +33,22 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
   const [activeRole, setActiveRole] = React.useState<RoleKey>("");
   const [showCityDropdown, setShowCityDropdown] = React.useState(false);
   const [cityDropdownPos, setCityDropdownPos] = React.useState({ top: 0, left: 0 });
-  const [gridFading, setGridFading] = React.useState(false);
   const [userCity, setUserCity] = React.useState<string | null | undefined>(undefined);
   const hasInitialDataRef = React.useRef(Boolean(initialData));
   const skipInitialFilterFetchRef = React.useRef(true);
+  const locationsRef = React.useRef(locations);
+  const requestIdRef = React.useRef(0);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
 
   const loadLocations = React.useCallback(
     async (params: { page?: number; search?: string; tagIds?: string[]; cityId?: string; type?: string }) => {
-      setIsLoading(true);
+      const requestId = ++requestIdRef.current;
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      const hasExistingLocations = locationsRef.current.length > 0;
+      setIsLoading(!hasExistingLocations);
+      setIsRefreshing(hasExistingLocations);
       try {
         const query = new URLSearchParams();
         if (params.page) query.set("page", params.page.toString());
@@ -49,20 +57,31 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
         if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
         if (params.cityId) query.set("cityId", params.cityId);
         if (params.type) query.set("type", params.type);
-        const res = await fetchPublicAPI(`/locations?${query}`);
+        const res = await fetchPublicAPI(`/locations?${query}`, { signal: controller.signal });
         const data = await res.json();
+        if (requestId !== requestIdRef.current) return;
         if (data.success) {
+          locationsRef.current = data.locations;
           setLocations(data.locations);
           setPagination(data.pagination);
-          setGridKey((k) => k + 1);
+        }
+      } catch (error) {
+        if (!(error instanceof Error && error.name === "AbortError")) {
+          console.error("[locations] Failed to load locations:", error);
         }
       } finally {
-        setIsLoading(false);
-        setGridFading(false);
+        if (requestId === requestIdRef.current) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
       }
     },
     []
   );
+
+  React.useEffect(() => {
+    return () => abortControllerRef.current?.abort();
+  }, []);
 
   // URL 参数初始化
   React.useEffect(() => {
@@ -142,7 +161,6 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
   }, [activeRole]);
 
   const handlePageChange = React.useCallback((page: number) => {
-    setGridFading(true);
     setCurrentPage(page);
     loadLocations({ page, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId, type: activeRole });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -177,7 +195,7 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
   return {
     locations,
     isLoading,
-    gridKey,
+    isRefreshing,
     searchQuery,
     currentPage,
     pagination,
@@ -188,7 +206,6 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
     activeRole,
     showCityDropdown,
     cityDropdownPos,
-    gridFading,
     selectedCityName,
     hasActiveFilters,
     userCity,

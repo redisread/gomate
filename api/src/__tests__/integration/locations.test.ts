@@ -21,10 +21,12 @@ vi.mock("../../db", () => ({
 }));
 
 const { locationsRoute } = await import("../../routes/locations");
+const { locationsRoute: v1LocationsRoute } = await import("../../routes/v1/locations");
 
 function createApp() {
   const app = new Hono<{ Bindings: { DB: unknown } }>();
   app.route("/locations", locationsRoute);
+  app.route("/v1/locations", v1LocationsRoute);
   return app;
 }
 
@@ -133,6 +135,25 @@ describe("Locations API 集成测试", () => {
     it("获取不存在的地点返回 404", async () => {
       const res = await req(app, "/locations/nonexistent-id");
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe("GET /locations/stats - 地图聚合数据", () => {
+    it("地点点位包含城市和省份归属，供省级地图筛选", async () => {
+      const guangdong = await seedCity(testDb, { name: "深圳", province: "广东省" });
+      const location = await seedLocation(testDb, guangdong.id, {
+        name: "梧桐山",
+        coordinates: JSON.stringify({ lat: 22.6, lng: 114.2 }),
+      });
+
+      const res = await req(app, "/v1/locations/stats");
+      expect(res.status).toBe(200);
+      const json = await res.json() as {
+        points: { id: string; cityName: string; province: string | null }[];
+      };
+      const point = json.points.find((item) => item.id === location.id);
+
+      expect(point).toMatchObject({ cityName: "深圳", province: "广东省" });
     });
   });
 

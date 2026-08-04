@@ -129,13 +129,7 @@
 - **`api/src/middleware/cors.ts`**：开发环境允许局域网 IP（`192.168.x.x`、`10.x.x.x`）
 - 建议生产环境严格限制 `ALLOWED_ORIGINS`，不允许通配符或宽松匹配
 
-#### 3.4 限流器竞态条件
-
-- **`api/src/lib/rate-limit.ts`**：基于 Cloudflare KV 的限流器在并发请求时存在竞态条件
-  - 两个并发请求可能同时读取到相同的计数器值，导致实际通过请求数超过限制
-  - 建议增加 `conditional put` 重试机制，或采用 Durable Objects 实现原子计数
-
-#### 3.5 会话安全
+#### 3.4 会话安全
 
 - 未在代码中发现显式的 session 过期配置
 - `better-auth` 的 session 策略应确认是否配置了合理的过期时间和 refresh 机制
@@ -167,7 +161,7 @@
 
 - **API 测试**：14 个文件（13 集成测试 + 1 单元测试）
   - 覆盖：auth, teams, locations, messages, stories, favorites, pois, users, admin, upload, activity-posts
-  - 缺少：缓存层测试、限流器测试、邮件发送测试、团队权限边界测试
+  - 缺少：缓存层测试、邮件发送测试、团队权限边界测试
 - **前端测试**：8 个文件
   - 覆盖：utils, vditor-editor, messages, markdown-content, team-detail-members, copy, api
   - 缺少：页面级集成测试、路由测试、性能测试、可访问性测试
@@ -233,7 +227,7 @@
    - 核实 `typescript` 版本号异常（7.0.2 可能为误报）
 
 10. **补充测试覆盖**
-    - 为限流器、缓存层、团队权限边界添加单元测试
+    - 为缓存层、团队权限边界添加单元测试
     - 引入 Playwright 进行关键用户流程的 E2E 测试
     - 运行覆盖率报告，确保核心业务逻辑覆盖率达到 80%+
 

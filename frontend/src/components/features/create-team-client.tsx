@@ -19,6 +19,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { QuickDurationButton } from "./create-team/quick-duration-button";
+import { TeamLocationPreview } from "./teams/shared/team-location-preview";
 import { Footer } from "@/components/layout/footer";
 
 /**
@@ -28,7 +29,7 @@ import { Footer } from "@/components/layout/footer";
 export function CreateTeamClient() {
   const { t } = useI18n(["teams", "errors", "common"]);
   const [locations, setLocations] = React.useState<Location[]>([]);
-  const [_selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
+  const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
   const [recommendedDuration, setRecommendedDuration] = React.useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
   const [hasWechat, setHasWechat] = React.useState(false);
@@ -281,6 +282,15 @@ export function CreateTeamClient() {
                   ))}
                 </select>
               </div>
+              {selectedLocation && (
+                <TeamLocationPreview
+                  location={selectedLocation}
+                  detailHref={`/locations/${selectedLocation.id}`}
+                  selectedLabel={t("teams.locationPreviewLabel")}
+                  emptyCoverLabel={t("teams.locationCoverUnavailable")}
+                  detailLabel={t("teams.viewDetailShort")}
+                />
+              )}
             </FieldGroup>
 
             {/* 路线选择（暂时隐藏） */}
@@ -485,5 +495,4 @@ export function CreateTeamClient() {
 function getDurationOptions(t: (key: string, vars?: Record<string, string | number>) => string) {
   return DURATION_OPTION_DEFS.map(([value, key]) => ({ value, label: t(key) }));
 }
-
 

@@ -6,7 +6,7 @@
 ## 现状
 
 - **Playwright 基础测试**：`e2e/auth.spec.ts`、`e2e/teams.spec.ts`、`e2e/team-applications.spec.ts`（#414 自构造 fixture）
-- **v1 API 契约测试**：`e2e/v1-read-endpoints.spec.ts`、`e2e/v1-rate-limit.spec.ts`
+- **v1 API 契约测试**：`e2e/v1-read-endpoints.spec.ts`
 - **browser-use 探索式测试**：`e2e/browser-use/home_smoke.py`
 - **CI 集成**：`pr-validation.yml` 的 `e2e-tests` job 运行 `pnpm e2e:ci`（本地起 api + web 两个服务）
 - **staging 测试**：`pnpm e2e:staging` 支持（`E2E_BASE_URL=https://staging.gomate.live`，`chromium-staging` project）

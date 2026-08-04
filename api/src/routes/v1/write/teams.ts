@@ -16,7 +16,6 @@ import { APIErrors } from "../../../lib/api-errors";
 import { generateId } from "../../../lib/id";
 import { idempotencyMiddleware } from "../../../lib/idempotency";
 import { resolveAuditActor } from "../../../lib/audit";
-import { apiRateLimitMiddleware } from "../../../lib/rate-limit";
 
 const writeTeams = new Hono<{ Bindings: Env }>();
 
@@ -30,7 +29,7 @@ const createTeamSchema = z.object({
   requirements: z.array(z.string()).optional(),
 });
 
-writeTeams.post("/", apiRateLimitMiddleware("write", 30), idempotencyMiddleware, async (c) => {
+writeTeams.post("/", idempotencyMiddleware, async (c) => {
   try {
     // 1. Authenticate
     const auth = createAuth(c.env);

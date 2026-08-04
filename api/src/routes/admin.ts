@@ -40,33 +40,6 @@ async function checkAdmin(c: { env: Env; req: { raw: Request } }) {
 }
 
 /**
- * POST /admin/clear-rate-limit
- * 清除速率限制（仅用于开发和测试）
- * 注意：Worker 环境下速率限制基于内存，本端点仅供兼容性使用
- */
-admin.post("/clear-rate-limit", async (c) => {
-  try {
-    await checkAdmin(c);
-    const body = await c.req.json<{ identifier?: string }>();
-
-    if (!body.identifier || typeof body.identifier !== "string") {
-      return c.json(APIErrors.badRequest("请提供要清除的标识符（邮箱）"), 400);
-    }
-
-    // Worker 环境下速率限制不跨请求持久化，直接返回成功
-    return c.json({
-      success: true,
-      message: `已清除 ${body.identifier} 的速率限制`,
-    });
-  } catch (error) {
-    if (error instanceof AuthenticationError) return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (error instanceof AuthorizationError) return c.json(APIErrors.forbidden("无权限访问"), 403);
-    logger.error("Clear rate limit error:", error);
-    return c.json(APIErrors.internalError("清除失败"), 500);
-  }
-});
-
-/**
  * POST /admin/cron/update-expired-teams
  * 手动触发过期队伍状态更新（仅管理员）
  * 用于本地测试和紧急处理

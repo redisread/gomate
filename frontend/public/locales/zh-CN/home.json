@@ -5,46 +5,6 @@
     "departingInDays": "{days} 天后出发",
     "viewDetails": "查看详情"
   },
-  "recommendations": {
-    "title": "这周就近去这三个",
-    "subtitle": "结合季节、距离、组队动态，按你所在的城市精选",
-    "cta": {
-      "refresh": "换一批"
-    },
-    "kind": {
-      "steady": "稳的",
-      "worthy": "值得的",
-      "fresh": "本周新的",
-      "fresh_fallback": "值得一探"
-    },
-    "meta": {
-      "distance": "{km} km",
-      "duration": "{n} 分钟",
-      "favorites": "{n} 人收藏",
-      "stories": "{n} 篇故事",
-      "ageDays": "新建 {n} 天",
-      "futureTeams": "{n} 个队伍招人"
-    },
-    "reason": {
-      "steady_season_close": "这个季节正合适，距离约 {km} km",
-      "steady_season_teams": "正适合现在去，已有 {n} 个队伍在招人",
-      "steady_easy_close": "难度低、距离约 {km} km，新手友好",
-      "steady_close_social": "距离近 + 有人一起，本周 {n} 个队伍出发",
-      "steady_fallback": "距离约 {km} km，稳稳出发",
-      "worthy_favorites": "{n} 人收藏，值得一去",
-      "worthy_stories": "{n} 个真实故事，值得一探",
-      "worthy_favorites_stories": "收藏 + 故事共 {n} 次，值得优先安排",
-      "worthy_fallback": "值得抽时间去一次",
-      "fresh_new_location": "本周刚加入的新地点，上架 {n} 天",
-      "fresh_trending_signups": "本周突然火了，{n} 人加入",
-      "fresh_new_teams": "{n} 支新队伍下周走，抢先加入",
-      "fresh_fallback": "顺路值得一探"
-    },
-    "cityHint": {
-      "mixed": "混搭{city}热门"
-    },
-    "error": "推荐加载失败，稍后重试"
-  },
   "locations": {
     "cityChip": "📍 {city}",
     "fallbackHint": "你所在的城市还没有可探索的地点，下面是热门推荐"
@@ -66,5 +26,12 @@
       "button": "去设置 →"
     }
   },
-  "mapAriaLabel": "地图：点击省份查看该地区地点"
+  "mapAriaLabel": "地图：点击省份放大查看该地区地点",
+  "mapHint": "点击省份，放大探索当地地点",
+  "mapFocusedAriaLabel": "地图：已进入 {province}，点击地点查看详情",
+  "mapBackToChina": "返回全国地图",
+  "mapPointHint": "点击地点查看详情",
+  "mapFocusedEmptyTitle": "{province} 暂时还没有收录地点",
+  "mapFocusedEmptyDesc": "可以先浏览全国其他地区的探索路线。",
+  "mapBrowseOtherRegions": "浏览其他地区"
 }
