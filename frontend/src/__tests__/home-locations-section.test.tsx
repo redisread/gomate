@@ -38,6 +38,12 @@ describe("HomeLocationsSection", () => {
       "href",
       "/locations/location-0",
     );
+    expect(screen.getAllByTestId("home-location-card")[0]).toHaveClass(
+      "-rotate-[4deg]",
+    );
+    expect(screen.getAllByTestId("home-location-card")[1]).toHaveClass(
+      "-ml-10",
+    );
     expect(screen.queryByText("帽峰山")).not.toBeInTheDocument();
   });
 });

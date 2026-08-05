@@ -44,7 +44,9 @@
     "kicker": "值得出发",
     "title": "下一次，去这里",
     "description": "从三个地点开始，挑一个现在就想去的。",
-    "viewAll": "查看全部地点"
+    "viewAll": "查看全部地点",
+    "listLabel": "推荐地点",
+    "swipeHint": "左右滑动查看更多"
   },
   "howItWorks": {
     "kicker": "从想去到出发",

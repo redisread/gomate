@@ -44,7 +44,9 @@
     "kicker": "Places worth going",
     "title": "Your next stop starts here",
     "description": "Start with three places and choose the one you want to leave for next.",
-    "viewAll": "View all places"
+    "viewAll": "View all places",
+    "listLabel": "Featured places",
+    "swipeHint": "Swipe to see more"
   },
   "howItWorks": {
     "kicker": "From idea to outing",
