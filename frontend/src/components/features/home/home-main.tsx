@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useHomeData, type HomeInitialData } from "./use-home-data";
 import { HomeHero } from "./home-hero";
-import { HomeLocationsSection } from "./home-locations-section";
 import { HomeLocalCircleSection } from "./local-circle/home-local-circle-section";
 import { HomeHowItWorksSection } from "./home-how-it-works-section";
 import { HomeMapSection } from "./home-map-section";
@@ -31,7 +30,6 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
       <PreloadImages images={data.preloadImages} />
       <main className="min-h-screen bg-background">
         <HomeHero data={data} isMember={isMember} />
-        <HomeLocationsSection locations={data.locations} />
         <HomeLocalCircleSection />
         <HomeMapSection />
         {!isMember && currentUser === null && <HomeHowItWorksSection />}

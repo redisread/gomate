@@ -1,13 +1,13 @@
-import { ArrowRight, CalendarDays, Compass, MapPin, Search, Users, X } from "lucide-react";
+import { ArrowRight, CalendarDays, Search, Users, X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
+import { HomeLocationStack } from "./home-location-stack";
 
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeHero({ data, isMember = false }: { data: HomeData; isMember?: boolean }) {
   const { animate, search, handleSearch } = data;
   const { t } = useI18n(["common", "content", "home", "locations"]);
-  const featuredLocation = data.locations[0];
   const featuredTeam = data.teams[0];
 
   return (
@@ -84,48 +84,7 @@ export function HomeHero({ data, isMember = false }: { data: HomeData; isMember?
         </div>
 
         <div className={`relative mx-auto w-full max-w-xl lg:mx-0 ${animate.search}`}>
-          <div className="home-route-card relative aspect-[0.92] overflow-hidden rounded-[2rem] bg-secondary shadow-warm-xl ring-1 ring-black/5 dark:ring-white/10">
-            {featuredLocation?.coverImage ? (
-              <img
-                src={featuredLocation.coverImage}
-                alt={featuredLocation.name}
-                loading="eager"
-                decoding="async"
-                // @ts-expect-error lowercase `fetchpriority` is the HTML DOM attribute name; React warns about `fetchPriority`
-                fetchpriority="high"
-                className="h-full w-full object-cover outline outline-1 outline-black/10 transition-transform duration-150 hover:scale-[1.02] motion-reduce:transition-none dark:outline-white/10"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_35%,color-mix(in_oklab,var(--primary)_34%,transparent),transparent_34%),linear-gradient(145deg,var(--brand-muted),var(--secondary))]">
-                <Compass className="h-24 w-24 text-primary/40" strokeWidth={1.1} aria-hidden="true" />
-              </div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" aria-hidden="true" />
-
-            <div className="absolute left-5 right-5 top-5 flex items-center justify-between gap-3 text-white">
-              <span className="inline-flex items-center gap-2 rounded-full bg-black/25 px-3 py-1.5 text-xs font-semibold backdrop-blur-md">
-                <Compass className="h-3.5 w-3.5" aria-hidden="true" />
-                {t("common.explore")}
-              </span>
-              {featuredLocation?.address && (
-                <span className="inline-flex max-w-[55%] items-center gap-1.5 truncate rounded-full bg-black/25 px-3 py-1.5 text-xs backdrop-blur-md">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  {featuredLocation.address}
-                </span>
-              )}
-            </div>
-
-            <div className="absolute inset-x-5 bottom-5 text-white">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">GoMate</p>
-              <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-                {featuredLocation?.name ?? t("common.exploreLocations")}
-              </h2>
-              <p className="mt-2 flex items-center gap-2 text-sm text-white/80">
-                <MapPin className="h-4 w-4" aria-hidden="true" />
-                {featuredLocation?.address ?? t("locations.defaultCity")}
-              </p>
-            </div>
-          </div>
+          <HomeLocationStack locations={data.locations} />
 
           {featuredTeam && (
             <a href={`/teams/${featuredTeam.id}`} className="group absolute -bottom-6 left-4 right-4 flex items-center gap-3 rounded-2xl bg-card p-3.5 shadow-warm-xl ring-1 ring-black/5 transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-brand-glow-lg dark:ring-white/10 sm:left-auto sm:right-[-1.5rem] sm:w-[min(20rem,calc(100%-2rem))]">

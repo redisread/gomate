@@ -40,11 +40,7 @@
     "title": "地図から次の場所を探す",
     "description": "身近な街からまだ歩いていない道まで、新しい出発点を開きましょう。"
   },
-  "featuredLocations": {
-    "kicker": "出かけたい場所",
-    "title": "次は、ここへ",
-    "description": "3つの場所から、次に出かけたいところを選びましょう。",
-    "viewAll": "すべての場所を見る",
+  "heroLocations": {
     "listLabel": "おすすめの場所",
     "swipeHint": "左右にスワイプして続きを見る"
   },
