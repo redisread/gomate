@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Search, MapPin, X, ChevronDown, Sparkles, Compass, ArrowRight, CheckCircle, Zap, Shield } from "lucide-react";
+import { Search, MapPin, X, ChevronDown, Sparkles } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { getRoleConfig, type RoleKey, type RoleCfg } from "./constants";
@@ -239,90 +239,5 @@ export function LocationsResultBar({
         </button>
       )}
     </div>
-  );
-}
-
-export function LocationsCtaSection() {
-  const { t } = useI18n(["locations"]);
-  return (
-    <section className="relative py-16 lg:py-20 overflow-hidden bg-gradient-to-b from-amber-50/50 via-stone-50/80 to-orange-50/30 dark:from-amber-950/20 dark:via-stone-950/80 dark:to-orange-950/10">
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl border border-amber-200/50 bg-white/80 dark:bg-stone-900/80 backdrop-blur-sm shadow-warm-sm overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-amber-100/40 blur-3xl translate-x-1/3 -translate-y-1/3" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-orange-100/30 blur-3xl -translate-x-1/4 translate-y-1/4" />
-          </div>
-
-          <div className="relative px-8 py-12 sm:px-12 sm:py-14 lg:px-16 lg:py-16">
-            <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-14">
-              {/* Left: Text Content */}
-              <div className="flex-1 text-center lg:text-left">
-                {/* Badge */}
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-sm font-medium mb-5 border border-amber-200/60 dark:border-amber-800/60">
-                  <Compass className="w-4 h-4" />
-                  <span>{t("locations.ctaBadge")}</span>
-                </div>
-
-                {/* Title */}
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-3 leading-tight">
-                  {t("locations.ctaTitle")}
-                </h3>
-
-                {/* Description */}
-                <p className="text-base sm:text-lg text-stone-500 dark:text-stone-400 mb-7 max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                  {t("locations.ctaDesc")}
-                </p>
-
-                {/* Button Group */}
-                <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
-                  <a href="/teams/create" className="group">
-                    <button className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-950 px-7 py-3.5 rounded-2xl text-base font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:shadow-lg hover:shadow-amber-200/40 active:scale-[0.96]">
-                      <Sparkles className="w-5 h-5" />
-                      {t("locations.ctaBtn")}
-                      <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-                    </button>
-                  </a>
-                  <a href="/contact" className="text-stone-500 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-400 text-base font-medium transition-colors inline-flex items-center gap-1.5">
-                    {t("locations.contactLink")}
-                  </a>
-                </div>
-              </div>
-
-              {/* Right: Visual Element — simplified circular icon */}
-              <div className="flex-shrink-0 relative">
-                <div className="relative w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center">
-                  {/* Outer ring */}
-                  <div className="absolute inset-0 rounded-full border-2 border-dashed border-amber-200/60" />
-                  {/* Inner circle */}
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center shadow-warm-md">
-                    <Compass className="w-10 h-10 sm:w-12 sm:h-12 text-amber-700 dark:text-amber-500" />
-                  </div>
-                  {/* Small decorative dots */}
-                  <div className="absolute top-2 right-6 w-3 h-3 rounded-full bg-amber-300/60" />
-                  <div className="absolute bottom-4 left-4 w-2 h-2 rounded-full bg-orange-300/50" />
-                  <div className="absolute top-8 left-2 w-2.5 h-2.5 rounded-full bg-amber-200/70" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Trust indicators */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-stone-500 dark:text-stone-400 text-sm">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 text-emerald-500" />
-            <span>{t("locations.ctaTrust1")}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-amber-500" />
-            <span>{t("locations.ctaTrust2")}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-blue-500" />
-            <span>{t("locations.ctaTrust3")}</span>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
