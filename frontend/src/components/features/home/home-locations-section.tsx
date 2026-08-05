@@ -4,9 +4,18 @@ import { LocationCoverImage } from "@/components/ui/lazy-image";
 import type { Location } from "@/lib/types";
 
 const CARD_STYLES = [
-  "bg-primary-50 dark:bg-primary/10 md:-rotate-2 md:hover:rotate-0",
-  "bg-secondary dark:bg-secondary/70 md:rotate-[1.5deg] md:hover:rotate-0",
-  "bg-brand-subtle dark:bg-brand-subtle/70 md:-rotate-1 md:hover:rotate-0",
+  {
+    wrapper: "-rotate-[4deg] lg:-translate-y-5 lg:z-10",
+    surface: "bg-primary-50 dark:bg-primary/15",
+  },
+  {
+    wrapper: "rotate-[2.5deg] lg:translate-y-2 lg:z-30",
+    surface: "bg-secondary dark:bg-secondary/70",
+  },
+  {
+    wrapper: "-rotate-[2deg] lg:-translate-y-2 lg:z-20",
+    surface: "bg-brand-subtle dark:bg-brand-subtle/70",
+  },
 ] as const;
 
 export function HomeLocationsSection({ locations }: { locations: Location[] }) {
@@ -44,7 +53,10 @@ export function HomeLocationsSection({ locations }: { locations: Location[] }) {
           </a>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+        <div
+          className="isolate -mx-4 flex min-h-[31rem] items-center overflow-x-auto px-4 pb-8 pt-8 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:min-h-[35rem] lg:justify-center lg:overflow-visible lg:px-0"
+          aria-label={t("home.featuredLocations.listLabel")}
+        >
           {featuredLocations.map((location, index) => {
             const summary = location.subtitle?.trim() || location.description;
 
@@ -52,11 +64,11 @@ export function HomeLocationsSection({ locations }: { locations: Location[] }) {
               <a
                 key={location.id}
                 href={`/locations/${location.id}`}
-                className={`group block rounded-[1.75rem] transition-transform duration-300 ease-out focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary motion-reduce:transition-none ${CARD_STYLES[index]}`}
+                className={`group relative w-[78vw] max-w-[25rem] shrink-0 snap-center rounded-[2.5rem] transition-[transform,filter] duration-300 ease-out focus-visible:z-40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary motion-reduce:transition-none ${index > 0 ? "-ml-10 sm:-ml-14 lg:-ml-20" : ""} ${CARD_STYLES[index].wrapper}`}
                 data-testid="home-location-card"
               >
-                <article className="h-full overflow-hidden rounded-[1.75rem] border border-foreground/10 bg-card shadow-warm-lg ring-1 ring-black/5 transition-[box-shadow,transform] duration-300 group-hover:-translate-y-1 group-hover:shadow-warm-xl dark:ring-white/10">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                <article className={`flex min-h-[29rem] flex-col overflow-hidden rounded-[2.5rem] border border-foreground/10 shadow-warm-xl ring-1 ring-black/5 transition-[box-shadow,transform] duration-300 group-hover:-translate-y-3 group-hover:shadow-brand-glow-lg dark:ring-white/10 ${CARD_STYLES[index].surface}`}>
+                  <div className="relative aspect-[0.9] overflow-hidden bg-muted">
                     <LocationCoverImage
                       src={location.coverImage}
                       alt=""
@@ -68,17 +80,17 @@ export function HomeLocationsSection({ locations }: { locations: Location[] }) {
                       <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
                       {location.cityName}
                     </span>
-                    <span className="absolute bottom-4 left-4 right-4 text-2xl font-bold tracking-tight text-white drop-shadow-sm sm:text-3xl">
+                    <span className="absolute bottom-5 left-5 right-5 text-center text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl">
                       {location.name}
                     </span>
                   </div>
 
-                  <div className={`flex min-h-44 flex-col p-5 sm:p-6 ${CARD_STYLES[index].split(" ")[0]}`}>
-                    <p className="line-clamp-2 text-sm leading-6 text-stone-700 dark:text-stone-200">
+                  <div className="flex flex-1 flex-col items-center px-5 pb-6 pt-5 text-center sm:px-7 sm:pb-8 sm:pt-6">
+                    <p className="line-clamp-2 max-w-[18rem] text-sm leading-6 text-stone-700 dark:text-stone-200">
                       {summary}
                     </p>
-                    <div className="mt-auto flex items-center justify-between gap-3 pt-6 text-sm font-semibold text-foreground">
-                      <span className="truncate text-stone-700 dark:text-stone-200">{location.address || location.cityName}</span>
+                    <div className="mt-auto flex w-full items-center justify-between gap-3 pt-6 text-sm font-semibold text-foreground">
+                      <span className="truncate text-left text-stone-700 dark:text-stone-200">{location.address || location.cityName}</span>
                       <span className="inline-flex shrink-0 items-center gap-1 text-amber-800 dark:text-amber-300">
                         {t("common.viewDetail")}
                         <ArrowUpRight className="h-4 w-4 transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
@@ -90,6 +102,10 @@ export function HomeLocationsSection({ locations }: { locations: Location[] }) {
             );
           })}
         </div>
+
+        <p className="mt-1 text-center text-xs text-muted-foreground lg:hidden">
+          {t("home.featuredLocations.swipeHint")}
+        </p>
       </div>
     </section>
   );

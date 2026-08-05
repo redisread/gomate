@@ -44,7 +44,9 @@
     "kicker": "出かけたい場所",
     "title": "次は、ここへ",
     "description": "3つの場所から、次に出かけたいところを選びましょう。",
-    "viewAll": "すべての場所を見る"
+    "viewAll": "すべての場所を見る",
+    "listLabel": "おすすめの場所",
+    "swipeHint": "左右にスワイプして続きを見る"
   },
   "howItWorks": {
     "kicker": "思いから出発へ",
