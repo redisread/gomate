@@ -3,7 +3,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useI18n } from "@/hooks/useI18n";
 import { useLocationsList, type LocationsListInitialData } from "./use-locations-list";
-import { LocationsHero, LocationsResultBar, LocationsCtaSection } from "./locations-hero";
+import { LocationsHero, LocationsResultBar } from "./locations-hero";
 import { LocationsGrid, type EmptyStateVariant } from "./locations-grid";
 
 export function LocationsClient({ initialData }: { initialData?: LocationsListInitialData }) {
@@ -100,7 +100,6 @@ export function LocationsClient({ initialData }: { initialData?: LocationsListIn
           />
         </div>
       </section>
-      <LocationsCtaSection />
       <Footer />
     </main>
   );
