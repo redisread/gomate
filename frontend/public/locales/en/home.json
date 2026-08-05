@@ -40,11 +40,7 @@
     "title": "Find your next stop on the map",
     "description": "Open a new starting point, from familiar cities to trails you have not walked yet."
   },
-  "featuredLocations": {
-    "kicker": "Places worth going",
-    "title": "Your next stop starts here",
-    "description": "Start with three places and choose the one you want to leave for next.",
-    "viewAll": "View all places",
+  "heroLocations": {
     "listLabel": "Featured places",
     "swipeHint": "Swipe to see more"
   },
