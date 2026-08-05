@@ -40,6 +40,12 @@
     "title": "从地图找下一站",
     "description": "从熟悉的城市到还没走过的山野，按省份打开一张新的出发清单。"
   },
+  "featuredLocations": {
+    "kicker": "值得出发",
+    "title": "下一次，去这里",
+    "description": "从三个地点开始，挑一个现在就想去的。",
+    "viewAll": "查看全部地点"
+  },
   "howItWorks": {
     "kicker": "从想去到出发",
     "title": "三步，找到同行的人",
