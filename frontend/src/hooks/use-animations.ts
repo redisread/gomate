@@ -3,7 +3,7 @@
  * 纯 CSS 变量 + Intersection Observer 实现，不依赖额外动画库
  */
 
-import { useState, useEffect, useRef, useCallback, type RefObject } from "react";
+import { useState, useEffect, useRef, type RefObject } from "react";
 
 /* ============================================================
    useInView — 视口进入检测
@@ -71,34 +71,5 @@ export function useAnimateIn(enabled = true): AnimateInConfig {
     search:   "animate-fade-up [animation-delay:300ms] [animation-fill-mode:both]",
     cta:      "animate-fade-up [animation-delay:400ms] [animation-fill-mode:both]",
     stats:    "animate-fade-up [animation-delay:500ms] [animation-fill-mode:both]",
-  };
-}
-
-/* ============================================================
-   useSearchInteraction — 搜索框交互状态
-   管理 focus、输入、清空按钮的交互状态
-   ============================================================ */
-export interface SearchState {
-  value: string;
-  isFocused: boolean;
-  setValue: (v: string) => void;
-  setFocused: (v: boolean) => void;
-  clear: () => void;
-}
-
-export function useSearchInteraction(initialValue = ""): SearchState {
-  const [value, setValue] = useState(initialValue);
-  const [isFocused, setFocused] = useState(false);
-
-  const clear = useCallback(() => {
-    setValue("");
-  }, []);
-
-  return {
-    value,
-    isFocused,
-    setValue,
-    setFocused,
-    clear,
   };
 }

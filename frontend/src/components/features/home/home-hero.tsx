@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Search, Users, X } from "lucide-react";
+import { ArrowRight, CalendarDays, Users } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 import { HomeLocationStack } from "./home-location-stack";
@@ -6,7 +6,7 @@ import { HomeLocationStack } from "./home-location-stack";
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeHero({ data, isMember = false }: { data: HomeData; isMember?: boolean }) {
-  const { animate, search, handleSearch } = data;
+  const { animate } = data;
   const { t } = useI18n(["common", "content", "home", "locations"]);
   const featuredTeam = data.teams[0];
 
@@ -31,47 +31,7 @@ export function HomeHero({ data, isMember = false }: { data: HomeData; isMember?
             {isMember ? t("home.memberHero.description") : t("content.hero.description")}
           </p>
 
-          <form
-            role="search"
-            aria-label={t("common.search")}
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleSearch(search.value);
-            }}
-            className={`home-search relative mt-8 max-w-2xl ${animate.search}`}
-          >
-            <label htmlFor="home-location-search" className="sr-only">{t("common.searchPlaceholder")}</label>
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <input
-              id="home-location-search"
-              type="search"
-              placeholder={t("common.searchPlaceholder")}
-              value={search.value}
-              onChange={(event) => search.setValue(event.target.value)}
-              onFocus={() => search.setFocused(true)}
-              onBlur={() => search.setFocused(false)}
-              className="w-full rounded-2xl border border-border bg-card/95 py-4 pl-12 pr-28 text-base text-foreground shadow-warm-sm outline-none transition-[background-color,border-color,box-shadow] duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/15"
-              style={{ boxShadow: search.isFocused ? "0 8px 32px color-mix(in oklab, var(--primary) 18%, transparent)" : undefined, backdropFilter: "blur(8px)" }}
-            />
-            {search.value && (
-              <button
-                type="button"
-                onClick={search.clear}
-                aria-label={t("common.clear")}
-                className="absolute right-24 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.96]"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            )}
-            <button
-              type="submit"
-              className="btn-brand-offset absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white transition-[background-color,transform,box-shadow] duration-150 motion-reduce:transition-none hover:bg-amber-800 active:scale-[0.96]"
-            >
-              {t("common.search")}
-            </button>
-          </form>
-
-          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
+          <div className={`mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-stone-700 dark:text-stone-300 ${animate.cta}`}>
             <a href={isMember ? "/my-teams" : "/locations"} className="group inline-flex items-center gap-1.5 transition-colors duration-150 hover:text-amber-700 dark:hover:text-amber-300">
               {isMember ? t("common.myTeams") : t("common.exploreLocations")}
               <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
