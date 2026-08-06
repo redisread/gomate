@@ -8,9 +8,6 @@ import { useI18n } from "@/hooks/useI18n";
 
 // 热门城市最大显示数量
 const HOT_CITY_MAX = 6;
-// 完整列表最大显示条数
-const FULL_LIST_MAX = 20;
-
 interface CitySelectProps {
   value: string;          // cityId
   onChange: (id: string) => void;
@@ -57,15 +54,14 @@ export function CitySelect({
   // 按关键字过滤后的完整列表
   const filteredCities = useMemo(() => {
     const kw = query.trim().toLowerCase();
-    if (!kw) return cities.slice(0, FULL_LIST_MAX);
+    if (!kw) return cities;
     return cities
       .filter(
         (c) =>
           c.name.includes(kw) ||
           c.pinyin?.toLowerCase().includes(kw) ||
           c.province?.includes(kw)
-      )
-      .slice(0, FULL_LIST_MAX);
+      );
   }, [cities, query]);
 
   // 打开下拉，聚焦搜索框

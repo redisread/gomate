@@ -36,18 +36,39 @@ export function useProfileForm() {
     gender: "", birthday: "", experience: "", equipment: [], city: "",
   });
 
-  // #181: 拉城市列表（CitySelect 数据源，GET /cities 已有）
+  // #181: 拉取完整城市列表（GET /cities 分页返回，不能只取首 100 条）
   React.useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetchPublicAPI("/cities?pageSize=100");
-        if (!res.ok) return;
-        const json = (await res.json()) as { cities?: City[] };
-        setCities(json.cities ?? []);
-      } catch {
-        // 城市列表拉取失败不阻塞表单，CitySelect 空列表降级
+    let cancelled = false;
+
+    const loadCities = async () => {
+      const allCities: City[] = [];
+      let page = 1;
+
+      while (true) {
+        const res = await fetchPublicAPI(`/cities?page=${page}&pageSize=100`);
+        if (!res.ok) throw new Error("Failed to load cities");
+
+        const json = (await res.json()) as {
+          cities?: City[];
+          pagination?: { hasMore?: boolean };
+        };
+        const pageCities = json.cities ?? [];
+        allCities.push(...pageCities);
+
+        if (!json.pagination?.hasMore || pageCities.length === 0) break;
+        page += 1;
       }
-    })();
+
+      if (!cancelled) setCities(allCities);
+    };
+
+    loadCities().catch(() => {
+      if (!cancelled) setCities([]);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Load user data

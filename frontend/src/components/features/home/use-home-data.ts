@@ -4,7 +4,7 @@ import * as React from "react";
 import { fetchPublicAPI } from "@/lib/api";
 import type { Team } from "@/lib/types";
 import { useLocations, type LocationsResponse } from "@/hooks/use-locations";
-import { useAnimateIn, useSearchInteraction } from "@/hooks/use-animations";
+import { useAnimateIn } from "@/hooks/use-animations";
 
 export interface HomeInitialData {
   locations?: LocationsResponse | null;
@@ -22,8 +22,6 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
 
   // Animation hooks
   const animate = useAnimateIn();
-  const search = useSearchInteraction();
-
   // Data fetchers
   const fetchTeams = React.useCallback(async () => {
     try {
@@ -50,19 +48,10 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
       .filter(Boolean) as string[];
   }, [locations]);
 
-  const handleSearch = (query: string) => {
-    if (query.trim()) {
-      window.location.href = `/locations?q=${encodeURIComponent(query.trim())}`;
-    } else {
-      window.location.href = "/locations";
-    }
-  };
-
   return {
     locations, teams,
     preloadImages,
-    animate, search,
+    animate,
     userCity: userCity ?? null,
-    handleSearch,
   };
 }

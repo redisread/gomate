@@ -16,22 +16,22 @@ export function FieldLabel({ children, required }: { children: React.ReactNode; 
 }
 
 // ─── Card ───────────────────────────────────────────────────────────
-export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+export function Card({ children, className = "", id }: { children: React.ReactNode; className?: string; id?: string }) {
   return (
-    <div className={cn("bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 shadow-sm p-6", className)}>
+    <section id={id} aria-labelledby={id ? `${id}-title` : undefined} className={cn("scroll-mt-24 bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 shadow-sm p-5 sm:p-6", className)}>
       {children}
-    </div>
+    </section>
   );
 }
 
 // ─── CardSection ────────────────────────────────────────────────────
-export function CardSection({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+export function CardSection({ icon: Icon, title, id }: { icon: React.ElementType; title: string; id?: string }) {
   return (
-    <div className="flex items-center gap-2 mb-5 pb-4 border-b border-stone-50 dark:border-stone-800">
-      <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center">
+    <div className="mb-6 flex items-center gap-3">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/30">
         <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
       </div>
-      <span className="text-sm font-semibold text-stone-700 dark:text-stone-300">{title}</span>
+      <h2 id={id} className="text-sm font-semibold text-stone-700 dark:text-stone-300">{title}</h2>
     </div>
   );
 }
@@ -103,7 +103,7 @@ interface BasicInfoFieldsProps {
 export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLimit, bioAtLimit, onChange, city, cities, onCityChange }: BasicInfoFieldsProps) {
   const { t } = useI18n(["profile", "common"]);
   return (
-    <div className="space-y-5">
+    <div className="grid gap-x-5 gap-y-6 sm:grid-cols-2">
       <div className="space-y-1.5">
         <FieldLabel>{t('profile.nameLabel')}</FieldLabel>
         <input value={userName} disabled className={cn(inputCls, "bg-stone-50 dark:bg-stone-800 text-stone-400 dark:text-stone-600 cursor-not-allowed")} />
@@ -120,7 +120,7 @@ export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLim
         <CitySelect value={city} onChange={onCityChange} cities={cities} clearable />
         <p className="text-xs text-stone-400">{t('profile.cityHint')}</p>
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 sm:col-span-2">
         <FieldLabel>{t('profile.bio')}</FieldLabel>
         <textarea name="bio" value={bio} onChange={onChange} rows={4} maxLength={200} placeholder={t('profile.bioPlaceholder')} className={cn(inputCls, "resize-none")} />
         <div className="flex items-center justify-between text-xs">
@@ -217,8 +217,8 @@ interface ContactFieldsProps {
 export function ContactFields({ wechat, gender, birthday, onChange }: ContactFieldsProps) {
   const { t } = useI18n(["profile", "common", "enums"]);
   return (
-    <div className="space-y-5">
-      <div className="space-y-1.5">
+    <div className="grid gap-x-5 gap-y-6 sm:grid-cols-2">
+      <div className="space-y-1.5 sm:col-span-2">
         <FieldLabel>{t('profile.wechat')}</FieldLabel>
         <div className="relative">
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md bg-[#07C160] flex items-center justify-center flex-shrink-0">
