@@ -20,16 +20,34 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
       .catch(() => setCurrentUser(null));
   }, []);
 
-  const isMember = currentUser !== undefined && Boolean(currentUser);
   const userCity = currentUser?.city ?? null;
   const data = useHomeData(initialData, userCity);
+
+  if (currentUser === undefined) {
+    return (
+      <main className="min-h-screen bg-background" data-testid="home-auth-loading" aria-busy="true">
+        <section className="mx-auto grid max-w-7xl gap-12 px-4 pb-20 pt-28 sm:px-6 lg:grid-cols-2 lg:px-8">
+          <div className="space-y-5 pt-8">
+            <div className="h-8 w-44 animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
+            <div className="h-36 max-w-xl animate-pulse rounded-2xl bg-muted motion-reduce:animate-none" />
+            <div className="h-20 max-w-lg animate-pulse rounded-xl bg-muted motion-reduce:animate-none" />
+          </div>
+          <div className="h-[30rem] animate-pulse rounded-[2rem] bg-muted motion-reduce:animate-none" />
+        </section>
+      </main>
+    );
+  }
+
+  const isMember = Boolean(currentUser);
 
   return (
     <>
       {/* 预加载首屏图片 */}
       <PreloadImages images={data.preloadImages} />
       <main className="min-h-screen bg-background">
-        <HomeHero data={data} isMember={isMember} />
+        <div data-testid={isMember ? "member-home" : "guest-home"}>
+          <HomeHero data={data} isMember={isMember} />
+        </div>
         <HomeLocalCircleSection />
         <HomeMapSection />
         {!isMember && currentUser === null && <HomeHowItWorksSection />}
