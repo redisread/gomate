@@ -6,6 +6,8 @@ import { HomeHero } from "./home-hero";
 import { HomeLocalCircleSection } from "./local-circle/home-local-circle-section";
 import { HomeHowItWorksSection } from "./home-how-it-works-section";
 import { HomeMapSection } from "./home-map-section";
+import { HomeDepartureBoard } from "./home-departure-board";
+import { HomeGuestStickyCta } from "./home-guest-sticky-cta";
 import { OnboardingModal } from "@/components/features/onboarding/onboarding-modal";
 import { PreloadImages } from "./preload-images";
 import { fetchCurrentUser } from "@/lib/api";
@@ -45,12 +47,18 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
       {/* 预加载首屏图片 */}
       <PreloadImages images={data.preloadImages} />
       <main className="min-h-screen bg-background">
-        <div data-testid={isMember ? "member-home" : "guest-home"}>
-          <HomeHero data={data} isMember={isMember} />
-        </div>
+        {isMember ? (
+          <div data-testid="member-home"><HomeHero data={data} isMember /></div>
+        ) : (
+          <div data-testid="guest-home">
+            <HomeHero data={data} />
+            <HomeDepartureBoard teams={data.teams} />
+          </div>
+        )}
         <HomeLocalCircleSection />
         <HomeMapSection />
         {!isMember && currentUser === null && <HomeHowItWorksSection />}
+        {!isMember && <HomeGuestStickyCta />}
         {/* P1-1 T2：首次引导流 modal（登录 + 无队伍 + 未看过才弹，gating 全在 hook 内） */}
         <OnboardingModal />
       </main>

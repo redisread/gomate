@@ -73,6 +73,7 @@ describe("HomeClient auth-specific experience", () => {
     });
 
     expect(await screen.findByTestId("guest-home")).toBeInTheDocument();
+    expect(screen.getByTestId("guest-departure-board")).toBeInTheDocument();
     expect(screen.queryByTestId("member-home")).not.toBeInTheDocument();
   });
 
@@ -89,6 +90,7 @@ describe("HomeClient auth-specific experience", () => {
     });
 
     expect(await screen.findByTestId("member-home")).toBeInTheDocument();
+    expect(screen.queryByTestId("guest-departure-board")).not.toBeInTheDocument();
     expect(screen.queryByTestId("guest-home")).not.toBeInTheDocument();
   });
 });

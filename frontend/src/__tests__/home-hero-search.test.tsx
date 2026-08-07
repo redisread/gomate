@@ -15,6 +15,10 @@ vi.mock("../components/features/home/home-location-stack", () => ({
   HomeLocationStack: () => <div data-testid="home-location-stack" />,
 }));
 
+vi.mock("../components/features/home/home-departure-stack", () => ({
+  HomeDepartureStack: () => <div data-testid="home-departure-stack" />,
+}));
+
 describe("HomeHero", () => {
   it("does not render the homepage search form", () => {
     render(
@@ -39,6 +43,7 @@ describe("HomeHero", () => {
 
     expect(screen.queryByRole("search")).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText("common.searchPlaceholder")).not.toBeInTheDocument();
-    expect(screen.getByTestId("home-location-stack")).toBeInTheDocument();
+    expect(screen.getByTestId("home-departure-stack")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-location-stack")).not.toBeInTheDocument();
   });
 });

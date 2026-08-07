@@ -44,6 +44,33 @@
     "listLabel": "おすすめの場所",
     "swipeHint": "左右にスワイプして続きを見る"
   },
+  "guestHero": {
+    "kicker": "今週末、あなたを待っている仲間がいます",
+    "titleLine1": "行きたい場所へ、",
+    "titleLine2": "ひとりで行かなくていい",
+    "description": "近くで集まっているチームを見て、同じ時間と方向を目指す仲間を探しましょう。ログインすると参加申請、場所の保存、旅の作成ができます。",
+    "primaryCta": "出発する人を見る",
+    "loginPrompt": "アカウントをお持ちですか？ログイン",
+    "noLoginRequired": "公開スポットとチームはログインなしで閲覧できます"
+  },
+  "departures": {
+    "kicker": "出発情報",
+    "title": "今週募集中",
+    "remaining": "あと {count} 人",
+    "full": "満員です",
+    "startedBy": "{name} が作成",
+    "viewAll": "すべてのチームを見る",
+    "startTeam": "チームを作る",
+    "swipeHint": "左右にスワイプして募集中のチームを見る",
+    "emptyTitle": "次のチームはあなたから始められます",
+    "emptyDescription": "行きたい場所と出発時間を決めて、一緒に行く仲間を募集しましょう。"
+  },
+  "guestSticky": {
+    "ariaLabel": "GoMateに参加",
+    "title": "募集中のチームがあります",
+    "description": "チームを選び、ログインして参加申請",
+    "cta": "無料で参加"
+  },
   "howItWorks": {
     "kicker": "思いから出発へ",
     "title": "3ステップで仲間を見つける",

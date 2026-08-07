@@ -44,6 +44,33 @@
     "listLabel": "推荐地点",
     "swipeHint": "左右滑动查看更多"
   },
+  "guestHero": {
+    "kicker": "这个周末，有人正等你加入",
+    "titleLine1": "想去的地方，",
+    "titleLine2": "不必一个人去",
+    "description": "看看附近正在集结的队伍，找到时间和方向一致的人。登录后可以申请加入、收藏地点，或者发起自己的行程。",
+    "primaryCta": "看看谁在出发",
+    "loginPrompt": "已有账号？登录",
+    "noLoginRequired": "浏览公开地点和队伍无需登录"
+  },
+  "departures": {
+    "kicker": "实时出发",
+    "title": "本周正在集结",
+    "remaining": "还差 {count} 人",
+    "full": "已经满员",
+    "startedBy": "由 {name} 发起",
+    "viewAll": "查看全部队伍",
+    "startTeam": "发起一支队伍",
+    "swipeHint": "左右滑动查看正在集结的队伍",
+    "emptyTitle": "下一支队伍，也可以由你发起",
+    "emptyDescription": "选择想去的地方，发布出发时间，等待同行的人加入。"
+  },
+  "guestSticky": {
+    "ariaLabel": "加入 GoMate",
+    "title": "正在招募的队伍等你加入",
+    "description": "选择一支队伍，登录后申请加入",
+    "cta": "免费加入"
+  },
   "howItWorks": {
     "kicker": "从想去到出发",
     "title": "三步，找到同行的人",
