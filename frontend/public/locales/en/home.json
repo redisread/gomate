@@ -69,7 +69,8 @@
     "ariaLabel": "Join GoMate",
     "title": "Teams are recruiting now",
     "description": "Pick a team, then sign in to apply",
-    "cta": "Join free"
+    "cta": "Join free",
+    "close": "Dismiss sign-up prompt"
   },
   "memberDashboard": {
     "kicker": "Your GoMate",

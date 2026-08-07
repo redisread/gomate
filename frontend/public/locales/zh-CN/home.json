@@ -69,7 +69,8 @@
     "ariaLabel": "加入 GoMate",
     "title": "正在招募的队伍等你加入",
     "description": "选择一支队伍，登录后申请加入",
-    "cta": "免费加入"
+    "cta": "免费加入",
+    "close": "关闭注册提示"
   },
   "memberDashboard": {
     "kicker": "你的 GoMate",

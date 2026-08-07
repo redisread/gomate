@@ -69,7 +69,8 @@
     "ariaLabel": "GoMateに参加",
     "title": "募集中のチームがあります",
     "description": "チームを選び、ログインして参加申請",
-    "cta": "無料で参加"
+    "cta": "無料で参加",
+    "close": "登録案内を閉じる"
   },
   "memberDashboard": {
     "kicker": "あなたの GoMate",
