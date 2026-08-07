@@ -61,7 +61,10 @@
     "startedBy": "Started by {name}",
     "viewAll": "View all teams",
     "startTeam": "Start a team",
-    "swipeHint": "Swipe to browse teams forming now",
+    "carouselLabel": "Teams forming now",
+    "previous": "Show previous team",
+    "next": "Show next team",
+    "swipeHint": "Drag a card, or use the buttons and arrow keys to switch teams",
     "emptyTitle": "The next team can start with you",
     "emptyDescription": "Choose a place, set a departure time, and invite others to join."
   },

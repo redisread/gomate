@@ -61,7 +61,10 @@
     "startedBy": "{name} が作成",
     "viewAll": "すべてのチームを見る",
     "startTeam": "チームを作る",
-    "swipeHint": "左右にスワイプして募集中のチームを見る",
+    "carouselLabel": "募集中のチーム",
+    "previous": "前のチームを見る",
+    "next": "次のチームを見る",
+    "swipeHint": "カードをドラッグするか、ボタンと矢印キーでチームを切り替えられます",
     "emptyTitle": "次のチームはあなたから始められます",
     "emptyDescription": "行きたい場所と出発時間を決めて、一緒に行く仲間を募集しましょう。"
   },

@@ -43,7 +43,7 @@ export function HomeHero({ data }: { data: HomeData }) {
           <p className="mt-3 text-xs text-muted-foreground">{t("home.guestHero.noLoginRequired")}</p>
         </div>
 
-        <div className={`relative mx-auto w-full lg:mx-0 ${animate.search}`}>
+        <div className={`relative mx-auto min-w-0 w-full lg:mx-0 ${animate.search}`}>
           {data.teams.length > 0 || data.locations.length === 0 ? (
             <HomeDepartureStack teams={data.teams} />
           ) : (

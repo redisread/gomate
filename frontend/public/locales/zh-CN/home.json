@@ -61,7 +61,10 @@
     "startedBy": "由 {name} 发起",
     "viewAll": "查看全部队伍",
     "startTeam": "发起一支队伍",
-    "swipeHint": "左右滑动查看正在集结的队伍",
+    "carouselLabel": "正在集结的队伍",
+    "previous": "查看上一支队伍",
+    "next": "查看下一支队伍",
+    "swipeHint": "拖动卡片，或使用按钮和方向键切换队伍",
     "emptyTitle": "下一支队伍，也可以由你发起",
     "emptyDescription": "选择想去的地方，发布出发时间，等待同行的人加入。"
   },
