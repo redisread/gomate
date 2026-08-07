@@ -1,0 +1,115 @@
+import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import type { Team } from "@/lib/types";
+import { selectNextMemberTeam } from "../components/features/home/member-home-utils";
+import { HomeMemberExperience } from "../components/features/home/home-member-experience";
+
+const { useMemberHomeMock } = vi.hoisted(() => ({ useMemberHomeMock: vi.fn() }));
+
+vi.mock("../components/features/home/use-member-home", () => ({
+  useMemberHome: (...args: unknown[]) => useMemberHomeMock(...args),
+}));
+
+vi.mock("@/hooks/useI18n", () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+    locale: "zh-CN",
+    loading: false,
+    getNsData: () => null,
+  }),
+}));
+
+vi.mock("@/components/ui/lazy-image", () => ({
+  LocationCoverImage: () => <div data-testid="cover-image" />,
+}));
+
+function team(overrides: Partial<Team>): Team {
+  return {
+    id: "team-1",
+    locationId: "location-1",
+    title: "梧桐山日出徒步",
+    description: "",
+    date: "2026-08-09",
+    time: "08:30",
+    startTime: "2026-08-09T00:30:00.000Z",
+    duration: "5小时",
+    maxMembers: 6,
+    currentMembers: 4,
+    requirements: [],
+    status: "recruiting",
+    createdAt: "2026-08-01T00:00:00.000Z",
+    leader: {
+      id: "user-1",
+      name: "Victor",
+      avatar: null,
+      level: "beginner",
+      completedHikes: 0,
+      bio: "",
+    },
+    location: {
+      id: "location-1",
+      name: "梧桐山",
+      description: "",
+      cityId: "shenzhen",
+      cityName: "深圳",
+      address: "梧桐山北门",
+      latitude: 22.58,
+      longitude: 114.21,
+      coverImage: "https://example.com/wutong.jpg",
+      images: [],
+      category: "mountain",
+      difficulty: "moderate",
+      bestSeasons: [],
+      tags: [],
+      createdAt: "2026-08-01T00:00:00.000Z",
+      updatedAt: "2026-08-01T00:00:00.000Z",
+    },
+    ...overrides,
+  } as Team;
+}
+
+describe("selectNextMemberTeam", () => {
+  it("selects the earliest future active team and ignores archived teams", () => {
+    const result = selectNextMemberTeam(
+      [
+        team({ id: "later", startTime: "2026-08-12T00:00:00.000Z" }),
+        team({ id: "completed", startTime: "2026-08-08T00:00:00.000Z", status: "completed" }),
+      ],
+      [team({ id: "next", startTime: "2026-08-09T00:30:00.000Z" })],
+      new Date("2026-08-07T00:00:00.000Z"),
+    );
+
+    expect(result?.id).toBe("next");
+  });
+});
+
+describe("HomeMemberExperience", () => {
+  it("shows the signed-in user's next departure", () => {
+    useMemberHomeMock.mockReturnValue({
+      teams: [team({})],
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    render(<HomeMemberExperience currentUser={{ id: "user-1", name: "Victor", nickname: "Victor" } as never} publicTeams={[]} />);
+
+    expect(screen.getByTestId("member-next-trip")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "home.memberDashboard.viewTrip" })).toHaveAttribute("href", "/teams/team-1");
+  });
+
+  it("shows a useful exploration state when the member has no active trip", () => {
+    useMemberHomeMock.mockReturnValue({
+      teams: [],
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    render(<HomeMemberExperience currentUser={{ id: "user-1", name: "Victor", nickname: "Victor" } as never} publicTeams={[]} />);
+
+    const emptyState = screen.getByTestId("member-no-trip");
+    expect(emptyState).toBeInTheDocument();
+    expect(within(emptyState).getByRole("link", { name: "home.memberDashboard.findTeams" })).toHaveAttribute("href", "/teams");
+  });
+});

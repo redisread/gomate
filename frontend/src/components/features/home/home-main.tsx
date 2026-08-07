@@ -8,6 +8,7 @@ import { HomeHowItWorksSection } from "./home-how-it-works-section";
 import { HomeMapSection } from "./home-map-section";
 import { HomeDepartureBoard } from "./home-departure-board";
 import { HomeGuestStickyCta } from "./home-guest-sticky-cta";
+import { HomeMemberExperience } from "./home-member-experience";
 import { OnboardingModal } from "@/components/features/onboarding/onboarding-modal";
 import { PreloadImages } from "./preload-images";
 import { fetchCurrentUser } from "@/lib/api";
@@ -47,8 +48,8 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
       {/* 预加载首屏图片 */}
       <PreloadImages images={data.preloadImages} />
       <main className="min-h-screen bg-background">
-        {isMember ? (
-          <div data-testid="member-home"><HomeHero data={data} isMember /></div>
+        {currentUser ? (
+          <div data-testid="member-home"><HomeMemberExperience currentUser={currentUser} publicTeams={data.teams} /></div>
         ) : (
           <div data-testid="guest-home">
             <HomeHero data={data} />

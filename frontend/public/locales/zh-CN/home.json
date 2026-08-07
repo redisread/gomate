@@ -71,6 +71,25 @@
     "description": "选择一支队伍，登录后申请加入",
     "cta": "免费加入"
   },
+  "memberDashboard": {
+    "kicker": "你的 GoMate",
+    "greeting": "回来啦，{name}",
+    "activeTitle": "下一次出发已经排好了",
+    "emptyTitle": "准备下一次出发",
+    "activeDescription": "先确认即将到来的行程，再看看附近还有哪些队伍正在集结。",
+    "emptyDescription": "从附近正在招募的队伍开始，或者发布一场由你决定时间和路线的同行。",
+    "findTeams": "找新的队伍",
+    "createTeam": "发布队伍",
+    "nextDeparture": "你的下一次出发",
+    "activeStatus": "行程进行中",
+    "viewTrip": "查看行程",
+    "recommendationKicker": "附近推荐",
+    "recommendationTitle": "先选一支想同行的队伍",
+    "noRecommendation": "附近暂时没有正在招募的队伍，可以浏览其他城市或自己发起一场。",
+    "loadErrorTitle": "暂时无法读取你的行程",
+    "loadErrorDescription": "公开地点和队伍仍然可以浏览，也可以稍后重试加载个人行程。",
+    "retry": "重新加载"
+  },
   "howItWorks": {
     "kicker": "从想去到出发",
     "title": "三步，找到同行的人",

@@ -71,6 +71,25 @@
     "description": "Pick a team, then sign in to apply",
     "cta": "Join free"
   },
+  "memberDashboard": {
+    "kicker": "Your GoMate",
+    "greeting": "Welcome back, {name}",
+    "activeTitle": "Your next departure is set",
+    "emptyTitle": "Plan your next departure",
+    "activeDescription": "Check your upcoming outing, then see which nearby teams are still forming.",
+    "emptyDescription": "Start with a nearby team that is recruiting now, or publish an outing with your own time and route.",
+    "findTeams": "Find a new team",
+    "createTeam": "Publish a team",
+    "nextDeparture": "Your next departure",
+    "activeStatus": "Trip active",
+    "viewTrip": "View trip",
+    "recommendationKicker": "Nearby picks",
+    "recommendationTitle": "Choose a team to go with",
+    "noRecommendation": "No nearby teams are recruiting right now. Browse another city or start one yourself.",
+    "loadErrorTitle": "We could not load your trips",
+    "loadErrorDescription": "You can still browse public places and teams, or try loading your personal trips again.",
+    "retry": "Try again"
+  },
   "howItWorks": {
     "kicker": "From idea to outing",
     "title": "Three steps to find your people",

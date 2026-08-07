@@ -71,6 +71,25 @@
     "description": "チームを選び、ログインして参加申請",
     "cta": "無料で参加"
   },
+  "memberDashboard": {
+    "kicker": "あなたの GoMate",
+    "greeting": "おかえりなさい、{name}",
+    "activeTitle": "次の出発が決まっています",
+    "emptyTitle": "次の出発を計画しよう",
+    "activeDescription": "次の予定を確認してから、近くで募集中のチームも見てみましょう。",
+    "emptyDescription": "近くで募集中のチームに参加するか、時間とルートを決めて自分の旅を公開しましょう。",
+    "findTeams": "新しいチームを探す",
+    "createTeam": "チームを公開",
+    "nextDeparture": "次の出発",
+    "activeStatus": "進行中",
+    "viewTrip": "予定を見る",
+    "recommendationKicker": "近くのおすすめ",
+    "recommendationTitle": "一緒に行きたいチームを選ぼう",
+    "noRecommendation": "近くに募集中のチームはありません。ほかの街を見るか、自分でチームを作成できます。",
+    "loadErrorTitle": "予定を読み込めませんでした",
+    "loadErrorDescription": "公開スポットとチームは引き続き閲覧できます。個人の予定は再読み込みできます。",
+    "retry": "再読み込み"
+  },
   "howItWorks": {
     "kicker": "思いから出発へ",
     "title": "3ステップで仲間を見つける",
