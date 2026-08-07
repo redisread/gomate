@@ -41,7 +41,7 @@ export function Navbar({ className }: NavbarProps) {
   const [session, setSession] = React.useState<{
     user?: { id: string; name: string; nickname?: string; email: string; image?: string };
     isAdmin?: boolean;
-  } | null>(null);
+  } | null | undefined>(undefined);
   // 延迟应用活跃状态，避免 SSR/CSR 不一致导致 hydration mismatch
   const [_mounted, setMounted] = React.useState(false);
   const { count: unreadCount } = useUnreadCount(!!session?.user);
@@ -69,8 +69,7 @@ export function Navbar({ className }: NavbarProps) {
   React.useEffect(() => {
     (async () => {
       const u = await fetchCurrentUser(); // 静默失败，不跳转
-      if (!u) return;
-      setSession({ user: u as { id: string; name: string; nickname?: string; email: string; image?: string } });
+      setSession(u ? { user: u as { id: string; name: string; nickname?: string; email: string; image?: string } } : null);
     })();
   }, []);
 
@@ -190,7 +189,12 @@ export function Navbar({ className }: NavbarProps) {
                 </a>
               )}
 
-              {session?.user ? (
+              {session === undefined ? (
+                <div className="flex items-center gap-2" data-testid="nav-auth-loading" aria-hidden="true">
+                  <div className="h-9 w-16 animate-pulse rounded-lg bg-muted motion-reduce:animate-none" />
+                  <div className="h-9 w-24 animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
+                </div>
+              ) : session?.user ? (
                 <>
                   {/* 用户菜单 */}
                   <div className="relative" data-user-menu>
@@ -386,7 +390,9 @@ export function Navbar({ className }: NavbarProps) {
               <div className="flex items-center justify-center py-2">
                 <LocaleToggle />
               </div>
-              {session?.user ? (
+              {session === undefined ? (
+                <div className="h-24 animate-pulse rounded-xl bg-muted motion-reduce:animate-none" aria-hidden="true" />
+              ) : session?.user ? (
                 <>
                   <a
                     href="/profile"
