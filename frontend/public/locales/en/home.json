@@ -44,6 +44,54 @@
     "listLabel": "Featured places",
     "swipeHint": "Swipe to see more"
   },
+  "guestHero": {
+    "kicker": "Someone is waiting for you this weekend",
+    "titleLine1": "Go somewhere new,",
+    "titleLine2": "without going alone",
+    "description": "See teams forming nearby and meet people heading in the same direction at the same time. Sign in to join, save places, or start your own outing.",
+    "primaryCta": "See who is heading out",
+    "loginPrompt": "Already a member? Sign in",
+    "noLoginRequired": "Public places and teams are open to browse"
+  },
+  "departures": {
+    "kicker": "Live departures",
+    "title": "Forming this week",
+    "remaining": "{count} spots left",
+    "full": "Team full",
+    "startedBy": "Started by {name}",
+    "viewAll": "View all teams",
+    "startTeam": "Start a team",
+    "swipeHint": "Swipe to browse teams forming now",
+    "emptyTitle": "The next team can start with you",
+    "emptyDescription": "Choose a place, set a departure time, and invite others to join."
+  },
+  "guestSticky": {
+    "ariaLabel": "Join GoMate",
+    "title": "Teams are recruiting now",
+    "description": "Pick a team, then sign in to apply",
+    "cta": "Join free",
+    "close": "Dismiss sign-up prompt"
+  },
+  "memberDashboard": {
+    "kicker": "Your GoMate",
+    "greeting": "Welcome back, {name}",
+    "activeTitle": "Your next departure is set",
+    "emptyTitle": "Plan your next departure",
+    "activeDescription": "Check your upcoming outing, then see which nearby teams are still forming.",
+    "emptyDescription": "Start with a nearby team that is recruiting now, or publish an outing with your own time and route.",
+    "findTeams": "Find a new team",
+    "createTeam": "Publish a team",
+    "nextDeparture": "Your next departure",
+    "inProgressStatus": "Trip in progress",
+    "upcomingStatus": "Upcoming",
+    "viewTrip": "View trip",
+    "recommendationKicker": "Nearby picks",
+    "recommendationTitle": "Choose a team to go with",
+    "noRecommendation": "No nearby teams are recruiting right now. Browse another city or start one yourself.",
+    "loadErrorTitle": "We could not load your trips",
+    "loadErrorDescription": "You can still browse public places and teams, or try loading your personal trips again.",
+    "retry": "Try again"
+  },
   "howItWorks": {
     "kicker": "From idea to outing",
     "title": "Three steps to find your people",

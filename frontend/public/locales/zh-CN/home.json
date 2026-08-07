@@ -44,6 +44,54 @@
     "listLabel": "推荐地点",
     "swipeHint": "左右滑动查看更多"
   },
+  "guestHero": {
+    "kicker": "这个周末，有人正等你加入",
+    "titleLine1": "想去的地方，",
+    "titleLine2": "不必一个人去",
+    "description": "看看附近正在集结的队伍，找到时间和方向一致的人。登录后可以申请加入、收藏地点，或者发起自己的行程。",
+    "primaryCta": "看看谁在出发",
+    "loginPrompt": "已有账号？登录",
+    "noLoginRequired": "浏览公开地点和队伍无需登录"
+  },
+  "departures": {
+    "kicker": "实时出发",
+    "title": "本周正在集结",
+    "remaining": "还差 {count} 人",
+    "full": "已经满员",
+    "startedBy": "由 {name} 发起",
+    "viewAll": "查看全部队伍",
+    "startTeam": "发起一支队伍",
+    "swipeHint": "左右滑动查看正在集结的队伍",
+    "emptyTitle": "下一支队伍，也可以由你发起",
+    "emptyDescription": "选择想去的地方，发布出发时间，等待同行的人加入。"
+  },
+  "guestSticky": {
+    "ariaLabel": "加入 GoMate",
+    "title": "正在招募的队伍等你加入",
+    "description": "选择一支队伍，登录后申请加入",
+    "cta": "免费加入",
+    "close": "关闭注册提示"
+  },
+  "memberDashboard": {
+    "kicker": "你的 GoMate",
+    "greeting": "回来啦，{name}",
+    "activeTitle": "下一次出发已经排好了",
+    "emptyTitle": "准备下一次出发",
+    "activeDescription": "先确认即将到来的行程，再看看附近还有哪些队伍正在集结。",
+    "emptyDescription": "从附近正在招募的队伍开始，或者发布一场由你决定时间和路线的同行。",
+    "findTeams": "找新的队伍",
+    "createTeam": "发布队伍",
+    "nextDeparture": "你的下一次出发",
+    "inProgressStatus": "行程进行中",
+    "upcomingStatus": "即将出发",
+    "viewTrip": "查看行程",
+    "recommendationKicker": "附近推荐",
+    "recommendationTitle": "先选一支想同行的队伍",
+    "noRecommendation": "附近暂时没有正在招募的队伍，可以浏览其他城市或自己发起一场。",
+    "loadErrorTitle": "暂时无法读取你的行程",
+    "loadErrorDescription": "公开地点和队伍仍然可以浏览，也可以稍后重试加载个人行程。",
+    "retry": "重新加载"
+  },
   "howItWorks": {
     "kicker": "从想去到出发",
     "title": "三步，找到同行的人",
