@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
 import { HomeDepartureStack } from "./home-departure-stack";
+import { HomeLocationStack } from "./home-location-stack";
 
 type HomeData = ReturnType<typeof useHomeData>;
 
@@ -43,7 +44,11 @@ export function HomeHero({ data }: { data: HomeData }) {
         </div>
 
         <div className={`relative mx-auto w-full lg:mx-0 ${animate.search}`}>
-          <HomeDepartureStack teams={data.teams} />
+          {data.teams.length > 0 || data.locations.length === 0 ? (
+            <HomeDepartureStack teams={data.teams} />
+          ) : (
+            <HomeLocationStack locations={data.locations} />
+          )}
         </div>
       </div>
     </section>

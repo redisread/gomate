@@ -46,4 +46,22 @@ describe("HomeHero", () => {
     expect(screen.getByTestId("home-departure-stack")).toBeInTheDocument();
     expect(screen.queryByTestId("home-location-stack")).not.toBeInTheDocument();
   });
+
+  it("falls back to real locations when no team is recruiting", () => {
+    render(
+      <HomeHero
+        data={
+          {
+            locations: [{ id: "location-1", name: "梧桐山" }],
+            teams: [],
+            preloadImages: [],
+            animate: { badge: "", title: "", subtitle: "", search: "", cta: "", stats: "" },
+          } as never
+        }
+      />,
+    );
+
+    expect(screen.getByTestId("home-location-stack")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-departure-stack")).not.toBeInTheDocument();
+  });
 });

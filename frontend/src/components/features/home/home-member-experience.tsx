@@ -3,7 +3,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
 import type { SessionUser, Team } from "@/lib/types";
 import { useMemberHome } from "./use-member-home";
-import { selectNextMemberTeam } from "./member-home-utils";
+import { isTeamInProgress, selectNextMemberTeam } from "./member-home-utils";
 
 interface HomeMemberExperienceProps {
   currentUser: SessionUser;
@@ -54,7 +54,7 @@ export function HomeMemberExperience({ currentUser, publicTeams }: HomeMemberExp
             </button>
           </div>
         ) : nextTeam ? (
-          <NextTripCard team={nextTeam} />
+          <NextTripCard team={nextTeam} inProgress={isTeamInProgress(nextTeam)} />
         ) : (
           <NoTripPanel teams={publicTeams} />
         )}
@@ -63,7 +63,7 @@ export function HomeMemberExperience({ currentUser, publicTeams }: HomeMemberExp
   );
 }
 
-function NextTripCard({ team }: { team: Team }) {
+function NextTripCard({ team, inProgress }: { team: Team; inProgress: boolean }) {
   const { t } = useI18n(["home"]);
   const coverImage = team.location?.coverImage;
 
@@ -74,7 +74,9 @@ function NextTripCard({ team }: { team: Team }) {
       <div className="relative z-10 flex min-h-[24rem] flex-col p-6 sm:p-8">
         <div className="flex items-center justify-between gap-4">
           <span className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-emerald-100">{t("home.memberDashboard.nextDeparture")}</span>
-          <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-950">{t("home.memberDashboard.activeStatus")}</span>
+          <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-950">
+            {inProgress ? t("home.memberDashboard.inProgressStatus") : t("home.memberDashboard.upcomingStatus")}
+          </span>
         </div>
 
         <div className="mt-auto">

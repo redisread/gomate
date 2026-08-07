@@ -81,6 +81,24 @@ describe("selectNextMemberTeam", () => {
 
     expect(result?.id).toBe("next");
   });
+
+  it("prefers a formed team that is already underway", () => {
+    const result = selectNextMemberTeam(
+      [
+        team({
+          id: "underway",
+          status: "formed",
+          startTime: "2026-08-09T00:30:00.000Z",
+          durationMin: 300,
+        }),
+        team({ id: "later", startTime: "2026-08-10T00:30:00.000Z" }),
+      ],
+      [],
+      new Date("2026-08-09T01:00:00.000Z"),
+    );
+
+    expect(result?.id).toBe("underway");
+  });
 });
 
 describe("HomeMemberExperience", () => {
@@ -95,6 +113,7 @@ describe("HomeMemberExperience", () => {
     render(<HomeMemberExperience currentUser={{ id: "user-1", name: "Victor", nickname: "Victor" } as never} publicTeams={[]} />);
 
     expect(screen.getByTestId("member-next-trip")).toBeInTheDocument();
+    expect(screen.getByText("home.memberDashboard.upcomingStatus")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "home.memberDashboard.viewTrip" })).toHaveAttribute("href", "/teams/team-1");
   });
 
