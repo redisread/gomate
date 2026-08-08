@@ -5,11 +5,9 @@
  *
  * 用法：
  *   node scripts/promote-admin.mjs --email victor@example.com --env production
- *   node scripts/promote-admin.mjs --user-id <id> --env staging --yes
  *
  * 环境：
  *   - local：使用本地 wrangler D1 模拟数据库
- *   - staging：使用 Cloudflare staging D1（需已登录 wrangler）
  *   - production：使用 Cloudflare 生产 D1（需已登录 wrangler，默认会二次确认）
  */
 
@@ -23,7 +21,6 @@ const API_DIR = path.resolve(__dirname, "..", "api");
 
 const ENV_CONFIG = {
   local: { dbName: "gomate-db", remote: false, envArg: null },
-  staging: { dbName: "gomate-db-staging", remote: true, envArg: "staging" },
   production: { dbName: "gomate-db", remote: true, envArg: "production" },
 };
 
@@ -54,13 +51,12 @@ Usage: node scripts/promote-admin.mjs [options]
 Options:
   -e, --email <email>      通过邮箱定位用户
   -u, --user-id <id>       通过 user id 定位用户
-      --env <env>          目标环境：local | staging | production（默认 local）
+      --env <env>          目标环境：local | production（默认 local）
   -y, --yes                跳过二次确认（仅 remote 环境有效）
   -h, --help               显示帮助
 
 Examples:
   node scripts/promote-admin.mjs --email victor@example.com --env production
-  node scripts/promote-admin.mjs --user-id abc123 --env staging --yes
 `);
 }
 
@@ -110,7 +106,7 @@ function execWrangler(extraArgs) {
         } else {
           resolve(stdout);
         }
-      }
+      },
     );
     child.stdout.pipe(process.stdout);
     child.stderr.pipe(process.stderr);
@@ -154,7 +150,7 @@ async function main() {
 
   const cfg = ENV_CONFIG[env];
   if (!cfg) {
-    console.error(`错误：未知环境 ${env}，可选 local/staging/production`);
+    console.error(`错误：未知环境 ${env}，可选 local/production`);
     process.exit(1);
   }
 

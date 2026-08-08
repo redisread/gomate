@@ -2,21 +2,17 @@
  * E2E fixture 自构造工具
  *
  * 背景：team-applications 等用例历史上依赖 seed 脚本预置的账号 + 队伍 + pending 申请，
- * 但「申请 → 审批」是消耗性状态（approve/reject 一次即消失），预置种子天然不幂等；
- * staging 侧旧种子账号（admin@test.com 等）在 staging D1 也已不存在。
+ * 但「申请 → 审批」是消耗性状态（approve/reject 一次即消失），预置种子天然不幂等。
  *
  * 本模块让每个用例自行构造隔离 fixture：
  *   signUpUser → patchWechat（建队/申请的前置条件）→ createTeamAs / applyToTeamAs
  * 用户名/队名带 RUN_ID 时间戳，多次运行互不干扰，无需清理。
  *
- * 环境自适应：staging 打 api-staging.gomate.live，本地打 localhost:8799（可用 env 覆盖）。
- * HTTP 模式与 scripts/seed-staging.mjs 一致（Origin 头 + set-cookie 会话），
- * 已在 staging 实证可用。
+ * 默认连接本地 API，可用环境变量覆盖端口。HTTP 使用 Origin 头和 set-cookie 会话。
  */
 
-const IS_STAGING = (process.env.E2E_BASE_URL || "").includes("staging.gomate.live");
-const API_BASE = process.env.E2E_API_URL || (IS_STAGING ? "https://api-staging.gomate.live" : "http://localhost:8799");
-const FRONTEND_ORIGIN = process.env.E2E_ORIGIN || (IS_STAGING ? "https://staging.gomate.live" : "http://localhost:5432");
+const API_BASE = process.env.E2E_API_URL || "http://localhost:8799";
+const FRONTEND_ORIGIN = process.env.E2E_ORIGIN || "http://localhost:5432";
 
 export interface FixtureUser {
   email: string;
@@ -62,54 +58,106 @@ async function apiFetch(
       data = text;
     }
   }
-  return { status: res.status, ok: res.ok, data, setCookie: res.headers.get("set-cookie") };
+  return {
+    status: res.status,
+    ok: res.ok,
+    data,
+    setCookie: res.headers.get("set-cookie"),
+  };
 }
 
 /** 注册新用户（better-auth sign-up 自动登录，会话在 set-cookie 里） */
-export async function signUpUser(email: string, password: string, name: string): Promise<FixtureUser> {
-  const res = await apiFetch("POST", "/auth/sign-up/email", { email, password, name });
+export async function signUpUser(
+  email: string,
+  password: string,
+  name: string,
+): Promise<FixtureUser> {
+  const res = await apiFetch("POST", "/auth/sign-up/email", {
+    email,
+    password,
+    name,
+  });
   const userId = res.data?.user?.id as string | undefined;
   if (!res.ok || !res.setCookie || !userId) {
-    throw new Error(`sign-up failed for ${email}: ${res.status} ${JSON.stringify(res.data)}`);
+    throw new Error(
+      `sign-up failed for ${email}: ${res.status} ${JSON.stringify(res.data)}`,
+    );
   }
   return { email, password, name, userId, cookie: res.setCookie };
 }
 
 /** 补微信号（建队 / 申请加入的前置条件，API 强制校验） */
-export async function patchWechat(user: FixtureUser, wechat: string): Promise<void> {
-  const res = await apiFetch("PATCH", "/users/update", { userId: user.userId, wechat }, user.cookie);
+export async function patchWechat(
+  user: FixtureUser,
+  wechat: string,
+): Promise<void> {
+  const res = await apiFetch(
+    "PATCH",
+    "/users/update",
+    { userId: user.userId, wechat },
+    user.cookie,
+  );
   if (!res.ok) {
-    throw new Error(`patch wechat failed for ${user.email}: ${res.status} ${JSON.stringify(res.data)}`);
+    throw new Error(
+      `patch wechat failed for ${user.email}: ${res.status} ${JSON.stringify(res.data)}`,
+    );
   }
 }
 
 /** 以某个用户身份建队，返回 teamId */
 export async function createTeamAs(
   user: FixtureUser,
-  team: { locationId: string; title: string; date: string; time: string; maxMembers: number; description?: string },
+  team: {
+    locationId: string;
+    title: string;
+    date: string;
+    time: string;
+    maxMembers: number;
+    description?: string;
+  },
 ): Promise<string> {
-  const res = await apiFetch("POST", "/teams", team as unknown as Record<string, unknown>, user.cookie);
+  const res = await apiFetch(
+    "POST",
+    "/teams",
+    team as unknown as Record<string, unknown>,
+    user.cookie,
+  );
   const teamId = res.data?.team?.id as string | undefined;
   if (!res.ok || !teamId) {
-    throw new Error(`create team failed for ${user.email}: ${res.status} ${JSON.stringify(res.data)}`);
+    throw new Error(
+      `create team failed for ${user.email}: ${res.status} ${JSON.stringify(res.data)}`,
+    );
   }
   return teamId;
 }
 
 /** 以某个用户身份申请加入队伍（构造 pending 状态用） */
-export async function applyToTeamAs(user: FixtureUser, teamId: string, message = "E2E 申请"): Promise<void> {
-  const res = await apiFetch("POST", `/teams/${teamId}/join`, { message }, user.cookie);
+export async function applyToTeamAs(
+  user: FixtureUser,
+  teamId: string,
+  message = "E2E 申请",
+): Promise<void> {
+  const res = await apiFetch(
+    "POST",
+    `/teams/${teamId}/join`,
+    { message },
+    user.cookie,
+  );
   if (!res.ok) {
-    throw new Error(`apply to team failed for ${user.email}: ${res.status} ${JSON.stringify(res.data)}`);
+    throw new Error(
+      `apply to team failed for ${user.email}: ${res.status} ${JSON.stringify(res.data)}`,
+    );
   }
 }
 
-/** 取 staging 第一个 location id（种子保证至少一个） */
+/** 取本地种子数据中的第一个 location id。 */
 export async function getFirstLocationId(): Promise<string> {
   const res = await apiFetch("GET", "/locations?pageSize=1");
   const id = res.data?.locations?.[0]?.id as string | undefined;
   if (!res.ok || !id) {
-    throw new Error(`list locations failed: ${res.status} ${JSON.stringify(res.data)}`);
+    throw new Error(
+      `list locations failed: ${res.status} ${JSON.stringify(res.data)}`,
+    );
   }
   return id;
 }

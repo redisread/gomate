@@ -65,8 +65,7 @@ pnpm db:reset
 # 本地
 pnpm db:promote-admin --email admin@test.com --env local --yes
 
-# staging / production（会二次确认）
-pnpm db:promote-admin --user-id <user-id> --env staging --yes
+# production（会二次确认）
 pnpm db:promote-admin --email victor@example.com --env production
 ```
 
@@ -89,11 +88,6 @@ pnpm e2e:ci
 # 调试模式（带 UI）
 pnpm e2e:ui
 
-# 测试 staging 环境
-pnpm e2e:staging
-
-# 向 staging API 灌入测试数据（管理员/队长/队员 + 城市/地点/队伍）
-pnpm seed:staging
 ```
 
 ### browser-use（AI 驱动探索式测试）

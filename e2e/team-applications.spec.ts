@@ -13,7 +13,7 @@ import {
  * 队伍申请流 E2E —— 每次运行自构造隔离 fixture。
  *
  * 历史版本依赖 seed 预置的 expert/admin/leader_a/leader_b@test.com + 特定队伍的
- * 特定 pending 申请：旧种子账号在 staging D1 已不存在（E2E 因此全红 18+ 次），
+ * 特定 pending 申请：共享种子状态会被前一次运行消耗，
  * 且 approve/reject 消耗 pending 状态，预置种子天然不幂等。
  * 现改为每个用例自建 leader/member/team/application，UI 只走被测主路径。
  */
@@ -22,7 +22,11 @@ const RUN_ID = Date.now().toString(36);
 const PASSWORD = "test1234";
 
 async function makeUser(role: string): Promise<FixtureUser> {
-  const user = await signUpUser(`e2e-app-${RUN_ID}-${role}@e2e.gomate.test`, PASSWORD, `E2E ${RUN_ID} ${role}`);
+  const user = await signUpUser(
+    `e2e-app-${RUN_ID}-${role}@e2e.gomate.test`,
+    PASSWORD,
+    `E2E ${RUN_ID} ${role}`,
+  );
   // 建队 / 申请加入都强制要求已填微信号
   await patchWechat(user, `e2e${RUN_ID}${role}`);
   return user;
@@ -52,12 +56,18 @@ test.describe("Team Application Flow", () => {
     await page.goto(`/teams/${teamId}`);
 
     await page.locator("[data-testid='team-join-button']").click();
-    await expect(page.locator("[data-testid='team-join-message']")).toBeVisible();
-    await page.locator("[data-testid='team-join-message']").fill("我想参加这次徒步");
+    await expect(
+      page.locator("[data-testid='team-join-message']"),
+    ).toBeVisible();
+    await page
+      .locator("[data-testid='team-join-message']")
+      .fill("我想参加这次徒步");
     await page.locator("[data-testid='team-join-submit']").click();
 
     // 申请提交后应显示“等待审核”状态
-    await expect(page.locator("[data-testid='team-pending-status']")).toBeVisible();
+    await expect(
+      page.locator("[data-testid='team-pending-status']"),
+    ).toBeVisible();
   });
 
   test("leader can approve a pending application", async ({ page }) => {
@@ -70,7 +80,9 @@ test.describe("Team Application Flow", () => {
     await loginAs(page, leader.email, leader.password);
     await page.goto(`/teams/${teamId}`);
 
-    const applicationsSection = page.locator("[data-testid='team-applications-section']");
+    const applicationsSection = page.locator(
+      "[data-testid='team-applications-section']",
+    );
     await expect(applicationsSection).toBeVisible();
 
     // 找到该成员的申请卡片并点击通过
@@ -92,7 +104,9 @@ test.describe("Team Application Flow", () => {
     await loginAs(page, leader.email, leader.password);
     await page.goto(`/teams/${teamId}`);
 
-    const applicationsSection = page.locator("[data-testid='team-applications-section']");
+    const applicationsSection = page.locator(
+      "[data-testid='team-applications-section']",
+    );
     await expect(applicationsSection).toBeVisible();
 
     const appCard = applicationsSection

@@ -5,11 +5,10 @@
 
 ## 基础信息
 
-| 环境       | 地址                              |
-| ---------- | --------------------------------- |
-| 本地开发   | `http://localhost:8799`           |
-| 生产环境   | `https://api.gomate.live`         |
-| 预发布环境 | `https://api-staging.gomate.live` |
+| 环境     | 地址                      |
+| -------- | ------------------------- |
+| 本地开发 | `http://localhost:8799`   |
+| 生产环境 | `https://api.gomate.live` |
 
 **认证方式：** Better Auth（基于 Session Cookie）；`/v1/*` 公开 API 另支持 API Key（`x-api-key` 请求头，格式 `gm_live_<key>`，通过 `POST /auth/api-key/create` 创建）。
 

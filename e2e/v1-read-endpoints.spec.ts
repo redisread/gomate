@@ -1,7 +1,6 @@
 /**
- * e2e: /v1/* OpenAPI read endpoints — staging smoke
+ * e2e: /v1/* OpenAPI read endpoints — local contract coverage
  *
- * Targets: api-staging.gomate.live
  * Purpose: 消除 #457 hidden risk（CI 绿 ≠ 路由可达），覆盖 6 端点 + my-status。
  *
  * 约束：
@@ -12,14 +11,17 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { E2E_ACCOUNTS } from "./helpers";
 
-// Staging API base
-const API_BASE = "https://api-staging.gomate.live";
-const FRONTEND_ORIGIN = "https://staging.gomate.live";
+const API_BASE = process.env.E2E_API_URL || "http://localhost:8799";
+const FRONTEND_ORIGIN = process.env.E2E_ORIGIN || "http://localhost:5432";
 
 // ─── HTTP helpers ────────────────────────────────────────────────────────────
 
-async function apiGet(path: string, cookie?: string): Promise<{ status: number; body: unknown }> {
+async function apiGet(
+  path: string,
+  cookie?: string,
+): Promise<{ status: number; body: unknown }> {
   const headers: Record<string, string> = {
     Accept: "application/json",
     Origin: FRONTEND_ORIGIN,
@@ -59,7 +61,11 @@ async function apiPost(
   } catch {
     data = await res.text();
   }
-  return { status: res.status, body: data, setCookie: res.headers.get("set-cookie") };
+  return {
+    status: res.status,
+    body: data,
+    setCookie: res.headers.get("set-cookie"),
+  };
 }
 
 /**
@@ -68,7 +74,9 @@ async function apiPost(
 async function signInApi(email: string, password: string): Promise<string> {
   const res = await apiPost("/auth/sign-in/email", { email, password });
   if (!res.setCookie) {
-    throw new Error(`sign-in failed for ${email}: status=${res.status} body=${JSON.stringify(res.body)}`);
+    throw new Error(
+      `sign-in failed for ${email}: status=${res.status} body=${JSON.stringify(res.body)}`,
+    );
   }
   return res.setCookie;
 }
@@ -78,8 +86,15 @@ async function signInApi(email: string, password: string): Promise<string> {
 test("GET /v1/teams — 200 with pagination", async () => {
   await test.step("call GET /v1/teams?page=1&pageSize=3", async () => {
     const { status, body } = await apiGet("/v1/teams?page=1&pageSize=3");
-    expect(status, `Expected 200, got ${status} body=${JSON.stringify(body)}`).toBe(200);
-    const data = body as { success: boolean; teams: unknown[]; pagination: unknown };
+    expect(
+      status,
+      `Expected 200, got ${status} body=${JSON.stringify(body)}`,
+    ).toBe(200);
+    const data = body as {
+      success: boolean;
+      teams: unknown[];
+      pagination: unknown;
+    };
     expect(data.success).toBe(true);
     expect(Array.isArray(data.teams)).toBe(true);
     expect(data.pagination).toBeDefined();
@@ -113,7 +128,7 @@ test("GET /v1/teams/:id — 200 for existing team", async () => {
     expect(status).toBe(200);
     const teams = (body as { teams: { id: string }[] }).teams;
     const id = teams[0]?.id;
-    expect(id, "staging must have at least one team").toBeDefined();
+    expect(id, "local seed must have at least one team").toBeDefined();
     return id as string;
   });
 
@@ -128,7 +143,9 @@ test("GET /v1/teams/:id — 200 for existing team", async () => {
 
 test("GET /v1/teams/:id — 404 for non-existent id", async () => {
   await test.step("call GET /v1/teams/00000000-0000-0000-0000-000000000000", async () => {
-    const { status } = await apiGet("/v1/teams/00000000-0000-0000-0000-000000000000");
+    const { status } = await apiGet(
+      "/v1/teams/00000000-0000-0000-0000-000000000000",
+    );
     expect(status, `Expected 404, got ${status}`).toBe(404);
   });
 });
@@ -148,15 +165,18 @@ test("GET /v1/teams/:id/my-status — anonymous returns 200 status:none", async 
     const { status, body } = await apiGet(`/v1/teams/${teamId}/my-status`);
     expect(status, `Expected 200, got ${status}`).toBe(200);
     const data = body as { status: string };
-    expect(["none", "pending", "approved", "rejected", "member"]).toContain(data.status);
+    expect(["none", "pending", "approved", "rejected", "member"]).toContain(
+      data.status,
+    );
   });
 });
 
 test("GET /v1/teams/:id/my-status — authenticated returns real status", async () => {
   // 1. Sign in via API to get session cookie (Wen approach: no browser)
-  const cookie = await test.step("POST /auth/sign-in/email with leader-staging account", async () => {
-    return signInApi("leader-staging@gomate.test", "test1234");
-  });
+  const cookie =
+    await test.step("POST /auth/sign-in/email with local leader account", async () => {
+      return signInApi(E2E_ACCOUNTS.leader.email, E2E_ACCOUNTS.leader.password);
+    });
 
   // 2. Get a valid team ID
   const teamId = await test.step("fetch first team id", async () => {
@@ -169,11 +189,16 @@ test("GET /v1/teams/:id/my-status — authenticated returns real status", async 
 
   // 3. Call my-status with real session cookie
   await test.step(`GET /v1/teams/${teamId}/my-status with session cookie`, async () => {
-    const { status, body } = await apiGet(`/v1/teams/${teamId}/my-status`, cookie);
+    const { status, body } = await apiGet(
+      `/v1/teams/${teamId}/my-status`,
+      cookie,
+    );
     expect(status, `Expected 200, got ${status}`).toBe(200);
     const data = body as { status: string };
-    // leader-staging@gomate.test should be member or leader of some team
-    expect(["none", "pending", "approved", "rejected", "member"]).toContain(data.status);
+    // The seeded leader may have any valid membership state for the first team.
+    expect(["none", "pending", "approved", "rejected", "member"]).toContain(
+      data.status,
+    );
   });
 });
 
@@ -182,8 +207,15 @@ test("GET /v1/teams/:id/my-status — authenticated returns real status", async 
 test("GET /v1/locations — 200 with pagination", async () => {
   await test.step("call GET /v1/locations?page=1&pageSize=5", async () => {
     const { status, body } = await apiGet("/v1/locations?page=1&pageSize=5");
-    expect(status, `Expected 200, got ${status} body=${JSON.stringify(body)}`).toBe(200);
-    const data = body as { success: boolean; locations: unknown[]; pagination: unknown };
+    expect(
+      status,
+      `Expected 200, got ${status} body=${JSON.stringify(body)}`,
+    ).toBe(200);
+    const data = body as {
+      success: boolean;
+      locations: unknown[];
+      pagination: unknown;
+    };
     expect(data.success).toBe(true);
     expect(Array.isArray(data.locations)).toBe(true);
     expect(data.pagination).toBeDefined();
@@ -192,7 +224,9 @@ test("GET /v1/locations — 200 with pagination", async () => {
 
 test("GET /v1/locations — 200 with keyword filter", async () => {
   await test.step("call GET /v1/locations?keyword=山&pageSize=5", async () => {
-    const { status, body } = await apiGet("/v1/locations?keyword=山&pageSize=5");
+    const { status, body } = await apiGet(
+      "/v1/locations?keyword=山&pageSize=5",
+    );
     expect(status, `Expected 200, got ${status}`).toBe(200);
     const data = body as { success: boolean };
     expect(data.success).toBe(true);
@@ -206,7 +240,7 @@ test("GET /v1/locations/:id — 200 for existing location", async () => {
     const { status, body } = await apiGet("/v1/locations?pageSize=1");
     expect(status).toBe(200);
     const id = (body as { locations: { id: string }[] }).locations[0]?.id;
-    expect(id, "staging must have at least one location").toBeDefined();
+    expect(id, "local seed must have at least one location").toBeDefined();
     return id as string;
   });
 
@@ -221,7 +255,9 @@ test("GET /v1/locations/:id — 200 for existing location", async () => {
 
 test("GET /v1/locations/:id — 404 for non-existent id", async () => {
   await test.step("call GET /v1/locations/00000000-0000-0000-0000-000000000000", async () => {
-    const { status } = await apiGet("/v1/locations/00000000-0000-0000-0000-000000000000");
+    const { status } = await apiGet(
+      "/v1/locations/00000000-0000-0000-0000-000000000000",
+    );
     expect(status, `Expected 404, got ${status}`).toBe(404);
   });
 });
@@ -231,7 +267,10 @@ test("GET /v1/locations/:id — 404 for non-existent id", async () => {
 test("GET /v1/enums — 200 returns all enum categories", async () => {
   await test.step("call GET /v1/enums", async () => {
     const { status, body } = await apiGet("/v1/enums");
-    expect(status, `Expected 200, got ${status} body=${JSON.stringify(body)}`).toBe(200);
+    expect(
+      status,
+      `Expected 200, got ${status} body=${JSON.stringify(body)}`,
+    ).toBe(200);
     const data = body as { success: boolean; enums: Record<string, unknown> };
     expect(data.success).toBe(true);
     expect(data.enums).toBeDefined();
@@ -248,8 +287,15 @@ test("GET /v1/enums — 200 returns all enum categories", async () => {
 test("GET /v1/stories — 200 with pagination", async () => {
   await test.step("call GET /v1/stories?page=1&pageSize=3", async () => {
     const { status, body } = await apiGet("/v1/stories?page=1&pageSize=3");
-    expect(status, `Expected 200, got ${status} body=${JSON.stringify(body)}`).toBe(200);
-    const data = body as { success: boolean; stories: unknown[]; pagination: unknown };
+    expect(
+      status,
+      `Expected 200, got ${status} body=${JSON.stringify(body)}`,
+    ).toBe(200);
+    const data = body as {
+      success: boolean;
+      stories: unknown[];
+      pagination: unknown;
+    };
     expect(data.success).toBe(true);
     expect(Array.isArray(data.stories)).toBe(true);
     expect(data.pagination).toBeDefined();
@@ -260,7 +306,9 @@ test("GET /v1/stories — 200 with pagination", async () => {
 
 test("GET /v1/stories/:id — 404 for non-existent id", async () => {
   await test.step("call GET /v1/stories/00000000-0000-0000-0000-000000000000", async () => {
-    const { status } = await apiGet("/v1/stories/00000000-0000-0000-0000-000000000000");
+    const { status } = await apiGet(
+      "/v1/stories/00000000-0000-0000-0000-000000000000",
+    );
     expect(status, `Expected 404, got ${status}`).toBe(404);
   });
 });

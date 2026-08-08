@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { fillLoginForm, STAGING_ACCOUNTS } from "./helpers";
+import { E2E_ACCOUNTS, fillLoginForm } from "./helpers";
 
 test.describe("Auth", () => {
   test("login page loads and form is interactive", async ({ page }) => {
@@ -8,14 +8,22 @@ test.describe("Auth", () => {
     await expect(page.locator("form")).toBeVisible();
     await expect(page.locator("[data-testid='login-email']")).toBeVisible();
     await expect(page.locator("[data-testid='login-password']")).toBeVisible();
-    await fillLoginForm(page, STAGING_ACCOUNTS.leader.email, STAGING_ACCOUNTS.leader.password);
+    await fillLoginForm(
+      page,
+      E2E_ACCOUNTS.leader.email,
+      E2E_ACCOUNTS.leader.password,
+    );
     await page.locator("[data-testid='login-submit']").click();
     await expect(page.locator("body")).toBeVisible();
   });
 
   test("successful login redirects to home", async ({ page }) => {
     await page.goto("/login");
-    await fillLoginForm(page, STAGING_ACCOUNTS.admin.email, STAGING_ACCOUNTS.admin.password);
+    await fillLoginForm(
+      page,
+      E2E_ACCOUNTS.admin.email,
+      E2E_ACCOUNTS.admin.password,
+    );
     await page.locator("[data-testid='login-submit']").click();
     // Deterministic assertion: wait for navigation to home
     await page.waitForURL(/\/$/, { timeout: 30000 });
@@ -38,7 +46,11 @@ test.describe("Auth", () => {
     await expect(page.locator("form")).toBeVisible();
     await expect(page.locator("[data-testid='register-name']")).toBeVisible();
     await expect(page.locator("[data-testid='register-email']")).toBeVisible();
-    await expect(page.locator("[data-testid='register-password']")).toBeVisible();
-    await expect(page.locator("[data-testid='register-confirm-password']")).toBeVisible();
+    await expect(
+      page.locator("[data-testid='register-password']"),
+    ).toBeVisible();
+    await expect(
+      page.locator("[data-testid='register-confirm-password']"),
+    ).toBeVisible();
   });
 });

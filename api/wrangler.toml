@@ -47,48 +47,6 @@ CORS_ALLOWED_ORIGINS = "http://localhost:3000,http://localhost:4321,http://local
 BETTER_AUTH_URL = "http://localhost:8799"
 # BETTER_AUTH_SECRET 通过 .dev.vars（本地开发）或 wrangler secret put（生产）设置，不在此处明文存储
 
-# 预发布环境（staging）
-[env.staging]
-name = "gomate-api-staging"
-compatibility_date = "2026-02-26"
-compatibility_flags = ["nodejs_compat"]
-
-[env.staging.vars]
-R2_PUBLIC_URL = "https://gomate-staging.cos.jiahongw.com"
-RESEND_FROM_EMAIL = "GoMate <noreply@gomate.live>"
-APP_URL = "https://api-staging.gomate.live"
-FRONTEND_URL = "https://staging.gomate.live"
-CORS_ALLOWED_ORIGINS = "https://staging.gomate.live,https://api-staging.gomate.live"
-BETTER_AUTH_URL = "https://api-staging.gomate.live"
-
-[[env.staging.r2_buckets]]
-binding = "R2"
-bucket_name = "gomate-staging"
-
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "gomate-db-staging"
-database_id = "4d3e4208-2fad-468b-a1c3-c1f627b07f14"
-migrations_dir = "db/migrations"
-
-[[env.staging.kv_namespaces]]
-binding = "GOMATE_KV"
-id = "5668184b0f7642f6895b716ca84d1c4a"
-
-[[env.staging.routes]]
-pattern = "api-staging.gomate.live"
-custom_domain = true
-
-[env.staging.placement]
-mode = "smart"
-
-[env.staging.observability]
-enabled = true
-head_sampling_rate = 1
-
-[env.staging.triggers]
-crons = ["10 12 * * *"]
-
 # 生产环境
 [env.production]
 name = "gomate-api"
