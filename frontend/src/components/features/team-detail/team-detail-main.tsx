@@ -8,13 +8,15 @@ import { TeamMainContent } from "./team-detail-content";
 import { TeamModalsAndFooter } from "./team-detail-bottom-bar";
 import { TeamDetailSkeleton } from "./team-detail-skeleton";
 import { useI18n } from "@/hooks/useI18n";
+import { TeamDepartureBrief } from "./team-detail-overview";
+import { getStatusInfo } from "./team-detail-utils";
 
 interface TeamDetailPartifulProps {
   teamId: string;
 }
 
 export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
-  const { t } = useI18n(["teams", "common"]);
+  const { t } = useI18n(["teams", "common", "enums"]);
   const ctx = useTeamDetail(teamId);
   const { team, loading, error } = ctx;
 
@@ -37,12 +39,20 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
     );
   }
 
+  const statusInfo = getStatusInfo(team.status, t);
+
   return (
     <main className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      {/* pt-20 为固定导航栏预留空间（移动端） */}
-      <div className="flex-1 max-w-7xl mx-auto px-6 pt-20 pb-8 lg:pt-8 lg:pb-12 lg:py-8 pb-24 lg:pb-12">
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 lg:gap-12">
+      <div className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-20 sm:px-6 lg:pb-16 lg:pt-8">
+        <TeamDepartureBrief
+          team={team}
+          location={ctx.location}
+          statusLabel={statusInfo.label}
+          canMessageLeader={ctx.isMember}
+        />
+
+        <div className="mt-7 grid grid-cols-1 gap-7 lg:mt-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-10">
           <TeamSidebar ctx={ctx} />
           <TeamMainContent ctx={ctx} />
         </div>

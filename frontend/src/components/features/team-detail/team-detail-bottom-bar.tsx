@@ -199,14 +199,16 @@ function MobileBottomBar({ ctx, team, location }: { ctx: ReturnType<typeof useTe
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border z-40 lg:hidden"
+      data-testid="team-mobile-action-bar"
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background shadow-[0_-10px_28px_rgba(82,58,31,0.10)] lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="max-w-7xl mx-auto px-4 py-3">
         {isLeader && <BottomBarLeader ctx={ctx} team={team} location={location} />}
         {!isLeader && isMember && <BottomBarMember ctx={ctx} team={team} />}
         {!isLeader && !isMember && isPending && <BottomBarPending ctx={ctx} team={team} />}
-        {!isLeader && !isMember && !isPending && !userId && <BottomBarNotLoggedIn team={team} />}
+        {!isLeader && !isMember && !isPending && !userId && canJoin && <BottomBarNotLoggedIn team={team} />}
+        {!isLeader && !isMember && !isPending && !userId && !canJoin && <BottomBarCannotJoin ctx={ctx} team={team} />}
         {!isLeader && !isMember && !isPending && userId && canJoin && <BottomBarCanJoin ctx={ctx} team={team} />}
         {!isLeader && !isMember && !isPending && userId && !canJoin && <BottomBarCannotJoin ctx={ctx} team={team} />}
       </div>
@@ -226,12 +228,18 @@ function BottomBarLeader({ ctx, team, location: _location }: { ctx: ReturnType<t
           <span className="font-medium">{t('teams.youAreLeader')}</span>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={share.openShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-            <Share2 className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={share.openShare}
+            aria-label={t('teams.shareTeam')}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground/70 transition-[transform,background-color,color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-amber-50 [@media(hover:hover)]:hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Share2 className="h-4 w-4" aria-hidden="true" />
           </button>
           {(team.status === "recruiting" || team.status === "cancelled") && (
-            <button onClick={() => ctx.setShowDeleteConfirm(true)}
-              className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors"
+            <button type="button" onClick={() => ctx.setShowDeleteConfirm(true)}
+              aria-label={t('teams.deleteTeam')}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-500 transition-[transform,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               title={t('teams.deleteTeam')}>
               <Trash2 className="h-4 w-4" />
             </button>
@@ -272,8 +280,8 @@ function BottomBarMember({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>;
           <span className="font-medium">{t('teams.statusApproved')}</span>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={share.openShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-            <Share2 className="h-4 w-4" />
+          <button type="button" onClick={share.openShare} aria-label={t('teams.shareTeam')} className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground/70 transition-[transform,background-color,color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-amber-50 [@media(hover:hover)]:hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Share2 className="h-4 w-4" aria-hidden="true" />
           </button>
           <button onClick={() => ctx.setShowLeave(true)} className="flex items-center gap-1 text-xs text-muted-foreground border border-border rounded-full px-3 py-1.5 hover:border-red-300 hover:text-red-500 transition-colors">
             <LogOut className="h-3 w-3" />
@@ -310,8 +318,8 @@ function BottomBarPending({ ctx: _ctx, team }: { ctx: ReturnType<typeof useTeamD
           <span className="font-medium">{t('teams.statusPending')}</span>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={share.openShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-            <Share2 className="h-4 w-4" />
+          <button type="button" onClick={share.openShare} aria-label={t('teams.shareTeam')} className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground/70 transition-[transform,background-color,color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-amber-50 [@media(hover:hover)]:hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Share2 className="h-4 w-4" aria-hidden="true" />
           </button>
           <a href="/my-teams" className="text-xs text-amber-600 flex items-center gap-1">
             {t('teams.viewLink')} <ArrowRight className="h-3 w-3" />
@@ -341,7 +349,7 @@ function BottomBarNotLoggedIn({ team }: { team: Team; }) {
     <div className="flex items-center justify-between min-h-[44px]">
       <span className="text-sm text-muted-foreground">{t('teams.loginToJoinTeam')}</span>
       <a href={`/login?redirect=/teams/${team.id}`}
-        className="px-4 py-2 bg-stone-800 text-white rounded-xl text-sm font-medium hover:bg-stone-900 transition-colors">
+        className="inline-flex min-h-11 shrink-0 items-center rounded-xl bg-stone-900 px-5 text-sm font-semibold text-white transition-[transform,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         {t('teams.loginBtn')}
       </a>
     </div>
@@ -355,11 +363,11 @@ function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
   return (
     <>
       <div className="flex items-center gap-2">
-        <button onClick={share.openShare} className="w-11 h-11 rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground hover:bg-amber-50 hover:text-amber-600 border border-border hover:border-amber-200 transition-[transform,background-color,border-color,color,opacity,box-shadow] flex-shrink-0">
-          <Share2 className="h-4 w-4" />
+        <button type="button" onClick={share.openShare} aria-label={t('teams.shareTeam')} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary text-muted-foreground transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:border-amber-200 [@media(hover:hover)]:hover:bg-amber-50 [@media(hover:hover)]:hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Share2 className="h-4 w-4" aria-hidden="true" />
         </button>
-        <button onClick={() => ctx.setShowJoinModal(true)}
-          className="flex-1 py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-[transform,background-color,border-color,color,opacity,box-shadow] min-h-[44px]">
+        <button type="button" onClick={() => ctx.setShowJoinModal(true)}
+          className="ml-auto inline-flex min-h-11 w-fit items-center justify-center rounded-xl bg-amber-600 px-6 font-semibold text-white transition-[transform,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {t('teams.joinTeam')}
         </button>
       </div>
@@ -390,8 +398,8 @@ function BottomBarCannotJoin({ ctx: _ctx, team }: { ctx: ReturnType<typeof useTe
         <div className="text-muted-foreground/70 text-sm">
           {team.status === "completed" ? t('teams.statusEnded') : team.status === "cancelled" ? t('teams.statusCancelled') : t('teams.teamFull')}
         </div>
-        <button onClick={share.openShare} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground/70 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-          <Share2 className="h-4 w-4" />
+        <button type="button" onClick={share.openShare} aria-label={t('teams.shareTeam')} className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground/70 transition-[transform,background-color,color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-amber-50 [@media(hover:hover)]:hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Share2 className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
 

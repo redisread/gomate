@@ -1,14 +1,10 @@
-import { MapPin, ArrowRight, Calendar, Clock, Timer, AlertCircle, CheckCircle, Crown, Share2, Loader2, Users, Trash2, Pencil, MessageCircle } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { ArrowRight, Clock, AlertCircle, CheckCircle, Share2, Loader2, Users, Trash2, Pencil } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import type { Team, Location } from "@/lib/types";
+import type { Team } from "@/lib/types";
 import { useTeamDetail } from "./use-team-detail";
-import { formatDuration } from "./team-detail-utils";
 import { TeamApplicationsSection } from "./team-detail-applications";
-import { TeamProgress, TeamLeaderMini } from "@/components/features/teams/shared";
+import { TeamProgress } from "@/components/features/teams/shared";
 import * as React from "react";
-import { createConversation } from "@/hooks/useMessages";
 
 // 懒加载分享相关组件
 const ShareOptionsSheet = React.lazy(() => import("./share-options-sheet").then(m => ({ default: m.ShareOptionsSheet })));
@@ -58,30 +54,36 @@ function useTeamShare(team: Team | null) {
 }
 
 export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
-  const { team, location, isLeader, isMember, isPending, statusLoadFailed, applications, isFull } = ctx;
+  const { team, isLeader, isMember, isPending, statusLoadFailed, applications, isFull } = ctx;
   const share = useTeamShare(team);
 
   if (!team) return null;
 
   return (
-    <aside className="lg:sticky lg:top-24 lg:self-start space-y-6">
-      <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight">{team.title}</h1>
-      <TeamTimeInfo team={team} />
-      {location && <MobileLocationLink location={location} />}
-      {team.description && (
-        <div className="border-t border-border pt-4">
-          <div className="text-sm text-muted-foreground leading-relaxed prose-sm">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{team.description}</ReactMarkdown>
-          </div>
+    <aside data-testid="team-decision-panel" className="space-y-5 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:self-start">
+      <div className="rounded-[20px] bg-card p-5 shadow-[0_8px_28px_rgba(82,58,31,0.08)] sm:p-6">
+        <TeamCapacity team={team} canJoin={ctx.canJoin} remaining={ctx.remaining} />
+
+        <div className="mt-5 hidden lg:block">
+          <TeamDecisionPrimaryAction
+            team={team}
+            userId={ctx.userId}
+            canJoin={ctx.canJoin}
+            isFull={ctx.isFull}
+            isLeader={ctx.isLeader}
+            isMember={ctx.isMember}
+            isPending={ctx.isPending}
+            onJoin={() => ctx.setShowJoinModal(true)}
+          />
         </div>
-      )}
-      <TeamCapacity team={team} canJoin={ctx.canJoin} remaining={ctx.remaining} />
-      {team.leader && <LeaderCard leader={team.leader} teamId={team.id} canMessage={isMember} />}
-      <ShareButton onClick={share.openShare} />
-      {isLeader && <LeaderActions ctx={ctx} team={team} />}
-      {isMember && <MemberStatusIndicator onLeave={() => ctx.setShowLeave(true)} />}
-      {isPending && <PendingStatusIndicator />}
-      {statusLoadFailed && <StatusLoadError onRetry={ctx.loadTeam} />}
+
+        <ShareButton onClick={share.openShare} />
+        {isLeader && <LeaderActions ctx={ctx} team={team} />}
+        {isMember && <MemberStatusIndicator onLeave={() => ctx.setShowLeave(true)} />}
+        {isPending && <PendingStatusIndicator />}
+        {statusLoadFailed && <StatusLoadError onRetry={ctx.loadTeam} />}
+      </div>
+
       {isLeader && (
         <TeamApplicationsSection
           applications={applications}
@@ -112,47 +114,10 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
   );
 }
 
-function TeamTimeInfo({ team }: { team: Team; }) {
-  const { t } = useI18n(["teams"]);
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 text-base text-foreground/70">
-        <Calendar className="w-4 h-4 text-amber-500" />
-        <span className="font-medium">{team.date}</span>
-      </div>
-      {team.time && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Clock className="w-4 h-4" />
-          <span>{team.time}</span>
-        </div>
-      )}
-      {team.durationMin && team.durationMin > 0 && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Timer className="w-4 h-4" />
-          <span>{t('teams.estimatedPrefix')} {formatDuration(team.durationMin / 60)}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MobileLocationLink({ location }: { location: Location; }) {
-  return (
-    <div className="lg:hidden">
-      <a href={`/locations/${location.id}`}
-        className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-foreground/70 hover:bg-amber-50 hover:text-amber-700 transition-colors">
-        <MapPin className="w-4 h-4" />
-        <span className="font-medium text-sm">{location.name}</span>
-        <ArrowRight className="w-3 h-3 ml-auto" />
-      </a>
-    </div>
-  );
-}
-
 function TeamCapacity({ team, canJoin, remaining }: { team: Team; canJoin: boolean; remaining: number; }) {
   const { t } = useI18n(["teams"]);
   return (
-    <div className="bg-amber-50 rounded-xl p-4 space-y-3">
+    <div className="rounded-xl bg-amber-50 p-4 space-y-3">
       <TeamProgress
         current={team.currentMembers}
         max={team.maxMembers}
@@ -161,7 +126,7 @@ function TeamCapacity({ team, canJoin, remaining }: { team: Team; canJoin: boole
         size="md"
       />
       {canJoin && remaining > 0 && (
-        <p className="text-xs text-amber-600 mt-2 font-medium text-center">
+        <p className="mt-2 text-center text-xs font-medium text-amber-800">
           {remaining === 1 ? t('teams.spotsRemainingOne') : t('teams.spotsRemainingCount').replace('{remaining}', String(remaining))}
         </p>
       )}
@@ -169,60 +134,80 @@ function TeamCapacity({ team, canJoin, remaining }: { team: Team; canJoin: boole
   );
 }
 
-function LeaderCard({ leader, teamId, canMessage }: { leader: Team["leader"]; teamId: string; canMessage: boolean; }) {
+export function TeamDecisionPrimaryAction({
+  team,
+  userId,
+  canJoin,
+  isFull,
+  isLeader,
+  isMember,
+  isPending,
+  onJoin,
+}: {
+  team: Team;
+  userId: string | null;
+  canJoin: boolean;
+  isFull: boolean;
+  isLeader: boolean;
+  isMember: boolean;
+  isPending: boolean;
+  onJoin: () => void;
+}) {
   const { t } = useI18n(["teams"]);
-  const [isStarting, setIsStarting] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
-  const handleMessage = async () => {
-    setIsStarting(true);
-    setError(null);
-    try {
-      const conversation = await createConversation(teamId);
-      window.location.href = `/messages/${conversation.id}`;
-    } catch (err) {
-      console.error("Failed to create conversation:", err);
-      setError(t("teams.messageStartFailed"));
-    } finally {
-      setIsStarting(false);
-    }
-  };
+  if (isLeader || isMember || isPending) return null;
+
+  if (!canJoin) {
+    const unavailableMessage = isFull
+      ? t("teams.teamFullCannotJoin")
+      : team.status === "completed"
+        ? t("teams.statusEnded")
+        : team.status === "formed"
+          ? t("teams.statusFormed")
+          : t("teams.statusCancelled");
+
+    return <p className="text-sm leading-6 text-muted-foreground">{unavailableMessage}</p>;
+  }
+
+  if (!userId) {
+    return (
+      <div className="space-y-3">
+        <p className="text-pretty text-sm leading-6 text-muted-foreground">
+          {t("teams.loginToJoinTeam")}
+        </p>
+        <a
+          href={`/login?redirect=/teams/${team.id}`}
+          className="inline-flex min-h-11 w-fit items-center gap-2 rounded-xl bg-stone-900 px-5 text-sm font-semibold text-white transition-[transform,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          {t("teams.loginBtn")}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </a>
+      </div>
+    );
+  }
 
   return (
-    <div className="border-t border-border pt-4">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-        <Crown className="w-3.5 h-3.5" />
-        <span className="font-medium">{t('teams.creatorLabel')}</span>
-      </div>
-      <a href={`/users/${leader.id}`}
-        className="flex items-center gap-3 p-3 bg-muted rounded-xl hover:bg-amber-50 transition-colors">
-        <TeamLeaderMini leader={leader} showLevel={true} size="md" />
-      </a>
-      {canMessage && (
-        <div className="mt-2 space-y-2">
-          <button
-            type="button"
-            onClick={handleMessage}
-            disabled={isStarting}
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isStarting ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-            {t("teams.messageLeader")}
-          </button>
-          {error && <p className="text-xs text-red-600 text-center">{error}</p>}
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      data-testid="team-join-button"
+      onClick={onJoin}
+      className="inline-flex min-h-12 w-fit items-center justify-center rounded-xl bg-amber-600 px-6 text-base font-semibold text-white transition-[transform,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+      {t("teams.joinTeam")}
+    </button>
   );
 }
 
 function ShareButton({ onClick }: { onClick: () => void; }) {
   const { t } = useI18n(["teams"]);
   return (
-    <div className="border-t border-border pt-4">
-      <button onClick={onClick}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground/70 hover:bg-accent rounded-lg transition-colors">
-        <Share2 className="w-4 h-4" />
+    <div className="mt-5 border-t border-border pt-4">
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-sm text-foreground/70 transition-[transform,background-color,color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Share2 className="h-4 w-4" aria-hidden="true" />
         {t('teams.shareTeam')}
       </button>
     </div>
