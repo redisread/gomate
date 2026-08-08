@@ -1,6 +1,8 @@
 import * as React from "react";
-import type { Team } from "@/lib/types";
+import type { City, Team } from "@/lib/types";
 import { fetchPublicAPI } from "@/lib/api";
+import { fetchAllCities } from "@/lib/cities";
+import { parseTeamDifficultyFilters, parseTeamTagFilters } from "@/lib/team-filter-params";
 import {
   getDateRangeByQuickType,
   getActiveDateQuickType,
@@ -18,28 +20,56 @@ export interface TeamsInitialData {
   teams: Team[];
   pagination: TeamsPagination;
   availableTags: { id: string; name: string }[];
+  availableCities: City[];
+  citiesComplete?: boolean;
+  filters?: {
+    searchQuery: string;
+    currentPage: number;
+    selectedDifficulty: string[];
+    selectedCityId: string;
+    startDate: string;
+    endDate: string;
+    selectedTags: string[];
+  };
 }
 
 export function useTeams(initialData?: TeamsInitialData) {
+  const initialFilters = initialData?.filters;
+  const hasInitialData = Boolean(initialData);
+  const shouldLoadFullCities = !initialData || initialData.citiesComplete === false || initialData.availableCities.length === 0;
   const [teams, setTeams] = React.useState<Team[]>(initialData?.teams ?? []);
   const [isLoading, setIsLoading] = React.useState(!initialData);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [currentPage, setCurrentPage] = React.useState(1);
+  const [loadError, setLoadError] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState(initialFilters?.searchQuery ?? "");
+  const [currentPage, setCurrentPage] = React.useState(initialFilters?.currentPage ?? 1);
   const [pagination, setPagination] = React.useState<TeamsPagination>(
     initialData?.pagination ?? { total: 0, totalPages: 0, pageSize: 12 },
   );
   const [showFilters, setShowFilters] = React.useState(false);
-  const [selectedDifficulty, setSelectedDifficulty] = React.useState<string[]>([]);
-  const [startDate, setStartDate] = React.useState("");
-  const [endDate, setEndDate] = React.useState("");
+  const [selectedDifficulty, setSelectedDifficulty] = React.useState<string[]>(initialFilters?.selectedDifficulty ?? []);
+  const [startDate, setStartDate] = React.useState(initialFilters?.startDate ?? "");
+  const [endDate, setEndDate] = React.useState(initialFilters?.endDate ?? "");
   const [availableTags, setAvailableTags] = React.useState<{ id: string; name: string }[]>(initialData?.availableTags ?? []);
-  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
-  const hasInitialDataRef = React.useRef(Boolean(initialData));
-  const skipInitialFilterFetchRef = React.useRef(true);
+  const [selectedTags, setSelectedTags] = React.useState<string[]>(initialFilters?.selectedTags ?? []);
+  const [availableCities, setAvailableCities] = React.useState<City[]>(initialData?.availableCities ?? []);
+  const [citiesLoading, setCitiesLoading] = React.useState(shouldLoadFullCities);
+  const [citiesError, setCitiesError] = React.useState(false);
+  const [selectedCityId, setSelectedCityId] = React.useState(initialFilters?.selectedCityId ?? "");
+  const [urlInitialized, setUrlInitialized] = React.useState(hasInitialData);
+  const skipInitialFilterFetchRef = React.useRef(hasInitialData);
+  const latestRequestIdRef = React.useRef(0);
+  const requestAbortRef = React.useRef<AbortController | null>(null);
+  const citiesAbortRef = React.useRef<AbortController | null>(null);
+  const filterRequestTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadTeams = React.useCallback(
-    async (params: { page?: number; search?: string; difficulty?: string[]; startDateFrom?: string; startDateTo?: string; tagIds?: string[] }) => {
+    async (params: { page?: number; search?: string; difficulty?: string[]; cityId?: string; startDateFrom?: string; startDateTo?: string; tagIds?: string[] }) => {
+      const requestId = ++latestRequestIdRef.current;
+      requestAbortRef.current?.abort();
+      const controller = new AbortController();
+      requestAbortRef.current = controller;
       setIsLoading(true);
+      setLoadError(false);
       try {
         const query = new URLSearchParams();
         query.set("status", "recruiting");
@@ -47,18 +77,23 @@ export function useTeams(initialData?: TeamsInitialData) {
         query.set("pageSize", "12");
         if (params.search) query.set("search", params.search);
         if (params.difficulty?.length) query.set("difficulty", params.difficulty.join(","));
+        if (params.cityId) query.set("cityId", params.cityId);
         if (params.startDateFrom) query.set("startDateFrom", params.startDateFrom);
         if (params.startDateTo) query.set("startDateTo", params.startDateTo);
         if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
 
-        const res = await fetchPublicAPI(`/teams?${query}`);
+        const res = await fetchPublicAPI(`/teams?${query}`, { signal: controller.signal });
         const data = await res.json();
-        if (data.success) {
+        if (data.success && requestId === latestRequestIdRef.current) {
           setTeams(data.teams || []);
           setPagination(data.pagination || { total: 0, totalPages: 0, pageSize: 12 });
+        } else if (requestId === latestRequestIdRef.current) {
+          setLoadError(true);
         }
+      } catch {
+        if (!controller.signal.aborted && requestId === latestRequestIdRef.current) setLoadError(true);
       } finally {
-        setIsLoading(false);
+        if (requestId === latestRequestIdRef.current) setIsLoading(false);
       }
     },
     []
@@ -66,42 +101,45 @@ export function useTeams(initialData?: TeamsInitialData) {
 
   // URL 参数初始化
   React.useEffect(() => {
+    if (hasInitialData) return;
     const params = new URLSearchParams(window.location.search);
-    const q = params.get("q") || "";
-    const page = parseInt(params.get("page") || "1", 10);
-    const difficulty = params.get("difficulty")?.split(",").filter(Boolean) || [];
+    const q = (params.get("q") || "").slice(0, 120);
+    const page = Math.min(1000, Math.max(1, parseInt(params.get("page") || "1", 10) || 1));
+    const difficulty = parseTeamDifficultyFilters(params.get("difficulty"));
+    const cityId = (params.get("cityId") || "").slice(0, 64);
     const timeFilter = params.get("timeFilter") || "";
-    const tags = params.get("tags")?.split(",").filter(Boolean) || [];
+    const tags = parseTeamTagFilters(params.get("tags"));
 
     setSearchQuery(q);
     setCurrentPage(page);
     setSelectedDifficulty(difficulty);
+    setSelectedCityId(cityId);
     setSelectedTags(tags);
 
     // 处理时间筛选：优先使用 timeFilter，回退到 startDate/endDate
     let start = "";
     let end = "";
-    if (timeFilter && ["today", "tomorrow", "weekend", "7days"].includes(timeFilter)) {
+    if (timeFilter) {
       const range = getDateRangeByQuickType(timeFilter);
       if (range) {
         start = range.start;
         end = range.end;
-        setStartDate(start);
-        setEndDate(end);
       }
-    } else {
+    }
+    if (!start && !end) {
       start = params.get("startDate") || "";
       end = params.get("endDate") || "";
-      setStartDate(start);
-      setEndDate(end);
     }
+    setStartDate(start);
+    setEndDate(end);
+    setUrlInitialized(true);
+  }, [hasInitialData]);
 
-    if (hasInitialDataRef.current) {
-      hasInitialDataRef.current = false;
-      return;
-    }
-    loadTeams({ page, search: q, difficulty, startDateFrom: start, startDateTo: end, tagIds: tags });
-  }, [loadTeams]);
+  React.useEffect(() => () => {
+    requestAbortRef.current?.abort();
+    citiesAbortRef.current?.abort();
+    if (filterRequestTimerRef.current) clearTimeout(filterRequestTimerRef.current);
+  }, []);
 
   // 加载可用标签
   React.useEffect(() => {
@@ -112,11 +150,34 @@ export function useTeams(initialData?: TeamsInitialData) {
       .catch(() => {});
   }, [initialData?.availableTags]);
 
-  const updateURL = React.useCallback(() => {
+  const loadAllCities = React.useCallback(async () => {
+    citiesAbortRef.current?.abort();
+    const controller = new AbortController();
+    citiesAbortRef.current = controller;
+    setCitiesLoading(true);
+    setCitiesError(false);
+    try {
+      const cities = await fetchAllCities({ signal: controller.signal });
+      if (!controller.signal.aborted) setAvailableCities(cities);
+    } catch {
+      if (!controller.signal.aborted) setCitiesError(true);
+    } finally {
+      if (!controller.signal.aborted) setCitiesLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!shouldLoadFullCities) return;
+    loadAllCities();
+    return () => citiesAbortRef.current?.abort();
+  }, [shouldLoadFullCities, loadAllCities]);
+
+  const updateURL = React.useCallback((page: number) => {
     const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
-    if (currentPage > 1) params.set("page", currentPage.toString());
+    if (page > 1) params.set("page", page.toString());
     if (selectedDifficulty.length) params.set("difficulty", selectedDifficulty.join(","));
+    if (selectedCityId) params.set("cityId", selectedCityId);
     if (selectedTags.length) params.set("tags", selectedTags.join(","));
 
     // 时间筛选参数：优先使用 timeFilter 快捷选项
@@ -131,34 +192,46 @@ export function useTeams(initialData?: TeamsInitialData) {
 
     const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     window.history.replaceState({}, "", newUrl);
-  }, [searchQuery, currentPage, selectedDifficulty, startDate, endDate, selectedTags]);
+  }, [searchQuery, selectedDifficulty, selectedCityId, startDate, endDate, selectedTags]);
 
   // 搜索防抖
   React.useEffect(() => {
+    if (!urlInitialized) return;
     if (skipInitialFilterFetchRef.current) {
       skipInitialFilterFetchRef.current = false;
       return;
     }
-    const timer = setTimeout(() => {
-      loadTeams({ page: 1, search: searchQuery, difficulty: selectedDifficulty, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
-      updateURL();
+    setCurrentPage(1);
+    setIsLoading(true);
+    filterRequestTimerRef.current = setTimeout(() => {
+      loadTeams({ page: 1, search: searchQuery, difficulty: selectedDifficulty, cityId: selectedCityId, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
+      updateURL(1);
     }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, selectedDifficulty, startDate, endDate, selectedTags, loadTeams, updateURL]);
+    return () => {
+      if (filterRequestTimerRef.current) clearTimeout(filterRequestTimerRef.current);
+      filterRequestTimerRef.current = null;
+    };
+  }, [urlInitialized, searchQuery, selectedDifficulty, selectedCityId, startDate, endDate, selectedTags, loadTeams, updateURL]);
 
 
 
   const handleDifficultyToggle = React.useCallback((id: string) => {
     const next = selectedDifficulty.includes(id) ? selectedDifficulty.filter((d) => d !== id) : [...selectedDifficulty, id];
     setSelectedDifficulty(next);
-    setCurrentPage(1);
   }, [selectedDifficulty]);
 
   const handleTagToggle = React.useCallback((tagId: string) => {
     const next = selectedTags.includes(tagId) ? selectedTags.filter((t) => t !== tagId) : [...selectedTags, tagId];
     setSelectedTags(next);
-    setCurrentPage(1);
   }, [selectedTags]);
+
+  const handleCitySelect = React.useCallback((cityId: string) => {
+    setSelectedCityId(cityId);
+  }, []);
+
+  const handleSearchChange = React.useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
 
   const handleDateQuickSelect = React.useCallback((type: string) => {
     if (type === "clear") {
@@ -171,14 +244,22 @@ export function useTeams(initialData?: TeamsInitialData) {
         setEndDate(range.end);
       }
     }
-    setCurrentPage(1);
   }, []);
 
   const handlePageChange = React.useCallback((page: number) => {
+    if (filterRequestTimerRef.current) {
+      clearTimeout(filterRequestTimerRef.current);
+      filterRequestTimerRef.current = null;
+    }
     setCurrentPage(page);
-    loadTeams({ page, search: searchQuery, difficulty: selectedDifficulty, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
+    loadTeams({ page, search: searchQuery, difficulty: selectedDifficulty, cityId: selectedCityId, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
+    updateURL(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [searchQuery, selectedDifficulty, startDate, endDate, selectedTags, loadTeams]);
+  }, [searchQuery, selectedDifficulty, selectedCityId, startDate, endDate, selectedTags, loadTeams, updateURL]);
+
+  const retryCurrentPage = React.useCallback(() => {
+    loadTeams({ page: currentPage, search: searchQuery, difficulty: selectedDifficulty, cityId: selectedCityId, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
+  }, [currentPage, searchQuery, selectedDifficulty, selectedCityId, startDate, endDate, selectedTags, loadTeams]);
 
   const clearFilters = React.useCallback(() => {
     setSelectedDifficulty([]);
@@ -186,20 +267,33 @@ export function useTeams(initialData?: TeamsInitialData) {
     setStartDate("");
     setEndDate("");
     setSelectedTags([]);
-    setCurrentPage(1);
+    setSelectedCityId("");
     setShowFilters(false);
   }, []);
 
-  const activeFiltersCount = selectedDifficulty.length + (startDate || endDate ? 1 : 0) + selectedTags.length;
+  const clearAdvancedFilters = React.useCallback(() => {
+    setSelectedDifficulty([]);
+    setSelectedTags([]);
+  }, []);
+
+  const activeFiltersCount = selectedDifficulty.length + (selectedCityId ? 1 : 0) + (startDate || endDate ? 1 : 0) + selectedTags.length;
+  const advancedFiltersCount = selectedDifficulty.length + selectedTags.length;
+  const hasDateFilter = Boolean(startDate || endDate);
 
   const activeDateQuickType = React.useMemo(
     () => getActiveDateQuickType(startDate, endDate),
     [startDate, endDate]
   );
 
+  const selectedCityName = React.useMemo(
+    () => availableCities.find((city) => city.id === selectedCityId)?.name,
+    [availableCities, selectedCityId],
+  );
+
   return {
     teams,
     isLoading,
+    loadError,
     searchQuery,
     currentPage,
     pagination,
@@ -208,18 +302,30 @@ export function useTeams(initialData?: TeamsInitialData) {
     startDate,
     endDate,
     availableTags,
+    availableCities,
+    citiesLoading,
+    citiesError,
+    selectedCityId,
+    selectedCityName,
     selectedTags,
     activeFiltersCount,
+    advancedFiltersCount,
     activeDateQuickType,
+    hasDateFilter,
     setSearchQuery,
+    handleSearchChange,
     setShowFilters,
     setStartDate,
     setEndDate,
     loadTeams,
     handleDifficultyToggle,
     handleTagToggle,
+    handleCitySelect,
     handleDateQuickSelect,
     handlePageChange,
+    retryCurrentPage,
+    retryCities: loadAllCities,
+    clearAdvancedFilters,
     clearFilters,
   };
 }
