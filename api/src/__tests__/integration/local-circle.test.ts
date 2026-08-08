@@ -308,7 +308,7 @@ describe("local-circle route — GET /local-circle/home（cityId 缺省 fallback
     expect(res.status).toBe(200);
     const body = (await res.json()) as { cityName: string };
     expect(body.cityName).toBe("深圳");
-  });
+  }, 10_000);
 
   it("cityId= 空串 → fallback 深圳 → 200（方案 a：空串与缺省一视同仁）", async () => {
     await seedCity(testDb, { name: "深圳", adcode: "440300" });

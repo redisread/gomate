@@ -9,10 +9,6 @@
     {
       "url": "https://api.gomate.live",
       "description": "生产环境"
-    },
-    {
-      "url": "https://api-staging.gomate.live",
-      "description": "Staging 环境"
     }
   ],
   "components": {

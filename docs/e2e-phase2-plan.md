@@ -9,8 +9,8 @@
 - **v1 API 契约测试**：`e2e/v1-read-endpoints.spec.ts`
 - **browser-use 探索式测试**：`e2e/browser-use/home_smoke.py`
 - **CI 集成**：`pr-validation.yml` 的 `e2e-tests` job 运行 `pnpm e2e:ci`（本地起 api + web 两个服务）
-- **staging 测试**：`pnpm e2e:staging` 支持（`E2E_BASE_URL=https://staging.gomate.live`，`chromium-staging` project）
-- 注：`e2e/home.spec.ts`、`e2e/staging-smoke.spec.ts` 已于 #486 清理（冗余覆盖），不再存在
+- **运行边界**：所有 Playwright 用例在本地隔离的 API、Web 和 D1 上执行，不依赖远程环境
+- 注：冗余首页 smoke 用例已于 #486 清理，不再存在
 
 ## 目标
 
@@ -61,9 +61,6 @@ pnpm e2e        # 终端 2
 
 # 仅跑特定测试
 pnpm e2e --grep "locations"
-
-# Staging E2E
-pnpm e2e:staging
 
 # browser-use 探索式测试
 pnpm e2e:browser-use

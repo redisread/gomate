@@ -32,7 +32,7 @@ export default defineConfig({
   ],
 
   use: {
-    // 测试基础 URL（可通过环境变量覆盖，用于 staging 测试）
+    // 测试基础 URL（可通过环境变量覆盖本地端口）
     baseURL: process.env.E2E_BASE_URL || "http://localhost:5432",
 
     // 保存 trace，失败时便于调试
@@ -48,21 +48,11 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      // 本地 e2e 不依赖 staging 环境健康：v1 契约测试硬编码打 api-staging.gomate.live，
-      // 归入 chromium-staging（pnpm e2e:staging），避免本地 CI 被 staging 抖动阻塞。
       use: { ...devices["Desktop Chrome"] },
-      testIgnore: ["**/v1-read-endpoints.spec.ts"],
-    },
-    {
-      name: "chromium-staging",
-      use: {
-        ...devices["Desktop Chrome"],
-        baseURL: process.env.E2E_BASE_URL || "https://staging.gomate.live",
-      },
     },
   ],
 
-  // 自动启动本地开发服务器（仅在非 staging 测试时）
+  // 自动启动本地开发服务器。
   // CI 中拆分为 api + web 两个独立服务，确保 API 完全 ready 后再跑测试，
   // 避免登录请求打到尚未初始化好 D1 的 API 上。
   webServer: process.env.E2E_BASE_URL
@@ -81,7 +71,8 @@ export default defineConfig({
             reuseExistingServer: false,
             timeout: 180_000,
             env: {
-              PUBLIC_API_URL: process.env.PUBLIC_API_URL || "http://localhost:8799",
+              PUBLIC_API_URL:
+                process.env.PUBLIC_API_URL || "http://localhost:8799",
             },
           },
         ]
