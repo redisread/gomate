@@ -7,8 +7,9 @@ import { TeamsClient } from "../../components/features/teams-client";
 import { declareI18nNs } from "../../middleware";
 import { API_BASE } from "../../lib/api";
 import { getDateRangeByQuickType } from "../../lib/date-beijing";
+import { parseTeamDifficultyFilters, parseTeamTagFilters } from "../../lib/team-filter-params";
 import type { TeamsInitialData } from "../../components/features/teams/use-teams";
-import type { Team } from "../../lib/types";
+import type { City, Team } from "../../lib/types";
 
 declareI18nNs(Astro.locals, ["teams", "filter", "enums", "content"]); // task #158：TeamCard/FilterPanel 难度标签走 enums
 
@@ -23,13 +24,25 @@ async function fetchJson<T>(path: string): Promise<T | null> {
 }
 
 const params = Astro.url.searchParams;
+const parsedPage = Number.parseInt(params.get("page") || "1", 10) || 1;
+if (parsedPage > 1000) {
+  const redirectParams = new URLSearchParams(params);
+  redirectParams.delete("page");
+  return Astro.redirect(`${Astro.url.pathname}${redirectParams.toString() ? `?${redirectParams.toString()}` : ""}`);
+}
+const currentPage = Math.max(1, parsedPage);
+const searchQuery = (params.get("q") || "").slice(0, 120);
+const selectedCityId = (params.get("cityId") || "").slice(0, 64);
 const listQuery = new URLSearchParams();
 listQuery.set("status", "recruiting");
-listQuery.set("page", params.get("page") || "1");
+listQuery.set("page", currentPage.toString());
 listQuery.set("pageSize", "12");
-if (params.get("q")) listQuery.set("search", params.get("q")!);
-if (params.get("difficulty")) listQuery.set("difficulty", params.get("difficulty")!);
-if (params.get("tags")) listQuery.set("tagIds", params.get("tags")!);
+if (searchQuery) listQuery.set("search", searchQuery);
+const selectedDifficulty = parseTeamDifficultyFilters(params.get("difficulty"));
+const selectedTags = parseTeamTagFilters(params.get("tags"));
+if (selectedDifficulty.length) listQuery.set("difficulty", selectedDifficulty.join(","));
+if (selectedCityId) listQuery.set("cityId", selectedCityId);
+if (selectedTags.length) listQuery.set("tagIds", selectedTags.join(","));
 
 const timeFilter = params.get("timeFilter");
 const quickRange = timeFilter ? getDateRangeByQuickType(timeFilter) : null;
@@ -38,16 +51,36 @@ const endDate = quickRange?.end || params.get("endDate");
 if (startDate) listQuery.set("startDateFrom", startDate);
 if (endDate) listQuery.set("startDateTo", endDate);
 
-const [teamsData, tagsData] = await Promise.all([
+const [teamsData, tagsData, citiesData] = await Promise.all([
   fetchJson<{ success: boolean; teams: Team[]; pagination: TeamsInitialData["pagination"] }>(`/teams?${listQuery}`),
   fetchJson<{ success: boolean; tags: { id: string; name: string }[] }>("/tags?type=activity"),
+  fetchJson<{ success: boolean; cities: City[] }>("/cities?hot=true&level=city&pageSize=100"),
 ]);
+
+if (teamsData?.success && currentPage > Math.max(1, teamsData.pagination.totalPages || 1)) {
+  const redirectParams = new URLSearchParams(params);
+  const lastPage = Math.max(1, teamsData.pagination.totalPages || 1);
+  if (lastPage > 1) redirectParams.set("page", lastPage.toString());
+  else redirectParams.delete("page");
+  return Astro.redirect(`${Astro.url.pathname}${redirectParams.toString() ? `?${redirectParams.toString()}` : ""}`);
+}
 
 const initialData = teamsData?.success
   ? {
       teams: teamsData.teams ?? [],
       pagination: teamsData.pagination,
       availableTags: tagsData?.success ? tagsData.tags ?? [] : [],
+      availableCities: citiesData?.success ? citiesData.cities ?? [] : [],
+      citiesComplete: false,
+      filters: {
+        searchQuery,
+        currentPage,
+        selectedDifficulty,
+        selectedCityId,
+        startDate: startDate || "",
+        endDate: endDate || "",
+        selectedTags,
+      },
     } satisfies TeamsInitialData
   : undefined;
 ---

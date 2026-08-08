@@ -1,7 +1,7 @@
 import * as React from "react";
 import {
   Users, Mountain, ChevronRight, Flame, MapPin, Calendar, Clock, Filter,
-  CalendarDays, Tag, X, Search,
+  RefreshCw, Tag, X, Search,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,8 @@ import {
 } from "@/lib/constants";
 import { getStatusConfig } from "./constants";
 import { TeamProgress, TeamLeaderMini } from "./shared";
+import { TeamsQuickFilters } from "./teams-quick-filters";
+import type { City } from "@/lib/types";
 
 // ─── MemberProgress ────────────────────────────────────────────────
 export function MemberProgress({ current, max, showUrgency = true }: { current: number; max: number; showUrgency?: boolean }) {
@@ -174,23 +176,37 @@ export function TeamSkeleton() {
 }
 
 // ─── EmptyState ─────────────────────────────────────────────────────
-export function EmptyState({ onClear, hasActiveCriteria }: { onClear: () => void; hasActiveCriteria: boolean }) {
+export function EmptyState({
+  onClear,
+  onClearCity,
+  hasActiveCriteria,
+  selectedCityName,
+}: {
+  onClear: () => void;
+  onClearCity: () => void;
+  hasActiveCriteria: boolean;
+  selectedCityName?: string;
+}) {
   const { t } = useI18n(["teams", "filter", "common"]);
   return (
     <div role="status" className="flex flex-col items-center justify-center px-4 py-20 text-center">
       <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
         <Mountain className="h-7 w-7" aria-hidden="true" />
       </div>
-      <h3 className="mb-2 text-lg font-semibold text-foreground">{t("teams.noResults")}</h3>
-      <p className="mb-6 max-w-xs text-sm leading-relaxed text-muted-foreground">{t("teams.noResultsTip")}</p>
+      <h3 className="mb-2 text-lg font-semibold text-foreground">
+        {selectedCityName ? t("teams.emptyCityTitle", { city: selectedCityName }) : t("teams.noResults")}
+      </h3>
+      <p className="mb-6 max-w-sm text-sm leading-relaxed text-muted-foreground">
+        {selectedCityName ? t("teams.emptyCityDesc", { city: selectedCityName }) : t("teams.noResultsTip")}
+      </p>
       <div className="flex flex-wrap items-center justify-center gap-3">
         {hasActiveCriteria && (
           <button
             type="button"
-            onClick={onClear}
+            onClick={selectedCityName ? onClearCity : onClear}
             className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-medium text-muted-foreground transition-[background-color,border-color,color,transform] duration-150 hover:border-amber-300 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]"
           >
-            {t("teams.clearFilters")}
+            {selectedCityName ? t("teams.browseAllCities") : t("teams.clearFilters")}
           </button>
         )}
         <a
@@ -201,6 +217,27 @@ export function EmptyState({ onClear, hasActiveCriteria }: { onClear: () => void
           {t("teams.createBtn")}
         </a>
       </div>
+    </div>
+  );
+}
+
+export function TeamsErrorState({ onRetry }: { onRetry: () => void }) {
+  const { t } = useI18n(["teams"]);
+  return (
+    <div role="alert" className="flex flex-col items-center justify-center px-4 py-20 text-center">
+      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+        <RefreshCw className="h-7 w-7" aria-hidden="true" />
+      </div>
+      <h3 className="mb-2 text-lg font-semibold text-foreground">{t("teams.loadErrorTitle")}</h3>
+      <p className="mb-6 max-w-sm text-sm leading-relaxed text-muted-foreground">{t("teams.loadErrorDesc")}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex min-h-11 items-center gap-2 rounded-full bg-amber-600 px-5 text-sm font-semibold text-white transition-[background-color,transform,box-shadow] duration-150 hover:bg-amber-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]"
+      >
+        <RefreshCw className="h-4 w-4" aria-hidden="true" />
+        {t("teams.retry")}
+      </button>
     </div>
   );
 }
@@ -230,56 +267,22 @@ export function Pagination({ current, total, onChange }: { current: number; tota
 
 // ─── FilterPanel ────────────────────────────────────────────────────
 interface FilterPanelProps {
-  startDate: string;
-  endDate: string;
   selectedDifficulty: string[];
   availableTags: { id: string; name: string }[];
   selectedTags: string[];
   activeFiltersCount: number;
-  activeDateQuickType: string | null;
-  onDateQuickSelect: (type: string) => void;
   onDifficultyToggle: (id: string) => void;
   onTagToggle: (tagId: string) => void;
   onClearAll: () => void;
 }
 
 export function FilterPanel({
-  startDate, endDate, selectedDifficulty, availableTags, selectedTags, activeFiltersCount, activeDateQuickType,
-  onDateQuickSelect, onDifficultyToggle, onTagToggle, onClearAll,
+  selectedDifficulty, availableTags, selectedTags, activeFiltersCount,
+  onDifficultyToggle, onTagToggle, onClearAll,
 }: FilterPanelProps) {
   const { t } = useI18n(["teams", "filter", "common", "enums"]);
   return (
     <div id="team-filter-panel" role="region" aria-label={t("filter.title")} className="mt-4 space-y-5 border-t border-border pt-4 pb-1 animate-in slide-in-from-top-2 duration-200 motion-reduce:animate-none">
-      <div>
-        <span className="mb-2 flex items-center gap-2 text-sm font-semibold text-stone-600 dark:text-stone-300"><CalendarDays className="h-4 w-4" aria-hidden="true" />{t("filter.dateRange")}</span>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { key: "today", label: t("filter.dateQuickToday") },
-            { key: "tomorrow", label: t("filter.dateQuickTomorrow") },
-            { key: "weekend", label: t("filter.dateQuickWeekend") },
-            { key: "7days", label: t("filter.dateQuick7Days") },
-          ].map((opt) => {
-            const isSelected = activeDateQuickType === opt.key;
-            return (
-              <button key={opt.key} type="button" onClick={() => onDateQuickSelect(opt.key)} aria-pressed={isSelected}
-                className={cn(
-                  "min-h-10 rounded-full border px-3 text-xs transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]",
-                  isSelected
-                    ? "bg-amber-100 dark:bg-amber-900/30 border-amber-400 dark:border-amber-700 text-amber-800 dark:text-amber-300"
-                    : "border-border bg-card text-stone-600 dark:text-stone-400 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400"
-                )}>
-                {opt.label}
-              </button>
-            );
-          })}
-          {(startDate || endDate) && (
-            <button type="button" onClick={() => onDateQuickSelect("clear")}
-              className="min-h-10 rounded-full border border-border px-3 text-xs text-stone-400 transition-[background-color,border-color,color,transform] duration-150 hover:bg-muted hover:text-stone-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96] dark:text-stone-500 dark:hover:text-stone-300">
-              {t("filter.clearBtn")}
-            </button>
-          )}
-        </div>
-      </div>
       <div>
         <span className="mb-2 block text-sm font-semibold text-stone-600 dark:text-stone-300">{t("filter.difficulty")}</span>
         <div className="flex flex-wrap gap-2">
@@ -327,62 +330,87 @@ export function FilterPanel({
 interface TeamsHeaderProps {
   searchQuery: string;
   showFilters: boolean;
-  activeFiltersCount: number;
+  advancedFiltersCount: number;
   onSearchChange: (q: string) => void;
   onToggleFilters: () => void;
   renderFilterPanel: () => React.ReactNode;
+  cities: City[];
+  selectedCityId: string;
+  activeDateQuickType: string | null;
+  hasDateFilter: boolean;
+  citiesLoading: boolean;
+  citiesError: boolean;
+  onCitySelect: (cityId: string) => void;
+  onDateQuickSelect: (type: string) => void;
+  onRetryCities: () => void;
 }
 
 export function TeamsHeader({
-  searchQuery, showFilters, activeFiltersCount,
+  searchQuery, showFilters, advancedFiltersCount,
   onSearchChange, onToggleFilters, renderFilterPanel,
+  cities, selectedCityId, activeDateQuickType, hasDateFilter, citiesLoading, citiesError,
+  onCitySelect, onDateQuickSelect, onRetryCities,
 }: TeamsHeaderProps) {
   const { t } = useI18n(["teams", "filter", "common"]);
   return (
-    <section className="relative border-b border-border bg-card pb-6 pt-20">
+    <section className="relative border-b border-border bg-card pb-7 pt-20">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="mb-5">
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{t("teams.pageTitle")}</h1>
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{t("teams.pageSubtitle")}</p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <label htmlFor="team-search" className="sr-only">{t("teams.searchAriaLabel")}</label>
+            <input
+              id="team-search"
+              name="q"
+              type="search"
+              autoComplete="off"
+              placeholder={t("teams.searchPlaceholder")}
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="min-h-12 w-full rounded-2xl border border-border bg-muted py-3 pl-12 pr-12 text-foreground placeholder-muted-foreground transition-[background-color,border-color,box-shadow] duration-150 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-400/15"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => onSearchChange("")}
+                aria-label={t("teams.clearSearchAriaLabel")}
+                className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 active:scale-[0.96] dark:hover:bg-stone-800"
+              >
+                <X className="h-4 w-4 text-stone-400 dark:text-stone-500" aria-hidden="true" />
+              </button>
+            )}
+          </div>
           <button
             type="button"
             onClick={onToggleFilters}
             aria-label={t("filter.title")}
             aria-expanded={showFilters}
             aria-controls="team-filter-panel"
-            className={cn("relative inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]",
-              showFilters || activeFiltersCount > 0 ? "bg-amber-50 border-amber-300 text-amber-700 shadow-sm" : "bg-card border-border text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600"
+            className={cn("relative inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-4 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]",
+              showFilters || advancedFiltersCount > 0 ? "bg-amber-50 border-amber-300 text-amber-700 shadow-sm" : "bg-card border-border text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600"
             )}>
             <Filter className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden text-sm font-medium sm:inline">{t("filter.title")}</span>
-            {activeFiltersCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-600 px-1 text-[10px] font-bold text-white">{activeFiltersCount}</span>
+            <span className="text-sm font-medium">{t("teams.moreFilters")}</span>
+            {advancedFiltersCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-600 px-1 text-[10px] font-bold text-white">{advancedFiltersCount}</span>
             )}
           </button>
         </div>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <label htmlFor="team-search" className="sr-only">{t("teams.searchAriaLabel")}</label>
-          <input
-            id="team-search"
-            name="q"
-            type="search"
-            autoComplete="off"
-            placeholder={t("teams.searchPlaceholder")}
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className={cn("w-full rounded-xl border border-border bg-muted py-3 pl-12 pr-12 text-foreground placeholder-muted-foreground transition-[background-color,border-color,box-shadow] duration-150 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-400/15")}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => onSearchChange("")}
-              aria-label={t("teams.clearSearchAriaLabel")}
-              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 active:scale-[0.96] dark:hover:bg-stone-800"
-            >
-              <X className="h-4 w-4 text-stone-400 dark:text-stone-500" aria-hidden="true" />
-            </button>
-          )}
-        </div>
+        <TeamsQuickFilters
+          cities={cities}
+          selectedCityId={selectedCityId}
+          activeDateQuickType={activeDateQuickType}
+          hasDateFilter={hasDateFilter}
+          citiesLoading={citiesLoading}
+          citiesError={citiesError}
+          onCitySelect={onCitySelect}
+          onDateQuickSelect={onDateQuickSelect}
+          onRetryCities={onRetryCities}
+        />
         {showFilters && renderFilterPanel()}
       </div>
     </section>

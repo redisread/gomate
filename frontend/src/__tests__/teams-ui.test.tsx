@@ -6,8 +6,13 @@ import {
   FilterPanel,
   TeamCard,
   TeamsHeader,
+  TeamsErrorState,
   TeamsCtaSection,
 } from "../components/features/teams/teams-ui";
+import {
+  TeamsQuickFilters,
+} from "../components/features/teams/teams-quick-filters";
+import { TeamsSelectedFilters } from "../components/features/teams/teams-selected-filters";
 
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
@@ -53,12 +58,12 @@ describe("teams list UI", () => {
   });
 
   it("only shows clear filters when the empty result is caused by criteria", () => {
-    const { rerender } = render(<EmptyState onClear={vi.fn()} hasActiveCriteria={false} />);
+    const { rerender } = render(<EmptyState onClear={vi.fn()} onClearCity={vi.fn()} hasActiveCriteria={false} />);
 
     expect(screen.queryByRole("button", { name: "teams.clearFilters" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "teams.createBtn" })).toHaveAttribute("href", "/teams/create");
 
-    rerender(<EmptyState onClear={vi.fn()} hasActiveCriteria />);
+    rerender(<EmptyState onClear={vi.fn()} onClearCity={vi.fn()} hasActiveCriteria />);
     expect(screen.getByRole("button", { name: "teams.clearFilters" })).toBeInTheDocument();
   });
 
@@ -68,9 +73,18 @@ describe("teams list UI", () => {
       <TeamsHeader
         searchQuery=""
         showFilters={false}
-        activeFiltersCount={1}
+        advancedFiltersCount={1}
         onSearchChange={vi.fn()}
         onToggleFilters={onToggleFilters}
+        cities={[]}
+        selectedCityId=""
+        activeDateQuickType={null}
+        hasDateFilter={false}
+        citiesLoading={false}
+        citiesError={false}
+        onCitySelect={vi.fn()}
+        onDateQuickSelect={vi.fn()}
+        onRetryCities={vi.fn()}
         renderFilterPanel={() => <div data-testid="filter-panel" />}
       />,
     );
@@ -89,14 +103,10 @@ describe("teams list UI", () => {
     render(
       <>
         <FilterPanel
-          startDate=""
-          endDate=""
           selectedDifficulty={[]}
           availableTags={[{ id: "tag-1", name: "日出" }]}
           selectedTags={[]}
           activeFiltersCount={0}
-          activeDateQuickType={null}
-          onDateQuickSelect={vi.fn()}
           onDifficultyToggle={vi.fn()}
           onTagToggle={vi.fn()}
           onClearAll={vi.fn()}
@@ -105,9 +115,112 @@ describe("teams list UI", () => {
       </>,
     );
 
-    expect(screen.getByRole("button", { name: "filter.dateQuickToday" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "filter.dateQuickTomorrow" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "enums.difficulty.easy" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("link", { name: "teams.createBtn" })).toHaveAttribute("href", "/teams/create");
     expect(screen.queryByRole("button", { name: "teams.createBtn" })).not.toBeInTheDocument();
+  });
+
+  it("keeps popular cities and departure time available as one-tap filters", () => {
+    const onCitySelect = vi.fn();
+    const onDateQuickSelect = vi.fn();
+
+    render(
+      <TeamsQuickFilters
+        cities={[
+          { id: "sz", adcode: "440300", name: "深圳", level: "city", isHot: true },
+          { id: "gz", adcode: "440100", name: "广州", level: "city", isHot: true },
+          { id: "hz", adcode: "441300", name: "惠州", level: "city", isHot: false },
+        ]}
+        selectedCityId="sz"
+        activeDateQuickType="weekend"
+        hasDateFilter
+        citiesLoading={false}
+        citiesError={false}
+        onCitySelect={onCitySelect}
+        onDateQuickSelect={onDateQuickSelect}
+        onRetryCities={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("group", { name: "filter.city" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "filter.dateRange" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "深圳" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "filter.dateQuickWeekend" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "广州" }));
+    fireEvent.click(screen.getByRole("button", { name: "filter.dateQuickTomorrow" }));
+
+    expect(onCitySelect).toHaveBeenCalledWith("gz");
+    expect(onDateQuickSelect).toHaveBeenCalledWith("tomorrow");
+
+    fireEvent.click(screen.getByRole("button", { name: "teams.moreCities" }));
+    const citySearch = screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" });
+    fireEvent.change(citySearch, { target: { value: "惠州" } });
+    fireEvent.click(screen.getByRole("option", { name: /惠州/ }));
+
+    expect(onCitySelect).toHaveBeenCalledWith("hz");
+
+    fireEvent.click(screen.getByRole("button", { name: "teams.moreCities" }));
+    fireEvent.keyDown(screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" }), { key: "ArrowDown" });
+    fireEvent.keyDown(screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" }), { key: "Enter" });
+    expect(onCitySelect).toHaveBeenCalledWith("sz");
+  });
+
+  it("shows selected city and date as independently removable filters", () => {
+    const onCitySelect = vi.fn();
+    const onDateQuickSelect = vi.fn();
+
+    render(
+      <TeamsSelectedFilters
+        selectedCityName="深圳"
+        activeDateQuickType="weekend"
+        startDate="2026-08-08"
+        endDate="2026-08-09"
+        selectedDifficulty={[]}
+        availableTags={[]}
+        selectedTags={[]}
+        onCitySelect={onCitySelect}
+        onDateQuickSelect={onDateQuickSelect}
+        onDifficultyToggle={vi.fn()}
+        onTagToggle={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "teams.removeCityFilter" }));
+    fireEvent.click(screen.getByRole("button", { name: "teams.removeDateFilter" }));
+
+    expect(onCitySelect).toHaveBeenCalledWith("");
+    expect(onDateQuickSelect).toHaveBeenCalledWith("clear");
+  });
+
+  it("keeps custom date ranges visible and removable", () => {
+    const onDateQuickSelect = vi.fn();
+
+    render(
+      <TeamsSelectedFilters
+        activeDateQuickType={null}
+        startDate="2026-08-08"
+        endDate="2026-08-10"
+        selectedDifficulty={[]}
+        availableTags={[]}
+        selectedTags={[]}
+        onCitySelect={vi.fn()}
+        onDateQuickSelect={onDateQuickSelect}
+        onDifficultyToggle={vi.fn()}
+        onTagToggle={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("filter.dateRange 2026-08-08–2026-08-10")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "teams.removeDateFilter" }));
+    expect(onDateQuickSelect).toHaveBeenCalledWith("clear");
+  });
+
+  it("offers a retry action when team loading fails", () => {
+    const onRetry = vi.fn();
+    render(<TeamsErrorState onRetry={onRetry} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "teams.retry" }));
+    expect(onRetry).toHaveBeenCalledOnce();
   });
 });
