@@ -143,13 +143,13 @@ favorites.post("/", async (c) => {
 
     if (existing.length > 0) return c.json(APIErrors.conflict("已经收藏过了"), 409);
 
-    if (entityType === "location") {
-      const loc = await db
-        .select({ id: schema.locations.id })
-        .from(schema.locations)
-        .where(eq(schema.locations.id, entityId))
-        .limit(1);
-      if (!loc.length) return c.json(APIErrors.notFound("地点不存在"), 404);
+    const target = entityType === "location"
+      ? await db.select({ id: schema.locations.id }).from(schema.locations)
+          .where(eq(schema.locations.id, entityId)).limit(1)
+      : await db.select({ id: schema.stories.id }).from(schema.stories)
+          .where(eq(schema.stories.id, entityId)).limit(1);
+    if (!target.length) {
+      return c.json(APIErrors.notFound(entityType === "location" ? "地点不存在" : "故事不存在"), 404);
     }
 
     const id = generateId();

@@ -1,7 +1,7 @@
 import { APIErrors } from "../../lib/api-errors";
 import { logger } from "../../lib/logger";
 import { Hono } from "hono";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { createAuth } from "../../lib/auth";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
@@ -40,15 +40,6 @@ status.post("/leave", async (c) => {
     if (team.status === "formed") return c.json(APIErrors.badRequest("队伍已组建，请通过退出申请流程离开"), 400);
 
     await db.delete(schema.teamMembers).where(eq(schema.teamMembers.id, membership.id));
-
-    const [{ remainingCount }] = await db
-      .select({ remainingCount: sql<number>`count(*)` })
-      .from(schema.teamMembers)
-      .where(and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.status, "approved")));
-
-    await db.update(schema.teams)
-      .set({ status: remainingCount < team.maxMembers ? "recruiting" : team.status, updatedAt: new Date() })
-      .where(eq(schema.teams.id, teamId as string));
 
     return c.json({ success: true, message: "已成功退出队伍" });
   } catch (error) {
@@ -108,9 +99,6 @@ status.post("/members/:userId/approve-leave", requireTeamLeader(), async (c) => 
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍ID"), 400);
     if (!targetUserId) return c.json(APIErrors.badRequest("缺少用户ID"), 400);
 
-    // Get team from context (set by requireTeamLeader middleware)
-    const team = c.get("team") as typeof schema.teams.$inferSelect;
-
     const members = await db.query.teamMembers.findMany({
       where: and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.userId, targetUserId), eq(schema.teamMembers.status, "leave_pending")),
       limit: 1,
@@ -119,15 +107,6 @@ status.post("/members/:userId/approve-leave", requireTeamLeader(), async (c) => 
     if (!membership) return c.json(APIErrors.notFound("未找到该成员的退出申请"), 404);
 
     await db.delete(schema.teamMembers).where(eq(schema.teamMembers.id, membership.id));
-
-    const [{ remainingCount }] = await db
-      .select({ remainingCount: sql<number>`count(*)` })
-      .from(schema.teamMembers)
-      .where(and(eq(schema.teamMembers.teamId, teamId as string), eq(schema.teamMembers.status, "approved")));
-
-    await db.update(schema.teams)
-      .set({ status: remainingCount < team.maxMembers ? "recruiting" : team.status, updatedAt: new Date() })
-      .where(eq(schema.teams.id, teamId as string));
 
     return c.json({ success: true, message: "已批准退出申请" });
   } catch (error) {

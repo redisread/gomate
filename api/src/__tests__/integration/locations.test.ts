@@ -53,6 +53,21 @@ describe("Locations API 集成测试", () => {
     city = await seedCity(testDb, { name: "深圳" });
   });
 
+  it("cityName 始终跟随 cities.name，不接受冗余字段漂移", async () => {
+    const canonicalCity = await seedCity(testDb, { name: "深圳" });
+    const canonicalLocation = await seedLocation(testDb, canonicalCity.id, { cityName: "错误城市名" });
+
+    const [afterInsert] = await testDb.select().from(schema.locations)
+      .where(eq(schema.locations.id, canonicalLocation.id));
+    expect(afterInsert.cityName).toBe("深圳");
+
+    await testDb.update(schema.cities).set({ name: "深圳市" })
+      .where(eq(schema.cities.id, canonicalCity.id));
+    const [afterRename] = await testDb.select().from(schema.locations)
+      .where(eq(schema.locations.id, canonicalLocation.id));
+    expect(afterRename.cityName).toBe("深圳市");
+  });
+
   describe("GET /locations - 地点列表", () => {
     it("获取地点列表返回分页数据", async () => {
       await seedLocation(testDb, city.id, { name: "梧桐山" });

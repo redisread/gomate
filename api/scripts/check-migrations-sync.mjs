@@ -189,6 +189,52 @@ for (const tableName of liveTables) {
   }
 }
 
+// 这些触发器承载无法用 SQLite 外键/Drizzle schema 表达的跨表完整性。
+// 若后续重建表时被意外删除，应用仍可编译，但派生计数和多态关系会静默失真。
+const REQUIRED_INTEGRITY_TRIGGERS = [
+  "locations_city_name_after_insert",
+  "locations_city_name_after_city_update",
+  "locations_city_name_after_city_rename",
+  "users_city_validate_insert",
+  "users_city_validate_update",
+  "cities_users_restrict_delete",
+  "entity_to_tags_validate_insert",
+  "entity_to_tags_validate_update",
+  "user_favorites_validate_insert",
+  "user_favorites_validate_update",
+  "locations_polymorphic_cleanup",
+  "stories_polymorphic_cleanup",
+  "teams_polymorphic_cleanup",
+  "user_story_likes_count_after_insert",
+  "user_story_likes_count_after_delete",
+  "messages_summary_after_insert",
+  "team_members_validate_insert",
+  "team_members_validate_update",
+  "teams_capacity_validate_update",
+  "team_members_status_after_insert",
+  "team_members_status_after_update",
+  "team_members_status_after_delete",
+  "users_domain_validate_insert",
+  "users_domain_validate_update",
+  "locations_domain_validate_insert",
+  "locations_domain_validate_update",
+  "tags_domain_validate_insert",
+  "tags_domain_validate_update",
+  "stories_domain_validate_insert",
+  "stories_domain_validate_update",
+  "activity_posts_domain_validate_insert",
+  "activity_posts_domain_validate_update",
+];
+const actualTriggers = new Set(
+  sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'trigger'").all()
+    .map((trigger) => trigger.name),
+);
+for (const triggerName of REQUIRED_INTEGRITY_TRIGGERS) {
+  if (!actualTriggers.has(triggerName)) {
+    errors.push(`数据库缺少必要完整性触发器 "${triggerName}"`);
+  }
+}
+
 sqlite.close();
 
 if (errors.length > 0) {

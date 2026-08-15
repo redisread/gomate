@@ -208,6 +208,21 @@ describe("Stories API 集成测试", () => {
       expect(json.data.title).toBe("测试故事");
     });
 
+    it("并发查看公开故事不会丢失浏览计数", async () => {
+      const story = await seedStory(testDb, user.id, { title: "浏览计数", status: "published" });
+
+      const responses = await Promise.all(
+        Array.from({ length: 5 }, () => req(app, `/stories/${story.id}`)),
+      );
+      responses.forEach((response) => expect(response.status).toBe(200));
+
+      const persisted = await testDb.query.stories.findFirst({
+        where: eq(schema.stories.id, story.id),
+        columns: { viewCount: true },
+      });
+      expect(persisted?.viewCount).toBe(5);
+    });
+
     it("故事不存在返回 404", async () => {
       const res = await req(app, "/stories/non-existent-id");
       expect(res.status).toBe(404);
@@ -670,12 +685,11 @@ describe("Stories API 集成测试", () => {
       );
       expect(likeRecords.length).toBeLessThanOrEqual(1);
 
-      // likeCount 应该 >= 0 且不会离谱（允许极端并发下的少量偏差）
+      // 派生计数必须与唯一点赞记录严格一致，不能接受并发漂移。
       const dbStory = await testDb.query.stories.findFirst({
         where: eq(schema.stories.id, story.id),
       });
-      expect((dbStory?.likeCount ?? 0)).toBeGreaterThanOrEqual(0);
-      expect((dbStory?.likeCount ?? 0)).toBeLessThanOrEqual(5);
+      expect(dbStory?.likeCount).toBe(likeRecords.length);
     });
   });
 

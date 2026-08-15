@@ -85,7 +85,7 @@ writeTeams.post("/", idempotencyMiddleware, async (c) => {
     const now = new Date();
     const teamIcon = "⛰️";
 
-    await db.insert(schema.teams).values({
+    const createTeam = db.insert(schema.teams).values({
       id: teamId,
       locationId,
       leaderId: actorId,
@@ -103,7 +103,7 @@ writeTeams.post("/", idempotencyMiddleware, async (c) => {
       actorApiKeyId: actorApiKeyId ?? null,
     });
 
-    await db.insert(schema.teamMembers).values({
+    const createLeaderMembership = db.insert(schema.teamMembers).values({
       id: memberId,
       teamId,
       userId: actorId,
@@ -112,6 +112,7 @@ writeTeams.post("/", idempotencyMiddleware, async (c) => {
       createdAt: now,
       actorApiKeyId: actorApiKeyId ?? null,
     });
+    await db.batch([createTeam, createLeaderMembership]);
 
     return c.json({
       success: true,

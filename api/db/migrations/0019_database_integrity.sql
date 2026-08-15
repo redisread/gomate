@@ -6,6 +6,31 @@ CREATE TABLE IF NOT EXISTS `_0019_integrity_guard` (
   `ok` integer NOT NULL CHECK (`ok` = 1)
 );--> statement-breakpoint
 DELETE FROM `_0019_integrity_guard`;--> statement-breakpoint
+
+-- Normalize the legacy users.city representation before enforcing city-id semantics.
+UPDATE `users`
+SET `city` = NULL
+WHERE `city` = '';--> statement-breakpoint
+UPDATE `users`
+SET `city` = (
+  SELECT c.id FROM `cities` c WHERE c.name = users.city ORDER BY c.id LIMIT 1
+)
+WHERE `city` IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM `cities` c WHERE c.id = users.city)
+  AND EXISTS (SELECT 1 FROM `cities` c WHERE c.name = users.city);--> statement-breakpoint
+
+-- Polymorphic relations cannot use native FKs; remove already-orphaned legacy rows
+-- before installing validation/cleanup triggers for all future writes.
+DELETE FROM `entity_to_tags`
+WHERE `entity_type` NOT IN ('location', 'activity', 'story')
+   OR (`entity_type` = 'location' AND NOT EXISTS (SELECT 1 FROM `locations` WHERE id = entity_to_tags.entity_id))
+   OR (`entity_type` = 'activity' AND NOT EXISTS (SELECT 1 FROM `teams` WHERE id = entity_to_tags.entity_id))
+   OR (`entity_type` = 'story' AND NOT EXISTS (SELECT 1 FROM `stories` WHERE id = entity_to_tags.entity_id));--> statement-breakpoint
+DELETE FROM `user_favorites`
+WHERE `entity_type` NOT IN ('location', 'story')
+   OR (`entity_type` = 'location' AND NOT EXISTS (SELECT 1 FROM `locations` WHERE id = user_favorites.entity_id))
+   OR (`entity_type` = 'story' AND NOT EXISTS (SELECT 1 FROM `stories` WHERE id = user_favorites.entity_id));--> statement-breakpoint
+
 INSERT INTO `_0019_integrity_guard` (`ok`)
 SELECT CASE WHEN EXISTS (
   SELECT 1
@@ -24,6 +49,24 @@ SELECT CASE WHEN EXISTS (
        'confirmed', 'ongoing', 'ended'
      )
 ) THEN 0 ELSE 1 END;--> statement-breakpoint
+INSERT INTO `_0019_integrity_guard` (`ok`)
+SELECT CASE WHEN
+  EXISTS (
+    SELECT 1 FROM `users` u
+    WHERE u.city IS NOT NULL AND NOT EXISTS (SELECT 1 FROM `cities` c WHERE c.id = u.city)
+  )
+  OR EXISTS (
+    SELECT 1 FROM `team_members` tm
+    WHERE tm.status NOT IN ('pending', 'approved', 'rejected', 'leave_pending', 'cancelled')
+  )
+  OR EXISTS (
+    SELECT 1 FROM `teams` t
+    WHERE (
+      SELECT COUNT(*) FROM `team_members` tm
+      WHERE tm.team_id = t.id AND tm.status IN ('approved', 'leave_pending')
+    ) > t.max_members
+  )
+THEN 0 ELSE 1 END;--> statement-breakpoint
 DROP TABLE IF EXISTS `_0019_integrity_guard`;--> statement-breakpoint
 
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
@@ -108,7 +151,8 @@ BEGIN
   WHERE id = NEW.id;
 END;--> statement-breakpoint
 CREATE TRIGGER IF NOT EXISTS `locations_city_name_after_city_update`
-AFTER UPDATE OF `city_id` ON `locations`
+AFTER UPDATE OF `city_id`, `city_name` ON `locations`
+WHEN NEW.city_name IS NOT (SELECT c.name FROM `cities` c WHERE c.id = NEW.city_id)
 BEGIN
   UPDATE `locations`
   SET `city_name` = (SELECT c.name FROM `cities` c WHERE c.id = NEW.city_id)
@@ -237,8 +281,9 @@ BEGIN
   SELECT RAISE(ABORT, 'invalid membership status or team capacity exceeded');
 END;--> statement-breakpoint
 CREATE TRIGGER IF NOT EXISTS `team_members_validate_update`
-BEFORE UPDATE OF `status` ON `team_members`
+BEFORE UPDATE OF `status`, `team_id` ON `team_members`
 WHEN NEW.status NOT IN ('pending', 'approved', 'rejected', 'leave_pending', 'cancelled')
+  OR NEW.team_id <> OLD.team_id
   OR (
     NEW.status = 'approved'
     AND OLD.status NOT IN ('approved', 'leave_pending')
@@ -248,6 +293,16 @@ WHEN NEW.status NOT IN ('pending', 'approved', 'rejected', 'leave_pending', 'can
   )
 BEGIN
   SELECT RAISE(ABORT, 'invalid membership status or team capacity exceeded');
+END;--> statement-breakpoint
+
+CREATE TRIGGER IF NOT EXISTS `teams_capacity_validate_update`
+BEFORE UPDATE OF `max_members` ON `teams`
+WHEN NEW.max_members < (
+  SELECT COUNT(*) FROM `team_members`
+  WHERE team_id = NEW.id AND status IN ('approved', 'leave_pending')
+)
+BEGIN
+  SELECT RAISE(ABORT, 'team max_members cannot be below current members');
 END;--> statement-breakpoint
 
 CREATE TRIGGER IF NOT EXISTS `team_members_status_after_insert`

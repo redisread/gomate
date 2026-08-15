@@ -569,16 +569,6 @@ app.post("/:id", async (c) => {
       createdAt: now,
     });
 
-    // 更新对话最后消息
-    await db
-      .update(conversations)
-      .set({
-        lastMessageAt: now,
-        lastMessageContent: content.substring(0, 100),
-        updatedAt: now,
-      })
-      .where(eq(conversations.id, conversationId));
-
     return c.json({ success: true, data: { id: messageId } }, 201);
   } catch (error) {
     if (error instanceof z.ZodError) {

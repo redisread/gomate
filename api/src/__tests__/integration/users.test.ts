@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Hono } from "hono";
 import { createTestDb } from "../helpers/db";
-import { seedUser } from "../helpers/seed";
+import { seedCity, seedUser } from "../helpers/seed";
 import * as schema from "../../db/schema";
 
 // ===== Mock 策略 =====
@@ -109,7 +109,8 @@ describe("用户 API 集成测试", () => {
      */
     it("获取用户信息 → 包含 city 字段（cityId）", async () => {
       // Arrange
-      const user = await seedUser(testDb, { city: "test-city-id-456" });
+      const city = await seedCity(testDb);
+      const user = await seedUser(testDb, { city: city.id });
 
       // Act
       const res = await req(app, `/users?id=${user.id}`);
@@ -117,7 +118,7 @@ describe("用户 API 集成测试", () => {
       // Assert
       expect(res.status).toBe(200);
       const data = await res.json() as { user: Record<string, unknown> };
-      expect(data.user.city).toBe("test-city-id-456");
+      expect(data.user.city).toBe(city.id);
     });
   });
 
@@ -201,6 +202,7 @@ describe("用户 API 集成测试", () => {
     it("更新 city 字段（cityId）→ 200；再传 null → 清空", async () => {
       // Arrange
       const user = await seedUser(testDb);
+      const city = await seedCity(testDb);
       currentSession = { user: { id: user.id, email: user.email, name: user.name } };
       const { eq } = await import("drizzle-orm");
 
@@ -208,13 +210,13 @@ describe("用户 API 集成测试", () => {
       const res1 = await req(app, "/users/update", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, city: "test-city-id-123" }),
+        body: JSON.stringify({ userId: user.id, city: city.id }),
       });
 
       // Assert 1
       expect(res1.status).toBe(200);
       const [u1] = await testDb.select().from(schema.users).where(eq(schema.users.id, user.id));
-      expect(u1.city).toBe("test-city-id-123");
+      expect(u1.city).toBe(city.id);
 
       // Act 2: 传 null 清空
       const res2 = await req(app, "/users/update", {
@@ -227,6 +229,19 @@ describe("用户 API 集成测试", () => {
       expect(res2.status).toBe(200);
       const [u2] = await testDb.select().from(schema.users).where(eq(schema.users.id, user.id));
       expect(u2.city).toBeNull();
+    });
+
+    it("更新为不存在的 cityId → 400", async () => {
+      const user = await seedUser(testDb);
+      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
+
+      const res = await req(app, "/users/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, city: "missing-city" }),
+      });
+
+      expect(res.status).toBe(400);
     });
 
     /**

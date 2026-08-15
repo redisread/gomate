@@ -178,6 +178,27 @@ describe("Teams API 集成测试", () => {
     });
   });
 
+  describe("PUT /teams/:id - 更新队伍", () => {
+    it("不能把人数上限调低到当前成员数以下", async () => {
+      const thirdMember = await seedUser(testDb, { name: "第三位成员", wechat: "third_wechat" });
+      const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 5 });
+      await seedTeamMember(testDb, team.id, leader.id, "approved");
+      await seedTeamMember(testDb, team.id, member.id, "approved");
+      await seedTeamMember(testDb, team.id, thirdMember.id, "approved");
+      setSession({ id: leader.id, email: leader.email, name: leader.name });
+
+      const res = await req(app, `/teams/${team.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ maxMembers: 2 }),
+      });
+
+      expect(res.status).toBe(400);
+      const [persisted] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
+      expect(persisted.maxMembers).toBe(5);
+    });
+  });
+
   // ===== GET /teams/:id - 获取队伍详情 =====
   describe("GET /teams/:id - 获取队伍详情", () => {
     it("获取存在的队伍详情返回 200", async () => {
@@ -415,6 +436,30 @@ describe("Teams API 集成测试", () => {
         method: "POST",
       });
       expect(res.status).toBe(200);
+
+      const [updatedTeam] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
+      expect(updatedTeam.status).toBe("full");
+    });
+
+    it("并发批准不会突破队伍人数上限", async () => {
+      const secondMember = await seedUser(testDb, { name: "第二位申请者", wechat: "second_wechat" });
+      const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 2 });
+      await seedTeamMember(testDb, team.id, leader.id, "approved");
+      await seedTeamMember(testDb, team.id, member.id, "pending");
+      await seedTeamMember(testDb, team.id, secondMember.id, "pending");
+      setSession({ id: leader.id, email: leader.email, name: leader.name });
+
+      const responses = await Promise.all([
+        req(app, `/teams/${team.id}/members/${member.id}/approve`, { method: "POST" }),
+        req(app, `/teams/${team.id}/members/${secondMember.id}/approve`, { method: "POST" }),
+      ]);
+
+      expect(responses.map((response) => response.status).sort()).toEqual([200, 400]);
+      const approved = await testDb.select().from(schema.teamMembers).where(and(
+        eq(schema.teamMembers.teamId, team.id),
+        eq(schema.teamMembers.status, "approved"),
+      ));
+      expect(approved).toHaveLength(2);
 
       const [updatedTeam] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
       expect(updatedTeam.status).toBe("full");

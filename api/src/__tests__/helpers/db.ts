@@ -131,8 +131,8 @@ export function createTestDb() {
 
     CREATE TABLE IF NOT EXISTS teams (
       id TEXT PRIMARY KEY,
-      location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
-      leader_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+      leader_id TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
       title TEXT NOT NULL,
       description TEXT,
       start_time INTEGER NOT NULL,
@@ -237,6 +237,157 @@ export function createTestDb() {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+
+    CREATE TRIGGER IF NOT EXISTS user_story_likes_count_after_insert
+    AFTER INSERT ON user_story_likes
+    BEGIN
+      UPDATE stories
+      SET like_count = COALESCE(like_count, 0) + 1,
+          updated_at = (unixepoch() * 1000)
+      WHERE id = NEW.story_id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS user_story_likes_count_after_delete
+    AFTER DELETE ON user_story_likes
+    BEGIN
+      UPDATE stories
+      SET like_count = MAX(0, COALESCE(like_count, 0) - 1),
+          updated_at = (unixepoch() * 1000)
+      WHERE id = OLD.story_id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS locations_city_name_after_insert
+    AFTER INSERT ON locations
+    BEGIN
+      UPDATE locations
+      SET city_name = (SELECT name FROM cities WHERE id = NEW.city_id)
+      WHERE id = NEW.id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS locations_city_name_after_city_update
+    AFTER UPDATE OF city_id, city_name ON locations
+    WHEN NEW.city_name IS NOT (SELECT name FROM cities WHERE id = NEW.city_id)
+    BEGIN
+      UPDATE locations
+      SET city_name = (SELECT name FROM cities WHERE id = NEW.city_id)
+      WHERE id = NEW.id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS locations_city_name_after_city_rename
+    AFTER UPDATE OF name ON cities
+    BEGIN
+      UPDATE locations SET city_name = NEW.name WHERE city_id = NEW.id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS users_city_validate_insert
+    BEFORE INSERT ON users
+    WHEN NEW.city IS NOT NULL AND NOT EXISTS (SELECT 1 FROM cities WHERE id = NEW.city)
+    BEGIN
+      SELECT RAISE(ABORT, 'users.city must reference cities.id');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS users_city_validate_update
+    BEFORE UPDATE OF city ON users
+    WHEN NEW.city IS NOT NULL AND NOT EXISTS (SELECT 1 FROM cities WHERE id = NEW.city)
+    BEGIN
+      SELECT RAISE(ABORT, 'users.city must reference cities.id');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS messages_summary_after_insert
+    AFTER INSERT ON messages
+    BEGIN
+      UPDATE conversations
+      SET last_message_content = SUBSTR(NEW.content, 1, 100),
+          last_message_at = NEW.created_at,
+          updated_at = NEW.created_at
+      WHERE id = NEW.conversation_id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS team_members_validate_insert
+    BEFORE INSERT ON team_members
+    WHEN NEW.status NOT IN ('pending', 'approved', 'rejected', 'leave_pending', 'cancelled')
+      OR (
+        NEW.status = 'approved'
+        AND (SELECT COUNT(*) FROM team_members
+             WHERE team_id = NEW.team_id AND status IN ('approved', 'leave_pending'))
+            >= (SELECT max_members FROM teams WHERE id = NEW.team_id)
+      )
+    BEGIN
+      SELECT RAISE(ABORT, 'invalid membership status or team capacity exceeded');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS team_members_validate_update
+    BEFORE UPDATE OF status, team_id ON team_members
+    WHEN NEW.status NOT IN ('pending', 'approved', 'rejected', 'leave_pending', 'cancelled')
+      OR NEW.team_id <> OLD.team_id
+      OR (
+        NEW.status = 'approved'
+        AND OLD.status NOT IN ('approved', 'leave_pending')
+        AND (SELECT COUNT(*) FROM team_members
+             WHERE team_id = NEW.team_id AND status IN ('approved', 'leave_pending'))
+            >= (SELECT max_members FROM teams WHERE id = NEW.team_id)
+      )
+    BEGIN
+      SELECT RAISE(ABORT, 'invalid membership status or team capacity exceeded');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS teams_capacity_validate_update
+    BEFORE UPDATE OF max_members ON teams
+    WHEN NEW.max_members < (
+      SELECT COUNT(*) FROM team_members
+      WHERE team_id = NEW.id AND status IN ('approved', 'leave_pending')
+    )
+    BEGIN
+      SELECT RAISE(ABORT, 'team max_members cannot be below current members');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS team_members_status_after_insert
+    AFTER INSERT ON team_members
+    BEGIN
+      UPDATE teams
+      SET status = CASE
+            WHEN status IN ('recruiting', 'full') AND (
+              SELECT COUNT(*) FROM team_members
+              WHERE team_id = NEW.team_id AND status IN ('approved', 'leave_pending')
+            ) >= max_members THEN 'full'
+            WHEN status IN ('recruiting', 'full') THEN 'recruiting'
+            ELSE status
+          END,
+          updated_at = (unixepoch() * 1000)
+      WHERE id = NEW.team_id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS team_members_status_after_update
+    AFTER UPDATE OF status ON team_members
+    BEGIN
+      UPDATE teams
+      SET status = CASE
+            WHEN status IN ('recruiting', 'full') AND (
+              SELECT COUNT(*) FROM team_members
+              WHERE team_id = NEW.team_id AND status IN ('approved', 'leave_pending')
+            ) >= max_members THEN 'full'
+            WHEN status IN ('recruiting', 'full') THEN 'recruiting'
+            ELSE status
+          END,
+          updated_at = (unixepoch() * 1000)
+      WHERE id = NEW.team_id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS team_members_status_after_delete
+    AFTER DELETE ON team_members
+    BEGIN
+      UPDATE teams
+      SET status = CASE
+            WHEN status IN ('recruiting', 'full') AND (
+              SELECT COUNT(*) FROM team_members
+              WHERE team_id = OLD.team_id AND status IN ('approved', 'leave_pending')
+            ) >= max_members THEN 'full'
+            WHEN status IN ('recruiting', 'full') THEN 'recruiting'
+            ELSE status
+          END,
+          updated_at = (unixepoch() * 1000)
+      WHERE id = OLD.team_id;
+    END;
   `);
 
   const db = drizzle(sqlite, { schema });
