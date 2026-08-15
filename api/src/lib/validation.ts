@@ -71,7 +71,9 @@ export const createActivityPostSchema = z.object({
  */
 export const createTagSchema = z.object({
   name: z.string().min(1, "标签名称不能为空").max(50, "标签名称不能超过50字"),
-  type: z.string().min(1, "标签类型不能为空").max(50, "标签类型不能超过50字"),
+  type: z.enum(["location", "activity", "story"], {
+    message: "标签类型必须是 location、activity 或 story",
+  }),
   icon: z.string().max(100, "图标不能超过100字").optional(),
 });
 
@@ -105,4 +107,3 @@ export const paginationSchema = z.object({
 export const idParamSchema = z.object({
   id: z.string().min(1, "ID不能为空"),
 });
-

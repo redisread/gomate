@@ -505,7 +505,7 @@ export type UserLevel = "beginner" | "intermediate" | "advanced" | "expert";
 export type UserStatus = "active" | "suspended" | "banned" | "deleted";
 export type UserGender = "male" | "female" | "other";
 export type CityLevel = "city" | "district";
-export type TagType = "location" | "activity";
+export type TagType = "location" | "activity" | "story";
 export type EntityType = "location" | "activity" | "story";
 
 // 活动后分享状态

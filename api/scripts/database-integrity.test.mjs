@@ -13,6 +13,14 @@ function applyMigrations(db, files) {
   }
 }
 
+function applyMigrationWithD1ForeignKeySemantics(db, file) {
+  const sql = readFileSync(join(migrationsDir, file), "utf8")
+    .replaceAll("--> statement-breakpoint", "")
+    // D1 ignores attempts to disable foreign keys inside its implicit migration transaction.
+    .replace(/PRAGMA\s+foreign_keys\s*=\s*(?:OFF|ON)\s*;/giu, "");
+  db.exec(sql);
+}
+
 function createMigratedDatabase(files = readdirSync(migrationsDir).filter((name) => name.endsWith(".sql")).sort()) {
   const db = new Database(":memory:");
   db.pragma("foreign_keys = ON");
@@ -78,6 +86,48 @@ describe("replayed migration database integrity", () => {
     ]));
     expect(() => db.prepare("DELETE FROM locations WHERE id = 'location-1'").run())
       .toThrow(/FOREIGN KEY constraint failed/u);
+  });
+
+  it("preserves team child rows when D1 keeps foreign keys enabled during the rebuild", () => {
+    db.close();
+    const allFiles = readdirSync(migrationsDir).filter((name) => name.endsWith(".sql")).sort();
+    const integrityFile = allFiles.at(-1);
+    db = createMigratedDatabase(allFiles.slice(0, -1));
+    const now = seedCore(db);
+    seedTeam(db, now);
+
+    db.prepare(`
+      INSERT INTO team_members (id, team_id, user_id, status, joined_at, created_at)
+      VALUES ('membership-1', 'team-1', 'member', 'approved', ?, ?)
+    `).run(now, now);
+    db.prepare(`
+      INSERT INTO conversations (id, team_id, user_id, leader_id, initiator_id, created_at, updated_at)
+      VALUES ('conversation-1', 'team-1', 'member', 'leader', 'member', ?, ?)
+    `).run(now, now);
+    db.prepare(`
+      INSERT INTO messages (id, conversation_id, sender_id, content, is_read, created_at)
+      VALUES ('message-1', 'conversation-1', 'member', '保留消息', 0, ?)
+    `).run(now);
+    db.prepare(`
+      INSERT INTO activity_posts (
+        id, team_id, location_id, author_id, content, images, status, created_at, updated_at
+      ) VALUES ('post-1', 'team-1', 'location-1', 'member', '保留动态', '[]', 'visible', ?, ?)
+    `).run(now, now);
+
+    const expectChildrenPreserved = () => {
+      expect(db.prepare("SELECT id FROM team_members WHERE id = 'membership-1'").get()).toBeTruthy();
+      expect(db.prepare("SELECT id FROM conversations WHERE id = 'conversation-1'").get()).toBeTruthy();
+      expect(db.prepare("SELECT id FROM messages WHERE id = 'message-1'").get()).toBeTruthy();
+      expect(db.prepare("SELECT id FROM activity_posts WHERE id = 'post-1'").get()).toBeTruthy();
+      expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+    };
+
+    applyMigrationWithD1ForeignKeySemantics(db, integrityFile);
+    expectChildrenPreserved();
+
+    // 迁移文件本身也必须可安全重放，不能只依赖 D1 migration ledger。
+    applyMigrationWithD1ForeignKeySemantics(db, integrityFile);
+    expectChildrenPreserved();
   });
 
   it("keeps city references and denormalized city names canonical", () => {

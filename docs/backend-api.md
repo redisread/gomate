@@ -652,7 +652,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 获取标签列表
 
 - **认证：** 否
-- **Query：** `type`（location\|activity）、`page`（默认 1）、`pageSize`（默认 50，最大 100）
+- **Query：** `type`（location\|activity\|story）、`page`（默认 1）、`pageSize`（默认 50，最大 100）
 - **响应：** `{ "success": true, "tags": [{ "id", "name", "type" }] }`
 
 ### POST `/tags`
@@ -660,7 +660,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 创建标签（同名标签返回已有标签）
 
 - **认证：** 是（仅管理员）
-- **Body：** `{ "name", "type", "description" }`
+- **Body：** `{ "name", "type", "icon" }`；`type` 仅允许 `location`、`activity`、`story`，非法值返回 400
 - **响应：** `{ "success": true, "tagId": "tag-xxx", "existing": false }`
 
 ---

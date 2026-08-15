@@ -69,7 +69,39 @@ SELECT CASE WHEN
 THEN 0 ELSE 1 END;--> statement-breakpoint
 DROP TABLE IF EXISTS `_0019_integrity_guard`;--> statement-breakpoint
 
-PRAGMA foreign_keys=OFF;--> statement-breakpoint
+-- D1 keeps foreign keys enabled inside migrations. Preserve every child row before
+-- rebuilding the parent table because DROP TABLE still executes ON DELETE CASCADE.
+PRAGMA defer_foreign_keys=ON;--> statement-breakpoint
+DROP TRIGGER IF EXISTS `teams_polymorphic_cleanup`;--> statement-breakpoint
+DROP TRIGGER IF EXISTS `entity_to_tags_validate_insert`;--> statement-breakpoint
+DROP TRIGGER IF EXISTS `entity_to_tags_validate_update`;--> statement-breakpoint
+DROP TRIGGER IF EXISTS `team_members_validate_insert`;--> statement-breakpoint
+DROP TRIGGER IF EXISTS `team_members_validate_update`;--> statement-breakpoint
+DROP TRIGGER IF EXISTS `teams_capacity_validate_update`;--> statement-breakpoint
+DROP TRIGGER IF EXISTS `team_members_status_after_insert`;--> statement-breakpoint
+DROP TRIGGER IF EXISTS `team_members_status_after_update`;--> statement-breakpoint
+DROP TRIGGER IF EXISTS `team_members_status_after_delete`;--> statement-breakpoint
+
+CREATE TABLE IF NOT EXISTS `_0019_team_members_backup` AS
+SELECT * FROM `team_members` WHERE 0;--> statement-breakpoint
+DELETE FROM `_0019_team_members_backup`;--> statement-breakpoint
+INSERT INTO `_0019_team_members_backup` SELECT * FROM `team_members`;--> statement-breakpoint
+
+CREATE TABLE IF NOT EXISTS `_0019_conversations_backup` AS
+SELECT * FROM `conversations` WHERE 0;--> statement-breakpoint
+DELETE FROM `_0019_conversations_backup`;--> statement-breakpoint
+INSERT INTO `_0019_conversations_backup` SELECT * FROM `conversations`;--> statement-breakpoint
+
+CREATE TABLE IF NOT EXISTS `_0019_messages_backup` AS
+SELECT * FROM `messages` WHERE 0;--> statement-breakpoint
+DELETE FROM `_0019_messages_backup`;--> statement-breakpoint
+INSERT INTO `_0019_messages_backup` SELECT * FROM `messages`;--> statement-breakpoint
+
+CREATE TABLE IF NOT EXISTS `_0019_activity_posts_backup` AS
+SELECT * FROM `activity_posts` WHERE 0;--> statement-breakpoint
+DELETE FROM `_0019_activity_posts_backup`;--> statement-breakpoint
+INSERT INTO `_0019_activity_posts_backup` SELECT * FROM `activity_posts`;--> statement-breakpoint
+
 CREATE TABLE IF NOT EXISTS `__new_teams` (
   `id` text PRIMARY KEY NOT NULL,
   `location_id` text NOT NULL,
@@ -115,7 +147,17 @@ SELECT
 FROM `teams`;--> statement-breakpoint
 DROP TABLE IF EXISTS `teams`;--> statement-breakpoint
 ALTER TABLE `__new_teams` RENAME TO `teams`;--> statement-breakpoint
-PRAGMA foreign_keys=ON;--> statement-breakpoint
+
+INSERT INTO `team_members` SELECT * FROM `_0019_team_members_backup`;--> statement-breakpoint
+INSERT INTO `conversations` SELECT * FROM `_0019_conversations_backup`;--> statement-breakpoint
+INSERT INTO `messages` SELECT * FROM `_0019_messages_backup`;--> statement-breakpoint
+INSERT INTO `activity_posts` SELECT * FROM `_0019_activity_posts_backup`;--> statement-breakpoint
+
+DROP TABLE IF EXISTS `_0019_team_members_backup`;--> statement-breakpoint
+DROP TABLE IF EXISTS `_0019_conversations_backup`;--> statement-breakpoint
+DROP TABLE IF EXISTS `_0019_messages_backup`;--> statement-breakpoint
+DROP TABLE IF EXISTS `_0019_activity_posts_backup`;--> statement-breakpoint
+PRAGMA defer_foreign_keys=OFF;--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS `teams_location_idx` ON `teams` (`location_id`);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `teams_leader_idx` ON `teams` (`leader_id`);--> statement-breakpoint

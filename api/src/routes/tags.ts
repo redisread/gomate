@@ -28,7 +28,7 @@ async function checkAdmin(c: { env: Env; req: { raw: Request } }) {
 
 /**
  * GET /tags
- * 获取标签列表，支持 ?type=location|route|activity 筛选
+ * 获取标签列表，支持 ?type=location|activity|story 筛选
  */
 tags.get("/", async (c) => {
   try {
