@@ -12,7 +12,7 @@ vi.mock("@/hooks/useI18n", () => ({
   }),
 }));
 
-const locations = ["麦理浩径", "香港", "澳门", "南山"].map((name, index) => ({
+const locations = ["香港", "麦理浩径", "大理", "牛奶排", "澳门"].map((name, index) => ({
   id: `location-${index}`,
   name,
   slug: name,
@@ -29,19 +29,23 @@ const locations = ["麦理浩径", "香港", "澳门", "南山"].map((name, inde
 } as unknown as Location));
 
 describe("HomeLocationStack", () => {
-  it("展示最多三张重叠地点卡片并链接到详情", () => {
+  it("按牛奶排、大理、香港的顺序展示三张地点卡片并链接到详情", () => {
     render(<HomeLocationStack locations={locations} />);
 
     expect(screen.getByTestId("home-location-stack")).toBeInTheDocument();
-    expect(screen.getAllByTestId("home-location-stack-card")).toHaveLength(3);
-    expect(screen.getByRole("link", { name: /麦理浩径/ })).toHaveAttribute(
+    const cards = screen.getAllByTestId("home-location-stack-card");
+    expect(cards).toHaveLength(3);
+    expect(cards.map((card) => card.textContent)).toEqual([
+      expect.stringContaining("牛奶排"),
+      expect.stringContaining("大理"),
+      expect.stringContaining("香港"),
+    ]);
+    expect(screen.getByRole("link", { name: /牛奶排/ })).toHaveAttribute(
       "href",
-      "/locations/location-0",
+      "/locations/location-3",
     );
-    expect(screen.getAllByTestId("home-location-stack-card")[1]).toHaveClass(
-      "lg:z-30",
-    );
-    expect(screen.queryByText("南山")).not.toBeInTheDocument();
+    expect(cards[1]).toHaveClass("lg:z-30");
+    expect(screen.queryByText("麦理浩径")).not.toBeInTheDocument();
   });
 
   it("没有地点时显示占位状态", () => {
