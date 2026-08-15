@@ -2,6 +2,7 @@ import { ArrowUpRight, Compass, MapPin } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
 import type { Location } from "@/lib/types";
+import { selectGuestFeaturedLocations } from "./guest-featured-locations";
 
 const CARD_STYLES = [
   {
@@ -26,7 +27,7 @@ const CARD_STYLES = [
 
 export function HomeLocationStack({ locations }: { locations: Location[] }) {
   const { t } = useI18n(["home", "common", "locations"]);
-  const featuredLocations = locations.slice(0, 3);
+  const featuredLocations = selectGuestFeaturedLocations(locations);
 
   if (featuredLocations.length === 0) {
     return (
