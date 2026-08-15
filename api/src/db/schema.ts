@@ -6,6 +6,7 @@ import {
   index,
   uniqueIndex,
   primaryKey,
+  check,
 } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 import type { TeamChecklist } from "@gomate/types";
@@ -41,9 +42,9 @@ export const users = sqliteTable(
     deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
   },
   (table) => ({
-    emailIdx: index("users_email_idx").on(table.email),
     nameIdx: index("users_name_idx").on(table.name),
     nicknameIdx: index("users_nickname_idx").on(table.nickname),
+    cityIdx: index("users_city_idx").on(table.city),
   })
 );
 
@@ -62,7 +63,6 @@ export const sessions = sqliteTable(
   },
   (table) => ({
     userIdx: index("sessions_user_idx").on(table.userId),
-    tokenIdx: index("sessions_token_idx").on(table.token),
   })
 );
 
@@ -123,7 +123,6 @@ export const cities = sqliteTable(
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
-    adcodeIdx: uniqueIndex("cities_adcode_idx").on(table.adcode),
     isHotIdx: index("cities_is_hot_idx").on(table.isHot),
   })
 );
@@ -165,11 +164,11 @@ export const locations = sqliteTable(
     actorApiKeyId: text("actor_api_key_id"),
   },
   (table) => ({
-    slugIdx: uniqueIndex("locations_slug_idx").on(table.slug),
     nameIdx: index("locations_name_idx").on(table.name),
     cityIdx: index("locations_city_idx").on(table.cityId),
     typeIdx: index("locations_type_idx").on(table.type),
     createdAtIdx: index("locations_created_at_idx").on(table.createdAt),
+    actorApiKeyIdx: index("locations_actor_api_key_id_idx").on(table.actorApiKeyId),
   })
 );
 
@@ -183,7 +182,6 @@ export const tags = sqliteTable(
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
-    nameIdx: uniqueIndex("tags_name_idx").on(table.name),
     typeIdx: index("tags_type_idx").on(table.type),
   })
 );
@@ -211,8 +209,8 @@ export const teams = sqliteTable(
   "teams",
   {
     id: text("id").primaryKey(),
-    locationId: text("location_id").references(() => locations.id, { onDelete: "cascade" }).notNull(),
-    leaderId: text("leader_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    locationId: text("location_id").references(() => locations.id, { onDelete: "restrict" }).notNull(),
+    leaderId: text("leader_id").references(() => users.id, { onDelete: "restrict" }).notNull(),
     title: text("title").notNull(),
     description: text("description"),
     startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
@@ -225,8 +223,8 @@ export const teams = sqliteTable(
     // task #163：Team「行动本」checklist（JSON，nullable = 队长未填）
     // 结构见 packages/types TeamChecklist；单字段 <2KB，D1 batch 写入简单
     checklist: text("checklist", { mode: "json" }).$type<TeamChecklist>(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).default(sql`(unixepoch() * 1000)`).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(sql`(unixepoch() * 1000)`).notNull(),
     // #219 P2-3：API key 创建/加入时记录来源 key（nullable，session 用户无 key）
     actorApiKeyId: text("actor_api_key_id"),
   },
@@ -238,6 +236,15 @@ export const teams = sqliteTable(
     titleIdx: index("teams_title_idx").on(table.title),
     statusCreatedAtIdx: index("teams_status_created_at_idx").on(table.status, table.createdAt),
     statusStartTimeIdx: index("teams_status_start_time_idx").on(table.status, table.startTime),
+    statusEndTimeIdx: index("teams_status_end_time_idx").on(table.status, table.endTime),
+    actorApiKeyIdx: index("teams_actor_api_key_id_idx").on(table.actorApiKeyId),
+    statusCheck: check(
+      "teams_status_check",
+      sql`${table.status} in ('recruiting', 'full', 'formed', 'cancelled', 'completed')`,
+    ),
+    durationCheck: check("teams_duration_min_check", sql`${table.durationMin} between 0 and 1440`),
+    capacityCheck: check("teams_max_members_check", sql`${table.maxMembers} between 2 and 50`),
+    timeRangeCheck: check("teams_time_range_check", sql`${table.endTime} >= ${table.startTime}`),
   })
 );
 
@@ -261,6 +268,7 @@ export const teamMembers = sqliteTable(
     userIdx: index("team_members_user_idx").on(table.userId),
     teamStatusIdx: index("team_members_team_status_idx").on(table.teamId, table.status),
     uniqueTeamUser: uniqueIndex("team_members_team_user_idx").on(table.teamId, table.userId),
+    actorApiKeyIdx: index("team_members_actor_api_key_id_idx").on(table.actorApiKeyId),
   })
 );
 
@@ -277,7 +285,6 @@ export const passwordResets = sqliteTable(
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
   },
   (table) => ({
-    tokenIdx: index("password_resets_token_idx").on(table.token),
     userIdx: index("password_resets_user_idx").on(table.userId),
     emailIdx: index("password_resets_email_idx").on(table.email),
   })
@@ -299,6 +306,11 @@ export const userFavorites = sqliteTable(
     uniqueFavorite: uniqueIndex("user_favorites_unique_idx").on(table.userId, table.entityType, table.entityId),
     // 0009 已建的复合索引（补充声明，对齐 DB 现状，零 DB 变更）
     userCreatedIdx: index("user_favorites_user_created_idx").on(table.userId, table.createdAt),
+    entityTypeEntityCreatedIdx: index("user_favorites_entity_type_entity_id_created_at_idx").on(
+      table.entityType,
+      table.entityId,
+      table.createdAt,
+    ),
   })
 );
 
@@ -455,6 +467,10 @@ export const activityPosts = sqliteTable(
     authorIdx: index("activity_posts_author_idx").on(table.authorId),
     statusIdx: index("activity_posts_status_idx").on(table.status),
     createdAtIdx: index("activity_posts_created_at_idx").on(table.createdAt),
+    locationCreatedAtIdx: index("activity_posts_location_created_at_idx").on(
+      table.locationId,
+      table.createdAt,
+    ),
   })
 );
 
@@ -518,6 +534,7 @@ export const stories = sqliteTable(
     createdAtIdx: index("stories_created_at_idx").on(table.createdAt),
     // 0009 已建的复合索引（补充声明，对齐 DB 现状，零 DB 变更）
     statusCreatedAtIdx: index("stories_status_created_at_idx").on(table.status, table.createdAt),
+    actorApiKeyIdx: index("stories_actor_api_key_id_idx").on(table.actorApiKeyId),
   })
 );
 

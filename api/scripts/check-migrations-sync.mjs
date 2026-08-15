@@ -15,6 +15,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import Database from "better-sqlite3";
 
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const migrationsDir = join(apiRoot, "db", "migrations");
@@ -90,6 +91,105 @@ for (const t of liveTables) {
     errors.push(`迁移创建的表 "${t}" 在 api/src/db/schema.ts 中无 sqliteTable 定义（schema 落后于 migration，运行时 adapter 会 500）`);
   }
 }
+
+// 7. 在内存 SQLite 中完整重放 migration，核对 schema.ts 声明的外键与索引。
+// 仅比较表名无法发现「重建表时漏写 FOREIGN KEY」或「手工 migration 索引未回写 schema」；
+// 这两类漂移都会让 Drizzle 类型与生产 D1 的真实约束不一致。
+const sqlite = new Database(":memory:");
+sqlite.pragma("foreign_keys = ON");
+
+try {
+  for (const f of readdirSync(migrationsDir).filter((name) => name.endsWith(".sql")).sort()) {
+    const migrationSql = readFileSync(join(migrationsDir, f), "utf8")
+      .replaceAll("--> statement-breakpoint", "");
+    sqlite.exec(migrationSql);
+  }
+} catch (err) {
+  errors.push(`migration 无法从空库完整重放：${err.message}`);
+}
+
+const tableDefinitions = [...schemaSrc.matchAll(
+  /export const (\w+) = sqliteTable\(\s*["'`]([^"'`]+)["'`]([\s\S]*?)(?=export const \w+ = sqliteTable\(|$)/g,
+)];
+const variableToTable = new Map(tableDefinitions.map((match) => [match[1], match[2]]));
+const propertyToColumn = new Map();
+
+for (const match of tableDefinitions) {
+  const [, variableName, , definition] = match;
+  const fields = new Map(
+    [...definition.matchAll(/(\w+):\s*(?:text|integer|real)\(["'`]([^"'`]+)["'`]/g)]
+      .map((field) => [field[1], field[2]]),
+  );
+  propertyToColumn.set(variableName, fields);
+}
+
+for (const match of tableDefinitions) {
+  const [, , tableName, definition] = match;
+  const expectedForeignKeys = [...definition.matchAll(
+    /(\w+):\s*(?:text|integer|real)\(["'`]([^"'`]+)["'`][^\n]*?\.references\(\(\) => (\w+)\.(\w+)(?:,\s*\{\s*onDelete:\s*["'`]([^"'`]+)["'`]\s*\})?/g,
+  )].map((foreignKey) => ({
+    from: foreignKey[2],
+    table: variableToTable.get(foreignKey[3]),
+    to: propertyToColumn.get(foreignKey[3])?.get(foreignKey[4]),
+    onDelete: (foreignKey[5] ?? "no action").toUpperCase(),
+  }));
+  const actualForeignKeys = sqlite.prepare(`PRAGMA foreign_key_list('${tableName}')`).all();
+
+  for (const expected of expectedForeignKeys) {
+    const exists = actualForeignKeys.some((actual) =>
+      actual.from === expected.from &&
+      actual.table === expected.table &&
+      actual.to === expected.to &&
+      String(actual.on_delete).toUpperCase() === expected.onDelete
+    );
+    if (!exists) {
+      errors.push(
+        `表 "${tableName}" 缺少 schema.ts 声明的外键：${expected.from} -> ${expected.table}.${expected.to} ON DELETE ${expected.onDelete}`,
+      );
+    }
+  }
+}
+
+const declaredIndexes = new Set(
+  [...schemaSrc.matchAll(/(?:uniqueIndex|index)\(["'`]([^"'`]+)["'`]\)/g)].map((match) => match[1]),
+);
+const implicitUniqueIndexes = new Set();
+for (const match of tableDefinitions) {
+  const [, , tableName, definition] = match;
+  for (const field of definition.matchAll(/\w+:\s*(?:text|integer|real)\(["'`]([^"'`]+)["'`][^\n]*?\.unique\(\)/g)) {
+    implicitUniqueIndexes.add(`${tableName}_${field[1]}_unique`);
+  }
+}
+
+const actualIndexes = sqlite.prepare(
+  "SELECT name, tbl_name FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL",
+).all();
+for (const indexRow of actualIndexes) {
+  if (!declaredIndexes.has(indexRow.name) && !implicitUniqueIndexes.has(indexRow.name)) {
+    errors.push(`数据库索引 "${indexRow.name}" 未声明在 schema.ts 中`);
+  }
+}
+
+for (const tableName of liveTables) {
+  const indexRows = sqlite.prepare(`PRAGMA index_list('${tableName}')`).all();
+  const columnsToIndexes = new Map();
+  for (const indexRow of indexRows) {
+    if (indexRow.origin === "pk") continue;
+    const columns = sqlite.prepare(`PRAGMA index_info('${indexRow.name}')`).all()
+      .map((column) => column.name)
+      .join(",");
+    const names = columnsToIndexes.get(columns) ?? [];
+    names.push(indexRow.name);
+    columnsToIndexes.set(columns, names);
+  }
+  for (const [columns, names] of columnsToIndexes) {
+    if (names.length > 1) {
+      errors.push(`表 "${tableName}" 的列 (${columns}) 存在重复索引：${names.sort().join(", ")}`);
+    }
+  }
+}
+
+sqlite.close();
 
 if (errors.length > 0) {
   console.error("✗ 迁移一致性校验失败：");
