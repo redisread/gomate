@@ -1,10 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Team } from "@/lib/types";
 import { selectNextMemberTeam } from "../components/features/home/member-home-utils";
 import { HomeMemberExperience } from "../components/features/home/home-member-experience";
 
-const { useMemberHomeMock } = vi.hoisted(() => ({ useMemberHomeMock: vi.fn() }));
+const { useMemberHomeMock } = vi.hoisted(() => ({
+  useMemberHomeMock: vi.fn(),
+}));
 
 vi.mock("../components/features/home/use-member-home", () => ({
   useMemberHome: (...args: unknown[]) => useMemberHomeMock(...args),
@@ -73,7 +75,11 @@ describe("selectNextMemberTeam", () => {
     const result = selectNextMemberTeam(
       [
         team({ id: "later", startTime: "2026-08-12T00:00:00.000Z" }),
-        team({ id: "completed", startTime: "2026-08-08T00:00:00.000Z", status: "completed" }),
+        team({
+          id: "completed",
+          startTime: "2026-08-08T00:00:00.000Z",
+          status: "completed",
+        }),
       ],
       [team({ id: "next", startTime: "2026-08-09T00:30:00.000Z" })],
       new Date("2026-08-07T00:00:00.000Z"),
@@ -102,6 +108,15 @@ describe("selectNextMemberTeam", () => {
 });
 
 describe("HomeMemberExperience", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-07T00:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("shows the signed-in user's next departure", () => {
     useMemberHomeMock.mockReturnValue({
       teams: [team({})],
@@ -110,11 +125,22 @@ describe("HomeMemberExperience", () => {
       retry: vi.fn(),
     });
 
-    render(<HomeMemberExperience currentUser={{ id: "user-1", name: "Victor", nickname: "Victor" } as never} publicTeams={[]} />);
+    render(
+      <HomeMemberExperience
+        currentUser={
+          { id: "user-1", name: "Victor", nickname: "Victor" } as never
+        }
+        publicTeams={[]}
+      />,
+    );
 
     expect(screen.getByTestId("member-next-trip")).toBeInTheDocument();
-    expect(screen.getByText("home.memberDashboard.upcomingStatus")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "home.memberDashboard.viewTrip" })).toHaveAttribute("href", "/teams/team-1");
+    expect(
+      screen.getByText("home.memberDashboard.upcomingStatus"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "home.memberDashboard.viewTrip" }),
+    ).toHaveAttribute("href", "/teams/team-1");
   });
 
   it("shows a useful exploration state when the member has no active trip", () => {
@@ -125,10 +151,21 @@ describe("HomeMemberExperience", () => {
       retry: vi.fn(),
     });
 
-    render(<HomeMemberExperience currentUser={{ id: "user-1", name: "Victor", nickname: "Victor" } as never} publicTeams={[]} />);
+    render(
+      <HomeMemberExperience
+        currentUser={
+          { id: "user-1", name: "Victor", nickname: "Victor" } as never
+        }
+        publicTeams={[]}
+      />,
+    );
 
     const emptyState = screen.getByTestId("member-no-trip");
     expect(emptyState).toBeInTheDocument();
-    expect(within(emptyState).getByRole("link", { name: "home.memberDashboard.findTeams" })).toHaveAttribute("href", "/teams");
+    expect(
+      within(emptyState).getByRole("link", {
+        name: "home.memberDashboard.findTeams",
+      }),
+    ).toHaveAttribute("href", "/teams");
   });
 });
