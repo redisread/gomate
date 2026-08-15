@@ -164,8 +164,23 @@ export function ChinaMap({ className }: { className?: string }) {
   );
   const focusedCount = focusedProvince ? provinceCount.get(focusedProvince) ?? 0 : 0;
 
+  const leaveProvince = () => {
+    setTooltip(null);
+    if (pushedMapState.current) {
+      pushedMapState.current = false;
+      window.history.back();
+      return;
+    }
+    updateMapUrl(null, "replace");
+    setFocusedProvince(null);
+  };
+
   const focusProvince = (name: string) => {
     if (!PROVINCE_CENTERS[name]) return;
+    if (focusedProvince === name) {
+      leaveProvince();
+      return;
+    }
     setTooltip(null);
     setIsTransitioning(true);
     if (!focusedProvince) {
@@ -177,17 +192,6 @@ export function ChinaMap({ className }: { className?: string }) {
     setFocusedProvince(name);
     if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
     transitionTimer.current = window.setTimeout(() => setIsTransitioning(false), 560);
-  };
-
-  const leaveProvince = () => {
-    setTooltip(null);
-    if (pushedMapState.current) {
-      pushedMapState.current = false;
-      window.history.back();
-      return;
-    }
-    updateMapUrl(null, "replace");
-    setFocusedProvince(null);
   };
 
   const handleProvinceEnter = (name: string) => {

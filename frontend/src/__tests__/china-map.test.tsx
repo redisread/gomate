@@ -33,6 +33,7 @@ describe("ChinaMap", () => {
   });
 
   it("clicking a province focuses the map and writes a restorable URL state", async () => {
+    const historyBack = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ text: async () => provinceSvg }));
     mockFetchAPI.mockResolvedValue({
       json: async () => ({
@@ -72,5 +73,9 @@ describe("ChinaMap", () => {
     await waitFor(() => {
       expect(screen.queryByLabelText("四姑娘山")).not.toBeInTheDocument();
     });
+
+    fireEvent.click(guangdong);
+
+    expect(historyBack).toHaveBeenCalledOnce();
   });
 });

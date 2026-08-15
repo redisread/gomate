@@ -9,6 +9,10 @@ import { API_BASE } from "../lib/api";
 import type { HomeInitialData } from "../components/features/home/use-home-data";
 import type { LocationsResponse } from "../hooks/use-locations";
 import type { Team } from "../lib/types";
+import {
+  GUEST_FEATURED_LOCATION_NAMES,
+  selectGuestFeaturedLocations,
+} from "../components/features/home/guest-featured-locations";
 
 declareI18nNs(Astro.locals, ["home", "locations", "locationDetail", "teams", "enums", "content", "onboarding"]);
 
@@ -22,8 +26,41 @@ async function fetchJson<T>(path: string): Promise<T | null> {
   }
 }
 
+async function fetchGuestFeaturedLocations(): Promise<LocationsResponse | null> {
+  const responses = await Promise.all(
+    GUEST_FEATURED_LOCATION_NAMES.map((name) =>
+      fetchJson<LocationsResponse>(
+        `/locations?page=1&pageSize=1&view=card&search=${encodeURIComponent(name)}`,
+      ),
+    ),
+  );
+  const requestedLocations = responses.flatMap((response) => response?.locations ?? []);
+  let locations = selectGuestFeaturedLocations(requestedLocations);
+
+  if (locations.length < GUEST_FEATURED_LOCATION_NAMES.length) {
+    const fallback = await fetchJson<LocationsResponse>("/locations?page=1&pageSize=6&view=card");
+    locations = selectGuestFeaturedLocations([
+      ...requestedLocations,
+      ...(fallback?.locations ?? []),
+    ]);
+  }
+
+  if (locations.length === 0) return null;
+
+  return {
+    success: true,
+    locations,
+    pagination: {
+      page: 1,
+      pageSize: 6,
+      total: locations.length,
+      totalPages: 1,
+    },
+  };
+}
+
 const [locationsData, teamsData] = await Promise.all([
-  fetchJson<LocationsResponse>("/locations?page=1&pageSize=6&view=card"),
+  fetchGuestFeaturedLocations(),
   fetchJson<{ success: boolean; teams: Team[] }>("/teams?status=recruiting&pageSize=4"),
 ]);
 
