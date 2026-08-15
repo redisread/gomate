@@ -273,6 +273,10 @@ export const teamMembers = sqliteTable(
 );
 
 // 密码重置令牌表
+/**
+ * @deprecated Better Auth 已统一使用 verifications 表处理密码重置。
+ * 保留该映射仅用于兼容现有生产表；删除条件见 notes/password-resets-deprecation.md。
+ */
 export const passwordResets = sqliteTable(
   "password_resets",
   {

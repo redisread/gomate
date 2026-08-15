@@ -1,6 +1,6 @@
 # GoMate 后端 API 文档
 
-> 最后更新：2026-08-01
+> 最后更新：2026-08-16
 > 框架：Hono 4 + Cloudflare Workers + Drizzle ORM
 
 ## 基础信息
@@ -190,7 +190,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 
 - **认证：** 是（仅队长）
 - **响应：** `{ "success": true, "message": "已通过申请" }`
-- **说明：** 人满时队伍状态自动置为 `full`（反之保持 `recruiting`）；已满拒绝批准返回 400
+- **说明：** 人满时队伍状态自动置为 `full`（反之保持 `recruiting`）；容量由数据库原子校验，并发批准也不会超过 `maxMembers`，已满返回 400
 
 ### POST `/teams/:id/members/:userId/reject`
 
@@ -357,7 +357,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 创建地点
 
 - **认证：** 是（仅管理员）
-- **Body：** `{ "name", "slug", "subtitle", "description", "address", "cityId", "cityName", "type", "coverImage", "images", "bestSeason", "coordinates", "extra", "parkingAvailable", "parkingInfo", "gearEssential", "gearOptional" }`
+- **Body：** `{ "name", "slug", "subtitle", "description", "address", "cityId", "cityName", "type", "coverImage", "images", "bestSeason", "coordinates", "extra", "parkingAvailable", "parkingInfo", "gearEssential", "gearOptional" }`；`cityId` 必须存在，兼容接收的 `cityName` 不作为权威值，响应/存储名称始终跟随 `cities.name`
 - **响应：** `{ "success": true, "location": { "id", "slug" } }`
 
 ### PUT `/locations`
@@ -365,7 +365,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 更新地点
 
 - **认证：** 是（仅管理员）
-- **Body：** 与创建相同，需包含 `id` 字段（`type` 可选，nullable）
+- **Body：** 与创建相同，需包含 `id` 字段（`type` 可选，nullable）；修改 `cityId` 时自动同步规范城市名
 
 ### DELETE `/locations/:id`
 
@@ -427,7 +427,7 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 更新用户信息
 
 - **认证：** 是（普通用户只能改自己；`userId` 必填，支持 id 或邮箱；管理员可改他人）
-- **Body：** `{ "userId", "name", "nickname", "bio", "level", "image", "wechat", "gender", "birthday", "extra", "city" }`（`city` 为 cityId）
+- **Body：** `{ "userId", "name", "nickname", "bio", "level", "image", "wechat", "gender", "birthday", "extra", "city" }`（`city` 为已存在的 cityId；未知 cityId 返回 400；`null`/空串清空）
 - **响应：** `{ "success": true, "user": {...} }`
 
 ### GET `/users/pending-approvals`
@@ -567,6 +567,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 - **认证：** 否
 - **响应：** `data` 含故事字段 + `author` + `location` + `isLiked` + `tags: [{ id, name }]`（标签关联，编辑表单回显依赖此字段；无标签时为 `[]`）
 - **可见性（task #156）：** `published` 公开可读；`draft` 仅作者本人或管理员可读（其余 404，不泄露存在性），且 draft 访问不计浏览数；`hidden` 一律 404
+- **计数：** published 浏览数使用数据库原子自增，并发请求不会覆盖彼此
 
 ### PUT `/stories/:id`
 
@@ -586,7 +587,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 点赞/取消点赞故事（toggle）
 
 - **认证：** 是（登录用户）
-- **行为：** 已点赞 → 取消点赞；未点赞 → 点赞
+- **行为：** 已点赞 → 取消点赞；未点赞 → 点赞；`likeCount` 由唯一点赞关系在数据库内同步维护
 - **响应：** `{ "success": true, "liked": boolean, "likeCount": number, "message": string }`
 - **错误：** 401 未登录 / 404 故事不存在 / 500 服务器错误
 
@@ -615,6 +616,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 
 - **认证：** 是
 - **Body：** `{ "entityType": "location", "entityId": "loc-xxx" }`
+- **错误：** 目标地点/故事不存在时返回 404，不创建悬空收藏
 
 ### DELETE `/favorites?entityType={type}&entityId={id}`
 
@@ -697,7 +699,7 @@ R2 文件代理（本地开发专用，顶层挂载）
 | `POST /messages`             | 是   | 创建会话，Body `{ "teamId", "userId"? }`（队长可指定目标成员；成员只能找队长） |
 | `GET /messages/unread-count` | 是   | 未读数                                                                         |
 | `GET /messages/:id`          | 是   | 会话消息（`cursor` / `since` / `limit` 分页）                                  |
-| `POST /messages/:id`         | 是   | 发送消息，Body `{ "content" }`（≤1000 字）                                     |
+| `POST /messages/:id`         | 是   | 发送消息，Body `{ "content" }`（≤1000 字）；会话摘要与消息同次数据库写入维护   |
 
 ---
 

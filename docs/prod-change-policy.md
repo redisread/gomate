@@ -12,7 +12,7 @@
 - **禁止** `wrangler d1 execute` 手工执行 DDL——这会绕过 `d1_migrations` 账本和 drizzle `_journal.json`，造成双账本漂移（#451 事故的根因）
 - 手工 DML（数据修复、清测试数据）允许，但按下方「prod 变更声明制」先报备
 
-### 2. 迁移必须幂等
+### 2. 迁移必须可安全重放
 
 所有新迁移默认使用幂等写法：
 
@@ -23,7 +23,9 @@ DROP TABLE IF EXISTS ...
 INSERT OR IGNORE INTO ...
 ```
 
-幂等迁移让流水线/手工重放永远安全，环境间账本漂移时可自愈。**自 0018 起强制执行**，历史迁移（0000–0017）不回填。
+SQLite 的部分 DDL（例如 `ALTER TABLE ... ADD COLUMN`）没有 `IF NOT EXISTS`。遇到这类语句时，必须改用可重放的建临时表/复制/重命名方案，或在 migration 说明中明确账本前置条件并提供结构预检，不能把 D1 migration 账本本身误当作 SQL 幂等性。
+
+`0018_add_actor_api_key_id.sql` 是已应用且不可改写的 ledger-only 例外；从 0019 起不再新增无保护的 `ALTER TABLE ... ADD COLUMN`。环境追平仍通过 pipeline 和 `d1_migrations` 账本完成，不手工绕过账本重复执行 migration 文件。
 
 ### 3. 双账本同步（CI 门禁）
 
