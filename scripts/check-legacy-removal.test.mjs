@@ -75,3 +75,43 @@ test("rejects a transpiled Worker source sibling", () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /frontend\/src\/worker\.js: removed path still exists/u);
 });
+
+test("allows the exact legacy frontend Worker only in reviewed rollback files", () => {
+  const root = fixture();
+  const workflowDirectory = path.join(root, ".github", "workflows");
+  const scriptsDirectory = path.join(root, "scripts");
+  mkdirSync(workflowDirectory, { recursive: true });
+  mkdirSync(scriptsDirectory, { recursive: true });
+  writeFileSync(
+    path.join(workflowDirectory, "rollback-production-cutover.yml"),
+    "TARGET_DOMAIN_SERVICE: gomate-frontend\n",
+  );
+  writeFileSync(
+    path.join(scriptsDirectory, "production-domain.mjs"),
+    'const oldWorker = "gomate-frontend";\n',
+  );
+  const result = run(root);
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("still rejects legacy Worker names outside or beyond the rollback allowlist", () => {
+  const outsideRoot = fixture();
+  mkdirSync(path.join(outsideRoot, "scripts"), { recursive: true });
+  writeFileSync(
+    path.join(outsideRoot, "scripts", "unreviewed.mjs"),
+    'const oldWorker = "gomate-frontend";\n',
+  );
+  const outside = run(outsideRoot);
+  assert.equal(outside.status, 1);
+  assert.match(outside.stderr, /legacy Worker name/u);
+
+  const apiRoot = fixture();
+  mkdirSync(path.join(apiRoot, "scripts"), { recursive: true });
+  writeFileSync(
+    path.join(apiRoot, "scripts", "production-domain.mjs"),
+    'const forbiddenWorker = "gomate-api";\n',
+  );
+  const api = run(apiRoot);
+  assert.equal(api.status, 1);
+  assert.match(api.stderr, /legacy Worker name/u);
+});
