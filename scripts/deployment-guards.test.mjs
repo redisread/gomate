@@ -622,6 +622,163 @@ test("protected preview smoke requires correlated request IDs", async () => {
   );
 });
 
+test("protected preview smoke waits through transient workers.dev propagation", async () => {
+  const requestId = "22222222-2222-4222-8222-222222222222";
+  const waits = [];
+  const requestTimeouts = [];
+  let nowMs = 0;
+  let healthAttempts = 0;
+  let ssrAttempts = 0;
+  let mutationAttempts = 0;
+  const fetchImpl = async (input, init) => {
+    const url = new URL(input);
+    if (url.pathname === "/api/health") {
+      healthAttempts += 1;
+      if (healthAttempts === 1) throw new Error("network not ready");
+      if (healthAttempts === 2) return new Response("not ready", { status: 523 });
+      return Response.json(
+        { status: "ok" },
+        { headers: { "x-request-id": requestId } },
+      );
+    }
+    if (url.pathname === "/") {
+      ssrAttempts += 1;
+      if (ssrAttempts === 1) {
+        return new Response("not found", { status: 404 });
+      }
+      return new Response("<!doctype html>", {
+        headers: { "content-type": "text/html" },
+      });
+    }
+    mutationAttempts += 1;
+    assert.equal(init?.method, "POST");
+    return Response.json(
+      { success: false, error: { code: "WRITE_PROTECTED" } },
+      {
+        status: 503,
+        headers: {
+          "retry-after": "60",
+          "x-request-id": requestId,
+        },
+      },
+    );
+  };
+
+  const result = await smokeProtectedPreview({
+    baseUrl: "https://gomate-production-preview.example.workers.dev",
+    fetchImpl,
+    readinessTimeoutMs: 10,
+    readinessRetryDelayMs: 1,
+    nowImpl: () => nowMs,
+    waitImpl: async (delayMs) => {
+      waits.push(delayMs);
+      nowMs += delayMs;
+    },
+    timeoutSignalImpl: (timeoutMs) => {
+      requestTimeouts.push(timeoutMs);
+      return { timeoutMs };
+    },
+  });
+
+  assert.equal(healthAttempts, 3);
+  assert.equal(ssrAttempts, 2);
+  assert.equal(mutationAttempts, 1);
+  assert.deepEqual(waits, [1, 1, 1]);
+  assert.deepEqual(requestTimeouts, [10, 9, 8, 8, 7]);
+  assert.deepEqual(result, {
+    healthRequestId: requestId,
+    blockedRequestId: requestId,
+  });
+});
+
+test("protected preview smoke shares one bounded readiness deadline", async () => {
+  const requestId = "33333333-3333-4333-8333-333333333333";
+  let nowMs = 0;
+  let healthAttempts = 0;
+  let ssrAttempts = 0;
+  const waits = [];
+  await assert.rejects(
+    smokeProtectedPreview({
+      baseUrl: "https://gomate-production-preview.example.workers.dev",
+      fetchImpl: async (input) => {
+        const url = new URL(input);
+        if (url.pathname === "/api/health") {
+          healthAttempts += 1;
+          if (healthAttempts === 1) {
+            return new Response("not found", { status: 404 });
+          }
+          return Response.json(
+            { status: "ok" },
+            { headers: { "x-request-id": requestId } },
+          );
+        }
+        ssrAttempts += 1;
+        return new Response("not found", { status: 404 });
+      },
+      readinessTimeoutMs: 2,
+      readinessRetryDelayMs: 1,
+      nowImpl: () => nowMs,
+      waitImpl: async (delayMs) => {
+        waits.push(delayMs);
+        nowMs += delayMs;
+      },
+      timeoutSignalImpl: (timeoutMs) => ({ timeoutMs }),
+    }),
+    /SSR smoke readiness timed out/u,
+  );
+  assert.equal(healthAttempts, 2);
+  assert.equal(ssrAttempts, 1);
+  assert.deepEqual(waits, [1, 1]);
+});
+
+test("protected preview smoke does not retry application failures", async () => {
+  const requestId = "44444444-4444-4444-8444-444444444444";
+  let attempts = 0;
+  const waits = [];
+  await assert.rejects(
+    smokeProtectedPreview({
+      baseUrl: "https://gomate-production-preview.example.workers.dev",
+      fetchImpl: async () => {
+        attempts += 1;
+        return Response.json(
+          { success: false, error: { code: "SERVICE_UNAVAILABLE" } },
+          {
+            status: 503,
+            headers: { "x-request-id": requestId },
+          },
+        );
+      },
+      readinessTimeoutMs: 10,
+      readinessRetryDelayMs: 1,
+      waitImpl: async (delayMs) => waits.push(delayMs),
+      timeoutSignalImpl: (timeoutMs) => ({ timeoutMs }),
+    }),
+    /Health smoke failed \(503\)/u,
+  );
+  assert.equal(attempts, 1);
+  assert.deepEqual(waits, []);
+
+  attempts = 0;
+  await assert.rejects(
+    smokeProtectedPreview({
+      baseUrl: "https://gomate-production-preview.example.workers.dev",
+      fetchImpl: async () => {
+        attempts += 1;
+        return new Response("wrong content type", {
+          headers: { "content-type": "text/plain" },
+        });
+      },
+      readinessTimeoutMs: 10,
+      readinessRetryDelayMs: 1,
+      waitImpl: async (delayMs) => waits.push(delayMs),
+      timeoutSignalImpl: (timeoutMs) => ({ timeoutMs }),
+    }),
+    /Health smoke failed \(200\)/u,
+  );
+  assert.equal(attempts, 1);
+  assert.deepEqual(waits, []);
+});
+
 test("deploy workflow blocks completion on post-smoke observability approval", () => {
   const workflow = readFileSync(
     path.resolve(
