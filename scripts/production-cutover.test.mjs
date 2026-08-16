@@ -190,28 +190,16 @@ test("domain audit supports an approved cutover state and bounded propagation re
   assert.equal(attempts, 3);
 });
 
-test("domain audit may recover from the accidental suffixed Worker but cannot target it", async () => {
-  const observed = await assertProductionDomain({
-    accountId: "e3afbb613458022947cd9dc9f5bd6334",
-    apiToken: "test-token",
-    expectedService: "gomate-production-preview-production",
-    fetchImpl: async () =>
-      new Response(
-        JSON.stringify({
-          success: true,
-          result: [
-            {
-              id: "domain-id",
-              hostname: "gomate.live",
-              service: "gomate-production-preview-production",
-              zone_id: "0b714cd4257332034b3c4c0c099feb9e",
-            },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ),
-  });
-  assert.equal(observed.service, "gomate-production-preview-production");
+test("domain audit rejects the accidental suffixed Worker after cutover", async () => {
+  await assert.rejects(
+    () =>
+      assertProductionDomain({
+        accountId: "e3afbb613458022947cd9dc9f5bd6334",
+        apiToken: "test-token",
+        expectedService: "gomate-production-preview-production",
+      }),
+    /unapproved Worker/u,
+  );
   await assert.rejects(
     () =>
       attachProductionDomain({
@@ -384,8 +372,9 @@ test("cutover and rollback workflows are protected and narrowly scoped", () => {
   assert.match(cutover, /production-canary\.mjs/u);
   assert.match(
     cutover,
-    /EXPECTED_DOMAIN_SERVICES:\s*gomate-frontend,gomate-production-preview,gomate-production-preview-production/u,
+    /EXPECTED_DOMAIN_SERVICES:\s*gomate-frontend,gomate-production-preview/u,
   );
+  assert.doesNotMatch(cutover, /gomate-production-preview-production/u);
   assert.match(cutover, /DOMAIN_ASSERT_TIMEOUT_MS:\s*"120000"/u);
   assert.doesNotMatch(
     cutover,
