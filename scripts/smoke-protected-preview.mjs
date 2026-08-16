@@ -6,6 +6,12 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const REQUEST_ID_PATTERN = /^[a-z0-9-]{36,96}$/iu;
+const DEFAULT_READINESS_TIMEOUT_MS = 120_000;
+const DEFAULT_READINESS_RETRY_DELAY_MS = 5_000;
+const TRANSIENT_READINESS_STATUSES = new Set([404, 523]);
+
+const wait = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs));
+const timeoutSignal = (timeoutMs) => AbortSignal.timeout(timeoutMs);
 
 function requiredRequestId(response, label) {
   const requestId = response.headers.get("x-request-id")?.trim();
@@ -15,22 +21,97 @@ function requiredRequestId(response, label) {
   return requestId;
 }
 
+async function waitForReadyResponse({
+  label,
+  request,
+  isReady,
+  deadlineMs,
+  retryDelayMs,
+  waitImpl,
+  nowImpl,
+  timeoutSignalImpl,
+}) {
+  while (true) {
+    const remainingMs = deadlineMs - nowImpl();
+    if (remainingMs <= 0) {
+      throw new Error(`${label} smoke readiness timed out`);
+    }
+
+    let response;
+    try {
+      response = await request(timeoutSignalImpl(remainingMs));
+    } catch {
+      const retryWaitMs = Math.min(retryDelayMs, deadlineMs - nowImpl());
+      if (retryWaitMs <= 0) {
+        throw new Error(`${label} smoke readiness timed out`);
+      }
+      await waitImpl(retryWaitMs);
+      continue;
+    }
+
+    if (isReady(response)) return response;
+    if (
+      !TRANSIENT_READINESS_STATUSES.has(response.status) ||
+      response.headers.has("x-request-id")
+    ) {
+      throw new Error(`${label} smoke failed (${response.status})`);
+    }
+
+    const retryWaitMs = Math.min(retryDelayMs, deadlineMs - nowImpl());
+    if (retryWaitMs <= 0) {
+      throw new Error(`${label} smoke readiness timed out`);
+    }
+    await waitImpl(retryWaitMs);
+  }
+}
+
 export async function smokeProtectedPreview({
   baseUrl = process.env.PREVIEW_APP_URL?.trim(),
   fetchImpl = fetch,
+  readinessTimeoutMs = DEFAULT_READINESS_TIMEOUT_MS,
+  readinessRetryDelayMs = DEFAULT_READINESS_RETRY_DELAY_MS,
+  waitImpl = wait,
+  nowImpl = Date.now,
+  timeoutSignalImpl = timeoutSignal,
 } = {}) {
   if (!baseUrl) throw new Error("PREVIEW_APP_URL is required");
-
-  const health = await fetchImpl(new URL("/api/health", baseUrl));
-  if (!health.ok || !health.headers.get("content-type")?.includes("application/json")) {
-    throw new Error(`Health smoke failed (${health.status})`);
+  if (!Number.isInteger(readinessTimeoutMs) || readinessTimeoutMs <= 0) {
+    throw new Error("readinessTimeoutMs must be a positive integer");
   }
+  if (
+    !Number.isInteger(readinessRetryDelayMs) ||
+    readinessRetryDelayMs <= 0
+  ) {
+    throw new Error("readinessRetryDelayMs must be a positive integer");
+  }
+  const readinessDeadlineMs = nowImpl() + readinessTimeoutMs;
+
+  const health = await waitForReadyResponse({
+    label: "Health",
+    request: (signal) =>
+      fetchImpl(new URL("/api/health", baseUrl), { signal }),
+    isReady: (response) =>
+      response.ok &&
+      response.headers.get("content-type")?.includes("application/json"),
+    deadlineMs: readinessDeadlineMs,
+    retryDelayMs: readinessRetryDelayMs,
+    waitImpl,
+    nowImpl,
+    timeoutSignalImpl,
+  });
   const healthRequestId = requiredRequestId(health, "Health");
 
-  const home = await fetchImpl(new URL("/", baseUrl));
-  if (!home.ok || !home.headers.get("content-type")?.includes("text/html")) {
-    throw new Error(`SSR smoke failed (${home.status})`);
-  }
+  await waitForReadyResponse({
+    label: "SSR",
+    request: (signal) => fetchImpl(new URL("/", baseUrl), { signal }),
+    isReady: (response) =>
+      response.ok && response.headers.get("content-type")?.includes("text/html"),
+    deadlineMs: readinessDeadlineMs,
+    retryDelayMs: readinessRetryDelayMs,
+    waitImpl,
+    nowImpl,
+    timeoutSignalImpl,
+  });
 
   const blocked = await fetchImpl(new URL("/api/auth/sign-in/email", baseUrl), {
     method: "POST",

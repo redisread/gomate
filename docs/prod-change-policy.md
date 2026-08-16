@@ -61,6 +61,10 @@ route 切换，都必须：
 5. 部署 `gomate-production-preview`，保持 `WRITE_MODE=protected` 且不挂生产域名。
 6. 执行 `/api/health`、SSR 页面读取烟测，并用一个认证 mutation 断言
    `503 + WRITE_PROTECTED`；请求必须在进入 Better Auth 前被拦截，不能写 D1。
+   Worker 部署完成后，health/SSR 共用约 2 分钟的 readiness deadline；只对尚未出现应用
+   `X-Request-ID` 的 workers.dev 传播期 `404/523` 与网络失败重试，每次请求不得超过剩余预算。
+   一旦收到其他状态、成功状态但内容类型错误，或认证 mutation 不是精确的
+   `503 + WRITE_PROTECTED`，必须立即失败，禁止用重试掩盖实现错误。
 7. smoke 输出 health 与 protected-mutation 两个 `X-Request-ID`；随后第二个 `production`
    protected-environment job 必须由审批人在 Workers Logs 完成人工证据检查后放行。未审批时
    整个部署工作流保持未完成。
