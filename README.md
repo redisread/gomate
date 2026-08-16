@@ -3,6 +3,8 @@
 > 发现有趣地点，找到同行伙伴
 
 [![Live](https://img.shields.io/badge/Live-gomate.live-blue)](https://gomate.live)
+[![Frontend Deploy](https://github.com/redisread/gomate/actions/workflows/frontend-deploy.yml/badge.svg?branch=main)](https://github.com/redisread/gomate/actions/workflows/frontend-deploy.yml)
+[![API Deploy](https://github.com/redisread/gomate/actions/workflows/api-deploy.yml/badge.svg?branch=main)](https://github.com/redisread/gomate/actions/workflows/api-deploy.yml)
 
 ## 产品定位
 
