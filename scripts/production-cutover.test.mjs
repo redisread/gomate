@@ -248,6 +248,10 @@ test("cutover and rollback workflows are protected and narrowly scoped", () => {
   assert.match(cutover, /gomate\.live/u);
   assert.match(cutover, /observe-production\.mjs/u);
   assert.match(cutover, /production-canary\.mjs/u);
+  assert.match(
+    cutover,
+    /pnpm --filter @gomate\/frontend worker:dry-run\s+pnpm --filter @gomate\/frontend worker:size/u,
+  );
   assert.doesNotMatch(
     cutover,
     /migrations apply|seed\.sql|wrangler\s+r2|wrangler\s+kv/iu,

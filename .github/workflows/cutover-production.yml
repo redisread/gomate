@@ -46,7 +46,7 @@ jobs:
           pnpm i18n:build
           pnpm --filter @gomate/frontend worker:types:check
           pnpm --filter @gomate/frontend build
-          node scripts/prepare-worker-output.mjs
+          pnpm --filter @gomate/frontend worker:dry-run
           pnpm --filter @gomate/frontend worker:size
       - name: Prove gomate.live still targets the reviewed legacy Worker
         env:
