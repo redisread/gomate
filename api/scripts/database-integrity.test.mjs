@@ -64,6 +64,52 @@ function seedTeam(db, now, maxMembers = 2) {
   `).run(now + 60_000, now + 120_000, maxMembers, now, now);
 }
 
+function reproduceProductionChildForeignKeyDrift(db) {
+  db.pragma("foreign_keys = OFF");
+  db.exec(`
+    CREATE TABLE __production_team_members (
+      id TEXT PRIMARY KEY NOT NULL,
+      team_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      status TEXT DEFAULT 'pending' NOT NULL,
+      joined_at INTEGER,
+      status_updated_at INTEGER,
+      extra TEXT,
+      created_at INTEGER NOT NULL,
+      actor_api_key_id TEXT
+    );
+    INSERT INTO __production_team_members SELECT * FROM team_members;
+    DROP TABLE team_members;
+    ALTER TABLE __production_team_members RENAME TO team_members;
+    CREATE INDEX team_members_team_idx ON team_members (team_id);
+    CREATE INDEX team_members_user_idx ON team_members (user_id);
+    CREATE INDEX team_members_team_status_idx ON team_members (team_id, status);
+    CREATE UNIQUE INDEX team_members_team_user_idx ON team_members (team_id, user_id);
+    CREATE INDEX team_members_actor_api_key_id_idx ON team_members (actor_api_key_id);
+
+    CREATE TABLE __production_conversations (
+      id TEXT PRIMARY KEY NOT NULL,
+      team_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      leader_id TEXT NOT NULL,
+      initiator_id TEXT NOT NULL,
+      last_message_content TEXT,
+      last_message_at INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    INSERT INTO __production_conversations SELECT * FROM conversations;
+    DROP TABLE conversations;
+    ALTER TABLE __production_conversations RENAME TO conversations;
+    CREATE INDEX conversations_team_idx ON conversations (team_id);
+    CREATE INDEX conversations_user_idx ON conversations (user_id);
+    CREATE INDEX conversations_leader_idx ON conversations (leader_id);
+    CREATE UNIQUE INDEX conversations_participant_idx ON conversations (team_id, user_id);
+    CREATE INDEX conversations_last_msg_idx ON conversations (last_message_at);
+  `);
+  db.pragma("foreign_keys = ON");
+}
+
 describe("replayed migration database integrity", () => {
   let db;
 
@@ -88,11 +134,12 @@ describe("replayed migration database integrity", () => {
       .toThrow(/FOREIGN KEY constraint failed/u);
   });
 
-  it("preserves team child rows when D1 keeps foreign keys enabled during the rebuild", () => {
+  it("repairs production child foreign-key drift without losing or duplicating rows", () => {
     db.close();
     const allFiles = readdirSync(migrationsDir).filter((name) => name.endsWith(".sql")).sort();
     const integrityFile = allFiles.at(-1);
     db = createMigratedDatabase(allFiles.slice(0, -1));
+    reproduceProductionChildForeignKeyDrift(db);
     const now = seedCore(db);
     seedTeam(db, now);
 
@@ -113,13 +160,31 @@ describe("replayed migration database integrity", () => {
         id, team_id, location_id, author_id, content, images, status, created_at, updated_at
       ) VALUES ('post-1', 'team-1', 'location-1', 'member', '保留动态', '[]', 'visible', ?, ?)
     `).run(now, now);
+    db.prepare(`
+      INSERT INTO conversations (id, team_id, user_id, leader_id, initiator_id, created_at, updated_at)
+      VALUES ('orphan-conversation', 'deleted-team', 'member', 'leader', 'member', ?, ?)
+    `).run(now, now);
+    db.prepare(`
+      INSERT INTO messages (id, conversation_id, sender_id, content, is_read, created_at)
+      VALUES ('orphan-message', 'orphan-conversation', 'member', '应随孤儿会话清理', 0, ?)
+    `).run(now);
 
     const expectChildrenPreserved = () => {
       expect(db.prepare("SELECT id FROM team_members WHERE id = 'membership-1'").get()).toBeTruthy();
       expect(db.prepare("SELECT id FROM conversations WHERE id = 'conversation-1'").get()).toBeTruthy();
       expect(db.prepare("SELECT id FROM messages WHERE id = 'message-1'").get()).toBeTruthy();
       expect(db.prepare("SELECT id FROM activity_posts WHERE id = 'post-1'").get()).toBeTruthy();
+      expect(db.prepare("SELECT id FROM conversations WHERE id = 'orphan-conversation'").get()).toBeUndefined();
+      expect(db.prepare("SELECT id FROM messages WHERE id = 'orphan-message'").get()).toBeUndefined();
       expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+      expect(db.prepare("PRAGMA foreign_key_list('team_members')").all()).toEqual(expect.arrayContaining([
+        expect.objectContaining({ from: "team_id", table: "teams", on_delete: "CASCADE" }),
+        expect.objectContaining({ from: "user_id", table: "users", on_delete: "CASCADE" }),
+      ]));
+      expect(db.prepare("PRAGMA foreign_key_list('conversations')").all()).toEqual(expect.arrayContaining([
+        expect.objectContaining({ from: "team_id", table: "teams", on_delete: "CASCADE" }),
+        expect.objectContaining({ from: "user_id", table: "users", on_delete: "NO ACTION" }),
+      ]));
     };
 
     applyMigrationWithD1ForeignKeySemantics(db, integrityFile);
