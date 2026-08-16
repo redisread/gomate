@@ -85,7 +85,7 @@
         {
           "binding": "DB",
           "database_name": "gomate-db-v2",
-          "database_id": "REPLACE_IN_BINDINGS_PR",
+          "database_id": "befa3d89-6551-4a25-8a1c-670efe62a315",
           "migrations_dir": "../api/db/migrations"
         }
       ],
@@ -98,7 +98,7 @@
       "kv_namespaces": [
         {
           "binding": "CACHE_KV",
-          "id": "REPLACE_IN_BINDINGS_PR"
+          "id": "f9904d1fa72140c18067e07d541ca92b"
         }
       ],
       "ratelimits": [
