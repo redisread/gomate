@@ -81,6 +81,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           EXPECTED_DOMAIN_SERVICE: gomate-frontend
+          DOMAIN_ASSERT_TIMEOUT_MS: "120000"
+          DOMAIN_ASSERT_RETRY_DELAY_MS: "5000"
         run: node scripts/production-domain.mjs assert
       - name: Record rollback evidence
         run: |
