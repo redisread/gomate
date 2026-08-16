@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Remove only the preview secrets file created inside the GitHub runner temp. */
+/** Remove only an approved ephemeral Wrangler secrets file in the runner temp. */
 
 import { rmSync } from "node:fs";
 import path from "node:path";
@@ -10,10 +10,20 @@ if (!runnerTemp || !secretsFile) {
   throw new Error("RUNNER_TEMP and SECRETS_FILE are required");
 }
 
-const expected = path.join(path.resolve(runnerTemp), "gomate-worker-secrets.json");
-if (path.resolve(secretsFile) !== expected) {
-  throw new Error("Refusing to remove a secrets file outside the exact runner temp target");
+const allowedNames = new Set([
+  "gomate-worker-secrets.json",
+  "gomate-production-secrets.json",
+]);
+const resolvedRunnerTemp = path.resolve(runnerTemp);
+const resolvedSecretsFile = path.resolve(secretsFile);
+if (
+  path.dirname(resolvedSecretsFile) !== resolvedRunnerTemp ||
+  !allowedNames.has(path.basename(resolvedSecretsFile))
+) {
+  throw new Error(
+    "Refusing to remove a secrets file outside the exact runner temp target",
+  );
 }
 
-rmSync(expected, { force: true });
+rmSync(resolvedSecretsFile, { force: true });
 console.log("Removed the ephemeral Wrangler secrets file.");

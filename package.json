@@ -30,7 +30,7 @@
     "i18n:gen-types": "node scripts/gen-i18n-types.mjs",
     "i18n:build": "tsx scripts/build-locales.ts",
     "check:legacy-removal": "node scripts/check-legacy-removal.mjs",
-    "test:delivery": "node --test scripts/check-legacy-removal.test.mjs scripts/deployment-guards.test.mjs scripts/promote-admin.test.mjs scripts/region-bootstrap-contract.test.mjs scripts/reset-local-db.test.mjs",
+    "test:delivery": "node --test scripts/check-legacy-removal.test.mjs scripts/deployment-guards.test.mjs scripts/production-cutover.test.mjs scripts/promote-admin.test.mjs scripts/region-bootstrap-contract.test.mjs scripts/reset-local-db.test.mjs",
     "prepare": "husky",
     "dev:wt": "node scripts/init-worktree.mjs && node scripts/start-worktree.mjs",
     "init:worktree": "node scripts/init-worktree.mjs"

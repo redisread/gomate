@@ -1,0 +1,126 @@
+#!/usr/bin/env node
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+
+const API_ROOT = "https://api.cloudflare.com/client/v4";
+const ZONE_ID = "0b714cd4257332034b3c4c0c099feb9e";
+const ALLOWED_SERVICES = new Set([
+  "gomate-frontend",
+  "gomate-production-preview",
+]);
+
+function required(value, label) {
+  const result = value?.trim();
+  if (!result) throw new Error(`${label} is required`);
+  return result;
+}
+
+async function cloudflareRequest({ accountId, apiToken, fetchImpl, init }) {
+  const response = await fetchImpl(
+    `${API_ROOT}/accounts/${encodeURIComponent(accountId)}/workers/domains`,
+    {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        ...(init?.body ? { "content-type": "application/json" } : {}),
+      },
+    },
+  );
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || payload?.success !== true) {
+    throw new Error(
+      `Cloudflare custom-domain request failed (${response.status})`,
+    );
+  }
+  return payload.result;
+}
+
+export async function assertProductionDomain({
+  accountId = process.env.CLOUDFLARE_ACCOUNT_ID,
+  apiToken = process.env.CLOUDFLARE_API_TOKEN,
+  expectedService = process.env.EXPECTED_DOMAIN_SERVICE,
+  fetchImpl = fetch,
+} = {}) {
+  accountId = required(accountId, "CLOUDFLARE_ACCOUNT_ID");
+  apiToken = required(apiToken, "CLOUDFLARE_API_TOKEN");
+  expectedService = required(expectedService, "EXPECTED_DOMAIN_SERVICE");
+  if (!ALLOWED_SERVICES.has(expectedService)) {
+    throw new Error("EXPECTED_DOMAIN_SERVICE is not an approved Worker");
+  }
+  const domains = await cloudflareRequest({ accountId, apiToken, fetchImpl });
+  if (!Array.isArray(domains)) {
+    throw new Error("Cloudflare custom-domain inventory is invalid");
+  }
+  const matches = domains.filter(
+    (domain) => domain?.hostname === "gomate.live",
+  );
+  if (
+    matches.length !== 1 ||
+    matches[0]?.service !== expectedService ||
+    matches[0]?.zone_id !== ZONE_ID
+  ) {
+    throw new Error(
+      "gomate.live is not attached to the expected Worker and zone",
+    );
+  }
+  console.log(`Verified gomate.live is attached to ${expectedService}.`);
+  return matches[0];
+}
+
+export async function attachProductionDomain({
+  accountId = process.env.CLOUDFLARE_ACCOUNT_ID,
+  apiToken = process.env.CLOUDFLARE_API_TOKEN,
+  service = process.env.TARGET_DOMAIN_SERVICE,
+  fetchImpl = fetch,
+} = {}) {
+  accountId = required(accountId, "CLOUDFLARE_ACCOUNT_ID");
+  apiToken = required(apiToken, "CLOUDFLARE_API_TOKEN");
+  service = required(service, "TARGET_DOMAIN_SERVICE");
+  if (!ALLOWED_SERVICES.has(service)) {
+    throw new Error("TARGET_DOMAIN_SERVICE is not an approved Worker");
+  }
+  const result = await cloudflareRequest({
+    accountId,
+    apiToken,
+    fetchImpl,
+    init: {
+      method: "PUT",
+      body: JSON.stringify({
+        hostname: "gomate.live",
+        service,
+        zone_id: ZONE_ID,
+      }),
+    },
+  });
+  if (
+    result?.hostname !== "gomate.live" ||
+    result?.service !== service ||
+    result?.zone_id !== ZONE_ID
+  ) {
+    throw new Error(
+      "Cloudflare returned an unexpected custom-domain attachment",
+    );
+  }
+  console.log(`Attached gomate.live to ${service}.`);
+}
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+) {
+  const command = process.argv[2];
+  const operation =
+    command === "assert"
+      ? assertProductionDomain
+      : command === "attach"
+        ? attachProductionDomain
+        : null;
+  if (!operation) {
+    console.error("Usage: production-domain.mjs assert|attach");
+    process.exit(1);
+  }
+  operation().catch((error) => {
+    console.error(`[production-domain] ${error.message}`);
+    process.exit(1);
+  });
+}

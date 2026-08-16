@@ -112,13 +112,13 @@ function isProductionLoggerSource(filePath) {
 }
 
 function isLoggerModuleSpecifier(node) {
-  return (
-    ts.isStringLiteral(node) && LOGGER_MODULE_PATTERN.test(node.text)
-  );
+  return ts.isStringLiteral(node) && LOGGER_MODULE_PATTERN.test(node.text);
 }
 
 function sourceLine(sourceFile, node) {
-  return sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+  return (
+    sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1
+  );
 }
 
 function loggerViolation(sourceFile, node, message) {
@@ -149,7 +149,9 @@ function isNonReferencePropertyName(node) {
 }
 
 function analyzeLoggerSource(fileName, source) {
-  const scriptKind = fileName.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const scriptKind = fileName.endsWith(".tsx")
+    ? ts.ScriptKind.TSX
+    : ts.ScriptKind.TS;
   const sourceFile = ts.createSourceFile(
     fileName,
     source,
@@ -252,7 +254,10 @@ function analyzeLoggerSource(fileName, source) {
         );
         return;
       }
-      if (!ts.isPropertyAccessExpression(access) || access.expression !== node) {
+      if (
+        !ts.isPropertyAccessExpression(access) ||
+        access.expression !== node
+      ) {
         violations.push(
           loggerViolation(
             sourceFile,
@@ -424,7 +429,9 @@ test("validates the exact protected preview invariants", async (t) => {
     const { builtConfigPath, configPath, directory } = validConfigPaths();
     t.after(() => rmSync(directory, { recursive: true, force: true }));
     assert.doesNotThrow(() => validatePreviewDeploy({ configPath }));
-    assert.doesNotThrow(() => validateBuiltPreview({ configPath: builtConfigPath }));
+    assert.doesNotThrow(() =>
+      validateBuiltPreview({ configPath: builtConfigPath }),
+    );
   });
 });
 
@@ -496,7 +503,8 @@ test("logger event AST guard rejects indirect and dynamic call shapes", () => {
     },
     {
       name: "aliased import",
-      source: 'import { logger as log } from "../lib/logger";\nlog.error("stable_event");',
+      source:
+        'import { logger as log } from "../lib/logger";\nlog.error("stable_event");',
     },
     {
       name: "template event",
@@ -509,7 +517,10 @@ test("logger event AST guard rejects indirect and dynamic call shapes", () => {
   ];
 
   for (const fixture of invalidFixtures) {
-    const result = analyzeLoggerSource(`fixture-${fixture.name}.tsx`, fixture.source);
+    const result = analyzeLoggerSource(
+      `fixture-${fixture.name}.tsx`,
+      fixture.source,
+    );
     assert.notDeepEqual(result.violations, [], fixture.name);
   }
 });
@@ -537,8 +548,7 @@ test("fails closed when a production route targets the preview Worker", async ()
       if (url.pathname.endsWith("/workers/subdomain")) {
         result = { subdomain: "example" };
       } else if (
-        url.pathname ===
-        "/client/v4/zones/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        url.pathname === "/client/v4/zones/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
       ) {
         result = { name: "gomate.live" };
       } else if (url.pathname === "/client/v4/zones") {
@@ -558,9 +568,7 @@ test("fails closed when a production route targets the preview Worker", async ()
       return Response.json({
         success: true,
         result,
-        ...(Array.isArray(result)
-          ? { result_info: { total_pages: 1 } }
-          : {}),
+        ...(Array.isArray(result) ? { result_info: { total_pages: 1 } } : {}),
       });
     };
     try {
@@ -579,9 +587,12 @@ test("protected preview smoke requires correlated request IDs", async () => {
   const fetchImpl = async (input, init) => {
     const url = new URL(input);
     if (url.pathname === "/api/health") {
-      return Response.json({ status: "ok" }, {
-        headers: { "x-request-id": requestId },
-      });
+      return Response.json(
+        { status: "ok" },
+        {
+          headers: { "x-request-id": requestId },
+        },
+      );
     }
     if (url.pathname === "/") {
       return new Response("<!doctype html>", {
@@ -635,7 +646,8 @@ test("protected preview smoke waits through transient workers.dev propagation", 
     if (url.pathname === "/api/health") {
       healthAttempts += 1;
       if (healthAttempts === 1) throw new Error("network not ready");
-      if (healthAttempts === 2) return new Response("not ready", { status: 523 });
+      if (healthAttempts === 2)
+        return new Response("not ready", { status: 523 });
       return Response.json(
         { status: "ok" },
         { headers: { "x-request-id": requestId } },
@@ -789,9 +801,18 @@ test("deploy workflow blocks completion on post-smoke observability approval", (
   );
 
   assert.match(workflow, /id: preview_smoke/u);
-  assert.match(workflow, /health_request_id:.*preview_smoke\.outputs\.health_request_id/u);
-  assert.match(workflow, /blocked_request_id:.*preview_smoke\.outputs\.blocked_request_id/u);
-  assert.match(workflow, /observability-approval:[\s\S]*needs: deploy-preview/u);
+  assert.match(
+    workflow,
+    /health_request_id:.*preview_smoke\.outputs\.health_request_id/u,
+  );
+  assert.match(
+    workflow,
+    /blocked_request_id:.*preview_smoke\.outputs\.blocked_request_id/u,
+  );
+  assert.match(
+    workflow,
+    /observability-approval:[\s\S]*needs: deploy-preview/u,
+  );
   assert.match(
     workflow,
     /observability-approval:[\s\S]*environment: production[\s\S]*Require request-correlation evidence/u,
@@ -809,8 +830,7 @@ test("fails closed when the preview Worker targets another account zone", async 
       if (url.pathname.endsWith("/workers/subdomain")) {
         result = { subdomain: "example" };
       } else if (
-        url.pathname ===
-        "/client/v4/zones/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        url.pathname === "/client/v4/zones/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
       ) {
         result = { name: "gomate.live" };
       } else if (url.pathname === "/client/v4/zones") {
@@ -840,9 +860,7 @@ test("fails closed when the preview Worker targets another account zone", async 
       return Response.json({
         success: true,
         result,
-        ...(Array.isArray(result)
-          ? { result_info: { total_pages: 1 } }
-          : {}),
+        ...(Array.isArray(result) ? { result_info: { total_pages: 1 } } : {}),
       });
     };
     try {
@@ -873,7 +891,9 @@ test("writes a private ephemeral Wrangler secrets file", async (t) => {
 });
 
 test("cleanup script removes only the exact runner temp secrets file", (t) => {
-  const directory = mkdtempSync(path.join(os.tmpdir(), "gomate-secrets-cleanup-"));
+  const directory = mkdtempSync(
+    path.join(os.tmpdir(), "gomate-secrets-cleanup-"),
+  );
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const outputPath = path.join(directory, "gomate-worker-secrets.json");
   writeFileSync(outputPath, "{}\n");
@@ -881,9 +901,24 @@ test("cleanup script removes only the exact runner temp secrets file", (t) => {
   assert.equal(result.status, 0, result.stderr);
   assert.equal(existsSync(outputPath), false);
 
-  const refused = spawnCleanup(directory, path.join(directory, "different.json"));
+  const refused = spawnCleanup(
+    directory,
+    path.join(directory, "different.json"),
+  );
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /Refusing to remove/u);
+});
+
+test("cleanup script accepts the exact production runner temp secrets file", (t) => {
+  const directory = mkdtempSync(
+    path.join(os.tmpdir(), "gomate-production-secret-"),
+  );
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const outputPath = path.join(directory, "gomate-production-secrets.json");
+  writeFileSync(outputPath, "{}\n", { mode: 0o600 });
+  const result = spawnCleanup(directory, outputPath);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(existsSync(outputPath), false);
 });
 
 function spawnCleanup(runnerTemp, secretsFile) {
@@ -963,7 +998,9 @@ test("protected binding provisioning workflow is narrowly scoped", () => {
     [...workflow.matchAll(/wrangler\s+d1\s+create\s+gomate-db-v2\b/gu)].length,
     1,
   );
-  for (const command of workflow.matchAll(/wrangler\s+d1\s+(?:list|create)[^\n]*/gu)) {
+  for (const command of workflow.matchAll(
+    /wrangler\s+d1\s+(?:list|create)[^\n]*/gu,
+  )) {
     assert.match(command[0], /--env\s+production/u);
   }
   assert.match(
@@ -1012,7 +1049,10 @@ test("protected binding provisioning workflow is narrowly scoped", () => {
     workflow,
     /Resolve and validate binding IDs[\s\S]*if:\s*always\(\)/u,
   );
-  assert.match(workflow, /Record reviewed resource IDs[\s\S]*if:\s*always\(\)/u);
+  assert.match(
+    workflow,
+    /Record reviewed resource IDs[\s\S]*if:\s*always\(\)/u,
+  );
   assert.match(workflow, /Upload binding ID evidence[\s\S]*if:\s*always\(\)/u);
   assert.match(workflow, /PROVISION_STATUS/u);
 });
