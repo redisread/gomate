@@ -739,3 +739,123 @@ function spawnCleanup(runnerTemp, secretsFile) {
     env: { ...process.env, RUNNER_TEMP: runnerTemp, SECRETS_FILE: secretsFile },
   });
 }
+
+test("protected binding provisioning workflow is narrowly scoped", () => {
+  const workflow = readFileSync(
+    path.join(
+      PROJECT_ROOT,
+      ".github",
+      "workflows",
+      "provision-v2-bindings.yml",
+    ),
+    "utf8",
+  );
+
+  assert.match(
+    workflow,
+    /workflow_dispatch:[\s\S]*inputs:[\s\S]*PROVISION_BINDINGS/u,
+  );
+  assert.doesNotMatch(
+    workflow,
+    /^ {2}(?:push|pull_request|schedule|workflow_run):/mu,
+  );
+  assert.match(
+    workflow,
+    /if:.*inputs\.confirm\s*==\s*'PROVISION_BINDINGS'.*github\.ref\s*==\s*'refs\/heads\/main'/u,
+  );
+  assert.match(workflow, /environment:\s*production/u);
+  assert.match(workflow, /CLOUDFLARE_ENV:\s*production/u);
+  const jobEnv = workflow.slice(
+    workflow.indexOf("    env:"),
+    workflow.indexOf("    steps:"),
+  );
+  assert.doesNotMatch(
+    jobEnv,
+    /secrets\./u,
+    "production secrets must not be exposed to checkout or dependency installation",
+  );
+  assert.match(
+    workflow,
+    /CLOUDFLARE_API_TOKEN:\s*\$\{\{\s*secrets\.CLOUDFLARE_API_TOKEN\s*\}\}/u,
+  );
+  assert.match(
+    workflow,
+    /CLOUDFLARE_ACCOUNT_ID:\s*\$\{\{\s*secrets\.CLOUDFLARE_ACCOUNT_ID\s*\}\}/u,
+  );
+  for (const secret of [
+    "CLOUDFLARE_ZONE_ID",
+    "BETTER_AUTH_SECRET",
+    "RESEND_API_KEY",
+    "PREVIEW_APP_URL",
+  ]) {
+    assert.match(
+      workflow,
+      new RegExp(
+        `${secret}:\\s*\\$\\{\\{\\s*secrets\\.${secret}\\s*\\}\\}`,
+        "u",
+      ),
+    );
+  }
+
+  const d1List = workflow.search(/wrangler\s+d1\s+list/u);
+  const d1Create = workflow.search(
+    /wrangler\s+d1\s+create\s+gomate-db-v2\s+--location\s+apac/u,
+  );
+  assert.ok(d1List >= 0 && d1List < d1Create);
+  assert.equal(
+    [...workflow.matchAll(/wrangler\s+d1\s+create\s+gomate-db-v2\b/gu)].length,
+    1,
+  );
+  for (const command of workflow.matchAll(/wrangler\s+d1\s+(?:list|create)[^\n]*/gu)) {
+    assert.match(command[0], /--env\s+production/u);
+  }
+  assert.match(
+    workflow.slice(d1List, d1Create),
+    /gomate-db-v2[\s\S]*exit(?:\s+|\()1\)?/u,
+  );
+
+  const kvList = workflow.search(/wrangler\s+kv\s+namespace\s+list/u);
+  const kvCreate = workflow.search(
+    /wrangler\s+kv\s+namespace\s+create\s+gomate-cache-v2/u,
+  );
+  assert.ok(kvList >= 0 && kvList < kvCreate);
+  assert.equal(
+    [
+      ...workflow.matchAll(
+        /wrangler\s+kv\s+namespace\s+create\s+gomate-cache-v2\b/gu,
+      ),
+    ].length,
+    1,
+  );
+  for (const command of workflow.matchAll(
+    /wrangler\s+kv\s+namespace\s+list[^\n]*/gu,
+  )) {
+    assert.match(command[0], /--env\s+production/u);
+  }
+  assert.match(
+    workflow.slice(kvList, kvCreate),
+    /gomate-cache-v2[\s\S]*exit(?:\s+|\()1\)?/u,
+  );
+
+  assert.doesNotMatch(
+    workflow,
+    /wrangler\s+(?:d1\s+(?:migrations?|execute)|deploy|secret|r2|route|domain)/u,
+  );
+  assert.doesNotMatch(workflow, /--update-config/u);
+  assert.doesNotMatch(
+    workflow,
+    /kv\s+namespace\s+create\s+gomate-cache-v2[^\n]*--env/u,
+  );
+  assert.doesNotMatch(workflow, /api\.cloudflare\.com\/client\/v4/u);
+  assert.match(workflow, /D1_DATABASE_ID/u);
+  assert.match(workflow, /KV_NAMESPACE_ID/u);
+  assert.match(workflow, /actions\/upload-artifact@v4/u);
+  assert.match(workflow, /GITHUB_STEP_SUMMARY/u);
+  assert.match(
+    workflow,
+    /Resolve and validate binding IDs[\s\S]*if:\s*always\(\)/u,
+  );
+  assert.match(workflow, /Record reviewed resource IDs[\s\S]*if:\s*always\(\)/u);
+  assert.match(workflow, /Upload binding ID evidence[\s\S]*if:\s*always\(\)/u);
+  assert.match(workflow, /PROVISION_STATUS/u);
+});

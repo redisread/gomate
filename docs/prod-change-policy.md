@@ -22,19 +22,29 @@ route 切换，都必须：
 3. 通过 GitHub `production` protected environment；
 4. Astro/Vite 构建通过 job 级 `CLOUDFLARE_ENV=production` 固定环境，构建后由
    Wrangler 自动读取 `dist/server/wrangler.json`；仅 D1、类型生成等直接读取源
-   Wrangler 配置的命令显式使用 `--env production`，禁止依赖默认环境；
+   Wrangler 配置的命令显式使用 `--env production`，禁止依赖默认环境。阶段 A 的 KV
+   namespace 创建是唯一例外：工作流仍固定 `CLOUDFLARE_ENV=production`，但不得传
+   `--env production`，否则 Wrangler 会把环境前缀加入经审查的精确 namespace 名称；
 5. 完成后记录资源 ID、Worker version 与验证证据。
 
 ## 3. 两阶段发布
 
 ### 阶段 A：绑定 PR
 
-1. 创建新的 D1 `gomate-db-v2` 与 KV namespace；R2 复用是否可行须单独确认。
-2. 使用 Wrangler `--update-config` 写入资源 ID，或只手工修改
+1. 先创建 GitHub `production` protected environment：deployment branch policy 仅允许
+   `main`，至少配置一名 required reviewer，并把 Cloudflare token/account/zone、Better Auth
+   secret、Resend key 与精确 preview workers.dev origin 六项全部保存为 environment secrets；
+   不得继续依赖 repository secrets 作为生产发布凭据。
+2. 只能从 `main` 手动运行 `Provision unified Worker V2 bindings`，输入
+   `PROVISION_BINDINGS`，在 `production` environment 审批后创建 D1 `gomate-db-v2`
+   （APAC location hint）与 KV `gomate-cache-v2`。工作流必须先确认两个精确名称均不存在，
+   且不得迁移 D1、部署 Worker、修改 secret/R2/route/domain；若只成功创建一个资源，保留它并
+   停止，禁止自动删除，后续清理仍需另一次显式批准。
+3. R2 复用 `gomate`：阶段 A 只记录账号、APAC location 与公开域名的只读证据，不写入或
+   删除对象。
+4. 使用 Wrangler `--update-config` 写入资源 ID，或只手工修改
    `frontend/wrangler.jsonc` 中的 `REPLACE_IN_BINDINGS_PR`。
-3. 以单独 PR 审查精确 ID；该 PR 不加入生产 route。
-4. 配置 GitHub protected environment secrets：Cloudflare token/account/zone、
-   Better Auth secret、Resend key 与精确 preview workers.dev origin。
+5. 以单独 PR 审查精确 ID；该 PR 不加入生产 route，也不执行 migration/deploy。
 
 占位符存在时，`.github/workflows/deploy.yml` 必须 fail closed。
 
