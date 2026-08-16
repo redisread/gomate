@@ -90,6 +90,19 @@ route 变更必须是 preview 验证后的独立、受保护操作。切换前�
 `https://gomate.live`；切换后再把 `WRITE_MODE` 改为 `open`。这两项不得随首次
 preview 部署自动发生。
 
+从 `main` 手动运行 `Cut over unified Worker production` 并输入 `CUTOVER_PRODUCTION`。
+流水线先证明 `gomate.live` 仍属于旧 `gomate-frontend`，再用 environment secret
+`PRODUCTION_APP_URL=https://gomate.live` 将同一 unified Worker 以 `WRITE_MODE=protected`
+挂为 custom domain。受保护读/SSR/写阻断与 Workers Logs 证据通过后，连续 30 分钟只读观察；
+第二次 production approval 后才部署 `WRITE_MODE=open`，执行一次可清理的注册、邮箱确认、
+登录、session、资料写入、退出 canary，随后按精确 canary email 删除测试账号并证明计数为 0。
+开放写入的日志证据审批后再连续观察 30 分钟。任一阶段失败都停止后续 job。
+
+回滚只允许从 `main` 手动运行 `Roll back unified Worker production cutover` 并输入
+`ROLLBACK_PRODUCTION`：先把 unified Worker 恢复为 `WRITE_MODE=protected`，确认 503 写阻断，
+再通过 Cloudflare Workers custom-domain API 把 `gomate.live` 精确重新附加到
+`gomate-frontend`。回滚不删除 V2 D1、KV、R2、Worker、版本或 secrets。
+
 ## 4. 回滚
 
 - 应用回滚：核实 Worker deployment/version 对应的 commit 后，回滚到已验证版本。

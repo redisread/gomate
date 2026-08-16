@@ -1,0 +1,240 @@
+name: Cut over unified Worker production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type CUTOVER_PRODUCTION to route gomate.live, observe, then open writes
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unified-worker-production-cutover
+  cancel-in-progress: false
+
+jobs:
+  cutover-protected:
+    name: Route gomate.live with writes protected
+    if: inputs.confirm == 'CUTOVER_PRODUCTION' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      CLOUDFLARE_ENV: production
+    outputs:
+      health_request_id: ${{ steps.smoke.outputs.health_request_id }}
+      blocked_request_id: ${{ steps.smoke.outputs.blocked_request_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validate source and build protected production output
+        run: |
+          pnpm audit --prod --audit-level high
+          pnpm check:legacy-removal
+          pnpm test:delivery
+          pnpm --filter @gomate/api check:migrations
+          pnpm i18n:build
+          pnpm --filter @gomate/frontend worker:types:check
+          pnpm --filter @gomate/frontend build
+          node scripts/prepare-worker-output.mjs
+          pnpm --filter @gomate/frontend worker:size
+      - name: Prove gomate.live still targets the reviewed legacy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          EXPECTED_DOMAIN_SERVICE: gomate-frontend
+        run: node scripts/production-domain.mjs assert
+      - name: Prepare protected custom-domain deployment
+        env:
+          PRODUCTION_APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+        run: node scripts/prepare-production-cutover.mjs --mode protected
+      - name: Deploy protected unified Worker to gomate.live
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          PRODUCTION_APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+          SECRETS_FILE: ${{ runner.temp }}/gomate-production-secrets.json
+        run: |
+          node ../scripts/write-production-secrets.mjs
+          pnpm exec wrangler deploy --config dist/server/wrangler.json --secrets-file "$SECRETS_FILE"
+      - name: Remove ephemeral production secrets
+        if: always()
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+          SECRETS_FILE: ${{ runner.temp }}/gomate-production-secrets.json
+        run: node scripts/remove-preview-secrets.mjs
+      - name: Prove gomate.live targets the unified Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          EXPECTED_DOMAIN_SERVICE: gomate-production-preview
+        run: node scripts/production-domain.mjs assert
+      - name: Protected production smoke
+        id: smoke
+        env:
+          PRODUCTION_APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+        run: node scripts/smoke-protected-production.mjs
+
+  protected-observability-approval:
+    name: Protected cutover log evidence approval
+    needs: cutover-protected
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Record protected evidence IDs
+        env:
+          HEALTH_REQUEST_ID: ${{ needs.cutover-protected.outputs.health_request_id }}
+          BLOCKED_REQUEST_ID: ${{ needs.cutover-protected.outputs.blocked_request_id }}
+        run: |
+          test -n "$HEALTH_REQUEST_ID"
+          test -n "$BLOCKED_REQUEST_ID"
+          {
+            echo "### Protected production cutover evidence approved"
+            echo "- Health request: $HEALTH_REQUEST_ID"
+            echo "- Blocked mutation: $BLOCKED_REQUEST_ID"
+            echo "- Reviewer confirmed correlated structured logs contain no canary body or token."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  observe-protected:
+    name: Observe protected production for 30 minutes
+    needs: protected-observability-approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only protected observation
+        env:
+          PRODUCTION_APP_URL: https://gomate.live
+        run: node scripts/observe-production.mjs
+
+  open-writes:
+    name: Open production writes and run controlled canary
+    needs: observe-protected
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      CLOUDFLARE_ENV: production
+      CANARY_EMAIL: stage-c-canary-${{ github.run_id }}@example.invalid
+    outputs:
+      signup_request_id: ${{ steps.canary.outputs.signup_request_id }}
+      signin_request_id: ${{ steps.canary.outputs.signin_request_id }}
+      mutation_request_id: ${{ steps.canary.outputs.mutation_request_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build the reviewed production commit
+        run: |
+          pnpm i18n:build
+          pnpm --filter @gomate/frontend build
+          node scripts/prepare-worker-output.mjs
+      - name: Confirm protected unified Worker owns gomate.live
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          EXPECTED_DOMAIN_SERVICE: gomate-production-preview
+        run: node scripts/production-domain.mjs assert
+      - name: Prepare open custom-domain deployment
+        env:
+          PRODUCTION_APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+        run: node scripts/prepare-production-cutover.mjs --mode open
+      - name: Deploy open unified Worker
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          PRODUCTION_APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+          SECRETS_FILE: ${{ runner.temp }}/gomate-production-secrets.json
+        run: |
+          node ../scripts/write-production-secrets.mjs
+          pnpm exec wrangler deploy --config dist/server/wrangler.json --secrets-file "$SECRETS_FILE"
+      - name: Remove ephemeral production secrets
+        if: always()
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+          SECRETS_FILE: ${{ runner.temp }}/gomate-production-secrets.json
+        run: node scripts/remove-preview-secrets.mjs
+      - name: Controlled auth and mutation canary
+        id: canary
+        env:
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          PRODUCTION_APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+        run: node scripts/production-canary.mjs
+      - name: Remove the exact canary account and prove cleanup
+        if: always()
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CANARY_CLEANUP_SQL: ${{ runner.temp }}/stage-c-canary-cleanup.sql
+          CLEANUP_JSON: ${{ runner.temp }}/stage-c-canary-count.json
+        run: |
+          node ../scripts/write-canary-cleanup-sql.mjs
+          pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --file "$CANARY_CLEANUP_SQL"
+          pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --json --command "SELECT count(*) AS canary_count FROM users WHERE email = '$CANARY_EMAIL'" > "$CLEANUP_JSON"
+          node --input-type=module -e 'const payload=JSON.parse((await import("node:fs")).readFileSync(process.argv[1],"utf8")); if(payload?.[0]?.success!==true || payload[0].results?.[0]?.canary_count!==0) process.exit(1)' "$CLEANUP_JSON"
+
+  open-observability-approval:
+    name: Open canary log evidence approval
+    needs: open-writes
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Record open canary evidence IDs
+        env:
+          SIGNUP_REQUEST_ID: ${{ needs.open-writes.outputs.signup_request_id }}
+          SIGNIN_REQUEST_ID: ${{ needs.open-writes.outputs.signin_request_id }}
+          MUTATION_REQUEST_ID: ${{ needs.open-writes.outputs.mutation_request_id }}
+        run: |
+          test -n "$SIGNUP_REQUEST_ID"
+          test -n "$SIGNIN_REQUEST_ID"
+          test -n "$MUTATION_REQUEST_ID"
+          {
+            echo "### Open production canary evidence approved"
+            echo "- Sign-up request: $SIGNUP_REQUEST_ID"
+            echo "- Sign-in request: $SIGNIN_REQUEST_ID"
+            echo "- Profile mutation: $MUTATION_REQUEST_ID"
+            echo "- Reviewer confirmed structured logs and exact canary cleanup."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  observe-open:
+    name: Observe open production for 30 minutes
+    needs: open-observability-approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only open-write observation
+        env:
+          PRODUCTION_APP_URL: https://gomate.live
+        run: node scripts/observe-production.mjs
+      - name: Record completed rollout boundary
+        run: |
+          {
+            echo "### Unified Worker production rollout complete"
+            echo "- gomate.live serves gomate-production-preview."
+            echo "- WRITE_MODE is open after protected and open 30-minute observations."
+            echo "- Legacy Workers and storage remain retained for the mandatory seven-day window."
+          } >> "$GITHUB_STEP_SUMMARY"
