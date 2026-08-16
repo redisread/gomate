@@ -1,69 +1,56 @@
-<!--
-v3.1 PR Description 模板（gomate 仓库强制）
-
-按 v3.1 SOP（含 Martin CR + Wen 测试两层保护）补全 6 段。空段保留标题即可（按情况补内容）。
--->
-
 ## 目的
 
-> 一句话说清楚"为什么" + "做什么"。不要写"修复 xxx 问题"没头没尾的描述。
+<!-- 一句话说明为什么改、解决什么问题。 -->
 
 ## 改动一览
 
-| 文件 / 模块 | 改动 |
-| ----------- | ---- |
-| ...         | ...  |
+| 模块           | 改动                                                |
+| -------------- | --------------------------------------------------- |
+| Unified Worker | <!-- Astro / Hono / bindings / routes -->           |
+| Database       | <!-- schema / migration / seed / query contract --> |
+| Product        | <!-- frontend / API / i18n -->                      |
+| Delivery       | <!-- scripts / CI / docs -->                        |
 
-> 列**关键改动点**，不是每个文件一行。新增 / 删除 / 修改 大块分区即可。
+## 破坏性变更
 
-## 验收方式（怎么验对）
+- [ ] 无破坏性变更
+- [ ] 有破坏性变更，已在下方说明数据、API 和部署影响
 
-- [ ] **手动验证步骤 1**（必要时附命令）
-- [ ] **手动验证步骤 2**
-- [ ] **回归确认**：本次改动不影响已上线功能 A / B / C
+<!-- 不提供兼容层时，请明确删除的 endpoint、字段、表或运行方式。 -->
 
-## 文件后缀清单 + 运行环境
+## 验证证据
 
-> v3.1 SOP 必填项（Martin CR 基础检查）
+- [ ] `pnpm check:legacy-removal`
+- [ ] `pnpm test:delivery && pnpm audit --prod --audit-level high`
+- [ ] `pnpm --filter @gomate/api lint && pnpm --filter @gomate/api type-check && pnpm --filter @gomate/api build && pnpm --filter @gomate/api test`
+- [ ] `pnpm i18n:build && pnpm --filter @gomate/frontend i18n:validate && pnpm --filter @gomate/frontend lint && pnpm --filter @gomate/frontend type-check && pnpm --filter @gomate/frontend test && pnpm --filter @gomate/frontend build`
+- [ ] `pnpm --filter @gomate/frontend worker:types:check && pnpm --filter @gomate/frontend worker:dry-run && pnpm --filter @gomate/frontend worker:size && pnpm --filter @gomate/frontend worker:startup`
+- [ ] `pnpm e2e:ci`
 
-| 文件                          | 后缀          | 运行环境                | 风险                        |
-| ----------------------------- | ------------- | ----------------------- | --------------------------- |
-| `api/wrangler.toml`           | .toml         | Cloudflare Workers      | wrangler 解析               |
-| `frontend/src/components/...` | .astro / .tsx | Astro 客户端 hydrate    | TS 注释遗留在 Astro 编译 OK |
-| `frontend/public/sw.js`       | .js           | Service Worker (native) | **不能有 TS 类型注解**      |
-| `scripts/...`                 | .mjs / .sh    | node / shell            | 引号 / 路径转义             |
+补充手动验证：
 
-## 「不改某某文件」声明 + 页面层 CSS 扫描
+<!-- 列出真实执行的步骤、结果和未执行项；不要用推断替代证据。 -->
 
-> v3.1 SOP 必填项（避免 PR body 写「不改 index.astro」但被 `:global(body)` 硬编码覆盖）
+## Cloudflare / 数据库影响
 
-- 本 PR 明确**不改**的文件：`api/src/services/foo.ts`、`frontend/src/components/Bar.astro`
-- 已扫页面层 CSS 检查硬编码：无
-- 或：本 PR **改动** `frontend/src/components/Bar.astro` scoped CSS，已确认无 `:global(body)` 残留
+- 远程 D1/KV/R2/secret/route/deploy 是否变化：
+- migration 是否可在全新 D1 重放：
+- production route 是否仍保持 fail-closed：
+- 需要的受保护人工 gate：
 
-## Wen 需验证的场景
+## UI 验证
 
-> v3.1 SOP 必填项（Martin CR 后由 Wen 接续测试）
-
-- [ ] Chrome / Safari / Firefox **三浏览器**视觉对齐（如本 PR 涉及 UI）
-- [ ] `getComputedStyle` 实测：在 homepage / 详情页读 `--bg-primary` 等关键 token
-- [ ] Lighthouse a11y / perf 分数未退化（如本 PR 涉及 UI）
-- [ ] Service Worker 注册 + cache 换代（如本 PR 改 public/sw.js）
-- [ ] 移动端 3 列 / 2 列自适应正确（如本 PR 涉及 layout）
-- [ ] reduced-motion 用户 fallback 正确
-- [ ] 线上 prod 验证（如本 PR 影响生产）：`getRegistrations()` + `caches.keys()` + hard reload
+- [ ] 不涉及用户界面
+- [ ] Chrome 桌面端与移动端关键流程已验证
+- [ ] Lighthouse accessibility / performance 未退化或差异已说明
+- [ ] i18n 三种语言 key 已生成并校验
 
 ## 回滚路径
 
-> v3.1 SOP 必填项（明确告诉 Victor / Martin / Wen 出问题怎么 revert）
-
-- `git revert <this-commit>` 无副作用（无 schema / 依赖 / CI 变化）
-- 或：`git reset --hard <last-green-commit>` 回退 dev
-- 或：Feature flag 关闭（如适用）
+<!-- 说明代码、Worker route 和 D1 binding 的独立回滚步骤。禁止用 git reset --hard 作为协作分支回滚方案。 -->
 
 ## 关联
 
-- Slock task: #N（链接 thread）
-- Spec: `notes/<spec>.md` vN
-- 前置 PR: #N
-- 上下游:（受影响服务 / 工具）
+- Spec / ADR：
+- Issue / task：
+- 上下游：

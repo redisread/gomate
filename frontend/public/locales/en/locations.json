@@ -3,7 +3,7 @@
   "pageSubtitle": "Cafes, parks, mountains, coastlines — find your next destination",
   "locationIntro": "Location Intro",
   "locationList": "Locations",
-  "defaultCity": "All",
+  "defaultRegion": "All",
   "viewDetail": "View Details",
   "routeInfo": "Hiking Guide",
   "facilities": "Facilities",
@@ -21,8 +21,8 @@
   "nextImage": "Next Image",
   "paginationPrev": "Previous page",
   "paginationNext": "Next page",
-  "allCities": "All Cities",
-  "cityFilter": "Filter by City",
+  "allRegions": "All Regions",
+  "regionFilter": "Filter by Region",
   "heroTagline": "Cafes, city walks, day trips… find someone to go with",
   "searchPlaceholder": "Cafes, exhibitions, board game bars, mountains… where do you want to go?",
   "tagsLabel": "Explore Tags",
@@ -37,16 +37,16 @@
       "clearBtn": "Clear Search",
       "browseBtn": "Browse All"
     },
-    "noCity": {
-      "title": "No recommendations in「{cityName}」yet",
-      "desc": "No locations here yet — check out other cities",
-      "browseBtn": "Explore Other Cities",
-      "changeBtn": "Change City"
+    "noRegion": {
+      "title": "No recommendations in「{regionName}」yet",
+      "desc": "No locations here yet — check out other regions",
+      "browseBtn": "Explore Other Regions",
+      "changeBtn": "Change Region"
     },
-    "noCitySet": {
-      "title": "City not set",
-      "desc": "Set your city to get personalized location recommendations",
-      "setBtn": "Set My City",
+    "noRegionSet": {
+      "title": "Region not set",
+      "desc": "Set your region to get personalized location recommendations",
+      "setBtn": "Set My Region",
       "browseFirstBtn": "Browse All"
     },
     "tooNarrow": {
@@ -101,5 +101,5 @@
   },
   "mapProvinceCount": "{count} locations",
   "mapNoLocations": "No locations yet",
-  "mapPointCity": "{city} · {province}"
+  "mapPointRegion": "{region} · {province}"
 }

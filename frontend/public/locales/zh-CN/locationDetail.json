@@ -32,11 +32,6 @@
     "openInMap": "在高德地图打开",
     "fallbackHint": "打开地图，查看具体位置和导航路线"
   },
-  "parking": {
-    "title": "停车",
-    "available": "有停车",
-    "noParking": "无停车 · 建议公共交通"
-  },
   "gear": {
     "title": "装备清单",
     "essential": "必带",

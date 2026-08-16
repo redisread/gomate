@@ -13,38 +13,26 @@ export function LocationsClient({ initialData }: { initialData?: LocationsListIn
   const emptyVariant: EmptyStateVariant =
     ctx.searchQuery.length > 0
       ? "noSearch"
-      : ctx.selectedCityId && ctx.locations.length === 0 && !ctx.searchQuery
-      ? "noCity"
-      : !ctx.userCity && !ctx.selectedCityId && !ctx.hasActiveFilters && ctx.locations.length === 0
-      ? "noCitySet"
+      : ctx.selectedRegionId && ctx.locations.length === 0 && !ctx.searchQuery
+      ? "noRegion"
+      : !ctx.userRegionId && !ctx.selectedRegionId && !ctx.hasActiveFilters && ctx.locations.length === 0
+      ? "noRegionSet"
       : "tooNarrow";
 
-  // 点击外部关闭城市下拉
+  // Close the Region menu when focus moves outside it.
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node;
-      const btn = document.querySelector("[data-city-btn]") as Node | null;
-      const dropdown = document.querySelector("[data-city-dropdown]") as Node | null;
+      const btn = document.querySelector("[data-region-btn]") as Node | null;
+      const dropdown = document.querySelector("[data-region-dropdown]") as Node | null;
       if (!btn?.contains(target) && !dropdown?.contains(target)) {
-        ctx.setShowCityDropdown(false);
+        ctx.setShowRegionDropdown(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ctx.setShowCityDropdown]);
-
-  // Sync page to URL
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (ctx.currentPage > 1) {
-      params.set("page", ctx.currentPage.toString());
-    } else {
-      params.delete("page");
-    }
-    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
-    window.history.replaceState({}, "", newUrl);
-  }, [ctx.currentPage]);
+  }, [ctx.setShowRegionDropdown]);
 
   return (
     <main className="min-h-screen bg-stone-50 dark:bg-stone-950">
@@ -52,37 +40,37 @@ export function LocationsClient({ initialData }: { initialData?: LocationsListIn
       <LocationsHero
         activeRole={ctx.activeRole}
         searchQuery={ctx.searchQuery}
-        selectedCityId={ctx.selectedCityId}
+        selectedRegionId={ctx.selectedRegionId}
         selectedTags={ctx.selectedTags}
-        cities={ctx.cities}
+        regions={ctx.regions}
         popularTags={ctx.popularTags}
-        showCityDropdown={ctx.showCityDropdown}
-        cityDropdownPos={ctx.cityDropdownPos}
-        selectedCityName={ctx.selectedCityName}
+        showRegionDropdown={ctx.showRegionDropdown}
+        regionDropdownPos={ctx.regionDropdownPos}
+        selectedRegionName={ctx.selectedRegionName}
         hasActiveFilters={ctx.hasActiveFilters}
         isLoading={ctx.isLoading}
         pagination={ctx.pagination}
         onRoleSelect={ctx.handleRoleSelect}
         onSearchChange={ctx.setSearchQuery}
         onTagToggle={ctx.handleTagToggle}
-        onCitySelect={ctx.handleCitySelect}
+        onRegionSelect={ctx.handleRegionSelect}
         onClearAll={ctx.handleClearAll}
-        onToggleCityDropdown={() => ctx.setShowCityDropdown(!ctx.showCityDropdown)}
-        setCityDropdownPos={ctx.setCityDropdownPos}
+        onToggleRegionDropdown={() => ctx.setShowRegionDropdown(!ctx.showRegionDropdown)}
+        setRegionDropdownPos={ctx.setRegionDropdownPos}
       />
       <section className="py-10 lg:py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <LocationsResultBar
             isLoading={ctx.isLoading}
             pagination={ctx.pagination}
-            selectedCityId={ctx.selectedCityId}
+            selectedRegionId={ctx.selectedRegionId}
             selectedTags={ctx.selectedTags}
             activeRole={ctx.activeRole}
-            selectedCityName={ctx.selectedCityName}
+            selectedRegionName={ctx.selectedRegionName}
             popularTags={ctx.popularTags}
             hasActiveFilters={ctx.hasActiveFilters}
             onRoleSelect={ctx.handleRoleSelect}
-            onCitySelect={ctx.handleCitySelect}
+            onRegionSelect={ctx.handleRegionSelect}
             onTagToggle={ctx.handleTagToggle}
             onClearAll={ctx.handleClearAll}
           />
@@ -96,7 +84,6 @@ export function LocationsClient({ initialData }: { initialData?: LocationsListIn
             query={ctx.searchQuery}
             currentPage={ctx.currentPage}
             onPageChange={ctx.handlePageChange}
-            getPageNumbers={ctx.getPageNumbers}
           />
         </div>
       </section>

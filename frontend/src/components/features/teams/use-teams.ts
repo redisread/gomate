@@ -1,32 +1,31 @@
 import * as React from "react";
-import type { City, Team } from "@/lib/types";
+import type { ActivityType, RecruitmentStatus, Region, Team } from "@/lib/types";
 import { fetchPublicAPI } from "@/lib/api";
-import { fetchAllCities } from "@/lib/cities";
-import { parseTeamDifficultyFilters, parseTeamTagFilters } from "@/lib/team-filter-params";
+import { fetchSelectableRegions } from "@/lib/regions";
+import { parseTeamTagFilters } from "@/lib/team-filter-params";
 import {
   getDateRangeByQuickType,
   getActiveDateQuickType,
 } from "@/lib/date-beijing";
 
 interface TeamsPagination {
-  page?: number;
-  pageSize: number;
+  limit: number;
   total: number;
-  totalPages: number;
-  hasMore?: boolean;
+  nextCursor: string | null;
 }
 
 export interface TeamsInitialData {
   teams: Team[];
   pagination: TeamsPagination;
   availableTags: { id: string; name: string }[];
-  availableCities: City[];
-  citiesComplete?: boolean;
+  tagsComplete?: boolean;
+  availableRegions: Region[];
+  regionsComplete?: boolean;
   filters?: {
     searchQuery: string;
-    currentPage: number;
-    selectedDifficulty: string[];
-    selectedCityId: string;
+    selectedActivityType: ActivityType | "";
+    selectedRecruitmentStatus: RecruitmentStatus | "";
+    selectedRegionId: string;
     startDate: string;
     endDate: string;
     selectedTags: string[];
@@ -36,34 +35,44 @@ export interface TeamsInitialData {
 export function useTeams(initialData?: TeamsInitialData) {
   const initialFilters = initialData?.filters;
   const hasInitialData = Boolean(initialData);
-  const shouldLoadFullCities = !initialData || initialData.citiesComplete === false || initialData.availableCities.length === 0;
+  const shouldLoadTags = !initialData || initialData.tagsComplete === false;
+  const shouldLoadFullRegions = !initialData || initialData.regionsComplete === false || initialData.availableRegions.length === 0;
   const [teams, setTeams] = React.useState<Team[]>(initialData?.teams ?? []);
   const [isLoading, setIsLoading] = React.useState(!initialData);
   const [loadError, setLoadError] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState(initialFilters?.searchQuery ?? "");
-  const [currentPage, setCurrentPage] = React.useState(initialFilters?.currentPage ?? 1);
+  const [currentPage, setCurrentPage] = React.useState(1);
   const [pagination, setPagination] = React.useState<TeamsPagination>(
-    initialData?.pagination ?? { total: 0, totalPages: 0, pageSize: 12 },
+    initialData?.pagination ?? { total: 0, nextCursor: null, limit: 12 },
   );
   const [showFilters, setShowFilters] = React.useState(false);
-  const [selectedDifficulty, setSelectedDifficulty] = React.useState<string[]>(initialFilters?.selectedDifficulty ?? []);
+  const [selectedActivityType, setSelectedActivityType] = React.useState<ActivityType | "">(initialFilters?.selectedActivityType ?? "");
+  const [selectedRecruitmentStatus, setSelectedRecruitmentStatus] = React.useState<RecruitmentStatus | "">(initialFilters?.selectedRecruitmentStatus ?? "open");
   const [startDate, setStartDate] = React.useState(initialFilters?.startDate ?? "");
   const [endDate, setEndDate] = React.useState(initialFilters?.endDate ?? "");
   const [availableTags, setAvailableTags] = React.useState<{ id: string; name: string }[]>(initialData?.availableTags ?? []);
   const [selectedTags, setSelectedTags] = React.useState<string[]>(initialFilters?.selectedTags ?? []);
-  const [availableCities, setAvailableCities] = React.useState<City[]>(initialData?.availableCities ?? []);
-  const [citiesLoading, setCitiesLoading] = React.useState(shouldLoadFullCities);
-  const [citiesError, setCitiesError] = React.useState(false);
-  const [selectedCityId, setSelectedCityId] = React.useState(initialFilters?.selectedCityId ?? "");
+  const [availableRegions, setAvailableRegions] = React.useState<Region[]>(initialData?.availableRegions ?? []);
+  const [regionsLoading, setRegionsLoading] = React.useState(shouldLoadFullRegions);
+  const [regionsError, setRegionsError] = React.useState(false);
+  const [selectedRegionId, setSelectedRegionId] = React.useState(initialFilters?.selectedRegionId ?? "");
   const [urlInitialized, setUrlInitialized] = React.useState(hasInitialData);
   const skipInitialFilterFetchRef = React.useRef(hasInitialData);
   const latestRequestIdRef = React.useRef(0);
   const requestAbortRef = React.useRef<AbortController | null>(null);
-  const citiesAbortRef = React.useRef<AbortController | null>(null);
+  const regionsAbortRef = React.useRef<AbortController | null>(null);
   const filterRequestTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cursorsByPageRef = React.useRef<Map<number, string | null>>(
+    new Map([
+      [1, null],
+      ...(initialData?.pagination.nextCursor
+        ? [[2, initialData.pagination.nextCursor] as const]
+        : []),
+    ]),
+  );
 
   const loadTeams = React.useCallback(
-    async (params: { page?: number; search?: string; difficulty?: string[]; cityId?: string; startDateFrom?: string; startDateTo?: string; tagIds?: string[] }) => {
+    async (params: { cursor?: string | null; targetPage?: number; search?: string; activityType?: ActivityType | ""; recruitmentStatus?: RecruitmentStatus | ""; regionId?: string; startDateFrom?: string; startDateTo?: string; tagIds?: string[] }) => {
       const requestId = ++latestRequestIdRef.current;
       requestAbortRef.current?.abort();
       const controller = new AbortController();
@@ -72,12 +81,12 @@ export function useTeams(initialData?: TeamsInitialData) {
       setLoadError(false);
       try {
         const query = new URLSearchParams();
-        query.set("status", "recruiting");
-        if (params.page) query.set("page", params.page.toString());
-        query.set("pageSize", "12");
+        query.set("limit", "12");
+        if (params.cursor) query.set("cursor", params.cursor);
         if (params.search) query.set("search", params.search);
-        if (params.difficulty?.length) query.set("difficulty", params.difficulty.join(","));
-        if (params.cityId) query.set("cityId", params.cityId);
+        if (params.activityType) query.set("activityType", params.activityType);
+        if (params.recruitmentStatus) query.set("recruitmentStatus", params.recruitmentStatus);
+        if (params.regionId) query.set("regionId", params.regionId);
         if (params.startDateFrom) query.set("startDateFrom", params.startDateFrom);
         if (params.startDateTo) query.set("startDateTo", params.startDateTo);
         if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
@@ -86,7 +95,19 @@ export function useTeams(initialData?: TeamsInitialData) {
         const data = await res.json();
         if (data.success && requestId === latestRequestIdRef.current) {
           setTeams(data.teams || []);
-          setPagination(data.pagination || { total: 0, totalPages: 0, pageSize: 12 });
+          const targetPage = params.targetPage ?? 1;
+          const nextCursor = data.nextCursor ?? null;
+          setCurrentPage(targetPage);
+          setPagination({
+            limit: 12,
+            total: Number(data.total ?? 0),
+            nextCursor,
+          });
+          if (nextCursor) {
+            cursorsByPageRef.current.set(targetPage + 1, nextCursor);
+          } else {
+            cursorsByPageRef.current.delete(targetPage + 1);
+          }
         } else if (requestId === latestRequestIdRef.current) {
           setLoadError(true);
         }
@@ -104,16 +125,25 @@ export function useTeams(initialData?: TeamsInitialData) {
     if (hasInitialData) return;
     const params = new URLSearchParams(window.location.search);
     const q = (params.get("q") || "").slice(0, 120);
-    const page = Math.min(1000, Math.max(1, parseInt(params.get("page") || "1", 10) || 1));
-    const difficulty = parseTeamDifficultyFilters(params.get("difficulty"));
-    const cityId = (params.get("cityId") || "").slice(0, 64);
+    const activityTypeParam = params.get("activityType");
+    const activityType = ["hiking", "explore", "leisure", "travel"].includes(activityTypeParam ?? "")
+      ? activityTypeParam as ActivityType
+      : "";
+    const recruitmentStatusParam = params.get("recruitmentStatus");
+    const recruitmentStatus = recruitmentStatusParam === "all"
+      ? ""
+      : recruitmentStatusParam === "closed"
+        ? "closed"
+        : "open";
+    const regionId = (params.get("regionId") || "").slice(0, 64);
     const timeFilter = params.get("timeFilter") || "";
     const tags = parseTeamTagFilters(params.get("tags"));
 
     setSearchQuery(q);
-    setCurrentPage(page);
-    setSelectedDifficulty(difficulty);
-    setSelectedCityId(cityId);
+    setCurrentPage(1);
+    setSelectedActivityType(activityType);
+    setSelectedRecruitmentStatus(recruitmentStatus);
+    setSelectedRegionId(regionId);
     setSelectedTags(tags);
 
     // 处理时间筛选：优先使用 timeFilter，回退到 startDate/endDate
@@ -137,47 +167,48 @@ export function useTeams(initialData?: TeamsInitialData) {
 
   React.useEffect(() => () => {
     requestAbortRef.current?.abort();
-    citiesAbortRef.current?.abort();
+    regionsAbortRef.current?.abort();
     if (filterRequestTimerRef.current) clearTimeout(filterRequestTimerRef.current);
   }, []);
 
   // 加载可用标签
   React.useEffect(() => {
-    if (initialData?.availableTags) return;
-    fetchPublicAPI("/tags?type=activity")
+    if (!shouldLoadTags) return;
+    fetchPublicAPI("/tags?limit=200")
       .then((r) => r.json())
       .then((data) => { if (data.success && data.tags) setAvailableTags(data.tags); })
       .catch(() => {});
-  }, [initialData?.availableTags]);
+  }, [shouldLoadTags]);
 
-  const loadAllCities = React.useCallback(async () => {
-    citiesAbortRef.current?.abort();
+  const loadAllRegions = React.useCallback(async () => {
+    regionsAbortRef.current?.abort();
     const controller = new AbortController();
-    citiesAbortRef.current = controller;
-    setCitiesLoading(true);
-    setCitiesError(false);
+    regionsAbortRef.current = controller;
+    setRegionsLoading(true);
+    setRegionsError(false);
     try {
-      const cities = await fetchAllCities({ signal: controller.signal });
-      if (!controller.signal.aborted) setAvailableCities(cities);
+      const regions = await fetchSelectableRegions({ signal: controller.signal });
+      if (!controller.signal.aborted) setAvailableRegions(regions);
     } catch {
-      if (!controller.signal.aborted) setCitiesError(true);
+      if (!controller.signal.aborted) setRegionsError(true);
     } finally {
-      if (!controller.signal.aborted) setCitiesLoading(false);
+      if (!controller.signal.aborted) setRegionsLoading(false);
     }
   }, []);
 
   React.useEffect(() => {
-    if (!shouldLoadFullCities) return;
-    loadAllCities();
-    return () => citiesAbortRef.current?.abort();
-  }, [shouldLoadFullCities, loadAllCities]);
+    if (!shouldLoadFullRegions) return;
+    loadAllRegions();
+    return () => regionsAbortRef.current?.abort();
+  }, [shouldLoadFullRegions, loadAllRegions]);
 
-  const updateURL = React.useCallback((page: number) => {
+  const updateURL = React.useCallback(() => {
     const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
-    if (page > 1) params.set("page", page.toString());
-    if (selectedDifficulty.length) params.set("difficulty", selectedDifficulty.join(","));
-    if (selectedCityId) params.set("cityId", selectedCityId);
+    if (selectedActivityType) params.set("activityType", selectedActivityType);
+    if (selectedRecruitmentStatus === "") params.set("recruitmentStatus", "all");
+    else if (selectedRecruitmentStatus !== "open") params.set("recruitmentStatus", selectedRecruitmentStatus);
+    if (selectedRegionId) params.set("regionId", selectedRegionId);
     if (selectedTags.length) params.set("tags", selectedTags.join(","));
 
     // 时间筛选参数：优先使用 timeFilter 快捷选项
@@ -192,7 +223,7 @@ export function useTeams(initialData?: TeamsInitialData) {
 
     const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     window.history.replaceState({}, "", newUrl);
-  }, [searchQuery, selectedDifficulty, selectedCityId, startDate, endDate, selectedTags]);
+  }, [searchQuery, selectedActivityType, selectedRecruitmentStatus, selectedRegionId, startDate, endDate, selectedTags]);
 
   // 搜索防抖
   React.useEffect(() => {
@@ -202,31 +233,35 @@ export function useTeams(initialData?: TeamsInitialData) {
       return;
     }
     setCurrentPage(1);
+    cursorsByPageRef.current = new Map([[1, null]]);
     setIsLoading(true);
     filterRequestTimerRef.current = setTimeout(() => {
-      loadTeams({ page: 1, search: searchQuery, difficulty: selectedDifficulty, cityId: selectedCityId, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
-      updateURL(1);
+      loadTeams({ search: searchQuery, activityType: selectedActivityType, recruitmentStatus: selectedRecruitmentStatus, regionId: selectedRegionId, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
+      updateURL();
     }, 300);
     return () => {
       if (filterRequestTimerRef.current) clearTimeout(filterRequestTimerRef.current);
       filterRequestTimerRef.current = null;
     };
-  }, [urlInitialized, searchQuery, selectedDifficulty, selectedCityId, startDate, endDate, selectedTags, loadTeams, updateURL]);
+  }, [urlInitialized, searchQuery, selectedActivityType, selectedRecruitmentStatus, selectedRegionId, startDate, endDate, selectedTags, loadTeams, updateURL]);
 
 
 
-  const handleDifficultyToggle = React.useCallback((id: string) => {
-    const next = selectedDifficulty.includes(id) ? selectedDifficulty.filter((d) => d !== id) : [...selectedDifficulty, id];
-    setSelectedDifficulty(next);
-  }, [selectedDifficulty]);
+  const handleActivityTypeSelect = React.useCallback((activityType: ActivityType | "") => {
+    setSelectedActivityType(activityType);
+  }, []);
+
+  const handleRecruitmentStatusSelect = React.useCallback((status: RecruitmentStatus | "") => {
+    setSelectedRecruitmentStatus(status);
+  }, []);
 
   const handleTagToggle = React.useCallback((tagId: string) => {
     const next = selectedTags.includes(tagId) ? selectedTags.filter((t) => t !== tagId) : [...selectedTags, tagId];
     setSelectedTags(next);
   }, [selectedTags]);
 
-  const handleCitySelect = React.useCallback((cityId: string) => {
-    setSelectedCityId(cityId);
+  const handleRegionSelect = React.useCallback((regionId: string) => {
+    setSelectedRegionId(regionId);
   }, []);
 
   const handleSearchChange = React.useCallback((query: string) => {
@@ -251,33 +286,37 @@ export function useTeams(initialData?: TeamsInitialData) {
       clearTimeout(filterRequestTimerRef.current);
       filterRequestTimerRef.current = null;
     }
-    setCurrentPage(page);
-    loadTeams({ page, search: searchQuery, difficulty: selectedDifficulty, cityId: selectedCityId, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
-    updateURL(page);
+    const cursor = cursorsByPageRef.current.get(page);
+    if (page < 1 || cursor === undefined) return;
+    loadTeams({ cursor, targetPage: page, search: searchQuery, activityType: selectedActivityType, recruitmentStatus: selectedRecruitmentStatus, regionId: selectedRegionId, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [searchQuery, selectedDifficulty, selectedCityId, startDate, endDate, selectedTags, loadTeams, updateURL]);
+  }, [searchQuery, selectedActivityType, selectedRecruitmentStatus, selectedRegionId, startDate, endDate, selectedTags, loadTeams]);
 
   const retryCurrentPage = React.useCallback(() => {
-    loadTeams({ page: currentPage, search: searchQuery, difficulty: selectedDifficulty, cityId: selectedCityId, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
-  }, [currentPage, searchQuery, selectedDifficulty, selectedCityId, startDate, endDate, selectedTags, loadTeams]);
+    const cursor = cursorsByPageRef.current.get(currentPage);
+    if (cursor === undefined) return;
+    loadTeams({ cursor, targetPage: currentPage, search: searchQuery, activityType: selectedActivityType, recruitmentStatus: selectedRecruitmentStatus, regionId: selectedRegionId, startDateFrom: startDate, startDateTo: endDate, tagIds: selectedTags });
+  }, [currentPage, searchQuery, selectedActivityType, selectedRecruitmentStatus, selectedRegionId, startDate, endDate, selectedTags, loadTeams]);
 
   const clearFilters = React.useCallback(() => {
-    setSelectedDifficulty([]);
+    setSelectedActivityType("");
+    setSelectedRecruitmentStatus("open");
     setSearchQuery("");
     setStartDate("");
     setEndDate("");
     setSelectedTags([]);
-    setSelectedCityId("");
+    setSelectedRegionId("");
     setShowFilters(false);
   }, []);
 
   const clearAdvancedFilters = React.useCallback(() => {
-    setSelectedDifficulty([]);
+    setSelectedActivityType("");
+    setSelectedRecruitmentStatus("open");
     setSelectedTags([]);
   }, []);
 
-  const activeFiltersCount = selectedDifficulty.length + (selectedCityId ? 1 : 0) + (startDate || endDate ? 1 : 0) + selectedTags.length;
-  const advancedFiltersCount = selectedDifficulty.length + selectedTags.length;
+  const activeFiltersCount = (selectedActivityType ? 1 : 0) + (selectedRecruitmentStatus && selectedRecruitmentStatus !== "open" ? 1 : 0) + (selectedRegionId ? 1 : 0) + (startDate || endDate ? 1 : 0) + selectedTags.length;
+  const advancedFiltersCount = (selectedActivityType ? 1 : 0) + (selectedRecruitmentStatus && selectedRecruitmentStatus !== "open" ? 1 : 0) + selectedTags.length;
   const hasDateFilter = Boolean(startDate || endDate);
 
   const activeDateQuickType = React.useMemo(
@@ -285,9 +324,9 @@ export function useTeams(initialData?: TeamsInitialData) {
     [startDate, endDate]
   );
 
-  const selectedCityName = React.useMemo(
-    () => availableCities.find((city) => city.id === selectedCityId)?.name,
-    [availableCities, selectedCityId],
+  const selectedRegionName = React.useMemo(
+    () => availableRegions.find((region) => region.id === selectedRegionId)?.name,
+    [availableRegions, selectedRegionId],
   );
 
   return {
@@ -298,15 +337,16 @@ export function useTeams(initialData?: TeamsInitialData) {
     currentPage,
     pagination,
     showFilters,
-    selectedDifficulty,
+    selectedActivityType,
+    selectedRecruitmentStatus,
     startDate,
     endDate,
     availableTags,
-    availableCities,
-    citiesLoading,
-    citiesError,
-    selectedCityId,
-    selectedCityName,
+    availableRegions,
+    regionsLoading,
+    regionsError,
+    selectedRegionId,
+    selectedRegionName,
     selectedTags,
     activeFiltersCount,
     advancedFiltersCount,
@@ -318,13 +358,14 @@ export function useTeams(initialData?: TeamsInitialData) {
     setStartDate,
     setEndDate,
     loadTeams,
-    handleDifficultyToggle,
+    handleActivityTypeSelect,
+    handleRecruitmentStatusSelect,
     handleTagToggle,
-    handleCitySelect,
+    handleRegionSelect,
     handleDateQuickSelect,
     handlePageChange,
     retryCurrentPage,
-    retryCities: loadAllCities,
+    retryRegions: loadAllRegions,
     clearAdvancedFilters,
     clearFilters,
   };

@@ -53,7 +53,7 @@ export function saveOnboardingPreference(pref: PreferenceType | "") {
 }
 
 export async function fetchRecommend(type?: PreferenceType | ""): Promise<RecommendOnboardingResponse | null> {
-  const url = type ? `/api/teams/recommend-onboarding?type=${encodeURIComponent(type)}` : "/api/teams/recommend-onboarding";
+  const url = type ? `/teams/recommend-onboarding?activityType=${encodeURIComponent(type)}` : "/teams/recommend-onboarding";
   const res = await fetchAPI(url);
   if (!res.ok) return null;
   return (await res.json()) as RecommendOnboardingResponse;

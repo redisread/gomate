@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ArrowLeft, Clock, Users, AlertCircle, Loader2, Pencil } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI, fetchCurrentUser } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
 import type { Team, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
@@ -28,9 +28,10 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
 
   const [formData, setFormData] = React.useState({
     title: "",
-    time: "",
-    durationMin: "240",
-    maxMembers: "",
+    startDateInput: "",
+    startClockInput: "",
+    durationMinutes: "240",
+    maxParticipants: "",
     description: "",
     requirements: [] as string[],
   });
@@ -42,7 +43,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
       setIsAuthenticated(true);
 
       try {
-        const res = await fetchAPI(`/api/teams/${teamId}`);
+        const res = await fetchAPI(`/teams/${teamId}`);
         if (res.status === 404) {
           setError(t("errors.teamNotFound"));
           setIsLoading(false);
@@ -51,7 +52,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
         const data = await res.json();
         if (data.success && data.team) {
           const t2 = data.team as Team;
-          if (t2.leader?.id !== u.id) {
+          if (t2.leaderId !== u.id) {
             setError(t("errors.noPermission"));
             setIsLoading(false);
             return;
@@ -60,14 +61,17 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
           setTeam(t2);
           setLocation(t2.location || null);
 
-          const startTime = new Date(t2.startTime || t2.date);
-          const timeStr = `${String(startTime.getHours()).padStart(2, "0")}:${String(startTime.getMinutes()).padStart(2, "0")}`;
+          const startDateTime = new Date(t2.startAt);
+          const dateStr = `${startDateTime.getFullYear()}-${String(startDateTime.getMonth() + 1).padStart(2, "0")}-${String(startDateTime.getDate()).padStart(2, "0")}`;
+          const timeStr = `${String(startDateTime.getHours()).padStart(2, "0")}:${String(startDateTime.getMinutes()).padStart(2, "0")}`;
+          const durationMinutes = Math.max(0, Math.round((Date.parse(t2.endAt) - Date.parse(t2.startAt)) / 60_000));
 
           setFormData({
             title: t2.title || "",
-            time: t2.time || timeStr,
-            durationMin: String(t2.durationMin || 240),
-            maxMembers: String(t2.maxMembers || ""),
+            startDateInput: dateStr,
+            startClockInput: timeStr,
+            durationMinutes: String(durationMinutes || 240),
+            maxParticipants: String(t2.maxParticipants),
             description: t2.description || "",
             requirements: Array.isArray(t2.requirements) ? t2.requirements : [],
           });
@@ -119,30 +123,33 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
       return;
     }
 
-    const maxMembersNum = parseInt(formData.maxMembers, 10);
-    if (isNaN(maxMembersNum) || maxMembersNum < 2 || maxMembersNum > 50) {
+    const maxParticipants = parseInt(formData.maxParticipants, 10);
+    if (isNaN(maxParticipants) || maxParticipants < 1 || maxParticipants > 49) {
       setError(t("errors.maxMembersRange"));
       setIsSubmitting(false);
       return;
     }
 
-    if (team && maxMembersNum < team.currentMembers) {
-      setError(t("errors.maxMembersBelowCurrent", { current: team.currentMembers }));
+    if (team && maxParticipants < team.activeParticipantCount) {
+      setError(t("errors.maxMembersBelowCurrent", { current: team.activeParticipantCount }));
       setIsSubmitting(false);
       return;
     }
 
     try {
       const reqList = formData.requirements.map((s) => s.trim()).filter(Boolean);
-      const res = await fetchAPI(`/api/teams/${teamId}`, {
+      const startAt = new Date(`${formData.startDateInput}T${formData.startClockInput}:00`);
+      const durationMinutes = parseInt(formData.durationMinutes, 10) || 240;
+      const endAt = new Date(startAt.getTime() + durationMinutes * 60_000);
+      const res = await fetchAPI(`/teams/${teamId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: formData.title.trim(),
           description: formData.description.trim() || null,
-          maxMembers: maxMembersNum,
-          time: formData.time,
-          durationMin: parseInt(formData.durationMin, 10) || 240,
+          maxParticipants,
+          startAt: startAt.toISOString(),
+          endAt: endAt.toISOString(),
           requirements: reqList,
         }),
       });
@@ -150,7 +157,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
       if (data.success) {
         window.location.href = `/teams/${teamId}`;
       } else {
-        setError(data.error || t("errors.editTeamSaveFailed"));
+        setError(getApiErrorMessage(data, t("errors.editTeamSaveFailed")));
         setIsSubmitting(false);
       }
     } catch {
@@ -247,7 +254,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 />
               ) : (
                 <div className="flex items-center justify-between rounded-xl border border-border bg-muted px-4 py-3">
-                  <span className="text-sm text-muted-foreground">{team.date}</span>
+                  <span className="text-sm text-muted-foreground">{team.locationId}</span>
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
@@ -258,7 +265,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
 
             <FieldGroup icon="📅" label={t("teams.formLabel.date")}>
               <div className="px-4 py-3 rounded-xl bg-muted border border-border">
-                <span className="text-sm text-foreground">{team.date}</span>
+                <span className="text-sm text-foreground">{formData.startDateInput}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <AlertCircle className="h-3 w-3" />
@@ -271,10 +278,10 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
-                    id="time"
-                    name="time"
+                    id="startClockInput"
+                    name="startClockInput"
                     type="time"
-                    value={formData.time}
+                    value={formData.startClockInput}
                     onChange={handleChange}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   />
@@ -285,9 +292,9 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <select
-                    id="durationMin"
-                    name="durationMin"
-                    value={formData.durationMin}
+                    id="durationMinutes"
+                    name="durationMinutes"
+                    value={formData.durationMinutes}
                     onChange={handleChange}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                   >
@@ -299,17 +306,17 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               </FieldGroup>
             </div>
 
-            <FieldGroup icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.editMaxSizeHint", { current: team.currentMembers })}>
+            <FieldGroup icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.editMaxSizeHint", { current: team.activeParticipantCount })}>
               <div className="relative">
                 <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "var(--muted-foreground)" }} />
                 <input
-                  id="maxMembers"
-                  name="maxMembers"
+                  id="maxParticipants"
+                  name="maxParticipants"
                   type="number"
-                  min={team.currentMembers}
-                  max={50}
+                  min={Math.max(1, team.activeParticipantCount)}
+                  max={49}
                   placeholder={t("teams.formPlaceholder.maxSize")}
-                  value={formData.maxMembers}
+                  value={formData.maxParticipants}
                   onChange={handleChange}
                   required
                   className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
@@ -317,7 +324,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               </div>
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <AlertCircle className="h-3 w-3" />
-                {t("teams.editMaxMembersTip", { current: team.currentMembers })}
+                {t("teams.editMaxMembersTip", { current: team.activeParticipantCount })}
               </p>
             </FieldGroup>
 

@@ -1,7 +1,8 @@
 import * as React from "react";
-import { fetchAPI, fetchCurrentUser, fetchPublicAPI, API_BASE } from "@/lib/api";
-import { parseExtra, formatBirthday, birthdayToTimestamp } from "@/lib/user-utils";
-import type { SessionUser, City } from "@/lib/types";
+import { fetchAPI, fetchCurrentUser, API_BASE } from "@/lib/api";
+import { formatBirthday, birthdayToIso } from "@/lib/user-utils";
+import { fetchSelectableRegions } from "@/lib/regions";
+import type { SessionUser, Region } from "@/lib/types";
 import { useI18n } from "@/hooks/useI18n";
 import type { MessageState } from "./constants";
 
@@ -12,9 +13,7 @@ interface ProfileFormData {
   wechat: string;
   gender: string;
   birthday: string;
-  experience: string;
-  equipment: string[];
-  city: string; // #181: cityId（CitySelect 产出），空串 = 未设
+  regionId: string;
 }
 
 export function useProfileForm() {
@@ -27,43 +26,21 @@ export function useProfileForm() {
   const [message, setMessage] = React.useState<MessageState>(null);
   const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
-  const [equipmentInput, setEquipmentInput] = React.useState("");
-  const [cities, setCities] = React.useState<City[]>([]);
+  const [regions, setRegions] = React.useState<Region[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null!);
 
   const [formData, setFormData] = React.useState<ProfileFormData>({
     nickname: "", bio: "", level: "beginner", wechat: "",
-    gender: "", birthday: "", experience: "", equipment: [], city: "",
+    gender: "", birthday: "", regionId: "",
   });
 
-  // #181: 拉取完整城市列表（GET /cities 分页返回，不能只取首 100 条）
+  // Region selection is backed by service-enabled city-level Region entities.
   React.useEffect(() => {
     let cancelled = false;
-
-    const loadCities = async () => {
-      const allCities: City[] = [];
-      let page = 1;
-
-      while (true) {
-        const res = await fetchPublicAPI(`/cities?page=${page}&pageSize=100`);
-        if (!res.ok) throw new Error("Failed to load cities");
-
-        const json = (await res.json()) as {
-          cities?: City[];
-          pagination?: { hasMore?: boolean };
-        };
-        const pageCities = json.cities ?? [];
-        allCities.push(...pageCities);
-
-        if (!json.pagination?.hasMore || pageCities.length === 0) break;
-        page += 1;
-      }
-
-      if (!cancelled) setCities(allCities);
-    };
-
-    loadCities().catch(() => {
-      if (!cancelled) setCities([]);
+    fetchSelectableRegions().then((regions) => {
+      if (!cancelled) setRegions(regions);
+    }).catch(() => {
+      if (!cancelled) setRegions([]);
     });
 
     return () => {
@@ -80,18 +57,15 @@ export function useProfileForm() {
         const user = u as unknown as SessionUser;
         setUser(user);
         setAvatarPreview(user.image || null);
-        const { experience, equipment } = parseExtra(user.extra);
         const birthdayStr = formatBirthday(user.birthday);
         setFormData({
           nickname: user.nickname || "",
           bio: user.bio || "",
-          level: user.level || "beginner",
-          wechat: user.wechat || "",
+          level: user.extra.level,
+          wechat: user.extra.wechat || "",
           gender: user.gender || "",
           birthday: birthdayStr,
-          experience: experience || "",
-          equipment: equipment || [],
-          city: user.city || "", // #181: 回填城市（cityId）
+          regionId: user.extra.city || "",
         });
       } catch {
         window.location.href = "/login?redirect=/profile/edit";
@@ -107,36 +81,8 @@ export function useProfileForm() {
     setMessage(null);
   };
 
-  // #181: CitySelect onChange(cityId) —— 非 DOM event，单独 handler
-  const handleCityChange = (cityId: string) => {
-    setFormData((prev) => ({ ...prev, city: cityId }));
-    setMessage(null);
-  };
-
-  const handleEquipmentKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const value = equipmentInput.trim();
-      if (!value) return;
-      if (formData.equipment.length >= 10) {
-        setMessage({ type: "error", text: t('profile.equipmentMaxReached') });
-        return;
-      }
-      if (formData.equipment.includes(value)) { setEquipmentInput(""); return; }
-      setFormData((prev) => ({ ...prev, equipment: [...prev.equipment, value] }));
-      setEquipmentInput("");
-      setMessage(null);
-    }
-  };
-
-  const handleRemoveEquipment = (index: number) => {
-    setFormData((prev) => ({ ...prev, equipment: prev.equipment.filter((_, i) => i !== index) }));
-  };
-
-  const handleAddPresetEquipment = (item: string) => {
-    if (formData.equipment.length >= 10) { setMessage({ type: "error", text: t('profile.equipmentMaxReached') }); return; }
-    if (formData.equipment.includes(item)) return;
-    setFormData((prev) => ({ ...prev, equipment: [...prev.equipment, item] }));
+  const handleRegionChange = (regionId: string) => {
+    setFormData((prev) => ({ ...prev, regionId }));
     setMessage(null);
   };
 
@@ -159,7 +105,6 @@ export function useProfileForm() {
     try {
       const fd = new FormData();
       fd.append("file", selectedFile);
-      fd.append("userId", user.id);
       const res = await fetch(`${API_BASE}/upload/avatar`, { method: "POST", body: fd, credentials: "include" });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || t('errors.failed'));
@@ -177,23 +122,23 @@ export function useProfileForm() {
     setIsSaving(true);
     setMessage(null);
     try {
-      let avatarUrl = user?.image;
       if (selectedFile) {
         const uploaded = await uploadAvatar();
-        if (uploaded) avatarUrl = uploaded;
+        if (!uploaded) return;
       }
 
-      const extra: { experience?: string; equipment?: string[] } = {};
-      if (formData.experience) extra.experience = formData.experience;
-      if (formData.equipment.length > 0) extra.equipment = formData.equipment;
-
-      const res = await fetchAPI("/api/users/update", {
+      const res = await fetchAPI("/users/me", {
         method: "PATCH",
         body: JSON.stringify({
-          userId: user!.id, nickname: formData.nickname || null, image: avatarUrl,
-          bio: formData.bio, level: formData.level, wechat: formData.wechat,
-          gender: formData.gender || null, birthday: birthdayToTimestamp(formData.birthday), extra,
-          city: formData.city || null, // #181: cityId，空串 → null（清空城市）
+          nickname: formData.nickname || null,
+          bio: formData.bio,
+          gender: formData.gender || null,
+          birthday: birthdayToIso(formData.birthday),
+          extra: {
+            level: formData.level,
+            wechat: formData.wechat || null,
+            city: formData.regionId || null,
+          },
         }),
       });
       const result = await res.json();
@@ -219,10 +164,9 @@ export function useProfileForm() {
 
   return {
     user, isLoading, isSaving, isUploading, savedDone, message,
-    avatarPreview, selectedFile, equipmentInput, fileInputRef, cities,
+    avatarPreview, selectedFile, fileInputRef, regions,
     formData, bioLength, bioNearLimit, bioAtLimit,
-    setEquipmentInput, setAvatarPreview, setMessage,
-    handleChange, handleCityChange, handleEquipmentKeyDown, handleRemoveEquipment,
-    handleAddPresetEquipment, handleFileChange, handleSubmit, cancelSelectedFile,
+    setAvatarPreview, setMessage,
+    handleChange, handleRegionChange, handleFileChange, handleSubmit, cancelSelectedFile,
   };
 }

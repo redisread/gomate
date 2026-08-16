@@ -198,8 +198,8 @@ export function SharePosterModal({
           const blob = await response.blob();
           const file = new File(
             [blob],
-            `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.png`,
-            { type: blob.type || "image/png" },
+            `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.svg`,
+            { type: blob.type || "image/svg+xml" },
           );
 
           if (navigator.canShare({ files: [file] })) {
@@ -225,7 +225,7 @@ export function SharePosterModal({
       // a new tab.
       const link = document.createElement("a");
       link.href = imageUrl;
-      link.download = `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.png`;
+      link.download = `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.svg`;
       link.style.display = "none";
       document.body.appendChild(link);
       link.click();

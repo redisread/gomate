@@ -4,13 +4,14 @@
 
 ## 架构入口
 
-- API：`api/src/index.ts` → `routes/`、`db/schema.ts`、`lib/{auth,storage,team-status}.ts`
-- 前端：`frontend/src/pages/`、`components/features/`（islands）、`layouts/Layout.astro`、`lib/api.ts`、`i18n/`
+- Worker：`frontend/src/worker.ts` 将 `/api/*` 交给 `api/src/app.ts`，其余请求交给 Astro 官方 Cloudflare handler
+- API：`api/src/app.ts` → `routes/`、`db/schema.ts`、`lib/`
+- 前端：`frontend/src/pages/`、`components/features/`（islands）、`layouts/Layout.astro`、`lib/{api,server-api}.ts`、`i18n/`
 
 ## 代理工作规则
 
 - 每次会话开始加载 `using-agent-skills` 技能（`.codex/skills/using-agent-skills/SKILL.md`）
-- 多 worktree 开发：`pnpm dev:wt` 自动分配端口；首次新 worktree 跑 `pnpm init:worktree`（幂等补齐 secrets/env/共享 D1）；本地数据对齐 prod 用 `pnpm db:sync`。细节见 [`docs/local-dev-worktrees.md`](docs/local-dev-worktrees.md)
+- 多 worktree 开发：`pnpm dev:wt` 自动分配统一 Worker 端口；首次新 worktree 跑 `pnpm init:worktree`（幂等补齐 `frontend/.dev.vars`、i18n 与共享 V2 D1）。细节见 [`docs/local-dev-worktrees.md`](docs/local-dev-worktrees.md)
 - 不顺手回滚自己未创建的无关 worktree 改动；顺手修离当前改动点很近、风险可控的问题时，在 commit/PR 单独标注
 
 ## 项目自定义 agent
@@ -35,6 +36,7 @@
 
 ## 部署
 
-- API：`gomate-api` → `https://api.gomate.live`；前端：`gomate-frontend` → `https://gomate.live`；R2：`https://gomate.cos.jiahongw.com`
-- 前端 entrypoint：`frontend/wrangler.toml` 中 `main = "@astrojs/cloudflare/entrypoints/server"`
-- 未明确要求不重新引入 Cloudflare Images binding
+- 单 Worker：`frontend/wrangler.jsonc`，入口 `frontend/src/worker.ts`；生产域名目标为 `https://gomate.live`
+- API 固定同源 `/api/*`，不再部署或调用 `api.gomate.live`
+- D1 binding `DB`（`gomate-db-v2`）、R2 binding `R2`、KV binding `CACHE_KV`；未明确要求不重新引入 Cloudflare Images binding
+- 生产变更仅走受保护的手动 preview 流程；本 PR 不创建资源、不迁移旧数据、不切生产 route

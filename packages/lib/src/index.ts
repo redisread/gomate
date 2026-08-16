@@ -5,5 +5,4 @@
  * 保持在 api/src 或 frontend/src 内。
  */
 
-export * from "./geo-fallback";
-export * from "./geo-city-center";
+export * from "./geo-region";

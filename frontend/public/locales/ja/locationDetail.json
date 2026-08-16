@@ -32,11 +32,6 @@
     "openInMap": "高德地図で開く",
     "fallbackHint": "地図を開いて、場所とナビルートを確認"
   },
-  "parking": {
-    "title": "駐車場",
-    "available": "駐車場あり",
-    "noParking": "駐車場なし · 公共交通機関推奨"
-  },
   "gear": {
     "title": "装備リスト",
     "essential": "必携",

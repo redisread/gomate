@@ -20,7 +20,6 @@ interface LocationIntroCardProps {
   location: Location;
   actions?: React.ReactNode;
   address?: string;
-  coordinates?: { lat: number; lng: number };
   showGallery?: boolean;
   showTravelMeta?: boolean;
 }
@@ -35,7 +34,6 @@ export function LocationIntroCard({
   location,
   actions,
   address,
-  coordinates,
   showGallery = true,
   showTravelMeta = true,
 }: LocationIntroCardProps) {
@@ -47,14 +45,10 @@ export function LocationIntroCard({
   const [lightboxActive, setLightboxActive] = React.useState(0);
   const [copied, setCopied] = React.useState(false);
   const hasValidCoordinates = Boolean(
-    coordinates &&
-      Number.isFinite(coordinates.lat) &&
-      Number.isFinite(coordinates.lng) &&
-      !(coordinates.lat === 0 && coordinates.lng === 0),
+    Number.isFinite(location.latitude) &&
+      Number.isFinite(location.longitude) &&
+      !(location.latitude === 0 && location.longitude === 0),
   );
-  const parkingAvailable = location.parkingAvailable ?? null;
-  const parkingInfo = (location.parkingInfo ?? "").trim();
-  const hasParking = parkingAvailable !== null || parkingInfo.length > 0;
 
   const handleCopy = async () => {
     if (!address) return;
@@ -69,9 +63,9 @@ export function LocationIntroCard({
 
   const handleNavigate = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!hasValidCoordinates || !coordinates) return;
+    if (!hasValidCoordinates) return;
     const dest = encodeURIComponent(location.name || address || "");
-    const url = `https://uri.amap.com/navigation?to=${coordinates.lng},${coordinates.lat},${dest}&callnative=0`;
+    const url = `https://uri.amap.com/navigation?to=${location.longitude},${location.latitude},${dest}&callnative=0`;
     openExternalLink(url);
   };
 
@@ -83,14 +77,14 @@ export function LocationIntroCard({
 
   const galleryImages = React.useMemo(() => {
     const all: string[] = [];
-    if (location.coverImage) all.push(location.coverImage);
+    if (location.coverImageUrl) all.push(location.coverImageUrl);
     if (location.images) {
       for (const img of location.images) {
-        if (img && img !== location.coverImage) all.push(img);
+        if (img && img !== location.coverImageUrl) all.push(img);
       }
     }
     return all;
-  }, [location.coverImage, location.images]);
+  }, [location.coverImageUrl, location.images]);
 
   const seasonLabels: Record<string, string> = {
     spring: t("admin.seasons.spring"),
@@ -152,11 +146,11 @@ export function LocationIntroCard({
             <span className="h-5 w-1 rounded-full bg-amber-400" />
             {t('locations.locationIntro')}
           </h2>
-          {location.type && t(`enums.locationType.${location.type}`) && (
-            <span className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50">
-              {t(`enums.locationType.${location.type}`)}
+          {location.supportedActivityTypes.map((activityType) => (
+            <span key={activityType} className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50">
+              {t(`enums.locationType.${activityType}`)}
             </span>
-          )}
+          ))}
         </div>
 
         <div className="relative">
@@ -194,7 +188,7 @@ export function LocationIntroCard({
                 key={tag?.id ?? i}
                 className="px-3 py-1 bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 rounded-full text-xs font-medium border border-stone-100 dark:border-stone-700 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-100 dark:hover:border-amber-900/50 transition-colors duration-150 cursor-default select-none"
               >
-                {typeof tag === "string" ? tag : tag?.name}
+                {tag.name}
               </span>
             ))}
           </div>
@@ -202,8 +196,7 @@ export function LocationIntroCard({
 
         {showTravelMeta &&
           (address ||
-            (location.bestSeason && location.bestSeason.length > 0) ||
-            hasParking) && (
+            (location.extra.hiking?.bestSeasons?.length ?? 0) > 0) && (
           <div className="mt-5 border-t border-stone-100 pt-5 dark:border-stone-800">
             {address && (
               <div className="flex items-start gap-2.5 mb-3">
@@ -237,11 +230,11 @@ export function LocationIntroCard({
                 </div>
               </div>
             )}
-            {location.bestSeason && location.bestSeason.length > 0 && (
+            {(location.extra.hiking?.bestSeasons?.length ?? 0) > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <Sparkles className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
                 <span className="text-xs text-stone-600 dark:text-stone-400">{t('locations.detailSeasonsLabel')}：</span>
-                {location.bestSeason.map((s) => (
+                {location.extra.hiking!.bestSeasons!.map((s) => (
                   <span
                     key={s}
                     className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50"
@@ -249,33 +242,6 @@ export function LocationIntroCard({
                     {seasonLabels[s] ?? s}
                   </span>
                 ))}
-              </div>
-            )}
-            {hasParking && (
-              <div className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-stone-600 dark:text-stone-400">
-                <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-700 dark:text-amber-400" />
-                <span>
-                  <span className="font-semibold text-stone-700 dark:text-stone-300">
-                    {t("locationDetail.parking.title")}：
-                  </span>
-                  {parkingAvailable !== null && (
-                    <span
-                      className={cn(
-                        "font-semibold",
-                        parkingAvailable
-                          ? "text-emerald-700 dark:text-emerald-400"
-                          : "text-amber-700 dark:text-amber-400",
-                      )}
-                    >
-                      {parkingAvailable
-                        ? t("locationDetail.parking.available")
-                        : t("locationDetail.parking.noParking")}
-                    </span>
-                  )}
-                  {parkingInfo && (
-                    <span>{parkingAvailable !== null ? `，${parkingInfo}` : parkingInfo}</span>
-                  )}
-                </span>
               </div>
             )}
           </div>

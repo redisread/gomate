@@ -19,7 +19,7 @@ interface LocationPosterData {
   coverImage?: string | null;
   tags: string[];
   qrCodeDataUrl?: string | null;
-  cityName?: string | null;
+  regionName?: string | null;
   bestSeason?: string[];
   type?: string | null;
   routeMetrics?: RouteMetrics | null;
@@ -141,7 +141,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
     coverImage,
     tags,
     qrCodeDataUrl,
-    cityName,
+    regionName,
     bestSeason,
     type,
     routeMetrics,
@@ -181,8 +181,8 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
   const displaySubtitle = subtitle ? clampText(subtitle, 28) : null;
   const displayAddress = address ? clampText(address, 38) : null;
 
-  // 城市/类型行
-  const metaLine = [cityName, type].filter(Boolean).join(" · ");
+  // 地区/类型行
+  const metaLine = [regionName, type].filter(Boolean).join(" · ");
 
   const svg = await satori(
     // @ts-expect-error - Satori accepts plain object format

@@ -12,21 +12,41 @@ vi.mock("@/hooks/useI18n", () => ({
   }),
 }));
 
-const locations = ["香港", "麦理浩径", "大理", "牛奶排", "澳门"].map((name, index) => ({
+const locations: Location[] = ["香港", "麦理浩径", "大理", "牛奶排", "澳门"].map((name, index) => ({
   id: `location-${index}`,
+  regionId: "hong-kong",
   name,
   slug: name,
+  supportedActivityTypes: ["hiking"],
+  status: "published",
+  subtitle: null,
   description: `${name}适合周末出发`,
   address: `香港 · ${name}`,
-  cityId: "hong-kong",
-  cityName: "香港",
-  coverImage: `/images/${index}.jpg`,
+  latitude: 22.3,
+  longitude: 114.1,
+  coverImageUrl: `/images/${index}.jpg`,
   images: [],
-  coordinates: { lat: 22.3, lng: 114.1 },
-  bestSeason: [],
+  extra: {},
+  createdByUserId: null,
   createdAt: "2026-01-01",
   updatedAt: "2026-01-01",
-} as unknown as Location));
+  region: {
+    id: "hong-kong",
+    countryCode: "CN",
+    parentId: null,
+    name: "香港",
+    nameEn: "Hong Kong",
+    slug: "hong-kong",
+    code: "810000",
+    level: "city",
+    timezone: "Asia/Hong_Kong",
+    centerLatitude: null,
+    centerLongitude: null,
+    serviceEnabled: true,
+    isHot: true,
+    sortOrder: 0,
+  },
+}));
 
 describe("HomeLocationStack", () => {
   it("按牛奶排、大理、香港的顺序展示三张地点卡片并链接到详情", () => {

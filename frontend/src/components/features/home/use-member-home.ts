@@ -25,8 +25,8 @@ export function useMemberHome(userId: string) {
 
       try {
         const [createdResponse, joinedResponse] = await Promise.all([
-          fetchAPI("/api/users/created-teams?page=1&pageSize=20"),
-          fetchAPI("/api/users/teams/joined?page=1&pageSize=20"),
+          fetchAPI("/users/me/created-teams?limit=20"),
+          fetchAPI("/users/me/joined-teams?limit=20"),
         ]);
 
         if (!createdResponse.ok || !joinedResponse.ok) throw new Error("member teams request failed");

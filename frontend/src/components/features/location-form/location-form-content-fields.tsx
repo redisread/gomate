@@ -65,14 +65,19 @@ export function LocationFormContentFields({ formData, isSaving, updateField }: L
   return (
     <SectionCard icon={<ImageIcon className="h-4 w-4" />} title={t("admin.formContentTitle")}>
       <Field label={t("admin.formCoverImageRequired")} hint={t("ui.selectFromAlbum")}>
-        <CoverImageUpload value={formData.coverImage} onChange={(url) => updateField("coverImage", url)} disabled={isSaving} />
+        <CoverImageUpload value={formData.coverImageUrl} onChange={(url) => updateField("coverImageUrl", url)} disabled={isSaving} />
       </Field>
       <Field label={t("admin.formAlbumTitle")} hint={t("ui.coverHint")}>
         <MultiImageUpload values={formData.images} onChange={(urls) => updateField("images", urls)}
-          max={9} disabled={isSaving} coverImage={formData.coverImage} onSetCover={(url) => updateField("coverImage", url)} />
+          max={9} disabled={isSaving} coverImage={formData.coverImageUrl} onSetCover={(url) => updateField("coverImageUrl", url)} />
       </Field>
       <Field label={t("admin.formBestSeason")} hint={t("admin.seasonSelectHint")}>
-        <SeasonPicker value={formData.bestSeason} onChange={(v) => updateField("bestSeason", v)} disabled={isSaving} />
+        <SeasonPicker value={formData.extra.hiking.bestSeasons}
+          onChange={(bestSeasons) => updateField("extra", {
+            ...formData.extra,
+            hiking: { ...formData.extra.hiking, bestSeasons },
+          })}
+          disabled={isSaving} />
       </Field>
     </SectionCard>
   );

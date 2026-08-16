@@ -30,7 +30,7 @@ export function StoryPosterPreview({ open, storyId, storyTitle, onClose }: Story
     setIsLoading(true);
     setHasError(false);
     setImageUrl(null);
-    fetchAPI(`/api/share-image/story/${storyId}`)
+    fetchAPI(`/share-image/story/${storyId}`)
       .then((r) => { if (!r.ok) throw new Error("Failed"); return r.blob(); })
       .then((blob) => { setImageUrl(URL.createObjectURL(blob)); setIsLoading(false); })
       .catch(() => { setHasError(true); setIsLoading(false); showToast({ type: "error", message: "海报生成失败" }); });
@@ -49,7 +49,7 @@ export function StoryPosterPreview({ open, storyId, storyTitle, onClose }: Story
     if (!imageUrl) return;
     const a = document.createElement("a");
     a.href = imageUrl;
-    a.download = `story-${storyId}.png`;
+    a.download = `story-${storyId}.svg`;
     a.click();
   };
 

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { Team } from "@/lib/types";
+import type { Region, Team } from "@/lib/types";
 import {
   EmptyState,
   FilterPanel,
@@ -32,20 +32,64 @@ vi.mock("@/hooks/useI18n", () => ({
 function makeTeam(overrides: Partial<Team> = {}): Team {
   return {
     id: "team-1",
-    title: "梧桐山日出",
-    date: "2026-08-08",
-    time: "05:00",
-    status: "recruiting",
-    maxMembers: 8,
-    currentMembers: 2,
     locationId: "location-1",
+    leaderId: "leader-1",
+    activityType: "hiking",
+    title: "梧桐山日出",
+    description: null,
+    startAt: "2026-08-08T05:00:00.000Z",
+    endAt: "2026-08-08T09:00:00.000Z",
+    maxParticipants: 8,
+    activeParticipantCount: 2,
+    requirements: [],
+    recruitmentStatus: "open",
+    formedAt: null,
+    cancelledAt: null,
+    lifecycle: "pending",
+    isFull: false,
+    checklist: null,
+    createdAt: "2026-08-01T00:00:00.000Z",
+    updatedAt: "2026-08-01T00:00:00.000Z",
     location: {
+      id: "location-1",
+      regionId: "sz",
       name: "梧桐山",
-      difficulty: "moderate",
-      coverImage: "https://example.com/wutong.jpg",
+      slug: "wutongshan",
+      supportedActivityTypes: ["hiking"],
+      status: "published",
+      subtitle: null,
+      description: "",
+      address: null,
+      latitude: 22.58,
+      longitude: 114.21,
+      coverImageUrl: "https://example.com/wutong.jpg",
+      images: [],
+      extra: { hiking: { difficulty: "moderate" } },
+      createdByUserId: null,
+      createdAt: "2026-08-01T00:00:00.000Z",
+      updatedAt: "2026-08-01T00:00:00.000Z",
     },
     ...overrides,
-  } as Team;
+  };
+}
+
+function selectableRegion(id: string, name: string, isHot: boolean): Region {
+  return {
+    id,
+    countryCode: "CN",
+    parentId: null,
+    name,
+    nameEn: null,
+    slug: id,
+    code: null,
+    level: "city",
+    timezone: "Asia/Shanghai",
+    centerLatitude: null,
+    centerLongitude: null,
+    serviceEnabled: true,
+    isHot,
+    sortOrder: 0,
+  };
 }
 
 describe("teams list UI", () => {
@@ -58,12 +102,12 @@ describe("teams list UI", () => {
   });
 
   it("only shows clear filters when the empty result is caused by criteria", () => {
-    const { rerender } = render(<EmptyState onClear={vi.fn()} onClearCity={vi.fn()} hasActiveCriteria={false} />);
+    const { rerender } = render(<EmptyState onClear={vi.fn()} onClearRegion={vi.fn()} hasActiveCriteria={false} />);
 
     expect(screen.queryByRole("button", { name: "teams.clearFilters" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "teams.createBtn" })).toHaveAttribute("href", "/teams/create");
 
-    rerender(<EmptyState onClear={vi.fn()} onClearCity={vi.fn()} hasActiveCriteria />);
+    rerender(<EmptyState onClear={vi.fn()} onClearRegion={vi.fn()} hasActiveCriteria />);
     expect(screen.getByRole("button", { name: "teams.clearFilters" })).toBeInTheDocument();
   });
 
@@ -76,15 +120,15 @@ describe("teams list UI", () => {
         advancedFiltersCount={1}
         onSearchChange={vi.fn()}
         onToggleFilters={onToggleFilters}
-        cities={[]}
-        selectedCityId=""
+        regions={[]}
+        selectedRegionId=""
         activeDateQuickType={null}
         hasDateFilter={false}
-        citiesLoading={false}
-        citiesError={false}
-        onCitySelect={vi.fn()}
+        regionsLoading={false}
+        regionsError={false}
+        onRegionSelect={vi.fn()}
         onDateQuickSelect={vi.fn()}
-        onRetryCities={vi.fn()}
+        onRetryRegions={vi.fn()}
         renderFilterPanel={() => <div data-testid="filter-panel" />}
       />,
     );
@@ -103,11 +147,13 @@ describe("teams list UI", () => {
     render(
       <>
         <FilterPanel
-          selectedDifficulty={[]}
+          selectedActivityType=""
+          selectedRecruitmentStatus="open"
           availableTags={[{ id: "tag-1", name: "日出" }]}
           selectedTags={[]}
           activeFiltersCount={0}
-          onDifficultyToggle={vi.fn()}
+          onActivityTypeSelect={vi.fn()}
+          onRecruitmentStatusSelect={vi.fn()}
           onTagToggle={vi.fn()}
           onClearAll={vi.fn()}
         />
@@ -115,30 +161,30 @@ describe("teams list UI", () => {
       </>,
     );
 
-    expect(screen.getByRole("button", { name: "enums.difficulty.easy" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "enums.locationType.hiking" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("link", { name: "teams.createBtn" })).toHaveAttribute("href", "/teams/create");
     expect(screen.queryByRole("button", { name: "teams.createBtn" })).not.toBeInTheDocument();
   });
 
-  it("keeps popular cities and departure time available as one-tap filters", () => {
-    const onCitySelect = vi.fn();
+  it("keeps popular regions and departure time available as one-tap filters", () => {
+    const onRegionSelect = vi.fn();
     const onDateQuickSelect = vi.fn();
 
     render(
       <TeamsQuickFilters
-        cities={[
-          { id: "sz", adcode: "440300", name: "深圳", level: "city", isHot: true },
-          { id: "gz", adcode: "440100", name: "广州", level: "city", isHot: true },
-          { id: "hz", adcode: "441300", name: "惠州", level: "city", isHot: false },
+        regions={[
+          selectableRegion("sz", "深圳", true),
+          selectableRegion("gz", "广州", true),
+          selectableRegion("hz", "惠州", false),
         ]}
-        selectedCityId="sz"
+        selectedRegionId="sz"
         activeDateQuickType="weekend"
         hasDateFilter
-        citiesLoading={false}
-        citiesError={false}
-        onCitySelect={onCitySelect}
+        regionsLoading={false}
+        regionsError={false}
+        onRegionSelect={onRegionSelect}
         onDateQuickSelect={onDateQuickSelect}
-        onRetryCities={vi.fn()}
+        onRetryRegions={vi.fn()}
       />,
     );
 
@@ -150,38 +196,40 @@ describe("teams list UI", () => {
     fireEvent.click(screen.getByRole("button", { name: "广州" }));
     fireEvent.click(screen.getByRole("button", { name: "filter.dateQuickTomorrow" }));
 
-    expect(onCitySelect).toHaveBeenCalledWith("gz");
+    expect(onRegionSelect).toHaveBeenCalledWith("gz");
     expect(onDateQuickSelect).toHaveBeenCalledWith("tomorrow");
 
     fireEvent.click(screen.getByRole("button", { name: "teams.moreCities" }));
-    const citySearch = screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" });
-    fireEvent.change(citySearch, { target: { value: "惠州" } });
+    const regionSearch = screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" });
+    fireEvent.change(regionSearch, { target: { value: "惠州" } });
     fireEvent.click(screen.getByRole("option", { name: /惠州/ }));
 
-    expect(onCitySelect).toHaveBeenCalledWith("hz");
+    expect(onRegionSelect).toHaveBeenCalledWith("hz");
 
     fireEvent.click(screen.getByRole("button", { name: "teams.moreCities" }));
     fireEvent.keyDown(screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" }), { key: "ArrowDown" });
     fireEvent.keyDown(screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" }), { key: "Enter" });
-    expect(onCitySelect).toHaveBeenCalledWith("sz");
+    expect(onRegionSelect).toHaveBeenCalledWith("sz");
   });
 
-  it("shows selected city and date as independently removable filters", () => {
-    const onCitySelect = vi.fn();
+  it("shows selected region and date as independently removable filters", () => {
+    const onRegionSelect = vi.fn();
     const onDateQuickSelect = vi.fn();
 
     render(
       <TeamsSelectedFilters
-        selectedCityName="深圳"
+        selectedRegionName="深圳"
         activeDateQuickType="weekend"
         startDate="2026-08-08"
         endDate="2026-08-09"
-        selectedDifficulty={[]}
+        selectedActivityType=""
+        selectedRecruitmentStatus="open"
         availableTags={[]}
         selectedTags={[]}
-        onCitySelect={onCitySelect}
+        onRegionSelect={onRegionSelect}
         onDateQuickSelect={onDateQuickSelect}
-        onDifficultyToggle={vi.fn()}
+        onActivityTypeSelect={vi.fn()}
+        onRecruitmentStatusSelect={vi.fn()}
         onTagToggle={vi.fn()}
       />,
     );
@@ -189,7 +237,7 @@ describe("teams list UI", () => {
     fireEvent.click(screen.getByRole("button", { name: "teams.removeCityFilter" }));
     fireEvent.click(screen.getByRole("button", { name: "teams.removeDateFilter" }));
 
-    expect(onCitySelect).toHaveBeenCalledWith("");
+    expect(onRegionSelect).toHaveBeenCalledWith("");
     expect(onDateQuickSelect).toHaveBeenCalledWith("clear");
   });
 
@@ -201,12 +249,14 @@ describe("teams list UI", () => {
         activeDateQuickType={null}
         startDate="2026-08-08"
         endDate="2026-08-10"
-        selectedDifficulty={[]}
+        selectedActivityType=""
+        selectedRecruitmentStatus="open"
         availableTags={[]}
         selectedTags={[]}
-        onCitySelect={vi.fn()}
+        onRegionSelect={vi.fn()}
         onDateQuickSelect={onDateQuickSelect}
-        onDifficultyToggle={vi.fn()}
+        onActivityTypeSelect={vi.fn()}
+        onRecruitmentStatusSelect={vi.fn()}
         onTagToggle={vi.fn()}
       />,
     );

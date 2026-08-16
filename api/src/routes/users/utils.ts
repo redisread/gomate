@@ -1,163 +1,154 @@
-import * as schema from "../../db/schema";
-import { and, eq, ne, gt, inArray } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or, sql } from "drizzle-orm";
 import type { createDb } from "../../db";
-import { formatBeijingDateTime } from "../../lib/date-utils";
+import * as schema from "../../db/schema";
+import { getTeamLifecycle } from "../../lib/team-lifecycle";
+import { parseUserExtra } from "../../lib/user-extra";
 
 type Db = ReturnType<typeof createDb>;
+type UserRow = typeof schema.users.$inferSelect;
 
-// Re-export for backward compatibility
-export { formatBeijingDateTime };
+function iso(value: Date | null): string | null {
+  return value?.toISOString() ?? null;
+}
 
-/** 返回安全的用户对象（时间戳格式） */
-export function sanitizeUser(user: typeof schema.users.$inferSelect) {
+export function toSelfUser(user: UserRow) {
   return {
     id: user.id,
     name: user.name,
     nickname: user.nickname,
     email: user.email,
-    avatar: user.image,
+    emailVerified: user.emailVerified,
+    image: user.image,
     bio: user.bio,
     gender: user.gender,
-    birthday: user.birthday,
-    level: user.level || "beginner",
-    completedHikes: user.completedHikes ?? 0,
-    wechat: user.wechat,
-    // #181: city = cityId（非城市名）；前端 profile 回填城市选择器 + 首页 use-local-circle 默认 cityId
-    city: user.city,
-    extra: user.extra,
-    role: user.role || "user",
+    birthday: iso(user.birthday),
+    role: user.role,
     status: user.status,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
+    extra: parseUserExtra(user.extra),
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
   };
 }
 
-/** 校验 UserExtra 字段格式 */
-export function validateUserExtra(extra: unknown): extra is { equipment?: string[]; experience?: string } {
-  if (typeof extra !== "object" || extra === null) return false;
-  const e = extra as Record<string, unknown>;
-  if (e.equipment !== undefined && !Array.isArray(e.equipment)) return false;
-  if (e.experience !== undefined && typeof e.experience !== "string") return false;
-  return true;
-}
-
-/** 统计用户创建/参加/完成的队伍数 */
-export async function getUserStats(db: Db, id: string) {
-  const createdTeamsCount = await db
-    .select({ count: schema.teams.id })
-    .from(schema.teams)
-    .where(eq(schema.teams.leaderId, id));
-
-  const joinedTeamsCount = await db
-    .select({ count: schema.teamMembers.id })
-    .from(schema.teamMembers)
-    .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
-    .where(
-      and(
-        eq(schema.teamMembers.userId, id),
-        eq(schema.teamMembers.status, "approved"),
-        ne(schema.teams.leaderId, id)
-      )
-    );
-
-  const completedAsLeaderCount = await db
-    .select({ count: schema.teams.id })
-    .from(schema.teams)
-    .where(and(eq(schema.teams.leaderId, id), eq(schema.teams.status, "completed")));
-
-  const completedAsMemberCount = await db
-    .select({ count: schema.teamMembers.id })
-    .from(schema.teamMembers)
-    .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
-    .where(
-      and(
-        eq(schema.teamMembers.userId, id),
-        eq(schema.teamMembers.status, "approved"),
-        eq(schema.teams.status, "completed"),
-        ne(schema.teams.leaderId, id)
-      )
-    );
-
+export function toPublicUser(user: UserRow) {
+  const extra = parseUserExtra(user.extra);
   return {
-    createdTeams: createdTeamsCount.length,
-    joinedTeams: joinedTeamsCount.length,
-    completedTeams: completedAsLeaderCount.length + completedAsMemberCount.length,
+    id: user.id,
+    name: user.name,
+    nickname: user.nickname,
+    image: user.image,
+    bio: user.bio,
+    extra: {
+      level: extra.level,
+      completedHikes: extra.completedHikes,
+      wechat: null,
+      city: extra.city,
+    },
+    createdAt: user.createdAt.toISOString(),
   };
 }
 
-/** 查询用户正在进行中的队伍（作为队长或已批准成员），最多 8 条 */
-export async function getUserOngoingTeams(db: Db, id: string) {
-  const now = new Date();
-  const activeStatuses = ["recruiting", "full", "formed"] as schema.TeamStatus[];
-  const { sql } = await import("drizzle-orm");
-
-  // CTE: 预先计算每个队伍的 approved 成员数，避免相关子查询 N+1
-  const teamMemberCounts = db.$with("team_member_counts").as(
-    db
-      .select({
-        teamId: schema.teamMembers.teamId,
-        count: sql<number>`count(*)`.as("count"),
-      })
-      .from(schema.teamMembers)
-      .where(eq(schema.teamMembers.status, "approved"))
-      .groupBy(schema.teamMembers.teamId)
-  );
-
-  const currentMembersColumn = sql<number>`COALESCE(${teamMemberCounts.count}, 0)`.as("currentMembers");
-
-  const ongoingSelect = {
-    id: schema.teams.id, title: schema.teams.title, startTime: schema.teams.startTime,
-    endTime: schema.teams.endTime, maxMembers: schema.teams.maxMembers, status: schema.teams.status,
-    locationName: schema.locations.name, locationCoverImage: schema.locations.coverImage,
-    currentMembers: currentMembersColumn,
-  };
-
-  const createdOngoingTeams = await db
-    .with(teamMemberCounts)
-    .select(ongoingSelect)
+export async function getUserStats(db: Db, userId: string) {
+  const [created] = await db
+    .select({ count: sql<number>`count(*)` })
     .from(schema.teams)
-    .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-    .leftJoin(teamMemberCounts, eq(teamMemberCounts.teamId, schema.teams.id))
-    .where(and(eq(schema.teams.leaderId, id), inArray(schema.teams.status, activeStatuses), gt(schema.teams.endTime, now)))
-    .limit(5);
-
-  const joinedOngoingTeams = await db
-    .with(teamMemberCounts)
-    .select(ongoingSelect)
+    .where(eq(schema.teams.leaderId, userId));
+  const [joined] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.teamMembers)
+    .where(eq(schema.teamMembers.userId, userId));
+  const [completed] = await db
+    .select({ count: sql<number>`count(distinct ${schema.teams.id})` })
     .from(schema.teams)
-    .innerJoin(schema.teamMembers, eq(schema.teamMembers.teamId, schema.teams.id))
-    .leftJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-    .leftJoin(teamMemberCounts, eq(teamMemberCounts.teamId, schema.teams.id))
+    .leftJoin(
+      schema.teamMembers,
+      and(
+        eq(schema.teamMembers.teamId, schema.teams.id),
+        eq(schema.teamMembers.userId, userId),
+      ),
+    )
     .where(
       and(
-        eq(schema.teamMembers.userId, id),
-        eq(schema.teamMembers.status, "approved"),
-        ne(schema.teams.leaderId, id),
-        inArray(schema.teams.status, activeStatuses),
-        gt(schema.teams.endTime, now)
-      )
+        or(
+          eq(schema.teams.leaderId, userId),
+          eq(schema.teamMembers.userId, userId),
+        ),
+        isNull(schema.teams.cancelledAt),
+        sql`${schema.teams.formedAt} is not null`,
+        lte(schema.teams.endAt, new Date()),
+      ),
+    );
+  return {
+    createdTeams: Number(created?.count ?? 0),
+    joinedTeams: Number(joined?.count ?? 0),
+    completedTeams: Number(completed?.count ?? 0),
+  };
+}
+
+export async function getUserOngoingTeams(db: Db, userId: string) {
+  const participantCount = sql<number>`(
+    select count(*) from team_members active_member
+    where active_member.team_id = ${schema.teams.id}
+      and active_member.left_at is null
+  )`;
+  const rows = await db
+    .select({
+      id: schema.teams.id,
+      title: schema.teams.title,
+      activityType: schema.teams.activityType,
+      startAt: schema.teams.startAt,
+      endAt: schema.teams.endAt,
+      maxParticipants: schema.teams.maxParticipants,
+      recruitmentStatus: schema.teams.recruitmentStatus,
+      formedAt: schema.teams.formedAt,
+      cancelledAt: schema.teams.cancelledAt,
+      activeParticipantCount: participantCount,
+      locationId: schema.locations.id,
+      locationName: schema.locations.name,
+      locationCoverImageUrl: schema.locations.coverImageUrl,
+    })
+    .from(schema.teams)
+    .innerJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+    .leftJoin(
+      schema.teamMembers,
+      and(
+        eq(schema.teamMembers.teamId, schema.teams.id),
+        eq(schema.teamMembers.userId, userId),
+        isNull(schema.teamMembers.leftAt),
+      ),
     )
-    .limit(5);
+    .where(
+      and(
+        or(
+          eq(schema.teams.leaderId, userId),
+          eq(schema.teamMembers.userId, userId),
+        ),
+        isNull(schema.teams.cancelledAt),
+        gt(schema.teams.endAt, new Date()),
+      ),
+    )
+    .orderBy(schema.teams.startAt)
+    .limit(8);
 
-  const allOngoingTeams = [...createdOngoingTeams, ...joinedOngoingTeams]
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-    .slice(0, 8);
-
-  return allOngoingTeams.map((row) => {
-    const startDate = new Date(row.startTime);
-    const { date, time } = formatBeijingDateTime(startDate);
-    return {
-      id: row.id,
-      title: row.title,
-      date,
-      time,
-      status: row.status,
-      currentMembers: row.currentMembers ?? 0,
-      maxMembers: row.maxMembers,
-      location: row.locationName ? {
-        name: row.locationName,
-        coverImage: row.locationCoverImage || "",
-      } : null,
-    };
-  });
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    activityType: row.activityType,
+    startAt: row.startAt.toISOString(),
+    endAt: row.endAt.toISOString(),
+    maxParticipants: row.maxParticipants,
+    activeParticipantCount: Number(row.activeParticipantCount ?? 0),
+    recruitmentStatus: row.recruitmentStatus,
+    lifecycle: getTeamLifecycle({
+      startAt: row.startAt,
+      endAt: row.endAt,
+      formedAt: row.formedAt,
+      cancelledAt: row.cancelledAt,
+    }),
+    location: {
+      id: row.locationId,
+      name: row.locationName,
+      coverImageUrl: row.locationCoverImageUrl,
+    },
+  }));
 }

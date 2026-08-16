@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 **/node_modules
+.pnpm-store/
 
 # coverage reports
 **/coverage
@@ -48,10 +49,14 @@ yarn-error.log*
 
 # Cloudflare
 .wrangler/
+frontend/.wrangler.dev.*.jsonc
 .dev.vars
 
 # Build output
 dist/
+dist-worker/
+.lighthouseci/
+.tmp-*.mjs
 .open-next/
 
 # vercel

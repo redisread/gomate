@@ -4,9 +4,9 @@ import * as React from "react";
 import { MapPin, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
-import type { City } from "@/lib/types";
+import type { Region } from "@/lib/types";
 import type { FormData } from "./use-location-form";
-import { CitySelect } from "@/components/ui/city-select";
+import { RegionSelect } from "@/components/ui/region-select";
 
 /* ================================================================
    共享子组件（SectionCard、Field、styledInput）
@@ -92,12 +92,12 @@ const LOCATION_TYPE_OPTIONS = (t: (key: string) => string) => [
 interface LocationFormBasicFieldsProps {
   formData: FormData;
   errors: Record<string, string | undefined>;
-  cities: City[];
+  regions: Region[];
   updateField: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
   touch: (key: string, value: string) => void;
   }
 
-export function LocationFormBasicFields({ formData, errors, cities, updateField, touch }: LocationFormBasicFieldsProps) {
+export function LocationFormBasicFields({ formData, errors, regions, updateField, touch }: LocationFormBasicFieldsProps) {
   const { t } = useI18n(["admin"]);
   const locationTypeOptions = LOCATION_TYPE_OPTIONS(t);
   return (
@@ -112,17 +112,37 @@ export function LocationFormBasicFields({ formData, errors, cities, updateField,
           <input type="text" value={formData.subtitle} onChange={(e) => updateField("subtitle", e.target.value)}
             className={cn(styledInput())} />
         </Field>
+        <Field label={t("admin.formSlug")}>
+          <input type="text" value={formData.slug}
+            onChange={(e) => updateField("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+            placeholder={t("admin.placeholderSlug")} className={cn(styledInput())} />
+        </Field>
         <Field label={t("admin.formLocationType")}>
           <div className="flex flex-wrap gap-2">
             {locationTypeOptions.map((opt) => (
               <button key={opt.value} type="button"
-                onClick={() => updateField("type", formData.type === opt.value ? "" : opt.value)}
+                onClick={() => updateField(
+                  "supportedActivityTypes",
+                  formData.supportedActivityTypes.includes(opt.value)
+                    ? formData.supportedActivityTypes.filter((value) => value !== opt.value)
+                    : [...formData.supportedActivityTypes, opt.value],
+                )}
                 className={cn("px-3.5 py-1.5 rounded-full text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow]",
-                  formData.type === opt.value ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700")}>
+                  formData.supportedActivityTypes.includes(opt.value) ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700")}>
                 {opt.label}
               </button>
             ))}
           </div>
+          {errors.supportedActivityTypes && <p className="mt-1 text-xs text-red-500">{errors.supportedActivityTypes}</p>}
+        </Field>
+        <Field label={t("admin.formStatus")}>
+          <select value={formData.status}
+            onChange={(e) => updateField("status", e.target.value as FormData["status"])}
+            className={cn(styledInput())}>
+            <option value="draft">{t("admin.statusDraft")}</option>
+            <option value="published">{t("admin.statusPublished")}</option>
+            <option value="archived">{t("admin.statusArchived")}</option>
+          </select>
         </Field>
         <Field label={t("admin.formDescriptionRequired")} required error={errors.description}
           hint={t("admin.charCountHint", { count: formData.description.length })}>
@@ -146,9 +166,9 @@ export function LocationFormBasicFields({ formData, errors, cities, updateField,
 
       {/* 位置信息 */}
       <SectionCard icon={<MapPin className="h-4 w-4" />} title={t("admin.formLocationTitle")}>
-        <Field label={t("admin.formCity")} required error={errors.cityId}>
-          <CitySelect value={formData.cityId} onChange={(id) => { updateField("cityId", id); touch("cityId", id); }}
-            cities={cities} error={errors.cityId} />
+        <Field label={t("admin.formRegion")} required error={errors.regionId}>
+          <RegionSelect value={formData.regionId} onChange={(id) => { updateField("regionId", id); touch("regionId", id); }}
+            regions={regions} error={errors.regionId} />
         </Field>
         <Field label={t("admin.formAddress")}>
           <input type="text" value={formData.address} onChange={(e) => updateField("address", e.target.value)}
@@ -159,15 +179,15 @@ export function LocationFormBasicFields({ formData, errors, cities, updateField,
             <div className="flex-1 grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-2xs text-stone-400 mb-1">{t("admin.latLabel")}</label>
-                <input type="number" step="any" value={formData.lat} onChange={(e) => updateField("lat", e.target.value)}
-                  onBlur={(e) => touch("lat", e.target.value)} placeholder="22.5619" className={cn(styledInput(!!errors.lat))} />
-                {errors.lat && <p className="text-xs text-red-500 mt-1">{errors.lat}</p>}
+                <input type="number" step="any" value={formData.latitude} onChange={(e) => updateField("latitude", e.target.value)}
+                  onBlur={(e) => touch("latitude", e.target.value)} placeholder="22.5619" className={cn(styledInput(!!errors.latitude))} />
+                {errors.latitude && <p className="text-xs text-red-500 mt-1">{errors.latitude}</p>}
               </div>
               <div>
                 <label className="block text-2xs text-stone-400 dark:text-stone-500 mb-1">{t("admin.lngLabel")}</label>
-                <input type="number" step="any" value={formData.lng} onChange={(e) => updateField("lng", e.target.value)}
-                  onBlur={(e) => touch("lng", e.target.value)} placeholder="114.1985" className={cn(styledInput(!!errors.lng))} />
-                {errors.lng && <p className="text-xs text-red-500 mt-1">{errors.lng}</p>}
+                <input type="number" step="any" value={formData.longitude} onChange={(e) => updateField("longitude", e.target.value)}
+                  onBlur={(e) => touch("longitude", e.target.value)} placeholder="114.1985" className={cn(styledInput(!!errors.longitude))} />
+                {errors.longitude && <p className="text-xs text-red-500 mt-1">{errors.longitude}</p>}
               </div>
             </div>
 

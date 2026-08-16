@@ -1,33 +1,37 @@
 import { X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { DIFFICULTY_OPTIONS } from "@/lib/constants";
 import { TEAM_DATE_OPTIONS } from "./teams-filter-options";
+import type { ActivityType, RecruitmentStatus } from "@/lib/types";
 
 interface TeamsSelectedFiltersProps {
-  selectedCityName?: string;
+  selectedRegionName?: string;
   activeDateQuickType: string | null;
   startDate: string;
   endDate: string;
-  selectedDifficulty: string[];
+  selectedActivityType: ActivityType | "";
+  selectedRecruitmentStatus: RecruitmentStatus | "";
   availableTags: { id: string; name: string }[];
   selectedTags: string[];
-  onCitySelect: (cityId: string) => void;
+  onRegionSelect: (regionId: string) => void;
   onDateQuickSelect: (type: string) => void;
-  onDifficultyToggle: (id: string) => void;
+  onActivityTypeSelect: (activityType: ActivityType | "") => void;
+  onRecruitmentStatusSelect: (status: RecruitmentStatus | "") => void;
   onTagToggle: (tagId: string) => void;
 }
 
 export function TeamsSelectedFilters({
-  selectedCityName,
+  selectedRegionName,
   activeDateQuickType,
   startDate,
   endDate,
-  selectedDifficulty,
+  selectedActivityType,
+  selectedRecruitmentStatus,
   availableTags,
   selectedTags,
-  onCitySelect,
+  onRegionSelect,
   onDateQuickSelect,
-  onDifficultyToggle,
+  onActivityTypeSelect,
+  onRecruitmentStatusSelect,
   onTagToggle,
 }: TeamsSelectedFiltersProps) {
   const { t } = useI18n(["teams", "filter", "enums"]);
@@ -38,13 +42,20 @@ export function TeamsSelectedFilters({
       ? `${t("filter.dateRange")} ${startDate || "…"}–${endDate || "…"}`
       : null;
   const filters = [
-    selectedCityName ? { id: "city", label: selectedCityName, ariaLabel: t("teams.removeCityFilter"), remove: () => onCitySelect("") } : null,
+    selectedRegionName ? { id: "region", label: selectedRegionName, ariaLabel: t("teams.removeCityFilter"), remove: () => onRegionSelect("") } : null,
     dateLabel ? { id: "date", label: dateLabel, ariaLabel: t("teams.removeDateFilter"), remove: () => onDateQuickSelect("clear") } : null,
-    ...selectedDifficulty.map((id) => {
-      const option = DIFFICULTY_OPTIONS.find((item) => item.id === id);
-      const label = option ? t(option.labelKey) : id;
-      return { id: `difficulty-${id}`, label, ariaLabel: t("teams.removeFilter", { name: label }), remove: () => onDifficultyToggle(id) };
-    }),
+    selectedActivityType ? {
+      id: "activityType",
+      label: t(`enums.locationType.${selectedActivityType}`),
+      ariaLabel: t("teams.removeFilter", { name: t(`enums.locationType.${selectedActivityType}`) }),
+      remove: () => onActivityTypeSelect(""),
+    } : null,
+    selectedRecruitmentStatus && selectedRecruitmentStatus !== "open" ? {
+      id: "recruitmentStatus",
+      label: t(`enums.teamStatus.${selectedRecruitmentStatus}`),
+      ariaLabel: t("teams.removeFilter", { name: t(`enums.teamStatus.${selectedRecruitmentStatus}`) }),
+      remove: () => onRecruitmentStatusSelect("open"),
+    } : null,
     ...selectedTags.map((id) => {
       const label = availableTags.find((tag) => tag.id === id)?.name ?? id;
       return { id: `tag-${id}`, label, ariaLabel: t("teams.removeFilter", { name: label }), remove: () => onTagToggle(id) };

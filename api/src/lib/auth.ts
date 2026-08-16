@@ -1,10 +1,16 @@
 import { betterAuth } from "better-auth";
 import { nanoid } from "nanoid";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { apiKey } from "@better-auth/api-key";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
-import { sendPasswordResetEmail, sendWelcomeEmail } from "./email";
+import type { WorkerEnv } from "../env";
+import {
+  sendEmailVerificationEmail,
+  sendWelcomeEmail,
+} from "./email";
+import { logger } from "./logger";
+import { isUserActive } from "./session-policy";
+import { authPassword } from "./auth-password";
 
 /** Better Auth 用户类型（包含扩展字段） */
 interface AuthUser {
@@ -14,78 +20,99 @@ interface AuthUser {
   nickname?: string | null;
 }
 
-/** 密码重置回调参数 */
-interface ResetPasswordParams {
+/** 验证邮件回调参数 */
+interface VerifyEmailParams {
   user: AuthUser;
   url: string;
   token: string;
 }
 
-/** 验证邮件回调参数 */
-interface VerifyEmailParams {
-  user: AuthUser;
-  url: string;
+export type Env = WorkerEnv;
+
+type BackgroundExecutionContext = {
+  waitUntil(promise: Promise<unknown>): void;
+};
+
+const AUTH_RATE_LIMIT_TTL_SECONDS = 15 * 60;
+
+function privateClientUrl(appUrl: string, pathname: string, token: string) {
+  const url = new URL(pathname, appUrl);
+  url.search = "";
+  url.hash = new URLSearchParams({ token }).toString();
+  return url.toString();
 }
 
-/** KV TTL 最小值（Cloudflare KV 限制） */
-const KV_MIN_TTL = 60;
+type StoredAuthRateLimit = {
+  count: number;
+  lastRequest: number;
+};
 
-/** 将 KVNamespace 包装为 Better Auth secondaryStorage 接口 */
-function buildKvSecondaryStorage(
-  kv: KVNamespace | undefined
-): import("better-auth").BetterAuthOptions["secondaryStorage"] | undefined {
-  if (!kv) return undefined;
+async function authRateLimitKey(rawKey: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(rawKey),
+  );
+  const token = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("");
+  return `auth:better-auth-rate-limit:v1:${token}`;
+}
+
+function createAuthRateLimitStorage(kv: KVNamespace) {
   return {
-    get: async (key: string) => {
+    async get(rawKey: string) {
+      const stored = await kv.get(await authRateLimitKey(rawKey));
+      if (!stored) return null;
       try {
-        return await kv.get(key);
-      } catch (err) {
-        console.warn("[KV] get failed:", err);
-        return null;
+        const value = JSON.parse(stored) as Partial<StoredAuthRateLimit>;
+        if (
+          Number.isInteger(value.count) &&
+          value.count! >= 0 &&
+          typeof value.lastRequest === "number" &&
+          Number.isFinite(value.lastRequest)
+        ) {
+          return {
+            key: rawKey,
+            count: value.count!,
+            lastRequest: value.lastRequest,
+          };
+        }
+      } catch {
+        // Corrupt limiter state is treated as expired; it is never auth truth.
       }
+      return null;
     },
-    set: async (key: string, value: string, ttl?: number) => {
-      try {
-        if (ttl !== undefined && ttl < KV_MIN_TTL) return;
-        await kv.put(key, value, ttl !== undefined ? { expirationTtl: ttl } : undefined);
-      } catch (err) {
-        console.warn("[KV] set failed:", err);
-      }
-    },
-    delete: async (key: string) => {
-      try {
-        await kv.delete(key);
-      } catch (err) {
-        console.warn("[KV] delete failed:", err);
-      }
+    async set(
+      rawKey: string,
+      value: { count: number; lastRequest: number },
+    ) {
+      await kv.put(
+        await authRateLimitKey(rawKey),
+        JSON.stringify({
+          count: value.count,
+          lastRequest: value.lastRequest,
+        } satisfies StoredAuthRateLimit),
+        { expirationTtl: AUTH_RATE_LIMIT_TTL_SECONDS },
+      );
     },
   };
-}
-
-export interface Env {
-  DB: D1Database;
-  GOMATE_KV?: KVNamespace;
-  R2?: R2Bucket;
-  BETTER_AUTH_SECRET?: string;
-  AUTH_SECRET_V2?: string; // 新的密钥名称，用于密钥轮换
-  RESEND_API_KEY?: string;
-  RESEND_FROM_EMAIL?: string;
-  APP_URL?: string;
-  FRONTEND_URL?: string;
-  R2_PUBLIC_URL?: string;
-  CORS_ALLOWED_ORIGINS?: string;
 }
 
 /**
  * 创建 Better Auth 实例（适用于 Cloudflare Workers 环境）
  */
-export function createAuth(env: Env) {
-  // 支持密钥轮换：优先使用 AUTH_SECRET_V2，fallback 到 BETTER_AUTH_SECRET
-  const authSecret = env.AUTH_SECRET_V2 || env.BETTER_AUTH_SECRET;
+export function createAuth(
+  env: Env,
+  executionContext?: BackgroundExecutionContext,
+) {
+  const authSecret = env.BETTER_AUTH_SECRET;
 
   // 强制检查 auth secret，生产环境必须有值
   if (!authSecret) {
-    throw new Error("BETTER_AUTH_SECRET or AUTH_SECRET_V2 is required");
+    throw new Error("BETTER_AUTH_SECRET is required");
+  }
+  if (!env.APP_URL) {
+    throw new Error("APP_URL is required");
   }
 
   const db = createDb(env.DB);
@@ -94,6 +121,11 @@ export function createAuth(env: Env) {
   const isSecure = (env.APP_URL || "").startsWith("https");
 
   return betterAuth({
+    // Better Auth's default logger includes raw adapter errors and SQL params.
+    // Disable it and throw unexpected API failures through Hono's sanitized
+    // request boundary instead of persisting tokens, emails or query details.
+    logger: { disabled: true },
+    onAPIError: { throw: true },
     database: drizzleAdapter(db as never, {
       provider: "sqlite",
       schema: {
@@ -101,110 +133,128 @@ export function createAuth(env: Env) {
         session: schema.sessions,
         account: schema.accounts,
         verification: schema.verifications,
-        apikey: schema.apiKeys,
       },
     }),
-    secondaryStorage: buildKvSecondaryStorage(env.GOMATE_KV),
     emailAndPassword: {
       enabled: true,
-      autoSignIn: true,
-      minPasswordLength: 6,
+      autoSignIn: false,
+      minPasswordLength: 8,
       maxPasswordLength: 128,
-      requireEmailVerification: false,
-      resetPasswordTokenExpiresIn: 3600,
-      // 自定义邮件发送回调 - 使用正确的函数名
-      sendResetPassword: async ({ user, url, token: _token }: ResetPasswordParams) => {
-        console.log("[Auth] 发送密码重置邮件:", user.email, "URL:", url);
-        const result = await sendPasswordResetEmail(
+      requireEmailVerification: true,
+      password: authPassword,
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      sendOnSignIn: true,
+      autoSignInAfterVerification: false,
+      expiresIn: 60 * 60,
+      sendVerificationEmail: async ({ user, url: _url, token }: VerifyEmailParams) => {
+        const task = sendEmailVerificationEmail(
           user.email,
-          url,
-          user.nickname || user.email,
-          env
-        );
-        if (!result.success) {
-          console.error("[Auth] 密码重置邮件发送失败:", result.error);
+          privateClientUrl(env.APP_URL, "/verify-email", token),
+          user.nickname || user.name || user.email,
+          env,
+        ).then((result) => {
+          if (!result.success) {
+            logger.error("verification_email_delivery_failed");
+          }
+        }).catch((error) => {
+          logger.error("verification_email_delivery_failed", {
+            errorType: error instanceof Error ? error.name : "UnknownEmailError",
+          });
+        });
+        if (executionContext) {
+          executionContext.waitUntil(task);
+          return;
         }
+        await task;
       },
-      // 用户注册成功发送欢迎邮件
-      sendVerifyEmail: async ({ user, url: _url }: VerifyEmailParams) => {
-        console.log("[Auth] 发送欢迎邮件:", user.email);
-        const result = await sendWelcomeEmail(user.email, user.nickname || user.email, env);
-        if (!result.success) {
-          console.error("[Auth] 欢迎邮件发送失败:", result.error);
+      afterEmailVerification: async (user) => {
+        const authUser = user as AuthUser;
+        const task = sendWelcomeEmail(
+          authUser.email,
+          authUser.nickname || authUser.name || authUser.email,
+          env,
+        ).then((result) => {
+          if (!result.success) logger.error("welcome_email_delivery_failed");
+        });
+        if (executionContext) {
+          executionContext.waitUntil(task);
+          return;
         }
+        await task;
       },
     },
     verification: {
-      // 2026-08-01 P0：verification token（forgot-password）默认只存 secondaryStorage（KV），
-      // KV 额度耗尽时同样会挂。改为落库，KV 仅缓存。
       storeInDatabase: true,
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
-      // 2026-08-01 P0 修复：配置 secondaryStorage 后 better-auth 默认把 session 只存 KV，
-      // KV 每日写入限额耗尽时 session 写入失败（被 try/catch 吞掉）导致认证全 401。
-      // 改为 session 落 D1（数据库权威），KV 仅作缓存；KV 写失败只丢缓存，不影响认证。
       storeSessionInDatabase: true,
+    },
+    rateLimit: {
+      enabled: true,
+      window: 60,
+      max: 100,
+      customRules: {
+        "/sign-in/email": { window: 60, max: 5 },
+        "/sign-up/email": { window: 60, max: 3 },
+        "/send-verification-email": { window: 60, max: 5 },
+        "/get-session": false,
+        "/sign-out": false,
+      },
+      customStorage: createAuthRateLimitStorage(env.CACHE_KV),
     },
     advanced: {
       generateId: () => nanoid(),
+      ipAddress: {
+        ipAddressHeaders: ["cf-connecting-ip"],
+      },
       defaultCookieAttributes: {
-        sameSite: isSecure ? "none" : "lax",
+        sameSite: "lax",
         secure: isSecure,
         path: "/",
       },
-      crossSubDomainCookies: isSecure
+      ...(executionContext
         ? {
-            enabled: true,
-            domain: ".gomate.live",
+            backgroundTasks: {
+              handler: (promise: Promise<unknown>) =>
+                executionContext.waitUntil(promise),
+            },
           }
-        : undefined,
+        : {}),
+    },
+    databaseHooks: {
+      session: {
+        create: {
+          before: async (session) => isUserActive(env, session.userId),
+        },
+      },
     },
     user: {
       additionalFields: {
-        bio: { type: "string", required: false, defaultValue: "" },
-        level: { type: "string", required: false, defaultValue: "beginner" },
-        role: { type: "string", required: false, defaultValue: "user" },
-        nickname: { type: "string", required: false },
-        gender: { type: "string", required: false },
-        birthday: { type: "date", required: false },
-        wechat: { type: "string", required: false },
-        // #181 热修（Wen 锚点 2 FAIL）：get-session 透 city（cityId），否则前端 fetchCurrentUser 合并后仍无 city
-        city: { type: "string", required: false },
-        completedHikes: { type: "number", required: false, defaultValue: 0 },
-        status: { type: "string", required: false, defaultValue: "active" },
-        extra: { type: "string", required: false },
+        bio: { type: "string", required: false, defaultValue: "", input: false },
+        role: {
+          type: "string",
+          required: false,
+          defaultValue: "user",
+          input: false,
+        },
+        nickname: { type: "string", required: false, input: false },
+        gender: { type: "string", required: false, input: false },
+        birthday: { type: "date", required: false, input: false },
+        status: {
+          type: "string",
+          required: false,
+          defaultValue: "active",
+          input: false,
+        },
       },
     },
     secret: authSecret,
-    baseURL: env.APP_URL || "http://localhost:8799",
-    basePath: "/auth",
-    trustedOrigins: [
-      ...(env.CORS_ALLOWED_ORIGINS ?? "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      "http://localhost:3000",
-      "http://localhost:4321",
-      "http://localhost:5432",
-      "http://localhost:8799",
-      "https://gomate.live",
-      "https://api.gomate.live",
-    ],
-    plugins: [
-      apiKey({
-        defaultPrefix: "gm_live_",
-        defaultKeyLength: 48,
-        rateLimit: { enabled: false },
-        keyExpiration: {
-          defaultExpiresIn: 365 * 24 * 60 * 60, // 1 year
-        },
-        // enableSessionForAPIKeys: API key 自动注入 session
-        // 安全前提：gomate 每用户自建 key，key→userId 一一对应，无跨用户风险
-        // 10-key cap 由 auth.ts 自定义 wrapper 处理，不受此影响
-        enableSessionForAPIKeys: true,
-      }),
-    ],
+    baseURL: env.APP_URL,
+    basePath: "/api/auth",
+    trustedOrigins: [env.APP_URL],
   });
 }

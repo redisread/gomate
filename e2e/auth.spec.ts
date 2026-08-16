@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { E2E_ACCOUNTS, fillLoginForm } from "./helpers";
+import { fillLoginForm } from "./helpers";
+import { signUpUser } from "./fixtures";
+
+const RUN_ID = Date.now().toString(36);
+const PASSWORD = "test1234";
 
 test.describe("Auth", () => {
   test("login page loads and form is interactive", async ({ page }) => {
@@ -8,22 +12,18 @@ test.describe("Auth", () => {
     await expect(page.locator("form")).toBeVisible();
     await expect(page.locator("[data-testid='login-email']")).toBeVisible();
     await expect(page.locator("[data-testid='login-password']")).toBeVisible();
-    await fillLoginForm(
-      page,
-      E2E_ACCOUNTS.leader.email,
-      E2E_ACCOUNTS.leader.password,
-    );
-    await page.locator("[data-testid='login-submit']").click();
-    await expect(page.locator("body")).toBeVisible();
+    await fillLoginForm(page, `interactive-${RUN_ID}@e2e.gomate.test`, PASSWORD);
+    await expect(page.locator("[data-testid='login-submit']")).toBeEnabled();
   });
 
   test("successful login redirects to home", async ({ page }) => {
-    await page.goto("/login");
-    await fillLoginForm(
-      page,
-      E2E_ACCOUNTS.admin.email,
-      E2E_ACCOUNTS.admin.password,
+    const user = await signUpUser(
+      `auth-${RUN_ID}@e2e.gomate.test`,
+      PASSWORD,
+      `Auth ${RUN_ID}`,
     );
+    await page.goto("/login");
+    await fillLoginForm(page, user.email, user.password);
     await page.locator("[data-testid='login-submit']").click();
     // Deterministic assertion: wait for navigation to home
     await page.waitForURL(/\/$/, { timeout: 30000 });

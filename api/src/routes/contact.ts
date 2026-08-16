@@ -41,13 +41,13 @@ contact.post("/", async (c) => {
     );
 
     if (!result.success) {
-      logger.error("Failed to send contact email:", result.error);
+      logger.error("contact_email_delivery_failed", result.error);
       return c.json(APIErrors.internalError("发送失败，请稍后重试"), 500);
     }
 
     return c.json({ success: true, message: "您的建议已成功提交，我们会尽快查看并回复。" });
   } catch (error) {
-    logger.error("Contact API error:", error);
+    logger.error("contact_request_failed", error);
     return c.json(APIErrors.internalError("服务器错误，请稍后重试"), 500);
   }
 });

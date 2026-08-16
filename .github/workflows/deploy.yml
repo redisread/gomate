@@ -1,0 +1,129 @@
+name: Deploy unified Worker preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type DEPLOY_PREVIEW to deploy without a production route
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-unified-worker-preview
+  cancel-in-progress: false
+
+jobs:
+  deploy-preview:
+    name: Protected preview deploy
+    if: inputs.confirm == 'DEPLOY_PREVIEW' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      health_request_id: ${{ steps.preview_smoke.outputs.health_request_id }}
+      blocked_request_id: ${{ steps.preview_smoke.outputs.blocked_request_id }}
+    env:
+      CLOUDFLARE_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validate source
+        run: |
+          pnpm audit --prod --audit-level high
+          pnpm check:legacy-removal
+          pnpm test:delivery
+          pnpm i18n:build
+          pnpm --filter @gomate/api check:migrations
+          pnpm --filter @gomate/api lint
+          pnpm --filter @gomate/api type-check
+          pnpm --filter @gomate/api build
+          pnpm --filter @gomate/api test
+          pnpm --filter @gomate/frontend exec wrangler types ../api/src/worker-configuration.d.ts --config wrangler.jsonc --env production --check
+          pnpm --filter @gomate/frontend i18n:validate
+          pnpm --filter @gomate/frontend lint
+          pnpm --filter @gomate/frontend type-check
+          pnpm --filter @gomate/frontend test
+          pnpm --filter @gomate/frontend build
+          node scripts/prepare-worker-output.mjs
+          pnpm --filter @gomate/frontend exec wrangler deploy --dry-run --outdir ../dist-worker
+          pnpm --filter @gomate/frontend worker:size
+          pnpm --filter @gomate/frontend exec wrangler check startup
+      - name: Validate protected preview and remote routing
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          PREVIEW_APP_URL: ${{ secrets.PREVIEW_APP_URL }}
+        run: |
+          node scripts/validate-preview-deploy.mjs
+          node scripts/assert-preview-unrouted.mjs
+      - name: Apply V2 baseline to the production-environment binding
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler d1 migrations apply DB --env production --remote --config wrangler.jsonc
+      - name: Deploy protected preview Worker
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          PREVIEW_APP_URL: ${{ secrets.PREVIEW_APP_URL }}
+          SECRETS_FILE: ${{ runner.temp }}/gomate-worker-secrets.json
+        run: |
+          node ../scripts/write-preview-secrets.mjs
+          pnpm exec wrangler deploy --secrets-file "$SECRETS_FILE"
+      - name: Remove ephemeral preview secrets
+        if: always()
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+          SECRETS_FILE: ${{ runner.temp }}/gomate-worker-secrets.json
+        run: node scripts/remove-preview-secrets.mjs
+      - name: Protected preview smoke test
+        id: preview_smoke
+        env:
+          PREVIEW_APP_URL: ${{ secrets.PREVIEW_APP_URL }}
+        run: node scripts/smoke-protected-preview.mjs
+
+  observability-approval:
+    name: Observability evidence approval (${{ needs.deploy-preview.outputs.health_request_id }})
+    needs: deploy-preview
+    runs-on: ubuntu-latest
+    # This second protected-environment gate is intentionally after deploy and
+    # smoke. Reviewers must inspect Workers Logs before approving this job.
+    environment: production
+    steps:
+      - name: Require request-correlation evidence
+        env:
+          HEALTH_REQUEST_ID: ${{ needs.deploy-preview.outputs.health_request_id }}
+          BLOCKED_REQUEST_ID: ${{ needs.deploy-preview.outputs.blocked_request_id }}
+        run: |
+          case "$HEALTH_REQUEST_ID" in
+            *-*-*-*-*) ;;
+            *) echo "Missing health X-Request-ID evidence" >&2; exit 1 ;;
+          esac
+          case "$BLOCKED_REQUEST_ID" in
+            *-*-*-*-*) ;;
+            *) echo "Missing protected-mutation X-Request-ID evidence" >&2; exit 1 ;;
+          esac
+          {
+            echo "### Protected preview observability approved"
+            echo "- Health request: \`$HEALTH_REQUEST_ID\`"
+            echo "- Blocked mutation: \`$BLOCKED_REQUEST_ID\`"
+            echo "- Reviewer verified both \`api_request_completed\` events in Workers Logs."
+            echo "- Reviewer verified logs contain neither the canary email nor canary token."
+            echo "- CI app-runtime tests verified normalized 500 logging without message, body, or secret leakage."
+          } >> "$GITHUB_STEP_SUMMARY"

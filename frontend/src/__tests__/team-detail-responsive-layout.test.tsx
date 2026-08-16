@@ -27,41 +27,67 @@ vi.mock("@/hooks/useI18n", () => ({
 const team = {
   id: "team-1",
   locationId: "location-1",
+  leaderId: "leader-1",
+  activityType: "hiking",
   title: "惠州大南山｜周末徒步",
   description: "本周六前往惠州大南山徒步，集合信息由队长通知。",
-  date: "2026-08-08",
-  time: "06:30",
-  duration: "8h",
-  durationMin: 480,
-  maxMembers: 10,
-  currentMembers: 1,
+  startAt: "2026-08-08T06:30:00.000Z",
+  endAt: "2026-08-08T14:30:00.000Z",
+  maxParticipants: 10,
+  activeParticipantCount: 1,
   requirements: [],
-  status: "recruiting",
+  recruitmentStatus: "open",
+  formedAt: null,
+  cancelledAt: null,
+  lifecycle: "pending",
+  isFull: false,
+  checklist: null,
   createdAt: "2026-08-01T00:00:00Z",
+  updatedAt: "2026-08-01T00:00:00Z",
   leader: {
     id: "leader-1",
     name: "Victor",
     nickname: null,
-    avatar: null,
-    level: "advanced",
-    completedHikes: 8,
+    image: null,
     bio: "",
+    extra: { level: "advanced", completedHikes: 8, wechat: null, city: "huizhou" },
   },
 } satisfies Team;
 
 const location = {
   id: "location-1",
+  regionId: "huizhou",
   name: "大南山",
   slug: "da-nan-shan",
+  supportedActivityTypes: ["hiking"],
+  status: "published",
+  subtitle: null,
   description: "",
-  cityId: "huizhou",
-  cityName: "惠州",
-  bestSeason: [],
-  coverImage: "https://example.com/location.jpg",
+  address: null,
+  latitude: 22.8,
+  longitude: 114.4,
+  coverImageUrl: "https://example.com/location.jpg",
   images: [],
-  coordinates: { lat: 22.8, lng: 114.4 },
+  extra: {},
+  createdByUserId: null,
   createdAt: "2026-08-01T00:00:00Z",
   updatedAt: "2026-08-01T00:00:00Z",
+  region: {
+    id: "huizhou",
+    countryCode: "CN",
+    parentId: null,
+    name: "惠州",
+    nameEn: "Huizhou",
+    slug: "huizhou",
+    code: "441300",
+    level: "city",
+    timezone: "Asia/Shanghai",
+    centerLatitude: null,
+    centerLongitude: null,
+    serviceEnabled: true,
+    isHot: false,
+    sortOrder: 0,
+  },
 } satisfies Location;
 
 describe("team detail responsive information architecture", () => {
@@ -133,7 +159,7 @@ describe("team detail responsive information architecture", () => {
   it("does not invite an anonymous visitor to log in when the team has ended", () => {
     render(
       <TeamDecisionPrimaryAction
-        team={{ ...team, status: "completed" }}
+        team={{ ...team, lifecycle: "completed", recruitmentStatus: "closed" }}
         userId={null}
         canJoin={false}
         isFull={false}

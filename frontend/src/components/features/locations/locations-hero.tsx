@@ -4,39 +4,40 @@ import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { getRoleConfig, type RoleKey, type RoleCfg } from "./constants";
 import { LocationsHeroSkeleton } from "@/components/ui/skeleton";
+import type { Region } from "@/lib/types";
 
 interface LocationsHeroProps {
   activeRole: RoleKey;
   searchQuery: string;
-  selectedCityId: string;
+  selectedRegionId: string;
   selectedTags: string[];
-  cities: { id: string; name: string }[];
+  regions: Region[];
   popularTags: { id: string; name: string }[];
-  showCityDropdown: boolean;
-  cityDropdownPos: { top: number; left: number };
-  selectedCityName?: string;
+  showRegionDropdown: boolean;
+  regionDropdownPos: { top: number; left: number };
+  selectedRegionName?: string;
   hasActiveFilters: boolean;
   isLoading: boolean;
   pagination: { total: number };
   onRoleSelect: (role: RoleKey) => void;
   onSearchChange: (q: string) => void;
   onTagToggle: (tagId: string) => void;
-  onCitySelect: (cityId: string) => void;
+  onRegionSelect: (regionId: string) => void;
   onClearAll: () => void;
-  onToggleCityDropdown: () => void;
-  setCityDropdownPos: (pos: { top: number; left: number }) => void;
+  onToggleRegionDropdown: () => void;
+  setRegionDropdownPos: (pos: { top: number; left: number }) => void;
 }
 
 export function LocationsHero({
-  activeRole, searchQuery, selectedCityId, selectedTags, cities, popularTags,
-  showCityDropdown, cityDropdownPos, selectedCityName, hasActiveFilters,
+  activeRole, searchQuery, selectedRegionId, selectedTags, regions, popularTags,
+  showRegionDropdown, regionDropdownPos, selectedRegionName, hasActiveFilters,
   isLoading: _isLoading, pagination: _pagination, onRoleSelect, onSearchChange, onTagToggle,
-  onCitySelect, onClearAll, onToggleCityDropdown, setCityDropdownPos,
+  onRegionSelect, onClearAll, onToggleRegionDropdown, setRegionDropdownPos,
 }: LocationsHeroProps) {
   const { t, loading: i18nLoading } = useI18n(["locations"]);
   const cfg = getRoleConfig(t);
-  const cityBtnRef = React.useRef<HTMLButtonElement>(null);
-  const cityDropdownRef = React.useRef<HTMLDivElement>(null);
+  const regionBtnRef = React.useRef<HTMLButtonElement>(null);
+  const regionDropdownRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   // i18n 加载中时显示骨架屏
@@ -119,24 +120,24 @@ export function LocationsHero({
         {/* 筛选栏 */}
         <div className="mt-3 relative" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 290ms both" }}>
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {cities.length > 0 && (
-              <button ref={cityBtnRef} type="button" data-city-btn
+            {regions.length > 0 && (
+              <button ref={regionBtnRef} type="button" data-region-btn
                 onClick={() => {
-                  if (cityBtnRef.current) {
-                    const rect = cityBtnRef.current.getBoundingClientRect();
-                    setCityDropdownPos({ top: rect.bottom + 6, left: rect.left });
+                  if (regionBtnRef.current) {
+                    const rect = regionBtnRef.current.getBoundingClientRect();
+                    setRegionDropdownPos({ top: rect.bottom + 6, left: rect.left });
                   }
-                  onToggleCityDropdown();
+                  onToggleRegionDropdown();
                 }}
                 className={cn("flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
-                  selectedCityId ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
+                  selectedRegionId ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
                 <MapPin className="w-3 h-3" />
-                {selectedCityName || t("locations.allCities")}
-                <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", showCityDropdown && "rotate-180")} />
+                {selectedRegionName || t("locations.allRegions")}
+                <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", showRegionDropdown && "rotate-180")} />
               </button>
             )}
-            {cities.length > 0 && popularTags.length > 0 && (
+            {regions.length > 0 && popularTags.length > 0 && (
               <div className="flex-shrink-0 w-px h-4 bg-stone-200 dark:bg-stone-700" />
             )}
             {popularTags.slice(0, 8).map((tag) => (
@@ -157,22 +158,22 @@ export function LocationsHero({
           <div className="absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-l from-white to-transparent pointer-events-none" />
         </div>
 
-        {/* 城市下拉 */}
-        {showCityDropdown && (
-          <div ref={cityDropdownRef} data-city-dropdown className="fixed bg-popover border border-stone-200 dark:border-stone-700 rounded-xl shadow-lg z-[9999] min-w-[140px] max-h-60 overflow-y-auto py-1 origin-top"
-            style={{ top: cityDropdownPos.top, left: cityDropdownPos.left, animation: "scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both" }}>
-            <button type="button" onClick={() => onCitySelect("")}
+        {/* Region dropdown */}
+        {showRegionDropdown && (
+          <div ref={regionDropdownRef} data-region-dropdown className="fixed bg-popover border border-stone-200 dark:border-stone-700 rounded-xl shadow-lg z-[9999] min-w-[140px] max-h-60 overflow-y-auto py-1 origin-top"
+            style={{ top: regionDropdownPos.top, left: regionDropdownPos.left, animation: "scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both" }}>
+            <button type="button" onClick={() => onRegionSelect("")}
               className={cn("w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
-                !selectedCityId ? "text-amber-700 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
+                !selectedRegionId ? "text-amber-700 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
               )}>
-              <MapPin className="w-3 h-3 flex-shrink-0" />{t("locations.allCities")}
+              <MapPin className="w-3 h-3 flex-shrink-0" />{t("locations.allRegions")}
             </button>
-            {cities.map((city) => (
-              <button key={city.id} type="button" onClick={() => onCitySelect(city.id)}
+            {regions.map((region) => (
+              <button key={region.id} type="button" onClick={() => onRegionSelect(region.id)}
                 className={cn("w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
-                  selectedCityId === city.id ? "text-amber-700 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
+                  selectedRegionId === region.id ? "text-amber-700 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
-                <MapPin className="w-3 h-3 flex-shrink-0" />{city.name}
+                <MapPin className="w-3 h-3 flex-shrink-0" />{region.name}
               </button>
             ))}
           </div>
@@ -183,12 +184,12 @@ export function LocationsHero({
 }
 
 export function LocationsResultBar({
-  isLoading, pagination, selectedCityId, selectedTags, activeRole,
-  selectedCityName, popularTags, hasActiveFilters, onRoleSelect, onCitySelect, onTagToggle, onClearAll,
+  isLoading, pagination, selectedRegionId, selectedTags, activeRole,
+  selectedRegionName, popularTags, hasActiveFilters, onRoleSelect, onRegionSelect, onTagToggle, onClearAll,
 }: {
-  isLoading: boolean; pagination: { total: number }; selectedCityId: string; selectedTags: string[];
-  activeRole: RoleKey; selectedCityName?: string; popularTags: { id: string; name: string }[];
-  hasActiveFilters: boolean; onRoleSelect: (role: RoleKey) => void; onCitySelect: (cityId: string) => void;
+  isLoading: boolean; pagination: { total: number }; selectedRegionId: string; selectedTags: string[];
+  activeRole: RoleKey; selectedRegionName?: string; popularTags: { id: string; name: string }[];
+  hasActiveFilters: boolean; onRoleSelect: (role: RoleKey) => void; onRegionSelect: (regionId: string) => void;
   onTagToggle: (tagId: string) => void; onClearAll: () => void;
 }) {
   const { t } = useI18n(["locations"]);
@@ -203,7 +204,7 @@ export function LocationsResultBar({
             {t("locations.totalResultPrefix", { count: pagination.total })}
           </p>
         )}
-        {!isLoading && (selectedCityId || selectedTags.length > 0 || activeRole) && (
+        {!isLoading && (selectedRegionId || selectedTags.length > 0 || activeRole) && (
           <div className="flex items-center gap-2 flex-wrap">
             {activeRole && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
@@ -212,11 +213,11 @@ export function LocationsResultBar({
                 <button onClick={() => onRoleSelect("")} className="hover:text-emerald-900 dark:hover:text-emerald-300 transition-colors ml-0.5"><X className="w-3 h-3" /></button>
               </span>
             )}
-            {selectedCityId && selectedCityName && (
+            {selectedRegionId && selectedRegionName && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50">
                 <MapPin className="w-3 h-3" />
-                {selectedCityName}
-                <button onClick={() => onCitySelect("")} className="hover:text-amber-900 dark:hover:text-amber-300 transition-colors ml-0.5"><X className="w-3 h-3" /></button>
+                {selectedRegionName}
+                <button onClick={() => onRegionSelect("")} className="hover:text-amber-900 dark:hover:text-amber-300 transition-colors ml-0.5"><X className="w-3 h-3" /></button>
               </span>
             )}
             {selectedTags.map((tagId) => {

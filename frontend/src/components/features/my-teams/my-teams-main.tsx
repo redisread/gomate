@@ -126,9 +126,12 @@ export function MyTeamsClient() {
               hasMore={ctx.roleFilter === "leader" ? ctx.createdHasMore : ctx.roleFilter === "member" ? ctx.joinedHasMore : ctx.createdHasMore || ctx.joinedHasMore}
               loading={ctx.roleFilter === "leader" ? ctx.createdLoadingMore : ctx.roleFilter === "member" ? ctx.joinedLoadingMore : ctx.createdLoadingMore || ctx.joinedLoadingMore}
               onClick={() => {
-                if (ctx.roleFilter === "leader") ctx.setCreatedPage((p) => p + 1);
-                else if (ctx.roleFilter === "member") ctx.setJoinedPage((p) => p + 1);
-                else { if (ctx.createdHasMore) ctx.setCreatedPage((p) => p + 1); if (ctx.joinedHasMore) ctx.setJoinedPage((p) => p + 1); }
+                if (ctx.roleFilter === "leader") ctx.loadMoreCreated();
+                else if (ctx.roleFilter === "member") ctx.loadMoreJoined();
+                else {
+                  if (ctx.createdHasMore) ctx.loadMoreCreated();
+                  if (ctx.joinedHasMore) ctx.loadMoreJoined();
+                }
               }}
             />
           </div>
@@ -162,7 +165,7 @@ export function MyTeamsClient() {
                     <EmptyState icon="clipboard" title={t("myTeams.emptyApplications")} desc={t("myTeams.emptyApplicationsDesc")} btnLabel={t("myTeams.emptyApplicationsBtn")} href="/teams" />
                   ) : ctx.applications.map((app) => <ApplicationCard key={app.id} application={app} />)
                 }
-                <LoadMoreButton hasMore={ctx.applicationsHasMore} loading={ctx.applicationsLoadingMore} onClick={() => ctx.setApplicationsPage((p) => p + 1)} />
+                <LoadMoreButton hasMore={ctx.applicationsHasMore} loading={ctx.applicationsLoadingMore} onClick={ctx.loadMoreApplications} />
               </div>
             )}
 
@@ -175,7 +178,7 @@ export function MyTeamsClient() {
                     <PendingApprovalCard key={approval.id} approval={approval} onClick={(a) => { ctx.setSelectedApproval(a); ctx.setIsDetailOpen(true); }} />
                   ))
                 }
-                <LoadMoreButton hasMore={ctx.pendingHasMore} loading={ctx.pendingLoadingMore} onClick={() => ctx.setPendingPage((p) => p + 1)} />
+                <LoadMoreButton hasMore={ctx.pendingHasMore} loading={ctx.pendingLoadingMore} onClick={ctx.loadMorePending} />
               </div>
             )}
           </div>
@@ -200,7 +203,7 @@ export function MyTeamsClient() {
         onConfirm={ctx.handleCancelTeam} onCancel={() => ctx.setCancelTarget(null)}
       />
       <FormTeamModal
-        teamId={ctx.formTarget} isFull={formTargetTeam ? formTargetTeam.currentMembers >= formTargetTeam.maxMembers : false}
+        teamId={ctx.formTarget} isFull={formTargetTeam?.isFull ?? false}
         isForming={ctx.isForming} onConfirm={ctx.handleFormTeam} onCancel={() => ctx.setFormTarget(null)}
       />
     </main>

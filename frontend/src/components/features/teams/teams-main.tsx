@@ -14,7 +14,7 @@ import { TeamsSelectedFilters } from "./teams-selected-filters";
 export function TeamsClient({ initialData }: { initialData?: TeamsInitialData }) {
   const { t } = useI18n(["teams"]);
   const ctx = useTeams(initialData);
-  const cityOnlyEmptyState = Boolean(ctx.selectedCityName)
+  const regionOnlyEmptyState = Boolean(ctx.selectedRegionName)
     && ctx.activeFiltersCount === 1
     && !ctx.searchQuery;
 
@@ -27,22 +27,24 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
         advancedFiltersCount={ctx.advancedFiltersCount}
         onSearchChange={ctx.handleSearchChange}
         onToggleFilters={() => ctx.setShowFilters(!ctx.showFilters)}
-        cities={ctx.availableCities}
-        selectedCityId={ctx.selectedCityId}
+        regions={ctx.availableRegions}
+        selectedRegionId={ctx.selectedRegionId}
         activeDateQuickType={ctx.activeDateQuickType}
         hasDateFilter={ctx.hasDateFilter}
-        citiesLoading={ctx.citiesLoading}
-        citiesError={ctx.citiesError}
-        onCitySelect={ctx.handleCitySelect}
+        regionsLoading={ctx.regionsLoading}
+        regionsError={ctx.regionsError}
+        onRegionSelect={ctx.handleRegionSelect}
         onDateQuickSelect={ctx.handleDateQuickSelect}
-        onRetryCities={ctx.retryCities}
+        onRetryRegions={ctx.retryRegions}
         renderFilterPanel={() => (
           <FilterPanel
-            selectedDifficulty={ctx.selectedDifficulty}
+            selectedActivityType={ctx.selectedActivityType}
+            selectedRecruitmentStatus={ctx.selectedRecruitmentStatus}
             availableTags={ctx.availableTags}
             selectedTags={ctx.selectedTags}
             activeFiltersCount={ctx.advancedFiltersCount}
-            onDifficultyToggle={ctx.handleDifficultyToggle}
+            onActivityTypeSelect={ctx.handleActivityTypeSelect}
+            onRecruitmentStatusSelect={ctx.handleRecruitmentStatusSelect}
             onTagToggle={ctx.handleTagToggle}
             onClearAll={ctx.clearAdvancedFilters}
           />
@@ -61,16 +63,18 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
               )}
               {!ctx.isLoading && (
                 <TeamsSelectedFilters
-                  selectedCityName={ctx.selectedCityName ?? (ctx.selectedCityId ? t("teams.selectedCityFallback") : undefined)}
+                  selectedRegionName={ctx.selectedRegionName ?? (ctx.selectedRegionId ? t("teams.selectedCityFallback") : undefined)}
                   activeDateQuickType={ctx.activeDateQuickType}
                   startDate={ctx.startDate}
                   endDate={ctx.endDate}
-                  selectedDifficulty={ctx.selectedDifficulty}
+                  selectedActivityType={ctx.selectedActivityType}
+                  selectedRecruitmentStatus={ctx.selectedRecruitmentStatus}
                   availableTags={ctx.availableTags}
                   selectedTags={ctx.selectedTags}
-                  onCitySelect={ctx.handleCitySelect}
+                  onRegionSelect={ctx.handleRegionSelect}
                   onDateQuickSelect={ctx.handleDateQuickSelect}
-                  onDifficultyToggle={ctx.handleDifficultyToggle}
+                  onActivityTypeSelect={ctx.handleActivityTypeSelect}
+                  onRecruitmentStatusSelect={ctx.handleRecruitmentStatusSelect}
                   onTagToggle={ctx.handleTagToggle}
                 />
               )}
@@ -95,9 +99,9 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
           ) : ctx.teams.length === 0 ? (
             <EmptyState
               onClear={ctx.clearFilters}
-              onClearCity={() => ctx.handleCitySelect("")}
+              onClearRegion={() => ctx.handleRegionSelect("")}
               hasActiveCriteria={ctx.activeFiltersCount > 0 || Boolean(ctx.searchQuery)}
-              selectedCityName={cityOnlyEmptyState ? ctx.selectedCityName : undefined}
+              selectedRegionName={regionOnlyEmptyState ? ctx.selectedRegionName : undefined}
             />
           ) : (
             <>
@@ -108,7 +112,7 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
             </>
           )}
           {!ctx.isLoading && !ctx.loadError && (
-            <Pagination current={ctx.currentPage} total={ctx.pagination.totalPages} onChange={ctx.handlePageChange} />
+            <Pagination current={ctx.currentPage} hasNext={Boolean(ctx.pagination.nextCursor)} onChange={ctx.handlePageChange} />
           )}
         </div>
       </section>

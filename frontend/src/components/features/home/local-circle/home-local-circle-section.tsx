@@ -1,17 +1,6 @@
 /**
- * P0-D T2 (task #176) — 首页本地圈子模块
- *
- * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §4 / §6
- *   - 挂在 Hero 之后 / Locations 之前（home-main.tsx）
- *   - 消费 GET /api/local-circle/home?cityId=（useLocalCircle hook）
- *   - 标题「{cityName} {activePeopleCount} 人在行动」+ 副标题
- *   - Top 3 地点卡（LocalCircleCard）
- *   - 空态整块不渲染（topLocations 空 → return null，spec §6.4）
- *   - 错误降级：fetch 失败 → return null，不阻塞首页其他模块（Martin CR）
- *   - skeleton 固定高度防 CLS
- *
- * 注：邻居队伍子区块（neighborTeams 渲染）归 T3（task #177），
- * 待 D2 spec 歧义拍板后在本 section 内追加。T2 只做 topLocations。
+ * 首页本地圈子：公共 Region 聚合与每请求计算的个性化邻居队伍。
+ * 请求失败或双空时静默降级，不阻塞首页其余内容；加载态固定高度以避免 CLS。
  */
 
 "use client";
@@ -55,16 +44,15 @@ export function HomeLocalCircleSection() {
   // 错误态 or 空态：整块不渲染（spec §6.4 + Martin CR 降级不阻塞首页）
   if (state.status === "error") return null;
 
-  const { cityName, activePeopleCount, topLocations, neighborTeams } = state.data;
-  const { loggedIn, userCity } = state;
+  const { regionName, activePeopleCount, topLocations, neighborTeams } = state.data;
+  const { loggedIn, userRegionId } = state;
 
-  // #185 T2 引导卡：登录 + 未设 city + 邻居子区块空 → 显示「设置城市看邻居」CTA（替代邻居空态）
-  // 匿名（loggedIn=false）不显示；已设 city 走正常 neighborTeams 渲染/空态不渲染
-  const showGuideCard = loggedIn && !userCity && neighborTeams.length === 0;
+  // 登录 + 未设置 Region + 邻居子区块空 → 显示设置地区引导。
+  const showGuideCard = loggedIn && !userRegionId && neighborTeams.length === 0;
 
   // 空态：地点 + 邻居队伍都空 → 整块不渲染（非占位，spec §6.4）
   // 两者独立空态：主区块随 topLocations，子区块随 neighborTeams
-  // #185：引导卡视为子区块内容——登录未设 city 用户即使双空也保留 section 给引导入口
+  // 引导卡视为子区块内容，登录未设置 Region 时即使双空也保留入口。
   if (topLocations.length === 0 && neighborTeams.length === 0 && !showGuideCard) return null;
 
   return (
@@ -81,11 +69,11 @@ export function HomeLocalCircleSection() {
           <p className="text-stone-700 dark:text-stone-300 max-w-xl mx-auto leading-relaxed text-base sm:text-lg">
             {t("home.localCircle.subtitle")}
           </p>
-          {/* 城市 dynamic 前缀「{city} {n} 人在行动」——0 人时不显示，避免
+          {/* Region dynamic 前缀「{region} {n} 人在行动」——0 人时不显示，避免
               「深圳 · 0 人在行动」这类负向空态文案劝退（UX 审计发现） */}
           {activePeopleCount > 0 && (
             <p className="mt-2 text-sm font-medium text-amber-800 dark:text-amber-300">
-              {cityName} · {t("home.localCircle.inAction", { n: activePeopleCount })}
+              {regionName} · {t("home.localCircle.inAction", { n: activePeopleCount })}
             </p>
           )}
         </div>
@@ -99,18 +87,18 @@ export function HomeLocalCircleSection() {
           </div>
         )}
 
-        {/* #185 T2 引导卡：登录未设 city 用户「设置城市看邻居」（替代邻居空态，spec §2.2） */}
+        {/* 登录未设置 Region 时展示引导卡。 */}
         {showGuideCard && (
-          <div className="mt-8 sm:mt-10 flex justify-center" data-testid="city-guide-card">
+          <div className="mt-8 sm:mt-10 flex justify-center" data-testid="region-guide-card">
             <div className="w-full max-w-md rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 px-6 py-6 text-center">
               <p className="text-base font-medium text-stone-800 dark:text-stone-200 leading-relaxed">
-                {t("home.localCircle.setCityCta.title")}
+                {t("home.localCircle.setRegionCta.title")}
               </p>
               <a
                 href="/profile/edit"
                 className="mt-4 inline-flex items-center gap-1 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 transition-colors"
               >
-                {t("home.localCircle.setCityCta.button")}
+                {t("home.localCircle.setRegionCta.button")}
               </a>
             </div>
           </div>
@@ -125,7 +113,7 @@ export function HomeLocalCircleSection() {
             </h3>
             <div className="flex flex-col gap-3">
               {neighborTeams.map((team) => (
-                <NeighborTeamRow key={team.teamId} team={team} cityName={cityName} />
+                <NeighborTeamRow key={team.teamId} team={team} regionName={regionName} />
               ))}
             </div>
           </div>

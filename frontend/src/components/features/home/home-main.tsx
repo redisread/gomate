@@ -23,8 +23,8 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
       .catch(() => setCurrentUser(null));
   }, []);
 
-  const userCity = currentUser?.city ?? null;
-  const data = useHomeData(initialData, userCity);
+  const userRegionId = currentUser?.extra.city ?? null;
+  const data = useHomeData(initialData, userRegionId);
 
   if (currentUser === undefined) {
     return (

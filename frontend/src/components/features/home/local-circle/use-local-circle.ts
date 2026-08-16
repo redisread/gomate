@@ -3,10 +3,10 @@
  *
  * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §3.4 / §6.4
  *
- * cityId 来源（#181 §3.4 起）：
- *   - 登录用户 `user.city` 非空 → `?cityId=${user.city}`（看自己城市圈子，地点维度个性化）
- *   - 未登录 / 未设城市 → 不传 cityId，后端 fallback 深圳（P0-D 方案 a 现状保留）
- *   - user.city 读取走 fetchCurrentUser 两步（get-session + /api/users），与 navbar 同口径
+ * regionId 来源（#181 §3.4 起）：
+ *   - 登录用户 `user.extra.city` 非空 → `?regionId=${user.extra.city}`（该 storage key 保存 Region id）
+ *   - 未登录 / 未设置 Region → 不传 regionId，后端稳定 fallback 深圳
+ *   - user.extra.city 读取走 fetchCurrentUser，与 navbar 同口径
  *
  * 错误 / 空态：
  *   - fetch 失败 or topLocations & neighborTeams 都空 → 消费方整块不渲染（spec §6.4）
@@ -14,26 +14,27 @@
  */
 
 import * as React from "react";
-import { fetchPublicAPI, fetchCurrentUser } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import type { LocalCircle } from "./types";
 
 export type LocalCircleState =
   | { status: "loading" }
-  // #185：引导卡显隐判定用 —— loggedIn 区分匿名（不显示）与登录未设 city（显示）
-  | { status: "ready"; data: LocalCircle; loggedIn: boolean; userCity: string | null }
+  // 引导卡显隐判定用：loggedIn 区分匿名与登录未设置 Region。
+  | { status: "ready"; data: LocalCircle; loggedIn: boolean; userRegionId: string | null }
   | { status: "error"; message: string };
 
-async function fetchLocalCircle(): Promise<{ data: LocalCircle; loggedIn: boolean; userCity: string | null }> {
-  // #181 §3.4：登录用户 user.city 非空 → ?cityId= 看自己城市圈子；
-  // 未登录 / 未设城市 → cityId 缺省，后端 fallback 深圳（方案 a）
+async function fetchLocalCircle(): Promise<{ data: LocalCircle; loggedIn: boolean; userRegionId: string | null }> {
+  // `user.extra.city` 是 V2 持久化的 Region id；匿名或空值时由后端稳定 fallback 深圳。
   const user = await fetchCurrentUser(); // 静默失败，不跳转
-  const cityId = user?.city || null;
-  const url = cityId
-    ? `/local-circle/home?cityId=${encodeURIComponent(cityId)}`
+  const regionId = user?.extra.city || null;
+  const url = regionId
+    ? `/local-circle/home?regionId=${encodeURIComponent(regionId)}`
     : "/local-circle/home";
-  const res = await fetchPublicAPI(url);
+  // The response combines a public cached aggregate with per-session neighbor
+  // teams, so the same-origin cookie must remain available to the Worker.
+  const res = await fetchAPI(url);
   if (!res.ok) throw new Error(`local-circle HTTP ${res.status}`);
-  return { data: (await res.json()) as LocalCircle, loggedIn: !!user, userCity: cityId };
+  return { data: (await res.json()) as LocalCircle, loggedIn: !!user, userRegionId: regionId };
 }
 
 export function useLocalCircle(): LocalCircleState {
@@ -43,9 +44,9 @@ export function useLocalCircle(): LocalCircleState {
     let cancelled = false;
 
     fetchLocalCircle()
-      .then(({ data, loggedIn, userCity }) => {
+      .then(({ data, loggedIn, userRegionId }) => {
         if (cancelled) return;
-        setState({ status: "ready", data, loggedIn, userCity });
+        setState({ status: "ready", data, loggedIn, userRegionId });
       })
       .catch((err) => {
         if (cancelled) return;

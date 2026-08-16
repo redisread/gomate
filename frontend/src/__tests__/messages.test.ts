@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createConversation } from "../hooks/useMessages";
+import {
+  createConversation,
+  fetchAllConversations,
+} from "../hooks/useMessages";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -29,7 +32,7 @@ describe("messages client helpers", () => {
     expect(JSON.parse(options.body)).toEqual({ teamId: "team-1" });
   });
 
-  it("creates a leader-to-member conversation with target userId", async () => {
+  it("creates a leader-to-member conversation with target memberUserId", async () => {
     mockFetch.mockResolvedValueOnce(makeResponse({
       success: true,
       data: { id: "conv-2", isNew: false },
@@ -39,7 +42,10 @@ describe("messages client helpers", () => {
 
     expect(result).toEqual({ id: "conv-2", isNew: false });
     const [, options] = mockFetch.mock.calls[0];
-    expect(JSON.parse(options.body)).toEqual({ teamId: "team-1", userId: "user-2" });
+    expect(JSON.parse(options.body)).toEqual({
+      teamId: "team-1",
+      memberUserId: "user-2",
+    });
   });
 
   it("throws the structured API error message when creation fails", async () => {
@@ -50,5 +56,38 @@ describe("messages client helpers", () => {
 
     await expect(createConversation("team-1", "pending-user"))
       .rejects.toThrow("Target user is not an approved team member");
+  });
+
+  it("follows opaque inbox cursors without page aliases or duplicate rows", async () => {
+    mockFetch
+      .mockResolvedValueOnce(makeResponse({
+        success: true,
+        data: [
+          { id: "conversation-c", createdAt: "2026-08-16T09:00:00.000Z" },
+          { id: "conversation-b", createdAt: "2026-08-16T09:00:00.000Z" },
+        ],
+        nextCursor: "cursor-b",
+      }))
+      .mockResolvedValueOnce(makeResponse({
+        success: true,
+        data: [
+          { id: "conversation-b", createdAt: "2026-08-16T09:00:00.000Z" },
+          { id: "conversation-a", createdAt: "2026-08-16T09:00:00.000Z" },
+        ],
+        nextCursor: null,
+      }));
+
+    const conversations = await fetchAllConversations();
+
+    expect(conversations.map(({ id }) => id)).toEqual([
+      "conversation-c",
+      "conversation-b",
+      "conversation-a",
+    ]);
+    expect(mockFetch.mock.calls.map(([url]) => url)).toEqual([
+      "/api/messages?limit=50",
+      "/api/messages?limit=50&cursor=cursor-b",
+    ]);
+    expect(mockFetch.mock.calls.flat().join(" ")).not.toMatch(/page(Size)?=/u);
   });
 });

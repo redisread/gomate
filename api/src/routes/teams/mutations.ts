@@ -1,303 +1,422 @@
-import { APIErrors } from "../../lib/api-errors";
-import { logger } from "../../lib/logger";
+import { and, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq, and, sql } from "drizzle-orm";
-import { createAuth } from "../../lib/auth";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
+import { APIErrors, ErrorCode } from "../../lib/api-errors";
 import type { Env } from "../../lib/auth";
-import { getRandomTeamIcon } from "./utils";
+import { getActiveSession } from "../../lib/active-session";
+import { mapDatabaseError } from "../../lib/database-errors";
 import { generateId } from "../../lib/id";
-import { invalidateCache, buildListCacheKey } from "../../lib/cache";
+import { logger } from "../../lib/logger";
+import { parseUserExtra } from "../../lib/user-extra";
+import { createTeamTagUpdateBatch } from "../../lib/team-tag-write";
+import { toTeamResponse } from "./utils";
 
 const mutations = new Hono<{ Bindings: Env }>();
 
+const activityTypeSchema = z.enum(["hiking", "explore", "leisure", "travel"]);
+const requirementSchema = z.string().trim().min(1).max(200);
+const tagIdsSchema = z.array(z.string().trim().min(1).max(100)).max(20)
+  .transform((values) => [...new Set(values)]);
+
 const createTeamSchema = z.object({
-  locationId: z.string().min(1),
-  title: z.string().min(1).max(100),
-  description: z.string().max(2000).optional(),
-  date: z.string().min(1),
-  time: z.string().min(1),
-  duration: z.string().optional(),
-  durationMin: z.number().optional(),
-  maxMembers: z.number().int().min(2).max(50),
-  requirements: z.array(z.string()).optional(),
+  locationId: z.string().trim().min(1).max(100),
+  activityType: activityTypeSchema,
+  title: z.string().trim().min(1).max(100),
+  description: z.string().trim().max(2_000).nullable().optional(),
+  startAt: z.string().datetime({ offset: true }),
+  endAt: z.string().datetime({ offset: true }),
+  maxParticipants: z.number().int().min(1).max(49),
+  requirements: z.array(requirementSchema).max(20).default([]),
+  recruitmentStatus: z.enum(["open", "closed"]).default("open"),
+  tagIds: tagIdsSchema.default([]),
+}).superRefine((value, ctx) => {
+  const startAt = Date.parse(value.startAt);
+  const endAt = Date.parse(value.endAt);
+  if (startAt <= Date.now()) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["startAt"], message: "startAt 必须在未来" });
+  }
+  if (endAt < startAt) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["endAt"], message: "endAt 不能早于 startAt" });
+  }
 });
 
 const updateTeamSchema = z.object({
-  title: z.string().min(1).max(100).optional(),
-  description: z.string().max(2000).optional().nullable(),
-  maxMembers: z.number().int().min(2).max(50).optional(),
-  requirements: z.array(z.string()).optional().nullable(),
-  icon: z.string().optional(),
-  time: z.string().optional(),
-  durationMin: z.number().optional(),
-});
+  locationId: z.string().trim().min(1).max(100).optional(),
+  activityType: activityTypeSchema.optional(),
+  title: z.string().trim().min(1).max(100).optional(),
+  description: z.string().trim().max(2_000).nullable().optional(),
+  startAt: z.string().datetime({ offset: true }).optional(),
+  endAt: z.string().datetime({ offset: true }).optional(),
+  maxParticipants: z.number().int().min(1).max(49).optional(),
+  requirements: z.array(requirementSchema).max(20).optional(),
+  recruitmentStatus: z.enum(["open", "closed"]).optional(),
+  tagIds: tagIdsSchema.optional(),
+}).strict();
 
-/**
- * POST /teams
- * 创建新队伍（需登录，需填写微信号）
- */
+type Db = ReturnType<typeof createDb>;
+
+function changes(result: D1Result<unknown> | undefined): number {
+  return Number(result?.meta?.changes ?? 0);
+}
+
+function isConstraintError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /constraint|foreign key|unique|check failed/i.test(message);
+}
+
+async function readTeamResponse(db: Db, teamId: string, checklistVisible: boolean) {
+  const activeCount = sql<number>`coalesce((
+    select count(*) from ${schema.teamMembers} as active_member
+    where active_member.team_id = ${schema.teams.id}
+      and active_member.left_at is null
+      and active_member.user_id <> ${schema.teams.leaderId}
+  ), 0)`;
+  const rows = await db
+    .select({
+      team: schema.teams,
+      leader: schema.users,
+      location: schema.locations,
+      region: schema.region,
+      activeParticipantCount: activeCount,
+    })
+    .from(schema.teams)
+    .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
+    .innerJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+    .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
+    .where(eq(schema.teams.id, teamId))
+    .limit(1);
+  const row = rows[0];
+  if (!row) return null;
+
+  const tagRows = await db
+    .select({ tag: schema.tags })
+    .from(schema.teamTags)
+    .innerJoin(schema.tags, eq(schema.tags.id, schema.teamTags.tagId))
+    .where(eq(schema.teamTags.teamId, teamId));
+
+  return toTeamResponse({
+    ...row,
+    activeParticipantCount: Number(row.activeParticipantCount),
+    tags: tagRows.map(({ tag }) => tag),
+    checklistVisible,
+    contactVisible: checklistVisible,
+  });
+}
+
+async function validateTagIds(db: Db, tagIds: string[]): Promise<boolean> {
+  if (tagIds.length === 0) return true;
+  const rows = await db
+    .select({ id: schema.tags.id })
+    .from(schema.tags)
+    .where(inArray(schema.tags.id, tagIds));
+  return rows.length === tagIds.length;
+}
+
 mutations.post("/", async (c) => {
   try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
+    const parsed = createTeamSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入无效", parsed.error.flatten()), 400);
+    }
+
     const db = createDb(c.env.DB);
-    const userId = session.user.id;
-
-    const userRecord = await db
-      .select({ wechat: schema.users.wechat })
-      .from(schema.users)
-      .where(eq(schema.users.id, userId))
-      .then((rows) => rows[0]);
-
-    if (!userRecord?.wechat) {
+    const user = await db.query.users.findFirst({ where: eq(schema.users.id, session.user.id) });
+    if (!user) return c.json(APIErrors.unauthorized("用户不存在"), 401);
+    if (!parseUserExtra(user.extra).wechat) {
       return c.json(APIErrors.badRequest("请先填写微信号才能创建队伍"), 400);
     }
-
-    const body = await c.req.json();
-    const parsed = createTeamSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(APIErrors.validationError("输入无效", parsed.error.errors), 400);
+    if (!await validateTagIds(db, parsed.data.tagIds)) {
+      return c.json(APIErrors.validationError("tagIds 包含不存在的标签"), 422);
     }
 
-    const { locationId, title, description, date, time, duration, durationMin, maxMembers, requirements } = parsed.data;
-
-    const startTime = new Date(`${date}T${time}`);
-    if (isNaN(startTime.getTime())) {
-      return c.json(APIErrors.badRequest("无效的日期或时间格式"), 400);
-    }
-
-    const durationMinutes = durationMin || (duration
-      ? parseFloat(duration.replace(/[^0-9.]/g, "")) * 60 || 240
-      : 240);
-    const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
     const teamId = generateId();
-    const memberId = generateId();
-    const now = new Date();
-    const teamIcon = getRandomTeamIcon();
+    const now = Date.now();
+    const data = parsed.data;
+    const createTeam = c.env.DB.prepare(`
+      INSERT INTO teams (
+        id, location_id, leader_id, activity_type, title, description,
+        start_at, end_at, max_participants, requirements,
+        recruitment_status, formed_at, cancelled_at, checklist,
+        created_at, updated_at
+      )
+      SELECT ?, location.id, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?
+      FROM locations AS location
+      WHERE location.id = ?
+        AND location.status = 'published'
+        AND EXISTS (
+          SELECT 1 FROM json_each(location.supported_activity_types)
+          WHERE json_each.value = ?
+        )
+    `).bind(
+      teamId,
+      session.user.id,
+      data.activityType,
+      data.title,
+      data.description ?? null,
+      Date.parse(data.startAt),
+      Date.parse(data.endAt),
+      data.maxParticipants,
+      JSON.stringify(data.requirements),
+      data.recruitmentStatus,
+      now,
+      now,
+      data.locationId,
+      data.activityType,
+    );
+    const tagStatements = data.tagIds.map((tagId) => c.env.DB.prepare(`
+      INSERT INTO team_tags (team_id, tag_id, created_at)
+      SELECT ?, ?, ?
+      WHERE EXISTS (SELECT 1 FROM teams WHERE id = ?)
+    `).bind(teamId, tagId, now, teamId));
 
-    const createTeam = db.insert(schema.teams).values({
-      id: teamId, locationId, leaderId: userId, title,
-      description: description || null, startTime, endTime,
-      durationMin: durationMinutes, maxMembers,
-      requirements: requirements ? JSON.stringify(requirements) : null,
-      icon: teamIcon, status: "recruiting", createdAt: now, updatedAt: now,
-    });
-    const createLeaderMembership = db.insert(schema.teamMembers).values({
-      id: memberId, teamId, userId, status: "approved",
-      joinedAt: now, createdAt: now,
-    });
-    await db.batch([createTeam, createLeaderMembership]);
+    const results = await c.env.DB.batch([createTeam, ...tagStatements]);
+    if (changes(results[0]) !== 1) {
+      return c.json(
+        APIErrors.validationError("地点不存在、未发布或不支持该活动类型"),
+        422,
+      );
+    }
 
-    // 清除相关缓存（Cache API 不支持通配删除，需显式列出常用键）
-    // TODO: 改用 KV 缓存版本号或标签缓存，避免遗漏
-    void invalidateCache(buildListCacheKey("teams", { locationId, status: "recruiting" }));
-    void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
-
-    return c.json({ success: true, team: { id: teamId, locationId, leaderId: userId, title, description, startTime: startTime.toISOString(), endTime: endTime.toISOString(), durationMin: durationMinutes, maxMembers, currentMembers: 1, requirements, icon: teamIcon, status: "recruiting", createdAt: now.toISOString() } });
+    const team = await readTeamResponse(db, teamId, true);
+    if (!team) throw new Error("Created team could not be loaded");
+    return c.json({ success: true, team }, 201);
   } catch (error) {
-    logger.error("Create team error:", error);
+    if (isConstraintError(error)) {
+      const mapped = mapDatabaseError(error);
+      return c.json(mapped.body, mapped.status);
+    }
+    logger.error("team_create_failed", error);
     return c.json(APIErrors.internalError("创建队伍失败"), 500);
   }
 });
 
-/**
- * PUT /teams/:id
- * 更新队伍信息（仅队长可操作）
- */
 mutations.put("/:id", async (c) => {
   try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+
+    const parsed = updateTeamSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) {
+      return c.json(APIErrors.validationError("输入无效", parsed.error.flatten()), 400);
+    }
+    if (Object.keys(parsed.data).length === 0) {
+      return c.json(APIErrors.validationError("至少提供一个更新字段"), 400);
+    }
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
-
-    const team = await db.query.teams.findFirst({
-      where: eq(schema.teams.id, teamId),
-      with: { location: true },
-    });
-
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId !== session.user.id)
+    const existing = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    if (!existing) return c.json(APIErrors.notFound("队伍不存在"), 404);
+    if (existing.leaderId !== session.user.id) {
       return c.json(APIErrors.forbidden("只有队长可以修改队伍"), 403);
-
-    const body = await c.req.json();
-    const parsed = updateTeamSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(APIErrors.validationError("输入无效", parsed.error.errors), 400);
     }
 
-    const { title, description, maxMembers, requirements, time, durationMin } = parsed.data;
+    const data = parsed.data;
+    const locationId = data.locationId ?? existing.locationId;
+    const activityType = data.activityType ?? existing.activityType;
+    const title = data.title ?? existing.title;
+    const description = data.description === undefined ? existing.description : data.description;
+    const startAt = data.startAt ? new Date(data.startAt) : existing.startAt;
+    const endAt = data.endAt ? new Date(data.endAt) : existing.endAt;
+    const maxParticipants = data.maxParticipants ?? existing.maxParticipants;
+    const requirements = data.requirements ?? existing.requirements;
+    const recruitmentStatus = data.recruitmentStatus ?? existing.recruitmentStatus;
 
-    type UpdateData = {
-      title?: string; description: string | null; maxMembers?: number;
-      requirements: string | null; updatedAt: Date;
-      durationMin?: number; startTime?: Date; endTime?: Date;
-    };
-    const updateData: UpdateData = {
-      description: description || null,
-      requirements: requirements ? JSON.stringify(requirements) : null,
-      updatedAt: new Date(),
-    };
-    if (title !== undefined) updateData.title = title;
-    if (maxMembers !== undefined) updateData.maxMembers = maxMembers;
-
-    if (time || durationMin) {
-      const originalStartTime = new Date(team.startTime);
-      const currentDurationMin = durationMin || team.durationMin || 240;
-      let newStartTime = originalStartTime;
-      if (time) {
-        const [hours, minutes] = time.split(":").map(Number);
-        // time is in Beijing (UTC+8); get the Beijing date of original startTime
-        const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
-        const originalInBeijing = new Date(originalStartTime.getTime() + BEIJING_OFFSET_MS);
-        const beijingMs = Date.UTC(
-          originalInBeijing.getUTCFullYear(),
-          originalInBeijing.getUTCMonth(),
-          originalInBeijing.getUTCDate(),
-          hours, minutes, 0, 0
-        );
-        newStartTime = new Date(beijingMs - BEIJING_OFFSET_MS);
-        updateData.startTime = newStartTime;
-      }
-      updateData.endTime = new Date(newStartTime.getTime() + currentDurationMin * 60000);
-      if (durationMin) updateData.durationMin = durationMin;
+    if (startAt.getTime() <= Date.now()) {
+      return c.json(APIErrors.validationError("startAt 必须在未来"), 400);
+    }
+    if (endAt.getTime() < startAt.getTime()) {
+      return c.json(APIErrors.validationError("endAt 不能早于 startAt"), 400);
+    }
+    if (data.tagIds && !await validateTagIds(db, data.tagIds)) {
+      return c.json(APIErrors.validationError("tagIds 包含不存在的标签"), 422);
     }
 
-    await db.update(schema.teams).set(updateData).where(eq(schema.teams.id, teamId));
+    const now = Date.now();
+    const updateTeam = c.env.DB.prepare(`
+      UPDATE teams
+      SET location_id = ?,
+          activity_type = ?,
+          title = ?,
+          description = ?,
+          start_at = ?,
+          end_at = ?,
+          max_participants = ?,
+          requirements = ?,
+          recruitment_status = ?,
+          updated_at = ?
+      WHERE id = ?
+        AND leader_id = ?
+        AND formed_at IS NULL
+        AND cancelled_at IS NULL
+        AND start_at > ?
+        AND EXISTS (
+          SELECT 1 FROM locations AS location
+          WHERE location.id = ?
+            AND location.status = 'published'
+            AND EXISTS (
+              SELECT 1 FROM json_each(location.supported_activity_types)
+              WHERE json_each.value = ?
+            )
+        )
+    `).bind(
+      locationId,
+      activityType,
+      title,
+      description,
+      startAt.getTime(),
+      endAt.getTime(),
+      maxParticipants,
+      JSON.stringify(requirements),
+      recruitmentStatus,
+      now,
+      teamId,
+      session.user.id,
+      now,
+      locationId,
+      activityType,
+    );
 
-    // 清除相关缓存
-    void invalidateCache(buildListCacheKey("teams", { locationId: team.locationId, status: "recruiting" }));
-    void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
+    const statements = data.tagIds
+      ? createTeamTagUpdateBatch(c.env.DB, updateTeam, {
+          teamId,
+          tagIds: data.tagIds,
+          now,
+        })
+      : [updateTeam];
+    const results = await c.env.DB.batch(statements);
+    if (changes(results[0]) !== 1) {
+      return c.json(
+        APIErrors.conflict("队伍已成行、已取消、已出发，或地点不支持该活动类型"),
+        409,
+      );
+    }
 
-    return c.json({ success: true, message: "队伍信息已更新" });
+    const team = await readTeamResponse(db, teamId, true);
+    if (!team) throw new Error("Updated team could not be loaded");
+    return c.json({ success: true, team });
   } catch (error) {
-    if ((error as Error).message.includes("max_members cannot be below current members")) {
-      return c.json(APIErrors.badRequest("队伍人数上限不能低于当前成员数"), 400);
+    const mapped = mapDatabaseError(error);
+    if (mapped.body.error.code === ErrorCode.TEAM_CAPACITY_EXCEEDED || isConstraintError(error)) {
+      return c.json(mapped.body, mapped.status);
     }
-    logger.error("Update team error:", error);
+    logger.error("team_update_failed", error);
     return c.json(APIErrors.internalError("更新队伍失败"), 500);
   }
 });
 
-/**
- * DELETE /teams/:id
- * 删除队伍（仅队长，仅 recruiting/cancelled 状态）
- */
 mutations.delete("/:id", async (c) => {
   try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const teamId = c.req.param("id");
-    const userId = session.user.id;
     const db = createDb(c.env.DB);
-
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-
-    if (team.leaderId !== userId)
+    const existing = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    if (!existing) return c.json(APIErrors.notFound("队伍不存在"), 404);
+    if (existing.leaderId !== session.user.id) {
       return c.json(APIErrors.forbidden("只有队长可以删除队伍"), 403);
+    }
 
-    if (team.status !== "recruiting" && team.status !== "cancelled")
-      return c.json(APIErrors.badRequest("只有招募中或已取消的队伍可以删除"), 400);
-
-    await db.delete(schema.teamMembers).where(eq(schema.teamMembers.teamId, teamId));
-    await db.delete(schema.teams).where(eq(schema.teams.id, teamId));
-
-    // 清除相关缓存
-    void invalidateCache(buildListCacheKey("teams", { locationId: team.locationId, status: "recruiting" }));
-    void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
-
-    return c.json({ success: true, message: "队伍已删除" });
+    const result = await c.env.DB.prepare(`
+      DELETE FROM teams
+      WHERE id = ?
+        AND leader_id = ?
+        AND formed_at IS NULL
+        AND cancelled_at IS NULL
+        AND start_at > ?
+        AND NOT EXISTS (
+          SELECT 1 FROM team_members
+          WHERE team_members.team_id = teams.id AND team_members.left_at IS NULL
+        )
+        AND NOT EXISTS (SELECT 1 FROM stories WHERE stories.team_id = teams.id)
+    `).bind(teamId, session.user.id, Date.now()).run();
+    if (changes(result) !== 1) {
+      return c.json(APIErrors.conflict("仅可删除尚未成行且没有活动成员或回顾的未来队伍"), 409);
+    }
+    return c.json({ success: true });
   } catch (error) {
-    logger.error("Delete team error:", error);
+    logger.error("team_delete_failed", error);
     return c.json(APIErrors.internalError("删除队伍失败"), 500);
   }
 });
 
-/**
- * POST /teams/:id/form
- * 组建队伍（仅队长）
- */
 mutations.post("/:id/form", async (c) => {
   try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
+    const existing = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    if (!existing) return c.json(APIErrors.notFound("队伍不存在"), 404);
+    if (existing.leaderId !== session.user.id) {
+      return c.json(APIErrors.forbidden("只有队长可以确认成行"), 403);
+    }
 
-    const body = await c.req.json<{ isUnderfilled?: boolean }>().catch(() => ({} as { isUnderfilled?: boolean }));
-    const isUnderfilled = body.isUnderfilled === true;
+    const now = new Date();
+    const updated = await db
+      .update(schema.teams)
+      .set({ formedAt: now, recruitmentStatus: "closed", updatedAt: now })
+      .where(and(
+        eq(schema.teams.id, teamId),
+        eq(schema.teams.leaderId, session.user.id),
+        isNull(schema.teams.formedAt),
+        isNull(schema.teams.cancelledAt),
+        gt(schema.teams.startAt, now),
+      ))
+      .returning({ id: schema.teams.id });
+    if (updated.length !== 1) {
+      return c.json(APIErrors.conflict("队伍当前无法确认成行"), 409);
+    }
 
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId !== session.user.id) return c.json(APIErrors.forbidden("只有队长可以组建队伍"), 403);
-    if (team.status !== "recruiting" && team.status !== "full")
-      return c.json(APIErrors.badRequest("当前队伍状态无法组建"), 400);
-
-    const [{ approvedCount }] = await db
-      .select({ approvedCount: sql<number>`count(*)` })
-      .from(schema.teamMembers)
-      .where(and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.status, "approved")));
-
-    if (approvedCount < 1) return c.json(APIErrors.badRequest("队伍至少需要1人才能组建"), 400);
-
-    await db.update(schema.teams)
-      .set({ status: "formed", updatedAt: new Date() })
-      .where(eq(schema.teams.id, teamId));
-
-    // 清除相关缓存
-    void invalidateCache(buildListCacheKey("teams", { locationId: team.locationId, status: "recruiting" }));
-    void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
-
-    return c.json({ success: true, message: "队伍已组建", isUnderfilled });
+    const team = await readTeamResponse(db, teamId, true);
+    if (!team) throw new Error("Formed team could not be loaded");
+    return c.json({ success: true, team });
   } catch (error) {
-    logger.error("Form team error:", error);
-    return c.json(APIErrors.internalError("组建队伍失败"), 500);
+    logger.error("team_form_failed", error);
+    return c.json(APIErrors.internalError("确认成行失败"), 500);
   }
 });
 
-/**
- * POST /teams/:id/cancel
- * 取消队伍（仅队长，仅 recruiting/full 状态）
- */
 mutations.post("/:id/cancel", async (c) => {
   try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
-
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId !== session.user.id)
+    const existing = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    if (!existing) return c.json(APIErrors.notFound("队伍不存在"), 404);
+    if (existing.leaderId !== session.user.id) {
       return c.json(APIErrors.forbidden("只有队长可以取消队伍"), 403);
-    if (team.status !== "recruiting" && team.status !== "full")
-      return c.json(APIErrors.badRequest("当前队伍状态无法取消"), 400);
+    }
 
-    await db.update(schema.teams)
-      .set({ status: "cancelled", updatedAt: new Date() })
-      .where(eq(schema.teams.id, teamId));
+    const now = new Date();
+    const updated = await db
+      .update(schema.teams)
+      .set({ cancelledAt: now, recruitmentStatus: "closed", updatedAt: now })
+      .where(and(
+        eq(schema.teams.id, teamId),
+        eq(schema.teams.leaderId, session.user.id),
+        isNull(schema.teams.cancelledAt),
+        gt(schema.teams.endAt, now),
+      ))
+      .returning({ id: schema.teams.id });
+    if (updated.length !== 1) {
+      return c.json(APIErrors.conflict("队伍当前无法取消"), 409);
+    }
 
-    // 清除相关缓存
-    void invalidateCache(buildListCacheKey("teams", { locationId: team.locationId, status: "recruiting" }));
-    void invalidateCache(buildListCacheKey("teams", { status: "recruiting" }));
-
-    return c.json({ success: true, message: "队伍已取消" });
+    const team = await readTeamResponse(db, teamId, true);
+    if (!team) throw new Error("Cancelled team could not be loaded");
+    return c.json({ success: true, team });
   } catch (error) {
-    logger.error("Cancel team error:", error);
+    logger.error("team_cancel_failed", error);
     return c.json(APIErrors.internalError("取消队伍失败"), 500);
   }
 });

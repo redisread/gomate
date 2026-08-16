@@ -14,7 +14,7 @@ import type { Location } from "@/lib/types";
 import { DIFFICULTY_CONFIG } from "./constants";
 import {
   normalizeLocationHiking,
-  type NormalizedLocationRoute,
+  type NormalizedLocationHiking,
   type RouteMetric,
 } from "./route-utils";
 
@@ -23,9 +23,9 @@ interface RouteInfoCardProps {
 }
 
 /**
- * 「徒步攻略」区块（task #152：原 RouteInfoCard 改读 location 字段，多路线选择器删除）。
+ * 「徒步攻略」区块，严格读取 V2 `Location.extra.hiking`。
  * 布局（Steven 定稿）：标题 + 4 参数 tiles + overview 引导段 + tips/装备/注意事项 notes。
- * 数据：4 参数 = location 扁平化字段（0010 回填）；notes = location.extra.hiking（0011 回填）。
+ * 数据：路线参数、攻略、装备和警告均来自同一 V2 nested DTO。
  * 空态：4 参数全空且无 hiking 内容 → 整区块不渲染。
  */
 export function RouteInfoCard({ location }: RouteInfoCardProps) {
@@ -37,7 +37,8 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
   const metrics = getMetricItems(hiking, t);
   const tips = hiking.routeGuide?.tips ?? [];
   const hasRouteNotes =
-    hiking.equipmentNeeded.length > 0 ||
+    hiking.gearEssential.length > 0 ||
+    hiking.gearOptional.length > 0 ||
     hiking.warnings.length > 0 ||
     tips.length > 0;
 
@@ -69,11 +70,11 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
 
       {hasRouteNotes && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {hiking.equipmentNeeded.length > 0 && (
+          {(hiking.gearEssential.length > 0 || hiking.gearOptional.length > 0) && (
             <RouteNoteBlock
               icon={<Backpack className="h-3.5 w-3.5" />}
               title={t("common.recommendedGear")}
-              items={hiking.equipmentNeeded}
+              items={[...hiking.gearEssential, ...hiking.gearOptional]}
               tone="stone"
             />
           )}
@@ -100,7 +101,7 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
 }
 
 function getMetricItems(
-  route: NormalizedLocationRoute,
+  route: NormalizedLocationHiking,
   t: (key: string, vars?: Record<string, string | number>) => string
 ) {
   const diffInfo = route.difficulty

@@ -9,16 +9,13 @@
     "title": "What Your City Did This Week",
     "subtitle": "Not what you pick — what your city's already doing",
     "inAction": "{n} in action",
-    "avatarStack": {
-      "tooltip": "Active here in the last 7 days"
-    },
     "neighborTeams": {
       "title": "Your neighbors are joining"
     },
-    "neighborCount": "{n} from {city}",
+    "neighborCount": "{n} from {region}",
     "neighborCountMany": "4+ from your city",
-    "setCityCta": {
-      "title": "👋 Set your city to see what neighbors are up to",
+    "setRegionCta": {
+      "title": "👋 Set your region to see what neighbors are up to",
       "button": "Set up →"
     }
   },

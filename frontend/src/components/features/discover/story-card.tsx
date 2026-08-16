@@ -4,34 +4,15 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { Heart, Eye, Clock } from "lucide-react";
-
-interface StoryAuthor {
-  id: string;
-  name: string;
-  image?: string;
-}
-
-interface StoryLocation {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface Story {
-  id: string;
-  title: string;
-  summary: string;
-  coverImage?: string;
-  viewCount: number;
-  likeCount: number;
-  createdAt: number;
-  author: StoryAuthor | null;
-  location?: StoryLocation | null;
-}
+import {
+  getStoryCoverImage,
+  getStoryTitle,
+  type StoryV2,
+} from "./story-contract";
 
 interface StoryCardProps {
-  story: Story;
-  onClick?: (story: Story) => void;
+  story: StoryV2;
+  onClick?: (story: StoryV2) => void;
   className?: string;
 }
 
@@ -43,15 +24,19 @@ interface StoryCardProps {
  */
 export function StoryCard({ story, onClick, className }: StoryCardProps) {
   const { t } = useI18n(["content"]);
+  const title = getStoryTitle(story);
+  const coverImage = getStoryCoverImage(story);
 
   const handleClick = () => {
     onClick?.(story);
   };
 
-  const formatDate = (timestamp: number) => {
+  const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+    );
 
     if (diffDays === 0) return t("content.discover.today");
     if (diffDays === 1) return t("content.discover.yesterday");
@@ -70,6 +55,15 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
   return (
     <article
       onClick={handleClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleClick();
+        }
+      }}
+      role="link"
+      tabIndex={0}
+      aria-label={title}
       className={cn(
         "bg-white cursor-pointer rounded-lg overflow-hidden",
         "border border-border/60",
@@ -77,27 +71,28 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
         "hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-[2px]",
         "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300",
         "break-inside-avoid mb-4",
-        className
+        className,
       )}
     >
       {/* 封面图（spec §6.4：无封面/加载失败用 bg-secondary + 标题首字符占位） */}
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        {story.coverImage ? (
+        {coverImage ? (
           <img
-            src={story.coverImage}
-            alt={story.title}
+            src={coverImage}
+            alt={title}
             className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
+              target.style.display = "none";
               const parent = target.parentElement;
               if (parent) {
-                const fallback = document.createElement('div');
-                fallback.className = 'w-full h-full flex items-center justify-center bg-secondary';
-                const span = document.createElement('span');
-                span.className = 'text-2xl font-bold text-muted-foreground';
-                span.textContent = story.title.trim().charAt(0);
+                const fallback = document.createElement("div");
+                fallback.className =
+                  "w-full h-full flex items-center justify-center bg-secondary";
+                const span = document.createElement("span");
+                span.className = "text-2xl font-bold text-muted-foreground";
+                span.textContent = title.trim().charAt(0);
                 fallback.appendChild(span);
                 parent.appendChild(fallback);
               }
@@ -105,7 +100,9 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-secondary">
-            <span className="text-2xl font-bold text-muted-foreground">{story.title.trim().charAt(0)}</span>
+            <span className="text-2xl font-bold text-muted-foreground">
+              {title.trim().charAt(0)}
+            </span>
           </div>
         )}
         {/* 地点标签 */}
@@ -120,12 +117,12 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
       <div className="p-3 space-y-2">
         {/* 标题 */}
         <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
-          {story.title}
+          {title}
         </h3>
 
         {/* 摘要 */}
         <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
-          {story.summary}
+          {story.summary ?? story.content.slice(0, 120)}
         </p>
 
         {/* 作者 + 数据 */}
@@ -143,7 +140,10 @@ export function StoryCard({ story, onClick, className }: StoryCardProps) {
                 {story.author?.name?.charAt(0) || "?"}
               </div>
             )}
-            <span title={story.author?.name || t("content.discover.anonymous")} className="text-xs text-muted-foreground truncate max-w-[80px]">
+            <span
+              title={story.author?.name || t("content.discover.anonymous")}
+              className="text-xs text-muted-foreground truncate max-w-[80px]"
+            >
               {story.author?.name || t("content.discover.anonymous")}
             </span>
           </div>

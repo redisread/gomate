@@ -58,9 +58,9 @@ function EditSkeleton() {
 
 
 
-interface PreviewPanelProps { data: FormData; cityName: string; }
+interface PreviewPanelProps { data: FormData; regionName: string; }
 
-function PreviewPanel({ data, cityName }: PreviewPanelProps) {
+function PreviewPanel({ data, regionName }: PreviewPanelProps) {
   const { t } = useI18n(["admin", "common", "locations"]);
   const seasonEmojis: Record<string, string> = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: "❄️" };
   return (
@@ -71,7 +71,7 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
           <span className="text-xs font-semibold text-stone-600 dark:text-stone-400">{t("admin.previewEffect")}</span>
         </div>
         <div className="w-full bg-stone-100 dark:bg-stone-800" style={{ aspectRatio: "16/9" }}>
-          {data.coverImage ? <img src={data.coverImage} alt={t("admin.coverImagePreview")} className="w-full h-full object-cover" />
+          {data.coverImageUrl ? <img src={data.coverImageUrl} alt={t("admin.coverImagePreview")} className="w-full h-full object-cover" />
             : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-8 w-8 text-stone-300 dark:text-stone-600" /></div>}
         </div>
         <div className="p-4 space-y-3">
@@ -81,25 +81,25 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
             </h3>
             {data.subtitle && <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">{data.subtitle}</p>}
           </div>
-          {(cityName || data.address) && (
+          {(regionName || data.address) && (
             <div className="flex items-start gap-1.5 text-xs text-stone-500 dark:text-stone-400">
               <MapPinIcon className="h-3.5 w-3.5 mt-0.5 text-amber-500 dark:text-amber-400 shrink-0" />
-              <span>{[cityName, data.address].filter(Boolean).join(" · ")}</span>
+              <span>{[regionName, data.address].filter(Boolean).join(" · ")}</span>
             </div>
           )}
           {data.description && <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed line-clamp-3">{data.description}</p>}
-          {data.bestSeason.length > 0 && (
+          {data.extra.hiking.bestSeasons.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {data.bestSeason.map((s) => (
+              {data.extra.hiking.bestSeasons.map((s) => (
                 <span key={s} className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50">
                   {seasonEmojis[s]} {s}
                 </span>
               ))}
             </div>
           )}
-          {(data.lat || data.lng) && (
+          {(data.latitude || data.longitude) && (
             <div className="flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500">
-              <Navigation className="h-3 w-3" /><span>{data.lat}, {data.lng}</span>
+              <Navigation className="h-3 w-3" /><span>{data.latitude}, {data.longitude}</span>
             </div>
           )}
         </div>
@@ -109,26 +109,26 @@ function PreviewPanel({ data, cityName }: PreviewPanelProps) {
   );
 }
 
-interface LocationEditClientProps { locationId: string; }
+interface LocationFormClientProps { locationId?: string; }
 
-export function LocationEditClient({ locationId }: LocationEditClientProps) {
+function LocationFormClient({ locationId }: LocationFormClientProps) {
   const { t } = useI18n(["admin", "common", "locations"]);
   const form = useLocationForm(locationId);
   const [showPreview, setShowPreview] = React.useState(false);
 
-  const currentCityName = React.useMemo(
-    () => form.cities.find((c) => c.id === form.formData.cityId)?.name ?? "",
-    [form.cities, form.formData.cityId]
+  const currentRegionName = React.useMemo(
+    () => form.regions.find((region) => region.id === form.formData.regionId)?.name ?? "",
+    [form.regions, form.formData.regionId]
   );
 
   const progressSteps = [
     { id: "core", label: t("admin.progressStep1"), done: !!form.formData.name && !!form.formData.description },
-    { id: "location", label: t("admin.progressStep2"), done: !!form.formData.cityId },
-    { id: "media", label: t("admin.progressStep3"), done: !!form.formData.coverImage },
-    { id: "finish", label: t("admin.progressStep4"), done: !!form.formData.name && !!form.formData.description && !!form.formData.cityId && !!form.formData.coverImage },
+    { id: "location", label: t("admin.progressStep2"), done: !!form.formData.regionId },
+    { id: "media", label: t("admin.progressStep3"), done: !!form.formData.coverImageUrl },
+    { id: "finish", label: t("admin.progressStep4"), done: !!form.formData.name && !!form.formData.description && !!form.formData.regionId && !!form.formData.coverImageUrl },
   ];
 
-  if (!form.location) return <EditSkeleton />;
+  if (form.isLoading) return <EditSkeleton />;
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 pb-24">
@@ -136,7 +136,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Top nav */}
         <div className="flex items-center justify-between mb-6">
-          <a href={`/locations/${locationId}`} className="inline-flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 hover:opacity-70 transition-opacity">
+          <a href={form.location ? `/locations/${form.location.id}` : "/locations"} className="inline-flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 hover:opacity-70 transition-opacity">
             <ArrowLeft className="h-4 w-4" />{t("common.back")}
           </a>
           <button type="button" onClick={() => setShowPreview((v) => !v)}
@@ -149,7 +149,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
         {/* Title */}
         <div className="flex items-center gap-2 mb-6">
           <span className="w-1.5 h-6 rounded-full bg-amber-600" />
-          <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100">{t("admin.editLocation")}</h1>
+          <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100">{t(form.mode === "edit" ? "admin.editLocation" : "admin.createLocation")}</h1>
         </div>
 
         {/* Progress */}
@@ -182,7 +182,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
         {/* Main content: two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
           <div className={cn("space-y-4", showPreview && "hidden lg:block")}>
-            <LocationFormBasicFields formData={form.formData} errors={form.errors} cities={form.cities}
+            <LocationFormBasicFields formData={form.formData} errors={form.errors} regions={form.regions}
               updateField={form.updateField} touch={form.touch}  />
             <LocationFormContentFields formData={form.formData} isSaving={form.isSaving} updateField={form.updateField} />
             <LocationFormSettingsFields formData={form.formData} allTags={form.allTags} updateField={form.updateField} />
@@ -193,7 +193,7 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
 
           {/* Right column: preview */}
           <div className={cn(showPreview ? "block" : "hidden", "lg:block")}>
-            <PreviewPanel data={form.formData} cityName={currentCityName} />
+            <PreviewPanel data={form.formData} regionName={currentRegionName} />
           </div>
         </div>
       </div>
@@ -204,4 +204,12 @@ export function LocationEditClient({ locationId }: LocationEditClientProps) {
 
     </div>
   );
+}
+
+export function LocationEditClient({ locationId }: { locationId: string }) {
+  return <LocationFormClient locationId={locationId} />;
+}
+
+export function LocationCreateClient() {
+  return <LocationFormClient />;
 }

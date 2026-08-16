@@ -3,7 +3,7 @@
   "pageSubtitle": "カフェ、公園、山、海岸。あなたに合った次の目的地を見つけよう",
   "locationIntro": "スポット紹介",
   "locationList": "スポット一覧",
-  "defaultCity": "すべて",
+  "defaultRegion": "すべて",
   "viewDetail": "詳細を見る",
   "routeInfo": "ハイキング攻略",
   "facilities": "付帯施設",
@@ -21,8 +21,8 @@
   "nextImage": "次の画像",
   "paginationPrev": "前のページ",
   "paginationNext": "次のページ",
-  "allCities": "すべての都市",
-  "cityFilter": "都市でフィルター",
+  "allRegions": "すべての地域",
+  "regionFilter": "地域でフィルター",
   "heroTagline": "カフェ、街歩き、ショートトリップ…一緒にいく人を見つけよう",
   "searchPlaceholder": "カフェ、展示、ボードゲームカフェ、山…どこに行きたい？",
   "tagsLabel": "探索タグ",
@@ -37,16 +37,16 @@
       "clearBtn": "検索をクリア",
       "browseBtn": "すべて見る"
     },
-    "noCity": {
-      "title": "「{cityName}」のおすすめスポットはまだありません",
-      "desc": "この都市にはまだスポット情報がありません。他の都市看一看",
-      "browseBtn": "他の都市を見る",
-      "changeBtn": "都市を変える"
+    "noRegion": {
+      "title": "「{regionName}」のおすすめスポットはまだありません",
+      "desc": "この地域にはまだスポット情報がありません。ほかの地域を見てみましょう",
+      "browseBtn": "ほかの地域を見る",
+      "changeBtn": "地域を変える"
     },
-    "noCitySet": {
-      "title": "都市が未設定です",
-      "desc": "都市を設定すると、より的確なスポット推薦が届きます",
-      "setBtn": "都市を設定する",
+    "noRegionSet": {
+      "title": "地域が未設定です",
+      "desc": "地域を設定すると、より的確なスポット推薦が届きます",
+      "setBtn": "地域を設定する",
       "browseFirstBtn": "すべて見る"
     },
     "tooNarrow": {
@@ -101,5 +101,5 @@
   },
   "mapProvinceCount": "{count} 件の地点",
   "mapNoLocations": "まだ地点はありません",
-  "mapPointCity": "{province}・{city}"
+  "mapPointRegion": "{province}・{region}"
 }

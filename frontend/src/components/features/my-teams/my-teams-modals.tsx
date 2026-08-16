@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Calendar, Users, MapPin, XCircle, CheckCircle, Loader2 } from "lucide-react";
+import { XCircle, CheckCircle, Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { formatTimeAgo } from "@/lib/date-utils";
 import type { PendingApproval } from "./my-teams-types";
@@ -18,10 +18,10 @@ export function ApprovalDetailModal({ approval, isProcessing, onApprove, onRejec
   onApprove: () => Promise<void>; onReject: () => Promise<void>; onClose: () => void;
 }) {
   const { t } = useI18n(["myTeams", "teams", "common"]);
-  const applicant = approval.applicant;
-  if (!applicant) return null;
+  const applicant = approval.user;
+  const displayName = applicant.nickname || applicant.name;
   const levelConfig = getLevelConfig(t);
-  const lv = levelConfig[applicant.level];
+  const lv = levelConfig[applicant.extra.level];
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
@@ -31,17 +31,17 @@ export function ApprovalDetailModal({ approval, isProcessing, onApprove, onRejec
         <div className="p-6">
           <div className="flex flex-col items-center mb-5">
             <div className="w-20 h-20 rounded-full bg-stone-200 dark:bg-stone-700 flex items-center justify-center overflow-hidden mb-3 ring-4 ring-amber-50">
-              {applicant.avatar ? (
-                <img src={applicant.avatar} alt={applicant.name} className="w-full h-full object-cover" />
+              {applicant.image ? (
+                <img src={applicant.image} alt={displayName} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-2xl font-semibold text-stone-500 dark:text-stone-500">{applicant.name?.charAt(0) || "?"}</span>
+                <span className="text-2xl font-semibold text-stone-500 dark:text-stone-500">{displayName.charAt(0) || "?"}</span>
               )}
             </div>
-            <h3 className="text-xl font-bold text-foreground">{applicant.name}</h3>
+            <h3 className="text-xl font-bold text-foreground">{displayName}</h3>
             {lv ? (
               <span className={`mt-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${lv.color}`}>{lv.emoji} {lv.label}</span>
             ) : (
-              <span className="mt-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-500">{applicant.level}</span>
+              <span className="mt-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-500">{applicant.extra.level}</span>
             )}
           </div>
           {applicant.bio ? (
@@ -51,25 +51,17 @@ export function ApprovalDetailModal({ approval, isProcessing, onApprove, onRejec
           ) : (
             <p className="mb-4 text-sm text-stone-400 dark:text-stone-500 text-center">{t("myTeams.noBio")}</p>
           )}
-          {applicant.wechat && (
+          {applicant.extra.wechat && (
             <div className="mb-4 flex items-center gap-2 text-sm text-stone-600 dark:text-stone-500 bg-stone-50 dark:bg-stone-900 rounded-xl px-4 py-2.5">
               <span className="font-medium text-stone-700 dark:text-stone-300">{t("myTeams.wechatLabel")}</span>
-              <span className="text-stone-600 dark:text-stone-500">{applicant.wechat}</span>
+              <span className="text-stone-600 dark:text-stone-500">{applicant.extra.wechat}</span>
             </div>
           )}
           {approval.team && (
             <div className="mb-4 bg-stone-50 dark:bg-stone-900 rounded-2xl p-4">
               <p className="text-xs text-stone-400 dark:text-stone-500 mb-2 font-medium uppercase tracking-wide">{t("myTeams.applyTeamLabel")}</p>
               <p className="font-semibold text-stone-800 mb-2">{approval.team.title}</p>
-              <div className="flex flex-wrap gap-3 text-xs text-stone-500 dark:text-stone-500">
-                {approval.team.date && (
-                  <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{approval.team.date}</span>
-                )}
-                <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{approval.team.currentMembers}/{approval.team.maxMembers}{t("myTeams.memberSuffix")}</span>
-                {approval.team.location?.name && (
-                  <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{approval.team.location.name}</span>
-                )}
-              </div>
+              {approval.message && <p className="text-xs text-stone-500 dark:text-stone-400">{approval.message}</p>}
             </div>
           )}
           <p className="text-xs text-stone-400 dark:text-stone-500 text-center mb-5">

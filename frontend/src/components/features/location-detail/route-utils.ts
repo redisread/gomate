@@ -7,51 +7,20 @@ export interface RouteMetric {
   unit?: RouteMetricUnit;
 }
 
-export interface NormalizedLocationRoute {
+export interface NormalizedLocationHiking {
   id: string;
   name: string;
-  description?: string;
-  difficulty?: Location["difficulty"];
+  difficulty?: NonNullable<Location["extra"]["hiking"]>["difficulty"];
   duration?: RouteMetric;
   distance?: RouteMetric;
   elevation?: RouteMetric;
-  equipmentNeeded: string[];
+  gearEssential: string[];
+  gearOptional: string[];
   warnings: string[];
   routeGuide?: {
     overview?: string;
     tips: string[];
   };
-}
-
-type RouteRecord = {
-  id?: string;
-  locationId?: string;
-  name?: string;
-  description?: string;
-  difficulty?: Location["difficulty"];
-  duration?: string;
-  durationMin?: number | null;
-  durationMax?: number | null;
-  distance?: string | number | null;
-  elevation?: string | number | null;
-  equipmentNeeded?: string[] | null;
-  warnings?: string[] | null;
-  routeGuide?: unknown;
-  extra?: unknown;
-};
-
-function parseJsonObject(value: unknown): Record<string, unknown> | undefined {
-  if (!value) return undefined;
-  if (typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
-  if (typeof value !== "string") return undefined;
-  try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
-      : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 function readStringArray(value: unknown): string[] {
@@ -65,9 +34,7 @@ function trimNumberString(value: number | string): string {
   return match?.[0] ?? value.trim();
 }
 
-function formatDurationMetric(route: RouteRecord): RouteMetric | undefined {
-  const min = route.durationMin;
-  const max = route.durationMax;
+function formatDurationMetric(min: number | undefined, max: number | undefined): RouteMetric | undefined {
   if (typeof min === "number" && min > 0) {
     const maxValue = typeof max === "number" && max > 0 ? max : min;
     if (min >= 60 && maxValue >= 60) {
@@ -82,76 +49,54 @@ function formatDurationMetric(route: RouteRecord): RouteMetric | undefined {
     return { value, unit: "minute" };
   }
 
-  if (typeof route.duration === "string" && route.duration.trim()) {
-    return { value: route.duration.trim() };
-  }
   return undefined;
 }
 
-function formatDistanceMetric(distance: RouteRecord["distance"]): RouteMetric | undefined {
-  if (distance === undefined || distance === null || distance === "") return undefined;
+function formatDistanceMetric(distance: number | undefined): RouteMetric | undefined {
+  if (distance === undefined) return undefined;
   return { value: trimNumberString(distance), unit: "kilometer" };
 }
 
-function formatElevationMetric(elevation: RouteRecord["elevation"]): RouteMetric | undefined {
-  if (elevation === undefined || elevation === null || elevation === "") return undefined;
+function formatElevationMetric(elevation: number | undefined): RouteMetric | undefined {
+  if (elevation === undefined) return undefined;
   return { value: trimNumberString(elevation), unit: "meter" };
 }
 
-function normalizeRouteGuide(value: unknown): NormalizedLocationRoute["routeGuide"] {
-  const parsed = parseJsonObject(value);
-  if (!parsed) return undefined;
-  const overview = typeof parsed.overview === "string" ? parsed.overview : undefined;
-  const tips = readStringArray(parsed.tips);
+function normalizeRouteGuide(
+  hiking: NonNullable<Location["extra"]["hiking"]>,
+): NormalizedLocationHiking["routeGuide"] {
+  const overview = typeof hiking.overview === "string" && hiking.overview.trim()
+    ? hiking.overview.trim()
+    : undefined;
+  const tips = readStringArray(hiking.tips);
   if (!overview && tips.length === 0) return undefined;
   return { overview, tips };
 }
 
-function normalizeRoute(route: RouteRecord): NormalizedLocationRoute {
-  const extra = parseJsonObject(route.extra);
-  return {
-    id: route.id || `${route.locationId || "location"}-route`,
-    name: route.name || "",
-    description: route.description,
-    difficulty: route.difficulty as Location["difficulty"],
-    duration: formatDurationMetric(route),
-    distance: formatDistanceMetric(route.distance),
-    elevation: formatElevationMetric(route.elevation),
-    equipmentNeeded: [
-      ...readStringArray(route.equipmentNeeded),
-      ...readStringArray(extra?.equipmentNeeded),
-    ],
-    warnings: [
-      ...readStringArray(route.warnings),
-      ...readStringArray(extra?.warnings),
-    ],
-    routeGuide: normalizeRouteGuide(route.routeGuide),
-  };
-}
-
 /**
- * task #152：从 location 自身字段构造「徒步攻略」区块数据（数据源已从 routes 切到 location）。
- * 4 参数读 location 扁平化字段（0010 回填）；overview/tips/装备/注意事项读 extra.hiking（0011 回填）。
- * 无任何内容时返回 null（区块整体不渲染）。
+ * Project the public V2 Location DTO into the view model used by route cards.
+ * Storage JSON and the removed flat Location fields are intentionally unsupported.
  */
-export function normalizeLocationHiking(location: Location): NormalizedLocationRoute | null {
-  const hiking = location.extra?.hiking ?? undefined;
-  const normalized = normalizeRoute({
+export function normalizeLocationHiking(location: Location): NormalizedLocationHiking | null {
+  const hiking = location.extra.hiking;
+  if (!hiking) return null;
+
+  const normalized: NormalizedLocationHiking = {
     id: `${location.id}-hiking`,
-    locationId: location.id,
     name: location.name,
-    difficulty: location.difficulty,
-    durationMin: location.durationMin,
-    durationMax: location.durationMax,
-    distance: location.distance,
-    elevation: location.elevation,
-    routeGuide: hiking ? { overview: hiking.overview ?? undefined, tips: hiking.tips ?? [] } : undefined,
-    equipmentNeeded: hiking?.equipmentNeeded ?? undefined,
-    warnings: hiking?.warnings ?? undefined,
-  });
+    difficulty: hiking.difficulty,
+    duration: formatDurationMetric(hiking.durationMin, hiking.durationMax),
+    distance: formatDistanceMetric(hiking.distanceKm),
+    elevation: formatElevationMetric(hiking.elevationGainM),
+    gearEssential: readStringArray(hiking.gearEssential),
+    gearOptional: readStringArray(hiking.gearOptional),
+    warnings: readStringArray(hiking.warnings),
+    routeGuide: normalizeRouteGuide(hiking),
+  };
   const hasAnyMetric = normalized.difficulty || normalized.duration || normalized.distance || normalized.elevation;
   const hasAnyNote = Boolean(normalized.routeGuide?.overview) || (normalized.routeGuide?.tips.length ?? 0) > 0
-    || normalized.equipmentNeeded.length > 0 || normalized.warnings.length > 0;
+    || normalized.gearEssential.length > 0 || normalized.gearOptional.length > 0
+    || normalized.warnings.length > 0;
   return hasAnyMetric || hasAnyNote ? normalized : null;
 }
 

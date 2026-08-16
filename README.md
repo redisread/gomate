@@ -3,8 +3,7 @@
 > 发现有趣地点，找到同行伙伴
 
 [![Live](https://img.shields.io/badge/Live-gomate.live-blue)](https://gomate.live)
-[![Frontend Deploy](https://github.com/redisread/gomate/actions/workflows/frontend-deploy.yml/badge.svg?branch=main)](https://github.com/redisread/gomate/actions/workflows/frontend-deploy.yml)
-[![API Deploy](https://github.com/redisread/gomate/actions/workflows/api-deploy.yml/badge.svg?branch=main)](https://github.com/redisread/gomate/actions/workflows/api-deploy.yml)
+[![PR Validation](https://github.com/redisread/gomate/actions/workflows/pr-validation.yml/badge.svg?branch=main)](https://github.com/redisread/gomate/actions/workflows/pr-validation.yml)
 
 ## 产品定位
 
@@ -20,20 +19,15 @@ GoMate 是一个**地点组队平台**，解决「想出门但找不到伙伴」
 
 **网站：** https://gomate.live
 
-**测试账号（本地）：**
-
-- 邮箱：`admin@test.com` / `leader_a@test.com` / `leader_b@test.com` / `member_a@test.com`
-- 密码：`test1234`
-
 **核心流程：**
 浏览地点 → 查看详情 → 加入/创建队伍 → 等待确认 → 一起出发
 
 ## 技术架构
 
 ```
-前端: Astro 6 + React 18 + Tailwind CSS
-后端: Hono + Cloudflare Workers + D1 数据库
-部署: Cloudflare（全球边缘节点）
+统一 Worker: Astro 6 SSR + React 18 + Hono `/api/*`
+数据: Cloudflare D1 + R2 + KV
+部署: 一个 Cloudflare Worker（同源页面、认证与 API）
 ```
 
 ## 快速开始
@@ -54,22 +48,19 @@ pnpm dev:fresh
 # 仅重置本地数据库并灌入测试数据
 pnpm db:reset
 
-# 本地测试账号（由 db:reset 自动生成）
-# 邮箱：admin@test.com / leader_a@test.com / leader_b@test.com / member_a@test.com
-# 密码：test1234（另有 member_b@test.com / expert@test.com / beginner@test.com）
+# V2 seed 仅写入 Region、地点与标签；用户在测试中独立注册
 ```
 
 ## 提升用户为 Admin
 
-地点/路线/城市管理等接口需要 `role = 'admin'`。如果注册账号默认是 `user`，可用以下脚本提升：
+地点与 Region 管理接口需要 `role = 'admin'`。如果本地注册账号默认是 `user`，可用以下脚本提升：
 
 ```bash
-# 本地
-pnpm db:promote-admin --email admin@test.com --env local --yes
-
-# production（会二次确认）
-pnpm db:promote-admin --email victor@example.com --env production
+pnpm db:promote-admin --email admin@test.com
 ```
+
+该脚本只允许修改本地 D1。生产权限变更必须走受保护环境与显式审批，脚本传入
+`--env` 或 `--yes` 会直接拒绝执行。
 
 ## E2E 测试
 
@@ -106,8 +97,13 @@ BU_CDP_URL=http://localhost:9222 pnpm e2e:browser-use
 
 ## 本地环境配置
 
-1. API 密钥：复制 `api/.dev.vars.example` 为 `api/.dev.vars`
-2. 前端 API 地址：复制 `frontend/.env.local.example` 为 `frontend/.env.local`
+复制统一 Worker 的本地 secrets：
+
+```bash
+cp frontend/.dev.vars.example frontend/.dev.vars
+```
+
+浏览器和 SSR 都使用同源 `/api`，无需配置 `PUBLIC_API_URL`。
 
 ## 本地环境故障排查
 
@@ -119,22 +115,21 @@ pnpm env:check
 
 常见问题：
 
-| 问题                            | 可能原因                                     | 解决办法                                         |
-| ------------------------------- | -------------------------------------------- | ------------------------------------------------ |
-| `pnpm dev:fresh` 提示端口被占用 | 5432（frontend）或 8799（api）被其他进程占用 | 关闭占用端口的进程，或运行 `pnpm env:check` 查看 |
-| E2E 登录失败                    | 本地 D1 数据库没有 seed 测试账号             | 运行 `pnpm db:reset` 重新初始化                  |
-| Playwright 报错找不到浏览器     | Chromium 未安装                              | `pnpm exec playwright install chromium`          |
-| `wrangler` 提示未登录           | Cloudflare 账号未认证                        | `pnpm exec wrangler login`                       |
-| `api/.dev.vars` 缺失            | 本地 secrets 未配置                          | 复制 `api/.dev.vars.example` 并填入              |
+| 问题                            | 可能原因                               | 解决办法                                         |
+| ------------------------------- | -------------------------------------- | ------------------------------------------------ |
+| `pnpm dev:fresh` 提示端口被占用 | 统一 Worker 的 5432 端口被其他进程占用 | 关闭占用端口的进程，或运行 `pnpm env:check` 查看 |
+| E2E 注册或登录失败              | 本地 D1 未初始化或 secrets 不一致      | 运行 `pnpm db:reset` 并检查 `.dev.vars`          |
+| Playwright 报错找不到浏览器     | Chromium 未安装                        | `pnpm exec playwright install chromium`          |
+| `wrangler` 提示未登录           | Cloudflare 账号未认证                  | `pnpm exec wrangler login`                       |
+| `frontend/.dev.vars` 缺失       | 本地 secrets 未配置                    | 复制 `frontend/.dev.vars.example` 并填入         |
 
 如果排查后仍无法解决，请附带 `pnpm env:check` 输出和错误日志提 issue。
 
 ## 部署
 
-```bash
-pnpm api:deploy    # 后端
-pnpm web:build     # 前端
-```
+生产不随 main 自动部署。`.github/workflows/deploy.yml` 仅允许通过受保护环境手动
+发布无生产域名的 preview；资源 ID 经独立 PR 审查、只读烟测通过后，才能另行切换
+`gomate.live` 路由。详见 `docs/prod-change-policy.md`。
 
 ## 相关仓库
 

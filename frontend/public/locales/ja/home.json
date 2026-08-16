@@ -9,16 +9,13 @@
     "title": "今週、あなたの街で",
     "subtitle": "あなたが選ぶのではなく、あなたの街で既に起こっていること",
     "inAction": "{n} 人活動中",
-    "avatarStack": {
-      "tooltip": "過去 7 日間に活動"
-    },
     "neighborTeams": {
       "title": "ご近所さんも参加中"
     },
-    "neighborCount": "{city} {n} 人ご近所",
+    "neighborCount": "{region} {n} 人ご近所",
     "neighborCountMany": "ご近所 4+",
-    "setCityCta": {
-      "title": "👋 都市を設定してご近所さんを見る",
+    "setRegionCta": {
+      "title": "👋 地域を設定してご近所さんを見る",
       "button": "設定する →"
     }
   },

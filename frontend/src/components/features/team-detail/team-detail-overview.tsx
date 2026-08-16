@@ -17,6 +17,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { createConversation } from "@/hooks/useMessages";
 import { TeamLeaderMini } from "@/components/features/teams/shared";
 import type { Location, Team } from "@/lib/types";
+import { formatTeamStart, getTeamDurationMinutes } from "@/lib/team-display";
 import { formatDuration } from "./team-detail-utils";
 
 interface TeamDepartureBriefProps {
@@ -33,6 +34,8 @@ export function TeamDepartureBrief({
   canMessageLeader,
 }: TeamDepartureBriefProps) {
   const { t } = useI18n(["teams", "common"]);
+  const start = formatTeamStart(team);
+  const durationMinutes = getTeamDurationMinutes(team);
   const [isStartingConversation, setIsStartingConversation] = React.useState(false);
   const [messageError, setMessageError] = React.useState<string | null>(null);
 
@@ -70,10 +73,10 @@ export function TeamDepartureBrief({
           <span className="inline-flex min-h-8 items-center rounded-full bg-amber-100 px-3 text-sm font-semibold text-amber-800">
             {statusLabel}
           </span>
-          {location?.cityName && (
+          {location?.region?.name && (
             <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-secondary px-3 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-              {location.cityName}
+              {location.region.name}
             </span>
           )}
         </div>
@@ -83,12 +86,12 @@ export function TeamDepartureBrief({
         </h1>
 
         <ul className="mt-6 grid grid-cols-1 gap-3 border-y border-border py-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-          <MetaItem icon={Calendar} label={team.date} />
-          {team.time && <MetaItem icon={Clock} label={team.time} />}
-          {team.durationMin && team.durationMin > 0 && (
+          <MetaItem icon={Calendar} label={start.date} />
+          {start.time && <MetaItem icon={Clock} label={start.time} />}
+          {durationMinutes > 0 && (
             <MetaItem
               icon={Timer}
-              label={`${t("teams.estimatedPrefix")} ${formatDuration(team.durationMin / 60)}`}
+              label={`${t("teams.estimatedPrefix")} ${formatDuration(durationMinutes / 60)}`}
             />
           )}
           {location && <MetaItem icon={MapPin} label={location.name} />}
@@ -143,9 +146,9 @@ function LocationMedia({ location }: { location: Location | null }) {
   const { t } = useI18n(["teams"]);
   const content = (
     <div className="group relative min-h-72 overflow-hidden bg-stone-900 lg:h-full lg:min-h-[34rem]">
-      {location?.coverImage ? (
+      {location?.coverImageUrl ? (
         <img
-          src={location.coverImage}
+          src={location.coverImageUrl}
           alt={location.name}
           width={1200}
           height={900}

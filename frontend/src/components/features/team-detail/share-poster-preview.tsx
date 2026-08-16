@@ -83,7 +83,7 @@ export function SharePosterPreview({
         // 获取图片 blob
         const response = await fetch(imageUrl);
         const blob = await response.blob();
-        const file = new File([blob], `gomate-team-${teamId.slice(0, 8)}.png`, { type: "image/png" });
+        const file = new File([blob], `gomate-team-${teamId.slice(0, 8)}.svg`, { type: "image/svg+xml" });
 
         // 检查是否可以分享文件
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -132,7 +132,7 @@ export function SharePosterPreview({
         }
       } else {
         // Standard download for Android/PC
-        await downloadImage(`gomate-team-${teamId.slice(0, 8)}.png`);
+        await downloadImage(`gomate-team-${teamId.slice(0, 8)}.svg`);
       }
     } catch (err) {
       console.error("Failed to save image:", err);

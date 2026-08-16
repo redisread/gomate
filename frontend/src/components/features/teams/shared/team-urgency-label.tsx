@@ -2,14 +2,14 @@
 
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import type { Team } from "@/lib/types";
+import type { TeamDisplayStatus } from "@/lib/team-display";
 import { getDaysUntilStart } from "../constants";
 
 interface TeamUrgencyLabelProps {
-  status: Team["status"];
-  currentMembers: number;
-  maxMembers: number;
-  date: string;
+  status: TeamDisplayStatus;
+  activeParticipantCount: number;
+  maxParticipants: number;
+  startAt: string;
   variant?: "badge" | "text";
 }
 
@@ -48,9 +48,9 @@ export function isThisWeekendBeijing(dateStr: string): boolean {
 
 export function TeamUrgencyLabel({
   status,
-  currentMembers,
-  maxMembers,
-  date,
+  activeParticipantCount,
+  maxParticipants,
+  startAt,
   variant = "badge",
 }: TeamUrgencyLabelProps) {
   const { t } = useI18n(["teams"]);
@@ -101,8 +101,8 @@ export function TeamUrgencyLabel({
     );
   }
 
-  // 防御：maxMembers <= 0 时显示「名额不限」
-  if (maxMembers <= 0) {
+  // 防御：maxParticipants <= 0 时显示「名额不限」
+  if (maxParticipants <= 0) {
     return (
       <span className={cn(
         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
@@ -113,10 +113,10 @@ export function TeamUrgencyLabel({
     );
   }
 
-  const fillRatio = currentMembers / maxMembers;
+  const fillRatio = activeParticipantCount / maxParticipants;
 
   // 4. 时间紧迫性（仅 recruiting 状态）
-  const daysInfo = getDaysUntilStart(t, date);
+  const daysInfo = getDaysUntilStart(t, startAt);
   if (daysInfo.days === 0) {
     return (
       <span className={cn(
@@ -140,7 +140,7 @@ export function TeamUrgencyLabel({
       </span>
     );
   }
-  if (isThisWeekendBeijing(date)) {
+  if (isThisWeekendBeijing(startAt)) {
     return (
       <span className={cn(
         "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
@@ -167,7 +167,7 @@ export function TeamUrgencyLabel({
   }
 
   // 6. 默认：还差 X 人成行
-  const remaining = Math.max(maxMembers - currentMembers, 0);
+  const remaining = Math.max(maxParticipants - activeParticipantCount, 0);
   if (remaining === 1) {
     return (
       <span className={cn(

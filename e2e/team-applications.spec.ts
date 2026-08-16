@@ -36,13 +36,17 @@ async function makeUser(role: string): Promise<FixtureUser> {
 async function makeTeam(leader: FixtureUser, suffix: string): Promise<string> {
   const locationId = await getFirstLocationId();
   const start = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const end = new Date(start.getTime() + 8 * 60 * 60 * 1000);
   return createTeamAs(leader, {
     locationId,
+    activityType: "hiking",
     title: `E2E 申请流 ${RUN_ID} ${suffix}`,
-    date: start.toISOString().split("T")[0]!,
-    time: "10:00",
-    maxMembers: 5,
+    startAt: start.toISOString(),
+    endAt: end.toISOString(),
+    maxParticipants: 5,
     description: "E2E 自构造 fixture 队伍，可安全忽略",
+    requirements: [],
+    tagIds: [],
   });
 }
 

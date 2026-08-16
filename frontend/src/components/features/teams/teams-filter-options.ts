@@ -1,4 +1,4 @@
-import type { City } from "@/lib/types";
+import type { Region } from "@/lib/types";
 
 export const TEAM_DATE_OPTIONS = [
   { key: "today", labelKey: "filter.dateQuickToday" },
@@ -8,14 +8,14 @@ export const TEAM_DATE_OPTIONS = [
   { key: "30days", labelKey: "filter.dateQuick30Days" },
 ] as const;
 
-const HOT_CITY_PRIORITY = ["深圳", "广州", "香港", "昆明", "长沙", "成都"];
+const HOT_REGION_PRIORITY = ["深圳", "广州", "香港", "昆明", "长沙", "成都"];
 
-export function getQuickCities(cities: City[], limit: number): City[] {
-  return cities
-    .filter((city) => city.isHot)
+export function getQuickRegions(regions: Region[], limit: number): Region[] {
+  return regions
+    .filter((region) => region.isHot)
     .sort((left, right) => {
-      const leftRank = HOT_CITY_PRIORITY.indexOf(left.name);
-      const rightRank = HOT_CITY_PRIORITY.indexOf(right.name);
+      const leftRank = HOT_REGION_PRIORITY.indexOf(left.name);
+      const rightRank = HOT_REGION_PRIORITY.indexOf(right.name);
       if (leftRank !== -1 || rightRank !== -1) {
         if (leftRank === -1) return 1;
         if (rightRank === -1) return -1;

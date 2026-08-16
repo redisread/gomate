@@ -1,13 +1,8 @@
 /**
- * Unified poster pipeline.
+ * Unified SVG poster pipeline.
  *
- * Replaces the four phase-scoped generators (generatePreviewImage /
- * generateLocationImage / generateTeamImage / generateStoryImage) with
- * one dispatcher keyed by `:kind`. The data-load and Satori-template logic
- * stays in the three real templates (location/team/story-poster.tsx);
- * the cache + WASM + font + image-base64 plumbing lives in `poster-cache.ts`.
- *
- * Skill: `zero-tech-debt` — Steps 2/3/4 collapse.
+ * Data loading and Satori templates stay specific to each poster kind;
+ * shared cache, font, QR, and image-loading support lives in `poster-cache.ts`.
  */
 
 import type { Env } from "../../lib/auth";
@@ -15,7 +10,6 @@ import { logger } from "../../lib/logger";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { safeJsonParse } from "../../lib/safe-json";
 import {
   lookupPosterStrings,
   localizeDifficulty,
@@ -26,8 +20,7 @@ import {
   generateQrDataUrl,
   loadImageAsBase64,
   loadPosterFonts,
-  md5,
-  renderSvgToPng,
+  sha256,
 } from "./poster-cache";
 import { renderLocationPoster } from "../../templates/share-image/location-poster";
 import { renderTeamPoster } from "../../templates/share-image/team-poster";
@@ -37,7 +30,7 @@ export type PosterKind = "location" | "team" | "story";
 
 /**
  * Bump this whenever a poster template's dimensions or visual structure
- * changes. The value is part of the content hash so old R2 PNGs cannot be
+ * changes. The value is part of the content hash so old cached SVGs cannot be
  * returned after a template deployment.
  */
 export const POSTER_TEMPLATE_VERSION = "v2";
@@ -48,7 +41,7 @@ export interface RenderPosterOptions {
 }
 
 export interface RenderPosterResult {
-  png: Uint8Array;
+  svg: string;
   cacheKey: string;
 }
 
@@ -58,14 +51,14 @@ export class PosterNotFoundError extends Error {
   }
 }
 
-/** Make a content hash (first 12 hex chars of MD5 over JSON-canonical content). */
+/** Make a content hash (first 12 hex chars of SHA-256 over JSON content). */
 async function hashContent(data: unknown): Promise<string> {
-  return (await md5(JSON.stringify(data))).slice(0, 12);
+  return (await sha256(JSON.stringify(data))).slice(0, 12);
 }
 
 /** Build canonical cache key for a (kind, id) pair. */
 function buildCacheKey(prefix: string, id: string, hash: string): string {
-  return `${prefix}/${id}-${hash}.png`;
+  return `poster:v3:${prefix}:${id}:${hash}`;
 }
 
 /**
@@ -98,31 +91,28 @@ async function buildLocationPoster(
   refresh: boolean,
 ): Promise<RenderPosterResult> {
   const db = createDb(env.DB);
-  let location = await db.query.locations.findFirst({
+  const location = await db.query.locations.findFirst({
     where: eq(schema.locations.id, locationId),
+    with: { region: true },
   });
-  if (!location) {
-    location = await db.query.locations.findFirst({
-      where: eq(schema.locations.slug, locationId),
-    });
-  }
-  if (!location) throw new PosterNotFoundError("location", locationId);
+  if (
+    !location ||
+    location.status !== "published" ||
+    location.region?.level !== "city" ||
+    !location.region.serviceEnabled
+  ) throw new PosterNotFoundError("location", locationId);
 
   const tagRelations = await db
     .select({ tagName: schema.tags.name })
-    .from(schema.entityToTags)
-    .innerJoin(schema.tags, eq(schema.tags.id, schema.entityToTags.tagId))
-    .where(
-      and(
-        eq(schema.entityToTags.entityId, location.id),
-        eq(schema.entityToTags.entityType, "location"),
-      ),
-    );
+    .from(schema.locationTags)
+    .innerJoin(schema.tags, eq(schema.tags.id, schema.locationTags.tagId))
+    .where(eq(schema.locationTags.locationId, location.id));
   const tags = tagRelations.map((r) => r.tagName);
 
   // content hash — pre-image load. If 8s budget for cover fails, contentHash still matches.
-  const bestSeason = safeJsonParse<string[]>(location.bestSeason, []);
-  const coverPath = location.coverImage ?? safeJsonParse<string[]>(location.images, [])[0] ?? null;
+  const hiking = location.extra.hiking;
+  const bestSeason = hiking?.best_seasons ?? [];
+  const coverPath = location.coverImageUrl ?? location.images[0] ?? null;
   const hashSeed = {
     templateVersion: POSTER_TEMPLATE_VERSION,
     title: location.name,
@@ -130,55 +120,51 @@ async function buildLocationPoster(
     subtitle: location.subtitle,
     description: location.description,
     address: location.address,
-    coverImage: coverPath,
-    cityName: location.cityName,
+    coverImageUrl: coverPath,
+    regionName: location.region?.name,
     bestSeason,
     tags,
-    type: location.type,
+    activityTypes: location.supportedActivityTypes,
   };
   const hash = await hashContent(hashSeed);
   const cacheKey = buildCacheKey("share/location", location.id, hash);
 
-  const { png } = await cachedPosterRender({
+  const { svg } = await cachedPosterRender({
     env,
     cacheKey,
     refresh,
     render: async () => {
       let coverImageBase64: string | null = null;
-            if (location.coverImage) {
+      if (location.coverImageUrl) {
         try {
-          coverImageBase64 = await loadImageAsBase64(location.coverImage, env, 8000);
-          if (!coverImageBase64) logger.warn("[ShareImage] Cover returned null:", location.coverImage);
+          coverImageBase64 = await loadImageAsBase64(location.coverImageUrl, env, 8000);
+          if (!coverImageBase64) logger.warn("share_image_cover_missing", location.coverImageUrl);
         } catch (e) {
-          logger.error("[ShareImage] Failed to load cover image:", e);
+          logger.error("share_image_cover_load_failed", e);
         }
       }
-      if (!coverImageBase64 && location.images) {
-        const images = safeJsonParse<string[]>(location.images, []);
-        if (images.length > 0) {
+      if (!coverImageBase64 && location.images.length > 0) {
           try {
-            coverImageBase64 = await loadImageAsBase64(images[0], env, 8000);
-            } catch (e) {
-            logger.error("[ShareImage] Failed to load fallback image:", e);
+            coverImageBase64 = await loadImageAsBase64(location.images[0], env, 8000);
+          } catch (e) {
+            logger.error("share_image_fallback_load_failed", e);
           }
-        }
       }
 
-      const slugOrId = location.slug || location.id;
-      const qrCodeDataUrl = await generateQrDataUrl(`https://gomate.live/locations/${slugOrId}`);
+      const qrCodeDataUrl = await generateQrDataUrl(`https://gomate.live/locations/${location.id}`);
 
-      const hasMetrics = location.difficulty != null
-        || location.durationMin != null
-        || location.durationMax != null
-        || location.distance != null
-        || location.elevation != null;
+      const hasMetrics = hiking?.difficulty != null
+        || hiking?.duration_min != null
+        || hiking?.duration_max != null
+        || hiking?.distance_km != null
+        || hiking?.elevation_gain_m != null;
       const routeMetrics = hasMetrics
         ? {
-            difficulty: localizeDifficulty(locale, location.difficulty),
-            durationMin: location.durationMin,
-            durationMax: location.durationMax,
-            distance: location.distance,
-            elevation: location.elevation,
+            difficulty: localizeDifficulty(locale, hiking?.difficulty),
+            durationMin: hiking?.duration_min,
+            durationMax: hiking?.duration_max,
+            distance: hiking?.distance_km,
+            elevation: hiking?.elevation_gain_m,
           }
         : null;
 
@@ -190,9 +176,9 @@ async function buildLocationPoster(
         address: location.address,
         coverImage: coverImageBase64,
         tags,
-        cityName: location.cityName ?? null,
+        regionName: location.region?.name ?? null,
         bestSeason,
-        type: location.type ?? null,
+        type: location.supportedActivityTypes[0] ?? null,
         routeMetrics,
         qrCodeDataUrl,
         locale,
@@ -208,11 +194,11 @@ async function buildLocationPoster(
           brandName: i18n.brandName,
         },
       });
-      return renderSvgToPng(svg);
+      return svg;
     },
   });
 
-  return { png, cacheKey };
+  return { svg, cacheKey };
 }
 
 // =============================================================
@@ -239,49 +225,49 @@ async function buildTeamPoster(
     .where(
       and(
         eq(schema.teamMembers.teamId, teamId),
-        eq(schema.teamMembers.status, "approved"),
+        sql`${schema.teamMembers.leftAt} is null`,
       ),
     );
-  const currentMembers = (count ?? 0) + 1;
-  const maxMembers = team.maxMembers;
-  const spotsToForm = Math.max(0, maxMembers - currentMembers);
+  const activeParticipantCount = count ?? 0;
+  const maxParticipants = team.maxParticipants;
+  const spotsToForm = Math.max(0, maxParticipants - activeParticipantCount);
 
   const hash = await hashContent({
     templateVersion: POSTER_TEMPLATE_VERSION,
     title: team.title,
-    startTime: team.startTime,
+    startAt: team.startAt,
     locationName: team.location?.name,
-    currentMembers,
-    maxMembers,
-    status: team.status,
+    activeParticipantCount,
+    maxParticipants,
+    recruitmentStatus: team.recruitmentStatus,
     locale,
     updatedAt: team.updatedAt,
   });
   const cacheKey = buildCacheKey("share/team", team.id, hash);
 
-  const { png } = await cachedPosterRender({
+  const { svg } = await cachedPosterRender({
     env,
     cacheKey,
     refresh,
     render: async () => {
       const [coverImageBase64, leaderAvatarBase64, qrCodeDataUrl] = await Promise.all([
-        team.location?.coverImage
-          ? loadImageAsBase64(team.location.coverImage, env, 3000)
+        team.location?.coverImageUrl
+          ? loadImageAsBase64(team.location.coverImageUrl, env, 3000)
           : Promise.resolve(null),
         team.leader?.image
           ? loadImageAsBase64(team.leader.image, env, 3000)
           : Promise.resolve(null),
         generateQrDataUrl(`https://gomate.live/teams/${team.id}`),
       ]);
-      const date = formatTeamDate(team.startTime, locale);
+      const date = formatTeamDate(team.startAt, locale);
       const i18n = lookupPosterStrings(locale);
       const svg = await renderTeamPoster({
         title: team.title,
         date,
         locationName: team.location?.name ?? null,
         coverImage: coverImageBase64,
-        currentMembers,
-        maxMembers,
+        activeParticipantCount,
+        maxParticipants,
         leaderName: team.leader?.name ?? null,
         leaderAvatar: leaderAvatarBase64,
         spotsToForm,
@@ -289,11 +275,11 @@ async function buildTeamPoster(
         fonts,
         i18n,
       });
-      return renderSvgToPng(svg);
+      return svg;
     },
   });
 
-  return { png, cacheKey };
+  return { svg, cacheKey };
 }
 
 // =============================================================
@@ -309,9 +295,20 @@ async function buildStoryPoster(
   const db = createDb(env.DB);
   const story = await db.query.stories.findFirst({
     where: eq(schema.stories.id, storyId),
-    with: { author: true, location: true },
+    with: {
+      author: true,
+      location: { with: { region: true } },
+    },
   });
-  if (!story || story.status !== "published") {
+  if (
+    !story ||
+    story.status !== "published" ||
+    (story.locationId !== null && (
+      story.location?.status !== "published" ||
+      story.location.region?.level !== "city" ||
+      !story.location.region.serviceEnabled
+    ))
+  ) {
     throw new PosterNotFoundError("story", storyId);
   }
 
@@ -319,26 +316,26 @@ async function buildStoryPoster(
     templateVersion: POSTER_TEMPLATE_VERSION,
     title: story.title,
     summary: story.summary,
-    coverImage: story.coverImage,
+    images: story.images,
     authorId: story.authorId,
     locationId: story.locationId,
     createdAt: story.createdAt,
   });
   const cacheKey = buildCacheKey("share/story", story.id, hash);
 
-  const { png } = await cachedPosterRender({
+  const { svg } = await cachedPosterRender({
     env,
     cacheKey,
     refresh,
     render: async () => {
       const [coverImageBase64, authorAvatarBase64, qrCodeDataUrl] = await Promise.all([
-        story.coverImage ? loadImageAsBase64(story.coverImage, env, 3000) : Promise.resolve(null),
+        story.images[0] ? loadImageAsBase64(story.images[0], env, 3000) : Promise.resolve(null),
         story.author?.image ? loadImageAsBase64(story.author.image, env, 3000) : Promise.resolve(null),
         generateQrDataUrl(`https://gomate.live/discover/${story.id}`),
       ]);
       const svg = await renderStoryPoster({
-        title: story.title,
-        summary: story.summary,
+        title: story.title ?? "GoMate Story",
+        summary: story.summary ?? story.content.slice(0, 160),
         coverImage: coverImageBase64 ?? undefined,
         authorName: (story.author?.name || story.author?.nickname) ?? undefined,
         authorAvatar: authorAvatarBase64 ?? undefined,
@@ -346,11 +343,11 @@ async function buildStoryPoster(
         qrCodeDataUrl,
         fonts,
       });
-      return renderSvgToPng(svg);
+      return svg;
     },
   });
 
-  return { png, cacheKey };
+  return { svg, cacheKey };
 }
 
 // =============================================================

@@ -28,10 +28,9 @@ function ShimmerCard() {
 
 function LocationCard({ location, index }: { location: Location; index: number }) {
   const { t } = useI18n(["locations", "common", "locationDetail"]);
-  // task #152 切源：徒步参数读 location 自身字段（0010 回填），不再读 routes[0]
   const hiking = normalizeLocationHiking(location);
   const durationText = formatRouteMetric(hiking?.duration, t);
-  const distanceText = hiking?.distance?.value;
+  const distanceText = formatRouteMetric(hiking?.distance, t);
   return (
     <a
       href={`/locations/${location.id}`}
@@ -39,9 +38,9 @@ function LocationCard({ location, index }: { location: Location; index: number }
     >
       <article className="bg-card rounded-2xl overflow-hidden border border-border hover:border-amber-200/50 dark:hover:border-amber-800/50 hover:shadow-xl hover:shadow-amber-100/40 dark:hover:shadow-amber-900/20 hover:ring-1 hover:ring-amber-200/40 dark:hover:ring-amber-700/40 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 motion-reduce:transition-none hover:-translate-y-1">
         <div className="relative h-52 overflow-hidden bg-stone-100 dark:bg-stone-800">
-          {location.coverImage ? (
+          {location.coverImageUrl ? (
             <LocationCoverImage
-              src={location.coverImage}
+              src={location.coverImageUrl}
               alt={location.name}
               priority={index === 0}
               className="group-hover:scale-[1.03] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -52,11 +51,11 @@ function LocationCard({ location, index }: { location: Location; index: number }
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-          {location.cityName && (
+          {location.region && (
             <div className="absolute top-3 right-3">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-black/35 text-white backdrop-blur-sm">
                 <MapPin className="w-3 h-3" />
-                {location.cityName}
+                {location.region.name}
               </span>
             </div>
           )}
@@ -94,7 +93,7 @@ function LocationCard({ location, index }: { location: Location; index: number }
                   key={tag?.id ?? i}
                   className={cn("px-2.5 py-0.5 rounded-full text-xs border", tagColorClasses[i % tagColorClasses.length])}
                 >
-                  {typeof tag === "string" ? tag : tag?.name}
+                  {tag.name}
                 </span>
               ))}
             </div>
@@ -102,7 +101,7 @@ function LocationCard({ location, index }: { location: Location; index: number }
           <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-800">
             <span className="text-xs text-stone-500 dark:text-stone-500 flex items-center gap-1">
               <MapPin className="w-3 h-3" />
-              {location.address || location.cityName || t("locations.defaultCity")}
+              {location.address || location.region?.name || t("locations.defaultRegion")}
             </span>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 group-hover:text-amber-800 dark:group-hover:text-amber-300 transition-colors">
               {t("common.viewDetail")}
@@ -119,61 +118,61 @@ function LocationCard({ location, index }: { location: Location; index: number }
  * EmptyState variants (spec v1.1 §3 / #222 T1).
  * i18n keys provided by T3 (locations.empty.{variant}.*).
  */
-export type EmptyStateVariant = "noSearch" | "noCity" | "noCitySet" | "tooNarrow";
+export type EmptyStateVariant = "noSearch" | "noRegion" | "noRegionSet" | "tooNarrow";
 
 export interface EmptyStateProps {
   variant: EmptyStateVariant;
   /** Search query for the noSearch variant template. */
   query?: string;
-  /** City name for noCity variant template (e.g. "深圳") */
-  cityName?: string;
+  /** Region name for noRegion variant template (e.g. "深圳") */
+  regionName?: string;
   onClearSearch?: () => void;
   onClearAll?: () => void;
-  onChangeCity?: () => void;
-  onSetCity?: () => void;
+  onChangeRegion?: () => void;
+  onSetRegion?: () => void;
 }
 
 const VARIANT_ICON: Record<EmptyStateVariant, React.ElementType> = {
   noSearch: Search,
-  noCity: Map,
-  noCitySet: MapPin,
+  noRegion: Map,
+  noRegionSet: MapPin,
   tooNarrow: Filter,
 };
 
 const VARIANT_PRIMARY: Record<
   EmptyStateVariant,
-  { action: "onClearSearch" | "onChangeCity" | "onSetCity"; labelKey: string }
+  { action: "onClearSearch" | "onChangeRegion" | "onSetRegion"; labelKey: string }
 > = {
   noSearch: { action: "onClearSearch", labelKey: "locations.empty.noSearch.clearBtn" },
-  noCity: { action: "onChangeCity", labelKey: "locations.empty.noCity.changeBtn" },
-  noCitySet: { action: "onSetCity", labelKey: "locations.empty.noCitySet.setBtn" },
+  noRegion: { action: "onChangeRegion", labelKey: "locations.empty.noRegion.changeBtn" },
+  noRegionSet: { action: "onSetRegion", labelKey: "locations.empty.noRegionSet.setBtn" },
   tooNarrow: { action: "onClearSearch", labelKey: "locations.empty.tooNarrow.resetBtn" },
 };
 
 const VARIANT_SECONDARY: Record<EmptyStateVariant, string> = {
   noSearch: "locations.empty.noSearch.browseBtn",
-  noCity: "locations.empty.noCity.browseBtn",
-  noCitySet: "locations.empty.noCitySet.browseFirstBtn",
+  noRegion: "locations.empty.noRegion.browseBtn",
+  noRegionSet: "locations.empty.noRegionSet.browseFirstBtn",
   tooNarrow: "locations.empty.tooNarrow.homeBtn",
 };
 
 export function EmptyState({
   variant,
   query,
-  cityName,
+  regionName,
   onClearSearch,
   onClearAll,
-  onChangeCity,
-  onSetCity,
+  onChangeRegion,
+  onSetRegion,
 }: EmptyStateProps) {
   const { t } = useI18n(["locations", "common"]);
   const Icon = VARIANT_ICON[variant];
 
-  const actionMap = { onClearSearch, onChangeCity, onSetCity };
+  const actionMap = { onClearSearch, onChangeRegion, onSetRegion };
   const primaryConfig = VARIANT_PRIMARY[variant];
   const primaryAction = actionMap[primaryConfig.action];
 
-  const titleVars: Record<string, string> = variant === "noSearch" ? { query: query ?? "" } : { cityName: cityName ?? "" };
+  const titleVars: Record<string, string> = variant === "noSearch" ? { query: query ?? "" } : { regionName: regionName ?? "" };
   const title = t(`locations.empty.${variant}.title`, titleVars);
   const desc = t(`locations.empty.${variant}.desc`, titleVars);
   const primaryLabel = t(primaryConfig.labelKey);
@@ -232,12 +231,11 @@ export function LocationsGrid({
   query,
   currentPage,
   onPageChange,
-  getPageNumbers,
 }: {
   locations: Location[];
   isLoading: boolean;
   isRefreshing: boolean;
-  pagination: { total: number; totalPages: number };
+  pagination: { total: number; nextCursor: string | null };
   onClear: () => void;
   /** @default "noSearch" */
   emptyVariant?: EmptyStateVariant;
@@ -245,7 +243,6 @@ export function LocationsGrid({
   query?: string;
   currentPage: number;
   onPageChange: (page: number) => void;
-  getPageNumbers: () => (number | "...")[];
 }) {
   const { t } = useI18n(["locations", "common"]);
   return (
@@ -289,7 +286,7 @@ export function LocationsGrid({
         </div>
       </div>
 
-      {pagination.totalPages > 1 && (
+      {(currentPage > 1 || pagination.nextCursor) && (
         <div className="flex justify-center items-center gap-1.5 mt-12">
           <button
             onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
@@ -302,33 +299,13 @@ export function LocationsGrid({
             </span>
           </button>
 
-          {getPageNumbers().map((page, idx) =>
-            page === "..." ? (
-              <span key={`e-${idx}`} className="w-9 h-9 flex items-center justify-center text-stone-600 dark:text-stone-400 text-sm">···</span>
-            ) : (
-              <button
-                key={page}
-                onClick={() => onPageChange(page as number)}
-                disabled={isRefreshing}
-                className={cn(
-                  "w-9 h-9 rounded-xl text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 motion-reduce:transition-none",
-                  page === currentPage
-                    ? "bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white shadow-sm"
-                    : "bg-card text-stone-600 dark:text-stone-400 border border-border hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
-                )}
-              >
-                {page}
-              </button>
-            )
-          )}
-
           <button
-            onClick={() => currentPage < pagination.totalPages && onPageChange(currentPage + 1)}
-            disabled={currentPage === pagination.totalPages || isRefreshing}
+            onClick={() => pagination.nextCursor && onPageChange(currentPage + 1)}
+            disabled={!pagination.nextCursor || isRefreshing}
             aria-label={t("locations.paginationNext")}
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
           >
-            <span className={cn("text-stone-900 dark:text-stone-100", currentPage === pagination.totalPages && "text-stone-500 dark:text-stone-500")}>
+            <span className={cn("text-stone-900 dark:text-stone-100", !pagination.nextCursor && "text-stone-500 dark:text-stone-500")}>
               <ChevronRight className="h-4 w-4" />
             </span>
           </button>

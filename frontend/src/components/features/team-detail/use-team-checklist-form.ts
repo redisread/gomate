@@ -428,7 +428,7 @@ export function useTeamChecklistForm({
     }
     try {
       setIsSaving(true);
-      const res = await fetchAPI(`/api/teams/${teamId}/checklist`, {
+      const res = await fetchAPI(`/teams/${teamId}/checklist`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: serialized,

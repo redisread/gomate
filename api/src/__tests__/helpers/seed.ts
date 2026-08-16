@@ -1,226 +1,282 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import type { TestDb } from "./db";
 
 let idCounter = 1;
+
 function genId(prefix = "id") {
   return `${prefix}_${idCounter++}_${Date.now()}`;
 }
 
-/**
- * 插入测试用户
- */
 export async function seedUser(
   db: TestDb,
-  overrides: Partial<schema.NewUser> = {}
+  overrides: Partial<schema.NewUser> = {},
 ): Promise<schema.User> {
-  const id = genId("user");
-  const ts = new Date();
-  // 排除 id，避免对象字面量重复属性
-  const { id: _omitId, ...restOverrides } = overrides;
-  const user: schema.NewUser = {
+  const id = overrides.id ?? genId("user");
+  await db.insert(schema.users).values({
     id,
-    name: restOverrides.name ?? `TestUser_${id}`,
-    email: restOverrides.email ?? `${id}@test.com`,
-    emailVerified: restOverrides.emailVerified ?? false,
-    level: restOverrides.level ?? "beginner",
-    role: restOverrides.role ?? "user",
-    status: restOverrides.status ?? "active",
-    createdAt: restOverrides.createdAt ?? ts,
-    updatedAt: restOverrides.updatedAt ?? ts,
-    ...restOverrides,
-  };
-  await db.insert(schema.users).values(user);
-  const [inserted] = await db.select().from(schema.users).where(eq(schema.users.id, id));
-  return inserted;
+    name: `Test User ${id}`,
+    email: `${id}@test.example`,
+    emailVerified: true,
+    role: "user",
+    status: "active",
+    extra: {
+      level: "beginner",
+      completed_hikes: 0,
+      wechat: null,
+      city: null,
+    },
+    ...overrides,
+  });
+  const [result] = await db.select().from(schema.users).where(eq(schema.users.id, id));
+  return result;
 }
 
-/**
- * 插入测试城市
- */
-export async function seedCity(
+export async function seedRegion(
   db: TestDb,
-  overrides: Partial<schema.NewCity> = {}
-): Promise<schema.City> {
-  const id = genId("city");
-  const ts = new Date();
-  // 排除 id，避免对象字面量重复属性
-  const { id: _omitId, ...restOverrides } = overrides;
-  const city: schema.NewCity = {
+  overrides: Partial<schema.NewRegion> = {},
+): Promise<schema.Region> {
+  const id = overrides.id ?? genId("region");
+  await db.insert(schema.region).values({
     id,
-    adcode: restOverrides.adcode ?? `44030${idCounter}`,
-    name: restOverrides.name ?? `TestCity_${id}`,
-    isHot: restOverrides.isHot ?? false,
-    createdAt: restOverrides.createdAt ?? ts,
-    updatedAt: restOverrides.updatedAt ?? ts,
-    ...restOverrides,
-  };
-  await db.insert(schema.cities).values(city);
-  const [inserted] = await db.select().from(schema.cities).where(eq(schema.cities.id, id));
-  return inserted;
+    countryCode: "CN",
+    name: `Test Region ${id}`,
+    slug: `test-region-${id}`,
+    code: `test-${id}`,
+    level: "city",
+    timezone: "Asia/Shanghai",
+    centerLatitude: 22.5431,
+    centerLongitude: 114.0579,
+    serviceEnabled: true,
+    isHot: false,
+    sortOrder: 0,
+    ...overrides,
+  });
+  const [result] = await db.select().from(schema.region).where(eq(schema.region.id, id));
+  return result;
 }
 
-/**
- * 插入测试地点
- */
 export async function seedLocation(
   db: TestDb,
-  cityId: string,
-  overrides: Partial<schema.NewLocation> = {}
+  regionId: string,
+  overrides: Partial<schema.NewLocation> = {},
 ): Promise<schema.Location> {
-  const id = genId("loc");
-  const ts = new Date();
-  // 排除 id，避免对象字面量重复属性
-  const { id: _omitId, ...restOverrides } = overrides;
-  const location: schema.NewLocation = {
+  const id = overrides.id ?? genId("location");
+  await db.insert(schema.locations).values({
     id,
-    name: restOverrides.name ?? `TestLocation_${id}`,
-    slug: restOverrides.slug ?? `test-location-${id}`,
-    description: restOverrides.description ?? "测试地点描述",
-    cityId,
-    bestSeason: restOverrides.bestSeason ?? JSON.stringify(["spring", "autumn"]),
-    coverImage: restOverrides.coverImage ?? "https://example.com/cover.jpg",
-    images: restOverrides.images ?? JSON.stringify([]),
-    coordinates: restOverrides.coordinates ?? JSON.stringify({ lat: 22.5, lng: 114.0 }),
-    createdAt: restOverrides.createdAt ?? ts,
-    updatedAt: restOverrides.updatedAt ?? ts,
-    ...restOverrides,
-  };
-  await db.insert(schema.locations).values(location);
-  const [inserted] = await db.select().from(schema.locations).where(eq(schema.locations.id, id));
-  return inserted;
+    regionId,
+    name: `Test Location ${id}`,
+    slug: `test-location-${id}`,
+    supportedActivityTypes: ["hiking"],
+    status: "published",
+    description: "Test location description",
+    latitude: 22.5431,
+    longitude: 114.0579,
+    coverImageUrl: "https://gomate.cos.jiahongw.com/test/cover.jpg",
+    images: [],
+    extra: {},
+    ...overrides,
+  });
+  const [result] = await db
+    .select()
+    .from(schema.locations)
+    .where(eq(schema.locations.id, id));
+  return result;
 }
 
-/**
- * 插入测试队伍
- */
 export async function seedTeam(
   db: TestDb,
   leaderId: string,
   locationId: string,
-  overrides: Partial<schema.NewTeam> = {}
+  overrides: Partial<schema.NewTeam> = {},
 ): Promise<schema.Team> {
-  const id = genId("team");
-  const ts = new Date();
-  const futureTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  // 排除 id，避免对象字面量重复属性
-  const { id: _omitId, ...restOverrides } = overrides;
-  const team: schema.NewTeam = {
+  const id = overrides.id ?? genId("team");
+  const startAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await db.insert(schema.teams).values({
     id,
     locationId,
     leaderId,
-    title: restOverrides.title ?? `TestTeam_${id}`,
-    startTime: restOverrides.startTime ?? futureTime,
-    endTime: restOverrides.endTime ?? new Date(futureTime.getTime() + 4 * 60 * 60 * 1000),
-    durationMin: restOverrides.durationMin ?? 240,
-    maxMembers: restOverrides.maxMembers ?? 5,
-    icon: restOverrides.icon ?? "⛰️",
-    status: restOverrides.status ?? "recruiting",
-    createdAt: restOverrides.createdAt ?? ts,
-    updatedAt: restOverrides.updatedAt ?? ts,
-    ...restOverrides,
-  };
-  await db.insert(schema.teams).values(team);
-  const [inserted] = await db.select().from(schema.teams).where(eq(schema.teams.id, id));
-  return inserted;
+    activityType: "hiking",
+    title: `Test Team ${id}`,
+    description: "Test team description",
+    startAt,
+    endAt: new Date(startAt.getTime() + 4 * 60 * 60 * 1000),
+    maxParticipants: 5,
+    requirements: [],
+    recruitmentStatus: "open",
+    checklist: null,
+    ...overrides,
+  });
+  const [result] = await db.select().from(schema.teams).where(eq(schema.teams.id, id));
+  return result;
 }
 
-/**
- * 插入队伍成员
- */
+export async function seedTeamJoinRequest(
+  db: TestDb,
+  teamId: string,
+  userId: string,
+  overrides: Partial<schema.NewTeamJoinRequest> = {},
+): Promise<schema.TeamJoinRequest> {
+  const id = overrides.id ?? genId("join_request");
+  await db.insert(schema.teamJoinRequests).values({
+    id,
+    teamId,
+    userId,
+    status: "pending",
+    ...overrides,
+  });
+  const [result] = await db
+    .select()
+    .from(schema.teamJoinRequests)
+    .where(eq(schema.teamJoinRequests.id, id));
+  return result;
+}
+
 export async function seedTeamMember(
   db: TestDb,
   teamId: string,
   userId: string,
-  status: schema.TeamMemberStatus = "approved"
+  overrides: Partial<schema.NewTeamMember> = {},
 ): Promise<schema.TeamMember> {
-  const id = genId("tm");
-  const ts = new Date();
-  const member: schema.NewTeamMember = {
-    id,
+  await db.insert(schema.teamMembers).values({
     teamId,
     userId,
-    status,
-    joinedAt: status === "approved" ? ts : undefined,
-    createdAt: ts,
-  };
-  await db.insert(schema.teamMembers).values(member);
-  const [inserted] = await db.select().from(schema.teamMembers).where(eq(schema.teamMembers.id, id));
-  return inserted;
+    role: "member",
+    joinedAt: new Date(),
+    leftAt: null,
+    ...overrides,
+  });
+  const [result] = await db
+    .select()
+    .from(schema.teamMembers)
+    .where(
+      and(
+        eq(schema.teamMembers.teamId, teamId),
+        eq(schema.teamMembers.userId, userId),
+      ),
+    );
+  return result;
 }
 
-/**
- * 插入测试故事
- */
 export async function seedStory(
   db: TestDb,
   authorId: string,
-  overrides: Partial<schema.NewStory> = {}
+  overrides: Partial<schema.NewStory> = {},
 ): Promise<schema.Story> {
-  const id = genId("story");
-  const ts = new Date();
-  const { id: _omitId, ...restOverrides } = overrides;
-  const story: schema.NewStory = {
+  const id = overrides.id ?? genId("story");
+  await db.insert(schema.stories).values({
     id,
     authorId,
-    title: restOverrides.title ?? `TestStory_${id}`,
-    summary: restOverrides.summary ?? "测试故事摘要",
-    content: restOverrides.content ?? "测试故事内容",
-    coverImage: restOverrides.coverImage ?? null,
-    locationId: restOverrides.locationId ?? null,
-    status: restOverrides.status ?? "published",
-    viewCount: restOverrides.viewCount ?? 0,
-    likeCount: restOverrides.likeCount ?? 0,
-    createdAt: restOverrides.createdAt ?? ts,
-    updatedAt: restOverrides.updatedAt ?? ts,
-    ...restOverrides,
-  };
-  await db.insert(schema.stories).values(story);
-  const [inserted] = await db.select().from(schema.stories).where(eq(schema.stories.id, id));
-  return inserted;
+    teamId: null,
+    locationId: null,
+    title: `Test Story ${id}`,
+    summary: "Test story summary",
+    content: "Test story content",
+    images: [],
+    status: "published",
+    viewCount: 0,
+    likeCount: 0,
+    ...overrides,
+  });
+  const [result] = await db.select().from(schema.stories).where(eq(schema.stories.id, id));
+  return result;
 }
 
-/**
- * 插入测试标签
- */
 export async function seedTag(
   db: TestDb,
-  overrides: Partial<schema.NewTag> = {}
+  overrides: Partial<schema.NewTag> = {},
 ): Promise<schema.Tag> {
-  const id = genId("tag");
-  const ts = new Date();
-  const { id: _omitId, ...restOverrides } = overrides;
-  const tag: schema.NewTag = {
+  const id = overrides.id ?? genId("tag");
+  await db.insert(schema.tags).values({
     id,
-    name: restOverrides.name ?? `TestTag_${id}`,
-    type: restOverrides.type ?? "activity",
-    createdAt: restOverrides.createdAt ?? ts,
-    ...restOverrides,
-  };
-  await db.insert(schema.tags).values(tag);
-  const [inserted] = await db.select().from(schema.tags).where(eq(schema.tags.id, id));
-  return inserted;
+    name: `Test Tag ${id}`,
+    slug: `test-tag-${id}`,
+    ...overrides,
+  });
+  const [result] = await db.select().from(schema.tags).where(eq(schema.tags.id, id));
+  return result;
 }
 
-/**
- * 关联标签到实体
- */
-export async function seedEntityTag(
+export async function seedLocationTag(
   db: TestDb,
-  entityId: string,
-  entityType: string,
-  tagId: string
-): Promise<schema.EntityToTag> {
-  const id = genId("et");
-  const ts = new Date();
-  const entityTag: typeof schema.entityToTags.$inferInsert = {
+  locationId: string,
+  tagId: string,
+): Promise<schema.LocationTag> {
+  await db.insert(schema.locationTags).values({ locationId, tagId });
+  const [result] = await db
+    .select()
+    .from(schema.locationTags)
+    .where(
+      and(
+        eq(schema.locationTags.locationId, locationId),
+        eq(schema.locationTags.tagId, tagId),
+      ),
+    );
+  return result;
+}
+
+export async function seedTeamTag(
+  db: TestDb,
+  teamId: string,
+  tagId: string,
+): Promise<schema.TeamTag> {
+  await db.insert(schema.teamTags).values({ teamId, tagId });
+  const [result] = await db
+    .select()
+    .from(schema.teamTags)
+    .where(and(eq(schema.teamTags.teamId, teamId), eq(schema.teamTags.tagId, tagId)));
+  return result;
+}
+
+export async function seedStoryTag(
+  db: TestDb,
+  storyId: string,
+  tagId: string,
+): Promise<schema.StoryTag> {
+  await db.insert(schema.storyTags).values({ storyId, tagId });
+  const [result] = await db
+    .select()
+    .from(schema.storyTags)
+    .where(and(eq(schema.storyTags.storyId, storyId), eq(schema.storyTags.tagId, tagId)));
+  return result;
+}
+
+export async function seedConversation(
+  db: TestDb,
+  teamId: string,
+  memberUserId: string,
+  initiatedByUserId: string,
+  overrides: Partial<schema.NewConversation> = {},
+): Promise<schema.Conversation> {
+  const id = overrides.id ?? genId("conversation");
+  await db.insert(schema.conversations).values({
     id,
-    entityId,
-    entityType,
-    tagId,
-    createdAt: ts,
-  };
-  await db.insert(schema.entityToTags).values(entityTag);
-  const [inserted] = await db.select().from(schema.entityToTags).where(eq(schema.entityToTags.id, id));
-  return inserted;
+    teamId,
+    memberUserId,
+    initiatedByUserId,
+    ...overrides,
+  });
+  const [result] = await db
+    .select()
+    .from(schema.conversations)
+    .where(eq(schema.conversations.id, id));
+  return result;
+}
+
+export async function seedMessage(
+  db: TestDb,
+  conversationId: string,
+  senderId: string,
+  overrides: Partial<schema.NewMessage> = {},
+): Promise<schema.Message> {
+  const id = overrides.id ?? genId("message");
+  await db.insert(schema.messages).values({
+    id,
+    conversationId,
+    senderId,
+    content: "Test message",
+    ...overrides,
+  });
+  const [result] = await db.select().from(schema.messages).where(eq(schema.messages.id, id));
+  return result;
 }

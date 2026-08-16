@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Bookmark,
   Eye,
   FileText,
   Heart,
@@ -19,7 +20,15 @@ import type { StoryMetric } from "./story-detail-utils";
 export const CONTENT_WIDTH = "mx-auto w-full max-w-3xl px-4 sm:px-6";
 export const SHELL_WIDTH = "mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8";
 
-export function StoryEyebrow({ story, showDraftBadge, t }: { story: Story; showDraftBadge?: boolean; t: TFunction }) {
+export function StoryEyebrow({
+  story,
+  showDraftBadge,
+  t,
+}: {
+  story: Story;
+  showDraftBadge?: boolean;
+  t: TFunction;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-sm font-medium text-primary">
@@ -52,7 +61,12 @@ export function StoryByline({
         <div className="flex min-w-0 items-center gap-3">
           <Avatar src={story.author?.image} name={authorName} size="md" />
           <div className="min-w-0">
-            <p title={authorName} className="truncate text-sm font-medium text-foreground">{authorName}</p>
+            <p
+              title={authorName}
+              className="truncate text-sm font-medium text-foreground"
+            >
+              {authorName}
+            </p>
             <p className="text-sm text-muted-foreground">{metrics[0].value}</p>
           </div>
         </div>
@@ -71,15 +85,23 @@ export function StoryByline({
   );
 }
 
-export function RelatedLocationLink({ story, t }: { story: Story; t: TFunction }) {
+export function RelatedLocationLink({
+  story,
+  t,
+}: {
+  story: Story;
+  t: TFunction;
+}) {
   if (!story.location) return null;
 
   return (
     <aside className="mt-12">
       <a
-        href={`/locations/${story.location.slug}`}
+        href={`/locations/${story.location.id}`}
         className="group flex items-center gap-4 rounded-lg border border-border bg-card p-4 shadow-sm transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        aria-label={t("content.discover.openLocation", { name: story.location.name })}
+        aria-label={t("content.discover.openLocation", {
+          name: story.location.name,
+        })}
       >
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <MapPin className="h-5 w-5" aria-hidden="true" />
@@ -88,7 +110,10 @@ export function RelatedLocationLink({ story, t }: { story: Story; t: TFunction }
           <span className="block text-xs font-medium uppercase text-muted-foreground">
             {t("content.discover.relatedLocation")}
           </span>
-          <span title={story.location.name} className="block truncate font-semibold text-foreground transition-colors group-hover:text-primary">
+          <span
+            title={story.location.name}
+            className="block truncate font-semibold text-foreground transition-colors group-hover:text-primary"
+          >
             {story.location.name}
           </span>
         </span>
@@ -105,7 +130,11 @@ export function StoryActions({
   liked,
   likeCount,
   isLiking,
+  canFavorite,
+  favorited,
+  isFavoriting,
   onLike,
+  onFavorite,
   onShare,
   viewsText,
   t,
@@ -113,7 +142,11 @@ export function StoryActions({
   liked: boolean;
   likeCount: number;
   isLiking: boolean;
+  canFavorite: boolean;
+  favorited: boolean;
+  isFavoriting: boolean;
   onLike: () => void;
+  onFavorite: () => void;
   onShare: () => void;
   viewsText?: string;
   t: TFunction;
@@ -133,10 +166,34 @@ export function StoryActions({
               : "border border-border bg-card text-foreground hover:border-primary/40 hover:text-primary",
           )}
         >
-          <Heart className={cn("h-4 w-4", liked && "fill-current")} aria-hidden="true" />
+          <Heart
+            className={cn("h-4 w-4", liked && "fill-current")}
+            aria-hidden="true"
+          />
           {liked ? t("content.discover.liked") : t("content.discover.like")}
           <span className="text-current/75">({likeCount})</span>
         </button>
+
+        {canFavorite && (
+          <button
+            type="button"
+            onClick={onFavorite}
+            disabled={isFavoriting}
+            aria-pressed={favorited}
+            className={cn(
+              "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed",
+              favorited
+                ? "bg-primary text-primary-foreground disabled:opacity-95"
+                : "border border-border bg-card text-foreground hover:border-primary/40 hover:text-primary",
+            )}
+          >
+            <Bookmark
+              className={cn("h-4 w-4", favorited && "fill-current")}
+              aria-hidden="true"
+            />
+            {favorited ? t("favorites.removeStory") : t("favorites.addStory")}
+          </button>
+        )}
 
         <button
           type="button"
@@ -170,7 +227,9 @@ export function StoryDeleteButton({
       onClick={onClick}
       className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-destructive transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
-      <span className="hidden sm:inline">{t("content.discover.deleteStory")}</span>
+      <span className="hidden sm:inline">
+        {t("content.discover.deleteStory")}
+      </span>
     </button>
   );
 }
@@ -198,42 +257,58 @@ export function StoryDeleteDialog({
       overlayClassName="flex items-center justify-center p-4"
       panelClassName="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-xl"
     >
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-          <AlertTriangle className="h-6 w-6" aria-hidden="true" />
-        </div>
-        <h3 id="delete-story-title" className="mb-2 text-lg font-bold text-foreground">
-          {t("content.discover.deleteConfirmTitle")}
-        </h3>
-        <p id="delete-story-description" className="mb-5 text-sm leading-relaxed text-muted-foreground">
-          {t("content.discover.deleteConfirmDesc")}
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+        <AlertTriangle className="h-6 w-6" aria-hidden="true" />
+      </div>
+      <h3
+        id="delete-story-title"
+        className="mb-2 text-lg font-bold text-foreground"
+      >
+        {t("content.discover.deleteConfirmTitle")}
+      </h3>
+      <p
+        id="delete-story-description"
+        className="mb-5 text-sm leading-relaxed text-muted-foreground"
+      >
+        {t("content.discover.deleteConfirmDesc")}
+      </p>
+      {deleteError && (
+        <p className="mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {deleteError}
         </p>
-        {deleteError && (
-          <p className="mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {deleteError}
-          </p>
+      )}
+      <button
+        type="button"
+        onClick={onDelete}
+        disabled={isDeleting}
+        className="mb-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-destructive px-4 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {isDeleting && (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
         )}
-        <button
-          type="button"
-          onClick={onDelete}
-          disabled={isDeleting}
-          className="mb-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-destructive px-4 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isDeleting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-          {isDeleting ? t("content.discover.deletingStory") : t("content.discover.deleteStory")}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isDeleting}
-          className="min-h-11 w-full rounded-lg px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {t("common.cancel")}
-        </button>
+        {isDeleting
+          ? t("content.discover.deletingStory")
+          : t("content.discover.deleteStory")}
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        disabled={isDeleting}
+        className="min-h-11 w-full rounded-lg px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {t("common.cancel")}
+      </button>
     </Modal>
   );
 }
 
-export function StoryDetailError({ message, t }: { message: string; t: TFunction }) {
+export function StoryDetailError({
+  message,
+  t,
+}: {
+  message: string;
+  t: TFunction;
+}) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-24">
       <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 text-center shadow-sm">

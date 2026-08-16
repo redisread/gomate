@@ -18,6 +18,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
 import { Avatar } from "@/components/ui/avatar";
 import type { Team } from "@/lib/types";
+import { formatTeamStart } from "@/lib/team-display";
 
 const DECK_POSITIONS = [
   "z-30 translate-x-0 translate-y-0 rotate-0 scale-100 opacity-100",
@@ -30,8 +31,8 @@ const CLICK_CANCEL_THRESHOLD = 8;
 const MAX_DRAG_DISTANCE = 144;
 
 function RemainingSpots({ team }: { team: Team }) {
-  const { t } = useI18n(["home"]);
-  const remaining = Math.max(0, team.maxMembers - team.currentMembers);
+  const { t } = useI18n(["home", "common"]);
+  const remaining = Math.max(0, team.maxParticipants - team.activeParticipantCount);
 
   return (
     <span className="rounded-full bg-primary-50 px-3 py-1.5 text-xs font-bold text-amber-900 dark:bg-amber-200 dark:text-amber-950">
@@ -60,9 +61,10 @@ function DepartureCard({
   dragOffset,
 }: DepartureCardProps) {
   const { t } = useI18n(["home"]);
-  const coverImage = team.location?.coverImage;
+  const coverImage = team.location?.coverImageUrl;
   const locationName = team.location?.name;
-  const leaderName = team.leader.nickname || team.leader.name;
+  const leaderName = team.leader?.nickname || team.leader?.name || t("common.unknown");
+  const start = formatTeamStart(team);
 
   return (
     <div
@@ -97,7 +99,7 @@ function DepartureCard({
             <div className="flex items-center justify-between gap-3">
               <span className="inline-flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 font-mono text-xs font-semibold text-white/90">
                 <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                {team.date}{team.time ? ` · ${team.time}` : ""}
+                {start.date}{start.time ? ` · ${start.time}` : ""}
               </span>
               <RemainingSpots team={team} />
             </div>
@@ -112,11 +114,11 @@ function DepartureCard({
               )}
               <div className="mt-5 flex items-center justify-between border-t border-white/20 pt-4">
                 <div className="flex min-w-0 items-center gap-2">
-                  <Avatar src={team.leader.avatar} name={leaderName} size="sm" className="ring-white/80" />
+                  <Avatar src={team.leader?.image} name={leaderName} size="sm" className="ring-white/80" />
                   <span className="truncate text-xs text-white/75">{t("home.departures.startedBy", { name: leaderName })}</span>
                 </div>
                 <span className="ml-3 shrink-0 font-mono text-xs font-semibold text-white/90">
-                  {team.currentMembers} / {team.maxMembers}
+                  {team.activeParticipantCount} / {team.maxParticipants}
                 </span>
               </div>
             </div>

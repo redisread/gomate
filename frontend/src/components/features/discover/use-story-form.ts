@@ -4,12 +4,18 @@ import * as React from "react";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
 import type { SessionUser } from "@/lib/types";
+import {
+  buildUpdateStoryPayload,
+  type StoryDetailResponse,
+  type StoryTagsResponse,
+} from "./story-contract";
 
 export interface FormFields {
   title: string;
   summary: string;
   content: string;
-  coverImage: string;
+  images: string[];
+  teamId: string;
   locationId: string;
   locationName: string;
   tags: string[];
@@ -28,19 +34,6 @@ interface TagOption {
   name: string;
 }
 
-interface StoryEditData {
-  id: string;
-  title: string;
-  summary: string;
-  content: string;
-  coverImage?: string;
-  locationId?: string;
-  location?: { id: string; name: string; slug: string } | null;
-  tags?: { id: string; name: string }[];
-  status: string;
-  author: { id: string } | null;
-}
-
 /** task #149：保存结果结构化，替代旧的字符串 saveMessage（旧实现把 API error 对象塞进字符串，下游 .includes 直接 TypeError 白屏） */
 export interface SaveResult {
   type: "success" | "error";
@@ -55,7 +48,7 @@ export interface UseStoryFormReturn {
   isSaving: boolean;
   /** 仅由 handleSave 产生；成功 → toast，失败 → 内联 banner + 重试 */
   saveResult: SaveResult | null;
-  /** 封面上传相关提示（走 toast） */
+  /** 草稿损坏等非保存提示（走 toast） */
   uploadMessage: string | null;
   error: string | null;
   canEdit: boolean;
@@ -63,10 +56,11 @@ export interface UseStoryFormReturn {
   locationSearch: string;
   locationResults: LocationOption[];
   isSearchingLocation: boolean;
-  isUploadingCover: boolean;
   draftAvailable: boolean;
-  updateField: <K extends keyof FormFields>(key: K, value: FormFields[K]) => void;
-  handleCoverUpload: (file: File) => Promise<void>;
+  updateField: <K extends keyof FormFields>(
+    key: K,
+    value: FormFields[K],
+  ) => void;
   handleLocationSearch: (value: string) => void;
   handleSave: () => Promise<void>;
   handleDiscardDraft: () => void;
@@ -80,16 +74,29 @@ const DRAFT_KEY_PREFIX = "story-edit-draft-";
  * 混入未知字段）duck-type 渲染会出滑稽计数或触发错误边界——恢复前校验，
  * 非法草稿丢弃并提示重新编辑（Steven 裁决）。
  */
-const DRAFT_STRING_FIELDS = ["title", "summary", "content", "coverImage", "locationId", "locationName", "status", "authorId"] as const;
+const DRAFT_STRING_FIELDS = [
+  "title",
+  "summary",
+  "content",
+  "teamId",
+  "locationId",
+  "locationName",
+  "status",
+  "authorId",
+] as const;
 
-export function isValidDraftShape(draft: unknown): draft is Partial<FormFields> {
-  if (typeof draft !== "object" || draft === null || Array.isArray(draft)) return false;
+export function isValidDraftShape(
+  draft: unknown,
+): draft is Partial<FormFields> {
+  if (typeof draft !== "object" || draft === null || Array.isArray(draft))
+    return false;
   const d = draft as Record<string, unknown>;
   for (const key of Object.keys(d)) {
     if ((DRAFT_STRING_FIELDS as readonly string[]).includes(key)) {
       if (typeof d[key] !== "string") return false;
-    } else if (key === "tags") {
-      if (!Array.isArray(d.tags) || d.tags.some((x) => typeof x !== "string")) return false;
+    } else if (key === "tags" || key === "images") {
+      if (!Array.isArray(d[key]) || d[key].some((x) => typeof x !== "string"))
+        return false;
     } else {
       return false; // 未知字段：spread 进 form 会污染 state
     }
@@ -109,18 +116,24 @@ function loadDraft(storyId: string): Partial<FormFields> | null {
 function saveDraft(storyId: string, form: FormFields): void {
   try {
     localStorage.setItem(`${DRAFT_KEY_PREFIX}${storyId}`, JSON.stringify(form));
-  } catch { /* quota exceeded */ }
+  } catch {
+    /* quota exceeded */
+  }
 }
 
 function clearDraft(storyId: string): void {
   try {
     localStorage.removeItem(`${DRAFT_KEY_PREFIX}${storyId}`);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function useStoryForm(storyId: string): UseStoryFormReturn {
   const { t } = useI18n(["content", "errors"]);
-  const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(null);
+  const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [saveResult, setSaveResult] = React.useState<SaveResult | null>(null);
@@ -128,23 +141,32 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
   const [error, setError] = React.useState<string | null>(null);
 
   const [form, setForm] = React.useState<FormFields>({
-    title: "", summary: "", content: "", coverImage: "", locationId: "",
-    locationName: "", tags: [], status: "published", authorId: "",
+    title: "",
+    summary: "",
+    content: "",
+    images: [],
+    teamId: "",
+    locationId: "",
+    locationName: "",
+    tags: [],
+    status: "published",
+    authorId: "",
   });
   const initialForm = React.useRef<FormFields | null>(null);
   const [allTags, setAllTags] = React.useState<TagOption[]>([]);
 
   // Location search
   const [locationSearch, setLocationSearch] = React.useState("");
-  const [locationResults, setLocationResults] = React.useState<LocationOption[]>([]);
+  const [locationResults, setLocationResults] = React.useState<
+    LocationOption[]
+  >([]);
   const [isSearchingLocation, setIsSearchingLocation] = React.useState(false);
-
-  // Cover upload
-  const [isUploadingCover, setIsUploadingCover] = React.useState(false);
 
   // Draft
   const [draftAvailable, setDraftAvailable] = React.useState(false);
-  const locSearchTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const locSearchTimer = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const draftTimer = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   React.useEffect(() => {
@@ -156,8 +178,12 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
 
         const [user, storyRes, tagsRes] = await Promise.all([
           fetchCurrentUser().catch(() => null),
-          fetchAPI(`/stories/${storyId}`).then((r: Response) => r.ok ? r.json() : { success: false }).catch(() => ({ success: false })),
-          fetchAPI("/stories/tags").then((r) => r.json()).catch(() => ({ tags: [] })),
+          fetchAPI(`/stories/${storyId}`)
+            .then((r: Response) => (r.ok ? r.json() : { success: false }))
+            .catch(() => ({ success: false })),
+          fetchAPI("/stories/tags")
+            .then((r) => r.json())
+            .catch(() => ({ success: false, data: { items: [] } })),
         ]);
 
         if (cancelled) return;
@@ -165,7 +191,8 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
         setCurrentUser(user);
 
         // Load tags
-        setAllTags(tagsRes.tags ?? []);
+        const tagsPayload = tagsRes as StoryTagsResponse;
+        setAllTags(tagsPayload.success ? tagsPayload.data.items : []);
 
         if (!storyRes.success || !storyRes.data) {
           // 存 i18n key，渲染层 t()（避免 load effect 依赖 t 重复拉取）
@@ -173,14 +200,15 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
           return;
         }
 
-        const data: StoryEditData = storyRes.data;
+        const data = (storyRes as StoryDetailResponse).data;
         const tags = (data.tags ?? []).map((t: TagOption) => t.name);
 
         const f: FormFields = {
           title: data.title || "",
           summary: data.summary || "",
           content: data.content || "",
-          coverImage: data.coverImage || "",
+          images: data.images,
+          teamId: data.teamId || "",
           locationId: data.location?.id || data.locationId || "",
           locationName: data.location?.name || "",
           tags,
@@ -205,7 +233,7 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
             setDraftAvailable(true);
           } else {
             clearDraft(storyId);
-            setUploadMessage(t("content.discover.edit.draftInvalid"));
+            setUploadMessage("content.discover.edit.draftInvalid");
           }
         }
 
@@ -222,7 +250,9 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [storyId]);
 
   // 自动保存草稿（每 30 秒）
@@ -237,55 +267,35 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
     };
   }, [storyId, form, draftAvailable]);
 
-  const isAuthor = Boolean(form.authorId && currentUser && form.authorId === currentUser.id);
+  const isAuthor = Boolean(
+    form.authorId && currentUser && form.authorId === currentUser.id,
+  );
   const isAdmin = currentUser?.role === "admin";
   const canEdit = Boolean(currentUser && (isAuthor || isAdmin));
 
-  const updateField = React.useCallback(<K extends keyof FormFields>(key: K, value: FormFields[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const updateField = React.useCallback(
+    <K extends keyof FormFields>(key: K, value: FormFields[K]) => {
+      setForm((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
 
   const handleLocationSearch = React.useCallback((value: string) => {
     setLocationSearch(value);
     if (locSearchTimer.current) clearTimeout(locSearchTimer.current);
-    if (!value.trim()) { setLocationResults([]); return; }
+    if (!value.trim()) {
+      setLocationResults([]);
+      return;
+    }
     setIsSearchingLocation(true);
     locSearchTimer.current = setTimeout(() => {
-      fetchAPI(`/api/locations?search=${encodeURIComponent(value)}&limit=8`)
+      fetchAPI(`/locations?search=${encodeURIComponent(value)}&limit=8`)
         .then((r) => r.json())
         .then((data) => setLocationResults(data.locations ?? []))
         .catch(() => setLocationResults([]))
         .finally(() => setIsSearchingLocation(false));
     }, 350);
   }, []);
-
-  const handleCoverUpload = React.useCallback(async (file: File) => {
-    setUploadMessage(null);
-    if (file.size > 2 * 1024 * 1024) {
-      setUploadMessage(t("content.discover.edit.coverTooLarge"));
-      return;
-    }
-    if (!["image/jpeg", "image/png"].includes(file.type)) {
-      setUploadMessage(t("content.discover.edit.coverTypeError"));
-      return;
-    }
-    try {
-      setIsUploadingCover(true);
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetchAPI("/upload/story", { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.success && data.url) {
-        setForm((prev) => ({ ...prev, coverImage: data.url }));
-      } else {
-        setUploadMessage(t("content.discover.create.uploadFailed"));
-      }
-    } catch {
-      setUploadMessage(t("content.discover.create.uploadFailed"));
-    } finally {
-      setIsUploadingCover(false);
-    }
-  }, [t]);
 
   const handleSave = React.useCallback(async () => {
     try {
@@ -295,19 +305,25 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
       const res = await fetchAPI(`/stories/${storyId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: form.title.trim(),
-          summary: form.summary.trim(),
-          content: form.content,
-          coverImage: form.coverImage || undefined,
-          locationId: form.locationId || undefined,
-          status: form.status,
-          tags: form.tags,
-        }),
+        body: JSON.stringify(
+          buildUpdateStoryPayload({
+            teamId: form.teamId || undefined,
+            title: form.title.trim(),
+            summary: form.summary.trim(),
+            content: form.content,
+            images: form.images,
+            locationId: form.locationId,
+            status: form.status === "draft" ? "draft" : "published",
+            tags: form.tags,
+          }),
+        ),
       });
       const data = await res.json();
       if (data.success) {
-        setSaveResult({ type: "success", message: t("content.discover.edit.saveSuccess") });
+        setSaveResult({
+          type: "success",
+          message: t("content.discover.edit.saveSuccess"),
+        });
         clearDraft(storyId);
         initialForm.current = { ...form };
       } else {
@@ -319,9 +335,7 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
             ? (data.error as { code?: string }).code
             : undefined;
         const apiMessage =
-          typeof data.error === "string"
-            ? data.error
-            : data.error?.message;
+          typeof data.error === "string" ? data.error : data.error?.message;
         const ERROR_CODE_I18N: Record<string, string> = {
           UNAUTHORIZED: "errors.loginRequired",
           FORBIDDEN: "errors.noPermission",
@@ -332,11 +346,17 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
         const mapped = apiCode ? ERROR_CODE_I18N[apiCode] : undefined;
         setSaveResult({
           type: "error",
-          message: (mapped && t(mapped)) || apiMessage || t("content.discover.edit.saveFailed"),
+          message:
+            (mapped && t(mapped)) ||
+            apiMessage ||
+            t("content.discover.edit.saveFailed"),
         });
       }
     } catch {
-      setSaveResult({ type: "error", message: t("content.discover.edit.saveNetworkError") });
+      setSaveResult({
+        type: "error",
+        message: t("content.discover.edit.saveNetworkError"),
+      });
     } finally {
       setIsSaving(false);
     }
@@ -354,18 +374,34 @@ export function useStoryForm(storyId: string): UseStoryFormReturn {
         // 与 load 时校验同源：load 后草稿被写坏（其他 tab/手动改 storage）的兜底
         clearDraft(storyId);
         setDraftAvailable(false);
-        setUploadMessage(t("content.discover.edit.draftInvalid"));
+        setUploadMessage("content.discover.edit.draftInvalid");
         return;
       }
       setForm((prev) => ({ ...prev, ...draft }));
       clearDraft(storyId);
       setDraftAvailable(false);
     }
-  }, [storyId, t]);
+  }, [storyId]);
 
   return {
-    form, initialForm, currentUser, isLoading, isSaving, saveResult, uploadMessage, error, canEdit,
-    allTags, locationSearch, locationResults, isSearchingLocation, isUploadingCover, draftAvailable,
-    updateField, handleCoverUpload, handleLocationSearch, handleSave, handleDiscardDraft, handleRestoreDraft,
+    form,
+    initialForm,
+    currentUser,
+    isLoading,
+    isSaving,
+    saveResult,
+    uploadMessage,
+    error,
+    canEdit,
+    allTags,
+    locationSearch,
+    locationResults,
+    isSearchingLocation,
+    draftAvailable,
+    updateField,
+    handleLocationSearch,
+    handleSave,
+    handleDiscardDraft,
+    handleRestoreDraft,
   };
 }

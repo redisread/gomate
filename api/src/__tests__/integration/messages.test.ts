@@ -1,20 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { eq } from "drizzle-orm";
-import { createTestDb } from "../helpers/db";
-import { generateId } from "../../lib/id";
+import { and, eq } from "drizzle-orm";
+import { createTestDb, type TestDb } from "../helpers/db";
+import {
+  seedLocation,
+  seedConversation,
+  seedRegion,
+  seedTeam,
+  seedTeamMember,
+  seedUser,
+} from "../helpers/seed";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 
-const testContext = vi.hoisted(() => ({
-  db: null as ReturnType<typeof drizzle> | null,
+const state = vi.hoisted(() => ({
+  db: null as TestDb | null,
+  routeDb: null as TestDb | null,
+  beforeGenerateId: null as (() => void) | null,
+  beforeRouteUpdate: null as (() => void) | null,
+  beforeRouteSelectAt: null as number | null,
+  routeSelectCount: 0,
+  id: 0,
 }));
 
 vi.mock("../../db", () => ({
   createDb: () => {
-    if (!testContext.db) throw new Error("Test DB not initialized");
-    return testContext.db;
+    if (!state.db) throw new Error("Test DB not initialized");
+    return state.routeDb ?? state.db;
+  },
+}));
+
+vi.mock("../../lib/id", () => ({
+  generateId: () => {
+    state.beforeGenerateId?.();
+    state.beforeGenerateId = null;
+    state.id += 1;
+    return `route-generated-${state.id}`;
   },
 }));
 
@@ -22,406 +43,458 @@ vi.mock("../../lib/auth", () => ({
   createAuth: () => ({
     api: {
       getSession: async ({ headers }: { headers: Headers }) => {
-        const userId = headers.get("x-test-user-id");
-        return userId ? { user: { id: userId } } : null;
+        const id = headers.get("x-test-user-id");
+        return id ? { user: { id } } : null;
       },
     },
   }),
 }));
 
-import messagesRoutes from "../../routes/messages";
+import messagesRoute from "../../routes/messages";
 
-function createMessagesTestApp() {
+function createApp() {
   const app = new Hono<{ Bindings: Env }>();
-
-  app.use("*", async (c, next) => {
-    (c as unknown as { env: Partial<Env> }).env = {
-      BETTER_AUTH_SECRET: "test-secret-key-for-testing-32chars",
-      APP_URL: "http://localhost:8799",
-      FRONTEND_URL: "http://localhost:3000",
-    } as Partial<Env>;
-    await next();
-  });
-
-  app.route("/messages", messagesRoutes);
+  app.route("/messages", messagesRoute);
   return app;
 }
 
-type TestDb = ReturnType<typeof drizzle>;
-type TestUser = typeof schema.users.$inferSelect;
-type TestTeam = typeof schema.teams.$inferSelect;
-type TestTeamOverrides = Pick<typeof schema.teams.$inferInsert, "locationId" | "leaderId"> &
-  Partial<typeof schema.teams.$inferInsert>;
-
-async function createTestUser(
-  db: TestDb,
-  overrides: Partial<typeof schema.users.$inferInsert> = {}
+function request(
+  app: ReturnType<typeof createApp>,
+  path: string,
+  userId?: string,
+  init: RequestInit = {},
 ) {
-  const id = generateId();
-  const user = {
-    id,
-    name: `Test User ${id.slice(0, 6)}`,
-    email: `test-${id}@test.com`,
-    role: "user",
-    status: "active",
-    level: "beginner",
-    emailVerified: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    ...overrides,
-  } satisfies typeof schema.users.$inferInsert;
-
-  await db.insert(schema.users).values(user);
-  return user as TestUser;
+  const headers = new Headers(init.headers);
+  if (userId) headers.set("x-test-user-id", userId);
+  if (init.body) headers.set("content-type", "application/json");
+  return app.request(path, { ...init, headers }, {} as Env);
 }
 
-async function createTestTeam(
-  db: TestDb,
-  overrides: TestTeamOverrides
-) {
-  const id = generateId();
-  const now = new Date();
-  const team = {
-    id,
-    title: `Test Team ${id.slice(0, 6)}`,
-    status: "recruiting",
-    icon: "⛰️",
-    maxMembers: 10,
-    durationMin: 240,
-    startTime: now,
-    endTime: new Date(now.getTime() + 4 * 60 * 60 * 1000),
-    createdAt: now,
-    updatedAt: now,
-    ...overrides,
-  } satisfies typeof schema.teams.$inferInsert;
-
-  await db.insert(schema.teams).values(team);
-  return team as TestTeam;
-}
-
-async function addTeamMember(
-  db: TestDb,
-  teamId: string,
-  userId: string,
-  status: typeof schema.teamMembers.$inferInsert["status"] = "approved"
-) {
-  await db.insert(schema.teamMembers).values({
-    id: generateId(),
-    teamId,
-    userId,
-    status,
-    joinedAt: status === "approved" ? new Date() : null,
-    statusUpdatedAt: new Date(),
-    createdAt: new Date(),
-  });
-}
-
-function authHeaders(userId: string, extra?: Record<string, string>) {
-  return {
-    "Content-Type": "application/json",
-    "x-test-user-id": userId,
-    ...extra,
-  };
-}
-
-describe("Messages API 集成测试", () => {
-  let app: ReturnType<typeof createMessagesTestApp>;
+describe("messages V2", () => {
   let db: TestDb;
-  let leader: TestUser;
-  let approvedMember: TestUser;
-  let pendingMember: TestUser;
-  let outsider: TestUser;
-  let team: TestTeam;
+  let app: ReturnType<typeof createApp>;
+  let leader: schema.User;
+  let member: schema.User;
+  let outsider: schema.User;
+  let team: schema.Team;
 
   beforeEach(async () => {
-    const testDb = createTestDb();
-    db = drizzle(testDb.sqlite, { schema });
-    testContext.db = db;
-    app = createMessagesTestApp();
-
-    leader = await createTestUser(db, { name: "Leader", email: "leader@test.com" });
-    approvedMember = await createTestUser(db, { name: "Member", email: "member@test.com" });
-    pendingMember = await createTestUser(db, { name: "Pending", email: "pending@test.com" });
-    outsider = await createTestUser(db, { name: "Outsider", email: "outsider@test.com" });
-
-    const cityId = generateId();
-    await db.insert(schema.cities).values({
-      id: cityId,
-      adcode: "110000",
-      name: "北京",
-      level: "city",
-      isHot: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    const locationId = generateId();
-    await db.insert(schema.locations).values({
-      id: locationId,
-      name: "Test Location",
-      slug: `test-location-${generateId()}`,
-      description: "Test",
-      cityId,
-      cityName: "北京",
-      bestSeason: "spring",
-      coverImage: "https://example.com/cover.jpg",
-      images: "[]",
-      coordinates: "{}",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    team = await createTestTeam(db, {
-      locationId,
-      leaderId: leader.id,
-    });
-
-    await addTeamMember(db, team.id, approvedMember.id, "approved");
-    await addTeamMember(db, team.id, pendingMember.id, "pending");
+    ({ db } = createTestDb());
+    state.db = db;
+    state.beforeGenerateId = null;
+    state.beforeRouteUpdate = null;
+    state.beforeRouteSelectAt = null;
+    state.routeSelectCount = 0;
+    state.routeDb = new Proxy(db, {
+      get(target, property, receiver) {
+        if (property === "select") {
+          return (...args: Parameters<TestDb["select"]>) => {
+            state.routeSelectCount += 1;
+            if (state.routeSelectCount === state.beforeRouteSelectAt) {
+              state.beforeRouteUpdate?.();
+              state.beforeRouteUpdate = null;
+            }
+            return target.select(...args);
+          };
+        }
+        if (property === "update") {
+          return (...args: Parameters<TestDb["update"]>) => {
+            state.beforeRouteUpdate?.();
+            state.beforeRouteUpdate = null;
+            return target.update(...args);
+          };
+        }
+        const value = Reflect.get(target, property, receiver);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    }) as TestDb;
+    app = createApp();
+    leader = await seedUser(db, { name: "Leader" });
+    member = await seedUser(db, { name: "Member" });
+    outsider = await seedUser(db, { name: "Outsider" });
+    const region = await seedRegion(db);
+    const location = await seedLocation(db, region.id);
+    team = await seedTeam(db, leader.id, location.id);
+    await seedTeamMember(db, team.id, member.id);
   });
 
-  describe("POST /messages", () => {
-    it("approved 成员可创建并复用与队长的对话", async () => {
-      const first = await app.request("/messages", {
-        method: "POST",
-        headers: authHeaders(approvedMember.id),
-        body: JSON.stringify({ teamId: team.id }),
-      });
+  async function createConversation() {
+    const response = await request(app, "/messages", member.id, {
+      method: "POST",
+      body: JSON.stringify({ teamId: team.id }),
+    });
+    const body = await response.json() as { data: { id: string } };
+    return { response, id: body.data.id };
+  }
 
-      expect(first.status).toBe(201);
-      const firstData = await first.json() as { success: boolean; data: { id: string; isNew: boolean } };
-      expect(firstData).toMatchObject({ success: true, data: { isNew: true } });
+  it("creates one conversation per team and active member", async () => {
+    const first = await createConversation();
+    expect(first.response.status).toBe(201);
 
-      const [conversation] = await db
-        .select()
-        .from(schema.conversations)
-        .where(eq(schema.conversations.id, firstData.data.id))
-        .limit(1);
-      expect(conversation).toMatchObject({
-        teamId: team.id,
-        userId: approvedMember.id,
-        leaderId: leader.id,
-        initiatorId: approvedMember.id,
-      });
-
-      const second = await app.request("/messages", {
-        method: "POST",
-        headers: authHeaders(approvedMember.id),
-        body: JSON.stringify({ teamId: team.id }),
-      });
-      expect(second.status).toBe(200);
-      const secondData = await second.json() as { data: { id: string; isNew: boolean } };
-      expect(secondData.data).toEqual({ id: firstData.data.id, isNew: false });
+    const second = await request(app, "/messages", leader.id, {
+      method: "POST",
+      body: JSON.stringify({ teamId: team.id, memberUserId: member.id }),
+    });
+    expect(second.status).toBe(200);
+    await expect(second.json()).resolves.toMatchObject({
+      success: true,
+      data: { id: first.id, isNew: false },
     });
 
-    it("pending 成员不可创建队伍私信", async () => {
-      const res = await app.request("/messages", {
-        method: "POST",
-        headers: authHeaders(pendingMember.id),
-        body: JSON.stringify({ teamId: team.id }),
-      });
-
-      expect(res.status).toBe(403);
-    });
-
-    it("队长可给 approved 成员创建对话", async () => {
-      const res = await app.request("/messages", {
-        method: "POST",
-        headers: authHeaders(leader.id),
-        body: JSON.stringify({ teamId: team.id, userId: approvedMember.id }),
-      });
-
-      expect(res.status).toBe(201);
-      const data = await res.json() as { success: boolean; data: { id: string; isNew: boolean } };
-      expect(data.success).toBe(true);
-      expect(data.data.isNew).toBe(true);
-
-      const [conversation] = await db
-        .select()
-        .from(schema.conversations)
-        .where(eq(schema.conversations.id, data.data.id))
-        .limit(1);
-      expect(conversation).toMatchObject({
-        teamId: team.id,
-        userId: approvedMember.id,
-        leaderId: leader.id,
-        initiatorId: leader.id,
-      });
-    });
-
-    it("队长不可给 pending 或非成员创建对话", async () => {
-      const pendingRes = await app.request("/messages", {
-        method: "POST",
-        headers: authHeaders(leader.id),
-        body: JSON.stringify({ teamId: team.id, userId: pendingMember.id }),
-      });
-      expect(pendingRes.status).toBe(403);
-
-      const outsiderRes = await app.request("/messages", {
-        method: "POST",
-        headers: authHeaders(leader.id),
-        body: JSON.stringify({ teamId: team.id, userId: outsider.id }),
-      });
-      expect(outsiderRes.status).toBe(403);
-    });
-
-    it("非队长不可指定目标成员创建对话", async () => {
-      const res = await app.request("/messages", {
-        method: "POST",
-        headers: authHeaders(approvedMember.id),
-        body: JSON.stringify({ teamId: team.id, userId: outsider.id }),
-      });
-
-      expect(res.status).toBe(403);
+    const [stored] = await db
+      .select()
+      .from(schema.conversations)
+      .where(eq(schema.conversations.id, first.id));
+    expect(stored).toMatchObject({
+      teamId: team.id,
+      memberUserId: member.id,
+      initiatedByUserId: member.id,
     });
   });
 
-  describe("conversation access", () => {
-    async function createConversationAsMember() {
-      const res = await app.request("/messages", {
-        method: "POST",
-        headers: authHeaders(approvedMember.id),
-        body: JSON.stringify({ teamId: team.id }),
+  it("rejects outsiders, inactive members, and the removed userId payload", async () => {
+    const outsiderResponse = await request(app, "/messages", outsider.id, {
+      method: "POST",
+      body: JSON.stringify({ teamId: team.id }),
+    });
+    expect(outsiderResponse.status).toBe(403);
+
+    await db
+      .update(schema.teamMembers)
+      .set({ leftAt: new Date() })
+      .where(
+        and(
+          eq(schema.teamMembers.teamId, team.id),
+          eq(schema.teamMembers.userId, member.id),
+        ),
+      );
+    const inactiveResponse = await request(app, "/messages", member.id, {
+      method: "POST",
+      body: JSON.stringify({ teamId: team.id }),
+    });
+    expect(inactiveResponse.status).toBe(403);
+
+    const legacyResponse = await request(app, "/messages", leader.id, {
+      method: "POST",
+      body: JSON.stringify({ teamId: team.id, userId: member.id }),
+    });
+    expect(legacyResponse.status).toBe(400);
+  });
+
+  it("uses the trigger summary and explicit read timestamps", async () => {
+    const { id } = await createConversation();
+    const send = await request(app, `/messages/${id}`, member.id, {
+      method: "POST",
+      body: JSON.stringify({ content: "Hello leader" }),
+    });
+    expect(send.status).toBe(201);
+    const sentBody = await send.json() as {
+      data: { createdAt: unknown; readAt: unknown };
+    };
+    expect(sentBody.data.createdAt).toBeTypeOf("string");
+    expect(Number.isNaN(Date.parse(sentBody.data.createdAt as string))).toBe(false);
+    expect(sentBody.data.readAt).toBeNull();
+
+    const [conversation] = await db
+      .select()
+      .from(schema.conversations)
+      .where(eq(schema.conversations.id, id));
+    expect(conversation.lastMessagePreview).toBe("Hello leader");
+    expect(conversation.lastMessageAt).toBeInstanceOf(Date);
+
+    const unread = await request(app, "/messages/unread-count", leader.id);
+    await expect(unread.json()).resolves.toEqual({
+      success: true,
+      data: { count: 1 },
+    });
+
+    const markRead = await request(app, `/messages/${id}/read`, leader.id, {
+      method: "PATCH",
+    });
+    expect(markRead.status).toBe(200);
+    const unreadAfter = await request(app, "/messages/unread-count", leader.id);
+    await expect(unreadAfter.json()).resolves.toEqual({
+      success: true,
+      data: { count: 0 },
+    });
+  });
+
+  it("checks the current leader and active membership on every access", async () => {
+    const { id } = await createConversation();
+    await db.update(schema.teams).set({ leaderId: outsider.id }).where(eq(schema.teams.id, team.id));
+
+    expect((await request(app, `/messages/${id}`, leader.id)).status).toBe(403);
+    expect((await request(app, `/messages/${id}`, outsider.id)).status).toBe(200);
+
+    await db
+      .update(schema.teamMembers)
+      .set({ leftAt: new Date() })
+      .where(
+        and(
+          eq(schema.teamMembers.teamId, team.id),
+          eq(schema.teamMembers.userId, member.id),
+        ),
+      );
+    expect((await request(app, `/messages/${id}`, member.id)).status).toBe(403);
+    expect((await request(app, `/messages/${id}`, outsider.id)).status).toBe(403);
+  });
+
+  it("paginates equal timestamps with an opaque {t,id} cursor without duplicates", async () => {
+    const { id } = await createConversation();
+    const createdAt = new Date("2026-08-16T08:00:00.000Z");
+    for (const messageId of ["message-a", "message-b", "message-c"]) {
+      await db.insert(schema.messages).values({
+        id: messageId,
+        conversationId: id,
+        senderId: member.id,
+        content: messageId,
+        createdAt,
       });
-      const data = await res.json() as { data: { id: string } };
-      return data.data.id;
     }
 
-    it("approved 成员和队长可互发、读取消息并统计未读", async () => {
-      const conversationId = await createConversationAsMember();
+    const first = await request(app, `/messages/${id}?limit=2`, member.id);
+    const firstBody = await first.json() as {
+      data: Array<{ id: string; createdAt: unknown; readAt: unknown }>;
+      nextCursor: string;
+    };
+    expect(firstBody.data.map((message) => message.id)).toEqual([
+      "message-b",
+      "message-c",
+    ]);
+    expect(firstBody.nextCursor).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(firstBody.data.every((message) => typeof message.createdAt === "string")).toBe(true);
+    expect(firstBody.data.every((message) => message.readAt === null)).toBe(true);
 
-      const sendRes = await app.request(`/messages/${conversationId}`, {
-        method: "POST",
-        headers: authHeaders(approvedMember.id),
-        body: JSON.stringify({ content: "Hello leader" }),
+    const second = await request(
+      app,
+      `/messages/${id}?limit=2&cursor=${firstBody.nextCursor}`,
+      member.id,
+    );
+    const secondBody = await second.json() as { data: Array<{ id: string }> };
+    expect(secondBody.data.map((message) => message.id)).toEqual(["message-a"]);
+  });
+
+  it("rejects invalid cursors and the removed since parameter", async () => {
+    const { id } = await createConversation();
+    expect((await request(app, `/messages/${id}?cursor=%%%`, member.id)).status).toBe(400);
+    expect((await request(app, `/messages/${id}?cursor=${"a".repeat(513)}`, member.id)).status).toBe(400);
+    expect((await request(app, `/messages/${id}?since=1`, member.id)).status).toBe(400);
+  });
+
+  it("paginates the conversation inbox by effective activity time and id", async () => {
+    const members = await Promise.all([
+      seedUser(db, { id: "inbox-member-a" }),
+      seedUser(db, { id: "inbox-member-b" }),
+      seedUser(db, { id: "inbox-member-c" }),
+    ]);
+    const activityAt = new Date("2026-08-16T09:00:00.000Z");
+    for (const [index, inboxMember] of members.entries()) {
+      await seedTeamMember(db, team.id, inboxMember.id);
+      await seedConversation(db, team.id, inboxMember.id, leader.id, {
+        id: `conversation-${String.fromCharCode(97 + index)}`,
+        lastMessageAt: activityAt,
+        createdAt: activityAt,
+        updatedAt: activityAt,
       });
-      expect(sendRes.status).toBe(201);
+    }
 
-      const [summarizedConversation] = await db
-        .select({
-          lastMessageContent: schema.conversations.lastMessageContent,
-          lastMessageAt: schema.conversations.lastMessageAt,
+    const first = await request(app, "/messages?limit=2", leader.id);
+    expect(first.status).toBe(200);
+    const firstBody = await first.json() as {
+      data: Array<{
+        id: string;
+        lastMessageAt: unknown;
+        createdAt: unknown;
+        updatedAt: unknown;
+      }>;
+      nextCursor: string | null;
+    };
+    expect(firstBody.data.map(({ id }) => id)).toEqual([
+      "conversation-c",
+      "conversation-b",
+    ]);
+    expect(firstBody.nextCursor).toMatch(/^[A-Za-z0-9_-]+$/u);
+    for (const conversation of firstBody.data) {
+      expect(conversation.lastMessageAt).toBe(activityAt.toISOString());
+      expect(conversation.createdAt).toBe(activityAt.toISOString());
+      expect(conversation.updatedAt).toBe(activityAt.toISOString());
+    }
+
+    const second = await request(
+      app,
+      `/messages?limit=2&cursor=${firstBody.nextCursor}`,
+      leader.id,
+    );
+    const secondBody = await second.json() as {
+      data: Array<{ id: string }>;
+      nextCursor: string | null;
+    };
+    expect(secondBody.data.map(({ id }) => id)).toEqual(["conversation-a"]);
+    expect(secondBody.nextCursor).toBeNull();
+
+    const allIds = [
+      ...firstBody.data.map(({ id }) => id),
+      ...secondBody.data.map(({ id }) => id),
+    ];
+    expect(new Set(allIds).size).toBe(3);
+  });
+
+  it("rejects removed inbox page parameters and oversized cursors", async () => {
+    expect((await request(app, "/messages?page=2", leader.id)).status).toBe(400);
+    expect((await request(app, "/messages?pageSize=20", leader.id)).status).toBe(400);
+    expect(
+      (await request(app, `/messages?cursor=${"a".repeat(513)}`, leader.id)).status,
+    ).toBe(400);
+  });
+
+  it("never exposes a conversation to an unrelated user", async () => {
+    const { id } = await createConversation();
+    expect((await request(app, `/messages/${id}`, outsider.id)).status).toBe(403);
+    expect(
+      (
+        await request(app, `/messages/${id}`, outsider.id, {
+          method: "POST",
+          body: JSON.stringify({ content: "nope" }),
         })
-        .from(schema.conversations)
-        .where(eq(schema.conversations.id, conversationId));
-      expect(summarizedConversation.lastMessageContent).toBe("Hello leader");
-      expect(summarizedConversation.lastMessageAt).not.toBeNull();
+      ).status,
+    ).toBe(403);
+  });
 
-      const unreadRes = await app.request("/messages/unread-count", {
-        method: "GET",
-        headers: authHeaders(leader.id),
-      });
-      expect(unreadRes.status).toBe(200);
-      const unreadData = await unreadRes.json() as { data: { count: number } };
-      expect(unreadData.data.count).toBe(1);
+  it("does not create a conversation when membership is revoked after the access read", async () => {
+    state.beforeGenerateId = () => {
+      db.update(schema.teamMembers)
+        .set({ leftAt: new Date() })
+        .where(and(
+          eq(schema.teamMembers.teamId, team.id),
+          eq(schema.teamMembers.userId, member.id),
+        ))
+        .run();
+    };
 
-      const listRes = await app.request(`/messages/${conversationId}`, {
-        method: "GET",
-        headers: authHeaders(leader.id),
-      });
-      expect(listRes.status).toBe(200);
-      const listData = await listRes.json() as { data: Array<{ content: string; senderId: string }> };
-      expect(listData.data).toHaveLength(1);
-      expect(listData.data[0]).toMatchObject({
-        content: "Hello leader",
-        senderId: approvedMember.id,
-      });
-
-      const unreadAfterReadRes = await app.request("/messages/unread-count", {
-        method: "GET",
-        headers: authHeaders(leader.id),
-      });
-      expect(unreadAfterReadRes.status).toBe(200);
-      const unreadAfterReadData = await unreadAfterReadRes.json() as { data: { count: number } };
-      expect(unreadAfterReadData.data.count).toBe(0);
-
-      const replyRes = await app.request(`/messages/${conversationId}`, {
-        method: "POST",
-        headers: authHeaders(leader.id),
-        body: JSON.stringify({ content: "Hi" }),
-      });
-      expect(replyRes.status).toBe(201);
+    const response = await request(app, "/messages", member.id, {
+      method: "POST",
+      body: JSON.stringify({ teamId: team.id }),
     });
 
-    it("非会话参与者不可读取或发送消息", async () => {
-      const conversationId = await createConversationAsMember();
+    expect(response.status).toBe(403);
+    const stored = await db.select().from(schema.conversations);
+    expect(stored).toHaveLength(0);
+  });
 
-      const readRes = await app.request(`/messages/${conversationId}`, {
-        method: "GET",
-        headers: authHeaders(outsider.id),
-      });
-      expect(readRes.status).toBe(403);
+  it.each([
+    { status: "suspended" as const, deletedAt: null },
+    { status: "banned" as const, deletedAt: null },
+    { status: "deleted" as const, deletedAt: new Date() },
+    { status: "active" as const, deletedAt: new Date() },
+  ])(
+    "rejects a stored session when user status is $status and deletedAt is $deletedAt",
+    async ({ status, deletedAt }) => {
+      await db.update(schema.users)
+        .set({ status, deletedAt })
+        .where(eq(schema.users.id, member.id));
 
-      const sendRes = await app.request(`/messages/${conversationId}`, {
+      const response = await request(app, "/messages", member.id, {
         method: "POST",
-        headers: authHeaders(outsider.id),
-        body: JSON.stringify({ content: "Nope" }),
+        body: JSON.stringify({ teamId: team.id }),
       });
-      expect(sendRes.status).toBe(403);
+
+      expect(response.status).toBe(401);
+      expect(await db.select().from(schema.conversations)).toHaveLength(0);
+    },
+  );
+
+  it("does not send after the member leaves or the team changes leader between check and insert", async () => {
+    const { id } = await createConversation();
+    state.beforeGenerateId = () => {
+      db.update(schema.teamMembers)
+        .set({ leftAt: new Date() })
+        .where(and(
+          eq(schema.teamMembers.teamId, team.id),
+          eq(schema.teamMembers.userId, member.id),
+        ))
+        .run();
+    };
+    const formerMember = await request(app, `/messages/${id}`, member.id, {
+      method: "POST",
+      body: JSON.stringify({ content: "must not persist" }),
+    });
+    expect(formerMember.status).toBe(403);
+    expect(await db.select().from(schema.messages)).toHaveLength(0);
+
+    await db.update(schema.teamMembers)
+      .set({ leftAt: null })
+      .where(and(
+        eq(schema.teamMembers.teamId, team.id),
+        eq(schema.teamMembers.userId, member.id),
+      ));
+    state.beforeGenerateId = () => {
+      db.update(schema.teams)
+        .set({ leaderId: outsider.id })
+        .where(eq(schema.teams.id, team.id))
+        .run();
+    };
+    const formerLeader = await request(app, `/messages/${id}`, leader.id, {
+      method: "POST",
+      body: JSON.stringify({ content: "must not persist either" }),
+    });
+    expect(formerLeader.status).toBe(403);
+    expect(await db.select().from(schema.messages)).toHaveLength(0);
+  });
+
+  it("does not mark messages read when access is revoked between check and update", async () => {
+    const { id } = await createConversation();
+    await db.insert(schema.messages).values({
+      id: "unread-race",
+      conversationId: id,
+      senderId: leader.id,
+      content: "still unread",
+    });
+    state.beforeRouteUpdate = () => {
+      db.update(schema.teamMembers)
+        .set({ leftAt: new Date() })
+        .where(and(
+          eq(schema.teamMembers.teamId, team.id),
+          eq(schema.teamMembers.userId, member.id),
+        ))
+        .run();
+    };
+
+    const response = await request(app, `/messages/${id}/read`, member.id, {
+      method: "PATCH",
     });
 
-    it("成员不再 approved 后双方都不可继续访问已有会话", async () => {
-      const conversationId = await createConversationAsMember();
-      await app.request(`/messages/${conversationId}`, {
-        method: "POST",
-        headers: authHeaders(leader.id),
-        body: JSON.stringify({ content: "Before removal" }),
-      });
+    expect(response.status).toBe(403);
+    const [stored] = await db
+      .select({ readAt: schema.messages.readAt })
+      .from(schema.messages)
+      .where(eq(schema.messages.id, "unread-race"));
+    expect(stored.readAt).toBeNull();
+  });
 
-      await db
-        .update(schema.teamMembers)
-        .set({ status: "rejected" })
-        .where(eq(schema.teamMembers.userId, approvedMember.id));
-
-      const memberListRes = await app.request("/messages", {
-        method: "GET",
-        headers: authHeaders(approvedMember.id),
-      });
-      expect(memberListRes.status).toBe(200);
-      const memberListData = await memberListRes.json() as { data: unknown[] };
-      expect(memberListData.data).toEqual([]);
-
-      const memberUnreadRes = await app.request("/messages/unread-count", {
-        method: "GET",
-        headers: authHeaders(approvedMember.id),
-      });
-      expect(memberUnreadRes.status).toBe(200);
-      const memberUnreadData = await memberUnreadRes.json() as { data: { count: number } };
-      expect(memberUnreadData.data.count).toBe(0);
-
-      const memberReadRes = await app.request(`/messages/${conversationId}`, {
-        method: "GET",
-        headers: authHeaders(approvedMember.id),
-      });
-      expect(memberReadRes.status).toBe(403);
-
-      const memberSendRes = await app.request(`/messages/${conversationId}`, {
-        method: "POST",
-        headers: authHeaders(approvedMember.id),
-        body: JSON.stringify({ content: "No longer in team" }),
-      });
-      expect(memberSendRes.status).toBe(403);
-
-      const leaderListRes = await app.request("/messages", {
-        method: "GET",
-        headers: authHeaders(leader.id),
-      });
-      expect(leaderListRes.status).toBe(200);
-      const leaderListData = await leaderListRes.json() as { data: unknown[] };
-      expect(leaderListData.data).toEqual([]);
-
-      const leaderReadRes = await app.request(`/messages/${conversationId}`, {
-        method: "GET",
-        headers: authHeaders(leader.id),
-      });
-      expect(leaderReadRes.status).toBe(403);
-
-      const leaderSendRes = await app.request(`/messages/${conversationId}`, {
-        method: "POST",
-        headers: authHeaders(leader.id),
-        body: JSON.stringify({ content: "No longer in team" }),
-      });
-      expect(leaderSendRes.status).toBe(403);
+  it("does not return message history when membership is revoked between check and read", async () => {
+    const { id } = await createConversation();
+    await db.insert(schema.messages).values({
+      id: "private-race",
+      conversationId: id,
+      senderId: leader.id,
+      content: "must not be disclosed",
     });
+    state.routeSelectCount = 0;
+    // active-session lookup, access lookup, then the message history SELECT
+    state.beforeRouteSelectAt = 3;
+    state.beforeRouteUpdate = () => {
+      db.update(schema.teamMembers)
+        .set({ leftAt: new Date() })
+        .where(and(
+          eq(schema.teamMembers.teamId, team.id),
+          eq(schema.teamMembers.userId, member.id),
+        ))
+        .run();
+    };
+
+    const response = await request(app, `/messages/${id}`, member.id);
+
+    expect(response.status).toBe(403);
+    expect(await response.text()).not.toContain("must not be disclosed");
   });
 });

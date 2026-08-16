@@ -1,11 +1,24 @@
 "use client";
 
 import * as React from "react";
-import { AlertCircle, ArrowLeft, Loader2, Plus, Send, X } from "lucide-react";
-import { API_BASE, fetchAPI, fetchCurrentUser } from "@/lib/api";
+import {
+  AlertCircle,
+  ArrowLeft,
+  BookOpenText,
+  Loader2,
+  Plus,
+  Send,
+  X,
+} from "lucide-react";
+import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-input";
 import { useI18n } from "@/hooks/useI18n";
 import { VditorEditor } from "./discover/vditor-editor";
+import {
+  buildCreateStoryPayload,
+  parseStoryUploadAsset,
+  type StoryUploadAsset,
+} from "./discover/story-contract";
 
 interface LocationOption {
   id: string;
@@ -19,40 +32,39 @@ interface LocationsResponse {
   data?: LocationOption[];
 }
 
-
-
 interface StoryForm {
   title: string;
   summary: string;
   content: string;
-  coverImage: string;
   locationId: string;
 }
 
-type StoryFormErrors = Partial<Record<keyof StoryForm | "tags", string>>;
+type StoryFormErrors = Partial<
+  Record<keyof StoryForm | "image" | "tags", string>
+>;
 
 const initialForm: StoryForm = {
   title: "",
   summary: "",
   content: "",
-  coverImage: "",
   locationId: "",
 };
 
-function getApiErrorMessage(data: unknown, fallback: string): string {
-  if (data && typeof data === "object") {
-    const payload = data as { message?: string; error?: { message?: string } };
-    return payload.message || payload.error?.message || fallback;
-  }
-  return fallback;
-}
-
-export function CreateStoryClient() {
+export function CreateStoryClient({ teamId }: { teamId?: string }) {
   const { t } = useI18n(["content", "common", "ui"]);
+  const isTeamRecap = Boolean(teamId);
+  const createPath = teamId
+    ? `/discover/create?teamId=${encodeURIComponent(teamId)}`
+    : "/discover/create";
+  const backHref = teamId
+    ? `/teams/${encodeURIComponent(teamId)}`
+    : "/discover";
   const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
   const [locations, setLocations] = React.useState<LocationOption[]>([]);
-  const [locationsLoading, setLocationsLoading] = React.useState(true);
+  const [locationsLoading, setLocationsLoading] = React.useState(!teamId);
   const [form, setForm] = React.useState<StoryForm>(initialForm);
+  const [pendingImage, setPendingImage] =
+    React.useState<StoryUploadAsset | null>(null);
   const [tagInput, setTagInput] = React.useState("");
   const [tags, setTags] = React.useState<string[]>([]);
   const [errors, setErrors] = React.useState<StoryFormErrors>({});
@@ -64,28 +76,32 @@ export function CreateStoryClient() {
     let cancelled = false;
 
     (async () => {
-      const user = await fetchCurrentUser(`/login?redirect=${encodeURIComponent("/discover/create")}`);
+      const user = await fetchCurrentUser(
+        `/login?redirect=${encodeURIComponent(createPath)}`,
+      );
       if (!user || cancelled) return;
       setIsCheckingAuth(false);
     })();
 
-    fetchAPI("/api/locations?view=card&pageSize=100")
-      .then((res) => res.json())
-      .then((data: LocationsResponse) => {
-        if (cancelled) return;
-        if (data.success) setLocations(data.locations ?? data.data ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setLocations([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLocationsLoading(false);
-      });
+    if (!teamId) {
+      fetchAPI("/locations?view=card&limit=100")
+        .then((res) => res.json())
+        .then((data: LocationsResponse) => {
+          if (cancelled) return;
+          if (data.success) setLocations(data.locations ?? data.data ?? []);
+        })
+        .catch(() => {
+          if (!cancelled) setLocations([]);
+        })
+        .finally(() => {
+          if (!cancelled) setLocationsLoading(false);
+        });
+    }
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [createPath, teamId]);
 
   const updateField = (field: keyof StoryForm, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -100,7 +116,10 @@ export function CreateStoryClient() {
       return;
     }
     if (tags.length >= 10) {
-      setErrors((prev) => ({ ...prev, tags: t("content.discover.create.tagsMax") }));
+      setErrors((prev) => ({
+        ...prev,
+        tags: t("content.discover.create.tagsMax"),
+      }));
       return;
     }
     setTags((prev) => [...prev, nextTag]);
@@ -120,56 +139,71 @@ export function CreateStoryClient() {
     }
   };
 
-  // spec §6.3：封面/标签不再参与校验；disabled 只看标题/摘要/正文
+  // V2 普通故事仅要求标题和正文；摘要、地点、图片与标签均可选。
   const validate = () => {
     const nextErrors: StoryFormErrors = {};
-    if (!form.title.trim()) nextErrors.title = t("content.discover.create.titleRequired");
-    if (!form.summary.trim()) nextErrors.summary = t("content.discover.create.summaryRequired");
-    if (!form.content.trim()) nextErrors.content = t("content.discover.create.contentRequired");
-    if (!form.locationId) nextErrors.locationId = t("content.discover.create.locationRequired");
-    if (tags.length > 10) nextErrors.tags = t("content.discover.create.tagsMax");
+    if (!isTeamRecap && !form.title.trim())
+      nextErrors.title = t("content.discover.create.titleRequired");
+    if (!form.content.trim())
+      nextErrors.content = t("content.discover.create.contentRequired");
+    if (tags.length > 10)
+      nextErrors.tags = t("content.discover.create.tagsMax");
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
 
   // spec §6.3：onBlur 即时校验必填项，错误消除即恢复（恢复由 updateField 负责）
-  const validateRequiredOnBlur = (field: "title" | "summary" | "content") => {
+  const validateRequiredOnBlur = (field: "title" | "content") => {
+    if (field === "title" && isTeamRecap) return;
     const errorKey = {
       title: "content.discover.create.titleRequired",
-      summary: "content.discover.create.summaryRequired",
       content: "content.discover.create.contentRequired",
     }[field];
-    setErrors((prev) => ({ ...prev, [field]: form[field].trim() ? undefined : t(errorKey) }));
+    setErrors((prev) => ({
+      ...prev,
+      [field]: form[field].trim() ? undefined : t(errorKey),
+    }));
   };
 
-  const isRequiredEmpty = !form.title.trim() || !form.summary.trim() || !form.content.trim();
+  const isRequiredEmpty =
+    (!isTeamRecap && !form.title.trim()) || !form.content.trim();
 
-  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
     setFormError("");
-    setErrors((prev) => ({ ...prev, coverImage: undefined }));
+    setErrors((prev) => ({ ...prev, image: undefined }));
 
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(`${API_BASE}/upload/story`, {
+      const res = await fetchAPI("/upload/story", {
         method: "POST",
         body: formData,
-        credentials: "include",
       });
-      const data = await res.json();
-      if (data.success && data.url) {
-        setForm((prev) => ({ ...prev, coverImage: data.url }));
+      const data = await res.json().catch(() => null);
+      const asset = res.ok ? parseStoryUploadAsset(data) : null;
+      if (asset) {
+        setPendingImage(asset);
       } else {
-        setFormError(getApiErrorMessage(data, t("content.discover.create.uploadFailed")));
-        setErrors((prev) => ({ ...prev, coverImage: t("content.discover.create.uploadFailed") }));
+        setFormError(
+          getApiErrorMessage(data, t("content.discover.create.uploadFailed")),
+        );
+        setErrors((prev) => ({
+          ...prev,
+          image: t("content.discover.create.uploadFailed"),
+        }));
       }
     } catch {
       setFormError(t("content.discover.create.uploadFailed"));
-      setErrors((prev) => ({ ...prev, coverImage: t("content.discover.create.uploadFailed") }));
+      setErrors((prev) => ({
+        ...prev,
+        image: t("content.discover.create.uploadFailed"),
+      }));
     } finally {
       if (!cancelledRef.current) {
         setIsUploading(false);
@@ -180,7 +214,9 @@ export function CreateStoryClient() {
   // Use a ref to track cancellation for cleanup
   const cancelledRef = React.useRef(false);
   React.useEffect(() => {
-    return () => { cancelledRef.current = true; };
+    return () => {
+      cancelledRef.current = true;
+    };
   }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -192,18 +228,20 @@ export function CreateStoryClient() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`${API_BASE}/stories`, {
+      const res = await fetchAPI("/stories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          title: form.title.trim(),
-          summary: form.summary.trim(),
-          content: form.content,
-          coverImage: form.coverImage || undefined,
-          locationId: form.locationId,
-          tags,
-        }),
+        body: JSON.stringify(
+          buildCreateStoryPayload({
+            teamId,
+            title: form.title.trim(),
+            summary: form.summary.trim(),
+            content: form.content,
+            locationId: form.locationId,
+            tags,
+            imageKey: pendingImage?.key,
+          }),
+        ),
       });
 
       const data = await res.json();
@@ -211,7 +249,9 @@ export function CreateStoryClient() {
       if (res.ok && data.success && data.data?.id) {
         window.location.href = `/discover/${data.data.id}`;
       } else {
-        setFormError(getApiErrorMessage(data, t("content.discover.create.submitFailed")));
+        setFormError(
+          getApiErrorMessage(data, t("content.discover.create.submitFailed")),
+        );
       }
     } catch {
       setFormError(t("content.discover.create.submitFailed"));
@@ -233,16 +273,36 @@ export function CreateStoryClient() {
       {/* Header */}
       <div className="sticky top-0 z-40 border-b border-border bg-card backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <a href="/discover" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <a
+            href={backHref}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
             <ArrowLeft className="h-4 w-4" />
             {t("content.discover.back")}
           </a>
-          <h1 className="text-base font-semibold text-foreground">{t("content.discover.create.title")}</h1>
+          <h1 className="text-base font-semibold text-foreground">
+            {isTeamRecap
+              ? t("content.storyRecap.createTitle")
+              : t("content.discover.create.title")}
+          </h1>
           <div className="w-20" />
         </div>
       </div>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        {isTeamRecap && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <BookOpenText className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div>
+              <p className="font-semibold">
+                {t("content.storyRecap.createTitle")}
+              </p>
+              <p className="mt-0.5 text-amber-800">
+                {t("content.storyRecap.createContext")}
+              </p>
+            </div>
+          </div>
+        )}
         {formError && (
           <div className="mb-6 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             <AlertCircle className="h-4 w-4 shrink-0" />
@@ -250,12 +310,16 @@ export function CreateStoryClient() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+        >
           {/* Left: Form fields */}
           <div className="lg:col-span-4 space-y-6">
             <FormField
               label={t("content.discover.create.titleLabel")}
               htmlFor="story-title"
+              optional={isTeamRecap}
               error={errors.title}
             >
               <Input
@@ -272,15 +336,22 @@ export function CreateStoryClient() {
               label={t("content.discover.create.coverLabel")}
               htmlFor="story-cover"
               optional
-              error={errors.coverImage}
+              error={errors.image}
               hint={t("content.discover.create.coverHint")}
             >
-              {form.coverImage ? (
+              {pendingImage ? (
                 <div className="relative rounded-lg overflow-hidden border border-border">
-                  <img src={form.coverImage} alt="Cover" className="w-full aspect-video object-cover" />
+                  <img
+                    src={pendingImage.url}
+                    alt={t("content.discover.create.coverPreviewAlt")}
+                    className="w-full aspect-video object-cover"
+                  />
                   <button
                     type="button"
-                    onClick={() => updateField("coverImage", "")}
+                    onClick={() => {
+                      setPendingImage(null);
+                      setErrors((prev) => ({ ...prev, image: undefined }));
+                    }}
                     aria-label={t("content.discover.create.removeCover")}
                     className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70"
                   >
@@ -294,8 +365,12 @@ export function CreateStoryClient() {
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   ) : (
                     <>
-                      <span className="text-sm font-medium text-foreground">{t("content.discover.create.coverEmptyTitle")}</span>
-                      <span className="text-xs text-muted-foreground">{t("content.discover.create.coverEmptyHint")}</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {t("content.discover.create.coverEmptyTitle")}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {t("content.discover.create.coverEmptyHint")}
+                      </span>
                     </>
                   )}
                   <input
@@ -313,14 +388,13 @@ export function CreateStoryClient() {
             <FormField
               label={t("content.discover.create.summaryLabel")}
               htmlFor="story-summary"
-              error={errors.summary}
               hint={t("content.discover.create.summaryHint")}
+              optional
             >
               <Textarea
                 id="story-summary"
                 value={form.summary}
                 onChange={(event) => updateField("summary", event.target.value)}
-                onBlur={() => validateRequiredOnBlur("summary")}
                 maxLength={150}
                 className="min-h-[84px]"
                 placeholder={t("content.discover.create.summaryPlaceholder")}
@@ -328,20 +402,31 @@ export function CreateStoryClient() {
               />
             </FormField>
 
-            <FormField
-              label={t("content.discover.create.locationLabel")}
-              htmlFor="story-location"
-              error={errors.locationId}
-            >
-              <Select
-                id="story-location"
-                value={form.locationId}
-                onChange={(event) => updateField("locationId", event.target.value)}
-                options={locations.map((location) => ({ value: location.id, label: location.name }))}
-                placeholder={locationsLoading ? t("content.discover.create.locationsLoading") : t("content.discover.create.locationPlaceholder")}
-                disabled={isSubmitting || locationsLoading}
-              />
-            </FormField>
+            {!isTeamRecap && (
+              <FormField
+                label={t("content.discover.create.locationLabel")}
+                htmlFor="story-location"
+                optional
+              >
+                <Select
+                  id="story-location"
+                  value={form.locationId}
+                  onChange={(event) =>
+                    updateField("locationId", event.target.value)
+                  }
+                  options={locations.map((location) => ({
+                    value: location.id,
+                    label: location.name,
+                  }))}
+                  placeholder={
+                    locationsLoading
+                      ? t("content.discover.create.locationsLoading")
+                      : t("content.discover.create.locationPlaceholder")
+                  }
+                  disabled={isSubmitting || locationsLoading}
+                />
+              </FormField>
+            )}
 
             <FormField
               label={t("content.discover.create.tagsLabel")}
@@ -362,7 +447,9 @@ export function CreateStoryClient() {
                 <button
                   type="button"
                   onClick={addTag}
-                  disabled={isSubmitting || tags.length >= 10 || !tagInput.trim()}
+                  disabled={
+                    isSubmitting || tags.length >= 10 || !tagInput.trim()
+                  }
                   className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label={t("content.discover.create.addTag")}
                 >
@@ -381,7 +468,9 @@ export function CreateStoryClient() {
                         type="button"
                         onClick={() => removeTag(tag)}
                         className="rounded-full p-0.5 hover:bg-primary/15"
-                        aria-label={t("content.discover.create.removeTag", { tag })}
+                        aria-label={t("content.discover.create.removeTag", {
+                          tag,
+                        })}
                         disabled={isSubmitting}
                       >
                         <X className="h-3.5 w-3.5" />
@@ -394,7 +483,7 @@ export function CreateStoryClient() {
 
             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-end">
               <a
-                href="/discover"
+                href={backHref}
                 className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
               >
                 {t("common.cancel")}
@@ -404,8 +493,14 @@ export function CreateStoryClient() {
                 disabled={isSubmitting || isUploading || isRequiredEmpty}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {isSubmitting ? t("content.discover.create.submitting") : t("content.discover.create.submit")}
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {isSubmitting
+                  ? t("content.discover.create.submitting")
+                  : t("content.discover.create.submit")}
               </button>
             </div>
           </div>
@@ -418,7 +513,11 @@ export function CreateStoryClient() {
               error={errors.content}
               hint={t("content.discover.create.contentHint")}
             >
-              <div className="rounded-lg border border-border overflow-hidden" style={{ height: "calc(100vh - 10rem)", minHeight: "500px" }} onBlur={() => validateRequiredOnBlur("content")}>
+              <div
+                className="rounded-lg border border-border overflow-hidden"
+                style={{ height: "calc(100vh - 10rem)", minHeight: "500px" }}
+                onBlur={() => validateRequiredOnBlur("content")}
+              >
                 <VditorEditor
                   value={form.content}
                   onChange={(v) => updateField("content", v)}

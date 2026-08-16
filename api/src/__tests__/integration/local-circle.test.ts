@@ -1,422 +1,351 @@
-/**
- * P0-D T1 (task #175) — 本地圈子服务层集成测试
- *
- * spec 参考：notes/gomate-p0d-local-circle-spec-v1.2.md §7 test case 清单
- *
- * 覆盖 8 case（Martin msg=82a5ffff 5 边界 + 2 assertion + Martin msg=6d046a06 tie-breaker）：
- *   Case 1 — score cap 3.0：单用户 4 源全命中 (1.0+0.1+1.5+1.0=3.6) → 单 (user,location) contribution capped 3.0
- *   Case 2 — cancelled 排除窄义：team.status='cancelled' → PRIMARY 0 signal
- *   Case 3 — 7d 窗口边界：end_time = now-8d 不计入；created_at = now-6d23h 计入
- *   Case 4 — 空态：city 内 0 signal → topLocations=[] / activePeopleCount=0
- *   Case 5 — entityType 泛化：favorites entityType='story'/'team' 不误计 SECONDARY
- *   Case 6 — tie-breaker signal_ts：同 score+同 visitor_count → latest signal_ts DESC 排前（Martin msg=6d046a06）
- *   Case 7 — assertion：activity_posts 关联 cancelled team → SUPPLEMENTARY 仍计入（activity_posts 独立于 team.status，spec §3.3 拍板）
- *   Case 8 — assertion：stories.location_id IS NULL baseline → 不进 signals（spec §3.3 NOT NULL 过滤）
- *
- * 测试环境使用 better-sqlite3 in-memory DB（helpers/db.ts），mock createDb 让 service 直接拿到 testDb。
- */
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { eq } from "drizzle-orm";
-import { createTestDb } from "../helpers/db";
-import { seedUser, seedCity, seedLocation, seedTeam, seedTeamMember, seedStory } from "../helpers/seed";
+import { Hono } from "hono";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import * as schema from "../../db/schema";
-import type { TestDb } from "../helpers/db";
+import { createTestDb } from "../helpers/db";
+import {
+  seedLocation,
+  seedRegion,
+  seedStory,
+  seedTeam,
+  seedTeamMember,
+  seedUser,
+} from "../helpers/seed";
 
-// ==================== Mock 策略 ====================
+type TestDb = ReturnType<typeof createTestDb>["db"];
 
+let currentSession: {
+  user: { id: string; email: string; name: string };
+} | null = null;
 let testDb: TestDb;
 
 vi.mock("../../db", () => ({
-  createDb: (_d1: unknown) => testDb,
+  createDb: () => testDb,
 }));
 
-// service dynamic import 在 vi.mock 之后
-async function loadService() {
-  return await import("../../services/local-circle");
-}
+vi.mock("../../lib/auth", () => ({
+  createAuth: () => ({
+    api: { getSession: async () => currentSession },
+  }),
+}));
 
-// ==================== 本地 seed helpers（seed.ts 尚未覆盖） ====================
+const { getLocalCircleHome, __test } = await import("../../services/local-circle");
+const { localCircleHomeRoute } = await import("../../routes/local-circle/home");
 
-let localCounter = 1;
-function genId(prefix = "id") {
-  return `${prefix}_${localCounter++}_${Date.now()}`;
+function fakeKv() {
+  const store = new Map<string, string>();
+  return {
+    store,
+    get: async (key: string) => store.get(key) ?? null,
+    put: async (key: string, value: string) => {
+      store.set(key, value);
+    },
+  } as unknown as KVNamespace & { store: Map<string, string> };
 }
 
 async function seedFavorite(
-  db: TestDb,
   userId: string,
-  entityType: string,
-  entityId: string,
-  createdAt: Date
-): Promise<schema.UserFavorite> {
-  const id = genId("fav");
-  await db.insert(schema.userFavorites).values({
-    id, userId, entityType, entityId, createdAt,
-  });
-  const [inserted] = await db
-    .select()
-    .from(schema.userFavorites)
-    .where(eq(schema.userFavorites.id, id));
-  return inserted;
-}
-
-async function seedActivityPost(
-  db: TestDb,
-  teamId: string,
-  authorId: string,
-  locationId: string | null,
-  createdAt: Date,
-  status: "visible" | "hidden" | "deleted" = "visible"
-): Promise<schema.ActivityPost> {
-  const id = genId("post");
-  await db.insert(schema.activityPosts).values({
-    id, teamId, locationId, authorId,
-    content: "test post", images: JSON.stringify([]),
-    status, createdAt, updatedAt: createdAt,
-  });
-  return { id, teamId, locationId, authorId, content: "test post",
-    images: JSON.stringify([]), status, createdAt, updatedAt: createdAt,
-  } as schema.ActivityPost;
-}
-
-// PRIMARY signal 要求 team.end_time > windowStart AND end_time <= now（team 7d 内已结束）
-// helpers/seed.ts 的 seedTeam 默认 futureTime，我们要过去时间 team，直接 override
-async function seedPastTeam(
-  db: TestDb,
-  leaderId: string,
   locationId: string,
-  endTime: Date,
-  status: schema.TeamStatus = "completed"
+  createdAt: Date,
 ) {
-  const startTime = new Date(endTime.getTime() - 4 * 60 * 60 * 1000);
-  return await seedTeam(db, leaderId, locationId, {
-    startTime, endTime, status,
+  await testDb.insert(schema.userLocationFavorites).values({
+    userId,
+    locationId,
+    createdAt,
   });
 }
 
-// ==================== 测试主体 ====================
-
-describe("local-circle service — getLocalCircleHome", () => {
-  const NOW = 1_700_000_000_000; // 固定时间基准（避免真实 Date.now 漂移）
-  const DAY = 24 * 60 * 60 * 1000;
-  const HOUR = 60 * 60 * 1000;
-
-  let city: schema.City;
+describe("Local Circle V2 service", () => {
+  const NOW = 1_800_000_000_000;
+  const DAY = 24 * 60 * 60 * 1_000;
+  let shenzhen: schema.Region;
 
   beforeEach(async () => {
-    const fresh = createTestDb();
-    testDb = fresh.db;
-    localCounter = 1;
-    city = await seedCity(testDb, { name: "深圳", adcode: "440300" });
+    testDb = createTestDb().db;
+    currentSession = null;
+    shenzhen = await seedRegion(testDb, {
+      id: "region-cn-shenzhen",
+      name: "深圳市",
+      nameEn: "Shenzhen",
+      slug: "shenzhen",
+      code: "440300",
+      isHot: true,
+    });
   });
 
-  // ==================== Case 1: score cap 3.0 ====================
-  it("Case 1 — score cap 3.0：单用户 4 源全命中 → contribution 单 (user,location) 上限 3.0", async () => {
-    const user = await seedUser(testDb);
-    const location = await seedLocation(testDb, city.id);
+  it("builds public aggregates from completed Team members, dedicated favorites and published Team recaps", async () => {
+    const user = await seedUser(testDb, {
+      id: "signal-user",
+      email: "signal@example.test",
+      image: "https://gomate.cos.jiahongw.com/avatars/signal.jpg",
+    });
+    const departed = await seedUser(testDb, {
+      id: "departed-user",
+      email: "departed@example.test",
+    });
+    const leader = await seedUser(testDb, {
+      id: "signal-team-leader",
+      email: "signal-team-leader@example.test",
+    });
+    const location = await seedLocation(testDb, shenzhen.id, {
+      id: "location-signals",
+      name: "梧桐山",
+      coverImageUrl: "https://gomate.cos.jiahongw.com/locations/wutong.jpg",
+    });
+    const completedTeam = await seedTeam(testDb, leader.id, location.id, {
+      id: "team-active",
+      startAt: new Date(NOW - 2 * DAY),
+      endAt: new Date(NOW - DAY),
+      formedAt: new Date(NOW - 3 * DAY),
+    });
+    await seedTeamMember(testDb, completedTeam.id, user.id, {
+      joinedAt: new Date(NOW - DAY),
+    });
+    await seedTeamMember(testDb, completedTeam.id, departed.id, {
+      joinedAt: new Date(NOW - DAY),
+      leftAt: new Date(NOW - 1_000),
+    });
+    await seedFavorite(user.id, location.id, new Date(NOW - 2 * DAY));
+    await seedStory(testDb, user.id, {
+      id: "team-recap",
+      teamId: completedTeam.id,
+      locationId: location.id,
+      title: null,
+      status: "published",
+      createdAt: new Date(NOW - DAY),
+    });
+    await seedStory(testDb, departed.id, {
+      id: "normal-story",
+      teamId: null,
+      locationId: location.id,
+      title: "普通地点故事",
+      status: "published",
+      createdAt: new Date(NOW - DAY),
+    });
 
-    // PRIMARY 1.0
-    const team = await seedPastTeam(testDb, user.id, location.id, new Date(NOW - 3 * DAY), "completed");
-    await seedTeamMember(testDb, team.id, user.id, "approved");
-    // SECONDARY 0.1
-    await seedFavorite(testDb, user.id, "location", location.id, new Date(NOW - 2 * DAY));
-    // SUPPLEMENTARY story 1.5
-    await seedStory(testDb, user.id, { locationId: location.id, status: "published", createdAt: new Date(NOW - 1 * DAY) });
-    // SUPPLEMENTARY activity_post 1.0
-    await seedActivityPost(testDb, team.id, user.id, location.id, new Date(NOW - 1 * DAY));
-
-    const { getLocalCircleHome } = await loadService();
     const result = await getLocalCircleHome({
-      db: testDb as never, cityId: city.id, currentUserId: null, now: NOW,
+      db: testDb as never,
+      regionId: shenzhen.id,
+      language: "zh-CN",
+      currentUserId: null,
+      now: NOW,
     });
 
-    expect(result.topLocations).toHaveLength(1);
-    const [top] = result.topLocations;
-    expect(top.locationId).toBe(location.id);
-    // 1.0+0.1+1.5+1.0 = 3.6 但 cap 3.0
-    expect(top.visitScore).toBeCloseTo(3.0, 6);
-    expect(top.uniqueVisitors).toBe(1);
-    expect(result.activePeopleCount).toBe(1);
-  });
-
-  // ==================== Case 2: cancelled 排除 ====================
-  it("Case 2 — cancelled 排除窄义：team.status='cancelled' → PRIMARY 0 signal", async () => {
-    const user = await seedUser(testDb);
-    const location = await seedLocation(testDb, city.id);
-
-    const team = await seedPastTeam(testDb, user.id, location.id, new Date(NOW - 3 * DAY), "cancelled");
-    await seedTeamMember(testDb, team.id, user.id, "approved");
-
-    const { getLocalCircleHome } = await loadService();
-    const result = await getLocalCircleHome({
-      db: testDb as never, cityId: city.id, currentUserId: null, now: NOW,
+    expect(result).toMatchObject({
+      regionId: shenzhen.id,
+      regionName: "深圳市",
+      activePeopleCount: 1,
+      neighborTeams: [],
     });
-
-    expect(result.topLocations).toHaveLength(0);
-    expect(result.activePeopleCount).toBe(0);
+    expect(result.topLocations).toEqual([
+      expect.objectContaining({
+        locationId: location.id,
+        locationName: "梧桐山",
+        coverImageUrl: "https://gomate.cos.jiahongw.com/locations/wutong.jpg",
+        visitScore: 2.6,
+        uniqueVisitors: 1,
+      }),
+    ]);
+    expect(result.topLocations[0]).not.toHaveProperty("avatarStack");
   });
 
-  // ==================== Case 3: 7d 窗口边界 ====================
-  it("Case 3 — 7d 窗口边界：end_time = now-8d 排除；favorite created_at = now-6d23h 计入", async () => {
-    const user = await seedUser(testDb);
-    const location = await seedLocation(testDb, city.id);
-
-    // 队伍 8 天前结束 → 排除
-    const staleTeam = await seedPastTeam(testDb, user.id, location.id, new Date(NOW - 8 * DAY), "completed");
-    await seedTeamMember(testDb, staleTeam.id, user.id, "approved");
-
-    // favorite 6d23h 前 → 计入
-    await seedFavorite(testDb, user.id, "location", location.id, new Date(NOW - (6 * DAY + 23 * HOUR)));
-
-    const { getLocalCircleHome } = await loadService();
-    const result = await getLocalCircleHome({
-      db: testDb as never, cityId: city.id, currentUserId: null, now: NOW,
-    });
-
-    expect(result.topLocations).toHaveLength(1);
-    // 仅 favorite 计分：0.1
-    expect(result.topLocations[0].visitScore).toBeCloseTo(0.1, 6);
-    expect(result.activePeopleCount).toBe(1);
-  });
-
-  // ==================== Case 4: 空态 ====================
-  it("Case 4 — 空态：city 内 0 signal → topLocations=[] / activePeopleCount=0", async () => {
-    await seedLocation(testDb, city.id); // 有地点但无 signal
-    const { getLocalCircleHome } = await loadService();
-    const result = await getLocalCircleHome({
-      db: testDb as never, cityId: city.id, currentUserId: null, now: NOW,
-    });
-    expect(result.topLocations).toEqual([]);
-    expect(result.activePeopleCount).toBe(0);
-    expect(result.neighborTeams).toEqual([]);
-    expect(result.cityName).toBe("深圳");
-  });
-
-  // ==================== Case 5: entityType 泛化 ====================
-  it("Case 5 — entityType 泛化：favorites entity_type='story'/'team' 不误计 SECONDARY", async () => {
-    const user = await seedUser(testDb);
-    const location = await seedLocation(testDb, city.id);
-    // 用 location.id 作 entity_id，但 type 不是 'location'
-    await seedFavorite(testDb, user.id, "story", location.id, new Date(NOW - 1 * DAY));
-    await seedFavorite(testDb, user.id, "team", location.id, new Date(NOW - 1 * DAY));
-
-    const { getLocalCircleHome } = await loadService();
-    const result = await getLocalCircleHome({
-      db: testDb as never, cityId: city.id, currentUserId: null, now: NOW,
-    });
-    expect(result.topLocations).toHaveLength(0);
-    expect(result.activePeopleCount).toBe(0);
-  });
-
-  // ==================== Case 6: tie-breaker signal_ts ====================
-  it("Case 6 — tie-breaker：同 score+同 visitor_count → latest signal_ts DESC 排前", async () => {
-    const userA = await seedUser(testDb, { name: "UserA" });
-    const userB = await seedUser(testDb, { name: "UserB" });
-    const locA = await seedLocation(testDb, city.id, { name: "LocA" });
-    const locB = await seedLocation(testDb, city.id, { name: "LocB" });
-
-    // A 收藏 locA：更早
-    await seedFavorite(testDb, userA.id, "location", locA.id, new Date(NOW - 5 * DAY));
-    // B 收藏 locB：更晚
-    await seedFavorite(testDb, userB.id, "location", locB.id, new Date(NOW - 1 * DAY));
-
-    const { getLocalCircleHome } = await loadService();
-    const result = await getLocalCircleHome({
-      db: testDb as never, cityId: city.id, currentUserId: null, now: NOW,
-    });
-
-    expect(result.topLocations).toHaveLength(2);
-    // 同 score (0.1) 同 visitor_count (1) → newer signal_ts 排前 → LocB 排前
-    expect(result.topLocations[0].locationId).toBe(locB.id);
-    expect(result.topLocations[1].locationId).toBe(locA.id);
-    expect(result.topLocations[0].visitScore).toBeCloseTo(0.1, 6);
-    expect(result.topLocations[1].visitScore).toBeCloseTo(0.1, 6);
-  });
-
-  // ==================== Case 7: activity_posts 独立于 team.status ====================
-  it("Case 7 — assertion：activity_posts 关联 cancelled team → SUPPLEMENTARY 仍计入（独立于 team.status）", async () => {
-    const user = await seedUser(testDb);
-    const location = await seedLocation(testDb, city.id);
-    // team cancelled：PRIMARY 不计
-    const team = await seedPastTeam(testDb, user.id, location.id, new Date(NOW - 3 * DAY), "cancelled");
-    await seedTeamMember(testDb, team.id, user.id, "approved");
-    // 但 activity_post visible & 7d 内：SUPPLEMENTARY 计入
-    await seedActivityPost(testDb, team.id, user.id, location.id, new Date(NOW - 1 * DAY), "visible");
-
-    const { getLocalCircleHome } = await loadService();
-    const result = await getLocalCircleHome({
-      db: testDb as never, cityId: city.id, currentUserId: null, now: NOW,
-    });
-
-    expect(result.topLocations).toHaveLength(1);
-    // 仅 activity_post：1.0（PRIMARY 因 cancelled 排除）
-    expect(result.topLocations[0].visitScore).toBeCloseTo(1.0, 6);
-    expect(result.activePeopleCount).toBe(1);
-  });
-
-  // ==================== Case 8: stories.location_id IS NULL ====================
-  it("Case 8 — assertion：stories.location_id IS NULL → 不进 signals（NOT NULL 过滤）", async () => {
-    const user = await seedUser(testDb);
-    const location = await seedLocation(testDb, city.id);
-
-    // story location_id = NULL：应被 SQL WHERE location_id IS NOT NULL 过滤
-    await seedStory(testDb, user.id, { locationId: null, status: "published", createdAt: new Date(NOW - 1 * DAY) });
-    // 也放一条 legit favorite 让 city 有 signal，验证 IS NULL story 未误计
-    await seedFavorite(testDb, user.id, "location", location.id, new Date(NOW - 1 * DAY));
-
-    const { getLocalCircleHome } = await loadService();
-    const result = await getLocalCircleHome({
-      db: testDb as never, cityId: city.id, currentUserId: null, now: NOW,
-    });
-
-    expect(result.topLocations).toHaveLength(1);
-    // 仅 favorite 0.1（story 因 IS NULL 未计）
-    expect(result.topLocations[0].visitScore).toBeCloseTo(0.1, 6);
-  });
-
-  // ==================== Case 9: cityName fallback「你的城市」====================
-  it("Case 9 — assertion：cityId 不存在 → 200 空态 + cityName='你的城市' fallback（Martin+Steven N3 拍板）", async () => {
-    const { getLocalCircleHome } = await loadService();
-    const result = await getLocalCircleHome({
-      db: testDb as never, cityId: "city_does_not_exist", currentUserId: null, now: NOW,
-    });
-    expect(result.cityName).toBe("你的城市");
-    expect(result.topLocations).toEqual([]);
-    expect(result.neighborTeams).toEqual([]);
-    expect(result.activePeopleCount).toBe(0);
-  });
-});
-
-// ==================== Route 层：cityId 缺省 fallback 深圳（方案 a）====================
-// Martin PR #406 NIT 方案 a：cityId 可选，缺省/空串 → 服务端 fallback 深圳（省前端 /cities 往返）。
-// service mock createDb 返回 testDb，route 走真实 fallback 查询。
-describe("local-circle route — GET /local-circle/home（cityId 缺省 fallback）", () => {
-  beforeEach(() => {
-    // 每个 route case 独立 fresh DB（不依赖 service describe 的 beforeEach）
-    const fresh = createTestDb();
-    testDb = fresh.db;
-    localCounter = 1;
-  });
-
-  it("无 cityId 参数 → fallback 深圳 → 200", async () => {
-    await seedCity(testDb, { name: "深圳", adcode: "440300" });
-    const { Hono } = await import("hono");
-    const { localCircleHomeRoute } = await import("../../routes/local-circle/home");
-    const app = new Hono();
-    app.route("/", localCircleHomeRoute);
-    const res = await app.fetch(new Request("http://localhost/?"), { DB: {}, GOMATE_KV: null } as never);
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { cityName: string };
-    expect(body.cityName).toBe("深圳");
-  }, 10_000);
-
-  it("cityId= 空串 → fallback 深圳 → 200（方案 a：空串与缺省一视同仁）", async () => {
-    await seedCity(testDb, { name: "深圳", adcode: "440300" });
-    const { Hono } = await import("hono");
-    const { localCircleHomeRoute } = await import("../../routes/local-circle/home");
-    const app = new Hono();
-    app.route("/", localCircleHomeRoute);
-    const res = await app.fetch(new Request("http://localhost/?cityId="), { DB: {}, GOMATE_KV: null } as never);
-    expect(res.status).toBe(200);
-  });
-
-  it("无 cityId 且无默认城市（深圳不存在）→ 400", async () => {
-    // testDb 此 case 无深圳 city → fallback 查询空 → 400
-    const { Hono } = await import("hono");
-    const { localCircleHomeRoute } = await import("../../routes/local-circle/home");
-    const app = new Hono();
-    app.route("/", localCircleHomeRoute);
-    const res = await app.fetch(new Request("http://localhost/?"), { DB: {}, GOMATE_KV: null } as never);
-    expect(res.status).toBe(400);
-  });
-});
-
-// ==================== #184：KV cache SWR 复评 ====================
-describe("local-circle cache — #184 SWR（fresh 5min / stale 60min）", () => {
-  const NOW = 1_700_000_000_000;
-  const MIN = 60 * 1000;
-
-  /** Map 版 fake KV（仅实现本测试用到的 get/put） */
-  function fakeKv() {
-    const store = new Map<string, string>();
-    return {
-      store,
-      get: async (key: string) => store.get(key) ?? null,
-      put: async (key: string, value: string) => void store.set(key, value),
-    } as unknown as KVNamespace & { store: Map<string, string> };
-  }
-
-  function cachedEntry(cityId: string, storedAt: number, cityName = "缓存城") {
-    return JSON.stringify({
-      data: { cityId, cityName, activePeopleCount: 99, topLocations: [], neighborTeams: [] },
-      storedAt,
-    });
-  }
-
-  beforeEach(async () => {
-    const fresh = createTestDb();
-    testDb = fresh.db;
-  });
-
-  it("fresh 窗口内（<5min）→ 直接返回缓存，不重算", async () => {
-    const svc = await loadService();
+  it("stores only public data in one exact KV key while anonymous, user A and user B get isolated neighborTeams", async () => {
     const kv = fakeKv();
-    const city = await seedCity(testDb, { name: "深圳", adcode: "440300" });
-    kv.store.set(`local-circle:v2:${city.id}`, cachedEntry(city.id, NOW - 1 * MIN));
-
-    const result = await svc.getLocalCircleHome({ db: testDb as never, kv, cityId: city.id, now: NOW });
-
-    expect(result.cityName).toBe("缓存城"); // 缓存值而非 DB 值
-    expect(result.activePeopleCount).toBe(99);
-  });
-
-  it("stale 窗口（5~60min）+ waitUntil → 先返回 stale，后台重算回写新数据", async () => {
-    const svc = await loadService();
-    const kv = fakeKv();
-    const city = await seedCity(testDb, { name: "深圳", adcode: "440300" });
-    const key = `local-circle:v2:${city.id}`;
-    kv.store.set(key, cachedEntry(city.id, NOW - 10 * MIN));
-
-    const background: Promise<unknown>[] = [];
-    const result = await svc.getLocalCircleHome({
-      db: testDb as never, kv, cityId: city.id, now: NOW,
-      waitUntil: (p) => background.push(p),
+    const viewerA = await seedUser(testDb, {
+      id: "viewer-a",
+      email: "viewer-a@example.test",
+      image: "https://gomate.cos.jiahongw.com/avatars/viewer-a.jpg",
+      extra: { city: shenzhen.id },
     });
+    const viewerB = await seedUser(testDb, {
+      id: "viewer-b",
+      email: "viewer-b@example.test",
+      extra: { city: "region-cn-guangzhou" },
+    });
+    const neighborA = await seedUser(testDb, {
+      id: "neighbor-a",
+      email: "neighbor-a@example.test",
+      image: "https://gomate.cos.jiahongw.com/avatars/a.jpg",
+      extra: { city: shenzhen.id },
+    });
+    const neighborB = await seedUser(testDb, {
+      id: "neighbor-b",
+      email: "neighbor-b@example.test",
+      image: "https://gomate.cos.jiahongw.com/avatars/b.jpg",
+      extra: { city: "region-cn-guangzhou" },
+    });
+    const leader = await seedUser(testDb, {
+      id: "leader",
+      email: "leader@example.test",
+    });
+    const location = await seedLocation(testDb, shenzhen.id, {
+      id: "location-neighbors",
+    });
+    const teamA = await seedTeam(testDb, leader.id, location.id, {
+      id: "team-neighbor-a",
+      title: "深圳邻居队",
+      startAt: new Date(NOW + DAY),
+      endAt: new Date(NOW + DAY + 3_600_000),
+    });
+    const teamB = await seedTeam(testDb, leader.id, location.id, {
+      id: "team-neighbor-b",
+      title: "广州邻居队",
+      startAt: new Date(NOW + 2 * DAY),
+      endAt: new Date(NOW + 2 * DAY + 3_600_000),
+    });
+    await seedTeamMember(testDb, teamA.id, neighborA.id);
+    await seedTeamMember(testDb, teamB.id, neighborB.id);
+    await seedFavorite(viewerA.id, location.id, new Date(NOW - DAY));
 
-    // 先返回 stale 数据
-    expect(result.cityName).toBe("缓存城");
-    expect(background.length).toBe(1);
-
-    // 后台重算完成 → 缓存被刷新为 DB 实算值 + 新 storedAt
-    await Promise.all(background);
-    const refreshed = JSON.parse(kv.store.get(key)!) as { data: { cityName: string }; storedAt: number };
-    expect(refreshed.data.cityName).toBe("深圳");
-    expect(refreshed.storedAt).toBe(NOW);
-  });
-
-  it("stale 窗口但无 waitUntil → 同步重算返回新数据", async () => {
-    const svc = await loadService();
-    const kv = fakeKv();
-    const city = await seedCity(testDb, { name: "深圳", adcode: "440300" });
-    kv.store.set(`local-circle:v2:${city.id}`, cachedEntry(city.id, NOW - 10 * MIN));
-
-    const result = await svc.getLocalCircleHome({ db: testDb as never, kv, cityId: city.id, now: NOW });
-
-    expect(result.cityName).toBe("深圳"); // 实算而非 stale
-  });
-
-  it("cache miss → 同步实算 + 写入 SWR entry 格式 {data, storedAt}", async () => {
-    const svc = await loadService();
-    const kv = fakeKv();
-    const city = await seedCity(testDb, { name: "深圳", adcode: "440300" });
-
-    const result = await svc.getLocalCircleHome({ db: testDb as never, kv, cityId: city.id, now: NOW });
-
-    expect(result.cityName).toBe("深圳");
-    const written = JSON.parse(kv.store.get(`local-circle:v2:${city.id}`)!) as {
-      data: { cityName: string }; storedAt: number;
+    const common = {
+      db: testDb as never,
+      kv,
+      regionId: shenzhen.id,
+      language: "zh-CN" as const,
+      now: NOW,
     };
-    expect(written.data.cityName).toBe("深圳");
-    expect(written.storedAt).toBe(NOW);
+    const exactKey = `local-circle:v2:public:${shenzhen.id}:zh-CN`;
+    kv.store.set(exactKey, JSON.stringify({
+      data: {
+        regionId: shenzhen.id,
+        regionName: "深圳市",
+        activePeopleCount: 1,
+        topLocations: [{
+          locationId: location.id,
+          locationName: location.name,
+          coverImageUrl: location.coverImageUrl,
+          visitScore: 1,
+          uniqueVisitors: 1,
+          avatarStack: ["https://gomate.cos.jiahongw.com/avatars/legacy.jpg"],
+        }],
+      },
+      storedAt: NOW,
+    }));
+    const anonymous = await getLocalCircleHome({
+      ...common,
+      currentUserId: null,
+    });
+    const forA = await getLocalCircleHome({
+      ...common,
+      currentUserId: viewerA.id,
+    });
+    const forB = await getLocalCircleHome({
+      ...common,
+      currentUserId: viewerB.id,
+    });
+
+    expect(anonymous.neighborTeams).toEqual([]);
+    expect(forA.neighborTeams.map((team) => team.teamId)).toEqual([teamA.id]);
+    expect(forB.neighborTeams.map((team) => team.teamId)).toEqual([teamB.id]);
+    expect(forA.neighborTeams[0]?.startAt).toBe(
+      new Date(NOW + DAY).toISOString(),
+    );
+    expect(typeof forA.neighborTeams[0]?.startAt).toBe("string");
+    expect(kv.store.size).toBe(1);
+    expect([...kv.store.keys()]).toEqual([exactKey]);
+    const cached = JSON.parse(kv.store.get(exactKey)!) as {
+      data: Record<string, unknown>;
+    };
+    expect(cached.data).not.toHaveProperty("neighborTeams");
+    const serializedPublicCache = JSON.stringify(cached.data);
+    expect(serializedPublicCache).not.toContain("avatars/");
+    expect(serializedPublicCache).not.toMatch(
+      /"(?:avatarStack|neighborAvatars|userId|neighborTeams)"/u,
+    );
+    expect(
+      (cached.data.topLocations as Array<Record<string, unknown>>)[0],
+    ).not.toHaveProperty("avatarStack");
+    expect(__test.CACHE_KEY_PREFIX).toBe("local-circle:v2:public:");
+  });
+});
+
+describe("Local Circle V2 route", () => {
+  beforeEach(async () => {
+    testDb = createTestDb().db;
+    currentSession = null;
+    await seedRegion(testDb, {
+      id: "region-cn-shenzhen",
+      name: "深圳市",
+      nameEn: "Shenzhen",
+      slug: "shenzhen",
+      code: "440300",
+      isHot: true,
+    });
+  });
+
+  function createApp() {
+    const app = new Hono<{ Bindings: Env }>();
+    app.route("/local-circle/home", localCircleHomeRoute);
+    return app;
+  }
+
+  function createEnv() {
+    return {
+      DB: {} as D1Database,
+      CACHE_KV: fakeKv(),
+    } as unknown as Env;
+  }
+
+  it("resolves an open Region from CF-IPCity and uses the requested language", async () => {
+    const response = await createApp().fetch(
+      new Request("http://localhost/local-circle/home?language=en", {
+        headers: { "CF-IPCity": "Shenzhen" },
+      }),
+      createEnv(),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      regionId: "region-cn-shenzhen",
+      regionName: "Shenzhen",
+      neighborTeams: [],
+    });
+  });
+
+  it("falls back to the stable Shenzhen Region ID when CF-IPCity cannot resolve", async () => {
+    const response = await createApp().fetch(
+      new Request("http://localhost/local-circle/home", {
+        headers: { "CF-IPCity": "Unknown City" },
+      }),
+      createEnv(),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      regionId: "region-cn-shenzhen",
+      regionName: "深圳市",
+    });
+  });
+
+  it("rejects an explicit Region that is not an enabled city", async () => {
+    await testDb.insert(schema.region).values({
+      id: "region-cn-disabled",
+      countryCode: "CN",
+      name: "未开放城市",
+      slug: "disabled",
+      level: "city",
+      serviceEnabled: false,
+    });
+
+    const response = await createApp().fetch(
+      new Request(
+        "http://localhost/local-circle/home?regionId=region-cn-disabled",
+      ),
+      createEnv(),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: { code: "BAD_REQUEST" },
+    });
+
+    const blank = await createApp().fetch(
+      new Request("http://localhost/local-circle/home?regionId=%20%20"),
+      createEnv(),
+    );
+    expect(blank.status).toBe(400);
   });
 });

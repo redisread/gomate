@@ -7,49 +7,18 @@ import { StoryCard } from "./story-card";
 import { FeaturedStoryCard } from "./featured-story-card";
 import { TagFilterBar } from "./tag-filter-bar";
 import { useI18n } from "@/hooks/useI18n";
-
-interface Story {
-  id: string;
-  title: string;
-  summary: string;
-  coverImage?: string;
-  viewCount: number;
-  likeCount: number;
-  createdAt: number;
-  author: {
-    id: string;
-    name: string;
-    image?: string;
-  } | null;
-  location?: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
-}
-
-interface StoriesResponse {
-  success: boolean;
-  data: Story[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    hasMore: boolean;
-  };
-}
+import {
+  buildStoriesPath,
+  type StoryListResponse,
+  type StoryTagsResponse,
+  type StoryV2,
+} from "./story-contract";
 
 interface Tag {
   id?: string;
   name: string;
   type?: string;
   count?: number;
-}
-
-interface TagsResponse {
-  success: boolean;
-  tags?: Tag[];
-  data?: Tag[];
 }
 
 /**
@@ -80,12 +49,12 @@ function StoryCardSkeleton() {
 
 export function DiscoverMain() {
   const { t } = useI18n(["content", "common"]);
-  const [stories, setStories] = React.useState<Story[]>([]);
+  const [stories, setStories] = React.useState<StoryV2[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [page, setPage] = React.useState(1);
-  const [hasMore, setHasMore] = React.useState(false);
+  const [nextCursor, setNextCursor] = React.useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+  const requestGeneration = React.useRef(0);
 
   // 标签筛选状态
   const [selectedTag, setSelectedTag] = React.useState<string | null>(null);
@@ -110,69 +79,86 @@ export function DiscoverMain() {
     }
   }, []);
 
-  const loadStories = React.useCallback(async (pageNum: number, append: boolean, tagFilter: string | null = selectedTag) => {
-    try {
-      if (pageNum === 1) {
-        setIsLoading(true);
-      } else {
-        setIsLoadingMore(true);
-      }
-      setError(null);
-
-      const tagQuery = tagFilter ? `&tag=${encodeURIComponent(tagFilter)}` : "";
-      const response = await apiGet<StoriesResponse>(`/stories?page=${pageNum}&limit=12${tagQuery}`);
-
-      if (response.success) {
-        if (append) {
-          setStories((prev) => [...prev, ...response.data]);
+  const loadStories = React.useCallback(
+    async (
+      cursor: string | null,
+      append: boolean,
+      tagFilter: string | null = selectedTag,
+    ) => {
+      const generation = append
+        ? requestGeneration.current
+        : ++requestGeneration.current;
+      try {
+        if (!append) {
+          setIsLoading(true);
         } else {
-          setStories(response.data);
+          setIsLoadingMore(true);
         }
-        setHasMore(response.pagination.hasMore);
-        setPage(pageNum);
-      } else {
-        setError(t("content.discover.loadError"));
+        setError(null);
+
+        const response = await apiGet<StoryListResponse>(
+          buildStoriesPath({ limit: 12, cursor, tag: tagFilter }),
+        );
+
+        if (generation !== requestGeneration.current) return;
+
+        if (response.success) {
+          if (append) {
+            setStories((prev) => [...prev, ...response.data.items]);
+          } else {
+            setStories(response.data.items);
+          }
+          setNextCursor(response.data.nextCursor);
+        } else {
+          setError(t("content.discover.loadError"));
+        }
+      } catch (err) {
+        if (generation === requestGeneration.current) {
+          setError(t("content.discover.loadError"));
+        }
+        console.error("Load stories error:", err);
+      } finally {
+        if (generation === requestGeneration.current) {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+        }
       }
+    },
+    [t, selectedTag],
+  );
+
+  const loadTags = React.useCallback(async () => {
+    try {
+      const result = await apiGet<StoryTagsResponse>("/stories/tags");
+      if (result.success) setTags(result.data.items);
     } catch (err) {
-      setError(t("content.discover.loadError"));
-      console.error("Load stories error:", err);
-    } finally {
-      setIsLoading(false);
-      setIsLoadingMore(false);
+      console.error("Load story tags error:", err);
     }
-  }, [t, selectedTag]);
+  }, []);
 
   // Initial load
   React.useEffect(() => {
     if (mounted) {
       setIsLoading(true);
-      loadStories(1, false, selectedTag);
-      loadTags();
+      loadStories(null, false, selectedTag);
     }
   }, [mounted, loadStories, selectedTag]);
 
-  const loadTags = async () => {
-    try {
-      const result = await apiGet<TagsResponse>("/stories/tags");
-      if (result.success) {
-        setTags(result.tags ?? result.data ?? []);
-      }
-    } catch (err) {
-      console.error("Load tags error:", err);
-    }
-  };
+  React.useEffect(() => {
+    if (mounted) loadTags();
+  }, [loadTags, mounted]);
 
   // 无限滚动 - IntersectionObserver
   React.useEffect(() => {
-    if (!hasMore || isLoadingMore || isLoading) return;
+    if (!nextCursor || isLoadingMore || isLoading) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
-          loadStories(page + 1, true, selectedTag);
+        if (entries[0].isIntersecting && nextCursor && !isLoadingMore) {
+          loadStories(nextCursor, true, selectedTag);
         }
       },
-      { threshold: 0.1, rootMargin: "200px" }
+      { threshold: 0.1, rootMargin: "200px" },
     );
 
     const currentRef = loadMoreRef.current;
@@ -185,9 +171,9 @@ export function DiscoverMain() {
         observer.unobserve(currentRef);
       }
     };
-  }, [hasMore, isLoadingMore, isLoading, page, selectedTag, loadStories]);
+  }, [nextCursor, isLoadingMore, isLoading, selectedTag, loadStories]);
 
-  const handleStoryClick = (story: Story) => {
+  const handleStoryClick = (story: StoryV2) => {
     window.location.href = `/discover/${story.id}`;
   };
 
@@ -203,13 +189,12 @@ export function DiscoverMain() {
     window.history.pushState({}, "", url.toString());
 
     setStories([]);
-    setPage(1);
-    loadStories(1, false, tagName);
+    setNextCursor(null);
   };
 
   const handleLoadMore = () => {
-    if (!isLoadingMore && hasMore) {
-      loadStories(page + 1, true, selectedTag);
+    if (!isLoadingMore && nextCursor) {
+      loadStories(nextCursor, true, selectedTag);
     }
   };
 
@@ -245,9 +230,11 @@ export function DiscoverMain() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center bg-background">
         <div className="text-center">
-          <p className="text-destructive mb-4" suppressHydrationWarning>{error}</p>
+          <p className="text-destructive mb-4" suppressHydrationWarning>
+            {error}
+          </p>
           <button
-            onClick={() => loadStories(1, false, selectedTag)}
+            onClick={() => loadStories(null, false, selectedTag)}
             className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
           >
             {t("content.discover.retry")}
@@ -263,7 +250,9 @@ export function DiscoverMain() {
       <div className="min-h-[60vh] flex items-center justify-center bg-background">
         <div className="text-center">
           <Compass className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground" suppressHydrationWarning>{t("content.discover.empty")}</p>
+          <p className="text-muted-foreground" suppressHydrationWarning>
+            {t("content.discover.empty")}
+          </p>
         </div>
       </div>
     );
@@ -280,9 +269,7 @@ export function DiscoverMain() {
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Compass className="w-4 h-4 text-primary" />
                 </div>
-                <h1 className="text-page-h1">
-                  {t("content.discover.title")}
-                </h1>
+                <h1 className="text-page-h1">{t("content.discover.title")}</h1>
               </div>
               <p className="text-muted-foreground text-sm sm:pl-11 leading-relaxed">
                 {t("content.discover.subtitle")}
@@ -292,7 +279,7 @@ export function DiscoverMain() {
             {/* Publish CTA (desktop) */}
             <button
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-              onClick={() => window.location.href = "/discover/create"}
+              onClick={() => (window.location.href = "/discover/create")}
             >
               <Plus className="h-4 w-4" />
               {t("content.discover.publish")}
@@ -313,10 +300,7 @@ export function DiscoverMain() {
 
           {/* Featured Story */}
           {stories.length > 0 && (
-            <FeaturedStoryCard
-              story={stories[0]}
-              onClick={handleStoryClick}
-            />
+            <FeaturedStoryCard story={stories[0]} onClick={handleStoryClick} />
           )}
 
           {/* 瀑布流 Story Grid */}
@@ -331,12 +315,14 @@ export function DiscoverMain() {
           </div>
 
           {/* 无限滚动触发点 */}
-          {hasMore && (
+          {nextCursor && (
             <div ref={loadMoreRef} className="py-6 flex justify-center">
               {isLoadingMore ? (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">{t("content.discover.loading")}</span>
+                  <span className="text-sm">
+                    {t("content.discover.loading")}
+                  </span>
                 </div>
               ) : (
                 <button
@@ -350,7 +336,7 @@ export function DiscoverMain() {
           )}
 
           {/* No more */}
-          {!hasMore && stories.length > 0 && (
+          {!nextCursor && stories.length > 0 && (
             <div className="py-8 text-center text-sm text-muted-foreground">
               {t("content.discover.noMore")}
             </div>
@@ -361,7 +347,7 @@ export function DiscoverMain() {
       {/* Mobile Publish FAB */}
       <button
         className="sm:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors flex items-center justify-center z-40"
-        onClick={() => window.location.href = "/discover/create"}
+        onClick={() => (window.location.href = "/discover/create")}
         aria-label={t("content.discover.publish")}
       >
         <Plus className="h-6 w-6" />

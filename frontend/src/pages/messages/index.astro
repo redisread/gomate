@@ -18,7 +18,7 @@ const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLoc
 const loadedData = await loadLocaleData(["messages"], locale, Astro.url.origin);
 const ssr = getSSRT(locale, { [locale]: loadedData } as Record<Locale, Record<string, Record<string, unknown>>>);
 const dateLocale = locale === "zh-CN" ? "zh-CN" : "en-US";
-const apiBase = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
+const apiBase = "/api";
 const copy = {
   centerTitle: ssr.t("messages.centerTitle"),
   loading: ssr.t("messages.loading"),
@@ -133,23 +133,45 @@ const copy = {
       }
 
       try {
-        const res = await fetch(`${API_BASE}/messages`, {
-          credentials: "include",
-        });
-        const data = await res.json().catch(() => ({}));
+        const conversations = [];
+        const seenIds = new Set();
+        const seenCursors = new Set();
+        let cursor = null;
+        do {
+          const query = new URLSearchParams({ limit: "50" });
+          if (cursor) query.set("cursor", cursor);
+          const res = await fetch(`${API_BASE}/messages?${query}`, {
+            credentials: "include",
+          });
+          const data = await res.json().catch(() => ({}));
 
-        if (res.status === 401) {
-          window.location.href = "/login?redirect=/messages";
-          return;
-        }
+          if (res.status === 401) {
+            window.location.href = "/login?redirect=/messages";
+            return;
+          }
 
-        if (res.status === 403) {
-          renderError(copy.centerForbidden, false);
-          return;
-        }
+          if (res.status === 403) {
+            renderError(copy.centerForbidden, false);
+            return;
+          }
+          if (!res.ok || !data.success || !Array.isArray(data.data)) {
+            throw new Error("Invalid conversation response");
+          }
+          for (const conversation of data.data) {
+            if (!seenIds.has(conversation.id)) {
+              seenIds.add(conversation.id);
+              conversations.push(conversation);
+            }
+          }
+          cursor = data.nextCursor || null;
+          if (cursor) {
+            if (seenCursors.has(cursor)) throw new Error("Repeated conversation cursor");
+            seenCursors.add(cursor);
+          }
+        } while (cursor);
 
-        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          renderList(data.data);
+        if (conversations.length > 0) {
+          renderList(conversations);
         } else {
           renderEmpty();
         }
@@ -254,7 +276,7 @@ const copy = {
 
         const messageEl = document.createElement("p");
         messageEl.className = "min-w-0 flex-1 truncate text-sm text-muted-foreground";
-        messageEl.textContent = conv.lastMessageContent || copy.noMessages;
+        messageEl.textContent = conv.lastMessagePreview || copy.noMessages;
         footerDiv.appendChild(messageEl);
 
         if (unreadCount > 0) {

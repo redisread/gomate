@@ -1,20 +1,20 @@
 import * as React from "react";
-import type { Location } from "@/lib/types";
+import type { Location, Region } from "@/lib/types";
 import { fetchPublicAPI, fetchCurrentUser } from "@/lib/api";
+import { fetchSelectableRegions } from "@/lib/regions";
 import type { RoleKey } from "./constants";
 
 interface LocationsPagination {
-  page?: number;
-  pageSize: number;
+  limit: number;
   total: number;
-  totalPages: number;
+  nextCursor: string | null;
 }
 
 export interface LocationsListInitialData {
   locations: Location[];
   pagination: LocationsPagination;
   popularTags: { id: string; name: string }[];
-  cities: { id: string; name: string }[];
+  regions: Region[];
 }
 
 export function useLocationsList(initialData?: LocationsListInitialData) {
@@ -24,24 +24,32 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pagination, setPagination] = React.useState<LocationsPagination>(
-    initialData?.pagination ?? { total: 0, totalPages: 0, pageSize: 12 },
+    initialData?.pagination ?? { total: 0, nextCursor: null, limit: 12 },
   );
   const [popularTags, setPopularTags] = React.useState<{ id: string; name: string }[]>(initialData?.popularTags ?? []);
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
-  const [cities, setCities] = React.useState<{ id: string; name: string }[]>(initialData?.cities ?? []);
-  const [selectedCityId, setSelectedCityId] = React.useState("");
+  const [regions, setRegions] = React.useState<Region[]>(initialData?.regions ?? []);
+  const [selectedRegionId, setSelectedRegionId] = React.useState("");
   const [activeRole, setActiveRole] = React.useState<RoleKey>("");
-  const [showCityDropdown, setShowCityDropdown] = React.useState(false);
-  const [cityDropdownPos, setCityDropdownPos] = React.useState({ top: 0, left: 0 });
-  const [userCity, setUserCity] = React.useState<string | null | undefined>(undefined);
+  const [showRegionDropdown, setShowRegionDropdown] = React.useState(false);
+  const [regionDropdownPos, setRegionDropdownPos] = React.useState({ top: 0, left: 0 });
+  const [userRegionId, setUserRegionId] = React.useState<string | null | undefined>(undefined);
   const hasInitialDataRef = React.useRef(Boolean(initialData));
   const skipInitialFilterFetchRef = React.useRef(true);
   const locationsRef = React.useRef(locations);
   const requestIdRef = React.useRef(0);
   const abortControllerRef = React.useRef<AbortController | null>(null);
+  const cursorsByPageRef = React.useRef<Map<number, string | null>>(
+    new Map([
+      [1, null],
+      ...(initialData?.pagination.nextCursor
+        ? [[2, initialData.pagination.nextCursor] as const]
+        : []),
+    ]),
+  );
 
   const loadLocations = React.useCallback(
-    async (params: { page?: number; search?: string; tagIds?: string[]; cityId?: string; type?: string }) => {
+    async (params: { cursor?: string | null; targetPage?: number; search?: string; tagIds?: string[]; regionId?: string; activityType?: RoleKey }) => {
       const requestId = ++requestIdRef.current;
       abortControllerRef.current?.abort();
       const controller = new AbortController();
@@ -51,19 +59,31 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
       setIsRefreshing(hasExistingLocations);
       try {
         const query = new URLSearchParams();
-        if (params.page) query.set("page", params.page.toString());
-        query.set("pageSize", "12");
+        query.set("limit", "12");
+        if (params.cursor) query.set("cursor", params.cursor);
         if (params.search) query.set("search", params.search);
         if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
-        if (params.cityId) query.set("cityId", params.cityId);
-        if (params.type) query.set("type", params.type);
+        if (params.regionId) query.set("regionId", params.regionId);
+        if (params.activityType) query.set("activityType", params.activityType);
         const res = await fetchPublicAPI(`/locations?${query}`, { signal: controller.signal });
         const data = await res.json();
         if (requestId !== requestIdRef.current) return;
         if (data.success) {
           locationsRef.current = data.locations;
           setLocations(data.locations);
-          setPagination(data.pagination);
+          const targetPage = params.targetPage ?? 1;
+          const nextCursor = data.nextCursor ?? null;
+          setCurrentPage(targetPage);
+          setPagination({
+            limit: 12,
+            total: Number(data.total ?? 0),
+            nextCursor,
+          });
+          if (nextCursor) {
+            cursorsByPageRef.current.set(targetPage + 1, nextCursor);
+          } else {
+            cursorsByPageRef.current.delete(targetPage + 1);
+          }
         }
       } catch (error) {
         if (!(error instanceof Error && error.name === "AbortError")) {
@@ -88,44 +108,41 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q") || "";
     const tags = params.get("tags")?.split(",").filter(Boolean) || [];
-    const page = parseInt(params.get("page") || "1", 10);
-    const cityId = params.get("cityId") || "";
-    const type = (params.get("type") || "") as RoleKey;
+    const regionId = params.get("regionId") || "";
+    const activityType = (params.get("activityType") || "") as RoleKey;
     setSearchQuery(q);
     setSelectedTags(tags);
-    setCurrentPage(page);
-    setSelectedCityId(cityId);
-    setActiveRole(type);
+    setSelectedRegionId(regionId);
+    setActiveRole(activityType);
     if (hasInitialDataRef.current) {
       hasInitialDataRef.current = false;
       return;
     }
-    loadLocations({ page, search: q, tagIds: tags, cityId, type });
+    loadLocations({ search: q, tagIds: tags, regionId, activityType });
   }, [loadLocations]);
 
   // 加载标签
   React.useEffect(() => {
     if (initialData?.popularTags) return;
-    fetchPublicAPI("/locations?tags=true")
+    fetchPublicAPI("/tags?limit=200")
       .then((r) => r.json())
       .then((data) => { if (data.success && data.tags) setPopularTags(data.tags); })
       .catch(() => {});
   }, [initialData?.popularTags]);
 
-  // 加载城市
+  // Load service-enabled city-level Regions from the canonical V2 endpoint.
   React.useEffect(() => {
-    if (initialData?.cities) return;
-    fetchPublicAPI("/cities")
-      .then((r) => r.json())
-      .then((data) => { if (data.success && data.cities) setCities(data.cities); })
+    if (initialData?.regions) return;
+    fetchSelectableRegions()
+      .then(setRegions)
       .catch(() => {});
-  }, [initialData?.cities]);
+  }, [initialData?.regions]);
 
-  // 取 userCity
+  // UserExtra.city stores the selected city-level Region id in V2.
   React.useEffect(() => {
     fetchCurrentUser()
-      .then((user) => setUserCity(user?.city ?? null))
-      .catch(() => setUserCity(null));
+      .then((user) => setUserRegionId(user?.extra.city ?? null))
+      .catch(() => setUserRegionId(null));
   }, []);
 
   // 搜索防抖
@@ -135,10 +152,12 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
       return;
     }
     const timer = setTimeout(() => {
-      loadLocations({ page: 1, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId, type: activeRole });
+      cursorsByPageRef.current = new Map([[1, null]]);
+      setCurrentPage(1);
+      loadLocations({ search: searchQuery, tagIds: selectedTags, regionId: selectedRegionId, activityType: activeRole });
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedTags, selectedCityId, activeRole, loadLocations]);
+  }, [searchQuery, selectedTags, selectedRegionId, activeRole, loadLocations]);
 
   const handleTagToggle = React.useCallback((tagId: string) => {
     const newTags = selectedTags.includes(tagId)
@@ -148,10 +167,10 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
     setCurrentPage(1);
   }, [selectedTags]);
 
-  const handleCitySelect = React.useCallback((cityId: string) => {
-    setSelectedCityId(cityId);
+  const handleRegionSelect = React.useCallback((regionId: string) => {
+    setSelectedRegionId(regionId);
     setCurrentPage(1);
-    setShowCityDropdown(false);
+    setShowRegionDropdown(false);
   }, []);
 
   const handleRoleSelect = React.useCallback((role: RoleKey) => {
@@ -161,36 +180,22 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
   }, [activeRole]);
 
   const handlePageChange = React.useCallback((page: number) => {
-    setCurrentPage(page);
-    loadLocations({ page, search: searchQuery, tagIds: selectedTags, cityId: selectedCityId, type: activeRole });
+    const cursor = cursorsByPageRef.current.get(page);
+    if (page < 1 || cursor === undefined) return;
+    loadLocations({ cursor, targetPage: page, search: searchQuery, tagIds: selectedTags, regionId: selectedRegionId, activityType: activeRole });
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [searchQuery, selectedTags, selectedCityId, activeRole, loadLocations]);
+  }, [searchQuery, selectedTags, selectedRegionId, activeRole, loadLocations]);
 
   const handleClearAll = React.useCallback(() => {
     setSearchQuery("");
     setSelectedTags([]);
-    setSelectedCityId("");
+    setSelectedRegionId("");
     setActiveRole("");
     setCurrentPage(1);
   }, []);
 
-  const selectedCityName = cities.find((c) => c.id === selectedCityId)?.name;
-  const hasActiveFilters = !!(searchQuery || selectedTags.length > 0 || selectedCityId || activeRole);
-
-  const getPageNumbers = React.useCallback(() => {
-    const total = pagination.totalPages;
-    const current = currentPage;
-    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
-    const pages: (number | "...")[] = [];
-    if (current <= 3) {
-      pages.push(1, 2, 3, 4, "...", total);
-    } else if (current >= total - 2) {
-      pages.push(1, "...", total - 3, total - 2, total - 1, total);
-    } else {
-      pages.push(1, "...", current - 1, current, current + 1, "...", total);
-    }
-    return pages;
-  }, [pagination.totalPages, currentPage]);
+  const selectedRegionName = regions.find((region) => region.id === selectedRegionId)?.name;
+  const hasActiveFilters = !!(searchQuery || selectedTags.length > 0 || selectedRegionId || activeRole);
 
   return {
     locations,
@@ -201,27 +206,26 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
     pagination,
     popularTags,
     selectedTags,
-    cities,
-    selectedCityId,
+    regions,
+    selectedRegionId,
     activeRole,
-    showCityDropdown,
-    cityDropdownPos,
-    selectedCityName,
+    showRegionDropdown,
+    regionDropdownPos,
+    selectedRegionName,
     hasActiveFilters,
-    userCity,
+    userRegionId,
     setSearchQuery,
-    setShowCityDropdown,
-    setCityDropdownPos,
+    setShowRegionDropdown,
+    setRegionDropdownPos,
     loadLocations,
     handleTagToggle,
-    handleCitySelect,
+    handleRegionSelect,
     handleRoleSelect,
     handlePageChange,
     handleClearAll,
-    getPageNumbers,
     onClearSearch: () => setSearchQuery(""),
     onClearAll: handleClearAll,
-    onChangeCity: () => setShowCityDropdown(true),
-    onSetCity: () => { window.location.href = "/profile/edit"; },
+    onChangeRegion: () => setShowRegionDropdown(true),
+    onSetRegion: () => { window.location.href = "/profile/edit"; },
   };
 }

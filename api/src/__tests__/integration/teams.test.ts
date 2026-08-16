@@ -1,671 +1,652 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { and, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
-import { createTestDb } from "../helpers/db";
-import { seedUser, seedCity, seedLocation, seedTeam, seedTeamMember } from "../helpers/seed";
-import { eq, and } from "drizzle-orm";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as schema from "../../db/schema";
+import { createTestDb } from "../helpers/db";
 
-// ===== Mock 策略 =====
-// 路由内部调用 createAuth(c.env) 和 createDb(c.env.DB)
-// vi.mock 替换这两个模块，使用测试数据库
+type TestDb = ReturnType<typeof createTestDb>["db"];
+type TestSqlite = ReturnType<typeof createTestDb>["sqlite"];
+type BindValue = string | number | null;
+type TestD1Database = D1Database & {
+  beforeNextBatch: (() => void) | null;
+};
 
 let currentSession: { user: { id: string; email: string; name: string } } | null = null;
-let testDb: ReturnType<typeof createTestDb>["db"];
+let testDb: TestDb;
 
 vi.mock("../../lib/auth", () => ({
-  createAuth: (_env: unknown) => ({
-    api: {
-      getSession: async (_opts: unknown) => currentSession,
-    },
+  createAuth: () => ({
+    api: { getSession: async () => currentSession },
   }),
 }));
 
 vi.mock("../../db", () => ({
-  createDb: (_d1: unknown) => testDb,
+  createDb: () => testDb,
 }));
 
-// 在 mock 之后导入路由
 const { teamsRoute } = await import("../../routes/teams");
 
-/** 创建测试 app，通过 fetch API 传递 env bindings */
+class TestD1Statement {
+  constructor(
+    private readonly sqlite: TestSqlite,
+    private readonly sql: string,
+    private readonly values: BindValue[] = [],
+  ) {}
+
+  bind(...values: BindValue[]) {
+    return new TestD1Statement(this.sqlite, this.sql, values);
+  }
+
+  execute() {
+    const result = this.sqlite.prepare(this.sql).run(...this.values);
+    return {
+      success: true,
+      results: [],
+      meta: { changes: result.changes, last_row_id: Number(result.lastInsertRowid) },
+    };
+  }
+
+  async run() {
+    return this.execute();
+  }
+}
+
+function createD1Binding(sqlite: TestSqlite): TestD1Database {
+  const binding = {
+    beforeNextBatch: null as (() => void) | null,
+    prepare(sql: string) {
+      return new TestD1Statement(sqlite, sql);
+    },
+    async batch(statements: D1PreparedStatement[]) {
+      binding.beforeNextBatch?.();
+      binding.beforeNextBatch = null;
+      const executeBatch = sqlite.transaction((items: TestD1Statement[]) =>
+        items.map((statement) => statement.execute()),
+      );
+      return executeBatch(statements as unknown as TestD1Statement[]);
+    },
+  };
+  return binding as unknown as TestD1Database;
+}
+
 function createApp() {
-  const app = new Hono<{ Bindings: { DB: unknown } }>();
+  const app = new Hono<{ Bindings: { DB: D1Database } }>();
   app.route("/teams", teamsRoute);
   return app;
 }
 
-/** 发送测试请求，自动传递 mock env */
-async function req(
+async function request(
   app: ReturnType<typeof createApp>,
+  d1: D1Database,
   path: string,
-  options: RequestInit = {}
-): Promise<Response> {
-  const request = new Request(`http://localhost${path}`, options);
-  // 通过 app.fetch 传递 env，让 c.env.DB 不为 undefined
-  return app.fetch(request, { DB: {} });
+  options: RequestInit = {},
+) {
+  return app.fetch(new Request(`http://localhost${path}`, options), { DB: d1 });
 }
 
-function setSession(user: { id: string; email: string; name: string } | null) {
-  currentSession = user ? { user } : null;
+function jsonRequest(method: string, body?: unknown): RequestInit {
+  return {
+    method,
+    headers: { "content-type": "application/json" },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  };
 }
 
-describe("Teams API 集成测试", () => {
+function login(user: schema.User | null) {
+  currentSession = user
+    ? { user: { id: user.id, email: user.email, name: user.name } }
+    : null;
+}
+
+async function seedUser(id: string, extra: schema.UserExtra = {}) {
+  await testDb.insert(schema.users).values({
+    id,
+    name: id,
+    email: `${id}@example.com`,
+    emailVerified: true,
+    extra,
+  });
+  return (await testDb.select().from(schema.users).where(eq(schema.users.id, id)))[0]!;
+}
+
+async function seedRegion(id: string, name: string) {
+  await testDb.insert(schema.region).values({
+    id,
+    countryCode: "CN",
+    name,
+    nameEn: name,
+    slug: id,
+    level: "city",
+    timezone: "Asia/Shanghai",
+    centerLatitude: 22.5,
+    centerLongitude: 114,
+    serviceEnabled: true,
+  });
+  return (await testDb.select().from(schema.region).where(eq(schema.region.id, id)))[0]!;
+}
+
+async function seedLocation(
+  id: string,
+  regionId: string,
+  supportedActivityTypes: schema.ActivityType[] = ["hiking"],
+) {
+  await testDb.insert(schema.locations).values({
+    id,
+    regionId,
+    name: id,
+    slug: id,
+    supportedActivityTypes,
+    status: "published",
+    description: `${id} description`,
+    latitude: 22.5,
+    longitude: 114,
+    coverImageUrl: `https://example.com/${id}.jpg`,
+  });
+  return (await testDb.select().from(schema.locations).where(eq(schema.locations.id, id)))[0]!;
+}
+
+async function seedTeam(
+  id: string,
+  leaderId: string,
+  locationId: string,
+  overrides: Partial<typeof schema.teams.$inferInsert> = {},
+) {
+  const startAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await testDb.insert(schema.teams).values({
+    id,
+    leaderId,
+    locationId,
+    activityType: "hiking",
+    title: id,
+    startAt,
+    endAt: new Date(startAt.getTime() + 4 * 60 * 60 * 1000),
+    maxParticipants: 3,
+    requirements: [],
+    ...overrides,
+  });
+  return (await testDb.select().from(schema.teams).where(eq(schema.teams.id, id)))[0]!;
+}
+
+async function seedJoinRequest(id: string, teamId: string, userId: string) {
+  await testDb.insert(schema.teamJoinRequests).values({ id, teamId, userId });
+  return (await testDb
+    .select()
+    .from(schema.teamJoinRequests)
+    .where(eq(schema.teamJoinRequests.id, id)))[0]!;
+}
+
+async function seedMember(
+  teamId: string,
+  userId: string,
+  options: { joinedAt?: Date; leftAt?: Date | null } = {},
+) {
+  await testDb.insert(schema.teamMembers).values({
+    teamId,
+    userId,
+    role: "member",
+    joinedAt: options.joinedAt ?? new Date(),
+    leftAt: options.leftAt ?? null,
+  });
+}
+
+describe("Teams V2 API", () => {
   let app: ReturnType<typeof createApp>;
+  let d1: TestD1Database;
   let leader: schema.User;
   let member: schema.User;
-  let city: schema.City;
+  let otherMember: schema.User;
   let location: schema.Location;
 
   beforeEach(async () => {
     const fresh = createTestDb();
     testDb = fresh.db;
+    d1 = createD1Binding(fresh.sqlite);
     app = createApp();
     currentSession = null;
 
-    leader = await seedUser(testDb, { name: "队长", wechat: "leader_wechat" });
-    member = await seedUser(testDb, { name: "成员", wechat: "member_wechat" });
-    city = await seedCity(testDb);
-    location = await seedLocation(testDb, city.id);
+    leader = await seedUser("leader", { wechat: "leader-wx", city: "region-cn-shenzhen" });
+    member = await seedUser("member", { wechat: "member-wx" });
+    otherMember = await seedUser("other-member");
+    await seedRegion("region-cn-shenzhen", "深圳市");
+    location = await seedLocation("location-1", "region-cn-shenzhen", ["hiking", "explore"]);
   });
 
-  // ===== GET /teams =====
-  describe("GET /teams - 获取队伍列表", () => {
-    it("无过滤条件时返回所有队伍", async () => {
-      await seedTeam(testDb, leader.id, location.id, { title: "队伍A" });
-      await seedTeam(testDb, leader.id, location.id, { title: "队伍B" });
+  it("creates a V2 team only when the location supports its activity and never inserts the leader as a member", async () => {
+    await testDb.insert(schema.tags).values({ id: "tag-weekend", name: "Weekend", slug: "weekend" });
+    login(leader);
 
-      const res = await req(app, "/teams");
-      expect(res.status).toBe(200);
-      const json = await res.json() as { teams: unknown[] };
-      expect(json.teams).toHaveLength(2);
-    });
+    const unsupported = await request(app, d1, "/teams", jsonRequest("POST", {
+      locationId: location.id,
+      activityType: "travel",
+      title: "Unsupported",
+      startAt: new Date(Date.now() + 86_400_000).toISOString(),
+      endAt: new Date(Date.now() + 90_000_000).toISOString(),
+      maxParticipants: 3,
+    }));
+    expect(unsupported.status).toBe(422);
 
-    it("按 locationId 过滤只返回该地点的队伍", async () => {
-      const city2 = await seedCity(testDb);
-      const location2 = await seedLocation(testDb, city2.id);
-      await seedTeam(testDb, leader.id, location.id, { title: "队伍A" });
-      await seedTeam(testDb, leader.id, location2.id, { title: "队伍B" });
+    const response = await request(app, d1, "/teams", jsonRequest("POST", {
+      locationId: location.id,
+      activityType: "hiking",
+      title: "Weekend hike",
+      description: "A V2 team",
+      startAt: new Date(Date.now() + 86_400_000).toISOString(),
+      endAt: new Date(Date.now() + 90_000_000).toISOString(),
+      maxParticipants: 3,
+      requirements: ["Bring water"],
+      tagIds: ["tag-weekend"],
+    }));
 
-      const res = await req(app, `/teams?locationId=${location.id}`);
-      expect(res.status).toBe(200);
-      const json = await res.json() as { teams: { title: string }[] };
-      expect(json.teams).toHaveLength(1);
-      expect(json.teams[0].title).toBe("队伍A");
-    });
+    expect(response.status).toBe(201);
+    const body = await response.json() as { team: { id: string; activityType: string; lifecycle: string } };
+    expect(body.team.activityType).toBe("hiking");
+    expect(body.team.lifecycle).toBe("pending");
 
-    it("列表查询不会批量更新已过期队伍状态", async () => {
-      const pastStart = new Date(Date.now() - 2 * 60 * 60 * 1000);
-      const team = await seedTeam(testDb, leader.id, location.id, {
-        title: "已过期但未归档队伍",
-        startTime: pastStart,
-        endTime: new Date(pastStart.getTime() + 60 * 60 * 1000),
-        status: "recruiting",
-      });
-
-      const res = await req(app, "/teams");
-      expect(res.status).toBe(200);
-
-      const [afterList] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
-      expect(afterList.status).toBe("recruiting");
-    });
-
-    it("公共列表响应带 CDN 缓存头", async () => {
-      await seedTeam(testDb, leader.id, location.id, { title: "队伍A" });
-
-      const res = await req(app, "/teams?page=1&pageSize=12");
-
-      expect(res.status).toBe(200);
-      expect(res.headers.get("Cache-Control")).toContain("s-maxage=300");
-      expect(res.headers.get("Cache-Control")).toContain("stale-while-revalidate=600");
-    });
+    const members = await testDb.select().from(schema.teamMembers)
+      .where(eq(schema.teamMembers.teamId, body.team.id));
+    expect(members).toEqual([]);
+    const tags = await testDb.select().from(schema.teamTags)
+      .where(eq(schema.teamTags.teamId, body.team.id));
+    expect(tags.map((tag) => tag.tagId)).toEqual(["tag-weekend"]);
   });
 
-  // ===== POST /teams - 创建队伍 =====
-  describe("POST /teams - 创建队伍", () => {
-    it("未登录用户创建队伍返回 401", async () => {
-      setSession(null);
-      const res = await req(app, "/teams", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locationId: location.id, title: "测试队伍", date: "2026-06-01", time: "08:00", maxMembers: 5 }),
-      });
-      expect(res.status).toBe(401);
+  it("filters more than 100 tagged teams without expanding IDs into D1 bindings", async () => {
+    await testDb.insert(schema.tags).values({
+      id: "tag-large-team-feed",
+      name: "Large feed",
+      slug: "large-team-feed",
     });
+    const startAt = new Date(Date.now() + 7 * 86_400_000);
+    const teamIds = Array.from({ length: 101 }, (_, index) =>
+      `team-large-${String(index).padStart(3, "0")}`
+    );
+    await testDb.insert(schema.teams).values(teamIds.map((id, index) => ({
+      id,
+      locationId: location.id,
+      leaderId: leader.id,
+      activityType: "hiking" as const,
+      title: id,
+      startAt: new Date(startAt.getTime() + index * 60_000),
+      endAt: new Date(startAt.getTime() + index * 60_000 + 3_600_000),
+      maxParticipants: 3,
+      requirements: [],
+    })));
+    await testDb.insert(schema.teamTags).values(teamIds.map((teamId) => ({
+      teamId,
+      tagId: "tag-large-team-feed",
+    })));
 
-    it("已登录但未填写微信号的用户创建队伍返回 400", async () => {
-      const noWechatUser = await seedUser(testDb, { name: "无微信用户", wechat: undefined });
-      setSession({ id: noWechatUser.id, email: noWechatUser.email, name: noWechatUser.name });
-
-      const res = await req(app, "/teams", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locationId: location.id, title: "测试队伍", date: "2026-06-01", time: "08:00", maxMembers: 5 }),
-      });
-      expect(res.status).toBe(400);
-      const json = await res.json() as { error: { message: string } };
-      expect(json.error.message).toContain("微信号");
-    });
-
-    it("已登录且有微信号的用户成功创建队伍返回 200", async () => {
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
-
-      const res = await req(app, "/teams", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          locationId: location.id,
-          title: "测试徒步队伍",
-          date: "2026-06-01",
-          time: "08:00",
-          maxMembers: 5,
-        }),
-      });
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; team: { title: string } };
-      expect(json.success).toBe(true);
-      expect(json.team.title).toBe("测试徒步队伍");
-    });
-
-    it("缺少必填字段返回 400", async () => {
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
-
-      const res = await req(app, "/teams", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locationId: location.id }),
-      });
-      expect(res.status).toBe(400);
+    const response = await request(
+      app,
+      d1,
+      "/teams?tagIds=tag-large-team-feed&limit=100",
+    );
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      total: 101,
+      nextCursor: expect.any(String),
+      teams: expect.any(Array),
     });
   });
 
-  describe("PUT /teams/:id - 更新队伍", () => {
-    it("不能把人数上限调低到当前成员数以下", async () => {
-      const thirdMember = await seedUser(testDb, { name: "第三位成员", wechat: "third_wechat" });
-      const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 5 });
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      await seedTeamMember(testDb, team.id, member.id, "approved");
-      await seedTeamMember(testDb, team.id, thirdMember.id, "approved");
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
+  it("creates a pending join request without creating a member row and rejects leader self-join", async () => {
+    const team = await seedTeam("team-join", leader.id, location.id);
+    login(member);
 
-      const res = await req(app, `/teams/${team.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ maxMembers: 2 }),
-      });
+    const response = await request(
+      app,
+      d1,
+      `/teams/${team.id}/join`,
+      jsonRequest("POST", { message: "May I join?" }),
+    );
+    expect(response.status).toBe(201);
 
-      expect(res.status).toBe(400);
-      const [persisted] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
-      expect(persisted.maxMembers).toBe(5);
-    });
-  });
-
-  // ===== GET /teams/:id - 获取队伍详情 =====
-  describe("GET /teams/:id - 获取队伍详情", () => {
-    it("获取存在的队伍详情返回 200", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-
-      const res = await req(app, `/teams/${team.id}`);
-      expect(res.status).toBe(200);
-      const json = await res.json() as { team: { id: string } };
-      expect(json.team.id).toBe(team.id);
-    });
-
-    it("requirements 为非 JSON 字符串时不应 500，返回 []", async () => {
-      // 直接插入脏数据模拟旧数据
-      const id = `team-${Date.now()}`;
-      const futureTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      await testDb.insert(schema.teams).values({
-        id,
-        locationId: location.id,
-        leaderId: leader.id,
-        title: "脏数据测试队伍",
-        startTime: futureTime,
-        endTime: new Date(futureTime.getTime() + 4 * 60 * 60 * 1000),
-        durationMin: 240,
-        maxMembers: 5,
-        icon: "⛰️",
-        status: "recruiting",
-        requirements: "无特殊要求", // 非 JSON 字符串
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      const res = await req(app, `/teams/${id}`);
-      expect(res.status).toBe(200);
-      const json = await res.json() as { team: { id: string; requirements: unknown[] } };
-      expect(json.team.id).toBe(id);
-      expect(json.team.requirements).toEqual([]);
-    });
-
-    it("详情查询仅刷新当前过期队伍状态", async () => {
-      const pastEnd = new Date(Date.now() - 60 * 60 * 1000);
-      const team = await seedTeam(testDb, leader.id, location.id, {
-        status: "recruiting",
-        startTime: new Date(pastEnd.getTime() - 4 * 60 * 60 * 1000),
-        endTime: pastEnd,
-      });
-
-      const res = await req(app, `/teams/${team.id}`);
-      expect(res.status).toBe(200);
-
-      const [afterDetail] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
-      expect(afterDetail.status).toBe("cancelled");
-    });
-
-    it("获取不存在的队伍返回 404", async () => {
-      const res = await req(app, "/teams/nonexistent-id");
-      expect(res.status).toBe(404);
-    });
-
-    // task #165 CR B1：spec §3.1 隐私红线 —— 访客拿不到 checklist
-    // server 端必须按身份判定，非成员时剥掉 checklist 字段
-    describe("checklist 隐私隔离（task #165 CR B1）", () => {
-      const SECRET_CHECKLIST = {
-        meetingPoint: { name: "深山老林集合点", time: "05:30" },
-        gear: { essential: ["登山鞋", "急救包"], optional: [] as string[] },
-        assignments: [{ id: "a1", task: "带路", assigneeIds: ["u-member"] }],
-        notes: "队内暗号",
-      };
-
-      it("leader → response.checklist 有完整数据", async () => {
-        const team = await seedTeam(testDb, leader.id, location.id);
-        await testDb
-          .update(schema.teams)
-          .set({ checklist: SECRET_CHECKLIST })
-          .where(eq(schema.teams.id, team.id));
-
-        setSession({ id: leader.id, email: leader.email ?? "", name: leader.name });
-        const res = await req(app, `/teams/${team.id}`);
-        expect(res.status).toBe(200);
-        const json = (await res.json()) as { team: { checklist: typeof SECRET_CHECKLIST } };
-        expect(json.team.checklist).toEqual(SECRET_CHECKLIST);
-      });
-
-      it("approved member → response.checklist 有完整数据", async () => {
-        const team = await seedTeam(testDb, leader.id, location.id);
-        await seedTeamMember(testDb, team.id, member.id, "approved");
-        await testDb
-          .update(schema.teams)
-          .set({ checklist: SECRET_CHECKLIST })
-          .where(eq(schema.teams.id, team.id));
-
-        setSession({ id: member.id, email: member.email ?? "", name: member.name });
-        const res = await req(app, `/teams/${team.id}`);
-        expect(res.status).toBe(200);
-        const json = (await res.json()) as { team: { checklist: typeof SECRET_CHECKLIST } };
-        expect(json.team.checklist).toEqual(SECRET_CHECKLIST);
-      });
-
-      it("已登录但非成员非队长 → response.checklist 为 null（隐私剥除）", async () => {
-        const team = await seedTeam(testDb, leader.id, location.id);
-        await seedTeamMember(testDb, team.id, member.id, "approved");
-        await testDb
-          .update(schema.teams)
-          .set({ checklist: SECRET_CHECKLIST })
-          .where(eq(schema.teams.id, team.id));
-
-        // 第三个用户 outsider —— 已登录但与该 team 无关
-        const outsider = await seedUser(testDb, { name: "路人甲" });
-        setSession({ id: outsider.id, email: outsider.email ?? "", name: outsider.name });
-        const res = await req(app, `/teams/${team.id}`);
-        expect(res.status).toBe(200);
-        const json = (await res.json()) as { team: { checklist: unknown } };
-        expect(json.team.checklist).toBeNull();
-      });
-
-      it("未登录用户 → response.checklist 为 null（隐私剥除）", async () => {
-        const team = await seedTeam(testDb, leader.id, location.id);
-        await testDb
-          .update(schema.teams)
-          .set({ checklist: SECRET_CHECKLIST })
-          .where(eq(schema.teams.id, team.id));
-
-        setSession(null);
-        const res = await req(app, `/teams/${team.id}`);
-        expect(res.status).toBe(200);
-        const json = (await res.json()) as { team: { checklist: unknown } };
-        expect(json.team.checklist).toBeNull();
-      });
-    });
-  });
-
-  // ===== POST /teams/:id/join - 申请加入 =====
-  describe("POST /teams/:id/join - 申请加入队伍", () => {
-    it("未登录用户申请加入返回 401", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      setSession(null);
-
-      const res = await req(app, `/teams/${team.id}/join`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      expect(res.status).toBe(401);
-    });
-
-    it("有微信号的用户成功申请加入，状态为 pending", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 5 });
-      setSession({ id: member.id, email: member.email, name: member.name });
-
-      const res = await req(app, `/teams/${team.id}/join`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      expect(res.status).toBe(200);
-
-      const [membership] = await testDb.select().from(schema.teamMembers)
-        .where(and(eq(schema.teamMembers.teamId, team.id), eq(schema.teamMembers.userId, member.id)));
-      expect(membership.status).toBe("pending");
-    });
-
-    it("重复申请（已有 pending 申请）返回 400 错误消息", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, member.id, "pending");
-      setSession({ id: member.id, email: member.email, name: member.name });
-
-      const res = await req(app, `/teams/${team.id}/join`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      // 路由返回 400 并带有错误消息
-      expect(res.status).toBe(400);
-      const json = await res.json() as { error?: { message: string } };
-      expect(json.error?.message).toContain("已经提交了申请");
-    });
-
-    it("被拒绝的用户重新申请成功，状态重置为 pending", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, member.id, "rejected");
-      setSession({ id: member.id, email: member.email, name: member.name });
-
-      const res = await req(app, `/teams/${team.id}/join`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean };
-      expect(json.success).toBe(true);
-
-      const [membership] = await testDb.select().from(schema.teamMembers)
-        .where(and(eq(schema.teamMembers.teamId, team.id), eq(schema.teamMembers.userId, member.id)));
-      expect(membership.status).toBe("pending");
-    });
-  });
-
-  // ===== POST /teams/:id/members/:userId/approve - 批准申请 =====
-  describe("POST /teams/:id/members/:userId/approve - 批准申请", () => {
-    it("队长批准申请成功", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 5 });
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      await seedTeamMember(testDb, team.id, member.id, "pending");
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
-
-      const res = await req(app, `/teams/${team.id}/members/${member.id}/approve`, {
-        method: "POST",
-      });
-      expect(res.status).toBe(200);
-
-      const [membership] = await testDb.select().from(schema.teamMembers)
-        .where(and(eq(schema.teamMembers.teamId, team.id), eq(schema.teamMembers.userId, member.id)));
-      expect(membership.status).toBe("approved");
-    });
-
-    it("非队长批准申请返回 403", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, member.id, "pending");
-      const otherUser = await seedUser(testDb, { name: "其他用户", wechat: "other_wechat" });
-      setSession({ id: otherUser.id, email: otherUser.email, name: otherUser.name });
-
-      const res = await req(app, `/teams/${team.id}/members/${member.id}/approve`, {
-        method: "POST",
-      });
-      expect(res.status).toBe(403);
-    });
-
-    it("批准后队伍满员自动变为 full 状态", async () => {
-      // maxMembers=2，队长已是成员，再批准一人就满了
-      const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 2 });
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      await seedTeamMember(testDb, team.id, member.id, "pending");
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
-
-      const res = await req(app, `/teams/${team.id}/members/${member.id}/approve`, {
-        method: "POST",
-      });
-      expect(res.status).toBe(200);
-
-      const [updatedTeam] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
-      expect(updatedTeam.status).toBe("full");
-    });
-
-    it("并发批准不会突破队伍人数上限", async () => {
-      const secondMember = await seedUser(testDb, { name: "第二位申请者", wechat: "second_wechat" });
-      const team = await seedTeam(testDb, leader.id, location.id, { maxMembers: 2 });
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      await seedTeamMember(testDb, team.id, member.id, "pending");
-      await seedTeamMember(testDb, team.id, secondMember.id, "pending");
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
-
-      const responses = await Promise.all([
-        req(app, `/teams/${team.id}/members/${member.id}/approve`, { method: "POST" }),
-        req(app, `/teams/${team.id}/members/${secondMember.id}/approve`, { method: "POST" }),
-      ]);
-
-      expect(responses.map((response) => response.status).sort()).toEqual([200, 400]);
-      const approved = await testDb.select().from(schema.teamMembers).where(and(
-        eq(schema.teamMembers.teamId, team.id),
-        eq(schema.teamMembers.status, "approved"),
+    const requests = await testDb.select().from(schema.teamJoinRequests)
+      .where(and(
+        eq(schema.teamJoinRequests.teamId, team.id),
+        eq(schema.teamJoinRequests.userId, member.id),
       ));
-      expect(approved).toHaveLength(2);
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({ status: "pending", message: "May I join?" });
+    expect(await testDb.select().from(schema.teamMembers)).toEqual([]);
 
-      const [updatedTeam] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
-      expect(updatedTeam.status).toBe("full");
-    });
+    login(leader);
+    const leaderJoin = await request(app, d1, `/teams/${team.id}/join`, jsonRequest("POST"));
+    expect(leaderJoin.status).toBe(409);
   });
 
-  // ===== POST /teams/:id/members/:userId/reject - 拒绝申请 =====
-  describe("POST /teams/:id/members/:userId/reject - 拒绝申请", () => {
-    it("队长拒绝申请成功，状态变为 rejected", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, member.id, "pending");
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
+  it("updates V2 fields and tags only for the leader and a supported activity", async () => {
+    const team = await seedTeam("team-update", leader.id, location.id);
+    await testDb.insert(schema.tags).values([
+      { id: "tag-old", name: "Old", slug: "old" },
+      { id: "tag-new", name: "New", slug: "new" },
+    ]);
+    await testDb.insert(schema.teamTags).values({ teamId: team.id, tagId: "tag-old" });
 
-      const res = await req(app, `/teams/${team.id}/members/${member.id}/reject`, {
-        method: "POST",
-      });
-      expect(res.status).toBe(200);
+    login(member);
+    const forbidden = await request(app, d1, `/teams/${team.id}`, jsonRequest("PUT", {
+      activityType: "explore",
+    }));
+    expect(forbidden.status).toBe(403);
 
-      const [membership] = await testDb.select().from(schema.teamMembers)
-        .where(and(eq(schema.teamMembers.teamId, team.id), eq(schema.teamMembers.userId, member.id)));
-      expect(membership.status).toBe("rejected");
-    });
+    login(leader);
+    const unsupported = await request(app, d1, `/teams/${team.id}`, jsonRequest("PUT", {
+      activityType: "travel",
+      tagIds: ["tag-new"],
+    }));
+    expect(unsupported.status).toBe(409);
+    expect((await testDb.select().from(schema.teamTags)
+      .where(eq(schema.teamTags.teamId, team.id))).map(({ tagId }) => tagId))
+      .toEqual(["tag-old"]);
+
+    const updated = await request(app, d1, `/teams/${team.id}`, jsonRequest("PUT", {
+      activityType: "explore",
+      title: "Updated team",
+      tagIds: ["tag-new"],
+    }));
+    expect(updated.status).toBe(200);
+    const persisted = (await testDb.select().from(schema.teams)
+      .where(eq(schema.teams.id, team.id)))[0]!;
+    expect(persisted).toMatchObject({ activityType: "explore", title: "Updated team" });
+    expect((await testDb.select().from(schema.teamTags)
+      .where(eq(schema.teamTags.teamId, team.id))).map(({ tagId }) => tagId))
+      .toEqual(["tag-new"]);
   });
 
-  // ===== POST /teams/:id/leave - 退出队伍 =====
-  describe("POST /teams/:id/leave - 退出队伍", () => {
-    it("普通成员成功退出 recruiting 队伍", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id, { status: "recruiting" });
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      await seedTeamMember(testDb, team.id, member.id, "approved");
-      setSession({ id: member.id, email: member.email, name: member.name });
+  it("rolls tag replacement back when shrinking capacity fails", async () => {
+    const team = await seedTeam("team-shrink", leader.id, location.id, { maxParticipants: 2 });
+    await seedMember(team.id, member.id);
+    await seedMember(team.id, otherMember.id);
+    await testDb.insert(schema.tags).values([
+      { id: "tag-before", name: "Before", slug: "before" },
+      { id: "tag-after", name: "After", slug: "after" },
+    ]);
+    await testDb.insert(schema.teamTags).values({ teamId: team.id, tagId: "tag-before" });
+    login(leader);
 
-      const res = await req(app, `/teams/${team.id}/leave`, { method: "POST" });
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean };
-      expect(json.success).toBe(true);
-    });
-
-    it("队长不能退出队伍返回 400", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
-
-      const res = await req(app, `/teams/${team.id}/leave`, { method: "POST" });
-      expect(res.status).toBe(400);
-      const json = await res.json() as { error: { message: string } };
-      expect(json.error.message).toContain("队长不能退出");
-    });
+    const response = await request(app, d1, `/teams/${team.id}`, jsonRequest("PUT", {
+      maxParticipants: 1,
+      tagIds: ["tag-after"],
+    }));
+    expect(response.status).toBe(409);
+    expect((await testDb.select().from(schema.teams)
+      .where(eq(schema.teams.id, team.id)))[0]?.maxParticipants).toBe(2);
+    expect((await testDb.select().from(schema.teamTags)
+      .where(eq(schema.teamTags.teamId, team.id))).map(({ tagId }) => tagId))
+      .toEqual(["tag-before"]);
   });
 
-  // ===== POST /teams/:id/cancel-application - 取消申请 =====
-  describe("POST /teams/:id/cancel-application - 取消申请", () => {
-    it("成功取消待审核申请，状态变为 cancelled", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, member.id, "pending");
-      setSession({ id: member.id, email: member.email, name: member.name });
-
-      const res = await req(app, `/teams/${team.id}/cancel-application`, { method: "POST" });
-      expect(res.status).toBe(200);
-
-      const [membership] = await testDb.select().from(schema.teamMembers)
-        .where(and(eq(schema.teamMembers.teamId, team.id), eq(schema.teamMembers.userId, member.id)));
-      expect(membership.status).toBe("cancelled");
+  it("does not replace tags when the location becomes unavailable after the precheck", async () => {
+    const team = await seedTeam("team-location-race", leader.id, location.id);
+    await testDb.insert(schema.tags).values([
+      { id: "tag-race-before", name: "Race Before", slug: "race-before" },
+      { id: "tag-race-after", name: "Race After", slug: "race-after" },
+    ]);
+    await testDb.insert(schema.teamTags).values({
+      teamId: team.id,
+      tagId: "tag-race-before",
     });
+    const teamBefore = await testDb.query.teams.findFirst({
+      where: eq(schema.teams.id, team.id),
+    });
+    const linksBefore = await testDb.select().from(schema.teamTags)
+      .where(eq(schema.teamTags.teamId, team.id));
+    const dictionaryBefore = await testDb.select().from(schema.tags)
+      .orderBy(schema.tags.id);
+    const now = teamBefore!.updatedAt.getTime();
+    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(now);
+    d1.beforeNextBatch = () => {
+      testDb.update(schema.locations)
+        .set({ status: "draft" })
+        .where(eq(schema.locations.id, location.id))
+        .run();
+    };
+    login(leader);
+
+    try {
+      const response = await request(
+        app,
+        d1,
+        `/teams/${team.id}`,
+        jsonRequest("PUT", { tagIds: ["tag-race-after"] }),
+      );
+
+      expect(response.status).toBe(409);
+      expect(await testDb.query.teams.findFirst({
+        where: eq(schema.teams.id, team.id),
+      })).toEqual(teamBefore);
+      expect(await testDb.select().from(schema.teamTags)
+        .where(eq(schema.teamTags.teamId, team.id))).toEqual(linksBefore);
+      expect(await testDb.select().from(schema.tags)
+        .orderBy(schema.tags.id)).toEqual(dictionaryBefore);
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 
-  // ===== POST /teams/:id/members/:userId/remove - 移除成员 =====
-  describe("POST /teams/:id/members/:userId/remove - 移除成员", () => {
-    it("队长成功移除成员", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      await seedTeamMember(testDb, team.id, member.id, "approved");
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
+  it("approves by requestId in one D1 batch and makes retry a conflict", async () => {
+    const team = await seedTeam("team-approve", leader.id, location.id);
+    const joinRequest = await seedJoinRequest("request-1", team.id, member.id);
+    login(leader);
 
-      const res = await req(app, `/teams/${team.id}/members/${member.id}/remove`, { method: "POST" });
-      expect(res.status).toBe(200);
-    });
+    const approve = await request(
+      app,
+      d1,
+      `/teams/${team.id}/join-requests/${joinRequest.id}/approve`,
+      jsonRequest("POST"),
+    );
+    expect(approve.status).toBe(200);
 
-    it("队长不能移除自己返回 400", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
+    const persistedRequest = (await testDb.select().from(schema.teamJoinRequests)
+      .where(eq(schema.teamJoinRequests.id, joinRequest.id)))[0]!;
+    expect(persistedRequest.status).toBe("approved");
+    expect(persistedRequest.decidedByUserId).toBe(leader.id);
 
-      const res = await req(app, `/teams/${team.id}/members/${leader.id}/remove`, { method: "POST" });
-      expect(res.status).toBe(400);
-    });
+    const activeMember = (await testDb.select().from(schema.teamMembers)
+      .where(and(
+        eq(schema.teamMembers.teamId, team.id),
+        eq(schema.teamMembers.userId, member.id),
+        isNull(schema.teamMembers.leftAt),
+      )))[0]!;
+    expect(activeMember.role).toBe("member");
+    expect(await testDb.select().from(schema.teamMembers)
+      .where(eq(schema.teamMembers.userId, leader.id))).toEqual([]);
 
-    it("非队长移除成员返回 403", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      await seedTeamMember(testDb, team.id, member.id, "approved");
-      setSession({ id: member.id, email: member.email, name: member.name });
-
-      const res = await req(app, `/teams/${team.id}/members/${leader.id}/remove`, { method: "POST" });
-      expect(res.status).toBe(403);
-    });
+    const retry = await request(
+      app,
+      d1,
+      `/teams/${team.id}/join-requests/${joinRequest.id}/approve`,
+      jsonRequest("POST"),
+    );
+    expect(retry.status).toBe(409);
   });
 
-  // ===== POST /teams/:id/form - 组建队伍 =====
-  describe("POST /teams/:id/form - 组建队伍", () => {
-    it("队长成功组建有成员的队伍", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id, { status: "recruiting" });
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      await seedTeamMember(testDb, team.id, member.id, "approved");
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
+  it("rolls the entire approval batch back when the capacity trigger rejects the member", async () => {
+    const team = await seedTeam("team-full", leader.id, location.id, { maxParticipants: 1 });
+    await seedMember(team.id, otherMember.id);
+    const joinRequest = await seedJoinRequest("request-full", team.id, member.id);
+    login(leader);
 
-      const res = await req(app, `/teams/${team.id}/form`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      expect(res.status).toBe(200);
+    const response = await request(
+      app,
+      d1,
+      `/teams/${team.id}/join-requests/${joinRequest.id}/approve`,
+      jsonRequest("POST"),
+    );
+    expect(response.status).toBe(409);
 
-      const [updatedTeam] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, team.id));
-      expect(updatedTeam.status).toBe("formed");
-    });
-
-    it("只有队长自己时（approvedCount=1）也可以组建", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id, { status: "recruiting" });
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      setSession({ id: leader.id, email: leader.email, name: leader.name });
-
-      const res = await req(app, `/teams/${team.id}/form`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      expect(res.status).toBe(200);
-    });
-
-    it("非队长不能组建队伍返回 403", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, leader.id, "approved");
-      await seedTeamMember(testDb, team.id, member.id, "approved");
-      setSession({ id: member.id, email: member.email, name: member.name });
-
-      const res = await req(app, `/teams/${team.id}/form`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      expect(res.status).toBe(403);
-    });
+    const persistedRequest = (await testDb.select().from(schema.teamJoinRequests)
+      .where(eq(schema.teamJoinRequests.id, joinRequest.id)))[0]!;
+    expect(persistedRequest.status).toBe("pending");
+    expect(await testDb.select().from(schema.teamMembers)
+      .where(eq(schema.teamMembers.userId, member.id))).toEqual([]);
   });
 
-  // ===== GET /teams/:id/my-status - 查询我的状态 =====
-  describe("GET /teams/:id/my-status - 查询我的状态", () => {
-    it("成员查询自己的 pending 状态", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      await seedTeamMember(testDb, team.id, member.id, "pending");
-      setSession({ id: member.id, email: member.email, name: member.name });
+  it("does not decide a pending request when the user is already active", async () => {
+    const team = await seedTeam("team-already-active", leader.id, location.id);
+    await seedMember(team.id, member.id, { joinedAt: new Date() });
+    const joinRequest = await seedJoinRequest("request-already-active", team.id, member.id);
+    login(leader);
 
-      const res = await req(app, `/teams/${team.id}/my-status`);
-      expect(res.status).toBe(200);
-      const json = await res.json() as { status: string };
-      expect(json.status).toBe("pending");
-    });
-
-    it("未登录用户查询状态返回 null", async () => {
-      const team = await seedTeam(testDb, leader.id, location.id);
-      setSession(null);
-
-      const res = await req(app, `/teams/${team.id}/my-status`);
-      expect(res.status).toBe(200);
-      const json = await res.json() as { status: string | null };
-      // 路由未登录时返回 { success: true, status: null }
-      expect(json.status).toBeNull();
-    });
+    const response = await request(
+      app,
+      d1,
+      `/teams/${team.id}/join-requests/${joinRequest.id}/approve`,
+      jsonRequest("POST"),
+    );
+    expect(response.status).toBe(409);
+    const persisted = (await testDb.select().from(schema.teamJoinRequests)
+      .where(eq(schema.teamJoinRequests.id, joinRequest.id)))[0]!;
+    expect(persisted.status).toBe("pending");
   });
 
-  describe("task #152 切源：teams 难度筛选读 location 字段", () => {
-    it("?difficulty= 按 location.difficulty 过滤", async () => {
-      const locModerate = await seedLocation(testDb, city.id, { name: "适中山", difficulty: "moderate" });
-      const locEasy = await seedLocation(testDb, city.id, { name: "轻松山", difficulty: "easy" });
-      await seedTeam(testDb, leader.id, locModerate.id, { title: "适中队" });
-      await seedTeam(testDb, leader.id, locEasy.id, { title: "轻松队" });
-
-      const res = await req(app, "/teams?difficulty=moderate");
-      expect(res.status).toBe(200);
-      const json = await res.json() as { teams: { title: string }[] };
-      expect(json.teams).toHaveLength(1);
-      expect(json.teams[0].title).toBe("适中队");
+  it("reactivates a historical member by clearing leftAt and refreshing joinedAt", async () => {
+    const team = await seedTeam("team-reactivate", leader.id, location.id);
+    const oldJoinedAt = new Date(Date.now() - 10_000);
+    await seedMember(team.id, member.id, {
+      joinedAt: oldJoinedAt,
+      leftAt: new Date(Date.now() - 5_000),
     });
+    const joinRequest = await seedJoinRequest("request-reactivate", team.id, member.id);
+    login(leader);
 
-    it("队伍详情 location 携带徒步参数字段", async () => {
-      const loc = await seedLocation(testDb, city.id, {
-        name: "参数山", difficulty: "hard", durationMin: 300, durationMax: 420,
-        distance: 8.5, elevation: 1200,
-      });
-      const team = await seedTeam(testDb, leader.id, loc.id, { title: "参数队" });
+    const response = await request(
+      app,
+      d1,
+      `/teams/${team.id}/join-requests/${joinRequest.id}/approve`,
+      jsonRequest("POST"),
+    );
+    expect(response.status).toBe(200);
 
-      const res = await req(app, `/teams/${team.id}`);
-      expect(res.status).toBe(200);
-      const json = await res.json() as {
-        team: {
-          location: {
-            name: string; difficulty: string; durationMin: number;
-            durationMax: number; distance: number; elevation: number;
-          };
-        };
-      };
-      expect(json.team.location.difficulty).toBe("hard");
-      expect(json.team.location.durationMin).toBe(300);
-      expect(json.team.location.durationMax).toBe(420);
-      expect(json.team.location.distance).toBe(8.5);
-      expect(json.team.location.elevation).toBe(1200);
+    const membership = (await testDb.select().from(schema.teamMembers)
+      .where(and(
+        eq(schema.teamMembers.teamId, team.id),
+        eq(schema.teamMembers.userId, member.id),
+      )))[0]!;
+    expect(membership.leftAt).toBeNull();
+    expect(membership.joinedAt.getTime()).toBeGreaterThan(oldJoinedAt.getTime());
+  });
+
+  it("leave and leader removal preserve membership history by setting leftAt", async () => {
+    const team = await seedTeam("team-leave", leader.id, location.id);
+    await seedMember(team.id, member.id);
+    await seedMember(team.id, otherMember.id);
+
+    login(member);
+    const leave = await request(app, d1, `/teams/${team.id}/leave`, jsonRequest("POST"));
+    expect(leave.status).toBe(200);
+
+    login(leader);
+    const remove = await request(
+      app,
+      d1,
+      `/teams/${team.id}/members/${otherMember.id}/remove`,
+      jsonRequest("POST"),
+    );
+    expect(remove.status).toBe(200);
+
+    const memberships = await testDb.select().from(schema.teamMembers)
+      .where(eq(schema.teamMembers.teamId, team.id));
+    expect(memberships).toHaveLength(2);
+    expect(memberships.every((membership) => membership.leftAt !== null)).toBe(true);
+  });
+
+  it("forms and cancels through stored timestamps while lifecycle remains derived", async () => {
+    const team = await seedTeam("team-actions", leader.id, location.id);
+    login(leader);
+
+    const form = await request(app, d1, `/teams/${team.id}/form`, jsonRequest("POST"));
+    expect(form.status).toBe(200);
+    const formedBody = await form.json() as { team: { lifecycle: string; recruitmentStatus: string } };
+    expect(formedBody.team.lifecycle).toBe("formed");
+    expect(formedBody.team.recruitmentStatus).toBe("closed");
+
+    const cancel = await request(app, d1, `/teams/${team.id}/cancel`, jsonRequest("POST"));
+    expect(cancel.status).toBe(200);
+    const cancelledBody = await cancel.json() as { team: { lifecycle: string } };
+    expect(cancelledBody.team.lifecycle).toBe("cancelled");
+  });
+
+  it("filters the V2 list by regionId and returns active participants without the leader", async () => {
+    const otherRegion = await seedRegion("region-cn-guangzhou", "广州市");
+    const otherLocation = await seedLocation("location-2", otherRegion.id);
+    const expected = await seedTeam("team-shenzhen", leader.id, location.id);
+    await seedTeam("team-guangzhou", leader.id, otherLocation.id);
+    await seedMember(expected.id, member.id);
+    await seedMember(expected.id, otherMember.id, { leftAt: new Date() });
+
+    const response = await request(app, d1, "/teams?regionId=region-cn-shenzhen");
+    expect(response.status).toBe(200);
+    const body = await response.json() as {
+      teams: Array<{
+        id: string;
+        activeParticipantCount: number;
+        maxParticipants: number;
+        leader: { extra: { wechat: string | null } };
+      }>;
+    };
+    expect(body.teams).toHaveLength(1);
+    expect(body.teams[0]).toMatchObject({
+      id: expected.id,
+      activeParticipantCount: 1,
+      maxParticipants: 3,
     });
+    expect(body.teams[0]?.leader.extra.wechat).toBeNull();
+
+    login(member);
+    const detail = await request(app, d1, `/teams/${expected.id}`);
+    const detailBody = await detail.json() as {
+      team: { leader: { extra: { wechat: string | null } } };
+    };
+    expect(detailBody.team.leader.extra.wechat).toBe("leader-wx");
+  });
+
+  it("paginates the team timeline by stable startAt/id keysets", async () => {
+    const startAt = new Date("2026-09-01T01:00:00.000Z");
+    const endAt = new Date("2026-09-01T05:00:00.000Z");
+    for (const id of ["team-a", "team-b", "team-c"]) {
+      await seedTeam(id, leader.id, location.id, { startAt, endAt });
+    }
+
+    const first = await request(app, d1, "/teams?limit=2");
+    expect(first.status).toBe(200);
+    const firstBody = await first.json() as {
+      teams: Array<{ id: string }>;
+      total: number;
+      nextCursor: string | null;
+    };
+    expect(firstBody.teams.map(({ id }) => id)).toEqual(["team-a", "team-b"]);
+    expect(firstBody.total).toBe(3);
+    expect(firstBody.nextCursor).toMatch(/^[A-Za-z0-9_-]+$/u);
+
+    const second = await request(
+      app,
+      d1,
+      `/teams?limit=2&cursor=${firstBody.nextCursor}`,
+    );
+    const secondBody = await second.json() as {
+      teams: Array<{ id: string }>;
+      total: number;
+      nextCursor: string | null;
+    };
+    expect(secondBody.teams.map(({ id }) => id)).toEqual(["team-c"]);
+    expect(secondBody.total).toBe(3);
+    expect(secondBody.nextCursor).toBeNull();
+    expect(
+      new Set([
+        ...firstBody.teams.map(({ id }) => id),
+        ...secondBody.teams.map(({ id }) => id),
+      ]).size,
+    ).toBe(3);
+  });
+
+  it("rejects removed page parameters and malformed team cursors", async () => {
+    expect((await request(app, d1, "/teams?page=2")).status).toBe(400);
+    expect((await request(app, d1, "/teams?pageSize=12")).status).toBe(400);
+    expect((await request(app, d1, "/teams?cursor=%%% ")).status).toBe(400);
+    expect(
+      (await request(app, d1, `/teams?cursor=${"a".repeat(513)}`)).status,
+    ).toBe(400);
   });
 });

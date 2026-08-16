@@ -8,6 +8,15 @@
     "expiryNote": "This link will expire in 1 hour.",
     "ignoreNote": "If you didn't request a password reset, please ignore this email."
   },
+  "emailVerification": {
+    "subject": "Verify your GoMate email",
+    "title": "Verify your email",
+    "greeting": "Hello, {name}!",
+    "body": "Confirm that this email belongs to you before signing in to GoMate.",
+    "btnText": "Verify email",
+    "expiryNote": "This link expires in 1 hour.",
+    "ignoreNote": "If you did not create a GoMate account, you can ignore this email."
+  },
   "welcome": {
     "subject": "Welcome to GoMate!",
     "title": "Welcome to GoMate!",

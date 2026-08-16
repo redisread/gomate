@@ -1,108 +1,113 @@
 #!/usr/bin/env node
-/**
- * 多 worktree 并行启动：自动分配空闲端口并同时启动 API + 前端
- *
- * 背景：api / 前端端口硬编码（8799 / 5432），多 worktree 同时 dev 必然冲突。
- * 本脚本在未显式指定端口时，从默认端口起递增寻找空闲端口，并把端口
- * （GOMATE_API_PORT / GOMATE_WEB_PORT）注入子进程：
- *   - API: wrangler dev --port 读取 GOMATE_API_PORT
- *   - 前端: astro dev --port 读取 GOMATE_WEB_PORT
- *   - 前端 PUBLIC_API_URL 指向当前 API 端口
- * 显式设置 GOMATE_API_PORT / GOMATE_WEB_PORT 时跳过自动分配。
- */
+/** Start one unified Astro + API Worker on the next available web port. */
 
 import { spawn } from "node:child_process";
+import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import net from "node:net";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const DEFAULT_API_PORT = 8799;
 const DEFAULT_WEB_PORT = 5432;
 const MAX_TRIES = 200;
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const FRONTEND_DIR = path.join(ROOT, "frontend");
+const WRANGLER_CONFIG = path.join(FRONTEND_DIR, "wrangler.jsonc");
 
 function isPortFree(port) {
-  // 同时探测 IPv4 / IPv6：只查一个地址族会漏掉另一族的占用
-  // （例如 astro dev 默认绑 [::1]，仅查 0.0.0.0 会误判为空闲）
   const check = (address) =>
     new Promise((resolve) => {
       const server = net.createServer();
-      server.once("error", (err) => {
-        if (err.code === "EADDRNOTAVAIL" || err.code === "EAFNOSUPPORT") {
-          // 当前平台不支持该地址族，视为该族无占用
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      });
+      server.once("error", (error) =>
+        resolve(
+          error.code === "EADDRNOTAVAIL" || error.code === "EAFNOSUPPORT",
+        ),
+      );
       server.once("listening", () => server.close(() => resolve(true)));
       server.listen(port, address);
     });
-  return Promise.all([check("0.0.0.0"), check("::1")]).then((okList) =>
-    okList.every(Boolean),
+  return Promise.all([check("0.0.0.0"), check("::1")]).then((results) =>
+    results.every(Boolean),
   );
 }
 
 async function nextFreePort(start) {
-  for (let port = start; port < start + MAX_TRIES; port++) {
+  for (let port = start; port < start + MAX_TRIES; port += 1) {
     if (await isPortFree(port)) return port;
   }
   throw new Error(`未找到空闲端口（从 ${start} 起尝试 ${MAX_TRIES} 个）`);
 }
 
 async function main() {
-  const apiPort = Number(process.env.GOMATE_API_PORT) || (await nextFreePort(DEFAULT_API_PORT));
-  const webPort = Number(process.env.GOMATE_WEB_PORT) || (await nextFreePort(DEFAULT_WEB_PORT));
-
-  const env = {
-    ...process.env,
-    GOMATE_API_PORT: String(apiPort),
-    GOMATE_WEB_PORT: String(webPort),
-    PUBLIC_API_URL: `http://localhost:${apiPort}`,
-  };
-
-  console.log(`\n[dev:wt] API:    http://localhost:${apiPort}`);
-  console.log(`[dev:wt] 前端:    http://localhost:${webPort}`);
-  console.log(`[dev:wt] 数据库:  共享本地 D1（${process.env.GOMATE_LOCAL_STATE || "~/.gomate/wrangler-state"}）\n`);
-
-  const children = [
-    spawn("pnpm", ["api:dev"], { env, stdio: "inherit" }),
-    spawn("pnpm", ["web:dev"], { env, stdio: "inherit" }),
-  ];
-
-  let shuttingDown = false;
-  function shutdown(code) {
-    if (shuttingDown) return;
-    shuttingDown = true;
-    console.log("\n[dev:wt] 正在停止子进程...");
-    // 先 SIGTERM（wrangler 交互模式可能吞掉 SIGINT），2 秒后未退出则 SIGKILL 兜底
-    for (const child of children) child.kill("SIGTERM");
-    setTimeout(() => {
-      for (const child of children) {
-        try {
-          child.kill("SIGKILL");
-        } catch {
-          // 进程已退出
-        }
-      }
-      process.exit(code);
-    }, 2000);
+  const explicitPort = process.env.GOMATE_WEB_PORT;
+  const webPort = explicitPort
+    ? Number(explicitPort)
+    : await nextFreePort(DEFAULT_WEB_PORT);
+  if (!Number.isInteger(webPort) || webPort < 1 || webPort > 65_535) {
+    throw new Error(`GOMATE_WEB_PORT 无效：${explicitPort}`);
   }
 
-  process.on("SIGINT", () => shutdown(130));
-  process.on("SIGTERM", () => shutdown(143));
-  process.on("SIGHUP", () => shutdown(129));
-
-  children.forEach((child) => {
-    child.on("error", (err) => {
-      console.error(`[dev:wt] 启动子进程失败: ${err.message}`);
-      shutdown(1);
-    });
-    child.on("exit", (code) => {
-      // 任一子进程退出（无论 code）都收掉另一个并退出，避免脚本挂住
-      if (!shuttingDown) shutdown(code ?? 0);
-    });
+  const configName = `.wrangler.dev.${process.pid}.${webPort}.jsonc`;
+  const configPath = path.join(FRONTEND_DIR, configName);
+  const config = JSON.parse(readFileSync(WRANGLER_CONFIG, "utf8"));
+  config.dev = { ...config.dev, port: webPort };
+  config.vars = {
+    ...config.vars,
+    APP_URL: `http://localhost:${webPort}`,
+  };
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, {
+    encoding: "utf8",
+    flag: "wx",
+    mode: 0o600,
   });
+
+  const cleanupConfig = () => {
+    try {
+      unlinkSync(configPath);
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        console.error(`[dev:wt] 临时 Wrangler 配置清理失败：${error.message}`);
+      }
+    }
+  };
+  const env = {
+    ...process.env,
+    GOMATE_WEB_PORT: String(webPort),
+    GOMATE_WRANGLER_CONFIG: `./${configName}`,
+  };
+  console.log(`\n[dev:wt] Worker:   http://localhost:${webPort}`);
+  console.log(`[dev:wt] API:      http://localhost:${webPort}/api`);
+  console.log(
+    `[dev:wt] 数据库:  ${process.env.GOMATE_LOCAL_STATE ?? "~/.gomate/wrangler-state"}\n`,
+  );
+
+  const pnpmPath = process.env.npm_execpath;
+  const executable = pnpmPath ? process.execPath : "pnpm";
+  const args = pnpmPath ? [pnpmPath, "web:dev"] : ["web:dev"];
+  const child = spawn(executable, args, {
+    cwd: ROOT,
+    env,
+    stdio: "inherit",
+  });
+  child.on("error", (error) => {
+    cleanupConfig();
+    console.error(`[dev:wt] 启动失败：${error.message}`);
+    process.exit(1);
+  });
+  child.on("exit", (code, signal) => {
+    cleanupConfig();
+    process.exitCode = signal ? 1 : (code ?? 0);
+  });
+
+  const stop = (signal) => {
+    if (child.exitCode === null && child.signalCode === null) child.kill(signal);
+  };
+  process.on("SIGINT", () => stop("SIGINT"));
+  process.on("SIGTERM", () => stop("SIGTERM"));
+  process.on("SIGHUP", () => stop("SIGHUP"));
+  process.on("exit", cleanupConfig);
 }
 
-main().catch((err) => {
-  console.error(`[dev:wt] ❌ ${err.message}`);
+main().catch((error) => {
+  console.error(`[dev:wt] ❌ ${error.message}`);
   process.exit(1);
 });

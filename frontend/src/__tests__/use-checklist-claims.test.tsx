@@ -76,7 +76,7 @@ describe("useChecklistClaims", () => {
     });
 
     expect(mockFetchAPI).toHaveBeenCalledWith(
-      "/api/teams/t1/checklist/assignments/a1/claim",
+      "/teams/t1/checklist/assignments/a1/claim",
       { method: "POST" },
     );
     expect(result.current.checklist?.assignments?.[0].assigneeIds).toEqual(["u-me"]);
@@ -105,7 +105,7 @@ describe("useChecklistClaims", () => {
     });
 
     expect(mockFetchAPI).toHaveBeenCalledWith(
-      "/api/teams/t1/checklist/assignments/a1/claim",
+      "/teams/t1/checklist/assignments/a1/claim",
       { method: "DELETE" },
     );
     expect(result.current.checklist?.assignments?.[0].assigneeIds).toEqual([]);

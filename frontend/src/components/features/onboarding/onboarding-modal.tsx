@@ -150,21 +150,21 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
   /** 申请加入：wechat 空 → 内联收集后 PATCH+join 串行；否则直接 join（§6.2/§6.4/§10） */
   const applyToTeam = async () => {
     if (!candidate) return;
-    if (!user.wechat && !showWechatForm) {
+    if (!user.extra.wechat && !showWechatForm) {
       setShowWechatForm(true);
       return;
     }
     const wechat = wechatInput.trim();
-    if (!user.wechat && !wechat) return; // 内联态空输入不提交（按钮 disabled 兜底）
+    if (!user.extra.wechat && !wechat) return;
 
     setSubmitting(true);
     try {
       // ① wechat 内联收集：先 PATCH（§6.4）
-      if (!user.wechat) {
-        const patchRes = await fetchAPI("/api/users/update", {
+      if (!user.extra.wechat) {
+        const patchRes = await fetchAPI("/users/me", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.id, wechat }),
+          body: JSON.stringify({ extra: { wechat } }),
         });
         const patchData = await patchRes.json();
         if (!(patchData.success || patchData.user)) {
@@ -174,10 +174,10 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
       }
 
       // ② POST join（§6.2）
-      const joinRes = await fetchAPI(`/api/teams/${candidate.id}/join`, {
+      const joinRes = await fetchAPI(`/teams/${candidate.id}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: "" }),
+        body: JSON.stringify({}),
       });
       const joinData = await joinRes.json();
 
@@ -284,18 +284,16 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
             {candidate ? (
               <div className="rounded-2xl border border-stone-100 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-800/40 p-5 mb-5">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-2xl">{candidate.icon || "⛰️"}</span>
+                  <span className="text-2xl">{roleConfig[candidate.activityType].emoji}</span>
                   <h3 className="text-base font-bold text-foreground">{candidate.title}</h3>
                 </div>
                 <p className="text-sm text-stone-600 dark:text-stone-400">
-                  {candidate.locationType && roleConfig[candidate.locationType as PreferenceType]
-                    ? roleConfig[candidate.locationType as PreferenceType].label
-                    : candidate.locationName}
+                  {roleConfig[candidate.activityType].label}
                   {" · "}
-                  {formatStartTime(candidate.startTime, t)}
+                  {formatStartTime(candidate.startAt, t)}
                 </p>
                 <p className="text-sm text-stone-600 dark:text-stone-400 mb-4">
-                  {candidate.cityName} · {t("common.memberCount", { current: candidate.approvedCount, max: candidate.maxMembers })}
+                  {candidate.regionName} · {t("common.memberCount", { current: candidate.activeParticipantCount, max: candidate.maxParticipants })}
                 </p>
 
                 {showWechatForm ? (

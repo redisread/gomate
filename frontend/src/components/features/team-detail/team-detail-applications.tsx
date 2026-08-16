@@ -3,7 +3,7 @@ import { Loader2, UserCheck } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { formatRelativeTime } from "./team-detail-utils";
 import { Avatar } from "./team-detail-ui";
-import type { Application } from "@/lib/types";
+import type { TeamJoinApplication } from "./team-detail-types";
 
 function ApplicationCard({
   application,
@@ -11,7 +11,7 @@ function ApplicationCard({
   onReject,
   isTeamFull,
 }: {
-  application: Application;
+  application: TeamJoinApplication;
   onApprove: () => void;
   onReject: () => void;
   isTeamFull: boolean;
@@ -32,7 +32,8 @@ function ApplicationCard({
     setRejecting(false);
   };
 
-  const name = application.user.nickname || application.user.name || t("common.unknown");
+  const user = application.user;
+  const name = user.nickname || user.name || t("common.unknown");
   const timeAgo = application.createdAt ? formatRelativeTime(new Date(application.createdAt)) : "";
 
   return (
@@ -43,10 +44,10 @@ function ApplicationCard({
     >
       <div className="flex items-center gap-2.5 mb-2">
         <a
-          href={`/users/${application.user.id}`}
+          href={`/users/${user.id}`}
           className="flex items-center gap-2.5 flex-1 min-w-0 hover:text-amber-700 transition-colors"
         >
-          <Avatar name={name} avatar={application.user.avatar} size="sm" />
+          <Avatar name={name} avatar={user.image} size="sm" />
           <div className="flex-1 min-w-0">
             <p title={name} className="text-sm font-medium text-foreground truncate">{name}</p>
             {timeAgo && <p className="text-xs text-muted-foreground/70">{timeAgo} {t("teams.appliedLabel")}</p>}
@@ -89,9 +90,9 @@ export function TeamApplicationsSection({
   onReject,
   isFull,
 }: {
-  applications: Application[];
-  onApprove: (uid: string) => void;
-  onReject: (uid: string) => void;
+  applications: TeamJoinApplication[];
+  onApprove: (requestId: string) => void;
+  onReject: (requestId: string) => void;
   isFull: boolean;
 }) {
   const { t } = useI18n(["teams"]);
@@ -113,8 +114,8 @@ export function TeamApplicationsSection({
           <ApplicationCard
             key={app.id}
             application={app}
-            onApprove={() => onApprove(app.userId)}
-            onReject={() => onReject(app.userId)}
+            onApprove={() => onApprove(app.id)}
+            onReject={() => onReject(app.id)}
             isTeamFull={isFull}
           />
         ))}

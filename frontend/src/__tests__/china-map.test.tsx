@@ -35,35 +35,46 @@ describe("ChinaMap", () => {
   it("clicking a province focuses the map and writes a restorable URL state", async () => {
     const historyBack = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ text: async () => provinceSvg }));
-    mockFetchAPI.mockResolvedValue({
-      json: async () => ({
-        provinces: [{ province: "广东省", count: 1 }],
+    mockFetchAPI.mockImplementation(async (path: string) => ({
+      json: async () => path.startsWith("/regions") ? ({
+        success: true,
+        regions: [
+          { id: "province-gd", name: "广东省" },
+          { id: "province-sc", name: "四川省" },
+        ],
+      }) : ({
+        success: true,
+        regions: [
+          { region: { id: "region-sz", parentId: "province-gd", name: "深圳" }, count: 1 },
+          { region: { id: "region-ab", parentId: "province-sc", name: "阿坝" }, count: 1 },
+        ],
         points: [
           {
             id: "loc-gd",
             name: "梧桐山",
             slug: "wutong-shan",
-            cityName: "深圳",
-            province: "广东省",
-            lat: 22.6,
-            lng: 114.2,
+            region: { id: "region-sz", parentId: "province-gd", name: "深圳" },
+            latitude: 22.6,
+            longitude: 114.2,
           },
           {
             id: "loc-sc",
             name: "四姑娘山",
             slug: "siguniang",
-            cityName: "阿坝",
-            province: "四川省",
-            lat: 31.0,
-            lng: 102.8,
+            region: { id: "region-ab", parentId: "province-sc", name: "阿坝" },
+            latitude: 31.0,
+            longitude: 102.8,
           },
         ],
       }),
-    });
+    }));
 
     render(<ChinaMap />);
 
     const guangdong = await screen.findByRole("button", { name: "广东省" });
+    expect(mockFetchAPI).toHaveBeenCalledWith(
+      "/regions?countryCode=CN&level=province&serviceEnabled=false",
+    );
     fireEvent.click(guangdong);
 
     expect(window.location.search).toContain("mapProvince=%E5%B9%BF%E4%B8%9C%E7%9C%81");

@@ -12,11 +12,10 @@ export interface HomeInitialData {
 }
 
 /**
- * @param userCity 用户的 cityId（P1 city 个性化 #193 T3），空/null 时不传
+ * @param userRegionId 用户的 Region id，空/null 时不传。
  */
-export function useHomeData(initialData?: HomeInitialData, userCity?: string | null) {
-  // 使用 SWR 获取地点列表（带缓存 + city 维度）
-  const { locations } = useLocations(1, 6, initialData?.locations, userCity);
+export function useHomeData(initialData?: HomeInitialData, userRegionId?: string | null) {
+  const { locations } = useLocations(6, initialData?.locations, userRegionId);
 
   const [teams, setTeams] = React.useState<Team[]>(initialData?.teams ?? []);
 
@@ -25,17 +24,17 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
   // Data fetchers
   const fetchTeams = React.useCallback(async () => {
     try {
-      const cityParam = userCity ? `&cityId=${encodeURIComponent(userCity)}` : "";
-      const res = await fetchPublicAPI(`/api/teams?status=recruiting&pageSize=4${cityParam}`);
+      const regionParam = userRegionId ? `&regionId=${encodeURIComponent(userRegionId)}` : "";
+      const res = await fetchPublicAPI(`/teams?recruitmentStatus=open&limit=4${regionParam}`);
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
     } catch (error) {
       console.error("[HomeClient] 获取队伍列表失败:", error);
     }
-  }, [userCity]);
+  }, [userRegionId]);
 
   // #221: always fetch on mount (hasInitialTeamsRef removed — SSR data is unfiltered,
-  // we need client to override with correct cityId-filtered data after hydration)
+  // we need client to override with correct regionId-filtered data after hydration)
   React.useEffect(() => {
     fetchTeams();
   }, [fetchTeams]);
@@ -44,7 +43,7 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
   const preloadImages = React.useMemo(() => {
     return locations
       .slice(0, 3)
-      .map((loc) => loc.coverImage)
+      .map((loc) => loc.coverImageUrl)
       .filter(Boolean) as string[];
   }, [locations]);
 
@@ -52,6 +51,6 @@ export function useHomeData(initialData?: HomeInitialData, userCity?: string | n
     locations, teams,
     preloadImages,
     animate,
-    userCity: userCity ?? null,
+    userRegionId: userRegionId ?? null,
   };
 }

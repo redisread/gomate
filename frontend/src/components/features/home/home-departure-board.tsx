@@ -3,6 +3,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
 import { Avatar } from "@/components/ui/avatar";
 import type { Team } from "@/lib/types";
+import { formatTeamStart } from "@/lib/team-display";
 
 export function HomeDepartureBoard({ teams }: { teams: Team[] }) {
   const { t } = useI18n(["home", "common"]);
@@ -25,9 +26,10 @@ export function HomeDepartureBoard({ teams }: { teams: Team[] }) {
         {departures.length > 0 ? (
           <div className="mt-7 grid gap-4 lg:grid-cols-[1.08fr_1fr_1fr]">
             {departures.map((team, index) => {
-              const coverImage = team.location?.coverImage;
-              const leaderName = team.leader.nickname || team.leader.name;
-              const remaining = Math.max(0, team.maxMembers - team.currentMembers);
+              const coverImage = team.location?.coverImageUrl;
+              const leaderName = team.leader?.nickname || team.leader?.name || t("common.unknown");
+              const remaining = Math.max(0, team.maxParticipants - team.activeParticipantCount);
+              const start = formatTeamStart(team);
 
               return (
                 <a key={team.id} href={`/teams/${team.id}`} className="group grid min-h-44 grid-cols-[7rem_1fr] overflow-hidden rounded-2xl bg-card shadow-warm-sm ring-1 ring-border/70 transition-[transform,box-shadow] duration-200 active:scale-[0.98] motion-reduce:transition-none lg:hover:-translate-y-1 lg:hover:shadow-card-hover">
@@ -37,7 +39,7 @@ export function HomeDepartureBoard({ teams }: { teams: Team[] }) {
                   <div className="flex min-w-0 flex-col p-4">
                     <p className="flex items-center gap-1.5 font-mono text-[0.68rem] font-bold text-warm">
                       <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                      {team.date}{team.time ? ` · ${team.time}` : ""}
+                      {start.date}{start.time ? ` · ${start.time}` : ""}
                     </p>
                     <h3 className="mt-2 line-clamp-2 text-base font-bold tracking-tight text-card-foreground">{team.title}</h3>
                     {team.location?.name && (
@@ -48,7 +50,7 @@ export function HomeDepartureBoard({ teams }: { teams: Team[] }) {
                     )}
                     <div className="mt-auto flex items-center justify-between gap-3 pt-4">
                       <div className="flex min-w-0 items-center gap-2">
-                        <Avatar src={team.leader.avatar} name={leaderName} size="xs" />
+                        <Avatar src={team.leader?.image} name={leaderName} size="xs" />
                         <span className="truncate text-xs text-muted-foreground">{leaderName}</span>
                       </div>
                       <span className="shrink-0 text-xs font-bold text-[color:oklch(0.42_0.09_155)] dark:text-emerald-300">

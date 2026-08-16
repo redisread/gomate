@@ -2,21 +2,21 @@ import * as React from "react";
 import { CalendarDays, Check, ChevronDown, MapPin, Search } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import type { City } from "@/lib/types";
-import { getQuickCities, TEAM_DATE_OPTIONS } from "./teams-filter-options";
+import type { Region } from "@/lib/types";
+import { getQuickRegions, TEAM_DATE_OPTIONS } from "./teams-filter-options";
 
-const QUICK_CITY_LIMIT = 6;
+const QUICK_REGION_LIMIT = 6;
 
 interface TeamsQuickFiltersProps {
-  cities: City[];
-  selectedCityId: string;
+  regions: Region[];
+  selectedRegionId: string;
   activeDateQuickType: string | null;
   hasDateFilter: boolean;
-  citiesLoading: boolean;
-  citiesError: boolean;
-  onCitySelect: (cityId: string) => void;
+  regionsLoading: boolean;
+  regionsError: boolean;
+  onRegionSelect: (regionId: string) => void;
   onDateQuickSelect: (type: string) => void;
-  onRetryCities: () => void;
+  onRetryRegions: () => void;
 }
 
 function QuickChip({
@@ -47,14 +47,14 @@ function QuickChip({
   );
 }
 
-function CityPicker({
-  cities,
-  selectedCityId,
-  citiesLoading,
-  citiesError,
-  onCitySelect,
-  onRetryCities,
-}: Pick<TeamsQuickFiltersProps, "cities" | "selectedCityId" | "citiesLoading" | "citiesError" | "onCitySelect" | "onRetryCities">) {
+function RegionPicker({
+  regions,
+  selectedRegionId,
+  regionsLoading,
+  regionsError,
+  onRegionSelect,
+  onRetryRegions,
+}: Pick<TeamsQuickFiltersProps, "regions" | "selectedRegionId" | "regionsLoading" | "regionsError" | "onRegionSelect" | "onRetryRegions">) {
   const { t } = useI18n(["teams", "common"]);
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -83,15 +83,15 @@ function CityPicker({
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  const filteredCities = React.useMemo(() => {
+  const filteredRegions = React.useMemo(() => {
     const keyword = query.trim().toLowerCase();
-    if (!keyword) return cities;
-    return cities.filter((city) =>
-      city.name.includes(keyword)
-      || city.pinyin?.toLowerCase().includes(keyword)
-      || city.province?.includes(keyword),
+    if (!keyword) return regions;
+    return regions.filter((region) =>
+      region.name.includes(keyword)
+      || region.nameEn?.toLowerCase().includes(keyword)
+      || region.code?.toLowerCase().includes(keyword),
     );
-  }, [cities, query]);
+  }, [regions, query]);
 
   React.useEffect(() => {
     if (highlightIndex < 0) return;
@@ -103,15 +103,15 @@ function CityPicker({
     if (!open) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setHighlightIndex((current) => current < filteredCities.length - 1 ? current + 1 : 0);
+      setHighlightIndex((current) => current < filteredRegions.length - 1 ? current + 1 : 0);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setHighlightIndex((current) => current > 0 ? current - 1 : filteredCities.length - 1);
+      setHighlightIndex((current) => current > 0 ? current - 1 : filteredRegions.length - 1);
     } else if (event.key === "Enter" && highlightIndex >= 0) {
       event.preventDefault();
-      const city = filteredCities[highlightIndex];
-      if (city) {
-        onCitySelect(city.id);
+      const region = filteredRegions[highlightIndex];
+      if (region) {
+        onRegionSelect(region.id);
         setOpen(false);
         setQuery("");
         setHighlightIndex(-1);
@@ -125,7 +125,7 @@ function CityPicker({
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-controls="teams-city-picker"
+        aria-controls="teams-region-picker"
         onClick={() => {
           setOpen((value) => !value);
           setHighlightIndex(-1);
@@ -138,7 +138,7 @@ function CityPicker({
 
       {open && (
         <div
-          id="teams-city-picker"
+          id="teams-region-picker"
           className="absolute right-0 z-30 mt-2 w-[min(20rem,calc(100vw-2rem))] origin-top-right rounded-2xl bg-popover p-2 shadow-xl shadow-stone-950/10 ring-1 ring-stone-900/10 dark:ring-white/10"
         >
           <label className="flex min-h-11 items-center gap-2 rounded-xl bg-muted px-3">
@@ -156,29 +156,29 @@ function CityPicker({
               className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
           </label>
-          {citiesLoading ? (
+          {regionsLoading ? (
             <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t("teams.citiesLoading")}</p>
-          ) : citiesError ? (
+          ) : regionsError ? (
             <div className="px-3 py-6 text-center">
               <p className="text-sm text-muted-foreground">{t("teams.citiesLoadError")}</p>
-              <button type="button" onClick={onRetryCities} className="mt-3 min-h-10 rounded-full bg-amber-600 px-4 text-sm font-medium text-white hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
+              <button type="button" onClick={onRetryRegions} className="mt-3 min-h-10 rounded-full bg-amber-600 px-4 text-sm font-medium text-white hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
                 {t("teams.retry")}
               </button>
             </div>
           ) : (
-            <div ref={listRef} role="listbox" aria-label={t("common.cityList")} className="mt-2 max-h-64 overflow-y-auto overscroll-contain py-1">
-              {filteredCities.length === 0 ? (
-              <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t("common.noCitiesFound")}</p>
-              ) : filteredCities.map((city, index) => {
-              const selected = city.id === selectedCityId;
+            <div ref={listRef} role="listbox" aria-label={t("common.regionList")} className="mt-2 max-h-64 overflow-y-auto overscroll-contain py-1">
+              {filteredRegions.length === 0 ? (
+              <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t("common.noRegionsFound")}</p>
+              ) : filteredRegions.map((region, index) => {
+              const selected = region.id === selectedRegionId;
               return (
                 <button
-                  key={city.id}
+                  key={region.id}
                   type="button"
                   role="option"
                   aria-selected={selected}
                   onClick={() => {
-                    onCitySelect(city.id);
+                    onRegionSelect(region.id);
                     setOpen(false);
                     setQuery("");
                     setHighlightIndex(-1);
@@ -189,8 +189,8 @@ function CityPicker({
                   )}
                 >
                   <span className="min-w-0">
-                    <span className="font-medium">{city.name}</span>
-                    {city.province && <span className="ml-2 text-xs text-muted-foreground">{city.province}</span>}
+                    <span className="font-medium">{region.name}</span>
+                    {region.nameEn && <span className="ml-2 text-xs text-muted-foreground">{region.nameEn}</span>}
                   </span>
                   {selected && <Check className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />}
                 </button>
@@ -205,22 +205,22 @@ function CityPicker({
 }
 
 export function TeamsQuickFilters({
-  cities,
-  selectedCityId,
+  regions,
+  selectedRegionId,
   activeDateQuickType,
   hasDateFilter,
-  citiesLoading,
-  citiesError,
-  onCitySelect,
+  regionsLoading,
+  regionsError,
+  onRegionSelect,
   onDateQuickSelect,
-  onRetryCities,
+  onRetryRegions,
 }: TeamsQuickFiltersProps) {
   const { t } = useI18n(["teams", "filter"]);
-  const hotCities = React.useMemo(() => getQuickCities(cities, QUICK_CITY_LIMIT), [cities]);
-  const selectedCity = cities.find((city) => city.id === selectedCityId);
-  const quickCities = selectedCity && !hotCities.some((city) => city.id === selectedCity.id)
-    ? [...hotCities.slice(0, QUICK_CITY_LIMIT - 1), selectedCity]
-    : hotCities;
+  const hotRegions = React.useMemo(() => getQuickRegions(regions, QUICK_REGION_LIMIT), [regions]);
+  const selectedRegion = regions.find((region) => region.id === selectedRegionId);
+  const quickRegions = selectedRegion && !hotRegions.some((region) => region.id === selectedRegion.id)
+    ? [...hotRegions.slice(0, QUICK_REGION_LIMIT - 1), selectedRegion]
+    : hotRegions;
 
   return (
     <div className="mt-5 space-y-4" aria-label={t("teams.quickFiltersLabel")}>
@@ -231,21 +231,21 @@ export function TeamsQuickFilters({
         </p>
         <div className="flex min-w-0 items-start gap-2">
           <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <QuickChip selected={!selectedCityId} onClick={() => onCitySelect("")}>{t("teams.allCities")}</QuickChip>
-            {quickCities.map((city) => (
-              <QuickChip key={city.id} selected={selectedCityId === city.id} onClick={() => onCitySelect(city.id)}>
-                {city.name}
+            <QuickChip selected={!selectedRegionId} onClick={() => onRegionSelect("")}>{t("teams.allCities")}</QuickChip>
+            {quickRegions.map((region) => (
+              <QuickChip key={region.id} selected={selectedRegionId === region.id} onClick={() => onRegionSelect(region.id)}>
+                {region.name}
               </QuickChip>
             ))}
           </div>
-          {(citiesLoading || citiesError || cities.length > quickCities.length) && (
-            <CityPicker
-              cities={cities}
-              selectedCityId={selectedCityId}
-              citiesLoading={citiesLoading}
-              citiesError={citiesError}
-              onCitySelect={onCitySelect}
-              onRetryCities={onRetryCities}
+          {(regionsLoading || regionsError || regions.length > quickRegions.length) && (
+            <RegionPicker
+              regions={regions}
+              selectedRegionId={selectedRegionId}
+              regionsLoading={regionsLoading}
+              regionsError={regionsError}
+              onRegionSelect={onRegionSelect}
+              onRetryRegions={onRetryRegions}
             />
           )}
         </div>

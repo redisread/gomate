@@ -3,7 +3,7 @@
   "pageSubtitle": "咖啡馆、公园、山野、海岸，找到适合你的下一个目的地",
   "locationIntro": "地点介绍",
   "locationList": "地点列表",
-  "defaultCity": "全部",
+  "defaultRegion": "全部",
   "viewDetail": "查看详情",
   "routeInfo": "徒步攻略",
   "facilities": "配套设施",
@@ -21,8 +21,8 @@
   "nextImage": "下一张图片",
   "paginationPrev": "上一页",
   "paginationNext": "下一页",
-  "allCities": "全部城市",
-  "cityFilter": "按城市筛选",
+  "allRegions": "全部地区",
+  "regionFilter": "按地区筛选",
   "heroTagline": "咖啡馆、citywalk、短途旅行……找个人一起去",
   "searchPlaceholder": "咖啡馆、展览、桌游吧、山野……你想去哪？",
   "tagsLabel": "探索标签",
@@ -37,16 +37,16 @@
       "clearBtn": "清除搜索",
       "browseBtn": "随便看看"
     },
-    "noCity": {
-      "title": "「{cityName}」暂无推荐地点",
-      "desc": "这个城市还没有地点信息，看看其他城市吧",
+    "noRegion": {
+      "title": "「{regionName}」暂无推荐地点",
+      "desc": "这个地区还没有地点信息，看看其他地区吧",
       "browseBtn": "看看其他地方",
-      "changeBtn": "换个城市"
+      "changeBtn": "换个地区"
     },
-    "noCitySet": {
-      "title": "还没设置城市",
-      "desc": "设置你的城市，获取更精准的地点推荐",
-      "setBtn": "去设置城市",
+    "noRegionSet": {
+      "title": "还没设置地区",
+      "desc": "设置你的地区，获取更精准的地点推荐",
+      "setBtn": "去设置地区",
       "browseFirstBtn": "随便看看"
     },
     "tooNarrow": {
@@ -101,5 +101,5 @@
   },
   "mapProvinceCount": "{count} 个地点",
   "mapNoLocations": "暂无地点",
-  "mapPointCity": "{city} · {province}"
+  "mapPointRegion": "{region} · {province}"
 }

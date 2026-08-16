@@ -1,493 +1,616 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Hono } from "hono";
-import { createTestDb } from "../helpers/db";
-import { seedUser, seedCity, seedLocation, seedTeam, seedTeamMember } from "../helpers/seed";
-import { eq } from "drizzle-orm";
-import * as schema from "../../db/schema";
 import type { TeamChecklist } from "@gomate/types";
+import { and, eq } from "drizzle-orm";
+import { Hono } from "hono";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as schema from "../../db/schema";
+import { createTestDb } from "../helpers/db";
 
-/**
- * task #163（P0-A T1+T5）：Team「行动本」checklist 集成测试
- *
- * 覆盖：
- * - PUT /teams/:id/checklist：队长权限、非队长 403、匿名 401、404
- * - assignment id 保留策略：入参已存在 id → 复用；缺 id → server 补新 uuid
- * - POST claim：joined-only、幂等、assignmentId（非 index）定位
- * - DELETE claim：幂等 204、不在时也 204
- * - assigneeIds server 去重
- */
+type TestDb = ReturnType<typeof createTestDb>["db"];
+type TestSqlite = ReturnType<typeof createTestDb>["sqlite"];
 
-let currentSession: { user: { id: string; email: string; name: string } } | null = null;
-let testDb: ReturnType<typeof createTestDb>["db"];
+let currentSession: {
+  user: { id: string; email: string; name: string };
+} | null = null;
+let testDb: TestDb;
+let testSqlite: TestSqlite;
 
 vi.mock("../../lib/auth", () => ({
-  createAuth: (_env: unknown) => ({
-    api: { getSession: async (_opts: unknown) => currentSession },
+  createAuth: () => ({
+    api: { getSession: async () => currentSession },
   }),
 }));
 
 vi.mock("../../db", () => ({
-  createDb: (_d1: unknown) => testDb,
+  createDb: () => testDb,
 }));
 
 const { teamsRoute } = await import("../../routes/teams");
 
 function createApp() {
-  const app = new Hono<{ Bindings: { DB: unknown } }>();
+  const app = new Hono<{ Bindings: { DB: D1Database } }>();
   app.route("/teams", teamsRoute);
   return app;
 }
 
-async function req(
+async function request(
   app: ReturnType<typeof createApp>,
   path: string,
   options: RequestInit = {},
-): Promise<Response> {
-  const request = new Request(`http://localhost${path}`, options);
-  return app.fetch(request, { DB: {} });
+) {
+  return app.fetch(new Request(`http://localhost${path}`, options), {
+    DB: {} as D1Database,
+  });
 }
 
-function setSession(user: { id: string; email: string; name: string } | null) {
-  currentSession = user ? { user } : null;
+function jsonRequest(method: string, body?: unknown): RequestInit {
+  return {
+    method,
+    headers: { "content-type": "application/json" },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  };
 }
 
-/** 从 DB 读回 checklist（driver 差异：可能是 JSON 字符串或对象） */
-async function readChecklist(teamId: string): Promise<TeamChecklist | null> {
-  const [row] = await testDb.select().from(schema.teams).where(eq(schema.teams.id, teamId));
-  const raw = row?.checklist as unknown;
-  if (raw === null || raw === undefined) return null;
-  if (typeof raw === "string") {
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as TeamChecklist;
-    } catch {
-      return null;
+async function seedUser(id: string) {
+  await testDb.insert(schema.users).values({
+    id,
+    name: id,
+    email: `${id}@example.com`,
+    emailVerified: true,
+  });
+  return (
+    await testDb.select().from(schema.users).where(eq(schema.users.id, id))
+  )[0]!;
+}
+
+async function seedTeam(
+  leaderId: string,
+  checklist: TeamChecklist | null = null,
+) {
+  await testDb.insert(schema.region).values({
+    id: "region-cn-shenzhen",
+    countryCode: "CN",
+    name: "深圳市",
+    slug: "shenzhen",
+    level: "city",
+    timezone: "Asia/Shanghai",
+    centerLatitude: 22.5,
+    centerLongitude: 114,
+    serviceEnabled: true,
+  });
+  await testDb.insert(schema.locations).values({
+    id: "location-1",
+    regionId: "region-cn-shenzhen",
+    name: "梧桐山",
+    slug: "wutongshan",
+    supportedActivityTypes: ["hiking"],
+    status: "published",
+    description: "A location",
+    latitude: 22.5,
+    longitude: 114,
+    coverImageUrl: "https://example.com/location.jpg",
+  });
+  const startAt = new Date(Date.now() + 86_400_000);
+  await testDb.insert(schema.teams).values({
+    id: "team-1",
+    leaderId,
+    locationId: "location-1",
+    activityType: "hiking",
+    title: "周末徒步",
+    startAt,
+    endAt: new Date(startAt.getTime() + 14_400_000),
+    maxParticipants: 5,
+    checklist,
+  });
+  return (
+    await testDb
+      .select()
+      .from(schema.teams)
+      .where(eq(schema.teams.id, "team-1"))
+  )[0]!;
+}
+
+async function seedMember(
+  teamId: string,
+  userId: string,
+  leftAt: Date | null = null,
+) {
+  await testDb.insert(schema.teamMembers).values({
+    teamId,
+    userId,
+    role: "member",
+    leftAt,
+  });
+}
+
+/**
+ * Inserts a deterministic concurrent change after the route has read the team,
+ * immediately before its next teams UPDATE is constructed.
+ */
+function beforeNextTeamUpdate(action: () => void) {
+  const originalUpdate = testDb.update.bind(testDb);
+  let armed = true;
+  testDb.update = ((table: Parameters<TestDb["update"]>[0]) => {
+    if (armed && table === schema.teams) {
+      armed = false;
+      action();
     }
-  }
-  return raw as TeamChecklist;
+    return originalUpdate(table);
+  }) as TestDb["update"];
 }
 
-describe("Teams checklist API 集成测试", () => {
+describe("Teams V2 checklist API", () => {
   let app: ReturnType<typeof createApp>;
   let leader: schema.User;
   let member: schema.User;
+  let formerMember: schema.User;
   let stranger: schema.User;
-  let city: schema.City;
-  let location: schema.Location;
   let team: schema.Team;
 
   beforeEach(async () => {
     const fresh = createTestDb();
     testDb = fresh.db;
+    testSqlite = fresh.sqlite;
     app = createApp();
     currentSession = null;
 
-    leader = await seedUser(testDb, { name: "队长" });
-    member = await seedUser(testDb, { name: "成员" });
-    stranger = await seedUser(testDb, { name: "路人" });
-    city = await seedCity(testDb);
-    location = await seedLocation(testDb, city.id);
-    team = await seedTeam(testDb, leader.id, location.id, { title: "周末徒步" });
-    await seedTeamMember(testDb, team.id, member.id, "approved");
+    leader = await seedUser("leader");
+    member = await seedUser("member");
+    formerMember = await seedUser("former-member");
+    stranger = await seedUser("stranger");
+    team = await seedTeam(leader.id, {
+      assignments: [{ id: "water", task: "带水", assigneeIds: [] }],
+    });
+    await seedMember(team.id, member.id);
+    await seedMember(team.id, formerMember.id, new Date());
   });
 
-  // ===== PUT /teams/:id/checklist =====
+  function login(user: schema.User | null) {
+    currentSession = user
+      ? { user: { id: user.id, email: user.email, name: user.name } }
+      : null;
+  }
 
-  describe("PUT /teams/:id/checklist - 队长覆盖式更新", () => {
-    it("匿名用户 → 401", async () => {
-      const res = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ notes: "test" }),
-      });
-      expect(res.status).toBe(401);
-    });
+  it("allows only the leader to replace the checklist", async () => {
+    const body = { notes: "新的约定", assignments: [] };
+    expect(
+      (
+        await request(
+          app,
+          `/teams/${team.id}/checklist`,
+          jsonRequest("PUT", body),
+        )
+      ).status,
+    ).toBe(401);
 
-    it("非队长成员 → 403", async () => {
-      setSession({ id: member.id, email: "m@x.com", name: "m" });
-      const res = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ notes: "test" }),
-      });
-      expect(res.status).toBe(403);
-    });
+    login(member);
+    expect(
+      (
+        await request(
+          app,
+          `/teams/${team.id}/checklist`,
+          jsonRequest("PUT", body),
+        )
+      ).status,
+    ).toBe(403);
 
-    it("队伍不存在 → 404", async () => {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-      const res = await req(app, "/teams/not-exist/checklist", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ notes: "test" }),
-      });
-      expect(res.status).toBe(404);
-    });
+    login(leader);
+    const response = await request(
+      app,
+      `/teams/${team.id}/checklist`,
+      jsonRequest("PUT", body),
+    );
+    expect(response.status).toBe(200);
+    const stored = (
+      await testDb
+        .select()
+        .from(schema.teams)
+        .where(eq(schema.teams.id, team.id))
+    )[0]!;
+    expect(stored.checklist).toEqual({ notes: "新的约定", assignments: [] });
+  });
 
-    it("队长完整提交 → 200，DB 落盘一致", async () => {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-      const body = {
-        meetingPoint: { name: "地铁北门", time: "07:30", note: "迟到 15 分钟不等" },
-        transport: { mode: "self_drive" as const, detail: "3 辆车拼车" },
-        gear: { essential: ["登山鞋", "水"], optional: ["登山杖"], note: "自带午餐" },
+  it("reuses known assignment IDs, creates unknown IDs and deduplicates assignees", async () => {
+    login(leader);
+    const response = await request(
+      app,
+      `/teams/${team.id}/checklist`,
+      jsonRequest("PUT", {
         assignments: [
-          { task: "买水", assigneeIds: [] },
-          { task: "买路餐", assigneeIds: [member.id] },
+          {
+            id: "water",
+            task: "带两瓶水",
+            assigneeIds: [member.id, member.id],
+          },
+          { id: "client-id", task: "带急救包", assigneeIds: [] },
         ],
-        notes: "队伍口令：出发",
-      };
-      const res = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      expect(res.status).toBe(200);
-      const json = (await res.json()) as { success: boolean; checklist: TeamChecklist };
-      expect(json.success).toBe(true);
-      expect(json.checklist.meetingPoint?.name).toBe("地铁北门");
-      expect(json.checklist.transport?.mode).toBe("self_drive");
-      expect(json.checklist.gear?.essential).toEqual(["登山鞋", "水"]);
-      expect(json.checklist.assignments).toHaveLength(2);
-      // server 补 uuid：入参无 id，返回值应带 id
-      expect(json.checklist.assignments![0].id).toBeTruthy();
-      expect(json.checklist.assignments![1].id).toBeTruthy();
-      expect(json.checklist.assignments![0].id).not.toBe(json.checklist.assignments![1].id);
+      }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { checklist: TeamChecklist };
+    expect(body.checklist.assignments?.[0]).toEqual({
+      id: "water",
+      task: "带两瓶水",
+      assigneeIds: [member.id],
+    });
+    expect(body.checklist.assignments?.[1]?.id).not.toBe("client-id");
+  });
 
-      const saved = await readChecklist(team.id);
-      expect(saved?.notes).toBe("队伍口令：出发");
+  it("rejects PUT assignees who are not the leader or current active members", async () => {
+    login(leader);
+    const response = await request(
+      app,
+      `/teams/${team.id}/checklist`,
+      jsonRequest("PUT", {
+        assignments: [
+          {
+            id: "water",
+            task: "带水",
+            assigneeIds: [member.id, formerMember.id, stranger.id],
+          },
+        ],
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        details: { invalidAssigneeIds: [formerMember.id, stranger.id] },
+      },
+    });
+    const stored = (
+      await testDb
+        .select()
+        .from(schema.teams)
+        .where(eq(schema.teams.id, team.id))
+    )[0]!;
+    expect(stored.checklist).toEqual(team.checklist);
+  });
+
+  it("allows the leader and current active members as PUT assignees", async () => {
+    login(leader);
+    const response = await request(
+      app,
+      `/teams/${team.id}/checklist`,
+      jsonRequest("PUT", {
+        assignments: [
+          {
+            id: "water",
+            task: "带水",
+            assigneeIds: [leader.id, member.id],
+          },
+        ],
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { checklist: TeamChecklist };
+    expect(body.checklist.assignments?.[0]?.assigneeIds).toEqual([
+      leader.id,
+      member.id,
+    ]);
+  });
+
+  it("rejects PUT when an assignee leaves after validation but before the update", async () => {
+    login(leader);
+    beforeNextTeamUpdate(() => {
+      testSqlite
+        .prepare(
+          "UPDATE team_members SET left_at = ? WHERE team_id = ? AND user_id = ?",
+        )
+        .run(Date.now(), team.id, member.id);
     });
 
-    it("入参 assignment.id 命中已有 → 复用；缺 id → 生成新 uuid", async () => {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
+    const response = await request(
+      app,
+      `/teams/${team.id}/checklist`,
+      jsonRequest("PUT", {
+        assignments: [{ id: "water", task: "带水", assigneeIds: [member.id] }],
+      }),
+    );
 
-      // 第一次 PUT：种下两条 assignment，让 server 生成 id
-      const first = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          assignments: [
-            { task: "带水", assigneeIds: [] },
-            { task: "带餐", assigneeIds: [] },
-          ],
-        }),
-      });
-      const firstJson = (await first.json()) as { checklist: TeamChecklist };
-      const existingId = firstJson.checklist.assignments![0].id;
-
-      // 第二次 PUT：一条带已有 id（应复用）、一条不带 id（应新生成）
-      const second = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          assignments: [
-            { id: existingId, task: "带水（改）", assigneeIds: [member.id] },
-            { task: "带气罐", assigneeIds: [] },
-          ],
-        }),
-      });
-      const secondJson = (await second.json()) as { checklist: TeamChecklist };
-      expect(secondJson.checklist.assignments).toHaveLength(2);
-      expect(secondJson.checklist.assignments![0].id).toBe(existingId); // 复用
-      expect(secondJson.checklist.assignments![0].task).toBe("带水（改）");
-      expect(secondJson.checklist.assignments![0].assigneeIds).toEqual([member.id]);
-      expect(secondJson.checklist.assignments![1].id).toBeTruthy();
-      expect(secondJson.checklist.assignments![1].id).not.toBe(existingId); // 新 id
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        details: { invalidAssigneeIds: [member.id] },
+      },
     });
+    const stored = (
+      await testDb
+        .select()
+        .from(schema.teams)
+        .where(eq(schema.teams.id, team.id))
+    )[0]!;
+    expect(stored.checklist).toEqual(team.checklist);
+  });
 
-    it("入参 assigneeIds 重复 → server 去重", async () => {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-      const res = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          assignments: [{ task: "买水", assigneeIds: [member.id, member.id, member.id] }],
-        }),
-      });
-      const json = (await res.json()) as { checklist: TeamChecklist };
-      expect(json.checklist.assignments![0].assigneeIds).toEqual([member.id]);
-    });
+  it("validates checklist content and the serialized size limit", async () => {
+    login(leader);
+    const invalid = await request(
+      app,
+      `/teams/${team.id}/checklist`,
+      jsonRequest("PUT", {
+        assignments: [{ task: "", assigneeIds: [] }],
+      }),
+    );
+    expect(invalid.status).toBe(400);
 
-    it("入参非法 (task 空字符串) → 400", async () => {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-      const res = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ assignments: [{ task: "" }] }),
-      });
-      expect(res.status).toBe(400);
-    });
+    const oversized = await request(
+      app,
+      `/teams/${team.id}/checklist`,
+      jsonRequest("PUT", {
+        notes: "x".repeat(2_001),
+        assignments: Array.from({ length: 10 }, (_, index) => ({
+          task: `task-${index}-${"y".repeat(50)}`,
+        })),
+      }),
+    );
+    expect(oversized.status).toBe(400);
+  });
 
-    it("入参序列化后 > 2KB → 400（软上限，防滥用）", async () => {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-      // 精心构造：多个字段加起来触发 >2KB 上限
-      // 单字段 notes 上限 2000，加 gear/notes/note 组合足以超 2048
-      const res = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          notes: "x".repeat(2000),
-          gear: { essential: ["a", "b"], optional: ["c"], note: "y".repeat(500) },
-        }),
-      });
-      expect(res.status).toBe(400);
-    });
+  it("measures the checklist limit in UTF-8 bytes for multibyte content", async () => {
+    login(leader);
+    const response = await request(
+      app,
+      `/teams/${team.id}/checklist`,
+      jsonRequest("PUT", {
+        notes: "你".repeat(700),
+        assignments: [],
+      }),
+    );
 
-    // B1（Martin CR）：spec §2.3 明确「PUT 是队长覆盖式更新整个 checklist」，
-    // 未传字段 → 清空。第一版用条件展开会保留旧值，破坏覆盖式语义。此处回归。
-    it("PUT 覆盖式：不传字段应清空旧值（B1 回归）", async () => {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-
-      // 第一次：写入完整 checklist（有 meetingPoint / transport / gear / assignments / notes）
-      const first = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          meetingPoint: { name: "地铁北门", time: "07:30" },
-          transport: { mode: "self_drive" as const, detail: "拼车" },
-          gear: { essential: ["水"], optional: [] },
-          assignments: [{ task: "买水", assigneeIds: [] }],
-          notes: "旧口令",
-        }),
-      });
-      expect(first.status).toBe(200);
-      const firstJson = (await first.json()) as { checklist: TeamChecklist };
-      expect(firstJson.checklist.meetingPoint?.name).toBe("地铁北门");
-      expect(firstJson.checklist.assignments).toHaveLength(1);
-
-      // 第二次：只传 notes，其他字段全部缺省 → 应清空
-      const second = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ notes: "新口令" }),
-      });
-      expect(second.status).toBe(200);
-      const secondJson = (await second.json()) as { checklist: TeamChecklist };
-      expect(secondJson.checklist.notes).toBe("新口令");
-      expect(secondJson.checklist.meetingPoint).toBeUndefined();
-      expect(secondJson.checklist.transport).toBeUndefined();
-      expect(secondJson.checklist.gear).toBeUndefined();
-      // assignments：既然全没传，normalize 后是 []（server 视为「清空」）
-      expect(secondJson.checklist.assignments).toEqual([]);
-
-      // DB 落盘一致
-      const saved = await readChecklist(team.id);
-      expect(saved?.notes).toBe("新口令");
-      expect(saved?.meetingPoint).toBeUndefined();
-      expect(saved?.transport).toBeUndefined();
-      expect(saved?.gear).toBeUndefined();
-      expect(saved?.assignments).toEqual([]);
-    });
-
-    it("PUT 覆盖式：显式传空 assignments 也应清空", async () => {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-
-      await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          assignments: [
-            { task: "买水", assigneeIds: [member.id] },
-            { task: "买餐", assigneeIds: [] },
-          ],
-        }),
-      });
-
-      const res = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ assignments: [] }),
-      });
-      expect(res.status).toBe(200);
-      const json = (await res.json()) as { checklist: TeamChecklist };
-      expect(json.checklist.assignments).toEqual([]);
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        details: [
+          expect.objectContaining({
+            message: expect.stringContaining("字节"),
+          }),
+        ],
+      },
     });
   });
 
-  // ===== POST /teams/:id/checklist/assignments/:assignmentId/claim =====
-
-  describe("POST claim - 队员认领", () => {
-    async function seedOneAssignment(): Promise<string> {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-      const res = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ assignments: [{ task: "买水", assigneeIds: [] }] }),
-      });
-      const json = (await res.json()) as { checklist: TeamChecklist };
-      return json.checklist.assignments![0].id;
-    }
-
-    it("匿名 → 401", async () => {
-      const aid = await seedOneAssignment();
-      setSession(null);
-      const res = await req(app, `/teams/${team.id}/checklist/assignments/${aid}/claim`, {
-        method: "POST",
-      });
-      expect(res.status).toBe(401);
-    });
-
-    it("非成员（路人） → 403", async () => {
-      const aid = await seedOneAssignment();
-      setSession({ id: stranger.id, email: "s@x.com", name: "s" });
-      const res = await req(app, `/teams/${team.id}/checklist/assignments/${aid}/claim`, {
-        method: "POST",
-      });
-      expect(res.status).toBe(403);
-    });
-
-    it("assignmentId 不存在 → 404（防漂移）", async () => {
-      await seedOneAssignment();
-      setSession({ id: member.id, email: "m@x.com", name: "m" });
-      const res = await req(app, `/teams/${team.id}/checklist/assignments/no-such-id/claim`, {
-        method: "POST",
-      });
-      expect(res.status).toBe(404);
-    });
-
-    it("成员认领 → 200，assigneeIds 含 userId；重复调用幂等", async () => {
-      const aid = await seedOneAssignment();
-      setSession({ id: member.id, email: "m@x.com", name: "m" });
-
-      const first = await req(app, `/teams/${team.id}/checklist/assignments/${aid}/claim`, {
-        method: "POST",
-      });
-      expect(first.status).toBe(200);
-      const firstJson = (await first.json()) as { assignment: { assigneeIds: string[] } };
-      expect(firstJson.assignment.assigneeIds).toEqual([member.id]);
-
-      const second = await req(app, `/teams/${team.id}/checklist/assignments/${aid}/claim`, {
-        method: "POST",
-      });
-      expect(second.status).toBe(200);
-      const secondJson = (await second.json()) as { assignment: { assigneeIds: string[] } };
-      expect(secondJson.assignment.assigneeIds).toEqual([member.id]); // 幂等：仍是一个
-
-      const saved = await readChecklist(team.id);
-      expect(saved?.assignments![0].assigneeIds).toEqual([member.id]);
-    });
-
-    it("队长本人（也是队长）→ 200，可认领", async () => {
-      const aid = await seedOneAssignment();
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-      const res = await req(app, `/teams/${team.id}/checklist/assignments/${aid}/claim`, {
-        method: "POST",
-      });
-      expect(res.status).toBe(200);
-      const json = (await res.json()) as { assignment: { assigneeIds: string[] } };
-      expect(json.assignment.assigneeIds).toEqual([leader.id]);
-    });
+  it("lets an active member claim idempotently", async () => {
+    login(member);
+    const first = await request(
+      app,
+      `/teams/${team.id}/checklist/assignments/water/claim`,
+      jsonRequest("POST"),
+    );
+    expect(first.status).toBe(200);
+    const second = await request(
+      app,
+      `/teams/${team.id}/checklist/assignments/water/claim`,
+      jsonRequest("POST"),
+    );
+    expect(second.status).toBe(200);
+    const stored = (
+      await testDb
+        .select()
+        .from(schema.teams)
+        .where(eq(schema.teams.id, team.id))
+    )[0]!;
+    expect(stored.checklist?.assignments?.[0]?.assigneeIds).toEqual([
+      member.id,
+    ]);
   });
 
-  // ===== DELETE /teams/:id/checklist/assignments/:assignmentId/claim =====
-
-  describe("DELETE claim - 队员取消认领", () => {
-    async function seedAssignmentClaimedByMember(): Promise<string> {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-      const res = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ assignments: [{ task: "买水", assigneeIds: [member.id] }] }),
-      });
-      const json = (await res.json()) as { checklist: TeamChecklist };
-      return json.checklist.assignments![0].id;
-    }
-
-    it("匿名 → 401", async () => {
-      const aid = await seedAssignmentClaimedByMember();
-      setSession(null);
-      const res = await req(app, `/teams/${team.id}/checklist/assignments/${aid}/claim`, {
-        method: "DELETE",
-      });
-      expect(res.status).toBe(401);
+  it("rejects a claim when membership is lost between the read and conditional update", async () => {
+    login(member);
+    beforeNextTeamUpdate(() => {
+      testSqlite
+        .prepare(
+          "UPDATE team_members SET left_at = ? WHERE team_id = ? AND user_id = ?",
+        )
+        .run(Date.now(), team.id, member.id);
     });
 
-    it("路人 → 403", async () => {
-      const aid = await seedAssignmentClaimedByMember();
-      setSession({ id: stranger.id, email: "s@x.com", name: "s" });
-      const res = await req(app, `/teams/${team.id}/checklist/assignments/${aid}/claim`, {
-        method: "DELETE",
-      });
-      expect(res.status).toBe(403);
+    const response = await request(
+      app,
+      `/teams/${team.id}/checklist/assignments/water/claim`,
+      jsonRequest("POST"),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: { code: "FORBIDDEN" },
     });
-
-    it("assignmentId 不存在 → 404", async () => {
-      await seedAssignmentClaimedByMember();
-      setSession({ id: member.id, email: "m@x.com", name: "m" });
-      const res = await req(app, `/teams/${team.id}/checklist/assignments/no-such-id/claim`, {
-        method: "DELETE",
-      });
-      expect(res.status).toBe(404);
-    });
-
-    it("成员取消认领 → 204，DB 中 userId 已移除；重复调用仍 204（幂等）", async () => {
-      const aid = await seedAssignmentClaimedByMember();
-      setSession({ id: member.id, email: "m@x.com", name: "m" });
-
-      const first = await req(app, `/teams/${team.id}/checklist/assignments/${aid}/claim`, {
-        method: "DELETE",
-      });
-      expect(first.status).toBe(204);
-
-      const saved = await readChecklist(team.id);
-      expect(saved?.assignments![0].assigneeIds).toEqual([]);
-
-      const second = await req(app, `/teams/${team.id}/checklist/assignments/${aid}/claim`, {
-        method: "DELETE",
-      });
-      expect(second.status).toBe(204); // 幂等：本来就不在，仍 204
-    });
+    const stored = (
+      await testDb
+        .select()
+        .from(schema.teams)
+        .where(eq(schema.teams.id, team.id))
+    )[0]!;
+    expect(stored.checklist?.assignments?.[0]?.assigneeIds).toEqual([]);
   });
 
-  // ===== 并发防漂移：assignmentId 稳定 =====
-
-  describe("并发防漂移：assignmentId 而非 index", () => {
-    it("队长删掉前一个 assignment 后，用旧 index 认领不会误伤（走 404）", async () => {
-      setSession({ id: leader.id, email: "l@x.com", name: "l" });
-      const firstPut = await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
+  it("preserves a same-timestamp checklist write by comparing checklist content in the CAS", async () => {
+    login(member);
+    beforeNextTeamUpdate(() => {
+      const before = testSqlite
+        .prepare("SELECT updated_at AS updatedAt FROM teams WHERE id = ?")
+        .get(team.id) as { updatedAt: number };
+      testSqlite.prepare("UPDATE teams SET checklist = ? WHERE id = ?").run(
+        JSON.stringify({
           assignments: [
-            { task: "买水", assigneeIds: [] },
-            { task: "买餐", assigneeIds: [] },
+            { id: "water", task: "带水", assigneeIds: [leader.id] },
           ],
         }),
-      });
-      const first = (await firstPut.json()) as { checklist: TeamChecklist };
-      const idA = first.checklist.assignments![0].id;
-      const idB = first.checklist.assignments![1].id;
-
-      // 队长删掉第一个（"买水"）
-      await req(app, `/teams/${team.id}/checklist`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          assignments: [{ id: idB, task: "买餐", assigneeIds: [] }],
-        }),
-      });
-
-      // 用旧的 idA 认领：应 404，而不是错认到 idB
-      setSession({ id: member.id, email: "m@x.com", name: "m" });
-      const claim = await req(app, `/teams/${team.id}/checklist/assignments/${idA}/claim`, {
-        method: "POST",
-      });
-      expect(claim.status).toBe(404);
-
-      // idB 依然可认领
-      const claimB = await req(app, `/teams/${team.id}/checklist/assignments/${idB}/claim`, {
-        method: "POST",
-      });
-      expect(claimB.status).toBe(200);
+        team.id,
+      );
+      const after = testSqlite
+        .prepare("SELECT updated_at AS updatedAt FROM teams WHERE id = ?")
+        .get(team.id) as { updatedAt: number };
+      expect(after.updatedAt).toBe(before.updatedAt);
     });
 
-    /**
-     * CAS 并发保护的说明（不在集成测试中真正验证）：
-     *
-     * 认领/取消认领路由用 `UPDATE ... WHERE id = ? AND updatedAt = ?` 做
-     * compare-and-swap，命中 0 行时重读一次再重试；两次都失败返回 409。
-     *
-     * 集成测试的 better-sqlite3 是同步 driver + Promise.all 无法真并发，
-     * 只能在生产（D1）验证真并发丢失场景。若需白盒测试，可在下一版通过
-     * 打桩 db.update 强制第一次返回 [] 来断言重试路径。
-     */
+    const response = await request(
+      app,
+      `/teams/${team.id}/checklist/assignments/water/claim`,
+      jsonRequest("POST"),
+    );
+
+    expect(response.status).toBe(200);
+    const stored = (
+      await testDb
+        .select()
+        .from(schema.teams)
+        .where(eq(schema.teams.id, team.id))
+    )[0]!;
+    expect(stored.checklist?.assignments?.[0]?.assigneeIds).toEqual([
+      leader.id,
+      member.id,
+    ]);
+  });
+
+  it("treats leftAt as the membership boundary for claims", async () => {
+    login(formerMember);
+    expect(
+      (
+        await request(
+          app,
+          `/teams/${team.id}/checklist/assignments/water/claim`,
+          jsonRequest("POST"),
+        )
+      ).status,
+    ).toBe(403);
+
+    login(stranger);
+    expect(
+      (
+        await request(
+          app,
+          `/teams/${team.id}/checklist/assignments/water/claim`,
+          jsonRequest("POST"),
+        )
+      ).status,
+    ).toBe(403);
+  });
+
+  it("allows the leader to claim without a team_members row", async () => {
+    login(leader);
+    const response = await request(
+      app,
+      `/teams/${team.id}/checklist/assignments/water/claim`,
+      jsonRequest("POST"),
+    );
+    expect(response.status).toBe(200);
+    expect(
+      await testDb
+        .select()
+        .from(schema.teamMembers)
+        .where(
+          and(
+            eq(schema.teamMembers.teamId, team.id),
+            eq(schema.teamMembers.userId, leader.id),
+          ),
+        ),
+    ).toEqual([]);
+  });
+
+  it("unclaims idempotently while preserving the membership row", async () => {
+    await testDb
+      .update(schema.teams)
+      .set({
+        checklist: {
+          assignments: [
+            { id: "water", task: "带水", assigneeIds: [member.id] },
+          ],
+        },
+      })
+      .where(eq(schema.teams.id, team.id));
+    login(member);
+
+    const first = await request(
+      app,
+      `/teams/${team.id}/checklist/assignments/water/claim`,
+      { method: "DELETE" },
+    );
+    expect(first.status).toBe(204);
+    const second = await request(
+      app,
+      `/teams/${team.id}/checklist/assignments/water/claim`,
+      { method: "DELETE" },
+    );
+    expect(second.status).toBe(204);
+    const membership = await testDb
+      .select()
+      .from(schema.teamMembers)
+      .where(eq(schema.teamMembers.userId, member.id));
+    expect(membership).toHaveLength(1);
+    expect(membership[0]?.leftAt).toBeNull();
+  });
+
+  it("rejects an unclaim when membership is lost between the read and conditional update", async () => {
+    await testDb
+      .update(schema.teams)
+      .set({
+        checklist: {
+          assignments: [
+            { id: "water", task: "带水", assigneeIds: [member.id] },
+          ],
+        },
+      })
+      .where(eq(schema.teams.id, team.id));
+    login(member);
+    beforeNextTeamUpdate(() => {
+      testSqlite
+        .prepare(
+          "UPDATE team_members SET left_at = ? WHERE team_id = ? AND user_id = ?",
+        )
+        .run(Date.now(), team.id, member.id);
+    });
+
+    const response = await request(
+      app,
+      `/teams/${team.id}/checklist/assignments/water/claim`,
+      { method: "DELETE" },
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: { code: "FORBIDDEN" },
+    });
+    const stored = (
+      await testDb
+        .select()
+        .from(schema.teams)
+        .where(eq(schema.teams.id, team.id))
+    )[0]!;
+    expect(stored.checklist?.assignments?.[0]?.assigneeIds).toEqual([
+      member.id,
+    ]);
+  });
+
+  it("keeps checklist private from visitors and former members", async () => {
+    login(null);
+    const visitor = await request(app, `/teams/${team.id}`);
+    expect(visitor.status).toBe(200);
+    expect(
+      ((await visitor.json()) as { team: { checklist: unknown } }).team
+        .checklist,
+    ).toBeNull();
+
+    login(formerMember);
+    const former = await request(app, `/teams/${team.id}`);
+    expect(
+      ((await former.json()) as { team: { checklist: unknown } }).team
+        .checklist,
+    ).toBeNull();
+
+    login(member);
+    const active = await request(app, `/teams/${team.id}`);
+    expect(
+      ((await active.json()) as { team: { checklist: unknown } }).team
+        .checklist,
+    ).toEqual(team.checklist);
   });
 });

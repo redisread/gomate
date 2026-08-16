@@ -19,6 +19,7 @@
   "appStatusPending": "待审核",
   "appStatusApproved": "已通过",
   "appStatusRejected": "已拒绝",
+  "appStatusCancelled": "已取消",
   "requirementsMore": "+{count}",
   "levelBeginner": "新手",
   "levelIntermediate": "进阶",

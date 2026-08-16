@@ -25,7 +25,7 @@
     "pending": "待审核",
     "approved": "已通过",
     "rejected": "已拒绝",
-    "leave_pending": "退出申请中"
+    "cancelled": "已取消"
   },
   "level": {
     "beginner": "新人",

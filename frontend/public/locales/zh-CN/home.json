@@ -9,16 +9,13 @@
     "title": "本周本地圈子在去哪",
     "subtitle": "不是你去过，是本地圈子已经在做的事",
     "inAction": "{n} 人在行动",
-    "avatarStack": {
-      "tooltip": "过去 7 天参与过此地点行动"
-    },
     "neighborTeams": {
       "title": "你的邻居参加了这些队伍"
     },
-    "neighborCount": "{city}邻居 {n} 人",
+    "neighborCount": "{region}邻居 {n} 人",
     "neighborCountMany": "你的邻居 4+",
-    "setCityCta": {
-      "title": "👋 设置你的城市，看看邻居在做什么",
+    "setRegionCta": {
+      "title": "👋 设置你的地区，看看邻居在做什么",
       "button": "去设置 →"
     }
   },

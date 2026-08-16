@@ -1,320 +1,141 @@
-# GoMate 前端页面功能文档
+# GoMate 前端页面
 
-> 最后更新：2026-08-09
-> 架构：Astro 6 SSR 壳 + React Islands（client:load）
-> 注意：本版本修正了页面数量、组件路径与已删除/新增页面，POI/路线相关页面已移除，新增发现/收藏/消息/API 设置等功能模块。
+最后更新：2026-08-16
 
-## 概览
+前端使用 Astro 6 SSR 壳与 React Islands，并与 Hono API 运行在同一个 Cloudflare Worker。浏览器请求统一使用同源 `/api/*`；Astro SSR 通过进程内 dispatcher 调用 API，不进行 HTTP self-fetch。
 
-前端共 **33 个页面**（不含 `sitemap.xml.ts` 生成端点），按功能分为 13 个模块：
+## 页面概览
 
-| 模块     | 页面数 | 是否需登录  |
-| -------- | ------ | ----------- |
-| 认证     | 4      | 否          |
-| 首页     | 1      | 否          |
-| 地点     | 2      | 否          |
-| 队伍     | 4      | 部分        |
-| 发现     | 4      | 部分        |
-| 收藏     | 1      | 是          |
-| 消息     | 2      | 是          |
-| 用户     | 4      | 部分        |
-| 博客     | 2      | 否          |
-| 管理     | 1      | 是（Admin） |
-| API 设置 | 1      | 是          |
-| 信息页   | 6      | 否          |
-| 快捷入口 | 1      | 否          |
+除 `sitemap.xml.ts` 外，当前共有 34 个用户页面：
 
----
+| 模块     | 页面数 | 认证要求       |
+| -------- | -----: | -------------- |
+| 认证     |      5 | 否             |
+| 首页     |      1 | 否             |
+| 地点     |      2 | 部分操作需登录 |
+| 队伍     |      4 | 部分操作需登录 |
+| Story    |      4 | 写入需登录     |
+| 收藏     |      1 | 是             |
+| 消息     |      2 | 是             |
+| 用户     |      4 | 部分页面需登录 |
+| 博客     |      2 | 否             |
+| 地点管理 |      2 | Admin          |
+| 信息页   |      6 | 否             |
+| 创建入口 |      1 | 否             |
 
-## 认证模块
+## 认证
 
-### 登录 `/login`
+| 路径               | 说明                                                                     |
+| ------------------ | ------------------------------------------------------------------------ |
+| `/login`           | 登录                                                                     |
+| `/register`        | 注册                                                                     |
+| `/verify-email`    | 从 fragment 读取 token；用户明确确认后以同源 body-only POST 完成邮箱验证 |
+| `/forgot-password` | 请求密码重置邮件                                                         |
+| `/reset-password`  | 从 fragment 读取邮件 token 并以 POST body 设置新密码                     |
 
-**组件：** `pages/login.astro`
-**认证要求：** 否
-
-### 注册 `/register`
-
-**组件：** `pages/register.astro`
-**认证要求：** 否
-
-### 忘记密码 `/forgot-password`
-
-**组件：** `pages/forgot-password.astro`
-**认证要求：** 否
-
-### 重置密码 `/reset-password`
-
-**组件：** `pages/reset-password.astro`
-**认证要求：** 否（通过邮件 token 访问）
-
----
+Better Auth 固定挂载在 `/api/auth`，使用同源 Cookie；不再存在跨子域认证或 API Key 设置页。
+验证与重置 token 不进入请求 URL、SSR、日志或 trace，页面读取后立即清除 fragment。
 
 ## 首页 `/`
 
-**组件：** `pages/index.astro`
-**认证要求：** 否
+- 访客 Hero、近期公开队伍、地点推荐与注册入口。
+- 登录用户看到下一次行程、公开队伍推荐和 onboarding。
+- 本地圈按 Region 展示公共活跃聚合；附近队伍按当前用户实时合并，不进入公共 KV。
+- 全国地图使用 `/api/locations/stats` 的 Region DTO。
 
-**功能点：**
+## 地点
 
-- 访客 Hero：产品价值说明 + 可滑动的重叠队伍卡片；无队伍时降级展示地点卡片
-- 近期出发：展示最多 3 个招募中队伍，可进入队伍详情或查看全部队伍
-- 会员首页：个性化问候 + 下一次行程；暂无行程时展示最多 2 个公开队伍推荐
-- 本地圈：展示同城活跃地点与附近队伍；未设置城市时引导完善个人资料
-- 全国探索地图：按省份聚焦地点分布，地点标记可进入详情页
-- 访客转化：三步使用说明 + 移动端注册浮动入口
-- 首次登录且尚未加入队伍时展示 onboarding 引导
-- 首页不提供搜索和筛选；地点与队伍的搜索分别在 `/locations`、`/teams`
+### 列表 `/locations`
 
-**关键交互：**
+- 搜索、开放城市 Region、活动类型和排序筛选。
+- 仅展示 `published` 地点。
+- 卡片使用 `region`、`supportedActivityTypes`、`coverImageUrl` 和结构化 `extra`。
 
-- 访客队伍卡片支持触摸滑动、拖拽、按钮和键盘翻页
-- 点击地图省份进入聚焦状态并同步 `mapProvince` URL 参数；点击地点标记进入地点详情
-- 会员可从首页进入下一次行程、找队伍或创建队伍
-- 认证状态加载时显示首屏骨架；本地圈加载失败时独立降级，不阻塞其他首页模块
+### 详情 `/locations/[id]`
 
----
+- 展示完整 Region、路线资料、图片、标签和相关队伍。
+- `[id]` 只接受 Location ID；slug 仅作为 Region 内业务字段，不参与前端路由。
+- 活动回顾由 `/api/stories?locationId=<id>` 的 V2 cursor feed 提供；组件明确展示加载、空态和可重试错误，不存在独立 Activity Post 模型。
+- 收藏读写使用 `/api/favorites/locations`。
 
-## 地点模块
+## 队伍
 
-### 地点列表 `/locations`
+### 列表 `/teams`
 
-**组件：** `pages/locations/index.astro`
-**认证要求：** 否
+- 搜索、Region、活动类型、时间与派生 lifecycle 筛选。
+- 卡片使用 `startAt/endAt`、`activeParticipantCount/maxParticipants`、`recruitmentStatus` 和派生 lifecycle。
 
-**功能点：**
+### 详情 `/teams/[id]`
 
-- Hero 搜索区（深色渐变背景）
-  - 搜索框（玻璃效果 + 清空按钮）
-  - 城市下拉筛选（单选，外部点击关闭）
-- 筛选栏：难度、季节、排序
-- 地点卡片网格（3 列，含封面图、最佳季节、难度标签）
-- 分页或无限滚动
+- 展示领队、有效成员、申请状态、行程与行动本。
+- 用户通过 join request 申请；领队以申请 ID 审批。
+- 成员离队直接结束 active membership，不存在退出申请/审批流程。
+- 详情页通过 `/api/stories?teamId=<id>` 展示队伍回顾。已结束且成行的队伍中，当前 leader 或 active member 可见“发布回顾”入口；链接进入 `/discover/create?teamId=<id>`。
 
-### 地点详情 `/locations/[id]`
+### 创建与编辑
 
-**组件：** `pages/locations/[id].astro`
-**认证要求：** 否（部分操作需登录）
+| 路径               | 说明                                                                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/teams/create`    | 选择地点后，从该地点的 `supportedActivityTypes` 显式选择 `activityType`；切换地点会清空不再受支持的值。要求按行输入，提交前 trim 并过滤空行后发送 `string[]` |
+| `/teams/[id]/edit` | 领队编辑仍允许变更的 V2 字段                                                                                                                                 |
 
-**功能点：**
+## Story
 
-- 封面图 + 基础信息（名称、城市、最佳季节、难度标签）
-- 决策信息区块：停车/装备/交通（静态 CTA）
-- 队伍 Activity Recap 模块
-- 队伍列表（含倒计时）
-- 评价/故事入口
+| 路径                           | 说明                                                        |
+| ------------------------------ | ----------------------------------------------------------- |
+| `/discover`                    | 已发布 Story cursor feed                                    |
+| `/discover/[id]`               | Story 详情、点赞与收藏                                      |
+| `/discover/create`             | 上传临时图片并以 `imageKeys` 创建普通 Story                 |
+| `/discover/create?teamId=<id>` | 创建队伍回顾；payload 携带 `teamId`，地点由后端从 Team 推导 |
+| `/discover/[id]/edit`          | 作者或 Admin 编辑内容并保留/删除既有最终图片                |
 
----
-
-## 队伍模块
-
-### 队伍列表 `/teams`
-
-**组件：** `pages/teams/index.astro`
-**认证要求：** 否
-
-**功能点：**
-
-- 筛选栏：城市、难度、时间范围
-- 队伍卡片网格（含招募状态、倒计时、人数）
-- 已结束队伍灰化处理
-
-### 队伍详情 `/teams/[id]`
-
-**组件：** `pages/teams/[id].astro`
-**认证要求：** 部分（申请需登录）
-
-**功能点：**
-
-- 封面图 + 基本信息
-- 参与成员头像列表
-- Activity Recap 模块（发布活动动态）
-- 申请/退出队伍操作
-- 已结束队伍状态展示
-- 行动本（checklist）：队长/成员可编辑，访客只读隐藏
-
-### 创建队伍 `/teams/create` 和 `/teams/[id]/edit`
-
-**组件：** `pages/teams/create.astro`、`pages/teams/[id]/edit.astro`
-**认证要求：** 是
-
-**功能点：**
-
-- 地点选择 + 基本信息录入
-- 时间、人数、难度设置
-- 提交发布（`CreateTeamClient`，`client:load`）
-
----
-
-## 发现模块（故事）
-
-### 发现首页 `/discover`
-
-**组件：** `pages/discover/index.astro`
-**认证要求：** 否
-
-### 发现详情 `/discover/[id]`
-
-**组件：** `pages/discover/[id].astro`
-**认证要求：** 否
-
-### 发布故事 `/discover/create`
-
-**组件：** `pages/discover/create.astro`
-**认证要求：** 是
-
-### 编辑故事 `/discover/[id]/edit`
-
-**组件：** `pages/discover/[id]/edit.astro`
-**认证要求：** 是（作者或管理员）
-
----
-
-## 用户模块
-
-### 我的队伍 `/my-teams`
-
-**组件：** `pages/my-teams/index.astro`
-**认证要求：** 是
-
-**功能点：**
-
-- 统一管理用户参与/创建的队伍
-- `MyTeamsClient` React 组件（`client:visible`）
-
-### 个人主页 `/profile`
-
-**组件：** `pages/profile/index.astro`
-**认证要求：** 是
-
-### 编辑资料 `/profile/edit`
-
-**组件：** `pages/profile/edit.astro`
-**认证要求：** 是
-
-### 用户页 `/users/[id]`
-
-**组件：** `pages/users/[id].astro`
-**认证要求：** 否
-
----
+创建成功后图片从用户专属 `temp/stories/<userId>/...` 归档到 Story 最终 key。普通 Story 与队伍回顾共用 Story DTO、卡片和 feed envelope；队伍回顾同样只提交 `imageKeys[]`，不会恢复 Activity Post 图片合同。Story 收藏使用 `/api/favorites/stories`；原生分享不再上报分享埋点。
+关联地点失去公开状态或所属 city Region 停止服务后，对应 Story 不再进入公开 feed、
+详情、标签统计、点赞或收藏。Story 详情 GET 是纯读取，不在请求内累计浏览量。
 
 ## 收藏与消息
 
 ### 收藏 `/favorites`
 
-**组件：** `pages/favorites/index.astro`
-**认证要求：** 是
+页面分别读取地点收藏和 Story 收藏的 cursor feed，再在 UI 合并展示；写操作始终使用资源专用 endpoint。
 
-### 消息 `/messages`
+### 消息 `/messages`、`/messages/[id]`
 
-**组件：** `pages/messages/index.astro`、`pages/messages/[id].astro`
-**认证要求：** 是
+会话按 `teamId + memberUserId` 唯一。只有该成员或队伍当前领队可以查看、发送和标记消息。
+聊天详情首屏读取最新 50 条并保存响应的 opaque `nextCursor`；“加载更早消息”按该
+cursor 请求、按消息 ID 去重后 prepend，并以 `scrollHeight` 增量保持用户当前阅读位置。
+5 秒轮询从无 cursor 的最新页开始；若该页与本地消息没有 ID 重叠，则临时沿响应 cursor
+回溯到重叠点或历史末尾，再一次性 merge。轮询和这段 gap bridge 都不会覆盖用户加载历史时
+保存的 cursor，否则首屏响应会把深层 cursor 重置，导致第 51 条以前的消息再次不可达。
 
----
+## 用户
 
-## API 设置
+| 路径            | 说明                                      |
+| --------------- | ----------------------------------------- |
+| `/my-teams`     | 当前用户创建、加入和申请中的队伍          |
+| `/profile`      | 当前用户资料与队伍摘要                    |
+| `/profile/edit` | 编辑资料；城市值保存为开放 city Region ID |
+| `/users/[id]`   | 公开用户资料                              |
 
-### API Key 管理 `/settings/api-keys`
+## 地点管理
 
-**组件：** `pages/settings/api-keys.astro`（`ApiKeysClient`，`client:load`）
-**认证要求：** 是
+| 路径                         | 说明                                              |
+| ---------------------------- | ------------------------------------------------- |
+| `/admin/locations/new`       | 创建 V2 地点                                      |
+| `/admin/locations/[id]/edit` | 编辑 Region、活动类型、图片、标签和结构化地点资料 |
 
-**功能点：**
+两个页面均要求 Admin。Location API 边界使用 camelCase `extra`，服务层写入数据库时转换为 V2 的 snake_case JSON。
 
-- 创建 / 复制 / 删除 API Key（`POST /auth/api-key/create`，每位用户最多 10 个）
-- 用于 `/v1/*` 公开 API 的 `x-api-key` 认证
+## 博客、信息页与创建入口
 
----
+- 博客：`/blog`、`/blog/[slug]`。
+- 信息页：`/about`、`/contact`、`/feedback`、`/help`、`/privacy`、`/terms`。
+- `/create` 提供创建队伍与发布 Story 的统一入口。
+- `sitemap.xml.ts` 是 SSR 生成端点，不计入用户页面数量。
 
-## 博客模块
+## 前端运行时约束
 
-### 博客列表 `/blog`
-
-**组件：** `pages/blog/index.astro`
-**认证要求：** 否
-
-### 博客详情 `/blog/[slug]`
-
-**组件：** `pages/blog/[slug].astro`
-**认证要求：** 否
-
----
-
-## 管理模块
-
-### 地点管理 `/admin/locations/[id]/edit`
-
-**组件：** `pages/admin/locations/[id]/edit.astro`
-**认证要求：** 是（Admin）
-
-**功能点：**
-
-- 地点基本信息编辑
-- 决策信息录入（停车/装备，`LocationEditClient` 含本地草稿自动保存/恢复）
-- 封面图 + 图片管理
-- 预览面板（实时同步）
-
----
-
-## 快捷入口
-
-### 创建入口 `/create`
-
-**组件：** `pages/create.astro`
-**认证要求：** 否
-
-**功能点：**
-
-- 统一内容创建导航页（三卡片：发布活动 / 发布故事 / 敬请期待）
-- 卡片跳转：发布活动 → `/teams/create`，发布故事 → `/discover/create`
-- 即将推出占位卡片（灰色半透明）
-
----
-
-## 信息页
-
-以下为静态信息页：
-
-| 路径        | 说明     |
-| ----------- | -------- |
-| `/about`    | 关于我们 |
-| `/contact`  | 联系页   |
-| `/feedback` | 反馈页   |
-| `/help`     | 帮助页   |
-| `/privacy`  | 隐私政策 |
-| `/terms`    | 服务条款 |
-
----
-
-## 其他
-
-- `pages/sitemap.xml.ts`：生成 `sitemap.xml` 的端点，非用户可见页面。
-
----
-
-## 功能矩阵总览
-
-| 页面     | 搜索 | 筛选 | 收藏 | 消息 | 队伍申请 | 管理 |
-| -------- | ---- | ---- | ---- | ---- | -------- | ---- |
-| 首页     | ❌   | ❌   | ❌   | ❌   | ❌       | ❌   |
-| 地点列表 | ✅   | ✅   | ❌   | ❌   | ❌       | ❌   |
-| 地点详情 | ❌   | ❌   | ✅   | ❌   | ❌       | ❌   |
-| 队伍列表 | ✅   | ✅   | ❌   | ❌   | ❌       | ❌   |
-| 队伍详情 | ❌   | ❌   | ❌   | ❌   | ✅       | ❌   |
-| 创建入口 | ❌   | ❌   | ❌   | ❌   | ❌       | ❌   |
-| 我的队伍 | ❌   | ✅   | ❌   | ❌   | ❌       | ❌   |
-| 收藏     | ❌   | ❌   | —    | ❌   | ❌       | ❌   |
-| 消息     | ❌   | ❌   | ❌   | —    | ❌       | ❌   |
-| API 设置 | ❌   | ❌   | ❌   | ❌   | ❌       | ❌   |
-| 地点管理 | ❌   | ❌   | ❌   | ❌   | ❌       | ✅   |
-
----
-
-## 设计系统摘要
-
-- **暗色模式**：全站支持，通过 Tailwind CSS `dark:` 变体实现
-- **颜色系统**：amber（主色）、stone（背景）、green（成功）、red（错误）
-- **图标库**：Lucide React
-- **动画**：入场动画（Intersection Observer）、换一批动效（Round 3 动效体系）
-- **响应式**：移动优先，支持 lg 断点双栏布局
+- 浏览器 API helper 只接收资源路径，例如 `/teams`，由 helper 添加唯一 `/api` 前缀。
+- SSR 页面使用 `frontend/src/lib/server-api.ts`，不得请求自身域名。
+- 用户可见文案必须来自 i18n；修改后运行 `pnpm i18n:build` 与前端 i18n validation。
+- Worker 的非 `/api` 请求全部委派给 Astro 官方 handler；`/api` 未命中路径必须返回 JSON 404。

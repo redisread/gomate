@@ -1,19 +1,20 @@
 import * as React from "react";
 import {
-  Users, Mountain, ChevronRight, Flame, MapPin, Calendar, Clock, Filter,
+  Users, Mountain, ChevronLeft, ChevronRight, Flame, MapPin, Calendar, Clock, Filter,
   RefreshCw, Tag, X, Search,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import type { Team } from "@/lib/types";
+import type { ActivityType, RecruitmentStatus, Team } from "@/lib/types";
+import { formatTeamStart, getTeamDisplayStatus } from "@/lib/team-display";
 import {
-  DIFFICULTY_CONFIG, DIFFICULTY_OPTIONS,
+  DIFFICULTY_CONFIG,
   getCardGradient, getProgressGradient,
 } from "@/lib/constants";
 import { getStatusConfig } from "./constants";
 import { TeamProgress, TeamLeaderMini } from "./shared";
 import { TeamsQuickFilters } from "./teams-quick-filters";
-import type { City } from "@/lib/types";
+import type { Region } from "@/lib/types";
 
 // ─── MemberProgress ────────────────────────────────────────────────
 export function MemberProgress({ current, max, showUrgency = true }: { current: number; max: number; showUrgency?: boolean }) {
@@ -86,8 +87,11 @@ export function StatusBadge({ status }: { status: string }) {
 export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
   const { t } = useI18n(["teams", "filter", "common", "enums"]);
   const location = team.location;
-  const diff = location?.difficulty ? DIFFICULTY_CONFIG[location.difficulty as keyof typeof DIFFICULTY_CONFIG] : null;
+  const difficulty = location?.extra.hiking?.difficulty;
+  const diff = difficulty ? DIFFICULTY_CONFIG[difficulty] : null;
   const gradient = getCardGradient(team.id);
+  const start = formatTeamStart(team);
+  const displayStatus = getTeamDisplayStatus(team);
 
   return (
     <li className="h-full list-none">
@@ -97,9 +101,9 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
       >
         <article className="flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-100/30 motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:hover:border-amber-800 dark:hover:shadow-amber-900/20">
         <div className="relative h-36 overflow-hidden">
-          {location?.coverImage ? (
+          {location?.coverImageUrl ? (
             <img
-              src={location.coverImage}
+              src={location.coverImageUrl}
               alt={location.name ?? t("common.unknown")}
               loading="lazy"
               className="h-full w-full object-cover outline outline-1 outline-black/10 transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100 dark:outline-white/10"
@@ -125,20 +129,20 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
           <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
-              {team.date}
+              {start.date}
             </span>
-            {team.time && (
+            {start.time && (
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-                {team.time}
+                {start.time}
               </span>
             )}
           </div>
           <div className="mt-auto">
             <TeamProgress
-              current={team.currentMembers}
-              max={team.maxMembers}
-              status={team.status}
+              current={team.activeParticipantCount}
+              max={team.maxParticipants}
+              status={displayStatus}
               showLabel={true}
               size="sm"
             />
@@ -178,14 +182,14 @@ export function TeamSkeleton() {
 // ─── EmptyState ─────────────────────────────────────────────────────
 export function EmptyState({
   onClear,
-  onClearCity,
+  onClearRegion,
   hasActiveCriteria,
-  selectedCityName,
+  selectedRegionName,
 }: {
   onClear: () => void;
-  onClearCity: () => void;
+  onClearRegion: () => void;
   hasActiveCriteria: boolean;
-  selectedCityName?: string;
+  selectedRegionName?: string;
 }) {
   const { t } = useI18n(["teams", "filter", "common"]);
   return (
@@ -194,19 +198,19 @@ export function EmptyState({
         <Mountain className="h-7 w-7" aria-hidden="true" />
       </div>
       <h3 className="mb-2 text-lg font-semibold text-foreground">
-        {selectedCityName ? t("teams.emptyCityTitle", { city: selectedCityName }) : t("teams.noResults")}
+        {selectedRegionName ? t("teams.emptyCityTitle", { city: selectedRegionName }) : t("teams.noResults")}
       </h3>
       <p className="mb-6 max-w-sm text-sm leading-relaxed text-muted-foreground">
-        {selectedCityName ? t("teams.emptyCityDesc", { city: selectedCityName }) : t("teams.noResultsTip")}
+        {selectedRegionName ? t("teams.emptyCityDesc", { city: selectedRegionName }) : t("teams.noResultsTip")}
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3">
         {hasActiveCriteria && (
           <button
             type="button"
-            onClick={selectedCityName ? onClearCity : onClear}
+            onClick={selectedRegionName ? onClearRegion : onClear}
             className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-medium text-muted-foreground transition-[background-color,border-color,color,transform] duration-150 hover:border-amber-300 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]"
           >
-            {selectedCityName ? t("teams.browseAllCities") : t("teams.clearFilters")}
+            {selectedRegionName ? t("teams.browseAllCities") : t("teams.clearFilters")}
           </button>
         )}
         <a
@@ -243,57 +247,87 @@ export function TeamsErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 // ─── Pagination ─────────────────────────────────────────────────────
-export function Pagination({ current, total, onChange }: { current: number; total: number; onChange: (page: number) => void }) {
+export function Pagination({ current, hasNext, onChange }: { current: number; hasNext: boolean; onChange: (page: number) => void }) {
   const { t } = useI18n(["teams"]);
-  if (total <= 1) return null;
+  if (current === 1 && !hasNext) return null;
   return (
     <nav className="mt-10 flex items-center justify-center gap-2" aria-label={t("teams.paginationLabel")}>
-      {Array.from({ length: total }, (_, i) => i + 1).map((page) => (
-        <button
-          key={page}
-          type="button"
-          onClick={() => onChange(page)}
-          aria-current={page === current ? "page" : undefined}
-          aria-label={t("teams.pageLabel", { page })}
-          className={cn("h-10 w-10 rounded-full text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]",
-            page === current ? "bg-amber-600 text-white shadow-md shadow-amber-200 dark:shadow-amber-900/30" : "bg-card text-stone-500 dark:text-stone-400 border border-border hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-700 dark:hover:text-amber-400"
-          )}>
-          {page}
-        </button>
-      ))}
+      <button
+        type="button"
+        onClick={() => onChange(current - 1)}
+        disabled={current === 1}
+        aria-label={t("teams.pageLabel", { page: current - 1 })}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-stone-500 transition-colors hover:border-amber-300 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-400"
+      >
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+      </button>
+      <span
+        aria-current="page"
+        aria-label={t("teams.pageLabel", { page: current })}
+        className="flex h-10 min-w-10 items-center justify-center rounded-full bg-amber-600 px-3 text-sm font-medium text-white shadow-md shadow-amber-200 dark:shadow-amber-900/30"
+      >
+        {current}
+      </span>
+      <button
+        type="button"
+        onClick={() => onChange(current + 1)}
+        disabled={!hasNext}
+        aria-label={t("teams.pageLabel", { page: current + 1 })}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-stone-500 transition-colors hover:border-amber-300 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-400"
+      >
+        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+      </button>
     </nav>
   );
 }
 
 // ─── FilterPanel ────────────────────────────────────────────────────
 interface FilterPanelProps {
-  selectedDifficulty: string[];
+  selectedActivityType: ActivityType | "";
+  selectedRecruitmentStatus: RecruitmentStatus | "";
   availableTags: { id: string; name: string }[];
   selectedTags: string[];
   activeFiltersCount: number;
-  onDifficultyToggle: (id: string) => void;
+  onActivityTypeSelect: (activityType: ActivityType | "") => void;
+  onRecruitmentStatusSelect: (status: RecruitmentStatus | "") => void;
   onTagToggle: (tagId: string) => void;
   onClearAll: () => void;
 }
 
 export function FilterPanel({
-  selectedDifficulty, availableTags, selectedTags, activeFiltersCount,
-  onDifficultyToggle, onTagToggle, onClearAll,
+  selectedActivityType, selectedRecruitmentStatus, availableTags, selectedTags, activeFiltersCount,
+  onActivityTypeSelect, onRecruitmentStatusSelect, onTagToggle, onClearAll,
 }: FilterPanelProps) {
   const { t } = useI18n(["teams", "filter", "common", "enums"]);
   return (
     <div id="team-filter-panel" role="region" aria-label={t("filter.title")} className="mt-4 space-y-5 border-t border-border pt-4 pb-1 animate-in slide-in-from-top-2 duration-200 motion-reduce:animate-none">
       <div>
-        <span className="mb-2 block text-sm font-semibold text-stone-600 dark:text-stone-300">{t("filter.difficulty")}</span>
+        <span className="mb-2 block text-sm font-semibold text-stone-600 dark:text-stone-300">{t("common.activityLocation")}</span>
         <div className="flex flex-wrap gap-2">
-          {DIFFICULTY_OPTIONS.map((opt) => {
-            const isSelected = selectedDifficulty.includes(opt.id);
+          {(["hiking", "explore", "leisure", "travel"] as const).map((activityType) => {
+            const isSelected = selectedActivityType === activityType;
             return (
-              <button key={opt.id} type="button" onClick={() => onDifficultyToggle(opt.id)} aria-pressed={isSelected}
+              <button key={activityType} type="button" onClick={() => onActivityTypeSelect(isSelected ? "" : activityType)} aria-pressed={isSelected}
                 className={cn("min-h-10 rounded-full border px-3 text-xs transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]",
-                  isSelected ? opt.activeColor : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
+                  isSelected ? "border-amber-400 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300" : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
                 )}>
-                {t(opt.labelKey)}
+                {t(`enums.locationType.${activityType}`)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div>
+        <span className="mb-2 block text-sm font-semibold text-stone-600 dark:text-stone-300">{t("teams.registrationStatus")}</span>
+        <div className="flex flex-wrap gap-2">
+          {(["open", "closed"] as const).map((status) => {
+            const isSelected = selectedRecruitmentStatus === status;
+            return (
+              <button key={status} type="button" onClick={() => onRecruitmentStatusSelect(isSelected ? "" : status)} aria-pressed={isSelected}
+                className={cn("min-h-10 rounded-full border px-3 text-xs transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]",
+                  isSelected ? "border-amber-400 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300" : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
+                )}>
+                {t(`enums.teamStatus.${status}`)}
               </button>
             );
           })}
@@ -334,22 +368,22 @@ interface TeamsHeaderProps {
   onSearchChange: (q: string) => void;
   onToggleFilters: () => void;
   renderFilterPanel: () => React.ReactNode;
-  cities: City[];
-  selectedCityId: string;
+  regions: Region[];
+  selectedRegionId: string;
   activeDateQuickType: string | null;
   hasDateFilter: boolean;
-  citiesLoading: boolean;
-  citiesError: boolean;
-  onCitySelect: (cityId: string) => void;
+  regionsLoading: boolean;
+  regionsError: boolean;
+  onRegionSelect: (regionId: string) => void;
   onDateQuickSelect: (type: string) => void;
-  onRetryCities: () => void;
+  onRetryRegions: () => void;
 }
 
 export function TeamsHeader({
   searchQuery, showFilters, advancedFiltersCount,
   onSearchChange, onToggleFilters, renderFilterPanel,
-  cities, selectedCityId, activeDateQuickType, hasDateFilter, citiesLoading, citiesError,
-  onCitySelect, onDateQuickSelect, onRetryCities,
+  regions, selectedRegionId, activeDateQuickType, hasDateFilter, regionsLoading, regionsError,
+  onRegionSelect, onDateQuickSelect, onRetryRegions,
 }: TeamsHeaderProps) {
   const { t } = useI18n(["teams", "filter", "common"]);
   return (
@@ -401,15 +435,15 @@ export function TeamsHeader({
           </button>
         </div>
         <TeamsQuickFilters
-          cities={cities}
-          selectedCityId={selectedCityId}
+          regions={regions}
+          selectedRegionId={selectedRegionId}
           activeDateQuickType={activeDateQuickType}
           hasDateFilter={hasDateFilter}
-          citiesLoading={citiesLoading}
-          citiesError={citiesError}
-          onCitySelect={onCitySelect}
+          regionsLoading={regionsLoading}
+          regionsError={regionsError}
+          onRegionSelect={onRegionSelect}
           onDateQuickSelect={onDateQuickSelect}
-          onRetryCities={onRetryCities}
+          onRetryRegions={onRetryRegions}
         />
         {showFilters && renderFilterPanel()}
       </div>

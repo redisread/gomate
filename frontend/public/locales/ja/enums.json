@@ -25,7 +25,7 @@
     "pending": "審査待ち",
     "approved": "承認済み",
     "rejected": "却下",
-    "leave_pending": "退出申請中"
+    "cancelled": "キャンセル済み"
   },
   "level": {
     "beginner": "初心者",

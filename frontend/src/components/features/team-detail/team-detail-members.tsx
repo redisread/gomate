@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Crown, ChevronDown, Loader2, MessageCircle } from "lucide-react";
+import { ChevronDown, Loader2, MessageCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { TeamMember } from "@/lib/types";
@@ -7,12 +7,10 @@ import { createConversation } from "@/hooks/useMessages";
 
 export function MemberAvatarGrid({
   members,
-  leaderId,
   teamId,
   canMessageMembers = false,
 }: {
   members: TeamMember[];
-  leaderId?: string;
   teamId?: string;
   canMessageMembers?: boolean;
 }) {
@@ -43,49 +41,37 @@ export function MemberAvatarGrid({
     <div>
       <div className="flex flex-wrap gap-3">
         {visible.map((m) => {
-          const name = m.nickname || m.name;
-          const isLeader = m.userId === leaderId;
+          const user = m.user;
+          if (!user) return null;
+          const name = user.nickname || user.name;
           const canMessageMember =
             canMessageMembers &&
             !!teamId &&
-            !isLeader &&
-            m.status === "approved";
+            m.leftAt === null;
 
           return (
             <div
-              key={m.id}
+              key={m.userId}
               className="relative group flex flex-col items-center gap-1.5"
             >
               <a href={`/users/${m.userId}`} className="relative flex flex-col items-center gap-1.5 cursor-pointer">
                 <div
                   className={cn(
                     "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150",
-                    isLeader
-                      ? "ring-2 ring-amber-400 ring-offset-1 bg-gradient-to-br from-amber-500 to-amber-300 group-hover:ring-amber-300"
-                      : "bg-secondary ring-1 ring-secondary/50 group-hover:scale-105 group-hover:ring-amber-300"
+                    "bg-secondary ring-1 ring-secondary/50 group-hover:scale-105 group-hover:ring-amber-300"
                   )}
                 >
-                  {m.avatar ? (
-                    <img src={m.avatar} alt={name} className="w-full h-full object-cover" />
+                  {user.image ? (
+                    <img src={user.image} alt={name} className="w-full h-full object-cover" />
                   ) : (
-                    <span
-                      className={cn(
-                        "font-semibold text-sm",
-                        isLeader ? "text-white" : "text-stone-500 text-muted-foreground/70"
-                      )}
-                    >
+                    <span className="font-semibold text-sm text-stone-500 text-muted-foreground/70">
                       {name?.[0] || "?"}
                     </span>
                   )}
                 </div>
-                {isLeader && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center shadow-sm">
-                    <Crown className="w-2.5 h-2.5 text-white" />
-                  </span>
-                )}
-                {m.wechat && (
-                  <p title={m.wechat} className="text-xs text-muted-foreground min-w-0 truncate text-center leading-tight">
-                    {m.wechat}
+                {user.extra.wechat && (
+                  <p title={user.extra.wechat} className="text-xs text-muted-foreground min-w-0 truncate text-center leading-tight">
+                    {user.extra.wechat}
                   </p>
                 )}
               </a>

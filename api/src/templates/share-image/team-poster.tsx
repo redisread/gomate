@@ -7,8 +7,8 @@ interface TeamPosterData {
   date: string;
   locationName?: string | null;
   coverImage?: string | null;
-  currentMembers: number;
-  maxMembers: number;
+  activeParticipantCount: number;
+  maxParticipants: number;
   leaderName?: string | null;
   leaderAvatar?: string | null;
   spotsToForm?: number | null;
@@ -215,8 +215,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
     date,
     locationName,
     coverImage,
-    currentMembers,
-    maxMembers,
+    activeParticipantCount,
+    maxParticipants,
     leaderName,
     leaderAvatar,
     spotsToForm,
@@ -226,14 +226,14 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
 
   const fontFamily = fonts.length > 0 ? fonts[0].name : "system-ui";
   const hasCover = !!coverImage;
-  const safeMaxMembers = Math.max(maxMembers || currentMembers || 1, 1);
-  const progressPercent = Math.min(Math.max(currentMembers / safeMaxMembers, 0), 1);
+  const safeMaxParticipants = Math.max(maxParticipants || activeParticipantCount || 1, 1);
+  const progressPercent = Math.min(Math.max(activeParticipantCount / safeMaxParticipants, 0), 1);
   const progressWidth = Math.round(progressPercent * 190);
   const copy = data.i18n ?? {
     siteSlogan: "找到同行的人，出发就不远",
     teamStatusNeed: (count: number) => `还差 ${count} 人成行`,
     teamStatusReady: "队伍已成行",
-    teamMemberCount: (current: number, max: number) => `${current}/${max} 人`,
+    teamMemberCount: (activeCount: number, capacity: number) => `${activeCount}/${capacity} 人`,
     teamDepartureLabel: "出发时间",
     teamLocationLabel: "集合地点",
     teamLocationPending: "目的地待确认",
@@ -512,7 +512,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   fontWeight: 800,
                                   color: C.primary,
                                 },
-                                children: copy.teamMemberCount(currentMembers, safeMaxMembers),
+                                children: copy.teamMemberCount(activeParticipantCount, safeMaxParticipants),
                               },
                             },
                           ],

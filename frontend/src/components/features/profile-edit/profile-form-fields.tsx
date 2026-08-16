@@ -2,9 +2,9 @@ import * as React from "react";
 import { Loader2, Camera, X, Check, MessageCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import { CitySelect } from "@/components/ui/city-select";
-import type { City } from "@/lib/types";
-import { inputCls, LEVEL_OPTIONS, PRESET_EQUIPMENT_KEYS } from "./constants";
+import { RegionSelect } from "@/components/ui/region-select";
+import type { Region } from "@/lib/types";
+import { inputCls, LEVEL_OPTIONS } from "./constants";
 
 // ─── FieldLabel ─────────────────────────────────────────────────────
 export function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
@@ -94,13 +94,12 @@ interface BasicInfoFieldsProps {
   bioNearLimit: boolean;
   bioAtLimit: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  // #181: 城市选择器（CitySelect onChange 产出 cityId，非 DOM event）
-  city: string;
-  cities: City[];
-  onCityChange: (cityId: string) => void;
+  regionId: string;
+  regions: Region[];
+  onRegionChange: (regionId: string) => void;
 }
 
-export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLimit, bioAtLimit, onChange, city, cities, onCityChange }: BasicInfoFieldsProps) {
+export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLimit, bioAtLimit, onChange, regionId, regions, onRegionChange }: BasicInfoFieldsProps) {
   const { t } = useI18n(["profile", "common"]);
   return (
     <div className="grid gap-x-5 gap-y-6 sm:grid-cols-2">
@@ -114,11 +113,11 @@ export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLim
         <input name="nickname" type="text" value={nickname} onChange={onChange} maxLength={20} placeholder={t('profile.nicknamePlaceholder')} className={inputCls} />
         <p className="text-xs text-stone-400">{t('profile.nicknameHint')}</p>
       </div>
-      {/* #181: 所在城市（非必填）—— 设置后本地圈子可见邻居维度 */}
+      {/* 所在地区（非必填）—— 设置后本地圈子可见邻居维度 */}
       <div className="space-y-1.5">
-        <FieldLabel>{t('profile.cityLabel')}</FieldLabel>
-        <CitySelect value={city} onChange={onCityChange} cities={cities} clearable />
-        <p className="text-xs text-stone-400">{t('profile.cityHint')}</p>
+        <FieldLabel>{t('profile.regionLabel')}</FieldLabel>
+        <RegionSelect value={regionId} onChange={onRegionChange} regions={regions} clearable />
+        <p className="text-xs text-stone-400">{t('profile.regionHint')}</p>
       </div>
       <div className="space-y-1.5 sm:col-span-2">
         <FieldLabel>{t('profile.bio')}</FieldLabel>
@@ -135,17 +134,10 @@ export function BasicInfoFields({ userName, nickname, bio, bioLength, bioNearLim
 // ─── OutdoorInfoFields ──────────────────────────────────────────────
 interface OutdoorInfoFieldsProps {
   level: string;
-  experience: string;
-  equipment: string[];
-  equipmentInput: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  onEquipmentKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  onRemoveEquipment: (index: number) => void;
-  onAddPresetEquipment: (item: string) => void;
-  onEquipmentInputChange: (v: string) => void;
 }
 
-export function OutdoorInfoFields({ level, experience, equipment, equipmentInput, onChange, onEquipmentKeyDown, onRemoveEquipment, onAddPresetEquipment, onEquipmentInputChange }: OutdoorInfoFieldsProps) {
+export function OutdoorInfoFields({ level, onChange }: OutdoorInfoFieldsProps) {
   const { t } = useI18n(["profile", "enums"]);
   return (
     <div className="space-y-5">
@@ -167,40 +159,6 @@ export function OutdoorInfoFields({ level, experience, equipment, equipmentInput
             );
           })}
         </div>
-      </div>
-      <div className="space-y-1.5">
-        <FieldLabel>{t('profile.experienceLabel')}</FieldLabel>
-        <textarea name="experience" value={experience} onChange={onChange} rows={3} maxLength={200} placeholder={t('profile.experiencePlaceholder')} className={cn(inputCls, "resize-none")} />
-        <p className="text-xs text-stone-400">{t('profile.experienceHint')}</p>
-      </div>
-      <div className="space-y-1.5">
-        <FieldLabel>{t('profile.equipment')}</FieldLabel>
-        <div className="flex flex-wrap gap-1.5">
-          {PRESET_EQUIPMENT_KEYS.map((key) => {
-            const label = t(`profile.presetEquipment.${key}`);
-            const isSelected = equipment.includes(label);
-            return (
-              <button key={key} type="button" onClick={() => onAddPresetEquipment(label)} disabled={isSelected}
-                className={cn("px-2.5 py-1 rounded-full text-xs font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow]",
-                  isSelected ? "bg-amber-100 dark:bg-amber-900/40 text-amber-400 dark:text-amber-600 cursor-not-allowed" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-200 dark:hover:border-amber-900 border border-transparent"
-                )}>
-                {label}
-              </button>
-            );
-          })}
-        </div>
-        <input type="text" value={equipmentInput} onChange={(e) => onEquipmentInputChange(e.target.value)} onKeyDown={onEquipmentKeyDown} placeholder={t('profile.equipmentPlaceholder')} className={inputCls} />
-        <p className="text-xs text-stone-400">{t('profile.equipmentHint')}</p>
-        {equipment.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {equipment.map((item, index) => (
-              <span key={index} className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-sm border border-amber-200 dark:border-amber-900/50">
-                {item}
-                <button type="button" onClick={() => onRemoveEquipment(index)} className="text-amber-400 hover:text-amber-600 transition-colors"><X className="h-3 w-3" /></button>
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
