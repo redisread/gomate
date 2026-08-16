@@ -2,40 +2,30 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchPublicAPI } from "@/lib/api";
-import type { Location } from "@/lib/types";
+import type { Location, Tag } from "@/lib/types";
 
 export interface LocationsResponse {
   success: boolean;
   locations: Location[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
-  _meta?: {
-    cityMatch: 'exact' | 'mixed' | 'fallback';
-  };
+  total: number;
+  nextCursor: string | null;
 }
 
 /**
- * 获取地点列表，支持分页和城市筛选
- * @param cityId 可选 cityId，登录用户已设城市时传入（P1 city 个性化 #193 T3）
+ * 获取地点列表首页，支持 V2 Region 筛选。
  */
-export function useLocations(page = 1, pageSize = 6, initialData?: LocationsResponse | null, cityId?: string | null) {
+export function useLocations(limit = 6, initialData?: LocationsResponse | null, regionId?: string | null) {
   const [data, setData] = useState<LocationsResponse | null>(initialData ?? null);
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<Error | null>(null);
-  const initialKeyRef = useRef(
-    initialData ? `${initialData.pagination.page}:${initialData.pagination.pageSize}` : "",
-  );
+  const skipInitialFetchRef = useRef(Boolean(initialData));
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const cityParam = cityId ? `&cityId=${encodeURIComponent(cityId)}` : "";
-      const res = await fetchPublicAPI(`/api/locations?page=${page}&pageSize=${pageSize}&view=card${cityParam}`);
+      const regionParam = regionId ? `&regionId=${encodeURIComponent(regionId)}` : "";
+      const res = await fetchPublicAPI(`/locations?limit=${limit}${regionParam}`);
       const json = await res.json();
       if (!json.success) {
         throw new Error(json.error || "获取地点列表失败");
@@ -46,16 +36,15 @@ export function useLocations(page = 1, pageSize = 6, initialData?: LocationsResp
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, cityId]);
+  }, [limit, regionId]);
 
   useEffect(() => {
-    const key = `${page}:${pageSize}`;
-    if (initialKeyRef.current === key) {
-      initialKeyRef.current = "";
+    if (skipInitialFetchRef.current) {
+      skipInitialFetchRef.current = false;
       return;
     }
     fetchData();
-  }, [fetchData, page, pageSize]);
+  }, [fetchData]);
 
   const mutate = useCallback(async () => {
     await fetchData();
@@ -63,8 +52,11 @@ export function useLocations(page = 1, pageSize = 6, initialData?: LocationsResp
 
   return {
     locations: data?.locations ?? [],
-    pagination: data?.pagination ?? { page, pageSize, total: 0, totalPages: 0 },
-    cityMatch: data?._meta?.cityMatch ?? null,
+    pagination: {
+      limit,
+      total: data?.total ?? 0,
+      nextCursor: data?.nextCursor ?? null,
+    },
     isLoading,
     error,
     mutate,
@@ -75,7 +67,7 @@ export function useLocations(page = 1, pageSize = 6, initialData?: LocationsResp
  * 获取热门标签
  */
 export function useLocationTags() {
-  const [tags, setTags] = useState<{ id: string; name: string; type: string }[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -86,13 +78,13 @@ export function useLocationTags() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetchPublicAPI("/api/locations?tags=true");
+        const res = await fetchPublicAPI("/tags?limit=200");
         const json = await res.json();
         if (!json.success) {
           throw new Error(json.error || "获取标签失败");
         }
         if (mounted) {
-          setTags(json.tags);
+          setTags(json.tags ?? []);
         }
       } catch (err) {
         if (mounted) {

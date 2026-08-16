@@ -1,14 +1,19 @@
 {
   "pageTitle": "お気に入り",
-  "pageSubtitle": "お気に入りスポット",
+  "pageSubtitle": "保存したスポットとストーリー",
   "addSuccess": "お気に入りに追加しました",
   "removeSuccess": "お気に入りを解除しました",
   "addFailed": "お気に入りに追加できませんでした。もう一度お試しください。",
   "removeFailed": "お気に入りを解除できませんでした。もう一度お試しください。",
+  "loadFailed": "お気に入りの読み込みに失敗しました",
+  "retry": "再試行",
+  "addStory": "ストーリーを保存",
+  "removeStory": "ストーリーの保存を解除",
   "loginRequired": "お気に入りにはログインが必要です",
   "emptyTitle": "まだお気に入りがありません",
-  "emptyDesc": "スポットを探索して、気になる場所をお気に入りしましょう",
-  "emptyBtn": "スポットを探索",
+  "emptyDesc": "スポットやストーリーを探索して、お気に入りをここに保存しましょう",
+  "emptyBtn": "ストーリーを探索",
+  "itemCount": "{count} 件の保存アイテム",
   "locationCount": "スポット",
   "backBtn": "戻る"
 }

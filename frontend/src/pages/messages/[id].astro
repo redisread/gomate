@@ -18,7 +18,7 @@ const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLoc
 const loadedData = await loadLocaleData(["messages"], locale, Astro.url.origin);
 const ssr = getSSRT(locale, { [locale]: loadedData } as Record<Locale, Record<string, Record<string, unknown>>>);
 const dateLocale = locale === "zh-CN" ? "zh-CN" : "en-US";
-const apiBase = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
+const apiBase = "/api";
 const copy = {
   loading: ssr.t("messages.loading"),
   unknownUser: ssr.t("messages.unknownUser"),
@@ -36,12 +36,25 @@ const copy = {
   sendMessage: ssr.t("messages.sendMessage"),
   sending: ssr.t("messages.sending"),
   privateConversation: ssr.t("messages.privateConversation"),
+  loadEarlier: ssr.t("messages.loadEarlier"),
+  loadingEarlier: ssr.t("messages.loadingEarlier"),
+  loadEarlierFailed: ssr.t("messages.loadEarlierFailed"),
 };
 const { id } = Astro.params;
+const clientConfig = JSON.stringify({
+  conversationId: id ?? "",
+  apiBase,
+  dateLocale,
+  copy,
+});
 ---
 
 <Layout title="聊天 - GoMate" showNavbar={false} showFooter={false}>
-  <div class="fixed inset-0 flex flex-col bg-background text-foreground">
+  <div
+    id="messageChatPage"
+    data-config={clientConfig}
+    class="fixed inset-0 flex flex-col bg-background text-foreground"
+  >
     <header class="shrink-0 border-b border-border bg-background/95 px-3 py-2.5 backdrop-blur">
       <div class="mx-auto flex max-w-2xl items-center gap-3">
         <a
@@ -64,22 +77,41 @@ const { id } = Astro.params;
       </div>
     </header>
 
-    <main
-      id="chatContainer"
-      role="log"
-      aria-live="polite"
-      aria-label={copy.messageList}
-      class="flex-1 overflow-y-auto px-3 py-4 sm:px-4"
-    >
-      <div role="status" aria-label={copy.loading} class="mx-auto flex max-w-2xl flex-col gap-4">
-        <div class="flex justify-start gap-2">
-          <div class="h-8 w-8 shrink-0 animate-pulse rounded-full bg-muted"></div>
-          <div class="h-10 w-44 animate-pulse rounded-2xl rounded-bl-md bg-muted"></div>
+    <main id="chatContainer" class="flex-1 overflow-y-auto px-3 py-4 sm:px-4">
+      <div id="historyControls" hidden class="mx-auto hidden max-w-2xl pb-4 text-center">
+        <button
+          id="loadEarlierBtn"
+          type="button"
+          aria-busy="false"
+          class="inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {copy.loadEarlier}
+        </button>
+        <p
+          id="historyError"
+          role="alert"
+          hidden
+          class="mt-2 hidden text-sm leading-5 text-destructive"
+        ></p>
+      </div>
+
+      <div
+        id="messageList"
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions text"
+        aria-label={copy.messageList}
+      >
+        <div role="status" aria-label={copy.loading} class="mx-auto flex max-w-2xl flex-col gap-4">
+          <div class="flex justify-start gap-2">
+            <div class="h-8 w-8 shrink-0 animate-pulse rounded-full bg-muted"></div>
+            <div class="h-10 w-44 animate-pulse rounded-2xl rounded-bl-md bg-muted"></div>
+          </div>
+          <div class="flex justify-end">
+            <div class="h-10 w-52 animate-pulse rounded-2xl rounded-br-md bg-muted"></div>
+          </div>
+          <span class="sr-only">{copy.loading}</span>
         </div>
-        <div class="flex justify-end">
-          <div class="h-10 w-52 animate-pulse rounded-2xl rounded-br-md bg-muted"></div>
-        </div>
-        <span class="sr-only">{copy.loading}</span>
       </div>
     </main>
 
@@ -88,7 +120,7 @@ const { id } = Astro.params;
       class="shrink-0 border-t border-border bg-background/95 px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur sm:px-4"
     >
       <div class="mx-auto max-w-2xl space-y-2">
-        <p id="chatError" role="alert" class="hidden text-sm leading-5 text-destructive"></p>
+        <p id="chatError" role="alert" hidden class="hidden text-sm leading-5 text-destructive"></p>
         <div class="flex items-end gap-2">
           <label for="messageInput" class="sr-only">{copy.messageInputLabel}</label>
           <input
@@ -121,459 +153,9 @@ const { id } = Astro.params;
     </form>
   </div>
 
-  <script is:inline define:vars={{ conversationId: id, API_BASE: apiBase, copy, dateLocale }}>
-    const chatContainer = document.getElementById("chatContainer");
-    const messageForm = document.getElementById("messageForm");
-    const messageInput = document.getElementById("messageInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const sendText = document.getElementById("sendText");
-    const sendIcon = document.getElementById("sendIcon");
-    const sendSpinner = document.getElementById("sendSpinner");
-    const headerInfo = document.getElementById("headerInfo");
-    const headerAvatar = document.getElementById("headerAvatar");
-    const headerMeta = document.getElementById("headerMeta");
-    const chatError = document.getElementById("chatError");
+  <script>
+    import { initializeMessageChatPage } from "../../components/features/messages/chat-page-client";
 
-    let messages = [];
-    let currentUserId = null;
-    let otherUser = null;
-    let composerLocked = false;
-    let isSending = false;
-    let isLoadingMessages = false;
-    let lastRenderedSignature = null;
-    let pollTimer = null;
-
-    async function init() {
-      try {
-        const sessionRes = await fetch(`${API_BASE}/auth/get-session`, {
-          credentials: "include",
-        });
-        const sessionData = await sessionRes.json();
-
-        if (!sessionData.user) {
-          window.location.href = "/login?redirect=/messages";
-          return;
-        }
-
-        currentUserId = sessionData.user.id;
-        await loadMessages({ forceScroll: true });
-        startPolling();
-
-        // 页面可见性变化时暂停/恢复轮询
-        document.addEventListener("visibilitychange", () => {
-          if (document.hidden) {
-            stopPolling();
-          } else {
-            loadMessages();
-            startPolling();
-          }
-        });
-      } catch (err) {
-        console.error("Auth check failed:", err);
-        window.location.href = "/login?redirect=/messages";
-      }
-    }
-
-    function startPolling() {
-      if (pollTimer) return;
-      pollTimer = window.setInterval(() => loadMessages(), 5000);
-    }
-
-    function stopPolling() {
-      if (pollTimer) {
-        clearInterval(pollTimer);
-        pollTimer = null;
-      }
-    }
-
-    async function loadMessages(options = {}) {
-      if (isLoadingMessages) return;
-      isLoadingMessages = true;
-
-      const shouldStayAtBottom = options.forceScroll || isNearBottom();
-
-      try {
-        const isIncremental = !options.forceScroll && messages.length > 0;
-        const lastMessage = messages[messages.length - 1];
-        const sinceParam = isIncremental && lastMessage?.createdAt
-          ? `&since=${new Date(lastMessage.createdAt).getTime()}`
-          : "";
-
-        const res = await fetch(`${API_BASE}/messages/${conversationId}?limit=50${sinceParam}`, {
-          credentials: "include",
-        });
-        const data = await res.json().catch(() => ({}));
-
-        if (res.status === 401) {
-          window.location.href = "/login?redirect=/messages";
-          return;
-        }
-
-        if (res.status === 403) {
-          setComposerDisabled(true);
-          renderStatusMessage(copy.forbidden, "error", "alert");
-          return;
-        }
-
-        if (!data.success) {
-          if (lastRenderedSignature === null) {
-            renderStatusMessage(getErrorMessage(data, copy.loadFailed), "error", "alert");
-          } else {
-            showChatError(getErrorMessage(data, copy.loadFailed));
-          }
-          return;
-        }
-
-        clearChatError();
-        const fetchedMessages = Array.isArray(data.data) ? data.data : [];
-
-        if (isIncremental && fetchedMessages.length > 0) {
-          messages = messages.concat(fetchedMessages);
-          if (data.conversation?.otherUser) {
-            otherUser = data.conversation.otherUser;
-            updateHeader();
-          }
-          const nextSignature = getMessagesSignature(messages);
-          if (nextSignature !== lastRenderedSignature) {
-            renderMessages();
-            lastRenderedSignature = nextSignature;
-            if (shouldStayAtBottom) {
-              scrollToBottom({ smooth: true });
-            }
-          }
-        } else if (!isIncremental) {
-          messages = fetchedMessages;
-          const nextSignature = getMessagesSignature(messages);
-
-          if (data.conversation?.otherUser) {
-            otherUser = data.conversation.otherUser;
-            updateHeader();
-          } else if (!otherUser && messages.length > 0) {
-            const firstMsg = messages[0];
-            otherUser = firstMsg.senderId === currentUserId
-              ? messages.find((message) => message.senderId !== currentUserId)?.sender
-              : firstMsg.sender;
-            updateHeader();
-          }
-
-          if (nextSignature !== lastRenderedSignature) {
-            renderMessages();
-            lastRenderedSignature = nextSignature;
-            if (shouldStayAtBottom) {
-              scrollToBottom({ smooth: !options.forceScroll });
-            }
-          }
-        }
-      } catch (err) {
-        if (lastRenderedSignature === null) {
-          renderStatusMessage(copy.loadFailed, "error", "alert");
-        } else {
-          showChatError(copy.loadFailed);
-        }
-      } finally {
-        isLoadingMessages = false;
-      }
-    }
-
-    function renderStatusMessage(message, tone = "muted", role = "status") {
-      if (!chatContainer) return;
-      chatContainer.replaceChildren();
-      const status = document.createElement("div");
-      status.setAttribute("role", role);
-      status.className = [
-        "mx-auto flex min-h-full max-w-2xl items-center justify-center px-6 py-16 text-center text-sm leading-6",
-        tone === "error" ? "text-destructive" : "text-muted-foreground",
-      ].join(" ");
-      status.textContent = message;
-      chatContainer.appendChild(status);
-    }
-
-    function setComposerDisabled(disabled) {
-      composerLocked = disabled;
-      if (messageInput) messageInput.disabled = disabled;
-      updateSendButton();
-    }
-
-    function setSending(sending) {
-      isSending = sending;
-      sendIcon?.classList.toggle("hidden", sending);
-      sendSpinner?.classList.toggle("hidden", !sending);
-      if (sendText) sendText.textContent = sending ? copy.sending : copy.sendMessage;
-      if (sendBtn) {
-        sendBtn.setAttribute("aria-label", sending ? copy.sending : copy.sendMessage);
-        sendBtn.setAttribute("title", sending ? copy.sending : copy.sendMessage);
-        sendBtn.setAttribute("aria-busy", sending ? "true" : "false");
-      }
-      updateSendButton();
-    }
-
-    function updateSendButton() {
-      if (!sendBtn || !messageInput) return;
-      const hasContent = messageInput.value.trim().length > 0;
-      sendBtn.disabled = composerLocked || isSending || !hasContent;
-    }
-
-    function showChatError(message) {
-      if (!chatError) return;
-      chatError.textContent = message;
-      chatError.classList.remove("hidden");
-    }
-
-    function clearChatError() {
-      if (!chatError) return;
-      chatError.textContent = "";
-      chatError.classList.add("hidden");
-    }
-
-    function getErrorMessage(data, fallback) {
-      if (typeof data?.error === "string") return data.error;
-      if (typeof data?.error?.message === "string") return data.error.message;
-      if (typeof data?.message === "string") return data.message;
-      return fallback;
-    }
-
-    function updateHeader() {
-      const h1 = headerInfo?.querySelector("h1");
-      if (h1) {
-        h1.textContent = getDisplayName(otherUser);
-      }
-      if (headerMeta) {
-        headerMeta.textContent = copy.privateConversation;
-        headerMeta.classList.remove("hidden");
-      }
-      if (headerAvatar) {
-        headerAvatar.replaceChildren();
-        headerAvatar.className = "flex";
-        headerAvatar.appendChild(createAvatar(otherUser, "h-10 w-10 text-sm"));
-      }
-    }
-
-    function renderMessages() {
-      if (!chatContainer) return;
-      if (messages.length === 0) {
-        renderStatusMessage(copy.noMessagesPrompt);
-        return;
-      }
-
-      const grouped = groupByDate(messages);
-      chatContainer.replaceChildren("");
-
-      const list = document.createElement("div");
-      list.className = "mx-auto flex max-w-2xl flex-col gap-5";
-
-      grouped.forEach((group) => {
-        const groupDiv = document.createElement("div");
-        groupDiv.className = "flex flex-col gap-3";
-
-        const dateDiv = document.createElement("div");
-        dateDiv.className = "flex items-center justify-center";
-        const dateSpan = document.createElement("span");
-        dateSpan.className = "rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground";
-        dateSpan.textContent = formatDate(group.date);
-        dateDiv.appendChild(dateSpan);
-        groupDiv.appendChild(dateDiv);
-
-        group.messages.forEach((msg) => {
-          groupDiv.appendChild(renderMessageElement(msg));
-        });
-
-        list.appendChild(groupDiv);
-      });
-
-      chatContainer.appendChild(list);
-    }
-
-    function renderMessageElement(msg) {
-      const isOwn = msg.senderId === currentUserId;
-      const sender = msg.sender || {};
-      const time = msg.createdAt
-        ? new Date(msg.createdAt).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })
-        : "";
-
-      const wrapper = document.createElement("div");
-
-      if (isOwn) {
-        wrapper.className = "flex justify-end";
-
-        const container = document.createElement("div");
-        container.className = "max-w-[82%] sm:max-w-md";
-
-        const contentDiv = document.createElement("div");
-        contentDiv.className = "whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground";
-        contentDiv.textContent = msg.content || "";
-        container.appendChild(contentDiv);
-
-        const metaDiv = document.createElement("div");
-        metaDiv.className = "mt-1 text-right text-xs text-muted-foreground";
-        metaDiv.textContent = time + (msg.isRead ? ` · ${copy.read}` : "");
-        container.appendChild(metaDiv);
-
-        wrapper.appendChild(container);
-        return wrapper;
-      }
-
-      wrapper.className = "flex justify-start gap-2";
-      wrapper.appendChild(createAvatar(sender, "h-8 w-8 text-xs"));
-
-      const container = document.createElement("div");
-      container.className = "max-w-[82%] sm:max-w-md";
-
-      const senderDiv = document.createElement("div");
-      senderDiv.className = "mb-1 ml-1 text-xs text-muted-foreground";
-      senderDiv.textContent = getDisplayName(sender);
-      container.appendChild(senderDiv);
-
-      const contentDiv = document.createElement("div");
-      contentDiv.className = "whitespace-pre-wrap break-words rounded-2xl rounded-bl-md border border-border bg-card px-4 py-2.5 text-sm leading-relaxed text-foreground";
-      contentDiv.textContent = msg.content || "";
-      container.appendChild(contentDiv);
-
-      const timeDiv = document.createElement("div");
-      timeDiv.className = "mt-1 ml-1 text-xs text-muted-foreground";
-      timeDiv.textContent = time;
-      container.appendChild(timeDiv);
-
-      wrapper.appendChild(container);
-      return wrapper;
-    }
-
-    function groupByDate(msgs) {
-      const groups = [];
-      msgs.forEach((msg) => {
-        const date = msg.createdAt ? new Date(msg.createdAt).toDateString() : "";
-        const existing = groups.find((group) => group.date === date);
-        if (existing) {
-          existing.messages.push(msg);
-        } else {
-          groups.push({ date, messages: [msg] });
-        }
-      });
-      return groups;
-    }
-
-    function getMessagesSignature(msgs) {
-      return msgs.map((msg) => `${msg.id}:${msg.isRead ? "1" : "0"}:${msg.createdAt || ""}`).join("|");
-    }
-
-    function formatDate(dateStr) {
-      const date = new Date(dateStr);
-      if (Number.isNaN(date.getTime())) return "";
-
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      if (date.toDateString() === today.toDateString()) return copy.today;
-      if (date.toDateString() === yesterday.toDateString()) return copy.yesterday;
-      return date.toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" });
-    }
-
-    function isNearBottom() {
-      if (!chatContainer) return true;
-      return chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < 96;
-    }
-
-    function scrollToBottom(options = {}) {
-      if (!chatContainer) return;
-      chatContainer.scrollTo({
-        top: chatContainer.scrollHeight,
-        behavior: options.smooth ? "smooth" : "auto",
-      });
-    }
-
-    function createAvatar(user, sizeClass) {
-      const avatar = document.createElement("div");
-      avatar.className = `${sizeClass} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted font-semibold text-muted-foreground ring-1 ring-border/70`;
-      avatar.setAttribute("aria-hidden", "true");
-
-      const imgUrl = user?.image ? String(user.image) : "";
-      if (imgUrl.startsWith("http://") || imgUrl.startsWith("https://") || imgUrl.startsWith("/")) {
-        const img = document.createElement("img");
-        img.src = imgUrl;
-        img.alt = "";
-        img.loading = "lazy";
-        img.className = "h-full w-full object-cover";
-        avatar.appendChild(img);
-        return avatar;
-      }
-
-      const fallback = document.createElement("span");
-      fallback.textContent = getDisplayName(user).trim().charAt(0) || "?";
-      avatar.appendChild(fallback);
-      return avatar;
-    }
-
-    function getDisplayName(user) {
-      return user?.nickname || user?.name || copy.unknownUser;
-    }
-
-    async function sendMessage() {
-      if (!messageInput || composerLocked || isSending) return;
-      const content = messageInput.value.trim();
-      if (!content) return;
-
-      setSending(true);
-      clearChatError();
-
-      try {
-        const res = await fetch(`${API_BASE}/messages/${conversationId}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ content }),
-        });
-        const data = await res.json().catch(() => ({}));
-
-        if (res.status === 401) {
-          window.location.href = "/login?redirect=/messages";
-          return;
-        }
-
-        if (res.status === 403) {
-          setComposerDisabled(true);
-          showChatError(copy.forbidden);
-          return;
-        }
-
-        if (!res.ok || !data.success) {
-          showChatError(getErrorMessage(data, copy.sendFailed));
-          return;
-        }
-
-        messageInput.value = "";
-        updateSendButton();
-        messages.push({
-          id: data.data.id,
-          senderId: currentUserId,
-          content,
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        });
-        renderMessages();
-        lastRenderedSignature = getMessagesSignature(messages);
-        scrollToBottom({ smooth: true });
-      } catch (err) {
-        showChatError(copy.sendFailed);
-      } finally {
-        setSending(false);
-      }
-    }
-
-    messageForm?.addEventListener("submit", (event) => {
-      event.preventDefault();
-      sendMessage();
-    });
-
-    messageInput?.addEventListener("input", () => {
-      clearChatError();
-      updateSendButton();
-    });
-
-    window.addEventListener("beforeunload", () => {
-      if (pollTimer) window.clearInterval(pollTimer);
-    });
-
-    updateSendButton();
-    init();
+    void initializeMessageChatPage();
   </script>
 </Layout>

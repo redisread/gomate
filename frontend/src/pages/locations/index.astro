@@ -5,43 +5,39 @@
 import Layout from "../../layouts/Layout.astro";
 import { LocationsClient } from "../../components/features/locations-client";
 import { declareI18nNs } from "../../middleware";
-import { API_BASE } from "../../lib/api";
+import { serverApiGet } from "../../lib/server-api";
 import type { LocationsListInitialData } from "../../components/features/locations/use-locations-list";
-import type { Location } from "../../lib/types";
+import type { Location, Region } from "../../lib/types";
 
 declareI18nNs(Astro.locals, ["locations", "locationDetail", "filter", "content"]);
 
-async function fetchJson<T>(path: string): Promise<T | null> {
-  try {
-    const response = await fetch(`${API_BASE}${path}`);
-    if (!response.ok) return null;
-    return (await response.json()) as T;
-  } catch {
-    return null;
-  }
-}
+const fetchJson = <T,>(path: string) =>
+  serverApiGet<T>(Astro.request, Astro.locals, path);
 
 const params = Astro.url.searchParams;
 const listQuery = new URLSearchParams();
-listQuery.set("page", params.get("page") || "1");
-listQuery.set("pageSize", "12");
+listQuery.set("limit", "12");
 if (params.get("q")) listQuery.set("search", params.get("q")!);
 if (params.get("tags")) listQuery.set("tagIds", params.get("tags")!);
-if (params.get("cityId")) listQuery.set("cityId", params.get("cityId")!);
-if (params.get("type")) listQuery.set("type", params.get("type")!);
+if (params.get("regionId")) listQuery.set("regionId", params.get("regionId")!);
+if (params.get("activityType")) listQuery.set("activityType", params.get("activityType")!);
 
-const [locationsData, tagsData, citiesData] = await Promise.all([
-  fetchJson<{ success: boolean; locations: Location[]; pagination: LocationsListInitialData["pagination"] }>(`/locations?${listQuery}`),
-  fetchJson<{ success: boolean; tags: { id: string; name: string }[] }>("/locations?tags=true"),
-  fetchJson<{ success: boolean; cities: { id: string; name: string }[] }>("/cities"),
+const [locationsData, tagsData, regionsData] = await Promise.all([
+  fetchJson<{ success: boolean; locations: Location[]; total: number; nextCursor: string | null }>(`/locations?${listQuery}`),
+  fetchJson<{ success: boolean; tags: { id: string; name: string }[] }>("/tags?limit=200"),
+  fetchJson<{ success: boolean; regions: Region[] }>("/regions?countryCode=CN&level=city&serviceEnabled=true"),
 ]);
 
 const initialData = locationsData?.success
   ? {
       locations: locationsData.locations ?? [],
-      pagination: locationsData.pagination,
+      pagination: {
+        limit: 12,
+        total: locationsData.total,
+        nextCursor: locationsData.nextCursor,
+      },
       popularTags: tagsData?.success ? tagsData.tags ?? [] : [],
-      cities: citiesData?.success ? citiesData.cities ?? [] : [],
+      regions: regionsData?.success ? regionsData.regions ?? [] : [],
     } satisfies LocationsListInitialData
   : undefined;
 ---

@@ -2,25 +2,47 @@ import { describe, expect, it } from "vitest";
 import { formatRouteMetric, normalizeLocationHiking } from "./route-utils";
 import type { Location } from "@/lib/types";
 
+function locationFixture(overrides: Partial<Location> = {}): Location {
+  return {
+    id: "loc-1",
+    regionId: "region-sz",
+    name: "梧桐山",
+    slug: "wutong-mountain",
+    supportedActivityTypes: ["hiking"],
+    status: "published",
+    subtitle: null,
+    description: "深圳第一高峰",
+    address: "深圳市罗湖区",
+    latitude: 22.58,
+    longitude: 114.2,
+    coverImageUrl: "https://gomate.cos.jiahongw.com/locations/wutong.jpg",
+    images: [],
+    extra: {},
+    createdByUserId: null,
+    createdAt: "2026-08-16T00:00:00.000Z",
+    updatedAt: "2026-08-16T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
 describe("normalizeLocationHiking", () => {
-  it("从 location 五字段 + extra.hiking 构造徒步攻略数据", () => {
-    const hiking = normalizeLocationHiking({
-      id: "loc-1",
-      name: "梧桐山",
-      difficulty: "moderate",
-      durationMin: 120,
-      durationMax: 180,
-      distance: 5.5,
-      elevation: 700,
+  it("strictly maps the V2 extra.hiking contract", () => {
+    const hiking = normalizeLocationHiking(locationFixture({
       extra: {
         hiking: {
+          difficulty: "moderate",
+          durationMin: 120,
+          durationMax: 180,
+          distanceKm: 5.5,
+          elevationGainM: 700,
           overview: "沿泰山涧步道上山。",
           tips: ["后半段较陡"],
-          equipmentNeeded: ["登山鞋", "登山杖"],
+          gearEssential: ["登山鞋"],
+          gearOptional: ["登山杖"],
           warnings: ["雨天路滑"],
         },
       },
-    } as unknown as Location);
+    }));
 
     expect(hiking).toMatchObject({
       id: "loc-1-hiking",
@@ -29,7 +51,8 @@ describe("normalizeLocationHiking", () => {
       duration: { value: "2-3", unit: "hour" },
       distance: { value: "5.5", unit: "kilometer" },
       elevation: { value: "700", unit: "meter" },
-      equipmentNeeded: ["登山鞋", "登山杖"],
+      gearEssential: ["登山鞋"],
+      gearOptional: ["登山杖"],
       warnings: ["雨天路滑"],
       routeGuide: {
         overview: "沿泰山涧步道上山。",
@@ -39,34 +62,33 @@ describe("normalizeLocationHiking", () => {
   });
 
   it("时长换算：不足 1 小时用分钟单位，单值不重复", () => {
-    const hiking = normalizeLocationHiking({
+    const hiking = normalizeLocationHiking(locationFixture({
       id: "loc-2",
       name: "莲花山",
-      durationMin: 45,
-      durationMax: 45,
-    } as unknown as Location);
+      extra: { hiking: { durationMin: 45, durationMax: 45 } },
+    }));
 
     expect(hiking?.duration).toEqual({ value: "45", unit: "minute" });
   });
 
   it("无参数且无 hiking 内容时返回 null（区块整体不渲染）", () => {
-    const hiking = normalizeLocationHiking({
+    const hiking = normalizeLocationHiking(locationFixture({
       id: "loc-3",
       name: "昆明",
       extra: { facilities: ["停车场"] },
-    } as unknown as Location);
+    }));
 
     expect(hiking).toBeNull();
   });
 
-  it("extra.hiking 键显式为 null 时按无内容处理", () => {
-    const hiking = normalizeLocationHiking({
+  it("empty optional V2 hiking properties do not create a route", () => {
+    const hiking = normalizeLocationHiking(locationFixture({
       id: "loc-4",
       name: "空攻略山",
       extra: {
-        hiking: { overview: null, tips: null, equipmentNeeded: null, warnings: null },
+        hiking: { overview: null, tips: [], gearEssential: [], gearOptional: [], warnings: [] },
       },
-    } as unknown as Location);
+    }));
 
     expect(hiking).toBeNull();
   });

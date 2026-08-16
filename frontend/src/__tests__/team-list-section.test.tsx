@@ -32,17 +32,26 @@ vi.mock("../components/features/location-detail/team-card", () => ({
 function makeTeam(overrides: Partial<Team> = {}): Team {
   return {
     id: "team-1",
-    title: "梧桐山日出",
-    date: "2026-08-08",
-    time: "05:00",
-    status: "recruiting",
-    maxMembers: 8,
-    currentMembers: 2,
     locationId: "loc-1",
-    locationName: "梧桐山",
-    cityName: "深圳",
+    leaderId: "leader-1",
+    activityType: "hiking",
+    title: "梧桐山日出",
+    description: null,
+    startAt: "2026-08-08T05:00:00.000Z",
+    endAt: "2026-08-08T09:00:00.000Z",
+    maxParticipants: 8,
+    activeParticipantCount: 2,
+    requirements: [],
+    recruitmentStatus: "open",
+    formedAt: null,
+    cancelledAt: null,
+    lifecycle: "pending",
+    isFull: false,
+    checklist: null,
+    createdAt: "2026-08-01T00:00:00.000Z",
+    updatedAt: "2026-08-01T00:00:00.000Z",
     ...overrides,
-  } as Team;
+  };
 }
 
 describe("TeamListSection", () => {

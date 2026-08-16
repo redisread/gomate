@@ -7,8 +7,11 @@ import { CreateStoryClient } from "../../components/features/create-story-client
 import { declareI18nNs } from "../../middleware";
 
 declareI18nNs(Astro.locals, ["content", "common", "ui"]);
+
+const requestedTeamId = Astro.url.searchParams.get("teamId")?.trim();
+const teamId = requestedTeamId || undefined;
 ---
 
 <Layout title="发布故事" showNavbar={true} showFooter={true}>
-  <CreateStoryClient client:load />
+  <CreateStoryClient teamId={teamId} client:load />
 </Layout>

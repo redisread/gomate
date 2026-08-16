@@ -12,9 +12,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI, fetchCurrentUser } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
 import { DURATION_OPTION_DEFS, snapToDurationOption } from "@/lib/duration-options";
-import type { Location } from "@/lib/types";
+import type { ActivityType, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -27,7 +27,7 @@ import { Footer } from "@/components/layout/footer";
  * 分步感知 + 情感化文案 + 品牌色 focus 状态
  */
 export function CreateTeamClient() {
-  const { t } = useI18n(["teams", "errors", "common"]);
+  const { t } = useI18n(["teams", "errors", "common", "enums"]);
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
   const [recommendedDuration, setRecommendedDuration] = React.useState<number | null>(null);
@@ -47,11 +47,13 @@ export function CreateTeamClient() {
   const [formData, setFormData] = React.useState({
     title: "",
     locationId: "",
-    date: defaultDate,
-    time: defaultTime,
-    durationMin: "240",
-    maxMembers: "",
+    activityType: "" as ActivityType | "",
+    startDateInput: defaultDate,
+    startClockInput: defaultTime,
+    durationMinutes: "240",
+    maxParticipants: "",
     description: "",
+    requirementsInput: "",
   });
 
   React.useEffect(() => {
@@ -59,10 +61,10 @@ export function CreateTeamClient() {
       const u = await fetchCurrentUser(`/login?redirect=${encodeURIComponent("/teams/create")}`);
       if (!u) return;
       setIsAuthenticated(true);
-      setHasWechat(!!(u.wechat));
+      setHasWechat(!!u.extra.wechat);
     })();
 
-    fetchAPI("/api/locations?pageSize=100")
+    fetchAPI("/locations?limit=100")
       .then((r) => r.json())
       .then((data) => {
         if (data.success) setLocations(data.locations || []);
@@ -80,15 +82,26 @@ export function CreateTeamClient() {
       setSelectedLocation(null);
       setRecommendedDuration(null);
       durationManuallyEditedRef.current = false;
+      setFormData((prev) =>
+        prev.activityType ? { ...prev, activityType: "" } : prev,
+      );
       return;
     }
 
+    let cancelled = false;
+    setSelectedLocation(null);
+    setRecommendedDuration(null);
+    durationManuallyEditedRef.current = false;
+    setFormData((prev) =>
+      prev.activityType ? { ...prev, activityType: "" } : prev,
+    );
+
     // 获取地点详情
-    fetchAPI(`/api/locations/${formData.locationId}`)
+    fetchAPI(`/locations/${formData.locationId}`)
       .then((r) => r.json())
       .then((data) => {
-        if (data.success && data.location) {
-          const loc = data.location;
+        if (!cancelled && data.success && data.location) {
+          const loc = data.location as Location;
           setSelectedLocation(loc);
           durationManuallyEditedRef.current = false; // 新地点，重置手动编辑标记
 
@@ -96,14 +109,26 @@ export function CreateTeamClient() {
           const recommended = calculateRecommendedDuration(loc);
           if (recommended != null) {
             setRecommendedDuration(recommended);
-            setFormData((prev) => ({ ...prev, durationMin: String(recommended) }));
+            setFormData((prev) => ({
+              ...prev,
+              activityType: "",
+              durationMinutes: String(recommended),
+            }));
           } else {
             setRecommendedDuration(null);
-            setFormData((prev) => ({ ...prev, durationMin: String(defaultDuration) }));
+            setFormData((prev) => ({
+              ...prev,
+              activityType: "",
+              durationMinutes: String(defaultDuration),
+            }));
           }
         }
       })
       .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
   }, [formData.locationId]);
 
   // 当用户手动修改时长时，标记为已手动编辑
@@ -115,21 +140,22 @@ export function CreateTeamClient() {
   // 快捷设置时长
   const handleDurationQuickSelect = (minutes: number) => {
     durationManuallyEditedRef.current = true;
-    setFormData((prev) => ({ ...prev, durationMin: String(minutes) }));
+    setFormData((prev) => ({ ...prev, durationMinutes: String(minutes) }));
   };
 
   /**
    * 根据地点的徒步参数推荐合适的活动时长（分钟）
-   * task #152 切源：读 location.durationMin/durationMax/difficulty（0010 回填）
+   * 从 Team V2 Location.extra.hiking 推导推荐时长。
    * 无任何参数时返回 null（回退默认值 4 小时）
    */
   const calculateRecommendedDuration = (loc: Location): number | null => {
     let raw: number | null = null;
-    if (loc.durationMin && loc.durationMax) {
+    const hiking = loc.extra.hiking;
+    if (hiking?.durationMin && hiking.durationMax) {
       // 取平均值
-      raw = Math.round((loc.durationMin + loc.durationMax) / 2);
-    } else if (loc.durationMin) {
-      raw = loc.durationMin;
+      raw = Math.round((hiking.durationMin + hiking.durationMax) / 2);
+    } else if (hiking?.durationMin) {
+      raw = hiking.durationMin;
     } else {
       // 根据难度推荐
       const difficultyDuration: Record<string, number> = {
@@ -138,7 +164,7 @@ export function CreateTeamClient() {
         hard: 420,      // 困难：7 小时
         expert: 600,    // 专家：10 小时
       };
-      raw = (loc.difficulty && difficultyDuration[loc.difficulty]) || null;
+      raw = (hiking?.difficulty && difficultyDuration[hiking.difficulty]) || null;
     }
     // task #160（Steven 口径）：推荐值 snap 到最近下拉选项，并列取较长档（徒步宁多勿少）。
     // 否则受控 select 无匹配项——DOM 显示第一项「1 hour」但 state 是推荐值，
@@ -151,28 +177,55 @@ export function CreateTeamClient() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleLocationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const locationId = e.target.value;
+    setSelectedLocation(null);
+    setRecommendedDuration(null);
+    durationManuallyEditedRef.current = false;
+    setFormData((prev) => ({ ...prev, locationId, activityType: "" }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
     try {
-      const res = await fetchAPI("/api/teams", {
+      const activityType = formData.activityType;
+      if (
+        !activityType ||
+        selectedLocation?.id !== formData.locationId ||
+        !selectedLocation.supportedActivityTypes.includes(activityType)
+      ) {
+        setError(t("errors.createTeamFailed"));
+        setIsSubmitting(false);
+        return;
+      }
+      const requirements = formData.requirementsInput
+        .split(/\r?\n/u)
+        .map((requirement) => requirement.trim())
+        .filter(Boolean);
+      const startAt = new Date(`${formData.startDateInput}T${formData.startClockInput}:00`);
+      const durationMinutes = parseInt(formData.durationMinutes, 10);
+      const endAt = new Date(startAt.getTime() + durationMinutes * 60_000);
+      const res = await fetchAPI("/teams", {
         method: "POST",
         body: JSON.stringify({
           title: formData.title,
           locationId: formData.locationId,
-          date: formData.date,
-          time: formData.time,
-          durationMin: parseInt(formData.durationMin, 10),
-          maxMembers: parseInt(formData.maxMembers, 10),
-          description: formData.description,
+          activityType,
+          startAt: startAt.toISOString(),
+          endAt: endAt.toISOString(),
+          maxParticipants: parseInt(formData.maxParticipants, 10),
+          description: formData.description || null,
+          requirements,
+          recruitmentStatus: "open",
         }),
       });
       const data = await res.json();
       if (data.success && data.team?.id) {
         window.location.href = `/teams/${data.team.id}`;
       } else {
-        setError(data.error || t("errors.createTeamFailed"));
+        setError(getApiErrorMessage(data, t("errors.createTeamFailed")));
         setIsSubmitting(false);
       }
     } catch {
@@ -272,7 +325,7 @@ export function CreateTeamClient() {
                   data-testid="create-team-location"
                   name="locationId"
                   value={formData.locationId}
-                  onChange={handleChange}
+                  onChange={handleLocationChange}
                   required
                   className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
                 >
@@ -293,7 +346,35 @@ export function CreateTeamClient() {
               )}
             </FieldGroup>
 
-            {/* 路线选择（暂时隐藏） */}
+            {selectedLocation && (
+              <FieldGroup
+                icon="🧭"
+                label={t("teams.formLabel.activityType")}
+                required
+              >
+                <select
+                  id="activityType"
+                  data-testid="create-team-activity-type"
+                  name="activityType"
+                  aria-label={t("teams.formLabel.activityType")}
+                  value={formData.activityType}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+                >
+                  <option value="">
+                    {t("teams.formPlaceholder.activityType")}
+                  </option>
+                  {selectedLocation.supportedActivityTypes.map(
+                    (activityType) => (
+                      <option key={activityType} value={activityType}>
+                        {t(`enums.locationType.${activityType}`)}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </FieldGroup>
+            )}
 
             {/* 日期 + 时间 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -301,11 +382,11 @@ export function CreateTeamClient() {
                 <div className="relative">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
-                    id="date"
+                    id="startDateInput"
                     data-testid="create-team-date"
-                    name="date"
+                    name="startDateInput"
                     type="date"
-                    value={formData.date}
+                    value={formData.startDateInput}
                     onChange={handleChange}
                     min={defaultDate}
                     required
@@ -318,11 +399,11 @@ export function CreateTeamClient() {
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
-                    id="time"
+                    id="startClockInput"
                     data-testid="create-team-time"
-                    name="time"
+                    name="startClockInput"
                     type="time"
-                    value={formData.time}
+                    value={formData.startClockInput}
                     onChange={handleChange}
                     required
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
@@ -354,10 +435,10 @@ export function CreateTeamClient() {
                     </div>
                   )}
                   <select
-                    id="durationMin"
+                    id="durationMinutes"
                     data-testid="create-team-duration"
-                    name="durationMin"
-                    value={formData.durationMin}
+                    name="durationMinutes"
+                    value={formData.durationMinutes}
                     onChange={handleDurationChange}
                     required
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
@@ -374,25 +455,25 @@ export function CreateTeamClient() {
                   <QuickDurationButton
                     label={t("teams.durationHalfDay")}
                     minutes={240}
-                    currentValue={formData.durationMin}
+                    currentValue={formData.durationMinutes}
                     onClick={() => handleDurationQuickSelect(240)}
                   />
                   <QuickDurationButton
                     label={t("teams.durationFullDay")}
                     minutes={480}
-                    currentValue={formData.durationMin}
+                    currentValue={formData.durationMinutes}
                     onClick={() => handleDurationQuickSelect(480)}
                   />
                   <QuickDurationButton
                     label={t("teams.durationTwoDays")}
                     minutes={1200}
-                    currentValue={formData.durationMin}
+                    currentValue={formData.durationMinutes}
                     onClick={() => handleDurationQuickSelect(1200)}
                   />
                   <button
                     type="button"
                     onClick={() => {
-                      const select = document.getElementById("durationMin") as HTMLSelectElement;
+                      const select = document.getElementById("durationMinutes") as HTMLSelectElement | null;
                       if (select) {
                         select.focus();
                         select.click();
@@ -409,14 +490,14 @@ export function CreateTeamClient() {
                 <div className="relative">
                   <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
-                    id="maxMembers"
+                    id="maxParticipants"
                     data-testid="create-team-max-members"
-                    name="maxMembers"
+                    name="maxParticipants"
                     type="number"
-                    min={2}
-                    max={50}
+                    min={1}
+                    max={49}
                     placeholder={t("teams.formPlaceholder.maxSize")}
-                    value={formData.maxMembers}
+                    value={formData.maxParticipants}
                     onChange={handleChange}
                     required
                     className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
@@ -438,6 +519,30 @@ export function CreateTeamClient() {
                 rows={4}
                 className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               />
+            </FieldGroup>
+
+            <FieldGroup
+              icon="📋"
+              label={t("teams.formLabel.requirements")}
+            >
+              <textarea
+                id="requirementsInput"
+                data-testid="create-team-requirements"
+                name="requirementsInput"
+                aria-label={t("teams.formLabel.requirements")}
+                aria-describedby="create-team-requirements-hint"
+                placeholder={t("teams.formPlaceholder.requirements")}
+                value={formData.requirementsInput}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none resize-y focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+              />
+              <p
+                id="create-team-requirements-hint"
+                className="text-xs text-muted-foreground"
+              >
+                {t("teams.requirementsInputHint")}
+              </p>
             </FieldGroup>
 
             {/* 温馨提示 */}
@@ -495,4 +600,3 @@ export function CreateTeamClient() {
 function getDurationOptions(t: (key: string, vars?: Record<string, string | number>) => string) {
   return DURATION_OPTION_DEFS.map(([value, key]) => ({ value, label: t(key) }));
 }
-

@@ -4,6 +4,7 @@ import * as React from "react";
 import { Settings, Plus, ChevronDown, GripVertical, CheckCircle2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
+import type { Tag } from "@/lib/types";
 import type { FormData } from "./use-location-form";
 
 interface SectionCardProps {
@@ -96,7 +97,7 @@ const FACILITY_OPTIONS = (t: (key: string) => string) => [
 
 interface LocationFormSettingsFieldsProps {
   formData: FormData;
-  allTags: Array<{ id: string; name: string; type: string }>;
+  allTags: Tag[];
   updateField: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
 }
 
@@ -104,6 +105,13 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
   const { t } = useI18n(["admin"]);
   const facilityOptions = FACILITY_OPTIONS(t);
   const [toast, setToast] = React.useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const updateHiking = React.useCallback((changes: Partial<FormData["extra"]["hiking"]>) => {
+    updateField("extra", {
+      ...formData.extra,
+      hiking: { ...formData.extra.hiking, ...changes },
+    });
+  }, [formData.extra, updateField]);
 
   const showToast = React.useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -131,9 +139,9 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
     e.preventDefault();
     const fromIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
     if (fromIdx === dropIdx) return;
-    const next = moveItem(formData.extra[field], fromIdx, dropIdx);
-    updateField("extra", { ...formData.extra, [field]: next });
-  }, [formData.extra, moveItem, updateField]);
+    const next = moveItem(formData.extra.hiking[field], fromIdx, dropIdx);
+    updateHiking({ [field]: next });
+  }, [formData.extra.hiking, moveItem, updateHiking]);
   return (<>
     <SectionCard icon={<Settings className="h-4 w-4" />} title={t("admin.formSettingsTitleRecommended")} collapsible defaultOpen={true}
       badge={<span className="text-3xs text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">{t("admin.optionalBadge")}</span>}>
@@ -156,11 +164,54 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
         </Field>
       </SubSectionCard>
 
+      <SubSectionCard title={t("admin.formHikingDetails")}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label={t("admin.formDifficulty")}>
+            <select value={formData.extra.hiking.difficulty}
+              onChange={(event) => updateHiking({ difficulty: event.target.value as FormData["extra"]["hiking"]["difficulty"] })}
+              className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700">
+              <option value="">{t("admin.optionalBadge")}</option>
+              <option value="easy">{t("admin.difficultyEasy")}</option>
+              <option value="moderate">{t("admin.difficultyModerate")}</option>
+              <option value="hard">{t("admin.difficultyHard")}</option>
+              <option value="expert">{t("admin.difficultyExpert")}</option>
+            </select>
+          </Field>
+          <Field label={t("admin.formDistanceKm")}>
+            <input type="number" min="0" step="0.1" value={formData.extra.hiking.distanceKm}
+              onChange={(event) => updateHiking({ distanceKm: event.target.value })}
+              className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700" />
+          </Field>
+          <Field label={t("admin.formDurationMin")}>
+            <input type="number" min="0" step="1" value={formData.extra.hiking.durationMin}
+              onChange={(event) => updateHiking({ durationMin: event.target.value })}
+              className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700" />
+          </Field>
+          <Field label={t("admin.formDurationMax")} error={undefined}>
+            <input type="number" min="0" step="1" value={formData.extra.hiking.durationMax}
+              onChange={(event) => updateHiking({ durationMax: event.target.value })}
+              className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700" />
+          </Field>
+          <Field label={t("admin.formElevationGainM")}>
+            <input type="number" min="0" step="1" value={formData.extra.hiking.elevationGainM}
+              onChange={(event) => updateHiking({ elevationGainM: event.target.value })}
+              className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700" />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label={t("admin.formHikingOverview")}>
+              <textarea rows={3} value={formData.extra.hiking.overview}
+                onChange={(event) => updateHiking({ overview: event.target.value })}
+                className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700" />
+            </Field>
+          </div>
+        </div>
+      </SubSectionCard>
+
       <SubSectionCard title={t("admin.formTipsSectionTitle")}>
         {/* 徒步贴士 */}
         <Field label="" hint="">{/* label 在 SubSectionCard title 中 */}
           <div className="space-y-2">
-            {formData.extra.tips.map((tip, idx) => (
+            {formData.extra.hiking.tips.map((tip, idx) => (
               <div key={idx} draggable
                 onDragStart={(e) => handleDragStart(e, idx)}
                 onDragOver={handleDragOver}
@@ -169,19 +220,19 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
                 <GripVertical className="h-3.5 w-3.5 text-stone-300 shrink-0" />
                 <input type="text" data-tip-input value={tip}
                   onChange={(e) => {
-                    const next = [...formData.extra.tips]; next[idx] = e.target.value;
-                    updateField("extra", { ...formData.extra, tips: next });
+                    const next = [...formData.extra.hiking.tips]; next[idx] = e.target.value;
+                    updateHiking({ tips: next });
                   }}
                   onBlur={() => {
                     if (tip.trim() === "") {
-                      const next = formData.extra.tips.filter((_, i) => i !== idx);
-                      updateField("extra", { ...formData.extra, tips: next });
+                      const next = formData.extra.hiking.tips.filter((_, i) => i !== idx);
+                      updateHiking({ tips: next });
                     }
                   }}
                   placeholder={t("admin.tipsPlaceholder")} className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
                 <button type="button" onClick={() => {
-                  const next = formData.extra.tips.filter((_, i) => i !== idx);
-                  updateField("extra", { ...formData.extra, tips: next });
+                  const next = formData.extra.hiking.tips.filter((_, i) => i !== idx);
+                  updateHiking({ tips: next });
                   showToast("success", t("admin.deleteSuccessToast"));
                 }}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
@@ -189,10 +240,10 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
                 </button>
               </div>
             ))}
-            {formData.extra.tips.length < 10 && (
+            {formData.extra.hiking.tips.length < 10 && (
               <AddButton label={t("admin.formTipsAdd")} onAdd={() => {
-                const next = [...formData.extra.tips, ""];
-                updateField("extra", { ...formData.extra, tips: next });
+                const next = [...formData.extra.hiking.tips, ""];
+                updateHiking({ tips: next });
                 setTimeout(() => {
                   const inputs = document.querySelectorAll<HTMLInputElement>('[data-tip-input]');
                   const last = inputs[inputs.length - 1];
@@ -206,7 +257,7 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
         {/* 安全警告 */}
         <Field label="" hint="">{/* label 在 SubSectionCard title 中 */}
           <div className="space-y-2">
-            {formData.extra.warnings.map((w, idx) => (
+            {formData.extra.hiking.warnings.map((w, idx) => (
               <div key={idx} draggable
                 onDragStart={(e) => handleDragStart(e, idx)}
                 onDragOver={handleDragOver}
@@ -215,19 +266,19 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
                 <GripVertical className="h-3.5 w-3.5 text-stone-300 shrink-0" />
                 <input type="text" data-warning-input value={w}
                   onChange={(e) => {
-                    const next = [...formData.extra.warnings]; next[idx] = e.target.value;
-                    updateField("extra", { ...formData.extra, warnings: next });
+                    const next = [...formData.extra.hiking.warnings]; next[idx] = e.target.value;
+                    updateHiking({ warnings: next });
                   }}
                   onBlur={() => {
                     if (w.trim() === "") {
-                      const next = formData.extra.warnings.filter((_, i) => i !== idx);
-                      updateField("extra", { ...formData.extra, warnings: next });
+                      const next = formData.extra.hiking.warnings.filter((_, i) => i !== idx);
+                      updateHiking({ warnings: next });
                     }
                   }}
                   placeholder={t("admin.warningsPlaceholder")} className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
                 <button type="button" onClick={() => {
-                  const next = formData.extra.warnings.filter((_, i) => i !== idx);
-                  updateField("extra", { ...formData.extra, warnings: next });
+                  const next = formData.extra.hiking.warnings.filter((_, i) => i !== idx);
+                  updateHiking({ warnings: next });
                   showToast("success", t("admin.deleteSuccessToast"));
                 }}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
@@ -235,10 +286,10 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
                 </button>
               </div>
             ))}
-            {formData.extra.warnings.length < 10 && (
+            {formData.extra.hiking.warnings.length < 10 && (
               <AddButton label={t("admin.formWarningsAdd")} onAdd={() => {
-                const next = [...formData.extra.warnings, ""];
-                updateField("extra", { ...formData.extra, warnings: next });
+                const next = [...formData.extra.hiking.warnings, ""];
+                updateHiking({ warnings: next });
                 setTimeout(() => {
                   const inputs = document.querySelectorAll<HTMLInputElement>('[data-warning-input]');
                   const last = inputs[inputs.length - 1];

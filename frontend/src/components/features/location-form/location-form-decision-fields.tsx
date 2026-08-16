@@ -6,12 +6,11 @@
  * spec 依据：
  *  - gomate-p0bcd-2026-07-20-spec.md §8：字段/DB/API
  *  - gomate/p0b-t4-admin-form-patch-spec.md §2：UI 规范（独立组件、UI required 1-8 项、
- *    parkingInfo ≤80 字、gearItem ≤12 字）
+ *    gearItem ≤12 字）
  *
  * 关键约束：
- *  - UI required + API optional：API validation.ts 保留 optional 是为兼容存量数据；
- *    UI 层业务约束更严（新建 / 编辑场景 essential 至少 1 项、每项 ≤12 字、上限 8 项）
- *  - parkingAvailable = false 时禁用 parkingInfo 输入（数据一致性保护）
+ *  - 徒步地点至少填写 1 项必带装备；非徒步地点允许省略 hiking extra。
+ *  - 每项 ≤12 字、上限 8 项。
  */
 
 import * as React from "react";
@@ -22,7 +21,6 @@ import type { FormData } from "./use-location-form";
 
 const GEAR_MAX = 8;
 const GEAR_ITEM_MAX = 12;
-const PARKING_INFO_MAX = 80;
 
 interface SectionCardProps {
   icon: React.ReactNode; title: string; badge?: React.ReactNode;
@@ -83,9 +81,10 @@ interface GearListProps {
   addLabel: string;
   maxError: string;
   deletedText: string;
+  deleteLabel: string;
 }
 
-function GearList({ items, onChange, placeholder, chipTone, inputSlotId, showToast, moveItem, addLabel, maxError, deletedText }: GearListProps) {
+function GearList({ items, onChange, placeholder, chipTone, inputSlotId, showToast, moveItem, addLabel, maxError, deletedText, deleteLabel }: GearListProps) {
   const handleDragStart = (e: React.DragEvent, idx: number) => {
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", String(idx));
@@ -129,7 +128,7 @@ function GearList({ items, onChange, placeholder, chipTone, inputSlotId, showToa
             showToast("success", deletedText);
           }}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-            aria-label="删除">
+            aria-label={deleteLabel}>
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -174,61 +173,26 @@ export function LocationFormDecisionFields({ formData, updateField }: LocationFo
     return next;
   }, []);
 
-  // spec §2：parkingInfo 仅 parkingAvailable === true 时可编辑（false=无停车/null=未知 均禁用置灰）
-  const parkingInfoEditable = formData.parkingAvailable === true;
-  const essentialEmpty = formData.gearEssential.filter((v) => v.trim()).length === 0;
+  const hikingSelected = formData.supportedActivityTypes.includes("hiking");
+  const essentialEmpty = hikingSelected && formData.extra.hiking.gearEssential.filter((v) => v.trim()).length === 0;
+
+  const updateHiking = React.useCallback((changes: Partial<FormData["extra"]["hiking"]>) => {
+    updateField("extra", {
+      ...formData.extra,
+      hiking: { ...formData.extra.hiking, ...changes },
+    });
+  }, [formData.extra, updateField]);
 
   return (<>
     <SectionCard icon={<Backpack className="h-4 w-4" />} title={t("admin.formDecisionTitle")} collapsible defaultOpen={true}>
       <div className="space-y-4">
-        {/* 停车 tri-state segmented control */}
-        <Field label={t("admin.formParkingLabel")} hint={t("admin.formParkingHint")}>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { value: true, key: "formParkingOptionYes" },
-              { value: false, key: "formParkingOptionNo" },
-              { value: null, key: "formParkingOptionUnknown" },
-            ].map((opt) => {
-              const selected = formData.parkingAvailable === opt.value;
-              return (
-                <button key={String(opt.value)} type="button"
-                  onClick={() => {
-                    updateField("parkingAvailable", opt.value);
-                    // 切到「无停车」时清空停车说明（数据一致性）
-                    if (opt.value === false && formData.parkingInfo) {
-                      updateField("parkingInfo", "");
-                    }
-                  }}
-                  className={cn("px-3 py-1.5 rounded-xl text-xs font-medium border transition-[transform,background-color,border-color,color,opacity,box-shadow]",
-                    selected
-                      ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800"
-                      : "bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-amber-300")}>
-                  {t(`admin.${opt.key}`)}
-                </button>
-              );
-            })}
-          </div>
-        </Field>
-
-        {/* 停车说明（仅「有停车」时可编辑；其他状态禁用置灰） */}
-        <Field label={t("admin.formParkingInfoLabel")} hint={t("admin.formParkingInfoHint")}>
-          <input type="text" value={formData.parkingInfo} maxLength={PARKING_INFO_MAX}
-            disabled={!parkingInfoEditable}
-            onChange={(e) => updateField("parkingInfo", e.target.value)}
-            placeholder={t("admin.formParkingInfoPlaceholder")}
-            className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:ring-2 focus:ring-amber-200 focus:border-amber-400",
-              parkingInfoEditable
-                ? "bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700"
-                : "bg-stone-100 dark:bg-stone-800/40 text-stone-400 dark:text-stone-500 border-stone-200 dark:border-stone-800 opacity-50 cursor-not-allowed")} />
-        </Field>
-
         {/* 必带装备 gearEssential — UI required 1-8 项 */}
-        <Field label={t("admin.formGearEssentialLabel")} required
+        <Field label={t("admin.formGearEssentialLabel")} required={hikingSelected}
           hint={t("admin.formGearEssentialHint")}
           error={essentialEmpty ? t("admin.formGearEssentialRequired") : undefined}>
           <GearList
-            items={formData.gearEssential}
-            onChange={(next) => updateField("gearEssential", next)}
+            items={formData.extra.hiking.gearEssential}
+            onChange={(gearEssential) => updateHiking({ gearEssential })}
             placeholder={t("admin.formGearEssentialPlaceholder")}
             chipTone="amber"
             inputSlotId="gear-essential"
@@ -237,14 +201,15 @@ export function LocationFormDecisionFields({ formData, updateField }: LocationFo
             addLabel={t("admin.formGearAdd")}
             maxError={t("admin.formGearMaxError")}
             deletedText={t("admin.deleteSuccessToast")}
+            deleteLabel={t("admin.delete")}
           />
         </Field>
 
         {/* 选带装备 gearOptional — 0-8 项 */}
         <Field label={t("admin.formGearOptionalLabel")} hint={t("admin.formGearOptionalHint")}>
           <GearList
-            items={formData.gearOptional}
-            onChange={(next) => updateField("gearOptional", next)}
+            items={formData.extra.hiking.gearOptional}
+            onChange={(gearOptional) => updateHiking({ gearOptional })}
             placeholder={t("admin.formGearOptionalPlaceholder")}
             chipTone="stone"
             inputSlotId="gear-optional"
@@ -253,6 +218,7 @@ export function LocationFormDecisionFields({ formData, updateField }: LocationFo
             addLabel={t("admin.formGearAdd")}
             maxError={t("admin.formGearMaxError")}
             deletedText={t("admin.deleteSuccessToast")}
+            deleteLabel={t("admin.delete")}
           />
         </Field>
       </div>

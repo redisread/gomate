@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { loginAsAdmin } from "./helpers";
+import { loginAs } from "./helpers";
+import { patchWechat, signUpUser } from "./fixtures";
+
+const RUN_ID = Date.now().toString(36);
+const PASSWORD = "test1234";
 
 test.describe("Team Flow", () => {
   test("create team requires login", async ({ page }) => {
@@ -9,7 +13,13 @@ test.describe("Team Flow", () => {
   });
 
   test("create team flow", async ({ page }) => {
-    await loginAsAdmin(page);
+    const user = await signUpUser(
+      `team-create-${RUN_ID}@e2e.gomate.test`,
+      PASSWORD,
+      `Team creator ${RUN_ID}`,
+    );
+    await patchWechat(user, `e2e${RUN_ID}`);
+    await loginAs(page, user.email, user.password);
 
     // Navigate to create team form
     await page.goto("/teams/create");

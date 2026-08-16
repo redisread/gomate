@@ -1,47 +1,19 @@
 import * as React from "react";
 import {
   ArrowLeft, User, Mountain, Award, Calendar, Users,
-  Briefcase, CheckCircle, Tent,
+  Briefcase, CheckCircle,
 } from "lucide-react";
+import type { UserPublicProfile } from "@gomate/types";
 import { fetchAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { formatJoinDate } from "@/lib/date-utils";
-import { getAgeFromBirthday } from "@/lib/user-utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { LEVEL_CONFIG, StatCard, ProfileSkeleton } from "@/components/shared/profile-shared";
 
-interface UserProfile {
-  id: string;
-  name: string;
-  nickname?: string | null;
-  avatar?: string | null;
-  bio?: string | null;
-  level: string;
-  gender?: string | null;
-  birthday?: string | null;
-  completedHikes?: number;
-  createdAt?: string;
-  extra?: string | null;
-  stats: {
-    createdTeams: number;
-    joinedTeams: number;
-    completedTeams: number;
-  };
-}
-
 interface UserDetailClientProps {
   userId: string;
-}
-
-function parseExtra(extra: string | null | undefined): { equipment?: string[]; experience?: string } {
-  if (!extra) return {};
-  try {
-    return JSON.parse(extra);
-  } catch {
-    return {};
-  }
 }
 
 /**
@@ -49,13 +21,13 @@ function parseExtra(extra: string | null | undefined): { equipment?: string[]; e
  */
 export function UserDetailClient({ userId }: UserDetailClientProps) {
   const { t } = useI18n(["userDetail", "profile", "common", "enums", "errors"]);
-  const [user, setUser] = React.useState<UserProfile | null>(null);
+  const [user, setUser] = React.useState<UserPublicProfile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setIsLoading(true);
-    fetchAPI(`/api/users/${userId}`)
+    fetchAPI(`/users/${userId}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.success && data.user) {
@@ -100,13 +72,11 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
   }
 
   const displayName = user.nickname || user.name;
-  const extra = parseExtra(user.extra);
-  const age = getAgeFromBirthday(user.birthday);
-  const levelConfig = LEVEL_CONFIG[user.level] || LEVEL_CONFIG.beginner;
+  const levelConfig = LEVEL_CONFIG[user.extra.level] || LEVEL_CONFIG.beginner;
 
   const joinDate = user.createdAt ? formatJoinDate(user.createdAt) : null;
 
-  const levelLabel = t(`enums.level.${user.level}` as string) ?? t("enums.level.beginner");
+  const levelLabel = t(`enums.level.${user.extra.level}` as string) ?? t("enums.level.beginner");
 
   return (
     <main className="min-h-screen bg-stone-50 dark:bg-stone-900">
@@ -158,8 +128,8 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
             <div className="absolute -top-16 left-6">
               <div className="relative">
                 <div className="h-32 w-32 rounded-full ring-4 ring-white dark:ring-stone-900 shadow-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center overflow-hidden">
-                  {user.avatar ? (
-                    <img src={user.avatar} alt={displayName} className="w-full h-full object-cover outline outline-1 -outline-offset-1 outline-[oklch(0_0_0_/_0.1)] dark:outline-[oklch(1_0_0_/_0.1)]" />
+                  {user.image ? (
+                    <img src={user.image} alt={displayName} className="w-full h-full object-cover outline outline-1 -outline-offset-1 outline-[oklch(0_0_0_/_0.1)] dark:outline-[oklch(1_0_0_/_0.1)]" />
                   ) : (
                     <span className="text-4xl font-bold text-white" style={{ textShadow: "0 2px 8px color-mix(in oklab, black 20%, transparent)" }}>
                       {displayName?.[0]?.toUpperCase()}
@@ -187,20 +157,6 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
                   <span>{levelConfig.emoji}</span>
                   {levelLabel}
                 </span>
-
-                {/* 性别 */}
-                {user.gender && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
-                    {user.gender === "male" ? "♂ " : "♀ "}{t(`enums.gender.${user.gender}` as string) ?? t("enums.gender.other")}
-                  </span>
-                )}
-
-                {/* 年龄 */}
-                {age && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">
-                    {age}
-                  </span>
-                )}
 
                 {/* 加入时间 */}
                 {joinDate && (
@@ -254,7 +210,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
               <Mountain className="h-5 w-5 text-stone-400 dark:text-stone-500" />
               <div>
                 <div className="text-sm text-stone-500 dark:text-stone-400">{t("profile.hikesCompleted")}</div>
-                <div className="font-medium text-stone-900 dark:text-stone-100">{user.completedHikes || 0} {t("userDetail.timesSuffix")}</div>
+                <div className="font-medium text-stone-900 dark:text-stone-100">{user.extra.completedHikes} {t("userDetail.timesSuffix")}</div>
               </div>
             </div>
 
@@ -268,45 +224,6 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
           </div>
         </div>
 
-        {/* 户外经验 */}
-        {(extra.equipment?.length || extra.experience) && (
-          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100 flex items-center gap-2 mb-4">
-              <Tent className="h-5 w-5 text-stone-600 dark:text-stone-400" />
-              {t("profile.sectionOutdoorInfoTitle")}
-            </h2>
-
-            <div className="space-y-4">
-              {extra.equipment && extra.equipment.length > 0 && (
-                <div>
-                  <div className="text-sm text-stone-500 dark:text-stone-400 mb-2 flex items-center gap-1">
-                    <Mountain className="h-3.5 w-3.5" />
-                    {t("profile.equipmentLabel")}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {extra.equipment.map((item, i) => (
-                      <span key={i} className="px-2.5 py-1 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-full text-sm">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {extra.experience && (
-                <div>
-                  <div className="text-sm text-stone-500 dark:text-stone-400 mb-2 flex items-center gap-1">
-                    <Award className="h-3.5 w-3.5" />
-                    {t("profile.experienceShareLabel")}
-                  </div>
-                  <p className="text-sm text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-800 p-3 rounded-xl leading-relaxed">
-                    {extra.experience}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       <Footer />

@@ -12,6 +12,7 @@ import {
   PROVINCE_CENTERS,
 } from "@/lib/china-map";
 import { fetchAPI } from "@/lib/api";
+import type { Location, Region } from "@/lib/types";
 
 interface ProvinceStat {
   province: string;
@@ -19,16 +20,27 @@ interface ProvinceStat {
 }
 
 interface MapPoint {
-  id: string;
-  name: string;
-  slug: string;
-  cityName: string;
-  province: string | null;
-  lat: number;
-  lng: number;
+  id: Location["id"];
+  name: Location["name"];
+  slug: Location["slug"];
+  region: Region;
+  provinceName: string | null;
+  latitude: Location["latitude"];
+  longitude: Location["longitude"];
 }
 
-interface StatsResponse {
+interface LocationStatsResponse {
+  success: boolean;
+  regions: Array<{ region: Region; count: number }>;
+  points: Array<Omit<MapPoint, "provinceName">>;
+}
+
+interface RegionsResponse {
+  success: boolean;
+  regions: Region[];
+}
+
+interface MapStats {
   provinces: ProvinceStat[];
   points: MapPoint[];
 }
@@ -83,7 +95,7 @@ function TooltipCard({ tooltip, mobile = false }: { tooltip: Tooltip; mobile?: b
 export function ChinaMap({ className }: { className?: string }) {
   const { t } = useI18n(["home", "locations", "common"]);
   const [svgPaths, setSvgPaths] = React.useState<{ name: string; d: string }[]>([]);
-  const [stats, setStats] = React.useState<StatsResponse | null>(null);
+  const [stats, setStats] = React.useState<MapStats | null>(null);
   const [tooltip, setTooltip] = React.useState<Tooltip | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [focusedProvince, setFocusedProvince] = React.useState<string | null>(null);
@@ -116,9 +128,40 @@ export function ChinaMap({ className }: { className?: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetchAPI("/v1/locations/stats");
-        const data = (await res.json()) as StatsResponse;
-        if (!cancelled) setStats(data);
+        const [statsResponse, provincesResponse] = await Promise.all([
+          fetchAPI("/locations/stats"),
+          fetchAPI(
+            "/regions?countryCode=CN&level=province&serviceEnabled=false",
+          ),
+        ]);
+        const data = (await statsResponse.json()) as LocationStatsResponse;
+        const regionData = (await provincesResponse.json()) as RegionsResponse;
+        if (!data.success || !regionData.success) throw new Error("Invalid map response");
+
+        const provinceNameById = new Map(
+          regionData.regions.map((region) => [region.id, region.name] as const),
+        );
+        const provinceCountByName = new Map<string, number>();
+        for (const entry of data.regions) {
+          const provinceName = entry.region.parentId
+            ? provinceNameById.get(entry.region.parentId)
+            : undefined;
+          if (!provinceName) continue;
+          provinceCountByName.set(
+            provinceName,
+            (provinceCountByName.get(provinceName) ?? 0) + entry.count,
+          );
+        }
+        const nextStats: MapStats = {
+          provinces: [...provinceCountByName].map(([province, count]) => ({ province, count })),
+          points: data.points.map((point) => ({
+            ...point,
+            provinceName: point.region.parentId
+              ? provinceNameById.get(point.region.parentId) ?? null
+              : null,
+          })),
+        };
+        if (!cancelled) setStats(nextStats);
       } catch {
         // 失败静默：地图无数据时不渲染点
       } finally {
@@ -158,7 +201,7 @@ export function ChinaMap({ className }: { className?: string }) {
   const mapPoints = React.useMemo(
     () =>
       focusedProvince
-        ? (stats?.points ?? []).filter((point) => point.province === focusedProvince)
+        ? (stats?.points ?? []).filter((point) => point.provinceName === focusedProvince)
         : (stats?.points ?? []),
     [focusedProvince, stats],
   );
@@ -208,16 +251,21 @@ export function ChinaMap({ className }: { className?: string }) {
   };
 
   const handlePointEnter = (point: MapPoint) => {
-    const position = transformMapPoint(projectChina(point.lat, point.lng), mapTransform);
-    const citySubtitle =
-      point.cityName && point.province
-        ? t("locations.mapPointCity", { city: point.cityName, province: point.province })
-        : point.cityName || point.province || t("locations.defaultCity");
+    const position = transformMapPoint(
+      projectChina(point.latitude, point.longitude),
+      mapTransform,
+    );
+    const regionSubtitle = point.provinceName
+      ? t("locations.mapPointRegion", {
+          region: point.region.name,
+          province: point.provinceName,
+        })
+      : point.region.name || t("locations.defaultRegion");
     setTooltip({
       x: position.x,
       y: position.y - 12,
       title: point.name,
-      subtitle: citySubtitle,
+      subtitle: regionSubtitle,
     });
   };
 
@@ -272,7 +320,7 @@ export function ChinaMap({ className }: { className?: string }) {
             })}
 
             {mapPoints.map((point) => {
-              const position = projectChina(point.lat, point.lng);
+              const position = projectChina(point.latitude, point.longitude);
               return (
                 <g key={point.id}>
                   <circle
@@ -288,11 +336,11 @@ export function ChinaMap({ className }: { className?: string }) {
                     onMouseEnter={() => handlePointEnter(point)}
                     onFocus={() => handlePointEnter(point)}
                     onClick={() => {
-                      window.location.href = `/locations/${point.slug}`;
+                      window.location.href = `/locations/${point.id}`;
                     }}
                     onKeyDown={(event) =>
                       handleInteractiveKeyDown(event, () => {
-                        window.location.href = `/locations/${point.slug}`;
+                        window.location.href = `/locations/${point.id}`;
                       })
                     }
                   />

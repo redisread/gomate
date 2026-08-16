@@ -2,11 +2,13 @@
   "name": "@gomate/api",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "exports": {
+    "./app": "./src/app.ts"
+  },
   "scripts": {
-    "dev": "wrangler dev --ip 0.0.0.0 --port ${GOMATE_API_PORT:-8799} --persist-to ${GOMATE_LOCAL_STATE:-$HOME/.gomate/wrangler-state} --var APP_URL:http://localhost:${GOMATE_API_PORT:-8799} --var FRONTEND_URL:http://localhost:${GOMATE_WEB_PORT:-5432} --var CORS_ALLOWED_ORIGINS:http://localhost:${GOMATE_WEB_PORT:-5432},http://localhost:${GOMATE_API_PORT:-8799}",
     "build": "tsc",
-    "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
-    "deploy": "wrangler deploy --env production",
+    "type-check": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "test": "vitest run",
@@ -19,32 +21,29 @@
     "@gomate/lib": "workspace:*",
     "@gomate/types": "workspace:*",
     "@hono/zod-validator": "^0.4.0",
-    "@resvg/resvg-wasm": "^2.6.2",
     "better-auth": "^1.6.25",
-    "drizzle-orm": "^0.36.0",
-    "hono": "^4.6.0",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.25",
     "kysely": "^0.28.5",
     "nanoid": "^5.1.16",
     "qrcode": "^1.5.4",
     "resend": "^4.0.0",
     "satori": "^0.12.0",
-    "zod": "^3.23.0",
-    "@better-auth/api-key": "^1.6.25"
+    "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260409.1",
     "@eslint/js": "9",
     "@types/better-sqlite3": "^7.6.0",
     "@types/node": "^25.0.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.0",
-    "@vitest/coverage-v8": "^2.0.0",
+    "@vitest/coverage-v8": "^3.2.6",
     "better-sqlite3": "^12.6.0",
-    "drizzle-kit": "^0.28.0",
+    "drizzle-kit": "^0.31.4",
     "eslint": "9",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.58.1",
-    "vitest": "^2.0.0",
+    "vitest": "^3.2.6",
     "wrangler": "^4.100.0"
   }
 }

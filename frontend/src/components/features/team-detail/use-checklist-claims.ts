@@ -10,8 +10,8 @@
  * - 已认领后按钮变为「取消认领」，仅自己可见/可点
  *
  * API：
- * - POST   /api/teams/:teamId/checklist/assignments/:assignmentId/claim
- * - DELETE /api/teams/:teamId/checklist/assignments/:assignmentId/claim
+ * - POST   /teams/:teamId/checklist/assignments/:assignmentId/claim
+ * - DELETE /teams/:teamId/checklist/assignments/:assignmentId/claim
  */
 
 import * as React from "react";
@@ -103,7 +103,7 @@ export function useChecklistClaims({
         return next;
       });
 
-      const path = `/api/teams/${teamId}/checklist/assignments/${assignment.id}/claim`;
+      const path = `/teams/${teamId}/checklist/assignments/${assignment.id}/claim`;
       const method = action === "claim" ? "POST" : "DELETE";
       try {
         let res = await fetchAPI(path, { method });

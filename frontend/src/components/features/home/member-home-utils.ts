@@ -1,17 +1,13 @@
 import type { Team } from "@/lib/types";
 
-const ACTIVE_TEAM_STATUSES = new Set(["recruiting", "full", "formed", "ongoing"]);
-
 function getTeamStartTime(team: Team): number {
-  const startValue = team.startTime || `${team.date}T${team.time || "00:00"}:00+08:00`;
-  const timestamp = new Date(startValue).getTime();
+  const timestamp = new Date(team.startAt).getTime();
   return Number.isFinite(timestamp) ? timestamp : Number.POSITIVE_INFINITY;
 }
 
 function getTeamEndTime(team: Team): number {
-  const startTime = getTeamStartTime(team);
-  const durationMs = Math.max(0, team.durationMin ?? 0) * 60_000;
-  return startTime + durationMs;
+  const timestamp = new Date(team.endAt).getTime();
+  return Number.isFinite(timestamp) ? timestamp : Number.POSITIVE_INFINITY;
 }
 
 export function isTeamInProgress(team: Team, now = new Date()): boolean {
@@ -24,7 +20,9 @@ export function mergeMemberTeams(createdTeams: Team[], joinedTeams: Team[]): Tea
 }
 
 export function selectNextMemberTeam(createdTeams: Team[], joinedTeams: Team[], now = new Date()): Team | null {
-  const activeTeams = mergeMemberTeams(createdTeams, joinedTeams).filter((team) => ACTIVE_TEAM_STATUSES.has(team.status));
+  const activeTeams = mergeMemberTeams(createdTeams, joinedTeams).filter((team) =>
+    team.lifecycle === "pending" || team.lifecycle === "formed" || team.lifecycle === "in_progress",
+  );
   const currentOngoing = activeTeams
     .filter((team) => isTeamInProgress(team, now))
     .sort((left, right) => getTeamStartTime(right) - getTeamStartTime(left))[0];

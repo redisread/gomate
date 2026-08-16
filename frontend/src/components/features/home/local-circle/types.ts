@@ -8,24 +8,24 @@
 export interface TopLocation {
   locationId: string;
   locationName: string;
-  locationCoverImage: string;
+  coverImageUrl: string;
   visitScore: number;
   uniqueVisitors: number;
-  avatarStack: string[];
 }
 
 export interface NeighborTeam {
   teamId: string;
-  teamTitle: string;
+  title: string;
+  activityType: "hiking" | "explore" | "leisure" | "travel";
   locationName: string;
-  startTime: number;
+  startAt: string;
   neighborCount: number;
   neighborAvatars: string[];
 }
 
 export interface LocalCircle {
-  cityId: string;
-  cityName: string;
+  regionId: string;
+  regionName: string;
   activePeopleCount: number;
   topLocations: TopLocation[];
   neighborTeams: NeighborTeam[];

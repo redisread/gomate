@@ -1,14 +1,19 @@
 {
   "pageTitle": "My Favorites",
-  "pageSubtitle": "Your saved locations",
+  "pageSubtitle": "Your saved locations and stories",
   "addSuccess": "Added to favorites",
   "removeSuccess": "Removed from favorites",
   "addFailed": "Failed to add to favorites, please try again",
   "removeFailed": "Failed to remove from favorites, please try again",
+  "loadFailed": "Failed to load favorites",
+  "retry": "Retry",
+  "addStory": "Save story",
+  "removeStory": "Remove saved story",
   "loginRequired": "Please log in to add favorites",
   "emptyTitle": "No favorites yet",
-  "emptyDesc": "Explore locations and save the places that interest you",
-  "emptyBtn": "Explore Locations",
+  "emptyDesc": "Explore locations and stories, then save your favorites here",
+  "emptyBtn": "Explore Stories",
+  "itemCount": "{count} saved items",
   "locationCount": "locations",
   "backBtn": "Back"
 }

@@ -6,29 +6,20 @@
 import Layout from "../../layouts/Layout.astro";
 import { TeamDetailPartiful } from "../../components/features/team-detail-partiful";
 import { declareI18nNs } from "../../middleware";
-import { API_BASE } from "../../lib/api";
+import { serverApiGet } from "../../lib/server-api";
 
 declareI18nNs(Astro.locals, ["teams", "locationDetail", "enums", "profile", "errors", "share", "content"]);
 
 const { id } = Astro.params;
 
-// Phase 5: 服务端获取队伍数据，用于 og:image
-let teamData: { title?: string; description?: string } | null = null;
-try {
-  const response = await fetch(`${API_BASE}/teams/${id}`);
-  if (response.ok) {
-    const data = await response.json();
-    if (data.success && data.team) {
-      teamData = data.team;
-    }
-  }
-} catch {
-  // 忽略错误，使用默认值
-}
+const data = id
+  ? await serverApiGet<{ success: boolean; team?: { title?: string; description?: string | null } }>(Astro.request, Astro.locals, `/teams/${id}`)
+  : null;
+const teamData = data?.success && data.team ? data.team : null;
 
 // 构建 og:image URL
 const ogImage = teamData
-  ? `${API_BASE}/share-image/team/${id}`
+  ? `/api/share-image/team/${id}`
   : undefined;
 
 const title = teamData?.title

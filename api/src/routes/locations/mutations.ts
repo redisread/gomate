@@ -1,196 +1,590 @@
-import { Hono } from "hono";
-import { logger } from "../../lib/logger";
-import { eq, and } from "drizzle-orm";
-import { generateId } from "../../lib/id";
+import {
+  and,
+  eq,
+  inArray,
+} from "drizzle-orm";
+import { Hono, type Context } from "hono";
+
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
-import type { Env } from "../../lib/auth";
-import { createLocationSchema, updateLocationSchema } from "../../lib/validation";
 import { APIErrors } from "../../lib/api-errors";
-import { requireAdmin } from "./utils";
+import type { Env } from "../../lib/auth";
+import { generateId } from "../../lib/id";
+import { logger } from "../../lib/logger";
+import {
+  backupLocationMedia,
+  discardLocationMediaBackups,
+  discardPreparedLocationMedia,
+  finalizeLocationMedia,
+  LocationMediaError,
+  ownedLocationMediaKeys,
+  prepareLocationMedia,
+  restoreLocationMediaBackups,
+  type LocationMediaBackup,
+  type PreparedLocationMedia,
+} from "../../lib/location-media";
+import {
+  deleteR2ObjectsWithRetry,
+  getR2PublicBaseUrl,
+} from "../../lib/r2-media";
+import {
+  createLocationInputSchema,
+  findOpenCityRegion,
+  loadLocationTags,
+  LocationAccessError,
+  locationImagesAreAllowed,
+  normalizeLocationExtraForStorage,
+  projectLocation,
+  replaceLocationTagsSchema,
+  requireAdmin,
+  safeErrorMetadata,
+  updateLocationInputSchema,
+} from "./utils";
 
 const mutations = new Hono<{ Bindings: Env }>();
 
-/**
- * POST /locations
- * 创建新地点（需要管理员权限）
- */
+function d1Changes(result: D1Result<unknown> | undefined): number {
+  return Number(result?.meta?.changes ?? 0);
+}
+
+function generatedSlug(id: string) {
+  const suffix = id.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `location-${suffix || crypto.randomUUID()}`;
+}
+
+function accessError(c: Context<{ Bindings: Env }>, error: unknown) {
+  if (!(error instanceof LocationAccessError)) return null;
+  return error.kind === "unauthorized"
+    ? c.json(APIErrors.unauthorized("Authentication required"), 401)
+    : c.json(APIErrors.forbidden("Administrator access required"), 403);
+}
+
 mutations.post("/", async (c) => {
+  let preparedMedia: PreparedLocationMedia | null = null;
+  let databaseCommitted = false;
   try {
-    await requireAdmin(c);
-    const db = createDb(c.env.DB);
-    const body = await c.req.json();
-
-    // Validate input
-    const parsed = createLocationSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
+    const session = await requireAdmin(c);
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json(APIErrors.validationError("Invalid JSON body"), 400);
     }
 
-    const data = parsed.data;
+    const parsed = createLocationInputSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        APIErrors.validationError(
+          "Invalid location input",
+          parsed.error.flatten(),
+        ),
+        400,
+      );
+    }
+    if (!locationImagesAreAllowed(parsed.data, c.env)) {
+      return c.json(
+        APIErrors.validationError("Location images use a disallowed host"),
+        400,
+      );
+    }
+
+    const db = createDb(c.env.DB);
+    const targetRegion = await findOpenCityRegion(db, parsed.data.regionId);
+    if (!targetRegion) {
+      return c.json(
+        APIErrors.badRequest("regionId must reference an enabled city Region"),
+        400,
+      );
+    }
+
     const id = generateId();
-    const slug = data.slug || data.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    const city = await db.query.cities.findFirst({
-      where: eq(schema.cities.id, data.cityId),
-      columns: { name: true },
-    });
-    if (!city) return c.json(APIErrors.badRequest("城市不存在"), 400);
+    preparedMedia = await prepareLocationMedia(
+      c.env,
+      session.user.id,
+      id,
+      {
+        coverImageUrl: parsed.data.coverImageUrl,
+        images: parsed.data.images,
+      },
+    );
+    const now = Date.now();
+    const insertResult = await c.env.DB.prepare(
+      `
+        INSERT INTO locations (
+          id, region_id, name, slug, supported_activity_types, status,
+          subtitle, description, address, latitude, longitude,
+          cover_image_url, images, extra, created_by_user_id,
+          created_at, updated_at
+        )
+        SELECT
+          ?, target_region.id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        FROM region AS target_region
+        WHERE target_region.id = ?
+          AND target_region.level = 'city'
+          AND target_region.service_enabled = 1
+      `,
+    ).bind(
+      id,
+      parsed.data.name,
+      parsed.data.slug ?? generatedSlug(id),
+      JSON.stringify(parsed.data.supportedActivityTypes),
+      parsed.data.status,
+      parsed.data.subtitle ?? null,
+      parsed.data.description,
+      parsed.data.address ?? null,
+      parsed.data.latitude,
+      parsed.data.longitude,
+      preparedMedia.coverImageUrl,
+      JSON.stringify(preparedMedia.images),
+      JSON.stringify(normalizeLocationExtraForStorage(parsed.data.extra)),
+      session.user.id,
+      now,
+      now,
+      parsed.data.regionId,
+    ).run();
+    if (d1Changes(insertResult) !== 1) {
+      await discardPreparedLocationMedia(c.env, preparedMedia);
+      preparedMedia = null;
+      return c.json(
+        APIErrors.conflict("Target Region changed concurrently"),
+        409,
+      );
+    }
+    databaseCommitted = true;
 
-    await db.insert(schema.locations).values({
-      id, name: data.name, slug, type: data.type || null, subtitle: data.subtitle || null,
-      description: data.description, address: data.address || null,
-      cityId: data.cityId, cityName: city.name,
-      bestSeason: JSON.stringify(data.bestSeason || []),
-      coverImage: data.coverImage,
-      images: JSON.stringify(data.images || []),
-      coordinates: JSON.stringify(data.coordinates || { lat: 0, lng: 0 }),
-      extra: data.extra ? JSON.stringify(data.extra) : null,
-      // P0-B T4（task #171）§8：停车 tri-state + 装备 CSV（后端存储格式，前端传数组）
-      parkingAvailable: data.parkingAvailable ?? null,
-      parkingInfo: data.parkingInfo || null,
-      gearEssential: data.gearEssential && data.gearEssential.length > 0 ? data.gearEssential.join(",") : null,
-      gearOptional: data.gearOptional && data.gearOptional.length > 0 ? data.gearOptional.join(",") : null,
-      createdAt: new Date(), updatedAt: new Date(),
-    });
+    const [location] = await db
+      .select()
+      .from(schema.locations)
+      .where(eq(schema.locations.id, id))
+      .limit(1);
+    if (!location) throw new Error("Created location could not be read back");
+    await finalizeLocationMedia(c.env, preparedMedia).catch(
+      (cleanupError: unknown) => logger.error(
+        "location_create_media_cleanup_failed",
+        safeErrorMetadata(cleanupError),
+      ),
+    );
 
-    return c.json({ success: true, location: { id, slug } });
+    return c.json({
+      success: true as const,
+      location: projectLocation(location, targetRegion, []),
+    }, 201);
   } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    logger.error("Create location error:", error);
-    return c.json(APIErrors.internalError("创建地点失败"), 500);
+    if (preparedMedia && !databaseCommitted) {
+      await discardPreparedLocationMedia(c.env, preparedMedia).catch(
+        (cleanupError: unknown) => logger.error(
+          "location_create_media_compensation_failed",
+          safeErrorMetadata(cleanupError),
+        ),
+      );
+    }
+    const denied = accessError(c, error);
+    if (denied) return denied;
+    if (error instanceof LocationMediaError) {
+      return c.json(
+        error.status === 403
+          ? APIErrors.forbidden(error.message)
+          : error.status === 400
+            ? APIErrors.badRequest(error.message)
+            : APIErrors.internalError(error.message),
+        error.status,
+      );
+    }
+    logger.error("location_create_failed", safeErrorMetadata(error));
+    return c.json(APIErrors.internalError("Failed to create location"), 500);
   }
 });
 
-/**
- * PUT /locations
- * 更新地点（需要管理员权限）
- */
 mutations.put("/", async (c) => {
+  let preparedMedia: PreparedLocationMedia | null = null;
+  let databaseCommitted = false;
   try {
-    await requireAdmin(c);
-    const db = createDb(c.env.DB);
-    const body = await c.req.json();
+    const session = await requireAdmin(c);
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json(APIErrors.validationError("Invalid JSON body"), 400);
+    }
 
-    // Validate input
-    const parsed = updateLocationSchema.safeParse(body);
+    const parsed = updateLocationInputSchema.safeParse(body);
     if (!parsed.success) {
-      return c.json(APIErrors.validationError("输入验证失败", parsed.error.errors), 400);
+      return c.json(
+        APIErrors.validationError(
+          "Invalid location input",
+          parsed.error.flatten(),
+        ),
+        400,
+      );
     }
 
-    const { id, ...updateData } = parsed.data;
+    const { id, ...changes } = parsed.data;
+    const db = createDb(c.env.DB);
+    const [existing] = await db
+      .select()
+      .from(schema.locations)
+      .where(eq(schema.locations.id, id))
+      .limit(1);
+    if (!existing) return c.json(APIErrors.notFound("Location not found"), 404);
 
-    if (updateData.cityId !== undefined) {
-      const city = await db.query.cities.findFirst({
-        where: eq(schema.cities.id, updateData.cityId),
-        columns: { id: true },
-      });
-      if (!city) return c.json(APIErrors.badRequest("城市不存在"), 400);
+    const nextActivities =
+      changes.supportedActivityTypes ?? existing.supportedActivityTypes;
+    const nextStatus = changes.status ?? existing.status;
+    const nextRegionId = changes.regionId ?? existing.regionId;
+    if (nextStatus === "published" && nextActivities.length === 0) {
+      return c.json(
+        APIErrors.validationError(
+          "Published locations require at least one activity type",
+        ),
+        400,
+      );
     }
 
-    const dataToUpdate: Record<string, unknown> = { updatedAt: new Date() };
-    if (updateData.name !== undefined) dataToUpdate.name = updateData.name;
-    if (updateData.slug !== undefined) dataToUpdate.slug = updateData.slug;
-    if (updateData.type !== undefined) dataToUpdate.type = updateData.type || null;
-    if (updateData.subtitle !== undefined) dataToUpdate.subtitle = updateData.subtitle || null;
-    if (updateData.description !== undefined) dataToUpdate.description = updateData.description;
-    if (updateData.address !== undefined) dataToUpdate.address = updateData.address || null;
-    if (updateData.cityId !== undefined) dataToUpdate.cityId = updateData.cityId;
-    if (updateData.bestSeason !== undefined) dataToUpdate.bestSeason = JSON.stringify(updateData.bestSeason);
-    if (updateData.coverImage !== undefined) dataToUpdate.coverImage = updateData.coverImage;
-    if (updateData.images !== undefined) dataToUpdate.images = JSON.stringify(updateData.images);
-    if (updateData.coordinates !== undefined) dataToUpdate.coordinates = JSON.stringify(updateData.coordinates);
-    if (updateData.extra !== undefined) dataToUpdate.extra = updateData.extra ? JSON.stringify(updateData.extra) : null;
-    // P0-B T4（task #171）§8：4 字段独立处理；parkingAvailable 允许 null（信息缺失），gear[] 传 [] 时清空
-    if (updateData.parkingAvailable !== undefined) dataToUpdate.parkingAvailable = updateData.parkingAvailable;
-    if (updateData.parkingInfo !== undefined) dataToUpdate.parkingInfo = updateData.parkingInfo || null;
-    if (updateData.gearEssential !== undefined) {
-      dataToUpdate.gearEssential = updateData.gearEssential.length > 0 ? updateData.gearEssential.join(",") : null;
-    }
-    if (updateData.gearOptional !== undefined) {
-      dataToUpdate.gearOptional = updateData.gearOptional.length > 0 ? updateData.gearOptional.join(",") : null;
+    const nextImages = {
+      coverImageUrl: changes.coverImageUrl ?? existing.coverImageUrl,
+      images: changes.images ?? existing.images,
+    };
+    if (!locationImagesAreAllowed(nextImages, c.env)) {
+      return c.json(
+        APIErrors.validationError("Location images use a disallowed host"),
+        400,
+      );
     }
 
-    await db.update(schema.locations).set(dataToUpdate).where(eq(schema.locations.id, id));
+    const targetRegion = await findOpenCityRegion(db, nextRegionId);
+    if (!targetRegion) {
+      return c.json(
+        APIErrors.badRequest("regionId must reference an enabled city Region"),
+        400,
+      );
+    }
 
-    return c.json({ success: true });
+    preparedMedia = await prepareLocationMedia(
+      c.env,
+      session.user.id,
+      id,
+      nextImages,
+    );
+
+    const removedActivities = existing.supportedActivityTypes.filter(
+      (activity) => !nextActivities.includes(activity),
+    );
+    const assignments = ["updated_at = ?"];
+    const values: unknown[] = [Date.now()];
+    const addAssignment = (column: string, value: unknown) => {
+      assignments.push(`${column} = ?`);
+      values.push(value);
+    };
+    if (changes.regionId !== undefined) {
+      addAssignment("region_id", changes.regionId);
+    }
+    if (changes.name !== undefined) addAssignment("name", changes.name);
+    if (changes.slug !== undefined) addAssignment("slug", changes.slug);
+    if (changes.supportedActivityTypes !== undefined) {
+      addAssignment(
+        "supported_activity_types",
+        JSON.stringify(changes.supportedActivityTypes),
+      );
+    }
+    if (changes.status !== undefined) addAssignment("status", changes.status);
+    if (changes.subtitle !== undefined) {
+      addAssignment("subtitle", changes.subtitle);
+    }
+    if (changes.description !== undefined) {
+      addAssignment("description", changes.description);
+    }
+    if (changes.address !== undefined) addAssignment("address", changes.address);
+    if (changes.latitude !== undefined) {
+      addAssignment("latitude", changes.latitude);
+    }
+    if (changes.longitude !== undefined) {
+      addAssignment("longitude", changes.longitude);
+    }
+    if (changes.coverImageUrl !== undefined) {
+      addAssignment("cover_image_url", preparedMedia.coverImageUrl);
+    }
+    if (changes.images !== undefined) {
+      addAssignment("images", JSON.stringify(preparedMedia.images));
+    }
+    if (changes.extra !== undefined) {
+      addAssignment(
+        "extra",
+        JSON.stringify(normalizeLocationExtraForStorage(changes.extra)),
+      );
+    }
+
+    values.push(
+      id,
+      existing.coverImageUrl,
+      JSON.stringify(existing.images),
+      existing.regionId,
+      nextRegionId,
+    );
+    let activityGuard = "";
+    if (removedActivities.length > 0) {
+      activityGuard = `
+        AND NOT EXISTS (
+          SELECT 1
+          FROM teams AS blocking_team
+          WHERE blocking_team.location_id = locations.id
+            AND blocking_team.cancelled_at IS NULL
+            AND blocking_team.end_at > ?
+            AND blocking_team.activity_type IN (
+              ${removedActivities.map(() => "?").join(", ")}
+            )
+        )
+      `;
+      values.push(Date.now(), ...removedActivities);
+    }
+
+    const updateResult = await c.env.DB.prepare(
+      `
+        UPDATE locations
+        SET ${assignments.join(", ")}
+        WHERE id = ?
+          AND cover_image_url = ?
+          AND images = ?
+          AND region_id = ?
+          AND EXISTS (
+            SELECT 1
+            FROM region AS target_region
+            WHERE target_region.id = ?
+              AND target_region.level = 'city'
+              AND target_region.service_enabled = 1
+          )
+          ${activityGuard}
+      `,
+    ).bind(...values).run();
+    if (d1Changes(updateResult) !== 1) {
+      await discardPreparedLocationMedia(c.env, preparedMedia);
+      preparedMedia = null;
+      return c.json(
+        APIErrors.conflict("Location or target Region changed concurrently"),
+        409,
+      );
+    }
+    databaseCommitted = true;
+
+    const [updated] = await db
+      .select()
+      .from(schema.locations)
+      .where(eq(schema.locations.id, id))
+      .limit(1);
+    if (!updated) throw new Error("Updated location could not be read back");
+
+    const retainedKeys = new Set(ownedLocationMediaKeys(c.env, id, {
+      coverImageUrl: preparedMedia.coverImageUrl,
+      images: preparedMedia.images,
+    }));
+    const staleKeys = ownedLocationMediaKeys(c.env, id, {
+      coverImageUrl: existing.coverImageUrl,
+      images: existing.images,
+    }).filter((key) => !retainedKeys.has(key));
+    await finalizeLocationMedia(c.env, preparedMedia, staleKeys).catch(
+      (cleanupError: unknown) => logger.error(
+        "location_update_media_cleanup_failed",
+        safeErrorMetadata(cleanupError),
+      ),
+    );
+
+    const tags = await loadLocationTags(db, [id]);
+    return c.json({
+      success: true as const,
+      location: projectLocation(
+        updated,
+        targetRegion,
+        tags.get(id) ?? [],
+      ),
+    });
   } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    logger.error("Update location error:", error);
-    return c.json(APIErrors.internalError("更新地点失败"), 500);
+    if (preparedMedia && !databaseCommitted) {
+      await discardPreparedLocationMedia(c.env, preparedMedia).catch(
+        (cleanupError: unknown) => logger.error(
+          "location_update_media_compensation_failed",
+          safeErrorMetadata(cleanupError),
+        ),
+      );
+    }
+    const denied = accessError(c, error);
+    if (denied) return denied;
+    if (error instanceof LocationMediaError) {
+      return c.json(
+        error.status === 403
+          ? APIErrors.forbidden(error.message)
+          : error.status === 400
+            ? APIErrors.badRequest(error.message)
+            : APIErrors.internalError(error.message),
+        error.status,
+      );
+    }
+    logger.error("location_update_failed", safeErrorMetadata(error));
+    return c.json(APIErrors.internalError("Failed to update location"), 500);
   }
 });
 
-/**
- * DELETE /locations/:id
- * 删除地点（需要管理员权限）
- */
 mutations.delete("/:id", async (c) => {
+  let mediaBackups: LocationMediaBackup[] = [];
+  let originalsRemovalAttempted = false;
+  let databaseDeleted = false;
   try {
     await requireAdmin(c);
-    const id = c.req.param("id");
     const db = createDb(c.env.DB);
+    const locationId = c.req.param("id");
+    const [existing] = await db
+      .select()
+      .from(schema.locations)
+      .where(eq(schema.locations.id, locationId))
+      .limit(1);
+    if (!existing) {
+      return c.json(APIErrors.notFound("Location not found"), 404);
+    }
+    if (!getR2PublicBaseUrl(c.env)) {
+      return c.json(
+        APIErrors.internalError("Location media storage is not safely configured"),
+        500,
+      );
+    }
 
-    const existing = await db.query.locations.findFirst({ where: eq(schema.locations.id, id) });
-    if (!existing) return c.json(APIErrors.notFound("地点不存在"), 404);
+    const mediaKeys = ownedLocationMediaKeys(c.env, locationId, {
+      coverImageUrl: existing.coverImageUrl,
+      images: existing.images,
+    });
+    if (mediaKeys.length > 0) {
+      if (!c.env.R2) {
+        return c.json(APIErrors.internalError("Location media storage is not configured"), 500);
+      }
+      mediaBackups = await backupLocationMedia(c.env.R2, locationId, mediaKeys);
+      originalsRemovalAttempted = true;
+      await deleteR2ObjectsWithRetry(c.env.R2, mediaKeys);
+    }
 
-    await db.delete(schema.locations).where(eq(schema.locations.id, id));
-
-    return c.json({ success: true });
+    const deleted = await db
+      .delete(schema.locations)
+      .where(and(
+        eq(schema.locations.id, locationId),
+        eq(schema.locations.coverImageUrl, existing.coverImageUrl),
+        eq(schema.locations.images, existing.images),
+      ))
+      .returning({ id: schema.locations.id });
+    if (deleted.length === 0) {
+      // A concurrent media update won the conditional DML. Restore only keys
+      // that its current version still references; the rest are stale.
+      const [current] = await db
+        .select({
+          coverImageUrl: schema.locations.coverImageUrl,
+          images: schema.locations.images,
+        })
+        .from(schema.locations)
+        .where(eq(schema.locations.id, locationId))
+        .limit(1);
+      if (c.env.R2) {
+        const retainedKeys = new Set(current
+          ? ownedLocationMediaKeys(c.env, locationId, current)
+          : []);
+        await restoreLocationMediaBackups(
+          c.env.R2,
+          mediaBackups,
+          retainedKeys,
+        );
+      }
+      originalsRemovalAttempted = false;
+      return c.json(APIErrors.conflict("Location changed concurrently"), 409);
+    }
+    databaseDeleted = true;
+    originalsRemovalAttempted = false;
+    if (c.env.R2) {
+      await discardLocationMediaBackups(c.env.R2, mediaBackups).catch(
+        (cleanupError: unknown) => logger.error(
+          "location_delete_media_backup_cleanup_failed",
+          safeErrorMetadata(cleanupError),
+        ),
+      );
+    }
+    return c.json({ success: true as const, id: deleted[0].id });
   } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    logger.error("Delete location error:", error);
-    return c.json(APIErrors.internalError("删除地点失败"), 500);
+    if (!databaseDeleted && originalsRemovalAttempted && c.env.R2) {
+      await restoreLocationMediaBackups(c.env.R2, mediaBackups).catch(
+        (restoreError: unknown) => logger.error(
+          "location_delete_media_rollback_failed",
+          safeErrorMetadata(restoreError),
+        ),
+      );
+    } else if (!databaseDeleted && mediaBackups.length > 0 && c.env.R2) {
+      await discardLocationMediaBackups(c.env.R2, mediaBackups).catch(
+        () => undefined,
+      );
+    }
+    const denied = accessError(c, error);
+    if (denied) return denied;
+    logger.error("location_delete_failed", safeErrorMetadata(error));
+    return c.json(APIErrors.internalError("Failed to delete location"), 500);
   }
 });
 
-/**
- * PUT /locations/:id/tags
- * 全量替换地点关联的标签（需要管理员权限）
- * body: { tagIds: string[] }
- */
 mutations.put("/:id/tags", async (c) => {
   try {
     await requireAdmin(c);
-    const id = c.req.param("id");
-    const { tagIds } = await c.req.json<{ tagIds: string[] }>();
-    const db = createDb(c.env.DB);
-
-    const deleteExistingTags = db
-      .delete(schema.entityToTags)
-      .where(
-        and(
-          eq(schema.entityToTags.entityId, id),
-          eq(schema.entityToTags.entityType, "location")
-        )
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json(APIErrors.validationError("Invalid JSON body"), 400);
+    }
+    const parsed = replaceLocationTagsSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        APIErrors.validationError("Invalid tag input", parsed.error.flatten()),
+        400,
       );
-
-    if (tagIds && tagIds.length > 0) {
-      const insertNewTags = db.insert(schema.entityToTags).values(
-        tagIds.map((tagId) => ({
-          id: generateId(),
-          entityId: id,
-          entityType: "location" as const,
-          tagId,
-        }))
-      );
-      await db.batch([deleteExistingTags, insertNewTags]);
-    } else {
-      await deleteExistingTags;
     }
 
-    return c.json({ success: true });
+    const locationId = c.req.param("id");
+    const db = createDb(c.env.DB);
+    const [location] = await db
+      .select({ id: schema.locations.id })
+      .from(schema.locations)
+      .where(eq(schema.locations.id, locationId))
+      .limit(1);
+    if (!location) return c.json(APIErrors.notFound("Location not found"), 404);
+
+    const selectedTags = parsed.data.tagIds.length > 0
+      ? await db
+          .select({ id: schema.tags.id, name: schema.tags.name, slug: schema.tags.slug })
+          .from(schema.tags)
+          .where(inArray(schema.tags.id, parsed.data.tagIds))
+      : [];
+    if (selectedTags.length !== parsed.data.tagIds.length) {
+      return c.json(
+        APIErrors.badRequest("Every tagId must reference an existing tag"),
+        400,
+      );
+    }
+
+    const deleteExisting = db
+      .delete(schema.locationTags)
+      .where(eq(schema.locationTags.locationId, locationId));
+    if (selectedTags.length === 0) {
+      await deleteExisting;
+    } else {
+      const insertNext = db.insert(schema.locationTags).values(
+        parsed.data.tagIds.map((tagId) => ({ locationId, tagId })),
+      );
+      await db.batch([deleteExisting, insertNext]);
+    }
+
+    const byId = new Map(selectedTags.map((tag) => [tag.id, tag]));
+    return c.json({
+      success: true as const,
+      tags: parsed.data.tagIds.map((tagId) => byId.get(tagId)!),
+    });
   } catch (error) {
-    const message = (error as Error).message;
-    if (message === "未登录") return c.json(APIErrors.unauthorized("未登录"), 401);
-    if (message === "无权限访问") return c.json(APIErrors.forbidden("无权限访问"), 403);
-    logger.error("Update location tags error:", error);
-    return c.json(APIErrors.internalError("更新标签失败"), 500);
+    const denied = accessError(c, error);
+    if (denied) return denied;
+    logger.error("location_tags_replace_failed", safeErrorMetadata(error));
+    return c.json(
+      APIErrors.internalError("Failed to replace location tags"),
+      500,
+    );
   }
 });
 

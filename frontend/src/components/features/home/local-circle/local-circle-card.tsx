@@ -3,7 +3,6 @@
  *
  * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §4 / §5.2 / §6.2
  *   - 「{uniqueVisitors} 人在行动」措辞（非「去过」，spec §5.2）
- *   - 头像堆叠 + tooltip「过去 7 天参与过此地点行动」
  *   - 点卡跳地点详情页
  */
 
@@ -11,7 +10,6 @@ import { memo } from "react";
 import { ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
-import { AvatarStack } from "./avatar-stack";
 import type { TopLocation } from "./types";
 
 interface LocalCircleCardProps {
@@ -34,7 +32,7 @@ export const LocalCircleCard = memo(function LocalCircleCard({ location, index =
       >
         <div className="relative aspect-[16/10] overflow-hidden">
           <LocationCoverImage
-            src={location.locationCoverImage}
+            src={location.coverImageUrl}
             alt={location.locationName}
             priority={index === 0}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -45,16 +43,9 @@ export const LocalCircleCard = memo(function LocalCircleCard({ location, index =
             {location.locationName}
           </h3>
           <div className="mt-3 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <AvatarStack
-                urls={location.avatarStack}
-                size="sm"
-                tooltip={t("home.localCircle.avatarStack.tooltip")}
-              />
-              <span title={t("home.localCircle.inAction", { n: location.uniqueVisitors })} className="text-sm text-stone-700 dark:text-stone-300 truncate">
-                {t("home.localCircle.inAction", { n: location.uniqueVisitors })}
-              </span>
-            </div>
+            <span title={t("home.localCircle.inAction", { n: location.uniqueVisitors })} className="min-w-0 truncate text-sm text-stone-700 dark:text-stone-300">
+              {t("home.localCircle.inAction", { n: location.uniqueVisitors })}
+            </span>
             <ArrowRight
               className="w-4 h-4 flex-shrink-0 text-amber-700 dark:text-amber-400 transition-transform group-hover:translate-x-0.5"
               strokeWidth={2}

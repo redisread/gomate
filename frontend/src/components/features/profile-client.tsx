@@ -2,24 +2,24 @@
 
 import * as React from "react";
 import {
-  Key,
   Mountain,
   Edit3,
   LogOut,
   MapPin,
   Calendar,
   Users,
-  FileText,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser } from "@/lib/api";
 import { signOut } from "@/lib/auth-client";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StatusBadge } from "@/components/features/teams/teams-ui";
 import { cn } from "@/lib/utils";
 import { formatBirthday, getAgeNumber } from "@/lib/user-utils";
-import type { SessionUser, Team, City } from "@/lib/types";
+import type { SessionUser, Team } from "@/lib/types";
+import { formatTeamStart, getTeamDisplayStatus } from "@/lib/team-display";
+import { fetchSelectableRegions } from "@/lib/regions";
 
 const LEVEL_CONFIG: Record<string, {
   badge: string;
@@ -70,7 +70,7 @@ export function ProfileClient() {
   const [createdTotal, setCreatedTotal] = React.useState(0);
   const [joinedTotal, setJoinedTotal] = React.useState(0);
   const [completedTotal, setCompletedTotal] = React.useState(0);
-  const [cityName, setCityName] = React.useState<string | null>(null);
+  const [regionName, setRegionName] = React.useState<string | null>(null);
 
   const loadProfile = React.useCallback(async () => {
     setIsLoading(true);
@@ -79,13 +79,12 @@ export function ProfileClient() {
       if (!u) return;
       setUser((u as unknown) as SessionUser);
       loadTeams(u.id as string);
-      // 解析 cityId → cityName
-      if ((u as unknown as SessionUser).city) {
+      // Resolve the persisted Region id to its display name.
+      if (u.extra.city) {
         try {
-          const res = await fetchAPI("/api/cities?pageSize=100");
-          const json = await res.json() as { cities?: City[] };
-          const match = json.cities?.find((c) => c.id === (u as unknown as SessionUser).city);
-          if (match) setCityName(match.name);
+          const regions = await fetchSelectableRegions();
+          const match = regions.find((region) => region.id === u.extra.city);
+          if (match) setRegionName(match.name);
         } catch { /* silent */ }
       }
     } finally {
@@ -100,8 +99,8 @@ export function ProfileClient() {
   const loadTeams = async (_userId: string) => {
     try {
       const [createdRes, joinedRes] = await Promise.all([
-        fetchAPI("/api/users/created-teams"),
-        fetchAPI("/api/users/teams/joined"),
+        fetchAPI("/users/me/created-teams"),
+        fetchAPI("/users/me/joined-teams"),
       ]);
       const createdData = await createdRes.json();
       const joinedData = await joinedRes.json();
@@ -119,7 +118,7 @@ export function ProfileClient() {
         const createdList: Team[] = createdData.teams || [];
         const joinedList: Team[] = joinedData.teams || [];
         const completedCount = [...createdList, ...joinedList].filter(
-          (t) => t.status === "completed"
+          (team) => team.lifecycle === "completed"
         ).length;
         setCompletedTotal(completedCount);
       }
@@ -177,7 +176,7 @@ export function ProfileClient() {
 
   if (!user) return null;
 
-  const levelConfig = LEVEL_CONFIG[user.level ?? ""] || LEVEL_CONFIG.beginner;
+  const levelConfig = LEVEL_CONFIG[user.extra.level] || LEVEL_CONFIG.beginner;
   const displayName = user.nickname || user.name;
 
   const genderText = user.gender === "male"
@@ -223,7 +222,7 @@ export function ProfileClient() {
                 levelConfig.badge
               )}>
                 <span>{levelConfig.emoji}</span>
-                {t(`profile.levelTitle.${user.level}` as string) ?? t("profile.levelTitle.beginner")}
+                {t(`profile.levelTitle.${user.extra.level}` as string) ?? t("profile.levelTitle.beginner")}
               </span>
 
               {/* 邮箱 */}
@@ -235,10 +234,6 @@ export function ProfileClient() {
               <a href="/profile/edit" className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--anthropic-accent)] px-4 py-2 text-xs font-medium text-white transition-[transform,background-color] duration-150 hover:bg-amber-700 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
                 <Edit3 className="h-3.5 w-3.5" />
                 {t("profile.editProfileBtn")}
-              </a>
-              <a href="/settings/api-keys" className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 px-4 py-2 text-xs font-medium text-stone-500 transition-[transform,border-color,color] duration-150 hover:border-amber-200 hover:text-amber-700 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-amber-800 dark:hover:text-amber-400">
-                <Key className="h-3.5 w-3.5" />
-                {t("profile.apiKeysBtn")}
               </a>
               <button
                 onClick={handleLogout}
@@ -264,13 +259,13 @@ export function ProfileClient() {
             <section className="space-y-5">
               {/* 徽章行 */}
               <div className="flex flex-wrap gap-1.5">
-                {cityName && (
+                {regionName && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-50 dark:bg-zinc-800 text-stone-600 dark:text-zinc-400 border border-stone-100 dark:border-zinc-700">
                     <MapPin className="h-3 w-3" />
-                    {cityName}
+                    {regionName}
                   </span>
                 )}
-                {(user.completedHikes ?? 0) > 0 && (
+                {user.extra.completedHikes > 0 && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-50 dark:bg-zinc-800 text-stone-600 dark:text-zinc-400 border border-stone-100 dark:border-zinc-700">
                     <Mountain className="h-3 w-3" />
                     {t("profile.hikesCompleted")}
@@ -299,55 +294,6 @@ export function ProfileClient() {
                 </p>
               )}
 
-              {/* 装备清单 */}
-              {user.extra && (() => {
-                try {
-                  const extra = JSON.parse(user.extra as string);
-                  if (extra.equipment?.length) {
-                    return (
-                      <div>
-                        <div className="text-xs uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium mb-2 flex items-center gap-1.5">
-                          <Mountain className="h-3.5 w-3.5" />
-                          {t("profile.equipmentLabel")}
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {extra.equipment.map((item: string, i: number) => (
-                            <span key={i} className="px-2 py-0.5 bg-stone-50 dark:bg-zinc-800 text-stone-600 dark:text-zinc-400 rounded text-xs border border-stone-100 dark:border-zinc-700">
-                              {item}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  }
-                } catch {
-                  console.warn("Failed to parse extra data (equipment section)");
-                }
-                return null;
-              })()}
-
-              {/* 活动经历 */}
-              {user.extra && (() => {
-                try {
-                  const extra = JSON.parse(user.extra as string);
-                  if (extra.experience?.trim()) {
-                    return (
-                      <div>
-                        <div className="text-xs uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium mb-2 flex items-center gap-1.5">
-                          <FileText className="h-3.5 w-3.5" />
-                          {t("profile.experienceLabel")}
-                        </div>
-                        <p className="text-sm text-stone-500 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
-                          {extra.experience.trim()}
-                        </p>
-                      </div>
-                    );
-                  }
-                } catch {
-                  console.warn("Failed to parse extra data (experience section)");
-                }
-                return null;
-              })()}
             </section>
 
             {/* ── 我发起的队伍 ── */}
@@ -363,14 +309,16 @@ export function ProfileClient() {
                 </div>
 
                 <div className="divide-y divide-stone-100 dark:divide-zinc-800 border border-stone-100 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-[var(--anthropic-surface)]">
-                  {createdTeams.map((team: Team) => (
+                  {createdTeams.map((team: Team) => {
+                    const start = formatTeamStart(team);
+                    return (
                     <a key={team.id} href={`/teams/${team.id}`} className="block group">
                       <div className="px-4 py-3.5 hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
                         <div className="flex items-center justify-between gap-2">
                           <h3 title={team.title} className="text-sm font-medium text-stone-800 dark:text-zinc-100 truncate group-hover:text-[var(--anthropic-accent)] transition-colors">
                             {team.title}
                           </h3>
-                          <StatusBadge status={team.status} size="sm" />
+                          <StatusBadge status={getTeamDisplayStatus(team)} />
                         </div>
                         <div className="flex items-center gap-3 mt-1.5 text-xs text-stone-400 dark:text-zinc-500">
                           {team.location?.name && (
@@ -381,16 +329,17 @@ export function ProfileClient() {
                           )}
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {team.date}
+                            {start.date}
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            {team.currentMembers}/{team.maxMembers}
+                            {team.activeParticipantCount}/{team.maxParticipants}
                           </span>
                         </div>
                       </div>
                     </a>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -408,14 +357,16 @@ export function ProfileClient() {
                 </div>
 
                 <div className="divide-y divide-stone-100 dark:divide-zinc-800 border border-stone-100 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-[var(--anthropic-surface)]">
-                  {joinedTeams.map((team: Team) => (
+                  {joinedTeams.map((team: Team) => {
+                    const start = formatTeamStart(team);
+                    return (
                     <a key={team.id} href={`/teams/${team.id}`} className="block group">
                       <div className="px-4 py-3.5 hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
                         <div className="flex items-center justify-between gap-2">
                           <h3 title={team.title} className="text-sm font-medium text-stone-800 dark:text-zinc-100 truncate group-hover:text-[var(--anthropic-accent)] transition-colors">
                             {team.title}
                           </h3>
-                          <StatusBadge status={team.status} size="sm" />
+                          <StatusBadge status={getTeamDisplayStatus(team)} />
                         </div>
                         <div className="flex items-center gap-3 mt-1.5 text-xs text-stone-400 dark:text-zinc-500">
                           {team.location?.name && (
@@ -426,16 +377,17 @@ export function ProfileClient() {
                           )}
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {team.date}
+                            {start.date}
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            {team.currentMembers}/{team.maxMembers}
+                            {team.activeParticipantCount}/{team.maxParticipants}
                           </span>
                         </div>
                       </div>
                     </a>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}

@@ -1,24 +1,21 @@
 /**
- * API 客户端 - 统一封装对后端 api/ 服务的 fetch 请求
- *
- * Note: 分享图功能已迁移到服务端生成 (PR #151)
+ * Same-origin browser API client. Callers pass resource paths without `/api`.
  */
 
-export const API_BASE =
-  typeof window !== "undefined"
-    ? (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8799"
-    : (import.meta.env.PUBLIC_API_URL as string) || "http://localhost:8799";
+export const API_BASE = "/api";
 
 type APIRequestInit = RequestInit & {
   /**
-   * Whether to send cookies with the request. Defaults to true for backwards
-   * compatibility with authenticated API calls.
+   * Whether to send cookies with the request. Defaults to true for
+   * authenticated same-origin calls.
    */
   auth?: boolean;
 };
 
-function normalizePath(path: string): string {
-  return path.startsWith("/api/") ? path.slice(4) : path;
+function assertResourcePath(path: string): void {
+  if (!path.startsWith("/") || path === "/api" || path.startsWith("/api/")) {
+    throw new Error(`API resource path must start with '/' and must not include '/api': ${path}`);
+  }
 }
 
 function isJsonRequest(method: string, body: BodyInit | null | undefined): boolean {
@@ -37,10 +34,10 @@ function buildHeaders(options: APIRequestInit, method: string): HeadersInit | un
 
 async function requestAPI(path: string, options: APIRequestInit = {}): Promise<Response> {
   const { auth = true, ...fetchOptions } = options;
-  const normalizedPath = normalizePath(path);
+  assertResourcePath(path);
   const method = (fetchOptions.method || "GET").toUpperCase();
 
-  return fetch(`${API_BASE}${normalizedPath}`, {
+  return fetch(`${API_BASE}${path}`, {
     ...fetchOptions,
     headers: buildHeaders(options, method),
     credentials: auth ? "include" : "omit",
@@ -79,7 +76,7 @@ export async function publicApiGet<T>(path: string): Promise<T> {
 }
 
 /**
- * 通用 GET 请求，保留登录态兼容。
+ * 通用 GET 请求，携带当前登录态。
  */
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetchAPI(path);
@@ -98,8 +95,7 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.message || `API POST ${path} failed: ${res.status}`);
+    throw new Error(await readErrorMessage(res, `API POST ${path} failed: ${res.status}`));
   }
   return res.json();
 }
@@ -113,8 +109,18 @@ export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.message || `API PUT ${path} failed: ${res.status}`);
+    throw new Error(await readErrorMessage(res, `API PUT ${path} failed: ${res.status}`));
+  }
+  return res.json();
+}
+
+export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetchAPI(path, {
+    method: "PATCH",
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res, `API PATCH ${path} failed: ${res.status}`));
   }
   return res.json();
 }
@@ -131,13 +137,10 @@ export async function apiDelete<T>(path: string): Promise<T> {
 }
 
 /**
- * 两步加载当前登录用户的最新数据，绕过 Cloudflare KV 会话缓存。
- * 1. /auth/get-session → 验证登录状态，取 userId
- * 2. /api/users?id=xxx → 直接读数据库，取最新字段
+ * 加载当前登录用户的最新数据库数据。
  *
  * task #183：模块级 promise memo —— 同页并发 dedupe + 会话内复用。
- * 首页 navbar + use-local-circle 同时调用时只打一轮 2 RTT（此前各打一轮，且
- * local-circle 串行等其完成后才发请求，共 3 串行 RTT）。
+ * 首页 navbar + use-local-circle 同时调用时复用同一个 `/users/me` 请求。
  * Astro MPA 整页刷新天然重置 memo，无跨页脏读面；
  * profile 保存走 PATCH 后 location.replace 整页跳转，memo 同样重置（无同页脏读）。
  * redirect 副作用在 memo 外层处理，缓存值保持纯净（不含跳转行为）。
@@ -148,18 +151,10 @@ let currentUserMemo: Promise<import("./types").SessionUser | null> | null = null
 
 async function loadCurrentUser(): Promise<import("./types").SessionUser | null> {
   try {
-    const sessionRes = await fetchAPI("/auth/get-session");
-    const sessionData = await sessionRes.json();
-    if (!sessionData?.user?.id) throw new Error("no session");
-
-    const userRes = await fetchAPI(`/api/users?id=${sessionData.user.id}`);
+    const userRes = await fetchAPI("/users/me");
+    if (!userRes.ok) return null;
     const userData = await userRes.json();
-
-    return {
-      ...sessionData.user,
-      ...userData.user,
-      image: userData.user?.avatar ?? sessionData.user.image,
-    };
+    return userData.user ?? null;
   } catch {
     return null;
   }
@@ -186,6 +181,28 @@ export async function submitFeedback(data: {
   steps?: string;
   pageUrl?: string;
 }): Promise<{ success: boolean; message: string }> {
-  return apiPost("/api/feedback", data);
+  return apiPost("/feedback", data);
 }
 
+export function getApiErrorMessage(payload: unknown, fallback: string): string {
+  if (!payload || typeof payload !== "object") return fallback;
+  const candidate = payload as {
+    message?: unknown;
+    error?: { message?: unknown } | string;
+  };
+  if (
+    typeof candidate.error === "object" &&
+    candidate.error !== null &&
+    typeof candidate.error.message === "string"
+  ) {
+    return candidate.error.message;
+  }
+  if (typeof candidate.error === "string") return candidate.error;
+  if (typeof candidate.message === "string") return candidate.message;
+  return fallback;
+}
+
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  const payload = await response.json().catch(() => null);
+  return getApiErrorMessage(payload, fallback);
+}

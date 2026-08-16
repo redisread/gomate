@@ -2,11 +2,11 @@
   "ci": {
     "collect": {
       "url": [
-        "http://localhost:4321/",
-        "http://localhost:4321/locations",
-        "http://localhost:4321/locations/Ha2v4QFa518e_geUuz9eC"
+        "http://localhost:5432/",
+        "http://localhost:5432/locations",
+        "http://localhost:5432/locations/location-shenzhen-wutongshan"
       ],
-      "numberOfRuns": 1,
+      "numberOfRuns": 3,
       "settings": {
         "chromeFlags": "--no-sandbox --headless --disable-gpu",
         "preset": "desktop"
@@ -19,7 +19,8 @@
       }
     },
     "upload": {
-      "target": "temporary-public-storage"
+      "target": "filesystem",
+      "outputDir": ".lighthouseci/reports"
     }
   }
 }

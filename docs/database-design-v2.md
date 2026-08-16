@@ -1,6 +1,6 @@
 # GoMate 数据库最终设计 V2
 
-> 设计状态：已收敛，尚未实现。本文描述 GoMate 下一版 Cloudflare D1 目标结构；当前生产结构见 [`database-schema.md`](database-schema.md)。
+> 设计状态：已落地。Drizzle schema、单一 baseline、最小 seed 与数据库合同测试均以本文为准；实现入口见 [`schema.ts`](../api/src/db/schema.ts)、[`0000_init.sql`](../api/db/migrations/0000_init.sql) 与[数据库测试](../api/scripts/database-v2-contract.test.mjs)。生产 D1 resource/binding 切换仍按 [`prod-change-policy.md`](prod-change-policy.md) 单独审批。
 
 ## 1. 设计目标
 
@@ -568,16 +568,22 @@ V2 只支持“一个队伍的队长与一名队员之间的双人会话”。�
 
 ## 11. 数据库触发器
 
-触发器只用于单靠声明式约束无法可靠保证、且并发写入时必须原子成立的规则。最终保留 6 个：
+触发器只用于单靠声明式约束无法可靠保证、且并发写入时必须原子成立的规则。最终保留 8 个：
 
 | 触发器                                      | 时机                                        | 作用                                 |
 | ------------------------------------------- | ------------------------------------------- | ------------------------------------ |
+| `sessions_active_user_insert_guard`         | `sessions` BEFORE INSERT                    | 禁止为非 active/已删除用户创建会话   |
+| `users_auth_revoke_after_inactive`          | `users` AFTER UPDATE OF `status,deleted_at` | 撤销全部会话和未消费的密码重置凭证   |
 | `team_members_capacity_validate_insert`     | `team_members` BEFORE INSERT                | 阻止活动成员超过容量                 |
 | `team_members_capacity_validate_reactivate` | `team_members` BEFORE UPDATE OF `left_at`   | 重新加入前检查容量                   |
 | `teams_capacity_validate_update`            | `teams` BEFORE UPDATE OF `max_participants` | 阻止容量被调低到当前活动人数以下     |
 | `story_likes_count_after_insert`            | `story_likes` AFTER INSERT                  | 原子增加故事点赞数                   |
 | `story_likes_count_after_delete`            | `story_likes` AFTER DELETE                  | 原子减少故事点赞数且不低于零         |
 | `messages_summary_after_insert`             | `messages` AFTER INSERT                     | 更新会话摘要、最近消息时间和更新时间 |
+
+点赞创建与消息插入若未能更新对应的 Story/Conversation，会分别 `RAISE(ABORT, 'STORY_LIKE_COUNT_FAILED')` 和 `RAISE(ABORT, 'MESSAGE_SUMMARY_FAILED')`；API 只返回稳定错误 envelope，不回传 D1/SQL 诊断。点赞删除触发器保留 `ON DELETE CASCADE` 语义：父 Story 级联删除时父行已不可见，因此不把该合法的零行更新误判为失败。
+
+用户从 active 变为 suspended/banned/deleted，或 `deleted_at` 变为非空时，数据库在同一条 UPDATE 内删除该用户全部 `sessions` 和 `password-reset:<userId>` challenge。之后即使恢复 active 或清空 `deleted_at`，旧会话与重置凭证也不会复活。`sessions_active_user_insert_guard` 还会在 session INSERT 的同一语句内复核用户状态，关闭认证层 active 预查与会话落库之间的竞态；密码重置的签发与消费语句同样在提交时复核 active/non-deleted。
 
 其余规则优先使用 PK、FK、UQ、CHECK 和部分索引。跨表身份权限、工作流状态迁移和“成员必须属于队伍”等规则由单事务的服务层命令与测试保证。
 
@@ -620,18 +626,17 @@ V2 只支持“一个队伍的队长与一名队员之间的双人会话”。�
 9. `stories.like_count` 必须等于 `story_likes` 的实际行数。
 10. 收藏和标签关系删除后不能留下悬空记录。
 11. R2 对象与 D1 媒体元数据失败时必须可补偿清理。
+12. 用户变为非 active 或被软删除时，全部会话与未消费的密码重置 challenge 必须在同一更新中撤销；非 active 用户不得新建会话、签发或消费重置凭证，恢复用户不得恢复旧能力。
 
-## 15. 落地方式
+## 15. 落地实现与验证
 
-当前没有用户和兼容性要求，因此不写旧表兼容层，也不保留双写：
+当前实现不包含旧表兼容层或双写：
 
-1. 以本文件为目标模型更新 `api/src/db/schema.ts`。
-2. 重新生成单一基线迁移 `0000_init.sql`，不要继续叠加历史修补迁移。
-3. 在全新本地 D1 上从零执行迁移并导入最小 seed：Region、地点和标签。
-4. 增加 schema、触发器、级联删除、关键事务和查询计划测试。
-5. 运行 `PRAGMA foreign_key_check`、迁移重放和 API 全量最低检查。
-6. 更新 `docs/backend-api.md` 中受字段、状态和分页方式影响的接口。
-7. 部署到新的 D1 数据库并切换 binding；回滚方式是切回旧 binding，而不是逆向迁移数据。
+1. [`api/src/db/schema.ts`](../api/src/db/schema.ts) 是 Drizzle V2 schema。
+2. [`api/db/migrations/0000_init.sql`](../api/db/migrations/0000_init.sql) 是唯一 baseline；[`api/db/seed.sql`](../api/db/seed.sql) 是可幂等最小 seed。
+3. [`database-v2-contract.test.mjs`](../api/scripts/database-v2-contract.test.mjs) 完整核对列/type/null/default/PK、FK action、CHECK、索引列序/unique/partial predicate 与 8 个 trigger；[`check-migrations-sync.mjs`](../api/scripts/check-migrations-sync.mjs) 在常规检查中执行同一套 Drizzle/baseline 语义 parity。
+4. [`database-integrity.test.mjs`](../api/scripts/database-integrity.test.mjs) 使用真实 SQLite 验证声明式约束、触发器、级联、会话撤销和查询计划；[`database-workerd-replay.test.mjs`](../api/scripts/database-workerd-replay.test.mjs) 使用真实本地 workerd/D1 binding 验证迁移重放、会话不可复活、稳定错误 envelope、审批 batch 回滚/重试与并发最后席位。
+5. 新建生产 D1 resource、切换 binding 和 route 属于独立生产变更；回滚方式是切回旧 binding，而不是逆向迁移数据。
 
 ## 16. 旧设计到 V2 的主要映射
 
@@ -660,4 +665,4 @@ V2 只支持“一个队伍的队长与一名队员之间的双人会话”。�
 | `apikey` 与 `actor_api_key_id`                             | 随 MCP/API Key 能力删除                                                     |
 | `password_resets`                                          | Better Auth verification 流程                                               |
 
-本文档描述目标设计，不代表代码和迁移已经完成。实施完成后，应将状态改为“已落地”，并补上对应 migration 与测试链接。
+本文档、Drizzle schema 与 baseline 必须同步修改；语义 parity 检查不通过时不得合并。

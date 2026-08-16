@@ -8,6 +8,15 @@
     "expiryNote": "此链接将在 1 小时后失效。",
     "ignoreNote": "如果您没有申请重置密码，请忽略此邮件。"
   },
+  "emailVerification": {
+    "subject": "验证您的 GoMate 邮箱",
+    "title": "验证邮箱",
+    "greeting": "您好，{name}！",
+    "body": "请点击下方按钮确认这是您的邮箱，验证完成后即可登录 GoMate。",
+    "btnText": "验证邮箱",
+    "expiryNote": "此链接将在 1 小时后失效。",
+    "ignoreNote": "如果您没有注册 GoMate，请忽略此邮件。"
+  },
   "welcome": {
     "subject": "欢迎加入 GoMate！",
     "title": "欢迎加入 GoMate！",

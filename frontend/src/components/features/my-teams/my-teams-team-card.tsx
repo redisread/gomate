@@ -3,6 +3,7 @@ import { Crown, MapPin, Users, Calendar, Clock, ChevronRight, ChevronDown, XCirc
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { TeamItem } from "./my-teams-types";
+import { formatTeamStart, getTeamDisplayStatus, isTeamActive } from "@/lib/team-display";
 
 function getStatusLabels(t: (key: string, vars?: Record<string, string | number>) => string): Record<string, { label: string; color: string; dot: string }> {
   return {
@@ -12,6 +13,8 @@ function getStatusLabels(t: (key: string, vars?: Record<string, string | number>
     ongoing: { label: t("myTeams.statusOngoing"), color: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-500" },
     completed: { label: t("myTeams.statusCompleted"), color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" },
     cancelled: { label: t("myTeams.statusCancelled"), color: "bg-red-50 text-red-600 border border-red-200", dot: "bg-red-400" },
+    closed: { label: t("enums.teamStatus.closed"), color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" },
+    expired_unformed: { label: t("teams.statusExpiredNotFormed"), color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" },
   };
 }
 
@@ -21,20 +24,21 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
   onCancel?: (id: string) => void;
   onForm?: (id: string) => void;
 }) {
-  const { t } = useI18n(["myTeams", "teams"]);
+  const { t } = useI18n(["myTeams", "teams", "enums"]);
   const statusLabels = getStatusLabels(t);
-  const status = statusLabels[team.status] || { label: team.status, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" };
-  const isFull = team.currentMembers >= team.maxMembers;
-  const canCancel = isLeader && onCancel && (team.status === "recruiting" || team.status === "full");
-  const canForm = isLeader && onForm && (team.status === "recruiting" || team.status === "full");
+  const displayStatus = getTeamDisplayStatus(team);
+  const status = statusLabels[displayStatus] || { label: displayStatus, color: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700", dot: "bg-stone-400" };
+  const start = formatTeamStart(team);
+  const canCancel = isLeader && onCancel && isTeamActive(team);
+  const canForm = isLeader && onForm && team.lifecycle === "pending";
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
       <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200">
         <div className="flex items-start gap-4">
           <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
-            {team.location?.coverImage ? (
-              <img src={team.location.coverImage} alt={team.location.name}
+            {team.location?.coverImageUrl ? (
+              <img src={team.location.coverImageUrl} alt={team.location.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
             ) : (
               <MapPin className="h-8 w-8 text-stone-300 dark:text-stone-600" />
@@ -62,18 +66,18 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-3 mt-3 text-sm">
-              {team.date && (
+              {start.date && (
                 <span className="flex items-center gap-1 text-stone-500 dark:text-stone-500">
-                  <Calendar className="h-3.5 w-3.5" />{team.date}
+                  <Calendar className="h-3.5 w-3.5" />{start.date}
                 </span>
               )}
-              {team.time && (
+              {start.time && (
                 <span className="flex items-center gap-1 text-stone-500 dark:text-stone-500">
-                  <Clock className="h-3.5 w-3.5" />{team.time}
+                  <Clock className="h-3.5 w-3.5" />{start.time}
                 </span>
               )}
               <span className="flex items-center gap-1 font-medium text-amber-600">
-                <Users className="h-3.5 w-3.5" />{team.currentMembers}/{team.maxMembers}{t("myTeams.memberSuffix")}
+                <Users className="h-3.5 w-3.5" />{team.activeParticipantCount}/{team.maxParticipants}{t("myTeams.memberSuffix")}
               </span>
             </div>
           </div>
@@ -84,7 +88,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
             {canForm && (
               <button onClick={(e) => { e.preventDefault(); onForm!(team.id); }}
                 className="text-xs text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-amber-50">
-                {isFull ? t("teams.formTeam") : t("teams.formTeamUnderfilled")}
+                {team.isFull ? t("teams.formTeam") : t("teams.formTeamUnderfilled")}
               </button>
             )}
             {canCancel && (
@@ -124,8 +128,8 @@ export function TeamListSection({ teams, isLeader, onCancel, onForm }: {
   onCancel?: (id: string) => void; onForm?: (id: string) => void;
 }) {
   const { t } = useI18n(["myTeams", "teams"]);
-  const active = teams.filter((t2) => ["recruiting", "full", "formed", "ongoing"].includes(t2.status));
-  const archived = teams.filter((t2) => ["completed", "cancelled"].includes(t2.status));
+  const active = teams.filter(isTeamActive);
+  const archived = teams.filter((team) => !isTeamActive(team));
   if (teams.length === 0) return null;
   const roleLabel = isLeader ? t("myTeams.roleFilterLeader") : t("myTeams.roleFilterMember");
   return (

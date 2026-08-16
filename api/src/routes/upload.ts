@@ -1,282 +1,472 @@
-import { APIErrors } from "../lib/api-errors";
-import { logger } from "../lib/logger";
-import { Hono } from "hono";
-import { eq } from "drizzle-orm";
-import { createAuth } from "../lib/auth";
+import { and, eq, isNull } from "drizzle-orm";
+import { Hono, type Context } from "hono";
+
 import { createDb } from "../db";
 import * as schema from "../db/schema";
+import { getActiveSession } from "../lib/active-session";
+import { APIErrors } from "../lib/api-errors";
 import type { Env } from "../lib/auth";
+import {
+  isOwnedAvatarKey,
+  ownedAvatarKeyFromStoredValue,
+} from "../lib/avatar-media";
+import { generateId } from "../lib/id";
+import { logger } from "../lib/logger";
+import {
+  deleteR2ObjectsWithRetry,
+  getR2PublicBaseUrl,
+} from "../lib/r2-media";
 
 const upload = new Hono<{ Bindings: Env }>();
+type UploadContext = Context<{ Bindings: Env }>;
 
-/** 允许的图片 MIME 类型 */
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-/** 允许的文件扩展名 */
-const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
-/** 最大文件大小：5MB */
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-/** MIME 类型到扩展名的映射 */
-const MIME_TO_EXT: Record<string, string[]> = {
-  "image/jpeg": ["jpg", "jpeg"],
-  "image/png": ["png"],
-  "image/gif": ["gif"],
-  "image/webp": ["webp"],
+// Keep total buffering bounded while allowing normal multipart framing.
+const MAX_MULTIPART_BODY_SIZE = MAX_FILE_SIZE + 64 * 1024;
+
+type ImageFormat = "jpeg" | "png" | "gif" | "webp";
+
+const MIME_FORMAT: Record<string, ImageFormat> = {
+  "image/jpeg": "jpeg",
+  "image/png": "png",
+  "image/gif": "gif",
+  "image/webp": "webp",
 };
 
-/** 常见图片格式的 Magic Number */
-const MAGIC_NUMBERS = {
-  jpeg: [0xFF, 0xD8, 0xFF],
-  png: [0x89, 0x50, 0x4E, 0x47],
-  gif: [0x47, 0x49, 0x46, 0x38],
-  webp: [0x52, 0x49, 0x46, 0x46],
+const EXT_FORMAT: Record<string, ImageFormat> = {
+  jpg: "jpeg",
+  jpeg: "jpeg",
+  png: "png",
+  gif: "gif",
+  webp: "webp",
 };
 
-function validateMagicNumber(buffer: ArrayBuffer): boolean {
+class UploadRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: 400 | 413,
+  ) {
+    super(message);
+    this.name = "UploadRequestError";
+  }
+}
+
+function detectedImageFormat(buffer: ArrayBuffer): ImageFormat | null {
   const bytes = new Uint8Array(buffer);
-  if (bytes.length < 4) return false;
-
-  const checks = [
-    { magic: MAGIC_NUMBERS.jpeg, minLen: 3 },
-    { magic: MAGIC_NUMBERS.png, minLen: 4 },
-    { magic: MAGIC_NUMBERS.gif, minLen: 4 },
-    { magic: MAGIC_NUMBERS.webp, minLen: 4 },
-  ];
-
-  return checks.some(({ magic, minLen }) => {
-    if (bytes.length < minLen) return false;
-    return magic.every((b, i) => bytes[i] === b);
-  });
+  if (
+    bytes.length >= 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff
+  ) {
+    return "jpeg";
+  }
+  if (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  ) {
+    return "png";
+  }
+  if (
+    bytes.length >= 6 &&
+    bytes[0] === 0x47 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x38 &&
+    (bytes[4] === 0x37 || bytes[4] === 0x39) &&
+    bytes[5] === 0x61
+  ) {
+    return "gif";
+  }
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    return "webp";
+  }
+  return null;
 }
 
-/**
- * 验证文件扩展名是否在白名单中，且与 MIME 类型一致
- */
-function validateFileExtension(file: File): { valid: boolean; ext: string; error?: string } {
-  const fileName = file.name || "";
-  const extMatch = fileName.match(/\.([a-zA-Z0-9]+)$/);
-  const ext = extMatch ? extMatch[1].toLowerCase() : "";
-
-  if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
-    return { valid: false, ext: "", error: `Invalid file extension: .${ext}. Allowed: ${ALLOWED_EXTENSIONS.join(", ")}` };
-  }
-
-  // 验证 MIME 类型和扩展名的一致性
-  const expectedExts = MIME_TO_EXT[file.type];
-  if (!expectedExts || !expectedExts.includes(ext)) {
-    return { valid: false, ext, error: `MIME type ${file.type} does not match extension .${ext}` };
-  }
-
-  return { valid: true, ext };
-}
-function getPublicUrl(env: Env, key: string): string | null {
-  if (!env.R2_PUBLIC_URL) {
-    logger.error("[Upload] R2_PUBLIC_URL not configured");
-    return null;
-  }
-  return `${env.R2_PUBLIC_URL}/${key}`;
+function fileExtension(file: File): string | null {
+  const match = file.name.match(/\.([A-Za-z0-9]+)$/u);
+  return match?.[1]?.toLowerCase() ?? null;
 }
 
-async function uploadImageFile(c: { env: Env; req: { header: (name: string) => string | undefined } }, file: File, key: string) {
-  // 验证文件扩展名和 MIME 类型一致性
-  const extValidation = validateFileExtension(file);
-  if (!extValidation.valid) {
-    return { error: APIErrors.badRequest(extValidation.error || "Invalid file extension"), status: 400 as const };
+async function validatedImage(file: File) {
+  const ext = fileExtension(file);
+  const mimeFormat = MIME_FORMAT[file.type];
+  const extensionFormat = ext ? EXT_FORMAT[ext] : undefined;
+  if (!ext || !extensionFormat) {
+    throw new UploadRequestError(
+      "Invalid file extension. Allowed: jpg, jpeg, png, gif, webp",
+      400,
+    );
+  }
+  if (!mimeFormat) {
+    throw new UploadRequestError(
+      "Invalid file type. Allowed: JPEG, PNG, GIF, WebP",
+      400,
+    );
+  }
+  if (mimeFormat !== extensionFormat) {
+    throw new UploadRequestError(
+      `MIME type ${file.type} does not match extension .${ext}`,
+      400,
+    );
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    throw new UploadRequestError("File too large. Maximum size: 5MB", 413);
   }
 
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type))
-    return { error: APIErrors.badRequest("Invalid file type. Allowed: JPEG, PNG, GIF, WebP"), status: 400 as const };
-  if (file.size > MAX_FILE_SIZE)
-    return { error: APIErrors.badRequest("File too large. Maximum size: 5MB"), status: 400 as const };
-
-  const arrayBuffer = await file.arrayBuffer();
-  if (!validateMagicNumber(arrayBuffer))
-    return { error: APIErrors.badRequest("Invalid file content. File header does not match allowed image formats."), status: 400 as const };
-
-  if (!c.env.R2) return { error: APIErrors.internalError("R2 storage not configured"), status: 500 as const };
-
-  await c.env.R2.put(key, arrayBuffer, {
-    httpMetadata: { contentType: file.type },
-  });
-
-  const host = c.req.header("host") || "";
-  const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
-  const publicUrl = isLocalDev
-    ? `http://${host}/r2/${key}`
-    : getPublicUrl(c.env, key);
-  if (!publicUrl) return { error: APIErrors.internalError("R2_PUBLIC_URL not configured"), status: 500 as const };
-
-  return { data: { success: true, key, url: publicUrl, size: file.size, type: file.type } };
+  const buffer = await file.arrayBuffer();
+  const contentFormat = detectedImageFormat(buffer);
+  if (!contentFormat || contentFormat !== mimeFormat) {
+    throw new UploadRequestError(
+      "File extension, MIME type, and image content must describe the same format",
+      400,
+    );
+  }
+  return { buffer, ext };
 }
 
-/**
- * POST /upload/avatar
- * 上传用户头像到 R2（需登录，只能上传自己的头像）
- */
-upload.post("/avatar", async (c) => {
+async function boundedFormData(request: Request): Promise<FormData> {
+  const contentLength = request.headers.get("content-length");
+  if (contentLength !== null) {
+    if (!/^\d+$/u.test(contentLength)) {
+      throw new UploadRequestError("Invalid Content-Length", 400);
+    }
+    if (Number(contentLength) > MAX_MULTIPART_BODY_SIZE) {
+      throw new UploadRequestError("Multipart body too large", 413);
+    }
+  }
+
+  const reader = request.body?.getReader();
+  if (!reader) throw new UploadRequestError("No multipart body provided", 400);
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_MULTIPART_BODY_SIZE) {
+      // Stop reading immediately. Returning the 413 releases the unread
+      // request body at the runtime boundary without spending Worker CPU on
+      // an attacker-controlled chunked remainder. Explicit reader.cancel()
+      // makes Node's native FormData producer enqueue into a closed stream.
+      throw new UploadRequestError("Multipart body too large", 413);
+    }
+    chunks.push(value);
+  }
+
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
   try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    return await new Request(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body,
+    }).formData();
+  } catch {
+    throw new UploadRequestError("Invalid multipart body", 400);
+  }
+}
+
+function storageConfiguration(c: UploadContext) {
+  const publicBaseUrl = getR2PublicBaseUrl(c.env);
+  if (!c.env.R2 || !publicBaseUrl) return null;
+  return { bucket: c.env.R2, publicBaseUrl };
+}
+
+function uploadUrl(c: UploadContext, publicBaseUrl: string, key: string) {
+  const requestUrl = new URL(c.req.raw.url);
+  const isLocal = ["localhost", "127.0.0.1", "[::1]"].includes(
+    requestUrl.hostname,
+  );
+  return isLocal
+    ? `${requestUrl.origin}/api/r2/${key}`
+    : `${publicBaseUrl}/${key}`;
+}
+
+function requestErrorResponse(c: UploadContext, error: UploadRequestError) {
+  return c.json(APIErrors.badRequest(error.message), error.status);
+}
+
+upload.post("/avatar", async (c) => {
+  const createdKeys: string[] = [];
+  try {
+    const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-    const formData = await c.req.formData();
-    const file = formData.get("file") as File | null;
-    const userId = formData.get("userId") as string | null;
+    const storage = storageConfiguration(c);
+    if (!storage) {
+      return c.json(APIErrors.internalError("R2 storage is not safely configured"), 500);
+    }
+    const formData = await boundedFormData(c.req.raw);
+    const file = formData.get("file");
+    if (!(file instanceof File)) {
+      return c.json(APIErrors.badRequest("No file provided"), 400);
+    }
+    const { buffer, ext } = await validatedImage(file);
 
-    if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
-    if (!userId) return c.json(APIErrors.badRequest("User ID is required"), 400);
+    const db = createDb(c.env.DB);
+    const [currentUser] = await db
+      .select({ image: schema.users.image })
+      .from(schema.users)
+      .where(eq(schema.users.id, session.user.id))
+      .limit(1);
+    if (!currentUser) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-    // 鉴权：只允许上传自己的头像（管理员除外）
-    if (userId !== session.user.id) {
-      const db = createDb(c.env.DB);
-      const userRecord = await db
-        .select({ role: schema.users.role })
-        .from(schema.users)
-        .where(eq(schema.users.id, session.user.id))
-        .then((rows) => rows[0]);
-      if (!userRecord || userRecord.role !== "admin") {
-        return c.json(APIErrors.forbidden("无权上传他人头像"), 403);
-      }
+    const objectId = generateId();
+    const tempKey = `temp/avatars/${session.user.id}/${objectId}.${ext}`;
+    const finalKey = `avatars/${session.user.id}/${objectId}.${ext}`;
+    createdKeys.push(tempKey);
+    await storage.bucket.put(tempKey, buffer, {
+      httpMetadata: { contentType: file.type },
+    });
+    createdKeys.push(finalKey);
+    await storage.bucket.put(finalKey, buffer, {
+      httpMetadata: { contentType: file.type },
+    });
+
+    const url = uploadUrl(c, storage.publicBaseUrl, finalKey);
+    const imageUnchanged = currentUser.image === null
+      ? isNull(schema.users.image)
+      : eq(schema.users.image, currentUser.image);
+    const updated = await db
+      .update(schema.users)
+      .set({ image: url, updatedAt: new Date() })
+      .where(and(
+        eq(schema.users.id, session.user.id),
+        imageUnchanged,
+        eq(schema.users.status, "active"),
+        isNull(schema.users.deletedAt),
+      ))
+      .returning({ image: schema.users.image });
+    if (updated.length !== 1) {
+      await deleteR2ObjectsWithRetry(storage.bucket, createdKeys);
+      return c.json(APIErrors.conflict("Avatar changed concurrently"), 409);
     }
 
-    const extValidation = validateFileExtension(file);
-    if (!extValidation.valid) return c.json(APIErrors.badRequest(extValidation.error || "Invalid file"), 400);
+    // From this point D1 owns the final key. Never include it in a generic
+    // rollback if deletion of the temporary or previous object later fails.
+    createdKeys.length = 0;
 
-    const ext = extValidation.ext;
-    const key = `avatars/${userId}-${Date.now()}.${ext}`;
-    const result = await uploadImageFile(c, file, key);
-    if ("error" in result) return c.json(result.error, result.status);
-    return c.json(result.data);
+    const previousKey = currentUser.image
+      ? ownedAvatarKeyFromStoredValue(
+          c.env,
+          new URL(c.req.raw.url),
+          currentUser.image,
+          session.user.id,
+        )
+      : null;
+    await deleteR2ObjectsWithRetry(storage.bucket, [
+      tempKey,
+      ...(previousKey && previousKey !== finalKey ? [previousKey] : []),
+    ]).catch((cleanupError: unknown) => {
+      logger.error("avatar_media_cleanup_failed", {
+        errorType: cleanupError instanceof Error ? cleanupError.name : "UnknownR2Error",
+      });
+    });
+
+    return c.json({
+      success: true,
+      key: finalKey,
+      url,
+      size: file.size,
+      type: file.type,
+    });
   } catch (error) {
-    logger.error("Avatar upload error:", error);
+    if (error instanceof UploadRequestError) return requestErrorResponse(c, error);
+    if (createdKeys.length > 0 && c.env.R2) {
+      await deleteR2ObjectsWithRetry(c.env.R2, createdKeys).catch(() => undefined);
+    }
+    logger.error("avatar_upload_failed", {
+      errorType: error instanceof Error ? error.name : "UnknownUploadError",
+    });
     return c.json(APIErrors.internalError("Failed to upload avatar"), 500);
   }
 });
 
-/**
- * DELETE /upload/avatar?key={key}
- * 删除用户头像（仅允许删除自己的头像）
- */
 upload.delete("/avatar", async (c) => {
   try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const key = c.req.query("key");
     if (!key) return c.json(APIErrors.badRequest("Object key is required"), 400);
-
-    if (!c.env.R2) return c.json(APIErrors.internalError("R2 storage not configured"), 500);
-
-    // 验证 key 属于当前用户
-    const db = createDb(c.env.DB);
-    const userRecord = await db
-      .select({ image: schema.users.image })
-      .from(schema.users)
-      .where(eq(schema.users.id, session.user.id))
-      .then((rows) => rows[0]);
-
-    if (!userRecord?.image?.includes(key)) {
+    if (!c.env.R2) {
+      return c.json(APIErrors.internalError("R2 storage not configured"), 500);
+    }
+    if (!isOwnedAvatarKey(key, session.user.id)) {
       return c.json(APIErrors.forbidden("无权删除该文件"), 403);
     }
 
-    await c.env.R2.delete(key);
+    const db = createDb(c.env.DB);
+    const [userRecord] = await db
+      .select({ image: schema.users.image })
+      .from(schema.users)
+      .where(eq(schema.users.id, session.user.id))
+      .limit(1);
+    if (!userRecord?.image) {
+      return c.json(APIErrors.forbidden("无权删除该文件"), 403);
+    }
 
+    const currentKey = ownedAvatarKeyFromStoredValue(
+      c.env,
+      new URL(c.req.raw.url),
+      userRecord.image,
+      session.user.id,
+    );
+    if (currentKey !== key) {
+      return c.json(APIErrors.forbidden("无权删除该文件"), 403);
+    }
+
+    const cleared = await db
+      .update(schema.users)
+      .set({ image: null, updatedAt: new Date() })
+      .where(and(
+        eq(schema.users.id, session.user.id),
+        eq(schema.users.image, userRecord.image),
+      ))
+      .returning({ id: schema.users.id });
+    if (cleared.length !== 1) {
+      return c.json(APIErrors.forbidden("头像已变化，请刷新后重试"), 403);
+    }
+
+    try {
+      await deleteR2ObjectsWithRetry(c.env.R2, [key]);
+    } catch (error) {
+      // Restore the reference only if no concurrent replacement occurred.
+      const restored = await db
+        .update(schema.users)
+        .set({ image: userRecord.image, updatedAt: new Date() })
+        .where(and(eq(schema.users.id, session.user.id), isNull(schema.users.image)))
+        .returning({ id: schema.users.id });
+      if (restored.length === 0) {
+        await deleteR2ObjectsWithRetry(c.env.R2, [key]);
+      }
+      throw error;
+    }
     return c.json({ success: true });
   } catch (error) {
-    logger.error("Avatar delete error:", error);
+    logger.error("avatar_delete_failed", {
+      errorType: error instanceof Error ? error.name : "UnknownUploadError",
+    });
     return c.json(APIErrors.internalError("Failed to delete avatar"), 500);
   }
 });
 
-/**
- * POST /upload/location
- * 上传地点封面图（需要管理员权限）
- */
 upload.post("/location", async (c) => {
+  let attemptedKey: string | null = null;
   try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const db = createDb(c.env.DB);
-    const user = await db
+    const [user] = await db
       .select({ role: schema.users.role })
       .from(schema.users)
       .where(eq(schema.users.id, session.user.id))
-      .then((rows) => rows[0]);
-    if (!user || user.role !== "admin") return c.json(APIErrors.forbidden("无权限访问"), 403);
+      .limit(1);
+    if (!user || user.role !== "admin") {
+      return c.json(APIErrors.forbidden("无权限访问"), 403);
+    }
 
-    const formData = await c.req.formData();
-    const file = formData.get("file") as File | null;
-    if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
-
-    const extValidation = validateFileExtension(file);
-    if (!extValidation.valid) return c.json(APIErrors.badRequest(extValidation.error || "Invalid file"), 400);
-
-    const ext = extValidation.ext;
-    const key = `locations/${Date.now()}.${ext}`;
-    const result = await uploadImageFile(c, file, key);
-    if ("error" in result) return c.json(result.error, result.status);
-    return c.json(result.data);
+    const storage = storageConfiguration(c);
+    if (!storage) {
+      return c.json(APIErrors.internalError("R2 storage is not safely configured"), 500);
+    }
+    const formData = await boundedFormData(c.req.raw);
+    const file = formData.get("file");
+    if (!(file instanceof File)) {
+      return c.json(APIErrors.badRequest("No file provided"), 400);
+    }
+    const { buffer, ext } = await validatedImage(file);
+    const key = `temp/locations/${session.user.id}/${generateId()}.${ext}`;
+    attemptedKey = key;
+    await storage.bucket.put(key, buffer, {
+      httpMetadata: { contentType: file.type },
+    });
+    return c.json({
+      success: true,
+      key,
+      // Location inputs require HTTPS, so always return the canonical R2 URL.
+      url: `${storage.publicBaseUrl}/${key}`,
+      size: file.size,
+      type: file.type,
+    });
   } catch (error) {
-    logger.error("Location image upload error:", error);
+    if (error instanceof UploadRequestError) return requestErrorResponse(c, error);
+    if (attemptedKey && c.env.R2) {
+      await deleteR2ObjectsWithRetry(c.env.R2, [attemptedKey]).catch(
+        () => undefined,
+      );
+    }
+    logger.error("location_image_upload_failed", {
+      errorType: error instanceof Error ? error.name : "UnknownUploadError",
+    });
     return c.json(APIErrors.internalError("Failed to upload location image"), 500);
   }
 });
 
-/**
- * POST /upload/story
- * 上传故事封面图（需要登录）
- */
 upload.post("/story", async (c) => {
+  let attemptedKey: string | null = null;
   try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
+    const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-    const formData = await c.req.formData();
-    const file = formData.get("file") as File | null;
-    if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
-
-    const extValidation = validateFileExtension(file);
-    if (!extValidation.valid) return c.json(APIErrors.badRequest(extValidation.error || "Invalid file"), 400);
-
-    const ext = extValidation.ext;
-    const key = `stories/${session.user.id}-${Date.now()}.${ext}`;
-    const result = await uploadImageFile(c, file, key);
-    if ("error" in result) return c.json(result.error, result.status);
-    return c.json(result.data);
+    const storage = storageConfiguration(c);
+    if (!storage) {
+      return c.json(APIErrors.internalError("R2 storage is not safely configured"), 500);
+    }
+    const formData = await boundedFormData(c.req.raw);
+    const file = formData.get("file");
+    if (!(file instanceof File)) {
+      return c.json(APIErrors.badRequest("No file provided"), 400);
+    }
+    const { buffer, ext } = await validatedImage(file);
+    const key = `temp/stories/${session.user.id}/${generateId()}.${ext}`;
+    attemptedKey = key;
+    await storage.bucket.put(key, buffer, {
+      httpMetadata: { contentType: file.type },
+    });
+    return c.json({
+      success: true,
+      key,
+      url: uploadUrl(c, storage.publicBaseUrl, key),
+      size: file.size,
+      type: file.type,
+    });
   } catch (error) {
-    logger.error("Story image upload error:", error);
+    if (error instanceof UploadRequestError) return requestErrorResponse(c, error);
+    if (attemptedKey && c.env.R2) {
+      await deleteR2ObjectsWithRetry(c.env.R2, [attemptedKey]).catch(
+        () => undefined,
+      );
+    }
+    logger.error("story_image_upload_failed", {
+      errorType: error instanceof Error ? error.name : "UnknownUploadError",
+    });
     return c.json(APIErrors.internalError("Failed to upload story image"), 500);
-  }
-});
-
-/**
- * POST /upload/activity-post
- * 上传活动动态图片（需要登录）
- */
-upload.post("/activity-post", async (c) => {
-  try {
-    const authInstance = createAuth(c.env);
-    const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-    const formData = await c.req.formData();
-    const file = formData.get("file") as File | null;
-    if (!file) return c.json(APIErrors.badRequest("No file provided"), 400);
-
-    const extValidation = validateFileExtension(file);
-    if (!extValidation.valid) return c.json(APIErrors.badRequest(extValidation.error || "Invalid file"), 400);
-
-    const ext = extValidation.ext;
-    const key = `activity-posts/${session.user.id}-${Date.now()}.${ext}`;
-    const result = await uploadImageFile(c, file, key);
-    if ("error" in result) return c.json(result.error, result.status);
-    return c.json(result.data);
-  } catch (error) {
-    logger.error("Activity post image upload error:", error);
-    return c.json(APIErrors.internalError("Failed to upload activity post image"), 500);
   }
 });
 

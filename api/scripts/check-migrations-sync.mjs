@@ -1,247 +1,231 @@
 #!/usr/bin/env node
-/**
- * check-migrations-sync.mjs
- *
- * D1 迁移规约规则 3 的 CI 门禁：
- *   - db/migrations/*.sql 文件集与 meta/_journal.json entries 必须一一对应（双向）
- *   - journal idx 必须连续（0..n-1）且无重复
- *
- * 背景：#202/#451 两次手工补录事故（journal 与文件漂移）导致流水线重放迁移即炸。
- *
- * 用法：node scripts/check-migrations-sync.mjs   （在 api/ 包根目录下运行）
- * 退出码：0 = 一致；1 = 漂移（stderr 输出差异明细）
- */
 
+import Database from "better-sqlite3";
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import Database from "better-sqlite3";
+import { compareSchemaToBaseline } from "./database-schema-parity.mjs";
 
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const migrationsDir = join(apiRoot, "db", "migrations");
-const journalPath = join(migrationsDir, "meta", "_journal.json");
-
+const metaDir = join(migrationsDir, "meta");
+const baselineName = "0000_init.sql";
+const snapshotName = "0000_snapshot.json";
+const expectedTables = [
+  "accounts",
+  "conversations",
+  "location_tags",
+  "locations",
+  "messages",
+  "region",
+  "sessions",
+  "stories",
+  "story_likes",
+  "story_tags",
+  "tags",
+  "team_join_requests",
+  "team_members",
+  "team_tags",
+  "teams",
+  "user_location_favorites",
+  "user_story_favorites",
+  "users",
+  "verifications",
+].sort();
+const expectedTriggers = [
+  "messages_summary_after_insert",
+  "sessions_active_user_insert_guard",
+  "story_likes_count_after_delete",
+  "story_likes_count_after_insert",
+  "team_members_capacity_validate_insert",
+  "team_members_capacity_validate_reactivate",
+  "teams_capacity_validate_update",
+  "users_auth_revoke_after_inactive",
+].sort();
 const errors = [];
 
-// 1. 读取 journal entries
+function reportError(message) {
+  errors.push(message);
+}
+
+const sqlFiles = readdirSync(migrationsDir)
+  .filter((name) => name.endsWith(".sql"))
+  .sort();
+if (JSON.stringify(sqlFiles) !== JSON.stringify([baselineName])) {
+  reportError(
+    `migration 必须只保留 ${baselineName}，实际为 ${sqlFiles.join(", ") || "none"}`,
+  );
+}
+
+const snapshotFiles = readdirSync(metaDir)
+  .filter((name) => name.endsWith("_snapshot.json"))
+  .sort();
+if (JSON.stringify(snapshotFiles) !== JSON.stringify([snapshotName])) {
+  reportError(
+    `snapshot 必须只保留 ${snapshotName}，实际为 ${snapshotFiles.join(", ") || "none"}`,
+  );
+}
+
 let journal;
 try {
-  journal = JSON.parse(readFileSync(journalPath, "utf8"));
-} catch (err) {
-  console.error(`✗ 无法读取 ${journalPath}: ${err.message}`);
-  process.exit(1);
-}
-const entries = journal.entries ?? [];
-const journalTags = entries.map((e) => e.tag);
-
-// 2. 读取 .sql 文件集
-const sqlTags = readdirSync(migrationsDir)
-  .filter((f) => f.endsWith(".sql"))
-  .map((f) => f.replace(/\.sql$/, ""));
-
-// 3. 双向比对：journal 有 entry 但缺 .sql 文件
-for (const tag of journalTags) {
-  if (!sqlTags.includes(tag)) {
-    errors.push(`journal entry "${tag}" 没有对应的 .sql 迁移文件`);
+  journal = JSON.parse(readFileSync(join(metaDir, "_journal.json"), "utf8"));
+  if (journal.dialect !== "sqlite")
+    reportError(`journal dialect 必须为 sqlite`);
+  if (journal.entries?.length !== 1) {
+    reportError(`journal 必须只有一个 entry`);
+  } else {
+    const entry = journal.entries[0];
+    if (entry.idx !== 0 || entry.tag !== "0000_init") {
+      reportError(`journal 唯一 entry 必须为 idx=0/tag=0000_init`);
+    }
   }
+} catch (error) {
+  reportError(`无法读取 journal: ${error.message}`);
 }
 
-// 4. 双向比对：.sql 有文件但 journal 缺 entry
-for (const tag of sqlTags) {
-  if (!journalTags.includes(tag)) {
-    errors.push(`迁移文件 "${tag}.sql" 未登记到 meta/_journal.json（疑似手工补录遗漏）`);
-  }
-}
-
-// 5. journal idx 连续且无重复
-const idxes = entries.map((e) => e.idx).sort((a, b) => a - b);
-for (let i = 0; i < idxes.length; i++) {
-  if (idxes[i] !== i) {
-    errors.push(`journal idx 不连续或重复：期望位置 ${i} 实际 idx=${idxes[i]}`);
-    break;
-  }
-}
-
-// 6. schema.ts ↔ migration 一致性（规则 3 扩展，2026-07-29）
-// 背景：0017 在 D1 建了 apikey 表但 schema.ts 无定义，adapter 运行时 500。
-// drizzle-kit check 只抓「schema 超前 migration」，抓不到反向，故自研：
-// 按迁移文件顺序依次应用 CREATE/DROP/RENAME 事件算出 live 表集合，
-// 校验每张 live 表在 schema.ts 均有 sqliteTable 定义。
-const schemaPath = join(apiRoot, "src", "db", "schema.ts");
-const schemaSrc = readFileSync(schemaPath, "utf8");
-const schemaTables = new Set(
-  [...schemaSrc.matchAll(/sqliteTable\(\s*["'`]([^"'`]+)["'`]/gs)].map((m) => m[1])
-);
-
-const SYSTEM_TABLES = new Set(["d1_migrations", "sqlite_sequence"]);
-const live = new Set();
-const EVENT_RE = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["'`]?([\w]+)["'`]?|DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?["'`]?([\w]+)["'`]?|ALTER\s+TABLE\s+["'`]?([\w]+)["'`]?\s+RENAME\s+TO\s+["'`]?([\w]+)["'`]?/gis;
-for (const f of readdirSync(migrationsDir).filter((f) => f.endsWith(".sql")).sort()) {
-  const sql = readFileSync(join(migrationsDir, f), "utf8");
-  for (const m of sql.matchAll(EVENT_RE)) {
-    if (m[1]) live.add(m[1]);                       // CREATE TABLE
-    else if (m[2]) live.delete(m[2]);               // DROP TABLE
-    else { live.delete(m[3]); live.add(m[4]); }     // RENAME old -> new
-  }
-}
-const liveTables = [...live].filter((t) => !SYSTEM_TABLES.has(t));
-
-for (const t of liveTables) {
-  if (!schemaTables.has(t)) {
-    errors.push(`迁移创建的表 "${t}" 在 api/src/db/schema.ts 中无 sqliteTable 定义（schema 落后于 migration，运行时 adapter 会 500）`);
-  }
-}
-
-// 7. 在内存 SQLite 中完整重放 migration，核对 schema.ts 声明的外键与索引。
-// 仅比较表名无法发现「重建表时漏写 FOREIGN KEY」或「手工 migration 索引未回写 schema」；
-// 这两类漂移都会让 Drizzle 类型与生产 D1 的真实约束不一致。
-const sqlite = new Database(":memory:");
-sqlite.pragma("foreign_keys = ON");
-
+let snapshot;
 try {
-  for (const f of readdirSync(migrationsDir).filter((name) => name.endsWith(".sql")).sort()) {
-    const migrationSql = readFileSync(join(migrationsDir, f), "utf8")
-      .replaceAll("--> statement-breakpoint", "");
-    sqlite.exec(migrationSql);
-  }
-} catch (err) {
-  errors.push(`migration 无法从空库完整重放：${err.message}`);
-}
-
-const tableDefinitions = [...schemaSrc.matchAll(
-  /export const (\w+) = sqliteTable\(\s*["'`]([^"'`]+)["'`]([\s\S]*?)(?=export const \w+ = sqliteTable\(|$)/g,
-)];
-const variableToTable = new Map(tableDefinitions.map((match) => [match[1], match[2]]));
-const propertyToColumn = new Map();
-
-for (const match of tableDefinitions) {
-  const [, variableName, , definition] = match;
-  const fields = new Map(
-    [...definition.matchAll(/(\w+):\s*(?:text|integer|real)\(["'`]([^"'`]+)["'`]/g)]
-      .map((field) => [field[1], field[2]]),
-  );
-  propertyToColumn.set(variableName, fields);
-}
-
-for (const match of tableDefinitions) {
-  const [, , tableName, definition] = match;
-  const expectedForeignKeys = [...definition.matchAll(
-    /(\w+):\s*(?:text|integer|real)\(["'`]([^"'`]+)["'`][^\n]*?\.references\(\(\) => (\w+)\.(\w+)(?:,\s*\{\s*onDelete:\s*["'`]([^"'`]+)["'`]\s*\})?/g,
-  )].map((foreignKey) => ({
-    from: foreignKey[2],
-    table: variableToTable.get(foreignKey[3]),
-    to: propertyToColumn.get(foreignKey[3])?.get(foreignKey[4]),
-    onDelete: (foreignKey[5] ?? "no action").toUpperCase(),
-  }));
-  const actualForeignKeys = sqlite.prepare(`PRAGMA foreign_key_list('${tableName}')`).all();
-
-  for (const expected of expectedForeignKeys) {
-    const exists = actualForeignKeys.some((actual) =>
-      actual.from === expected.from &&
-      actual.table === expected.table &&
-      actual.to === expected.to &&
-      String(actual.on_delete).toUpperCase() === expected.onDelete
+  snapshot = JSON.parse(readFileSync(join(metaDir, snapshotName), "utf8"));
+  const snapshotTables = Object.keys(snapshot.tables ?? {}).sort();
+  if (JSON.stringify(snapshotTables) !== JSON.stringify(expectedTables)) {
+    reportError(
+      `snapshot 表集合不是 V2 的 19 张表：${snapshotTables.join(", ")}`,
     );
-    if (!exists) {
-      errors.push(
-        `表 "${tableName}" 缺少 schema.ts 声明的外键：${expected.from} -> ${expected.table}.${expected.to} ON DELETE ${expected.onDelete}`,
-      );
-    }
   }
+} catch (error) {
+  reportError(`无法读取 snapshot: ${error.message}`);
 }
 
-const declaredIndexes = new Set(
-  [...schemaSrc.matchAll(/(?:uniqueIndex|index)\(["'`]([^"'`]+)["'`]\)/g)].map((match) => match[1]),
+const schemaSource = readFileSync(
+  join(apiRoot, "src", "db", "schema.ts"),
+  "utf8",
 );
-const implicitUniqueIndexes = new Set();
-for (const match of tableDefinitions) {
-  const [, , tableName, definition] = match;
-  for (const field of definition.matchAll(/\w+:\s*(?:text|integer|real)\(["'`]([^"'`]+)["'`][^\n]*?\.unique\(\)/g)) {
-    implicitUniqueIndexes.add(`${tableName}_${field[1]}_unique`);
-  }
+const baselineSource = readFileSync(join(migrationsDir, baselineName), "utf8");
+for (const mismatch of compareSchemaToBaseline(baselineSource)) {
+  reportError(`Drizzle/baseline 语义漂移：${mismatch}`);
+}
+const schemaTables = [
+  ...schemaSource.matchAll(/sqliteTable\(\s*["'`]([^"'`]+)["'`]/gs),
+]
+  .map((match) => match[1])
+  .sort();
+if (JSON.stringify(schemaTables) !== JSON.stringify(expectedTables)) {
+  reportError(`schema.ts 表集合不是 V2 的 19 张表：${schemaTables.join(", ")}`);
 }
 
-const actualIndexes = sqlite.prepare(
-  "SELECT name, tbl_name FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL",
-).all();
-for (const indexRow of actualIndexes) {
-  if (!declaredIndexes.has(indexRow.name) && !implicitUniqueIndexes.has(indexRow.name)) {
-    errors.push(`数据库索引 "${indexRow.name}" 未声明在 schema.ts 中`);
-  }
-}
-
-for (const tableName of liveTables) {
-  const indexRows = sqlite.prepare(`PRAGMA index_list('${tableName}')`).all();
-  const columnsToIndexes = new Map();
-  for (const indexRow of indexRows) {
-    if (indexRow.origin === "pk") continue;
-    const columns = sqlite.prepare(`PRAGMA index_info('${indexRow.name}')`).all()
-      .map((column) => column.name)
-      .join(",");
-    const names = columnsToIndexes.get(columns) ?? [];
-    names.push(indexRow.name);
-    columnsToIndexes.set(columns, names);
-  }
-  for (const [columns, names] of columnsToIndexes) {
-    if (names.length > 1) {
-      errors.push(`表 "${tableName}" 的列 (${columns}) 存在重复索引：${names.sort().join(", ")}`);
-    }
-  }
-}
-
-// 这些触发器承载无法用 SQLite 外键/Drizzle schema 表达的跨表完整性。
-// 若后续重建表时被意外删除，应用仍可编译，但派生计数和多态关系会静默失真。
-const REQUIRED_INTEGRITY_TRIGGERS = [
-  "locations_city_name_after_insert",
-  "locations_city_name_after_city_update",
-  "locations_city_name_after_city_rename",
-  "users_city_validate_insert",
-  "users_city_validate_update",
-  "cities_users_restrict_delete",
-  "entity_to_tags_validate_insert",
-  "entity_to_tags_validate_update",
-  "user_favorites_validate_insert",
-  "user_favorites_validate_update",
-  "locations_polymorphic_cleanup",
-  "stories_polymorphic_cleanup",
-  "teams_polymorphic_cleanup",
-  "user_story_likes_count_after_insert",
-  "user_story_likes_count_after_delete",
-  "messages_summary_after_insert",
-  "team_members_validate_insert",
-  "team_members_validate_update",
-  "teams_capacity_validate_update",
-  "team_members_status_after_insert",
-  "team_members_status_after_update",
-  "team_members_status_after_delete",
-  "users_domain_validate_insert",
-  "users_domain_validate_update",
-  "locations_domain_validate_insert",
-  "locations_domain_validate_update",
-  "tags_domain_validate_insert",
-  "tags_domain_validate_update",
-  "stories_domain_validate_insert",
-  "stories_domain_validate_update",
-  "activity_posts_domain_validate_insert",
-  "activity_posts_domain_validate_update",
+const forbiddenLegacyTables = [
+  "apikey",
+  "cities",
+  "entity_to_tags",
+  "user_favorites",
+  "password_resets",
+  "activity_posts",
+  "image_caches",
+  "share_events",
 ];
-const actualTriggers = new Set(
-  sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'trigger'").all()
-    .map((trigger) => trigger.name),
-);
-for (const triggerName of REQUIRED_INTEGRITY_TRIGGERS) {
-  if (!actualTriggers.has(triggerName)) {
-    errors.push(`数据库缺少必要完整性触发器 "${triggerName}"`);
+for (const table of forbiddenLegacyTables) {
+  if (
+    new RegExp(`sqliteTable\\(\\s*["'\`]${table}["'\`]`, "u").test(schemaSource)
+  ) {
+    reportError(`schema.ts 仍声明已删除旧表 ${table}`);
   }
 }
 
-sqlite.close();
+const db = new Database(":memory:");
+db.pragma("foreign_keys = ON");
+try {
+  const baseline = baselineSource.replaceAll("--> statement-breakpoint", "");
+  db.exec(baseline);
+  db.exec(baseline);
+
+  const actualTables = db
+    .prepare(
+      `
+    SELECT name FROM sqlite_master
+    WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+    ORDER BY name
+  `,
+    )
+    .all()
+    .map((row) => row.name);
+  if (JSON.stringify(actualTables) !== JSON.stringify(expectedTables)) {
+    reportError(
+      `baseline 表集合不是 V2 的 19 张表：${actualTables.join(", ")}`,
+    );
+  }
+
+  const actualTriggers = db
+    .prepare(
+      `
+    SELECT name FROM sqlite_master WHERE type = 'trigger' ORDER BY name
+  `,
+    )
+    .all()
+    .map((row) => row.name);
+  if (JSON.stringify(actualTriggers) !== JSON.stringify(expectedTriggers)) {
+    reportError(
+      `baseline trigger 集合不等于约定的 8 个：${actualTriggers.join(", ")}`,
+    );
+  }
+
+  const declaredIndexes = [
+    ...schemaSource.matchAll(/(?:uniqueIndex|index)\(["'`]([^"'`]+)["'`]\)/g),
+  ]
+    .map((match) => match[1])
+    .sort();
+  const actualIndexes = db
+    .prepare(
+      `
+    SELECT name FROM sqlite_master
+    WHERE type = 'index' AND sql IS NOT NULL
+    ORDER BY name
+  `,
+    )
+    .all()
+    .map((row) => row.name);
+  if (JSON.stringify(actualIndexes) !== JSON.stringify(declaredIndexes)) {
+    reportError(
+      `schema.ts 与 baseline 索引名不一致\nschema=${declaredIndexes.join(", ")}\nbaseline=${actualIndexes.join(", ")}`,
+    );
+  }
+
+  const foreignKeyProblems = db.pragma("foreign_key_check");
+  if (foreignKeyProblems.length > 0) {
+    reportError(
+      `baseline foreign_key_check 失败：${JSON.stringify(foreignKeyProblems)}`,
+    );
+  }
+
+  const seed = readFileSync(join(apiRoot, "db", "seed.sql"), "utf8");
+  db.exec(seed);
+  db.exec(seed);
+  const seedCounts = {
+    region: db.prepare("SELECT COUNT(*) AS count FROM region").get().count,
+    locations: db.prepare("SELECT COUNT(*) AS count FROM locations").get()
+      .count,
+    tags: db.prepare("SELECT COUNT(*) AS count FROM tags").get().count,
+  };
+  if (
+    seedCounts.region !== 3 ||
+    seedCounts.locations !== 1 ||
+    seedCounts.tags < 3
+  ) {
+    reportError(`最小 seed 不完整或不可幂等：${JSON.stringify(seedCounts)}`);
+  }
+  if (db.pragma("foreign_key_check").length > 0) {
+    reportError(`seed 后 foreign_key_check 失败`);
+  }
+} catch (error) {
+  reportError(`baseline 无法从空库幂等重放：${error.message}`);
+} finally {
+  db.close();
+}
 
 if (errors.length > 0) {
-  console.error("✗ 迁移一致性校验失败：");
-  for (const e of errors) console.error(`  - ${e}`);
-  console.error("\n修复：补齐缺失的 .sql / journal entry / schema.ts 表定义（参见 docs/prod-change-policy.md）");
+  for (const error of errors) console.error(`✗ ${error}`);
   process.exit(1);
 }
 
-console.log(`✓ 迁移同步校验通过：${sqlTags.length} 个 .sql 文件 ↔ ${journalTags.length} 条 journal entry；${liveTables.length} 张 live 表在 schema.ts 均有定义`);
+console.log(
+  `✓ V2 migration 同步：1 baseline, 1 journal entry, 1 snapshot, ${expectedTables.length} tables, ${expectedTriggers.length} triggers`,
+);

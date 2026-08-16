@@ -1,741 +1,985 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Hono } from "hono";
-import { and, eq } from "drizzle-orm";
-import { createTestDb } from "../helpers/db";
-import { seedUser, seedStory, seedTag, seedEntityTag, seedCity, seedLocation } from "../helpers/seed";
-import * as schema from "../../db/schema";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
-let currentSession: { user: { id: string; email: string; name: string; role?: string } } | null = null;
+import { and, eq } from "drizzle-orm";
+import { Hono } from "hono";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import * as schema from "../../db/schema";
+import { ContentD1Database } from "../helpers/content-db";
+import { createTestDb } from "../helpers/db";
+
+type SessionUser = {
+  id: string;
+  email: string;
+  name: string;
+  role?: string;
+};
+
+let currentSession: { user: SessionUser } | null = null;
 let testDb: ReturnType<typeof createTestDb>["db"];
+let sqlite: ReturnType<typeof createTestDb>["sqlite"];
+let d1: ContentD1Database;
+let r2: FakeR2Bucket;
+let backgroundTasks: Promise<unknown>[];
+
+class FakeR2Bucket {
+  readonly objects = new Map<
+    string,
+    {
+      body: ArrayBuffer;
+      httpMetadata?: R2HTTPMetadata;
+      customMetadata?: Record<string, string>;
+    }
+  >();
+  failPutSuffix: string | null = null;
+  deleteFailuresRemaining = 0;
+  deleteAttempts = 0;
+
+  seed(key: string, body = new Uint8Array([1, 2, 3]).buffer) {
+    this.objects.set(key, {
+      body,
+      httpMetadata: { contentType: "image/jpeg" },
+    });
+  }
+
+  async get(key: string) {
+    const stored = this.objects.get(key);
+    return stored
+      ? {
+          body: stored.body,
+          httpMetadata: stored.httpMetadata,
+          customMetadata: stored.customMetadata,
+        }
+      : null;
+  }
+
+  async put(
+    key: string,
+    body: ArrayBuffer,
+    options?: {
+      httpMetadata?: R2HTTPMetadata;
+      customMetadata?: Record<string, string>;
+    },
+  ) {
+    if (this.failPutSuffix && key.endsWith(this.failPutSuffix)) {
+      throw new Error("simulated R2 copy failure");
+    }
+    this.objects.set(key, {
+      body,
+      httpMetadata: options?.httpMetadata,
+      customMetadata: options?.customMetadata,
+    });
+    return {};
+  }
+
+  async delete(keys: string | string[]) {
+    this.deleteAttempts += 1;
+    if (this.deleteFailuresRemaining > 0) {
+      this.deleteFailuresRemaining -= 1;
+      throw new Error("simulated transient R2 delete failure");
+    }
+    for (const key of Array.isArray(keys) ? keys : [keys]) {
+      this.objects.delete(key);
+    }
+  }
+}
 
 vi.mock("../../lib/auth", () => ({
-  createAuth: (_env: unknown) => ({
-    api: {
-      getSession: async (_opts: unknown) => currentSession,
-    },
+  createAuth: () => ({
+    api: { getSession: async () => currentSession },
   }),
 }));
 
 vi.mock("../../db", () => ({
-  createDb: (_d1: unknown) => testDb,
+  createDb: () => testDb,
 }));
 
 const { default: storiesRoute } = await import("../../routes/stories");
 
 function createApp() {
-  const app = new Hono<{ Bindings: { DB: unknown } }>();
+  const app = new Hono<{ Bindings: { DB: D1Database } }>();
   app.route("/stories", storiesRoute);
   return app;
 }
 
-async function req(app: ReturnType<typeof createApp>, path: string, options: RequestInit = {}) {
-  return app.fetch(new Request(`http://localhost${path}`, options), { DB: {} });
+async function request(
+  app: ReturnType<typeof createApp>,
+  path: string,
+  options: RequestInit = {},
+) {
+  return app.fetch(
+    new Request(`http://localhost${path}`, options),
+    {
+      DB: d1 as unknown as D1Database,
+      R2: r2 as unknown as R2Bucket,
+      R2_PUBLIC_URL: "https://gomate.cos.jiahongw.com",
+    } as never,
+    {
+      waitUntil: (promise: Promise<unknown>) => {
+        backgroundTasks.push(promise);
+      },
+      passThroughOnException: () => undefined,
+      props: {},
+    } as unknown as ExecutionContext,
+  );
 }
 
-describe("Stories API 集成测试", () => {
+async function settleBackgroundTasks() {
+  await Promise.all(backgroundTasks.splice(0));
+}
+
+function json(body: unknown, method = "POST"): RequestInit {
+  return {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  };
+}
+
+function signIn(user: schema.User) {
+  currentSession = {
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    },
+  };
+}
+
+async function seedUser(id: string, role: schema.UserRole = "user") {
+  const [user] = await testDb
+    .insert(schema.users)
+    .values({ id, name: id, email: `${id}@example.com`, role })
+    .returning();
+  return user;
+}
+
+async function seedRegion() {
+  const [result] = await testDb
+    .insert(schema.region)
+    .values({
+      id: "region-shenzhen",
+      countryCode: "CN",
+      name: "深圳",
+      slug: "shenzhen",
+      level: "city",
+      timezone: "Asia/Shanghai",
+      centerLatitude: 22.5431,
+      centerLongitude: 114.0579,
+      serviceEnabled: true,
+    })
+    .returning();
+  return result;
+}
+
+async function seedLocation(
+  id: string,
+  regionId: string,
+  overrides: Partial<schema.NewLocation> = {},
+) {
+  const [location] = await testDb
+    .insert(schema.locations)
+    .values({
+      id,
+      regionId,
+      name: id,
+      slug: id,
+      supportedActivityTypes: ["hiking"],
+      status: "published",
+      description: `${id} description`,
+      latitude: 22.54,
+      longitude: 114.05,
+      coverImageUrl: `https://gomate.cos.jiahongw.com/${id}.jpg`,
+      ...overrides,
+    })
+    .returning();
+  return location;
+}
+
+async function seedTeam(
+  id: string,
+  leaderId: string,
+  locationId: string,
+  overrides: Partial<schema.NewTeam> = {},
+) {
+  const now = Date.now();
+  const [team] = await testDb
+    .insert(schema.teams)
+    .values({
+      id,
+      leaderId,
+      locationId,
+      activityType: "hiking",
+      title: id,
+      startAt: new Date(now - 7_200_000),
+      endAt: new Date(now - 3_600_000),
+      formedAt: new Date(now - 10_800_000),
+      recruitmentStatus: "closed",
+      ...overrides,
+    })
+    .returning();
+  return team;
+}
+
+async function seedStory(
+  id: string,
+  authorId: string,
+  overrides: Partial<schema.NewStory> = {},
+) {
+  const [story] = await testDb
+    .insert(schema.stories)
+    .values({
+      id,
+      authorId,
+      title: id,
+      content: `${id} content`,
+      images: [],
+      status: "published",
+      ...overrides,
+    })
+    .returning();
+  return story;
+}
+
+describe("Stories V2 API", () => {
   let app: ReturnType<typeof createApp>;
-  let user: schema.User;
+  let author: schema.User;
+  let member: schema.User;
+  let outsider: schema.User;
+  let region: schema.Region;
   let location: schema.Location;
 
   beforeEach(async () => {
     const fresh = createTestDb();
     testDb = fresh.db;
+    sqlite = fresh.sqlite;
+    d1 = new ContentD1Database(sqlite);
+    r2 = new FakeR2Bucket();
+    backgroundTasks = [];
     app = createApp();
     currentSession = null;
 
-    user = await seedUser(testDb, { name: "测试用户", email: "test@example.com" });
-    const city = await seedCity(testDb);
-    location = await seedLocation(testDb, city.id, { name: "测试地点" });
+    author = await seedUser("author");
+    member = await seedUser("member");
+    outsider = await seedUser("outsider");
+    region = await seedRegion();
+    location = await seedLocation("location-main", region.id);
   });
 
-  describe("GET /stories - 故事列表", () => {
-    it("获取故事列表返回分页数据", async () => {
-      await seedStory(testDb, user.id, { title: "故事1", status: "published" });
-      await seedStory(testDb, user.id, { title: "故事2", status: "published" });
+  it("creates a normal story with object-array images and dedicated story_tags", async () => {
+    signIn(author);
+    const tempKey = `temp/stories/${author.id}/cover.jpg`;
+    r2.seed(tempKey);
 
-      const res = await req(app, "/stories");
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: unknown[]; pagination: unknown };
-      expect(json.success).toBe(true);
-      expect(json.data).toHaveLength(2);
-      expect(json.pagination).toBeDefined();
+    const response = await request(
+      app,
+      "/stories",
+      json({
+        title: "  山间日记  ",
+        summary: "周末徒步",
+        content: "  一段真实的徒步记录。  ",
+        locationId: location.id,
+        imageKeys: [tempKey, tempKey],
+        tags: [" 徒步 ", "徒步", "露营"],
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    const body = (await response.json()) as {
+      success: boolean;
+      data: { id: string };
+    };
+    expect(body.success).toBe(true);
+    const finalKey = `stories/${body.data.id}/cover.jpg`;
+    const image = `https://gomate.cos.jiahongw.com/${finalKey}`;
+    await settleBackgroundTasks();
+
+    const persisted = await testDb.query.stories.findFirst({
+      where: eq(schema.stories.id, body.data.id),
     });
-
-    it("支持分页参数 page 和 limit", async () => {
-      for (let i = 0; i < 5; i++) {
-        await seedStory(testDb, user.id, { title: `故事${i}`, status: "published" });
-      }
-
-      const res = await req(app, "/stories?page=1&limit=2");
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: unknown[]; pagination: { hasMore: boolean; total: number } };
-      expect(json.data).toHaveLength(2);
-      expect(json.pagination.hasMore).toBe(true);
-      expect(json.pagination.total).toBe(5);
+    expect(persisted).toMatchObject({
+      title: "山间日记",
+      content: "一段真实的徒步记录。",
+      locationId: location.id,
+      teamId: null,
+      images: [image],
+      likeCount: 0,
     });
+    expect(typeof persisted?.images).not.toBe("string");
+    expect(r2.objects.has(tempKey)).toBe(false);
+    expect(r2.objects.has(finalKey)).toBe(true);
 
-    it("?tag=xxx 只返回对应标签的故事", async () => {
-      // 创建标签
-      const tag = await seedTag(testDb, { name: "溯溪", type: "activity" });
-
-      // 创建故事
-      const story1 = await seedStory(testDb, user.id, { title: "溯溪故事", status: "published" });
-      const _story2 = await seedStory(testDb, user.id, { title: "其他故事", status: "published" });
-
-      // 关联标签
-      await seedEntityTag(testDb, story1.id, "story", tag.id);
-
-      const res = await req(app, "/stories?tag=溯溪");
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: { title: string }[] };
-      expect(json.success).toBe(true);
-      expect(json.data).toHaveLength(1);
-      expect(json.data[0].title).toBe("溯溪故事");
-    });
-
-    it("?tag=不存在的标签 返回空数组", async () => {
-      const res = await req(app, "/stories?tag=不存在的标签");
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: unknown[]; pagination: { total: number } };
-      expect(json.success).toBe(true);
-      expect(json.data).toHaveLength(0);
-      expect(json.pagination.total).toBe(0);
-    });
-
-    it("标签筛选下分页参数正确", async () => {
-      const tag = await seedTag(testDb, { name: "徒步", type: "activity" });
-
-      // 创建多个带标签的故事
-      for (let i = 0; i < 5; i++) {
-        const story = await seedStory(testDb, user.id, { title: `徒步故事${i}`, status: "published" });
-        await seedEntityTag(testDb, story.id, "story", tag.id);
-      }
-
-      // 创建一个不带标签的故事
-      await seedStory(testDb, user.id, { title: "其他故事", status: "published" });
-
-      const res = await req(app, "/stories?tag=徒步&page=1&limit=2");
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: unknown[]; pagination: { hasMore: boolean; total: number } };
-      expect(json.data).toHaveLength(2);
-      expect(json.pagination.hasMore).toBe(true);
-      expect(json.pagination.total).toBe(5);
-    });
-
-    it("无 tag 参数时返回所有已发布故事", async () => {
-      await seedStory(testDb, user.id, { title: "故事1", status: "published" });
-      await seedStory(testDb, user.id, { title: "故事2", status: "published" });
-      await seedStory(testDb, user.id, { title: "草稿", status: "draft" });
-
-      const res = await req(app, "/stories");
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: unknown[] };
-      expect(json.data).toHaveLength(2); // 只返回 published
-    });
-
-    it("标签筛选下 Load More 保持筛选状态", async () => {
-      const tag = await seedTag(testDb, { name: "露营", type: "activity" });
-
-      // 创建3个带标签的故事（刚好2页）
-      for (let i = 0; i < 3; i++) {
-        const story = await seedStory(testDb, user.id, { title: `露营故事${i}`, status: "published" });
-        await seedEntityTag(testDb, story.id, "story", tag.id);
-      }
-
-      // 第一页
-      const res1 = await req(app, "/stories?tag=露营&page=1&limit=2");
-      const json1 = await res1.json() as { data: unknown[]; pagination: { hasMore: boolean } };
-      expect(json1.data).toHaveLength(2);
-      expect(json1.pagination.hasMore).toBe(true);
-
-      // 第二页
-      const res2 = await req(app, "/stories?tag=露营&page=2&limit=2");
-      const json2 = await res2.json() as { data: unknown[]; pagination: { hasMore: boolean } };
-      expect(json2.data).toHaveLength(1);
-      expect(json2.pagination.hasMore).toBe(false);
-    });
-
-    it("?status=draft 未登录返回空数组，不泄露草稿（task #156）", async () => {
-      await seedStory(testDb, user.id, { title: "草稿", status: "draft" });
-
-      const res = await req(app, "/stories?status=draft");
-      expect(res.status).toBe(200);
-      const json = await res.json() as { data: unknown[] };
-      expect(json.data).toHaveLength(0);
-    });
-
-    it("?status=draft 登录只返回自己的草稿（task #156）", async () => {
-      const other = await seedUser(testDb, { name: "其他用户", email: "other@example.com" });
-      await seedStory(testDb, user.id, { title: "我的草稿", status: "draft" });
-      await seedStory(testDb, other.id, { title: "别人的草稿", status: "draft" });
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-
-      const res = await req(app, "/stories?status=draft");
-      const json = await res.json() as { data: { title: string }[] };
-      expect(json.data.map((s) => s.title)).toEqual(["我的草稿"]);
-    });
-
-    it("?status=hidden 按 published 处理，不泄露已删故事（task #156）", async () => {
-      await seedStory(testDb, user.id, { title: "公开故事", status: "published" });
-      await seedStory(testDb, user.id, { title: "已删故事", status: "hidden" });
-
-      const res = await req(app, "/stories?status=hidden");
-      const json = await res.json() as { data: { title: string }[] };
-      expect(json.data.map((s) => s.title)).toEqual(["公开故事"]);
-    });
-
-    it("?status=draft&tag= 组合过滤不丢条件（task #156 回归）", async () => {
-      const tag = await seedTag(testDb, { name: "徒步", type: "activity" });
-      const myDraft = await seedStory(testDb, user.id, { title: "带标签草稿", status: "draft" });
-      await seedEntityTag(testDb, myDraft.id, "story", tag.id);
-      await seedStory(testDb, user.id, { title: "无标签草稿", status: "draft" });
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-
-      const res = await req(app, "/stories?status=draft&tag=徒步");
-      const json = await res.json() as { data: { title: string }[] };
-      expect(json.data.map((s) => s.title)).toEqual(["带标签草稿"]);
-    });
+    const linkedTags = await testDb
+      .select({ name: schema.tags.name })
+      .from(schema.storyTags)
+      .innerJoin(schema.tags, eq(schema.storyTags.tagId, schema.tags.id))
+      .where(eq(schema.storyTags.storyId, body.data.id));
+    expect(linkedTags.map(({ name }) => name).sort()).toEqual(["徒步", "露营"]);
   });
 
-  describe("GET /stories/:id - 故事详情", () => {
-    it("获取故事详情成功", async () => {
-      const story = await seedStory(testDb, user.id, { title: "测试故事", status: "published" });
+  it("retries idempotent background deletion after transient R2 failures", async () => {
+    signIn(author);
+    const tempKey = `temp/stories/${author.id}/retry.jpg`;
+    r2.seed(tempKey);
+    r2.deleteFailuresRemaining = 2;
 
-      const res = await req(app, `/stories/${story.id}`);
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: { title: string } };
-      expect(json.success).toBe(true);
-      expect(json.data.title).toBe("测试故事");
+    const response = await request(
+      app,
+      "/stories",
+      json({
+        title: "重试清理",
+        content: "临时对象删除失败必须在 waitUntil 中重试。",
+        imageKeys: [tempKey],
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    await settleBackgroundTasks();
+    expect(r2.deleteAttempts).toBe(3);
+    expect(r2.objects.has(tempKey)).toBe(false);
+  });
+
+  it("rejects legacy image fields and temp keys owned by another user", async () => {
+    signIn(author);
+
+    const legacy = await request(
+      app,
+      "/stories",
+      json({
+        title: "旧格式",
+        content: "不能被兼容",
+        coverImage: "https://gomate.cos.jiahongw.com/legacy.jpg",
+      }),
+    );
+    expect(legacy.status).toBe(400);
+
+    const legacyImages = await request(
+      app,
+      "/stories",
+      json({
+        title: "旧图片格式",
+        content: "客户端不能直接提交最终 URL",
+        images: ["https://attacker.example/track.jpg"],
+      }),
+    );
+    expect(legacyImages.status).toBe(400);
+
+    const legacyHyphenKey = await request(
+      app,
+      "/stories",
+      json({
+        title: "旧临时键",
+        content: "连字符格式不再兼容",
+        imageKeys: [`temp/stories/${author.id}-legacy.jpg`],
+      }),
+    );
+    expect(legacyHyphenKey.status).toBe(403);
+
+    const foreignKey = `temp/stories/${outsider.id}/foreign.jpg`;
+    r2.seed(foreignKey);
+    const foreign = await request(
+      app,
+      "/stories",
+      json({
+        title: "越权图片",
+        content: "不能归档其他用户的临时对象",
+        imageKeys: [foreignKey],
+      }),
+    );
+    expect(foreign.status).toBe(403);
+    expect(r2.objects.has(foreignKey)).toBe(true);
+  });
+
+  it("allows an ended, formed team recap by the leader and derives its location", async () => {
+    const team = await seedTeam("team-leader", author.id, location.id);
+    signIn(author);
+    const tempKey = `temp/stories/${author.id}/recap.jpg`;
+    r2.seed(tempKey);
+
+    const response = await request(
+      app,
+      "/stories",
+      json({
+        teamId: team.id,
+        content: "队伍顺利完成行程。",
+        imageKeys: [tempKey],
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    await settleBackgroundTasks();
+    const body = (await response.json()) as { data: { id: string } };
+    const recap = await testDb.query.stories.findFirst({
+      where: eq(schema.stories.id, body.data.id),
     });
-
-    it("并发查看公开故事不会丢失浏览计数", async () => {
-      const story = await seedStory(testDb, user.id, { title: "浏览计数", status: "published" });
-
-      const responses = await Promise.all(
-        Array.from({ length: 5 }, () => req(app, `/stories/${story.id}`)),
-      );
-      responses.forEach((response) => expect(response.status).toBe(200));
-
-      const persisted = await testDb.query.stories.findFirst({
-        where: eq(schema.stories.id, story.id),
-        columns: { viewCount: true },
-      });
-      expect(persisted?.viewCount).toBe(5);
-    });
-
-    it("故事不存在返回 404", async () => {
-      const res = await req(app, "/stories/non-existent-id");
-      expect(res.status).toBe(404);
-      const json = await res.json() as { success: boolean; error: { message: string } };
-      expect(json.success).toBe(false);
-      expect(json.error.message).toBe("故事不存在");
-    });
-
-    it("hidden 故事详情返回 404", async () => {
-      const story = await seedStory(testDb, user.id, { title: "已删除故事", status: "hidden" });
-
-      const res = await req(app, `/stories/${story.id}`);
-
-      expect(res.status).toBe(404);
-    });
-
-    it("详情返回 tags 关联，编辑表单可回显（task #155 回归用例）", async () => {
-      const tagA = await seedTag(testDb, { name: "徒步", type: "activity" });
-      const tagB = await seedTag(testDb, { name: "露营", type: "activity" });
-      const story = await seedStory(testDb, user.id, { title: "带标签故事", status: "published" });
-      await seedEntityTag(testDb, story.id, "story", tagA.id);
-      await seedEntityTag(testDb, story.id, "story", tagB.id);
-
-      const res = await req(app, `/stories/${story.id}`);
-
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: { tags: { id: string; name: string }[] } };
-      expect(json.data.tags.map((t) => t.name).sort()).toEqual(["徒步", "露营"]);
-    });
-
-    it("无标签故事详情 tags 返回空数组", async () => {
-      const story = await seedStory(testDb, user.id, { title: "无标签故事", status: "published" });
-
-      const res = await req(app, `/stories/${story.id}`);
-
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: { tags: unknown[] } };
-      expect(json.data.tags).toEqual([]);
-    });
-
-    it("draft 故事作者本人可查看且不计浏览（task #156）", async () => {
-      const story = await seedStory(testDb, user.id, { title: "我的草稿", status: "draft" });
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-
-      const res = await req(app, `/stories/${story.id}`);
-
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: { status: string; viewCount: number; title: string } };
-      expect(json.data.status).toBe("draft");
-      expect(json.data.title).toBe("我的草稿");
-      expect(json.data.viewCount).toBe(0);
-    });
-
-    it("draft 故事未登录返回 404，不泄露存在性（task #156）", async () => {
-      const story = await seedStory(testDb, user.id, { title: "私密草稿", status: "draft" });
-
-      const res = await req(app, `/stories/${story.id}`);
-
-      expect(res.status).toBe(404);
-    });
-
-    it("draft 故事非作者登录同样 404（task #156）", async () => {
-      const other = await seedUser(testDb, { name: "其他用户", email: "other@example.com" });
-      const story = await seedStory(testDb, user.id, { title: "私密草稿", status: "draft" });
-      currentSession = { user: { id: other.id, email: other.email, name: other.name } };
-
-      const res = await req(app, `/stories/${story.id}`);
-
-      expect(res.status).toBe(404);
-    });
-
-    it("draft 故事管理员可查看（task #156）", async () => {
-      const story = await seedStory(testDb, user.id, { title: "待审草稿", status: "draft" });
-      currentSession = { user: { id: "admin-id", email: "admin@example.com", name: "管理员", role: "admin" } };
-
-      const res = await req(app, `/stories/${story.id}`);
-
-      expect(res.status).toBe(200);
-    });
-
-    it("hidden 故事作者本人也返回 404（task #156）", async () => {
-      const story = await seedStory(testDb, user.id, { title: "已删故事", status: "hidden" });
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-
-      const res = await req(app, `/stories/${story.id}`);
-
-      expect(res.status).toBe(404);
+    expect(recap).toMatchObject({
+      authorId: author.id,
+      teamId: team.id,
+      locationId: location.id,
+      title: null,
     });
   });
 
-  describe("GET /stories/stats - 故事统计", () => {
-    it("获取统计数据成功", async () => {
-      await seedStory(testDb, user.id, { title: "故事1", status: "published" });
-
-      const res = await req(app, "/stories/stats");
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: { weeklyNewStories: number } };
-      expect(json.success).toBe(true);
-      expect(typeof json.data.weeklyNewStories).toBe("number");
+  it("allows an active participant to create a recap", async () => {
+    const team = await seedTeam("team-member", author.id, location.id);
+    await testDb.insert(schema.teamMembers).values({
+      teamId: team.id,
+      userId: member.id,
     });
+    signIn(member);
+
+    const response = await request(
+      app,
+      "/stories",
+      json({ teamId: team.id, content: "队员视角的回顾。" }),
+    );
+
+    expect(response.status).toBe(201);
   });
 
-  describe("GET /stories/tags - 故事标签", () => {
-    it("不统计 hidden 故事的标签", async () => {
-      const tag = await seedTag(testDb, { name: "已删除标签", type: "activity" });
-      const hiddenStory = await seedStory(testDb, user.id, { title: "已隐藏故事", status: "hidden" });
-      await seedEntityTag(testDb, hiddenStory.id, "story", tag.id);
-
-      const res = await req(app, "/stories/tags");
-
-      expect(res.status).toBe(200);
-      const json = await res.json() as { tags: { name: string }[] };
-      expect(json.tags.some((item) => item.name === "已删除标签")).toBe(false);
+  it("rejects a former participant who has left the team", async () => {
+    const team = await seedTeam("team-former-member", author.id, location.id);
+    await testDb.insert(schema.teamMembers).values({
+      teamId: team.id,
+      userId: member.id,
+      leftAt: new Date(),
     });
+    signIn(member);
+
+    const response = await request(
+      app,
+      "/stories",
+      json({ teamId: team.id, content: "已离队成员不能发布回顾。" }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(await testDb.$count(schema.stories)).toBe(0);
   });
 
-  describe("POST /stories - 创建故事", () => {
-    it("未登录创建故事 → 401", async () => {
-      const res = await req(app, "/stories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "一次海岸线徒步",
-          summary: "记录一次轻量海岸线徒步。",
-          content: "天气很好，路线也适合新手。",
-          coverImage: "https://example.com/story.jpg",
-          locationId: location.id,
-        }),
-      });
+  it.each([
+    {
+      name: "unformed team",
+      overrides: { formedAt: null },
+      session: "author",
+      expected: 409,
+    },
+    {
+      name: "cancelled team",
+      overrides: { cancelledAt: new Date() },
+      session: "author",
+      expected: 409,
+    },
+    {
+      name: "team that has not ended",
+      overrides: { endAt: new Date(Date.now() + 3_600_000) },
+      session: "author",
+      expected: 409,
+    },
+    {
+      name: "non-member author",
+      overrides: {},
+      session: "outsider",
+      expected: 403,
+    },
+  ])("rejects a recap for $name", async ({ overrides, session, expected }) => {
+    const team = await seedTeam(
+      "team-invalid",
+      author.id,
+      location.id,
+      overrides,
+    );
+    signIn(session === "author" ? author : outsider);
 
-      expect(res.status).toBe(401);
-    });
+    const response = await request(
+      app,
+      "/stories",
+      json({ teamId: team.id, content: "不应写入的回顾。" }),
+    );
 
-    it("登录用户创建合法故事后写入 stories 并返回 id", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-
-      const res = await req(app, "/stories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "  一次海岸线徒步  ",
-          summary: "  记录一次轻量海岸线徒步。  ",
-          content: "  天气很好，路线也适合新手。  ",
-          coverImage: "https://example.com/story.jpg",
-          locationId: location.id,
-        }),
-      });
-
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: { id: string } };
-      expect(json.success).toBe(true);
-      expect(json.data.id).toBeTruthy();
-
-      const story = await testDb.query.stories.findFirst({
-        where: eq(schema.stories.id, json.data.id),
-      });
-      expect(story?.authorId).toBe(user.id);
-      expect(story?.title).toBe("一次海岸线徒步");
-      expect(story?.summary).toBe("记录一次轻量海岸线徒步。");
-      expect(story?.content).toBe("天气很好，路线也适合新手。");
-      expect(story?.status).toBe("published");
-    });
-
-    it("不带 coverImage/tags 也可创建（spec §6 契约放宽）", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-
-      const res = await req(app, "/stories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "无封面无标签故事",
-          summary: "验证封面与标签改可选后的契约。",
-          content: "正文内容满足必填要求。",
-          locationId: location.id,
-        }),
-      });
-
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; data: { id: string } };
-      expect(json.success).toBe(true);
-
-      const story = await testDb.query.stories.findFirst({
-        where: eq(schema.stories.id, json.data.id),
-      });
-      expect(story?.coverImage).toBeNull();
-    });
-
-    it("非法 coverImage（非 URL）仍返回 400", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-
-      const res = await req(app, "/stories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "非法封面故事",
-          summary: "optional 不等于不校验格式。",
-          content: "正文内容满足必填要求。",
-          coverImage: "not-a-url",
-          locationId: location.id,
-        }),
-      });
-
-      expect(res.status).toBe(400);
-    });
-
-    it("创建带标签故事后可通过标签筛选并出现在热门标签", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-
-      const res = await req(app, "/stories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "海边露营记录",
-          summary: "周末海边露营和轻徒步记录。",
-          content: "从停车场到营地一路都比较平缓。",
-          coverImage: "https://example.com/camping.jpg",
-          locationId: location.id,
-          tags: ["  露营  ", "徒步", "露营", ""],
-        }),
-      });
-
-      expect(res.status).toBe(200);
-      const json = await res.json() as { data: { id: string } };
-
-      const campingTag = await testDb.query.tags.findFirst({
-        where: eq(schema.tags.name, "露营"),
-      });
-      expect(campingTag?.type).toBe("activity");
-
-      const tagLink = await testDb.query.entityToTags.findFirst({
-        where: and(
-          eq(schema.entityToTags.entityId, json.data.id),
-          eq(schema.entityToTags.entityType, "story"),
-          eq(schema.entityToTags.tagId, campingTag!.id)
-        ),
-      });
-      expect(tagLink).toBeDefined();
-
-      const filteredRes = await req(app, "/stories?tag=露营");
-      const filteredJson = await filteredRes.json() as { data: { id: string; title: string }[] };
-      expect(filteredJson.data).toHaveLength(1);
-      expect(filteredJson.data[0].id).toBe(json.data.id);
-
-      const tagsRes = await req(app, "/stories/tags");
-      const tagsJson = await tagsRes.json() as { tags: { name: string; count: number }[] };
-      expect(tagsJson.tags.some((tag) => tag.name === "露营" && Number(tag.count) >= 1)).toBe(true);
-    });
+    expect(response.status).toBe(expected);
+    const rows = await testDb
+      .select()
+      .from(schema.stories)
+      .where(eq(schema.stories.teamId, team.id));
+    expect(rows).toHaveLength(0);
   });
 
-  describe("PUT /stories/:id - 更新故事", () => {
-    it("带 tags 更新成功并替换标签关联（task #147 回归用例）", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-      const story = await seedStory(testDb, user.id, { title: "原标题" });
-      const oldTag = await seedTag(testDb, { name: "旧标签", type: "activity" });
-      await seedEntityTag(testDb, story.id, "story", oldTag.id);
+  it("rejects a recap whose location differs from the team's location", async () => {
+    const otherLocation = await seedLocation("location-other", region.id);
+    const team = await seedTeam("team-location", author.id, location.id);
+    signIn(author);
 
-      const res = await req(app, `/stories/${story.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "新标题", tags: ["新标签", "旧标签"] }),
-      });
+    const response = await request(
+      app,
+      "/stories",
+      json({
+        teamId: team.id,
+        locationId: otherLocation.id,
+        content: "地点被伪造。",
+      }),
+    );
 
-      expect(res.status).toBe(200);
-
-      const updated = await testDb.query.stories.findFirst({
-        where: eq(schema.stories.id, story.id),
-      });
-      expect(updated?.title).toBe("新标题");
-
-      // 旧关联被替换：新标签 + 旧标签各一条，无残留重复
-      const links = await testDb.query.entityToTags.findMany({
-        where: and(
-          eq(schema.entityToTags.entityId, story.id),
-          eq(schema.entityToTags.entityType, "story")
-        ),
-      });
-      expect(links).toHaveLength(2);
-
-      const newTag = await testDb.query.tags.findFirst({
-        where: eq(schema.tags.name, "新标签"),
-      });
-      expect(newTag).toBeDefined();
-    });
-
-    it("tags 传空数组清除全部标签关联（task #147 回归用例）", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-      const story = await seedStory(testDb, user.id, { title: "带标签故事" });
-      const tag = await seedTag(testDb, { name: "待清除", type: "activity" });
-      await seedEntityTag(testDb, story.id, "story", tag.id);
-
-      const res = await req(app, `/stories/${story.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "带标签故事", tags: [] }),
-      });
-
-      expect(res.status).toBe(200);
-
-      const links = await testDb.query.entityToTags.findMany({
-        where: and(
-          eq(schema.entityToTags.entityId, story.id),
-          eq(schema.entityToTags.entityType, "story")
-        ),
-      });
-      expect(links).toHaveLength(0);
-    });
-
-    it("不传 tags 字段只更新正文，标签关联保持不变", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-      const story = await seedStory(testDb, user.id, { title: "保留标签故事" });
-      const tag = await seedTag(testDb, { name: "保留", type: "activity" });
-      await seedEntityTag(testDb, story.id, "story", tag.id);
-
-      const res = await req(app, `/stories/${story.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "保留标签故事（改）" }),
-      });
-
-      expect(res.status).toBe(200);
-
-      const links = await testDb.query.entityToTags.findMany({
-        where: and(
-          eq(schema.entityToTags.entityId, story.id),
-          eq(schema.entityToTags.entityType, "story")
-        ),
-      });
-      expect(links).toHaveLength(1);
-    });
+    expect(response.status).toBe(409);
   });
 
-  describe("POST /stories/:id/like - 点赞 toggle", () => {
-    it("未登录点赞 → 401", async () => {
-      const story = await seedStory(testDb, user.id, { title: "测试故事", status: "published" });
+  it("rechecks recap invariants in the conditional INSERT to close the race window", async () => {
+    const team = await seedTeam("team-race", author.id, location.id);
+    signIn(author);
+    d1.beforeNextBatch = () => {
+      sqlite
+        .prepare("UPDATE teams SET cancelled_at = ? WHERE id = ?")
+        .run(Date.now(), team.id);
+    };
 
-      const res = await req(app, `/stories/${story.id}/like`, { method: "POST" });
+    const response = await request(
+      app,
+      "/stories",
+      json({
+        teamId: team.id,
+        content: "并发取消后不能写入。",
+        tags: ["竞态标签"],
+      }),
+    );
 
-      expect(res.status).toBe(401);
+    expect(response.status).toBe(409);
+    expect(await testDb.$count(schema.stories)).toBe(0);
+    expect(await testDb.$count(schema.tags)).toBe(0);
+  });
+
+  it("compensates final and temp R2 objects when the D1 batch fails", async () => {
+    signIn(author);
+    const tempKey = `temp/stories/${author.id}/db-failure.jpg`;
+    r2.seed(tempKey);
+    d1.failNextBatch = new Error(
+      "D1_ERROR: constraint failed; SQL: insert into stories ...",
+    );
+
+    const response = await request(
+      app,
+      "/stories",
+      json({
+        title: "D1 失败",
+        content: "所有已复制对象都必须被清理。",
+        imageKeys: [tempKey],
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(JSON.stringify(body)).not.toMatch(/D1_ERROR|SQL:|insert into/u);
+    expect(backgroundTasks).toHaveLength(1);
+    await settleBackgroundTasks();
+    expect(r2.objects.has(tempKey)).toBe(false);
+    expect(
+      [...r2.objects.keys()].some((key) => key.startsWith("stories/")),
+    ).toBe(false);
+    expect(await testDb.$count(schema.stories)).toBe(0);
+  });
+
+  it("cleans copied and temporary objects when an R2 copy fails midway", async () => {
+    signIn(author);
+    const firstKey = `temp/stories/${author.id}/first.jpg`;
+    const secondKey = `temp/stories/${author.id}/second.jpg`;
+    r2.seed(firstKey);
+    r2.seed(secondKey);
+    r2.failPutSuffix = "/second.jpg";
+
+    const response = await request(
+      app,
+      "/stories",
+      json({
+        title: "复制失败",
+        content: "部分复制不能留下孤儿对象。",
+        imageKeys: [firstKey, secondKey],
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    expect(backgroundTasks).toHaveLength(1);
+    await settleBackgroundTasks();
+    expect(r2.objects.size).toBe(0);
+    expect(await testDb.$count(schema.stories)).toBe(0);
+  });
+
+  it("lists a tag-filtered feed with an opaque keyset cursor", async () => {
+    const tagId = "tag-hiking";
+    await testDb.insert(schema.tags).values({
+      id: tagId,
+      name: "徒步",
+      slug: encodeURIComponent("徒步"),
     });
-
-    it("点赞不存在的故事 → 404", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-
-      const res = await req(app, "/stories/non-existent-id/like", { method: "POST" });
-
-      expect(res.status).toBe(404);
-    });
-
-    it("首次点赞 → liked=true, likeCount=1", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-      const story = await seedStory(testDb, user.id, { title: "测试故事", status: "published" });
-
-      const res = await req(app, `/stories/${story.id}/like`, { method: "POST" });
-
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; liked: boolean; likeCount: number };
-      expect(json.success).toBe(true);
-      expect(json.liked).toBe(true);
-      expect(json.likeCount).toBe(1);
-
-      const dbStory = await testDb.query.stories.findFirst({
-        where: eq(schema.stories.id, story.id),
+    for (let index = 0; index < 3; index += 1) {
+      const story = await seedStory(`story-${index}`, author.id, {
+        images: [`https://gomate.cos.jiahongw.com/story/${index}.jpg`],
+        createdAt: new Date(Date.now() - index * 1_000),
       });
-      expect(dbStory?.likeCount).toBe(1);
+      await testDb
+        .insert(schema.storyTags)
+        .values({ storyId: story.id, tagId });
+    }
+
+    const first = await request(app, "/stories?tag=%E5%BE%92%E6%AD%A5&limit=2");
+    expect(first.status).toBe(200);
+    const firstBody = (await first.json()) as {
+      data: {
+        items: Array<{ id: string; images: string[] }>;
+        nextCursor: string | null;
+      };
+    };
+    expect(firstBody.data.items).toHaveLength(2);
+    expect(firstBody.data.items[0].images).toEqual([
+      "https://gomate.cos.jiahongw.com/story/0.jpg",
+    ]);
+    expect(firstBody.data.nextCursor).toMatch(/^[A-Za-z0-9_-]+$/u);
+
+    const second = await request(
+      app,
+      `/stories?tag=%E5%BE%92%E6%AD%A5&limit=2&cursor=${firstBody.data.nextCursor}`,
+    );
+    const secondBody = (await second.json()) as {
+      data: { items: Array<{ id: string }>; nextCursor: string | null };
+    };
+    expect(secondBody.data.items.map(({ id }) => id)).toEqual(["story-2"]);
+    expect(secondBody.data.nextCursor).toBeNull();
+  });
+
+  it("filters the shared V2 feed by locationId or teamId", async () => {
+    const firstTeam = await seedTeam("team-feed-1", author.id, location.id);
+    const secondTeam = await seedTeam("team-feed-2", author.id, location.id);
+    const otherLocation = await seedLocation("location-feed-other", region.id);
+    await Promise.all([
+      seedStory("story-location", author.id, { locationId: location.id }),
+      seedStory("story-team-1", author.id, {
+        teamId: firstTeam.id,
+        locationId: location.id,
+      }),
+      seedStory("story-team-2", author.id, {
+        teamId: secondTeam.id,
+        locationId: location.id,
+      }),
+      seedStory("story-other-location", author.id, {
+        locationId: otherLocation.id,
+      }),
+    ]);
+
+    const locationResponse = await request(
+      app,
+      `/stories?locationId=${location.id}&limit=10`,
+    );
+    const locationBody = (await locationResponse.json()) as {
+      data: { items: Array<{ id: string }>; nextCursor: string | null };
+    };
+    expect(locationResponse.status).toBe(200);
+    expect(locationBody.data.items.map(({ id }) => id).sort()).toEqual([
+      "story-location",
+      "story-team-1",
+      "story-team-2",
+    ]);
+    expect(locationBody.data.nextCursor).toBeNull();
+
+    const teamResponse = await request(
+      app,
+      `/stories?teamId=${firstTeam.id}&limit=10`,
+    );
+    const teamBody = (await teamResponse.json()) as {
+      data: { items: Array<{ id: string; teamId: string | null }> };
+    };
+    expect(teamResponse.status).toBe(200);
+    expect(teamBody.data.items).toEqual([
+      expect.objectContaining({ id: "story-team-1", teamId: firstTeam.id }),
+    ]);
+  });
+
+  it("hides published stories linked to a non-public Location from every public read", async () => {
+    const [closedRegion] = await testDb.insert(schema.region).values({
+      id: "region-closed-story",
+      countryCode: "CN",
+      name: "未开放城市",
+      slug: "closed-story",
+      level: "city",
+      serviceEnabled: false,
+    }).returning();
+    const draftLocation = await seedLocation("location-draft-story", region.id, {
+      status: "draft",
+      supportedActivityTypes: [],
+    });
+    const closedLocation = await seedLocation(
+      "location-closed-story",
+      closedRegion.id,
+    );
+    const visible = await seedStory("story-visible-location", author.id, {
+      locationId: location.id,
+    });
+    const draftLinked = await seedStory("story-draft-location", author.id, {
+      locationId: draftLocation.id,
+    });
+    const closedLinked = await seedStory("story-closed-location", author.id, {
+      locationId: closedLocation.id,
+    });
+    await testDb.insert(schema.tags).values({
+      id: "tag-visibility",
+      name: "可见性",
+      slug: "visibility",
+    });
+    await testDb.insert(schema.storyTags).values([
+      { storyId: visible.id, tagId: "tag-visibility" },
+      { storyId: draftLinked.id, tagId: "tag-visibility" },
+      { storyId: closedLinked.id, tagId: "tag-visibility" },
+    ]);
+
+    const list = await request(app, "/stories?limit=20");
+    const listBody = await list.json() as {
+      data: { items: Array<{ id: string }> };
+    };
+    expect(listBody.data.items.map((item) => item.id)).toEqual([visible.id]);
+    expect((await request(app, `/stories/${draftLinked.id}`)).status).toBe(404);
+    expect((await request(app, `/stories/${closedLinked.id}`)).status).toBe(404);
+
+    const tags = await request(app, "/stories/tags");
+    await expect(tags.json()).resolves.toMatchObject({
+      data: { items: [{ id: "tag-visibility", count: 1 }] },
+    });
+    const stats = await request(app, "/stories/stats");
+    await expect(stats.json()).resolves.toMatchObject({
+      data: {
+        weeklyNewStories: 1,
+        popularLocation: { id: location.id, storyCount: 1 },
+      },
     });
 
-    it("再次点赞（取消） → liked=false, likeCount=0", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-      const story = await seedStory(testDb, user.id, { title: "测试故事", status: "published" });
+    signIn(member);
+    expect(
+      (await request(app, `/stories/${closedLinked.id}/like`, { method: "POST" }))
+        .status,
+    ).toBe(404);
+  });
 
-      // 第一次点赞
-      await req(app, `/stories/${story.id}/like`, { method: "POST" });
-
-      // 第二次点赞 → 取消
-      const res = await req(app, `/stories/${story.id}/like`, { method: "POST" });
-
-      expect(res.status).toBe(200);
-      const json = await res.json() as { success: boolean; liked: boolean; likeCount: number };
-      expect(json.success).toBe(true);
-      expect(json.liked).toBe(false);
-      expect(json.likeCount).toBe(0);
-
-      const dbStory = await testDb.query.stories.findFirst({
-        where: eq(schema.stories.id, story.id),
-      });
-      expect(dbStory?.likeCount).toBe(0);
+  it("keeps story detail GET read-only and returns the shared isLiked DTO field", async () => {
+    const story = await seedStory("story-read-only", author.id, {
+      viewCount: 7,
+    });
+    signIn(member);
+    await testDb.insert(schema.storyLikes).values({
+      storyId: story.id,
+      userId: member.id,
     });
 
-    it("likeCount 不会减到负数", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-      // 手动创建一个 likeCount=0 的故事
-      const story = await seedStory(testDb, user.id, { title: "零点赞故事", status: "published", likeCount: 0 });
+    const response = await request(app, `/stories/${story.id}`);
+    expect(response.status).toBe(200);
+    const body = await response.json() as { data: Record<string, unknown> };
+    expect(body.data).toMatchObject({ viewCount: 7, isLiked: true });
+    expect(body.data).not.toHaveProperty("liked");
+    expect(body.data).not.toHaveProperty("favorited");
+    const persisted = await testDb.query.stories.findFirst({
+      where: eq(schema.stories.id, story.id),
+      columns: { viewCount: true },
+    });
+    expect(persisted?.viewCount).toBe(7);
+  });
 
-      // 先点赞
-      await req(app, `/stories/${story.id}/like`, { method: "POST" });
-      // 再取消
-      await req(app, `/stories/${story.id}/like`, { method: "POST" });
-      // 再次取消（异常状态：点赞记录已删除但 likeCount 已经是 0）
-      // 直接操作 DB 删除 like 记录但保留 likeCount=0，然后尝试取消
-      await testDb.delete(schema.userStoryLikes).where(
+  it("rechecks Location visibility in the conditional story INSERT", async () => {
+    signIn(author);
+    d1.beforeNextBatch = () => {
+      sqlite.prepare("UPDATE locations SET status = 'draft' WHERE id = ?")
+        .run(location.id);
+    };
+
+    const response = await request(
+      app,
+      "/stories",
+      json({
+        title: "竞态地点",
+        content: "地点在写入前失去公开可见性。",
+        locationId: location.id,
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    expect(await testDb.$count(schema.stories)).toBe(0);
+  });
+
+  it("rechecks Location visibility in the conditional story UPDATE", async () => {
+    const story = await seedStory("story-location-update-race", author.id, {
+      locationId: null,
+    });
+    await testDb.insert(schema.tags).values({
+      id: "tag-location-update-race-old",
+      name: "竞态旧标签",
+      slug: encodeURIComponent("竞态旧标签"),
+    });
+    await testDb.insert(schema.storyTags).values({
+      storyId: story.id,
+      tagId: "tag-location-update-race-old",
+    });
+    signIn(author);
+    d1.beforeNextBatch = () => {
+      sqlite.prepare("UPDATE locations SET status = 'draft' WHERE id = ?")
+        .run(location.id);
+    };
+
+    const response = await request(
+      app,
+      `/stories/${story.id}`,
+      json(
+        { locationId: location.id, tags: ["竞态新标签"] },
+        "PUT",
+      ),
+    );
+
+    expect(response.status).toBe(409);
+    const persisted = await testDb.query.stories.findFirst({
+      where: eq(schema.stories.id, story.id),
+      columns: { locationId: true },
+    });
+    expect(persisted?.locationId).toBeNull();
+    const linkedTags = await testDb
+      .select({ name: schema.tags.name })
+      .from(schema.storyTags)
+      .innerJoin(schema.tags, eq(schema.storyTags.tagId, schema.tags.id))
+      .where(eq(schema.storyTags.storyId, story.id));
+    expect(linkedTags.map(({ name }) => name)).toEqual(["竞态旧标签"]);
+    const dictionary = await testDb
+      .select({ name: schema.tags.name })
+      .from(schema.tags);
+    expect(dictionary.map(({ name }) => name)).toEqual(["竞态旧标签"]);
+  });
+
+  it("replaces story_tags while only retaining or deleting owned final images", async () => {
+    const retainedKey = "stories/story-update/retained.jpg";
+    const removedKey = "stories/story-update/removed.jpg";
+    r2.seed(retainedKey);
+    r2.seed(removedKey);
+    const story = await seedStory("story-update", author.id, {
+      locationId: location.id,
+      images: [
+        `https://gomate.cos.jiahongw.com/${retainedKey}`,
+        `https://gomate.cos.jiahongw.com/${removedKey}`,
+      ],
+    });
+    await testDb.insert(schema.tags).values({
+      id: "tag-old",
+      name: "旧标签",
+      slug: encodeURIComponent("旧标签"),
+    });
+    await testDb.insert(schema.storyTags).values({
+      storyId: story.id,
+      tagId: "tag-old",
+    });
+    signIn(author);
+
+    const update = await request(
+      app,
+      `/stories/${story.id}`,
+      json(
+        {
+          images: [`https://gomate.cos.jiahongw.com/${retainedKey}`],
+          tags: ["新标签"],
+        },
+        "PUT",
+      ),
+    );
+    expect(update.status).toBe(200);
+    expect(backgroundTasks).toHaveLength(1);
+    await settleBackgroundTasks();
+    expect(r2.objects.has(retainedKey)).toBe(true);
+    expect(r2.objects.has(removedKey)).toBe(false);
+
+    const detail = await request(app, `/stories/${story.id}`);
+    const body = (await detail.json()) as {
+      data: { images: string[]; tags: Array<{ name: string }> };
+    };
+    expect(body.data.images).toEqual([
+      `https://gomate.cos.jiahongw.com/${retainedKey}`,
+    ]);
+    expect(body.data.tags.map(({ name }) => name)).toEqual(["新标签"]);
+
+    const inject = await request(
+      app,
+      `/stories/${story.id}`,
+      json(
+        {
+          images: [
+            `https://gomate.cos.jiahongw.com/stories/another-story/foreign.jpg`,
+          ],
+        },
+        "PUT",
+      ),
+    );
+    expect(inject.status).toBe(400);
+  });
+
+  it("toggles only story_likes while triggers maintain likeCount", async () => {
+    const story = await seedStory("story-like", author.id);
+    signIn(member);
+
+    const liked = await request(app, `/stories/${story.id}/like`, {
+      method: "POST",
+    });
+    expect(liked.status).toBe(200);
+    expect(await liked.json()).toMatchObject({
+      success: true,
+      data: { liked: true, likeCount: 1 },
+    });
+    expect(
+      await testDb.$count(
+        schema.storyLikes,
         and(
-          eq(schema.userStoryLikes.userId, user.id),
-          eq(schema.userStoryLikes.storyId, story.id),
+          eq(schema.storyLikes.userId, member.id),
+          eq(schema.storyLikes.storyId, story.id),
         ),
-      );
-      await testDb.update(schema.stories).set({ likeCount: 0 }).where(eq(schema.stories.id, story.id));
+      ),
+    ).toBe(1);
+    expect(
+      (
+        await testDb.query.stories.findFirst({
+          where: eq(schema.stories.id, story.id),
+        })
+      )?.likeCount,
+    ).toBe(1);
 
-      // 此时 likeCount=0，再插入点赞再取消，不会为负
-      const res1 = await req(app, `/stories/${story.id}/like`, { method: "POST" });
-      expect((await res1.json() as { likeCount: number }).likeCount).toBe(1);
-
-      const res2 = await req(app, `/stories/${story.id}/like`, { method: "POST" });
-      expect((await res2.json() as { likeCount: number }).likeCount).toBe(0);
+    const unliked = await request(app, `/stories/${story.id}/like`, {
+      method: "POST",
     });
-
-    it("多次点赞/取消后数据一致", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-      const story = await seedStory(testDb, user.id, { title: "测试故事", status: "published" });
-
-      // 连续 toggle 3 次
-      await req(app, `/stories/${story.id}/like`, { method: "POST" }); // +1
-      await req(app, `/stories/${story.id}/like`, { method: "POST" }); // -1
-      const res = await req(app, `/stories/${story.id}/like`, { method: "POST" }); // +1
-
-      const json = await res.json() as { liked: boolean; likeCount: number };
-      expect(json.liked).toBe(true);
-      expect(json.likeCount).toBe(1);
-
-      const dbStory = await testDb.query.stories.findFirst({
-        where: eq(schema.stories.id, story.id),
-      });
-      expect(dbStory?.likeCount).toBe(1);
-
-      const likeRecord = await testDb.query.userStoryLikes.findFirst({
-        where: and(
-          eq(schema.userStoryLikes.userId, user.id),
-          eq(schema.userStoryLikes.storyId, story.id),
-        ),
-      });
-      expect(likeRecord).toBeDefined();
+    expect(await unliked.json()).toMatchObject({
+      success: true,
+      data: { liked: false, likeCount: 0 },
     });
-
-    it("并发点赞：同一用户多次请求只产生一条记录", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name } };
-      const story = await seedStory(testDb, user.id, { title: "并发测试故事", status: "published" });
-
-      // 模拟并发：5 个请求同时发送（一个用户对同一故事）
-      const results = await Promise.all(
-        Array.from({ length: 5 }, () =>
-          req(app, `/stories/${story.id}/like`, { method: "POST" })
-        )
-      );
-
-      // 所有请求都应成功
-      results.forEach((res) => expect(res.status).toBe(200));
-
-      // 数据库中只有 1 条点赞记录（PRIMARY KEY 约束保证）
-      const likeRecords = await testDb.select().from(schema.userStoryLikes).where(
-        eq(schema.userStoryLikes.storyId, story.id),
-      );
-      expect(likeRecords.length).toBeLessThanOrEqual(1);
-
-      // 派生计数必须与唯一点赞记录严格一致，不能接受并发漂移。
-      const dbStory = await testDb.query.stories.findFirst({
-        where: eq(schema.stories.id, story.id),
-      });
-      expect(dbStory?.likeCount).toBe(likeRecords.length);
-    });
+    expect(await testDb.$count(schema.storyLikes)).toBe(0);
   });
 
-  describe("DELETE /stories/:id - 删除故事", () => {
-    it("管理员可以删除其他用户的故事", async () => {
-      const admin = await seedUser(testDb, { role: "admin", email: "admin@example.com" });
-      currentSession = { user: { id: admin.id, email: admin.email, name: admin.name, role: "admin" } };
-      const story = await seedStory(testDb, user.id, { title: "他人故事", status: "published" });
+  it("maps trigger failures without exposing D1 or SQL diagnostics", async () => {
+    const story = await seedStory("story-like-error", author.id);
+    signIn(member);
+    d1.failNextRun = new Error(
+      "D1_ERROR: STORY_LIKE_COUNT_FAILED; SQL: insert into story_likes ...",
+    );
 
-      const res = await req(app, `/stories/${story.id}`, { method: "DELETE" });
-
-      expect(res.status).toBe(200);
-      const deletedStory = await testDb.query.stories.findFirst({
-        where: eq(schema.stories.id, story.id),
-      });
-      expect(deletedStory?.status).toBe("hidden");
+    const response = await request(app, `/stories/${story.id}/like`, {
+      method: "POST",
     });
+    const body = await response.json();
 
-    it("作者删除故事后软删除记录并清理 story 标签关联", async () => {
-      currentSession = { user: { id: user.id, email: user.email, name: user.name, role: "user" } };
-      const tag = await seedTag(testDb, { name: "待清理标签", type: "activity" });
-      const story = await seedStory(testDb, user.id, { title: "准备删除的故事", status: "published" });
-      await seedEntityTag(testDb, story.id, "story", tag.id);
-
-      const res = await req(app, `/stories/${story.id}`, { method: "DELETE" });
-
-      expect(res.status).toBe(200);
-      const deletedStory = await testDb.query.stories.findFirst({
-        where: eq(schema.stories.id, story.id),
-      });
-      expect(deletedStory?.status).toBe("hidden");
-
-      const remainingLink = await testDb.query.entityToTags.findFirst({
-        where: and(
-          eq(schema.entityToTags.entityId, story.id),
-          eq(schema.entityToTags.entityType, "story")
-        ),
-      });
-      expect(remainingLink).toBeUndefined();
-
-      const tagsRes = await req(app, "/stories/tags");
-      const tagsJson = await tagsRes.json() as { tags: { name: string }[] };
-      expect(tagsJson.tags.some((item) => item.name === "待清理标签")).toBe(false);
-
-      const detailRes = await req(app, `/stories/${story.id}`);
-      expect(detailRes.status).toBe(404);
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({
+      success: false,
+      error: { code: "STORY_LIKE_COUNT_FAILED" },
     });
+    expect(JSON.stringify(body)).not.toMatch(/D1_ERROR|SQL:|insert into/u);
+  });
+
+  it("does not expose the removed share-stats route or share_events references", async () => {
+    const story = await seedStory("story-share", author.id);
+
+    const response = await request(app, `/stories/${story.id}/share-stats`);
+    expect(response.status).toBe(404);
+
+    const source = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), "../../routes/stories.ts"),
+      "utf8",
+    );
+    expect(source).not.toMatch(/share[-_]?stats|shareEvents|share_events/iu);
   });
 });

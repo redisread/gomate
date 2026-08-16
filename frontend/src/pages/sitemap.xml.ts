@@ -5,6 +5,7 @@
  */
 import type { APIRoute } from "astro";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from "../i18n";
+import { serverApiGet } from "../lib/server-api";
 
 const SITE_URL = "https://gomate.live";
 
@@ -47,7 +48,7 @@ function escapeXml(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request, locals }) => {
   const now = new Date().toISOString();
   const entries: string[] = [];
 
@@ -68,26 +69,38 @@ export const GET: APIRoute = async () => {
 
   // 2. 动态路由 - 从 API 获取地点列表
   try {
-    const apiBaseUrl = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
-    const res = await fetch(`${apiBaseUrl}/locations`);
-    if (res.ok) {
-      const data = await res.json();
-      const locationList = Array.isArray(data) ? data : (data.locations || data.data || []);
+    const locationList: { id: string }[] = [];
+    const seenCursors = new Set<string>();
+    let cursor: string | null = null;
+    do {
+      const query = new URLSearchParams({ limit: "100" });
+      if (cursor) query.set("cursor", cursor);
+      const data = await serverApiGet<{
+        success: boolean;
+        locations: { id: string }[];
+        nextCursor: string | null;
+      }>(request, locals, `/locations?${query}`);
+      if (!data?.success) break;
+      locationList.push(...(data.locations ?? []));
+      const nextCursor = data.nextCursor ?? null;
+      if (!nextCursor || seenCursors.has(nextCursor)) break;
+      seenCursors.add(nextCursor);
+      cursor = nextCursor;
+    } while (cursor);
 
-      for (const loc of locationList) {
-        const id = typeof loc === "object" ? loc.id : loc;
-        const path = `/locations/${id}`;
-        for (const lang of SUPPORTED_LOCALES) {
-          const locUrl = getLocaleUrl(lang, path);
-          entries.push(
-            `<url>` +
-              `<loc>${escapeXml(locUrl)}</loc>` +
-              `<lastmod>${now}</lastmod>` +
-              `<changefreq>weekly</changefreq>` +
-              `<priority>0.7</priority>` +
-              `</url>`
-          );
-        }
+    for (const loc of locationList) {
+      const id = typeof loc === "object" ? loc.id : loc;
+      const path = `/locations/${id}`;
+      for (const lang of SUPPORTED_LOCALES) {
+        const locUrl = getLocaleUrl(lang, path);
+        entries.push(
+          `<url>` +
+            `<loc>${escapeXml(locUrl)}</loc>` +
+            `<lastmod>${now}</lastmod>` +
+            `<changefreq>weekly</changefreq>` +
+            `<priority>0.7</priority>` +
+            `</url>`
+        );
       }
     }
   } catch {
@@ -96,26 +109,38 @@ export const GET: APIRoute = async () => {
 
   // 3. 动态路由 - 从 API 获取队伍列表
   try {
-    const apiBaseUrl = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
-    const res = await fetch(`${apiBaseUrl}/teams`);
-    if (res.ok) {
-      const data = await res.json();
-      const teamList = Array.isArray(data) ? data : (data.teams || data.data || []);
+    const teamList: { id: string }[] = [];
+    const seenCursors = new Set<string>();
+    let cursor: string | null = null;
+    do {
+      const query = new URLSearchParams({ limit: "100" });
+      if (cursor) query.set("cursor", cursor);
+      const data = await serverApiGet<{
+        success: boolean;
+        teams: { id: string }[];
+        nextCursor: string | null;
+      }>(request, locals, `/teams?${query}`);
+      if (!data?.success) break;
+      teamList.push(...(data.teams ?? []));
+      const nextCursor = data.nextCursor ?? null;
+      if (!nextCursor || seenCursors.has(nextCursor)) break;
+      seenCursors.add(nextCursor);
+      cursor = nextCursor;
+    } while (cursor);
 
-      for (const team of teamList) {
-        const id = typeof team === "object" ? team.id : team;
-        const path = `/teams/${id}`;
-        for (const lang of SUPPORTED_LOCALES) {
-          const locUrl = getLocaleUrl(lang, path);
-          entries.push(
-            `<url>` +
-              `<loc>${escapeXml(locUrl)}</loc>` +
-              `<lastmod>${now}</lastmod>` +
-              `<changefreq>daily</changefreq>` +
-              `<priority>0.7</priority>` +
-              `</url>`
-          );
-        }
+    for (const team of teamList) {
+      const id = typeof team === "object" ? team.id : team;
+      const path = `/teams/${id}`;
+      for (const lang of SUPPORTED_LOCALES) {
+        const locUrl = getLocaleUrl(lang, path);
+        entries.push(
+          `<url>` +
+            `<loc>${escapeXml(locUrl)}</loc>` +
+            `<lastmod>${now}</lastmod>` +
+            `<changefreq>daily</changefreq>` +
+            `<priority>0.7</priority>` +
+            `</url>`
+        );
       }
     }
   } catch {

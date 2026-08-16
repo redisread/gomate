@@ -5,35 +5,31 @@
 import Layout from "../../layouts/Layout.astro";
 import { StoryDetail } from "../../components/features/discover-client";
 import { declareI18nNs } from "../../middleware";
-import { API_BASE } from "../../lib/api";
+import { serverApiGet } from "../../lib/server-api";
 
-declareI18nNs(Astro.locals, ["content", "common", "teams", "share"]);
+declareI18nNs(Astro.locals, ["content", "common", "teams", "share", "favorites"]);
 
 const { id } = Astro.params;
 
 // 服务端获取故事数据，用于 SEO
-let storyData: { title?: string; summary?: string; coverImage?: string } | null = null;
-try {
-  const response = await fetch(`${API_BASE}/stories/${id}`);
-  if (response.ok) {
-    const data = await response.json();
-    if (data.success && data.data) {
-      storyData = data.data;
-    }
-  }
-} catch {
-  // 忽略错误，使用默认值
-}
+const storyResponse = await serverApiGet<{
+  success: boolean;
+  data?: {
+    title?: string | null;
+    displayTitle?: string;
+    summary?: string | null;
+    images?: string[];
+  };
+}>(Astro.request, Astro.locals, `/stories/${id}`);
+const storyData = storyResponse?.success ? storyResponse.data ?? null : null;
 
-const title = storyData?.title
-  ? storyData.title
-  : "故事详情";
+const title = storyData?.displayTitle || storyData?.title || "故事详情";
 
 const description = storyData?.summary
   ? storyData.summary.slice(0, 160)
   : "发现精彩内容，分享户外故事";
 
-const ogImage = storyData?.coverImage;
+const ogImage = storyData?.images?.[0];
 ---
 
 <Layout

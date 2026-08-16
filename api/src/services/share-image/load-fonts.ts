@@ -13,6 +13,25 @@ let fontCache: FontData[] | null = null;
 let fontCacheTime = 0;
 const FONT_CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
 
+type FontAssetPath =
+  | "assets/fonts/zpix-400.woff2"
+  | "assets/fonts/noto-sans-400.woff2"
+  | "assets/fonts/noto-sans-700.woff2";
+
+function logFontAssetLoadFailure(path: FontAssetPath, error: unknown): void {
+  switch (path) {
+    case "assets/fonts/zpix-400.woff2":
+      logger.error("share_image_font_zpix_400_r2_load_failed", error);
+      break;
+    case "assets/fonts/noto-sans-400.woff2":
+      logger.error("share_image_font_noto_sans_400_r2_load_failed", error);
+      break;
+    case "assets/fonts/noto-sans-700.woff2":
+      logger.error("share_image_font_noto_sans_700_r2_load_failed", error);
+      break;
+  }
+}
+
 /**
  * 加载字体数据
  * 从 R2 加载字体文件，如果没有则从 CDN 加载备用字体
@@ -31,7 +50,7 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
       { path: "assets/fonts/zpix-400.woff2", name: "Zpix", weight: 400 },
       { path: "assets/fonts/noto-sans-400.woff2", name: "Noto Sans SC", weight: 400 },
       { path: "assets/fonts/noto-sans-700.woff2", name: "Noto Sans SC", weight: 700 },
-    ];
+    ] as const;
 
     const fontPromises = fontPaths.map(async ({ path, name, weight }) => {
       try {
@@ -47,7 +66,7 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
         }
         return null;
       } catch (e) {
-        logger.error(`[Fonts] Failed to load ${path}:`, e);
+        logFontAssetLoadFailure(path, e);
         return null;
       }
     });
@@ -80,7 +99,7 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
           });
         }
       } catch (e) {
-        logger.error("[Fonts] Failed to load fallback font:", e);
+        logger.error("share_image_fallback_font_load_failed", e);
       }
     }
 
@@ -95,7 +114,7 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
 
     return fonts;
   } catch (error) {
-    logger.error("[Fonts] Failed to load fonts:", error);
+    logger.error("share_image_fonts_load_failed", error);
     throw error;
   }
 }

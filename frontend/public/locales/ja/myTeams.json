@@ -19,6 +19,7 @@
   "appStatusPending": "審査待ち",
   "appStatusApproved": "承認済み",
   "appStatusRejected": "却下",
+  "appStatusCancelled": "キャンセル済み",
   "requirementsMore": "+{count}",
   "levelBeginner": "初心者",
   "levelIntermediate": "中級",

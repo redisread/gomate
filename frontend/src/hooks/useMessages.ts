@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Conversation, Message } from "@gomate/types";
+import { getApiErrorMessage } from "@/lib/api";
 
-const API_BASE = import.meta.env.PUBLIC_API_URL || "http://localhost:8799";
+const API_BASE = "/api";
 
 // ============ Types ============
 
@@ -26,16 +27,43 @@ interface UseUnreadCountReturn {
   refetch: () => void;
 }
 
-function getApiErrorMessage(data: unknown, fallback: string): string {
-  if (!data || typeof data !== "object") return fallback;
-  const payload = data as { error?: unknown; message?: unknown };
-  if (typeof payload.error === "string") return payload.error;
-  if (payload.error && typeof payload.error === "object") {
-    const error = payload.error as { message?: unknown };
-    if (typeof error.message === "string") return error.message;
-  }
-  if (typeof payload.message === "string") return payload.message;
-  return fallback;
+export async function fetchAllConversations(): Promise<Conversation[]> {
+  const conversations: Conversation[] = [];
+  const seenIds = new Set<string>();
+  const seenCursors = new Set<string>();
+  let cursor: string | null = null;
+
+  do {
+    const query = new URLSearchParams({ limit: "50" });
+    if (cursor) query.set("cursor", cursor);
+    const response = await fetch(`${API_BASE}/messages?${query}`, {
+      credentials: "include",
+    });
+    const payload = await response.json() as {
+      success?: boolean;
+      data?: Conversation[];
+      nextCursor?: string | null;
+      error?: unknown;
+    };
+    if (!response.ok || !payload.success) {
+      throw new Error(getApiErrorMessage(payload, "Failed to load conversations"));
+    }
+    for (const conversation of payload.data ?? []) {
+      if (!seenIds.has(conversation.id)) {
+        seenIds.add(conversation.id);
+        conversations.push(conversation);
+      }
+    }
+    cursor = payload.nextCursor ?? null;
+    if (cursor) {
+      if (seenCursors.has(cursor)) {
+        throw new Error("Conversation pagination returned a repeated cursor");
+      }
+      seenCursors.add(cursor);
+    }
+  } while (cursor);
+
+  return conversations;
 }
 
 // ============ Hooks ============
@@ -51,17 +79,10 @@ export function useConversations(): UseConversationsReturn {
   const fetchConversations = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/messages`, {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success) {
-        setConversations(data.data || []);
-      } else {
-        setError(data.error || "Failed to load conversations");
-      }
-    } catch {
-      setError("Failed to load conversations");
+      setError(null);
+      setConversations(await fetchAllConversations());
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to load conversations");
     } finally {
       setLoading(false);
     }
@@ -88,7 +109,6 @@ export function useMessages(conversationId: string | undefined): UseMessagesRetu
   const [error, setError] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const lastMessageIdRef = useRef<string | null>(null);
 
   // Initial load
   useEffect(() => {
@@ -106,11 +126,6 @@ export function useMessages(conversationId: string | undefined): UseMessagesRetu
           setMessages(data.data || []);
           setHasMore(!!data.nextCursor);
           setCursor(data.nextCursor);
-          // Track last message for polling
-          const lastMsg = data.data?.[data.data.length - 1];
-          if (lastMsg) {
-            lastMessageIdRef.current = lastMsg.id;
-          }
         } else {
           setError(data.error || "Failed to load messages");
         }
@@ -141,7 +156,7 @@ export function useMessages(conversationId: string | undefined): UseMessagesRetu
           const existingIds = new Set(messages.map((m) => m.id));
           const merged = [...newMessages.filter((m: Message) => !existingIds.has(m.id)), ...messages];
           // Sort by createdAt
-          merged.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+          merged.sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
           setMessages(merged);
         }
       } catch {
@@ -164,18 +179,9 @@ export function useMessages(conversationId: string | undefined): UseMessagesRetu
     });
     const data = await res.json();
     if (data.success) {
-      // Optimistically add message
-      const newMessage: Message = {
-        id: data.data.id,
-        conversationId,
-        senderId: "current_user", // Will be replaced on next poll
-        content,
-        isRead: false,
-        createdAt: Date.now(),
-      };
-      setMessages((prev) => [...prev, newMessage]);
+      setMessages((prev) => [...prev, data.data as Message]);
     } else {
-      throw new Error(data.error);
+      throw new Error(getApiErrorMessage(data, "Failed to send message"));
     }
   };
 
@@ -253,7 +259,7 @@ export function useUnreadCount(enabled = true): UseUnreadCountReturn {
 /**
  * 创建会话
  */
-export async function createConversation(teamId: string, userId?: string): Promise<{
+export async function createConversation(teamId: string, memberUserId?: string): Promise<{
   id: string;
   isNew: boolean;
 }> {
@@ -261,7 +267,7 @@ export async function createConversation(teamId: string, userId?: string): Promi
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ teamId, ...(userId ? { userId } : {}) }),
+    body: JSON.stringify({ teamId, ...(memberUserId ? { memberUserId } : {}) }),
   });
   const data = await res.json();
   if (data.success) {

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Eye, EyeOff, Loader2, Mountain, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { signUp } from "@/lib/auth-client";
+import { sendVerificationEmail, signUp } from "@/lib/auth-client";
 
 /**
  * 注册页 — 温暖品牌双栏布局
@@ -16,6 +16,8 @@ export function RegisterClient() {
   const [error, setError] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
+  const [isResending, setIsResending] = React.useState(false);
+  const [resendMessage, setResendMessage] = React.useState("");
   const [formData, setFormData] = React.useState({
     name: "",
     email: "",
@@ -55,22 +57,35 @@ export function RegisterClient() {
       });
 
       if (result.error) {
-        if (result.error.message?.includes("already")) {
-          setError(t("auth.emailTaken"));
-        } else {
-          setError(t("auth.registerErrorRetry"));
-        }
+        setError(t("auth.registerErrorRetry"));
         return;
       }
 
       setIsSuccess(true);
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 1500);
     } catch {
       setError(t("auth.registerErrorRetry"));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    setResendMessage("");
+    try {
+      const result = await sendVerificationEmail({
+        email: formData.email.trim().toLowerCase(),
+        callbackURL: "/login",
+      });
+      setResendMessage(
+        result.error
+          ? t("auth.verificationResendFailed")
+          : t("auth.verificationResent"),
+      );
+    } catch {
+      setResendMessage(t("auth.verificationResendFailed"));
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -90,7 +105,24 @@ export function RegisterClient() {
           <h2 className="text-2xl font-bold text-foreground">
             {t("auth.registerSuccess")}
           </h2>
-          <p className="text-muted-foreground">{t("auth.registerSuccessRedirect")}</p>
+          <p className="text-muted-foreground">{t("auth.registerVerifyEmail")}</p>
+          <button
+            type="button"
+            onClick={handleResendVerification}
+            disabled={isResending}
+            className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            style={{ background: "var(--primary)" }}
+          >
+            {isResending ? t("auth.verificationResending") : t("auth.verificationResend")}
+          </button>
+          {resendMessage && (
+            <p className="text-sm text-muted-foreground" role="status">{resendMessage}</p>
+          )}
+          <p>
+            <a href="/login" className="text-sm font-medium underline" style={{ color: "var(--primary)" }}>
+              {t("auth.goLogin")}
+            </a>
+          </p>
         </div>
       </div>
     );
@@ -251,7 +283,7 @@ export function RegisterClient() {
                     value={formData.password}
                     onChange={handleInputChange}
                     required
-                    minLength={6}
+                    minLength={8}
                     className="w-full px-4 py-3 pr-11 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
                   />
                   <button

@@ -11,7 +11,19 @@ import { MarkdownContent } from "./markdown-content";
 import { StoryDetailSkeleton } from "./story-detail-skeleton";
 import { StoryToast } from "./story-detail-toast";
 import { ShareStorySheet } from "./share-story-sheet";
-import type { Story, StoryDetailProps, StoryDetailResponse } from "./story-detail-types";
+import type {
+  Story,
+  StoryDetailProps,
+  StoryDetailResponse,
+} from "./story-detail-types";
+import { getStoryCoverImage, getStoryTitle } from "./story-contract";
+import {
+  buildStoryFavoriteDeletePath,
+  buildStoryFavoritePayload,
+  buildStoryFavoritesPath,
+  STORY_FAVORITES_PATH,
+  type FavoriteStoriesResponse,
+} from "../favorite-contract";
 import {
   CONTENT_WIDTH,
   RelatedLocationLink,
@@ -26,14 +38,18 @@ import {
 import { getStoryMetrics, getViewCountText } from "./story-detail-utils";
 
 export function StoryDetail({ storyId }: StoryDetailProps) {
-  const { t, locale } = useI18n(["content", "common"]);
+  const { t, locale } = useI18n(["content", "common", "favorites"]);
   const { toast, show: showToast, isExiting } = useToast();
   const [story, setStory] = React.useState<Story | null>(null);
-  const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(null);
+  const [currentUser, setCurrentUser] = React.useState<SessionUser | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [isLiking, setIsLiking] = React.useState(false);
   const [liked, setLiked] = React.useState(false);
+  const [favorited, setFavorited] = React.useState(false);
+  const [isFavoriting, setIsFavoriting] = React.useState(false);
 
   // 从 API 响应初始化点赞状态（仅在故事数据首次加载时同步）
   const storyIdRef = React.useRef<string | null>(null);
@@ -89,8 +105,50 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
     };
   }, []);
 
+  const currentUserId = currentUser?.id;
+  const loadedStoryId = story?.id;
+  const loadedStoryStatus = story?.status;
+  React.useEffect(() => {
+    if (!currentUserId || !loadedStoryId || loadedStoryStatus !== "published") {
+      setFavorited(false);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      let cursor: string | null = null;
+      const seenCursors = new Set<string>();
+      try {
+        for (;;) {
+          const response: FavoriteStoriesResponse =
+            await apiGet<FavoriteStoriesResponse>(
+              buildStoryFavoritesPath(cursor),
+            );
+          if (
+            response.data.items.some((item) => item.story.id === loadedStoryId)
+          ) {
+            if (!cancelled) setFavorited(true);
+            return;
+          }
+          cursor = response.data.nextCursor;
+          if (!cursor || seenCursors.has(cursor)) break;
+          seenCursors.add(cursor);
+        }
+        if (!cancelled) setFavorited(false);
+      } catch {
+        if (!cancelled) setFavorited(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUserId, loadedStoryId, loadedStoryStatus]);
+
   const canDelete = Boolean(
-    story && currentUser && (story.author?.id === currentUser.id || currentUser.role === "admin"),
+    story &&
+    currentUser &&
+    (story.author?.id === currentUser.id || currentUser.role === "admin"),
   );
 
   const copyCurrentUrl = React.useCallback(async () => {
@@ -118,7 +176,11 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
     setLiked(nextLiked);
     setStory((prev) =>
       prev
-        ? { ...prev, isLiked: nextLiked, likeCount: prev.likeCount + (liked ? -1 : 1) }
+        ? {
+            ...prev,
+            isLiked: nextLiked,
+            likeCount: prev.likeCount + (liked ? -1 : 1),
+          }
         : prev,
     );
 
@@ -126,26 +188,34 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
       setIsLiking(true);
       const response = await apiPost<{
         success: boolean;
-        liked: boolean;
-        likeCount: number;
-        message: string;
+        data: { liked: boolean; likeCount: number };
       }>(`/stories/${storyId}/like`);
 
-      if (response.success) {
+      if (response.success && response.data) {
         // 以服务器返回值为准，修正乐观计算的偏差
-        setLiked(response.liked);
+        setLiked(response.data.liked);
         setStory((prev) =>
-          prev ? { ...prev, isLiked: response.liked, likeCount: response.likeCount } : prev,
+          prev
+            ? {
+                ...prev,
+                isLiked: response.data.liked,
+                likeCount: response.data.likeCount,
+              }
+            : prev,
         );
         showToast({
           type: "success",
-          message: response.liked ? t("content.discover.liked") : t("content.discover.unliked"),
+          message: response.data.liked
+            ? t("content.discover.liked")
+            : t("content.discover.unliked"),
         });
       } else {
         // API 返回失败 → 回滚本地状态
         setLiked(prevLiked);
         setStory((prev) =>
-          prev ? { ...prev, isLiked: prevLiked, likeCount: prevLikeCount } : prev,
+          prev
+            ? { ...prev, isLiked: prevLiked, likeCount: prevLikeCount }
+            : prev,
         );
         showToast({ type: "error", message: t("content.discover.likeFailed") });
       }
@@ -162,13 +232,55 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
     }
   }, [isLiking, liked, story, currentUser, showToast, storyId, t]);
 
+  const handleFavorite = React.useCallback(async () => {
+    if (isFavoriting || story?.status !== "published") return;
+    if (!currentUser) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const previous = favorited;
+    const next = !previous;
+    setFavorited(next);
+    setIsFavoriting(true);
+    try {
+      if (next) {
+        await apiPost(STORY_FAVORITES_PATH, buildStoryFavoritePayload(storyId));
+      } else {
+        await apiDelete(buildStoryFavoriteDeletePath(storyId));
+      }
+      showToast({
+        type: "success",
+        message: t(next ? "favorites.addSuccess" : "favorites.removeSuccess"),
+      });
+    } catch {
+      setFavorited(previous);
+      showToast({
+        type: "error",
+        message: t(next ? "favorites.addFailed" : "favorites.removeFailed"),
+      });
+    } finally {
+      setIsFavoriting(false);
+    }
+  }, [
+    currentUser,
+    favorited,
+    isFavoriting,
+    showToast,
+    story?.status,
+    storyId,
+    t,
+  ]);
+
   const handleDelete = React.useCallback(async () => {
     if (!canDelete || isDeleting) return;
 
     try {
       setIsDeleting(true);
       setDeleteError("");
-      await apiDelete<{ success: boolean; message?: string }>(`/stories/${storyId}`);
+      await apiDelete<{ success: boolean; message?: string }>(
+        `/stories/${storyId}`,
+      );
       window.location.href = "/discover";
     } catch (err) {
       console.error("Delete story error:", err);
@@ -184,13 +296,18 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
   if (error || !story) {
     return (
       <>
-        <StoryDetailError message={error || t("content.discover.storyNotFound")} t={t} />
+        <StoryDetailError
+          message={error || t("content.discover.storyNotFound")}
+          t={t}
+        />
         <StoryToast toast={toast} exiting={isExiting} />
       </>
     );
   }
 
   const metrics = getStoryMetrics(story, locale, t);
+  const title = getStoryTitle(story);
+  const coverImage = getStoryCoverImage(story);
 
   return (
     <div className="min-h-screen bg-background pb-16 pt-20 sm:pt-24">
@@ -209,8 +326,10 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
           <div className="flex items-center gap-2">
             {canDelete && (
               <>
-                <a href={`/discover/${storyId}/edit`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+                <a
+                  href={`/discover/${storyId}/edit`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                >
                   <FileText className="h-4 w-4" />
                   {t("common.edit")}
                 </a>
@@ -230,13 +349,15 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
       <header className={cn(CONTENT_WIDTH, "space-y-6")}>
         <StoryEyebrow
           story={story}
-          showDraftBadge={story.status === "draft" && currentUser?.id === story.author?.id}
+          showDraftBadge={
+            story.status === "draft" && currentUser?.id === story.author?.id
+          }
           t={t}
         />
 
         <div className="space-y-4">
           <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">
-            {story.title}
+            {title}
           </h1>
           {story.summary && (
             <p className="text-lg leading-relaxed text-muted-foreground">
@@ -248,12 +369,12 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
         <StoryByline story={story} metrics={metrics} t={t} />
       </header>
 
-      {story.coverImage && (
+      {coverImage && (
         <figure className={cn(CONTENT_WIDTH, "mt-8")}>
           <div className="overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
             <img
-              src={story.coverImage}
-              alt={story.title}
+              src={coverImage}
+              alt={title}
               className="aspect-[16/9] w-full object-cover"
             />
           </div>
@@ -274,7 +395,11 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
           liked={liked}
           likeCount={story.likeCount}
           isLiking={isLiking}
+          canFavorite={story.status === "published"}
+          favorited={favorited}
+          isFavoriting={isFavoriting}
           onLike={handleLike}
+          onFavorite={handleFavorite}
           onShare={() => setShowShareSheet(true)}
           viewsText={getViewCountText(story, locale, t)}
           t={t}
@@ -294,7 +419,7 @@ export function StoryDetail({ storyId }: StoryDetailProps) {
       <ShareStorySheet
         open={showShareSheet}
         onClose={() => setShowShareSheet(false)}
-        title={story?.title || ""}
+        title={title}
         storyId={storyId}
         summary={story?.summary || ""}
         onCopyLink={copyCurrentUrl}

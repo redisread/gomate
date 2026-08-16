@@ -16,10 +16,9 @@ import { Clock } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 
 interface Props {
-  /** ISO 时间戳（team.startTime，API 返回） */
-  startTime: string;
-  /** 活动预计时长（分钟）—— 判断是否 endTime+24h 折叠为「已结束」 */
-  durationMin?: number;
+  /** V2 Team DTO 的 ISO 起止时间。 */
+  startAt: string;
+  endAt: string;
 }
 
 type CountdownState =
@@ -27,8 +26,7 @@ type CountdownState =
   | { kind: "started"; startMs: number; nowMs: number; msPast: number }
   | { kind: "ended" };
 
-function computeState(startMs: number, durationMinMinutes: number, nowMs: number): CountdownState {
-  const endMs = startMs + durationMinMinutes * 60 * 1000;
+function computeState(startMs: number, endMs: number, nowMs: number): CountdownState {
   const foldMs = endMs + 24 * 60 * 60 * 1000; // spec §3.2: 已开始 24h 后整块折叠为「已结束」
   if (nowMs >= foldMs) return { kind: "ended" };
   if (nowMs >= startMs) return { kind: "started", startMs, nowMs, msPast: nowMs - startMs };
@@ -107,24 +105,25 @@ function nextTick(state: CountdownState): number | null {
   return 60 * 1000;
 }
 
-export function TeamCountdown({ startTime, durationMin = 240 }: Props) {
+export function TeamCountdown({ startAt, endAt }: Props) {
   const { t } = useI18n(["teams"]);
-  const startMs = React.useMemo(() => new Date(startTime).getTime(), [startTime]);
+  const startMs = React.useMemo(() => new Date(startAt).getTime(), [startAt]);
+  const endMs = React.useMemo(() => new Date(endAt).getTime(), [endAt]);
 
   const [nowMs, setNowMs] = React.useState<number>(() => Date.now());
 
   React.useEffect(() => {
-    if (Number.isNaN(startMs)) return;
-    const state = computeState(startMs, durationMin, nowMs);
+    if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs < startMs) return;
+    const state = computeState(startMs, endMs, nowMs);
     const delay = nextTick(state);
     if (delay === null) return;
     const id = window.setTimeout(() => setNowMs(Date.now()), delay);
     return () => window.clearTimeout(id);
-  }, [startMs, durationMin, nowMs]);
+  }, [startMs, endMs, nowMs]);
 
-  if (Number.isNaN(startMs)) return null;
+  if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs < startMs) return null;
 
-  const state = computeState(startMs, durationMin, nowMs);
+  const state = computeState(startMs, endMs, nowMs);
   const whenStr = formatWhen(startMs, nowMs, t);
   const remainingStr = formatRemaining(state, t);
 

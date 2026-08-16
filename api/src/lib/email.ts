@@ -1,7 +1,68 @@
 import { Resend } from "resend";
-import { getEmailField, EmailLocale } from "./email-i18n";
+import { getEmailField, type EmailLocale } from "./email-i18n";
 import { withTimeout } from "./timeout";
 import { logger } from "./logger";
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>'"]/gu, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    '"': "&quot;",
+  })[character]!);
+}
+
+/** Send the ownership challenge required before an email identity can sign in. */
+export async function sendEmailVerificationEmail(
+  email: string,
+  verificationUrl: string,
+  name: string,
+  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string },
+  locale: EmailLocale = "zh-CN",
+): Promise<{ success: boolean; error?: string }> {
+  const apiKey = env.RESEND_API_KEY;
+  if (!apiKey) {
+    logger.warn("email_provider_not_configured");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  try {
+    const parsedUrl = new URL(verificationUrl);
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      throw new Error("Invalid verification URL protocol");
+    }
+    const resend = new Resend(apiKey);
+    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
+    const safeName = escapeHtml(name);
+    const safeUrl = escapeHtml(parsedUrl.toString());
+
+    await withTimeout(
+      () => resend.emails.send({
+        from: fromEmail,
+        to: email,
+        subject: getEmailField(locale, "emailVerification", "subject"),
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>${getEmailField(locale, "emailVerification", "title")}</h2>
+            <p>${getEmailField(locale, "emailVerification", "greeting", { name: safeName })}</p>
+            <p>${getEmailField(locale, "emailVerification", "body")}</p>
+            <a href="${safeUrl}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "emailVerification", "btnText")}</a>
+            <p>${getEmailField(locale, "emailVerification", "expiryNote")}</p>
+            <p>${getEmailField(locale, "emailVerification", "ignoreNote")}</p>
+          </div>
+        `,
+      }),
+      10000,
+      "Send email verification timeout",
+    );
+
+    return { success: true };
+  } catch (error) {
+    logger.error("email_verification_send_failed", error);
+    return { success: false, error: (error as Error).message };
+  }
+}
 
 /**
  * 发送密码重置邮件
@@ -15,14 +76,20 @@ export async function sendPasswordResetEmail(
 ): Promise<{ success: boolean; error?: string }> {
   const apiKey = env.RESEND_API_KEY;
   if (!apiKey) {
-    logger.warn("[Email] RESEND_API_KEY not configured");
+    logger.warn("email_provider_not_configured");
     return { success: false, error: "Email service not configured" };
   }
 
   try {
+    const parsedUrl = new URL(resetUrl);
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      throw new Error("Invalid password reset URL protocol");
+    }
     const resend = new Resend(apiKey);
     const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
-    const nameStr = name ? `，${name}` : "";
+    const safeName = name ? escapeHtml(name) : "";
+    const safeUrl = escapeHtml(parsedUrl.toString());
+    const nameStr = safeName ? `，${safeName}` : "";
     const greeting = getEmailField(locale, "passwordReset", "greeting", { name: nameStr });
 
     await withTimeout(
@@ -35,7 +102,7 @@ export async function sendPasswordResetEmail(
             <h2>${getEmailField(locale, "passwordReset", "title")}</h2>
             <p>${greeting}</p>
             <p>${getEmailField(locale, "passwordReset", "body")}</p>
-            <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "passwordReset", "btnText")}</a>
+            <a href="${safeUrl}" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "passwordReset", "btnText")}</a>
             <p>${getEmailField(locale, "passwordReset", "expiryNote")}</p>
             <p>${getEmailField(locale, "passwordReset", "ignoreNote")}</p>
           </div>
@@ -47,7 +114,7 @@ export async function sendPasswordResetEmail(
 
     return { success: true };
   } catch (error) {
-    logger.error("[Email] Failed to send password reset email:", error);
+    logger.error("email_password_reset_send_failed", error);
     return { success: false, error: (error as Error).message };
   }
 }
@@ -67,6 +134,7 @@ export async function sendWelcomeEmail(
   try {
     const resend = new Resend(apiKey);
     const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
+    const safeName = escapeHtml(name);
 
     await withTimeout(
       () => resend.emails.send({
@@ -76,7 +144,7 @@ export async function sendWelcomeEmail(
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>${getEmailField(locale, "welcome", "title")}</h2>
-            <p>${getEmailField(locale, "welcome", "greeting", { name })}</p>
+            <p>${getEmailField(locale, "welcome", "greeting", { name: safeName })}</p>
             <p>${getEmailField(locale, "welcome", "body")}</p>
             <p>${getEmailField(locale, "welcome", "featuresTitle")}</p>
             <ul>
@@ -95,7 +163,7 @@ export async function sendWelcomeEmail(
 
     return { success: true };
   } catch (error) {
-    logger.error("[Email] Failed to send welcome email:", error);
+    logger.error("email_welcome_send_failed", error);
     return { success: false, error: (error as Error).message };
   }
 }
@@ -138,7 +206,7 @@ export async function sendContactFormEmail(
 
     return { success: true };
   } catch (error) {
-    logger.error("[Email] Failed to send contact form email:", error);
+    logger.error("email_contact_send_failed", error);
     return { success: false, error: (error as Error).message };
   }
 }
@@ -193,7 +261,7 @@ export async function sendTeamJoinApplicationEmail(
 
     return { success: true };
   } catch (error) {
-    logger.error("[Email] Failed to send team join application email:", error);
+    logger.error("email_team_join_application_send_failed", error);
     return { success: false, error: (error as Error).message };
   }
 }
@@ -277,7 +345,7 @@ export async function sendFeedbackEmail(
 
     return { success: true };
   } catch (error) {
-    logger.error("[Email] Failed to send feedback email:", error);
+    logger.error("email_feedback_send_failed", error);
     return { success: false, error: (error as Error).message };
   }
 }

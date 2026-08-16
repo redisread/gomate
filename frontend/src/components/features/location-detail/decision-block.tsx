@@ -3,15 +3,11 @@ import {
   AlertTriangle,
   Backpack,
   ExternalLink,
-  MapPin,
   Navigation,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import type {
-  Location,
-
-} from "@/lib/types";
+import type { Location } from "@/lib/types";
 import { normalizeLocationHiking } from "./route-utils";
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string;
@@ -29,28 +25,21 @@ interface DecisionBlockProps {
  * 会让占位坐标漏过 hasCoords 校验 → transport fetch 触发 → mapUrl 指向非洲外海。
  * `buildFallbackMapUrl` 走同一 helper，保证 error fallback 也不生成 (0,0) 链接。
  */
-function hasValidCoords(
-  c: { lat: number; lng: number } | undefined | null,
-): boolean {
+function hasValidCoords(latitude: number, longitude: number): boolean {
   return (
-    !!c &&
-    Number.isFinite(c.lat) &&
-    Number.isFinite(c.lng) &&
-    !(c.lat === 0 && c.lng === 0)
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    !(latitude === 0 && longitude === 0)
   );
 }
 
 export function DecisionBlock({ location, showGear = true }: DecisionBlockProps) {
   const { t } = useI18n(["locationDetail", "common"]);
 
-  const hasCoords = hasValidCoords(location.coordinates);
+  const hasCoords = hasValidCoords(location.latitude, location.longitude);
 
-  const parkingAvailable = location.parkingAvailable ?? null;
-  const parkingInfo = (location.parkingInfo ?? "").trim();
-  const hasParking = parkingAvailable !== null || parkingInfo.length > 0;
-
-  const gearEssential = showGear ? location.gearEssential ?? [] : [];
-  const gearOptional = showGear ? location.gearOptional ?? [] : [];
+  const gearEssential = showGear ? location.extra.hiking?.gearEssential ?? [] : [];
+  const gearOptional = showGear ? location.extra.hiking?.gearOptional ?? [] : [];
   const hiking = showGear ? normalizeLocationHiking(location) : null;
   const gearWarnings = hiking?.warnings ?? [];
   const hasGear =
@@ -59,7 +48,7 @@ export function DecisionBlock({ location, showGear = true }: DecisionBlockProps)
     gearWarnings.length > 0;
 
 
-  if (!hasCoords && !hasParking && !hasGear) return null;
+  if (!hasCoords && !hasGear) return null;
 
   return (
     <section className="rounded-2xl bg-card p-5 shadow-warm-sm sm:p-6">
@@ -89,13 +78,6 @@ export function DecisionBlock({ location, showGear = true }: DecisionBlockProps)
             </div>
           );
         })()}
-        {hasParking && (
-          <ParkingSubBlock
-            available={parkingAvailable}
-            info={parkingInfo}
-            t={t}
-          />
-        )}
         {hasGear && (
           <GearSubBlock
             essential={gearEssential}
@@ -124,53 +106,13 @@ function OpenInMapButton({ href, t }: { href: string; t: Translate }) {
 }
 
 function buildFallbackMapUrl(location: Location): string {
-  const c = location.coordinates;
-  if (!hasValidCoords(c)) return "";
+  if (!hasValidCoords(location.latitude, location.longitude)) return "";
   return (
     "https://uri.amap.com/marker?position=" +
-    c!.lng +
+    location.longitude +
     "," +
-    c!.lat +
+    location.latitude +
     "&callnative=1"
-  );
-}
-
-// ─── Parking ──────────────────────────────────────────────────────────────────
-
-interface ParkingSubBlockProps {
-  available: boolean | null;
-  info: string;
-  t: Translate;
-}
-
-function ParkingSubBlock({ available, info, t }: ParkingSubBlockProps) {
-  const showStatus = available !== null;
-  return (
-            <div className="rounded-xl border border-stone-100 bg-stone-50/60 p-4 dark:border-stone-800 dark:bg-stone-900/50">
-      <p className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase text-stone-500 dark:text-stone-400">
-        <MapPin className="h-3.5 w-3.5" />
-        {t("locationDetail.parking.title")}
-      </p>
-      {showStatus && (
-        <p
-          className={cn(
-            "text-sm font-semibold",
-            available
-              ? "text-emerald-700 dark:text-emerald-400"
-              : "text-amber-700 dark:text-amber-400",
-          )}
-        >
-          {available
-            ? t("locationDetail.parking.available")
-            : t("locationDetail.parking.noParking")}
-        </p>
-      )}
-      {info && (
-        <p className="mt-1.5 text-xs leading-relaxed text-stone-600 dark:text-stone-400">
-          {info}
-        </p>
-      )}
-    </div>
   );
 }
 

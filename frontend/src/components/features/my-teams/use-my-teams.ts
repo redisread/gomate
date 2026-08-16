@@ -1,10 +1,27 @@
 "use client";
 
 import * as React from "react";
-import { fetchAPI, fetchCurrentUser } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
 import type { SessionUser } from "@/lib/types";
 import type { TeamItem, ApplicationRecord, PendingApproval } from "./my-teams-types";
+
+export function buildTimelinePath(path: string, cursor: string | null, limit = 10): string {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (cursor) query.set("cursor", cursor);
+  return `${path}?${query}`;
+}
+
+export function mergeUniqueById<T extends { id: string }>(current: T[], incoming: T[]): T[] {
+  const seen = new Set(current.map((item) => item.id));
+  const merged = [...current];
+  for (const item of incoming) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    merged.push(item);
+  }
+  return merged;
+}
 
 export function useMyTeams() {
   const { t } = useI18n(["teams"]);
@@ -13,18 +30,14 @@ export function useMyTeams() {
   const [applicationSubTab, setApplicationSubTab] = React.useState<"my" | "pending">("my");
   const [roleFilter, setRoleFilter] = React.useState<"all" | "leader" | "member">("all");
 
-  // Pagination
-  const [createdPage, setCreatedPage] = React.useState(1);
-  const [createdHasMore, setCreatedHasMore] = React.useState(false);
+  // Stable timeline cursors
+  const [createdCursor, setCreatedCursor] = React.useState<string | null>(null);
   const [createdLoadingMore, setCreatedLoadingMore] = React.useState(false);
-  const [joinedPage, setJoinedPage] = React.useState(1);
-  const [joinedHasMore, setJoinedHasMore] = React.useState(false);
+  const [joinedCursor, setJoinedCursor] = React.useState<string | null>(null);
   const [joinedLoadingMore, setJoinedLoadingMore] = React.useState(false);
-  const [applicationsPage, setApplicationsPage] = React.useState(1);
-  const [applicationsHasMore, setApplicationsHasMore] = React.useState(false);
+  const [applicationsCursor, setApplicationsCursor] = React.useState<string | null>(null);
   const [applicationsLoadingMore, setApplicationsLoadingMore] = React.useState(false);
-  const [pendingPage, setPendingPage] = React.useState(1);
-  const [pendingHasMore, setPendingHasMore] = React.useState(false);
+  const [pendingCursor, setPendingCursor] = React.useState<string | null>(null);
   const [pendingLoadingMore, setPendingLoadingMore] = React.useState(false);
 
   // Data
@@ -76,79 +89,97 @@ export function useMyTeams() {
   // Fetch current user
   React.useEffect(() => {
     fetchCurrentUser(`/login?redirect=/my-teams`)
-      .then((user) => { if (user) setCurrentUser(user as unknown as SessionUser); });
+      .then((user) => { if (user) setCurrentUser(user); });
   }, []);
 
   // Data loaders
-  const loadCreatedTeams = React.useCallback(async (page: number, append = false) => {
+  const loadCreatedTeams = React.useCallback(async (cursor: string | null, append = false) => {
     if (!currentUser?.id) return;
     if (append) setCreatedLoadingMore(true); else setCreatedLoading(true);
     try {
-      const r = await fetchAPI(`/api/users/created-teams?page=${page}&pageSize=10`);
+      const r = await fetchAPI(buildTimelinePath("/users/me/created-teams", cursor));
       const data = await r.json();
       if (data.success) {
-        if (append) setCreatedTeams((prev) => [...prev, ...data.teams]);
+        if (append) setCreatedTeams((prev) => mergeUniqueById(prev, data.teams || []));
         else setCreatedTeams(data.teams || []);
-        setCreatedHasMore(data.pagination?.hasMore || false);
+        setCreatedCursor(data.nextCursor ?? null);
       }
     } finally { setCreatedLoading(false); setCreatedLoadingMore(false); }
   }, [currentUser?.id]);
 
-  const loadJoinedTeams = React.useCallback(async (page: number, append = false) => {
+  const loadJoinedTeams = React.useCallback(async (cursor: string | null, append = false) => {
     if (!currentUser?.id) return;
     if (append) setJoinedLoadingMore(true); else setJoinedLoading(true);
     try {
-      const r = await fetchAPI(`/api/users/teams/joined?page=${page}&pageSize=10`);
+      const r = await fetchAPI(buildTimelinePath("/users/me/joined-teams", cursor));
       const data = await r.json();
       if (data.success) {
-        if (append) setJoinedTeams((prev) => [...prev, ...data.teams]);
+        if (append) setJoinedTeams((prev) => mergeUniqueById(prev, data.teams || []));
         else setJoinedTeams(data.teams || []);
-        setJoinedHasMore(data.pagination?.hasMore || false);
+        setJoinedCursor(data.nextCursor ?? null);
       }
     } finally { setJoinedLoading(false); setJoinedLoadingMore(false); }
   }, [currentUser?.id]);
 
-  const loadApplications = React.useCallback(async (page: number, append = false) => {
+  const loadApplications = React.useCallback(async (cursor: string | null, append = false) => {
     if (!currentUser?.id) return;
     if (append) setApplicationsLoadingMore(true); else setApplicationsLoading(true);
     try {
-      const r = await fetchAPI(`/api/users/applications?page=${page}&pageSize=10`);
+      const r = await fetchAPI(buildTimelinePath("/users/me/join-requests", cursor));
       const data = await r.json();
       if (data.success) {
-        if (append) setApplications((prev) => [...prev, ...data.applications]);
-        else setApplications(data.applications || []);
-        setApplicationsHasMore(data.pagination?.hasMore || false);
+        if (append) setApplications((prev) => mergeUniqueById(prev, data.requests || []));
+        else setApplications(data.requests || []);
+        setApplicationsCursor(data.nextCursor ?? null);
       }
     } finally { setApplicationsLoading(false); setApplicationsLoadingMore(false); }
   }, [currentUser?.id]);
 
-  const loadPendingApprovals = React.useCallback(async (page: number, append = false) => {
+  const loadPendingApprovals = React.useCallback(async (cursor: string | null, append = false) => {
     if (!currentUser?.id) return;
     if (append) setPendingLoadingMore(true); else setPendingLoading(true);
     try {
-      const r = await fetchAPI(`/api/users/pending-approvals?page=${page}&pageSize=10`);
+      const r = await fetchAPI(buildTimelinePath("/users/me/pending-join-requests", cursor));
       const data = await r.json();
       if (data.success) {
-        if (append) setPendingApprovals((prev) => [...prev, ...data.approvals]);
-        else setPendingApprovals(data.approvals || []);
-        setPendingHasMore(data.pagination?.hasMore || false);
+        if (append) setPendingApprovals((prev) => mergeUniqueById(prev, data.requests || []));
+        else setPendingApprovals(data.requests || []);
+        setPendingCursor(data.nextCursor ?? null);
       }
     } finally { setPendingLoading(false); setPendingLoadingMore(false); }
   }, [currentUser?.id]);
 
   // Initial loads
-  React.useEffect(() => { if (currentUser?.id && createdPage === 1) loadCreatedTeams(1); }, [currentUser?.id, createdPage, loadCreatedTeams]);
-  React.useEffect(() => { if (createdPage > 1) loadCreatedTeams(createdPage, true); }, [createdPage, loadCreatedTeams]);
-  React.useEffect(() => { if (currentUser?.id && joinedPage === 1) loadJoinedTeams(1); }, [currentUser?.id, joinedPage, loadJoinedTeams]);
-  React.useEffect(() => { if (joinedPage > 1) loadJoinedTeams(joinedPage, true); }, [joinedPage, loadJoinedTeams]);
-  React.useEffect(() => { if (currentUser?.id && applicationsPage === 1) loadApplications(1); }, [currentUser?.id, applicationsPage, loadApplications]);
-  React.useEffect(() => { if (applicationsPage > 1) loadApplications(applicationsPage, true); }, [applicationsPage, loadApplications]);
-  React.useEffect(() => { if (currentUser?.id && pendingPage === 1) loadPendingApprovals(1); }, [currentUser?.id, pendingPage, loadPendingApprovals]);
-  React.useEffect(() => { if (pendingPage > 1) loadPendingApprovals(pendingPage, true); }, [pendingPage, loadPendingApprovals]);
+  React.useEffect(() => {
+    if (!currentUser?.id) return;
+    void Promise.all([
+      loadCreatedTeams(null),
+      loadJoinedTeams(null),
+      loadApplications(null),
+      loadPendingApprovals(null),
+    ]);
+  }, [currentUser?.id, loadCreatedTeams, loadJoinedTeams, loadApplications, loadPendingApprovals]);
+
+  const loadMoreCreated = React.useCallback(() => {
+    if (!createdCursor || createdLoadingMore) return;
+    void loadCreatedTeams(createdCursor, true);
+  }, [createdCursor, createdLoadingMore, loadCreatedTeams]);
+  const loadMoreJoined = React.useCallback(() => {
+    if (!joinedCursor || joinedLoadingMore) return;
+    void loadJoinedTeams(joinedCursor, true);
+  }, [joinedCursor, joinedLoadingMore, loadJoinedTeams]);
+  const loadMoreApplications = React.useCallback(() => {
+    if (!applicationsCursor || applicationsLoadingMore) return;
+    void loadApplications(applicationsCursor, true);
+  }, [applicationsCursor, applicationsLoadingMore, loadApplications]);
+  const loadMorePending = React.useCallback(() => {
+    if (!pendingCursor || pendingLoadingMore) return;
+    void loadPendingApprovals(pendingCursor, true);
+  }, [pendingCursor, pendingLoadingMore, loadPendingApprovals]);
 
   const refreshPendingApprovals = async () => {
-    setPendingPage(1);
-    loadPendingApprovals(1);
+    setPendingCursor(null);
+    await loadPendingApprovals(null);
   };
 
   const handleTabChange = (tab: string) => {
@@ -177,13 +208,13 @@ export function useMyTeams() {
     if (!selectedApproval) return;
     setIsProcessing(true);
     try {
-      const r = await fetchAPI(`/api/teams/${selectedApproval.teamId}/members/${selectedApproval.userId}/approve`, { method: "POST" });
+      const r = await fetchAPI(`/teams/${selectedApproval.teamId}/join-requests/${selectedApproval.id}/approve`, { method: "POST" });
       const data = await r.json();
       if (data.success) {
-        setActionMessage("已通过申请"); setIsDetailOpen(false);
+        setActionMessage(t("teams.approved")); setIsDetailOpen(false);
         await refreshPendingApprovals();
-      } else { setActionMessage(data.error || "操作失败"); }
-    } catch { setActionMessage("操作失败，请重试"); }
+      } else { setActionMessage(data.error?.message || t("teams.toasts.approveFailed")); }
+    } catch { setActionMessage(t("teams.toasts.approveFailed")); }
     finally { setIsProcessing(false); }
   };
 
@@ -191,13 +222,13 @@ export function useMyTeams() {
     if (!selectedApproval) return;
     setIsProcessing(true);
     try {
-      const r = await fetchAPI(`/api/teams/${selectedApproval.teamId}/members/${selectedApproval.userId}/reject`, { method: "POST" });
+      const r = await fetchAPI(`/teams/${selectedApproval.teamId}/join-requests/${selectedApproval.id}/reject`, { method: "POST" });
       const data = await r.json();
       if (data.success) {
-        setActionMessage("已拒绝申请"); setIsRejectConfirmOpen(false); setIsDetailOpen(false);
+        setActionMessage(t("teams.rejected")); setIsRejectConfirmOpen(false); setIsDetailOpen(false);
         await refreshPendingApprovals();
-      } else { setActionMessage(data.error || "操作失败"); }
-    } catch { setActionMessage("操作失败，请重试"); }
+      } else { setActionMessage(data.error?.message || t("teams.toasts.rejectFailed")); }
+    } catch { setActionMessage(t("teams.toasts.rejectFailed")); }
     finally { setIsProcessing(false); }
   };
 
@@ -205,12 +236,12 @@ export function useMyTeams() {
     if (!cancelTarget) return;
     setIsCancelling(true);
     try {
-      const r = await fetchAPI(`/api/teams/${cancelTarget}/cancel`, { method: "POST" });
+      const r = await fetchAPI(`/teams/${cancelTarget}/cancel`, { method: "POST" });
       const data = await r.json();
       if (data.success) {
-        setCreatedTeams((prev) => prev.map((t) => (t.id === cancelTarget ? { ...t, status: "cancelled" } : t)));
+        setCreatedTeams((prev) => prev.map((team) => (team.id === cancelTarget ? data.team : team)));
         setActionMessage(t('teams.cancelTeamSuccess')); setCancelTarget(null);
-      } else { setActionMessage(data.error || t('teams.cancelTeamFailed')); }
+      } else { setActionMessage(getApiErrorMessage(data, t('teams.cancelTeamFailed'))); }
     } catch { setActionMessage(t('teams.cancelTeamFailed')); }
     finally { setIsCancelling(false); setTimeout(() => setActionMessage(""), 3000); }
   };
@@ -219,41 +250,37 @@ export function useMyTeams() {
     if (!formTarget) return;
     const targetTeam = createdTeams.find((t) => t.id === formTarget);
     if (!targetTeam) return;
-    const isFull = targetTeam.currentMembers >= targetTeam.maxMembers;
     setIsForming(true);
     try {
-      const r = await fetchAPI(`/api/teams/${formTarget}/form`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isUnderfilled: !isFull }),
-      });
+      const r = await fetchAPI(`/teams/${formTarget}/form`, { method: "POST" });
       const data = await r.json();
       if (data.success) {
-        setCreatedTeams((prev) => prev.map((t) => (t.id === formTarget ? { ...t, status: "formed" } : t)));
+        setCreatedTeams((prev) => prev.map((team) => (team.id === formTarget ? data.team : team)));
         setActionMessage(t('teams.formTeamSuccess')); setFormTarget(null);
-      } else { setActionMessage(data.error || t('teams.formTeamFailed')); }
+      } else { setActionMessage(getApiErrorMessage(data, t('teams.formTeamFailed'))); }
     } catch { setActionMessage(t('teams.formTeamFailed')); }
     finally { setIsForming(false); setTimeout(() => setActionMessage(""), 3000); }
   };
 
-  const activeCreated = createdTeams.filter((t) => ["recruiting", "full", "formed", "ongoing"].includes(t.status));
-  const archivedCreated = createdTeams.filter((t) => ["completed", "cancelled"].includes(t.status));
-  const activeJoined = joinedTeams.filter((t) => ["recruiting", "full", "formed", "ongoing"].includes(t.status));
-  const archivedJoined = joinedTeams.filter((t) => ["completed", "cancelled"].includes(t.status));
+  const activeCreated = createdTeams.filter((team) => ["pending", "formed", "in_progress"].includes(team.lifecycle));
+  const archivedCreated = createdTeams.filter((team) => ["completed", "cancelled", "expired_unformed"].includes(team.lifecycle));
+  const activeJoined = joinedTeams.filter((team) => ["pending", "formed", "in_progress"].includes(team.lifecycle));
+  const archivedJoined = joinedTeams.filter((team) => ["completed", "cancelled", "expired_unformed"].includes(team.lifecycle));
   const pendingApplicationsCount = applications.filter((a) => a.status === "pending").length;
 
   return {
     currentUser, activeTab, applicationSubTab, roleFilter,
-    createdPage, createdHasMore, createdLoadingMore,
-    joinedPage, joinedHasMore, joinedLoadingMore,
-    applicationsPage, applicationsHasMore, applicationsLoadingMore,
-    pendingPage, pendingHasMore, pendingLoadingMore,
+    createdHasMore: Boolean(createdCursor), createdLoadingMore,
+    joinedHasMore: Boolean(joinedCursor), joinedLoadingMore,
+    applicationsHasMore: Boolean(applicationsCursor), applicationsLoadingMore,
+    pendingHasMore: Boolean(pendingCursor), pendingLoadingMore,
     createdTeams, createdLoading, joinedTeams, joinedLoading,
     applications, applicationsLoading, pendingApprovals, pendingLoading,
     selectedApproval, isDetailOpen, isRejectConfirmOpen,
     isProcessing, actionMessage, cancelTarget, isCancelling, formTarget, isForming,
     activeCreated, archivedCreated, activeJoined, archivedJoined,
     pendingApplicationsCount,
-    setCreatedPage, setJoinedPage, setApplicationsPage, setPendingPage,
+    loadMoreCreated, loadMoreJoined, loadMoreApplications, loadMorePending,
     handleTabChange, handleSubTabChange, handleRoleFilterChange,
     handleApprove, handleConfirmReject, handleCancelTeam, handleFormTeam,
     setSelectedApproval, setIsDetailOpen, setIsRejectConfirmOpen,

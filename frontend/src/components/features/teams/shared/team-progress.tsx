@@ -2,12 +2,12 @@
 
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import type { Team } from "@/lib/types";
+import type { TeamDisplayStatus } from "@/lib/team-display";
 
 interface TeamProgressProps {
   current: number;
   max: number;
-  status: Team["status"];
+  status: TeamDisplayStatus;
   showLabel?: boolean;
   size?: "sm" | "md";
 }
@@ -52,7 +52,7 @@ export function TeamProgress({
   // 判断颜色等级
   const getColorLevel = () => {
     // 终态统一 neutral
-    if (status === "cancelled" || status === "completed") {
+    if (status === "cancelled" || status === "completed" || status === "expired_unformed") {
       return { bar: "bg-stone-400", track: "bg-stone-200 dark:bg-stone-700" };
     }
     if (status === "full") {
@@ -70,7 +70,7 @@ export function TeamProgress({
   };
 
   const colors = getColorLevel();
-  const isUrgent = fillRatio >= 0.8 && status !== "full" && status !== "cancelled" && status !== "completed";
+  const isUrgent = fillRatio >= 0.8 && status === "recruiting";
   const isFull = status === "full";
 
   // 显示文案

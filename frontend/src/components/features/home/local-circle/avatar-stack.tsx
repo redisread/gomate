@@ -1,13 +1,11 @@
 /**
- * P0-D T2 (task #176) — 头像堆叠（URL 数组版，T2/T3 共用）
+ * P0-D T3 (task #176) — 邻近队伍头像堆叠（URL 数组版）
  *
  * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §6.2
  *   - 最大 5 个头像，超过显示「+N」
  *   - sm=24px / md=32px；堆叠间隔 -8px（重叠 1/3）
- *   - tooltip「过去 7 天参与过此地点行动」（由消费方传 title）
- *
  * 与队伍卡片中的 AvatarStack（member 对象版）区分：
- * 本组件接受 avatar URL 数组（来自 local-circle API 的 avatarStack / neighborAvatars）。
+ * 本组件接受 local-circle 个性化 neighborAvatars URL 数组。
  */
 
 import * as React from "react";

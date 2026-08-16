@@ -4,6 +4,7 @@ import { LocationCoverImage } from "@/components/ui/lazy-image";
 import type { SessionUser, Team } from "@/lib/types";
 import { useMemberHome } from "./use-member-home";
 import { isTeamInProgress, selectNextMemberTeam } from "./member-home-utils";
+import { formatTeamStart } from "@/lib/team-display";
 
 interface HomeMemberExperienceProps {
   currentUser: SessionUser;
@@ -65,7 +66,8 @@ export function HomeMemberExperience({ currentUser, publicTeams }: HomeMemberExp
 
 function NextTripCard({ team, inProgress }: { team: Team; inProgress: boolean }) {
   const { t } = useI18n(["home"]);
-  const coverImage = team.location?.coverImage;
+  const coverImage = team.location?.coverImageUrl;
+  const start = formatTeamStart(team);
 
   return (
     <article className="group relative h-[24rem] overflow-hidden rounded-[2rem] bg-neutral-900 text-white shadow-warm-xl ring-1 ring-black/10" data-testid="member-next-trip">
@@ -82,11 +84,11 @@ function NextTripCard({ team, inProgress }: { team: Team; inProgress: boolean })
         <div className="mt-auto">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{team.title}</h2>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/75">
-            <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-4 w-4" aria-hidden="true" />{team.date}{team.time ? ` · ${team.time}` : ""}</span>
+            <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-4 w-4" aria-hidden="true" />{start.date}{start.time ? ` · ${start.time}` : ""}</span>
             {team.location?.name && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" aria-hidden="true" />{team.location.name}</span>}
           </div>
           <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-white/20 pt-5">
-            <span className="inline-flex items-center gap-2 font-mono text-sm font-bold"><Users className="h-4 w-4" aria-hidden="true" />{team.currentMembers} / {team.maxMembers}</span>
+            <span className="inline-flex items-center gap-2 font-mono text-sm font-bold"><Users className="h-4 w-4" aria-hidden="true" />{team.activeParticipantCount} / {team.maxParticipants}</span>
             <a href={`/teams/${team.id}`} className="group/link inline-flex min-h-11 items-center gap-2 rounded-full bg-primary-50 px-5 py-3 text-sm font-bold text-amber-950 transition-transform duration-150 active:scale-95">
               {t("home.memberDashboard.viewTrip")}
               <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover/link:translate-x-1" aria-hidden="true" />
@@ -108,13 +110,16 @@ function NoTripPanel({ teams }: { teams: Team[] }) {
       <h2 className="mt-3 text-2xl font-bold text-foreground">{t("home.memberDashboard.recommendationTitle")}</h2>
       {suggestions.length > 0 ? (
         <div className="mt-6 space-y-3">
-          {suggestions.map((team) => (
+          {suggestions.map((team) => {
+            const start = formatTeamStart(team);
+            return (
             <a key={team.id} href={`/teams/${team.id}`} className="group flex min-h-20 items-center gap-4 rounded-2xl bg-card p-3 ring-1 ring-border/70 transition-transform duration-150 active:scale-[0.98]">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-brand-subtle text-primary"><Users className="h-5 w-5" aria-hidden="true" /></div>
-              <div className="min-w-0 flex-1"><h3 className="truncate text-sm font-bold text-card-foreground">{team.title}</h3><p className="mt-1 truncate text-xs text-muted-foreground">{team.date}{team.time ? ` · ${team.time}` : ""}{team.location?.name ? ` · ${team.location.name}` : ""}</p></div>
+              <div className="min-w-0 flex-1"><h3 className="truncate text-sm font-bold text-card-foreground">{team.title}</h3><p className="mt-1 truncate text-xs text-muted-foreground">{start.date}{start.time ? ` · ${start.time}` : ""}{team.location?.name ? ` · ${team.location.name}` : ""}</p></div>
               <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150 group-hover:translate-x-1" aria-hidden="true" />
             </a>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <p className="mt-4 text-sm leading-6 text-muted-foreground">{t("home.memberDashboard.noRecommendation")}</p>

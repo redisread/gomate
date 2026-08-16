@@ -1,75 +1,162 @@
-/**
- * P0-D T1 (task #175) — GET /api/local-circle/home
- *
- * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §3.4
- *
- * Query:
- *   - cityId: string (可选) — 前端传用户 city；缺省时服务端 fallback 到默认城市（深圳）
- *     （spec §3.4「匿名 fallback 深圳」+ Martin PR #406 NIT 方案 a：省前端 /cities 往返）
- *
- * Response（200）：LocalCircle（见 services/local-circle.ts）
- *
- * 匿名可访问：cityId 是纯输入不依赖 session；
- * 登录用户附带 currentUserId 用于邻居队伍关联。
- */
-
+import { and, eq, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
-import { eq } from "drizzle-orm";
-import { logger } from "../../lib/logger";
-import { createDb } from "../../db";
-import * as schema from "../../db/schema";
-import { createAuth, type Env } from "../../lib/auth";
-import { APIErrors } from "../../lib/api-errors";
-import { getLocalCircleHome } from "../../services/local-circle";
+import { z } from "zod";
 
-/** 默认城市名（cityId 缺省时 fallback，与 service 层 cityName fallback 语义一致） */
-const DEFAULT_CITY_NAME = "深圳";
+import { createDb, type Db } from "../../db";
+import * as schema from "../../db/schema";
+import { APIErrors } from "../../lib/api-errors";
+import type { Env } from "../../lib/auth";
+import { getActiveSession } from "../../lib/active-session";
+import { logger } from "../../lib/logger";
+import {
+  getLocalCircleHome,
+  LocalCircleRegionError,
+  type LocalCircleLanguage,
+} from "../../services/local-circle";
+
+const SHENZHEN_REGION_ID = "region-cn-shenzhen";
+const languageSchema = z.enum(["zh-CN", "en", "ja"]);
+const regionIdSchema = z.string().trim().min(1).max(128);
 
 const home = new Hono<{ Bindings: Env }>();
 
+type ResolvedRegion = {
+  id: string;
+};
+
+function safeErrorMetadata(error: unknown) {
+  return {
+    errorType: error instanceof Error ? error.name : "UnknownError",
+  };
+}
+
+function resolveLanguage(
+  requested: string | undefined,
+  acceptLanguage: string | undefined,
+): LocalCircleLanguage | null {
+  if (requested !== undefined) {
+    const parsed = languageSchema.safeParse(requested);
+    return parsed.success ? parsed.data : null;
+  }
+  const primary = acceptLanguage?.split(",", 1)[0]?.trim().toLowerCase();
+  if (primary?.startsWith("en")) return "en";
+  if (primary?.startsWith("ja")) return "ja";
+  return "zh-CN";
+}
+
+async function findOpenCityById(db: Db, id: string) {
+  const [region] = await db
+    .select({ id: schema.region.id })
+    .from(schema.region)
+    .where(
+      and(
+        eq(schema.region.id, id),
+        eq(schema.region.level, "city"),
+        eq(schema.region.serviceEnabled, true),
+      ),
+    )
+    .limit(1);
+  return region ?? null;
+}
+
+async function resolveRegion(
+  db: Db,
+  requestedRegionId: string | undefined,
+  cfIpCity: string | undefined,
+): Promise<ResolvedRegion | null> {
+  if (requestedRegionId !== undefined) {
+    const parsed = regionIdSchema.safeParse(requestedRegionId);
+    if (!parsed.success) return null;
+    return findOpenCityById(db, parsed.data);
+  }
+
+  const cityName = cfIpCity?.trim();
+  if (cityName && cityName.length <= 120) {
+    const [matched] = await db
+      .select({ id: schema.region.id })
+      .from(schema.region)
+      .where(
+        and(
+          eq(schema.region.level, "city"),
+          eq(schema.region.serviceEnabled, true),
+          or(
+            eq(schema.region.name, cityName),
+            sql`lower(${schema.region.nameEn}) = lower(${cityName})`,
+          ),
+        ),
+      )
+      .limit(1);
+    if (matched) return matched;
+  }
+
+  return findOpenCityById(db, SHENZHEN_REGION_ID);
+}
+
 home.get("/", async (c) => {
+  const requestedLanguage = c.req.query("language");
+  const language = resolveLanguage(
+    requestedLanguage,
+    c.req.header("accept-language"),
+  );
+  if (!language) {
+    return c.json(
+      APIErrors.validationError("language must be zh-CN, en or ja"),
+      400,
+    );
+  }
+
   try {
     const db = createDb(c.env.DB);
-
-    // cityId 可选：缺省时服务端 fallback 深圳（方案 a，省前端 /cities 往返）
-    // 空串（cityId=）与缺省一视同仁走 fallback；非空则直接用（未知 id 由 service 走空态 fallback）
-    let cityId = c.req.query("cityId");
-    if (!cityId) {
-      const shenzhen = await db
-        .select({ id: schema.cities.id })
-        .from(schema.cities)
-        .where(eq(schema.cities.name, DEFAULT_CITY_NAME))
-        .limit(1);
-      if (shenzhen.length === 0) {
-        // 连默认城市都没有 → 空态（service emptyResult 语义）
-        return c.json(APIErrors.badRequest("cityId is required and no default city available"), 400);
+    const requestedRegionId = c.req.query("regionId");
+    const region = await resolveRegion(
+      db,
+      requestedRegionId,
+      c.req.header("CF-IPCity"),
+    );
+    if (!region) {
+      if (requestedRegionId !== undefined) {
+        return c.json(
+          APIErrors.badRequest("regionId must reference an enabled city Region"),
+          400,
+        );
       }
-      cityId = shenzhen[0].id;
+      return c.json(
+        APIErrors.serviceUnavailable("Default Region is not configured"),
+        503,
+      );
     }
 
-    // 匿名允许；登录用户拿 id
     let currentUserId: string | null = null;
     try {
-      const authInstance = createAuth(c.env);
-      const session = await authInstance.api.getSession({ headers: c.req.raw.headers });
-      currentUserId = session?.user?.id ?? null;
-    } catch {
-      // getSession 失败静默；走匿名路径
+      const session = await getActiveSession(c.env, c.req.raw.headers);
+      currentUserId = session?.user.id ?? null;
+    } catch (error) {
+      logger.warn(
+        "local_circle_session_lookup_failed",
+        safeErrorMetadata(error),
+      );
     }
 
     const result = await getLocalCircleHome({
       db,
-      kv: c.env.GOMATE_KV,
-      cityId,
+      kv: c.env.CACHE_KV,
+      regionId: region.id,
+      language,
       currentUserId,
-      // #184：SWR 后台重算（stale 命中时返回旧数据 + 后台刷新）
-      waitUntil: (promise) => c.executionCtx.waitUntil(promise),
     });
-
-    return c.json(result);
-  } catch (err) {
-    logger.error("[local-circle/home] failed", err);
-    return c.json(APIErrors.internalError("Failed to fetch local circle home"), 500);
+    return c.json({ success: true as const, ...result });
+  } catch (error) {
+    if (error instanceof LocalCircleRegionError) {
+      return c.json(
+        APIErrors.badRequest("regionId must reference an enabled city Region"),
+        400,
+      );
+    }
+    logger.error("local_circle_home_get_failed", safeErrorMetadata(error));
+    return c.json(
+      APIErrors.internalError("Failed to fetch local circle home"),
+      500,
+    );
   }
 });
 

@@ -1,137 +1,204 @@
-/**
- * GoMate 共享类型定义入口
- * 供 api、frontend、mobile 各子包共享使用
- */
-
 export * from "./enums";
 export * from "./team-checklist";
-// 显式 import 以便本文件 Team 接口的 checklist 字段可引用（export * 不引入 local scope）
+
+import type {
+  ActivityType,
+  Difficulty,
+  LocationStatus,
+  RecruitmentStatus,
+  RegionLevel,
+  StoryStatus,
+  TeamJoinRequestStatus,
+  TeamLifecycle,
+  TeamMemberRole,
+  UserGender,
+  UserLevel,
+  UserRole,
+  UserStatus,
+} from "./enums";
 import type { TeamChecklist } from "./team-checklist";
 
-/** ISO 格式时间戳 */
+/** API timestamps are ISO 8601 strings; D1 stores Unix milliseconds. */
 export type Timestamp = string;
 
-/** 地理坐标 */
 export interface Coordinates {
   lat: number;
   lng: number;
 }
 
-/** 城市信息 */
-export interface City {
+export interface Region {
   id: string;
-  adcode: string;
+  countryCode: string;
+  parentId: string | null;
   name: string;
-  pinyin?: string;
-  province?: string;
-  level: "city" | "district";
+  nameEn: string | null;
+  slug: string;
+  code: string | null;
+  level: RegionLevel;
+  timezone: string | null;
+  centerLatitude: number | null;
+  centerLongitude: number | null;
+  serviceEnabled: boolean;
   isHot: boolean;
-  parentId?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  sortOrder: number;
 }
 
-/** 标签 */
 export interface Tag {
   id: string;
   name: string;
-  type: "location" | "activity";
+  slug: string;
 }
 
-/** 地点基础信息 */
+export interface HikingLocationExtra {
+  difficulty?: Difficulty;
+  durationMin?: number;
+  durationMax?: number;
+  distanceKm?: number;
+  elevationGainM?: number;
+  bestSeasons?: string[];
+  gearEssential?: string[];
+  gearOptional?: string[];
+  overview?: string | null;
+  tips?: string[];
+  warnings?: string[];
+}
+
+export interface LocationExtra {
+  hiking?: HikingLocationExtra;
+  facilities?: string[];
+}
+
 export interface Location {
   id: string;
+  regionId: string;
   name: string;
   slug: string;
-  subtitle?: string;
+  supportedActivityTypes: ActivityType[];
+  status: LocationStatus;
+  subtitle: string | null;
   description: string;
-  address?: string;
-  cityId: string;
-  cityName?: string;
-  difficulty?: "easy" | "moderate" | "hard" | "expert";
-  duration?: string;
-  distance?: string;
-  elevation?: string;
-  equipmentNeeded?: string[];
-  bestSeason: string[];
-  coverImage: string;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+  coverImageUrl: string;
   images: string[];
-  coordinates: Coordinates;
-  extra?: {
-    facilities?: string[];
-    tips?: string;
-    warnings?: string[];
-  };
+  extra: LocationExtra;
+  createdByUserId: string | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  region?: Region;
   tags?: Tag[];
+}
+
+export interface UserExtra {
+  level: UserLevel;
+  completedHikes: number;
+  wechat: string | null;
+  city: string | null;
+}
+
+export interface SessionUser {
+  id: string;
+  name: string;
+  nickname: string | null;
+  email: string;
+  emailVerified: boolean;
+  image: string | null;
+  bio: string | null;
+  gender: UserGender | null;
+  birthday: Timestamp | null;
+  role: UserRole;
+  status: UserStatus;
+  extra: UserExtra;
+  createdAt: Timestamp;
+}
+
+export interface TeamParticipant {
+  userId: string;
+  role: TeamMemberRole;
+  joinedAt: Timestamp;
+  leftAt: Timestamp | null;
+  user?: Pick<SessionUser, "id" | "name" | "nickname" | "image" | "bio" | "gender" | "birthday" | "extra">;
+}
+
+export interface TeamJoinRequest {
+  id: string;
+  teamId: string;
+  userId: string;
+  status: TeamJoinRequestStatus;
+  message: string | null;
+  decidedByUserId: string | null;
+  decidedAt: Timestamp | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-
-/** 队伍成员 */
-export interface TeamMember {
-  id: string;
-  userId: string;
-  name: string;
-  nickname?: string | null;
-  image: string | null;
-  bio: string | null;
-  level: string;
-  status?: "pending" | "approved" | "rejected" | "leave_pending";
-  joinedAt: Timestamp | null;
-  wechat?: string;
-  gender?: string | null;
-  birthday?: Timestamp | null;
-  extra?: string | null;
-}
-
-/** 队伍信息 */
 export interface Team {
   id: string;
   locationId: string;
+  leaderId: string;
+  activityType: ActivityType;
   title: string;
-  description: string;
-  date: string;
-  time: string;
-  duration: string;
-  durationMin?: number;
-  maxMembers: number;
-  currentMembers: number;
+  description: string | null;
+  startAt: Timestamp;
+  endAt: Timestamp;
+  maxParticipants: number;
+  activeParticipantCount: number;
   requirements: string[];
-  icon?: string;
-  leader: {
-    id: string;
-    name: string;
-    nickname?: string | null;
-    avatar: string;
-    level: string;
-    completedHikes: number;
-    bio: string;
-    wechat?: string;
-    gender?: string | null;
-    birthday?: Timestamp | null;
-    extra?: string | null;
-  };
-  status: "recruiting" | "full" | "formed" | "cancelled" | "completed";
+  recruitmentStatus: RecruitmentStatus;
+  formedAt: Timestamp | null;
+  cancelledAt: Timestamp | null;
+  lifecycle: TeamLifecycle;
+  isFull: boolean;
+  checklist: TeamChecklist | null;
   createdAt: Timestamp;
-  members?: TeamMember[];
+  updatedAt: Timestamp;
+  leader?: Pick<SessionUser, "id" | "name" | "nickname" | "image" | "bio" | "extra">;
+  participants?: TeamParticipant[];
   location?: Location;
-  /** task #163：行动本 checklist（未填 = undefined） */
-  checklist?: TeamChecklist;
+  tags?: Tag[];
 }
 
-/** 用户公开资料 */
+export interface Story {
+  id: string;
+  authorId: string;
+  teamId: string | null;
+  locationId: string | null;
+  title: string | null;
+  summary: string | null;
+  content: string;
+  images: string[];
+  status: StoryStatus;
+  viewCount: number;
+  likeCount: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  displayTitle: string;
+  author: {
+    id: string;
+    name: string;
+    image: string | null;
+  } | null;
+  location: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+  team: {
+    id: string;
+    title: string;
+  } | null;
+  tags: Tag[];
+  isLiked: boolean;
+}
+
 export interface UserPublicProfile {
   id: string;
   name: string;
   nickname: string | null;
   image: string | null;
   bio: string | null;
-  gender: string | null;
-  birthday: Timestamp | null;
-  level: string;
-  completedHikes: number;
-  extra: string | null;
+  extra: UserExtra;
   createdAt: Timestamp;
   stats: {
     createdTeams: number;
@@ -140,59 +207,42 @@ export interface UserPublicProfile {
   };
 }
 
-/** API 通用响应格式 */
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
-/** 私信会话 */
 export interface Conversation {
   id: string;
   teamId: string;
-  userId: string;
-  leaderId: string;
-  initiatorId: string;
-  lastMessageContent?: string;
-  lastMessageAt?: number;
-  createdAt: number;
-  updatedAt: number;
-  otherUser?: {
-    id: string;
-    name: string;
-    nickname?: string | null;
-    image: string | null;
-  };
-  unreadCount?: number;
+  memberUserId: string;
+  initiatedByUserId: string;
+  lastMessagePreview: string | null;
+  lastMessageAt: Timestamp | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  team: { id: string; title: string };
+  otherUser: Pick<SessionUser, "id" | "name" | "nickname" | "image"> | null;
+  unreadCount: number;
 }
 
-/** 私信消息 */
 export interface Message {
   id: string;
   conversationId: string;
   senderId: string;
   content: string;
-  isRead: boolean;
-  readAt?: number;
-  createdAt: number;
-  sender?: {
-    id: string;
-    name: string;
-    nickname?: string | null;
-    image: string | null;
-  };
+  readAt: Timestamp | null;
+  createdAt: Timestamp;
+  sender?: Pick<SessionUser, "id" | "name" | "nickname" | "image"> | null;
 }
 
-/** 分页信息 */
-export interface Pagination {
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
+export interface CursorPage<T> {
+  items: T[];
+  nextCursor: string | null;
 }
 
-/** 分页响应 */
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  pagination: Pagination;
+export interface ApiError {
+  code: string;
+  message: string;
+}
+
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: ApiError;
 }

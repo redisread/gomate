@@ -20,5 +20,5 @@ import type { TeamActionbookEvent } from "@gomate/types";
  */
 export function emitTeamActionbookEvent(event: TeamActionbookEvent): void {
   // structured log：字段稳定，方便 P1 立项时按事件类型回填推送逻辑
-  logger.info("[actionbook-event]", event);
+  logger.info("team_actionbook_event_emitted", event);
 }

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { CalendarDays, ArrowRight } from "lucide-react";
 import type { Team } from "@/lib/types";
+import { getTeamDisplayStatus } from "@/lib/team-display";
 import { TeamProgress, TeamUrgencyLabel, TeamLeaderMini } from "@/components/features/teams/shared";
 
 interface TeamCardProps {
@@ -8,20 +9,19 @@ interface TeamCardProps {
 }
 
 export function TeamCard({ team }: TeamCardProps) {
-
   const dateInfo = React.useMemo(() => {
-    if (!team.date) return null;
-    const parts = team.date.split("-");
-    if (parts.length < 3) return null;
-    const month = parseInt(parts[1], 10);
-    const day = parseInt(parts[2], 10);
+    const start = new Date(team.startAt);
+    if (Number.isNaN(start.getTime())) return null;
+    const month = start.getUTCMonth() + 1;
+    const day = start.getUTCDate();
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     return {
       month: monthNames[month - 1] ?? `${month}`,
       day: String(day),
-      full: team.date,
+      full: team.startAt,
     };
-  }, [team.date]);
+  }, [team.startAt]);
+  const displayStatus = getTeamDisplayStatus(team);
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
@@ -55,10 +55,10 @@ export function TeamCard({ team }: TeamCardProps) {
 
           <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
             <TeamUrgencyLabel
-              status={team.status}
-              currentMembers={team.currentMembers}
-              maxMembers={team.maxMembers}
-              date={team.date}
+              status={displayStatus}
+              activeParticipantCount={team.activeParticipantCount}
+              maxParticipants={team.maxParticipants}
+              startAt={team.startAt}
               variant="badge"
             />
             <ArrowRight className="h-3.5 w-3.5 text-stone-400 dark:text-stone-600 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150" />
@@ -66,9 +66,9 @@ export function TeamCard({ team }: TeamCardProps) {
         </div>
 
         <TeamProgress
-          current={team.currentMembers}
-          max={team.maxMembers}
-          status={team.status}
+          current={team.activeParticipantCount}
+          max={team.maxParticipants}
+          status={displayStatus}
           showLabel={true}
           size="sm"
         />

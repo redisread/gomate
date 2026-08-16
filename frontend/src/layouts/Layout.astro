@@ -30,6 +30,9 @@ const {
   showNavbar = true,
   showFooter = true,
 } = Astro.props;
+const resolvedOgImage = ogImage
+  ? new URL(ogImage, Astro.url.origin).toString()
+  : undefined;
 
 // 从 middleware 设置的 locals 或 cookie 读取 locale
 const localsLocale = (Astro.locals as any)?.locale as Locale | undefined;
@@ -171,6 +174,9 @@ const isDark = themeCookie === "dark" || (!themeCookie && false); // 默认 ligh
 
 // 获取当前路径（不含 locale 前缀）
 const url = new URL(Astro.request.url);
+const canonicalUrl = new URL(Astro.url);
+canonicalUrl.search = "";
+canonicalUrl.hash = "";
 const pathSegments = url.pathname.split("/").filter(Boolean);
 const hasLocalePrefix = SUPPORTED_LOCALES.includes(pathSegments[0] as Locale);
 const cleanSegments = hasLocalePrefix ? pathSegments.slice(1) : pathSegments;
@@ -201,16 +207,16 @@ function getHreflangUrl(loc: Locale) {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={Astro.url.href} />
-    {ogImage && <meta property="og:image" content={ogImage} />}
-    {ogImage && <meta property="og:image:width" content="1200" />}
-    {ogImage && <meta property="og:image:height" content="630" />}
+    <meta property="og:url" content={canonicalUrl.href} />
+    {resolvedOgImage && <meta property="og:image" content={resolvedOgImage} />}
+    {resolvedOgImage && <meta property="og:image:width" content="1200" />}
+    {resolvedOgImage && <meta property="og:image:height" content="630" />}
 
     {/* Twitter Card meta tags */}
-    <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
+    <meta name="twitter:card" content={resolvedOgImage ? "summary_large_image" : "summary"} />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    {ogImage && <meta name="twitter:image" content={ogImage} />}
+    {resolvedOgImage && <meta name="twitter:image" content={resolvedOgImage} />}
 
     {/* ═══════════════════════════════════════════════════════════════
        Phase 3 Task 2: Critical CSS 内联优化
@@ -230,8 +236,6 @@ function getHreflangUrl(loc: Locale) {
     {/* 字体：当前使用系统字体栈（PingFang SC 等），无需预连接外部字体 */}
 
     {/* API 域名预连接（减少 TTFB） */}
-    <link rel="dns-prefetch" href="https://api.gomate.live" />
-    <link rel="preconnect" href="https://api.gomate.live" crossorigin />
 
     {/* R2 存储预连接（图片加载优化） */}
     <link rel="dns-prefetch" href="https://cos.gomate.live" />

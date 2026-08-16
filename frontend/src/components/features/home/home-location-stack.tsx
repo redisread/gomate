@@ -51,7 +51,7 @@ export function HomeLocationStack({ locations }: { locations: Location[] }) {
       >
         {featuredLocations.map((location, index) => {
           const style = CARD_STYLES[index];
-          const address = location.address || location.cityName || t("locations.defaultCity");
+          const address = location.address || location.region?.name || t("locations.defaultRegion");
 
           return (
             <a
@@ -64,7 +64,7 @@ export function HomeLocationStack({ locations }: { locations: Location[] }) {
                 className={`relative h-full overflow-hidden rounded-[2rem] border border-foreground/10 shadow-warm-xl ring-1 ring-black/5 transition-[transform,box-shadow] duration-300 group-hover:-translate-y-2 group-hover:shadow-brand-glow-lg dark:ring-white/10 ${style.surface}`}
               >
                 <LocationCoverImage
-                  src={location.coverImage}
+                  src={location.coverImageUrl}
                   alt=""
                   priority
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none"
@@ -73,7 +73,7 @@ export function HomeLocationStack({ locations }: { locations: Location[] }) {
 
                 <span className="absolute left-4 top-4 inline-flex max-w-[calc(100%-2rem)] items-center gap-1.5 truncate rounded-full bg-black/30 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
                   <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  {location.cityName}
+                  {location.region?.name}
                 </span>
 
                 <div className="absolute inset-x-5 bottom-5 text-white">

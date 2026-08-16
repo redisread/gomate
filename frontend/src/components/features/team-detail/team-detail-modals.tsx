@@ -9,11 +9,11 @@ import { AnimatedProgress } from "./team-detail-ui";
 
 export function JoinBottomSheet({
   open, onClose, onJoin, isJoining, joinMessage, setJoinMessage,
-  remaining, fillRatio, currentMembers, maxMembers,
+  remaining, fillRatio, activeParticipantCount, maxParticipants,
 }: {
   open: boolean; onClose: () => void; onJoin: () => void; isJoining: boolean;
   joinMessage: string; setJoinMessage: (v: string) => void;
-  remaining: number; fillRatio: number; currentMembers: number; maxMembers: number;
+  remaining: number; fillRatio: number; activeParticipantCount: number; maxParticipants: number;
 }) {
   const { t } = useI18n(["teams"]);
 
@@ -44,7 +44,7 @@ export function JoinBottomSheet({
           </div>
           <div className="mb-4 bg-amber-50/60 rounded-2xl p-3.5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">{t('teams.alreadyJoinedCount').replace('{current}', String(currentMembers)).replace('{max}', String(maxMembers))}</span>
+              <span className="text-xs text-muted-foreground">{t('teams.alreadyJoinedCount').replace('{current}', String(activeParticipantCount)).replace('{max}', String(maxParticipants))}</span>
               <span className="text-xs font-semibold text-amber-600">{fillRatio}%</span>
             </div>
             <AnimatedProgress ratio={fillRatio} isFull={false} />
@@ -74,11 +74,11 @@ export function JoinBottomSheet({
 
 export function JoinDesktopModal({
   open, onClose, onJoin, isJoining, joinMessage, setJoinMessage,
-  remaining, fillRatio, currentMembers, maxMembers,
+  remaining, fillRatio, activeParticipantCount, maxParticipants,
 }: {
   open: boolean; onClose: () => void; onJoin: () => void; isJoining: boolean;
   joinMessage: string; setJoinMessage: (v: string) => void;
-  remaining: number; fillRatio: number; currentMembers: number; maxMembers: number;
+  remaining: number; fillRatio: number; activeParticipantCount: number; maxParticipants: number;
 }) {
   const { t } = useI18n(["teams"]);
 
@@ -103,7 +103,7 @@ export function JoinDesktopModal({
         </div>
         <div className="mb-4 bg-amber-50/60 rounded-2xl p-3.5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted-foreground">{t('teams.alreadyJoinedCount').replace('{current}', String(currentMembers)).replace('{max}', String(maxMembers))}</span>
+            <span className="text-xs text-muted-foreground">{t('teams.alreadyJoinedCount').replace('{current}', String(activeParticipantCount)).replace('{max}', String(maxParticipants))}</span>
             <span className="text-xs font-semibold text-amber-600">{fillRatio}%</span>
           </div>
           <AnimatedProgress ratio={fillRatio} isFull={false} />

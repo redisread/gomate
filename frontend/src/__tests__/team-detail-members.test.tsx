@@ -24,61 +24,57 @@ vi.mock("@/hooks/useI18n", () => ({
 
 const members: TeamMember[] = [
   {
-    id: "leader-row",
-    userId: "leader-1",
-    name: "Leader",
-    nickname: null,
-    avatar: null,
-    bio: null,
-    level: "advanced",
-    status: "approved",
-    joinedAt: "2026-01-01",
-  },
-  {
-    id: "member-row",
     userId: "member-1",
-    name: "Ada",
-    nickname: null,
-    avatar: null,
-    bio: null,
-    level: "beginner",
-    status: "approved",
+    role: "member",
     joinedAt: "2026-01-01",
+    leftAt: null,
+    user: {
+      id: "member-1",
+      name: "Ada",
+      nickname: null,
+      image: null,
+      bio: null,
+      gender: null,
+      birthday: null,
+      extra: { level: "beginner", completedHikes: 0, wechat: null, city: null },
+    },
   },
   {
-    id: "pending-row",
-    userId: "pending-1",
-    name: "Pending",
-    nickname: null,
-    avatar: null,
-    bio: null,
-    level: "beginner",
-    status: "pending",
-    joinedAt: null,
+    userId: "left-1",
+    role: "member",
+    joinedAt: "2026-01-01",
+    leftAt: "2026-02-01",
+    user: {
+      id: "left-1",
+      name: "Left",
+      nickname: null,
+      image: null,
+      bio: null,
+      gender: null,
+      birthday: null,
+      extra: { level: "beginner", completedHikes: 0, wechat: null, city: null },
+    },
   },
 ];
 
 describe("MemberAvatarGrid", () => {
-  it("shows message action only for approved non-leader members when viewed by leader", () => {
+  it("shows message action only for active participants when viewed by the leader", () => {
     render(
       <MemberAvatarGrid
         members={members}
-        leaderId="leader-1"
         teamId="team-1"
         canMessageMembers
       />
     );
 
     expect(screen.getByRole("button", { name: "Message Ada" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Message Leader" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Message Pending" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Message Left" })).not.toBeInTheDocument();
   });
 
   it("hides member message actions for non-leader viewers", () => {
     render(
       <MemberAvatarGrid
         members={members}
-        leaderId="leader-1"
         teamId="team-1"
         canMessageMembers={false}
       />

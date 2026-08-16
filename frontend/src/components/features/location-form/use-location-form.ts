@@ -1,323 +1,436 @@
 "use client";
 
 import * as React from "react";
-import { fetchAPI, apiPut } from "@/lib/api";
-import type { Location, City } from "@/lib/types";
+import { apiPost, apiPut, fetchAPI } from "@/lib/api";
+import { fetchSelectableRegions } from "@/lib/regions";
+import { useI18n } from "@/hooks/useI18n";
+import type {
+  ActivityType,
+  Difficulty,
+  Location,
+  LocationStatus,
+  Region,
+  Tag,
+} from "@/lib/types";
 
-/* ================================================================
-   类型
-   ================================================================ */
-
-export interface FormData {
+export interface LocationFormData {
   name: string;
-  type: string;
+  slug: string;
+  supportedActivityTypes: ActivityType[];
+  status: LocationStatus;
   subtitle: string;
   description: string;
   address: string;
-  cityId: string;
-  bestSeason: string[];
-  coverImage: string;
+  regionId: string;
+  latitude: number | string;
+  longitude: number | string;
+  coverImageUrl: string;
   images: string[];
-  lat: number | string;
-  lng: number | string;
-  extra: { facilities: string[]; tips: string[]; warnings: string[] };
+  extra: {
+    hiking: {
+      difficulty: Difficulty | "";
+      durationMin: number | string;
+      durationMax: number | string;
+      distanceKm: number | string;
+      elevationGainM: number | string;
+      bestSeasons: string[];
+      gearEssential: string[];
+      gearOptional: string[];
+      overview: string;
+      tips: string[];
+      warnings: string[];
+    };
+    facilities: string[];
+  };
   tagIds: string[];
-  // P0-B T4（task #171）§8：决策信息 · 停车 tri-state + 装备清单（前端结构，后端 CSV）
-  parkingAvailable: boolean | null;
-  parkingInfo: string;
-  gearEssential: string[];
-  gearOptional: string[];
+}
+
+export type FormData = LocationFormData;
+
+export interface LocationMutationPayload {
+  regionId: string;
+  name: string;
+  slug?: string;
+  supportedActivityTypes: ActivityType[];
+  status: LocationStatus;
+  subtitle: string | null;
+  description: string;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+  coverImageUrl: string;
+  images: string[];
+  extra: {
+    hiking?: {
+      difficulty?: Difficulty;
+      durationMin?: number;
+      durationMax?: number;
+      distanceKm?: number;
+      elevationGainM?: number;
+      bestSeasons?: string[];
+      gearEssential?: string[];
+      gearOptional?: string[];
+      overview?: string | null;
+      tips?: string[];
+      warnings?: string[];
+    };
+    facilities?: string[];
+  };
+}
+
+interface LocationResponse {
+  success: boolean;
+  location: Location;
 }
 
 interface UseLocationFormReturn {
-  // Data
+  mode: "create" | "edit";
   location: Location | null;
-  cities: City[];
-  allTags: Array<{ id: string; name: string; type: string }>;
-  // Form state
-  formData: FormData;
+  regions: Region[];
+  allTags: Tag[];
+  formData: LocationFormData;
   errors: Record<string, string | undefined>;
+  isLoading: boolean;
   isSaving: boolean;
   isDirty: boolean;
   saveMessage: { type: "success" | "error"; text: string } | null;
   showDraftBanner: boolean;
-  pendingDraft: FormData | null;
-  // Field updates
-  updateField: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
+  pendingDraft: LocationFormData | null;
+  updateField: <K extends keyof LocationFormData>(key: K, value: LocationFormData[K]) => void;
   touch: (key: string, value: string) => void;
-  // Actions
   handleSave: () => Promise<void>;
   handleDiscard: () => void;
   handleRestoreDraft: () => void;
   handleDiscardDraft: () => void;
 }
 
-/* ================================================================
-   常量
-   ================================================================ */
-
-const SEASON_ZH_TO_KEY: Record<string, string> = {
-  春季: "spring", 夏季: "summer", 秋季: "autumn", 冬季: "winter",
+const EMPTY_HIKING: LocationFormData["extra"]["hiking"] = {
+  difficulty: "",
+  durationMin: "",
+  durationMax: "",
+  distanceKm: "",
+  elevationGainM: "",
+  bestSeasons: [],
+  gearEssential: [],
+  gearOptional: [],
+  overview: "",
+  tips: [],
+  warnings: [],
 };
 
-function normalizeSeasons(seasons: string[]): string[] {
-  return seasons.map((s) => SEASON_ZH_TO_KEY[s] ?? s);
+export const DEFAULT_LOCATION_FORM: LocationFormData = {
+  name: "",
+  slug: "",
+  supportedActivityTypes: [],
+  status: "draft",
+  subtitle: "",
+  description: "",
+  address: "",
+  regionId: "",
+  latitude: "",
+  longitude: "",
+  coverImageUrl: "",
+  images: [],
+  extra: {
+    hiking: { ...EMPTY_HIKING },
+    facilities: [],
+  },
+  tagIds: [],
+};
+
+function cleanStrings(values: string[]): string[] {
+  return values.map((value) => value.trim()).filter(Boolean);
 }
 
-const DEFAULT_FORM: FormData = {
-  name: "", type: "", subtitle: "", description: "", address: "",
-  cityId: "", bestSeason: [], coverImage: "", images: [],
-  lat: "", lng: "", extra: { facilities: [], tips: [], warnings: [] },
-  tagIds: [],
-  parkingAvailable: null, parkingInfo: "", gearEssential: [], gearOptional: [],
-};
+function optionalNumber(value: number | string): number | undefined {
+  if (value === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
 
-const VALIDATION_RULES: Record<string, (v: string) => string | undefined> = {
-  name: (v) => {
-    if (!v.trim()) return "名称不能为空";
-    if (v.trim().length > 50) return "名称不能超过50个字符";
-  },
-  description: (v) => {
-    if (!v.trim()) return "描述不能为空";
-    if (v.trim().length < 10) return "描述至少需要10个字符";
-  },
-  cityId: (v) => { if (!v) return "请选择城市"; },
-  lat: (v) => {
-    if (v === "" || v === undefined) return undefined;
-    const n = parseFloat(String(v));
-    if (isNaN(n) || n < -90 || n > 90) return "纬度无效 (-90 到 90)";
-  },
-  lng: (v) => {
-    if (v === "" || v === undefined) return undefined;
-    const n = parseFloat(String(v));
-    if (isNaN(n) || n < -180 || n > 180) return "经度无效 (-180 到 180)";
-  },
-};
+export function locationToFormData(location: Location): LocationFormData {
+  const hiking = location.extra.hiking;
+  return {
+    name: location.name,
+    slug: location.slug,
+    supportedActivityTypes: [...location.supportedActivityTypes],
+    status: location.status,
+    subtitle: location.subtitle ?? "",
+    description: location.description,
+    address: location.address ?? "",
+    regionId: location.regionId,
+    latitude: location.latitude,
+    longitude: location.longitude,
+    coverImageUrl: location.coverImageUrl,
+    images: [...location.images],
+    extra: {
+      hiking: {
+        difficulty: hiking?.difficulty ?? "",
+        durationMin: hiking?.durationMin ?? "",
+        durationMax: hiking?.durationMax ?? "",
+        distanceKm: hiking?.distanceKm ?? "",
+        elevationGainM: hiking?.elevationGainM ?? "",
+        bestSeasons: [...(hiking?.bestSeasons ?? [])],
+        gearEssential: [...(hiking?.gearEssential ?? [])],
+        gearOptional: [...(hiking?.gearOptional ?? [])],
+        overview: hiking?.overview ?? "",
+        tips: [...(hiking?.tips ?? [])],
+        warnings: [...(hiking?.warnings ?? [])],
+      },
+      facilities: [...(location.extra.facilities ?? [])],
+    },
+    tagIds: (location.tags ?? []).map((tag) => tag.id),
+  };
+}
 
-/* ================================================================
-   Hook
-   ================================================================ */
+export function locationSaveRedirect(
+  location: Pick<Location, "id" | "status">,
+): string {
+  return location.status === "published"
+    ? `/locations/${location.id}`
+    : `/admin/locations/${location.id}/edit`;
+}
 
-export function useLocationForm(locationId: string): UseLocationFormReturn {
+export function formDataToLocationPayload(form: LocationFormData): LocationMutationPayload {
+  const hiking = form.extra.hiking;
+  const hikingPayload: NonNullable<LocationMutationPayload["extra"]["hiking"]> = {
+    difficulty: hiking.difficulty || undefined,
+    durationMin: optionalNumber(hiking.durationMin),
+    durationMax: optionalNumber(hiking.durationMax),
+    distanceKm: optionalNumber(hiking.distanceKm),
+    elevationGainM: optionalNumber(hiking.elevationGainM),
+    bestSeasons: cleanStrings(hiking.bestSeasons),
+    gearEssential: cleanStrings(hiking.gearEssential),
+    gearOptional: cleanStrings(hiking.gearOptional),
+    overview: hiking.overview.trim() || null,
+    tips: cleanStrings(hiking.tips),
+    warnings: cleanStrings(hiking.warnings),
+  };
+  const hasHiking = Object.values(hikingPayload).some((value) =>
+    Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== "",
+  );
+
+  return {
+    regionId: form.regionId,
+    name: form.name.trim(),
+    slug: form.slug.trim() || undefined,
+    supportedActivityTypes: [...form.supportedActivityTypes],
+    status: form.status,
+    subtitle: form.subtitle.trim() || null,
+    description: form.description.trim(),
+    address: form.address.trim() || null,
+    latitude: Number(form.latitude),
+    longitude: Number(form.longitude),
+    coverImageUrl: form.coverImageUrl.trim(),
+    images: form.images,
+    extra: {
+      hiking: hasHiking ? hikingPayload : undefined,
+      facilities: cleanStrings(form.extra.facilities),
+    },
+  };
+}
+
+function draftKey(locationId?: string): string {
+  return `location-v2-${locationId ? `edit-${locationId}` : "create"}-draft`;
+}
+
+async function jsonOrThrow<T>(response: Response, message: string): Promise<T> {
+  if (!response.ok) throw new Error(message);
+  return response.json() as Promise<T>;
+}
+
+export function useLocationForm(locationId?: string): UseLocationFormReturn {
+  const { t } = useI18n(["admin"]);
+  const mode = locationId ? "edit" : "create";
   const [location, setLocation] = React.useState<Location | null>(null);
-  const [cities, setCities] = React.useState<City[]>([]);
-  const [allTags, setAllTags] = React.useState<Array<{ id: string; name: string; type: string }>>([]);
-  const [formData, setFormData] = React.useState<FormData>(DEFAULT_FORM);
+  const [regions, setRegions] = React.useState<Region[]>([]);
+  const [allTags, setAllTags] = React.useState<Tag[]>([]);
+  const [formData, setFormData] = React.useState<LocationFormData>(DEFAULT_LOCATION_FORM);
   const [errors, setErrors] = React.useState<Record<string, string | undefined>>({});
+  const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDirty, setIsDirty] = React.useState(false);
   const [saveMessage, setSaveMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showDraftBanner, setShowDraftBanner] = React.useState(false);
-  const [pendingDraft, setPendingDraft] = React.useState<FormData | null>(null);
+  const [pendingDraft, setPendingDraft] = React.useState<LocationFormData | null>(null);
 
-  // Auth guard
   React.useEffect(() => {
     fetchAPI("/auth/get-session")
-      .then((r) => r.json())
-      .then((data) => { if (data?.user?.role !== "admin") window.location.href = "/"; })
-      .catch(() => { window.location.href = "/"; });
-  }, []);
-
-  // Load data
-  React.useEffect(() => {
-    Promise.all([
-      fetchAPI(`/api/locations/${locationId}`).then((r) => r.json()),
-      fetchAPI("/api/cities").then((r) => r.json()),
-      fetchAPI(`/api/locations/${locationId}/tags`).then((r) => r.json()).catch(() => ({ tags: [] })),
-      fetchAPI("/api/tags?type=location&limit=200").then((r) => r.json()).catch(() => ({ tags: [] })),
-    ])
-      .then(([locData, cityData, locTagsData, allTagsData]) => {
-        if (locData.location) {
-          const loc: Location = locData.location;
-          setLocation(loc);
-          setAllTags(allTagsData.tags ?? []);
-
-          const currentTagIds: string[] = (locTagsData.tags ?? []).map((t: { id: string }) => t.id);
-
-          const serverData: FormData = {
-            name: loc.name, type: loc.type ?? "", subtitle: loc.subtitle ?? "",
-            description: loc.description, address: loc.address ?? "", cityId: loc.cityId,
-            bestSeason: normalizeSeasons(loc.bestSeason ?? []), coverImage: loc.coverImage,
-            images: loc.images ?? [], lat: loc.coordinates?.lat ?? "", lng: loc.coordinates?.lng ?? "",
-            extra: {
-              facilities: loc.extra?.facilities ?? [],
-              tips: Array.isArray(loc.extra?.tips) ? loc.extra.tips : [],
-              warnings: Array.isArray(loc.extra?.warnings) ? loc.extra.warnings : [],
-            },
-            tagIds: currentTagIds,
-            // P0-B T4：GET 已通过 parseCsvField 返回 string[]，null → 空表单
-            parkingAvailable: loc.parkingAvailable ?? null,
-            parkingInfo: loc.parkingInfo ?? "",
-            gearEssential: loc.gearEssential ?? [],
-            gearOptional: loc.gearOptional ?? [],
-          };
-
-          // Check for draft
-          const draftKey = `location-edit-draft-${locationId}`;
-          try {
-            const raw = localStorage.getItem(draftKey);
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              const expiresAt = parsed._draftExpiresAt;
-              if (expiresAt && Date.now() < expiresAt) {
-                const { _draftExpiresAt: __draftExpiresAt, ...draftData } = parsed;
-                if (JSON.stringify(draftData) !== JSON.stringify(serverData)) {
-                  setPendingDraft(draftData);
-                  setShowDraftBanner(true);
-                  setFormData(serverData);
-                  return;
-                }
-              }
-            }
-          } catch { /* ignore */ }
-          setFormData(serverData);
-        }
-        if (cityData.cities) setCities(cityData.cities);
+      .then((response) => response.json())
+      .then((data) => {
+        if (data?.user?.role !== "admin") window.location.href = "/";
       })
       .catch(() => {
-        setSaveMessage({ type: "error", text: "加载地点数据失败，请刷新重试" });
+        window.location.href = "/";
       });
-   
-  }, [locationId]);
-
-  // Validation
-  const validateField = React.useCallback((key: string, value: string) => {
-    const rule = VALIDATION_RULES[key];
-    if (!rule) return undefined;
-    return rule(value);
   }, []);
 
+  React.useEffect(() => {
+    let active = true;
+    setIsLoading(true);
+    Promise.all([
+      fetchSelectableRegions(),
+      fetchAPI("/tags?limit=200").then((response) =>
+        jsonOrThrow<{ success: boolean; tags: Tag[] }>(response, t("admin.loadLocationFailed")),
+      ),
+      locationId
+        ? fetchAPI(`/locations/${locationId}/admin`).then((response) =>
+            jsonOrThrow<LocationResponse>(response, t("admin.loadLocationFailed")),
+          )
+        : Promise.resolve(null),
+    ])
+      .then(([nextRegions, tagsData, locationData]) => {
+        if (!active) return;
+        setRegions(nextRegions);
+        setAllTags(tagsData.tags ?? []);
+        const serverForm = locationData?.location
+          ? locationToFormData(locationData.location)
+          : DEFAULT_LOCATION_FORM;
+        if (locationData?.location) setLocation(locationData.location);
+
+        try {
+          const raw = localStorage.getItem(draftKey(locationId));
+          const draft = raw ? JSON.parse(raw) as {
+            version?: number;
+            expiresAt?: number;
+            data?: LocationFormData;
+          } : null;
+          if (draft?.version === 2 && draft.expiresAt && draft.expiresAt > Date.now() && draft.data) {
+            setPendingDraft(draft.data);
+            setShowDraftBanner(JSON.stringify(draft.data) !== JSON.stringify(serverForm));
+          }
+        } catch {
+          localStorage.removeItem(draftKey(locationId));
+        }
+        setFormData(serverForm);
+      })
+      .catch((error) => {
+        if (active) {
+          setSaveMessage({
+            type: "error",
+            text: error instanceof Error ? error.message : t("admin.loadLocationFailed"),
+          });
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [locationId, t]);
+
+  const validateField = React.useCallback((key: string, value: string) => {
+    if (key === "name") {
+      if (!value.trim()) return t("admin.validationNameRequired");
+      if (value.trim().length > 200) return t("admin.validationNameTooLong");
+    }
+    if (key === "description" && !value.trim()) return t("admin.validationDescRequired");
+    if (key === "regionId" && !value) return t("admin.validationRegionRequired");
+    if (key === "coverImageUrl" && !value.trim()) return t("admin.validationCoverRequired");
+    if (key === "latitude" || key === "longitude") {
+      if (value === "") return key === "latitude" ? t("admin.validationLatInvalid") : t("admin.validationLngInvalid");
+      const number = Number(value);
+      const [min, max] = key === "latitude" ? [-90, 90] : [-180, 180];
+      if (!Number.isFinite(number) || number < min || number > max) {
+        return key === "latitude" ? t("admin.validationLatInvalid") : t("admin.validationLngInvalid");
+      }
+    }
+    return undefined;
+  }, [t]);
+
   const touch = React.useCallback((key: string, value: string) => {
-    const error = validateField(key, value);
-    setErrors((prev) => ({ ...prev, [key]: error }));
-    return error === undefined;
+    setErrors((previous) => ({ ...previous, [key]: validateField(key, value) }));
   }, [validateField]);
 
-  // Auto-draft
-  const saveDraft = React.useCallback((data: FormData) => {
-    try {
-      const draftKey = `location-edit-draft-${locationId}`;
-      const draftData = { ...data, _draftExpiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 };
-      localStorage.setItem(draftKey, JSON.stringify(draftData));
-    } catch { /* ignore */ }
-  }, [locationId]);
-
-  const clearDraft = React.useCallback(() => {
-    try {
-      const draftKey = `location-edit-draft-${locationId}`;
-      localStorage.removeItem(draftKey);
-    } catch { /* ignore */ }
-  }, [locationId]);
-
-  // Auto-save draft on change
   React.useEffect(() => {
-    if (isDirty && formData.name) {
-      const timer = setTimeout(() => saveDraft(formData), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [formData, isDirty, saveDraft]);
+    if (!isDirty || !formData.name) return;
+    const timer = window.setTimeout(() => {
+      localStorage.setItem(draftKey(locationId), JSON.stringify({
+        version: 2,
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        data: formData,
+      }));
+    }, 2_000);
+    return () => window.clearTimeout(timer);
+  }, [formData, isDirty, locationId]);
 
-  // Field update
-  const updateField = React.useCallback(<K extends keyof FormData>(key: K, value: FormData[K]) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
+  const updateField = React.useCallback(<K extends keyof LocationFormData>(
+    key: K,
+    value: LocationFormData[K],
+  ) => {
+    setFormData((previous) => ({ ...previous, [key]: value }));
     setIsDirty(true);
     setSaveMessage(null);
-    if (typeof value === "string" && VALIDATION_RULES[key]) {
-      touch(key, value);
-    }
+    if (typeof value === "string") touch(key, value);
   }, [touch]);
 
-  // Save
+  const clearDraft = React.useCallback(() => {
+    localStorage.removeItem(draftKey(locationId));
+  }, [locationId]);
+
   const handleSave = React.useCallback(async () => {
-    const validationData: Record<string, string> = {
-      name: formData.name, description: formData.description, cityId: formData.cityId,
-      lat: String(formData.lat), lng: String(formData.lng),
-    };
-    let allValid = true;
-    for (const [key, val] of Object.entries(validationData)) {
-      const err = validateField(key, val);
-      if (err) { allValid = false; }
-      setErrors((prev) => ({ ...prev, [key]: err }));
+    const nextErrors: Record<string, string | undefined> = {};
+    for (const [key, value] of Object.entries({
+      name: formData.name,
+      description: formData.description,
+      regionId: formData.regionId,
+      coverImageUrl: formData.coverImageUrl,
+      latitude: String(formData.latitude),
+      longitude: String(formData.longitude),
+    })) {
+      nextErrors[key] = validateField(key, value);
     }
-    // P0-B T4：UI required + API optional —— UI 层强制 gearEssential ≥ 1 项
-    const essentialFilled = formData.gearEssential.filter((v) => v.trim()).length;
-    if (essentialFilled === 0) {
-      setErrors((prev) => ({ ...prev, gearEssential: "至少填 1 项必带装备" }));
-      allValid = false;
-    } else {
-      setErrors((prev) => ({ ...prev, gearEssential: undefined }));
+    if (formData.status === "published" && formData.supportedActivityTypes.length === 0) {
+      nextErrors.supportedActivityTypes = t("admin.validationActivityRequired");
     }
-    if (!allValid || !location) return;
+    const min = optionalNumber(formData.extra.hiking.durationMin);
+    const max = optionalNumber(formData.extra.hiking.durationMax);
+    if (min !== undefined && max !== undefined && max < min) {
+      nextErrors.durationMax = t("admin.validationDurationRange");
+    }
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) return;
 
     setIsSaving(true);
     setSaveMessage(null);
     try {
-      const extraPayload = {
-        facilities: formData.extra.facilities.length > 0 ? formData.extra.facilities : undefined,
-        tips: formData.extra.tips.filter((s) => s.trim()).length > 0 ? formData.extra.tips.filter((s) => s.trim()) : undefined,
-        warnings: formData.extra.warnings.filter((s) => s.trim()).length > 0 ? formData.extra.warnings.filter((s) => s.trim()) : undefined,
-      };
-      const hasExtra = extraPayload.facilities || extraPayload.tips || extraPayload.warnings;
-
-      await Promise.all([
-        apiPut("/api/locations", {
-          id: location.id, name: formData.name, type: formData.type || null,
-          subtitle: formData.subtitle || undefined, description: formData.description,
-          address: formData.address || undefined, cityId: formData.cityId,
-          bestSeason: formData.bestSeason, coverImage: formData.coverImage,
-          images: formData.images,
-          coordinates: { lat: parseFloat(String(formData.lat)) || 0, lng: parseFloat(String(formData.lng)) || 0 },
-          extra: hasExtra ? extraPayload : undefined,
-          // P0-B T4：4 字段透传（前端 boolean|null / string / string[] → 后端 CSV/nullable boolean）
-          parkingAvailable: formData.parkingAvailable,
-          parkingInfo: formData.parkingInfo.trim() || undefined,
-          gearEssential: formData.gearEssential,
-          gearOptional: formData.gearOptional,
-        }),
-        apiPut(`/api/locations/${location.id}/tags`, { tagIds: formData.tagIds }),
-      ]);
-
+      const payload = formDataToLocationPayload(formData);
+      const response = locationId
+        ? await apiPut<LocationResponse>("/locations", { id: locationId, ...payload })
+        : await apiPost<LocationResponse>("/locations", payload);
+      await apiPut(`/locations/${response.location.id}/tags`, { tagIds: formData.tagIds });
+      setLocation(response.location);
       clearDraft();
       setIsDirty(false);
-      setErrors({});
-      setSaveMessage({ type: "success", text: "保存成功！正在跳转..." });
-      setTimeout(() => { window.location.href = `/locations/${locationId}`; }, 800);
-    } catch (err) {
-      setSaveMessage({ type: "error", text: (err as Error).message || "保存失败，请重试" });
+      setSaveMessage({ type: "success", text: t("admin.saveSuccess") });
+      window.setTimeout(() => {
+        window.location.href = locationSaveRedirect(response.location);
+      }, 800);
+    } catch (error) {
+      setSaveMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : t("admin.saveFailed"),
+      });
     } finally {
       setIsSaving(false);
     }
-  }, [formData, location, locationId, clearDraft, validateField]);
+  }, [clearDraft, formData, locationId, t, validateField]);
 
-  // Discard
   const handleDiscard = React.useCallback(() => {
-    if (!location) return;
-    if (!window.confirm("确定放弃所有未保存的更改？")) return;
-    setFormData({
-      name: location.name, type: location.type ?? "", subtitle: location.subtitle ?? "",
-      description: location.description, address: location.address ?? "", cityId: location.cityId,
-      bestSeason: normalizeSeasons(location.bestSeason ?? []), coverImage: location.coverImage,
-      images: location.images ?? [], lat: location.coordinates?.lat ?? "", lng: location.coordinates?.lng ?? "",
-      extra: {
-        facilities: location.extra?.facilities ?? [],
-        tips: Array.isArray(location.extra?.tips) ? location.extra.tips : [],
-        warnings: Array.isArray(location.extra?.warnings) ? location.extra.warnings : [],
-      },
-      tagIds: formData.tagIds,
-      parkingAvailable: location.parkingAvailable ?? null,
-      parkingInfo: location.parkingInfo ?? "",
-      gearEssential: location.gearEssential ?? [],
-      gearOptional: location.gearOptional ?? [],
-    });
+    if (!window.confirm(t("admin.discardConfirm"))) return;
+    setFormData(location ? locationToFormData(location) : DEFAULT_LOCATION_FORM);
     clearDraft();
     setIsDirty(false);
     setErrors({});
     setSaveMessage(null);
-  }, [location, formData.tagIds, clearDraft]);
+  }, [clearDraft, location, t]);
 
-  // Draft restore/discard
   const handleRestoreDraft = React.useCallback(() => {
-    if (pendingDraft) { setFormData(pendingDraft); setIsDirty(true); }
+    if (pendingDraft) {
+      setFormData(pendingDraft);
+      setIsDirty(true);
+    }
     setShowDraftBanner(false);
     setPendingDraft(null);
   }, [pendingDraft]);
@@ -329,8 +442,23 @@ export function useLocationForm(locationId: string): UseLocationFormReturn {
   }, [clearDraft]);
 
   return {
-    location, cities, allTags, formData, errors, isSaving, isDirty, saveMessage,
-    showDraftBanner, pendingDraft, updateField, touch, handleSave, handleDiscard,
-    handleRestoreDraft, handleDiscardDraft,
+    mode,
+    location,
+    regions,
+    allTags,
+    formData,
+    errors,
+    isLoading,
+    isSaving,
+    isDirty,
+    saveMessage,
+    showDraftBanner,
+    pendingDraft,
+    updateField,
+    touch,
+    handleSave,
+    handleDiscard,
+    handleRestoreDraft,
+    handleDiscardDraft,
   };
 }

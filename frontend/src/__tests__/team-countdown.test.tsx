@@ -42,43 +42,43 @@ describe("TeamCountdown", () => {
     // start = 现在 + ~24h 少一点，还在今天+1
     const start = new Date("2026-07-20T00:30:00Z"); // 24.5h 后
     // 但当前 now 是 UTC 00:00，本地时间取决于 tz；这里改用本地时区一致做法：把两者都当作本地时间
-    render(<TeamCountdown startTime={start.toISOString()} durationMin={240} />);
+    render(<TeamCountdown startAt={start.toISOString()} endAt={new Date(start.getTime() + 240 * 60_000).toISOString()} />);
     // 主标题包含 tomorrow key，副标题包含 remainingHours
     const container = screen.getByTestId("team-actionbook-countdown");
     expect(container.textContent).toContain("teams.actionbook.countdown.tomorrow");
   });
 
-  it("已开始：now > startTime 且 < startTime + duration + 24h → startedHours", () => {
+  it("已开始：now > startAt 且 < endAt + 24h → startedHours", () => {
     const start = new Date("2026-07-18T22:00:00Z"); // 2 小时前
-    render(<TeamCountdown startTime={start.toISOString()} durationMin={240} />);
+    render(<TeamCountdown startAt={start.toISOString()} endAt={new Date(start.getTime() + 240 * 60_000).toISOString()} />);
     const container = screen.getByTestId("team-actionbook-countdown");
     expect(container.textContent).toContain("teams.actionbook.countdown.startedHours");
   });
 
-  it("已结束：now > startTime + duration + 24h → ended", () => {
+  it("已结束：now > endAt + 24h → ended", () => {
     // start 是 2 天前 + duration 4h，现在已过 endTime+24h
     const start = new Date("2026-07-16T00:00:00Z"); // 3 天前
-    render(<TeamCountdown startTime={start.toISOString()} durationMin={240} />);
+    render(<TeamCountdown startAt={start.toISOString()} endAt={new Date(start.getTime() + 240 * 60_000).toISOString()} />);
     const container = screen.getByTestId("team-actionbook-countdown");
     expect(container.textContent).toContain("teams.actionbook.countdown.ended");
   });
 
   it("大于 24h：显示 remainingDays", () => {
     const start = new Date("2026-07-25T00:00:00Z"); // 6 天后
-    render(<TeamCountdown startTime={start.toISOString()} durationMin={240} />);
+    render(<TeamCountdown startAt={start.toISOString()} endAt={new Date(start.getTime() + 240 * 60_000).toISOString()} />);
     const container = screen.getByTestId("team-actionbook-countdown");
     expect(container.textContent).toContain("teams.actionbook.countdown.remainingDays");
   });
 
-  it("无效 startTime 不渲染", () => {
-    const { container } = render(<TeamCountdown startTime="not-a-date" />);
+  it("无效 startAt 不渲染", () => {
+    const { container } = render(<TeamCountdown startAt="not-a-date" endAt="2026-07-19T04:00:00.000Z" />);
     expect(container.firstChild).toBeNull();
   });
 
   it("<24h 每分钟刷新一次", () => {
     // start = now + 12h → <24h 分支
     const start = new Date("2026-07-19T12:00:00Z");
-    render(<TeamCountdown startTime={start.toISOString()} durationMin={240} />);
+    render(<TeamCountdown startAt={start.toISOString()} endAt={new Date(start.getTime() + 240 * 60_000).toISOString()} />);
     const before = screen.getByTestId("team-actionbook-countdown").textContent;
     act(() => {
       vi.advanceTimersByTime(60 * 1000);

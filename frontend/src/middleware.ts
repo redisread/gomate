@@ -97,6 +97,21 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   const segments = url.pathname.split("/").filter(Boolean);
   const firstSegment = segments[0] as Locale | undefined;
   const hasLocalePrefix = SUPPORTED_LOCALES.includes(firstSegment as Locale);
+  const pageSegment = segments[hasLocalePrefix ? 1 : 0];
+
+  // Query tokens are a rejected legacy transport: never consume them and do
+  // not forward them through locale redirects/rewrite requests. The supported
+  // email links use fragments, which never reach this middleware.
+  if (
+    (pageSegment === "reset-password" || pageSegment === "verify-email") &&
+    url.searchParams.has("token")
+  ) {
+    url.searchParams.delete("token");
+    const response = context.redirect(url.toString(), 302);
+    response.headers.set("Cache-Control", "no-store");
+    response.headers.set("Referrer-Policy", "no-referrer");
+    return response;
+  }
 
   // 如果 URL 没有 locale 前缀，且检测到的语言不是默认语言
   if (!hasLocalePrefix) {
@@ -105,7 +120,9 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
     if (!existingCookie.includes("gomate_locale=") && detectedLocale !== DEFAULT_LOCALE) {
       // 首次访问，重定向到带前缀的 URL
-      return context.redirect(`/${detectedLocale}${url.pathname}`, 302);
+      const redirectUrl = new URL(url);
+      redirectUrl.pathname = `/${detectedLocale}${url.pathname}`;
+      return context.redirect(redirectUrl.toString(), 302);
     }
   }
 
@@ -124,7 +141,9 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     });
 
     // 重写 URL，让 Astro 路由匹配正确的页面
-    return context.rewrite(cleanPath);
+    const rewriteUrl = new URL(url);
+    rewriteUrl.pathname = cleanPath;
+    return context.rewrite(rewriteUrl);
   }
 
   return next();

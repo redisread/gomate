@@ -26,10 +26,12 @@ import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import {
+  DecisionBlock,
   LocationIntroCard,
+  RouteInfoCard,
   TeamListSection,
 } from "@/components/features/location-detail-main-content";
-import { LocationActivityPosts } from "@/components/features/activity-posts";
+import { LocationStoryRecapFeed } from "@/components/features/discover/story-recap-feed";
 import { normalizeLocationHiking, type RouteMetric } from "@/components/features/location-detail/route-utils";
 
 // 动态导入 SharePosterModal
@@ -242,8 +244,8 @@ interface ActionCardProps {
 
 function ActionCard({ location, teams }: ActionCardProps) {
   const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
-  const totalParticipants = teams.reduce((sum, t) => sum + (t.currentMembers || 0), 0);
-  const avatarLeaders = teams.filter((t) => t.leader?.avatar).slice(0, 5);
+  const totalParticipants = teams.reduce((sum, team) => sum + team.activeParticipantCount, 0);
+  const avatarLeaders = teams.filter((team) => Boolean(team.leader?.image)).slice(0, 5);
   const socialProofText =
     teams.length > 0
       ? t("locationDetail.socialProof", { participants: totalParticipants, teams: teams.length })
@@ -267,8 +269,8 @@ function ActionCard({ location, teams }: ActionCardProps) {
               {avatarLeaders.map((t, i) => (
                 <img
                   key={t.id}
-                  src={t.leader.avatar!}
-                  alt={t.leader.nickname || t.leader.name}
+                  src={t.leader!.image!}
+                  alt={t.leader!.nickname || t.leader!.name}
                   className="w-7 h-7 rounded-full border-2 border-amber-50 object-cover shadow-sm"
                   style={{ zIndex: avatarLeaders.length - i }}
                 />
@@ -352,8 +354,9 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
 
       <div className="space-y-2">
         {locations.map((loc) => {
-          const diff = loc.difficulty ? diffBadgeConfig[loc.difficulty] : null;
-          const diffLabel = loc.difficulty ? diffInfo[loc.difficulty]?.label : null;
+          const difficulty = loc.extra.hiking?.difficulty;
+          const diff = difficulty ? diffBadgeConfig[difficulty] : null;
+          const diffLabel = difficulty ? diffInfo[difficulty]?.label : null;
 
           return (
             <a
@@ -362,9 +365,9 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
               className="flex items-center gap-3 group rounded-xl p-2 -mx-2 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:bg-stone-50 dark:hover:bg-stone-800"
             >
               <div className="w-[68px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 dark:bg-stone-800">
-                {loc.coverImage ? (
+                {loc.coverImageUrl ? (
                   <img
-                    src={loc.coverImage}
+                    src={loc.coverImageUrl}
                     alt={loc.name}
                     className="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 transition-transform duration-300 group-hover:scale-110 dark:outline-white/10"
                   />
@@ -616,23 +619,40 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       .catch(() => {});
   }, []);
 
-  // 初始化收藏状态
+  // Resolve favorite state across the cursor-paginated dedicated endpoint.
   React.useEffect(() => {
     if (!resolvedLocationId || !userId) return;
-    fetchAPI(`/favorites?entityType=location`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!data) return;
-        const favs: { entityId: string }[] = data.favorites || [];
-        setIsFavorited(favs.some((f) => f.entityId === resolvedLocationId));
-      })
-      .catch(() => {});
+    let cancelled = false;
+    void (async () => {
+      let cursor: string | null = null;
+      do {
+        const query = new URLSearchParams({ limit: "50" });
+        if (cursor) query.set("cursor", cursor);
+        const response = await fetchAPI(`/favorites/locations?${query}`);
+        if (!response.ok) return;
+        const result = await response.json() as {
+          data?: {
+            items?: { location: { id: string } }[];
+            nextCursor?: string | null;
+          };
+        };
+        if (result.data?.items?.some((item) => item.location.id === resolvedLocationId)) {
+          if (!cancelled) setIsFavorited(true);
+          return;
+        }
+        cursor = result.data?.nextCursor ?? null;
+      } while (cursor && !cancelled);
+      if (!cancelled) setIsFavorited(false);
+    })().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [resolvedLocationId, userId]);
 
   const loadLocation = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetchAPI(`/api/locations/${locationId}`);
+      const res = await fetchAPI(`/locations/${locationId}`);
       const data = await res.json();
       if (data.success && data.location) {
         setLocation(data.location);
@@ -654,7 +674,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
   const loadTeams = async (locId: string) => {
     try {
-      const res = await fetchAPI(`/api/teams?locationId=${locId}&status=recruiting&pageSize=5`);
+      const res = await fetchAPI(`/teams?locationId=${locId}&recruitmentStatus=open&limit=5`);
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
     } catch (err) {
@@ -664,7 +684,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
   const loadRelatedLocations = async (currentLocationId: string) => {
     try {
-      const res = await fetchAPI("/api/locations?pageSize=4");
+      const res = await fetchAPI("/locations?limit=4");
       const data = await res.json();
       if (data.success) {
         setRelatedLocations(
@@ -700,14 +720,19 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     setIsFavorited(newFavorited);
     try {
       if (!location) return;
+      let response: Response;
       if (newFavorited) {
-        await fetchAPI("/favorites", {
+        response = await fetchAPI("/favorites/locations", {
           method: "POST",
-          body: JSON.stringify({ entityType: "location", entityId: location.id }),
+          body: JSON.stringify({ locationId: location.id }),
         });
       } else {
-        await fetchAPI(`/favorites?entityType=location&entityId=${location.id}`, { method: "DELETE" });
+        response = await fetchAPI(
+          `/favorites/locations?locationId=${encodeURIComponent(location.id)}`,
+          { method: "DELETE" },
+        );
       }
+      if (!response.ok) throw new Error(`Favorite request failed: ${response.status}`);
     } catch {
       setIsFavorited(!newFavorited);
     }
@@ -741,9 +766,8 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     );
   }
 
-  // task #154：hero 徒步参数直读 location 字段（normalizeLocationRoutes 随 routes 删除退场）
   const heroHiking = normalizeLocationHiking(location);
-  const heroDifficulty = location.difficulty;
+  const heroDifficulty = heroHiking?.difficulty;
   const diffInfo = getDifficultyInfo(t)[heroDifficulty as keyof ReturnType<typeof getDifficultyInfo>] ?? {
     label: heroDifficulty || "",
     dot: "bg-stone-400",
@@ -753,10 +777,10 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
   // 构建画廊图片列表
   const galleryImages: string[] = [];
-  if (location.coverImage) galleryImages.push(location.coverImage);
+  if (location.coverImageUrl) galleryImages.push(location.coverImageUrl);
   if (location.images) {
     for (const img of location.images) {
-      if (img && img !== location.coverImage) galleryImages.push(img);
+      if (img && img !== location.coverImageUrl) galleryImages.push(img);
     }
   }
   const hasMultiple = galleryImages.length > 1;
@@ -881,10 +905,10 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
                   {diffInfo.label}
                 </span>
               )}
-              {location.bestSeason && location.bestSeason.length > 0 && (
+              {(location.extra.hiking?.bestSeasons?.length ?? 0) > 0 && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/15 text-white backdrop-blur-sm border border-white/20">
                   <Sparkles className="w-3 h-3" />
-                  {getSeasonLabel(t)[location.bestSeason[0] as keyof ReturnType<typeof getSeasonLabel>] ?? location.bestSeason[0]}
+                  {getSeasonLabel(t)[location.extra.hiking!.bestSeasons![0] as keyof ReturnType<typeof getSeasonLabel>] ?? location.extra.hiking!.bestSeasons![0]}
                 </span>
               )}
             </div>
@@ -951,18 +975,17 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             <div>
               <LocationIntroCard
                 location={location}
-                address={location.address}
-                coordinates={location.coordinates}
+                address={location.address ?? undefined}
                 showGallery={false}
                 showTravelMeta
               />
             </div>
+            <RouteInfoCard location={location} />
+            <DecisionBlock location={location} showGear={false} />
             <div>
               <TeamListSection teams={teams} locationId={location.id} />
             </div>
-            <div>
-              <LocationActivityPosts locationId={location.id} hideEmpty />
-            </div>
+            <LocationStoryRecapFeed locationId={location.id} />
           </div>
 
           {/* 右栏 sticky */}

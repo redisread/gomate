@@ -1,6 +1,7 @@
 import { Crown, Share2, Trash2, Pencil, CheckCircle, LogOut, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import type { Team } from "@/lib/types";
+import type { Location, Team } from "@/lib/types";
+import { getTeamDisplayStatus } from "@/lib/team-display";
 import { useTeamDetail } from "./use-team-detail";
 import { ToastDisplay } from "./team-detail-ui";
 import { Modal } from "@/components/ui/modal";
@@ -65,7 +66,7 @@ export function TeamModalsAndFooter({ ctx }: { ctx: ReturnType<typeof useTeamDet
   const { team, location } = ctx;
   if (!team) return null;
 
-  const fillRatio = Math.round((team.currentMembers / team.maxMembers) * 100);
+  const fillRatio = Math.round((team.activeParticipantCount / team.maxParticipants) * 100);
 
   return (
     <>
@@ -105,7 +106,7 @@ function JoinModals({ ctx, team, fillRatio }: { ctx: ReturnType<typeof useTeamDe
         onJoin={ctx.handleJoin} isJoining={ctx.joining}
         joinMessage={ctx.joinMsg} setJoinMessage={ctx.setJoinMsg}
         remaining={ctx.remaining} fillRatio={fillRatio}
-        currentMembers={team.currentMembers} maxMembers={team.maxMembers}
+        activeParticipantCount={team.activeParticipantCount} maxParticipants={team.maxParticipants}
       />
       {ctx.showJoinModal && (
         <JoinDesktopModal
@@ -113,7 +114,7 @@ function JoinModals({ ctx, team, fillRatio }: { ctx: ReturnType<typeof useTeamDe
           onJoin={ctx.handleJoin} isJoining={ctx.joining}
           joinMessage={ctx.joinMsg} setJoinMessage={ctx.setJoinMsg}
           remaining={ctx.remaining} fillRatio={fillRatio}
-          currentMembers={team.currentMembers} maxMembers={team.maxMembers}
+          activeParticipantCount={team.activeParticipantCount} maxParticipants={team.maxParticipants}
         />
       )}
     </>
@@ -194,7 +195,7 @@ function WechatModals({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; }) {
   );
 }
 
-function MobileBottomBar({ ctx, team, location }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; location?: { name?: string; coverImage?: string } | null; }) {
+function MobileBottomBar({ ctx, team, location }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; location: Location | null; }) {
   const { isLeader, isMember, isPending, userId, canJoin } = ctx;
 
   return (
@@ -216,7 +217,7 @@ function MobileBottomBar({ ctx, team, location }: { ctx: ReturnType<typeof useTe
   );
 }
 
-function BottomBarLeader({ ctx, team, location: _location }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; location?: { name?: string; coverImage?: string } | null; }) {
+function BottomBarLeader({ ctx, team, location: _location }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; location: Location | null; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
 
@@ -236,7 +237,7 @@ function BottomBarLeader({ ctx, team, location: _location }: { ctx: ReturnType<t
           >
             <Share2 className="h-4 w-4" aria-hidden="true" />
           </button>
-          {(team.status === "recruiting" || team.status === "cancelled") && (
+          {team.lifecycle === "pending" && team.activeParticipantCount === 0 && (
             <button type="button" onClick={() => ctx.setShowDeleteConfirm(true)}
               aria-label={t('teams.deleteTeam')}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-500 transition-[transform,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
@@ -244,10 +245,12 @@ function BottomBarLeader({ ctx, team, location: _location }: { ctx: ReturnType<t
               <Trash2 className="h-4 w-4" />
             </button>
           )}
-          <a href={`/teams/${team.id}/edit`} className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
-            <Pencil className="h-3 w-3" />
-            {t('teams.editBtn')}
-          </a>
+          {team.lifecycle === "pending" && (
+            <a href={`/teams/${team.id}/edit`} className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
+              <Pencil className="h-3 w-3" />
+              {t('teams.editBtn')}
+            </a>
+          )}
         </div>
       </div>
 
@@ -391,12 +394,19 @@ function BottomBarCanJoin({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>
 function BottomBarCannotJoin({ ctx: _ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; team: Team; }) {
   const { t } = useI18n(["teams", "common"]);
   const share = useTeamShare(team);
+  const displayStatus = getTeamDisplayStatus(team);
 
   return (
     <>
       <div className="flex items-center justify-between min-h-[44px]">
         <div className="text-muted-foreground/70 text-sm">
-          {team.status === "completed" ? t('teams.statusEnded') : team.status === "cancelled" ? t('teams.statusCancelled') : t('teams.teamFull')}
+          {displayStatus === "completed" || displayStatus === "expired_unformed" || displayStatus === "closed"
+            ? t('teams.statusEnded')
+            : displayStatus === "cancelled"
+              ? t('teams.statusCancelled')
+              : displayStatus === "formed" || displayStatus === "ongoing"
+                ? t('teams.statusFormed')
+                : t('teams.teamFull')}
         </div>
         <button type="button" onClick={share.openShare} aria-label={t('teams.shareTeam')} className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground/70 transition-[transform,background-color,color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-amber-50 [@media(hover:hover)]:hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <Share2 className="h-4 w-4" aria-hidden="true" />

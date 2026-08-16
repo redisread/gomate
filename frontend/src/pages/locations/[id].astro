@@ -8,24 +8,20 @@ import { LocationDetailClient } from "../../components/features/location-detail-
 import { ErrorBoundary } from "../../components/ui/error-boundary";
 import { declareI18nNs } from "../../middleware";
 import { API_BASE } from "../../lib/api";
+import { serverApiGet } from "../../lib/server-api";
 
 declareI18nNs(Astro.locals, ["locationDetail", "locations", "errors", "admin", "enums", "teams", "share", "content"]);
 
 const { id } = Astro.params;
 
 // Phase 5: 服务端获取地点数据，用于 og:image
-let locationData: { id?: string; name?: string; description?: string; coverImage?: string } | null = null;
-try {
-  const response = await fetch(`${API_BASE}/locations/${id}`);
-  if (response.ok) {
-    const data = await response.json();
-    if (data.success && data.location) {
-      locationData = data.location;
-    }
-  }
-} catch {
-  // 忽略错误，使用默认值
-}
+const locationResponse = await serverApiGet<{
+  success: boolean;
+  location?: { id: string; name: string; description: string; coverImageUrl: string };
+}>(Astro.request, Astro.locals, `/locations/${id}`);
+const locationData = locationResponse?.success
+  ? locationResponse.location ?? null
+  : null;
 
 // 构建 og:image URL
 const ogImage = locationData

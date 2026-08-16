@@ -19,6 +19,7 @@
   "appStatusPending": "Pending Review",
   "appStatusApproved": "Approved",
   "appStatusRejected": "Rejected",
+  "appStatusCancelled": "Cancelled",
   "requirementsMore": "+{count}",
   "levelBeginner": "Beginner",
   "levelIntermediate": "Intermediate",

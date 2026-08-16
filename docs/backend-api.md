@@ -1,853 +1,236 @@
-# GoMate 后端 API 文档
+# GoMate V2 API
 
-> 最后更新：2026-08-16
-> 框架：Hono 4 + Cloudflare Workers + Drizzle ORM
+> 2026-08-16。Hono API 由统一 Cloudflare Worker 提供，外部路径均以 `/api` 开头。
 
-## 基础信息
+## 运行合同
 
-| 环境     | 地址                      |
-| -------- | ------------------------- |
-| 本地开发 | `http://localhost:8799`   |
-| 生产环境 | `https://api.gomate.live` |
+| 环境     | Origin                  | API base                    |
+| -------- | ----------------------- | --------------------------- |
+| 本地     | `http://localhost:5432` | `http://localhost:5432/api` |
+| 生产目标 | `https://gomate.live`   | `https://gomate.live/api`   |
 
-**认证方式：** Better Auth（基于 Session Cookie）；`/v1/*` 公开 API 另支持 API Key（`x-api-key` 请求头，格式 `gm_live_<key>`，通过 `POST /auth/api-key/create` 创建）。
+- 浏览器只调用同源 `/api`；Astro SSR 通过 `apiApp.fetch()` 进程内分发。
+- Better Auth 固定在 `/api/auth/*`，使用同源 session cookie。
+- 所有携带 Cookie 的非安全方法必须同时满足 `Origin === APP_URL.origin`；存在
+  `Sec-Fetch-Site` 时必须为 `same-origin`，否则在读取业务 body 前返回 403。
+- 未匹配的 `/api/*` 返回 JSON 404，不落入 Astro 页面路由。
+- `WRITE_MODE=protected` 时所有非 GET/HEAD/OPTIONS 请求返回 503，并带
+  `Retry-After: 60`。
+- 时间字段是 ISO 8601；数据库内部使用 Unix 毫秒。
+- JSON 成功响应以 `success: true` 或健康检查的 `status: "ok"` 标识；错误使用
+  统一 `{ success: false, error: { code, message, details? } }`。
 
-## 认证与权限
+## 端点目录
 
-绝大多数受保护端点都是逐路由调用 `getSession()` 校验会话，未登录返回 401。集中封装：
+下表省略统一 `/api` 前缀。
 
-| 工具                  | 位置                                | 作用                                   | 未通过时返回 |
-| --------------------- | ----------------------------------- | -------------------------------------- | ------------ |
-| `requireAdmin`        | `api/src/routes/locations/utils.ts` | 管理员专属操作（地点/城市/标签写入等） | 401 / 403    |
-| `requireTeamLeader()` | `api/src/lib/team-permissions.ts`   | 仅队长（审批、修改、组建/取消、移除）  | 401 / 403    |
-| `requireTeamMember()` | `api/src/lib/team-permissions.ts`   | 仅已批准成员（行动本认领等）           | 401 / 403    |
+### 平台与认证
 
----
+| 方法与路径                           | 认证                     | 说明                                                                                                                                                                                       |
+| ------------------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `GET /health`                        | 否                       | Worker/API 健康检查                                                                                                                                                                        |
+| `POST /auth/forgot-password`         | 否                       | 发起 GoMate latest-only 密码重置；email 最长 254，挑战签发在同一写语句复核 active/non-deleted，且与邮件均在 `waitUntil`；固定响应不泄露账号/数据库/邮件状态；按规范化 email 与来源分别限流 |
+| `POST /auth/sign-up/email`           | 否                       | Better Auth 注册；密码至少 8 字符，仅接受 JSON 账号字段；注册不建立 session，验证邮箱后才能登录                                                                                            |
+| `POST /auth/sign-in/email`           | 否                       | 登录；无效凭据与未验证账号使用完全相同的 401；成功仅向浏览器返回 user 与 HttpOnly cookie，不在 JSON 暴露 session token                                                                     |
+| `POST /auth/send-verification-email` | 否                       | 重新发送邮箱验证；与找回密码共用独立的 Cloudflare 邮件限流 binding                                                                                                                         |
+| `POST /auth/confirm-email`           | 否                       | body-only 验证 token；邮件先打开 `/verify-email#token=...`，用户明确确认后调用，token 不进入 Worker URL/log/trace                                                                          |
+| `POST /auth/reset-password`          | 否                       | body-only `v1.<userId>.<random>` token；每用户只保留最新哈希，D1 原子复核 active、claim、更新唯一 credential、撤销全部 session 并消费挑战；停用/软删除会同步撤销挑战                       |
+| `POST /auth/sign-out`                | 是                       | 注销当前 session                                                                                                                                                                           |
+| `GET                                 | POST /auth/get-session`  | 可选                                                                                                                                                                                       | 强制回源数据库；inactive/deleted 用户返回 null 并删除其全部旧 session |
+| `POST /auth/update-user`             | -                        | 固定 404；资料与头像分别只能走 `/users/me` 和 `/upload/avatar`                                                                                                                             |
+| `POST /auth/request-password-reset`  | -                        | 固定 404；防止绕过受保护的 `/auth/forgot-password`                                                                                                                                         |
+| `GET                                 | POST /auth/verify-email` | -                                                                                                                                                                                          | 固定 404；禁止带 token 的状态变更 GET 与邮件安全扫描器自动确认        |
+| `ALL /auth/*`                        | -                        | 除上表明确列出的产品端点外全部固定 404，不暴露 Better Auth 原生能力                                                                                                                        |
+| `POST /contact`                      | 否                       | 联系表单，带频率限制                                                                                                                                                                       |
+| `POST /feedback`                     | 否                       | 反馈表单，带频率限制                                                                                                                                                                       |
 
-## 1. 认证 `/auth`
+邮箱验证与密码重置邮件只把 token 放在浏览器 fragment。fragment 不进入 HTTP 请求；页面立即
+清除地址栏 secret。验证邮箱必须由用户点击确认后 POST `/auth/confirm-email`，密码重置则把
+fragment token 放入 GoMate 自有 reset command 的 POST body。任何 bearer token 都不得进入
+URL query/path；D1 只保存带域分隔的 SHA-256 token 摘要，不保存 raw token。
 
-### POST `/auth/forgot-password`
+### Region 与地点
 
-发送密码重置邮件
+| 方法与路径                 | 认证  | 说明                                                                              |
+| -------------------------- | ----- | --------------------------------------------------------------------------------- |
+| `GET /regions`             | 否    | 过滤参数：`countryCode`、`level`、`serviceEnabled`、`parentId`                    |
+| `GET /locations`           | 否    | 仅 published 且 Region 已启用；`limit/cursor/search/regionId/activityType/tagIds` |
+| `GET /locations/stats`     | 否    | `regions[].region` 与 `points[].region` 都返回完整 Region DTO                     |
+| `GET /locations/:id`       | 否    | 仅按全局唯一 ID 查询，返回公开 Location DTO                                       |
+| `GET /locations/:id/tags`  | 否    | 仅为公开 Location 返回地点标签                                                    |
+| `GET /locations/:id/admin` | admin | 返回任意状态 Location，供草稿/归档地点后台编辑                                    |
+| `POST /locations`          | admin | 创建 Location                                                                     |
+| `PUT /locations`           | admin | 更新 Location，body 必须含 `id`                                                   |
+| `DELETE /locations/:id`    | admin | 被 Team 引用时拒绝删除                                                            |
+| `PUT /locations/:id/tags`  | admin | 原子替换地点标签                                                                  |
 
-- **认证：** 否
-- **Body：** `{ "email": "user@example.com" }`
-- **响应：** `{ "success": true, "message": "如果该邮箱已注册，重置密码邮件已发送" }`（不暴露邮箱是否注册）
+Location DTO 使用 `regionId` 和嵌套 `region`，坐标为 `latitude/longitude`，图片为
+`coverImageUrl/images`，活动为 `supportedActivityTypes[]`。HTTP `extra` 使用
+camelCase（例如 `durationMin`、`bestSeasons`）；写入 D1 时规范化为 snake_case。
+输入 schema 为 strict，不接收旧字段别名。由于 `locations.slug` 只在 Region 内唯一，
+详情、标签、前端链接、sitemap 与分享二维码一律使用 Location ID，不提供 slug fallback。
+详情、标签和收藏只暴露 `published` 且属于 `serviceEnabled=true` city Region 的地点。
+地点列表按 `(createdAt DESC, id DESC)` 稳定分页，返回
+`{ success, locations, total, nextCursor }`；不接受 `page/pageSize`。
 
-### POST `/auth/api-key/create`
+### Team
 
-创建 API Key（放行到 Better Auth `apiKey.create`）
+| 方法与路径                                                    | 认证      | 说明                                                |
+| ------------------------------------------------------------- | --------- | --------------------------------------------------- |
+| `GET /teams`                                                  | 否        | `limit/cursor` 分页，Region 过滤使用 `regionId`     |
+| `GET /teams/:id`                                              | 否        | Team、leader、location、region、tags 与权限可见字段 |
+| `POST /teams`                                                 | 是        | 创建 Team                                           |
+| `PUT /teams/:id`                                              | leader    | 修改未开始、未取消 Team                             |
+| `DELETE /teams/:id`                                           | leader    | 删除符合约束的 Team                                 |
+| `POST /teams/:id/form`                                        | leader    | 标记成团                                            |
+| `POST /teams/:id/cancel`                                      | leader    | 取消 Team                                           |
+| `POST /teams/:id/join`                                        | 是        | 创建 pending join request                           |
+| `GET /teams/:id/join-requests`                                | leader    | 列出申请                                            |
+| `POST /teams/:id/join-requests/:requestId/approve`            | leader    | 原子批准并占用名额                                  |
+| `POST /teams/:id/join-requests/:requestId/reject`             | leader    | 拒绝申请                                            |
+| `POST /teams/:id/join-requests/:requestId/cancel`             | applicant | 撤销申请                                            |
+| `POST /teams/:id/leave`                                       | member    | 离队                                                |
+| `POST /teams/:id/members/:userId/remove`                      | leader    | 移除 active 成员                                    |
+| `GET /teams/:id/my-status`                                    | 可选      | 当前会话的 leader/member/pending 状态               |
+| `PUT /teams/:id/checklist`                                    | leader    | 替换行动本                                          |
+| `POST /teams/:id/checklist/assignments/:assignmentId/claim`   | member    | 认领分工                                            |
+| `DELETE /teams/:id/checklist/assignments/:assignmentId/claim` | member    | 取消认领                                            |
+| `GET /teams/recommend-onboarding`                             | 是        | 基于 Region 与活动类型推荐                          |
 
-- **认证：** 是（登录用户）
-- **限制：** 每位用户最多 10 个 key，超出返回 403 `MAX_API_KEYS_EXCEEDED`
-
-### ALL `/auth/*`
-
-Better Auth 代理，处理注册、登录、登出、会话刷新等所有认证操作。
-
----
-
-## 2. 队伍管理 `/teams`
-
-### GET `/teams`
-
-获取队伍列表
-
-- **认证：** 否
-- **Query 参数：**
-
-| 参数            | 类型    | 说明                                                             |
-| --------------- | ------- | ---------------------------------------------------------------- |
-| `page`          | int     | 页码，默认 1                                                     |
-| `pageSize`      | int     | 每页数量，默认 12，最大 100                                      |
-| `search`        | string  | 搜索队伍标题                                                     |
-| `status`        | string  | 逗号分隔的状态（recruiting\|full\|formed\|completed\|cancelled） |
-| `difficulty`    | string  | 逗号分隔的难度（easy\|moderate\|hard\|expert，按地点难度过滤）   |
-| `locationId`    | string  | 地点 ID，返回该地点下的所有队伍                                  |
-| `userId`        | string  | 配合 `includeJoined=true` 获取用户加入的队伍                     |
-| `includeJoined` | boolean | true 时仅返回已加入的队伍                                        |
-| `activeOnly`    | boolean | true 时排除已完成/已取消的队伍                                   |
-| `cityId`        | string  | 城市 ID（经地点 join 过滤）                                      |
-| `startDateFrom` | string  | 起始日期范围（YYYY-MM-DD）                                       |
-| `startDateTo`   | string  | 结束日期范围（YYYY-MM-DD）                                       |
-| `timeFilter`    | string  | 时间快捷筛选：`today` \| `tomorrow` \| `weekend` \| `7days`      |
-| `tagIds`        | string  | 逗号分隔的标签 ID（`entityType=activity`）                       |
-
-- **响应：**
-
-```json
-{
-  "success": true,
-  "teams": [
-    {
-      "id": "team-xxx",
-      "locationId": "loc-xxx",
-      "title": "周六徒步清水湾",
-      "description": "体验南山海边风景",
-      "date": "2026-03-28",
-      "time": "09:00",
-      "duration": "3小时",
-      "durationMin": 180,
-      "maxMembers": 6,
-      "currentMembers": 3,
-      "icon": "⛰️",
-      "status": "recruiting",
-      "requirements": ["防晒", "登山鞋"],
-      "location": {
-        "name": "清水湾",
-        "coverImage": "url",
-        "difficulty": "moderate"
-      },
-      "leader": {
-        "id": "user-xxx",
-        "name": "张三",
-        "nickname": "登山达人",
-        "avatar": "url",
-        "level": "advanced",
-        "completedHikes": 0,
-        "bio": ""
-      },
-      "createdAt": "2026-03-20T10:00:00Z"
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "pageSize": 12,
-    "total": 45,
-    "totalPages": 4,
-    "hasMore": true
-  }
-}
-```
-
-### GET `/teams/recommend-onboarding`
-
-获取新手引导推荐队伍（task #187）
-
-- **认证：** 是
-- **Query：** `type`（hiking\|explore\|leisure\|travel，可选，偏好过滤）
-- **响应：** `{ "hasAnyMembership": boolean, "candidates": [...], "fallbackNoType": boolean, "cityId": string|null }`（cityId 缺省时服务端 fallback 深圳）
-
-### POST `/teams`
-
-创建队伍
-
-- **认证：** 是（需填写微信号，否则 400）
-- **Body：**
+创建 Team 的核心 body：
 
 ```json
 {
-  "locationId": "loc-xxx",
-  "title": "周末徒步",
-  "description": "一起体验自然",
-  "date": "2026-03-28",
-  "time": "09:00",
-  "duration": "3小时",
-  "durationMin": 180,
-  "maxMembers": 6,
-  "requirements": ["防晒", "登山鞋"]
+  "locationId": "location-id",
+  "activityType": "hiking",
+  "title": "周末登山",
+  "description": "...",
+  "startAt": "2026-09-01T02:00:00.000Z",
+  "endAt": "2026-09-01T10:00:00.000Z",
+  "maxParticipants": 5,
+  "requirements": [],
+  "recruitmentStatus": "open",
+  "tagIds": []
 }
 ```
 
-- **说明：** `duration` / `durationMin` 至少提供一个（都缺省时默认 240 分钟）；队长自动成为 approved 成员
-- **响应：** `{ "success": true, "team": { "id": "team-xxx", "startTime": "ISO", "endTime": "ISO", ... } }`
-
-### GET `/teams/:id`
-
-获取队伍详情
-
-- **认证：** 否（已登录则返回与当前用户相关的字段）
-- **响应：** 队伍完整数据 + `leader` + `members`（approved/leave_pending）+ `location`；`checklist`（行动本）仅队长/成员可见，访客为 `null`（隐私红线，不泄漏到 SSR 响应）
-- **说明：** 访问时先执行过期状态更新（recruiting→cancelled、formed→completed）
-
-### PUT `/teams/:id`
-
-更新队伍信息
-
-- **认证：** 是（仅队长）
-- **Body：** `{ "title", "description", "maxMembers", "requirements", "icon", "time", "durationMin" }`（均可选）
-- **响应：** `{ "success": true, "message": "队伍信息已更新" }`
-
-### POST `/teams/:id/join`
-
-申请加入队伍
-
-- **认证：** 是（需填写微信号，否则 400）
-- **条件：** 仅 `recruiting` 状态可申请；已满返回 400；被拒后可重新申请
-- **响应：** `{ "success": true, "message": "申请已提交，等待队长审核" }`
-
-### GET `/teams/:id/applications`
-
-获取成员/申请列表
-
-- **认证：** 是（仅队长）
-- **Query：** `status`（可选，如 `pending`；不传返回该队伍全部成员）
-- **响应：** `{ "success": true, "applications": [{ "id", "userId", "status", "createdAt", "userName", "wechat", "user": {...} }] }`
-
-### POST `/teams/:id/members/:userId/approve`
-
-批准成员申请
-
-- **认证：** 是（仅队长）
-- **响应：** `{ "success": true, "message": "已通过申请" }`
-- **说明：** 人满时队伍状态自动置为 `full`（反之保持 `recruiting`）；容量由数据库原子校验，并发批准也不会超过 `maxMembers`，已满返回 400
-
-### POST `/teams/:id/members/:userId/reject`
-
-拒绝成员申请
-
-- **认证：** 是（仅队长）
-- **响应：** `{ "success": true, "message": "已拒绝申请" }`
-
-### POST `/teams/:id/members/:userId/remove`
-
-移除成员（队长操作）
-
-- **认证：** 是（仅队长，不能移除自己）
-- **响应：** `{ "success": true, "message": "已移除成员" }`
-- **说明：** 移除后人数低于上限时队伍状态自动回 `recruiting`
-
-### POST `/teams/:id/leave`
-
-成员退出队伍
-
-- **认证：** 是（队长不能退出）
-- **说明：** `recruiting`/`full` 状态直接退出；已组建（`formed`）的队伍需走退出申请流程
-- **响应：** `{ "success": true, "message": "已成功退出队伍" }`
-
-### POST `/teams/:id/cancel-application`
-
-取消入队申请
-
-- **认证：** 是
-- **说明：** 仅 `pending` 状态可取消，取消后状态记为 `cancelled`（保留历史）
-- **响应：** `{ "success": true, "message": "申请已取消" }`
-
-### POST `/teams/:id/leave-request`
-
-申请退出已组建队伍
-
-- **认证：** 是（仅 `formed` 状态；队长不能退出）
-- **响应：** `{ "success": true, "message": "退出申请已提交，等待队长审批" }`
-
-### POST `/teams/:id/members/:userId/approve-leave`
-
-批准退出申请
-
-- **认证：** 是（仅队长）
-- **响应：** `{ "success": true, "message": "已批准退出申请" }`
-
-### POST `/teams/:id/members/:userId/reject-leave`
-
-拒绝退出申请
-
-- **认证：** 是（仅队长）
-- **响应：** `{ "success": true, "message": "已拒绝退出申请" }`
-
-### GET `/teams/:id/my-status`
-
-获取当前用户在队伍中的状态
-
-- **认证：** 否（未登录返回 `null`）
-- **响应：** `{ "success": true, "status": "pending|approved|rejected|leave_pending|cancelled|null" }`
-
-### POST `/teams/:id/form`
-
-组建队伍（状态从 recruiting/full 转为 formed）
-
-- **认证：** 是（仅队长）
-- **Body：** `{ "isUnderfilled": boolean }`
-- **响应：** `{ "success": true, "message": "队伍已组建", "isUnderfilled": boolean }`
-
-### POST `/teams/:id/cancel`
-
-取消队伍（队长操作）
-
-- **认证：** 是（仅队长）
-- **条件：** 仅 `recruiting` / `full` 状态可取消
-- **响应：** `{ "success": true, "message": "队伍已取消" }`
-
-### DELETE `/teams/:id`
-
-删除队伍
-
-- **认证：** 是（仅队长）
-- **条件：** 仅 `recruiting` 或 `cancelled` 状态可删除
-- **响应：** `{ "success": true, "message": "队伍已删除" }`
-- **错误响应：**
-  - 401：未登录
-  - 403：非队长
-  - 400：状态不允许删除（已组建/已完成的队伍）
-  - 404：队伍不存在
-- **说明：** 删除操作会先清除所有成员记录，再删除队伍记录，不可恢复
-
-### 行动本 Checklist（task #163）
-
-| 端点                                                          | 认证         | 说明                                       |
-| ------------------------------------------------------------- | ------------ | ------------------------------------------ |
-| `PUT /teams/:id/checklist`                                    | 是（仅队长） | 覆盖式保存行动本（集合点/装备/分工，≤2KB） |
-| `POST /teams/:id/checklist/assignments/:assignmentId/claim`   | 是（成员）   | 认领分工                                   |
-| `DELETE /teams/:id/checklist/assignments/:assignmentId/claim` | 是（成员）   | 取消认领（幂等，未认领返回 204）           |
-
----
-
-## 3. 地点管理 `/locations`
-
-### GET `/locations`
-
-获取地点列表
-
-- **认证：** 否
-- **Query 参数：**
-
-| 参数           | 类型   | 说明                                                      |
-| -------------- | ------ | --------------------------------------------------------- |
-| `page`         | int    | 页码，默认 1                                              |
-| `pageSize`     | int    | 每页数量，默认 12，最大 100                               |
-| `search`       | string | 搜索地点名称                                              |
-| `cityId`       | string | 城市 ID                                                   |
-| `tagIds`       | string | 逗号分隔的标签 ID                                         |
-| `type`         | string | 地点类型筛选（hiking\|explore\|leisure\|travel）          |
-| `view`         | string | `card` 轻量卡片模式（不 join 城市，徒步参数直读地点字段） |
-| `tags=true`    | —      | 返回热门标签（15 条）                                     |
-| `allTags=true` | —      | 返回所有标签（按类型分组）                                |
-
-- **响应：**
-
-```json
-{
-  "success": true,
-  "locations": [
-    {
-      "id": "loc-xxx",
-      "name": "清水湾",
-      "slug": "qingshuiwan",
-      "subtitle": "深圳南山的海边秘境",
-      "description": "...",
-      "address": "...",
-      "cityId": "city-xxx",
-      "cityName": "深圳",
-      "type": "hiking",
-      "coverImage": "url",
-      "images": ["url1", "url2"],
-      "bestSeason": ["春", "秋"],
-      "coordinates": { "lat": 22.5, "lng": 113.9 },
-      "tags": [{ "id", "name", "type" }],
-      "difficulty": "moderate",
-      "durationMin": 120,
-      "durationMax": 180,
-      "distance": 5.5,
-      "elevation": 700,
-      "extra": { "hiking": { "overview": "...", "tips": ["..."], "equipmentNeeded": ["..."], "warnings": ["..."] } }
-    }
-  ],
-  "pagination": { "page": 1, "pageSize": 12, "total": 50, "totalPages": 5 }
-}
-```
-
-### GET `/locations/:id`
-
-获取地点详情（支持 id 或 slug）
-
-- **认证：** 否
-- **响应：** 地点完整信息 + `tags` + `gearEssential` / `gearOptional`（数组）+ `extra`
-
-### POST `/locations`
-
-创建地点
-
-- **认证：** 是（仅管理员）
-- **Body：** `{ "name", "slug", "subtitle", "description", "address", "cityId", "cityName", "type", "coverImage", "images", "bestSeason", "coordinates", "extra", "parkingAvailable", "parkingInfo", "gearEssential", "gearOptional" }`；`cityId` 必须存在，兼容接收的 `cityName` 不作为权威值，响应/存储名称始终跟随 `cities.name`
-- **响应：** `{ "success": true, "location": { "id", "slug" } }`
-
-### PUT `/locations`
-
-更新地点
-
-- **认证：** 是（仅管理员）
-- **Body：** 与创建相同，需包含 `id` 字段（`type` 可选，nullable）；修改 `cityId` 时自动同步规范城市名
-
-### DELETE `/locations/:id`
-
-删除地点
-
-- **认证：** 是（仅管理员）
-
-### GET `/locations/:id/tags`
-
-获取地点当前关联的标签
-
-- **认证：** 否
-- **响应：** `{ "success": true, "tags": [...] }`
-
-### PUT `/locations/:id/tags`
-
-全量替换地点标签
-
-- **认证：** 是（仅管理员）
-- **Body：** `{ "tagIds": ["tag-1", "tag-2"] }`
-
----
-
-## 4. 用户管理 `/users`
-
-### GET `/users?id={userId}`
-
-获取用户信息
-
-- **认证：** 否
-- **响应：**
-
-```json
-{
-  "user": {
-    "id": "user-xxx",
-    "name": "张三",
-    "nickname": "登山达人",
-    "email": "user@example.com",
-    "avatar": "url",
-    "bio": "我喜欢徒步",
-    "gender": "M",
-    "birthday": "1990-01-01",
-    "level": "advanced",
-    "completedHikes": 15,
-    "wechat": "user_wechat",
-    "extra": { "equipment": [], "experience": "..." },
-    "city": "city-xxx",
-    "role": "user",
-    "status": "active",
-    "createdAt": "...",
-    "updatedAt": "..."
-  }
-}
-```
-
-### PATCH `/users/update`
-
-更新用户信息
-
-- **认证：** 是（普通用户只能改自己；`userId` 必填，支持 id 或邮箱；管理员可改他人）
-- **Body：** `{ "userId", "name", "nickname", "bio", "level", "image", "wechat", "gender", "birthday", "extra", "city" }`（`city` 为已存在的 cityId；未知 cityId 返回 400；`null`/空串清空）
-- **响应：** `{ "success": true, "user": {...} }`
-
-### GET `/users/pending-approvals`
-
-获取待审批申请列表（队长视角，支持分页）
-
-- **认证：** 是
-- **Query：** `page`（默认 1）、`pageSize`（默认 10，最大 100）
-- **响应：**
-
-```json
-{
-  "success": true,
-  "approvals": [
-    {
-      "id": "tm-xxx",
-      "teamId": "team-xxx",
-      "userId": "user-xxx",
-      "createdAt": "...",
-      "team": { "id", "title", "date", "time", "maxMembers", "location": {...} },
-      "applicant": { "id", "name", "nickname", "avatar", "bio", "level" }
-    }
-  ],
-  "pagination": { "page": 1, "pageSize": 10, "total": 3, "totalPages": 1, "hasMore": false }
-}
-```
-
-### GET `/users/applications`
-
-获取当前用户的申请记录（不含自己创建的队伍）
-
-- **认证：** 是
-- **Query：** `page`、`pageSize`（默认 10，最大 100）
-- **响应：** `{ "success": true, "applications": [{ "id", "status", "createdAt", "joinedAt", "team": {...} }], "stats": { "pending": 1, "approved": 5, "rejected": 0 }, "pagination": {...} }`
-
-### GET `/users/teams/joined`
-
-获取用户加入的队伍（已审批通过，不含自己创建的）
-
-- **认证：** 是
-
-### GET `/users/created-teams`
-
-获取用户创建的所有队伍
-
-- **认证：** 是
-
-### GET `/users/:id`
-
-获取用户公开资料
-
-- **认证：** 否（`email`/`wechat`/`role`/`status` 仅本人可见）
-- **响应：** 用户公开信息 + `stats`（创建/加入/完成队伍数）+ `ongoingTeams`
-
----
-
-## 5. 文件上传 `/upload`
-
-所有上传端点统一走 R2（`https://gomate.cos.jiahongw.com/...`）。
-
-### POST `/upload/avatar`
-
-上传用户头像
-
-- **认证：** 是（只能上传自己的头像，管理员除外）
-- **Form-Data：** `file`（JPEG/PNG/GIF/WebP，最大 5MB）、`userId`
-- **响应：** `{ "success": true, "key": "avatars/...", "url": "https://gomate.cos.jiahongw.com/...", "size": 123456, "type": "image/jpeg" }`
-
-### DELETE `/upload/avatar?key={key}`
-
-删除用户头像
-
-- **认证：** 是（仅能删除自己的头像）
-
-### POST `/upload/location`
-
-上传地点图片
-
-- **认证：** 是（仅管理员）
-
-### POST `/upload/story`
-
-上传故事封面图
-
-- **认证：** 是（登录用户）
-
-### POST `/upload/activity-post`
-
-上传活动动态图片
-
-- **认证：** 是（登录用户）
-
-### GET `/r2/*`
-
-R2 文件代理（本地开发专用，顶层挂载）
-
----
-
-## 6. 发现故事 `/stories`
-
-### GET `/stories`
-
-获取已发布故事列表
-
-- **认证：** 否
-- **Query：** `page`（默认 1）、`limit`（默认 10，最大 20）、`status`（默认 `published`）、`tag`
-- **status 可见性（task #156）：** 仅 `published` / `draft` 有效（其他值按 `published` 处理）；`draft` 需登录且只返回本人草稿，未登录返回空列表
-- **响应：** `{ "success": true, "data": [{ "id", "title", "summary", "content", "coverImage", "locationId", "viewCount", "likeCount", "author": {...} }], "pagination": { "page", "limit", "total", "hasMore" } }`
-
-### POST `/stories`
-
-发布故事
-
-- **认证：** 是（登录用户）
-- **Body：** `{ "title", "summary", "content", "coverImage", "locationId", "tags": ["徒步", "露营"] }`（`coverImage` 可选；`tags` ≤ 10）
-- **行为：** 使用当前登录用户作为作者，故事状态直接写入 `published`；`tags` 会 trim、去空、去重并限制最多 10 个，不存在的标签自动创建为 `type="activity"`，同时写入 `entity_to_tags(entityType="story")`。
-- **响应：** `{ "success": true, "message": "发布成功", "data": { "id": "story-xxx" } }`
-
-### GET `/stories/tags`
-
-获取有故事关联的热门标签
-
-- **认证：** 否
-- **响应：** `{ "success": true, "tags": [{ "id", "name", "type", "count" }] }`
-
-### GET `/stories/stats`
-
-获取故事统计数据
-
-- **认证：** 否
-- **响应：** `{ "success": true, "data": { "weeklyNewStories", "popularLocation" } }`
-
-### GET `/stories/:id`
-
-获取故事详情，并增加浏览数
-
-- **认证：** 否
-- **响应：** `data` 含故事字段 + `author` + `location` + `isLiked` + `tags: [{ id, name }]`（标签关联，编辑表单回显依赖此字段；无标签时为 `[]`）
-- **可见性（task #156）：** `published` 公开可读；`draft` 仅作者本人或管理员可读（其余 404，不泄露存在性），且 draft 访问不计浏览数；`hidden` 一律 404
-- **计数：** published 浏览数使用数据库原子自增，并发请求不会覆盖彼此
-
-### PUT `/stories/:id`
-
-更新故事
-
-- **认证：** 是（作者或管理员）
-- **Body：** 同创建（可选字段）+ `status`（draft\|published\|hidden）
-
-### DELETE `/stories/:id`
-
-软删除故事，状态改为 `hidden`
-
-- **认证：** 是（作者或管理员）
-
-### POST `/stories/:id/like`
-
-点赞/取消点赞故事（toggle）
-
-- **认证：** 是（登录用户）
-- **行为：** 已点赞 → 取消点赞；未点赞 → 点赞；`likeCount` 由唯一点赞关系在数据库内同步维护
-- **响应：** `{ "success": true, "liked": boolean, "likeCount": number, "message": string }`
-- **错误：** 401 未登录 / 404 故事不存在 / 500 服务器错误
-
-### GET `/stories/:id/share-stats`
-
-获取故事分享统计
-
-- **认证：** 否
-- **响应：** `{ "success": true, "total": number, "byChannel": { "wechat": 3, ... } }`
-
----
-
-## 7. 收藏管理 `/favorites`
-
-### GET `/favorites`
-
-获取收藏列表
-
-- **认证：** 是
-- **Query：** `entityType`（location\|story，可选）
-- **响应：** `{ "success": true, "favorites": [{ "id", "entityType", "entityId", "createdAt", "location": {...} }] }`
-
-### POST `/favorites`
-
-添加收藏
-
-- **认证：** 是
-- **Body：** `{ "entityType": "location", "entityId": "loc-xxx" }`
-- **错误：** 目标地点/故事不存在时返回 404，不创建悬空收藏
-
-### DELETE `/favorites?entityType={type}&entityId={id}`
-
-取消收藏
-
-- **认证：** 是
-
----
-
-## 8. 城市管理 `/cities`
-
-### GET `/cities`
-
-获取城市列表
-
-- **认证：** 否
-- **Query：** `hot`（boolean）、`province`、`level`、`page`（默认 1）、`pageSize`（默认 20，最大 100）
-- **响应：** `{ "success": true, "cities": [{ "id", "adcode", "name", "level", "province", "isHot" }] }`
-
-### POST `/cities`
-
-创建城市
-
-- **认证：** 是（仅管理员）
-- **Body：** `{ "adcode", "name", "level", "province", "isHot" }`
-
----
-
-## 9. 标签管理 `/tags`
-
-### GET `/tags`
-
-获取标签列表
-
-- **认证：** 否
-- **Query：** `type`（location\|activity\|story）、`page`（默认 1）、`pageSize`（默认 50，最大 100）
-- **响应：** `{ "success": true, "tags": [{ "id", "name", "type" }] }`
-
-### POST `/tags`
-
-创建标签（同名标签返回已有标签）
-
-- **认证：** 是（仅管理员）
-- **Body：** `{ "name", "type", "icon" }`；`type` 仅允许 `location`、`activity`、`story`，非法值返回 400
-- **响应：** `{ "success": true, "tagId": "tag-xxx", "existing": false }`
-
----
-
-## 10. 联系表单 `/contact`
-
-### POST `/contact`
-
-提交联系表单
-
-- **认证：** 否
-- **Body：** `{ "name", "email", "subject", "message" }`
-- **校验：** 所有字段必填；name ≤ 100 字；subject ≤ 200 字；message ≤ 5000 字
-- **响应：** `{ "success": true, "message": "您的建议已成功提交" }`
-
----
-
-## 11. 反馈 `/feedback`
-
-### POST `/feedback`
-
-提交用户反馈（发送邮件）
-
-- **认证：** 否
-- **Body：** `{ "type": "suggestion"|"bug", "name", "email", "content", "device"?, "browser"?, "steps"?, "pageUrl"? }`（content ≤ 5000 字，steps ≤ 2000，pageUrl ≤ 500）
-
----
-
-## 12. 消息 `/messages`
-
-队伍内一对一私信（仅队长与 approved 成员可互发）。
-
-| 端点                         | 认证 | 说明                                                                           |
-| ---------------------------- | ---- | ------------------------------------------------------------------------------ |
-| `GET /messages`              | 是   | 会话列表（`limit`，默认 20，最大 50）                                          |
-| `POST /messages`             | 是   | 创建会话，Body `{ "teamId", "userId"? }`（队长可指定目标成员；成员只能找队长） |
-| `GET /messages/unread-count` | 是   | 未读数                                                                         |
-| `GET /messages/:id`          | 是   | 会话消息（`cursor` / `since` / `limit` 分页）                                  |
-| `POST /messages/:id`         | 是   | 发送消息，Body `{ "content" }`（≤1000 字）；会话摘要与消息同次数据库写入维护   |
-
----
-
-## 13. 分享事件 `/shares`
-
-### POST `/shares/track`
-
-记录分享事件
-
-- **认证：** 否（有 session 则记录 userId）
-- **Body：** `{ "entity_type": "story", "entity_id": "story-xxx", "share_channel": "wechat" }`
-
----
-
-## 14. 分享图 `/share-image`
-
-服务端 Satori + resvg 生成分享图（PNG），R2 缓存（`Cache-Control: public, max-age=86400`）。
-
-| 端点                         | 说明                                                                                                                               |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /share-image/:kind/:id` | 统一端点：`kind` ∈ `location \| team \| story`。`id` 是对应 ID（location/team）或故事 ID（story）；location 支持 `slug` 作为后备。 |
-| `GET /share-image/locales`   | 服务端支持的海报 locale 列表（`["zh-CN", "en", "ja"]`）。                                                                          |
-
-- **Path params:** `:kind` 限定三种 kind；`:id` 自由但已校验存在（不存在 → 404）。
-- **Query:**
-  - `locale=zh-CN | en | ja`（仅在前端调用，未匹配则按 Accept-Language header 回退；默认 `zh-CN`）—— **所有 kinds 现在都按 locale 渲染**（之前只有 location 支持 team/story 忽略）
-  - `refresh=1` —— 清 R2 缓存后强制重新生成
-
-**原多端点已合并为 `GET /share-image/:kind/:id` 一个端点。** 客户端 `useShareImage({ type, id })` 现在支持 `kind: "location" | "team" | "story"`，重定向分发到此单一端点。早期 `GET /share-image/preview`（仅 Phase 1 验证用）已删除。
-
----
-
-## 15. 附近圈 `/local-circle/home`
-
-### GET `/local-circle/home`
-
-本地（同城）动态汇总（task #184）
-
-- **认证：** 否
-- **Query：** `cityId`（可选，缺省 fallback 深圳）
-- **响应：** `{ "success": true, ... }`（同城推荐数据，KV SWR 缓存）
-
----
-
-## 16. 活动动态 `/activity-posts`
-
-挂在根路由（`api/src/index.ts` 的 `app.route("/", activityPostsRoute)`）。
-
-| 端点                                | 认证                        | 说明                                            |
-| ----------------------------------- | --------------------------- | ----------------------------------------------- |
-| `GET /teams/:id/activity-posts`     | 否                          | 队伍活动后分享列表（`limit`，默认 10，最大 50） |
-| `POST /teams/:id/activity-posts`    | 是（队伍成员 + 队伍已完成） | Body `{ "content", "images"? }`（≤3 张）        |
-| `DELETE /activity-posts/:id`        | 是（作者）                  | 删除动态                                        |
-| `GET /locations/:id/activity-posts` | 否                          | 地点活动动态列表                                |
-
----
-
-## 17. 管理工具 `/admin`
-
-| 端点                                    | 认证           | 说明                                                               |
-| --------------------------------------- | -------------- | ------------------------------------------------------------------ |
-| `POST /admin/cron/update-expired-teams` | 是（仅管理员） | 手动触发过期队伍状态更新（recruiting→cancelled、formed→completed） |
-| `GET /admin/share-analytics`            | 是（仅管理员） | 分享分析（渠道分布、7 日趋势、Top 10 被分享故事）                  |
-
----
-
-## 18. 公开 API `/v1/*`（API Key / Session）
-
-面向外部工具与移动端的稳定公开 API。认证二选一：`x-api-key` 请求头（`gm_live_<key>`）或 Session Cookie。OpenAPI 契约：`GET /v1/openapi.json`。
-
-写端点需 `Idempotency-Key` 请求头（UUID v4），重复 key + 相同 body 幂等重放。
-
-### 读端点
-
-| 端点                          | 说明                                                              |
-| ----------------------------- | ----------------------------------------------------------------- |
-| `GET /v1/teams`               | 队伍列表（`page`/`pageSize`/`cityId`/`tagId`/`status`/`keyword`） |
-| `GET /v1/teams/:id`           | 队伍详情                                                          |
-| `GET /v1/teams/:id/my-status` | 我的队伍状态                                                      |
-| `GET /v1/locations`           | 地点列表（`page`/`pageSize`/`cityId`/`keyword`）                  |
-| `GET /v1/locations/:id`       | 地点详情                                                          |
-| `GET /v1/locations/stats`     | 首页地图聚合（省份数量 + 点位及其城市/省份归属）                  |
-| `GET /v1/stories`             | 故事列表                                                          |
-| `GET /v1/stories/:id`         | 故事详情                                                          |
-| `GET /v1/enums`               | 枚举数据（队伍状态、难度等）                                      |
-
-### 写端点
-
-| 端点                             | 认证要求         | 说明         |
-| -------------------------------- | ---------------- | ------------ |
-| `POST /v1/teams`                 | 登录（需微信号） | 创建队伍     |
-| `POST /v1/teams/:teamId/members` | 登录（需微信号） | 申请加入队伍 |
-| `POST /v1/locations`             | 登录 + admin     | 创建地点     |
-| `POST /v1/stories`               | 登录             | 发布故事     |
-
----
-
-## 20. 图片代理与健康检查
-
-### GET `/proxy-image?url={url}`
-
-图片代理（供前端 Canvas 绘图绕过跨域，域名白名单：gomate.cos.jiahongw.com、\*.githubusercontent.com、\*.googleusercontent.com、cdn.discordapp.com）
-
-- **认证：** 否
-- **错误：** 403 域名不在白名单 / 502 抓取失败
-
-### GET `/health`
-
-- **认证：** 否
-- **响应：** `{ "status": "ok", "timestamp": "2026-03-22T10:00:00Z" }`
-
----
-
-## 错误格式
-
-```json
-{ "error": "错误描述", "success": false }
-```
-
-| 状态码 | 含义                     |
-| ------ | ------------------------ |
-| 400    | 请求参数错误             |
-| 401    | 未登录或认证失败         |
-| 403    | 无权限访问               |
-| 404    | 资源不存在               |
-| 409    | 冲突（如已收藏、已申请） |
-| 500    | 服务器内部错误           |
-
----
-
-## 队伍状态流转
-
-```
-recruiting ──→ full ──→ formed ──→ completed
-     ↑           │
-     └───────────┘ (成员退出/移除，空位释放)
-
-recruiting / full ──→ cancelled (队长取消)
-recruiting ──────────→ cancelled (过期自动，cron/GET 详情时触发)
-formed ──────────────→ completed (过期自动)
-```
-
-## 成员状态枚举
-
-| 值              | 说明                   |
-| --------------- | ---------------------- |
-| `pending`       | 待审核                 |
-| `approved`      | 已批准                 |
-| `rejected`      | 已拒绝                 |
-| `cancelled`     | 申请已取消             |
-| `leave_pending` | 申请退出（已组建队伍） |
+`maxParticipants` 只计算 `team_members` 中的 active participant，不包含 leader。审批使用 D1 `batch()` 和数据库容量 trigger，满员、
+重试与最后席位竞争不会产生超员 active membership。
+Team 列表按 `(startAt ASC, id ASC)` 稳定分页，返回
+`{ success, teams, total, nextCursor }`；不接受 `page/pageSize`。
+
+行动本合同：
+
+- `PUT /teams/:id/checklist` 是 leader 的覆盖式写入；省略字段表示清空该字段。
+  每个 assignment 的已有 `id` 会保留，新条目由服务端生成 ID，`assigneeIds` 去重。
+- checklist 以 `JSON.stringify` 后的 UTF-8 字节数计量，上限为 2048 bytes；超限返回
+  `400 VALIDATION_ERROR`。`assigneeIds` 只能包含 leader 或 `left_at is null` 的当前
+  active member；否则同样返回 `400 VALIDATION_ERROR`，`details.invalidAssigneeIds`
+  给出不合法 ID。
+- PUT 的 assignee 资格与写入在同一 conditional DML 中复查。PUT、claim 与 unclaim
+  的 compare-and-swap 直接比较 checklist JSON 内容，不依赖毫秒级 `updatedAt`。PUT
+  发现内容冲突时直接返回 `409 CONFLICT`；claim/unclaim 会重读合并一次，仍冲突再返回
+  `409 CONFLICT`。
+- claim/unclaim 都是幂等操作，但即使目标状态已经满足，也会在 conditional UPDATE 的
+  `WHERE/EXISTS` 中原子复查调用者仍是 leader 或 active member。预读后离队会返回
+  `403 FORBIDDEN` 且不修改 checklist。claim 成功返回当前 assignment；unclaim 成功返回
+  `204 No Content`。
+
+### 用户
+
+| 方法与路径                            | 认证 | 说明                                                |
+| ------------------------------------- | ---- | --------------------------------------------------- |
+| `GET /users/me`                       | 是   | 当前用户 canonical DTO                              |
+| `PATCH /users/me`                     | 是   | 更新当前用户非头像资料；扩展字段放在 `extra` object |
+| `GET /users/me/created-teams`         | 是   | 当前用户创建的 Team                                 |
+| `GET /users/me/joined-teams`          | 是   | 当前用户 active membership                          |
+| `GET /users/me/join-requests`         | 是   | 当前用户全部申请                                    |
+| `GET /users/me/pending-join-requests` | 是   | 当前用户待处理申请                                  |
+| `GET /users/:id`                      | 否   | 公开用户资料                                        |
+
+客户端不能提交目标 user ID 来修改其他用户。`extra` 中的 `wechat` 仅在业务权限允许
+时显示；用户 birthday 输入/输出均为 ISO 时间。`PATCH /users/me` 不接受 `image`
+（包括 `null`）；头像只通过 `/upload/avatar` 的原子 R2/D1 command 变更。
+四个 `/users/me/*` 列表均只接受 `limit/cursor`，按各自 `createdAt DESC, id DESC`
+稳定分页并在顶层返回 `nextCursor`，不接受 `page/pageSize`。`extra` 的 partial patch
+通过单条 SQL `json_set` 合并到数据库当前值，避免并发更新不同字段时 read-merge-write
+覆盖彼此。
+
+### Stories、点赞与收藏
+
+| 方法与路径                             | 认证   | 说明                                                                                     |
+| -------------------------------------- | ------ | ---------------------------------------------------------------------------------------- |
+| `GET /stories`                         | 否     | cursor feed；支持 `locationId`/`teamId` 精确过滤，返回 `{ data: { items, nextCursor } }` |
+| `GET /stories/stats`                   | 否     | 内容统计                                                                                 |
+| `GET /stories/tags`                    | 否     | Story 标签                                                                               |
+| `GET /stories/:id`                     | 否     | Story 详情与 author/location/team/tags                                                   |
+| `POST /stories`                        | 是     | 创建普通 Story 或携带 `teamId` 的队伍回顾，并归档已上传临时图片                          |
+| `PUT /stories/:id`                     | author | 更新内容与受控 final `images[]`                                                          |
+| `DELETE /stories/:id`                  | author | 删除 Story                                                                               |
+| `POST /stories/:id/like`               | 是     | 幂等切换点赞，计数由 trigger 维护                                                        |
+| `GET/POST/DELETE /favorites/locations` | 是     | 专用地点收藏查询/写入/删除                                                               |
+| `GET/POST/DELETE /favorites/stories`   | 是     | 专用 Story 收藏查询/写入/删除                                                            |
+
+创建 Story 只接受 `imageKeys[]`，key 必须属于
+`temp/stories/<currentUserId>/<id>.<ext>`。服务端复制到
+`stories/<storyId>/...` 后才把公开 URL 写入 D1；R2 或 D1 失败会补偿删除生成物。
+携带 `teamId` 时，Team 必须已成行、未取消且 `endAt <= now`；只有当前 leader
+或未离队的 active member 可以创建。服务端从 Team 推导 `locationId`，并在最终
+条件 INSERT 中原子复查 Team 生命周期、角色、地点公开状态和 Region 服务状态。
+关联 Location 的 Story 只有在 Location 自身为 `published` 且属于已启用 city Region
+时才可创建、更新、展示、点赞或收藏；写入以条件 DML 在同一语句中复查该条件。
+Story DTO 的用户态字段固定为 `isLiked`，不返回 `liked`/`favorited` 别名。
+`GET /stories/:id` 是纯读取，不同步修改 `viewCount`，因此在
+`WRITE_MODE=protected` 下所有 GET 都不会写 D1。
+
+### 消息
+
+| 方法与路径                             | 认证        | 说明                                    |
+| -------------------------------------- | ----------- | --------------------------------------- |
+| `GET /messages`                        | 是          | 会话 inbox                              |
+| `POST /messages`                       | 是          | 为允许联系的 Team/member 建立或复用会话 |
+| `GET /messages/unread-count`           | 是          | 未读总数                                |
+| `GET /messages/:conversationId`        | participant | 以稳定 cursor 读取消息                  |
+| `POST /messages/:conversationId`       | participant | 发送消息并更新会话摘要                  |
+| `PATCH /messages/:conversationId/read` | participant | 标记已读                                |
+
+会话 inbox 只接受 `limit/cursor`，按
+`(coalesce(lastMessageAt, createdAt) DESC, id DESC)` 稳定分页，返回顶层
+`nextCursor`；消息历史按 `(createdAt DESC, id DESC)` 稳定分页。两者均拒绝旧的
+`page/pageSize/since` 分页别名。Conversation 与 Message DTO 的所有时间字段均为
+ISO 8601 string（nullable 字段仍可为 `null`），不返回 Unix number 别名。
+
+### 上传、分享图片与首页本地圈子
+
+| 方法与路径                            | 认证  | 说明                                                                                                 |
+| ------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------- |
+| `POST /upload/avatar`                 | 是    | 临时写入、归档到当前用户 namespace，并以条件 DML 更新当前头像                                        |
+| `DELETE /upload/avatar?key=...`       | 是    | 只删除当前用户正在使用的头像 key                                                                     |
+| `POST /upload/location`               | admin | 写入 `temp/locations/<adminId>/...`，由 Location mutation 归档                                       |
+| `POST /upload/story`                  | 是    | 写入当前用户临时 Story key                                                                           |
+| `GET /share-image/:kind/:id`          | 否    | 生成 Team/Location 分享 SVG                                                                          |
+| `GET /share-image/locales`            | 否    | 支持的海报 locale                                                                                    |
+| `GET /local-circle/home?regionId=...` | 可选  | 公共 Region 信号 + 每请求用户 neighborTeams                                                          |
+| `GET /r2/*`                           | 否    | 本地开发对象读取                                                                                     |
+| `GET /proxy-image?url=...`            | 否    | 仅 HTTPS allowlist 的 jpeg/png/gif/webp/avif raster 代理，不跟随 redirect；拒绝 SVG 并设置 `nosniff` |
+
+Local-circle KV 只缓存不含用户身份的公共部分；个性化 neighborTeams 每次从 D1
+计算后合并，避免跨用户缓存泄漏。
+登录、注册与邮件发送的主要滥用保护使用三个 Cloudflare Rate Limiting binding：
+`AUTH_SIGN_IN_RATE_LIMITER`、`AUTH_SIGN_UP_RATE_LIMITER`、
+`AUTH_EMAIL_RATE_LIMITER`。输入按用途、email 与来源分别 SHA-256 后传入 binding，
+不记录原始 PII；binding 是按 Cloudflare location 的最终一致滥用抑制，不承担权限、
+计费或精确全局计数真相。Better Auth 自带限流继续作为纵深防御，状态使用
+`auth:better-auth-rate-limit:v1:<sha256>` KV key，value 仅含 count/lastRequest 且 15
+分钟 TTL；原始 IP 与 path 不落 KV。该安全状态不会进入
+`local-circle:v2:public:*` payload，后者仍禁止任何用户字段。
+Better Auth 扩展 user 字段全部为 server-owned (`input: false`)；session 创建 hook 与
+`sessions_active_user_insert_guard` 双重限制 active 且未软删除用户，后者在落库语句内
+关闭状态检查竞态。用户停用/软删除时数据库同步删除全部 session 与未消费的自有 reset
+challenge。注册、登录、验证与找回密码 JSON body 上限为 16 KiB。
+
+所有图片上传先检查 `Content-Length`，并在缺失或伪造长度时仍以固定上限读取
+multipart；扩展名、声明 MIME 与文件魔数必须完全一致。`R2_PUBLIC_URL` 必须在写入
+前通过 HTTPS canonical URL 校验。Avatar 与 Location 使用临时对象、最终对象和 D1
+条件写入的补偿流程；失败会幂等重试清理或恢复引用。Story 的 `waitUntil` 清理同样
+执行有界幂等重试；由于 V2 固定 19 张表，不新增第二十张媒体清理 ledger。

@@ -6,7 +6,6 @@
 ## 现状
 
 - **Playwright 基础测试**：`e2e/auth.spec.ts`、`e2e/teams.spec.ts`、`e2e/team-applications.spec.ts`（#414 自构造 fixture）
-- **v1 API 契约测试**：`e2e/v1-read-endpoints.spec.ts`
 - **browser-use 探索式测试**：`e2e/browser-use/home_smoke.py`
 - **CI 集成**：`pr-validation.yml` 的 `e2e-tests` job 运行 `pnpm e2e:ci`（本地起 api + web 两个服务）
 - **运行边界**：所有 Playwright 用例在本地隔离的 API、Web 和 D1 上执行，不依赖远程环境

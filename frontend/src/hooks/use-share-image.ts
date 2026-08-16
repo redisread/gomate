@@ -84,7 +84,7 @@ export function useShareImage({ type, id }: UseShareImageOptions) {
         const link = document.createElement("a");
         link.href = url;
         link.download =
-          filename || `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.png`;
+          filename || `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.svg`;
         link.click();
         return true;
       } catch {

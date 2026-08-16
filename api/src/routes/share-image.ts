@@ -20,6 +20,20 @@ import { SUPPORTED_POSTER_LOCALES, resolvePosterLocale } from "../services/share
 
 const POSTER_KINDS = new Set<PosterKind>(["location", "team", "story"]);
 
+function logPosterRenderFailure(kind: PosterKind, error: unknown): void {
+  switch (kind) {
+    case "location":
+      logger.error("share_image_location_render_failed", error);
+      break;
+    case "story":
+      logger.error("share_image_story_render_failed", error);
+      break;
+    case "team":
+      logger.error("share_image_team_render_failed", error);
+      break;
+  }
+}
+
 /**
  * Header builder shared by every poster response.
  *
@@ -28,16 +42,18 @@ const POSTER_KINDS = new Set<PosterKind>(["location", "team", "story"]);
  * browser navigation to the poster URL from "show image" into "download".
  * If a download feature returns later, add the header conditionally.
  */
-function pngResponse(
-  png: Uint8Array,
+function svgResponse(
+  svg: string,
   opts: { cacheKey: string },
 ): Response {
   const headers: Record<string, string> = {
-    "Content-Type": "image/png",
+    "Content-Type": "image/svg+xml; charset=utf-8",
     "Cache-Control": "public, max-age=86400",
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:",
     "X-Cache-Key": opts.cacheKey,
   };
-  return new Response(png, { headers });
+  return new Response(svg, { headers });
 }
 
 const shareImageRoute = new Hono<{ Bindings: Env }>();
@@ -60,14 +76,13 @@ shareImageRoute.get("/:kind/:id", async (c) => {
 
   try {
     const result = await renderPoster(c.env, kind, id, { locale, refresh });
-    return pngResponse(result.png, { cacheKey: result.cacheKey });
+    return svgResponse(result.svg, { cacheKey: result.cacheKey });
   } catch (error) {
     if (error instanceof PosterNotFoundError) {
       return c.json(APIErrors.notFound(error.message), 404);
     }
-    logger.error(`[ShareImage] ${kind} render failed:`, error);
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json(APIErrors.internalError(`Failed to generate ${kind} image`, message), 500);
+    logPosterRenderFailure(kind, error);
+    return c.json(APIErrors.internalError(`Failed to generate ${kind} image`), 500);
   }
 });
 

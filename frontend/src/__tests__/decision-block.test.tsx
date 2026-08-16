@@ -8,12 +8,8 @@ import type { Location } from "../lib/types";
  *
  * 覆盖矩阵：
  *   1. 全空 location → 整块不渲染（返回 null）
- *   2. 只有 parking 数据 → 只渲染 parking sub-block（跳过 transport fetch）
- *   3. 只有 gear 数据 → 只渲染 gear sub-block
- *   4. 有坐标，fetch 返回 ready（subway+driving）→ 渲染 subway / driving / openInMap
- *   5. 有坐标，fetch 返回 amapAllFailed → 只渲染 fallbackHint + openInMap CTA
- *   6. 有坐标，fetch 失败 → 渲染 error fallback（fallbackHint + retry + coord-based mapUrl）
- *   7. staleDays >= 7 → 渲染 stale 提示
+ *   2. 只有 gear 数据 → 只渲染 gear sub-block
+ *   3. 有坐标 → 渲染 fallbackHint + openInMap CTA
  */
 
 vi.mock("@/hooks/useI18n", () => ({
@@ -32,20 +28,35 @@ vi.mock("@/lib/api", () => ({
 }));
 
 function makeLocation(overrides: Partial<Location> = {}): Location {
-  return {
+  const base: Location = {
     id: "loc-1",
     name: "测试地点",
     slug: "test",
+    supportedActivityTypes: ["hiking"],
+    status: "published",
+    subtitle: null,
     description: "",
-    cityId: "c1",
-    cityName: "深圳",
-    bestSeason: [],
-    coverImage: "",
+    address: null,
+    regionId: "region-sz",
+    latitude: 22.54,
+    longitude: 114.06,
+    coverImageUrl: "https://gomate.cos.jiahongw.com/locations/test.jpg",
     images: [],
-    coordinates: { lat: 22.54, lng: 114.06 },
-    createdAt: "",
-    updatedAt: "",
+    extra: {},
+    createdByUserId: null,
+    createdAt: "2026-08-16T00:00:00.000Z",
+    updatedAt: "2026-08-16T00:00:00.000Z",
+  };
+  return {
+    ...base,
     ...overrides,
+    extra: {
+      ...base.extra,
+      ...overrides.extra,
+      hiking: overrides.extra?.hiking
+        ? { ...base.extra.hiking, ...overrides.extra.hiking }
+        : base.extra.hiking,
+    },
   };
 }
 
@@ -68,7 +79,8 @@ describe("DecisionBlock", () => {
 
   it("全空 location（无坐标 + 无停车 + 无装备）→ 不渲染", () => {
     const location = makeLocation({
-      coordinates: { lat: Number.NaN, lng: Number.NaN },
+      latitude: Number.NaN,
+      longitude: Number.NaN,
     });
     const { container } = render(<DecisionBlock location={location} />);
     expect(container.firstChild).toBeNull();
@@ -79,44 +91,25 @@ describe("DecisionBlock", () => {
   // 坐标漏过校验会触发 amap fetch → mapUrl 指向 (0,0) 非洲外海
   it("sentinel {0,0} 坐标 → hasCoords=false，transport sub-block 不渲染 + fetch 不发起", () => {
     const location = makeLocation({
-      coordinates: { lat: 0, lng: 0 },
+      latitude: 0,
+      longitude: 0,
     });
     const { container } = render(<DecisionBlock location={location} />);
-    // 无 parking / gear，整块空态
+    // 无 gear，整块空态
     expect(container.firstChild).toBeNull();
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("sentinel {0,0} 坐标 + parking 数据 → parking 渲染但 transport 不发起 + 不显 CTA", () => {
-    const location = makeLocation({
-      coordinates: { lat: 0, lng: 0 },
-      parkingAvailable: false,
-    });
-    render(<DecisionBlock location={location} />);
-    expect(screen.getByText("locationDetail.parking.title")).toBeInTheDocument();
-    expect(screen.queryByText("locationDetail.transport.title")).toBeNull();
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("只有 parking 数据 → 只渲染 parking sub-block，不发起 transport 请求", () => {
-    const location = makeLocation({
-      coordinates: { lat: Number.NaN, lng: Number.NaN },
-      parkingAvailable: true,
-      parkingInfo: "免费停车",
-    });
-    render(<DecisionBlock location={location} />);
-    expect(screen.getByText("locationDetail.parking.title")).toBeInTheDocument();
-    expect(screen.getByText("locationDetail.parking.available")).toBeInTheDocument();
-    expect(screen.getByText("免费停车")).toBeInTheDocument();
-    expect(screen.queryByText("locationDetail.transport.title")).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("只有 gear 数据 → 只渲染 gear sub-block", () => {
     const location = makeLocation({
-      coordinates: { lat: Number.NaN, lng: Number.NaN },
-      gearEssential: ["登山鞋", "帽子"],
-      gearOptional: ["登山杖"],
+      latitude: Number.NaN,
+      longitude: Number.NaN,
+      extra: {
+        hiking: {
+          gearEssential: ["登山鞋", "帽子"],
+          gearOptional: ["登山杖"],
+        },
+      },
     });
     render(<DecisionBlock location={location} />);
     expect(screen.getByText("locationDetail.gear.title")).toBeInTheDocument();

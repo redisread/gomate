@@ -4,6 +4,7 @@ import type { Team } from "@/lib/types";
 import { useTeamDetail } from "./use-team-detail";
 import { TeamApplicationsSection } from "./team-detail-applications";
 import { TeamProgress } from "@/components/features/teams/shared";
+import { getTeamDisplayStatus } from "@/lib/team-display";
 import * as React from "react";
 
 // 懒加载分享相关组件
@@ -116,12 +117,13 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
 
 function TeamCapacity({ team, canJoin, remaining }: { team: Team; canJoin: boolean; remaining: number; }) {
   const { t } = useI18n(["teams"]);
+  const displayStatus = getTeamDisplayStatus(team);
   return (
     <div className="rounded-xl bg-amber-50 p-4 space-y-3">
       <TeamProgress
-        current={team.currentMembers}
-        max={team.maxMembers}
-        status={team.status}
+        current={team.activeParticipantCount}
+        max={team.maxParticipants}
+        status={displayStatus}
         showLabel={true}
         size="md"
       />
@@ -154,15 +156,16 @@ export function TeamDecisionPrimaryAction({
   onJoin: () => void;
 }) {
   const { t } = useI18n(["teams"]);
+  const displayStatus = getTeamDisplayStatus(team);
 
   if (isLeader || isMember || isPending) return null;
 
   if (!canJoin) {
     const unavailableMessage = isFull
       ? t("teams.teamFullCannotJoin")
-      : team.status === "completed"
+      : displayStatus === "completed" || displayStatus === "expired_unformed" || displayStatus === "closed"
         ? t("teams.statusEnded")
-        : team.status === "formed"
+        : displayStatus === "formed" || displayStatus === "ongoing"
           ? t("teams.statusFormed")
           : t("teams.statusCancelled");
 
@@ -218,12 +221,14 @@ function LeaderActions({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; t
   const { t } = useI18n(["teams"]);
   return (
     <div className="bg-amber-50 rounded-xl p-3 space-y-1.5">
-      <a href={`/teams/${team.id}/edit`}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground/70 hover:bg-accent rounded-lg transition-colors">
-        <Pencil className="w-4 h-4" />
-        {t('teams.editTeam')}
-      </a>
-      {(team.status === "recruiting" || team.status === "full") && (
+      {team.lifecycle === "pending" && (
+        <a href={`/teams/${team.id}/edit`}
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground/70 hover:bg-accent rounded-lg transition-colors">
+          <Pencil className="w-4 h-4" />
+          {t('teams.editTeam')}
+        </a>
+      )}
+      {team.lifecycle === "pending" && (
         <button onClick={() => ctx.setShowFormConfirm(true)} disabled={ctx.isForming}
           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-400 hover:bg-accent rounded-lg transition-colors disabled:opacity-50 font-medium">
           {ctx.isForming && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -231,7 +236,7 @@ function LeaderActions({ ctx, team }: { ctx: ReturnType<typeof useTeamDetail>; t
           {ctx.isFull ? t('teams.formTeam') : t('teams.formTeamUnderfilled')}
         </button>
       )}
-      {(team.status === "recruiting" || team.status === "cancelled") && (
+      {team.lifecycle === "pending" && team.activeParticipantCount === 0 && (
         <button onClick={() => ctx.setShowDeleteConfirm(true)} disabled={ctx.isDeleting}
           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-accent rounded-lg transition-colors disabled:opacity-50">
           {ctx.isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}

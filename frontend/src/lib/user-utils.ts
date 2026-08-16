@@ -2,26 +2,6 @@
  * 用户相关工具函数
  */
 
-/** 用户扩展信息结构 */
-export interface UserExtra {
-  equipment?: string[];
-  experience?: string;
-}
-
-/**
- * 解析用户扩展信息 JSON 字符串
- * @param extra JSON 字符串或 null
- * @returns 解析后的对象，解析失败返回空对象
- */
-export function parseExtra(extra: string | null | undefined): UserExtra {
-  if (!extra) return {};
-  try {
-    return JSON.parse(extra);
-  } catch {
-    return {};
-  }
-}
-
 /**
  * 将生日转为日期显示字符串 (YYYY-MM-DD)
  * @param birthday ISO 字符串、时间戳或 null
@@ -72,9 +52,8 @@ export function getAgeFromBirthday(birthday: string | number | null | undefined)
  * @param dateStr 日期字符串 (YYYY-MM-DD)
  * @returns 时间戳 (ms) 或 null
  */
-export function birthdayToTimestamp(dateStr: string | null | undefined): number | null {
+export function birthdayToIso(dateStr: string | null | undefined): string | null {
   if (!dateStr) return null;
-  // 使用 UTC 时间避免时区偏移
   const [y, m, d] = dateStr.split("-").map(Number);
-  return Date.UTC(y, m - 1, d);
+  return new Date(Date.UTC(y, m - 1, d)).toISOString();
 }

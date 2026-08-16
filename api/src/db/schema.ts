@@ -1,667 +1,1063 @@
+import type { TeamChecklist } from "@gomate/types";
+import { relations, sql } from "drizzle-orm";
 import {
+  check,
+  index,
+  integer,
+  primaryKey,
+  real,
   sqliteTable,
   text,
-  integer,
-  real,
-  index,
   uniqueIndex,
-  primaryKey,
-  check,
+  type AnySQLiteColumn,
 } from "drizzle-orm/sqlite-core";
-import { relations, sql } from "drizzle-orm";
-import type { TeamChecklist } from "@gomate/types";
 
-// ==================== Tables ====================
+export type ActivityType = "hiking" | "explore" | "leisure" | "travel";
+export type UserRole = "user" | "admin";
+export type UserStatus = "active" | "suspended" | "banned" | "deleted";
+export type UserGender = "male" | "female" | "other";
+export type RegionLevel = "province" | "city" | "district" | "other";
+export type LocationStatus = "draft" | "published" | "archived";
+export type RecruitmentStatus = "open" | "closed";
+export type TeamJoinRequestStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "cancelled";
+export type TeamMemberRole = "member" | "co_leader";
+export type StoryStatus = "draft" | "published" | "hidden";
 
-// 用户表（Better Auth 扩展）
+export interface UserExtra {
+  level?: "beginner" | "intermediate" | "advanced" | "expert";
+  completed_hikes?: number;
+  wechat?: string | null;
+  city?: string | null;
+  [key: string]: unknown;
+}
+
+export interface LocationExtra {
+  hiking?: {
+    difficulty?: "easy" | "moderate" | "hard" | "expert";
+    duration_min?: number;
+    duration_max?: number;
+    distance_km?: number;
+    elevation_gain_m?: number;
+    best_seasons?: string[];
+    gear_essential?: string[];
+    gear_optional?: string[];
+    overview?: string | null;
+    tips?: string[];
+    warnings?: string[];
+  };
+  [key: string]: unknown;
+}
+
+const nowMs = sql`(unixepoch() * 1000)`;
+
 export const users = sqliteTable(
   "users",
   {
-    id: text("id").primaryKey(),
+    id: text("id").notNull().primaryKey(),
     name: text("name").notNull(),
     nickname: text("nickname"),
-    email: text("email").notNull().unique(),
-    emailVerified: integer("email_verified", { mode: "boolean" }).default(false).notNull(),
+    email: text("email").notNull(),
+    emailVerified: integer("email_verified", { mode: "boolean" })
+      .notNull()
+      .default(false),
     image: text("image"),
     bio: text("bio"),
-    gender: text("gender"),
+    gender: text("gender").$type<UserGender>(),
     birthday: integer("birthday", { mode: "timestamp_ms" }),
-    level: text("level").default("beginner").notNull(),
-    completedHikes: integer("completed_hikes").default(0),
-    wechat: text("wechat"),
-    // P0-A T4（task #164）：用户所属城市，用于本地圈子/推荐位/季节判定 fallback
-    // nullable：旧用户默认 null，UI 走 CF-IPCity + 深圳 fallback
-    // #181: 存 cityId（非城市名），与 local-circle neighbor query u.city=userCity 一致性依赖
-    //   —— 任何绕过 CitySelect 的写入（admin 导入/迁移/脚本）也必须存 cityId，否则邻居匹配失效（防休眠 2.0）
-    city: text("city"),
-    role: text("role").default("user").notNull(),
-    status: text("status").default("active").notNull(),
-    extra: text("extra"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    role: text("role").$type<UserRole>().notNull().default("user"),
+    status: text("status").$type<UserStatus>().notNull().default("active"),
+    extra: text("extra", { mode: "json" })
+      .$type<UserExtra>()
+      .notNull()
+      .default(sql`'{}'`),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
     deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
   },
   (table) => ({
-    nameIdx: index("users_name_idx").on(table.name),
-    nicknameIdx: index("users_nickname_idx").on(table.nickname),
-    cityIdx: index("users_city_idx").on(table.city),
-  })
+    emailUnique: uniqueIndex("users_email_unique").on(table.email),
+    statusCreatedIdx: index("users_status_created_idx").on(
+      table.status,
+      table.createdAt,
+      table.id,
+    ),
+    emailVerifiedCheck: check(
+      "users_email_verified_check",
+      sql`${table.emailVerified} in (0, 1)`,
+    ),
+    genderCheck: check(
+      "users_gender_check",
+      sql`${table.gender} is null or ${table.gender} in ('male', 'female', 'other')`,
+    ),
+    roleCheck: check(
+      "users_role_check",
+      sql`${table.role} in ('user', 'admin')`,
+    ),
+    statusCheck: check(
+      "users_status_check",
+      sql`${table.status} in ('active', 'suspended', 'banned', 'deleted')`,
+    ),
+    extraCheck: check(
+      "users_extra_json_check",
+      sql`json_valid(${table.extra}) and json_type(${table.extra}) = 'object'`,
+    ),
+  }),
 );
 
-// Better Auth Session 表
 export const sessions = sqliteTable(
   "sessions",
   {
-    id: text("id").primaryKey(),
-    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-    token: text("token").notNull().unique(),
+    id: text("id").notNull().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
   },
   (table) => ({
+    tokenUnique: uniqueIndex("sessions_token_unique").on(table.token),
     userIdx: index("sessions_user_idx").on(table.userId),
-  })
+    expiresIdx: index("sessions_expires_idx").on(table.expiresAt),
+  }),
 );
 
-// Better Auth Account 表
 export const accounts = sqliteTable(
   "accounts",
   {
-    id: text("id").primaryKey(),
-    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    id: text("id").notNull().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
-    accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp_ms" }),
-    refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp_ms" }),
+    accessTokenExpiresAt: integer("access_token_expires_at", {
+      mode: "timestamp_ms",
+    }),
+    refreshTokenExpiresAt: integer("refresh_token_expires_at", {
+      mode: "timestamp_ms",
+    }),
     scope: text("scope"),
     idToken: text("id_token"),
     password: text("password"),
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
   },
   (table) => ({
+    providerUnique: uniqueIndex("accounts_provider_unique").on(
+      table.providerId,
+      table.accountId,
+    ),
     userIdx: index("accounts_user_idx").on(table.userId),
-    providerIdx: uniqueIndex("accounts_provider_idx").on(table.providerId, table.accountId),
-  })
+  }),
 );
 
-// Better Auth Verification 表
 export const verifications = sqliteTable(
   "verifications",
   {
-    id: text("id").primaryKey(),
+    id: text("id").notNull().primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
   },
   (table) => ({
-    identifierIdx: uniqueIndex("verifications_identifier_idx").on(table.identifier),
-  })
+    identifierUnique: uniqueIndex("verifications_identifier_unique").on(
+      table.identifier,
+    ),
+    expiresIdx: index("verifications_expires_idx").on(table.expiresAt),
+  }),
 );
 
-// 城市表
-export const cities = sqliteTable(
-  "cities",
+export const region = sqliteTable(
+  "region",
   {
-    id: text("id").primaryKey(),
-    adcode: text("adcode").notNull().unique(),
+    id: text("id").notNull().primaryKey(),
+    countryCode: text("country_code").notNull(),
+    parentId: text("parent_id").references((): AnySQLiteColumn => region.id, {
+      onDelete: "restrict",
+    }),
     name: text("name").notNull(),
-    pinyin: text("pinyin"),
-    province: text("province"),
-    level: text("level"),
-    isHot: integer("is_hot", { mode: "boolean" }).default(false).notNull(),
-    parentId: text("parent_id"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    nameEn: text("name_en"),
+    slug: text("slug").notNull(),
+    code: text("code"),
+    level: text("level").$type<RegionLevel>().notNull(),
+    timezone: text("timezone"),
+    centerLatitude: real("center_latitude"),
+    centerLongitude: real("center_longitude"),
+    serviceEnabled: integer("service_enabled", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    isHot: integer("is_hot", { mode: "boolean" }).notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
   },
   (table) => ({
-    isHotIdx: index("cities_is_hot_idx").on(table.isHot),
-  })
+    countrySlugUnique: uniqueIndex("region_country_slug_unique").on(
+      table.countryCode,
+      table.slug,
+    ),
+    countryCodeUnique: uniqueIndex("region_country_code_unique")
+      .on(table.countryCode, table.code)
+      .where(sql`${table.code} is not null`),
+    hierarchyIdx: index("region_hierarchy_idx").on(
+      table.countryCode,
+      table.parentId,
+      table.level,
+      table.sortOrder,
+    ),
+    servicePickerIdx: index("region_service_picker_idx").on(
+      table.countryCode,
+      table.serviceEnabled,
+      table.isHot,
+      table.sortOrder,
+      table.id,
+    ),
+    countryCodeCheck: check(
+      "region_country_code_check",
+      sql`length(${table.countryCode}) = 2 and ${table.countryCode} = upper(${table.countryCode})`,
+    ),
+    parentNotSelfCheck: check(
+      "region_parent_not_self_check",
+      sql`${table.id} <> ${table.parentId}`,
+    ),
+    levelCheck: check(
+      "region_level_check",
+      sql`${table.level} in ('province', 'city', 'district', 'other')`,
+    ),
+    centerLatitudeCheck: check(
+      "region_center_latitude_check",
+      sql`${table.centerLatitude} is null or ${table.centerLatitude} between -90 and 90`,
+    ),
+    centerLongitudeCheck: check(
+      "region_center_longitude_check",
+      sql`${table.centerLongitude} is null or ${table.centerLongitude} between -180 and 180`,
+    ),
+    serviceEnabledCheck: check(
+      "region_service_enabled_check",
+      sql`${table.serviceEnabled} in (0, 1)`,
+    ),
+    isHotCheck: check("region_is_hot_check", sql`${table.isHot} in (0, 1)`),
+    serviceShapeCheck: check(
+      "region_service_shape_check",
+      sql`${table.serviceEnabled} = 0 or (${table.level} = 'city' and ${table.timezone} is not null and ${table.centerLatitude} is not null and ${table.centerLongitude} is not null)`,
+    ),
+  }),
 );
 
-// 地点表
-export const locations = sqliteTable(
-  "locations",
-  {
-    id: text("id").primaryKey(),
-    name: text("name").notNull(),
-    slug: text("slug").notNull().unique(),
-    type: text("type"),
-    subtitle: text("subtitle"),
-    description: text("description").notNull(),
-    address: text("address"),
-    cityId: text("city_id").references(() => cities.id, { onDelete: "restrict" }).notNull(),
-    cityName: text("city_name"),
-    // task #151（简化 Phase 1）：徒步参数扁平化到地点，从主路线回填（多路线取 MIN(created_at)）
-    // 均可空——无路线的地点（城市探索类等）天然无徒步参数
-    difficulty: text("difficulty"),
-    durationMin: integer("duration_min"),
-    durationMax: integer("duration_max"),
-    distance: real("distance"),
-    elevation: integer("elevation"),
-    bestSeason: text("best_season").notNull(),
-    coverImage: text("cover_image").notNull(),
-    images: text("images").notNull(),
-    coordinates: text("coordinates").notNull(),
-    // P0-B T1（task #168）：决策信息字段（依据 spec §6 v1.1）
-    // 4 字段全 nullable：旧数据自动兼容（35 条 prod locations 全 null，前端按未填处理）
-    parkingAvailable: integer("parking_available", { mode: "boolean" }), // spec §3.4-A boolean 三态：true=有 / false=无 / null=信息缺失
-    parkingInfo: text("parking_info"), // 停车信息自由文本，业务层 zod .max(100) 校验（DB 层不加 CHECK）
-    gearEssential: text("gear_essential"), // 必带装备，comma-separated
-    gearOptional: text("gear_optional"), // 选带装备，comma-separated
-    extra: text("extra"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    // #219 P2-3：API key 创建地点时记录来源 key
-    actorApiKeyId: text("actor_api_key_id"),
-  },
-  (table) => ({
-    nameIdx: index("locations_name_idx").on(table.name),
-    cityIdx: index("locations_city_idx").on(table.cityId),
-    typeIdx: index("locations_type_idx").on(table.type),
-    createdAtIdx: index("locations_created_at_idx").on(table.createdAt),
-    actorApiKeyIdx: index("locations_actor_api_key_id_idx").on(table.actorApiKeyId),
-  })
-);
-
-// 标签表
 export const tags = sqliteTable(
   "tags",
   {
-    id: text("id").primaryKey(),
-    name: text("name").notNull().unique(),
-    type: text("type").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    id: text("id").notNull().primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
   },
-  (table) => ({
-    typeIdx: index("tags_type_idx").on(table.type),
-  })
+  (table) => ({ slugUnique: uniqueIndex("tags_slug_unique").on(table.slug) }),
 );
 
-// 标签关联表
-export const entityToTags = sqliteTable(
-  "entity_to_tags",
+export const locations = sqliteTable(
+  "locations",
   {
-    id: text("id").primaryKey(),
-    entityId: text("entity_id").notNull(),
-    entityType: text("entity_type").notNull(),
-    tagId: text("tag_id").references(() => tags.id, { onDelete: "cascade" }).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
+    id: text("id").notNull().primaryKey(),
+    regionId: text("region_id")
+      .notNull()
+      .references(() => region.id, { onDelete: "restrict" }),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    supportedActivityTypes: text("supported_activity_types", { mode: "json" })
+      .$type<ActivityType[]>()
+      .notNull()
+      .default(sql`'[]'`),
+    status: text("status")
+      .$type<LocationStatus>()
+      .notNull()
+      .default("published"),
+    subtitle: text("subtitle"),
+    description: text("description").notNull(),
+    address: text("address"),
+    latitude: real("latitude").notNull(),
+    longitude: real("longitude").notNull(),
+    coverImageUrl: text("cover_image_url").notNull(),
+    images: text("images", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'`),
+    extra: text("extra", { mode: "json" })
+      .$type<LocationExtra>()
+      .notNull()
+      .default(sql`'{}'`),
+    createdByUserId: text("created_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
   },
   (table) => ({
-    entityIdx: index("entity_to_tags_entity_idx").on(table.entityId, table.entityType),
-    tagIdx: index("entity_to_tags_tag_idx").on(table.tagId),
-    typeTagEntityIdx: index("entity_to_tags_type_tag_entity_idx").on(table.entityType, table.tagId, table.entityId),
-    uniqueEntityTag: uniqueIndex("entity_to_tags_unique_idx").on(table.entityId, table.entityType, table.tagId),
-  })
+    regionSlugUnique: uniqueIndex("locations_region_slug_unique").on(
+      table.regionId,
+      table.slug,
+    ),
+    regionFeedIdx: index("locations_region_feed_idx").on(
+      table.regionId,
+      table.status,
+      table.createdAt,
+      table.id,
+    ),
+    supportedActivityTypesCheck: check(
+      "locations_supported_activity_types_json_check",
+      sql`json_valid(${table.supportedActivityTypes}) and json_type(${table.supportedActivityTypes}) = 'array'`,
+    ),
+    statusCheck: check(
+      "locations_status_check",
+      sql`${table.status} in ('draft', 'published', 'archived')`,
+    ),
+    latitudeCheck: check(
+      "locations_latitude_check",
+      sql`${table.latitude} between -90 and 90`,
+    ),
+    longitudeCheck: check(
+      "locations_longitude_check",
+      sql`${table.longitude} between -180 and 180`,
+    ),
+    imagesCheck: check(
+      "locations_images_json_check",
+      sql`json_valid(${table.images}) and json_type(${table.images}) = 'array'`,
+    ),
+    extraCheck: check(
+      "locations_extra_json_check",
+      sql`json_valid(${table.extra}) and json_type(${table.extra}) = 'object'`,
+    ),
+    publishedActivityCheck: check(
+      "locations_published_activity_check",
+      sql`${table.status} <> 'published' or json_array_length(${table.supportedActivityTypes}) > 0`,
+    ),
+  }),
 );
 
-// 队伍表
 export const teams = sqliteTable(
   "teams",
   {
-    id: text("id").primaryKey(),
-    locationId: text("location_id").references(() => locations.id, { onDelete: "restrict" }).notNull(),
-    leaderId: text("leader_id").references(() => users.id, { onDelete: "restrict" }).notNull(),
+    id: text("id").notNull().primaryKey(),
+    locationId: text("location_id")
+      .notNull()
+      .references(() => locations.id, { onDelete: "restrict" }),
+    leaderId: text("leader_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    activityType: text("activity_type").$type<ActivityType>().notNull(),
     title: text("title").notNull(),
     description: text("description"),
-    startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
-    endTime: integer("end_time", { mode: "timestamp_ms" }).notNull(),
-    durationMin: integer("duration_min").notNull().default(240),
-    maxMembers: integer("max_members").notNull().default(10),
-    requirements: text("requirements"),
-    icon: text("icon").default("⛰️").notNull(),
-    status: text("status").notNull().default("recruiting"),
-    // task #163：Team「行动本」checklist（JSON，nullable = 队长未填）
-    // 结构见 packages/types TeamChecklist；单字段 <2KB，D1 batch 写入简单
+    startAt: integer("start_at", { mode: "timestamp_ms" }).notNull(),
+    endAt: integer("end_at", { mode: "timestamp_ms" }).notNull(),
+    maxParticipants: integer("max_participants").notNull().default(9),
+    requirements: text("requirements", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'`),
+    recruitmentStatus: text("recruitment_status")
+      .$type<RecruitmentStatus>()
+      .notNull()
+      .default("open"),
+    formedAt: integer("formed_at", { mode: "timestamp_ms" }),
+    cancelledAt: integer("cancelled_at", { mode: "timestamp_ms" }),
     checklist: text("checklist", { mode: "json" }).$type<TeamChecklist>(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).default(sql`(unixepoch() * 1000)`).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(sql`(unixepoch() * 1000)`).notNull(),
-    // #219 P2-3：API key 创建/加入时记录来源 key（nullable，session 用户无 key）
-    actorApiKeyId: text("actor_api_key_id"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
   },
   (table) => ({
-    locationIdx: index("teams_location_idx").on(table.locationId),
-    leaderIdx: index("teams_leader_idx").on(table.leaderId),
-    statusIdx: index("teams_status_idx").on(table.status),
-    startTimeIdx: index("teams_start_time_idx").on(table.startTime),
-    titleIdx: index("teams_title_idx").on(table.title),
-    statusCreatedAtIdx: index("teams_status_created_at_idx").on(table.status, table.createdAt),
-    statusStartTimeIdx: index("teams_status_start_time_idx").on(table.status, table.startTime),
-    statusEndTimeIdx: index("teams_status_end_time_idx").on(table.status, table.endTime),
-    actorApiKeyIdx: index("teams_actor_api_key_id_idx").on(table.actorApiKeyId),
-    statusCheck: check(
-      "teams_status_check",
-      sql`${table.status} in ('recruiting', 'full', 'formed', 'cancelled', 'completed')`,
+    locationStartIdx: index("teams_location_start_idx").on(
+      table.locationId,
+      table.startAt,
+      table.id,
     ),
-    durationCheck: check("teams_duration_min_check", sql`${table.durationMin} between 0 and 1440`),
-    capacityCheck: check("teams_max_members_check", sql`${table.maxMembers} between 2 and 50`),
-    timeRangeCheck: check("teams_time_range_check", sql`${table.endTime} >= ${table.startTime}`),
-  })
+    locationActivityFeedIdx: index("teams_location_activity_feed_idx").on(
+      table.locationId,
+      table.activityType,
+      table.recruitmentStatus,
+      table.startAt,
+      table.id,
+    ),
+    leaderCreatedIdx: index("teams_leader_created_idx").on(
+      table.leaderId,
+      table.createdAt,
+      table.id,
+    ),
+    endIdx: index("teams_end_idx").on(table.cancelledAt, table.endAt, table.id),
+    activityTypeCheck: check(
+      "teams_activity_type_check",
+      sql`${table.activityType} in ('hiking', 'explore', 'leisure', 'travel')`,
+    ),
+    timeRangeCheck: check(
+      "teams_time_range_check",
+      sql`${table.endAt} >= ${table.startAt}`,
+    ),
+    capacityCheck: check(
+      "teams_capacity_check",
+      sql`${table.maxParticipants} between 1 and 49`,
+    ),
+    requirementsCheck: check(
+      "teams_requirements_json_check",
+      sql`json_valid(${table.requirements}) and json_type(${table.requirements}) = 'array'`,
+    ),
+    recruitmentStatusCheck: check(
+      "teams_recruitment_status_check",
+      sql`${table.recruitmentStatus} in ('open', 'closed')`,
+    ),
+    checklistCheck: check(
+      "teams_checklist_json_check",
+      sql`${table.checklist} is null or (json_valid(${table.checklist}) and json_type(${table.checklist}) = 'object')`,
+    ),
+  }),
 );
 
-// 队伍成员表
+export const teamJoinRequests = sqliteTable(
+  "team_join_requests",
+  {
+    id: text("id").notNull().primaryKey(),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status")
+      .$type<TeamJoinRequestStatus>()
+      .notNull()
+      .default("pending"),
+    message: text("message"),
+    decidedByUserId: text("decided_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    decidedAt: integer("decided_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+  },
+  (table) => ({
+    onePendingUnique: uniqueIndex("team_join_requests_one_pending_unique")
+      .on(table.teamId, table.userId)
+      .where(sql`${table.status} = 'pending'`),
+    teamStatusIdx: index("team_join_requests_team_status_idx").on(
+      table.teamId,
+      table.status,
+      table.createdAt,
+      table.id,
+    ),
+    userCreatedIdx: index("team_join_requests_user_created_idx").on(
+      table.userId,
+      table.createdAt,
+      table.id,
+    ),
+    statusCheck: check(
+      "team_join_requests_status_check",
+      sql`${table.status} in ('pending', 'approved', 'rejected', 'cancelled')`,
+    ),
+    decisionCheck: check(
+      "team_join_requests_decision_check",
+      sql`(
+      ${table.status} = 'pending' and ${table.decidedAt} is null and ${table.decidedByUserId} is null
+    ) or (
+      ${table.status} in ('approved', 'rejected') and ${table.decidedAt} is not null and ${table.decidedByUserId} is not null
+    ) or (
+      ${table.status} = 'cancelled' and ${table.decidedAt} is not null
+    )`,
+    ),
+  }),
+);
+
 export const teamMembers = sqliteTable(
   "team_members",
   {
-    id: text("id").primaryKey(),
-    teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
-    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-    status: text("status").notNull().default("pending"),
-    joinedAt: integer("joined_at", { mode: "timestamp_ms" }),
-    statusUpdatedAt: integer("status_updated_at", { mode: "timestamp_ms" }),
-    extra: text("extra"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    // #219 P2-3：API key 申请加入时记录来源 key
-    actorApiKeyId: text("actor_api_key_id"),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").$type<TeamMemberRole>().notNull().default("member"),
+    joinedAt: integer("joined_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    leftAt: integer("left_at", { mode: "timestamp_ms" }),
   },
   (table) => ({
-    teamIdx: index("team_members_team_idx").on(table.teamId),
-    userIdx: index("team_members_user_idx").on(table.userId),
-    teamStatusIdx: index("team_members_team_status_idx").on(table.teamId, table.status),
-    uniqueTeamUser: uniqueIndex("team_members_team_user_idx").on(table.teamId, table.userId),
-    actorApiKeyIdx: index("team_members_actor_api_key_id_idx").on(table.actorApiKeyId),
-  })
-);
-
-// 密码重置令牌表
-/**
- * @deprecated Better Auth 已统一使用 verifications 表处理密码重置。
- * 保留该映射仅用于兼容现有生产表；删除条件见 notes/password-resets-deprecation.md。
- */
-export const passwordResets = sqliteTable(
-  "password_resets",
-  {
-    id: text("id").primaryKey(),
-    token: text("token").notNull().unique(),
-    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-    email: text("email").notNull(),
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-    usedAt: integer("used_at", { mode: "timestamp_ms" }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-  },
-  (table) => ({
-    userIdx: index("password_resets_user_idx").on(table.userId),
-    emailIdx: index("password_resets_email_idx").on(table.email),
-  })
-);
-
-// 用户收藏表
-export const userFavorites = sqliteTable(
-  "user_favorites",
-  {
-    id: text("id").primaryKey(),
-    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-    entityType: text("entity_type").notNull(),
-    entityId: text("entity_id").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-  },
-  (table) => ({
-    userIdx: index("user_favorites_user_idx").on(table.userId),
-    entityIdx: index("user_favorites_entity_idx").on(table.entityType, table.entityId),
-    uniqueFavorite: uniqueIndex("user_favorites_unique_idx").on(table.userId, table.entityType, table.entityId),
-    // 0009 已建的复合索引（补充声明，对齐 DB 现状，零 DB 变更）
-    userCreatedIdx: index("user_favorites_user_created_idx").on(table.userId, table.createdAt),
-    entityTypeEntityCreatedIdx: index("user_favorites_entity_type_entity_id_created_at_idx").on(
-      table.entityType,
-      table.entityId,
-      table.createdAt,
+    pk: primaryKey({ columns: [table.teamId, table.userId] }),
+    activeIdx: index("team_members_active_idx").on(
+      table.teamId,
+      table.leftAt,
+      table.joinedAt,
+      table.userId,
     ),
-  })
-);
-
-// ==================== Relations ====================
-
-export const usersRelations = relations(users, ({ many }) => ({
-  teams: many(teams, { relationName: "leaderTeams" }),
-  teamMemberships: many(teamMembers),
-  sessions: many(sessions),
-  accounts: many(accounts),
-  favorites: many(userFavorites),
-  storyLikes: many(userStoryLikes),
-}));
-
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, { fields: [sessions.userId], references: [users.id] }),
-}));
-
-export const accountsRelations = relations(accounts, ({ one }) => ({
-  user: one(users, { fields: [accounts.userId], references: [users.id] }),
-}));
-
-export const citiesRelations = relations(cities, ({ many }) => ({
-  locations: many(locations),
-}));
-
-export const locationsRelations = relations(locations, ({ one, many }) => ({
-  city: one(cities, { fields: [locations.cityId], references: [cities.id] }),
-  teams: many(teams),
-}));
-
-export const tagsRelations = relations(tags, ({ many }) => ({
-  entityToTags: many(entityToTags),
-}));
-
-export const entityToTagsRelations = relations(entityToTags, ({ one }) => ({
-  tag: one(tags, { fields: [entityToTags.tagId], references: [tags.id] }),
-}));
-
-export const teamsRelations = relations(teams, ({ one, many }) => ({
-  location: one(locations, { fields: [teams.locationId], references: [locations.id] }),
-  leader: one(users, { fields: [teams.leaderId], references: [users.id], relationName: "leaderTeams" }),
-  members: many(teamMembers),
-  activityPosts: many(activityPosts),
-}));
-
-export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
-  team: one(teams, { fields: [teamMembers.teamId], references: [teams.id] }),
-  user: one(users, { fields: [teamMembers.userId], references: [users.id] }),
-}));
-
-export const userFavoritesRelations = relations(userFavorites, ({ one }) => ({
-  user: one(users, { fields: [userFavorites.userId], references: [users.id] }),
-}));
-
-// ==================== Types ====================
-
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Session = typeof sessions.$inferSelect;
-export type Account = typeof accounts.$inferSelect;
-export type Verification = typeof verifications.$inferSelect;
-export type City = typeof cities.$inferSelect;
-export type NewCity = typeof cities.$inferInsert;
-export type Location = typeof locations.$inferSelect;
-export type NewLocation = typeof locations.$inferInsert;
-export type Tag = typeof tags.$inferSelect;
-export type NewTag = typeof tags.$inferInsert;
-export type EntityToTag = typeof entityToTags.$inferSelect;
-export type Team = typeof teams.$inferSelect;
-export type NewTeam = typeof teams.$inferInsert;
-export type TeamMember = typeof teamMembers.$inferSelect;
-export type NewTeamMember = typeof teamMembers.$inferInsert;
-
-// 私信会话表
-export const conversations = sqliteTable(
-  "conversations",
-  {
-    id: text("id").primaryKey(),
-    teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
-    userId: text("user_id").references(() => users.id).notNull(),
-    leaderId: text("leader_id").references(() => users.id).notNull(),
-    initiatorId: text("initiator_id").references(() => users.id).notNull(),
-    lastMessageContent: text("last_message_content"),
-    lastMessageAt: integer("last_message_at", { mode: "timestamp_ms" }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-  },
-  (table) => ({
-    teamIdx: index("conversations_team_idx").on(table.teamId),
-    userIdx: index("conversations_user_idx").on(table.userId),
-    leaderIdx: index("conversations_leader_idx").on(table.leaderId),
-    participantIdx: uniqueIndex("conversations_participant_idx").on(table.teamId, table.userId),
-    lastMsgIdx: index("conversations_last_msg_idx").on(table.lastMessageAt),
-  })
-);
-
-// 私信消息表
-export const messages = sqliteTable(
-  "messages",
-  {
-    id: text("id").primaryKey(),
-    conversationId: text("conversation_id").references(() => conversations.id, { onDelete: "cascade" }).notNull(),
-    senderId: text("sender_id").references(() => users.id).notNull(),
-    content: text("content").notNull(),
-    isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
-    readAt: integer("read_at", { mode: "timestamp_ms" }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-  },
-  (table) => ({
-    conversationIdx: index("messages_conversation_idx").on(table.conversationId),
-    senderIdx: index("messages_sender_idx").on(table.senderId),
-    createdIdx: index("messages_created_idx").on(table.createdAt),
-    conversationCreatedIdx: index("messages_conversation_created_at_idx").on(table.conversationId, table.createdAt),
-    conversationUnreadSenderIdx: index("messages_conversation_unread_sender_idx").on(
-      table.conversationId,
-      table.isRead,
-      table.senderId
+    userIdx: index("team_members_user_idx").on(
+      table.userId,
+      table.leftAt,
+      table.joinedAt,
+      table.teamId,
     ),
-  })
-);
-
-// Relations
-export const conversationsRelations = relations(conversations, ({ one, many }) => ({
-  team: one(teams, { fields: [conversations.teamId], references: [teams.id] }),
-  user: one(users, { fields: [conversations.userId], references: [users.id] }),
-  leader: one(users, { fields: [conversations.leaderId], references: [users.id] }),
-  messages: many(messages),
-}));
-
-export const messagesRelations = relations(messages, ({ one }) => ({
-  conversation: one(conversations, { fields: [messages.conversationId], references: [conversations.id] }),
-  sender: one(users, { fields: [messages.senderId], references: [users.id] }),
-}));
-
-// ==================== Activity Posts (活动后分享) ====================
-
-export const activityPosts = sqliteTable(
-  "activity_posts",
-  {
-    id: text("id").primaryKey(),
-    teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
-    locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }),
-    authorId: text("author_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-    content: text("content").notNull(),
-    images: text("images").notNull(), // JSON array of image URLs
-    status: text("status").notNull().default("visible"), // visible | hidden | deleted
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-  },
-  (table) => ({
-    teamIdx: index("activity_posts_team_idx").on(table.teamId),
-    locationIdx: index("activity_posts_location_idx").on(table.locationId),
-    authorIdx: index("activity_posts_author_idx").on(table.authorId),
-    statusIdx: index("activity_posts_status_idx").on(table.status),
-    createdAtIdx: index("activity_posts_created_at_idx").on(table.createdAt),
-    locationCreatedAtIdx: index("activity_posts_location_created_at_idx").on(
-      table.locationId,
-      table.createdAt,
+    roleCheck: check(
+      "team_members_role_check",
+      sql`${table.role} in ('member', 'co_leader')`,
     ),
-  })
+  }),
 );
-
-export const activityPostsRelations = relations(activityPosts, ({ one }) => ({
-  team: one(teams, { fields: [activityPosts.teamId], references: [teams.id] }),
-  location: one(locations, { fields: [activityPosts.locationId], references: [locations.id] }),
-  author: one(users, { fields: [activityPosts.authorId], references: [users.id] }),
-}));
-
-// Update teams relations to include activity posts
-// (Need to update existing teamsRelations)
-export type UserFavorite = typeof userFavorites.$inferSelect;
-export type NewUserFavorite = typeof userFavorites.$inferInsert;
-export type Conversation = typeof conversations.$inferSelect;
-export type NewConversation = typeof conversations.$inferInsert;
-export type Message = typeof messages.$inferSelect;
-export type NewMessage = typeof messages.$inferInsert;
-export type ActivityPost = typeof activityPosts.$inferSelect;
-export type NewActivityPost = typeof activityPosts.$inferInsert;
-
-// ==================== Enums ====================
-
-export type Difficulty = "easy" | "moderate" | "hard" | "expert";
-export type TeamStatus = "recruiting" | "full" | "formed" | "cancelled" | "completed";
-export type TeamMemberStatus = "pending" | "approved" | "rejected" | "leave_pending" | "cancelled";
-export type UserRole = "user" | "admin";
-export type UserLevel = "beginner" | "intermediate" | "advanced" | "expert";
-export type UserStatus = "active" | "suspended" | "banned" | "deleted";
-export type UserGender = "male" | "female" | "other";
-export type CityLevel = "city" | "district";
-export type TagType = "location" | "activity" | "story";
-export type EntityType = "location" | "activity" | "story";
-
-// 活动后分享状态
-export type ActivityPostStatus = "visible" | "hidden" | "deleted";
-
-// ==================== Stories (发现/故事) ====================
 
 export const stories = sqliteTable(
   "stories",
   {
-    id: text("id").primaryKey(),
-    authorId: text("author_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-    title: text("title").notNull(),
-    summary: text("summary").notNull(), // 摘要，限制 150 字
-    content: text("content").notNull(), // Markdown/富文本内容
-    coverImage: text("cover_image"), // 120x80px 封面图
-    locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }), // 关联地点（可选）
-    status: text("status").notNull().default("published"), // draft | published | hidden
-    viewCount: integer("view_count").default(0),
-    likeCount: integer("like_count").default(0),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    // #219 P2-3：API key 发故事时记录来源 key
-    actorApiKeyId: text("actor_api_key_id"),
-  },
-  (table) => ({
-    authorIdx: index("stories_author_idx").on(table.authorId),
-    locationIdx: index("stories_location_idx").on(table.locationId),
-    statusIdx: index("stories_status_idx").on(table.status),
-    createdAtIdx: index("stories_created_at_idx").on(table.createdAt),
-    // 0009 已建的复合索引（补充声明，对齐 DB 现状，零 DB 变更）
-    statusCreatedAtIdx: index("stories_status_created_at_idx").on(table.status, table.createdAt),
-    actorApiKeyIdx: index("stories_actor_api_key_id_idx").on(table.actorApiKeyId),
-  })
-);
-
-export const storiesRelations = relations(stories, ({ one, many }) => ({
-  author: one(users, { fields: [stories.authorId], references: [users.id] }),
-  location: one(locations, { fields: [stories.locationId], references: [locations.id] }),
-  likes: many(userStoryLikes),
-}));
-
-export type Story = typeof stories.$inferSelect;
-export type NewStory = typeof stories.$inferInsert;
-
-// 发现内容状态
-export type StoryStatus = "draft" | "published" | "hidden";
-
-// ==================== User Story Likes (点赞) ====================
-
-export const userStoryLikes = sqliteTable(
-  "user_story_likes",
-  {
-    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-    storyId: text("story_id").references(() => stories.id, { onDelete: "cascade" }).notNull(),
+    id: text("id").notNull().primaryKey(),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    teamId: text("team_id").references(() => teams.id, {
+      onDelete: "restrict",
+    }),
+    locationId: text("location_id").references(() => locations.id, {
+      onDelete: "set null",
+    }),
+    title: text("title"),
+    summary: text("summary"),
+    content: text("content").notNull(),
+    images: text("images", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'`),
+    status: text("status").$type<StoryStatus>().notNull().default("published"),
+    viewCount: integer("view_count").notNull().default(0),
+    likeCount: integer("like_count").notNull().default(0),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
-      .default(sql`(unixepoch() * 1000)`),
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+  },
+  (table) => ({
+    feedIdx: index("stories_feed_idx").on(
+      table.status,
+      table.createdAt,
+      table.id,
+    ),
+    authorIdx: index("stories_author_idx").on(
+      table.authorId,
+      table.createdAt,
+      table.id,
+    ),
+    teamFeedIdx: index("stories_team_feed_idx").on(
+      table.teamId,
+      table.status,
+      table.createdAt,
+      table.id,
+    ),
+    locationFeedIdx: index("stories_location_feed_idx").on(
+      table.locationId,
+      table.status,
+      table.createdAt,
+      table.id,
+    ),
+    contentCheck: check(
+      "stories_content_check",
+      sql`length(trim(${table.content})) > 0`,
+    ),
+    imagesCheck: check(
+      "stories_images_json_check",
+      sql`json_valid(${table.images}) and json_type(${table.images}) = 'array'`,
+    ),
+    statusCheck: check(
+      "stories_status_check",
+      sql`${table.status} in ('draft', 'published', 'hidden')`,
+    ),
+    viewCountCheck: check(
+      "stories_view_count_check",
+      sql`${table.viewCount} >= 0`,
+    ),
+    likeCountCheck: check(
+      "stories_like_count_check",
+      sql`${table.likeCount} >= 0`,
+    ),
+    normalTitleCheck: check(
+      "stories_normal_title_check",
+      sql`${table.teamId} is not null or (${table.title} is not null and length(trim(${table.title})) > 0)`,
+    ),
+  }),
+);
+
+export const locationTags = sqliteTable(
+  "location_tags",
+  {
+    locationId: text("location_id")
+      .notNull()
+      .references(() => locations.id, { onDelete: "cascade" }),
+    tagId: text("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.locationId, table.tagId] }),
+    tagIdx: index("location_tags_tag_idx").on(table.tagId, table.locationId),
+  }),
+);
+
+export const teamTags = sqliteTable(
+  "team_tags",
+  {
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    tagId: text("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.teamId, table.tagId] }),
+    tagIdx: index("team_tags_tag_idx").on(table.tagId, table.teamId),
+  }),
+);
+
+export const storyTags = sqliteTable(
+  "story_tags",
+  {
+    storyId: text("story_id")
+      .notNull()
+      .references(() => stories.id, { onDelete: "cascade" }),
+    tagId: text("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.storyId, table.tagId] }),
+    tagIdx: index("story_tags_tag_idx").on(table.tagId, table.storyId),
+  }),
+);
+
+export const storyLikes = sqliteTable(
+  "story_likes",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    storyId: text("story_id")
+      .notNull()
+      .references(() => stories.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.storyId] }),
-    userIdx: index("user_story_likes_user_idx").on(table.userId),
-    storyIdx: index("user_story_likes_story_idx").on(table.storyId),
-  })
+    storyIdx: index("story_likes_story_idx").on(
+      table.storyId,
+      table.createdAt,
+      table.userId,
+    ),
+  }),
 );
 
-export const userStoryLikesRelations = relations(userStoryLikes, ({ one }) => ({
-  user: one(users, { fields: [userStoryLikes.userId], references: [users.id] }),
-  story: one(stories, { fields: [userStoryLikes.storyId], references: [stories.id] }),
-}));
-
-export type UserStoryLike = typeof userStoryLikes.$inferSelect;
-export type NewUserStoryLike = typeof userStoryLikes.$inferInsert;
-
-// ==================== Image Cache (分享图图片预缓存) ====================
-
-export const imageCaches = sqliteTable(
-  "image_caches",
+export const userLocationFavorites = sqliteTable(
+  "user_location_favorites",
   {
-    id: text("id").primaryKey(),
-    imageUrl: text("image_url").notNull(), // 原始图片 URL
-    base64Data: text("base64_data").notNull(), // Base64 Data URL
-    contentType: text("content_type").notNull().default("image/jpeg"),
-    size: integer("size"), // 图片大小(字节)
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(), // 缓存过期时间
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
-  },
-  (table) => ({
-    imageUrlIdx: uniqueIndex("image_caches_url_idx").on(table.imageUrl),
-    expiresIdx: index("image_caches_expires_idx").on(table.expiresAt),
-  })
-);
-
-export type ImageCache = typeof imageCaches.$inferSelect;
-export type NewImageCache = typeof imageCaches.$inferInsert;
-
-// ==================== Share Events (分享埋点) ====================
-
-export const shareEvents = sqliteTable(
-  "share_events",
-  {
-    id: text("id").primaryKey(),
-    entityType: text("entity_type").notNull(),
-    entityId: text("entity_id").notNull(),
-    shareChannel: text("share_channel").notNull(),
-    userId: text("user_id"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    locationId: text("location_id")
+      .notNull()
+      .references(() => locations.id, { onDelete: "cascade" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
-      .default(sql`(unixepoch() * 1000)`),
+      .default(nowMs),
   },
   (table) => ({
-    entityIdx: index("share_events_entity_idx").on(table.entityType, table.entityId),
-    channelIdx: index("share_events_channel_idx").on(table.shareChannel),
-    createdAtIdx: index("share_events_created_at_idx").on(table.createdAt),
-  })
+    pk: primaryKey({ columns: [table.userId, table.locationId] }),
+    userIdx: index("user_location_favorites_user_idx").on(
+      table.userId,
+      table.createdAt,
+      table.locationId,
+    ),
+    locationIdx: index("user_location_favorites_location_idx").on(
+      table.locationId,
+      table.createdAt,
+      table.userId,
+    ),
+  }),
 );
 
-export type ShareEvent = typeof shareEvents.$inferSelect;
-export type NewShareEvent = typeof shareEvents.$inferInsert;
-
-// ==================== Better Auth API Key 表（@better-auth/api-key 插件）====================
-// 表由 0017_add_api_keys.sql 创建（IF NOT EXISTS 幂等），Drizzle schema 供 drizzleAdapter 使用。
-// config_id 列由 better-auth apiKey 插件内部自动填充（单配置部署无需命名 configId）
-export const apiKeys = sqliteTable(
-  "apikey",
+export const userStoryFavorites = sqliteTable(
+  "user_story_favorites",
   {
-    id: text("id").primaryKey(),
-    configId: text("config_id").notNull(),
-    name: text("name"),
-    start: text("start"),
-    referenceId: text("reference_id").notNull(), // userId
-    key: text("key").notNull(), // hashed
-    prefix: text("prefix"),
-    refillInterval: integer("refill_interval"),
-    refillAmount: integer("refill_amount"),
-    lastRefillAt: integer("last_refill_at", { mode: "timestamp_ms" }),
-    enabled: integer("enabled", { mode: "boolean" }).default(true).notNull(),
-    rateLimitEnabled: integer("rate_limit_enabled", { mode: "boolean" }).default(true).notNull(),
-    rateLimitTimeWindow: integer("rate_limit_time_window"),
-    rateLimitMax: integer("rate_limit_max"),
-    requestCount: integer("request_count").default(0).notNull(),
-    remaining: integer("remaining"),
-    lastRequest: integer("last_request", { mode: "timestamp_ms" }),
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
-    permissions: text("permissions"), // JSON string
-    metadata: text("metadata"), // JSON string
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    storyId: text("story_id")
+      .notNull()
+      .references(() => stories.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
   },
   (table) => ({
-    configIdIdx: index("apikey_config_id_idx").on(table.configId),
-    referenceIdIdx: index("apikey_reference_id_idx").on(table.referenceId),
-    keyIdx: index("apikey_key_idx").on(table.key),
-  })
+    pk: primaryKey({ columns: [table.userId, table.storyId] }),
+    userIdx: index("user_story_favorites_user_idx").on(
+      table.userId,
+      table.createdAt,
+      table.storyId,
+    ),
+    storyIdx: index("user_story_favorites_story_idx").on(
+      table.storyId,
+      table.createdAt,
+      table.userId,
+    ),
+  }),
 );
 
-export type ApiKey = typeof apiKeys.$inferSelect;
-export type NewApiKey = typeof apiKeys.$inferInsert;
+export const conversations = sqliteTable(
+  "conversations",
+  {
+    id: text("id").notNull().primaryKey(),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    memberUserId: text("member_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    initiatedByUserId: text("initiated_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    lastMessagePreview: text("last_message_preview"),
+    lastMessageAt: integer("last_message_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+  },
+  (table) => ({
+    teamMemberUnique: uniqueIndex("conversations_team_member_unique").on(
+      table.teamId,
+      table.memberUserId,
+    ),
+    memberInboxIdx: index("conversations_member_inbox_idx").on(
+      table.memberUserId,
+      table.lastMessageAt,
+      table.id,
+    ),
+    teamInboxIdx: index("conversations_team_inbox_idx").on(
+      table.teamId,
+      table.lastMessageAt,
+      table.id,
+    ),
+  }),
+);
+
+export const messages = sqliteTable(
+  "messages",
+  {
+    id: text("id").notNull().primaryKey(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    senderId: text("sender_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    content: text("content").notNull(),
+    readAt: integer("read_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+  },
+  (table) => ({
+    conversationCursorIdx: index("messages_conversation_cursor_idx").on(
+      table.conversationId,
+      table.createdAt,
+      table.id,
+    ),
+    senderIdx: index("messages_sender_idx").on(
+      table.senderId,
+      table.createdAt,
+      table.id,
+    ),
+    contentCheck: check(
+      "messages_content_check",
+      sql`length(trim(${table.content})) > 0`,
+    ),
+  }),
+);
+
+export const usersRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions),
+  accounts: many(accounts),
+  createdLocations: many(locations, { relationName: "locationCreator" }),
+  ledTeams: many(teams, { relationName: "teamLeader" }),
+  joinRequests: many(teamJoinRequests, { relationName: "joinRequestUser" }),
+  decidedJoinRequests: many(teamJoinRequests, {
+    relationName: "joinRequestDecider",
+  }),
+  teamMemberships: many(teamMembers),
+  stories: many(stories),
+  storyLikes: many(storyLikes),
+  locationFavorites: many(userLocationFavorites),
+  storyFavorites: many(userStoryFavorites),
+  memberConversations: many(conversations, {
+    relationName: "conversationMember",
+  }),
+  initiatedConversations: many(conversations, {
+    relationName: "conversationInitiator",
+  }),
+  messages: many(messages),
+}));
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, { fields: [sessions.userId], references: [users.id] }),
+}));
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+}));
+export const regionRelations = relations(region, ({ one, many }) => ({
+  parent: one(region, {
+    fields: [region.parentId],
+    references: [region.id],
+    relationName: "regionHierarchy",
+  }),
+  children: many(region, { relationName: "regionHierarchy" }),
+  locations: many(locations),
+}));
+export const locationsRelations = relations(locations, ({ one, many }) => ({
+  region: one(region, {
+    fields: [locations.regionId],
+    references: [region.id],
+  }),
+  creator: one(users, {
+    fields: [locations.createdByUserId],
+    references: [users.id],
+    relationName: "locationCreator",
+  }),
+  teams: many(teams),
+  tags: many(locationTags),
+  stories: many(stories),
+  favorites: many(userLocationFavorites),
+}));
+export const tagsRelations = relations(tags, ({ many }) => ({
+  locations: many(locationTags),
+  teams: many(teamTags),
+  stories: many(storyTags),
+}));
+export const teamsRelations = relations(teams, ({ one, many }) => ({
+  location: one(locations, {
+    fields: [teams.locationId],
+    references: [locations.id],
+  }),
+  leader: one(users, {
+    fields: [teams.leaderId],
+    references: [users.id],
+    relationName: "teamLeader",
+  }),
+  joinRequests: many(teamJoinRequests),
+  members: many(teamMembers),
+  tags: many(teamTags),
+  stories: many(stories),
+  conversations: many(conversations),
+}));
+export const teamJoinRequestsRelations = relations(
+  teamJoinRequests,
+  ({ one }) => ({
+    team: one(teams, {
+      fields: [teamJoinRequests.teamId],
+      references: [teams.id],
+    }),
+    user: one(users, {
+      fields: [teamJoinRequests.userId],
+      references: [users.id],
+      relationName: "joinRequestUser",
+    }),
+    decidedBy: one(users, {
+      fields: [teamJoinRequests.decidedByUserId],
+      references: [users.id],
+      relationName: "joinRequestDecider",
+    }),
+  }),
+);
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  team: one(teams, { fields: [teamMembers.teamId], references: [teams.id] }),
+  user: one(users, { fields: [teamMembers.userId], references: [users.id] }),
+}));
+export const storiesRelations = relations(stories, ({ one, many }) => ({
+  author: one(users, { fields: [stories.authorId], references: [users.id] }),
+  team: one(teams, { fields: [stories.teamId], references: [teams.id] }),
+  location: one(locations, {
+    fields: [stories.locationId],
+    references: [locations.id],
+  }),
+  tags: many(storyTags),
+  likes: many(storyLikes),
+  favorites: many(userStoryFavorites),
+}));
+export const locationTagsRelations = relations(locationTags, ({ one }) => ({
+  location: one(locations, {
+    fields: [locationTags.locationId],
+    references: [locations.id],
+  }),
+  tag: one(tags, { fields: [locationTags.tagId], references: [tags.id] }),
+}));
+export const teamTagsRelations = relations(teamTags, ({ one }) => ({
+  team: one(teams, { fields: [teamTags.teamId], references: [teams.id] }),
+  tag: one(tags, { fields: [teamTags.tagId], references: [tags.id] }),
+}));
+export const storyTagsRelations = relations(storyTags, ({ one }) => ({
+  story: one(stories, {
+    fields: [storyTags.storyId],
+    references: [stories.id],
+  }),
+  tag: one(tags, { fields: [storyTags.tagId], references: [tags.id] }),
+}));
+export const storyLikesRelations = relations(storyLikes, ({ one }) => ({
+  user: one(users, { fields: [storyLikes.userId], references: [users.id] }),
+  story: one(stories, {
+    fields: [storyLikes.storyId],
+    references: [stories.id],
+  }),
+}));
+export const userLocationFavoritesRelations = relations(
+  userLocationFavorites,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [userLocationFavorites.userId],
+      references: [users.id],
+    }),
+    location: one(locations, {
+      fields: [userLocationFavorites.locationId],
+      references: [locations.id],
+    }),
+  }),
+);
+export const userStoryFavoritesRelations = relations(
+  userStoryFavorites,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [userStoryFavorites.userId],
+      references: [users.id],
+    }),
+    story: one(stories, {
+      fields: [userStoryFavorites.storyId],
+      references: [stories.id],
+    }),
+  }),
+);
+export const conversationsRelations = relations(
+  conversations,
+  ({ one, many }) => ({
+    team: one(teams, {
+      fields: [conversations.teamId],
+      references: [teams.id],
+    }),
+    member: one(users, {
+      fields: [conversations.memberUserId],
+      references: [users.id],
+      relationName: "conversationMember",
+    }),
+    initiatedBy: one(users, {
+      fields: [conversations.initiatedByUserId],
+      references: [users.id],
+      relationName: "conversationInitiator",
+    }),
+    messages: many(messages),
+  }),
+);
+export const messagesRelations = relations(messages, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [messages.conversationId],
+    references: [conversations.id],
+  }),
+  sender: one(users, { fields: [messages.senderId], references: [users.id] }),
+}));
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+export type Account = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+export type Verification = typeof verifications.$inferSelect;
+export type NewVerification = typeof verifications.$inferInsert;
+export type Region = typeof region.$inferSelect;
+export type NewRegion = typeof region.$inferInsert;
+export type Location = typeof locations.$inferSelect;
+export type NewLocation = typeof locations.$inferInsert;
+export type Tag = typeof tags.$inferSelect;
+export type NewTag = typeof tags.$inferInsert;
+export type LocationTag = typeof locationTags.$inferSelect;
+export type NewLocationTag = typeof locationTags.$inferInsert;
+export type Team = typeof teams.$inferSelect;
+export type NewTeam = typeof teams.$inferInsert;
+export type TeamTag = typeof teamTags.$inferSelect;
+export type NewTeamTag = typeof teamTags.$inferInsert;
+export type TeamJoinRequest = typeof teamJoinRequests.$inferSelect;
+export type NewTeamJoinRequest = typeof teamJoinRequests.$inferInsert;
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type NewTeamMember = typeof teamMembers.$inferInsert;
+export type Story = typeof stories.$inferSelect;
+export type NewStory = typeof stories.$inferInsert;
+export type StoryTag = typeof storyTags.$inferSelect;
+export type NewStoryTag = typeof storyTags.$inferInsert;
+export type StoryLike = typeof storyLikes.$inferSelect;
+export type NewStoryLike = typeof storyLikes.$inferInsert;
+export type UserLocationFavorite = typeof userLocationFavorites.$inferSelect;
+export type NewUserLocationFavorite = typeof userLocationFavorites.$inferInsert;
+export type UserStoryFavorite = typeof userStoryFavorites.$inferSelect;
+export type NewUserStoryFavorite = typeof userStoryFavorites.$inferInsert;
+export type Conversation = typeof conversations.$inferSelect;
+export type NewConversation = typeof conversations.$inferInsert;
+export type Message = typeof messages.$inferSelect;
+export type NewMessage = typeof messages.$inferInsert;

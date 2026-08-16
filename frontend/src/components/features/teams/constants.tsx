@@ -39,6 +39,14 @@ export function getStatusConfig(t: (key: TranslationKey) => string): Record<stri
       pulse: false,
       icon: <Flag className="h-3 w-3" />,
     },
+    ongoing: {
+      label: t("enums.teamStatus.ongoing"),
+      dotColor: "bg-blue-500",
+      bgColor: "bg-blue-50 dark:bg-blue-950/30 ring-1 ring-blue-200/60 dark:ring-blue-900/50",
+      textColor: "text-blue-700 dark:text-blue-400",
+      pulse: false,
+      icon: <Flag className="h-3 w-3" />,
+    },
     completed: {
       label: t("enums.teamStatus.completed"),
       dotColor: "bg-stone-400",
@@ -53,6 +61,22 @@ export function getStatusConfig(t: (key: TranslationKey) => string): Record<stri
       bgColor: "bg-red-50 dark:bg-red-950/30 ring-1 ring-red-200/60 dark:ring-red-900/50",
       textColor: "text-red-600 dark:text-red-400",
       pulse: false,
+    },
+    closed: {
+      label: t("enums.teamStatus.closed"),
+      dotColor: "bg-stone-400",
+      bgColor: "bg-stone-100 dark:bg-stone-800 ring-1 ring-stone-200 dark:ring-stone-700",
+      textColor: "text-stone-500 dark:text-stone-400",
+      pulse: false,
+      icon: <Lock className="h-3 w-3" />,
+    },
+    expired_unformed: {
+      label: t("enums.teamStatus.closed"),
+      dotColor: "bg-stone-400",
+      bgColor: "bg-stone-100 dark:bg-stone-800 ring-1 ring-stone-200 dark:ring-stone-700",
+      textColor: "text-stone-500 dark:text-stone-400",
+      pulse: false,
+      icon: <Lock className="h-3 w-3" />,
     },
   };
 }

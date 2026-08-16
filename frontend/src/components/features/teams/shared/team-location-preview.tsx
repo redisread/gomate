@@ -24,9 +24,9 @@ export function TeamLocationPreview({
         aria-label={`${selectedLabel}: ${location.name}`}
       >
         <div className="relative min-h-28 overflow-hidden bg-muted sm:min-h-32">
-          {location.coverImage ? (
+          {location.coverImageUrl ? (
             <img
-              src={location.coverImage}
+              src={location.coverImageUrl}
               alt={location.name}
               className="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-[oklch(0_0_0_/_0.1)] dark:outline-[oklch(1_0_0_/_0.1)] transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
@@ -46,7 +46,9 @@ export function TeamLocationPreview({
         <div className="flex min-w-0 flex-col justify-center gap-2 px-4 py-3.5 sm:px-5">
           <div className="min-w-0">
             <h3 className="truncate text-sm font-semibold text-foreground sm:text-base">{location.name}</h3>
-            <p className="mt-1 truncate text-xs text-muted-foreground">{location.cityName}</p>
+            {location.region?.name && (
+              <p className="mt-1 truncate text-xs text-muted-foreground">{location.region.name}</p>
+            )}
           </div>
           <span className="inline-flex items-center gap-1 self-start text-xs font-medium text-primary transition-[color,transform] duration-150 group-hover:translate-x-0.5">
             {detailLabel}

@@ -6,7 +6,7 @@ import type { LocalCircle } from "../components/features/home/local-circle/types
 
 /**
  * P0 UX 审计：本地圈子「0 人在行动」负向文案
- * - activePeopleCount=0 不渲染「{city} · {n} 人在行动」
+ * - activePeopleCount=0 不渲染「{region} · {n} 人在行动」
  * - activePeopleCount>0 正常渲染
  */
 
@@ -31,24 +31,28 @@ vi.mock("../components/features/home/local-circle/use-local-circle", () => ({
   useLocalCircle: () => mockState,
 }));
 
+vi.mock("../components/features/home/local-circle/avatar-stack", () => ({
+  AvatarStack: () => <div data-testid="local-circle-user-avatar-stack" />,
+}));
+
 const baseData: LocalCircle = {
-  cityId: "sz",
-  cityName: "深圳",
+  regionId: "sz",
+  regionName: "深圳",
   activePeopleCount: 0,
   topLocations: [],
   neighborTeams: [],
 };
 
 describe("HomeLocalCircleSection", () => {
-  it("activePeopleCount=0：不渲染「{city} · {n} 人在行动」，引导卡仍渲染", () => {
-    mockState = { status: "ready", data: baseData, loggedIn: true, userCity: null };
+  it("activePeopleCount=0：不渲染「{region} · {n} 人在行动」，引导卡仍渲染", () => {
+    mockState = { status: "ready", data: baseData, loggedIn: true, userRegionId: null };
     render(<HomeLocalCircleSection />);
     expect(screen.queryByText(/inAction/)).toBeNull();
-    // #185 引导卡保留（登录未设城市）
-    expect(screen.getByText("home.localCircle.setCityCta.title")).toBeTruthy();
+    // #185 引导卡保留（登录未设地区）
+    expect(screen.getByText("home.localCircle.setRegionCta.title")).toBeTruthy();
   });
 
-  it("activePeopleCount>0：渲染「{city} · {n} 人在行动」", () => {
+  it("activePeopleCount>0：渲染公共地点聚合但不渲染用户头像堆叠", () => {
     mockState = {
       status: "ready",
       data: {
@@ -58,19 +62,19 @@ describe("HomeLocalCircleSection", () => {
           {
             locationId: "loc-1",
             locationName: "梧桐山",
-            locationCoverImage: "",
+            coverImageUrl: "",
             visitScore: 2,
             uniqueVisitors: 3,
-            avatarStack: [],
           },
         ],
       },
       loggedIn: true,
-      userCity: "sz",
+      userRegionId: "sz",
     };
     render(<HomeLocalCircleSection />);
-    // inAction 出现于城市前缀行 + LocalCircleCard 的 uniqueVisitors 徽章，至少一处
+    // inAction 出现于地区前缀行 + LocalCircleCard 的 uniqueVisitors 徽章，至少一处
     expect(screen.getAllByText(/inAction\[n=3\]/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByTestId("local-circle-user-avatar-stack")).not.toBeInTheDocument();
   });
 
   it("loading 状态渲染 skeleton（不渲染 inAction）", () => {
@@ -78,5 +82,29 @@ describe("HomeLocalCircleSection", () => {
     render(<HomeLocalCircleSection />);
     expect(screen.queryByText(/inAction/)).toBeNull();
     expect(screen.getByTestId("home-local-circle-loading")).toBeTruthy();
+  });
+
+  it("renders a neighbor Team whose startAt is an ISO 8601 string", () => {
+    mockState = {
+      status: "ready",
+      data: {
+        ...baseData,
+        neighborTeams: [{
+          teamId: "team-1",
+          title: "周末梧桐山",
+          activityType: "hiking",
+          locationName: "梧桐山",
+          startAt: "2099-01-02T03:04:05.000Z",
+          neighborCount: 1,
+          neighborAvatars: [],
+        }],
+      },
+      loggedIn: true,
+      userRegionId: "sz",
+    };
+
+    render(<HomeLocalCircleSection />);
+    expect(screen.getByText("周末梧桐山")).toBeInTheDocument();
+    expect(screen.getByText(/home\.teamCard\.departingInDays/)).toBeInTheDocument();
   });
 });

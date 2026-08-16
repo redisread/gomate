@@ -81,23 +81,16 @@ export function ProfileEditClient() {
               bioNearLimit={ctx.bioNearLimit}
               bioAtLimit={ctx.bioAtLimit}
               onChange={ctx.handleChange}
-              city={ctx.formData.city}
-              cities={ctx.cities}
-              onCityChange={ctx.handleCityChange}
+              regionId={ctx.formData.regionId}
+              regions={ctx.regions}
+              onRegionChange={ctx.handleRegionChange}
             />
           </Card>
           <Card id="profile-outdoor">
             <CardSection id="profile-outdoor-title" icon={SECTION_ICONS.outdoor} title={t('profile.sectionOutdoorInfo')} />
             <OutdoorInfoFields
               level={ctx.formData.level}
-              experience={ctx.formData.experience}
-              equipment={ctx.formData.equipment}
-              equipmentInput={ctx.equipmentInput}
               onChange={ctx.handleChange}
-              onEquipmentKeyDown={ctx.handleEquipmentKeyDown}
-              onRemoveEquipment={ctx.handleRemoveEquipment}
-              onAddPresetEquipment={ctx.handleAddPresetEquipment}
-              onEquipmentInputChange={ctx.setEquipmentInput}
             />
           </Card>
           <Card id="profile-contact">

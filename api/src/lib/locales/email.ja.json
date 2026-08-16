@@ -8,6 +8,15 @@
     "expiryNote": "このリンクは 1 時間後に期限切れになります。",
     "ignoreNote": "パスワードのリセットをリクエストしていない場合は、このメールを無視してください。"
   },
+  "emailVerification": {
+    "subject": "GoMate のメールアドレスを確認してください",
+    "title": "メールアドレスの確認",
+    "greeting": "{name} さん、こんにちは。",
+    "body": "GoMate にログインする前に、下のボタンからメールアドレスを確認してください。",
+    "btnText": "メールアドレスを確認",
+    "expiryNote": "このリンクは 1 時間後に期限切れになります。",
+    "ignoreNote": "GoMate に登録していない場合は、このメールを無視してください。"
+  },
   "welcome": {
     "subject": "GoMate へようこそ！",
     "title": "GoMate へようこそ！",

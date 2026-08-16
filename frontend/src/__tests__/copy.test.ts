@@ -1,11 +1,19 @@
 import { describe, it, expect, beforeAll } from "vitest";
+import type { TeamJoinRequestStatus } from "@gomate/types";
 import { t, type Locale } from "../i18n";
 import { hydrateSSRData } from "../i18n";
 
 /**
- * i18n 枚举完整性测试
- * 验证每个数据库枚举值在 i18n 系统中都有对应的翻译文案
+ * i18n 合同与展示文案完整性测试
+ * 验证 V2 共享枚举合同和前端派生展示状态都有对应翻译文案
  */
+
+const teamJoinRequestStatusCopy = {
+  pending: "待审核",
+  approved: "已通过",
+  rejected: "已拒绝",
+  cancelled: "已取消",
+} satisfies Record<TeamJoinRequestStatus, string>;
 
 // 预加载枚举数据到内存缓存
 beforeAll(async () => {
@@ -17,7 +25,7 @@ beforeAll(async () => {
       ongoing: "进行中", completed: "圆满归来", cancelled: "已取消",
       open: "等你一起", closed: "已结束",
     },
-    memberStatus: { pending: "待审核", approved: "已通过", rejected: "已拒绝", leave_pending: "退出申请中" },
+    memberStatus: teamJoinRequestStatusCopy,
     level: { beginner: "新人", intermediate: "探索者", advanced: "资深玩家", expert: "传奇达人" },
     leaderLevel: { beginner: "新人领队", intermediate: "探索者领队", advanced: "资深玩家领队", expert: "传奇达人领队" },
     levelDesc: { beginner: "刚开始探索之旅", intermediate: "有一定活动经验", advanced: "经验丰富的玩家", expert: "资深活动达人" },
@@ -62,11 +70,11 @@ describe("enums - 枚举文案完整性", () => {
     });
   });
 
-  describe("teamStatus（队伍状态）枚举映射", () => {
-    const DB_TEAM_STATUS_VALUES = ["recruiting", "full", "formed", "cancelled", "completed"] as const;
+  describe("teamStatus（队伍派生展示状态）文案映射", () => {
+    const TEAM_DISPLAY_STATUS_VALUES = ["recruiting", "full", "formed", "cancelled", "completed"] as const;
 
-    it("所有队伍状态枚举值都有对应文案", () => {
-      for (const val of DB_TEAM_STATUS_VALUES) {
+    it("所有受测的派生展示状态都有对应文案", () => {
+      for (const val of TEAM_DISPLAY_STATUS_VALUES) {
         const result = t(`enums.teamStatus.${val}`);
         expect(result, `缺少 enums.teamStatus.${val} 的文案`).not.toBe(`enums.teamStatus.${val}`);
       }
@@ -81,21 +89,23 @@ describe("enums - 枚举文案完整性", () => {
     });
   });
 
-  describe("memberStatus（成员状态）枚举映射", () => {
-    const DB_MEMBER_STATUS_VALUES = ["pending", "approved", "rejected", "leave_pending"] as const;
+  describe("TeamJoinRequestStatus（入队申请状态）枚举映射", () => {
+    const TEAM_JOIN_REQUEST_STATUS_VALUES = Object.keys(
+      teamJoinRequestStatusCopy,
+    ) as TeamJoinRequestStatus[];
 
-    it("所有成员状态枚举值都有对应文案", () => {
-      for (const val of DB_MEMBER_STATUS_VALUES) {
+    it("canonical V2 入队申请状态都有对应文案", () => {
+      for (const val of TEAM_JOIN_REQUEST_STATUS_VALUES) {
         const result = t(`enums.memberStatus.${val}`);
         expect(result, `缺少 enums.memberStatus.${val} 的文案`).not.toBe(`enums.memberStatus.${val}`);
       }
     });
 
-    it("成员状态文案为有意义的中文", () => {
+    it("入队申请状态文案为有意义的中文", () => {
       expect(t("enums.memberStatus.pending")).toBe("待审核");
       expect(t("enums.memberStatus.approved")).toBe("已通过");
       expect(t("enums.memberStatus.rejected")).toBe("已拒绝");
-      expect(t("enums.memberStatus.leave_pending")).toBe("退出申请中");
+      expect(t("enums.memberStatus.cancelled")).toBe("已取消");
     });
   });
 

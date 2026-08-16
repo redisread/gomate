@@ -38,7 +38,7 @@
 ### 3.1 必须完成
 
 - 单 Worker 入口、单 Wrangler 配置、单本地开发服务器、单部署流程。
-- 19 张 V2 表、全部声明式约束、索引和 6 个触发器。
+- 19 张 V2 表、全部声明式约束、索引和 8 个触发器。
 - 现有前后端业务代码全部切换到 V2 字段、关系和状态模型。
 - 旧 Activity Post 合并为带 `team_id` 的 Story。
 - `cities` 切换为 `region`，用户资料城市切换到 `users.extra.city`。
@@ -61,7 +61,7 @@
 
 | 能力                     | 稳定边界                                                | 依赖           | 独立验收                              |
 | ------------------------ | ------------------------------------------------------- | -------------- | ------------------------------------- |
-| `database-v2`            | Drizzle schema、`0000_init.sql`、seed、DB 不变量        | 无             | 全新库重放、19 表、6 触发器、FK check |
+| `database-v2`            | Drizzle schema、`0000_init.sql`、seed、DB 不变量        | 无             | 全新库重放、19 表、8 触发器、FK check |
 | `mcp-api-removal`        | MCP 包、`/v1`、API Key 服务/UI/依赖                     | 无             | 全仓零可执行引用、旧端点 404          |
 | `application-adaptation` | Region、Location、Team、Story、Favorites、Messages 服务 | `database-v2`  | API 集成测试和前端契约测试            |
 | `single-worker-runtime`  | Hono API + Astro SSR + Assets + bindings                | API app 可导入 | 单端口 smoke、路由隔离、dry-run       |
@@ -112,6 +112,8 @@ flowchart LR
 - 生产 cookie 使用 `Secure + SameSite=Lax + Path=/`，不再启用跨子域 cookie。
 - 删除全局跨域 CORS 中间件和 `FRONTEND_URL`、`CORS_ALLOWED_ORIGINS`、`BETTER_AUTH_URL` 配置。
 - `APP_URL` 仅作为邮件链接等无法从当前请求推导的 canonical origin；本地值与单一 dev 端口一致。
+- 邮件 bearer token 只放在客户端 fragment。邮箱验证必须经用户明确点击后以同源 POST body
+  提交；密码重置也只从 fragment 转入 POST body。公开 Worker URL、日志和 trace 不得含 token。
 - 每个部署环境必须配置精确的 `APP_URL` 和 Better Auth `trustedOrigins=[APP_URL]`。preview 使用固定、显式列出的 `gomate-production-preview.<account-subdomain>.workers.dev` origin；禁止 `*.workers.dev` 通配信任。
 - Better Auth 删除 `secondaryStorage`；`sessions` 和 `verifications` 只以 D1 为权威存储。
 
@@ -174,7 +176,7 @@ Astro adapter 的 `persistState.path` 读取 `GOMATE_LOCAL_STATE`（默认 `~/.g
 
 - 删除 `api/db/migrations/` 下全部历史 SQL 和旧 Drizzle meta。
 - 新建唯一 `api/db/migrations/0000_init.sql`。
-- baseline 明确创建 19 表、索引、部分唯一索引和 6 触发器。
+- baseline 明确创建 19 表、索引、部分唯一索引和 8 触发器。
 - 所有 table/index/trigger 使用幂等 DDL；同一 DB 连续执行 baseline 两次必须成功，另在两个隔离的 workerd/D1 状态目录各通过 Wrangler migration ledger 应用一次。
 - test helper 直接加载 baseline，不再维护第三份手写 DDL。
 - 结构清单逐项核对：19 表、所有列的 type/null/default/PK、FK action、CHECK、索引列序/唯一性/partial WHERE，并拒绝任何非目标触发器。
@@ -189,8 +191,10 @@ Astro adapter 的 `persistState.path` 读取 `GOMATE_LOCAL_STATE`（默认 `~/.g
 - JSON array/object 列同时检查 `json_valid` 与 `json_type`。
 - API 写入前再用 Zod 校验元素类型、枚举、去重、URL 域名和业务关系。
 
-### 6.4 六个触发器
+### 6.4 八个触发器
 
+- `sessions_active_user_insert_guard`
+- `users_auth_revoke_after_inactive`
 - `team_members_capacity_validate_insert`
 - `team_members_capacity_validate_reactivate`
 - `teams_capacity_validate_update`
@@ -198,7 +202,7 @@ Astro adapter 的 `persistState.path` 读取 `GOMATE_LOCAL_STATE`（默认 `~/.g
 - `story_likes_count_after_delete`
 - `messages_summary_after_insert`
 
-触发器以 `RAISE(ABORT, stable_error_code)` 返回稳定错误码，服务层集中映射而不是向客户端泄漏 SQL。具体合同为：容量触发器返回 `TEAM_CAPACITY_EXCEEDED`（409），Story 计数触发器失败返回 `STORY_LIKE_COUNT_FAILED`（409），消息摘要触发器失败返回 `MESSAGE_SUMMARY_FAILED`（409）；未知 D1/SQLite 文本一律映射为通用 `DATABASE_CONSTRAINT_FAILED`（422）且原始 SQL 只进入脱敏服务端日志。每个码都有 API envelope 与原始 SQL 不泄漏测试。
+用户从 active 变为非 active 或 `deleted_at` 变为非空时，认证撤销触发器在同一 UPDATE 内删除该用户全部 session 与 `password-reset:<userId>` challenge；恢复用户不能恢复已删除的能力。session INSERT 必须在数据库语句内复核 active/non-deleted，密码重置签发与消费也执行提交时复核。其余触发器以 `RAISE(ABORT, stable_error_code)` 返回稳定错误码，服务层集中映射而不是向客户端泄漏 SQL。具体合同为：容量触发器返回 `TEAM_CAPACITY_EXCEEDED`（409），Story 计数触发器失败返回 `STORY_LIKE_COUNT_FAILED`（409），消息摘要触发器失败返回 `MESSAGE_SUMMARY_FAILED`（409）；未知 D1/SQLite 文本一律映射为通用 `DATABASE_CONSTRAINT_FAILED`（422）且原始 SQL 只进入脱敏服务端日志。每个码都有 API envelope 与原始 SQL 不泄漏测试。
 
 ### 6.5 Seed
 
@@ -242,6 +246,8 @@ seed 使用 `INSERT OR IGNORE` 并可重复执行。E2E/QA seed 另行创建用�
 
 - 输入输出使用 `regionId`、`supportedActivityTypes`、`coverImageUrl`、经纬度和结构化 `extra`。
 - 删除旧 `type/cityId/cityName/coordinates/coverImage` 以及扁平徒步、停车和 API Key actor 字段。
+- `locations.slug` 只在 Region 内唯一；所有详情、标签、前端链接、sitemap 和分享二维码只使用全局唯一 Location ID，不提供 slug fallback。
+- 公开详情、标签、收藏与分享图只暴露 `published` 且属于已启用 city Region 的 Location。
 - 标签只经 `location_tags` 管理。
 - stats 成为内部 `/api/locations/stats`，替代被删除的 `/v1/locations/stats`。
 
@@ -262,10 +268,13 @@ seed 使用 `INSERT OR IGNORE` 并可重复执行。E2E/QA seed 另行创建用�
 ### 7.4 Story 和旧 Activity Post
 
 - 删除 `activity-posts` 路由、表、类型和独立前端模型。
-- 队伍回顾通过 `/api/stories` 创建，携带 `teamId`；地点详情和队伍详情以 Story feed 展示。
+- 队伍回顾通过 `/api/stories` 创建，携带 `teamId`；地点详情使用 `locationId`、队伍详情使用 `teamId` 读取同一 V2 cursor/envelope Story feed，并提供加载、空态和可重试错误。
+- 已完成 Team 的当前 leader 或 active member 可见发布入口，进入 `/discover/create?teamId=<id>`；创建 payload 保留 `teamId + imageKeys[]` 严格合同，地点由后端从 Team 推导。
 - 旧 `upload/activity-post` 改为 Story 图片上传；删除 `frontend/src/components/features/activity-posts/**` 并把详情页入口替换为 Story recap 组件。
 - 普通 Story 与队伍回顾共用 `stories`、`story_tags`、`story_likes`。
 - 点赞只增删 `story_likes`，计数只由触发器维护。
+- Story 关联 Location 时，创建/更新使用条件 DML 复查 Location 为 `published` 且所属 city Region 已启用；公开 feed、详情、统计、标签、点赞、收藏与分享图使用同一可见性条件。
+- Story DTO 的用户态字段固定为 `isLiked`；详情 GET 为纯读取，不在请求内更新 `viewCount`。
 
 ### 7.5 Favorites
 
@@ -286,6 +295,11 @@ seed 使用 `INSERT OR IGNORE` 并可重复执行。E2E/QA seed 另行创建用�
 - 删除 `share_events`、`/api/shares/track`、Story share stats、admin share analytics 和前端 `trackShare`；保留原生分享但不再埋点。
 - local-circle 请求/响应统一使用 `regionId/regionName`；CF-IPCity 先按开放 Region 的 `name/name_en` 解析，失败回退 seed 中稳定的深圳 Region ID。
 - KV 只缓存不含用户信息的公共聚合（如 `activePeopleCount/topLocations`），key 固定为 `local-circle:v2:public:<regionId>:<language>`；`neighborTeams` 每次按当前 `currentUserId` 从 D1 计算并在响应阶段合并，绝不写入公共 KV。测试必须证明匿名、用户 A、用户 B 的个性化结果互不命中/泄漏。
+- 登录、注册与认证邮件分别使用 Cloudflare Rate Limiting binding；每个 key 对用途、
+  email 与来源做 SHA-256，不传原始 PII。Better Auth 额外保留
+  `auth:better-auth-rate-limit:v1:<sha256>` 私有 KV 计数作为 15 分钟 TTL 的纵深防御。
+  两层均为最终一致的滥用抑制，不是 session、权限、计费或精确全局计数真相；不改变
+  上一条 local-circle 公共缓存“零用户字段”的合同。
 - local-circle SQL 切到 `region`、V2 teams、active team members、已发布 Team recap Story 和专用收藏表。
 - 缓存不可成为权限或业务真相来源；KV 失败时回源 D1 或继续生成。
 
@@ -363,40 +377,40 @@ Lighthouse 作为上述唯一 PR validation workflow 的一个 job 运行，不�
 
 ### 10.1 静态结构
 
-- [ ] 只有一个部署入口和一个 Wrangler 配置。
-- [ ] `packages/mcp`、`routes/v1`、API Key UI/依赖均不存在。
-- [ ] schema 只导出 V2 19 表。
-- [ ] migrations 只有 `0000_init.sql` 和必要的新 meta。
-- [ ] 全仓没有指向 `api.gomate.live`、`PUBLIC_API_URL`、独立 API 端口或旧 MCP 能力的可执行配置。
-- [ ] 可执行配置中没有 `gomate-api`、`gomate-frontend`、旧 `gomate-db`、旧 Wrangler cwd；legacy deploy workflows 已删除。
+- [x] 只有一个部署入口和一个 Wrangler 配置。
+- [x] `packages/mcp`、`routes/v1`、API Key UI/依赖均不存在。
+- [x] schema 只导出 V2 19 表。
+- [x] migrations 只有 `0000_init.sql` 和必要的新 meta。
+- [x] 全仓没有指向 `api.gomate.live`、`PUBLIC_API_URL`、独立 API 端口或旧 MCP 能力的可执行配置。
+- [x] 可执行配置中没有 `gomate-api`、`gomate-frontend`、旧 `gomate-db`、旧 Wrangler cwd；legacy deploy workflows 已删除。
 
 ### 10.2 数据库
 
-- [ ] 同一 DB baseline 连续执行两次成功，两个隔离 workerd 状态各通过 migration ledger 应用成功。
-- [ ] 精确 19 张业务表、6 个目标触发器。
-- [ ] `PRAGMA foreign_key_check` 返回空。
-- [ ] 11 条关键不变量均有成功、拒绝及适用的并发/故障回滚测试。
-- [ ] Location 城市 feed、Team 地点/活动 feed、Story 全局/地点/队伍 feed、两个收藏列表、Conversation inbox、Message cursor 的 `EXPLAIN QUERY PLAN` 命中目标索引。
+- [x] 同一 DB baseline 连续执行两次成功，两个隔离 workerd 状态各通过 migration ledger 应用成功。
+- [x] 精确 19 张业务表、8 个目标触发器。
+- [x] `PRAGMA foreign_key_check` 返回空。
+- [x] 12 条关键不变量均有成功、拒绝及适用的并发/故障回滚测试。
+- [x] Location 城市 feed、Team 地点/活动 feed、Story 全局/地点/队伍 feed、两个收藏列表、Conversation inbox、Message cursor 的 `EXPLAIN QUERY PLAN` 命中目标索引。
 
 ### 10.3 运行时
 
-- [ ] `/api/health` 返回 JSON 200。
-- [ ] `/health` 不再暴露旧 API；由 Astro 404 处理。
-- [ ] `/api/unknown` 返回 JSON 404，不返回 HTML。
-- [ ] `/`、动态 Astro 页面、静态 `_astro/*` 在同一端口可访问。
-- [ ] 同源注册、登录、session、退出流程通过。
-- [ ] Worker gzip 小于 3 MiB，目标小于等于 2.4 MiB。
-- [ ] `wrangler check startup` 通过；SSR 内部 API dispatch 不发起同区 HTTP self-fetch。
+- [x] `/api/health` 返回 JSON 200。
+- [x] `/health` 不再暴露旧 API；由 Astro 404 处理。
+- [x] `/api/unknown` 返回 JSON 404，不返回 HTML。
+- [x] `/`、动态 Astro 页面、静态 `_astro/*` 在同一端口可访问。
+- [x] 同源注册、登录、session、退出流程通过。
+- [x] Worker gzip 小于 3 MiB，目标小于等于 2.4 MiB。
+- [x] `wrangler check startup` 通过；SSR 内部 API dispatch 不发起同区 HTTP self-fetch。
 
 ### 10.4 产品回归
 
-- [ ] Region/地点列表与详情。
-- [ ] 创建/编辑/取消/成行队伍、申请/批准/拒绝/离开。
-- [ ] 普通 Story、队伍回顾、点赞、标签。
-- [ ] 地点与 Story 收藏。
-- [ ] 私信创建、发送、游标分页、已读。
-- [ ] R2 上传、SVG 分享海报和 KV fallback。
-- [ ] 首页、本地圈、个人资料、我的队伍没有旧字段依赖。
+- [x] Region/地点列表与详情。
+- [x] 创建/编辑/取消/成行队伍、申请/批准/拒绝/离开。
+- [x] 普通 Story、队伍回顾、点赞、标签。
+- [x] 地点与 Story 收藏。
+- [x] 私信创建、发送、游标分页、已读。
+- [x] R2 上传、SVG 分享海报和 KV fallback。
+- [x] 首页、本地圈、个人资料、我的队伍没有旧字段依赖。
 
 ## 11. 风险与控制
 

@@ -18,8 +18,8 @@ export function TeamLeaderMini({
 }: TeamLeaderMiniProps) {
   const { t } = useI18n(["teams", "enums"]);
   const name = leader?.nickname || leader?.name || t("teams.defaultLeader");
-  const avatar = leader?.avatar;
-  const level = leader?.level;
+  const avatar = leader?.image;
+  const level = leader?.extra.level;
 
   const sizeClasses = {
     sm: {

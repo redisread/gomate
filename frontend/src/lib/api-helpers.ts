@@ -19,7 +19,7 @@ interface ApiCallOptions<T> {
  * 自动处理 try-catch 和错误日志
  *
  * @example
- * const data = await safeFetch<Location>("/api/locations/123");
+ * const data = await safeFetch<Location>("/locations/123");
  * if (data) setLocation(data.location);
  */
 export async function safeFetch<T = unknown>(

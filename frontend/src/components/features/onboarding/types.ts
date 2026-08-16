@@ -6,20 +6,20 @@
 export interface OnboardingCandidate {
   id: string;
   title: string;
-  icon: string | null;
-  startTime: string;
-  maxMembers: number;
-  approvedCount: number;
+  activityType: PreferenceType;
+  startAt: string;
+  maxParticipants: number;
+  activeParticipantCount: number;
   locationName: string;
-  cityName: string;
-  locationType: string | null;
+  regionName: string;
+  coverImageUrl: string;
 }
 
 export interface RecommendOnboardingResponse {
   hasAnyMembership: boolean;
   candidates: OnboardingCandidate[];
   fallbackNoType: boolean;
-  cityId: string | null;
+  regionId: string;
 }
 
 export type PreferenceType = "hiking" | "explore" | "leisure" | "travel";

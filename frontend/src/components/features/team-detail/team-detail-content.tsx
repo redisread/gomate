@@ -1,9 +1,9 @@
 import { AlertCircle, Users } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { TeamActivityPosts } from "@/components/features/activity-posts";
 import { useTeamDetail } from "./use-team-detail";
 import { MemberAvatarGrid } from "./team-detail-members";
 import { TeamActionbookSection } from "./team-actionbook-section";
+import { TeamStoryRecapFeed } from "@/components/features/discover/story-recap-feed";
 
 export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail> }) {
   const { team, allMembers, isLeader, isMember, userId, show, loadTeam } = ctx;
@@ -25,6 +25,12 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
 
       <RequirementsList requirements={team.requirements} />
 
+      <TeamStoryRecapFeed
+        team={team}
+        isLeader={isLeader}
+        isMember={isMember}
+      />
+
       {allMembers.length > 0 && (
         <section
           aria-labelledby="team-members-title"
@@ -41,15 +47,10 @@ export function TeamMainContent({ ctx }: { ctx: ReturnType<typeof useTeamDetail>
           </div>
           <MemberAvatarGrid
             members={allMembers}
-            leaderId={team.leader?.id}
             teamId={team.id}
             canMessageMembers={isLeader}
           />
         </section>
-      )}
-
-      {team.status === "completed" && (
-        <TeamActivityPosts teamId={team.id} teamStatus={team.status} isMember={isMember} />
       )}
     </div>
   );

@@ -10,6 +10,7 @@ import { TeamDetailSkeleton } from "./team-detail-skeleton";
 import { useI18n } from "@/hooks/useI18n";
 import { TeamDepartureBrief } from "./team-detail-overview";
 import { getStatusInfo } from "./team-detail-utils";
+import { getTeamDisplayStatus } from "@/lib/team-display";
 
 interface TeamDetailPartifulProps {
   teamId: string;
@@ -39,7 +40,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
     );
   }
 
-  const statusInfo = getStatusInfo(team.status, t);
+  const statusInfo = getStatusInfo(getTeamDisplayStatus(team), t);
 
   return (
     <main className="min-h-screen bg-background flex flex-col">

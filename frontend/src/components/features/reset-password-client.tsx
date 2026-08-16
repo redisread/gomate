@@ -18,11 +18,18 @@ export function ResetPasswordClient() {
   const [token, setToken] = React.useState<string | null>(null);
   const [tokenLoading, setTokenLoading] = React.useState(true);
 
-  // 从 URL query 参数中获取 token
+  // Fragment never reaches the Worker request URL, logs, traces or referrers.
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(window.location.hash.replace(/^#/u, ""));
       const resetToken = params.get("token");
+      const scrubbedUrl = new URL(window.location.href);
+      scrubbedUrl.searchParams.delete("token");
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${scrubbedUrl.pathname}${scrubbedUrl.search}`,
+      );
       if (resetToken) {
         setToken(resetToken);
       }
@@ -43,7 +50,7 @@ export function ResetPasswordClient() {
       return;
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       setError(t("auth.passwordTooShort"));
       setIsLoading(false);
       return;

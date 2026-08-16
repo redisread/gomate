@@ -1,0 +1,13 @@
+---
+import { VerifyEmailClient } from "../components/features/verify-email-client";
+import Layout from "../layouts/Layout.astro";
+import { declareI18nNs } from "../middleware";
+
+declareI18nNs(Astro.locals, ["auth"]);
+Astro.response.headers.set("Cache-Control", "no-store");
+Astro.response.headers.set("Referrer-Policy", "no-referrer");
+---
+
+<Layout title="GoMate" showNavbar={false} showFooter={false}>
+  <VerifyEmailClient client:load />
+</Layout>

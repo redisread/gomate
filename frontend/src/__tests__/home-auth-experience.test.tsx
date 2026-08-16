@@ -13,7 +13,7 @@ vi.mock("../components/features/home/use-home-data", () => ({
     locations: [],
     teams: [],
     preloadImages: [],
-    userCity: null,
+    userRegionId: null,
     animate: {
       badge: "",
       title: "",
@@ -82,7 +82,7 @@ describe("HomeClient auth-specific experience", () => {
       id: "user-1",
       name: "Victor",
       nickname: "Victor",
-      city: "shenzhen",
+      extra: { level: "beginner", completedHikes: 0, wechat: null, city: "region-shenzhen" },
     });
 
     await act(async () => {

@@ -1,383 +1,377 @@
-import { Hono } from "hono";
-import { logger } from "../../lib/logger";
-import { eq, like, and, sql, inArray, not } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  like,
+  lt,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
+import { Hono, type Context } from "hono";
+import { z } from "zod";
+
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
-import type { Env } from "../../lib/auth";
 import { APIErrors } from "../../lib/api-errors";
-import { getCachedOrFetch, buildListCacheKey, setPublicCacheHeaders } from "../../lib/cache";
-import { safeJsonParse } from "./utils";
+import type { Env } from "../../lib/auth";
+import { setPublicCacheHeaders } from "../../lib/cache";
+import { logger } from "../../lib/logger";
+import {
+  decodeContentCursor,
+  encodeContentCursor,
+} from "../../lib/content-cursor";
+import {
+  ACTIVITY_TYPES,
+  loadLocationTags,
+  LocationAccessError,
+  projectLocation,
+  projectRegion,
+  requireAdmin,
+  safeErrorMetadata,
+} from "./utils";
 
 const queries = new Hono<{ Bindings: Env }>();
 
-/**
- * P0-B T2 (task #169): 将逗号/中文顿号分隔的自由文本切成 chip 数组。
- * 空字符串 / null / undefined → 空数组（前端按"未填"处理）。
- */
-function parseCsvField(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  return raw
-    .split(/[,、]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+const locationListQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(12),
+  cursor: z.string().optional(),
+  search: z.string().trim().max(100).optional(),
+  regionId: z.string().trim().min(1).max(128).optional(),
+  activityType: z.enum(ACTIVITY_TYPES).optional(),
+  tagIds: z
+    .string()
+    .trim()
+    .max(2_000)
+    .optional()
+    .transform((value) =>
+      value
+        ? [...new Set(value.split(",").map((item) => item.trim()).filter(Boolean))]
+        : [],
+    )
+    .refine((values) => values.length <= 20, "At most 20 tag IDs are allowed"),
+});
+
+type Db = ReturnType<typeof createDb>;
+
+function adminAccessError(c: Context<{ Bindings: Env }>, error: unknown) {
+  if (!(error instanceof LocationAccessError)) return null;
+  return error.kind === "unauthorized"
+    ? c.json(APIErrors.unauthorized("Authentication required"), 401)
+    : c.json(APIErrors.forbidden("Administrator access required"), 403);
 }
 
+export function buildLocationPageQuery(
+  db: Db,
+  where: SQL | undefined,
+  limit: number,
+) {
+  return db
+    .select({
+      location: schema.locations,
+      region: schema.region,
+    })
+    .from(schema.locations)
+    .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
+    .where(where)
+    .orderBy(desc(schema.locations.createdAt), desc(schema.locations.id))
+    .limit(limit);
+}
 
-/**
- * GET /locations
- * 获取地点列表，支持分页、搜索、城市筛选、标签筛选
- * ?tags=true 返回热门标签
- * ?allTags=true 返回按类型分组的所有标签
- * ?view=card 返回轻量卡片视图（首页用），跳过 routes/tags/images 等重字段
- */
 queries.get("/", async (c) => {
+  if (c.req.query("page") !== undefined || c.req.query("pageSize") !== undefined) {
+    return c.json(
+      APIErrors.badRequest("page pagination is not supported; use cursor"),
+      400,
+    );
+  }
+  const parsed = locationListQuerySchema.safeParse({
+    limit: c.req.query("limit"),
+    cursor: c.req.query("cursor"),
+    search: c.req.query("search"),
+    regionId: c.req.query("regionId"),
+    activityType: c.req.query("activityType"),
+    tagIds: c.req.query("tagIds"),
+  });
+  if (!parsed.success) {
+    return c.json(
+      APIErrors.validationError(
+        "Invalid location filters",
+        parsed.error.flatten(),
+      ),
+      400,
+    );
+  }
+
   try {
     const db = createDb(c.env.DB);
+    const { limit, cursor: encodedCursor, search, regionId, activityType, tagIds } =
+      parsed.data;
+    const baseConditions: SQL[] = [
+      eq(schema.locations.status, "published"),
+      eq(schema.region.level, "city"),
+      eq(schema.region.serviceEnabled, true),
+    ];
 
-    // 返回热门标签
-    if (c.req.query("tags") === "true") {
-      const popularTags = await db
-        .select({ id: schema.tags.id, name: schema.tags.name, type: schema.tags.type })
-        .from(schema.tags)
-        .limit(15);
-      setPublicCacheHeaders(c);
-      return c.json({ success: true, tags: popularTags });
+    if (search) {
+      baseConditions.push(like(schema.locations.name, `%${search}%`));
+    }
+    if (regionId) {
+      baseConditions.push(eq(schema.locations.regionId, regionId));
+    }
+    if (activityType) {
+      baseConditions.push(sql`exists (
+        select 1
+        from json_each(${schema.locations.supportedActivityTypes})
+        where json_each.value = ${activityType}
+      )`);
     }
 
-    // 返回所有标签（按类型分组）
-    if (c.req.query("allTags") === "true") {
-      const allTags = await db
-        .select({ id: schema.tags.id, name: schema.tags.name, type: schema.tags.type })
-        .from(schema.tags)
-        .orderBy(schema.tags.type, schema.tags.name);
-      const grouped: Record<string, typeof allTags> = {};
-      for (const tag of allTags) {
-        if (!grouped[tag.type]) grouped[tag.type] = [];
-        grouped[tag.type].push(tag);
-      }
-      setPublicCacheHeaders(c);
-      return c.json({ success: true, tags: grouped });
-    }
-
-    const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
-    const pageSize = Math.min(100, Math.max(1, parseInt(c.req.query("pageSize") || "12", 10)));
-    const search = c.req.query("search") || "";
-    const cityId = c.req.query("cityId") || "";
-    const tagIdsParam = c.req.query("tagIds");
-    const tagIds = tagIdsParam ? tagIdsParam.split(",").filter(Boolean) : [];
-    const type = c.req.query("type") || "";
-    const view = c.req.query("view") || ""; // "card" for lightweight view
-
-    // 公共列表数据，使用缓存（键含全部查询参数，避免不同过滤串池）
-    const cacheKey = buildListCacheKey("locations", {
-      page: String(page), pageSize: String(pageSize), search, cityId,
-      tagIds: tagIdsParam, type, view,
-    });
-    const body = await getCachedOrFetch(cacheKey, async () => {
-
-    // 构建过滤条件
-    const conditions = [];
-    if (search) conditions.push(like(schema.locations.name, `%${search}%`));
-    if (cityId) conditions.push(eq(schema.locations.cityId, cityId));
-    if (type) conditions.push(eq(schema.locations.type, type));
-
-    // 如果有标签筛选，先查出符合标签的 locationIds
-    let tagLocationIds: string[] | null = null;
     if (tagIds.length > 0) {
-      const tagMatches = await db
-        .select({ entityId: schema.entityToTags.entityId })
-        .from(schema.entityToTags)
-        .where(and(
-          eq(schema.entityToTags.entityType, "location"),
-          inArray(schema.entityToTags.tagId, tagIds)
-        ));
-      tagLocationIds = [...new Set(tagMatches.map((t) => t.entityId))];
-      if (tagLocationIds.length === 0) {
-        return { success: true, locations: [], pagination: { page, pageSize, total: 0, totalPages: 0 } };
-      }
-      conditions.push(inArray(schema.locations.id, tagLocationIds));
+      const matchingLocationIds = db
+        .select({ locationId: schema.locationTags.locationId })
+        .from(schema.locationTags)
+        .where(inArray(schema.locationTags.tagId, tagIds));
+      baseConditions.push(inArray(schema.locations.id, matchingLocationIds));
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-    // 查询总数
-    const [{ total }] = await db
+    const baseWhere = and(...baseConditions);
+    const [{ total: rawTotal }] = await db
       .select({ total: sql<number>`count(*)` })
       .from(schema.locations)
-      .where(whereClause);
+      .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
+      .where(baseWhere);
+    const total = Number(rawTotal);
 
-    const totalPages = Math.ceil(total / pageSize);
-    const offset = (page - 1) * pageSize;
-
-    // ==================== view=card 轻量模式 ====================
-    if (view === "card") {
-      // 只查询卡片需要的字段，不 join city；徒步参数读 location 自身字段（task #152 切源，不再 join routes）
-      const locationList = await db
-        .select({
-          id: schema.locations.id,
-          name: schema.locations.name,
-          slug: schema.locations.slug,
-          type: schema.locations.type,
-          subtitle: schema.locations.subtitle,
-          description: schema.locations.description,
-          address: schema.locations.address,
-          cityName: schema.locations.cityName,
-          coverImage: schema.locations.coverImage,
-          difficulty: schema.locations.difficulty,
-          durationMin: schema.locations.durationMin,
-          durationMax: schema.locations.durationMax,
-          distance: schema.locations.distance,
-          elevation: schema.locations.elevation,
-          createdAt: schema.locations.createdAt,
-        })
-        .from(schema.locations)
-        .where(whereClause)
-        .limit(pageSize)
-        .offset(offset);
-
-      const locationIds = locationList.map((l) => l.id);
-
-      // 只取每个地点第一个标签
-      const firstTags = locationIds.length > 0
-        ? await db
-            .select({
-              entityId: schema.entityToTags.entityId,
-              tagName: schema.tags.name,
-              tagType: schema.tags.type,
-            })
-            .from(schema.entityToTags)
-            .innerJoin(schema.tags, eq(schema.tags.id, schema.entityToTags.tagId))
-            .where(and(
-              eq(schema.entityToTags.entityType, "location"),
-              inArray(schema.entityToTags.entityId, locationIds)
-            ))
-        : [];
-
-      const firstTagByLocation: Record<string, { name: string; type: string }> = {};
-      for (const t of firstTags) {
-        if (!firstTagByLocation[t.entityId]) firstTagByLocation[t.entityId] = { name: t.tagName, type: t.tagType };
+    const pageConditions = [...baseConditions];
+    if (encodedCursor !== undefined) {
+      const cursor = decodeContentCursor(encodedCursor);
+      if (!cursor) {
+        return c.json(APIErrors.badRequest("Invalid location cursor"), 400);
       }
-
-      const formattedLocations = locationList.map((loc) => {
-        const tag = firstTagByLocation[loc.id];
-        return {
-          id: loc.id,
-          name: loc.name,
-          slug: loc.slug,
-          type: loc.type,
-          subtitle: loc.subtitle,
-          description: loc.description,
-          address: loc.address,
-          cityName: loc.cityName,
-          coverImage: loc.coverImage,
-          difficulty: loc.difficulty ?? null,
-          durationMin: loc.durationMin ?? null,
-          durationMax: loc.durationMax ?? null,
-          distance: loc.distance ?? null,
-          elevation: loc.elevation ?? null,
-          tags: tag ? [{ name: tag.name, type: tag.type }] : [],
-          createdAt: loc.createdAt,
-        };
-      });
-
-      // P1 (city 个性化 #192 T2): city 过滤不足 → 以 hot 补位（仅首页 view=card 走此路径）
-      let cityMatch: 'exact' | 'mixed' | 'fallback' | null = null;
-      if (cityId && view === 'card' && total >= pageSize) {
-        cityMatch = 'exact';
-      } else if (cityId && view === 'card' && formattedLocations.length < pageSize) {
-        const existingIds = new Set(formattedLocations.map(l => l.id));
-        const needed = pageSize - formattedLocations.length;
-        const hotRows = await db
-          .select({
-            id: schema.locations.id,
-            name: schema.locations.name,
-            slug: schema.locations.slug,
-            type: schema.locations.type,
-            subtitle: schema.locations.subtitle,
-            description: schema.locations.description,
-            address: schema.locations.address,
-            cityName: schema.locations.cityName,
-            coverImage: schema.locations.coverImage,
-            difficulty: schema.locations.difficulty,
-            durationMin: schema.locations.durationMin,
-            durationMax: schema.locations.durationMax,
-            distance: schema.locations.distance,
-            elevation: schema.locations.elevation,
-            createdAt: schema.locations.createdAt,
-          })
-          .from(schema.locations)
-          .where(existingIds.size > 0 ? not(inArray(schema.locations.id, Array.from(existingIds))) : undefined)
-          .orderBy(sql`created_at DESC`)
-          .limit(needed);
-        for (const h of hotRows) {
-          formattedLocations.push({
-            id: h.id, name: h.name, slug: h.slug,
-            type: h.type, subtitle: h.subtitle,
-            description: h.description, address: h.address,
-            cityName: h.cityName, coverImage: h.coverImage,
-            difficulty: h.difficulty ?? null,
-            durationMin: h.durationMin ?? null,
-            durationMax: h.durationMax ?? null,
-            distance: h.distance ?? null,
-            elevation: h.elevation ?? null,
-            tags: [],
-            createdAt: h.createdAt,
-          });
-        }
-        cityMatch = total > 0 ? 'mixed' : 'fallback';
-      }
-
-      return {
-        success: true,
-        locations: formattedLocations,
-        pagination: { page, pageSize, total, totalPages },
-        ...(cityMatch ? { _meta: { cityMatch } } : {}),
-      };
+      const cursorDate = new Date(cursor.t);
+      pageConditions.push(
+        or(
+          lt(schema.locations.createdAt, cursorDate),
+          and(
+            eq(schema.locations.createdAt, cursorDate),
+            lt(schema.locations.id, cursor.id),
+          ),
+        )!,
+      );
     }
 
-    // ==================== 完整模式（默认） ====================
-    // 查询地点列表
-    const locationList = await db.query.locations.findMany({
-      where: whereClause,
-      with: { city: true },
-      limit: pageSize,
-      offset,
-    });
+    const fetchedRows = await buildLocationPageQuery(
+      db,
+      and(...pageConditions),
+      limit + 1,
+    );
+    const hasMore = fetchedRows.length > limit;
+    const rows = fetchedRows.slice(0, limit);
 
-    // 查询各地点的标签
-    const locationIds = locationList.map((l) => l.id);
-    const tagRelations = locationIds.length > 0
-      ? await db
-          .select({ entityId: schema.entityToTags.entityId, tagId: schema.entityToTags.tagId, tagName: schema.tags.name, tagType: schema.tags.type })
-          .from(schema.entityToTags)
-          .innerJoin(schema.tags, eq(schema.tags.id, schema.entityToTags.tagId))
-          .where(and(
-            eq(schema.entityToTags.entityType, "location"),
-            inArray(schema.entityToTags.entityId, locationIds)
-          ))
-      : [];
+    const tagsByLocation = await loadLocationTags(
+      db,
+      rows.map((row) => row.location.id),
+    );
+    const locations = rows.map((row) =>
+      projectLocation(
+        row.location,
+        row.region,
+        tagsByLocation.get(row.location.id) ?? [],
+      ),
+    );
+    const oldest = rows.at(-1)?.location;
 
-    const tagsByLocation: Record<string, { id: string; name: string; type: string }[]> = {};
-    for (const rel of tagRelations) {
-      if (!tagsByLocation[rel.entityId]) tagsByLocation[rel.entityId] = [];
-      tagsByLocation[rel.entityId].push({ id: rel.tagId, name: rel.tagName, type: rel.tagType });
-    }
-
-    const formattedLocations = locationList.map((location) => {
-      return {
-        id: location.id, name: location.name, slug: location.slug,
-        type: location.type,
-        subtitle: location.subtitle, description: location.description,
-        address: location.address, cityId: location.cityId,
-        cityName: location.city?.name || location.cityName,
-        coverImage: location.coverImage,
-        images: safeJsonParse(location.images, [] as string[]),
-        bestSeason: safeJsonParse(location.bestSeason, [] as string[]),
-        coordinates: safeJsonParse(location.coordinates, { lat: 0, lng: 0 }),
-        extra: safeJsonParse(location.extra, undefined),
-        tags: tagsByLocation[location.id] || [],
-        // task #152 切源：徒步参数读 location 自身字段（0010 已回填，与主路线一致）
-        difficulty: location.difficulty,
-        durationMin: location.durationMin,
-        durationMax: location.durationMax,
-        distance: location.distance,
-        elevation: location.elevation,
-        createdAt: location.createdAt, updatedAt: location.updatedAt,
-      };
-    });
-
-    return { success: true, locations: formattedLocations, pagination: { page, pageSize, total, totalPages } };
-    });
     setPublicCacheHeaders(c);
-    return c.json(body);
+    return c.json({
+      success: true as const,
+      locations,
+      total,
+      nextCursor:
+        hasMore && oldest
+          ? encodeContentCursor({
+              t: oldest.createdAt.getTime(),
+              id: oldest.id,
+            })
+          : null,
+    });
   } catch (error) {
-    logger.error("Get locations error:", error);
-    return c.json(APIErrors.internalError("获取地点列表失败"), 500);
+    logger.error("locations_list_failed", safeErrorMetadata(error));
+    return c.json(APIErrors.internalError("Failed to list locations"), 500);
   }
 });
 
-/**
- * GET /locations/:id
- * 获取单个地点详情
- */
-queries.get("/:id", async (c) => {
+queries.get("/stats", async (c) => {
   try {
-    const idOrSlug = c.req.param("id");
     const db = createDb(c.env.DB);
-
-    // 先尝试按 id 查询
-    let location = await db.query.locations.findFirst({
-      where: eq(schema.locations.id, idOrSlug),
-    });
-
-    // 如果未找到，尝试按 slug 查询
-    if (!location) {
-      location = await db.query.locations.findFirst({
-        where: eq(schema.locations.slug, idOrSlug),
-      });
-    }
-
-    if (!location) return c.json(APIErrors.notFound("地点不存在"), 404);
-
-    // 查询地点关联的标签
-    const tagRelations = await db
-      .select({ tagId: schema.entityToTags.tagId, tagName: schema.tags.name, tagType: schema.tags.type })
-      .from(schema.entityToTags)
-      .innerJoin(schema.tags, eq(schema.tags.id, schema.entityToTags.tagId))
+    const rows = await db
+      .select({
+        id: schema.locations.id,
+        name: schema.locations.name,
+        slug: schema.locations.slug,
+        regionId: schema.locations.regionId,
+        region: schema.region,
+        latitude: schema.locations.latitude,
+        longitude: schema.locations.longitude,
+        coverImageUrl: schema.locations.coverImageUrl,
+        supportedActivityTypes: schema.locations.supportedActivityTypes,
+      })
+      .from(schema.locations)
+      .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
       .where(
         and(
-          eq(schema.entityToTags.entityType, "location"),
-          eq(schema.entityToTags.entityId, location.id)
-        )
-      );
+          eq(schema.locations.status, "published"),
+          eq(schema.region.level, "city"),
+          eq(schema.region.serviceEnabled, true),
+        ),
+      )
+      .orderBy(asc(schema.region.sortOrder), asc(schema.locations.id));
 
-    const tags = tagRelations.map((r) => ({ id: r.tagId, name: r.tagName, type: r.tagType }));
+    const regionCounts = new Map<
+      string,
+      { region: ReturnType<typeof projectRegion>; count: number }
+    >();
+    for (const row of rows) {
+      const current = regionCounts.get(row.regionId);
+      if (current) current.count += 1;
+      else {
+        regionCounts.set(row.regionId, {
+          region: projectRegion(row.region),
+          count: 1,
+        });
+      }
+    }
 
+    setPublicCacheHeaders(c);
     return c.json({
-      success: true,
-      location: {
-        ...location,
-        images: safeJsonParse(location.images, [] as string[]),
-        bestSeason: safeJsonParse(location.bestSeason, [] as string[]),
-        coordinates: safeJsonParse(location.coordinates, { lat: 0, lng: 0 }),
-        extra: safeJsonParse(location.extra, undefined),
-        // P0-B T2（task #169）：spec §5 gear_essential/gear_optional 存 comma-separated 文本，
-        // 前端渲染时按 chip 列表展示 → API 层直接切好数组，避免前端各处零散 split。
-        gearEssential: parseCsvField(location.gearEssential),
-        gearOptional: parseCsvField(location.gearOptional),
-        tags,
-      },
+      success: true as const,
+      total: rows.length,
+      regions: [...regionCounts.values()],
+      points: rows.map(({ region, ...point }) => ({
+        ...point,
+        region: projectRegion(region),
+      })),
     });
   } catch (error) {
-    logger.error("Get location error:", error);
-    return c.json(APIErrors.internalError("获取地点详情失败"), 500);
+    logger.error("location_stats_get_failed", safeErrorMetadata(error));
+    return c.json(
+      APIErrors.internalError("Failed to get location statistics"),
+      500,
+    );
   }
 });
 
-/**
- * GET /locations/:id/tags
- * 获取地点当前关联的标签列表
- */
 queries.get("/:id/tags", async (c) => {
   try {
-    const id = c.req.param("id");
     const db = createDb(c.env.DB);
-
+    const locationId = c.req.param("id");
     const rows = await db
-      .select({ tag: schema.tags })
-      .from(schema.entityToTags)
-      .innerJoin(schema.tags, eq(schema.entityToTags.tagId, schema.tags.id))
+      .select({
+        locationId: schema.locations.id,
+        tag: {
+          id: schema.tags.id,
+          name: schema.tags.name,
+          slug: schema.tags.slug,
+        },
+      })
+      .from(schema.locations)
+      .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
+      .leftJoin(
+        schema.locationTags,
+        eq(schema.locationTags.locationId, schema.locations.id),
+      )
+      .leftJoin(schema.tags, eq(schema.tags.id, schema.locationTags.tagId))
       .where(
         and(
-          eq(schema.entityToTags.entityId, id),
-          eq(schema.entityToTags.entityType, "location")
-        )
-      );
-
-    return c.json({ success: true, tags: rows.map((r) => r.tag) });
+          eq(schema.locations.id, locationId),
+          eq(schema.locations.status, "published"),
+          eq(schema.region.level, "city"),
+          eq(schema.region.serviceEnabled, true),
+        ),
+      )
+      .orderBy(asc(schema.tags.name), asc(schema.tags.id));
+    if (rows.length === 0) {
+      return c.json(APIErrors.notFound("Location not found"), 404);
+    }
+    return c.json({
+      success: true as const,
+      tags: rows.flatMap(({ tag }) => tag ? [tag] : []),
+    });
   } catch (error) {
-    logger.error("Get location tags error:", error);
-    return c.json(APIErrors.internalError("获取标签失败"), 500);
+    logger.error("location_tags_get_failed", safeErrorMetadata(error));
+    return c.json(APIErrors.internalError("Failed to get location tags"), 500);
+  }
+});
+
+queries.get("/:id/admin", async (c) => {
+  try {
+    await requireAdmin(c);
+    const db = createDb(c.env.DB);
+    const id = c.req.param("id");
+    const [row] = await db
+      .select({
+        location: schema.locations,
+        region: schema.region,
+      })
+      .from(schema.locations)
+      .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
+      .where(eq(schema.locations.id, id))
+      .limit(1);
+
+    if (!row) return c.json(APIErrors.notFound("Location not found"), 404);
+    const tags = await loadLocationTags(db, [row.location.id]);
+    return c.json({
+      success: true as const,
+      location: projectLocation(
+        row.location,
+        row.region,
+        tags.get(row.location.id) ?? [],
+      ),
+    });
+  } catch (error) {
+    const denied = adminAccessError(c, error);
+    if (denied) return denied;
+    logger.error("location_admin_get_failed", safeErrorMetadata(error));
+    return c.json(APIErrors.internalError("Failed to get location"), 500);
+  }
+});
+
+queries.get("/:id", async (c) => {
+  try {
+    const db = createDb(c.env.DB);
+    const id = c.req.param("id");
+    const [row] = await db
+      .select({
+        location: schema.locations,
+        region: schema.region,
+      })
+      .from(schema.locations)
+      .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
+      .where(
+        and(
+          eq(schema.locations.id, id),
+          eq(schema.locations.status, "published"),
+          eq(schema.region.level, "city"),
+          eq(schema.region.serviceEnabled, true),
+        ),
+      )
+      .limit(1);
+
+    if (!row) return c.json(APIErrors.notFound("Location not found"), 404);
+    const tags = await loadLocationTags(db, [row.location.id]);
+    return c.json({
+      success: true as const,
+      location: projectLocation(
+        row.location,
+        row.region,
+        tags.get(row.location.id) ?? [],
+      ),
+    });
+  } catch (error) {
+    logger.error("location_get_failed", safeErrorMetadata(error));
+    return c.json(APIErrors.internalError("Failed to get location"), 500);
   }
 });
 

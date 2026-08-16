@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TeamActionbookSection } from "../components/features/team-detail/team-actionbook-section";
+import type { Team } from "../lib/types";
 
 /**
  * task #165（T2）CR B1：spec §3.1 隐私红线 —— server 已剥 visitor 的 checklist
@@ -8,7 +9,7 @@ import { TeamActionbookSection } from "../components/features/team-detail/team-a
  *
  * 关键断言：
  * - 容器渲染
- * - countdown 仍然显示（startTime 不是隐私）
+ * - countdown 仍然显示（startAt/endAt 不是隐私）
  * - "empty.visitor" 文案出现
  * - 不出现任何 meetingPoint / gear / assignments / notes 字段的子块
  *   （即便 team.checklist 是 null，SSR HTML 也不会泄露 meetingPoint.name / gear.essential 等）
@@ -38,23 +39,25 @@ vi.mock("@/components/features/team-detail/use-checklist-claims", () => ({
 const baseTeam = {
   id: "t1",
   locationId: "loc1",
+  leaderId: "u-leader",
+  activityType: "hiking",
   title: "t",
   description: "",
-  date: "2026-07-25",
-  time: "07:30",
-  startTime: "2026-07-25T00:30:00.000Z",
-  duration: "4小时",
-  durationMin: 240,
-  maxMembers: 10,
-  currentMembers: 3,
+  startAt: "2026-07-25T00:30:00.000Z",
+  endAt: "2026-07-25T04:30:00.000Z",
+  maxParticipants: 10,
+  activeParticipantCount: 3,
   requirements: [],
-  status: "recruiting",
+  recruitmentStatus: "open",
+  formedAt: null,
+  cancelledAt: null,
+  lifecycle: "pending",
+  isFull: false,
   createdAt: "2026-07-19T00:00:00Z",
-  leader: { id: "u-leader", name: "L", avatar: "", level: "beginner", completedHikes: 0, bio: "" },
-  members: [],
+  updatedAt: "2026-07-19T00:00:00Z",
   // task #165 CR B1：visitor 拿到 null
   checklist: null,
-} as unknown as Parameters<typeof TeamActionbookSection>[0]["team"];
+} satisfies Team;
 
 describe("TeamActionbookSection · visitor (task #165 CR B1)", () => {
   beforeEach(() => {

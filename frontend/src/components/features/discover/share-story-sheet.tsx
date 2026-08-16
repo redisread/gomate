@@ -1,22 +1,25 @@
 "use client";
 
 import * as React from "react";
-import { ImagePlus, Link2, Mail, MessageCircle, Share2, Twitter, X, Smartphone } from "lucide-react";
+import {
+  ImagePlus,
+  Link2,
+  Mail,
+  MessageCircle,
+  Share2,
+  Twitter,
+  X,
+  Smartphone,
+} from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI } from "@/lib/api";
+import { fetchPublicAPI } from "@/lib/api";
 import { openExternalLink } from "@/lib/open-external";
-import { weiboShareUrl, twitterShareUrl, mailtoUrl } from "@/lib/share-channels";
+import {
+  weiboShareUrl,
+  twitterShareUrl,
+  mailtoUrl,
+} from "@/lib/share-channels";
 import { StoryPosterPreview } from "./story-poster-preview";
-
-
-async function trackShare(storyId: string, channel: string) {
-  try {
-    await fetchAPI("/shares/track", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entity_type: "story", entity_id: storyId, share_channel: channel }),
-    });
-  } catch { /* don't block share flow */ }
-}
 
 interface ShareStorySheetProps {
   open: boolean;
@@ -27,76 +30,178 @@ interface ShareStorySheetProps {
   onCopyLink: () => void;
 }
 
-export function ShareStorySheet({ open, onClose, title, storyId, summary, onCopyLink }: ShareStorySheetProps) {
+export function ShareStorySheet({
+  open,
+  onClose,
+  title,
+  storyId,
+  summary,
+  onCopyLink,
+}: ShareStorySheetProps) {
   const { t } = useI18n(["common", "teams", "share"]);
   const url = typeof window !== "undefined" ? window.location.href : "";
   const [showPosterPreview, setShowPosterPreview] = React.useState(false);
 
   if (!open) return null;
 
-  const handleCopyLink = () => { trackShare(storyId, "copy"); onCopyLink(); onClose(); };
-  const handleSystemShare = async () => {
-    try { await navigator.share({ title, url }); } catch (err) { if (err instanceof DOMException && err.name === "AbortError") return; }
-    trackShare(storyId, "native"); onClose();
+  const handleCopyLink = () => {
+    onCopyLink();
+    onClose();
   };
-  const handleWeibo = () => { trackShare(storyId, "weibo"); openExternalLink(weiboShareUrl(url, title)); onClose(); };
-  const handleTwitter = () => { trackShare(storyId, "twitter"); openExternalLink(twitterShareUrl(url, title)); onClose(); };
-  const handleEmail = () => { window.location.href = mailtoUrl(title, `${title}\n\n${summary}\n\n${url}`); onClose(); };
-  const handleWechat = async () => { trackShare(storyId, "wechat");
+  const handleSystemShare = async () => {
     try {
-      const res = await fetch(`/share-image/story/${storyId}`);
-      if (!res.ok) { openExternalLink(url); onClose(); return; }
+      await navigator.share({ title, url });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+    }
+    onClose();
+  };
+  const handleWeibo = () => {
+    openExternalLink(weiboShareUrl(url, title));
+    onClose();
+  };
+  const handleTwitter = () => {
+    openExternalLink(twitterShareUrl(url, title));
+    onClose();
+  };
+  const handleEmail = () => {
+    window.location.href = mailtoUrl(title, `${title}\n\n${summary}\n\n${url}`);
+    onClose();
+  };
+  const handleWechat = async () => {
+    try {
+      const res = await fetchPublicAPI(`/share-image/story/${storyId}`);
+      if (!res.ok) {
+        openExternalLink(url);
+        onClose();
+        return;
+      }
       const blob = await res.blob();
-      const file = new File([blob], "story.png", { type: "image/png" });
+      const file = new File([blob], "story.svg", { type: "image/svg+xml" });
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title, url });
       } else {
         openExternalLink(url);
       }
-    } catch { openExternalLink(url); }
+    } catch {
+      openExternalLink(url);
+    }
     onClose();
   };
-  const handlePoster = () => { trackShare(storyId, "poster"); setShowPosterPreview(true); };
+  const handlePoster = () => {
+    setShowPosterPreview(true);
+  };
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-50 transition-opacity" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 bg-background z-50 rounded-t-2xl" style={{ paddingBottom: "env(safe-area-inset-bottom)", animation: "slideUp 0.2s ease" }}>
+      <div
+        className="fixed inset-0 bg-black/40 z-50 transition-opacity"
+        onClick={onClose}
+      />
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-background z-50 rounded-t-2xl"
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom)",
+          animation: "slideUp 0.2s ease",
+        }}
+      >
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-muted-foreground">{t("teams.shareOptions")}</span>
-            <button onClick={onClose} aria-label={t("common.close")} className="p-1 hover:bg-muted rounded-full transition-colors"><X className="w-4 h-4 text-muted-foreground" aria-hidden="true" /></button>
+            <span className="text-sm font-medium text-muted-foreground">
+              {t("teams.shareOptions")}
+            </span>
+            <button
+              onClick={onClose}
+              aria-label={t("common.close")}
+              className="p-1 hover:bg-muted rounded-full transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            </button>
           </div>
-          <p title={title} className="text-sm font-medium text-foreground truncate">{title}</p>
+          <p
+            title={title}
+            className="text-sm font-medium text-foreground truncate"
+          >
+            {title}
+          </p>
 
           <div className="grid grid-cols-4 gap-4 py-4">
-            <button onClick={handleCopyLink} className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center"><Link2 className="w-5 h-5 text-amber-600" /></div>
-              <span className="text-xs text-muted-foreground">{t("teams.copyLink")}</span>
+            <button
+              onClick={handleCopyLink}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                <Link2 className="w-5 h-5 text-amber-600" />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {t("teams.copyLink")}
+              </span>
             </button>
-            <button onClick={handleSystemShare} className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center"><Share2 className="w-5 h-5 text-blue-600" /></div>
-              <span className="text-xs text-muted-foreground">{t("common.share")}</span>
+            <button
+              onClick={handleSystemShare}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <Share2 className="w-5 h-5 text-blue-600" />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {t("common.share")}
+              </span>
             </button>
-            <button onClick={handleWeibo} className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center"><MessageCircle className="w-5 h-5 text-red-500" /></div>
-              <span className="text-xs text-muted-foreground">{t("share.weibo")}</span>
+            <button
+              onClick={handleWeibo}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-red-500" />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {t("share.weibo")}
+              </span>
             </button>
-            <button onClick={handleTwitter} className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center"><Twitter className="w-5 h-5 text-sky-500" /></div>
-              <span className="text-xs text-muted-foreground">{t("share.twitter")}</span>
+            <button
+              onClick={handleTwitter}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center">
+                <Twitter className="w-5 h-5 text-sky-500" />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {t("share.twitter")}
+              </span>
             </button>
-            <button onClick={handleEmail} className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center"><Mail className="w-5 h-5 text-stone-600" /></div>
-              <span className="text-xs text-muted-foreground">{t("share.email")}</span>
+            <button
+              onClick={handleEmail}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-stone-600" />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {t("share.email")}
+              </span>
             </button>
-            <button onClick={handleWechat} className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center"><Smartphone className="w-5 h-5 text-green-600" /></div>
-              <span className="text-xs text-muted-foreground">{t("share.wechat")}</span>
+            <button
+              onClick={handleWechat}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <Smartphone className="w-5 h-5 text-green-600" />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {t("share.wechat")}
+              </span>
             </button>
-            <button onClick={handlePoster} className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center"><ImagePlus className="w-5 h-5 text-purple-600" /></div>
-              <span className="text-xs text-muted-foreground">{t("teams.generatePoster")}</span>
+            <button
+              onClick={handlePoster}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                <ImagePlus className="w-5 h-5 text-purple-600" />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {t("teams.generatePoster")}
+              </span>
             </button>
           </div>
         </div>

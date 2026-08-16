@@ -1,20 +1,18 @@
 import type { Page } from "@playwright/test";
 
-/** 本地种子测试账号；CI 可用环境变量覆盖。 */
-export const E2E_ACCOUNTS = {
-  admin: {
-    email: process.env.E2E_ADMIN_EMAIL || "admin@test.com",
-    password: process.env.E2E_ADMIN_PASSWORD || "test1234",
-  },
-  leader: {
-    email: process.env.E2E_LEADER_EMAIL || "leader_a@test.com",
-    password: process.env.E2E_LEADER_PASSWORD || "test1234",
-  },
-  member: {
-    email: process.env.E2E_MEMBER_EMAIL || "member_a@test.com",
-    password: process.env.E2E_MEMBER_PASSWORD || "test1234",
-  },
-} as const;
+let browserClientIpSequence = 10;
+
+async function isolateAuthRateLimitBucket(page: Page) {
+  const octet = browserClientIpSequence;
+  browserClientIpSequence = browserClientIpSequence >= 249
+    ? 10
+    : browserClientIpSequence + 1;
+  // Miniflare accepts the Cloudflare client-IP header. Production Cloudflare
+  // overwrites it, while local E2E uses a distinct bucket per isolated user.
+  await page.context().setExtraHTTPHeaders({
+    "CF-Connecting-IP": `203.0.113.${octet}`,
+  });
+}
 
 /**
  * 等待登录页 React island hydration 完成，然后填写邮箱/密码。
@@ -27,6 +25,7 @@ export async function fillLoginForm(
   email: string,
   password: string,
 ) {
+  await isolateAuthRateLimitBucket(page);
   await page.waitForLoadState("networkidle");
   const emailInput = page.locator("[data-testid='login-email']");
   await emailInput.waitFor({ state: "visible" });
@@ -40,14 +39,9 @@ export async function loginAs(page: Page, email: string, password: string) {
   await fillLoginForm(page, email, password);
   await page.locator("[data-testid='login-submit']").click();
   // 等待登录接口响应完成，避免在 CI 慢机器上还没收到响应就判断超时
-  // Better Auth 的 basePath 是 /auth，实际请求为 /auth/sign-in/email
-  await page.waitForResponse(/\/auth\//, { timeout: 30000 }).catch(() => null);
+  // Better Auth is mounted below the unified Worker's /api prefix.
+  await page.waitForResponse(/\/api\/auth\//, { timeout: 30000 }).catch(() => null);
   // 登录后可能重定向到 / 或 /en/ 等同义词，用正则匹配首页路径
   await page.waitForURL(/\/$/, { timeout: 30000 });
   await page.waitForLoadState("domcontentloaded");
-}
-
-/** 使用 admin 测试账号登录 */
-export async function loginAsAdmin(page: Page) {
-  await loginAs(page, E2E_ACCOUNTS.admin.email, E2E_ACCOUNTS.admin.password);
 }
