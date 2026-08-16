@@ -31,6 +31,36 @@ WHERE `entity_type` NOT IN ('location', 'story')
    OR (`entity_type` = 'location' AND NOT EXISTS (SELECT 1 FROM `locations` WHERE id = user_favorites.entity_id))
    OR (`entity_type` = 'story' AND NOT EXISTS (SELECT 1 FROM `stories` WHERE id = user_favorites.entity_id));--> statement-breakpoint
 
+-- Apply the cleanup that the intended child FKs would already have performed.
+-- Delete deepest children first so this also works on databases where those FKs
+-- were lost and no cascade behavior is available.
+DELETE FROM `messages`
+WHERE NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = messages.sender_id)
+   OR NOT EXISTS (
+     SELECT 1
+     FROM `conversations` c
+     JOIN `teams` t ON t.id = c.team_id
+     JOIN `users` participant ON participant.id = c.user_id
+     JOIN `users` leader ON leader.id = c.leader_id
+     JOIN `users` initiator ON initiator.id = c.initiator_id
+     WHERE c.id = messages.conversation_id
+   );--> statement-breakpoint
+DELETE FROM `conversations`
+WHERE NOT EXISTS (SELECT 1 FROM `teams` t WHERE t.id = conversations.team_id)
+   OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = conversations.user_id)
+   OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = conversations.leader_id)
+   OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = conversations.initiator_id);--> statement-breakpoint
+DELETE FROM `team_members`
+WHERE NOT EXISTS (SELECT 1 FROM `teams` t WHERE t.id = team_members.team_id)
+   OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = team_members.user_id);--> statement-breakpoint
+UPDATE `activity_posts`
+SET `location_id` = NULL
+WHERE `location_id` IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM `locations` l WHERE l.id = activity_posts.location_id);--> statement-breakpoint
+DELETE FROM `activity_posts`
+WHERE NOT EXISTS (SELECT 1 FROM `teams` t WHERE t.id = activity_posts.team_id)
+   OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = activity_posts.author_id);--> statement-breakpoint
+
 INSERT INTO `_0019_integrity_guard` (`ok`)
 SELECT CASE WHEN EXISTS (
   SELECT 1
@@ -58,6 +88,26 @@ SELECT CASE WHEN
   OR EXISTS (
     SELECT 1 FROM `team_members` tm
     WHERE tm.status NOT IN ('pending', 'approved', 'rejected', 'leave_pending', 'cancelled')
+       OR NOT EXISTS (SELECT 1 FROM `teams` t WHERE t.id = tm.team_id)
+       OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = tm.user_id)
+  )
+  OR EXISTS (
+    SELECT 1 FROM `conversations` c
+    WHERE NOT EXISTS (SELECT 1 FROM `teams` t WHERE t.id = c.team_id)
+       OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = c.user_id)
+       OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = c.leader_id)
+       OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = c.initiator_id)
+  )
+  OR EXISTS (
+    SELECT 1 FROM `messages` m
+    WHERE NOT EXISTS (SELECT 1 FROM `conversations` c WHERE c.id = m.conversation_id)
+       OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = m.sender_id)
+  )
+  OR EXISTS (
+    SELECT 1 FROM `activity_posts` ap
+    WHERE NOT EXISTS (SELECT 1 FROM `teams` t WHERE t.id = ap.team_id)
+       OR (ap.location_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM `locations` l WHERE l.id = ap.location_id))
+       OR NOT EXISTS (SELECT 1 FROM `users` u WHERE u.id = ap.author_id)
   )
   OR EXISTS (
     SELECT 1 FROM `teams` t
@@ -69,8 +119,9 @@ SELECT CASE WHEN
 THEN 0 ELSE 1 END;--> statement-breakpoint
 DROP TABLE IF EXISTS `_0019_integrity_guard`;--> statement-breakpoint
 
--- D1 keeps foreign keys enabled inside migrations. Preserve every child row before
--- rebuilding the parent table because DROP TABLE still executes ON DELETE CASCADE.
+-- D1 keeps foreign keys enabled inside migrations, while historical production
+-- databases can be missing some child-table FKs. Rebuild the complete teams graph
+-- instead of relying on environment-specific DROP TABLE cascade behavior.
 PRAGMA defer_foreign_keys=ON;--> statement-breakpoint
 DROP TRIGGER IF EXISTS `teams_polymorphic_cleanup`;--> statement-breakpoint
 DROP TRIGGER IF EXISTS `entity_to_tags_validate_insert`;--> statement-breakpoint
@@ -81,26 +132,6 @@ DROP TRIGGER IF EXISTS `teams_capacity_validate_update`;--> statement-breakpoint
 DROP TRIGGER IF EXISTS `team_members_status_after_insert`;--> statement-breakpoint
 DROP TRIGGER IF EXISTS `team_members_status_after_update`;--> statement-breakpoint
 DROP TRIGGER IF EXISTS `team_members_status_after_delete`;--> statement-breakpoint
-
-CREATE TABLE IF NOT EXISTS `_0019_team_members_backup` AS
-SELECT * FROM `team_members` WHERE 0;--> statement-breakpoint
-DELETE FROM `_0019_team_members_backup`;--> statement-breakpoint
-INSERT INTO `_0019_team_members_backup` SELECT * FROM `team_members`;--> statement-breakpoint
-
-CREATE TABLE IF NOT EXISTS `_0019_conversations_backup` AS
-SELECT * FROM `conversations` WHERE 0;--> statement-breakpoint
-DELETE FROM `_0019_conversations_backup`;--> statement-breakpoint
-INSERT INTO `_0019_conversations_backup` SELECT * FROM `conversations`;--> statement-breakpoint
-
-CREATE TABLE IF NOT EXISTS `_0019_messages_backup` AS
-SELECT * FROM `messages` WHERE 0;--> statement-breakpoint
-DELETE FROM `_0019_messages_backup`;--> statement-breakpoint
-INSERT INTO `_0019_messages_backup` SELECT * FROM `messages`;--> statement-breakpoint
-
-CREATE TABLE IF NOT EXISTS `_0019_activity_posts_backup` AS
-SELECT * FROM `activity_posts` WHERE 0;--> statement-breakpoint
-DELETE FROM `_0019_activity_posts_backup`;--> statement-breakpoint
-INSERT INTO `_0019_activity_posts_backup` SELECT * FROM `activity_posts`;--> statement-breakpoint
 
 CREATE TABLE IF NOT EXISTS `__new_teams` (
   `id` text PRIMARY KEY NOT NULL,
@@ -145,18 +176,121 @@ SELECT
   END,
   `checklist`, `created_at`, `updated_at`, `actor_api_key_id`
 FROM `teams`;--> statement-breakpoint
+
+CREATE TABLE IF NOT EXISTS `__new_team_members` (
+  `id` text PRIMARY KEY NOT NULL,
+  `team_id` text NOT NULL,
+  `user_id` text NOT NULL,
+  `status` text DEFAULT 'pending' NOT NULL,
+  `joined_at` integer,
+  `status_updated_at` integer,
+  `extra` text,
+  `created_at` integer NOT NULL,
+  `actor_api_key_id` text,
+  CONSTRAINT `team_members_team_id_teams_id_fk`
+    FOREIGN KEY (`team_id`) REFERENCES `__new_teams`(`id`) ON UPDATE no action ON DELETE cascade,
+  CONSTRAINT `team_members_user_id_users_id_fk`
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+);--> statement-breakpoint
+DELETE FROM `__new_team_members`;--> statement-breakpoint
+INSERT INTO `__new_team_members` (
+  `id`, `team_id`, `user_id`, `status`, `joined_at`, `status_updated_at`,
+  `extra`, `created_at`, `actor_api_key_id`
+)
+SELECT
+  `id`, `team_id`, `user_id`, `status`, `joined_at`, `status_updated_at`,
+  `extra`, `created_at`, `actor_api_key_id`
+FROM `team_members`;--> statement-breakpoint
+
+CREATE TABLE IF NOT EXISTS `__new_conversations` (
+  `id` text PRIMARY KEY NOT NULL,
+  `team_id` text NOT NULL,
+  `user_id` text NOT NULL,
+  `leader_id` text NOT NULL,
+  `initiator_id` text NOT NULL,
+  `last_message_content` text,
+  `last_message_at` integer,
+  `created_at` integer NOT NULL,
+  `updated_at` integer NOT NULL,
+  CONSTRAINT `conversations_team_id_teams_id_fk`
+    FOREIGN KEY (`team_id`) REFERENCES `__new_teams`(`id`) ON UPDATE no action ON DELETE cascade,
+  CONSTRAINT `conversations_user_id_users_id_fk`
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
+  CONSTRAINT `conversations_leader_id_users_id_fk`
+    FOREIGN KEY (`leader_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
+  CONSTRAINT `conversations_initiator_id_users_id_fk`
+    FOREIGN KEY (`initiator_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);--> statement-breakpoint
+DELETE FROM `__new_conversations`;--> statement-breakpoint
+INSERT INTO `__new_conversations` (
+  `id`, `team_id`, `user_id`, `leader_id`, `initiator_id`, `last_message_content`,
+  `last_message_at`, `created_at`, `updated_at`
+)
+SELECT
+  `id`, `team_id`, `user_id`, `leader_id`, `initiator_id`, `last_message_content`,
+  `last_message_at`, `created_at`, `updated_at`
+FROM `conversations`;--> statement-breakpoint
+
+CREATE TABLE IF NOT EXISTS `__new_messages` (
+  `id` text PRIMARY KEY NOT NULL,
+  `conversation_id` text NOT NULL,
+  `sender_id` text NOT NULL,
+  `content` text NOT NULL,
+  `is_read` integer DEFAULT 0 NOT NULL,
+  `read_at` integer,
+  `created_at` integer NOT NULL,
+  CONSTRAINT `messages_conversation_id_conversations_id_fk`
+    FOREIGN KEY (`conversation_id`) REFERENCES `__new_conversations`(`id`) ON UPDATE no action ON DELETE cascade,
+  CONSTRAINT `messages_sender_id_users_id_fk`
+    FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);--> statement-breakpoint
+DELETE FROM `__new_messages`;--> statement-breakpoint
+INSERT INTO `__new_messages` (
+  `id`, `conversation_id`, `sender_id`, `content`, `is_read`, `read_at`, `created_at`
+)
+SELECT
+  `id`, `conversation_id`, `sender_id`, `content`, `is_read`, `read_at`, `created_at`
+FROM `messages`;--> statement-breakpoint
+
+CREATE TABLE IF NOT EXISTS `__new_activity_posts` (
+  `id` text PRIMARY KEY NOT NULL,
+  `team_id` text NOT NULL,
+  `location_id` text,
+  `author_id` text NOT NULL,
+  `content` text NOT NULL,
+  `images` text NOT NULL,
+  `status` text DEFAULT 'visible' NOT NULL,
+  `created_at` integer NOT NULL,
+  `updated_at` integer NOT NULL,
+  CONSTRAINT `activity_posts_team_id_teams_id_fk`
+    FOREIGN KEY (`team_id`) REFERENCES `__new_teams`(`id`) ON UPDATE no action ON DELETE cascade,
+  CONSTRAINT `activity_posts_location_id_locations_id_fk`
+    FOREIGN KEY (`location_id`) REFERENCES `locations`(`id`) ON UPDATE no action ON DELETE set null,
+  CONSTRAINT `activity_posts_author_id_users_id_fk`
+    FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+);--> statement-breakpoint
+DELETE FROM `__new_activity_posts`;--> statement-breakpoint
+INSERT INTO `__new_activity_posts` (
+  `id`, `team_id`, `location_id`, `author_id`, `content`, `images`, `status`,
+  `created_at`, `updated_at`
+)
+SELECT
+  `id`, `team_id`, `location_id`, `author_id`, `content`, `images`, `status`,
+  `created_at`, `updated_at`
+FROM `activity_posts`;--> statement-breakpoint
+
+-- Drop children first so the parent replacement never depends on cascade behavior.
+DROP TABLE IF EXISTS `messages`;--> statement-breakpoint
+DROP TABLE IF EXISTS `conversations`;--> statement-breakpoint
+DROP TABLE IF EXISTS `team_members`;--> statement-breakpoint
+DROP TABLE IF EXISTS `activity_posts`;--> statement-breakpoint
 DROP TABLE IF EXISTS `teams`;--> statement-breakpoint
+
 ALTER TABLE `__new_teams` RENAME TO `teams`;--> statement-breakpoint
-
-INSERT INTO `team_members` SELECT * FROM `_0019_team_members_backup`;--> statement-breakpoint
-INSERT INTO `conversations` SELECT * FROM `_0019_conversations_backup`;--> statement-breakpoint
-INSERT INTO `messages` SELECT * FROM `_0019_messages_backup`;--> statement-breakpoint
-INSERT INTO `activity_posts` SELECT * FROM `_0019_activity_posts_backup`;--> statement-breakpoint
-
-DROP TABLE IF EXISTS `_0019_team_members_backup`;--> statement-breakpoint
-DROP TABLE IF EXISTS `_0019_conversations_backup`;--> statement-breakpoint
-DROP TABLE IF EXISTS `_0019_messages_backup`;--> statement-breakpoint
-DROP TABLE IF EXISTS `_0019_activity_posts_backup`;--> statement-breakpoint
+ALTER TABLE `__new_team_members` RENAME TO `team_members`;--> statement-breakpoint
+ALTER TABLE `__new_conversations` RENAME TO `conversations`;--> statement-breakpoint
+ALTER TABLE `__new_messages` RENAME TO `messages`;--> statement-breakpoint
+ALTER TABLE `__new_activity_posts` RENAME TO `activity_posts`;--> statement-breakpoint
 PRAGMA defer_foreign_keys=OFF;--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS `teams_location_idx` ON `teams` (`location_id`);--> statement-breakpoint
@@ -168,6 +302,30 @@ CREATE INDEX IF NOT EXISTS `teams_status_created_at_idx` ON `teams` (`status`, `
 CREATE INDEX IF NOT EXISTS `teams_status_start_time_idx` ON `teams` (`status`, `start_time`);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `teams_status_end_time_idx` ON `teams` (`status`, `end_time`);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `teams_actor_api_key_id_idx` ON `teams` (`actor_api_key_id`);--> statement-breakpoint
+
+CREATE INDEX IF NOT EXISTS `team_members_team_idx` ON `team_members` (`team_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `team_members_user_idx` ON `team_members` (`user_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `team_members_team_status_idx` ON `team_members` (`team_id`, `status`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `team_members_team_user_idx` ON `team_members` (`team_id`, `user_id`);--> statement-breakpoint
+
+CREATE INDEX IF NOT EXISTS `conversations_team_idx` ON `conversations` (`team_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `conversations_user_idx` ON `conversations` (`user_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `conversations_leader_idx` ON `conversations` (`leader_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `conversations_participant_idx` ON `conversations` (`team_id`, `user_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `conversations_last_msg_idx` ON `conversations` (`last_message_at`);--> statement-breakpoint
+
+CREATE INDEX IF NOT EXISTS `messages_conversation_idx` ON `messages` (`conversation_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `messages_sender_idx` ON `messages` (`sender_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `messages_created_idx` ON `messages` (`created_at`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `messages_conversation_created_at_idx` ON `messages` (`conversation_id`, `created_at`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `messages_conversation_unread_sender_idx` ON `messages` (`conversation_id`, `is_read`, `sender_id`);--> statement-breakpoint
+
+CREATE INDEX IF NOT EXISTS `activity_posts_team_idx` ON `activity_posts` (`team_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `activity_posts_location_idx` ON `activity_posts` (`location_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `activity_posts_author_idx` ON `activity_posts` (`author_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `activity_posts_status_idx` ON `activity_posts` (`status`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `activity_posts_created_at_idx` ON `activity_posts` (`created_at`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `activity_posts_location_created_at_idx` ON `activity_posts` (`location_id`, `created_at`);--> statement-breakpoint
 
 DROP INDEX IF EXISTS `users_email_idx`;--> statement-breakpoint
 DROP INDEX IF EXISTS `sessions_token_idx`;--> statement-breakpoint
