@@ -22,8 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production
-    env:
-      CLOUDFLARE_ENV: production
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -42,6 +40,7 @@ jobs:
         run: node scripts/production-domain.mjs assert
       - name: Build and prepare WRITE_MODE protected
         env:
+          CLOUDFLARE_ENV: production
           PRODUCTION_APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
         run: |
           pnpm i18n:build

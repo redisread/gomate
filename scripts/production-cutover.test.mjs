@@ -190,6 +190,39 @@ test("domain audit supports an approved cutover state and bounded propagation re
   assert.equal(attempts, 3);
 });
 
+test("domain audit may recover from the accidental suffixed Worker but cannot target it", async () => {
+  const observed = await assertProductionDomain({
+    accountId: "e3afbb613458022947cd9dc9f5bd6334",
+    apiToken: "test-token",
+    expectedService: "gomate-production-preview-production",
+    fetchImpl: async () =>
+      new Response(
+        JSON.stringify({
+          success: true,
+          result: [
+            {
+              id: "domain-id",
+              hostname: "gomate.live",
+              service: "gomate-production-preview-production",
+              zone_id: "0b714cd4257332034b3c4c0c099feb9e",
+            },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+  });
+  assert.equal(observed.service, "gomate-production-preview-production");
+  await assert.rejects(
+    () =>
+      attachProductionDomain({
+        accountId: "e3afbb613458022947cd9dc9f5bd6334",
+        apiToken: "test-token",
+        service: "gomate-production-preview-production",
+      }),
+    /not an approved Worker/u,
+  );
+});
+
 test("rollback reattaches only the exact hostname, zone, and approved Worker", async () => {
   let request;
   await attachProductionDomain({
@@ -322,9 +355,13 @@ test("cutover and rollback workflows are protected and narrowly scoped", () => {
   assert.match(cutover, /production-canary\.mjs/u);
   assert.match(
     cutover,
-    /EXPECTED_DOMAIN_SERVICES:\s*gomate-frontend,gomate-production-preview/u,
+    /EXPECTED_DOMAIN_SERVICES:\s*gomate-frontend,gomate-production-preview,gomate-production-preview-production/u,
   );
   assert.match(cutover, /DOMAIN_ASSERT_TIMEOUT_MS:\s*"120000"/u);
+  assert.doesNotMatch(
+    cutover,
+    /environment:\s*production\s+env:\s+CLOUDFLARE_ENV:\s*production/u,
+  );
   assert.match(
     cutover,
     /pnpm --filter @gomate\/frontend worker:dry-run\s+pnpm --filter @gomate\/frontend worker:size/u,

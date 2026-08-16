@@ -91,8 +91,9 @@ route 变更必须是 preview 验证后的独立、受保护操作。切换前�
 preview 部署自动发生。
 
 从 `main` 手动运行 `Cut over unified Worker production` 并输入 `CUTOVER_PRODUCTION`。
-流水线先证明 `gomate.live` 只属于已审核的旧 `gomate-frontend` 或新
-`gomate-production-preview`（允许在受保护部署后的失败点安全重跑），再用 environment secret
+流水线先证明 `gomate.live` 只属于已审核的旧 `gomate-frontend`、新
+`gomate-production-preview`，或仅用于恢复一次错误双重环境选择的
+`gomate-production-preview-production`，再用 environment secret
 `PRODUCTION_APP_URL=https://gomate.live` 将同一 unified Worker 以 `WRITE_MODE=protected`
 挂为 custom domain。部署后的 custom-domain inventory 断言共用 120 秒有界传播窗口；窗口结束仍
 不属于新 Worker 时失败闭合。受保护读/SSR/写阻断与 Workers Logs 证据通过后，连续 30 分钟只读观察；

@@ -4,9 +4,14 @@ import { pathToFileURL } from "node:url";
 
 const API_ROOT = "https://api.cloudflare.com/client/v4";
 const ZONE_ID = "0b714cd4257332034b3c4c0c099feb9e";
-const ALLOWED_SERVICES = new Set([
+const ALLOWED_TARGET_SERVICES = new Set([
   "gomate-frontend",
   "gomate-production-preview",
+]);
+const ALLOWED_OBSERVED_SERVICES = new Set([
+  ...ALLOWED_TARGET_SERVICES,
+  // Recovery-only state created by a double-applied production environment.
+  "gomate-production-preview-production",
 ]);
 const DEFAULT_RETRY_DELAY_MS = 5_000;
 
@@ -31,7 +36,7 @@ function expectedServiceSet(value) {
     .filter(Boolean);
   if (
     services.length === 0 ||
-    services.some((service) => !ALLOWED_SERVICES.has(service))
+    services.some((service) => !ALLOWED_OBSERVED_SERVICES.has(service))
   ) {
     throw new Error("Expected domain services contain an unapproved Worker");
   }
@@ -130,7 +135,7 @@ export async function attachProductionDomain({
   accountId = required(accountId, "CLOUDFLARE_ACCOUNT_ID");
   apiToken = required(apiToken, "CLOUDFLARE_API_TOKEN");
   service = required(service, "TARGET_DOMAIN_SERVICE");
-  if (!ALLOWED_SERVICES.has(service)) {
+  if (!ALLOWED_TARGET_SERVICES.has(service)) {
     throw new Error("TARGET_DOMAIN_SERVICE is not an approved Worker");
   }
   const result = await cloudflareRequest({
