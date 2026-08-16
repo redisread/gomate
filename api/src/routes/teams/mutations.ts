@@ -80,17 +80,18 @@ mutations.post("/", async (c) => {
     const now = new Date();
     const teamIcon = getRandomTeamIcon();
 
-    await db.insert(schema.teams).values({
+    const createTeam = db.insert(schema.teams).values({
       id: teamId, locationId, leaderId: userId, title,
       description: description || null, startTime, endTime,
       durationMin: durationMinutes, maxMembers,
       requirements: requirements ? JSON.stringify(requirements) : null,
       icon: teamIcon, status: "recruiting", createdAt: now, updatedAt: now,
     });
-    await db.insert(schema.teamMembers).values({
+    const createLeaderMembership = db.insert(schema.teamMembers).values({
       id: memberId, teamId, userId, status: "approved",
       joinedAt: now, createdAt: now,
     });
+    await db.batch([createTeam, createLeaderMembership]);
 
     // 清除相关缓存（Cache API 不支持通配删除，需显式列出常用键）
     // TODO: 改用 KV 缓存版本号或标签缓存，避免遗漏
@@ -177,6 +178,9 @@ mutations.put("/:id", async (c) => {
 
     return c.json({ success: true, message: "队伍信息已更新" });
   } catch (error) {
+    if ((error as Error).message.includes("max_members cannot be below current members")) {
+      return c.json(APIErrors.badRequest("队伍人数上限不能低于当前成员数"), 400);
+    }
     logger.error("Update team error:", error);
     return c.json(APIErrors.internalError("更新队伍失败"), 500);
   }

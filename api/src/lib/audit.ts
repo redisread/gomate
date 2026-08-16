@@ -9,7 +9,7 @@
  */
 
 import { Context } from "hono";
-import { eq, desc } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createDb } from "../db";
 import { apiKeys } from "../db/schema";
 import { createAuth, type Env } from "./auth";
@@ -22,6 +22,16 @@ export interface AuditActor {
   actorType: "user" | "apiKey";
   /** 用户 ID（已认证请求必有） */
   userId: string | null;
+}
+
+/** 与 @better-auth/api-key 的 defaultKeyHasher 保持一致。 */
+export async function hashApiKeyForLookup(rawKey: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(rawKey),
+  );
+  const binary = Array.from(new Uint8Array(digest), (byte) => String.fromCharCode(byte)).join("");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/u, "");
 }
 
 /**
@@ -56,15 +66,19 @@ export async function resolveAuditActor(
     const xApiKey = c.req.header("x-api-key");
 
     if (xApiKey) {
-      // 请求通过 apiKey 鉴权 → 查 apiKeys 表获取 id
-      // 用 referenceId(userId) + lastRequest 排序取最近使用的 key
+      // 请求通过 apiKey 鉴权 → 用原始 key 的 SHA-256 精确定位审计来源。
+      // 不能按 lastRequest 猜测：同一用户可有多个 key，并发请求会串错归属。
       try {
         const db = createDb(c.env.DB);
+        const hashedKey = await hashApiKeyForLookup(xApiKey);
         const [key] = await db
           .select({ id: apiKeys.id })
           .from(apiKeys)
-          .where(eq(apiKeys.referenceId, userId))
-          .orderBy(desc(apiKeys.lastRequest), desc(apiKeys.createdAt))
+          .where(and(
+            eq(apiKeys.referenceId, userId),
+            eq(apiKeys.key, hashedKey),
+            eq(apiKeys.enabled, true),
+          ))
           .limit(1);
 
         if (key?.id) {

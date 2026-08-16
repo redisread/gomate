@@ -297,6 +297,16 @@ describe("Messages API 集成测试", () => {
       });
       expect(sendRes.status).toBe(201);
 
+      const [summarizedConversation] = await db
+        .select({
+          lastMessageContent: schema.conversations.lastMessageContent,
+          lastMessageAt: schema.conversations.lastMessageAt,
+        })
+        .from(schema.conversations)
+        .where(eq(schema.conversations.id, conversationId));
+      expect(summarizedConversation.lastMessageContent).toBe("Hello leader");
+      expect(summarizedConversation.lastMessageAt).not.toBeNull();
+
       const unreadRes = await app.request("/messages/unread-count", {
         method: "GET",
         headers: authHeaders(leader.id),

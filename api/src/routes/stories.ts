@@ -345,11 +345,14 @@ stories.get("/:id", async (c) => {
 
     // Increment view count（draft 不计，避免作者编辑时自增）
     const currentViewCount = story.viewCount ?? 0;
+    let responseViewCount = currentViewCount;
     if (story.status === "published") {
-      await db
+      const [updatedView] = await db
         .update(schema.stories)
-        .set({ viewCount: currentViewCount + 1 })
-        .where(eq(schema.stories.id, id));
+        .set({ viewCount: sql`${schema.stories.viewCount} + 1` })
+        .where(eq(schema.stories.id, id))
+        .returning({ viewCount: schema.stories.viewCount });
+      responseViewCount = updatedView?.viewCount ?? currentViewCount;
     }
 
     // 检查当前用户是否已点赞（仅登录用户）
@@ -381,7 +384,7 @@ stories.get("/:id", async (c) => {
       success: true,
       data: {
         ...story,
-        viewCount: story.status === "published" ? currentViewCount + 1 : currentViewCount,
+        viewCount: responseViewCount,
         isLiked,
         tags: tagRows,
         author: author
@@ -663,8 +666,8 @@ stories.delete("/:id", async (c) => {
 /**
  * POST /stories/:id/like
  * 点赞/取消点赞故事（toggle）
- * 已点赞 → 取消点赞（likeCount -1）
- * 未点赞 → 点赞（likeCount +1）
+ * 已点赞 → 取消点赞；未点赞 → 点赞。
+ * likeCount 由数据库触发器依据点赞关系维护，避免并发请求导致计数漂移。
  */
 stories.post("/:id/like", async (c) => {
   try {
@@ -697,7 +700,6 @@ stories.post("/:id/like", async (c) => {
       columns: { userId: true },
     });
 
-    let liked: boolean;
     if (existingLike) {
       // 已点赞 → 取消点赞
       await db.delete(schema.userStoryLikes).where(
@@ -706,38 +708,29 @@ stories.post("/:id/like", async (c) => {
           eq(schema.userStoryLikes.storyId, id)
         )
       );
-      // 原子递减：SQL 层面条件判断，避免负数
-      await db.update(schema.stories)
-        .set({
-          likeCount: sql`MAX(0, ${schema.stories.likeCount} - 1)`,
-          updatedAt: new Date(),
-        })
-        .where(and(
-          eq(schema.stories.id, id),
-          sql`${schema.stories.likeCount} > 0`
-        ));
-      liked = false;
     } else {
       // 未点赞 → 点赞：先插入（PRIMARY KEY 约束 + onConflictDoNothing 防重复）
       await db.insert(schema.userStoryLikes).values({
         userId,
         storyId: id,
       }).onConflictDoNothing();
-      // 原子递增
-      await db.update(schema.stories)
-        .set({
-          likeCount: sql`${schema.stories.likeCount} + 1`,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.stories.id, id));
-      liked = true;
     }
 
-    // 返回最新 likeCount，以便前端修正乐观计算的偏差
-    const updated = await db.query.stories.findFirst({
-      where: eq(schema.stories.id, id),
-      columns: { likeCount: true },
-    });
+    // 并发 toggle 后以数据库最终状态为准，修正前端乐观状态。
+    const [updated, finalLike] = await Promise.all([
+      db.query.stories.findFirst({
+        where: eq(schema.stories.id, id),
+        columns: { likeCount: true },
+      }),
+      db.query.userStoryLikes.findFirst({
+        where: and(
+          eq(schema.userStoryLikes.userId, userId),
+          eq(schema.userStoryLikes.storyId, id)
+        ),
+        columns: { userId: true },
+      }),
+    ]);
+    const liked = Boolean(finalLike);
 
     return c.json({
       success: true,

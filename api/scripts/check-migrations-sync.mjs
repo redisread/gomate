@@ -15,6 +15,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import Database from "better-sqlite3";
 
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const migrationsDir = join(apiRoot, "db", "migrations");
@@ -90,6 +91,151 @@ for (const t of liveTables) {
     errors.push(`迁移创建的表 "${t}" 在 api/src/db/schema.ts 中无 sqliteTable 定义（schema 落后于 migration，运行时 adapter 会 500）`);
   }
 }
+
+// 7. 在内存 SQLite 中完整重放 migration，核对 schema.ts 声明的外键与索引。
+// 仅比较表名无法发现「重建表时漏写 FOREIGN KEY」或「手工 migration 索引未回写 schema」；
+// 这两类漂移都会让 Drizzle 类型与生产 D1 的真实约束不一致。
+const sqlite = new Database(":memory:");
+sqlite.pragma("foreign_keys = ON");
+
+try {
+  for (const f of readdirSync(migrationsDir).filter((name) => name.endsWith(".sql")).sort()) {
+    const migrationSql = readFileSync(join(migrationsDir, f), "utf8")
+      .replaceAll("--> statement-breakpoint", "");
+    sqlite.exec(migrationSql);
+  }
+} catch (err) {
+  errors.push(`migration 无法从空库完整重放：${err.message}`);
+}
+
+const tableDefinitions = [...schemaSrc.matchAll(
+  /export const (\w+) = sqliteTable\(\s*["'`]([^"'`]+)["'`]([\s\S]*?)(?=export const \w+ = sqliteTable\(|$)/g,
+)];
+const variableToTable = new Map(tableDefinitions.map((match) => [match[1], match[2]]));
+const propertyToColumn = new Map();
+
+for (const match of tableDefinitions) {
+  const [, variableName, , definition] = match;
+  const fields = new Map(
+    [...definition.matchAll(/(\w+):\s*(?:text|integer|real)\(["'`]([^"'`]+)["'`]/g)]
+      .map((field) => [field[1], field[2]]),
+  );
+  propertyToColumn.set(variableName, fields);
+}
+
+for (const match of tableDefinitions) {
+  const [, , tableName, definition] = match;
+  const expectedForeignKeys = [...definition.matchAll(
+    /(\w+):\s*(?:text|integer|real)\(["'`]([^"'`]+)["'`][^\n]*?\.references\(\(\) => (\w+)\.(\w+)(?:,\s*\{\s*onDelete:\s*["'`]([^"'`]+)["'`]\s*\})?/g,
+  )].map((foreignKey) => ({
+    from: foreignKey[2],
+    table: variableToTable.get(foreignKey[3]),
+    to: propertyToColumn.get(foreignKey[3])?.get(foreignKey[4]),
+    onDelete: (foreignKey[5] ?? "no action").toUpperCase(),
+  }));
+  const actualForeignKeys = sqlite.prepare(`PRAGMA foreign_key_list('${tableName}')`).all();
+
+  for (const expected of expectedForeignKeys) {
+    const exists = actualForeignKeys.some((actual) =>
+      actual.from === expected.from &&
+      actual.table === expected.table &&
+      actual.to === expected.to &&
+      String(actual.on_delete).toUpperCase() === expected.onDelete
+    );
+    if (!exists) {
+      errors.push(
+        `表 "${tableName}" 缺少 schema.ts 声明的外键：${expected.from} -> ${expected.table}.${expected.to} ON DELETE ${expected.onDelete}`,
+      );
+    }
+  }
+}
+
+const declaredIndexes = new Set(
+  [...schemaSrc.matchAll(/(?:uniqueIndex|index)\(["'`]([^"'`]+)["'`]\)/g)].map((match) => match[1]),
+);
+const implicitUniqueIndexes = new Set();
+for (const match of tableDefinitions) {
+  const [, , tableName, definition] = match;
+  for (const field of definition.matchAll(/\w+:\s*(?:text|integer|real)\(["'`]([^"'`]+)["'`][^\n]*?\.unique\(\)/g)) {
+    implicitUniqueIndexes.add(`${tableName}_${field[1]}_unique`);
+  }
+}
+
+const actualIndexes = sqlite.prepare(
+  "SELECT name, tbl_name FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL",
+).all();
+for (const indexRow of actualIndexes) {
+  if (!declaredIndexes.has(indexRow.name) && !implicitUniqueIndexes.has(indexRow.name)) {
+    errors.push(`数据库索引 "${indexRow.name}" 未声明在 schema.ts 中`);
+  }
+}
+
+for (const tableName of liveTables) {
+  const indexRows = sqlite.prepare(`PRAGMA index_list('${tableName}')`).all();
+  const columnsToIndexes = new Map();
+  for (const indexRow of indexRows) {
+    if (indexRow.origin === "pk") continue;
+    const columns = sqlite.prepare(`PRAGMA index_info('${indexRow.name}')`).all()
+      .map((column) => column.name)
+      .join(",");
+    const names = columnsToIndexes.get(columns) ?? [];
+    names.push(indexRow.name);
+    columnsToIndexes.set(columns, names);
+  }
+  for (const [columns, names] of columnsToIndexes) {
+    if (names.length > 1) {
+      errors.push(`表 "${tableName}" 的列 (${columns}) 存在重复索引：${names.sort().join(", ")}`);
+    }
+  }
+}
+
+// 这些触发器承载无法用 SQLite 外键/Drizzle schema 表达的跨表完整性。
+// 若后续重建表时被意外删除，应用仍可编译，但派生计数和多态关系会静默失真。
+const REQUIRED_INTEGRITY_TRIGGERS = [
+  "locations_city_name_after_insert",
+  "locations_city_name_after_city_update",
+  "locations_city_name_after_city_rename",
+  "users_city_validate_insert",
+  "users_city_validate_update",
+  "cities_users_restrict_delete",
+  "entity_to_tags_validate_insert",
+  "entity_to_tags_validate_update",
+  "user_favorites_validate_insert",
+  "user_favorites_validate_update",
+  "locations_polymorphic_cleanup",
+  "stories_polymorphic_cleanup",
+  "teams_polymorphic_cleanup",
+  "user_story_likes_count_after_insert",
+  "user_story_likes_count_after_delete",
+  "messages_summary_after_insert",
+  "team_members_validate_insert",
+  "team_members_validate_update",
+  "teams_capacity_validate_update",
+  "team_members_status_after_insert",
+  "team_members_status_after_update",
+  "team_members_status_after_delete",
+  "users_domain_validate_insert",
+  "users_domain_validate_update",
+  "locations_domain_validate_insert",
+  "locations_domain_validate_update",
+  "tags_domain_validate_insert",
+  "tags_domain_validate_update",
+  "stories_domain_validate_insert",
+  "stories_domain_validate_update",
+  "activity_posts_domain_validate_insert",
+  "activity_posts_domain_validate_update",
+];
+const actualTriggers = new Set(
+  sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'trigger'").all()
+    .map((trigger) => trigger.name),
+);
+for (const triggerName of REQUIRED_INTEGRITY_TRIGGERS) {
+  if (!actualTriggers.has(triggerName)) {
+    errors.push(`数据库缺少必要完整性触发器 "${triggerName}"`);
+  }
+}
+
+sqlite.close();
 
 if (errors.length > 0) {
   console.error("✗ 迁移一致性校验失败：");

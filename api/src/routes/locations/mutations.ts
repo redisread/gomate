@@ -30,11 +30,16 @@ mutations.post("/", async (c) => {
     const data = parsed.data;
     const id = generateId();
     const slug = data.slug || data.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const city = await db.query.cities.findFirst({
+      where: eq(schema.cities.id, data.cityId),
+      columns: { name: true },
+    });
+    if (!city) return c.json(APIErrors.badRequest("城市不存在"), 400);
 
     await db.insert(schema.locations).values({
       id, name: data.name, slug, type: data.type || null, subtitle: data.subtitle || null,
       description: data.description, address: data.address || null,
-      cityId: data.cityId, cityName: data.cityName || null,
+      cityId: data.cityId, cityName: city.name,
       bestSeason: JSON.stringify(data.bestSeason || []),
       coverImage: data.coverImage,
       images: JSON.stringify(data.images || []),
@@ -76,6 +81,14 @@ mutations.put("/", async (c) => {
 
     const { id, ...updateData } = parsed.data;
 
+    if (updateData.cityId !== undefined) {
+      const city = await db.query.cities.findFirst({
+        where: eq(schema.cities.id, updateData.cityId),
+        columns: { id: true },
+      });
+      if (!city) return c.json(APIErrors.badRequest("城市不存在"), 400);
+    }
+
     const dataToUpdate: Record<string, unknown> = { updatedAt: new Date() };
     if (updateData.name !== undefined) dataToUpdate.name = updateData.name;
     if (updateData.slug !== undefined) dataToUpdate.slug = updateData.slug;
@@ -84,7 +97,6 @@ mutations.put("/", async (c) => {
     if (updateData.description !== undefined) dataToUpdate.description = updateData.description;
     if (updateData.address !== undefined) dataToUpdate.address = updateData.address || null;
     if (updateData.cityId !== undefined) dataToUpdate.cityId = updateData.cityId;
-    if (updateData.cityName !== undefined) dataToUpdate.cityName = updateData.cityName || null;
     if (updateData.bestSeason !== undefined) dataToUpdate.bestSeason = JSON.stringify(updateData.bestSeason);
     if (updateData.coverImage !== undefined) dataToUpdate.coverImage = updateData.coverImage;
     if (updateData.images !== undefined) dataToUpdate.images = JSON.stringify(updateData.images);
@@ -149,8 +161,7 @@ mutations.put("/:id/tags", async (c) => {
     const { tagIds } = await c.req.json<{ tagIds: string[] }>();
     const db = createDb(c.env.DB);
 
-    // 删除旧关联
-    await db
+    const deleteExistingTags = db
       .delete(schema.entityToTags)
       .where(
         and(
@@ -159,9 +170,8 @@ mutations.put("/:id/tags", async (c) => {
         )
       );
 
-    // 批量插入新关联
     if (tagIds && tagIds.length > 0) {
-      await db.insert(schema.entityToTags).values(
+      const insertNewTags = db.insert(schema.entityToTags).values(
         tagIds.map((tagId) => ({
           id: generateId(),
           entityId: id,
@@ -169,6 +179,9 @@ mutations.put("/:id/tags", async (c) => {
           tagId,
         }))
       );
+      await db.batch([deleteExistingTags, insertNewTags]);
+    } else {
+      await deleteExistingTags;
     }
 
     return c.json({ success: true });

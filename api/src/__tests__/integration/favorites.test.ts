@@ -134,6 +134,20 @@ describe("Favorites API 集成测试", () => {
       });
       expect(res.status).toBe(409);
     });
+
+    it("收藏不存在的故事返回 404 且不创建悬空关系", async () => {
+      setSession({ id: user.id, email: user.email, name: user.name });
+
+      const res = await req(app, "/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entityType: "story", entityId: "missing-story" }),
+      });
+
+      expect(res.status).toBe(404);
+      const favorites = await testDb.select().from(schema.userFavorites);
+      expect(favorites).toHaveLength(0);
+    });
   });
 
   describe("DELETE /favorites - 取消收藏", () => {
