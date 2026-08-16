@@ -37,12 +37,15 @@ export async function observeProduction({
       const requestId = response.headers.get("x-request-id")?.trim();
       const contentType = response.headers.get("content-type") ?? "";
       const payload = await response.json().catch(() => null);
+      const payloadIsValid = endpoint === "/api/health"
+        ? payload?.status === "ok"
+        : payload?.success === true;
       if (
         !response.ok ||
         !contentType.includes("application/json") ||
         !requestId ||
         !REQUEST_ID.test(requestId) ||
-        payload?.success !== true
+        !payloadIsValid
       ) {
         throw new Error(
           `Observation failed for ${endpoint} (${response.status})`,

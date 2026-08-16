@@ -269,7 +269,7 @@ test("production observation checks health and Region without writes", async () 
       return new Response(
         JSON.stringify(
           isHealth
-            ? { success: true }
+            ? { status: "ok", timestamp: "2026-08-16T17:37:36.642Z" }
             : { success: true, regions: [{ id: "region-cn-shenzhen" }] },
         ),
         {
@@ -288,6 +288,35 @@ test("production observation checks health and Region without writes", async () 
     calls.every(
       (url) => !url.includes("auth/sign") && !url.includes("users/me"),
     ),
+  );
+});
+
+test("production observation rejects an invalid health payload", async () => {
+  await assert.rejects(
+    () =>
+      observeProduction({
+        baseUrl: "https://gomate.live",
+        durationMs: 0,
+        fetchImpl: async (url) =>
+          new Response(
+            JSON.stringify(
+              String(url).includes("/api/health")
+                ? { success: true }
+                : {
+                    success: true,
+                    regions: [{ id: "region-cn-shenzhen" }],
+                  },
+            ),
+            {
+              status: 200,
+              headers: {
+                "content-type": "application/json",
+                "x-request-id": "00000000-0000-4000-8000-000000000001",
+              },
+            },
+          ),
+      }),
+    /Observation failed for \/api\/health/u,
   );
 });
 
