@@ -48,11 +48,11 @@ jobs:
           pnpm --filter @gomate/frontend build
           pnpm --filter @gomate/frontend worker:dry-run
           pnpm --filter @gomate/frontend worker:size
-      - name: Prove gomate.live still targets the reviewed legacy Worker
+      - name: Prove gomate.live targets an approved cutover Worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          EXPECTED_DOMAIN_SERVICE: gomate-frontend
+          EXPECTED_DOMAIN_SERVICES: gomate-frontend,gomate-production-preview
         run: node scripts/production-domain.mjs assert
       - name: Prepare protected custom-domain deployment
         env:
@@ -81,6 +81,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           EXPECTED_DOMAIN_SERVICE: gomate-production-preview
+          DOMAIN_ASSERT_TIMEOUT_MS: "120000"
+          DOMAIN_ASSERT_RETRY_DELAY_MS: "5000"
         run: node scripts/production-domain.mjs assert
       - name: Protected production smoke
         id: smoke

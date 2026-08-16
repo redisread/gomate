@@ -118,6 +118,78 @@ test("domain audit requires one exact hostname, zone, and Worker", async () => {
   );
 });
 
+test("domain audit supports an approved cutover state and bounded propagation retries", async () => {
+  let attempts = 0;
+  let now = 0;
+  const result = await assertProductionDomain({
+    accountId: "e3afbb613458022947cd9dc9f5bd6334",
+    apiToken: "test-token",
+    expectedServices: "gomate-frontend,gomate-production-preview",
+    timeoutMs: 20,
+    retryDelayMs: 5,
+    nowImpl: () => now,
+    waitImpl: async (delay) => {
+      now += delay;
+    },
+    fetchImpl: async () => {
+      attempts += 1;
+      return new Response(
+        JSON.stringify({
+          success: true,
+          result: [
+            {
+              id: "domain-id",
+              hostname: "gomate.live",
+              service:
+                attempts === 1
+                  ? "gomate-frontend"
+                  : "gomate-production-preview",
+              zone_id: "0b714cd4257332034b3c4c0c099feb9e",
+            },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    },
+  });
+  assert.equal(result.service, "gomate-frontend");
+  assert.equal(attempts, 1);
+
+  attempts = 0;
+  now = 0;
+  const propagated = await assertProductionDomain({
+    accountId: "e3afbb613458022947cd9dc9f5bd6334",
+    apiToken: "test-token",
+    expectedService: "gomate-production-preview",
+    timeoutMs: 20,
+    retryDelayMs: 5,
+    nowImpl: () => now,
+    waitImpl: async (delay) => {
+      now += delay;
+    },
+    fetchImpl: async () => {
+      attempts += 1;
+      return new Response(
+        JSON.stringify({
+          success: true,
+          result: [
+            {
+              id: "domain-id",
+              hostname: "gomate.live",
+              service:
+                attempts < 3 ? "gomate-frontend" : "gomate-production-preview",
+              zone_id: "0b714cd4257332034b3c4c0c099feb9e",
+            },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    },
+  });
+  assert.equal(propagated.service, "gomate-production-preview");
+  assert.equal(attempts, 3);
+});
+
 test("rollback reattaches only the exact hostname, zone, and approved Worker", async () => {
   let request;
   await attachProductionDomain({
@@ -248,6 +320,11 @@ test("cutover and rollback workflows are protected and narrowly scoped", () => {
   assert.match(cutover, /gomate\.live/u);
   assert.match(cutover, /observe-production\.mjs/u);
   assert.match(cutover, /production-canary\.mjs/u);
+  assert.match(
+    cutover,
+    /EXPECTED_DOMAIN_SERVICES:\s*gomate-frontend,gomate-production-preview/u,
+  );
+  assert.match(cutover, /DOMAIN_ASSERT_TIMEOUT_MS:\s*"120000"/u);
   assert.match(
     cutover,
     /pnpm --filter @gomate\/frontend worker:dry-run\s+pnpm --filter @gomate\/frontend worker:size/u,
