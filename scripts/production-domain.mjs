@@ -8,11 +8,6 @@ const ALLOWED_TARGET_SERVICES = new Set([
   "gomate-frontend",
   "gomate-production-preview",
 ]);
-const ALLOWED_OBSERVED_SERVICES = new Set([
-  ...ALLOWED_TARGET_SERVICES,
-  // Recovery-only state created by a double-applied production environment.
-  "gomate-production-preview-production",
-]);
 const DEFAULT_RETRY_DELAY_MS = 5_000;
 
 function required(value, label) {
@@ -36,7 +31,7 @@ function expectedServiceSet(value) {
     .filter(Boolean);
   if (
     services.length === 0 ||
-    services.some((service) => !ALLOWED_OBSERVED_SERVICES.has(service))
+    services.some((service) => !ALLOWED_TARGET_SERVICES.has(service))
   ) {
     throw new Error("Expected domain services contain an unapproved Worker");
   }
