@@ -78,6 +78,11 @@ bootstrap。该变更只能写入已复核的国家/省/city Region 行，不得
 执行前记录 SQL 文件 checksum 与这些精确 Region ID，执行后验证 `level=city`、
 `service_enabled=1`、IANA timezone 和地图中心坐标，并保存 D1 查询证据。若验证失败，在尚无
 业务引用时只按该清单中的精确 Region ID 回滚；不得运行 development seed 作为快捷方案。
+生产 bootstrap 只能从 `main` 手动运行 `Bootstrap production V2 Regions`，输入
+`BOOTSTRAP_REGIONS` 并通过 `production` environment 审批。工作流在写入前要求全部 18 个
+非 Region 业务表与 Region 表均为空，只执行 `api/db/bootstrap/regions-v1.sql`，并把 checksum、
+精确三行查询和业务行计数保存为 90 天 artifact。`regions-v1.rollback.sql` 只作为经再次审批的
+紧急回滚输入，禁止由 bootstrap 失败自动执行。
 
 ### 阶段 C：route 切换
 

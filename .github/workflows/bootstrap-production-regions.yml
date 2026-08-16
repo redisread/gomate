@@ -1,0 +1,94 @@
+name: Bootstrap production V2 Regions
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type BOOTSTRAP_REGIONS to insert the reviewed three-row hierarchy
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bootstrap-production-v2-regions
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    name: Bootstrap reviewed production Regions
+    if: inputs.confirm == 'BOOTSTRAP_REGIONS' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      CLOUDFLARE_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Validate reviewed bootstrap contract
+        run: |
+          cd api/db/bootstrap
+          sha256sum --check regions-v1.sha256
+          cd ../../..
+          node --test scripts/region-bootstrap-contract.test.mjs
+
+      - name: Prove the V2 database is empty
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PREFLIGHT_JSON: ${{ runner.temp }}/region-bootstrap-preflight.json
+        run: |
+          pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --json --command "SELECT (SELECT count(*) FROM users) + (SELECT count(*) FROM sessions) + (SELECT count(*) FROM accounts) + (SELECT count(*) FROM verifications) + (SELECT count(*) FROM tags) + (SELECT count(*) FROM locations) + (SELECT count(*) FROM teams) + (SELECT count(*) FROM team_join_requests) + (SELECT count(*) FROM team_members) + (SELECT count(*) FROM stories) + (SELECT count(*) FROM location_tags) + (SELECT count(*) FROM team_tags) + (SELECT count(*) FROM story_tags) + (SELECT count(*) FROM story_likes) + (SELECT count(*) FROM user_location_favorites) + (SELECT count(*) FROM user_story_favorites) + (SELECT count(*) FROM conversations) + (SELECT count(*) FROM messages) AS business_row_count, (SELECT count(*) FROM region) AS region_row_count" > "$PREFLIGHT_JSON"
+          node ../scripts/region-bootstrap-contract.mjs preflight "$PREFLIGHT_JSON"
+
+      - name: Apply exact reviewed Region bootstrap
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --file ../api/db/bootstrap/regions-v1.sql
+
+      - name: Validate and record exact production rows
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          REGION_JSON: ${{ runner.temp }}/region-bootstrap-regions.json
+          COUNT_JSON: ${{ runner.temp }}/region-bootstrap-counts.json
+          EVIDENCE_JSON: ${{ runner.temp }}/region-bootstrap-evidence.json
+        run: |
+          pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --json --command "SELECT id, parent_id, country_code, level, timezone, center_latitude, center_longitude, service_enabled FROM region ORDER BY id" > "$REGION_JSON"
+          pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --json --command "SELECT (SELECT count(*) FROM users) + (SELECT count(*) FROM sessions) + (SELECT count(*) FROM accounts) + (SELECT count(*) FROM verifications) + (SELECT count(*) FROM tags) + (SELECT count(*) FROM locations) + (SELECT count(*) FROM teams) + (SELECT count(*) FROM team_join_requests) + (SELECT count(*) FROM team_members) + (SELECT count(*) FROM stories) + (SELECT count(*) FROM location_tags) + (SELECT count(*) FROM team_tags) + (SELECT count(*) FROM story_tags) + (SELECT count(*) FROM story_likes) + (SELECT count(*) FROM user_location_favorites) + (SELECT count(*) FROM user_story_favorites) + (SELECT count(*) FROM conversations) + (SELECT count(*) FROM messages) AS business_row_count" > "$COUNT_JSON"
+          node ../scripts/region-bootstrap-contract.mjs postflight "$REGION_JSON" "$COUNT_JSON" "$EVIDENCE_JSON"
+          cp ../api/db/bootstrap/regions-v1.sha256 "$RUNNER_TEMP/regions-v1.sha256"
+
+      - name: Record production bootstrap evidence
+        run: |
+          {
+            echo "### Production V2 Region bootstrap complete"
+            echo "- Database: \`gomate-db-v2\`"
+            echo "- IDs: \`region-cn\`, \`region-cn-guangdong\`, \`region-cn-shenzhen\`"
+            echo "- Source checksum: \`$(cut -d ' ' -f 1 api/db/bootstrap/regions-v1.sha256)\`"
+            echo "- No user, location, tag, Worker, route, R2, KV, or secret mutation was performed."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Region bootstrap evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gomate-production-region-bootstrap
+          path: |
+            ${{ runner.temp }}/region-bootstrap-evidence.json
+            ${{ runner.temp }}/regions-v1.sha256
+          if-no-files-found: error
+          retention-days: 90
