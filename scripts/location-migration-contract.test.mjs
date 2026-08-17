@@ -242,6 +242,12 @@ test("production workflow is protected and limited to D1 Location migration", ()
     /inputs\.confirm\s*==\s*'MIGRATE_LEGACY_LOCATIONS'.*github\.ref\s*==\s*'refs\/heads\/main'/u,
   );
   assert.match(workflow, /environment:\s*production/u);
+  const jobHeader = workflow.slice(0, workflow.indexOf("    steps:"));
+  assert.doesNotMatch(jobHeader, /\$\{\{\s*runner\.temp\s*\}\}/u);
+  assert.match(
+    workflow,
+    /name: Initialize private migration evidence paths[\s\S]*umask 077[\s\S]*RUNNER_TEMP[\s\S]*GITHUB_ENV/u,
+  );
   assert.match(workflow, /7d17d076-202f-48f8-b343-24209cdb0ba1/u);
   assert.match(workflow, /--env production --remote --config wrangler\.jsonc/u);
   assert.match(workflow, /actions\/upload-artifact@v4/u);
