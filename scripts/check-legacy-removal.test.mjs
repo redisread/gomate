@@ -35,7 +35,10 @@ test("scans SQL for singular legacy apikey identifiers", () => {
   const root = fixture();
   const migrations = path.join(root, "api", "db", "migrations");
   mkdirSync(migrations, { recursive: true });
-  writeFileSync(path.join(migrations, "0000.sql"), "CREATE TABLE apikey (id TEXT);\n");
+  writeFileSync(
+    path.join(migrations, "0000.sql"),
+    "CREATE TABLE apikey (id TEXT);\n",
+  );
 
   const result = run(root);
   assert.equal(result.status, 1);
@@ -69,11 +72,17 @@ test("ignores generated Worker dry-run output", () => {
 test("rejects a transpiled Worker source sibling", () => {
   const root = fixture();
   mkdirSync(path.join(root, "frontend", "src"), { recursive: true });
-  writeFileSync(path.join(root, "frontend", "src", "worker.js"), "export default {};\n");
+  writeFileSync(
+    path.join(root, "frontend", "src", "worker.js"),
+    "export default {};\n",
+  );
 
   const result = run(root);
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /frontend\/src\/worker\.js: removed path still exists/u);
+  assert.match(
+    result.stderr,
+    /frontend\/src\/worker\.js: removed path still exists/u,
+  );
 });
 
 test("allows the exact legacy frontend Worker only in reviewed rollback files", () => {
@@ -114,4 +123,42 @@ test("still rejects legacy Worker names outside or beyond the rollback allowlist
   const api = run(apiRoot);
   assert.equal(api.status, 1);
   assert.match(api.stderr, /legacy Worker name/u);
+});
+
+test("allows only exact legacy resource identifiers in reviewed retirement files", () => {
+  const root = fixture();
+  const scriptsDirectory = path.join(root, "scripts");
+  mkdirSync(scriptsDirectory, { recursive: true });
+  writeFileSync(
+    path.join(scriptsDirectory, "retire-legacy-production.mjs"),
+    [
+      'const workers = ["gomate-api", "gomate-frontend"];',
+      'const database = "gomate-db";',
+      'const namespace = "GOMATE_KV";',
+      "",
+    ].join("\n"),
+  );
+
+  const result = run(root);
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("does not turn retirement files into a broad legacy bypass", () => {
+  const root = fixture();
+  const scriptsDirectory = path.join(root, "scripts");
+  mkdirSync(scriptsDirectory, { recursive: true });
+  writeFileSync(
+    path.join(scriptsDirectory, "retire-legacy-production.mjs"),
+    [
+      'const worker = "gomate-api";',
+      'const forbiddenOrigin = "https://api.gomate.live";',
+      'const forbiddenBinding = "FRONTEND_URL";',
+      "",
+    ].join("\n"),
+  );
+
+  const result = run(root);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /legacy API origin/u);
+  assert.match(result.stderr, /legacy Worker binding/u);
 });

@@ -100,9 +100,15 @@ const operationalForbiddenContent = [
   ["legacy API origin", /https:\/\/api\.gomate\.live/],
   ["legacy API secret file", /api\/\.dev\.vars/],
   ["legacy frontend environment file", /frontend\/\.env\.local/],
-  ["legacy Worker binding", /\bGOMATE_KV\b|\bFRONTEND_URL\b|\bCORS_ALLOWED_ORIGINS\b|\bBETTER_AUTH_URL\b/],
+  [
+    "legacy Worker binding",
+    /\bGOMATE_KV\b|\bFRONTEND_URL\b|\bCORS_ALLOWED_ORIGINS\b|\bBETTER_AUTH_URL\b/,
+  ],
   ["removed route path", /\/(?:shares\/track|activity-posts|cities)(?:\/|\b)/],
-  ["removed schema relation", /schema\.(?:cities|activityPosts|shareEvents|userFavorites|entityToTags|apiKeys)\b/],
+  [
+    "removed schema relation",
+    /schema\.(?:cities|activityPosts|shareEvents|userFavorites|entityToTags|apiKeys)\b/,
+  ],
   ["removed lifecycle mutation", /\bupdateExpiredTeams\b/],
   ["forbidden Astro session", /\bAstro\.session\b/],
   ["removed resvg runtime", /@resvg\/resvg-wasm/],
@@ -117,6 +123,11 @@ const approvedLegacyWorkerRollbackFiles = new Set([
   "scripts/production-domain.mjs",
 ]);
 
+const approvedLegacyRetirementFiles = new Set([
+  "scripts/retire-legacy-production.mjs",
+  "scripts/retire-legacy-production.test.mjs",
+]);
+
 function isApprovedLegacyWorkerRollbackReference(relativePath, label, line) {
   return (
     label === "legacy Worker name" &&
@@ -124,6 +135,23 @@ function isApprovedLegacyWorkerRollbackReference(relativePath, label, line) {
     /\bgomate-frontend\b/u.test(line) &&
     !/\bgomate-api\b/u.test(line)
   );
+}
+
+function isApprovedLegacyRetirementReference(relativePath, label, line) {
+  if (!approvedLegacyRetirementFiles.has(relativePath)) return false;
+  if (label === "legacy Worker name") {
+    return /\bgomate-(?:api|frontend)\b/u.test(line);
+  }
+  if (label === "legacy D1 name") {
+    return /\bgomate-db(?!-v2)\b/u.test(line);
+  }
+  if (label === "legacy Worker binding") {
+    return (
+      /\bGOMATE_KV\b/u.test(line) &&
+      !/\b(?:FRONTEND_URL|CORS_ALLOWED_ORIGINS|BETTER_AUTH_URL)\b/u.test(line)
+    );
+  }
+  return false;
 }
 
 function isOperationalFile(relativePath) {
@@ -193,7 +221,9 @@ if (
 }
 
 for (const relativePath of textFiles) {
-  const lines = readFileSync(path.join(root, relativePath), "utf8").split(/\r?\n/);
+  const lines = readFileSync(path.join(root, relativePath), "utf8").split(
+    /\r?\n/,
+  );
   lines.forEach((line, index) => {
     if (isDatabaseDefinitionFile(relativePath) && /\bapikeys?\b/iu.test(line)) {
       violations.push(
@@ -209,7 +239,8 @@ for (const relativePath of textFiles) {
       for (const [label, pattern] of operationalForbiddenContent) {
         if (
           pattern.test(line) &&
-          !isApprovedLegacyWorkerRollbackReference(relativePath, label, line)
+          !isApprovedLegacyWorkerRollbackReference(relativePath, label, line) &&
+          !isApprovedLegacyRetirementReference(relativePath, label, line)
         ) {
           violations.push(`${relativePath}:${index + 1}: ${label}`);
         }
@@ -219,9 +250,13 @@ for (const relativePath of textFiles) {
 }
 
 if (violations.length > 0) {
-  console.error(`Legacy removal check failed with ${violations.length} violation(s):`);
+  console.error(
+    `Legacy removal check failed with ${violations.length} violation(s):`,
+  );
   for (const violation of violations) console.error(`- ${violation}`);
   process.exit(1);
 }
 
-console.log("Legacy split deployment, MCP, public v1, API-key, and removed route surfaces are absent.");
+console.log(
+  "Legacy split deployment, MCP, public v1, API-key, and removed route surfaces are absent.",
+);
