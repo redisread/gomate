@@ -54,19 +54,16 @@ jobs:
         run: node --test scripts/location-migration-contract.test.mjs
 
       - name: Read and validate the immutable legacy Location snapshot
-        working-directory: frontend
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          for attempt in 1 2 3; do
-            if pnpm exec wrangler d1 execute 7d17d076-202f-48f8-b343-24209cdb0ba1 --remote --json --command "SELECT l.*, c.adcode AS city_adcode, c.name AS canonical_city_name, c.province AS city_province FROM locations l JOIN cities c ON c.id = l.city_id ORDER BY l.id" > "$SOURCE_JSON"; then
-              break
-            fi
-            if [ "$attempt" -eq 3 ]; then exit 1; fi
-            sleep 5
-          done
-          node ../scripts/location-migration-contract.mjs source "$SOURCE_JSON" "$APPLY_SQL" "$ROLLBACK_SQL" "$MANIFEST_JSON"
+          curl --fail --silent --show-error --retry 2 --retry-all-errors \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            --json '{"sql":"SELECT l.*, c.adcode AS city_adcode, c.name AS canonical_city_name, c.province AS city_province FROM locations l JOIN cities c ON c.id = l.city_id ORDER BY l.id"}' \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/7d17d076-202f-48f8-b343-24209cdb0ba1/query" \
+            > "$SOURCE_JSON"
+          node scripts/location-migration-contract.mjs source "$SOURCE_JSON" "$APPLY_SQL" "$ROLLBACK_SQL" "$MANIFEST_JSON"
 
       - name: Prove the V2 target is ready for the exact import
         working-directory: frontend

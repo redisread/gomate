@@ -11,6 +11,7 @@ import {
   assertPostflight,
   assertPublicLocations,
   buildLocationMigration,
+  rowsFromD1Payload,
   validateTargetPreflight,
 } from "./location-migration-contract.mjs";
 
@@ -102,6 +103,23 @@ test("legacy Location snapshot contract is immutable", () => {
         expectedSha256: "0".repeat(64),
       }),
     /snapshot/u,
+  );
+});
+
+test("accepts only one successful Wrangler or Cloudflare REST D1 query", () => {
+  const execution = { success: true, results: fixtureRows };
+  assert.deepEqual(rowsFromD1Payload([execution]), fixtureRows);
+  assert.deepEqual(
+    rowsFromD1Payload({ success: true, result: [execution] }),
+    fixtureRows,
+  );
+  assert.throws(
+    () => rowsFromD1Payload({ success: false, errors: [{ code: 9109 }] }),
+    /one successful execution/u,
+  );
+  assert.throws(
+    () => rowsFromD1Payload({ success: true, result: [execution, execution] }),
+    /one successful execution/u,
   );
 });
 
@@ -249,6 +267,14 @@ test("production workflow is protected and limited to D1 Location migration", ()
     /name: Initialize private migration evidence paths[\s\S]*umask 077[\s\S]*RUNNER_TEMP[\s\S]*GITHUB_ENV/u,
   );
   assert.match(workflow, /7d17d076-202f-48f8-b343-24209cdb0ba1/u);
+  assert.match(
+    workflow,
+    /api\.cloudflare\.com\/client\/v4\/accounts\/\$CLOUDFLARE_ACCOUNT_ID\/d1\/database\/7d17d076-202f-48f8-b343-24209cdb0ba1\/query/u,
+  );
+  assert.doesNotMatch(
+    workflow,
+    /wrangler d1 execute 7d17d076-202f-48f8-b343-24209cdb0ba1/u,
+  );
   assert.match(workflow, /--env production --remote --config wrangler\.jsonc/u);
   assert.match(workflow, /actions\/upload-artifact@v4/u);
   assert.match(
