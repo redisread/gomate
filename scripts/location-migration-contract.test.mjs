@@ -216,7 +216,11 @@ test("generated migration and rollback preserve the existing production hierarch
 test("postflight and public validators reject any projection drift", () => {
   const migration = buildLocationMigration(fixtureRows, fixtureContract());
   assert.doesNotThrow(() =>
-    assertPostflight(migration, migration.locations, migration.newRegions),
+    assertPostflight(
+      migration,
+      [...migration.locations].reverse(),
+      [...migration.newRegions].reverse(),
+    ),
   );
   assert.throws(
     () =>
@@ -271,6 +275,8 @@ test("production workflow is protected and limited to D1 Location migration", ()
     workflow,
     /api\.cloudflare\.com\/client\/v4\/accounts\/\$CLOUDFLARE_ACCOUNT_ID\/d1\/database\/7d17d076-202f-48f8-b343-24209cdb0ba1\/query/u,
   );
+  assert.match(workflow, /id: target/u);
+  assert.match(workflow, /if: steps\.target\.outputs\.state == 'empty'/u);
   assert.doesNotMatch(
     workflow,
     /wrangler d1 execute 7d17d076-202f-48f8-b343-24209cdb0ba1/u,
@@ -288,11 +294,25 @@ test("production workflow is protected and limited to D1 Location migration", ()
 });
 
 test("target preflight allows only the current three Regions and zero Locations", () => {
-  assert.doesNotThrow(() =>
+  assert.equal(
     validateTargetPreflight({
       locationCount: 0,
       regionIds: ["region-cn", "region-cn-guangdong", "region-cn-shenzhen"],
     }),
+    "empty",
+  );
+  const migration = buildLocationMigration(fixtureRows, fixtureContract());
+  assert.equal(
+    validateTargetPreflight({
+      locationCount: 36,
+      regionIds: [
+        "region-cn",
+        "region-cn-guangdong",
+        "region-cn-shenzhen",
+        ...migration.newRegions.map((region) => region.id),
+      ],
+    }),
+    "applied",
   );
   assert.throws(
     () =>

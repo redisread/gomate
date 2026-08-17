@@ -66,15 +66,18 @@ jobs:
           node scripts/location-migration-contract.mjs source "$SOURCE_JSON" "$APPLY_SQL" "$ROLLBACK_SQL" "$MANIFEST_JSON"
 
       - name: Prove the V2 target is ready for the exact import
+        id: target
         working-directory: frontend
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --json --command "SELECT (SELECT count(*) FROM locations) AS location_count, (SELECT json_group_array(id) FROM (SELECT id FROM region ORDER BY id)) AS region_ids" > "$TARGET_PREFLIGHT_JSON"
-          node ../scripts/location-migration-contract.mjs target-preflight "$TARGET_PREFLIGHT_JSON"
+          state="$(node ../scripts/location-migration-contract.mjs target-preflight "$TARGET_PREFLIGHT_JSON")"
+          echo "state=$state" >> "$GITHUB_OUTPUT"
 
       - name: Apply the reviewed Region and Location import
+        if: steps.target.outputs.state == 'empty'
         working-directory: frontend
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
