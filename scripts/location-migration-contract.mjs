@@ -558,16 +558,23 @@ export function validateTargetPreflight({ locationCount, regionIds }) {
   }
 }
 
-function rowsFromWrangler(filePath) {
-  const payload = JSON.parse(readFileSync(filePath, "utf8"));
-  const executions = Array.isArray(payload) ? payload : [payload];
+export function rowsFromD1Payload(payload) {
+  const executions = Array.isArray(payload)
+    ? payload
+    : payload?.success === true && Array.isArray(payload.result)
+      ? payload.result
+      : [payload];
   if (executions.length !== 1 || executions[0]?.success !== true) {
-    throw new Error("Wrangler D1 evidence is missing one successful execution");
+    throw new Error("D1 evidence is missing one successful execution");
   }
   if (!Array.isArray(executions[0].results)) {
-    throw new Error("Wrangler D1 evidence does not contain result rows");
+    throw new Error("D1 evidence does not contain result rows");
   }
   return executions[0].results;
+}
+
+function rowsFromD1(filePath) {
+  return rowsFromD1Payload(JSON.parse(readFileSync(filePath, "utf8")));
 }
 
 function normalizeActualLocation(row) {
@@ -599,7 +606,7 @@ export function generateMigrationFiles(
   rollbackPath,
   manifestPath,
 ) {
-  const migration = buildLocationMigration(rowsFromWrangler(sourcePath));
+  const migration = buildLocationMigration(rowsFromD1(sourcePath));
   writeFileSync(applyPath, migration.applySql, { mode: 0o600 });
   writeFileSync(rollbackPath, migration.rollbackSql, { mode: 0o600 });
   writePrivateJson(manifestPath, {
@@ -616,7 +623,7 @@ export function generateMigrationFiles(
 }
 
 export function validateTargetPreflightFile(filePath) {
-  const rows = rowsFromWrangler(filePath);
+  const rows = rowsFromD1(filePath);
   if (rows.length !== 1)
     throw new Error("Target preflight must return one row");
   validateTargetPreflight({
@@ -631,11 +638,11 @@ export function validatePostflightFiles(
   regionsPath,
   evidencePath,
 ) {
-  const migration = buildLocationMigration(rowsFromWrangler(sourcePath));
-  const actualLocations = rowsFromWrangler(locationsPath).map(
+  const migration = buildLocationMigration(rowsFromD1(sourcePath));
+  const actualLocations = rowsFromD1(locationsPath).map(
     normalizeActualLocation,
   );
-  const actualRegions = rowsFromWrangler(regionsPath).map((row) => ({
+  const actualRegions = rowsFromD1(regionsPath).map((row) => ({
     ...row,
     center_latitude:
       row.center_latitude == null ? null : Number(row.center_latitude),
@@ -670,7 +677,7 @@ export function assertPostflight(migration, actualLocations, actualRegions) {
 }
 
 export function validatePublicLocationsFile(sourcePath, publicPath) {
-  const migration = buildLocationMigration(rowsFromWrangler(sourcePath));
+  const migration = buildLocationMigration(rowsFromD1(sourcePath));
   const payload = JSON.parse(readFileSync(publicPath, "utf8"));
   assertPublicLocations(migration, payload);
 }
