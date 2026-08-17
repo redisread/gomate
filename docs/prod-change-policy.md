@@ -106,6 +106,25 @@ preview 部署自动发生。
 再通过 Cloudflare Workers custom-domain API 把 `gomate.live` 精确重新附加到
 `gomate-frontend`。回滚不删除 V2 D1、KV、R2、Worker、版本或 secrets。
 
+### 阶段 D：旧资源退役
+
+阶段 C 于 2026-08-16T18:53:01Z 完成；旧资源最早只能在
+2026-08-23T18:53:01Z 后退役。从 `main` 手动运行
+`Retire legacy Cloudflare resources` 并输入 `RETIRE_LEGACY_RESOURCES`，且必须通过
+`production` environment 审批。流水线先证明 `gomate.live` 精确属于
+`gomate-production-preview`，并核对新 D1/KV 与共享 R2；随后只删除：
+
+- `api.gomate.live` custom domain；
+- Workers `gomate-api`、`gomate-frontend`、`gomate-production-preview-production`；
+- D1 `gomate-db`（`7d17d076-202f-48f8-b343-24209cdb0ba1`）；
+- KV `GOMATE_KV`（`638ecd78e70c48fda01904bc9c2105d8`）和
+  `gomate-frontend-session`（`6e3db6b00bc4421faeb1402c2e51f7d1`）。
+
+脚本不得调用 R2 删除 API；执行后重新读取 Cloudflare inventory，并验证生产 Worker、
+`gomate-db-v2`、`gomate-cache-v2`、R2 `gomate`、health 和深圳 Region。任一名称、ID、域名归属、
+时间边界或生产资源不匹配时，在首个 DELETE 前失败闭合。流水线可安全重跑：已经删除的精确旧资源
+视为完成，但新资源缺失仍立即失败。
+
 ## 4. 回滚
 
 - 应用回滚：核实 Worker deployment/version 对应的 commit 后，回滚到已验证版本。
