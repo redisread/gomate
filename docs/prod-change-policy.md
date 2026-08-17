@@ -1,6 +1,7 @@
 # GoMate 单 Worker / D1 V2 生产变更规约
 
-> 2026-08-16 起适用。当前没有真实用户，本次发布创建全新资源，不迁移旧 D1。
+> 2026-08-16 起适用。当前没有真实用户；认证和活动数据不迁移，但切流后按单独批准将旧库
+> 36 条公开地点转换为 V2 Region/Location 数据。
 
 ## 1. 当前发布边界
 
@@ -106,6 +107,24 @@ preview 部署自动发生。
 再通过 Cloudflare Workers custom-domain API 把 `gomate.live` 精确重新附加到
 `gomate-frontend`。回滚不删除 V2 D1、KV、R2、Worker、版本或 secrets。
 
+### 阶段 C.1：旧地点数据一次性导入
+
+阶段 C 切流后、阶段 D 删除旧 D1 前，从 `main` 手动运行
+`Migrate production V2 Locations` 并输入 `MIGRATE_LEGACY_LOCATIONS`，通过
+`production` environment 审批。该工作流只读旧 D1 固定 UUID
+`7d17d076-202f-48f8-b343-24209cdb0ba1`，要求旧地点查询恰好返回 36 行且规范化快照
+SHA-256 为 `7685b4d2424271c2d5fc7bd871c8e25e20dbecd9a336477a4b16552b45662677`；任一字段
+变化都必须在写入前失败闭合。
+
+转换只新增 5 个省级 Region、11 个非深圳 city Region 和 36 个 published Location，保留旧地点
+ID、名称、slug、描述、坐标、HTTPS 媒体 URL 与时间戳；活动类型转为
+`supported_activity_types`，徒步字段转为 V2 `extra.hiking` snake_case。旧库没有任何地点标签关联，
+因此不得从未关联的旧标签词典伪造 `location_tags`。目标写入前必须证明新库仍只有首发三条
+Region 且 `locations=0`；写入后必须逐字段比对 36 条 V2 projection、16 条新增 Region，并通过
+`/api/locations?limit=100` 证明全部公开可读。工作流不得修改用户、队伍、故事、标签、Worker、
+route、domain、KV、R2、secret 或 migration ledger；精确 rollback SQL 只作为 90 天 artifact
+保存，不自动执行。
+
 ### 阶段 D：旧资源退役
 
 阶段 C 于 2026-08-16T18:53:01Z 完成；旧资源最早只能在
@@ -122,14 +141,15 @@ preview 部署自动发生。
 
 脚本不得调用 R2 删除 API；执行后重新读取 Cloudflare inventory，并验证生产 Worker、
 `gomate-db-v2`、`gomate-cache-v2`、R2 `gomate`、health 和深圳 Region。任一名称、ID、域名归属、
-时间边界或生产资源不匹配时，在首个 DELETE 前失败闭合。流水线可安全重跑：已经删除的精确旧资源
-视为完成，但新资源缺失仍立即失败。
+时间边界、36 条地点迁移结果或生产资源不匹配时，在首个 DELETE 前失败闭合。流水线可安全重跑：
+已经删除的精确旧资源视为完成，但新资源缺失仍立即失败。
 
 ## 4. 回滚
 
 - 应用回滚：核实 Worker deployment/version 对应的 commit 后，回滚到已验证版本。
 - route 回滚：将 `gomate.live` 恢复到旧 Worker；不要删除新资源。
-- 数据回滚：V2 首发没有旧数据迁移。出现 schema 或写入问题时先把
+- 数据回滚：地点导入前由 workflow 生成精确 rollback SQL 并保存 90 天；该 SQL 仍需单独批准，
+  且只能在没有新 Team/Story 引用迁入地点时执行。出现 schema 或写入问题时先把
   `WRITE_MODE` 恢复为 `protected`，再从 D1 Time Travel/备份恢复或创建新的 V2
   数据库；不得修改已应用的 migration 文件。
 - secrets 与资源只有在稳定观察期结束后才能清理，清理需再次显式批准。

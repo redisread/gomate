@@ -9,7 +9,11 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const accountRoot =
   "https://api.cloudflare.com/client/v4/accounts/e3afbb613458022947cd9dc9f5bd6334";
 
-function initialState({ includeLegacy = true, productionService } = {}) {
+function initialState({
+  includeLegacy = true,
+  productionService,
+  productionLocationCount = 36,
+} = {}) {
   return {
     domains: [
       {
@@ -72,6 +76,7 @@ function initialState({ includeLegacy = true, productionService } = {}) {
         : []),
     ],
     buckets: [{ name: "gomate" }],
+    productionLocationCount,
   };
 }
 
@@ -107,6 +112,25 @@ function fakeCloudflare(state, requests) {
         { success: result !== null, result },
         { status: result === null ? 404 : 200 },
       );
+    }
+    if (
+      method === "POST" &&
+      relative === "/d1/database/befa3d89-6551-4a25-8a1c-670efe62a315/query"
+    ) {
+      return Response.json({
+        success: true,
+        result: [
+          {
+            success: true,
+            results: [
+              {
+                location_count: state.productionLocationCount,
+                region_count: state.productionLocationCount === 36 ? 19 : 3,
+              },
+            ],
+          },
+        ],
+      });
     }
     if (method !== "DELETE") {
       return Response.json({ success: false }, { status: 405 });
@@ -210,6 +234,26 @@ test("legacy retirement fails closed when production domain ownership drifts", a
         fetchImpl: fakeCloudflare(state, requests),
       }),
     /reviewed unified Worker/u,
+  );
+  assert.equal(
+    requests.some(({ method }) => method === "DELETE"),
+    false,
+  );
+});
+
+test("legacy retirement refuses to delete the old D1 before Location migration", async () => {
+  const state = initialState({ productionLocationCount: 0 });
+  const requests = [];
+  await assert.rejects(
+    () =>
+      retireLegacyProduction({
+        accountId: "e3afbb613458022947cd9dc9f5bd6334",
+        apiToken: "test-token",
+        baseUrl: "https://gomate.live",
+        nowImpl: () => Date.parse("2026-08-24T00:00:00Z"),
+        fetchImpl: fakeCloudflare(state, requests),
+      }),
+    /Location migration is not complete/u,
   );
   assert.equal(
     requests.some(({ method }) => method === "DELETE"),

@@ -44,11 +44,19 @@ async function cloudflareRequest({
   apiToken,
   resourcePath,
   method = "GET",
+  body,
   fetchImpl,
 }) {
   const response = await fetchImpl(
     `${API_ROOT}/accounts/${encodeURIComponent(accountId)}${resourcePath}`,
-    { method, headers: { Authorization: `Bearer ${apiToken}` } },
+    {
+      method,
+      body,
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        ...(body ? { "Content-Type": "application/json" } : {}),
+      },
+    },
   );
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.success !== true) {
@@ -57,6 +65,27 @@ async function cloudflareRequest({
     );
   }
   return payload.result;
+}
+
+async function assertLocationMigrationComplete({
+  accountId,
+  apiToken,
+  fetchImpl,
+}) {
+  const result = await cloudflareRequest({
+    accountId,
+    apiToken,
+    resourcePath: `/d1/database/${PRODUCTION_D1.id}/query`,
+    method: "POST",
+    body: JSON.stringify({
+      sql: "SELECT (SELECT count(*) FROM locations) AS location_count, (SELECT count(*) FROM region) AS region_count",
+    }),
+    fetchImpl,
+  });
+  const row = result?.[0]?.results?.[0];
+  if (Number(row?.location_count) !== 36 || Number(row?.region_count) !== 19) {
+    throw new Error("Reviewed legacy Location migration is not complete");
+  }
 }
 
 async function inventory({ accountId, apiToken, fetchImpl }) {
@@ -223,6 +252,7 @@ export async function retireLegacyProduction({
   const before = await inventory({ accountId, apiToken, fetchImpl });
   assertProductionResources(before);
   assertLegacyIdentity(before);
+  await assertLocationMigrationComplete({ accountId, apiToken, fetchImpl });
   const deleted = [];
   const apiDomain = before.domains.find(
     (domain) => domain.hostname === "api.gomate.live",

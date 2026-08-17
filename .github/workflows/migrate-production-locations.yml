@@ -1,0 +1,119 @@
+name: Migrate production V2 Locations
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type MIGRATE_LEGACY_LOCATIONS to import the reviewed 36-row snapshot
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate-production-v2-locations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Migrate reviewed production Locations
+    if: inputs.confirm == 'MIGRATE_LEGACY_LOCATIONS' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CLOUDFLARE_ENV: production
+      SOURCE_JSON: ${{ runner.temp }}/legacy-locations.json
+      TARGET_PREFLIGHT_JSON: ${{ runner.temp }}/location-target-preflight.json
+      APPLY_SQL: ${{ runner.temp }}/locations-v1.sql
+      ROLLBACK_SQL: ${{ runner.temp }}/locations-v1.rollback.sql
+      MANIFEST_JSON: ${{ runner.temp }}/location-migration-manifest.json
+      LOCATIONS_JSON: ${{ runner.temp }}/location-postflight.json
+      REGIONS_JSON: ${{ runner.temp }}/location-region-postflight.json
+      EVIDENCE_JSON: ${{ runner.temp }}/location-migration-evidence.json
+      PUBLIC_JSON: ${{ runner.temp }}/location-public-api.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify migration contract tests
+        run: node --test scripts/location-migration-contract.test.mjs
+
+      - name: Read and validate the immutable legacy Location snapshot
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          for attempt in 1 2 3; do
+            if pnpm exec wrangler d1 execute 7d17d076-202f-48f8-b343-24209cdb0ba1 --remote --json --command "SELECT l.*, c.adcode AS city_adcode, c.name AS canonical_city_name, c.province AS city_province FROM locations l JOIN cities c ON c.id = l.city_id ORDER BY l.id" > "$SOURCE_JSON"; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep 5
+          done
+          node ../scripts/location-migration-contract.mjs source "$SOURCE_JSON" "$APPLY_SQL" "$ROLLBACK_SQL" "$MANIFEST_JSON"
+
+      - name: Prove the V2 target is ready for the exact import
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --json --command "SELECT (SELECT count(*) FROM locations) AS location_count, (SELECT json_group_array(id) FROM (SELECT id FROM region ORDER BY id)) AS region_ids" > "$TARGET_PREFLIGHT_JSON"
+          node ../scripts/location-migration-contract.mjs target-preflight "$TARGET_PREFLIGHT_JSON"
+
+      - name: Apply the reviewed Region and Location import
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --file "$APPLY_SQL"
+
+      - name: Validate exact D1 rows and public API projection
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --json --command "SELECT id, region_id, name, slug, supported_activity_types, status, subtitle, description, address, latitude, longitude, cover_image_url, images, extra, created_by_user_id, created_at, updated_at FROM locations ORDER BY id" > "$LOCATIONS_JSON"
+          pnpm exec wrangler d1 execute DB --env production --remote --config wrangler.jsonc --json --command "SELECT id, country_code, parent_id, name, name_en, slug, code, level, timezone, center_latitude, center_longitude, service_enabled, is_hot, sort_order, created_at, updated_at FROM region WHERE id NOT IN ('region-cn', 'region-cn-guangdong', 'region-cn-shenzhen') ORDER BY id" > "$REGIONS_JSON"
+          node ../scripts/location-migration-contract.mjs postflight "$SOURCE_JSON" "$LOCATIONS_JSON" "$REGIONS_JSON" "$EVIDENCE_JSON"
+          for attempt in 1 2 3 4 5 6; do
+            if curl --fail --silent --show-error 'https://gomate.live/api/locations?limit=100' > "$PUBLIC_JSON" && node ../scripts/location-migration-contract.mjs public "$SOURCE_JSON" "$PUBLIC_JSON"; then
+              break
+            fi
+            if [ "$attempt" -eq 6 ]; then exit 1; fi
+            sleep 5
+          done
+
+      - name: Record production Location migration evidence
+        run: |
+          {
+            echo "### Production V2 Location migration complete"
+            echo "- Source snapshot: 36 legacy Locations"
+            echo "- Target: \`gomate-db-v2\`"
+            echo "- Added: 5 provinces, 11 non-Shenzhen cities, 36 published Locations"
+            echo "- No user, Team, Story, tag, Worker, route, R2, KV, secret, or domain mutation was performed."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload migration and rollback evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gomate-production-location-migration
+          path: |
+            ${{ runner.temp }}/location-migration-manifest.json
+            ${{ runner.temp }}/location-migration-evidence.json
+            ${{ runner.temp }}/locations-v1.sql
+            ${{ runner.temp }}/locations-v1.rollback.sql
+          if-no-files-found: error
+          retention-days: 90
