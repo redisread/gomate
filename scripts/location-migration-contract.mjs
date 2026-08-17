@@ -544,18 +544,40 @@ export function buildLocationMigration(
 }
 
 export function validateTargetPreflight({ locationCount, regionIds }) {
-  if (Number(locationCount) !== 0) {
-    throw new Error("Target V2 database must contain zero Locations");
-  }
-  if (
-    !Array.isArray(regionIds) ||
-    JSON.stringify([...regionIds].sort()) !==
+  const normalizedRegionIds = Array.isArray(regionIds)
+    ? [...regionIds].sort()
+    : null;
+  if (Number(locationCount) === 0) {
+    if (
+      JSON.stringify(normalizedRegionIds) !==
       JSON.stringify([...EXISTING_REGION_IDS].sort())
-  ) {
+    ) {
+      throw new Error(
+        "Target V2 Region set does not match the production bootstrap",
+      );
+    }
+    return "empty";
+  }
+  const migratedRegionIds = [
+    ...EXISTING_REGION_IDS,
+    ...PROVINCES.map((region) => region.id),
+    ...[...CITY_BY_CODE.values()]
+      .filter((region) => !region.existing)
+      .map((region) => region.id),
+  ].sort();
+  if (Number(locationCount) !== EXPECTED_LEGACY_LOCATION_COUNT) {
     throw new Error(
-      "Target V2 Region set does not match the production bootstrap",
+      "Target V2 database contains a partial or unexpected Locations set",
     );
   }
+  if (
+    JSON.stringify(normalizedRegionIds) !== JSON.stringify(migratedRegionIds)
+  ) {
+    throw new Error(
+      "Target V2 Region set does not match the reviewed migrated set",
+    );
+  }
+  return "applied";
 }
 
 export function rowsFromD1Payload(payload) {
@@ -626,7 +648,7 @@ export function validateTargetPreflightFile(filePath) {
   const rows = rowsFromD1(filePath);
   if (rows.length !== 1)
     throw new Error("Target preflight must return one row");
-  validateTargetPreflight({
+  return validateTargetPreflight({
     locationCount: rows[0].location_count,
     regionIds: parseJson(rows[0].region_ids, null, "region_ids"),
   });
@@ -668,10 +690,18 @@ export function validatePostflightFiles(
 }
 
 export function assertPostflight(migration, actualLocations, actualRegions) {
-  if (JSON.stringify(actualLocations) !== JSON.stringify(migration.locations)) {
+  const byId = (left, right) =>
+    left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+  if (
+    JSON.stringify([...actualLocations].sort(byId)) !==
+    JSON.stringify([...migration.locations].sort(byId))
+  ) {
     throw new Error("Target Locations do not match the reviewed V2 projection");
   }
-  if (JSON.stringify(actualRegions) !== JSON.stringify(migration.newRegions)) {
+  if (
+    JSON.stringify([...actualRegions].sort(byId)) !==
+    JSON.stringify([...migration.newRegions].sort(byId))
+  ) {
     throw new Error("Target Regions do not match the reviewed V2 projection");
   }
 }
@@ -701,7 +731,7 @@ if (process.argv[1]?.endsWith("location-migration-contract.mjs")) {
   if (command === "source" && args.length === 4) {
     generateMigrationFiles(...args);
   } else if (command === "target-preflight" && args.length === 1) {
-    validateTargetPreflightFile(args[0]);
+    console.log(validateTargetPreflightFile(args[0]));
   } else if (command === "postflight" && args.length === 4) {
     validatePostflightFiles(...args);
   } else if (command === "public" && args.length === 2) {

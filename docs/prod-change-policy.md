@@ -123,7 +123,8 @@ ID、名称、slug、描述、坐标、HTTPS 媒体 URL 与时间戳；活动类
 Region 且 `locations=0`；写入后必须逐字段比对 36 条 V2 projection、16 条新增 Region，并通过
 `/api/locations?limit=100` 证明全部公开可读。工作流不得修改用户、队伍、故事、标签、Worker、
 route、domain、KV、R2、secret 或 migration ledger；精确 rollback SQL 只作为 90 天 artifact
-保存，不自动执行。
+保存，不自动执行。若 apply 成功后校验中断，重跑必须识别精确的 36 Location/19 Region 状态、
+跳过 apply 并只续跑 postflight；任何部分写入或额外数据都失败闭合。
 
 ### 阶段 D：旧资源退役
 
