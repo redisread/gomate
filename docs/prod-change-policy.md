@@ -1,7 +1,7 @@
 # GoMate 单 Worker / D1 V2 生产变更规约
 
-> 2026-08-16 起适用。当前没有真实用户；认证和活动数据不迁移，但切流后按单独批准将旧库
-> 36 条公开地点转换为 V2 Region/Location 数据。
+> 2026-08-16 起适用。统一 Worker 已上线，旧库 36 条公开地点已转换为 V2
+> Region/Location；旧资源处于阶段 D 退役观察期。
 
 ## 1. 当前发布边界
 
@@ -9,9 +9,10 @@
 - 页面和 API 同源；API 只存在于 `https://<origin>/api/*`。
 - D1 使用全新 `gomate-db-v2`，唯一 baseline 为
   `api/db/migrations/0000_init.sql`。
-- 旧 `gomate-api`、`gomate-frontend`、旧 D1、旧定时任务均不在新发布链路中。
-- 合并本重构 PR 不等于上线：不得自动创建资源、迁移远端数据库或切换
-  `gomate.live` route。
+- 旧 `gomate-api`、`gomate-frontend`、旧 D1、旧 KV 均不在新发布链路中，且只等待阶段 D
+  退役。
+- `gomate.live` 已由 `gomate-production-preview` 提供统一 Worker 服务；日常生产变更仍必须先走
+  无 route 的 protected preview，再通过独立受保护流程切换。
 
 ## 2. 生产写入授权
 
@@ -28,26 +29,23 @@ route 切换，都必须：
    `--env production`，否则 Wrangler 会把环境前缀加入经审查的精确 namespace 名称；
 5. 完成后记录资源 ID、Worker version 与验证证据。
 
-## 3. 两阶段发布
+生产凭据只保存在 GitHub `production` environment secrets；仓库级 Actions secrets 保持为空，
+避免未绑定受保护环境的 job 通过同名 fallback 读取生产凭据。
 
-### 阶段 A：绑定 PR
+## 3. 生产发布与首发记录
 
-1. 先创建 GitHub `production` protected environment：deployment branch policy 仅允许
-   `main`，至少配置一名 required reviewer，并把 Cloudflare token/account/zone、Better Auth
-   secret、Resend key 与精确 preview workers.dev origin 六项全部保存为 environment secrets；
-   不得继续依赖 repository secrets 作为生产发布凭据。
-2. 只能从 `main` 手动运行 `Provision unified Worker V2 bindings`，输入
-   `PROVISION_BINDINGS`，在 `production` environment 审批后创建 D1 `gomate-db-v2`
-   （APAC location hint）与 KV `gomate-cache-v2`。工作流必须先确认两个精确名称均不存在，
-   且不得迁移 D1、部署 Worker、修改 secret/R2/route/domain；若只成功创建一个资源，保留它并
-   停止，禁止自动删除，后续清理仍需另一次显式批准。
-3. R2 复用 `gomate`：阶段 A 只记录账号、APAC location 与公开域名的只读证据，不写入或
-   删除对象。
-4. 使用 Wrangler `--update-config` 写入资源 ID，或只手工修改
-   `frontend/wrangler.jsonc` 中的 `REPLACE_IN_BINDINGS_PR`。
-5. 以单独 PR 审查精确 ID；该 PR 不加入生产 route，也不执行 migration/deploy。
+### 已完成的一次性阶段
 
-占位符存在时，`.github/workflows/deploy.yml` 必须 fail closed。
+- 资源创建：[run 31955191318](https://github.com/redisread/gomate/actions/runs/31955191318)
+  创建 D1 `gomate-db-v2`（APAC）与 KV `gomate-cache-v2`；R2 `gomate` 只复用、不改对象。
+- Region bootstrap：[run 31959130476](https://github.com/redisread/gomate/actions/runs/31959130476)
+  写入稳定的 `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen` 三行。
+- 地点迁移：[run 32000310678](https://github.com/redisread/gomate/actions/runs/32000310678)
+  完成 36 Location/19 Region 精确校验，rollback SQL 与证据 artifact 保留 90 天。
+
+以上三个一次性 workflow、专用合同脚本和 bootstrap SQL 已在成功验收后从 `main` 删除，防止
+误重跑；GitHub run/artifact 与 Git 历史是审计和回滚证据。生产环境、secrets、binding ID 与
+资源本身不因代码清理而改变。
 
 ### 阶段 B：受保护 preview
 
@@ -71,19 +69,9 @@ route 切换，都必须：
    整个部署工作流保持未完成。
 
 `api/db/seed.sql` 明确只用于 development/local replay，禁止由 preview workflow 或人工命令
-直接应用到远程 D1：其中示例 Location 的媒体 URL 不是生产资产。baseline 只建结构，因此在
-阶段 C 前必须通过另一个受审查的数据 PR 和一次独立 production approval 完成最小 Region
-bootstrap。该变更只能写入已复核的国家/省/city Region 行，不得顺带创建用户、地点或标签；
-首发必须沿用稳定 ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`，其中
-`region-cn-shenzhen` 是匿名 local-circle 的运行时 fallback，禁止在数据 PR 中另行改名。
-执行前记录 SQL 文件 checksum 与这些精确 Region ID，执行后验证 `level=city`、
-`service_enabled=1`、IANA timezone 和地图中心坐标，并保存 D1 查询证据。若验证失败，在尚无
-业务引用时只按该清单中的精确 Region ID 回滚；不得运行 development seed 作为快捷方案。
-生产 bootstrap 只能从 `main` 手动运行 `Bootstrap production V2 Regions`，输入
-`BOOTSTRAP_REGIONS` 并通过 `production` environment 审批。工作流在写入前要求全部 18 个
-非 Region 业务表与 Region 表均为空，只执行 `api/db/bootstrap/regions-v1.sql`，并把 checksum、
-精确三行查询和业务行计数保存为 90 天 artifact。`regions-v1.rollback.sql` 只作为经再次审批的
-紧急回滚输入，禁止由 bootstrap 失败自动执行。
+直接应用到远程 D1：其中示例 Location 的媒体 URL 不是生产资产。生产稳定 Region ID
+`region-cn`、`region-cn-guangdong`、`region-cn-shenzhen` 不得改名，其中
+`region-cn-shenzhen` 是匿名 local-circle fallback。
 
 ### 阶段 C：route 切换
 
@@ -109,12 +97,9 @@ preview 部署自动发生。
 
 ### 阶段 C.1：旧地点数据一次性导入
 
-阶段 C 切流后、阶段 D 删除旧 D1 前，从 `main` 手动运行
-`Migrate production V2 Locations` 并输入 `MIGRATE_LEGACY_LOCATIONS`，通过
-`production` environment 审批。该工作流只读旧 D1 固定 UUID
-`7d17d076-202f-48f8-b343-24209cdb0ba1`，要求旧地点查询恰好返回 36 行且规范化快照
-SHA-256 为 `7685b4d2424271c2d5fc7bd871c8e25e20dbecd9a336477a4b16552b45662677`；任一字段
-变化都必须在写入前失败闭合。
+地点迁移已由受保护的 [run 32000310678](https://github.com/redisread/gomate/actions/runs/32000310678)
+完成。源为旧 D1 固定 UUID `7d17d076-202f-48f8-b343-24209cdb0ba1`，恰好 36 行，规范化快照
+SHA-256 为 `7685b4d2424271c2d5fc7bd871c8e25e20dbecd9a336477a4b16552b45662677`。
 
 转换只新增 5 个省级 Region、11 个非深圳 city Region 和 36 个 published Location，保留旧地点
 ID、名称、slug、描述、坐标、HTTPS 媒体 URL 与时间戳；活动类型转为
@@ -122,9 +107,9 @@ ID、名称、slug、描述、坐标、HTTPS 媒体 URL 与时间戳；活动类
 因此不得从未关联的旧标签词典伪造 `location_tags`。目标写入前必须证明新库仍只有首发三条
 Region 且 `locations=0`；写入后必须逐字段比对 36 条 V2 projection、16 条新增 Region，并通过
 `/api/locations?limit=100` 证明全部公开可读。工作流不得修改用户、队伍、故事、标签、Worker、
-route、domain、KV、R2、secret 或 migration ledger；精确 rollback SQL 只作为 90 天 artifact
-保存，不自动执行。若 apply 成功后校验中断，重跑必须识别精确的 36 Location/19 Region 状态、
-跳过 apply 并只续跑 postflight；任何部分写入或额外数据都失败闭合。
+route、domain、KV、R2、secret 或 migration ledger。最终证据记录 36 Location/19 Region；精确
+rollback SQL 只作为 90 天 artifact 保存，不自动执行。一次性迁移代码已删除，不得重建或重跑，
+除非另有新的数据迁移设计与显式生产批准。
 
 ### 阶段 D：旧资源退役
 
