@@ -10,6 +10,7 @@ import {
 } from "./prepare-production-cutover.mjs";
 import {
   assertProductionDomain,
+  assertWorkerExists,
   attachProductionDomain,
 } from "./production-domain.mjs";
 import { observeProduction } from "./observe-production.mjs";
@@ -211,6 +212,42 @@ test("domain audit rejects the accidental suffixed Worker after cutover", async 
   );
 });
 
+test("rollback preflight requires the exact legacy Worker before any mutation", async () => {
+  const calls = [];
+  await assert.doesNotReject(() =>
+    assertWorkerExists({
+      accountId: "e3afbb613458022947cd9dc9f5bd6334",
+      apiToken: "test-token",
+      expectedService: "gomate-frontend",
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init });
+        return Response.json({
+          success: true,
+          result: [{ id: "gomate-frontend" }],
+        });
+      },
+    }),
+  );
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /\/workers\/scripts$/u);
+  assert.equal(calls[0].init?.method, undefined);
+
+  await assert.rejects(
+    () =>
+      assertWorkerExists({
+        accountId: "e3afbb613458022947cd9dc9f5bd6334",
+        apiToken: "test-token",
+        expectedService: "gomate-frontend",
+        fetchImpl: async () =>
+          Response.json({
+            success: true,
+            result: [{ id: "gomate-production-preview" }],
+          }),
+      }),
+    /rollback Worker is unavailable/u,
+  );
+});
+
 test("rollback reattaches only the exact hostname, zone, and approved Worker", async () => {
   let request;
   await attachProductionDomain({
@@ -363,6 +400,18 @@ test("cutover and rollback workflows are protected and narrowly scoped", () => {
     path.join(root, ".github/workflows/rollback-production-cutover.yml"),
     "utf8",
   );
+  const deploy = readFileSync(
+    path.join(root, ".github/workflows/deploy.yml"),
+    "utf8",
+  );
+  const retire = readFileSync(
+    path.join(root, ".github/workflows/retire-legacy-production.yml"),
+    "utf8",
+  );
+  for (const workflow of [deploy, cutover, rollback, retire]) {
+    assert.match(workflow, /group:\s*gomate-production-mutation/u);
+    assert.match(workflow, /cancel-in-progress:\s*false/u);
+  }
   assert.match(cutover, /CUTOVER_PRODUCTION/u);
   assert.match(cutover, /github\.ref\s*==\s*'refs\/heads\/main'/u);
   assert.match(cutover, /environment:\s*production/gu);
@@ -390,6 +439,14 @@ test("cutover and rollback workflows are protected and narrowly scoped", () => {
   );
   assert.match(rollback, /ROLLBACK_PRODUCTION/u);
   assert.match(rollback, /gomate-frontend/u);
+  const legacyPreflight = rollback.indexOf(
+    "production-domain.mjs assert-worker",
+  );
+  const protectedBuild = rollback.indexOf(
+    "Build and prepare WRITE_MODE protected",
+  );
+  assert.ok(legacyPreflight >= 0 && legacyPreflight < protectedBuild);
+  assert.match(rollback, /EXPECTED_WORKER_SERVICE:\s*gomate-frontend/u);
   assert.match(rollback, /mode=protected|--mode protected/u);
   assert.doesNotMatch(rollback, /DELETE FROM|wrangler\s+r2|wrangler\s+kv/iu);
 });

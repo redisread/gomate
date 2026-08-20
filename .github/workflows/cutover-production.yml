@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: unified-worker-production-cutover
+  group: gomate-production-mutation
   cancel-in-progress: false
 
 jobs:
@@ -239,5 +239,5 @@ jobs:
             echo "### Unified Worker production rollout complete"
             echo "- gomate.live serves gomate-production-preview."
             echo "- WRITE_MODE is open after protected and open 30-minute observations."
-            echo "- Legacy Workers and storage remain retained for the mandatory seven-day window."
+            echo "- Legacy Workers and storage remain retained until the separately approved retirement workflow."
           } >> "$GITHUB_STEP_SUMMARY"

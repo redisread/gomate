@@ -91,7 +91,8 @@ preview 部署自动发生。
 开放写入的日志证据审批后再连续观察 30 分钟。任一阶段失败都停止后续 job。
 
 回滚只允许从 `main` 手动运行 `Roll back unified Worker production cutover` 并输入
-`ROLLBACK_PRODUCTION`：先把 unified Worker 恢复为 `WRITE_MODE=protected`，确认 503 写阻断，
+`ROLLBACK_PRODUCTION`。回滚在任何部署前必须确认旧 `gomate-frontend` Worker 仍存在；不存在时
+直接失败，不能先改变 `WRITE_MODE`。确认后先把 unified Worker 恢复为 `WRITE_MODE=protected`，确认 503 写阻断，
 再通过 Cloudflare Workers custom-domain API 把 `gomate.live` 精确重新附加到
 `gomate-frontend`。回滚不删除 V2 D1、KV、R2、Worker、版本或 secrets。
 
@@ -113,8 +114,8 @@ rollback SQL 只作为 90 天 artifact 保存，不自动执行。一次性迁�
 
 ### 阶段 D：旧资源退役
 
-阶段 C 于 2026-08-16T18:53:01Z 完成；旧资源最早只能在
-2026-08-23T18:53:01Z 后退役。从 `main` 手动运行
+阶段 C 于 2026-08-16T18:53:01Z 完成。Victor 于 2026-08-20 明确批准缩短原 7 天观察期；
+旧资源最早只能在 2026-08-20T15:00:00Z（上海时间 2026-08-20 23:00）后退役。从 `main` 手动运行
 `Retire legacy Cloudflare resources` 并输入 `RETIRE_LEGACY_RESOURCES`，且必须通过
 `production` environment 审批。流水线先证明 `gomate.live` 精确属于
 `gomate-production-preview`，并核对新 D1/KV 与共享 R2；随后只删除：
@@ -130,10 +131,16 @@ rollback SQL 只作为 90 天 artifact 保存，不自动执行。一次性迁�
 时间边界、36 条地点迁移结果或生产资源不匹配时，在首个 DELETE 前失败闭合。流水线可安全重跑：
 已经删除的精确旧资源视为完成，但新资源缺失仍立即失败。
 
+preview deploy、cutover、旧 route 回滚和阶段 D 退役共用 `gomate-production-mutation` concurrency
+group，禁止这些生产写操作并发。阶段 D 成功后旧 route 回滚永久不可用，并立即通过代码清理 PR
+删除该 workflow 与退役专用 workflow/script；今后回滚只能使用已验证的 Worker version，必要时先
+恢复 `WRITE_MODE=protected`。
+
 ## 4. 回滚
 
 - 应用回滚：核实 Worker deployment/version 对应的 commit 后，回滚到已验证版本。
-- route 回滚：将 `gomate.live` 恢复到旧 Worker；不要删除新资源。
+- route 回滚：仅在阶段 D 前且旧 Worker 存在时允许恢复到旧 Worker；阶段 D 后只能回滚统一 Worker
+  version，不得重建旧 split deployment。
 - 数据回滚：地点导入前由 workflow 生成精确 rollback SQL 并保存 90 天；该 SQL 仍需单独批准，
   且只能在没有新 Team/Story 引用迁入地点时执行。出现 schema 或写入问题时先把
   `WRITE_MODE` 恢复为 `protected`，再从 D1 Time Travel/备份恢复或创建新的 V2
