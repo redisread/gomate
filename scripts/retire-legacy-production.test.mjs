@@ -75,7 +75,6 @@ function initialState({
           ]
         : []),
     ],
-    buckets: [{ name: "gomate" }],
     productionLocationCount,
   };
 }
@@ -87,6 +86,17 @@ function fakeCloudflare(state, requests) {
     requests.push({ url: value, method });
     if (value === "https://gomate.live/api/health") {
       return Response.json({ status: "ok" });
+    }
+    if (value === "https://gomate.live/api/locations?limit=100") {
+      return Response.json({
+        success: true,
+        locations: Array.from(
+          { length: state.productionLocationCount },
+          (_, index) => ({ id: index }),
+        ),
+        total: state.productionLocationCount,
+        nextCursor: null,
+      });
     }
     if (value.startsWith("https://gomate.live/api/regions?")) {
       return Response.json({
@@ -105,9 +115,7 @@ function fakeCloudflare(state, requests) {
               ? state.databases
               : relative === "/storage/kv/namespaces"
                 ? state.namespaces
-                : relative === "/r2/buckets"
-                  ? { buckets: state.buckets }
-                  : null;
+                : null;
       return Response.json(
         { success: result !== null, result },
         { status: result === null ? 404 : 200 },
@@ -200,8 +208,11 @@ test("legacy retirement deletes only reviewed legacy resources", async () => {
   assert.equal(state.workers[0].id, "gomate-production-preview");
   assert.equal(state.databases.length, 1);
   assert.equal(state.namespaces.length, 1);
-  assert.deepEqual(state.buckets, [{ name: "gomate" }]);
   assert.equal(requests.filter(({ method }) => method === "DELETE").length, 7);
+  assert.equal(
+    requests.some(({ url }) => url.includes("/r2/")),
+    false,
+  );
 });
 
 test("legacy retirement is idempotent after reviewed resources are absent", async () => {
@@ -261,6 +272,58 @@ test("legacy retirement refuses to delete the old D1 before Location migration",
   );
 });
 
+test("legacy retirement verifies public Locations before and after deletion", async () => {
+  const state = initialState();
+  const requests = [];
+  await retireLegacyProduction({
+    accountId: "e3afbb613458022947cd9dc9f5bd6334",
+    apiToken: "test-token",
+    baseUrl: "https://gomate.live",
+    nowImpl: () => Date.parse("2026-08-24T00:00:00Z"),
+    fetchImpl: fakeCloudflare(state, requests),
+  });
+  assert.equal(
+    requests.filter(
+      ({ url }) => url === "https://gomate.live/api/locations?limit=100",
+    ).length,
+    2,
+  );
+});
+
+test("Cloudflare failures identify the safe operation without leaking credentials", async () => {
+  const state = initialState();
+  const requests = [];
+  const fake = fakeCloudflare(state, requests);
+  await assert.rejects(
+    () =>
+      retireLegacyProduction({
+        accountId: "e3afbb613458022947cd9dc9f5bd6334",
+        apiToken: "test-token",
+        baseUrl: "https://gomate.live",
+        nowImpl: () => Date.parse("2026-08-24T00:00:00Z"),
+        fetchImpl: async (url, init) => {
+          if (String(url).endsWith("/workers/scripts")) {
+            return Response.json({
+              success: false,
+              errors: [{ code: 10000, message: "permission denied" }],
+            });
+          }
+          return fake(url, init);
+        },
+      }),
+    (error) => {
+      assert.match(error.message, /list Workers/u);
+      assert.match(error.message, /10000/u);
+      assert.doesNotMatch(error.message, /test-token/u);
+      return true;
+    },
+  );
+  assert.equal(
+    requests.some(({ method }) => method === "DELETE"),
+    false,
+  );
+});
+
 test("legacy retirement workflow is protected and has no R2 deletion", () => {
   const workflow = readFileSync(
     path.join(root, ".github/workflows/retire-legacy-production.yml"),
@@ -272,4 +335,9 @@ test("legacy retirement workflow is protected and has no R2 deletion", () => {
   assert.match(workflow, /group:\s*gomate-production-mutation/u);
   assert.match(workflow, /retire-legacy-production\.mjs/u);
   assert.doesNotMatch(workflow, /wrangler\s+r2|migrations apply|seed\.sql/iu);
+  const script = readFileSync(
+    path.join(root, "scripts/retire-legacy-production.mjs"),
+    "utf8",
+  );
+  assert.doesNotMatch(script, /\/r2\//u);
 });
