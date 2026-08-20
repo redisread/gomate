@@ -17,7 +17,8 @@ function required(value, label) {
 }
 
 function nonNegativeInteger(value, label, fallback) {
-  const candidate = value === undefined || value === "" ? fallback : Number(value);
+  const candidate =
+    value === undefined || value === "" ? fallback : Number(value);
   if (!Number.isInteger(candidate) || candidate < 0) {
     throw new Error(`${label} must be a non-negative integer`);
   }
@@ -38,9 +39,15 @@ function expectedServiceSet(value) {
   return new Set(services);
 }
 
-async function cloudflareRequest({ accountId, apiToken, fetchImpl, init }) {
+async function cloudflareRequest({
+  accountId,
+  apiToken,
+  fetchImpl,
+  resourcePath = "/workers/domains",
+  init,
+}) {
   const response = await fetchImpl(
-    `${API_ROOT}/accounts/${encodeURIComponent(accountId)}/workers/domains`,
+    `${API_ROOT}/accounts/${encodeURIComponent(accountId)}${resourcePath}`,
     {
       ...init,
       headers: {
@@ -56,6 +63,33 @@ async function cloudflareRequest({ accountId, apiToken, fetchImpl, init }) {
     );
   }
   return payload.result;
+}
+
+export async function assertWorkerExists({
+  accountId = process.env.CLOUDFLARE_ACCOUNT_ID,
+  apiToken = process.env.CLOUDFLARE_API_TOKEN,
+  expectedService = process.env.EXPECTED_WORKER_SERVICE,
+  fetchImpl = fetch,
+} = {}) {
+  accountId = required(accountId, "CLOUDFLARE_ACCOUNT_ID");
+  apiToken = required(apiToken, "CLOUDFLARE_API_TOKEN");
+  expectedService = required(expectedService, "EXPECTED_WORKER_SERVICE");
+  if (!ALLOWED_TARGET_SERVICES.has(expectedService)) {
+    throw new Error("EXPECTED_WORKER_SERVICE is not an approved Worker");
+  }
+  const workers = await cloudflareRequest({
+    accountId,
+    apiToken,
+    fetchImpl,
+    resourcePath: "/workers/scripts",
+  });
+  if (
+    !Array.isArray(workers) ||
+    !workers.some((worker) => worker?.id === expectedService)
+  ) {
+    throw new Error("Expected rollback Worker is unavailable");
+  }
+  console.log(`Verified rollback Worker ${expectedService} exists.`);
 }
 
 export async function assertProductionDomain({
@@ -84,13 +118,19 @@ export async function assertProductionDomain({
     DEFAULT_RETRY_DELAY_MS,
   );
   if (retryDelayMs === 0 && timeoutMs > 0) {
-    throw new Error("DOMAIN_ASSERT_RETRY_DELAY_MS must be positive when retrying");
+    throw new Error(
+      "DOMAIN_ASSERT_RETRY_DELAY_MS must be positive when retrying",
+    );
   }
   const deadline = nowImpl() + timeoutMs;
 
   while (true) {
     try {
-      const domains = await cloudflareRequest({ accountId, apiToken, fetchImpl });
+      const domains = await cloudflareRequest({
+        accountId,
+        apiToken,
+        fetchImpl,
+      });
       if (!Array.isArray(domains)) {
         throw new Error("Cloudflare custom-domain inventory is invalid");
       }
@@ -166,11 +206,13 @@ if (
   const operation =
     command === "assert"
       ? assertProductionDomain
-      : command === "attach"
-        ? attachProductionDomain
-        : null;
+      : command === "assert-worker"
+        ? assertWorkerExists
+        : command === "attach"
+          ? attachProductionDomain
+          : null;
   if (!operation) {
-    console.error("Usage: production-domain.mjs assert|attach");
+    console.error("Usage: production-domain.mjs assert|assert-worker|attach");
     process.exit(1);
   }
   operation().catch((error) => {

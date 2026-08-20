@@ -158,7 +158,7 @@ function fakeCloudflare(state, requests) {
   };
 }
 
-test("legacy retirement fails before the mandatory seven-day boundary", async () => {
+test("legacy retirement fails before the explicitly approved boundary", async () => {
   let fetched = false;
   await assert.rejects(
     () =>
@@ -166,13 +166,13 @@ test("legacy retirement fails before the mandatory seven-day boundary", async ()
         accountId: "e3afbb613458022947cd9dc9f5bd6334",
         apiToken: "test-token",
         baseUrl: "https://gomate.live",
-        nowImpl: () => Date.parse("2026-08-23T18:53:00Z"),
+        nowImpl: () => Date.parse("2026-08-20T14:59:59Z"),
         fetchImpl: async () => {
           fetched = true;
           throw new Error("must not fetch");
         },
       }),
-    /seven-day retention/u,
+    /approved legacy retirement time/u,
   );
   assert.equal(fetched, false);
 });
@@ -184,7 +184,7 @@ test("legacy retirement deletes only reviewed legacy resources", async () => {
     accountId: "e3afbb613458022947cd9dc9f5bd6334",
     apiToken: "test-token",
     baseUrl: "https://gomate.live",
-    nowImpl: () => Date.parse("2026-08-23T18:53:01Z"),
+    nowImpl: () => Date.parse("2026-08-20T15:00:00Z"),
     fetchImpl: fakeCloudflare(state, requests),
   });
   assert.deepEqual(result.deleted, [
@@ -269,6 +269,7 @@ test("legacy retirement workflow is protected and has no R2 deletion", () => {
   assert.match(workflow, /RETIRE_LEGACY_RESOURCES/u);
   assert.match(workflow, /github\.ref\s*==\s*'refs\/heads\/main'/u);
   assert.match(workflow, /environment:\s*production/u);
+  assert.match(workflow, /group:\s*gomate-production-mutation/u);
   assert.match(workflow, /retire-legacy-production\.mjs/u);
   assert.doesNotMatch(workflow, /wrangler\s+r2|migrations apply|seed\.sql/iu);
 });

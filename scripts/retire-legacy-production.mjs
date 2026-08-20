@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 const API_ROOT = "https://api.cloudflare.com/client/v4";
 const ACCOUNT_ID = "e3afbb613458022947cd9dc9f5bd6334";
 const ZONE_ID = "0b714cd4257332034b3c4c0c099feb9e";
-const RETIRE_NOT_BEFORE = Date.parse("2026-08-23T18:53:01Z");
+const RETIRE_NOT_BEFORE = Date.parse("2026-08-20T15:00:00Z");
 const PRODUCTION_WORKER = "gomate-production-preview";
 const PRODUCTION_D1 = {
   id: "befa3d89-6551-4a25-8a1c-670efe62a315",
@@ -246,7 +246,7 @@ export async function retireLegacyProduction({
     throw new Error("Legacy retirement target is not the reviewed production");
   }
   if (nowImpl() < RETIRE_NOT_BEFORE) {
-    throw new Error("Mandatory seven-day retention window has not elapsed");
+    throw new Error("approved legacy retirement time has not been reached");
   }
 
   const before = await inventory({ accountId, apiToken, fetchImpl });
