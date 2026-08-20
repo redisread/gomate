@@ -1,9 +1,8 @@
 "use client";
 
 /**
- * task #165（P0-A T2）：Team 详情页「行动本」区块
+ * Team 详情页「行动本」区块。
  *
- * spec：notes/gomate-p0a-team-actionbook-spec.md §3
  * - 顶部 countdown island（独立组件，见 team-countdown.tsx）
  * - 5 个区块 meeting / transport / gear / assignments / notes 平铺
  * - 3 种空态：队长（引导填写）· 队员（提示队长）· 访客（只留时间概览）

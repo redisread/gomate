@@ -1,7 +1,6 @@
 /**
- * task #163（P0-A T1+T5）：Team「行动本」checklist 类型 + 通知钩子事件 payload
+ * Team「行动本」checklist 类型与通知事件 payload。
  *
- * spec：notes/gomate-p0a-team-actionbook-spec.md（v1.1）
  * - checklist 单 JSON 字段而非子表（<2KB，D1 batch 简单）
  * - assignment 用稳定 id（uuid）而非 index，防并发漂移
  * - assigneeIds[] 支持多人认领同一任务；server 端去重

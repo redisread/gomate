@@ -1,15 +1,13 @@
 /**
- * P1-1 T2 (task #188) — 引导流 gating + 数据 hook
+ * 首次引导流 gating 与数据 hook。
  *
- * spec: notes/gomate-p1-1-onboarding-spec.md v1.2 §3.1 / §3.2 / §7 / §9.2
- *
- * 触发条件（§3.1，全满足才弹）：
+ * 触发条件（全满足才弹）：
  *   1. 已登录（匿名不触发）
  *   2. localStorage.onboardingDismissed !== "true"（未永久跳过）
  *   3. localStorage.onboardingSeen !== "true"（本设备未看过）
  *   4. hasAnyMembership === false（T1 端点返回；同时挡住老用户）
  *
- * 与 #185 引导卡共存（§3.2）：modal 一次性激活（注册时刻），引导卡常住兜底，
+ * 与首页引导卡共存：modal 一次性激活（注册时刻），引导卡常住兜底，
  * 两者不叠加 —— modal 关闭后首页引导卡判断照常（modal 不阻塞 local-circle 渲染，
  * 视觉上是 modal 遮罩盖在上面，关闭后引导卡自然可见）。
  */

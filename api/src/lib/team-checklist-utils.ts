@@ -1,7 +1,5 @@
 /**
- * task #163：Team「行动本」checklist 工具函数（api 内共享）
- *
- * spec：notes/gomate-p0a-team-actionbook-spec.md v1.1 §2
+ * Team「行动本」checklist 工具函数（API 内共享）。
  *
  * 目前只放 parseChecklist：checklist.ts / queries.ts 都要读 DB checklist，
  * driver 层 JSON 兜底逻辑只需一处，未来若 D1 driver 行为变化只改这里。

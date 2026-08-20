@@ -11,8 +11,7 @@ import {
   CHECKLIST_MAX_BYTES,
 } from "./use-team-checklist-form";
 
-// task #166 P0-A T3: leader-only actionbook editor
-// spec: notes/gomate-p0a-team-actionbook-spec.md section 5
+// Leader-only actionbook editor.
 //
 // - independent Save button (not merged with team basic-info form)
 // - fold section by default so it doesn't crowd the edit page above

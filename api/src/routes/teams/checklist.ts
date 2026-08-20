@@ -13,9 +13,7 @@ import { parseChecklist } from "../../lib/team-checklist-utils";
 import type { TeamChecklist, ActionbookAssignment } from "@gomate/types";
 
 /**
- * task #163（P0-A T1+T5）：Team「行动本」checklist 路由
- *
- * spec：notes/gomate-p0a-team-actionbook-spec.md v1.1 §2.3
+ * Team「行动本」checklist 路由。
  *
  * 两条路径：
  *   PUT    /:id/checklist                                     队长覆盖式更新

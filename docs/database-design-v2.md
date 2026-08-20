@@ -1,11 +1,11 @@
 # GoMate 数据库最终设计 V2
 
-> 设计状态：已落地。Drizzle schema、单一 baseline、最小 seed 与数据库合同测试均以本文为准；实现入口见 [`schema.ts`](../api/src/db/schema.ts)、[`0000_init.sql`](../api/db/migrations/0000_init.sql) 与[数据库测试](../api/scripts/database-v2-contract.test.mjs)。生产 D1 resource/binding 切换仍按 [`prod-change-policy.md`](prod-change-policy.md) 单独审批。
+> 设计状态：已落地。Drizzle schema、单一 baseline、最小 seed 与数据库合同测试均以本文为准；实现入口见 [`schema.ts`](../api/src/db/schema.ts)、[`0000_init.sql`](../api/db/migrations/0000_init.sql) 与[数据库测试](../api/scripts/database-v2-contract.test.mjs)。生产 binding 已指向 `gomate-db-v2`；后续生产变更遵守 [`prod-change-policy.md`](prod-change-policy.md)。
 
 ## 1. 设计目标
 
 - 继续使用 Cloudflare D1（SQLite）和 Drizzle ORM。
-- 当前没有用户数据，不保留旧 schema 兼容层，直接建立干净的 V2 baseline migration。
+- 不保留旧 schema 兼容层；所有环境使用同一份干净的 V2 baseline migration。
 - 使用单一 `region` 表表达行政层级和产品开放城市，schema 原生支持多国家，但首批数据只初始化中国。
 - 用户非核心资料默认收敛到 `users.extra` JSON；后续新增用户字段如无特殊说明也进入 `extra`。
 - 尽量使用原生 FK、CHECK、UNIQUE 和复合主键，把触发器限制在真正的跨行/跨表派生规则。
@@ -57,20 +57,6 @@ V2 共 19 张 D1 表：
 | 队伍（3）       | `teams`、`team_join_requests`、`team_members`                               |
 | 内容与互动（4） | `stories`、`story_likes`、`user_location_favorites`、`user_story_favorites` |
 | 私信（2）       | `conversations`、`messages`                                                 |
-
-不再保留：
-
-- `cities`：统一由 `region` 替代。
-- `region_codes`、`service_cities`、`service_city_regions`：编码、层级和服务开放状态合并到 `region`。
-- `apikey`：随 MCP/API Key 能力一起删除，不保留来源审计字段。
-- `share_events`：删除分享埋点表；如后续需要分析，优先发送到独立分析系统。
-- `password_resets`：Better Auth 使用 `verifications`。
-- `entity_to_tags`：由 3 张专用标签关联表替代。
-- `user_favorites`：拆成地点收藏和故事收藏。
-- `image_caches`：迁移到 KV/R2/Cache API。
-- `location_media`：地点图片链接合并到 `locations.images` JSON。
-- `location_hiking_profiles`：徒步专属字段合并到 `locations.extra.hiking` JSON。
-- `activity_posts`、`activity_post_media`：活动后分享统一合并到 `stories`，图片保存在 `stories.images` JSON。
 
 ## 4. 总体关系图
 
@@ -593,12 +579,12 @@ V2 只支持“一个队伍的队长与一名队员之间的双人会话”。�
 | ----------------- | -------------------------------------------------------- | --------------------------------------- |
 | D1                | 用户、地区、地点、队伍、内容、关系和受控域名下的媒体 URL | 图片二进制、Base64 海报缓存、大响应缓存 |
 | R2                | 地点图片、Story 图片、需要长期保留的生成图片             | 可查询业务关系                          |
-| 独立 KV namespace | 有 TTL 的分享海报 Base64、可重建缓存                     | 永久业务数据、关系真实性来源            |
+| `CACHE_KV`        | 有 TTL 的分享海报 Base64、限流纵深和可重建缓存           | session、永久业务数据、关系真实性来源   |
 | Cache API（可选） | HTTP GET 响应缓存                                        | 用户私有数据、写模型                    |
 
 媒体写入采用“先上传临时 key，上传成功后再提交 D1；失败时异步清理”的补偿流程。地点和 Story 图片保存最终公开 URL。图片域名变更时需要批量回填 URL，因此只允许写入受控 CDN/R2 域名，禁止保存会过期的签名 URL。
 
-认证会话 KV 与业务缓存应使用不同 namespace，分别设置权限和清理策略。分享海报建议使用内容哈希作为 key，并配置明确的 `expirationTtl`，不再创建 `image_caches` 表。
+认证会话保存在 D1 `sessions`，不得复制到 `CACHE_KV`。分享海报缓存使用内容哈希 key 和明确的 `expirationTtl`，不创建数据库缓存表。
 
 ## 13. 查询与索引原则
 
@@ -636,33 +622,6 @@ V2 只支持“一个队伍的队长与一名队员之间的双人会话”。�
 2. [`api/db/migrations/0000_init.sql`](../api/db/migrations/0000_init.sql) 是唯一 baseline；[`api/db/seed.sql`](../api/db/seed.sql) 是可幂等最小 seed。
 3. [`database-v2-contract.test.mjs`](../api/scripts/database-v2-contract.test.mjs) 完整核对列/type/null/default/PK、FK action、CHECK、索引列序/unique/partial predicate 与 8 个 trigger；[`check-migrations-sync.mjs`](../api/scripts/check-migrations-sync.mjs) 在常规检查中执行同一套 Drizzle/baseline 语义 parity。
 4. [`database-integrity.test.mjs`](../api/scripts/database-integrity.test.mjs) 使用真实 SQLite 验证声明式约束、触发器、级联、会话撤销和查询计划；[`database-workerd-replay.test.mjs`](../api/scripts/database-workerd-replay.test.mjs) 使用真实本地 workerd/D1 binding 验证迁移重放、会话不可复活、稳定错误 envelope、审批 batch 回滚/重试与并发最后席位。
-5. 新建生产 D1 resource、切换 binding 和 route 属于独立生产变更；回滚方式是切回旧 binding，而不是逆向迁移数据。
-
-## 16. 旧设计到 V2 的主要映射
-
-| 旧设计                                                     | V2                                                                          |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `cities`                                                   | `region`                                                                    |
-| `region_codes` / `service_cities` / `service_city_regions` | 字段和开放状态合并到 `region`                                               |
-| `users.level/completed_hikes/wechat/city`                  | 合并到 `users.extra` JSON                                                   |
-| `locations.cover_image`                                    | `locations.cover_image_url`                                                 |
-| `locations.images` JSON                                    | 保留为经过校验的图片 URL 字符串数组                                         |
-| `locations.type`                                           | 初始化 `locations.supported_activity_types`，并迁移到 `teams.activity_type` |
-| 地点徒步字段和 `extra.hiking`                              | 统一合并到 `locations.extra.hiking`                                         |
-| `locations.parking_available/parking_info`                 | 删除                                                                        |
-| `activity_posts` / `activity_post_media`                   | 合并到 `stories.team_id`、`stories.content` 和 `stories.images`             |
-| `entity_to_tags`                                           | `location_tags` / `team_tags` / `story_tags`                                |
-| `user_favorites` 多态表                                    | `user_location_favorites` / `user_story_favorites`                          |
-| 成员表兼做申请状态                                         | `team_join_requests` + `team_members`                                       |
-| `teams.region_id`                                          | 删除；通过 `locations.region_id` 获取                                       |
-| `teams.icon`                                               | 删除；前端根据 `activity_type` 映射                                         |
-| `teams.status` 混合多个概念                                | `cancelled_at` + `formed_at` + 时间计算生命周期；`recruitment_status` 独立  |
-| `teams.requirements` 文本                                  | JSON 字符串数组                                                             |
-| `duration_min`                                             | `end_at - start_at`                                                         |
-| `messages.is_read`                                         | `messages.read_at`                                                          |
-| `image_caches`                                             | R2 + 独立 KV namespace / Cache API                                          |
-| `share_events`                                             | 删除；需要时改接独立分析系统                                                |
-| `apikey` 与 `actor_api_key_id`                             | 随 MCP/API Key 能力删除                                                     |
-| `password_resets`                                          | Better Auth verification 流程                                               |
+5. 生产 D1、binding、migration 或恢复操作属于独立生产变更；异常时保持写保护并使用 D1 Time Travel/备份或经批准的新 V2 数据库，不得恢复已退役的旧 binding。
 
 本文档、Drizzle schema 与 baseline 必须同步修改；语义 parity 检查不通过时不得合并。

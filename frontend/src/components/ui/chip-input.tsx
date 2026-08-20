@@ -4,13 +4,11 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * task #166（P0-A T3）：chip-input 通用组件
+ * chip-input 通用组件。
  *
  * 场景：Team「行动本」编辑页装备/分工的多值输入；未来 story 编辑页 tags 也可复用。
  * 键盘无障碍：Enter / , / 空格 提交当前输入；Backspace 空输入时删末项。
  * server 侧仍会去重（防绕过前端），前端提交前也去重。
- *
- * spec：notes/gomate-p0a-team-actionbook-spec.md §5
  */
 export interface ChipInputProps {
   values: string[];

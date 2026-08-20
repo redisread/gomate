@@ -1,7 +1,5 @@
 # GoMate 前端页面
 
-最后更新：2026-08-16
-
 前端使用 Astro 6 SSR 壳与 React Islands，并与 Hono API 运行在同一个 Cloudflare Worker。浏览器请求统一使用同源 `/api/*`；Astro SSR 通过进程内 dispatcher 调用 API，不进行 HTTP self-fetch。
 
 ## 页面概览

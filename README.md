@@ -127,9 +127,10 @@ pnpm env:check
 
 ## 部署
 
-生产不随 main 自动部署。`.github/workflows/deploy.yml` 仅允许通过受保护环境手动
-发布无生产域名的 preview；资源 ID 经独立 PR 审查、只读烟测通过后，才能另行切换
-`gomate.live` 路由。详见 `docs/prod-change-policy.md`。
+生产不随 `main` 自动部署。当前线上由统一 Worker `gomate-production-preview` 提供
+`gomate.live`；`.github/workflows/deploy.yml` 只保留受保护、无 route、写保护 preview
+流程，不是生产 version/route 更新授权。任何生产发布能力或资源变更都必须经独立 PR、
+显式批准与 GitHub `production` protected environment。详见 `docs/prod-change-policy.md`。
 
 ## 相关仓库
 

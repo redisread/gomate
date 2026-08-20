@@ -1,245 +1,103 @@
-# GoMate 单 Worker / D1 V2 生产变更规约
+# GoMate 生产变更规约
 
-> 2026-08-16 起适用。统一 Worker 已上线，旧库 36 条公开地点已转换为 V2
-> Region/Location；阶段 D 旧资源退役已于 2026-08-20 完成。
+本文只描述当前生产拓扑、授权边界、发布能力和回滚方式。已完成的一次性迁移、割接与退役过程由 GitHub Actions run 和 Git 历史保留，不作为现行操作手册继续维护。
 
-## 1. 当前发布边界
+## 1. 当前生产拓扑
 
-- `frontend/src/worker.ts` 是唯一 Worker 入口。
-- 页面和 API 同源；API 只存在于 `https://<origin>/api/*`。
-- D1 使用全新 `gomate-db-v2`，唯一 baseline 为
-  `api/db/migrations/0000_init.sql`。
-- 旧 split Worker、旧 D1、旧 KV 与 `api.gomate.live` 已删除，不得重新创建或恢复引用。
-- `gomate.live` 已由 `gomate-production-preview` 提供统一 Worker 服务；日常生产变更仍必须先走
-  无 route 的 protected preview，再通过独立受保护流程切换。
+- 生产域名：`https://gomate.live`
+- Worker 服务：`gomate-production-preview`（历史命名，现为唯一生产 Worker）
+- Worker 入口：`frontend/src/worker.ts`
+- API：同源 `/api/*`，进程内交给 `api/src/app.ts`
+- D1：binding `DB`，`gomate-db-v2`，UUID `befa3d89-6551-4a25-8a1c-670efe62a315`
+- KV：binding `CACHE_KV`，`gomate-cache-v2`，ID `f9904d1fa72140c18067e07d541ca92b`
+- R2：binding `R2`，bucket `gomate`
+- Rate Limiting bindings：`AUTH_SIGN_IN_RATE_LIMITER`、`AUTH_SIGN_UP_RATE_LIMITER`、`AUTH_EMAIL_RATE_LIMITER`
+- GitHub `production` environment secrets：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_ZONE_ID`、`BETTER_AUTH_SECRET`、`RESEND_API_KEY`、`PREVIEW_APP_URL`、`PRODUCTION_APP_URL`；受保护部署根据目标 origin 生成 Worker runtime secret `APP_URL`
 
-## 2. 生产写入授权
+旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除。`pnpm check:legacy-removal` 阻止这些标识重新进入运行时代码或工作流。
 
-任何 Cloudflare 资源创建、D1 远程 migration/execute、secret 写入、Worker 部署或
-route 切换，都必须：
+生产 D1 当前基线为 19 张业务表、8 个触发器；稳定 Region ID 包括 `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。`region-cn-shenzhen` 还是匿名 local-circle fallback，不得随意改名。
 
-1. 在任务或 PR 中列出精确目标、影响面与回滚方式；
-2. 获得 Victor 的显式批准；
-3. 通过 GitHub `production` protected environment；
-4. Astro/Vite 构建通过 job 级 `CLOUDFLARE_ENV=production` 固定环境，构建后由
-   Wrangler 自动读取 `dist/server/wrangler.json`；仅 D1、类型生成等直接读取源
-   Wrangler 配置的命令显式使用 `--env production`，禁止依赖默认环境。阶段 A 的 KV
-   namespace 创建是唯一例外：工作流仍固定 `CLOUDFLARE_ENV=production`，但不得传
-   `--env production`，否则 Wrangler 会把环境前缀加入经审查的精确 namespace 名称；
-5. 完成后记录资源 ID、Worker version 与验证证据。
+## 2. 授权边界
 
-生产凭据只保存在 GitHub `production` environment secrets；仓库级 Actions secrets 保持为空，
-避免未绑定受保护环境的 job 通过同名 fallback 读取生产凭据。
+以下操作均属于生产写入：创建/删除 Cloudflare 资源、D1 remote migration/execute、KV/R2 写入、secret 写入、Worker 部署、version promotion、route/custom-domain 变更和 `WRITE_MODE` 变更。
 
-## 3. 生产发布与首发记录
+每次生产写入必须同时满足：
 
-### 已完成的一次性阶段
+1. 在任务或 PR 中列出精确资源、预期状态、影响面、验证和回滚方式；
+2. 获得用户对本次精确范围的显式批准；
+3. 从 `main` 通过 GitHub `production` protected environment 执行；
+4. 使用正常 environment review，不使用 admin bypass；
+5. secrets 只在需要它的步骤暴露，且不得写入日志、artifact、PR、命令参数或仓库级 Actions secrets；
+6. 执行后保存 run URL、head SHA、资源/version 结果与只读验证证据。
 
-- 资源创建：[run 31955191318](https://github.com/redisread/gomate/actions/runs/31955191318)
-  创建 D1 `gomate-db-v2`（APAC）与 KV `gomate-cache-v2`；R2 `gomate` 只复用、不改对象。
-- Region bootstrap：[run 31959130476](https://github.com/redisread/gomate/actions/runs/31959130476)
-  写入稳定的 `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen` 三行。
-- 地点迁移：[run 32000310678](https://github.com/redisread/gomate/actions/runs/32000310678)
-  完成 36 Location/19 Region 精确校验，rollback SQL 与证据 artifact 保留 90 天。
+禁止在开发机直接运行生产 Cloudflare 写命令。只读 inventory/health 检查可以在任务范围内执行，但不得据此扩大写入权限。
 
-以上三个一次性 workflow、专用合同脚本和 bootstrap SQL 已在成功验收后从 `main` 删除，防止
-误重跑；GitHub run/artifact 与 Git 历史是审计和回滚证据。生产环境、secrets、binding ID 与
-资源本身不因代码清理而改变。
+## 3. 当前发布能力
 
-### 阶段 B：受保护 preview
+仓库不在 push `main` 时自动部署。`.github/workflows/deploy.yml` 是手动、受保护的 preview 流程，固定：
 
-1. 手动运行 `Deploy unified Worker preview`，输入 `DEPLOY_PREVIEW`。
-2. 在任何远程写入前，流水线校验 main ref、资源 ID、精确 preview origin，且通过
-   Cloudflare API 确认 `gomate-production-preview` 没有 custom domain，且未绑定到该
-   账号任一可见 zone route；审计 token 必须具备账号内 Zone Read / Workers Routes
-   Read，任一 zone 查询失败也必须停止。
-3. 流水线用 `--env production --remote` 对新 D1 应用 baseline。
-4. secrets 通过临时 `--secrets-file` 与代码一次部署，不运行会提前发布版本的
-   `wrangler secret put`。
-5. 部署 `gomate-production-preview`，保持 `WRITE_MODE=protected` 且不挂生产域名。
-6. 执行 `/api/health`、SSR 页面读取烟测，并用一个认证 mutation 断言
-   `503 + WRITE_PROTECTED`；请求必须在进入 Better Auth 前被拦截，不能写 D1。
-   Worker 部署完成后，health/SSR 共用约 2 分钟的 readiness deadline；只对尚未出现应用
-   `X-Request-ID` 的 workers.dev 传播期 `404/523` 与网络失败重试，每次请求不得超过剩余预算。
-   一旦收到其他状态、成功状态但内容类型错误，或认证 mutation 不是精确的
-   `503 + WRITE_PROTECTED`，必须立即失败，禁止用重试掩盖实现错误。
-7. smoke 输出 health 与 protected-mutation 两个 `X-Request-ID`；随后第二个 `production`
-   protected-environment job 必须由审批人在 Workers Logs 完成人工证据检查后放行。未审批时
-   整个部署工作流保持未完成。
+- input `DEPLOY_PREVIEW`、`main` ref、`production` environment；
+- `CLOUDFLARE_ENV=production`；
+- 构建后的 Worker 无 route，`WRITE_MODE=protected`；
+- baseline migration 只对已审核的 `DB` binding 幂等应用；
+- secrets 通过临时 `--secrets-file` 与部署一起提交，不使用会提前发布版本的 `wrangler secret put`；
+- smoke 验证 health、SSR、`503 WRITE_PROTECTED` 与 `X-Request-ID`；
+- 第二个 environment gate 要求审批人在 Workers Logs 核对两个 request ID 和脱敏证据。
 
-`api/db/seed.sql` 明确只用于 development/local replay，禁止由 preview workflow 或人工命令
-直接应用到远程 D1：其中示例 Location 的媒体 URL 不是生产资产。生产稳定 Region ID
-`region-cn`、`region-cn-guangdong`、`region-cn-shenzhen` 不得改名，其中
-`region-cn-shenzhen` 是匿名 local-circle fallback。
+当前生产 Worker 已绑定 `gomate.live`，而 preview 流程会要求目标 Worker 无 custom domain/route，因此该流程会失败闭合，不能被视为日常生产 version rollout。建立新的生产发布能力前，必须用独立 PR 设计“构建已审核 version → protected canary/证据 → version promotion/rollback”的受保护流程；不得删除 route audit 或绕过它来复用 preview workflow。
 
-### 阶段 C：route 切换
+任何新的生产发布流程至少要保留：固定 `main`、`production` environment、`gomate-production-mutation` concurrency、`cancel-in-progress=false`、源代码全量门禁、构建产物/绑定校验、最小 secrets 暴露、structured-log 人工证据与失败闭合。
 
-route 变更必须是 preview 验证后的独立、受保护操作。切换前将 `APP_URL` 更新为
-`https://gomate.live`；切换后再把 `WRITE_MODE` 改为 `open`。这两项不得随首次
-preview 部署自动发生。
+## 4. D1、KV 与 R2
 
-阶段 C 已于 2026-08-16 完成，原一次性割接 workflow 已删除，以防在割接完成后误重跑。
-当时流水线先证明 `gomate.live` 只属于已审核的旧 `gomate-frontend` 或新
-`gomate-production-preview`；阶段 C 成功后不再接受曾用于恢复错误双重环境选择的
-临时 Worker。随后使用 environment secret
-`PRODUCTION_APP_URL=https://gomate.live` 将同一 unified Worker 以 `WRITE_MODE=protected`
-挂为 custom domain。部署后的 custom-domain inventory 断言共用 120 秒有界传播窗口；窗口结束仍
-不属于新 Worker 时失败闭合。受保护读/SSR/写阻断与 Workers Logs 证据通过后，连续 30 分钟只读观察；
-第二次 production approval 后才部署 `WRITE_MODE=open`，执行一次可清理的注册、邮箱确认、
-登录、session、资料写入、退出 canary，随后按精确 canary email 删除测试账号并证明计数为 0。
-开放写入的日志证据审批后再连续观察 30 分钟，任一阶段失败都停止后续 job。后续生产变更仅使用
-日常受保护部署；回滚仅使用已验证的 Worker version，不再重复阶段 C 的 route 割接流程。
+- 所有 DDL 只通过 `api/db/migrations/`；不得用 `d1 execute` 手工修改生产 schema。
+- `0000_init.sql`、Drizzle schema、journal 和 snapshot 必须同步，CI 运行 `pnpm --filter @gomate/api check:migrations`。
+- `api/db/seed.sql` 只用于 local/development，禁止应用到生产。
+- 多语句原子写使用 D1 `batch()` 与条件 DML；禁止 `db.transaction()` 和裸 `BEGIN`/`COMMIT`。
+- JSON 列在 SQLite 为带 CHECK 的 TEXT，在 Drizzle 使用 `mode: "json"`；业务层传对象/数组。
+- R2 对象删除、批量迁移或 bucket 配置变化必须独立列出 key/prefix 与恢复方式；“部署 Worker”不隐含任何 R2 修改授权。
+- KV 只承载缓存/限流纵深，不是权限、计费或精确全局计数真相；不得把 session 或原始 PII 放入 KV。
 
-阶段 D 已删除旧 Worker，因此旧 route 回滚永久不可用，相关 workflow 与 domain attach 命令也已从
-`main` 删除。今后只能回滚 `gomate-production-preview` 的已验证 Worker version；若生产写路径异常，
-先部署同一 Worker 为 `WRITE_MODE=protected`，不得重建 split deployment 或把域名指向其他 Worker。
+## 5. 回滚与事故处理
 
-### 阶段 C.1：旧地点数据一次性导入
+1. 生产写路径异常时，优先把同一 Worker 恢复为 `WRITE_MODE=protected`，阻止新的业务写入。
+2. 核对 deployment/version 与 commit 后，回滚到已验证的 unified Worker version。
+3. 旧 Worker、旧 route 和旧 D1 已不存在，不得重建 split deployment 作为回滚。
+4. 数据问题使用 D1 Time Travel/备份或经单独批准的新 V2 数据库恢复；不得修改已应用 migration。
+5. R2/KV 恢复必须基于本次变更预先记录的对象/namespace 证据，不执行模糊前缀或全 bucket 删除。
+6. 任一自动验证、日志证据或人工审批缺失时停止，不用本机命令手工补写。
 
-地点迁移已由受保护的 [run 32000310678](https://github.com/redisread/gomate/actions/runs/32000310678)
-完成。源为旧 D1 固定 UUID `7d17d076-202f-48f8-b343-24209cdb0ba1`，恰好 36 行，规范化快照
-SHA-256 为 `7685b4d2424271c2d5fc7bd871c8e25e20dbecd9a336477a4b16552b45662677`。
+## 6. 可观测性与隐私
 
-转换只新增 5 个省级 Region、11 个非深圳 city Region 和 36 个 published Location，保留旧地点
-ID、名称、slug、描述、坐标、HTTPS 媒体 URL 与时间戳；活动类型转为
-`supported_activity_types`，徒步字段转为 V2 `extra.hiking` snake_case。旧库没有任何地点标签关联，
-因此不得从未关联的旧标签词典伪造 `location_tags`。目标写入前必须证明新库仍只有首发三条
-Region 且 `locations=0`；写入后必须逐字段比对 36 条 V2 projection、16 条新增 Region，并通过
-`/api/locations?limit=100` 证明全部公开可读。工作流不得修改用户、队伍、故事、标签、Worker、
-route、domain、KV、R2、secret 或 migration ledger。最终证据记录 36 Location/19 Region；精确
-rollback SQL 只作为 90 天 artifact 保存，不自动执行。一次性迁移代码已删除，不得重建或重跑，
-除非另有新的数据迁移设计与显式生产批准。
+生产 Workers Logs 与 invocation logs 持久化并全量采样；automatic traces 持久化并按 10% head sampling。API 每个请求返回 `X-Request-ID`，结构化 completion 日志包含稳定的 `event/level/timestamp/requestId/method/route/status/durationMs`。
 
-### 阶段 D：旧资源退役
+禁止记录请求/响应 body、headers、cookie、token、secret、原始 email/IP、用户资料或 Error message/stack/cause。Better Auth 默认 logger 必须保持关闭，未处理异常只经过 Hono 的结构化脱敏边界。邮箱验证和密码重置 token 只存在于邮件 URL fragment，页面清除后通过同源 POST body 提交。
 
-阶段 C 于 2026-08-16T18:53:01Z 完成。Victor 于 2026-08-20 明确批准缩短原 7 天观察期；
-退役在 2026-08-20T15:00:00Z（上海时间 2026-08-20 23:00）后通过 GitHub `production`
-protected environment 执行。首次 [run 32383947967](https://github.com/redisread/gomate/actions/runs/32383947967)
-已删除 `api.gomate.live`，但 Cloudflare 的 domain DELETE 返回 HTTP 200 后未满足旧客户端的
-`success=true` 判定，工作流因此失败闭合；没有手工补删。修复经 PR #572 全量 CI 后，
-[run 32388792025](https://github.com/redisread/gomate/actions/runs/32388792025) 幂等完成其余退役并验证生产。
-两个 run 合计精确删除：
+发布或回滚后至少验证：
 
-- `api.gomate.live` custom domain；
-- Workers `gomate-api`、`gomate-frontend`、`gomate-production-preview-production`；
-- D1 `gomate-db`（`7d17d076-202f-48f8-b343-24209cdb0ba1`）；
-- KV `GOMATE_KV`（`638ecd78e70c48fda01904bc9c2105d8`）和
-  `gomate-frontend-session`（`6e3db6b00bc4421faeb1402c2e51f7d1`）。
+- `/api/health` 为 2xx 且 `status=ok`；
+- SSR 页面为 2xx；
+- 关键 API 响应有 `X-Request-ID`，Workers Logs 可定位对应 completion；
+- 写保护阶段 mutation 精确返回 `503 WRITE_PROTECTED`；
+- 公开 Location 与稳定深圳 Region 可读；
+- 日志不包含 smoke 使用的 email/token 或故障注入信息。
 
-退役全程未调用 R2 API，保留 `gomate-production-preview`、D1 `gomate-db-v2`、KV
-`gomate-cache-v2`、R2 `gomate`、`gomate.live`、production environment 及七项 environment
-secrets。最终证据为 health 正常、D1 19 Region/36 Location、公开 36 Location 且
-`nextCursor=null`、深圳 Region 可读。退役 workflow/script/test 与旧 route rollback workflow 已在
-独立清理 PR 中删除，防止不可恢复操作被误重跑。
+当前没有 Cloudflare notification、外部 OTel destination、Sentry/PagerDuty 或自动值班通知。不得把人工阈值描述为已经自动告警。
 
-## 4. 回滚
+## 7. 合并与发布门禁
 
-- 应用回滚：核实 Worker deployment/version 对应的 commit 后，回滚到已验证版本。
-- route 回滚：旧 route rollback 已永久不可用；只能回滚统一 Worker version，不得重建旧 split
-  deployment。必要时先将当前 Worker 恢复为 `WRITE_MODE=protected`。
-- 数据回滚：地点导入前由 workflow 生成精确 rollback SQL 并保存 90 天；该 SQL 仍需单独批准，
-  且只能在没有新 Team/Story 引用迁入地点时执行。出现 schema 或写入问题时先把
-  `WRITE_MODE` 恢复为 `protected`，再从 D1 Time Travel/备份恢复或创建新的 V2
-  数据库；不得修改已应用的 migration 文件。
-- production environment 与七项 secrets 继续保留；任何后续清理都需新的精确范围与显式批准。
-
-## 5. D1 硬约束
-
-- 所有 DDL 只通过 migration；禁止用 `d1 execute` 手工执行 DDL。
-- `0000_init.sql` 与 journal/snapshot/schema 必须同步，CI 运行
-  `pnpm --filter @gomate/api check:migrations`。
-- 多步原子写入使用 D1 `batch()`；禁止 `db.transaction()` 或裸
-  `BEGIN`/`COMMIT`。
-- JSON 列在 SQLite 中为 TEXT + CHECK，在 Drizzle 中使用 `mode: "json"`；业务层
-  只传对象/数组，不保留旧 JSON 字符串兼容。
-- 未经明确需求不得把 session 放入 KV。登录、注册与认证邮件的主要滥用保护使用
-  Wrangler 中受审查的三个 Cloudflare Rate Limiting binding；key 对 email/来源与用途
-  做 SHA-256，不传原始 PII。Better Auth 的私有 KV 计数仅作为带 TTL 的纵深防御，
-  value 只保存 count 与时间。两层保护均不是权限、计费或精确全局计数真相。
-
-## 6. 本地与 CI 验证
-
-合并前至少执行：
+本地至少执行与变更范围匹配的 lint、type-check、test 和 build；生产相关改动还必须执行：
 
 ```bash
 pnpm check:legacy-removal
 pnpm test:delivery
 pnpm audit --prod --audit-level high
 pnpm --filter @gomate/api check:migrations
-pnpm --filter @gomate/api lint
-pnpm --filter @gomate/api type-check
-pnpm --filter @gomate/api build
-pnpm --filter @gomate/api test
-pnpm i18n:build
-pnpm --filter @gomate/frontend i18n:validate
 pnpm --filter @gomate/frontend worker:types:check
-pnpm --filter @gomate/frontend lint
-pnpm --filter @gomate/frontend type-check
-pnpm --filter @gomate/frontend test
-pnpm --filter @gomate/frontend build
 pnpm --filter @gomate/frontend worker:dry-run
 pnpm --filter @gomate/frontend worker:startup
 pnpm e2e
 ```
 
-## 7. 可观测性与首发值守
-
-统一 Worker 使用 Cloudflare 原生 Workers Logs 与 automatic traces。生产配置固定为：
-
-- logs、invocation logs 与 dashboard persistence 显式开启，首发阶段
-  `head_sampling_rate=1`；当前没有真实用户，优先保留完整首发证据，产生稳定流量后再以
-  独立 PR 按实际用量调低。
-- traces 显式开启并持久化，`head_sampling_rate=0.1`。traces 是 head-based sampling，
-  因此不能假定每个 smoke request 都有 trace。
-- API 自定义日志是单个结构化对象，固定包含 `event/level/timestamp`；API 请求边界还包含
-  `requestId/method/route/status/durationMs`。`requestId` 使用已校验的 `CF-Ray + UUID`，
-  无合法 CF-Ray 时只使用 UUID，并通过响应 `X-Request-ID` 返回。
-- Better Auth 的默认 logger 明确关闭，`onAPIError.throw=true` 使未处理 adapter/API 异常只经过
-  Hono 的结构化脱敏边界；禁止恢复会输出 SQL、params 或原始 Error 的第三方默认日志。
-- 密码重置由 GoMate 自有 latest-only challenge command 承担：每用户唯一 D1 记录只保存
-  domain-separated SHA-256 摘要，签发/邮件完全位于 `waitUntil`；重置在单个 D1 batch 中
-  claim challenge、更新唯一 credential、撤销全部 session 并消费 challenge。禁止恢复 Better
-  Auth 原生 request/reset URL 或把 raw token 存入 D1。
-- 日志只允许预定义的运行维度；不得记录请求/响应 body、headers、cookie、token、secret、
-  原始 email/IP、用户资料或 Error message/stack/cause。Error 只保留安全归一化的类型及受限
-  code。
-- 邮箱验证和密码重置 bearer token 只存在于邮件链接 fragment，页面读取后立即清除，并以
-  同源 POST body 提交；禁止恢复 Better Auth 带 token 的公开 GET URL，否则 invocation URL
-  与 automatic span 会把 token 写入持久化遥测。
-
-官方依据：
-[Workers Logs 的结构化对象与采样](https://developers.cloudflare.com/workers/observability/logs/workers-logs/)、
-[Workers automatic traces 与独立采样](https://developers.cloudflare.com/workers/observability/traces/)、
-[Workers AsyncLocalStorage 异步上下文传播](https://developers.cloudflare.com/workers/runtime-apis/nodejs/asynclocalstorage/)。
-
-### 7.1 On-call 必须能回答的问题
-
-1. 哪个 API route/method/status 组合的错误率上升，持续了多久？
-2. 哪些 route 的 `durationMs` p95/p99 退化，trace 将时间消耗定位到哪里？
-3. 用户提供 `X-Request-ID` 后，能否定位同一请求的 completion、应用错误与 Cloudflare
-   invocation/trace？
-4. 503 是预期的 `WRITE_MODE=protected`，还是非预期的服务异常？
-
-在 Cloudflare Worker 的 Observability Query Builder 中，首选过滤/分组维度为
-`event`、`level`、`requestId`、`method`、`route`、`status`、`durationMs`、`error.type` 与
-`errorType`；不要按原始 URL、query、用户 ID 或错误文本聚合。
-
-### 7.2 首发观察与回滚阈值
-
-1. preview smoke 必须检查 health 与受保护 mutation 响应的 `X-Request-ID`。部署工作流随后
-   进入第二次 `production` protected-environment 人工审批；审批人必须在 Workers Logs 以两个
-   ID 找到 `api_request_completed`，并确认日志不含 smoke body 中的 canary email/token。
-   `app-runtime.test.ts` 在 CI 中通过注入安全 500 验证 Error 仅保留归一化 type/code，且不记录
-   message、body 或 secret。任一自动证据缺失、人工审批未完成或字段退化为拼接字符串时，
-   工作流保持未完成且不得进入后续 production routing/解除写保护流程。
-2. `WRITE_MODE=protected` 的首个 30 分钟只观察 read/SSR：若 `/api/health` 连续 3 次
-   非 2xx，或 API 5xx（排除预期 write-protection 503）在至少 100 个请求的滚动 5 分钟窗口
-   超过 1%，保持写保护并回滚 Worker version/route。
-3. 同一窗口内任一关键 read route 的 `durationMs` p95 连续 5 分钟超过 2 秒，或出现持续
-   `api_unhandled_error`，停止切流并回滚；先按 `requestId` 检查 trace/log，再决定前滚。
-4. 解除写保护后的 30 分钟 canary 中，auth 或关键 mutation 的非预期 5xx 超过 1%，立即把
-   `WRITE_MODE` 恢复为 `protected`。如果已产生公开写入，按第 4 节的数据回滚规则保留 V2
-   数据并进行事故决策，不自动切回旧 D1。
-
-这些是首发人工值守阈值。本 PR **没有**创建 Cloudflare notification、外部 OTel destination、
-Sentry/PagerDuty 告警或值班通知渠道；在真实流量和基线出现前不得把上述阈值描述为已自动告警。
+PR 的完整必需检查以 `.github/workflows/pr-validation.yml` 为准。所有检查通过只说明代码可合并，不等于获得生产写入授权。

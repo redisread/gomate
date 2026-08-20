@@ -1,6 +1,6 @@
 # GoMate D1 V2 数据库结构
 
-> 2026-08-16 仓库快照。产品决策以 `docs/database-design-v2.md` 为准；可执行事实以
+> 当前 V2 结构速查。产品决策以 `docs/database-design-v2.md` 为准；可执行事实以
 > `api/db/migrations/0000_init.sql` 与 `api/src/db/schema.ts` 为准。
 
 ## 基线
