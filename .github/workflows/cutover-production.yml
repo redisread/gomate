@@ -52,7 +52,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          EXPECTED_DOMAIN_SERVICES: gomate-frontend,gomate-production-preview
+          EXPECTED_DOMAIN_SERVICE: gomate-production-preview
         run: node scripts/production-domain.mjs assert
       - name: Prepare protected custom-domain deployment
         env:
@@ -239,5 +239,5 @@ jobs:
             echo "### Unified Worker production rollout complete"
             echo "- gomate.live serves gomate-production-preview."
             echo "- WRITE_MODE is open after protected and open 30-minute observations."
-            echo "- Legacy Workers and storage remain retained until the separately approved retirement workflow."
+            echo "- Stage D legacy resources are retired; rollback is Worker-version only."
           } >> "$GITHUB_STEP_SUMMARY"

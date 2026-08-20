@@ -4,10 +4,7 @@ import { pathToFileURL } from "node:url";
 
 const API_ROOT = "https://api.cloudflare.com/client/v4";
 const ZONE_ID = "0b714cd4257332034b3c4c0c099feb9e";
-const ALLOWED_TARGET_SERVICES = new Set([
-  "gomate-frontend",
-  "gomate-production-preview",
-]);
+const ALLOWED_TARGET_SERVICES = new Set(["gomate-production-preview"]);
 const DEFAULT_RETRY_DELAY_MS = 5_000;
 
 function required(value, label) {
@@ -39,20 +36,12 @@ function expectedServiceSet(value) {
   return new Set(services);
 }
 
-async function cloudflareRequest({
-  accountId,
-  apiToken,
-  fetchImpl,
-  resourcePath = "/workers/domains",
-  init,
-}) {
+async function cloudflareRequest({ accountId, apiToken, fetchImpl }) {
   const response = await fetchImpl(
-    `${API_ROOT}/accounts/${encodeURIComponent(accountId)}${resourcePath}`,
+    `${API_ROOT}/accounts/${encodeURIComponent(accountId)}/workers/domains`,
     {
-      ...init,
       headers: {
         Authorization: `Bearer ${apiToken}`,
-        ...(init?.body ? { "content-type": "application/json" } : {}),
       },
     },
   );
@@ -63,33 +52,6 @@ async function cloudflareRequest({
     );
   }
   return payload.result;
-}
-
-export async function assertWorkerExists({
-  accountId = process.env.CLOUDFLARE_ACCOUNT_ID,
-  apiToken = process.env.CLOUDFLARE_API_TOKEN,
-  expectedService = process.env.EXPECTED_WORKER_SERVICE,
-  fetchImpl = fetch,
-} = {}) {
-  accountId = required(accountId, "CLOUDFLARE_ACCOUNT_ID");
-  apiToken = required(apiToken, "CLOUDFLARE_API_TOKEN");
-  expectedService = required(expectedService, "EXPECTED_WORKER_SERVICE");
-  if (!ALLOWED_TARGET_SERVICES.has(expectedService)) {
-    throw new Error("EXPECTED_WORKER_SERVICE is not an approved Worker");
-  }
-  const workers = await cloudflareRequest({
-    accountId,
-    apiToken,
-    fetchImpl,
-    resourcePath: "/workers/scripts",
-  });
-  if (
-    !Array.isArray(workers) ||
-    !workers.some((worker) => worker?.id === expectedService)
-  ) {
-    throw new Error("Expected rollback Worker is unavailable");
-  }
-  console.log(`Verified rollback Worker ${expectedService} exists.`);
 }
 
 export async function assertProductionDomain({
@@ -161,58 +123,14 @@ export async function assertProductionDomain({
   }
 }
 
-export async function attachProductionDomain({
-  accountId = process.env.CLOUDFLARE_ACCOUNT_ID,
-  apiToken = process.env.CLOUDFLARE_API_TOKEN,
-  service = process.env.TARGET_DOMAIN_SERVICE,
-  fetchImpl = fetch,
-} = {}) {
-  accountId = required(accountId, "CLOUDFLARE_ACCOUNT_ID");
-  apiToken = required(apiToken, "CLOUDFLARE_API_TOKEN");
-  service = required(service, "TARGET_DOMAIN_SERVICE");
-  if (!ALLOWED_TARGET_SERVICES.has(service)) {
-    throw new Error("TARGET_DOMAIN_SERVICE is not an approved Worker");
-  }
-  const result = await cloudflareRequest({
-    accountId,
-    apiToken,
-    fetchImpl,
-    init: {
-      method: "PUT",
-      body: JSON.stringify({
-        hostname: "gomate.live",
-        service,
-        zone_id: ZONE_ID,
-      }),
-    },
-  });
-  if (
-    result?.hostname !== "gomate.live" ||
-    result?.service !== service ||
-    result?.zone_id !== ZONE_ID
-  ) {
-    throw new Error(
-      "Cloudflare returned an unexpected custom-domain attachment",
-    );
-  }
-  console.log(`Attached gomate.live to ${service}.`);
-}
-
 if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
 ) {
   const command = process.argv[2];
-  const operation =
-    command === "assert"
-      ? assertProductionDomain
-      : command === "assert-worker"
-        ? assertWorkerExists
-        : command === "attach"
-          ? attachProductionDomain
-          : null;
+  const operation = command === "assert" ? assertProductionDomain : null;
   if (!operation) {
-    console.error("Usage: production-domain.mjs assert|assert-worker|attach");
+    console.error("Usage: production-domain.mjs assert");
     process.exit(1);
   }
   operation().catch((error) => {

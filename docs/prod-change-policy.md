@@ -1,7 +1,7 @@
 # GoMate 单 Worker / D1 V2 生产变更规约
 
 > 2026-08-16 起适用。统一 Worker 已上线，旧库 36 条公开地点已转换为 V2
-> Region/Location；旧资源处于阶段 D 退役观察期。
+> Region/Location；阶段 D 旧资源退役已于 2026-08-20 完成。
 
 ## 1. 当前发布边界
 
@@ -9,8 +9,7 @@
 - 页面和 API 同源；API 只存在于 `https://<origin>/api/*`。
 - D1 使用全新 `gomate-db-v2`，唯一 baseline 为
   `api/db/migrations/0000_init.sql`。
-- 旧 `gomate-api`、`gomate-frontend`、旧 D1、旧 KV 均不在新发布链路中，且只等待阶段 D
-  退役。
+- 旧 split Worker、旧 D1、旧 KV 与 `api.gomate.live` 已删除，不得重新创建或恢复引用。
 - `gomate.live` 已由 `gomate-production-preview` 提供统一 Worker 服务；日常生产变更仍必须先走
   无 route 的 protected preview，再通过独立受保护流程切换。
 
@@ -90,11 +89,9 @@ preview 部署自动发生。
 登录、session、资料写入、退出 canary，随后按精确 canary email 删除测试账号并证明计数为 0。
 开放写入的日志证据审批后再连续观察 30 分钟。任一阶段失败都停止后续 job。
 
-回滚只允许从 `main` 手动运行 `Roll back unified Worker production cutover` 并输入
-`ROLLBACK_PRODUCTION`。回滚在任何部署前必须确认旧 `gomate-frontend` Worker 仍存在；不存在时
-直接失败，不能先改变 `WRITE_MODE`。确认后先把 unified Worker 恢复为 `WRITE_MODE=protected`，确认 503 写阻断，
-再通过 Cloudflare Workers custom-domain API 把 `gomate.live` 精确重新附加到
-`gomate-frontend`。回滚不删除 V2 D1、KV、R2、Worker、版本或 secrets。
+阶段 D 已删除旧 Worker，因此旧 route 回滚永久不可用，相关 workflow 与 domain attach 命令也已从
+`main` 删除。今后只能回滚 `gomate-production-preview` 的已验证 Worker version；若生产写路径异常，
+先部署同一 Worker 为 `WRITE_MODE=protected`，不得重建 split deployment 或把域名指向其他 Worker。
 
 ### 阶段 C.1：旧地点数据一次性导入
 
@@ -115,10 +112,12 @@ rollback SQL 只作为 90 天 artifact 保存，不自动执行。一次性迁�
 ### 阶段 D：旧资源退役
 
 阶段 C 于 2026-08-16T18:53:01Z 完成。Victor 于 2026-08-20 明确批准缩短原 7 天观察期；
-旧资源最早只能在 2026-08-20T15:00:00Z（上海时间 2026-08-20 23:00）后退役。从 `main` 手动运行
-`Retire legacy Cloudflare resources` 并输入 `RETIRE_LEGACY_RESOURCES`，且必须通过
-`production` environment 审批。流水线先证明 `gomate.live` 精确属于
-`gomate-production-preview`，并核对新 D1/KV；随后只删除：
+退役在 2026-08-20T15:00:00Z（上海时间 2026-08-20 23:00）后通过 GitHub `production`
+protected environment 执行。首次 [run 32383947967](https://github.com/redisread/gomate/actions/runs/32383947967)
+已删除 `api.gomate.live`，但 Cloudflare 的 domain DELETE 返回 HTTP 200 后未满足旧客户端的
+`success=true` 判定，工作流因此失败闭合；没有手工补删。修复经 PR #572 全量 CI 后，
+[run 32388792025](https://github.com/redisread/gomate/actions/runs/32388792025) 幂等完成其余退役并验证生产。
+两个 run 合计精确删除：
 
 - `api.gomate.live` custom domain；
 - Workers `gomate-api`、`gomate-frontend`、`gomate-production-preview-production`；
@@ -126,32 +125,22 @@ rollback SQL 只作为 90 天 artifact 保存，不自动执行。一次性迁�
 - KV `GOMATE_KV`（`638ecd78e70c48fda01904bc9c2105d8`）和
   `gomate-frontend-session`（`6e3db6b00bc4421faeb1402c2e51f7d1`）。
 
-脚本不得调用任何 R2 API；这是不扩大 production token 权限且不触碰 R2 bucket/对象的结构化门禁，
-由退役合同测试扫描保证。执行前后都要重新读取其余 Cloudflare inventory，并验证生产 Worker、
-`gomate-db-v2`、`gomate-cache-v2`、health、36 条公开 Location 和深圳 Region。任一名称、ID、域名归属、
-时间边界、36 条地点迁移结果或生产资源不匹配时，在首个 DELETE 前失败闭合。流水线可安全重跑：
-已经删除的精确旧资源视为完成，但新资源缺失仍立即失败。
-
-首次阶段 D [run 32383947967](https://github.com/redisread/gomate/actions/runs/32383947967)
-在首个脚本步骤失败：一个不参与删除的 Cloudflare inventory 请求返回 HTTP 200 但
-`success != true`。工作流按设计停止，未进行手工补删或代码清理；随后修复移除无关的 R2 inventory
-权限依赖，并为每个 Cloudflare 操作增加不含凭据的稳定错误标签。
-
-preview deploy、cutover、旧 route 回滚和阶段 D 退役共用 `gomate-production-mutation` concurrency
-group，禁止这些生产写操作并发。阶段 D 成功后旧 route 回滚永久不可用，并立即通过代码清理 PR
-删除该 workflow 与退役专用 workflow/script；今后回滚只能使用已验证的 Worker version，必要时先
-恢复 `WRITE_MODE=protected`。
+退役全程未调用 R2 API，保留 `gomate-production-preview`、D1 `gomate-db-v2`、KV
+`gomate-cache-v2`、R2 `gomate`、`gomate.live`、production environment 及七项 environment
+secrets。最终证据为 health 正常、D1 19 Region/36 Location、公开 36 Location 且
+`nextCursor=null`、深圳 Region 可读。退役 workflow/script/test 与旧 route rollback workflow 已在
+独立清理 PR 中删除，防止不可恢复操作被误重跑。
 
 ## 4. 回滚
 
 - 应用回滚：核实 Worker deployment/version 对应的 commit 后，回滚到已验证版本。
-- route 回滚：仅在阶段 D 前且旧 Worker 存在时允许恢复到旧 Worker；阶段 D 后只能回滚统一 Worker
-  version，不得重建旧 split deployment。
+- route 回滚：旧 route rollback 已永久不可用；只能回滚统一 Worker version，不得重建旧 split
+  deployment。必要时先将当前 Worker 恢复为 `WRITE_MODE=protected`。
 - 数据回滚：地点导入前由 workflow 生成精确 rollback SQL 并保存 90 天；该 SQL 仍需单独批准，
   且只能在没有新 Team/Story 引用迁入地点时执行。出现 schema 或写入问题时先把
   `WRITE_MODE` 恢复为 `protected`，再从 D1 Time Travel/备份恢复或创建新的 V2
   数据库；不得修改已应用的 migration 文件。
-- secrets 与资源只有在稳定观察期结束后才能清理，清理需再次显式批准。
+- production environment 与七项 secrets 继续保留；任何后续清理都需新的精确范围与显式批准。
 
 ## 5. D1 硬约束
 
