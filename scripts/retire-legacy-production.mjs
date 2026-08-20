@@ -42,6 +42,7 @@ function required(value, label) {
 async function cloudflareRequest({
   accountId,
   apiToken,
+  operation,
   resourcePath,
   method = "GET",
   body,
@@ -60,8 +61,14 @@ async function cloudflareRequest({
   );
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.success !== true) {
+    const errorCodes = Array.isArray(payload?.errors)
+      ? payload.errors
+          .map((error) => error?.code)
+          .filter((code) => Number.isFinite(Number(code)))
+          .join(",")
+      : "";
     throw new Error(
-      `Cloudflare retirement request failed (${response.status})`,
+      `Cloudflare ${operation} failed (${response.status}${errorCodes ? `; codes=${errorCodes}` : ""})`,
     );
   }
   return payload.result;
@@ -75,6 +82,7 @@ async function assertLocationMigrationComplete({
   const result = await cloudflareRequest({
     accountId,
     apiToken,
+    operation: "query production D1 counts",
     resourcePath: `/d1/database/${PRODUCTION_D1.id}/query`,
     method: "POST",
     body: JSON.stringify({
@@ -89,35 +97,33 @@ async function assertLocationMigrationComplete({
 }
 
 async function inventory({ accountId, apiToken, fetchImpl }) {
-  const [domains, workers, databases, namespaces, r2] = await Promise.all([
+  const [domains, workers, databases, namespaces] = await Promise.all([
     cloudflareRequest({
       accountId,
       apiToken,
+      operation: "list Worker domains",
       resourcePath: "/workers/domains",
       fetchImpl,
     }),
     cloudflareRequest({
       accountId,
       apiToken,
+      operation: "list Workers",
       resourcePath: "/workers/scripts",
       fetchImpl,
     }),
     cloudflareRequest({
       accountId,
       apiToken,
+      operation: "list D1 databases",
       resourcePath: "/d1/database",
       fetchImpl,
     }),
     cloudflareRequest({
       accountId,
       apiToken,
+      operation: "list KV namespaces",
       resourcePath: "/storage/kv/namespaces",
-      fetchImpl,
-    }),
-    cloudflareRequest({
-      accountId,
-      apiToken,
-      resourcePath: "/r2/buckets",
       fetchImpl,
     }),
   ]);
@@ -125,12 +131,11 @@ async function inventory({ accountId, apiToken, fetchImpl }) {
     !Array.isArray(domains) ||
     !Array.isArray(workers) ||
     !Array.isArray(databases) ||
-    !Array.isArray(namespaces) ||
-    !Array.isArray(r2?.buckets)
+    !Array.isArray(namespaces)
   ) {
     throw new Error("Cloudflare retirement inventory is invalid");
   }
-  return { domains, workers, databases, namespaces, buckets: r2.buckets };
+  return { domains, workers, databases, namespaces };
 }
 
 function assertProductionResources(state) {
@@ -164,9 +169,6 @@ function assertProductionResources(state) {
     )
   ) {
     throw new Error("Production V2 KV is missing");
-  }
-  if (!state.buckets.some((bucket) => bucket.name === "gomate")) {
-    throw new Error("Shared gomate R2 bucket is missing");
   }
 }
 
@@ -210,11 +212,26 @@ function assertLegacyIdentity(state) {
   }
 }
 
-async function verifyPublicProduction({ baseUrl, fetchImpl }) {
+async function verifyPublicProduction({ baseUrl, fetchImpl, phase }) {
   const health = await fetchImpl(new URL("/api/health", baseUrl));
   const healthPayload = await health.json().catch(() => null);
   if (!health.ok || healthPayload?.status !== "ok") {
-    throw new Error("Production health failed after retirement");
+    throw new Error(`Production health failed ${phase} retirement`);
+  }
+  const locations = await fetchImpl(
+    new URL("/api/locations?limit=100", baseUrl),
+  );
+  const locationPayload = await locations.json().catch(() => null);
+  if (
+    !locations.ok ||
+    locationPayload?.success !== true ||
+    locationPayload.locations?.length !== 36 ||
+    locationPayload.total !== 36 ||
+    locationPayload.nextCursor !== null
+  ) {
+    throw new Error(
+      `Production Location verification failed ${phase} retirement`,
+    );
   }
   const regions = await fetchImpl(
     new URL(
@@ -228,7 +245,9 @@ async function verifyPublicProduction({ baseUrl, fetchImpl }) {
     regionPayload?.success !== true ||
     !regionPayload.regions?.some((region) => region.id === "region-cn-shenzhen")
   ) {
-    throw new Error("Production Region verification failed after retirement");
+    throw new Error(
+      `Production Region verification failed ${phase} retirement`,
+    );
   }
 }
 
@@ -253,6 +272,7 @@ export async function retireLegacyProduction({
   assertProductionResources(before);
   assertLegacyIdentity(before);
   await assertLocationMigrationComplete({ accountId, apiToken, fetchImpl });
+  await verifyPublicProduction({ baseUrl, fetchImpl, phase: "before" });
   const deleted = [];
   const apiDomain = before.domains.find(
     (domain) => domain.hostname === "api.gomate.live",
@@ -261,6 +281,7 @@ export async function retireLegacyProduction({
     await cloudflareRequest({
       accountId,
       apiToken,
+      operation: "delete legacy API domain",
       resourcePath: `/workers/domains/${encodeURIComponent(apiDomain.id)}`,
       method: "DELETE",
       fetchImpl,
@@ -272,6 +293,7 @@ export async function retireLegacyProduction({
       await cloudflareRequest({
         accountId,
         apiToken,
+        operation: `delete legacy Worker ${workerName}`,
         resourcePath: `/workers/scripts/${encodeURIComponent(workerName)}`,
         method: "DELETE",
         fetchImpl,
@@ -283,6 +305,7 @@ export async function retireLegacyProduction({
     await cloudflareRequest({
       accountId,
       apiToken,
+      operation: "delete legacy D1",
       resourcePath: `/d1/database/${LEGACY_D1.id}`,
       method: "DELETE",
       fetchImpl,
@@ -294,6 +317,7 @@ export async function retireLegacyProduction({
       await cloudflareRequest({
         accountId,
         apiToken,
+        operation: `delete legacy KV ${target.title}`,
         resourcePath: `/storage/kv/namespaces/${target.id}`,
         method: "DELETE",
         fetchImpl,
@@ -314,7 +338,7 @@ export async function retireLegacyProduction({
   ) {
     throw new Error("Legacy Cloudflare resource retirement is incomplete");
   }
-  await verifyPublicProduction({ baseUrl, fetchImpl });
+  await verifyPublicProduction({ baseUrl, fetchImpl, phase: "after" });
   return { deleted };
 }
 
@@ -328,7 +352,7 @@ if (
         "### Legacy Cloudflare retirement complete",
         ...deleted.map((resource) => `- Deleted ${resource}`),
         "- Preserved gomate-production-preview, gomate-db-v2, gomate-cache-v2, and R2 gomate.",
-        "- Verified gomate.live health and Shenzhen Region after retirement.",
+        "- Verified gomate.live health, 36 Locations, and Shenzhen Region before and after retirement.",
       ];
       if (process.env.GITHUB_STEP_SUMMARY) {
         appendFileSync(

@@ -118,7 +118,7 @@ rollback SQL 只作为 90 天 artifact 保存，不自动执行。一次性迁�
 旧资源最早只能在 2026-08-20T15:00:00Z（上海时间 2026-08-20 23:00）后退役。从 `main` 手动运行
 `Retire legacy Cloudflare resources` 并输入 `RETIRE_LEGACY_RESOURCES`，且必须通过
 `production` environment 审批。流水线先证明 `gomate.live` 精确属于
-`gomate-production-preview`，并核对新 D1/KV 与共享 R2；随后只删除：
+`gomate-production-preview`，并核对新 D1/KV；随后只删除：
 
 - `api.gomate.live` custom domain；
 - Workers `gomate-api`、`gomate-frontend`、`gomate-production-preview-production`；
@@ -126,10 +126,16 @@ rollback SQL 只作为 90 天 artifact 保存，不自动执行。一次性迁�
 - KV `GOMATE_KV`（`638ecd78e70c48fda01904bc9c2105d8`）和
   `gomate-frontend-session`（`6e3db6b00bc4421faeb1402c2e51f7d1`）。
 
-脚本不得调用 R2 删除 API；执行后重新读取 Cloudflare inventory，并验证生产 Worker、
-`gomate-db-v2`、`gomate-cache-v2`、R2 `gomate`、health 和深圳 Region。任一名称、ID、域名归属、
+脚本不得调用任何 R2 API；这是不扩大 production token 权限且不触碰 R2 bucket/对象的结构化门禁，
+由退役合同测试扫描保证。执行前后都要重新读取其余 Cloudflare inventory，并验证生产 Worker、
+`gomate-db-v2`、`gomate-cache-v2`、health、36 条公开 Location 和深圳 Region。任一名称、ID、域名归属、
 时间边界、36 条地点迁移结果或生产资源不匹配时，在首个 DELETE 前失败闭合。流水线可安全重跑：
 已经删除的精确旧资源视为完成，但新资源缺失仍立即失败。
+
+首次阶段 D [run 32383947967](https://github.com/redisread/gomate/actions/runs/32383947967)
+在首个脚本步骤失败：一个不参与删除的 Cloudflare inventory 请求返回 HTTP 200 但
+`success != true`。工作流按设计停止，未进行手工补删或代码清理；随后修复移除无关的 R2 inventory
+权限依赖，并为每个 Cloudflare 操作增加不含凭据的稳定错误标签。
 
 preview deploy、cutover、旧 route 回滚和阶段 D 退役共用 `gomate-production-mutation` concurrency
 group，禁止这些生产写操作并发。阶段 D 成功后旧 route 回滚永久不可用，并立即通过代码清理 PR
