@@ -78,16 +78,17 @@ route 变更必须是 preview 验证后的独立、受保护操作。切换前�
 `https://gomate.live`；切换后再把 `WRITE_MODE` 改为 `open`。这两项不得随首次
 preview 部署自动发生。
 
-从 `main` 手动运行 `Cut over unified Worker production` 并输入 `CUTOVER_PRODUCTION`。
-流水线先证明 `gomate.live` 只属于已审核的旧 `gomate-frontend` 或新
+阶段 C 已于 2026-08-16 完成，原一次性割接 workflow 已删除，以防在割接完成后误重跑。
+当时流水线先证明 `gomate.live` 只属于已审核的旧 `gomate-frontend` 或新
 `gomate-production-preview`；阶段 C 成功后不再接受曾用于恢复错误双重环境选择的
-临时 Worker。然后使用 environment secret
+临时 Worker。随后使用 environment secret
 `PRODUCTION_APP_URL=https://gomate.live` 将同一 unified Worker 以 `WRITE_MODE=protected`
 挂为 custom domain。部署后的 custom-domain inventory 断言共用 120 秒有界传播窗口；窗口结束仍
 不属于新 Worker 时失败闭合。受保护读/SSR/写阻断与 Workers Logs 证据通过后，连续 30 分钟只读观察；
 第二次 production approval 后才部署 `WRITE_MODE=open`，执行一次可清理的注册、邮箱确认、
 登录、session、资料写入、退出 canary，随后按精确 canary email 删除测试账号并证明计数为 0。
-开放写入的日志证据审批后再连续观察 30 分钟。任一阶段失败都停止后续 job。
+开放写入的日志证据审批后再连续观察 30 分钟，任一阶段失败都停止后续 job。后续生产变更仅使用
+日常受保护部署；回滚仅使用已验证的 Worker version，不再重复阶段 C 的 route 割接流程。
 
 阶段 D 已删除旧 Worker，因此旧 route 回滚永久不可用，相关 workflow 与 domain attach 命令也已从
 `main` 删除。今后只能回滚 `gomate-production-preview` 的已验证 Worker version；若生产写路径异常，

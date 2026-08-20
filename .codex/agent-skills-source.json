@@ -1,9 +1,0 @@
-{
-  "source": "https://github.com/addyosmani/agent-skills",
-  "commit": "df1edb2e05487d0aa6d93c747141e0aed1187f25",
-  "version": "0.6.7",
-  "syncedAt": "2026-08-16",
-  "includes": [".codex/skills", ".codex/references"],
-  "license": "MIT",
-  "licenseFile": ".codex/agent-skills.LICENSE"
-}
