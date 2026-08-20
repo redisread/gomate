@@ -1,15 +1,13 @@
 /**
- * P0-D T2 (task #176) — 本地圈子数据 hook
+ * 本地圈子数据 hook。
  *
- * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §3.4 / §6.4
- *
- * regionId 来源（#181 §3.4 起）：
+ * regionId 来源：
  *   - 登录用户 `user.extra.city` 非空 → `?regionId=${user.extra.city}`（该 storage key 保存 Region id）
  *   - 未登录 / 未设置 Region → 不传 regionId，后端稳定 fallback 深圳
  *   - user.extra.city 读取走 fetchCurrentUser，与 navbar 同口径
  *
  * 错误 / 空态：
- *   - fetch 失败 or topLocations & neighborTeams 都空 → 消费方整块不渲染（spec §6.4）
+ *   - fetch 失败或 topLocations 与 neighborTeams 都空 → 消费方整块不渲染
  *   - 本 hook 只负责取数 + 归一状态，渲染决策在 section
  */
 

@@ -1,6 +1,5 @@
 /**
- * P1-1 T2 (task #188) — 引导流类型定义
- * spec: notes/gomate-p1-1-onboarding-spec.md v1.2 §9.3
+ * 首次引导流类型定义。
  */
 
 export interface OnboardingCandidate {

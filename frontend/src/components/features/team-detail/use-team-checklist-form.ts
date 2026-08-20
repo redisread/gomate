@@ -8,8 +8,7 @@ import type {
 } from "@gomate/types";
 import { fetchAPI } from "@/lib/api";
 
-// task #166 P0-A T3: Team checklist edit hook
-// spec: notes/gomate-p0a-team-actionbook-spec.md section 5
+// Team checklist edit hook.
 //
 // draft key: team-checklist-draft-{teamId}; 3s debounce + unmount flush
 // draft shape validated on load (aligned with PR #388 isValidDraftShape)

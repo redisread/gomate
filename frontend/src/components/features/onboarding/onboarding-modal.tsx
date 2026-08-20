@@ -1,15 +1,12 @@
 /**
- * P1-1 T2 (task #188) — 首次引导流 modal（3 步：偏好 → 推荐 → 申请已提交）
- *
- * spec: notes/gomate-p1-1-onboarding-spec.md v1.2 §3-§8
+ * 首次引导流 modal（3 步：偏好 → 推荐 → 申请已提交）。
  *
  * - 全屏 modal（半透明遮罩 + 居中卡片 max-w-md，移动端全屏），React state 切步不刷页
- * - 偏好卡复用 getRoleConfig() 视觉（emoji + gradient + iconColor，零新增色板，§3.4）
- * - 「换一个」候选池纯客户端轮播零请求（§5.3）
- * - wechat 内联收集：PATCH → join 串行，合并 loading，失败如实报错（§6.4 / §10）
- * - join 400（满员/已申请/停止招募）→ toast + 自动切下一候选（§5.3）
- * - 成功页「申请已提交 / 审核期间留意队伍页面」口径，不设 checklist CTA（§6.3）
- * - 跳过 / 不再提示 / Esc 关闭语义见 §7
+ * - 偏好卡复用 getRoleConfig() 视觉，避免新增色板
+ * - 「换一个」在客户端候选池内轮播，不发额外请求
+ * - wechat 内联收集：PATCH → join 串行，合并 loading，失败如实报错
+ * - join 400（满员/已申请/停止招募）→ toast + 自动切下一候选
+ * - 成功页只承诺申请已提交和可在队伍页面查看状态
  */
 
 "use client";

@@ -1,12 +1,7 @@
 "use client";
 
 /**
- * P0-B T4 (task #171) 决策信息 —— 地点编辑页第 4 个 SectionCard
- *
- * spec 依据：
- *  - gomate-p0bcd-2026-07-20-spec.md §8：字段/DB/API
- *  - gomate/p0b-t4-admin-form-patch-spec.md §2：UI 规范（独立组件、UI required 1-8 项、
- *    gearItem ≤12 字）
+ * 地点编辑页的徒步决策信息 SectionCard。
  *
  * 关键约束：
  *  - 徒步地点至少填写 1 项必带装备；非徒步地点允许省略 hiking extra。

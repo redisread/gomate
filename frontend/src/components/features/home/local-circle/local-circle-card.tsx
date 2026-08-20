@@ -1,8 +1,7 @@
 /**
- * P0-D T2 (task #176) — 本地圈子地点卡（Top 3 邻居活动过的地点）
+ * 本地圈子地点卡（Top 3 邻居活动过的地点）。
  *
- * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §4 / §5.2 / §6.2
- *   - 「{uniqueVisitors} 人在行动」措辞（非「去过」，spec §5.2）
+ *   - 使用「{uniqueVisitors} 人在行动」措辞，不声称用户去过
  *   - 点卡跳地点详情页
  */
 

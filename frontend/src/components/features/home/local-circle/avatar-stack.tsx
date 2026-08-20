@@ -1,7 +1,6 @@
 /**
- * P0-D T3 (task #176) — 邻近队伍头像堆叠（URL 数组版）
+ * 邻近队伍头像堆叠（URL 数组版）。
  *
- * spec: notes/gomate-p0d-local-circle-spec-v1.2.md §6.2
  *   - 最大 5 个头像，超过显示「+N」
  *   - sm=24px / md=32px；堆叠间隔 -8px（重叠 1/3）
  * 与队伍卡片中的 AvatarStack（member 对象版）区分：

@@ -1,6 +1,6 @@
 # GoMate V2 API
 
-> 2026-08-16。Hono API 由统一 Cloudflare Worker 提供，外部路径均以 `/api` 开头。
+> Hono API 由统一 Cloudflare Worker 提供，外部路径均以 `/api` 开头。
 
 ## 运行合同
 
