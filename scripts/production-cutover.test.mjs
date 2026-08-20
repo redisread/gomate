@@ -8,11 +8,7 @@ import {
   prepareProductionCutover,
   validateProductionOrigin,
 } from "./prepare-production-cutover.mjs";
-import {
-  assertProductionDomain,
-  assertWorkerExists,
-  attachProductionDomain,
-} from "./production-domain.mjs";
+import { assertProductionDomain } from "./production-domain.mjs";
 import { observeProduction } from "./observe-production.mjs";
 import { runProductionCanary } from "./production-canary.mjs";
 
@@ -92,7 +88,7 @@ test("domain audit requires one exact hostname, zone, and Worker", async () => {
           {
             id: "domain-id",
             hostname: "gomate.live",
-            service: "gomate-frontend",
+            service: "gomate-production-preview",
             zone_id: "0b714cd4257332034b3c4c0c099feb9e",
           },
         ],
@@ -103,7 +99,7 @@ test("domain audit requires one exact hostname, zone, and Worker", async () => {
     assertProductionDomain({
       accountId: "e3afbb613458022947cd9dc9f5bd6334",
       apiToken: "test-token",
-      expectedService: "gomate-frontend",
+      expectedService: "gomate-production-preview",
       fetchImpl,
     }),
   );
@@ -112,52 +108,16 @@ test("domain audit requires one exact hostname, zone, and Worker", async () => {
       assertProductionDomain({
         accountId: "e3afbb613458022947cd9dc9f5bd6334",
         apiToken: "test-token",
-        expectedService: "gomate-production-preview",
+        expectedService: "unapproved-worker",
         fetchImpl,
       }),
-    /expected Worker/u,
+    /unapproved Worker/u,
   );
 });
 
-test("domain audit supports an approved cutover state and bounded propagation retries", async () => {
+test("domain audit uses bounded propagation retries for the unified Worker", async () => {
   let attempts = 0;
   let now = 0;
-  const result = await assertProductionDomain({
-    accountId: "e3afbb613458022947cd9dc9f5bd6334",
-    apiToken: "test-token",
-    expectedServices: "gomate-frontend,gomate-production-preview",
-    timeoutMs: 20,
-    retryDelayMs: 5,
-    nowImpl: () => now,
-    waitImpl: async (delay) => {
-      now += delay;
-    },
-    fetchImpl: async () => {
-      attempts += 1;
-      return new Response(
-        JSON.stringify({
-          success: true,
-          result: [
-            {
-              id: "domain-id",
-              hostname: "gomate.live",
-              service:
-                attempts === 1
-                  ? "gomate-frontend"
-                  : "gomate-production-preview",
-              zone_id: "0b714cd4257332034b3c4c0c099feb9e",
-            },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    },
-  });
-  assert.equal(result.service, "gomate-frontend");
-  assert.equal(attempts, 1);
-
-  attempts = 0;
-  now = 0;
   const propagated = await assertProductionDomain({
     accountId: "e3afbb613458022947cd9dc9f5bd6334",
     apiToken: "test-token",
@@ -173,15 +133,17 @@ test("domain audit supports an approved cutover state and bounded propagation re
       return new Response(
         JSON.stringify({
           success: true,
-          result: [
-            {
-              id: "domain-id",
-              hostname: "gomate.live",
-              service:
-                attempts < 3 ? "gomate-frontend" : "gomate-production-preview",
-              zone_id: "0b714cd4257332034b3c4c0c099feb9e",
-            },
-          ],
+          result:
+            attempts < 3
+              ? []
+              : [
+                  {
+                    id: "domain-id",
+                    hostname: "gomate.live",
+                    service: "gomate-production-preview",
+                    zone_id: "0b714cd4257332034b3c4c0c099feb9e",
+                  },
+                ],
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
@@ -191,90 +153,16 @@ test("domain audit supports an approved cutover state and bounded propagation re
   assert.equal(attempts, 3);
 });
 
-test("domain audit rejects the accidental suffixed Worker after cutover", async () => {
+test("domain audit rejects every non-production Worker", async () => {
   await assert.rejects(
     () =>
       assertProductionDomain({
         accountId: "e3afbb613458022947cd9dc9f5bd6334",
         apiToken: "test-token",
-        expectedService: "gomate-production-preview-production",
+        expectedService: "unapproved-worker",
       }),
     /unapproved Worker/u,
   );
-  await assert.rejects(
-    () =>
-      attachProductionDomain({
-        accountId: "e3afbb613458022947cd9dc9f5bd6334",
-        apiToken: "test-token",
-        service: "gomate-production-preview-production",
-      }),
-    /not an approved Worker/u,
-  );
-});
-
-test("rollback preflight requires the exact legacy Worker before any mutation", async () => {
-  const calls = [];
-  await assert.doesNotReject(() =>
-    assertWorkerExists({
-      accountId: "e3afbb613458022947cd9dc9f5bd6334",
-      apiToken: "test-token",
-      expectedService: "gomate-frontend",
-      fetchImpl: async (url, init) => {
-        calls.push({ url: String(url), init });
-        return Response.json({
-          success: true,
-          result: [{ id: "gomate-frontend" }],
-        });
-      },
-    }),
-  );
-  assert.equal(calls.length, 1);
-  assert.match(calls[0].url, /\/workers\/scripts$/u);
-  assert.equal(calls[0].init?.method, undefined);
-
-  await assert.rejects(
-    () =>
-      assertWorkerExists({
-        accountId: "e3afbb613458022947cd9dc9f5bd6334",
-        apiToken: "test-token",
-        expectedService: "gomate-frontend",
-        fetchImpl: async () =>
-          Response.json({
-            success: true,
-            result: [{ id: "gomate-production-preview" }],
-          }),
-      }),
-    /rollback Worker is unavailable/u,
-  );
-});
-
-test("rollback reattaches only the exact hostname, zone, and approved Worker", async () => {
-  let request;
-  await attachProductionDomain({
-    accountId: "e3afbb613458022947cd9dc9f5bd6334",
-    apiToken: "test-token",
-    service: "gomate-frontend",
-    fetchImpl: async (url, init) => {
-      request = { url: String(url), init };
-      return new Response(
-        JSON.stringify({
-          success: true,
-          result: {
-            hostname: "gomate.live",
-            service: "gomate-frontend",
-            zone_id: "0b714cd4257332034b3c4c0c099feb9e",
-          },
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    },
-  });
-  assert.equal(request.init.method, "PUT");
-  assert.deepEqual(JSON.parse(request.init.body), {
-    hostname: "gomate.live",
-    service: "gomate-frontend",
-    zone_id: "0b714cd4257332034b3c4c0c099feb9e",
-  });
 });
 
 test("production observation checks health and Region without writes", async () => {
@@ -391,24 +279,16 @@ test("production canary covers auth, session, mutation, and sign-out without exp
   );
 });
 
-test("cutover and rollback workflows are protected and narrowly scoped", () => {
+test("deploy and cutover workflows share the production mutation lock", () => {
   const cutover = readFileSync(
     path.join(root, ".github/workflows/cutover-production.yml"),
-    "utf8",
-  );
-  const rollback = readFileSync(
-    path.join(root, ".github/workflows/rollback-production-cutover.yml"),
     "utf8",
   );
   const deploy = readFileSync(
     path.join(root, ".github/workflows/deploy.yml"),
     "utf8",
   );
-  const retire = readFileSync(
-    path.join(root, ".github/workflows/retire-legacy-production.yml"),
-    "utf8",
-  );
-  for (const workflow of [deploy, cutover, rollback, retire]) {
+  for (const workflow of [deploy, cutover]) {
     assert.match(workflow, /group:\s*gomate-production-mutation/u);
     assert.match(workflow, /cancel-in-progress:\s*false/u);
   }
@@ -421,9 +301,8 @@ test("cutover and rollback workflows are protected and narrowly scoped", () => {
   assert.match(cutover, /production-canary\.mjs/u);
   assert.match(
     cutover,
-    /EXPECTED_DOMAIN_SERVICES:\s*gomate-frontend,gomate-production-preview/u,
+    /EXPECTED_DOMAIN_SERVICE:\s*gomate-production-preview/u,
   );
-  assert.doesNotMatch(cutover, /gomate-production-preview-production/u);
   assert.match(cutover, /DOMAIN_ASSERT_TIMEOUT_MS:\s*"120000"/u);
   assert.doesNotMatch(
     cutover,
@@ -437,16 +316,4 @@ test("cutover and rollback workflows are protected and narrowly scoped", () => {
     cutover,
     /migrations apply|seed\.sql|wrangler\s+r2|wrangler\s+kv/iu,
   );
-  assert.match(rollback, /ROLLBACK_PRODUCTION/u);
-  assert.match(rollback, /gomate-frontend/u);
-  const legacyPreflight = rollback.indexOf(
-    "production-domain.mjs assert-worker",
-  );
-  const protectedBuild = rollback.indexOf(
-    "Build and prepare WRITE_MODE protected",
-  );
-  assert.ok(legacyPreflight >= 0 && legacyPreflight < protectedBuild);
-  assert.match(rollback, /EXPECTED_WORKER_SERVICE:\s*gomate-frontend/u);
-  assert.match(rollback, /mode=protected|--mode protected/u);
-  assert.doesNotMatch(rollback, /DELETE FROM|wrangler\s+r2|wrangler\s+kv/iu);
 });

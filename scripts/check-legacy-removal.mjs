@@ -116,44 +116,6 @@ const operationalForbiddenContent = [
   ["legacy D1 name", /\bgomate-db(?!-v2)\b/],
 ];
 
-const approvedLegacyWorkerRollbackFiles = new Set([
-  ".github/workflows/cutover-production.yml",
-  ".github/workflows/rollback-production-cutover.yml",
-  "scripts/production-cutover.test.mjs",
-  "scripts/production-domain.mjs",
-]);
-
-const approvedLegacyRetirementFiles = new Set([
-  "scripts/retire-legacy-production.mjs",
-  "scripts/retire-legacy-production.test.mjs",
-]);
-
-function isApprovedLegacyWorkerRollbackReference(relativePath, label, line) {
-  return (
-    label === "legacy Worker name" &&
-    approvedLegacyWorkerRollbackFiles.has(relativePath) &&
-    /\bgomate-frontend\b/u.test(line) &&
-    !/\bgomate-api\b/u.test(line)
-  );
-}
-
-function isApprovedLegacyRetirementReference(relativePath, label, line) {
-  if (!approvedLegacyRetirementFiles.has(relativePath)) return false;
-  if (label === "legacy Worker name") {
-    return /\bgomate-(?:api|frontend)\b/u.test(line);
-  }
-  if (label === "legacy D1 name") {
-    return /\bgomate-db(?!-v2)\b/u.test(line);
-  }
-  if (label === "legacy Worker binding") {
-    return (
-      /\bGOMATE_KV\b/u.test(line) &&
-      !/\b(?:FRONTEND_URL|CORS_ALLOWED_ORIGINS|BETTER_AUTH_URL)\b/u.test(line)
-    );
-  }
-  return false;
-}
-
 function isOperationalFile(relativePath) {
   return (
     relativePath === "package.json" ||
@@ -237,11 +199,7 @@ for (const relativePath of textFiles) {
     }
     if (isOperationalFile(relativePath)) {
       for (const [label, pattern] of operationalForbiddenContent) {
-        if (
-          pattern.test(line) &&
-          !isApprovedLegacyWorkerRollbackReference(relativePath, label, line) &&
-          !isApprovedLegacyRetirementReference(relativePath, label, line)
-        ) {
+        if (pattern.test(line)) {
           violations.push(`${relativePath}:${index + 1}: ${label}`);
         }
       }
