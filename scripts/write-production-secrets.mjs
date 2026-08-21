@@ -2,7 +2,7 @@
 import { chmodSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { validateProductionOrigin } from "./prepare-production-cutover.mjs";
+import { validateProductionOrigin } from "./validate-production-release.mjs";
 
 function required(name) {
   const value = process.env[name];

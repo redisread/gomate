@@ -1,0 +1,163 @@
+name: Roll back unified production Worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_id:
+        description: Exact previously verified Worker version UUID
+        required: true
+        type: string
+      confirm:
+        description: Type ROLLBACK_PRODUCTION to continue
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gomate-production-mutation
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    name: Approve and roll back Worker version
+    if: inputs.confirm == 'ROLLBACK_PRODUCTION' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CLOUDFLARE_ENV: production
+      FORCE_COLOR: "0"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Validate rollback version input
+        id: target
+        env:
+          WORKER_VERSION_ID: ${{ inputs.version_id }}
+        run: node scripts/release-versions.mjs validate
+
+      - name: Validate target against production-version-allowlist
+        env:
+          WORKER_VERSION_ID: ${{ steps.target.outputs.version_id }}
+        run: node scripts/release-versions.mjs compatible
+
+      - name: Verify production domain
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          EXPECTED_DOMAIN_SERVICE: gomate-production-preview
+        run: node scripts/production-domain.mjs assert
+
+      - name: Capture current production version
+        working-directory: frontend
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DEPLOYMENTS_FILE: ${{ runner.temp }}/gomate-deployments.json
+        run: >-
+          pnpm exec wrangler deployments list --env production --json
+          --config wrangler.jsonc > "$DEPLOYMENTS_FILE"
+
+      - name: Validate current production version
+        id: current_version
+        env:
+          DEPLOYMENTS_FILE: ${{ runner.temp }}/gomate-deployments.json
+        run: node scripts/release-versions.mjs active "$DEPLOYMENTS_FILE"
+
+      - name: Verify rollback target exists
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frontend
+          packageManager: pnpm
+          wranglerVersion: "4.100.0"
+          command: >-
+            versions view
+            ${{ steps.target.outputs.version_id }}
+            --env production
+            --json
+
+      - name: Stage rollback target at zero percent
+        id: stage_rollback
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frontend
+          packageManager: pnpm
+          wranglerVersion: "4.100.0"
+          command: >-
+            versions deploy
+            ${{ steps.current_version.outputs.version_id }}@100%
+            ${{ steps.target.outputs.version_id }}@0%
+            --env production
+            --message "Stage rollback target ${{ github.run_id }} at 0%"
+            -y
+
+      - name: Smoke rollback target through Version Override
+        id: rollback_candidate_smoke
+        env:
+          EXPECTED_VERSION_ID: ${{ steps.target.outputs.version_id }}
+          PRODUCTION_APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+          USE_VERSION_OVERRIDE: "true"
+        run: node scripts/smoke-production-version.mjs
+
+      - name: Promote exact rollback target
+        id: promote_rollback
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frontend
+          packageManager: pnpm
+          wranglerVersion: "4.100.0"
+          command: >-
+            versions deploy
+            ${{ steps.target.outputs.version_id }}@100%
+            --env production
+            --message "GitHub rollback ${{ github.run_id }}"
+            -y
+
+      - name: Smoke rolled back production version
+        id: rollback_smoke
+        env:
+          EXPECTED_VERSION_ID: ${{ steps.target.outputs.version_id }}
+          PRODUCTION_APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+        run: node scripts/smoke-production-version.mjs
+
+      - name: Restore original version after rollback failure
+        if: (failure() || cancelled()) && steps.current_version.outcome == 'success' && steps.stage_rollback.outcome != 'skipped'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frontend
+          packageManager: pnpm
+          wranglerVersion: "4.100.0"
+          command: >-
+            versions deploy
+            ${{ steps.current_version.outputs.version_id }}@100%
+            --env production
+            --message "Restore after failed rollback ${{ github.run_id }}"
+            -y
+
+      - name: Record rollback evidence
+        env:
+          REQUEST_ID: ${{ steps.rollback_smoke.outputs.first_request_id }}
+          VERSION_ID: ${{ steps.target.outputs.version_id }}
+        run: |
+          {
+            echo "### Production Worker rolled back"
+            echo "- Target version: \`${VERSION_ID}\`"
+            echo "- Smoke request: \`${REQUEST_ID}\`"
+            echo "- D1, KV, and R2 state was not rolled back."
+          } >> "$GITHUB_STEP_SUMMARY"
