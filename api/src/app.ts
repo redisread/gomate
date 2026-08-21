@@ -69,10 +69,7 @@ apiApp.use("*", async (c, next) => {
 });
 
 apiApp.use("*", async (c, next) => {
-  if (
-    SAFE_METHODS.has(c.req.method.toUpperCase()) ||
-    !c.req.header("cookie")
-  ) {
+  if (SAFE_METHODS.has(c.req.method.toUpperCase()) || !c.req.header("cookie")) {
     await next();
     return;
   }
@@ -83,7 +80,10 @@ apiApp.use("*", async (c, next) => {
     if (configured.href !== `${configured.origin}/`) throw new Error("APP_URL");
     allowedOrigin = configured.origin;
   } catch {
-    return c.json(APIErrors.serviceUnavailable("Origin protection unavailable"), 503);
+    return c.json(
+      APIErrors.serviceUnavailable("Origin protection unavailable"),
+      503,
+    );
   }
 
   const origin = c.req.header("origin");
@@ -92,15 +92,23 @@ apiApp.use("*", async (c, next) => {
     origin !== allowedOrigin ||
     (fetchSite !== undefined && fetchSite !== "same-origin")
   ) {
-    return c.json(APIErrors.forbidden("Cross-origin cookie write rejected"), 403);
+    return c.json(
+      APIErrors.forbidden("Cross-origin cookie write rejected"),
+      403,
+    );
   }
 
   await next();
 });
 
-apiApp.get("/health", (c) =>
-  c.json({ status: "ok", timestamp: new Date().toISOString() })
-);
+apiApp.get("/health", (c) => {
+  const versionId = c.env?.CF_VERSION_METADATA?.id;
+  return c.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    ...(versionId ? { versionId } : {}),
+  });
+});
 
 apiApp.route("/auth", authRoute);
 apiApp.route("/teams", teamsRoute);
@@ -181,19 +189,23 @@ apiApp.get("/proxy-image", async (c) => {
     const response = await fetchWithTimeout(
       urlObject.toString(),
       { redirect: "manual" },
-      10_000
+      10_000,
     );
     if (!response.ok) {
       return c.json(APIErrors.badGateway("fetch failed"), 502);
     }
 
     const headers = new Headers();
-    const contentType = response.headers.get("content-type")
+    const contentType = response.headers
+      .get("content-type")
       ?.split(";", 1)[0]
       ?.trim()
       .toLowerCase();
     if (!contentType || !ALLOWED_PROXY_IMAGE_TYPES.has(contentType)) {
-      return c.json(APIErrors.badGateway("upstream is not a safe raster image"), 502);
+      return c.json(
+        APIErrors.badGateway("upstream is not a safe raster image"),
+        502,
+      );
     }
     headers.set("Content-Type", contentType);
     headers.set("X-Content-Type-Options", "nosniff");

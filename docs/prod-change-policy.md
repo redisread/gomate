@@ -12,7 +12,7 @@
 - KV：binding `CACHE_KV`，`gomate-cache-v2`，ID `f9904d1fa72140c18067e07d541ca92b`
 - R2：binding `R2`，bucket `gomate`
 - Rate Limiting bindings：`AUTH_SIGN_IN_RATE_LIMITER`、`AUTH_SIGN_UP_RATE_LIMITER`、`AUTH_EMAIL_RATE_LIMITER`
-- GitHub `production` environment secrets：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_ZONE_ID`、`BETTER_AUTH_SECRET`、`RESEND_API_KEY`、`PREVIEW_APP_URL`、`PRODUCTION_APP_URL`；受保护部署根据目标 origin 生成 Worker runtime secret `APP_URL`
+- GitHub `production` environment secrets：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_ZONE_ID`、`BETTER_AUTH_SECRET`、`RESEND_API_KEY`、`PRODUCTION_APP_URL`；受保护部署根据生产 origin 生成 Worker runtime secret `APP_URL`
 
 旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除。`pnpm check:legacy-removal` 阻止这些标识重新进入运行时代码或工作流。
 
@@ -35,24 +35,36 @@
 
 ## 3. 当前发布能力
 
-仓库不在 push `main` 时自动部署。`.github/workflows/deploy.yml` 是手动、受保护的 preview 流程，固定：
+仓库不在 push `main` 时自动部署。`.github/workflows/deploy.yml` 只接受 `main` 上手动输入 `DEPLOY_PRODUCTION`，并通过 GitHub `production` protected environment 执行。发布顺序固定为：
 
-- input `DEPLOY_PREVIEW`、`main` ref、`production` environment；
-- `CLOUDFLARE_ENV=production`；
-- 构建后的 Worker 无 route，`WRITE_MODE=protected`；
-- baseline migration 只对已审核的 `DB` binding 幂等应用；
-- secrets 通过临时 `--secrets-file` 与部署一起提交，不使用会提前发布版本的 `wrangler secret put`；
-- smoke 验证 health、SSR、`503 WRITE_PROTECTED` 与 `X-Request-ID`；
-- 第二个 environment gate 要求审批人在 Workers Logs 核对两个 request ID 和脱敏证据。
+1. 重跑源代码、migration、类型、测试、构建、bundle size 与 startup 门禁；
+2. 验证 `gomate.live` 仍只绑定到 `gomate-production-preview`，生产 binding、route、write mode、observability 与 secrets 声明符合仓库配置；
+3. 使用官方 `cloudflare/wrangler-action@v4` 和仓库锁定的 Wrangler 版本执行 `versions upload`，通过 `WRANGLER_OUTPUT_FILE_PATH` 读取不可变 version ID；
+4. 保持现行版本 100% 流量，将候选版本加入 deployment 但设为 0%，通过 `Cloudflare-Workers-Version-Overrides` 请求头在 `gomate.live` 上验证候选版本；冒烟包含 health、Region 与 Astro SSR，并为 Cloudflare deployment 传播保留两分钟重试窗口；
+5. 在同一个受保护 job 内将同一个候选 version ID 提升到 100%，不得重新构建；候选、推广、观察和恢复不跨 job，避免审批等待或新 runner 初始化留下 0% 的中间 deployment；
+6. 验证 health、Region、SSR、`X-Request-ID` 与 Version Metadata，并进行五分钟只读观察；候选或生产验证失败或取消时恢复上一版本 100%。
 
-当前生产 Worker 已绑定 `gomate.live`，而 preview 流程会要求目标 Worker 无 custom domain/route，因此该流程会失败闭合，不能被视为日常生产 version rollout。建立新的生产发布能力前，必须用独立 PR 设计“构建已审核 version → protected canary/证据 → version promotion/rollback”的受保护流程；不得删除 route audit 或绕过它来复用 preview workflow。
+Wrangler secrets 文件只在 GitHub runner temp 中以 `0600` 权限短暂存在，清理脚本只接受精确文件名；secrets 文件和内容不得进入 artifact。候选证据 artifact 只保存原 deployment inventory 与 Wrangler 结构化输出，保留 90 天。
 
-任何新的生产发布流程至少要保留：固定 `main`、`production` environment、`gomate-production-mutation` concurrency、`cancel-in-progress=false`、源代码全量门禁、构建产物/绑定校验、最小 secrets 暴露、structured-log 人工证据与失败闭合。
+Worker 发布 workflow 不执行 D1 migration。数据库变更只走独立的 `.github/workflows/migrate-production.yml`：手动输入 `APPLY_PRODUCTION_MIGRATIONS` 和已证明同时兼容 migration 前后 schema 的当前 Worker version UUID；workflow 要求 allowlist 只包含这一个 UUID，且该 UUID 正在承载 100% 生产流量，随后才应用 pending migrations。这样 migration 开始前就已关闭所有旧 schema 版本的回滚入口，Worker 发布失败也不会把旧版本恢复到一个已经不兼容的 schema。
+
+每次成功发布后，run summary 会给出不可变 version UUID。只有经过单独 PR 审核并加入 `.github/production-version-allowlist.json` 的 version，才能作为 rollback 或 schema contract migration 的兼容性边界；空 allowlist 会安全地禁止这两类操作，不允许用自由文本确认绕过。
+
+GitHub 的失败和正常取消会进入自动恢复步骤；如果 runner 被强制终止或平台无法继续调度 cleanup step，自动恢复无法作为绝对保证。任何被取消的生产 workflow 都必须先核对当前 deployment，再决定是否运行独立回滚 workflow。
+
+官方依据：
+
+- GitHub Actions 集成：https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/
+- Versions 与 deployments：https://developers.cloudflare.com/workers/versions-and-deployments/
+- Version Override：https://developers.cloudflare.com/workers/versions-and-deployments/version-overrides/
+- Wrangler 自动化输出：https://developers.cloudflare.com/workers/wrangler/system-environment-variables/
 
 ## 4. D1、KV 与 R2
 
 - 所有 DDL 只通过 `api/db/migrations/`；不得用 `d1 execute` 手工修改生产 schema。
-- `0000_init.sql`、Drizzle schema、journal 和 snapshot 必须同步，CI 运行 `pnpm --filter @gomate/api check:migrations`。
+- migration 采用 expand/code/contract：先应用旧代码可接受的增量 schema，再发布使用新 schema 的代码；删除列、表、约束等 contract migration 必须先发布同时兼容旧/新 schema 的 Worker，完成观察并关闭旧版本回滚窗口后再执行。
+- contract migration 执行前，必须通过单独 PR 从 allowlist 删除所有旧 UUID，只保留当前同时兼容新旧 schema 的 version；migration 完成后，生产记录保存该 minimum schema-compatible Worker UUID，后续再逐个审核新增版本。
+- 已应用迁移（包括 `0000_init.sql`）不可改写；新增迁移、Drizzle schema、journal 和 snapshot 必须同步，CI 运行 `pnpm --filter @gomate/api check:migrations`。
 - `api/db/seed.sql` 只用于 local/development，禁止应用到生产。
 - 多语句原子写使用 D1 `batch()` 与条件 DML；禁止 `db.transaction()` 和裸 `BEGIN`/`COMMIT`。
 - JSON 列在 SQLite 为带 CHECK 的 TEXT，在 Drizzle 使用 `mode: "json"`；业务层传对象/数组。
@@ -62,7 +74,7 @@
 ## 5. 回滚与事故处理
 
 1. 生产写路径异常时，优先把同一 Worker 恢复为 `WRITE_MODE=protected`，阻止新的业务写入。
-2. 核对 deployment/version 与 commit 后，回滚到已验证的 unified Worker version。
+2. 核对 deployment/version、schema compatibility 与 commit 后，先确认目标 UUID 已在 `.github/production-version-allowlist.json`，再从 `main` 手动运行 `.github/workflows/rollback-production.yml`，输入精确 version UUID 和 `ROLLBACK_PRODUCTION`；workflow 先保持当前版本 100%、把目标版本设为 0%，通过 Version Override 验证 API 与 SSR，成功后才提升目标版本。任一后续验证失败或取消时恢复原版本。
 3. 旧 Worker、旧 route 和旧 D1 已不存在，不得重建 split deployment 作为回滚。
 4. 数据问题使用 D1 Time Travel/备份或经单独批准的新 V2 数据库恢复；不得修改已应用 migration。
 5. R2/KV 恢复必须基于本次变更预先记录的对象/namespace 证据，不执行模糊前缀或全 bucket 删除。
@@ -70,16 +82,15 @@
 
 ## 6. 可观测性与隐私
 
-生产 Workers Logs 与 invocation logs 持久化并全量采样；automatic traces 持久化并按 10% head sampling。API 每个请求返回 `X-Request-ID`，结构化 completion 日志包含稳定的 `event/level/timestamp/requestId/method/route/status/durationMs`。
+生产 Workers Logs 与 invocation logs 持久化并全量采样；automatic traces 持久化并按 10% head sampling。统一 Worker 的 API 与 Astro SSR 响应都返回 `X-Worker-Version-ID`，API 请求另返回 `X-Request-ID`；`/api/health` body 返回当前 Worker `versionId`，结构化 completion 日志包含稳定的 `event/level/timestamp/requestId/method/route/status/durationMs`。
 
 禁止记录请求/响应 body、headers、cookie、token、secret、原始 email/IP、用户资料或 Error message/stack/cause。Better Auth 默认 logger 必须保持关闭，未处理异常只经过 Hono 的结构化脱敏边界。邮箱验证和密码重置 token 只存在于邮件 URL fragment，页面清除后通过同源 POST body 提交。
 
 发布或回滚后至少验证：
 
-- `/api/health` 为 2xx 且 `status=ok`；
-- SSR 页面为 2xx；
+- `/api/health` 为 2xx、`status=ok`，body `versionId` 与响应 `X-Worker-Version-ID` 都等于本次推广或回滚目标；
+- SSR 页面为 2xx，且 `X-Worker-Version-ID` 等于同一目标；
 - 关键 API 响应有 `X-Request-ID`，Workers Logs 可定位对应 completion；
-- 写保护阶段 mutation 精确返回 `503 WRITE_PROTECTED`；
 - 公开 Location 与稳定深圳 Region 可读；
 - 日志不包含 smoke 使用的 email/token 或故障注入信息。
 

@@ -22,11 +22,15 @@ const executionContext = {
   waitUntil: vi.fn(),
 } as unknown as ExecutionContext;
 
-async function dispatch(path: string, init?: RequestInit) {
+async function dispatch(
+  path: string,
+  init?: RequestInit,
+  env: Record<string, unknown> = {},
+) {
   return worker.fetch(
     new Request(`https://gomate.live${path}`, init),
-    {} as never,
-    executionContext
+    env as never,
+    executionContext,
   );
 }
 
@@ -34,7 +38,7 @@ describe("single Worker request routing", () => {
   beforeEach(() => {
     mocks.astroHandle.mockReset();
     mocks.astroHandle.mockResolvedValue(
-      new Response("astro", { headers: { "Content-Type": "text/html" } })
+      new Response("astro", { headers: { "Content-Type": "text/html" } }),
     );
   });
 
@@ -52,13 +56,15 @@ describe("single Worker request routing", () => {
       const response = await dispatch(path);
 
       expect(response.status).toBe(404);
-      expect(response.headers.get("content-type")).toContain("application/json");
+      expect(response.headers.get("content-type")).toContain(
+        "application/json",
+      );
       await expect(response.json()).resolves.toEqual({
         success: false,
         error: { code: "NOT_FOUND", message: "Not found" },
       });
       expect(mocks.astroHandle).not.toHaveBeenCalled();
-    }
+    },
   );
 
   it("delegates every non-API request to the official Astro handler", async () => {
@@ -74,4 +80,19 @@ describe("single Worker request routing", () => {
     expect(env).toEqual({});
     expect(context).toBe(executionContext);
   });
+
+  it.each(["/api/health", "/teams"])(
+    "identifies the exact Worker version on %s responses",
+    async (path) => {
+      const response = await dispatch(path, undefined, {
+        CF_VERSION_METADATA: {
+          id: "11111111-2222-4333-8444-555555555555",
+        },
+      });
+
+      expect(response.headers.get("x-worker-version-id")).toBe(
+        "11111111-2222-4333-8444-555555555555",
+      );
+    },
+  );
 });
