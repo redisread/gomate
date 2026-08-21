@@ -25,7 +25,7 @@
 - 前端入口位于 `frontend/src/pages/`，交互组件位于 `frontend/src/components/`，共享客户端调用位于 `frontend/src/lib/`。
 - API 路由位于 `api/src/routes/`，通用能力位于 `api/src/lib/`，Drizzle schema 位于 `api/src/db/schema.ts`。
 - 跨包公开类型放在 `packages/types`；不要在前后端各自维护同一 DTO 的兼容副本。
-- 生产域名是 `https://gomate.live`，当前 Cloudflare Worker 服务名为 `gomate-production-preview`（历史命名，仍是现行生产资源）。
+- 生产域名是 `https://gomate.live`，当前 Cloudflare Worker 服务名为 `gomate`。
 
 ## 工作方式
 

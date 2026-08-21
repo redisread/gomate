@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 
 const API_ROOT = "https://api.cloudflare.com/client/v4";
 const ZONE_ID = "0b714cd4257332034b3c4c0c099feb9e";
-const ALLOWED_TARGET_SERVICES = new Set(["gomate-production-preview"]);
+const ALLOWED_TARGET_SERVICES = new Set(["gomate"]);
 const DEFAULT_RETRY_DELAY_MS = 5_000;
 
 function required(value, label) {

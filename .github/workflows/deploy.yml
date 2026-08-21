@@ -68,7 +68,7 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
           node scripts/validate-production-release.mjs
-          EXPECTED_DOMAIN_SERVICE=gomate-production-preview node scripts/production-domain.mjs assert
+          EXPECTED_DOMAIN_SERVICE=gomate node scripts/production-domain.mjs assert
 
       - name: Capture current production version
         working-directory: frontend
@@ -154,7 +154,7 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          EXPECTED_DOMAIN_SERVICE: gomate-production-preview
+          EXPECTED_DOMAIN_SERVICE: gomate
         run: node scripts/production-domain.mjs assert
 
       - name: Promote candidate to all traffic
