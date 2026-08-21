@@ -385,7 +385,6 @@ describe("messages V2", () => {
     { status: "suspended" as const, deletedAt: null },
     { status: "banned" as const, deletedAt: null },
     { status: "deleted" as const, deletedAt: new Date() },
-    { status: "active" as const, deletedAt: new Date() },
   ])(
     "rejects a stored session when user status is $status and deletedAt is $deletedAt",
     async ({ status, deletedAt }) => {

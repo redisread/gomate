@@ -16,7 +16,7 @@
 
 旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除。`pnpm check:legacy-removal` 阻止这些标识重新进入运行时代码或工作流。
 
-生产 D1 当前基线为 19 张业务表、8 个触发器；稳定 Region ID 包括 `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。`region-cn-shenzhen` 还是匿名 local-circle fallback，不得随意改名。
+生产 D1 目标结构为 19 张业务表、13 个触发器；稳定 Region ID 包括 `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。`region-cn-shenzhen` 还是匿名 local-circle fallback，不得随意改名。迁移发布前不得把仓库目标结构误报为已应用生产状态。
 
 ## 2. 授权边界
 

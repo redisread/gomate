@@ -142,6 +142,7 @@ Team 列表按 `(startAt ASC, id ASC)` 稳定分页，返回
 | ------------------------------------- | ---- | --------------------------------------------------- |
 | `GET /users/me`                       | 是   | 当前用户 canonical DTO                              |
 | `PATCH /users/me`                     | 是   | 更新当前用户非头像资料；扩展字段放在 `extra` object |
+| `DELETE /users/me`                    | 是   | 确认后匿名化账户并撤销全部凭证                      |
 | `GET /users/me/created-teams`         | 是   | 当前用户创建的 Team                                 |
 | `GET /users/me/joined-teams`          | 是   | 当前用户 active membership                          |
 | `GET /users/me/join-requests`         | 是   | 当前用户全部申请                                    |
@@ -155,6 +156,10 @@ Team 列表按 `(startAt ASC, id ASC)` 稳定分页，返回
 稳定分页并在顶层返回 `nextCursor`，不接受 `page/pageSize`。`extra` 的 partial patch
 通过单条 SQL `json_set` 合并到数据库当前值，避免并发更新不同字段时 read-merge-write
 覆盖彼此。
+
+`DELETE /users/me` 只接受 `{ "confirmation": "DELETE" }`。命令先清理当前用户自有
+头像，再通过一个 D1 `batch()` 将用户替换为匿名墓碑，并删除 `accounts`、`sessions`
+及关联 `verifications`；历史 Team、Story、Conversation 和 Message 外键继续有效。
 
 ### Stories、点赞与收藏
 

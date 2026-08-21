@@ -79,6 +79,33 @@ export const triggerContract = {
       );
     END`,
   },
+  team_members_leader_validate_insert: {
+    on: "team_members",
+    timing: "before",
+    event: "insert",
+    raises: ["TEAM_LEADER_MEMBER_CONFLICT"],
+    body: `WHEN NEW.left_at IS NULL AND EXISTS (
+      SELECT 1 FROM teams
+      WHERE teams.id = NEW.team_id AND teams.leader_id = NEW.user_id
+    )
+    BEGIN
+      SELECT RAISE(ABORT, 'TEAM_LEADER_MEMBER_CONFLICT');
+    END`,
+  },
+  team_members_leader_validate_reactivate: {
+    on: "team_members",
+    timing: "before",
+    event: "update",
+    updateOf: "team_id,user_id,left_at",
+    raises: ["TEAM_LEADER_MEMBER_CONFLICT"],
+    body: `WHEN NEW.left_at IS NULL AND EXISTS (
+      SELECT 1 FROM teams
+      WHERE teams.id = NEW.team_id AND teams.leader_id = NEW.user_id
+    )
+    BEGIN
+      SELECT RAISE(ABORT, 'TEAM_LEADER_MEMBER_CONFLICT');
+    END`,
+  },
   teams_capacity_validate_update: {
     on: "teams",
     timing: "before",
@@ -91,6 +118,22 @@ export const triggerContract = {
     )
     BEGIN
       SELECT RAISE(ABORT, 'TEAM_CAPACITY_EXCEEDED');
+    END`,
+  },
+  teams_leader_validate_update: {
+    on: "teams",
+    timing: "before",
+    event: "update",
+    updateOf: "leader_id",
+    raises: ["TEAM_LEADER_MEMBER_CONFLICT"],
+    body: `WHEN EXISTS (
+      SELECT 1 FROM team_members
+      WHERE team_members.team_id = NEW.id
+        AND team_members.user_id = NEW.leader_id
+        AND team_members.left_at IS NULL
+    )
+    BEGIN
+      SELECT RAISE(ABORT, 'TEAM_LEADER_MEMBER_CONFLICT');
     END`,
   },
   sessions_active_user_insert_guard: {
@@ -120,6 +163,27 @@ export const triggerContract = {
       DELETE FROM sessions WHERE user_id = NEW.id;
       DELETE FROM verifications
       WHERE identifier = 'password-reset:' || NEW.id;
+    END`,
+  },
+  users_deleted_state_validate_insert: {
+    on: "users",
+    timing: "before",
+    event: "insert",
+    raises: ["USER_DELETED_STATE_INVALID"],
+    body: `WHEN (NEW.status = 'deleted') <> (NEW.deleted_at IS NOT NULL)
+    BEGIN
+      SELECT RAISE(ABORT, 'USER_DELETED_STATE_INVALID');
+    END`,
+  },
+  users_deleted_state_validate_update: {
+    on: "users",
+    timing: "before",
+    event: "update",
+    updateOf: "status,deleted_at",
+    raises: ["USER_DELETED_STATE_INVALID"],
+    body: `WHEN (NEW.status = 'deleted') <> (NEW.deleted_at IS NOT NULL)
+    BEGIN
+      SELECT RAISE(ABORT, 'USER_DELETED_STATE_INVALID');
     END`,
   },
 };
@@ -413,7 +477,9 @@ export function compareSchemaToBaseline(baselineSql) {
   const db = new Database(":memory:");
   db.pragma("foreign_keys = ON");
   try {
-    db.exec(baselineSql.replaceAll("--> statement-breakpoint", ""));
+    db.transaction(() =>
+      db.exec(baselineSql.replaceAll("--> statement-breakpoint", "")),
+    )();
     const tables = schemaTables();
     const actualNames = db
       .prepare(

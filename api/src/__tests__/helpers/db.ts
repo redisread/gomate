@@ -1,27 +1,32 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as schema from "../../db/schema";
 
-const baselinePath = join(
+const migrationsPath = join(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../db/migrations/0000_init.sql",
+  "../../../db/migrations",
 );
-const baselineSql = readFileSync(baselinePath, "utf8").replaceAll(
-  "--> statement-breakpoint",
-  "",
-);
+const migrationSql = readdirSync(migrationsPath)
+  .filter((name) => /^\d{4}_.+\.sql$/u.test(name))
+  .sort()
+  .map((name) =>
+    readFileSync(join(migrationsPath, name), "utf8").replaceAll(
+      "--> statement-breakpoint",
+      "",
+    ),
+  );
 
 /**
- * Creates the integration-test database from the production V2 baseline.
+ * Creates the integration-test database from the production migration chain.
  * Tests must not maintain a third, hand-written schema copy.
  */
 export function createTestDb() {
   const sqlite = new Database(":memory:");
   sqlite.pragma("foreign_keys = ON");
-  sqlite.exec(baselineSql);
+  for (const sql of migrationSql) sqlite.transaction(() => sqlite.exec(sql))();
 
   const db = drizzle(sqlite, { schema });
 

@@ -183,7 +183,6 @@ async function seedMember(
   await testDb.insert(schema.teamMembers).values({
     teamId,
     userId,
-    role: "member",
     joinedAt: options.joinedAt ?? new Date(),
     leftAt: options.leftAt ?? null,
   });
@@ -449,7 +448,11 @@ describe("Teams V2 API", () => {
         eq(schema.teamMembers.userId, member.id),
         isNull(schema.teamMembers.leftAt),
       )))[0]!;
-    expect(activeMember.role).toBe("member");
+    expect(activeMember).toMatchObject({
+      teamId: team.id,
+      userId: member.id,
+      leftAt: null,
+    });
     expect(await testDb.select().from(schema.teamMembers)
       .where(eq(schema.teamMembers.userId, leader.id))).toEqual([]);
 

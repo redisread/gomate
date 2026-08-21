@@ -204,11 +204,7 @@ function updateTeamTags(url, teamId, tagIds, disableLocation = false) {
   });
 }
 
-async function issuePasswordReset(
-  url,
-  now,
-  email = "reset-user@example.com",
-) {
+async function issuePasswordReset(url, now, email = "reset-user@example.com") {
   const result = await globalThis.fetch(`${url}/password-reset/issue`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -283,7 +279,7 @@ function readIntegrity(instance) {
          AND name NOT LIKE 'sqlite_%'
          AND name NOT IN ('_cf_METADATA', 'd1_migrations')) AS business_tables,
       (SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger') AS triggers,
-      (SELECT COUNT(*) FROM d1_migrations WHERE name = '0000_init.sql') AS ledger_entries,
+      (SELECT COUNT(*) FROM d1_migrations) AS ledger_entries,
       (SELECT COUNT(*) FROM pragma_foreign_key_check) AS foreign_key_violations`,
     ],
     instance,
@@ -298,7 +294,7 @@ afterAll(() => {
   rmSync(testRoot, { recursive: true, force: true });
 });
 
-describe("V2 baseline in real local workerd/D1", () => {
+describe("V2 migration chain in real local workerd/D1", () => {
   it("applies in two isolated databases and is ledger-idempotent", () => {
     const firstApply = runWrangler(
       ["d1", "migrations", "apply", "DB"],
@@ -314,18 +310,19 @@ describe("V2 baseline in real local workerd/D1", () => {
     );
 
     expect(firstApply).toContain("0000_init.sql");
+    expect(firstApply).toContain("0002_remove_team_member_role.sql");
     expect(firstReplay).toContain("No migrations to apply");
     expect(secondApply).toContain("0000_init.sql");
     expect(readIntegrity("first")).toEqual({
       business_tables: 19,
-      triggers: 8,
-      ledger_entries: 1,
+      triggers: 13,
+      ledger_entries: 3,
       foreign_key_violations: 0,
     });
     expect(readIntegrity("second")).toEqual({
       business_tables: 19,
-      triggers: 8,
-      ledger_entries: 1,
+      triggers: 13,
+      ledger_entries: 3,
       foreign_key_violations: 0,
     });
   }, 60_000);
@@ -396,26 +393,39 @@ describe("Team approval through a real Wrangler workerd/D1 binding", () => {
     const first = await issuePasswordReset(worker.url, 2_000_000_010_000);
     const second = await issuePasswordReset(worker.url, 2_000_000_010_001);
 
-    expect((await commitPasswordReset(
-      worker.url,
-      first,
-      "stale-link-password",
-      2_000_000_010_002,
-    )).status).toBe(400);
-    expect((await commitPasswordReset(
-      worker.url,
-      second,
-      "latest-link-password",
-      2_000_000_010_003,
-    )).status).toBe(200);
-    expect(await readPasswordResetState(worker.url, "latest-link-password"))
-      .toEqual({ passwordMatches: true, sessions: 0, challenges: 0 });
-    expect((await commitPasswordReset(
-      worker.url,
-      second,
-      "replayed-password",
-      2_000_000_010_004,
-    )).status).toBe(400);
+    expect(
+      (
+        await commitPasswordReset(
+          worker.url,
+          first,
+          "stale-link-password",
+          2_000_000_010_002,
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await commitPasswordReset(
+          worker.url,
+          second,
+          "latest-link-password",
+          2_000_000_010_003,
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      await readPasswordResetState(worker.url, "latest-link-password"),
+    ).toEqual({ passwordMatches: true, sessions: 0, challenges: 0 });
+    expect(
+      (
+        await commitPasswordReset(
+          worker.url,
+          second,
+          "replayed-password",
+          2_000_000_010_004,
+        )
+      ).status,
+    ).toBe(400);
   });
 
   it("allows only one real D1 consumer for the same password-reset token", async () => {
@@ -439,7 +449,9 @@ describe("Team approval through a real Wrangler workerd/D1 binding", () => {
       readPasswordResetState(worker.url, "concurrent-password-a"),
       readPasswordResetState(worker.url, "concurrent-password-b"),
     ]);
-    expect(states.filter(({ passwordMatches }) => passwordMatches)).toHaveLength(1);
+    expect(
+      states.filter(({ passwordMatches }) => passwordMatches),
+    ).toHaveLength(1);
     expect(states[0]).toMatchObject({ sessions: 0, challenges: 0 });
     expect(states[1]).toMatchObject({ sessions: 0, challenges: 0 });
   });

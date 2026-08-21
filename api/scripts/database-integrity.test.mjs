@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import Database from "better-sqlite3";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -6,6 +7,7 @@ import {
   baselineSql,
   createV2Database,
   explainDetails,
+  migrationSql,
   seedV2Core,
 } from "./database-v2-test-helpers.mjs";
 
@@ -88,6 +90,62 @@ describe("database design v2 runtime integrity", () => {
     ).toBe(0);
   });
 
+  it("upgrades an existing 0000 database without losing membership history", () => {
+    db = new Database(":memory:");
+    db.pragma("foreign_keys = ON");
+    db.transaction(() => db.exec(baselineSql))();
+    seedV2Core(db, { maxParticipants: 3 });
+    db.exec(`
+      INSERT INTO users (id, name, email, status, deleted_at)
+      VALUES ('legacy-deleted', 'Legacy', 'legacy@example.com', 'active', 1900000000000);
+      INSERT INTO team_members (team_id, user_id, role, joined_at, left_at)
+      VALUES
+        ('team-1', 'leader', 'co_leader', 1800000000000, NULL),
+        ('team-1', 'member-1', 'co_leader', 1800000000000, NULL);
+    `);
+
+    db.transaction(() => db.exec(migrationSql[1]))();
+    expect(
+      db
+        .prepare(
+          "SELECT status, deleted_at FROM users WHERE id = 'legacy-deleted'",
+        )
+        .get(),
+    ).toEqual({ status: "deleted", deleted_at: 1900000000000 });
+    expect(
+      db
+        .prepare(
+          `
+      SELECT user_id, left_at FROM team_members
+      WHERE team_id = 'team-1' ORDER BY user_id
+    `,
+        )
+        .all(),
+    ).toEqual([
+      { user_id: "leader", left_at: expect.any(Number) },
+      { user_id: "member-1", left_at: null },
+    ]);
+
+    db.transaction(() => db.exec(migrationSql[2]))();
+    expect(
+      db
+        .prepare("PRAGMA table_info('team_members')")
+        .all()
+        .map((column) => column.name),
+    ).toEqual(["team_id", "user_id", "joined_at", "left_at"]);
+    expect(
+      db
+        .prepare(
+          "SELECT user_id, left_at FROM team_members WHERE team_id = 'team-1' ORDER BY user_id",
+        )
+        .all(),
+    ).toEqual([
+      { user_id: "leader", left_at: expect.any(Number) },
+      { user_id: "member-1", left_at: null },
+    ]);
+    expect(db.pragma("foreign_key_check")).toEqual([]);
+  });
+
   it("revokes sessions on inactive or soft-deleted user transitions without resurrecting them", () => {
     db = createV2Database();
     db.exec(`
@@ -115,14 +173,22 @@ describe("database design v2 runtime integrity", () => {
         .get().count,
     ).toBe(0);
     expect(
-      db.prepare(
-        "SELECT COUNT(*) AS count FROM verifications WHERE identifier = 'password-reset:status-user'",
-      ).get().count,
+      db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM verifications WHERE identifier = 'password-reset:status-user'",
+        )
+        .get().count,
     ).toBe(0);
-    expect(() => db.prepare(`
+    expect(() =>
+      db
+        .prepare(
+          `
       INSERT INTO sessions (id, user_id, token, expires_at)
       VALUES ('status-race-session', 'status-user', 'status-race-token', 4102444800000)
-    `).run()).toThrow(/SESSION_USER_INACTIVE/u);
+    `,
+        )
+        .run(),
+    ).toThrow(/SESSION_USER_INACTIVE/u);
     db.prepare(
       "UPDATE users SET status = 'active' WHERE id = 'status-user'",
     ).run();
@@ -133,8 +199,15 @@ describe("database design v2 runtime integrity", () => {
         )
         .get().count,
     ).toBe(0);
+    expect(() =>
+      db
+        .prepare(
+          "UPDATE users SET deleted_at = 2000000000000 WHERE id = 'deleted-user'",
+        )
+        .run(),
+    ).toThrow(/USER_DELETED_STATE_INVALID/u);
     db.prepare(
-      "UPDATE users SET deleted_at = 2000000000000 WHERE id = 'deleted-user'",
+      "UPDATE users SET status = 'deleted', deleted_at = 2000000000000 WHERE id = 'deleted-user'",
     ).run();
     expect(
       db
@@ -144,16 +217,29 @@ describe("database design v2 runtime integrity", () => {
         .get().count,
     ).toBe(0);
     expect(
-      db.prepare(
-        "SELECT COUNT(*) AS count FROM verifications WHERE identifier = 'password-reset:deleted-user'",
-      ).get().count,
+      db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM verifications WHERE identifier = 'password-reset:deleted-user'",
+        )
+        .get().count,
     ).toBe(0);
-    expect(() => db.prepare(`
+    expect(() =>
+      db
+        .prepare(
+          `
       INSERT INTO sessions (id, user_id, token, expires_at)
       VALUES ('deleted-race-session', 'deleted-user', 'deleted-race-token', 4102444800000)
-    `).run()).toThrow(/SESSION_USER_INACTIVE/u);
+    `,
+        )
+        .run(),
+    ).toThrow(/SESSION_USER_INACTIVE/u);
+    expect(() =>
+      db
+        .prepare("UPDATE users SET deleted_at = NULL WHERE id = 'deleted-user'")
+        .run(),
+    ).toThrow(/USER_DELETED_STATE_INVALID/u);
     db.prepare(
-      "UPDATE users SET deleted_at = NULL WHERE id = 'deleted-user'",
+      "UPDATE users SET status = 'active', deleted_at = NULL WHERE id = 'deleted-user'",
     ).run();
     expect(
       db
@@ -331,6 +417,41 @@ describe("database design v2 runtime integrity", () => {
         )
         .get().count,
     ).toBe(2);
+  });
+
+  it("prevents a team leader from also being an active member", () => {
+    db = createV2Database();
+    const now = seedV2Core(db);
+
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO team_members (team_id, user_id) VALUES ('team-1', 'leader')`,
+        )
+        .run(),
+    ).toThrow(/TEAM_LEADER_MEMBER_CONFLICT/u);
+
+    db.prepare(
+      `INSERT INTO team_members (team_id, user_id) VALUES ('team-1', 'member-1')`,
+    ).run();
+    expect(() =>
+      db
+        .prepare(`UPDATE teams SET leader_id = 'member-1' WHERE id = 'team-1'`)
+        .run(),
+    ).toThrow(/TEAM_LEADER_MEMBER_CONFLICT/u);
+
+    db.prepare(
+      `INSERT INTO team_members (team_id, user_id, joined_at, left_at)
+       VALUES ('team-1', 'leader', ?, ?)`,
+    ).run(now - 2, now - 1);
+    expect(() =>
+      db
+        .prepare(
+          `UPDATE team_members SET left_at = NULL
+       WHERE team_id = 'team-1' AND user_id = 'leader'`,
+        )
+        .run(),
+    ).toThrow(/TEAM_LEADER_MEMBER_CONFLICT/u);
   });
 
   it("keeps story like counts and conversation summaries atomic", () => {

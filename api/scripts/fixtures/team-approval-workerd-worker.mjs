@@ -97,8 +97,8 @@ async function seed(db) {
         endAt,
       ),
     db.prepare(`
-      INSERT INTO team_members (team_id, user_id, role, joined_at, left_at)
-      VALUES ('team-full', 'full-holder', 'member', 1900000000000, NULL)
+      INSERT INTO team_members (team_id, user_id, joined_at, left_at)
+      VALUES ('team-full', 'full-holder', 1900000000000, NULL)
     `),
     db.prepare(`
       INSERT INTO team_join_requests (id, team_id, user_id) VALUES
@@ -452,7 +452,7 @@ async function sessionRevocation(db, kind) {
   const before = await countSessions();
   if (kind === "deleted-at") {
     await db
-      .prepare("UPDATE users SET deleted_at = ? WHERE id = ?")
+      .prepare("UPDATE users SET status = 'deleted', deleted_at = ? WHERE id = ?")
       .bind(2_000_000_003_000, userId)
       .run();
   } else {
@@ -479,7 +479,7 @@ async function sessionRevocation(db, kind) {
 
   if (kind === "deleted-at") {
     await db
-      .prepare("UPDATE users SET deleted_at = NULL WHERE id = ?")
+      .prepare("UPDATE users SET status = 'active', deleted_at = NULL WHERE id = ?")
       .bind(userId)
       .run();
   } else {

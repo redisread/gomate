@@ -24,7 +24,7 @@ pnpm dev:wt
 
 1. 补齐统一 Worker secret 文件；
 2. 生成 i18n 数据；
-3. 对共享本地 D1 幂等应用 `0000_init.sql`；
+3. 对共享本地 D1 幂等应用全部 pending migration；
 4. 幂等执行 `api/db/seed.sql`。
 
 `pnpm dev:wt` 从 5432 起选择一个空闲端口，只启动一个 Astro/Worker 进程。启动器

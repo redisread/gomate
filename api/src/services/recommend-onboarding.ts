@@ -2,6 +2,7 @@ import type { ActivityType } from "@gomate/types";
 import { and, asc, desc, eq, gt, isNull, lte, sql, type SQL } from "drizzle-orm";
 import type { createDb } from "../db";
 import * as schema from "../db/schema";
+import { activeTeamMemberCount } from "../lib/team-participant-count";
 
 type Db = ReturnType<typeof createDb>;
 
@@ -66,12 +67,7 @@ export async function getRecommendOnboarding(params: {
   const hasAnyMembership = Boolean(membershipRows[0]?.hasAnyMembership);
 
   const queryCandidates = async (filterActivityType: ActivityType | null) => {
-    const activeParticipantCount = sql<number>`coalesce((
-      select count(*) from ${schema.teamMembers} as active_member
-      where active_member.team_id = ${schema.teams.id}
-        and active_member.left_at is null
-        and active_member.user_id <> ${schema.teams.leaderId}
-    ), 0)`;
+    const activeParticipantCount = activeTeamMemberCount(schema.teams.id);
     const filters: SQL[] = [
       eq(schema.locations.regionId, regionId),
       eq(schema.locations.status, "published"),

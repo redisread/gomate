@@ -11,6 +11,10 @@ const STABLE_ERRORS = [
     message: "Team participant capacity has been reached",
   },
   {
+    code: ErrorCode.TEAM_LEADER_MEMBER_CONFLICT,
+    message: "A team leader cannot also be an active member",
+  },
+  {
     code: ErrorCode.STORY_LIKE_COUNT_FAILED,
     message: "Story like count could not be updated",
   },

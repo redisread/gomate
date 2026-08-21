@@ -1,6 +1,6 @@
 # GoMate 数据库最终设计 V2
 
-> 设计状态：已落地。Drizzle schema、单一 baseline、最小 seed 与数据库合同测试均以本文为准；实现入口见 [`schema.ts`](../api/src/db/schema.ts)、[`0000_init.sql`](../api/db/migrations/0000_init.sql) 与[数据库测试](../api/scripts/database-v2-contract.test.mjs)。生产 binding 已指向 `gomate-db-v2`；后续生产变更遵守 [`prod-change-policy.md`](prod-change-policy.md)。
+> 设计状态：已落地。Drizzle schema、不可变 baseline、后续迁移链、最小 seed 与数据库合同测试均以本文为准；实现入口见 [`schema.ts`](../api/src/db/schema.ts)、[`migrations/`](../api/db/migrations/) 与[数据库测试](../api/scripts/database-v2-contract.test.mjs)。生产 binding 已指向 `gomate-db-v2`；后续生产变更遵守 [`prod-change-policy.md`](prod-change-policy.md)。
 
 ## 1. 设计目标
 
@@ -422,20 +422,19 @@ erDiagram
 
 只保存已经加入的参与者；队长由 `teams.leader_id` 表达，不重复写入成员表。
 
-| 字段        | 类型                 | 空值 / 默认         | 约束与说明                                       |
-| ----------- | -------------------- | ------------------- | ------------------------------------------------ |
-| `team_id`   | TEXT                 | 非空                | 复合 PK；FK → `teams.id`，CASCADE                |
-| `user_id`   | TEXT                 | 非空                | 复合 PK；FK → `users.id`，CASCADE                |
-| `role`      | TEXT                 | 非空，默认 `member` | CHECK：`member` / `co_leader`                    |
-| `joined_at` | INTEGER timestamp_ms | 非空，DB 当前时间   | 最近加入时间                                     |
-| `left_at`   | INTEGER timestamp_ms | 可空                | 非空表示已退出；重新加入时清空并刷新 `joined_at` |
+| 字段        | 类型                 | 空值 / 默认       | 约束与说明                                       |
+| ----------- | -------------------- | ----------------- | ------------------------------------------------ |
+| `team_id`   | TEXT                 | 非空              | 复合 PK；FK → `teams.id`，CASCADE                |
+| `user_id`   | TEXT                 | 非空              | 复合 PK；FK → `users.id`，CASCADE                |
+| `joined_at` | INTEGER timestamp_ms | 非空，DB 当前时间 | 最近加入时间                                     |
+| `left_at`   | INTEGER timestamp_ms | 可空              | 非空表示已退出；重新加入时清空并刷新 `joined_at` |
 
 主键：`(team_id, user_id)`。索引：
 
 - `team_members_active_idx(team_id, left_at, joined_at, user_id)`
 - `team_members_user_idx(user_id, left_at, joined_at, team_id)`
 
-成员插入或把 `left_at` 从非空改为空前，由容量触发器检查活动成员数小于 `max_participants`。队长不能成为自己队伍的 participant，由应用和测试保证。
+成员插入或把 `left_at` 从非空改为空前，由容量触发器检查活动成员数小于 `max_participants`。数据库同时禁止队长成为 active participant，也禁止把 active participant 直接设为队长。
 
 ## 9. 内容与互动
 
@@ -554,15 +553,20 @@ V2 只支持“一个队伍的队长与一名队员之间的双人会话”。�
 
 ## 11. 数据库触发器
 
-触发器只用于单靠声明式约束无法可靠保证、且并发写入时必须原子成立的规则。最终保留 8 个：
+触发器只用于单靠声明式约束无法可靠保证、且并发写入时必须原子成立的规则。最终保留 13 个：
 
 | 触发器                                      | 时机                                        | 作用                                 |
 | ------------------------------------------- | ------------------------------------------- | ------------------------------------ |
 | `sessions_active_user_insert_guard`         | `sessions` BEFORE INSERT                    | 禁止为非 active/已删除用户创建会话   |
 | `users_auth_revoke_after_inactive`          | `users` AFTER UPDATE OF `status,deleted_at` | 撤销全部会话和未消费的密码重置凭证   |
+| `users_deleted_state_validate_insert`       | `users` BEFORE INSERT                       | 校验 deleted 状态与时间一致          |
+| `users_deleted_state_validate_update`       | `users` BEFORE UPDATE                       | 校验 deleted 状态与时间一致          |
 | `team_members_capacity_validate_insert`     | `team_members` BEFORE INSERT                | 阻止活动成员超过容量                 |
 | `team_members_capacity_validate_reactivate` | `team_members` BEFORE UPDATE OF `left_at`   | 重新加入前检查容量                   |
+| `team_members_leader_validate_insert`       | `team_members` BEFORE INSERT                | 阻止队长成为活动成员                 |
+| `team_members_leader_validate_reactivate`   | `team_members` BEFORE UPDATE                | 阻止队长重新激活为成员               |
 | `teams_capacity_validate_update`            | `teams` BEFORE UPDATE OF `max_participants` | 阻止容量被调低到当前活动人数以下     |
+| `teams_leader_validate_update`              | `teams` BEFORE UPDATE OF `leader_id`        | 阻止活动成员直接成为队长             |
 | `story_likes_count_after_insert`            | `story_likes` AFTER INSERT                  | 原子增加故事点赞数                   |
 | `story_likes_count_after_delete`            | `story_likes` AFTER DELETE                  | 原子减少故事点赞数且不低于零         |
 | `messages_summary_after_insert`             | `messages` AFTER INSERT                     | 更新会话摘要、最近消息时间和更新时间 |
@@ -605,23 +609,24 @@ V2 只支持“一个队伍的队长与一名队员之间的双人会话”。�
 2. 队伍城市始终通过地点获得；Region 父子节点必须属于同一国家且不能形成循环。
 3. 每支队伍的 `activity_type` 必须包含在对应地点的 `supported_activity_types` 中。
 4. 队长不占 `max_participants`；活动 participant 数不得超过容量。
-5. 同一用户对同一队伍最多有一个 `pending` 申请。
-6. 批准申请时，在同一事务中写入或重新激活 `team_members`，并完成申请决策。
-7. 队伍活动回顾作者、会话队员和消息发送者必须满足对应成员权限。
-8. 每个队伍与队员组合最多一个会话。
-9. `stories.like_count` 必须等于 `story_likes` 的实际行数。
-10. 收藏和标签关系删除后不能留下悬空记录。
-11. R2 对象与 D1 媒体元数据失败时必须可补偿清理。
-12. 用户变为非 active 或被软删除时，全部会话与未消费的密码重置 challenge 必须在同一更新中撤销；非 active 用户不得新建会话、签发或消费重置凭证，恢复用户不得恢复旧能力。
+5. 队长不能同时存在 active `team_members` 记录；转让队长前必须先结束目标成员记录。
+6. 同一用户对同一队伍最多有一个 `pending` 申请。
+7. 批准申请时，在同一事务中写入或重新激活 `team_members`，并完成申请决策。
+8. 队伍活动回顾作者、会话队员和消息发送者必须满足对应成员权限。
+9. 每个队伍与队员组合最多一个会话。
+10. `stories.like_count` 必须等于 `story_likes` 的实际行数。
+11. 收藏和标签关系删除后不能留下悬空记录。
+12. R2 对象与 D1 媒体元数据失败时必须可补偿清理。
+13. 用户变为非 active 或被软删除时，全部会话与未消费的密码重置 challenge 必须在同一更新中撤销；非 active 用户不得新建会话、签发或消费重置凭证，恢复用户不得恢复旧能力。
 
 ## 15. 落地实现与验证
 
 当前实现不包含旧表兼容层或双写：
 
 1. [`api/src/db/schema.ts`](../api/src/db/schema.ts) 是 Drizzle V2 schema。
-2. [`api/db/migrations/0000_init.sql`](../api/db/migrations/0000_init.sql) 是唯一 baseline；[`api/db/seed.sql`](../api/db/seed.sql) 是可幂等最小 seed。
-3. [`database-v2-contract.test.mjs`](../api/scripts/database-v2-contract.test.mjs) 完整核对列/type/null/default/PK、FK action、CHECK、索引列序/unique/partial predicate 与 8 个 trigger；[`check-migrations-sync.mjs`](../api/scripts/check-migrations-sync.mjs) 在常规检查中执行同一套 Drizzle/baseline 语义 parity。
+2. [`api/db/migrations/0000_init.sql`](../api/db/migrations/0000_init.sql) 是不可变 baseline；`0001` 增加账户/成员约束，`0002` 独立移除未使用的成员角色；[`api/db/seed.sql`](../api/db/seed.sql) 是可幂等最小 seed。
+3. [`database-v2-contract.test.mjs`](../api/scripts/database-v2-contract.test.mjs) 完整核对列/type/null/default/PK、FK action、CHECK、索引列序/unique/partial predicate 与 13 个 trigger；[`check-migrations-sync.mjs`](../api/scripts/check-migrations-sync.mjs) 在常规检查中执行同一套 Drizzle/migration-chain 语义 parity。
 4. [`database-integrity.test.mjs`](../api/scripts/database-integrity.test.mjs) 使用真实 SQLite 验证声明式约束、触发器、级联、会话撤销和查询计划；[`database-workerd-replay.test.mjs`](../api/scripts/database-workerd-replay.test.mjs) 使用真实本地 workerd/D1 binding 验证迁移重放、会话不可复活、稳定错误 envelope、审批 batch 回滚/重试与并发最后席位。
 5. 生产 D1、binding、migration 或恢复操作属于独立生产变更；异常时保持写保护并使用 D1 Time Travel/备份或经批准的新 V2 数据库，不得恢复已退役的旧 binding。
 
-本文档、Drizzle schema 与 baseline 必须同步修改；语义 parity 检查不通过时不得合并。
+本文档、Drizzle schema 与迁移链必须同步修改；已应用迁移不可改写，语义 parity 检查不通过时不得合并。

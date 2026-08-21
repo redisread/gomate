@@ -27,6 +27,7 @@ describe("session policy", () => {
     });
     const deleted = await seedUser(testDb, {
       id: "deleted-user",
+      status: "deleted",
       deletedAt: new Date(),
     });
 
@@ -170,7 +171,7 @@ describe("session policy", () => {
 
     await testDb
       .update(schema.users)
-      .set({ deletedAt: new Date() })
+      .set({ status: "deleted", deletedAt: new Date() })
       .where(eq(schema.users.id, user.id));
 
     await expect(
@@ -182,7 +183,7 @@ describe("session policy", () => {
 
     await testDb
       .update(schema.users)
-      .set({ deletedAt: null })
+      .set({ status: "active", deletedAt: null })
       .where(eq(schema.users.id, user.id));
 
     await expect(

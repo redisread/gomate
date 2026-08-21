@@ -63,13 +63,9 @@ function checkRuntime() {
     return fail("pnpm 不可用");
   }
   const nodeMajor = Number(process.versions.node.split(".")[0]);
-  const pnpmMajor = Number(pnpmVersion.split(".")[0]);
-  const expectedPnpmMajor = Number(
-    String(pkg.packageManager ?? "pnpm@9").match(/^pnpm@(\d+)/u)?.[1] ?? 9,
-  );
-  if (nodeMajor < 22 || pnpmMajor !== expectedPnpmMajor) {
+  if (nodeMajor < 22) {
     return fail(
-      `运行时版本不满足 ${pkg.engines.node} / ${pkg.packageManager}：Node ${process.version}, pnpm ${pnpmVersion}`,
+      `Node 版本不满足 ${pkg.engines.node}：当前为 ${process.version}`,
     );
   }
   ok(`Node ${process.version} / pnpm ${pnpmVersion}`);

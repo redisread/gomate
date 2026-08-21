@@ -18,8 +18,6 @@ export type TeamLifecycle =
 
 export type TeamJoinRequestStatus = "pending" | "approved" | "rejected" | "cancelled";
 
-export type TeamMemberRole = "member" | "co_leader";
-
 export type StoryStatus = "draft" | "published" | "hidden";
 
 export type UserRole = "user" | "admin";

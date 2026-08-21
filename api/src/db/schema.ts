@@ -24,7 +24,6 @@ export type TeamJoinRequestStatus =
   | "approved"
   | "rejected"
   | "cancelled";
-export type TeamMemberRole = "member" | "co_leader";
 export type StoryStatus = "draft" | "published" | "hidden";
 
 export interface UserExtra {
@@ -520,7 +519,6 @@ export const teamMembers = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    role: text("role").$type<TeamMemberRole>().notNull().default("member"),
     joinedAt: integer("joined_at", { mode: "timestamp_ms" })
       .notNull()
       .default(nowMs),
@@ -539,10 +537,6 @@ export const teamMembers = sqliteTable(
       table.leftAt,
       table.joinedAt,
       table.teamId,
-    ),
-    roleCheck: check(
-      "team_members_role_check",
-      sql`${table.role} in ('member', 'co_leader')`,
     ),
   }),
 );

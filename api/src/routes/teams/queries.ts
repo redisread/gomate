@@ -22,6 +22,7 @@ import { APIErrors } from "../../lib/api-errors";
 import type { Env } from "../../lib/auth";
 import { getActiveSession } from "../../lib/active-session";
 import { logger } from "../../lib/logger";
+import { activeTeamMemberCount } from "../../lib/team-participant-count";
 import {
   decodeContentCursor,
   encodeContentCursor,
@@ -107,13 +108,7 @@ function lifecycleCondition(lifecycle: TeamLifecycle, now: Date): SQL {
   }
 }
 
-const activeParticipantCount = sql<number>`coalesce((
-  select count(*)
-  from ${schema.teamMembers} as active_member
-  where active_member.team_id = ${schema.teams.id}
-    and active_member.left_at is null
-    and active_member.user_id <> ${schema.teams.leaderId}
-), 0)`;
+const activeParticipantCount = activeTeamMemberCount(schema.teams.id);
 
 async function loadTagsByTeam(db: Db, teamIds: string[]) {
   const grouped = new Map<string, schema.Tag[]>();
