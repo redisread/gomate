@@ -53,12 +53,14 @@ function checkRuntime() {
   let pnpmVersion;
   try {
     const pnpmPath = process.env.npm_execpath;
-    pnpmVersion = execFileSync(pnpmPath ? process.execPath : "pnpm", [
-      ...(pnpmPath ? [pnpmPath] : []),
-      "--version",
-    ], {
-      encoding: "utf8",
-    }).trim();
+    const isJavaScriptLauncher = Boolean(
+      pnpmPath && /\.[cm]?js$/u.test(pnpmPath),
+    );
+    pnpmVersion = execFileSync(
+      isJavaScriptLauncher ? process.execPath : (pnpmPath ?? "pnpm"),
+      isJavaScriptLauncher ? [pnpmPath, "--version"] : ["--version"],
+      { encoding: "utf8" },
+    ).trim();
   } catch {
     return fail("pnpm 不可用");
   }
@@ -115,12 +117,7 @@ async function checkPort(port) {
 }
 
 function checkWrangler() {
-  const wrangler = path.join(
-    FRONTEND_DIR,
-    "node_modules",
-    ".bin",
-    "wrangler",
-  );
+  const wrangler = path.join(FRONTEND_DIR, "node_modules", ".bin", "wrangler");
   if (!existsSync(wrangler)) {
     return fail("Wrangler CLI 不可用；请先安装 workspace 依赖");
   }
