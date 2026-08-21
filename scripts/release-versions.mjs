@@ -79,7 +79,7 @@ export function parseVersionUploadOutput(value) {
     upload.version_id ?? upload.versionId,
   );
   const workerName = upload.worker_name ?? upload.workerName;
-  if (workerName !== "gomate-production-preview") {
+  if (workerName !== "gomate") {
     throw new Error("Uploaded version belongs to an unexpected Worker");
   }
   return { versionId, workerName };

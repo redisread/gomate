@@ -5,7 +5,7 @@
 ## 1. 当前生产拓扑
 
 - 生产域名：`https://gomate.live`
-- Worker 服务：`gomate-production-preview`（历史命名，现为唯一生产 Worker）
+- Worker 服务：`gomate`（唯一生产 Worker）
 - Worker 入口：`frontend/src/worker.ts`
 - API：同源 `/api/*`，进程内交给 `api/src/app.ts`
 - D1：binding `DB`，`gomate-db-v2`，UUID `befa3d89-6551-4a25-8a1c-670efe62a315`
@@ -41,7 +41,7 @@ Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 仓库不在 push `main` 时自动部署。`.github/workflows/deploy.yml` 只接受 `main` 上手动输入 `DEPLOY_PRODUCTION`，并通过 GitHub `production` protected environment 执行。发布顺序固定为：
 
 1. 重跑源代码、migration、类型、测试、构建、bundle size 与 startup 门禁；
-2. 验证 `gomate.live` 仍只绑定到 `gomate-production-preview`，生产 binding、route、write mode、observability 与 secrets 声明符合仓库配置；
+2. 验证 `gomate.live` 仍只绑定到 `gomate`，生产 binding、route、write mode、observability 与 secrets 声明符合仓库配置；
 3. 使用官方 `cloudflare/wrangler-action@v4` 和仓库锁定的 Wrangler 版本执行 `versions upload`，通过 `WRANGLER_OUTPUT_FILE_PATH` 读取不可变 version ID；
 4. 保持现行版本 100% 流量，将候选版本加入 deployment 但设为 0%，通过 `Cloudflare-Workers-Version-Overrides` 请求头在 `gomate.live` 上验证候选版本；冒烟包含 health、Region 与 Astro SSR，并为 Cloudflare deployment 传播保留两分钟重试窗口；
 5. 在同一个受保护 job 内将同一个候选 version ID 提升到 100%，不得重新构建；候选、推广、观察和恢复不跨 job，避免审批等待或新 runner 初始化留下 0% 的中间 deployment；

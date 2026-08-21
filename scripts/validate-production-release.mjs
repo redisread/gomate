@@ -14,7 +14,7 @@ const BUILT_CONFIG_PATH = path.join(
   "server",
   "wrangler.json",
 );
-const WORKER_NAME = "gomate-production-preview";
+const WORKER_NAME = "gomate";
 const COMPATIBILITY_DATE = "2026-06-18";
 const D1_ID = "befa3d89-6551-4a25-8a1c-670efe62a315";
 const KV_ID = "f9904d1fa72140c18067e07d541ca92b";

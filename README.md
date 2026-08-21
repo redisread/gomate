@@ -127,7 +127,7 @@ pnpm env:check
 
 ## 部署
 
-生产不随 `main` 自动部署。当前线上由统一 Worker `gomate-production-preview` 提供
+生产不随 `main` 自动部署。当前线上由统一 Worker `gomate` 提供
 `gomate.live`；`.github/workflows/deploy.yml` 通过 GitHub `production` protected
 environment 上传、验证并推广不可变 Worker version，D1 migration 使用独立 workflow。
 任何生产写入都必须明确目标与回滚方式并获得逐次批准。详见 `docs/prod-change-policy.md`。

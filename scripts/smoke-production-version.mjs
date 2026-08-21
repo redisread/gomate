@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { assertWorkerVersionId } from "./release-versions.mjs";
 
 const REQUEST_ID_PATTERN = /^[a-z0-9-]{36,96}$/iu;
-const WORKER_NAME = "gomate-production-preview";
+const WORKER_NAME = "gomate";
 const wait = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
 function productionOrigin(value) {

@@ -78,7 +78,7 @@
   },
   "env": {
     "production": {
-      "name": "gomate-production-preview",
+      "name": "gomate",
       "routes": [{ "pattern": "gomate.live", "custom_domain": true }],
       "assets": {
         "directory": "./dist",

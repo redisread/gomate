@@ -86,7 +86,7 @@ function sourceConfig() {
     version_metadata: { binding: "CF_VERSION_METADATA" },
     env: {
       production: {
-        name: "gomate-production-preview",
+        name: "gomate",
         routes: [{ pattern: "gomate.live", custom_domain: true }],
         assets: {
           directory: "./dist",
@@ -103,7 +103,7 @@ function sourceConfig() {
 function builtConfig() {
   return {
     targetEnvironment: "production",
-    name: "gomate-production-preview",
+    name: "gomate",
     main: "entry.mjs",
     no_bundle: true,
     compatibility_date: "2026-06-18",
@@ -180,13 +180,13 @@ test("Wrangler structured output yields the exact uploaded version", () => {
     JSON.stringify({
       type: "version-upload",
       version: 1,
-      worker_name: "gomate-production-preview",
+      worker_name: "gomate",
       version_id: versionId,
     }),
   ].join("\n");
   assert.deepEqual(parseVersionUploadOutput(output), {
     versionId,
-    workerName: "gomate-production-preview",
+    workerName: "gomate",
   });
   assert.throws(
     () => parseVersionUploadOutput('{"type":"command-failed"}\n'),
@@ -320,7 +320,7 @@ test("candidate smoke pins every request to the uploaded version", async () => {
     calls.every(
       ({ headers }) =>
         headers.get("Cloudflare-Workers-Version-Overrides") ===
-        `gomate-production-preview="${versionId}"`,
+        `gomate="${versionId}"`,
     ),
   );
 });
@@ -533,4 +533,8 @@ test("production workflows use Wrangler Action immutable versions and explicit r
   assert.match(migration, /production-version-allowlist/u);
   assert.match(migration, /cloudflare\/wrangler-action@v4/u);
   assert.match(migration, /d1 migrations apply/u);
+  for (const workflow of [release, rollback, migration]) {
+    assert.match(workflow, /EXPECTED_DOMAIN_SERVICE(?:=|: )gomate/u);
+    assert.doesNotMatch(workflow, /gomate-production-preview/u);
+  }
 });
