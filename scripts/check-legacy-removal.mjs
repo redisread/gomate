@@ -56,8 +56,6 @@ const ignoredDirectories = new Set([
 ]);
 
 const ignoredFiles = new Set([
-  "docs/database-design-v2.md",
-  "docs/database-schema.md",
   "docs/prod-change-policy.md",
   "scripts/check-legacy-removal.mjs",
   "scripts/check-legacy-removal.test.mjs",
@@ -178,7 +176,9 @@ if (
   wranglerConfigs[0] !== path.join("frontend", "wrangler.jsonc")
 ) {
   violations.push(
-    `Wrangler config set must be exactly frontend/wrangler.jsonc; found: ${wranglerConfigs.join(", ") || "none"}`,
+    `Wrangler config set must be exactly frontend/wrangler.jsonc; found: ${
+      wranglerConfigs.join(", ") || "none"
+    }`,
   );
 }
 
