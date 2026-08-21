@@ -50,10 +50,10 @@ pnpm db:reset
 
 该命令通过 `DB` binding 枚举并删除目标 D1 中的全部用户表，不扫描或删除共享
 Miniflare 目录里的 SQLite 文件，因此不会碰同一 persist root 下的 KV/R2 或其他
-D1 binding。随后重新应用 V2 baseline 和 seed。执行前停止所有使用同一 D1 的 dev
+D1 binding。随后重新应用完整 migration 链和 seed。执行前停止所有使用同一 D1 的 dev
 进程，避免并发写入。
 
-本次数据库为全新 V2 基线，不从生产或旧数据库同步数据。
+本地数据库从仓库 baseline 和 seed 重建，不从生产同步数据。
 
 ## E2E
 

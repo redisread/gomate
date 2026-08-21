@@ -16,7 +16,10 @@
 
 旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除。`pnpm check:legacy-removal` 阻止这些标识重新进入运行时代码或工作流。
 
-生产 D1 目标结构为 19 张业务表、13 个触发器；稳定 Region ID 包括 `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。`region-cn-shenzhen` 还是匿名 local-circle fallback，不得随意改名。迁移发布前不得把仓库目标结构误报为已应用生产状态。
+仓库 migration 链的目标结构为 19 张业务表、13 个触发器；seed 与运行时代码依赖稳定
+Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
+`region-cn-shenzhen` 还是匿名 local-circle fallback，不得随意改名。生产实际 migration
+状态必须从受保护 workflow 或只读 inventory 验证，不能由仓库文件推断。
 
 ## 2. 授权边界
 
@@ -94,7 +97,8 @@ GitHub 的失败和正常取消会进入自动恢复步骤；如果 runner 被�
 - 公开 Location 与稳定深圳 Region 可读；
 - 日志不包含 smoke 使用的 email/token 或故障注入信息。
 
-当前没有 Cloudflare notification、外部 OTel destination、Sentry/PagerDuty 或自动值班通知。不得把人工阈值描述为已经自动告警。
+仓库未声明 Cloudflare notification、外部 OTel destination、Sentry/PagerDuty 或自动值班通知。
+账号侧实际配置需要单独只读验证；不得把仓库缺省值或人工阈值描述为生产告警现状。
 
 ## 7. 合并与发布门禁
 

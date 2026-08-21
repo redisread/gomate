@@ -1,247 +1,77 @@
-# GoMate Frontend Design System
+# GoMate 前端设计系统
 
-> Source of truth: `frontend/src/styles/globals.css`. Last sync: 2026-08-01 (PR #494 OKLCH migration + WCAG AA fixes).
+设计 token 与基础样式的事实来源是
+[`frontend/src/styles/globals.css`](../frontend/src/styles/globals.css)；Tailwind 补充配置在
+[`frontend/tailwind.config.ts`](../frontend/tailwind.config.ts)，共享组件在
+[`frontend/src/components/ui/`](../frontend/src/components/ui/)。本文只记录稳定的使用约束。
 
-## 1. 浏览器兼容矩阵
+## 视觉基础
 
-仅支持 evergreen (2023+ Chrome / Safari / Firefox / Edge)。这是项目级决策：
+- 采用温暖琥珀主色、沙米中性色和珊瑚强调色；颜色统一使用 OKLCH token。
+- light/dark 主题通过 `:root`、`.dark` 与语义 token 映射，不在组件中维护第二套色值。
+- 字体使用系统字体栈；网页 UI 不加载远程字体。服务端分享海报的 R2 字体属于 API 媒体实现，不属于网页字体系统。
+- 当前面向支持 OKLCH、`color-mix()` 和现代 CSS 的 evergreen 浏览器。
 
-- **`oklch()`** 颜色函数 / **`color-mix(in oklab, ...)`** 半透明色：Baseline 2023，本项目**不写 hex fallback**
-- 旧浏览器 (Safari 14 / 旧 Android) 需新增 fallback；当前不接受
+## Token 使用
 
-如未来需要兼容更老浏览器，整套颜色体系需要 review（不是只改 fallback）。
+组件按语义角色选择 token：
 
-## 2. Color tokens 命名约定
+- 基础：`background`、`foreground`、`card`、`popover`、`primary`、`secondary`、`muted`、`accent`、`destructive`、`border`、`input`、`ring`。
+- 业务：`brand`、`warm`、`success`、`warning` 及其 `foreground` / `subtle` 变体。
+- 层级：`shadow-card`、`shadow-card-hover`、`shadow-warm-*`、`shadow-glow` 与统一圆角 scale。
 
-### shadcn/ui 兼容语义 token
+约束：
 
-`--background` / `--foreground` / `--card[-foreground]` / `--popover[-foreground]` / `--primary[-foreground]` / `--secondary[-foreground]` / `--muted[-foreground]` / `--accent[-foreground]` / `--destructive` / `--border` / `--input` / `--ring`
+- 优先使用 Tailwind 语义 utility，例如 `bg-primary`、`text-muted-foreground`。
+- 需要动态 inline style、渐变或 `backdropFilter` 时仍引用 `var(--token)`，不写 hex、rgba 或 OKLCH 字面量。
+- 半透明优先使用 `bg-primary/10`；inline style 使用
+  `color-mix(in oklab, var(--primary) 10%, transparent)`。
+- 不因两个 token 当前色值相同就混用角色；token 的职责比具体色值稳定。
 
-### 品牌 / 业务 token
+## 排版
 
-`--brand[-foreground|subtle|muted]` / `--warm[-foreground|subtle]` / `--success[-subtle]` / `--warning[-subtle]`
+- 页面渲染路径只有一个 `<h1>`，后续层级使用 `<h2>` / `<h3>`，不要用字号代替语义。
+- 优先使用 `text-page-h1`、`text-section-h2`、`text-card-h3` 和既有 Tailwind scale，避免任意 `text-[Npx]`。
+- 标题使用 `text-wrap: balance`，长文正文使用 `text-wrap: pretty`；相关 base 样式已在 `globals.css` 定义。
+- 截断内容必须仍可访问完整文本；可用 `title`、展开控件或可访问说明，不能只留下视觉省略号。
+- `<input>`、`<textarea>` 和可编辑控件在移动端 computed font size 不得小于 16px，避免 iOS 聚焦缩放。
+- 数字排版优先使用高层属性，例如 `font-variant-numeric: tabular-nums`，不直接堆叠底层 OpenType tags。
 
-### 渐进 / 阴影 / 半径
+## 交互与动效
 
-`--primary-50/300/400/500` / `--shadow-card[-hover]` / `--shadow-warm-sm` / `--shadow-glow` / `--radius-xs/sm/md/lg/xl/2xl/full`
+- 常规点击反馈使用 `active:scale-[0.96]`；高频操作避免夸张位移或缩放。
+- hover 放大只用于页面主要 CTA，不用于导航、标签页、列表项或重复社交操作。
+- 禁止 `transition-all`；只声明会变化的属性，例如 `transition-colors`、
+  `transition-transform` 或明确的 property list。
+- Lucide 图标默认 `strokeWidth={2}`，只在与更粗视觉语言配对时调整。
+- 使用现有 shadow token，不创建临时 `shadow-[...]` 色值。
+- 新动效必须尊重 `prefers-reduced-motion`；reduced-motion 下移除非必要移动、循环和视差。
 
-完整定义（oklch 值 + light/dark 对应）见 `frontend/src/styles/globals.css:265–402` (`:root` 与 `.dark` 块)。
+## 布局与响应式
 
-**约定**：
+- 先保证小屏单列与自然阅读顺序，再通过现有 `sm` / `md` / `lg` 断点增强。
+- 固定底部操作条必须考虑 safe area，不遮挡表单、Toast 或浏览器控件。
+- 弹窗、抽屉和菜单必须有可访问名称、焦点管理、Escape 关闭和焦点恢复。
+- 交互目标至少 44×44 CSS px；键盘焦点不得只依赖颜色变化。
+- 页面优先使用 Astro SSR，只有需要客户端状态的交互才建立 React island。
 
-- **不直接写 oklch 字面值在 inline style**
-- **所有颜色引用走 var(--token)**
-- **不通过 value 而通过 role 选 token**（同一个 oklch 值不要分两个 role 使用）
+## 可访问性与内容
 
-## 3. 半透明 inline style 写法
+- 正文和控件文字达到 WCAG 2 AA 对比度：普通文本至少 4.5:1，大文本至少 3:1。
+- 状态不能只靠颜色表达；同时提供文本、图标或结构语义。
+- 用户可见文案全部走完整 i18n namespace，不在组件内硬编码替代翻译。
+- 图片提供与上下文匹配的 `alt`；纯装饰图使用空 `alt` 或隐藏于辅助技术。
+- loading、空态、错误与重试状态都必须可理解、可操作，且不改变页面标题层级。
 
-半透明色首选 Tailwind v4 utility (`bg-primary/10`)；当需要 inline style（与 `backdropFilter` / `boxShadow` / `linear-gradient` 共存）时：
+## 验证
 
-```tsx
-style={{ background: "color-mix(in oklab, var(--primary) 10%, transparent)" }}
+UI 变更至少检查键盘、可访问名称、移动端、dark mode 和 reduced-motion，并运行：
+
+```bash
+pnpm i18n:build
+pnpm --filter @gomate/frontend i18n:validate
+pnpm --filter @gomate/frontend lint
+pnpm --filter @gomate/frontend type-check
+pnpm --filter @gomate/frontend test
+pnpm --filter @gomate/frontend build
 ```
-
-**不要**直接写 `oklch(0.666 0.157 58.3 / 0.10)` — 这把 token 系统分裂。
-
-## 4. 对比度阈值 (WCAG 2)
-
-- body text：≥ 4.5 (AA)，目标 ≥ 7.0 (AAA)
-- ≥18px bold 或 ≥24px regular：AA ≥ 3.0，AAA ≥ 4.5
-
-新加 / 调色 token 时跑 `chrome://inspect` / axe devtools 验证。
-
-### 最近 contrast 修复（PR #494）
-
-| token                        | 旧 hex    | 新 hex    | 旧 / 新 ratio      |
-| ---------------------------- | --------- | --------- | ------------------ |
-| `--muted-foreground` (light) | `#8f7f6e` | `#6b5d4e` | 3.65 → 6.00 (AA)   |
-| `--muted-foreground` (dark)  | `#7a6e63` | `#a89a8c` | 3.83 → 6.93 (AA)   |
-| `--warm-foreground` (light)  | `#fff5f3` | `#2d0f08` | 2.38 ✗ → 6.95 (AA) |
-
-## 5. Avatar 身份色（Hue Rotation）
-
-`avatar.tsx` 用 OKLCH hue rotation 155–215°（cyan-green 域）做用户身份色：常亮 L=0.55 / C=0.11（**常量 C 保证 hue 间感知均匀鲜艳度**——"same absolute C ≠ equal vividness across hues" 这是 `better-colors` skill 原则）。
-
-**与品牌色解耦**：avatar 不是品牌色，是身份色。
-
-## 6. Status / Recommendation badges
-
-通过现有 semantic token 复用（不新增 component-level token）：
-
-- steady / worthy / fresh：用 `--primary` / `--accent-foreground`
-- danger / expert / destructive：`--destructive`
-- muted (completed / cancelled)：`--muted-foreground`
-
-如果未来出现需要与品牌色解耦的 badge（如 emerald success / sky info），再加 `--easy-bg/fg --hard-bg/fg` 这类 component token，并配套在 `.dark` 加 dark-mode override。
-
-## 7. Inline-style vs Tailwind utility 决策
-
-| 场景                                                                         | 用法                                                                        |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| 仅 background / color / border                                               | Tailwind utility（tree-shakeable）                                          |
-| inline 元素含 `backdropFilter` / `boxShadow` / `linear-gradient(...)` 等组合 | `style={{ ... }}` + `var(--token)`                                          |
-| dynamic 值 (e.g. `departureLabel.urgent ? '...' : '...'`)                    | inline style                                                                |
-| 渐变                                                                         | `linear-gradient(... var(--token) ..., var(--other-token) ...)` 保留 inline |
-
-## 8. 与其他文档的关系
-
-- `docs/frontend-pages.md`：页面功能矩阵，与本设计系统正交
-- `AGENTS.md`：项目级代理工作规则（含 minimum checks）；不含 design tokens
-- PR #494：https://github.com/redisread/gomate/pull/494 — `feat(frontend): OKLCH-ify tokens, fix HIGH WCAG, and switch inline-style to var(--token)`
-- `/better-colors` skill：user-level `~/.codex/skills/better-colors/SKILL.md`，做对比度 / palette 决策时加载
-
-## 9. Motion & Interaction Polish
-
-Five `better-ui` skill rules, all PR-enforced since PR #496 (2026-08-02).
-
-### 9.1 Canonical press feedback
-
-Always `active:scale-[0.96]`. Never `< 0.95` (exaggerated). Other values (0.97 / 0.98) give inconsistent tactile feel.
-
-```tsx
-// ✅
-className="... active:scale-[0.96] transition-transform duration-150"
-// ❌
-className="... active:scale-95 hover:scale-[1.02] ..."
-```
-
-### 9.2 Hover scale restricted to primary CTAs
-
-`hover:scale-[1.02+]` only on the **single decision-per-page primary CTA**. Forbidden on:
-
-- footer share-row (Wechat / Contact / Share)
-- navigation tabs
-- repeat social actions (Principle #15 — motion restraint on high-frequency interactions).
-
-### 9.3 `transition-all` is never correct
-
-The compositor over-paints every property on every state change. Specify the exact list:
-
-```tsx
-// ✅ canonical list (covers ~95% of GoMate use cases)
-className="transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
-// ✅ narrow subsets when only 1-2 props actually change
-className="transition-colors duration-150"          // hover color
-className="transition-transform duration-150"       // hover scale/translate
-// ❌
-className="transition-all duration-200"
-```
-
-### 9.4 Icon stroke = 2 default
-
-Lucide icons paired with `font-medium` (500) / `font-semibold` (600) use `strokeWidth={2}` (default). Heavier (2.2 / 2.4) makes small icons read visibly heavier next to semibold text. Bump to 2.5 only when paired with `font-bold` (700+) text. Circular-progress SVGs (3-5px) are intentionally thick ring strokes — not icon weight.
-
-### 9.5 Shadow tokens over inline `rgba`
-
-Always use `shadow-warm-sm` / `shadow-card-hover` / `shadow-glow` from `globals.css`. Don't inline `shadow-[rgba(...)]` — these duplicate the design-system palette and drift over time.
-
-```tsx
-// ❌ duplicate (also legacy: pure rgba can't follow --shadow-* semantic change)
-className="shadow-[0_8px_18px_rgba(217,119,6,0.20)]"
-// ✅
-className="shadow-card-hover"
-```
-
-## Related
-
-- PR #494: OKLCH + WCAG fixes (color tokens)
-- PR #495: this doc created
-- PR #496: motion / interaction polish (rules §9)
-- `/better-ui` skill: `~/.codex/skills/better-ui/SKILL.md`
-
-## 10. Typography
-
-Six `better-typography` skill rules, PR-enforced since PR #498 (2026-08-02).
-
-### 10.1 Type scale — use semantic tokens, not magic numbers
-
-The scale lives in `globals.css` `@theme inline`. Never reach for `text-[Xpx]` arbitrary values.
-
-| Token | Size | Use |
-| --- | --- | --- |
-| `text-3xs` | 10px / 0.875rem lh | status badge text, avatar initial hints, indicator dots |
-| `text-2xs` | 11px / 1rem lh | small chip / notification badge counters |
-| `xs` … `5xl` | Tailwind default scale | body text and standard headings (unchanged) |
-| `text-page-h1` | 24px / 1.2 / 700 / -0.02em | **page-title `<h1>`** only |
-| `text-section-h2` | 18px / 1.3 / 600 / -0.01em | section headings inside a page |
-| `text-card-h3` | 16px / 1.4 / 600 | card heading inside a card |
-
-For `<h2>` / `<h3>` in marketing-hero / profile-card sub-section roles: keep them size-customizable, but stay on the standard `text-2xl … text-base` ramp.
-
-### 10.2 Heading semantics — one `<h1>` per render
-
-Each render-path of a page owns exactly one `<h1>`. Multiple `<h1>` on the same route breaks the document outline and screen-reader landmark count.
-
-```tsx
-// ❌ duplicate h1 — loading state + active state both render
-if (isLoading) return <Loading />;          // <h1>Title</h1>
-return <Active />;                          // <h1>Title</h1>
-
-// ✅ subordinate <h2> in loading / empty / error states
-if (isLoading) return <Loading h1As="h2" />;
-return <Active />;                          // <h1>Title</h1>
-```
-
-Owned by the `better-accessibility` skill's landmark-counting rule. Just don't reach for `<h1>` twice on the same logical page.
-
-### 10.3 `text-wrap` for headings & body
-
-```css
-/* in @layer base */
-h1, h2, h3 { text-wrap: balance; }   /* orphan-aware balance on multi-line headings */
-.story-prose :where(p) { text-wrap: pretty; }  /* body paragraphs */
-```
-
-`balance` makes 2-line and 3-line headings look deliberate instead of lopsided. `pretty` for long-form reading avoids the worst-line-with-orphan feel. Both fall back gracefully on older browsers (no-op).
-
-### 10.4 Properties over raw tags
-
-Always use the high-level CSS property if one exists for the feature.
-
-| ❌ Don't | ✅ Use |
-| --- | --- |
-| `font-feature-settings: "liga" 1, "calt" 1` | `font-variant-ligatures: common-ligatures contextual` |
-| `font-variation-settings: "wght" 650` | `font-weight: 650` |
-| `font-variation-settings: "opsz" auto` | `font-optical-sizing: auto` |
-| `font-feature-settings: "tnum" 1` | `font-variant-numeric: tabular-nums` |
-
-The high-level property preserves fallback behavior when a non-variable / older-rendered stack takes over. Reserve raw tags for custom axes (`"GRAD" 80`) and niche features (`"ss01" 1`) that have no property of their own.
-
-### 10.5 Truncated text — keep full text reachable
-
-Every `line-clamp-N` heading needs a `title={full}` attribute so keyboard / screen-reader users can read the unclamped text.
-
-```tsx
-// ❌ no fallback content for truncated text
-<h3 className="… line-clamp-1">{team.title}</h3>
-
-// ✅ tooltip on hover + exposed to assistive tech
-<h3 title={team.title} className="… line-clamp-1">{team.title}</h3>
-```
-
-Use the **same field** as the inner content (no rewriting / no truncation in `title`). Should match `text-card-h3` token.
-
-### 10.6 iOS input zoom (always ≥ 16px text-size in inputs)
-
-iOS Safari zooms the viewport when an `<input>` receives focus with computed font-size < 16px. Rule:
-
-```tsx
-// ✅ always 16px or larger in <input> / <textarea>
-className="text-base"                              // always 16px
-className="text-sm sm:text-base"                   // mobile-xs then ≥md
-className="text-base sm:text-sm"                   // wrong: starts <16px
-
-// ❌
-className="text-xs" / "text-sm" / "text-[13px]"    // forces iOS zoom
-```
-
-`text-base` is the safest default. `text-sm sm:text-base` is fine if you want smaller text on mobile but it must cross 16px by `sm:`.
-
-## Related
-
-- PR #494: OKLCH + WCAG fixes (color tokens §1-§8)
-- PR #495: this doc created
-- PR #496: motion polish (rules §9)
-- PR #498: typography polish (rules §10)
-- `/better-typography` skill: `~/.codex/skills/better-typography/SKILL.md`
-- `/better-accessibility` skill (heading semantics): `~/.codex/skills/better-accessibility/SKILL.md`

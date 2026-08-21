@@ -10,8 +10,7 @@
 | ---------------------- | ------------------------------------------------------------ |
 | 项目启动、常用命令     | [`README.md`](README.md)                                     |
 | API 合同               | [`docs/backend-api.md`](docs/backend-api.md)                 |
-| 数据库决策与完整字段   | [`docs/database-design-v2.md`](docs/database-design-v2.md)   |
-| 数据库关系与触发器速查 | [`docs/database-schema.md`](docs/database-schema.md)         |
+| 数据库关系、决策与约束 | [`docs/database.md`](docs/database.md)                       |
 | 页面与前端运行时       | [`docs/frontend-pages.md`](docs/frontend-pages.md)           |
 | 设计系统               | [`docs/design-system.md`](docs/design-system.md)             |
 | 本地多 worktree 开发   | [`docs/local-dev-worktrees.md`](docs/local-dev-worktrees.md) |
@@ -39,8 +38,8 @@
 
 ## 数据库与存储硬约束
 
-- D1 binding 为 `DB`，数据库为 `gomate-db-v2`。仓库只有 `api/db/migrations/0000_init.sql` 一个 baseline；schema、journal、snapshot 与 migration 必须同步。
-- 当前模型为 19 张业务表、8 个业务触发器。所有 DDL 只通过 migration；不得手工对生产 D1 执行 DDL。
+- D1 binding 为 `DB`，数据库为 `gomate-db-v2`。迁移链包含 `0000_init.sql` baseline 与后续有序 migration；schema、journal、snapshot 与 migration 必须同步。
+- 当前模型为 19 张业务表、13 个业务触发器。所有 DDL 只通过 migration；不得手工对生产 D1 执行 DDL。
 - 多语句原子写使用 D1 `batch()` 与条件 DML；不要使用 `db.transaction()` 或裸 `BEGIN`/`COMMIT`。
 - JSON 列在 Drizzle 使用 `mode: "json"`，业务层只传对象/数组，不增加字符串兼容层。
 - `api/db/seed.sql` 仅用于本地开发/测试，不得应用到生产。
@@ -88,7 +87,7 @@ pnpm --filter @gomate/api check:migrations
 - PR 至少运行与变更范围匹配的测试；合并前运行 `pnpm check:legacy-removal` 与 `pnpm test:delivery`。完整 CI 以 `.github/workflows/pr-validation.yml` 为准。
 - 生产不随 `main` 自动部署。任何远程 D1、KV、R2、Worker、route/domain 或 secret 变更都必须列出精确目标和回滚方式，获得用户显式批准，并通过 GitHub `production` protected environment。
 - 不在本机直接执行生产 Cloudflare 写命令，不使用 admin bypass，不把生产 secrets 放到仓库级 Actions secrets、日志、PR 或命令参数。
-- 当前仓库的 `deploy.yml` 只描述受保护、无 route、`WRITE_MODE=protected` 的 preview 流程；它不是生产 route/open-write 更新授权。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。
+- 当前仓库的 `deploy.yml` 通过 GitHub `production` protected environment 发布不可变 Worker version，并在同一受保护 job 内验证、推广或恢复；它不包含 D1 migration，也不代表可绕过逐次审批。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。
 - 生产异常先恢复/保持 `WRITE_MODE=protected`，再回滚到已验证 Worker version；旧 split Worker、旧 route 与旧数据库已退役，不得重建为回滚手段。
 
 ## 项目审查
