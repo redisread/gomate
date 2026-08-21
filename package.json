@@ -4,8 +4,7 @@
   "private": true,
   "description": "GoMate monorepo - 极简地点组队平台",
   "engines": {
-    "node": ">=22.12.0",
-    "pnpm": "9.x"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "web:dev": "pnpm --filter @gomate/frontend dev",
@@ -30,7 +29,7 @@
     "i18n:gen-types": "node scripts/gen-i18n-types.mjs",
     "i18n:build": "tsx scripts/build-locales.ts",
     "check:legacy-removal": "node scripts/check-legacy-removal.mjs",
-    "test:delivery": "node --test scripts/check-legacy-removal.test.mjs scripts/deployment-guards.test.mjs scripts/production-release.test.mjs scripts/promote-admin.test.mjs scripts/reset-local-db.test.mjs",
+    "test:delivery": "node --test scripts/check-legacy-removal.test.mjs scripts/deployment-guards.test.mjs scripts/production-release.test.mjs scripts/promote-admin.test.mjs scripts/reset-local-db.test.mjs scripts/toolchain-policy.test.mjs",
     "prepare": "husky",
     "dev:wt": "node scripts/init-worktree.mjs && node scripts/start-worktree.mjs",
     "init:worktree": "node scripts/init-worktree.mjs"
@@ -53,28 +52,5 @@
     "prettier": "^3.0.0",
     "tsx": "^4.22.2",
     "typescript": "^5"
-  },
-  "packageManager": "pnpm@9.0.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild",
-      "sharp",
-      "workerd"
-    ],
-    "overrides": {
-      "brace-expansion@<1.1.18": "1.1.18",
-      "brace-expansion@>=2.0.0 <2.1.4": "2.1.4",
-      "brace-expansion@>=5.0.0 <5.0.9": "5.0.9",
-      "fast-uri@>=3.0.0 <3.1.5": "3.1.5",
-      "js-yaml@>=4.0.0 <4.3.1": "4.3.1",
-      "nanoid@3.3.12": "3.3.18",
-      "postcss@<=8.5.22": "8.5.26",
-      "sharp@<0.35.0": "0.35.0",
-      "svgo@>=4.0.0 <4.0.2": "4.0.2",
-      "undici@>=7.0.0 <7.29.0": "7.29.0",
-      "ws@>=8.0.0 <8.21.0": "8.21.0",
-      "yaml@>=2.0.0 <2.8.3": "2.9.0"
-    }
   }
 }

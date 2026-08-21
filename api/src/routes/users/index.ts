@@ -28,6 +28,10 @@ import {
   type ContentCursor,
 } from "../../lib/content-cursor";
 import { getTeamLifecycle } from "../../lib/team-lifecycle";
+import { eraseAccount } from "../../lib/account-erasure";
+import { ownedAvatarKeyFromStoredValue } from "../../lib/avatar-media";
+import { deleteR2ObjectsWithRetry } from "../../lib/r2-media";
+import { activeTeamMemberCount } from "../../lib/team-participant-count";
 import {
   getUserOngoingTeams,
   getUserStats,
@@ -58,6 +62,10 @@ const updateProfileSchema = z
   })
   .strict()
   .refine((value) => Object.keys(value).length > 0, "At least one field is required");
+
+const deleteAccountSchema = z.object({
+  confirmation: z.literal("DELETE"),
+}).strict();
 
 async function currentUserId(c: {
   env: Env;
@@ -145,11 +153,7 @@ function teamSummary(row: {
   };
 }
 
-const participantCount = sql<number>`(
-  select count(*) from team_members active_member
-  where active_member.team_id = ${schema.teams.id}
-    and active_member.left_at is null
-)`;
+const participantCount = activeTeamMemberCount(schema.teams.id);
 
 const teamSummarySelection = {
   id: schema.teams.id,
@@ -533,6 +537,76 @@ usersRoute.get("/me/pending-join-requests", async (c) => {
         ? encodeContentCursor({ t: last.createdAt.getTime(), id: last.id })
         : null,
   });
+});
+
+usersRoute.delete("/me", async (c) => {
+  const userId = await currentUserId(c);
+  if (!userId) return c.json(APIErrors.unauthorized("请先登录"), 401);
+
+  const parsed = deleteAccountSchema.safeParse(
+    await c.req.json().catch(() => null),
+  );
+  if (!parsed.success) {
+    return c.json(APIErrors.validationError("请输入 DELETE 确认删除账户"), 400);
+  }
+
+  const db = createDb(c.env.DB);
+  const [user] = await db
+    .select({
+      email: schema.users.email,
+      image: schema.users.image,
+      status: schema.users.status,
+    })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .limit(1);
+  if (!user) return c.json(APIErrors.unauthorized("用户不存在"), 401);
+  const deletedEmail = `deleted-${userId}@deleted.invalid`;
+  if (user.status === "deleted" && user.email === deletedEmail) {
+    return c.json({ success: true });
+  }
+
+  const avatarKey = user.image
+    ? ownedAvatarKeyFromStoredValue(
+        c.env,
+        new URL(c.req.raw.url),
+        user.image,
+        userId,
+      )
+    : null;
+  if (avatarKey) {
+    if (!c.env.R2) {
+      return c.json(APIErrors.serviceUnavailable("头像存储暂不可用"), 503);
+    }
+    try {
+      await deleteR2ObjectsWithRetry(c.env.R2, [avatarKey]);
+    } catch (error) {
+      logger.error("account_avatar_cleanup_failed", {
+        errorType: error instanceof Error ? error.name : "UnknownR2Error",
+      });
+      return c.json(APIErrors.internalError("账户媒体清理失败"), 500);
+    }
+  }
+
+  try {
+    await eraseAccount(c.env.DB, {
+      userId,
+      currentEmail: user.email,
+      now: Date.now(),
+    });
+    return c.json({ success: true });
+  } catch (error) {
+    const current = await c.env.DB.prepare(
+      "SELECT status, email FROM users WHERE id = ?",
+    ).bind(userId).first<{ status: string; email: string }>().catch(() => null);
+    if (current?.status === "deleted" && current.email === deletedEmail) {
+      return c.json({ success: true });
+    }
+    logger.error("account_erasure_failed", {
+      errorType: error instanceof Error ? error.name : "UnknownDatabaseError",
+    });
+    return c.json(APIErrors.internalError("账户删除失败"), 500);
+  }
 });
 
 usersRoute.get("/:id", async (c) => {

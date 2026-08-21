@@ -5,6 +5,7 @@ import { mapDatabaseError } from "../../lib/database-errors";
 describe("database error mapping", () => {
   it.each([
     ["D1_ERROR: TEAM_CAPACITY_EXCEEDED", 409, "TEAM_CAPACITY_EXCEEDED"],
+    ["D1_ERROR: TEAM_LEADER_MEMBER_CONFLICT", 409, "TEAM_LEADER_MEMBER_CONFLICT"],
     ["STORY_LIKE_COUNT_FAILED", 409, "STORY_LIKE_COUNT_FAILED"],
     ["MESSAGE_SUMMARY_FAILED", 409, "MESSAGE_SUMMARY_FAILED"],
   ])("maps stable trigger code %s", (message, status, code) => {

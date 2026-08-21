@@ -19,6 +19,24 @@ describe("API runtime contract", () => {
     await expect(response.json()).resolves.toMatchObject({ status: "ok" });
   });
 
+  it("reports the immutable Cloudflare Worker version when metadata is bound", async () => {
+    const response = await apiApp.request(
+      "/health",
+      { method: "GET" },
+      {
+        WRITE_MODE: "open",
+        CF_VERSION_METADATA: {
+          id: "11111111-2222-4333-8444-555555555555",
+        },
+      } as never,
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      status: "ok",
+      versionId: "11111111-2222-4333-8444-555555555555",
+    });
+  });
+
   it.each(["GET", "HEAD", "OPTIONS"])(
     "does not block the safe %s method",
     async (method) => {

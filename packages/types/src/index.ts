@@ -10,7 +10,6 @@ import type {
   StoryStatus,
   TeamJoinRequestStatus,
   TeamLifecycle,
-  TeamMemberRole,
   UserGender,
   UserLevel,
   UserRole,
@@ -115,7 +114,6 @@ export interface SessionUser {
 
 export interface TeamParticipant {
   userId: string;
-  role: TeamMemberRole;
   joinedAt: Timestamp;
   leftAt: Timestamp | null;
   user?: Pick<SessionUser, "id" | "name" | "nickname" | "image" | "bio" | "gender" | "birthday" | "extra">;

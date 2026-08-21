@@ -171,7 +171,10 @@ membership.post("/join-requests/:requestId/approve", async (c) => {
     return c.json({ success: true, requestId, status: "approved" });
   } catch (error) {
     const mapped = mapDatabaseError(error);
-    if (mapped.body.error.code === "TEAM_CAPACITY_EXCEEDED") {
+    if (
+      mapped.body.error.code === "TEAM_CAPACITY_EXCEEDED" ||
+      mapped.body.error.code === "TEAM_LEADER_MEMBER_CONFLICT"
+    ) {
       return c.json(mapped.body, mapped.status);
     }
     logger.error("team_join_request_approve_failed", error);

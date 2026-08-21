@@ -117,7 +117,6 @@ async function seedMember(
   await testDb.insert(schema.teamMembers).values({
     teamId,
     userId,
-    role: "member",
     leftAt,
   });
 }

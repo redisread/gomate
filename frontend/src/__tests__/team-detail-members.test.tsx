@@ -25,7 +25,6 @@ vi.mock("@/hooks/useI18n", () => ({
 const members: TeamMember[] = [
   {
     userId: "member-1",
-    role: "member",
     joinedAt: "2026-01-01",
     leftAt: null,
     user: {
@@ -41,7 +40,6 @@ const members: TeamMember[] = [
   },
   {
     userId: "left-1",
-    role: "member",
     joinedAt: "2026-01-01",
     leftAt: "2026-02-01",
     user: {

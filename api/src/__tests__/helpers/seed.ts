@@ -141,7 +141,6 @@ export async function seedTeamMember(
   await db.insert(schema.teamMembers).values({
     teamId,
     userId,
-    role: "member",
     joinedAt: new Date(),
     leftAt: null,
     ...overrides,

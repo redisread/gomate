@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { createDb } from "../../db";
@@ -11,6 +11,7 @@ import { generateId } from "../../lib/id";
 import { logger } from "../../lib/logger";
 import { parseUserExtra } from "../../lib/user-extra";
 import { createTeamTagUpdateBatch } from "../../lib/team-tag-write";
+import { activeTeamMemberCount } from "../../lib/team-participant-count";
 import { toTeamResponse } from "./utils";
 
 const mutations = new Hono<{ Bindings: Env }>();
@@ -67,12 +68,7 @@ function isConstraintError(error: unknown): boolean {
 }
 
 async function readTeamResponse(db: Db, teamId: string, checklistVisible: boolean) {
-  const activeCount = sql<number>`coalesce((
-    select count(*) from ${schema.teamMembers} as active_member
-    where active_member.team_id = ${schema.teams.id}
-      and active_member.left_at is null
-      and active_member.user_id <> ${schema.teams.leaderId}
-  ), 0)`;
+  const activeCount = activeTeamMemberCount(schema.teams.id);
   const rows = await db
     .select({
       team: schema.teams,

@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,12 +10,25 @@ export const baselineSql = readFileSync(baselinePath, "utf8").replaceAll(
   "--> statement-breakpoint",
   "",
 );
+export const migrationNames = readdirSync(migrationsDir)
+  .filter((name) => /^\d{4}_.+\.sql$/u.test(name))
+  .sort();
+export const migrationSql = migrationNames.map((name) =>
+  readFileSync(join(migrationsDir, name), "utf8").replaceAll(
+    "--> statement-breakpoint",
+    "",
+  ),
+);
+export const migrationChainSql = migrationSql.join("\n");
 
-export function createV2Database({ replayTwice = false } = {}) {
+export function applyMigrationChain(db) {
+  for (const sql of migrationSql) db.transaction(() => db.exec(sql))();
+}
+
+export function createV2Database() {
   const db = new Database(":memory:");
   db.pragma("foreign_keys = ON");
-  db.exec(baselineSql);
-  if (replayTwice) db.exec(baselineSql);
+  applyMigrationChain(db);
   return db;
 }
 

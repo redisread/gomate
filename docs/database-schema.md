@@ -1,13 +1,13 @@
 # GoMate D1 V2 数据库结构
 
 > 当前 V2 结构速查。产品决策以 `docs/database-design-v2.md` 为准；可执行事实以
-> `api/db/migrations/0000_init.sql` 与 `api/src/db/schema.ts` 为准。
+> `api/db/migrations/` 的有序迁移链与 `api/src/db/schema.ts` 为准。
 
 ## 基线
 
 - Cloudflare D1 / SQLite，binding 名为 `DB`，新数据库名为 `gomate-db-v2`。
-- 1 个可重放 baseline、1 条 Drizzle journal、1 份 snapshot。
-- 19 张业务表、42 个索引、8 个业务触发器。
+- 1 个不可变 baseline、2 个后续迁移、3 条 Drizzle journal entry 与 3 份 snapshot。
+- 19 张业务表、42 个索引、13 个业务触发器。
 - `api/db/seed.sql` 只提供最小 Region、地点和标签，不创建用户。
 - 时间统一存 Unix 毫秒；HTTP DTO 统一输出 ISO 8601。
 - JSON 列在 D1 中为 TEXT，并用 `json_valid` 与 `json_type` CHECK；Drizzle 使用
@@ -73,16 +73,17 @@ erDiagram
 | Messaging | `conversations`           | `(team_id,member_user_id)` 唯一；leader/member 均为用户 FK                             |
 | Messaging | `messages`                | conversation/sender FK；`(conversation_id,created_at,id)` 稳定游标                     |
 
-## 八个触发器
+## 十三个触发器
 
 1. `sessions_active_user_insert_guard`：同一 INSERT 内拒绝为非 active 或已软删除用户创建会话。
 2. `users_auth_revoke_after_inactive`：用户变为非 active 或被软删除时立即撤销其全部会话与未消费的密码重置 challenge；恢复用户不会恢复旧能力。
-3. `team_members_capacity_validate_insert`：新增 active 成员前验证容量。
-4. `team_members_capacity_validate_reactivate`：重新激活成员前验证容量。
-5. `teams_capacity_validate_update`：缩小人数上限时不得低于 active 人数。
-6. `story_likes_count_after_insert`：成功点赞后增加 `stories.like_count`。
-7. `story_likes_count_after_delete`：取消点赞后安全减少计数。
-8. `messages_summary_after_insert`：写消息后更新会话最后消息摘要与时间。
+3. `users_deleted_state_validate_insert/update`：强制 `status = deleted` 与 `deleted_at` 同时成立。
+4. `team_members_capacity_validate_insert/reactivate`：新增或重新激活成员前验证容量。
+5. `team_members_leader_validate_insert/reactivate`：禁止队长成为 active 成员。
+6. `teams_capacity_validate_update`：缩小人数上限时不得低于 active 人数。
+7. `teams_leader_validate_update`：禁止把 active 成员直接设为队长。
+8. `story_likes_count_after_insert/delete`：原子维护 `stories.like_count`。
+9. `messages_summary_after_insert`：写消息后更新会话最后消息摘要与时间。
 
 容量仍由应用的 D1 `batch()` 提供跨语句原子性；触发器是数据库最终护栏。
 
@@ -93,9 +94,11 @@ erDiagram
 - Story 的可选 team/location 引用删除时置空，保留内容。
 - 用户相关历史中需要保留的 creator/decision 引用使用 SET NULL；身份凭证使用
   CASCADE。
+- 账户删除保留匿名用户墓碑和历史外键，同时清除 PII、`accounts`、`sessions`、
+  用户关联的 `verifications` 以及自有头像对象。
 
 ## 验证
 
-`pnpm --filter @gomate/api check:migrations` 会验证 baseline、journal、snapshot、
-19 表与 8 trigger 一致。API 测试还覆盖结构/CHECK/FK/query plan、双隔离 D1 重放、
+`pnpm --filter @gomate/api check:migrations` 会验证完整迁移链、journal、snapshot、
+19 表与 13 trigger 一致。API 测试还覆盖结构/CHECK/FK/query plan、双隔离 D1 重放、
 ledger 幂等和 Team 容量竞争。

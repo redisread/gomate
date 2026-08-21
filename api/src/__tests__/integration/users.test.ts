@@ -12,6 +12,7 @@ import {
 } from "../helpers/seed";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
+import { ContentD1Database } from "../helpers/content-db";
 
 const state = vi.hoisted(() => ({
   db: null as TestDb | null,
@@ -44,7 +45,7 @@ function createApp() {
   return app;
 }
 
-const bindings = {} as Env;
+let bindings: Env;
 
 function request(
   app: ReturnType<typeof createApp>,
@@ -64,7 +65,11 @@ describe("users V2", () => {
   let user: schema.User;
 
   beforeEach(async () => {
-    ({ db } = createTestDb());
+    const fresh = createTestDb();
+    db = fresh.db;
+    bindings = {
+      DB: new ContentD1Database(fresh.sqlite) as unknown as D1Database,
+    } as Env;
     state.beforeRouteUpdate = null;
     state.db = new Proxy(db, {
       get(target, property, receiver) {
@@ -111,6 +116,124 @@ describe("users V2", () => {
     });
   });
 
+  it("anonymizes the account and atomically revokes every credential", async () => {
+    await db.insert(schema.accounts).values({
+      id: "account-to-delete",
+      userId: user.id,
+      accountId: user.id,
+      providerId: "credential",
+      password: "stored-password-hash",
+    });
+    await db.insert(schema.sessions).values({
+      id: "session-to-delete",
+      userId: user.id,
+      token: "session-token-to-delete",
+      expiresAt: new Date("2099-01-01T00:00:00.000Z"),
+    });
+    await db.insert(schema.verifications).values([
+      {
+        id: "custom-reset-to-delete",
+        identifier: `password-reset:${user.id}`,
+        value: "digest",
+        expiresAt: new Date("2099-01-01T00:00:00.000Z"),
+      },
+      {
+        id: "better-auth-reset-to-delete",
+        identifier: "reset-password:opaque-token",
+        value: user.id,
+        expiresAt: new Date("2099-01-01T00:00:00.000Z"),
+      },
+      {
+        id: "unrelated-verification",
+        identifier: "password-reset:someone-else",
+        value: "someone-else",
+        expiresAt: new Date("2099-01-01T00:00:00.000Z"),
+      },
+    ]);
+
+    expect((await request(app, "/users/me", undefined, {
+      method: "DELETE",
+      body: JSON.stringify({ confirmation: "DELETE" }),
+    })).status).toBe(401);
+    expect((await request(app, "/users/me", user.id, {
+      method: "DELETE",
+      body: JSON.stringify({ confirmation: "wrong" }),
+    })).status).toBe(400);
+
+    const response = await request(app, "/users/me", user.id, {
+      method: "DELETE",
+      body: JSON.stringify({ confirmation: "DELETE" }),
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ success: true });
+
+    const [stored] = await db.select().from(schema.users)
+      .where(eq(schema.users.id, user.id));
+    expect(stored).toMatchObject({
+      name: "Deleted User",
+      nickname: null,
+      emailVerified: false,
+      image: null,
+      bio: null,
+      gender: null,
+      birthday: null,
+      status: "deleted",
+      extra: {},
+    });
+    expect(stored.email).toBe(`deleted-${user.id}@deleted.invalid`);
+    expect(stored.deletedAt).toBeInstanceOf(Date);
+    await expect(db.select().from(schema.accounts)).resolves.toEqual([]);
+    await expect(db.select().from(schema.sessions)).resolves.toEqual([]);
+    await expect(db.select().from(schema.verifications)).resolves.toEqual([
+      expect.objectContaining({ id: "unrelated-verification" }),
+    ]);
+    expect((await request(app, `/users/${user.id}`)).status).toBe(404);
+  });
+
+  it("deletes an owned avatar before committing the account tombstone", async () => {
+    const avatarKey = `avatars/${user.id}/profile.webp`;
+    await db.update(schema.users)
+      .set({ image: avatarKey })
+      .where(eq(schema.users.id, user.id));
+    const deleteObject = vi.fn().mockResolvedValue(undefined);
+    bindings.R2 = { delete: deleteObject } as unknown as R2Bucket;
+
+    const response = await request(app, "/users/me", user.id, {
+      method: "DELETE",
+      body: JSON.stringify({ confirmation: "DELETE" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(deleteObject).toHaveBeenCalledWith([avatarKey]);
+    const [stored] = await db.select().from(schema.users)
+      .where(eq(schema.users.id, user.id));
+    expect(stored).toMatchObject({ status: "deleted", image: null });
+  });
+
+  it("keeps the account unchanged when owned avatar cleanup fails", async () => {
+    const avatarKey = `avatars/${user.id}/profile.webp`;
+    await db.update(schema.users)
+      .set({ image: avatarKey })
+      .where(eq(schema.users.id, user.id));
+    const deleteObject = vi.fn().mockRejectedValue(new Error("R2 unavailable"));
+    bindings.R2 = { delete: deleteObject } as unknown as R2Bucket;
+
+    const response = await request(app, "/users/me", user.id, {
+      method: "DELETE",
+      body: JSON.stringify({ confirmation: "DELETE" }),
+    });
+
+    expect(response.status).toBe(500);
+    expect(deleteObject).toHaveBeenCalledTimes(3);
+    const [stored] = await db.select().from(schema.users)
+      .where(eq(schema.users.id, user.id));
+    expect(stored).toMatchObject({
+      status: "active",
+      email: "victor@test.example",
+      image: avatarKey,
+    });
+  });
+
   it("redacts private contact data from public profiles", async () => {
     const response = await request(app, `/users/${user.id}`);
     const body = await response.json() as {
@@ -130,6 +253,7 @@ describe("users V2", () => {
     });
     const deleted = await seedUser(db, {
       id: "deleted-public-user",
+      status: "deleted",
       deletedAt: new Date(),
     });
 

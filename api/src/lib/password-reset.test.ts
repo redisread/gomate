@@ -164,7 +164,11 @@ describe("password reset challenge", () => {
 
   it("does not issue challenges for inactive, deleted, or unknown users", async () => {
     await seedUser(fresh.db, { email: "suspended@example.test", status: "suspended" });
-    await seedUser(fresh.db, { email: "deleted@example.test", deletedAt: new Date() });
+    await seedUser(fresh.db, {
+      email: "deleted@example.test",
+      status: "deleted",
+      deletedAt: new Date(),
+    });
 
     await expect(issuePasswordResetChallenge(d1, "suspended@example.test"))
       .resolves.toBeNull();
@@ -193,7 +197,10 @@ describe("password reset challenge", () => {
 
   it.each([
     ["suspended", "UPDATE users SET status = 'suspended' WHERE id = ?"],
-    ["soft-deleted", "UPDATE users SET deleted_at = 1500 WHERE id = ?"],
+    [
+      "soft-deleted",
+      "UPDATE users SET status = 'deleted', deleted_at = 1500 WHERE id = ?",
+    ],
   ])("revokes a challenge when the user becomes %s", async (_label, statement) => {
     const user = await seedCredentialUser(`${_label}@example.test`);
     const issued = await issuePasswordResetChallenge(d1, user.email, 1_000);

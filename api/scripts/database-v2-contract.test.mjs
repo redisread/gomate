@@ -3,8 +3,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
   apiRoot,
-  baselineSql,
   createV2Database,
+  migrationChainSql,
   migrationsDir,
 } from "./database-v2-test-helpers.mjs";
 import { compareSchemaToBaseline } from "./database-schema-parity.mjs";
@@ -121,7 +121,7 @@ const TABLE_COLUMNS = {
     "created_at",
     "updated_at",
   ],
-  team_members: ["team_id", "user_id", "role", "joined_at", "left_at"],
+  team_members: ["team_id", "user_id", "joined_at", "left_at"],
   team_tags: ["team_id", "tag_id", "created_at"],
   teams: [
     "id",
@@ -300,7 +300,7 @@ const DEFAULTS = {
   story_tags: { created_at: NOW },
   tags: { created_at: NOW },
   team_join_requests: { status: "'pending'", created_at: NOW, updated_at: NOW },
-  team_members: { role: "'member'", joined_at: NOW },
+  team_members: { joined_at: NOW },
   team_tags: { created_at: NOW },
   teams: {
     max_participants: "9",
@@ -449,7 +449,6 @@ const CHECKS = [
   "stories_view_count_check",
   "team_join_requests_decision_check",
   "team_join_requests_status_check",
-  "team_members_role_check",
   "teams_activity_type_check",
   "teams_capacity_check",
   "teams_checklist_json_check",
@@ -470,8 +469,13 @@ const TRIGGERS = [
   "story_likes_count_after_insert",
   "team_members_capacity_validate_insert",
   "team_members_capacity_validate_reactivate",
+  "team_members_leader_validate_insert",
+  "team_members_leader_validate_reactivate",
   "teams_capacity_validate_update",
+  "teams_leader_validate_update",
   "users_auth_revoke_after_inactive",
+  "users_deleted_state_validate_insert",
+  "users_deleted_state_validate_update",
 ].sort();
 
 function normalizeDefault(value) {
@@ -488,28 +492,46 @@ describe("database design v2 structural contract", () => {
 
   afterEach(() => db?.close());
 
-  it("uses one baseline, one journal entry, and one matching snapshot", () => {
+  it("uses an immutable baseline followed by the ordered optimization migrations", () => {
     expect(
       readdirSync(migrationsDir)
         .filter((name) => name.endsWith(".sql"))
         .sort(),
-    ).toEqual(["0000_init.sql"]);
+    ).toEqual([
+      "0000_init.sql",
+      "0001_account_membership_guards.sql",
+      "0002_remove_team_member_role.sql",
+    ]);
     const metaDir = join(migrationsDir, "meta");
     expect(
       readdirSync(metaDir)
         .filter((name) => name.endsWith("_snapshot.json"))
         .sort(),
-    ).toEqual(["0000_snapshot.json"]);
+    ).toEqual([
+      "0000_snapshot.json",
+      "0001_snapshot.json",
+      "0002_snapshot.json",
+    ]);
 
     const journal = JSON.parse(
       readFileSync(join(metaDir, "_journal.json"), "utf8"),
     );
     expect(journal.entries).toEqual([
       expect.objectContaining({ idx: 0, tag: "0000_init", breakpoints: true }),
+      expect.objectContaining({
+        idx: 1,
+        tag: "0001_account_membership_guards",
+        breakpoints: true,
+      }),
+      expect.objectContaining({
+        idx: 2,
+        tag: "0002_remove_team_member_role",
+        breakpoints: true,
+      }),
     ]);
 
     const snapshot = JSON.parse(
-      readFileSync(join(metaDir, "0000_snapshot.json"), "utf8"),
+      readFileSync(join(metaDir, "0002_snapshot.json"), "utf8"),
     );
     expect(Object.keys(snapshot.tables).sort()).toEqual(
       Object.keys(TABLE_COLUMNS).sort(),
@@ -519,8 +541,8 @@ describe("database design v2 structural contract", () => {
     }
   });
 
-  it("replays twice and exposes exactly the 19-table, 8-trigger model", () => {
-    db = createV2Database({ replayTwice: true });
+  it("replays the full chain and exposes exactly the 19-table, 13-trigger model", () => {
+    db = createV2Database();
     const tables = db
       .prepare(
         `
@@ -662,33 +684,36 @@ describe("database design v2 structural contract", () => {
   });
 
   it("matches Drizzle and baseline semantics, not only object names", () => {
-    expect(compareSchemaToBaseline(baselineSql)).toEqual([]);
+    expect(compareSchemaToBaseline(migrationChainSql)).toEqual([]);
 
     const drifts = [
-      baselineSql.replace("`name` text NOT NULL", "`name` integer NOT NULL"),
-      baselineSql.replace(
+      migrationChainSql.replace(
+        "`name` text NOT NULL",
+        "`name` integer NOT NULL",
+      ),
+      migrationChainSql.replace(
         "`users_status_created_idx` ON `users` (`status`, `created_at`, `id`)",
         "`users_status_created_idx` ON `users` (`created_at`, `status`, `id`)",
       ),
-      baselineSql.replace(
+      migrationChainSql.replace(
         "`users_role_check` CHECK (`role` in ('user', 'admin'))",
         "`users_role_check` CHECK (`role` = 'user')",
       ),
-      baselineSql.replace(
+      migrationChainSql.replace(
         "REFERENCES `users` (`id`) ON UPDATE no action ON DELETE cascade",
         "REFERENCES `users` (`id`) ON UPDATE no action ON DELETE restrict",
       ),
-      baselineSql.replace(
+      migrationChainSql.replaceAll(
         "BEFORE UPDATE OF `left_at` ON `team_members`",
         "BEFORE UPDATE OF `role` ON `team_members`",
       ),
-      baselineSql.replace(
+      migrationChainSql.replace(
         "RAISE(ABORT, 'MESSAGE_SUMMARY_FAILED')",
         "RAISE(ABORT, 'RAW_SQL_FAILURE')",
       ),
     ];
     for (const drifted of drifts) {
-      expect(drifted).not.toBe(baselineSql);
+      expect(drifted).not.toBe(migrationChainSql);
       expect(compareSchemaToBaseline(drifted)).not.toEqual([]);
     }
   });

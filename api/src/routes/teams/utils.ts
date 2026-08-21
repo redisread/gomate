@@ -101,7 +101,6 @@ function mapUserExtra(value: unknown, contactVisible = false) {
 function mapParticipant(row: ParticipantRow, contactVisible: boolean): TeamParticipant {
   return {
     userId: row.userId,
-    role: row.role,
     joinedAt: asIso(row.joinedAt),
     leftAt: row.leftAt ? asIso(row.leftAt) : null,
     ...(row.user ? {

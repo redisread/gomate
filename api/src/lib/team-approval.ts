@@ -13,8 +13,8 @@ export function createTeamApprovalBatch(
   const activateMember = db
     .prepare(
       `
-        INSERT INTO team_members (team_id, user_id, role, joined_at, left_at)
-        SELECT r.team_id, r.user_id, 'member', ?, NULL
+        INSERT INTO team_members (team_id, user_id, joined_at, left_at)
+        SELECT r.team_id, r.user_id, ?, NULL
         FROM team_join_requests AS r
         INNER JOIN teams AS t ON t.id = r.team_id
         WHERE r.id = ?
@@ -26,7 +26,6 @@ export function createTeamApprovalBatch(
           AND t.cancelled_at IS NULL
           AND t.start_at > ?
         ON CONFLICT(team_id, user_id) DO UPDATE SET
-          role = 'member',
           joined_at = excluded.joined_at,
           left_at = NULL
         WHERE team_members.left_at IS NOT NULL
