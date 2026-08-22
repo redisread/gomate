@@ -4,6 +4,7 @@ import {
   assertProductionBuildEnvironment,
   assertProductionDeployEnvironment,
 } from "./production-build-guard.mjs";
+import { PRODUCTION_WRANGLER_COMMANDS } from "./deploy-production.mjs";
 
 test("allows local production-parity builds", () => {
   assert.doesNotThrow(() =>
@@ -58,4 +59,21 @@ test("rejects production deployment outside Workers Builds", () => {
       }),
     /只允许由 main 分支的 Workers Builds 执行/u,
   );
+});
+
+test("deploys the Astro build through Wranglers redirected config", () => {
+  assert.deepEqual(PRODUCTION_WRANGLER_COMMANDS, [
+    [
+      "d1",
+      "migrations",
+      "apply",
+      "DB",
+      "--remote",
+      "--env",
+      "production",
+      "--config",
+      "wrangler.jsonc",
+    ],
+    ["deploy", "--env", "production"],
+  ]);
 });

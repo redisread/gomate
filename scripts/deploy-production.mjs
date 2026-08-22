@@ -8,7 +8,7 @@ import { assertProductionDeployEnvironment } from "./production-build-guard.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WRANGLER = process.platform === "win32" ? "wrangler.cmd" : "wrangler";
 
-const COMMANDS = [
+export const PRODUCTION_WRANGLER_COMMANDS = [
   [
     "d1",
     "migrations",
@@ -20,7 +20,7 @@ const COMMANDS = [
     "--config",
     "wrangler.jsonc",
   ],
-  ["deploy", "--env", "production", "--config", "wrangler.jsonc"],
+  ["deploy", "--env", "production"],
 ];
 
 function runWrangler(args) {
@@ -46,10 +46,12 @@ function runWrangler(args) {
 
 async function main() {
   assertProductionDeployEnvironment();
-  for (const args of COMMANDS) await runWrangler(args);
+  for (const args of PRODUCTION_WRANGLER_COMMANDS) await runWrangler(args);
 }
 
-main().catch((error) => {
-  console.error(`❌ ${error.message}`);
-  process.exitCode = 1;
-});
+if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(`❌ ${error.message}`);
+    process.exitCode = 1;
+  });
+}
