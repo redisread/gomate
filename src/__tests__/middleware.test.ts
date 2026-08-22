@@ -20,6 +20,7 @@ describe("i18n middleware query preservation", () => {
 
     const response = await onRequest(context as never, vi.fn() as never);
 
+    if (!(response instanceof Response)) throw new Error("Expected API response");
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ status: "ok" });
   });

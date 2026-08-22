@@ -15,7 +15,7 @@
     "env:check": "node scripts/env-check.mjs",
     "check": "astro check",
     "lint": "eslint src scripts",
-    "type-check": "tsc --noEmit -p tsconfig.json",
+    "type-check": "astro sync && tsc --noEmit -p tsconfig.json",
     "test": "vitest run --config vitest.config.ts",
     "test:server": "vitest run --config vitest.server.config.ts",
     "test:worker": "vitest run --config vitest.worker.config.ts",
