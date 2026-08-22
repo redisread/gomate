@@ -15,7 +15,7 @@
     "env:check": "node scripts/env-check.mjs",
     "check": "astro check",
     "lint": "eslint src scripts",
-    "type-check": "astro sync && tsc --noEmit -p tsconfig.json",
+    "type-check": "pnpm worker:types:generate && astro sync && tsc --noEmit -p tsconfig.json",
     "test": "vitest run --config vitest.config.ts",
     "test:server": "vitest run --config vitest.server.config.ts",
     "test:worker": "vitest run --config vitest.worker.config.ts",
@@ -29,9 +29,11 @@
     "db:check": "node scripts/check-migrations-sync.mjs",
     "db:reset": "node scripts/reset-local-db.mjs",
     "db:promote-admin": "node scripts/promote-admin.mjs",
-    "worker:types": "wrangler types src/server/worker-configuration.d.ts --config wrangler.jsonc --env production",
+    "worker:types:generate": "wrangler types src/server/worker-configuration.d.ts --config wrangler.jsonc --env production",
+    "worker:types": "wrangler types src/server/worker-configuration.d.ts --config wrangler.jsonc --env production --check && git diff --exit-code -- src/server/worker-configuration.d.ts",
     "worker:dry-run": "node scripts/worker-dry-run.mjs",
-    "worker:size": "node scripts/check-worker-bundle-size.mjs"
+    "worker:size": "node scripts/check-worker-bundle-size.mjs",
+    "deploy:production": "wrangler d1 migrations apply DB --remote --env production --config wrangler.jsonc && wrangler deploy"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.3",
