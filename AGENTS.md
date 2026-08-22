@@ -84,10 +84,10 @@ pnpm --filter @gomate/api check:migrations
 
 ## 交付与生产红线
 
-- PR 至少运行与变更范围匹配的测试；合并前运行 `pnpm check:legacy-removal` 与 `pnpm test:delivery`。完整 CI 以 `.github/workflows/pr-validation.yml` 为准。
-- 生产不随 `main` 自动部署。任何远程 D1、KV、R2、Worker、route/domain 或 secret 变更都必须列出精确目标和回滚方式，获得用户显式批准，并通过 GitHub `production` protected environment。
+- 仓库暂不包含 CI/CD 流水线。PR 至少在本地运行与变更范围匹配的测试；合并前运行 `pnpm check:legacy-removal` 与 `pnpm test:delivery`，并记录实际执行结果。
+- 生产发布流水线正在重构。在新流程经过审核并落地前，禁止任何远程 D1、KV、R2、Worker、route/domain 或 secret 写入。
 - 不在本机直接执行生产 Cloudflare 写命令，不使用 admin bypass，不把生产 secrets 放到仓库级 Actions secrets、日志、PR 或命令参数。
-- 当前仓库的 `deploy.yml` 通过 GitHub `production` protected environment 发布不可变 Worker version，并在同一受保护 job 内验证、推广或恢复；它不包含 D1 migration，也不代表可绕过逐次审批。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。
+- 不得用临时脚本、Dashboard 手工部署或本机命令替代待重构的受保护流水线。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。
 - 生产异常先恢复/保持 `WRITE_MODE=protected`，再回滚到已验证 Worker version；旧 split Worker、旧 route 与旧数据库已退役，不得重建为回滚手段。
 
 ## 项目审查

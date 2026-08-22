@@ -28,6 +28,8 @@ const removedPaths = [
   ".github/workflows/api-deploy.yml",
   ".github/workflows/frontend-deploy.yml",
   ".github/workflows/lighthouse-frontend.yml",
+  "scripts/e2e-health-report.mjs",
+  "scripts/write-canary-cleanup-sql.mjs",
   "e2e/v1-read-endpoints.spec.ts",
   "frontend/src/components/features/activity-posts",
   "frontend/src/components/features/api-keys-client.tsx",

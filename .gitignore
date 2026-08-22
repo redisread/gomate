@@ -23,10 +23,6 @@ test-results/
 # Misc untracked files that should not be committed
 paseo.json
 
-# E2E health reports
-e2e-health-report.json
-e2e-health-history.json
-
 # testing
 /coverage
 

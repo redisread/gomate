@@ -3,7 +3,6 @@
 > 发现有趣地点，找到同行伙伴
 
 [![Live](https://img.shields.io/badge/Live-gomate.live-blue)](https://gomate.live)
-[![PR Validation](https://github.com/redisread/gomate/actions/workflows/pr-validation.yml/badge.svg?branch=main)](https://github.com/redisread/gomate/actions/workflows/pr-validation.yml)
 
 ## 产品定位
 
@@ -127,10 +126,9 @@ pnpm env:check
 
 ## 部署
 
-生产不随 `main` 自动部署。当前线上由统一 Worker `gomate` 提供
-`gomate.live`；`.github/workflows/deploy.yml` 通过 GitHub `production` protected
-environment 上传、验证并推广不可变 Worker version，D1 migration 使用独立 workflow。
-任何生产写入都必须明确目标与回滚方式并获得逐次批准。详见 `docs/prod-change-policy.md`。
+当前仓库暂不包含 CI/CD 或生产发布流水线，等待重新设计。线上仍由统一 Worker
+`gomate` 提供 `gomate.live`；在新流水线经过审核并落地前，不得从本机或临时命令执行
+生产 Worker、D1、KV、R2、secret 或 route 写入。详见 `docs/prod-change-policy.md`。
 
 ## 相关仓库
 
