@@ -1,4 +1,4 @@
-name: Validate unified Worker
+name: Worker CI
 
 on:
   pull_request:
