@@ -74,9 +74,9 @@ Workers Builds 的推荐配置为：
 - 所有 DDL 只通过 `migrations/`；不得用 `d1 execute` 手工修改生产 schema。
 - migration 采用 expand/code/contract：先应用旧代码可接受的增量 schema，再发布使用新 schema 的代码；删除列、表、约束等 contract migration 必须先发布同时兼容旧/新 schema 的 Worker，完成观察并关闭旧版本回滚窗口后再执行。
 - contract migration 必须等待新的受保护流水线落地，并在执行前证明当前 Worker 同时兼容新旧 schema、关闭不兼容版本的回滚入口。
-- 新 D1 v3 以 `0000_init.sql` 作为 fresh baseline；已应用 migration 不可改写。后续新增迁移、Drizzle schema、journal 和 snapshot 必须同步，本地运行 `pnpm db:check`。
+- 新 D1 v3 以 `0000_init.sql` 作为 fresh baseline，并由 `0001_reference_data.sql` 写入运行时必需的稳定 Region、Location 和 Tag；已应用 migration 不可改写。后续新增迁移、Drizzle schema、journal 和 snapshot 必须同步，本地运行 `pnpm db:check`。
 - 生产 D1 v3 的创建/绑定是独立的受保护基础设施变更；在该资源完成只读核对前，禁止把旧 D1 UUID 填回 `wrangler.jsonc`，也禁止执行远程 migration。
-- `db/seed.sql` 只用于 local/development，禁止放入 `migrations/` 或应用到生产。
+- 测试用户和可变 demo 数据不得进入 migration；测试 fixture 只在隔离的本地数据库创建。
 - 多语句原子写使用 D1 `batch()` 与条件 DML；禁止 `db.transaction()` 和裸 `BEGIN`/`COMMIT`。
 - JSON 列在 SQLite 为带 CHECK 的 TEXT，在 Drizzle 使用 `mode: "json"`；业务层传对象/数组。
 - R2 对象删除、批量迁移或 bucket 配置变化必须独立列出 key/prefix 与恢复方式；“部署 Worker”不隐含任何 R2 修改授权。

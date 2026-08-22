@@ -1,5 +1,5 @@
--- Minimal idempotent development seed for the V3 schema.
--- Keep fixture/demo users and activity data in test-specific seeds.
+-- Stable reference data required by production and local runtimes.
+-- Keep test users and mutable demo activity in test-specific fixtures.
 
 INSERT OR IGNORE INTO `region` (
   `id`, `country_code`, `name`, `name_en`, `slug`, `code`, `level`, `sort_order`

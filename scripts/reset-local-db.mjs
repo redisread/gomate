@@ -105,12 +105,4 @@ run([
   "apply",
   ...sharedArgs,
 ]);
-run([
-  "d1",
-  "execute",
-  ...sharedArgs,
-  "--file",
-  "db/seed.sql",
-]);
-
 log("✅ 本地 v3 数据库已重置；运行 pnpm dev 启动统一 Worker。");
