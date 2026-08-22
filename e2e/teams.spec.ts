@@ -32,37 +32,31 @@ test.describe("Team Flow", () => {
     // Select a location from the dropdown
     const locationSelect = page.locator("[data-testid='create-team-location']");
     await expect(locationSelect).toBeVisible();
-    // Pick the first non-empty option
-    const options = await locationSelect.locator("option").allTextContents();
-    const firstRealOption = options.find((text) => text.trim() !== "");
-    if (firstRealOption) {
-      await locationSelect.selectOption({ label: firstRealOption });
-    }
+    // Index 0 is the non-empty placeholder; choose the first real location.
+    await expect(locationSelect.locator("option")).toHaveCount(2);
+    await locationSelect.selectOption({ index: 1 });
+    await page
+      .locator("[data-testid='create-team-activity-type']")
+      .selectOption("hiking");
 
-    await page.locator("[data-testid='create-team-date']").fill("2026-12-31");
+    const startDate = new Date();
+    startDate.setUTCDate(startDate.getUTCDate() + 7);
+    await page
+      .locator("[data-testid='create-team-date']")
+      .fill(startDate.toISOString().slice(0, 10));
     await page.locator("[data-testid='create-team-time']").fill("10:00");
     await page.locator("[data-testid='create-team-max-members']").fill("5");
     await page.locator("[data-testid='create-team-description']").fill("Created by E2E test");
 
     // Submit and wait for navigation to the new team detail page
     await page.locator("[data-testid='create-team-submit']").click();
-    await page.waitForURL(/\/teams\/.+/, { timeout: 5000 });
+    await page.waitForURL(/\/teams\/(?!create(?:\/|$))[^/]+/u, {
+      timeout: 10_000,
+    });
 
-    await expect(page.locator("body")).toBeVisible();
+    await expect(
+      page.getByText("E2E Test Team", { exact: true }).first(),
+    ).toBeVisible();
     await expect(page.locator("text=Internal Server Error")).not.toBeVisible();
-  });
-
-  test("team detail page loads", async ({ page }) => {
-    await page.goto("/teams/1");
-    await page.waitForLoadState("domcontentloaded");
-    await expect(page.locator("body")).toBeVisible();
-    await expect(page.locator("text=Internal Server Error")).not.toBeVisible();
-  });
-
-  test("team list page loads", async ({ page }) => {
-    await page.goto("/teams");
-    await expect(page.locator("body")).toBeVisible();
-    await expect(page.locator("text=Internal Server Error")).not.toBeVisible();
-    await expect(page.locator("body")).toContainText("GoMate");
   });
 });

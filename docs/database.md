@@ -12,7 +12,8 @@
 ## 基线与约定
 
 - Cloudflare D1 / SQLite，binding 为 `DB`，数据库为 `gomate-db-v3`。
-- 当前 migration 链只有新的 `0000_init.sql` baseline，共 1 条 journal entry 和 1 份 snapshot。
+- 当前 migration 链为 `0000_init.sql` baseline、`0001_reference_data.sql` 稳定参考数据与
+  `0002_account_issuer.sql` Better Auth 账户 issuer 升级；journal 与 snapshot 必须逐条对应。
 - 当前 schema 包含 19 张业务表和 13 个触发器；CI 会校验 schema、migration 链与 snapshot 一致。
 - 时间在 D1 中存 Unix 毫秒，HTTP DTO 输出 ISO 8601。
 - JSON 列使用 Drizzle `mode: "json"`，D1 通过 `json_valid` 与 `json_type` CHECK 约束形状；业务层只传对象或数组。
@@ -96,6 +97,8 @@ Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和
 ### 认证与隐私
 
 - session 真相只在 D1 `sessions`；KV 不是 session 或权限来源。
+- `accounts` 使用 Better Auth 1.7 的 `(issuer, account_id)` 唯一身份；升级 migration 将
+  既有 credential 账户回填为 `local:credential`，不得恢复旧 `(provider_id, account_id)` 唯一键。
 - 用户变为非 active 或软删除时，同一数据库更新会撤销其 session 和未消费的密码重置 challenge。
 - 新建 session、签发 challenge 和消费 challenge 都在最终写语句复核用户仍 active 且未删除。
 - 用户可扩展资料保存在 `users.extra`；敏感字段的读取仍由 API 权限决定。

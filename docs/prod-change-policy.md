@@ -46,7 +46,7 @@ Cloudflare 或应用 secrets，也不提供本机生产写入路径。合并到 
 
 ## 3. 发布能力
 
-PR 使用仓库内 `pnpm test:ci` 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，
+PR 使用仓库内 `pnpm test:ci` 加隔离 D1 的 5 条 Chromium E2E 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，
 只负责 `main` 分支的生产构建和自动发布；非 `main` 分支不生成远程 Preview。PR 审核与
 受保护分支是发布授权边界。构建阶段只做校验和 dry-run，部署阶段先执行目标环境 D1
 migration，再发布不可变 Worker version。
@@ -123,4 +123,6 @@ pnpm worker:size
 pnpm test:e2e:ci
 ```
 
-PR CI 与本地检查必须记录实际完成的验证和未执行项。检查通过只说明代码具备合并条件，不等于获得生产写入授权。
+GitHub PR CI 会在 `pnpm test:ci`、Worker types/dry-run/size 通过后初始化 runner 临时 D1，
+再自动执行 `pnpm test:e2e:ci`；该流程不持有 Cloudflare 生产凭据，也不访问远程 D1/R2。
+本地检查必须记录实际完成的验证和未执行项。检查通过只说明代码具备合并条件，不等于获得生产写入授权。

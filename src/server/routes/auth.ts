@@ -195,11 +195,21 @@ async function enforceNativeRateLimit(
   return c.json(APIErrors.rateLimited("请求过于频繁，请稍后重试"), 429);
 }
 
+export function normalizeBetterAuthUrl(input: string): string {
+  const url = new URL(input);
+  const authMarker = url.pathname.match(/\/auth(?=\/|$)/u);
+  const endpointPath = authMarker?.index === undefined
+    ? url.pathname
+    : url.pathname.slice(authMarker.index + authMarker[0].length);
+  url.pathname = `/api/auth${endpointPath.startsWith("/") ? endpointPath : `/${endpointPath}`}`;
+  return url.toString();
+}
+
 function normalizedJsonRequest(c: AuthContext, data: unknown): Request {
   const headers = new Headers(c.req.raw.headers);
   headers.delete("content-length");
   headers.set("content-type", "application/json");
-  return new Request(c.req.raw.url, {
+  return new Request(normalizeBetterAuthUrl(c.req.raw.url), {
     method: c.req.raw.method,
     headers,
     body: JSON.stringify(data),

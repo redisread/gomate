@@ -52,23 +52,15 @@ export default defineConfig({
     },
   ],
 
-  // Preview the built unified Worker so browser tests exercise the same
-  // Hono/Astro boundary that Wrangler deploys. CI prepares D1 before this.
+  // Serve the built Astro application through Wrangler so browser tests share
+  // the exact persistent local bindings prepared by db:reset. The deploy
+  // entrypoint is covered separately by the workerd Worker test suite.
   webServer: process.env.E2E_BASE_URL
     ? undefined
-    : process.env.CI
-      ? {
-          command: "pnpm build && pnpm exec astro preview --port 5432",
-          url: "http://localhost:5432/api/health",
-          reuseExistingServer: false,
-          timeout: 180_000,
-          env: { ASTRO_PREVIEW_BACKGROUND: "0" },
-        }
-      : {
-          command: "pnpm build && pnpm exec astro preview --port 5432",
-          url: "http://localhost:5432/api/health",
-          reuseExistingServer: false,
-          timeout: 180_000,
-          env: { ASTRO_PREVIEW_BACKGROUND: "0" },
-        },
+    : {
+        command: "pnpm exec astro build && node scripts/start-e2e-server.mjs",
+        url: "http://localhost:5432/api/health",
+        reuseExistingServer: false,
+        timeout: 180_000,
+      },
 });

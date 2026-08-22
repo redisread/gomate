@@ -143,6 +143,7 @@ export const accounts = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    issuer: text("issuer").notNull(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     accessToken: text("access_token"),
@@ -165,8 +166,8 @@ export const accounts = sqliteTable(
       .default(nowMs),
   },
   (table) => ({
-    providerUnique: uniqueIndex("accounts_provider_unique").on(
-      table.providerId,
+    issuerAccountUnique: uniqueIndex("accounts_issuer_account_unique").on(
+      table.issuer,
       table.accountId,
     ),
     userIdx: index("accounts_user_idx").on(table.userId),

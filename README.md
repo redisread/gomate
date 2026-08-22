@@ -65,13 +65,17 @@ pnpm db:promote-admin --email admin@test.com
 
 ### Playwright（推荐）
 
-覆盖范围：登录/注册、地点浏览、队伍创建、队伍申请与审批、首页浏览等核心路径。
+固定保留 5 条高价值路径：首页与健康检查、登录、未登录访问保护、创建队伍、申请并审批。
+测试使用构建后的本地 Worker 和隔离 D1，不访问 Cloudflare 远程资源；GitHub PR CI 会自动运行。
 
 ```bash
 # 安装浏览器（首次运行）
 pnpm exec playwright install chromium
 
-# 运行本地 E2E 测试（自动启动本地服务器）
+# 初始化测试所用的本地 D1
+pnpm db:reset
+
+# 运行本地 E2E 测试（自动构建并启动本地 Worker）
 pnpm test:e2e
 
 # 无头模式（CI 用）

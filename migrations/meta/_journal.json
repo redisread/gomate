@@ -15,6 +15,13 @@
       "when": 1787391518244,
       "tag": "0001_reference_data",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787395697517,
+      "tag": "0002_account_issuer",
+      "breakpoints": true
     }
   ]
 }
