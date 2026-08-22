@@ -38,11 +38,11 @@
 
 ## 数据库与存储硬约束
 
-- D1 binding 为 `DB`，数据库为 `gomate-db-v3`。当前迁移链只有新的 `0000_init.sql` baseline；schema、journal、snapshot 与 migration 必须同步。
+- D1 binding 为 `DB`，数据库为 `gomate-db-v3`。有序 migration 链位于 `migrations/`；schema、journal、snapshot 与 migration 必须同步。
 - 当前模型为 19 张业务表、13 个业务触发器。所有 DDL 只通过 migration；不得手工对生产 D1 执行 DDL。
 - 多语句原子写使用 D1 `batch()` 与条件 DML；不要使用 `db.transaction()` 或裸 `BEGIN`/`COMMIT`。
 - JSON 列在 Drizzle 使用 `mode: "json"`，业务层只传对象/数组，不增加字符串兼容层。
-- 稳定 Region、Location、Tag 参考数据由 `0001_reference_data.sql` 管理；测试用户和可变 demo 数据不得进入 migration。
+- 稳定 Region、Location、Tag 参考数据由 `0001_reference_data.sql` 管理；`0003_import_v2_catalog.sql` 只保留已退役 v2 的公开地区与地点目录。测试用户和可变 demo 数据不得进入 migration。
 - R2 binding 为 `R2`（bucket `gomate`）。运行时不依赖 KV；不得重新引入已退役的 Worker、KV、域名或旧 binding。
 
 ## 前端规则

@@ -77,8 +77,59 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
       "--command",
       "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name;",
     ]);
-    const tables = JSON.parse(output).flatMap((entry) => entry.results ?? []).map((row) => row.name);
+    const tables = JSON.parse(output)
+      .flatMap((entry) => entry.results ?? [])
+      .map((row) => row.name);
     assert.deepEqual(tables, EXPECTED_TABLES);
+
+    const catalogOutput = run(WRANGLER, [
+      "d1",
+      "execute",
+      "DB",
+      "--local",
+      "--persist-to",
+      state,
+      "--config",
+      "wrangler.jsonc",
+      "--json",
+      "--command",
+      `SELECT
+        (SELECT COUNT(*) FROM region) AS region_count,
+        (SELECT COUNT(*) FROM locations) AS location_count,
+        (SELECT COUNT(*) FROM tags) AS tag_count,
+        (SELECT COUNT(*) FROM location_tags) AS location_tag_count,
+        (SELECT COUNT(*) FROM d1_migrations) AS migration_count,
+        (SELECT COUNT(*) FROM locations WHERE id = 'location-shenzhen-wutongshan') AS retained_v3_location_count;`,
+    ]);
+    const [catalog] = JSON.parse(catalogOutput).flatMap(
+      (entry) => entry.results ?? [],
+    );
+    assert.deepEqual(catalog, {
+      region_count: 19,
+      location_count: 37,
+      tag_count: 3,
+      location_tag_count: 3,
+      migration_count: 4,
+      retained_v3_location_count: 1,
+    });
+
+    const foreignKeyOutput = run(WRANGLER, [
+      "d1",
+      "execute",
+      "DB",
+      "--local",
+      "--persist-to",
+      state,
+      "--config",
+      "wrangler.jsonc",
+      "--json",
+      "--command",
+      "PRAGMA foreign_key_check;",
+    ]);
+    const foreignKeyViolations = JSON.parse(foreignKeyOutput).flatMap(
+      (entry) => entry.results ?? [],
+    );
+    assert.deepEqual(foreignKeyViolations, []);
   } finally {
     rmSync(state, { recursive: true, force: true });
   }
