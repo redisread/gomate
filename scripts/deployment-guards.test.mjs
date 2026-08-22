@@ -1,20 +1,9 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import {
-  existsSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
-import os from "node:os";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
-import { writeProductionSecrets } from "./write-production-secrets.mjs";
 
 const PROJECT_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -289,64 +278,4 @@ test("logger guard covers supported TypeScript source extensions", () => {
       violations: [],
     });
   }
-});
-
-test("production secrets file is private and contains only required values", (t) => {
-  const directory = mkdtempSync(path.join(os.tmpdir(), "gomate-secrets-"));
-  t.after(() => rmSync(directory, { recursive: true, force: true }));
-  const outputPath = path.join(directory, "gomate-production-secrets.json");
-  const previous = {
-    BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
-    PRODUCTION_APP_URL: process.env.PRODUCTION_APP_URL,
-    RESEND_API_KEY: process.env.RESEND_API_KEY,
-    SECRETS_FILE: process.env.SECRETS_FILE,
-  };
-  Object.assign(process.env, {
-    BETTER_AUTH_SECRET: "production-auth-secret-at-least-32-characters",
-    PRODUCTION_APP_URL: "https://gomate.live",
-    RESEND_API_KEY: "resend-key",
-    SECRETS_FILE: outputPath,
-  });
-  t.after(() => {
-    for (const [name, value] of Object.entries(previous)) {
-      if (value === undefined) delete process.env[name];
-      else process.env[name] = value;
-    }
-  });
-  writeProductionSecrets(outputPath);
-  assert.equal(statSync(outputPath).mode & 0o777, 0o600);
-  assert.deepEqual(JSON.parse(readFileSync(outputPath, "utf8")), {
-    APP_URL: "https://gomate.live",
-    BETTER_AUTH_SECRET: "production-auth-secret-at-least-32-characters",
-    RESEND_API_KEY: "resend-key",
-  });
-});
-
-test("cleanup removes only the exact production runner secrets file", (t) => {
-  const directory = mkdtempSync(path.join(os.tmpdir(), "gomate-cleanup-"));
-  t.after(() => rmSync(directory, { recursive: true, force: true }));
-  const outputPath = path.join(directory, "gomate-production-secrets.json");
-  writeFileSync(outputPath, "{}\n", { mode: 0o600 });
-  const script = path.join(
-    PROJECT_ROOT,
-    "scripts",
-    "remove-deployment-secrets.mjs",
-  );
-  const result = spawnSync(process.execPath, [script], {
-    encoding: "utf8",
-    env: { ...process.env, RUNNER_TEMP: directory, SECRETS_FILE: outputPath },
-  });
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(existsSync(outputPath), false);
-
-  const refused = spawnSync(process.execPath, [script], {
-    encoding: "utf8",
-    env: {
-      ...process.env,
-      RUNNER_TEMP: directory,
-      SECRETS_FILE: path.join(directory, "different.json"),
-    },
-  });
-  assert.equal(refused.status, 1);
-  assert.match(refused.stderr, /Refusing to remove/u);
 });

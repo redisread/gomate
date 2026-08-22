@@ -9,7 +9,7 @@
 | Unified Worker | <!-- Astro / Hono / bindings / routes -->           |
 | Database       | <!-- schema / migration / seed / query contract --> |
 | Product        | <!-- frontend / API / i18n -->                      |
-| Delivery       | <!-- scripts / CI / docs -->                        |
+| Delivery       | <!-- local tooling / docs -->                       |
 
 ## 破坏性变更
 
@@ -36,7 +36,7 @@
 - 远程 D1/KV/R2/secret/route/deploy 是否变化：
 - migration 是否可在全新 D1 重放：
 - production route 是否仍保持 fail-closed：
-- 需要的受保护人工 gate：
+- 流水线重构前是否需要保持生产写入冻结：
 
 ## UI 验证
 
