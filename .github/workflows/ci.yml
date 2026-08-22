@@ -15,7 +15,10 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --user 1001
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -48,9 +51,6 @@ jobs:
 
       - name: Enforce Worker size budget
         run: pnpm worker:size
-
-      - name: Install Chromium
-        run: pnpm exec playwright install --with-deps chromium
 
       - name: Prepare isolated E2E database
         run: pnpm db:reset
