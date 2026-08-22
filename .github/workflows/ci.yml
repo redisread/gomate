@@ -15,7 +15,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -48,3 +48,18 @@ jobs:
 
       - name: Enforce Worker size budget
         run: pnpm worker:size
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Prepare isolated E2E database
+        run: pnpm db:reset
+        env:
+          GOMATE_LOCAL_STATE: ${{ runner.temp }}/gomate-e2e-state
+
+      - name: Run browser E2E
+        run: pnpm test:e2e:ci
+        env:
+          BETTER_AUTH_SECRET: local-ci-${{ github.run_id }}-${{ github.run_attempt }}-only-not-production
+          GOMATE_LOCAL_STATE: ${{ runner.temp }}/gomate-e2e-state
+          RESEND_API_KEY: ""

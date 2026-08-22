@@ -6,7 +6,7 @@
  *
  * 本模块让每个用例自行构造隔离 fixture：
  *   signUpUser（注册、验证邮箱、登录）→ patchWechat（建队/申请的前置条件）
- *   → createTeamAs / applyToTeamAs
+ *   → createTeamAs；申请和审批由浏览器完成
  * 用户名/队名带 RUN_ID 时间戳，多次运行互不干扰，无需清理。
  *
  * 默认连接统一 Worker 的 /api，可用环境变量覆盖。HTTP 使用 Origin 头和
@@ -220,25 +220,6 @@ export async function createTeamAs(
     );
   }
   return teamId;
-}
-
-/** 以某个用户身份申请加入队伍（构造 pending 状态用） */
-export async function applyToTeamAs(
-  user: FixtureUser,
-  teamId: string,
-  message = "E2E 申请",
-): Promise<void> {
-  const res = await apiFetch(
-    "POST",
-    `/teams/${teamId}/join`,
-    { message },
-    user.cookie,
-  );
-  if (!res.ok) {
-    throw new Error(
-      `apply to team failed for ${user.email}: ${res.status} ${JSON.stringify(res.data)}`,
-    );
-  }
 }
 
 /** 取本地种子数据中的第一个 location id。 */

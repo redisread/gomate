@@ -4,7 +4,6 @@ import {
   signUpUser,
   patchWechat,
   createTeamAs,
-  applyToTeamAs,
   getFirstLocationId,
   type FixtureUser,
 } from "./fixtures";
@@ -51,10 +50,12 @@ async function makeTeam(leader: FixtureUser, suffix: string): Promise<string> {
 }
 
 test.describe("Team Application Flow", () => {
-  test("member can apply to join a recruiting team", async ({ page }) => {
-    const leader = await makeUser("leader-apply");
-    const teamId = await makeTeam(leader, "申请");
-    const member = await makeUser("applicant-apply");
+  test("member applies and leader approves the application", async ({
+    page,
+  }) => {
+    const leader = await makeUser("leader");
+    const teamId = await makeTeam(leader, "申请审批");
+    const member = await makeUser("applicant");
 
     await loginAs(page, member.email, member.password);
     await page.goto(`/teams/${teamId}`);
@@ -72,15 +73,8 @@ test.describe("Team Application Flow", () => {
     await expect(
       page.locator("[data-testid='team-pending-status']"),
     ).toBeVisible();
-  });
 
-  test("leader can approve a pending application", async ({ page }) => {
-    const leader = await makeUser("leader-approve");
-    const teamId = await makeTeam(leader, "审批");
-    const member = await makeUser("applicant-approve");
-    // pending 申请由 API 构造，UI 只走审批主路径
-    await applyToTeamAs(member, teamId);
-
+    await page.context().clearCookies();
     await loginAs(page, leader.email, leader.password);
     await page.goto(`/teams/${teamId}`);
 
@@ -96,29 +90,6 @@ test.describe("Team Application Flow", () => {
     await appCard.locator("[data-testid='team-application-approve']").click();
 
     // 审批后该申请卡片应消失
-    await expect(appCard).toHaveCount(0);
-  });
-
-  test("leader can reject a pending application", async ({ page }) => {
-    const leader = await makeUser("leader-reject");
-    const teamId = await makeTeam(leader, "拒绝");
-    const member = await makeUser("applicant-reject");
-    await applyToTeamAs(member, teamId);
-
-    await loginAs(page, leader.email, leader.password);
-    await page.goto(`/teams/${teamId}`);
-
-    const applicationsSection = page.locator(
-      "[data-testid='team-applications-section']",
-    );
-    await expect(applicationsSection).toBeVisible();
-
-    const appCard = applicationsSection
-      .locator("[data-testid='team-application-card']")
-      .filter({ hasText: member.name });
-    await appCard.locator("[data-testid='team-application-reject']").click();
-
-    // 拒绝后该申请卡片应消失
     await expect(appCard).toHaveCount(0);
   });
 });

@@ -1,55 +1,64 @@
 ## 目的
 
-<!-- 一句话说明为什么改、解决什么问题。 -->
+<!-- 说明问题、为什么现在要改，以及用户或运维侧的预期结果；不要复述 diff。 -->
 
-## 改动一览
+## 范围
 
-| 模块           | 改动                                                |
-| -------------- | --------------------------------------------------- |
-| Unified Worker | <!-- Astro / Hono / bindings / routes -->           |
-| Database       | <!-- schema / migration / seed / query contract --> |
-| Product        | <!-- frontend / API / i18n -->                      |
-| Delivery       | <!-- local tooling / docs -->                       |
+- 包含：
+- 不包含：
+- 关联 Issue / Spec / ADR：
 
-## 破坏性变更
+## 风险与兼容性
 
-- [ ] 无破坏性变更
-- [ ] 有破坏性变更，已在下方说明数据、API 和部署影响
-
-<!-- 不提供兼容层时，请明确删除的 endpoint、字段、表或运行方式。 -->
+- 风险等级：<!-- 低 / 中 / 高。D1、bindings、route、认证、安全或生产写入通常为高风险。 -->
+- 用户可见或 API 破坏性变更：<!-- 无；或列出 endpoint、字段、行为及迁移方式。 -->
+- 主要失败模式与限制措施：
 
 ## 验证证据
 
+<!-- 只勾选实际通过的项目并补充结果；计划执行或未运行的检查不得勾选。 -->
+
 - [ ] `pnpm test:ci`
 - [ ] `pnpm worker:types && pnpm worker:dry-run && pnpm worker:size`
-- [ ] `pnpm test:e2e:ci`
-- [ ] 生产发布（如适用）仅由受保护 Workers Builds 执行 `pnpm deploy:production`
-- [ ] 非 `main` 分支不发布远程 Workers Preview；在线 Preview 需要独立资源和 secrets
+- [ ] `pnpm audit --prod --audit-level high`（生产相关改动时）
+- [ ] `pnpm test:e2e:ci`（涉及关键用户流程时）
+- [ ] UI：桌面端、移动端、键盘、可访问名称和 i18n 已验证（涉及界面时）
+- [ ] 其他自动或手动验证：
+- 未运行项及原因：
 
-补充手动验证：
+## Cloudflare 与数据影响
 
-<!-- 列出真实执行的步骤、结果和未执行项；不要用推断替代证据。 -->
+<!-- 勾选所有适用项；全部不涉及时只勾选“不涉及”。 -->
 
-## Cloudflare / 数据库影响
+- [ ] 不涉及 Cloudflare 运行时或远程数据
+- [ ] Worker 代码、Static Assets、兼容日期或 flags
+- [ ] route、custom domain 或 Workers Builds 配置
+- [ ] D1 schema、migration 或生产数据
+- [ ] R2 bucket、对象或公开 URL
+- [ ] bindings、变量、rate limit 或 secrets
+- [ ] 认证、缓存、日志、trace 或隐私边界
 
-- 远程 D1/KV/R2/secret/route/deploy 是否变化：
-- migration 是否可在全新 D1 重放：
-- production route 是否仍保持 fail-closed：
-- 流水线重构前是否需要保持生产写入冻结：
+精确目标、预期状态和影响范围：
 
-## UI 验证
+### Worker 检查（适用时）
 
-- [ ] 不涉及用户界面
-- [ ] Chrome 桌面端与移动端关键流程已验证
-- [ ] Lighthouse accessibility / performance 未退化或差异已说明
-- [ ] i18n 三种语言 key 已生成并校验
+- [ ] 配置、bindings 与 `wrangler types` 生成类型一致；secret 值未进入代码、配置、日志或 artifact
+- [ ] 不保存请求级全局可变状态；Promise 均被 `await`、返回或交给 `waitUntil()`
+- [ ] 大型或未知大小的 body 使用流式处理；访问 Cloudflare 服务优先使用 binding
+- [ ] 新日志可查询且不包含 body、headers、cookie、token、原始 email/IP 或用户资料
 
-## 回滚路径
+### D1 / R2 检查（适用时）
 
-<!-- 说明代码、Worker route 和 D1 binding 的独立回滚步骤。禁止用 git reset --hard 作为协作分支回滚方案。 -->
+- migration / 对象范围：
+- 全新本地 D1 重放结果：
+- 当前与上一 Worker version 的 schema 兼容性：
+- 数据或对象恢复方式：
 
-## 关联
+## 发布、验证与回滚
 
-- Spec / ADR：
-- Issue / task：
-- 上下游：
+<!-- 合并到 main 会触发 Workers Builds：先应用待执行 D1 migration，再部署 Worker。Worker 版本回滚不会恢复 D1/R2 状态。 -->
+
+- 合并后的生产影响：
+- 发布后 smoke：<!-- /api/health、SSR、关键只读 API、version/request ID 与脱敏日志。 -->
+- Worker 回滚目标或停止发布方式：<!-- 仅写计划；生产恢复仍需精确目标、schema 兼容性与单独批准。 -->
+- schema / 数据 / R2 无法随 Worker 回滚时的处理方式：
