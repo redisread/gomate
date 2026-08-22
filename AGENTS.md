@@ -89,7 +89,3 @@ pnpm --filter @gomate/api check:migrations
 - 不在本机直接执行生产 Cloudflare 写命令，不使用 admin bypass，不把生产 secrets 放到仓库级 Actions secrets、日志、PR 或命令参数。
 - 不得用临时脚本、Dashboard 手工部署或本机命令替代待重构的受保护流水线。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。
 - 生产异常先恢复/保持 `WRITE_MODE=protected`，再回滚到已验证 Worker version；旧 split Worker、旧 route 与旧数据库已退役，不得重建为回滚手段。
-
-## 项目审查
-
-用户要求 GoMate 专项审查或合并前专项审查时，使用 [`agents/gomate-reviewer.md`](agents/gomate-reviewer.md)。该 reviewer 只报告有代码路径和证据支持的问题，不直接修改代码。
