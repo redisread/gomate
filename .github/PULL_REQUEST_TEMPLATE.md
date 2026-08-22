@@ -24,6 +24,7 @@
 - [ ] `pnpm worker:types && pnpm worker:dry-run && pnpm worker:size`
 - [ ] `pnpm test:e2e:ci`
 - [ ] 生产发布（如适用）仅由受保护 Workers Builds 执行 `pnpm deploy:production`
+- [ ] 非 `main` 分支不发布远程 Workers Preview；在线 Preview 需要独立资源和 secrets
 
 补充手动验证：
 

@@ -15,6 +15,11 @@
 
 旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除；当前 Worker 不引入 KV 运行时缓存。
 
+仓库根配置是本地开发配置：Worker 名称保持为连接的 `gomate`（满足 Workers Builds
+连接校验），但使用本地 D1/R2 状态；
+`production` 环境显式绑定线上 Worker、D1、R2 和 route。根配置不再指向任何生产资源，
+生产命令必须显式传入 `--env production`。
+
 仓库 migration baseline 为 19 张业务表、13 个触发器；seed 与运行时代码依赖稳定
 Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 `region-cn-shenzhen` 还是匿名 local-circle fallback，不得随意改名。生产实际 migration
@@ -41,9 +46,10 @@ Cloudflare 或应用 secrets，也不提供本机生产写入路径。未经单�
 
 ## 3. 发布能力
 
-PR 使用仓库内 `pnpm test:ci` 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，负责
-preview 构建和生产发布；生产环境必须启用 protected environment 审核。构建阶段只做校验和
-dry-run，部署阶段先执行目标环境 D1 migration，再发布不可变 Worker version。
+PR 使用仓库内 `pnpm test:ci` 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，
+只负责 `main` 分支的生产构建和发布；非 `main` 分支不生成远程 Preview，生产环境必须启用
+protected environment 审核。构建阶段只做校验和 dry-run，部署阶段先执行目标环境 D1
+migration，再发布不可变 Worker version。
 
 Workers Builds 的推荐配置为：
 
@@ -53,8 +59,10 @@ Workers Builds 的推荐配置为：
    migration 成功后才执行 `wrangler deploy --env production`；
 3. Deploy command 依赖同一次 Build 已生成的 `dist/`；migration 失败时不得继续部署，Worker
    发布失败也不得回滚或手工补写数据库；
-4. Preview 与 production 的资源隔离、secret 边界和分支规则仍需单独完成审核（本次改动不处理
-   问题 1，也不改变 `wrangler.jsonc` 的环境资源声明）；production 仅允许 `main`，并要求人工审批；
+4. 当前采用单一远程环境策略：`main` 是唯一生产分支，构建脚本拒绝 Workers Builds 传入的
+   非 `main` 分支，`wrangler.jsonc` 的根配置使用本地资源，`production` 显式关闭
+   `workers_dev` 和 `preview_urls`。未来若要提供在线 Preview，必须先创建独立的 Worker、
+   D1、R2、secrets 和访问控制，不能把版本预览当作数据隔离；
 5. 发布后用 `/api/health`、SSR 页面和关键只读 API 做 smoke，记录 version ID、migration 结果和
    构建 run URL。任何 smoke 失败都停止后续推广。
 

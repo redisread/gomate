@@ -12,7 +12,16 @@ await rm(outputDirectory, { recursive: true, force: true });
 
 const child = spawn(
   "pnpm",
-  ["exec", "wrangler", "deploy", "--dry-run", "--outdir", "dist-worker"],
+  [
+    "exec",
+    "wrangler",
+    "deploy",
+    "--dry-run",
+    "--env",
+    "production",
+    "--outdir",
+    "dist-worker",
+  ],
   { cwd: root, stdio: "inherit", shell: process.platform === "win32" },
 );
 

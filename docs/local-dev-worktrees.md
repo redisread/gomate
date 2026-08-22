@@ -5,7 +5,9 @@
 开发和生产共用同一套页面与 Hono API。`pnpm dev` 使用 Astro adapter 的默认开发
 入口以保留 HMR，`src/middleware.ts` 会把 `/api/*` 交给同一个 `src/server/app.ts`；
 `pnpm build`（固定 `CLOUDFLARE_ENV=production`）与 `astro preview`、Cloudflare
-Workers Builds 则使用 `src/worker.ts` 的正式 Hono pipeline。这样本地开发和正式部署都
+Workers Builds 则使用 `src/worker.ts` 的正式 Hono pipeline。根配置保留连接的 Worker
+名称 `gomate` 以满足 Workers Builds 校验，但 D1/R2 使用本地名称，生产绑定只存在于显式的
+`production` 环境。这样本地开发和正式部署都
 只有一个应用进程，不维护第二套 API 实现。
 
 同一进程与端口同时提供：

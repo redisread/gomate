@@ -11,7 +11,7 @@
     "dev": "astro dev --port ${GOMATE_WEB_PORT:-5432}",
     "dev:wt": "node scripts/start-worktree.mjs",
     "init:worktree": "node scripts/init-worktree.mjs",
-    "build": "CLOUDFLARE_ENV=production astro build && cp .assetsignore dist/",
+    "build": "node scripts/build-production.mjs",
     "env:check": "node scripts/env-check.mjs",
     "check": "astro check",
     "lint": "eslint src scripts",
@@ -20,7 +20,8 @@
     "test:server": "vitest run --config vitest.server.config.ts",
     "test:worker": "pnpm build && pnpm test:worker:run",
     "test:worker:run": "vitest run --config vitest.worker.config.ts",
-    "test:ci": "pnpm i18n:validate && pnpm db:check && pnpm lint && pnpm type-check && pnpm test && pnpm test:server && pnpm build && pnpm test:worker:run",
+    "test:build-guard": "node --test scripts/production-build-guard.test.mjs",
+    "test:ci": "pnpm i18n:validate && pnpm test:build-guard && pnpm db:check && pnpm lint && pnpm type-check && pnpm test && pnpm test:server && pnpm build && pnpm test:worker:run",
     "test:e2e": "playwright test --project=chromium",
     "test:e2e:ci": "CI=true playwright test --project=chromium",
     "i18n:build": "tsx scripts/build-locales.ts",
@@ -34,7 +35,7 @@
     "worker:types": "wrangler types src/server/worker-configuration.d.ts --config wrangler.jsonc --env production --check && git diff --exit-code -- src/server/worker-configuration.d.ts",
     "worker:dry-run": "node scripts/worker-dry-run.mjs",
     "worker:size": "node scripts/check-worker-bundle-size.mjs",
-    "deploy:production": "wrangler d1 migrations apply DB --remote --env production --config wrangler.jsonc && wrangler deploy --env production"
+    "deploy:production": "node scripts/deploy-production.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.3",

@@ -4,7 +4,7 @@
   "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2026-06-18",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  "workers_dev": true,
+  "workers_dev": false,
   "preview_urls": false,
   "version_metadata": {
     "binding": "CF_VERSION_METADATA",
@@ -21,37 +21,37 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "gomate-db-v3",
+      "database_name": "gomate-local",
       "migrations_dir": "./migrations",
     },
   ],
   "r2_buckets": [
     {
       "binding": "R2",
-      "bucket_name": "gomate",
+      "bucket_name": "gomate-local",
     },
   ],
   "ratelimits": [
     {
       "name": "AUTH_SIGN_IN_RATE_LIMITER",
-      "namespace_id": "26081",
+      "namespace_id": "gomate-local-auth-sign-in",
       "simple": { "limit": 5, "period": 60 },
     },
     {
       "name": "AUTH_SIGN_UP_RATE_LIMITER",
-      "namespace_id": "26082",
+      "namespace_id": "gomate-local-auth-sign-up",
       "simple": { "limit": 3, "period": 60 },
     },
     {
       "name": "AUTH_EMAIL_RATE_LIMITER",
-      "namespace_id": "26083",
+      "namespace_id": "gomate-local-auth-email",
       "simple": { "limit": 5, "period": 60 },
     },
   ],
   "vars": {
     "APP_URL": "http://localhost:5432",
-    "R2_PUBLIC_URL": "https://gomate.cos.jiahongw.com",
-    "RESEND_FROM_EMAIL": "GoMate <noreply@gomate.live>",
+    "R2_PUBLIC_URL": "http://localhost:5432/r2",
+    "RESEND_FROM_EMAIL": "GoMate <noreply@example.test>",
     "WRITE_MODE": "open",
   },
   "secrets": {
@@ -75,6 +75,8 @@
     "production": {
       "main": "./src/worker.ts",
       "name": "gomate",
+      "workers_dev": false,
+      "preview_urls": false,
       "routes": [{ "pattern": "gomate.live", "custom_domain": true }],
       "assets": {
         "directory": "./dist",
