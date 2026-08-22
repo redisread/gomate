@@ -82,7 +82,7 @@ try {
       "--config",
       "wrangler.jsonc",
       "--file",
-      "migrations/seed.sql",
+      "db/seed.sql",
     ],
     ROOT,
   );

@@ -16,7 +16,7 @@
 - 当前 schema 包含 19 张业务表和 13 个触发器；CI 会校验 schema、migration 链与 snapshot 一致。
 - 时间在 D1 中存 Unix 毫秒，HTTP DTO 输出 ISO 8601。
 - JSON 列使用 Drizzle `mode: "json"`，D1 通过 `json_valid` 与 `json_type` CHECK 约束形状；业务层只传对象或数组。
-- `migrations/seed.sql` 仅用于本地开发和测试，不得应用到生产。
+- `db/seed.sql` 仅用于本地开发和测试，不得放入 `migrations/` 或应用到生产。
 - 所有 DDL 只通过 migration；已应用 migration 不可改写。
 
 ## 领域表

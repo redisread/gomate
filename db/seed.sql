@@ -1,4 +1,4 @@
--- Minimal idempotent development seed for the V2 schema.
+-- Minimal idempotent development seed for the V3 schema.
 -- Keep fixture/demo users and activity data in test-specific seeds.
 
 INSERT OR IGNORE INTO `region` (

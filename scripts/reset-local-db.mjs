@@ -110,7 +110,7 @@ run([
   "execute",
   ...sharedArgs,
   "--file",
-  "migrations/seed.sql",
+  "db/seed.sql",
 ]);
 
 log("✅ 本地 v3 数据库已重置；运行 pnpm dev 启动统一 Worker。");
