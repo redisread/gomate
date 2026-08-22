@@ -81,34 +81,28 @@ export const users = sqliteTable(
       .default(nowMs),
     deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
   },
-  (table) => ({
-    emailUnique: uniqueIndex("users_email_unique").on(table.email),
-    statusCreatedIdx: index("users_status_created_idx").on(
+  (table) => [
+    uniqueIndex("users_email_unique").on(table.email),
+    index("users_status_created_idx").on(
       table.status,
       table.createdAt,
       table.id,
     ),
-    emailVerifiedCheck: check(
-      "users_email_verified_check",
-      sql`${table.emailVerified} in (0, 1)`,
-    ),
-    genderCheck: check(
+    check("users_email_verified_check", sql`${table.emailVerified} in (0, 1)`),
+    check(
       "users_gender_check",
       sql`${table.gender} is null or ${table.gender} in ('male', 'female', 'other')`,
     ),
-    roleCheck: check(
-      "users_role_check",
-      sql`${table.role} in ('user', 'admin')`,
-    ),
-    statusCheck: check(
+    check("users_role_check", sql`${table.role} in ('user', 'admin')`),
+    check(
       "users_status_check",
       sql`${table.status} in ('active', 'suspended', 'banned', 'deleted')`,
     ),
-    extraCheck: check(
+    check(
       "users_extra_json_check",
       sql`json_valid(${table.extra}) and json_type(${table.extra}) = 'object'`,
     ),
-  }),
+  ],
 );
 
 export const sessions = sqliteTable(
@@ -129,11 +123,11 @@ export const sessions = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    tokenUnique: uniqueIndex("sessions_token_unique").on(table.token),
-    userIdx: index("sessions_user_idx").on(table.userId),
-    expiresIdx: index("sessions_expires_idx").on(table.expiresAt),
-  }),
+  (table) => [
+    uniqueIndex("sessions_token_unique").on(table.token),
+    index("sessions_user_idx").on(table.userId),
+    index("sessions_expires_idx").on(table.expiresAt),
+  ],
 );
 
 export const accounts = sqliteTable(
@@ -165,13 +159,13 @@ export const accounts = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    issuerAccountUnique: uniqueIndex("accounts_issuer_account_unique").on(
+  (table) => [
+    uniqueIndex("accounts_issuer_account_unique").on(
       table.issuer,
       table.accountId,
     ),
-    userIdx: index("accounts_user_idx").on(table.userId),
-  }),
+    index("accounts_user_idx").on(table.userId),
+  ],
 );
 
 export const verifications = sqliteTable(
@@ -188,12 +182,10 @@ export const verifications = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    identifierUnique: uniqueIndex("verifications_identifier_unique").on(
-      table.identifier,
-    ),
-    expiresIdx: index("verifications_expires_idx").on(table.expiresAt),
-  }),
+  (table) => [
+    uniqueIndex("verifications_identifier_unique").on(table.identifier),
+    index("verifications_expires_idx").on(table.expiresAt),
+  ],
 );
 
 export const region = sqliteTable(
@@ -224,57 +216,54 @@ export const region = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    countrySlugUnique: uniqueIndex("region_country_slug_unique").on(
-      table.countryCode,
-      table.slug,
-    ),
-    countryCodeUnique: uniqueIndex("region_country_code_unique")
+  (table) => [
+    uniqueIndex("region_country_slug_unique").on(table.countryCode, table.slug),
+    uniqueIndex("region_country_code_unique")
       .on(table.countryCode, table.code)
       .where(sql`${table.code} is not null`),
-    hierarchyIdx: index("region_hierarchy_idx").on(
+    index("region_hierarchy_idx").on(
       table.countryCode,
       table.parentId,
       table.level,
       table.sortOrder,
     ),
-    servicePickerIdx: index("region_service_picker_idx").on(
+    index("region_service_picker_idx").on(
       table.countryCode,
       table.serviceEnabled,
       table.isHot,
       table.sortOrder,
       table.id,
     ),
-    countryCodeCheck: check(
+    check(
       "region_country_code_check",
       sql`length(${table.countryCode}) = 2 and ${table.countryCode} = upper(${table.countryCode})`,
     ),
-    parentNotSelfCheck: check(
+    check(
       "region_parent_not_self_check",
       sql`${table.id} <> ${table.parentId}`,
     ),
-    levelCheck: check(
+    check(
       "region_level_check",
       sql`${table.level} in ('province', 'city', 'district', 'other')`,
     ),
-    centerLatitudeCheck: check(
+    check(
       "region_center_latitude_check",
       sql`${table.centerLatitude} is null or ${table.centerLatitude} between -90 and 90`,
     ),
-    centerLongitudeCheck: check(
+    check(
       "region_center_longitude_check",
       sql`${table.centerLongitude} is null or ${table.centerLongitude} between -180 and 180`,
     ),
-    serviceEnabledCheck: check(
+    check(
       "region_service_enabled_check",
       sql`${table.serviceEnabled} in (0, 1)`,
     ),
-    isHotCheck: check("region_is_hot_check", sql`${table.isHot} in (0, 1)`),
-    serviceShapeCheck: check(
+    check("region_is_hot_check", sql`${table.isHot} in (0, 1)`),
+    check(
       "region_service_shape_check",
       sql`${table.serviceEnabled} = 0 or (${table.level} = 'city' and ${table.timezone} is not null and ${table.centerLatitude} is not null and ${table.centerLongitude} is not null)`,
     ),
-  }),
+  ],
 );
 
 export const tags = sqliteTable(
@@ -287,7 +276,7 @@ export const tags = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({ slugUnique: uniqueIndex("tags_slug_unique").on(table.slug) }),
+  (table) => [uniqueIndex("tags_slug_unique").on(table.slug)],
 );
 
 export const locations = sqliteTable(
@@ -331,46 +320,43 @@ export const locations = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    regionSlugUnique: uniqueIndex("locations_region_slug_unique").on(
-      table.regionId,
-      table.slug,
-    ),
-    regionFeedIdx: index("locations_region_feed_idx").on(
+  (table) => [
+    uniqueIndex("locations_region_slug_unique").on(table.regionId, table.slug),
+    index("locations_region_feed_idx").on(
       table.regionId,
       table.status,
       table.createdAt,
       table.id,
     ),
-    supportedActivityTypesCheck: check(
+    check(
       "locations_supported_activity_types_json_check",
       sql`json_valid(${table.supportedActivityTypes}) and json_type(${table.supportedActivityTypes}) = 'array'`,
     ),
-    statusCheck: check(
+    check(
       "locations_status_check",
       sql`${table.status} in ('draft', 'published', 'archived')`,
     ),
-    latitudeCheck: check(
+    check(
       "locations_latitude_check",
       sql`${table.latitude} between -90 and 90`,
     ),
-    longitudeCheck: check(
+    check(
       "locations_longitude_check",
       sql`${table.longitude} between -180 and 180`,
     ),
-    imagesCheck: check(
+    check(
       "locations_images_json_check",
       sql`json_valid(${table.images}) and json_type(${table.images}) = 'array'`,
     ),
-    extraCheck: check(
+    check(
       "locations_extra_json_check",
       sql`json_valid(${table.extra}) and json_type(${table.extra}) = 'object'`,
     ),
-    publishedActivityCheck: check(
+    check(
       "locations_published_activity_check",
       sql`${table.status} <> 'published' or json_array_length(${table.supportedActivityTypes}) > 0`,
     ),
-  }),
+  ],
 );
 
 export const teams = sqliteTable(
@@ -407,50 +393,47 @@ export const teams = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    locationStartIdx: index("teams_location_start_idx").on(
+  (table) => [
+    index("teams_location_start_idx").on(
       table.locationId,
       table.startAt,
       table.id,
     ),
-    locationActivityFeedIdx: index("teams_location_activity_feed_idx").on(
+    index("teams_location_activity_feed_idx").on(
       table.locationId,
       table.activityType,
       table.recruitmentStatus,
       table.startAt,
       table.id,
     ),
-    leaderCreatedIdx: index("teams_leader_created_idx").on(
+    index("teams_leader_created_idx").on(
       table.leaderId,
       table.createdAt,
       table.id,
     ),
-    endIdx: index("teams_end_idx").on(table.cancelledAt, table.endAt, table.id),
-    activityTypeCheck: check(
+    index("teams_end_idx").on(table.cancelledAt, table.endAt, table.id),
+    check(
       "teams_activity_type_check",
       sql`${table.activityType} in ('hiking', 'explore', 'leisure', 'travel')`,
     ),
-    timeRangeCheck: check(
-      "teams_time_range_check",
-      sql`${table.endAt} >= ${table.startAt}`,
-    ),
-    capacityCheck: check(
+    check("teams_time_range_check", sql`${table.endAt} >= ${table.startAt}`),
+    check(
       "teams_capacity_check",
       sql`${table.maxParticipants} between 1 and 49`,
     ),
-    requirementsCheck: check(
+    check(
       "teams_requirements_json_check",
       sql`json_valid(${table.requirements}) and json_type(${table.requirements}) = 'array'`,
     ),
-    recruitmentStatusCheck: check(
+    check(
       "teams_recruitment_status_check",
       sql`${table.recruitmentStatus} in ('open', 'closed')`,
     ),
-    checklistCheck: check(
+    check(
       "teams_checklist_json_check",
       sql`${table.checklist} is null or (json_valid(${table.checklist}) and json_type(${table.checklist}) = 'object')`,
     ),
-  }),
+  ],
 );
 
 export const teamJoinRequests = sqliteTable(
@@ -479,26 +462,26 @@ export const teamJoinRequests = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    onePendingUnique: uniqueIndex("team_join_requests_one_pending_unique")
+  (table) => [
+    uniqueIndex("team_join_requests_one_pending_unique")
       .on(table.teamId, table.userId)
       .where(sql`${table.status} = 'pending'`),
-    teamStatusIdx: index("team_join_requests_team_status_idx").on(
+    index("team_join_requests_team_status_idx").on(
       table.teamId,
       table.status,
       table.createdAt,
       table.id,
     ),
-    userCreatedIdx: index("team_join_requests_user_created_idx").on(
+    index("team_join_requests_user_created_idx").on(
       table.userId,
       table.createdAt,
       table.id,
     ),
-    statusCheck: check(
+    check(
       "team_join_requests_status_check",
       sql`${table.status} in ('pending', 'approved', 'rejected', 'cancelled')`,
     ),
-    decisionCheck: check(
+    check(
       "team_join_requests_decision_check",
       sql`(
       ${table.status} = 'pending' and ${table.decidedAt} is null and ${table.decidedByUserId} is null
@@ -508,7 +491,7 @@ export const teamJoinRequests = sqliteTable(
       ${table.status} = 'cancelled' and ${table.decidedAt} is not null
     )`,
     ),
-  }),
+  ],
 );
 
 export const teamMembers = sqliteTable(
@@ -525,21 +508,21 @@ export const teamMembers = sqliteTable(
       .default(nowMs),
     leftAt: integer("left_at", { mode: "timestamp_ms" }),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.teamId, table.userId] }),
-    activeIdx: index("team_members_active_idx").on(
+  (table) => [
+    primaryKey({ columns: [table.teamId, table.userId] }),
+    index("team_members_active_idx").on(
       table.teamId,
       table.leftAt,
       table.joinedAt,
       table.userId,
     ),
-    userIdx: index("team_members_user_idx").on(
+    index("team_members_user_idx").on(
       table.userId,
       table.leftAt,
       table.joinedAt,
       table.teamId,
     ),
-  }),
+  ],
 );
 
 export const stories = sqliteTable(
@@ -572,54 +555,37 @@ export const stories = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    feedIdx: index("stories_feed_idx").on(
-      table.status,
-      table.createdAt,
-      table.id,
-    ),
-    authorIdx: index("stories_author_idx").on(
-      table.authorId,
-      table.createdAt,
-      table.id,
-    ),
-    teamFeedIdx: index("stories_team_feed_idx").on(
+  (table) => [
+    index("stories_feed_idx").on(table.status, table.createdAt, table.id),
+    index("stories_author_idx").on(table.authorId, table.createdAt, table.id),
+    index("stories_team_feed_idx").on(
       table.teamId,
       table.status,
       table.createdAt,
       table.id,
     ),
-    locationFeedIdx: index("stories_location_feed_idx").on(
+    index("stories_location_feed_idx").on(
       table.locationId,
       table.status,
       table.createdAt,
       table.id,
     ),
-    contentCheck: check(
-      "stories_content_check",
-      sql`length(trim(${table.content})) > 0`,
-    ),
-    imagesCheck: check(
+    check("stories_content_check", sql`length(trim(${table.content})) > 0`),
+    check(
       "stories_images_json_check",
       sql`json_valid(${table.images}) and json_type(${table.images}) = 'array'`,
     ),
-    statusCheck: check(
+    check(
       "stories_status_check",
       sql`${table.status} in ('draft', 'published', 'hidden')`,
     ),
-    viewCountCheck: check(
-      "stories_view_count_check",
-      sql`${table.viewCount} >= 0`,
-    ),
-    likeCountCheck: check(
-      "stories_like_count_check",
-      sql`${table.likeCount} >= 0`,
-    ),
-    normalTitleCheck: check(
+    check("stories_view_count_check", sql`${table.viewCount} >= 0`),
+    check("stories_like_count_check", sql`${table.likeCount} >= 0`),
+    check(
       "stories_normal_title_check",
       sql`${table.teamId} is not null or (${table.title} is not null and length(trim(${table.title})) > 0)`,
     ),
-  }),
+  ],
 );
 
 export const locationTags = sqliteTable(
@@ -635,10 +601,10 @@ export const locationTags = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.locationId, table.tagId] }),
-    tagIdx: index("location_tags_tag_idx").on(table.tagId, table.locationId),
-  }),
+  (table) => [
+    primaryKey({ columns: [table.locationId, table.tagId] }),
+    index("location_tags_tag_idx").on(table.tagId, table.locationId),
+  ],
 );
 
 export const teamTags = sqliteTable(
@@ -654,10 +620,10 @@ export const teamTags = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.teamId, table.tagId] }),
-    tagIdx: index("team_tags_tag_idx").on(table.tagId, table.teamId),
-  }),
+  (table) => [
+    primaryKey({ columns: [table.teamId, table.tagId] }),
+    index("team_tags_tag_idx").on(table.tagId, table.teamId),
+  ],
 );
 
 export const storyTags = sqliteTable(
@@ -673,10 +639,10 @@ export const storyTags = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.storyId, table.tagId] }),
-    tagIdx: index("story_tags_tag_idx").on(table.tagId, table.storyId),
-  }),
+  (table) => [
+    primaryKey({ columns: [table.storyId, table.tagId] }),
+    index("story_tags_tag_idx").on(table.tagId, table.storyId),
+  ],
 );
 
 export const storyLikes = sqliteTable(
@@ -692,14 +658,14 @@ export const storyLikes = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.userId, table.storyId] }),
-    storyIdx: index("story_likes_story_idx").on(
+  (table) => [
+    primaryKey({ columns: [table.userId, table.storyId] }),
+    index("story_likes_story_idx").on(
       table.storyId,
       table.createdAt,
       table.userId,
     ),
-  }),
+  ],
 );
 
 export const userLocationFavorites = sqliteTable(
@@ -715,19 +681,19 @@ export const userLocationFavorites = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.userId, table.locationId] }),
-    userIdx: index("user_location_favorites_user_idx").on(
+  (table) => [
+    primaryKey({ columns: [table.userId, table.locationId] }),
+    index("user_location_favorites_user_idx").on(
       table.userId,
       table.createdAt,
       table.locationId,
     ),
-    locationIdx: index("user_location_favorites_location_idx").on(
+    index("user_location_favorites_location_idx").on(
       table.locationId,
       table.createdAt,
       table.userId,
     ),
-  }),
+  ],
 );
 
 export const userStoryFavorites = sqliteTable(
@@ -743,19 +709,19 @@ export const userStoryFavorites = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.userId, table.storyId] }),
-    userIdx: index("user_story_favorites_user_idx").on(
+  (table) => [
+    primaryKey({ columns: [table.userId, table.storyId] }),
+    index("user_story_favorites_user_idx").on(
       table.userId,
       table.createdAt,
       table.storyId,
     ),
-    storyIdx: index("user_story_favorites_story_idx").on(
+    index("user_story_favorites_story_idx").on(
       table.storyId,
       table.createdAt,
       table.userId,
     ),
-  }),
+  ],
 );
 
 export const conversations = sqliteTable(
@@ -780,22 +746,22 @@ export const conversations = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    teamMemberUnique: uniqueIndex("conversations_team_member_unique").on(
+  (table) => [
+    uniqueIndex("conversations_team_member_unique").on(
       table.teamId,
       table.memberUserId,
     ),
-    memberInboxIdx: index("conversations_member_inbox_idx").on(
+    index("conversations_member_inbox_idx").on(
       table.memberUserId,
       table.lastMessageAt,
       table.id,
     ),
-    teamInboxIdx: index("conversations_team_inbox_idx").on(
+    index("conversations_team_inbox_idx").on(
       table.teamId,
       table.lastMessageAt,
       table.id,
     ),
-  }),
+  ],
 );
 
 export const messages = sqliteTable(
@@ -814,22 +780,15 @@ export const messages = sqliteTable(
       .notNull()
       .default(nowMs),
   },
-  (table) => ({
-    conversationCursorIdx: index("messages_conversation_cursor_idx").on(
+  (table) => [
+    index("messages_conversation_cursor_idx").on(
       table.conversationId,
       table.createdAt,
       table.id,
     ),
-    senderIdx: index("messages_sender_idx").on(
-      table.senderId,
-      table.createdAt,
-      table.id,
-    ),
-    contentCheck: check(
-      "messages_content_check",
-      sql`length(trim(${table.content})) > 0`,
-    ),
-  }),
+    index("messages_sender_idx").on(table.senderId, table.createdAt, table.id),
+    check("messages_content_check", sql`length(trim(${table.content})) > 0`),
+  ],
 );
 
 export const usersRelations = relations(users, ({ many }) => ({
