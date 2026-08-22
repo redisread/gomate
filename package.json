@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.19.0",
   "description": "GoMate - 极简地点组队平台 on Cloudflare Workers",
   "engines": {
     "node": ">=22.13.0"

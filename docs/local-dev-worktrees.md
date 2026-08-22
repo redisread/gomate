@@ -32,8 +32,7 @@ pnpm dev:wt
 
 1. 补齐统一 Worker secret 文件；
 2. 生成 i18n 数据；
-3. 对共享本地 D1 幂等应用全部 pending migration；
-4. 幂等执行 `migrations/seed.sql`。
+3. 对共享本地 D1 幂等应用全部 pending migration（包含稳定参考数据）。
 
 `pnpm dev:wt` 从 5432 起选择一个空闲端口，只启动一个 Astro/Worker 进程。启动器
 为该进程生成 ignored 的临时 Wrangler 配置，同时把 `dev.port` 与 `APP_URL` 写成

@@ -4,7 +4,7 @@
  *
  * Git worktrees do not copy ignored secrets or local D1 state. This script
  * restores the one Worker secret file, generates i18n data, and idempotently
- * applies the v3 baseline plus seed to the shared local D1 state.
+ * applies the v3 migrations to the shared local D1 state.
  */
 
 import { execFileSync } from "node:child_process";
@@ -67,22 +67,6 @@ try {
       LOCAL_STATE,
       "--config",
       "wrangler.jsonc",
-    ],
-    ROOT,
-  );
-  run(
-    WRANGLER,
-    [
-      "d1",
-      "execute",
-      "DB",
-      "--local",
-      "--persist-to",
-      LOCAL_STATE,
-      "--config",
-      "wrangler.jsonc",
-      "--file",
-      "migrations/seed.sql",
     ],
     ROOT,
   );

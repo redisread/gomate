@@ -118,6 +118,7 @@ PR 通过 `pnpm test:ci` 后由 Cloudflare Workers Builds 从 Git 构建；当�
 环境：只有 `main` 分支允许发布，非 `main` 分支不构建 Cloudflare Preview，Preview URL 也
 关闭。线上由统一 Worker `gomate` 提供 `gomate.live`；本地开发使用根配置中的本地
 D1/R2。禁止从本机或临时命令执行生产 Worker、D1、R2、secret 或 route 写入；受保护的
+`main` 分支合并即授权 Cloudflare 自动发布，
 Workers Builds deploy command 使用 `pnpm deploy:production`，详见
 `docs/prod-change-policy.md`。如未来需要在线预览，必须先创建独立的 Worker、D1、R2 和
 secrets，不能把版本预览当作数据隔离。

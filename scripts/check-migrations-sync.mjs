@@ -5,7 +5,24 @@ import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
 const migrationsDir = fileURLToPath(new URL("../migrations/", import.meta.url));
-const entries = readdirSync(migrationsDir, { withFileTypes: true })
+const directoryEntries = readdirSync(migrationsDir, { withFileTypes: true });
+const unexpectedSql = directoryEntries
+  .filter(
+    (entry) =>
+      entry.isFile() &&
+      entry.name.endsWith(".sql") &&
+      !/^\d{4}_.+\.sql$/u.test(entry.name),
+  )
+  .map((entry) => entry.name)
+  .sort();
+
+if (unexpectedSql.length > 0) {
+  throw new Error(
+    `migrations directory contains non-migration SQL: ${unexpectedSql.join(", ")}`,
+  );
+}
+
+const entries = directoryEntries
   .filter((entry) => entry.isFile() && /^\d{4}_.+\.sql$/u.test(entry.name))
   .map((entry) => entry.name)
   .sort();
