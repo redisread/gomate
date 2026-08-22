@@ -7,8 +7,7 @@ import net from "node:net";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const FRONTEND_DIR = path.join(ROOT, "frontend");
-const DEV_VARS_PATH = path.join(FRONTEND_DIR, ".dev.vars");
+const DEV_VARS_PATH = path.join(ROOT, ".dev.vars");
 const IS_CI = process.argv.includes("--ci");
 const ENV_INDEX = process.argv.indexOf("--env");
 const TARGET_ENV =
@@ -79,11 +78,11 @@ function checkSecrets() {
   const authSecret = process.env.BETTER_AUTH_SECRET ?? local.BETTER_AUTH_SECRET;
   if (!authSecret || authSecret.length < 32) {
     return fail(
-      `${IS_CI ? "CI 环境" : "frontend/.dev.vars"} 缺少至少 32 字符的 BETTER_AUTH_SECRET`,
+      `${IS_CI ? "CI 环境" : ".dev.vars"} 缺少至少 32 字符的 BETTER_AUTH_SECRET`,
     );
   }
   if (!IS_CI && !existsSync(DEV_VARS_PATH)) {
-    return fail("frontend/.dev.vars 不存在；请复制 frontend/.dev.vars.example");
+    return fail(".dev.vars 不存在；请复制 .dev.vars.example");
   }
   if (TARGET_ENV === "production" && !process.env.CLOUDFLARE_API_TOKEN) {
     return fail("production 检查缺少 CLOUDFLARE_API_TOKEN");
@@ -117,13 +116,13 @@ async function checkPort(port) {
 }
 
 function checkWrangler() {
-  const wrangler = path.join(FRONTEND_DIR, "node_modules", ".bin", "wrangler");
+  const wrangler = path.join(ROOT, "node_modules", ".bin", "wrangler");
   if (!existsSync(wrangler)) {
     return fail("Wrangler CLI 不可用；请先安装 workspace 依赖");
   }
   try {
     execFileSync(wrangler, ["--version"], {
-      cwd: FRONTEND_DIR,
+      cwd: ROOT,
       stdio: "ignore",
     });
     ok("Wrangler CLI 可用");

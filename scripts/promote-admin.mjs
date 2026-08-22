@@ -7,8 +7,7 @@ import os from "node:os";
 import path from "node:path";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const FRONTEND_DIR = path.join(ROOT, "frontend");
-const WRANGLER = path.join(FRONTEND_DIR, "node_modules", ".bin", "wrangler");
+const WRANGLER = path.join(ROOT, "node_modules", ".bin", "wrangler");
 const LOCAL_STATE = path.resolve(
   process.env.GOMATE_LOCAL_STATE ??
     path.join(os.homedir(), ".gomate", "wrangler-state"),
@@ -56,7 +55,7 @@ function execWrangler(args) {
     const child = execFile(
       WRANGLER,
       ["d1", "execute", "DB", ...args],
-      { cwd: FRONTEND_DIR },
+      { cwd: ROOT },
       (error, stdout, stderr) =>
         error ? reject(new Error(stderr || error.message)) : resolve(stdout),
     );
@@ -74,7 +73,7 @@ async function main() {
   }
   validate(args.email ?? args.userId, args.email ? "email" : "userId");
 
-  console.log("目标数据库：gomate-db-v2 (local)");
+  console.log("目标数据库：gomate-db-v3 (local)");
   const targetArgs = [
     "--local",
     "--persist-to",

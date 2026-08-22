@@ -1,0 +1,220 @@
+import * as React from "react";
+import {
+  AlertTriangle,
+  Backpack,
+  Clock,
+  Lightbulb,
+  Mountain,
+  Ruler,
+  TrendingUp,
+} from "lucide-react";
+import { useI18n } from "@/hooks/useI18n";
+import { cn } from "@/lib/utils";
+import type { Location } from "@/lib/types";
+import { DIFFICULTY_CONFIG } from "./constants";
+import {
+  normalizeLocationHiking,
+  type NormalizedLocationHiking,
+  type RouteMetric,
+} from "./route-utils";
+
+interface RouteInfoCardProps {
+  location: Location;
+}
+
+/**
+ * 「徒步攻略」区块，严格读取 `Location.extra.hiking`。
+ * 布局（Steven 定稿）：标题 + 4 参数 tiles + overview 引导段 + tips/装备/注意事项 notes。
+ * 数据：路线参数、攻略、装备和警告均来自同一 nested DTO。
+ * 空态：4 参数全空且无 hiking 内容 → 整区块不渲染。
+ */
+export function RouteInfoCard({ location }: RouteInfoCardProps) {
+  const { t } = useI18n(["enums", "locations", "common", "locationDetail"]);
+  const hiking = React.useMemo(() => normalizeLocationHiking(location), [location]);
+
+  if (!hiking) return null;
+
+  const metrics = getMetricItems(hiking, t);
+  const tips = hiking.routeGuide?.tips ?? [];
+  const hasRouteNotes =
+    hiking.gearEssential.length > 0 ||
+    hiking.gearOptional.length > 0 ||
+    hiking.warnings.length > 0 ||
+    tips.length > 0;
+
+  return (
+    <section className="rounded-2xl bg-card p-5 shadow-warm-sm sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <span className="h-5 w-1 flex-shrink-0 rounded-full bg-emerald-400" />
+            {t("locations.routeInfo")}
+          </h2>
+          <p className="mt-1 text-xs sm:text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+            {t("locationDetail.routeSummarySubtitle")}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {metrics.map((item) => (
+          <MetricTile key={item.label} {...item} />
+        ))}
+      </div>
+
+      {hiking.routeGuide?.overview && (
+        <p className="mt-4 rounded-xl border border-stone-100 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/50 px-3.5 py-3 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+          {hiking.routeGuide.overview}
+        </p>
+      )}
+
+      {hasRouteNotes && (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {(hiking.gearEssential.length > 0 || hiking.gearOptional.length > 0) && (
+            <RouteNoteBlock
+              icon={<Backpack className="h-3.5 w-3.5" />}
+              title={t("common.recommendedGear")}
+              items={[...hiking.gearEssential, ...hiking.gearOptional]}
+              tone="stone"
+            />
+          )}
+          {tips.length > 0 && (
+            <RouteNoteBlock
+              icon={<Lightbulb className="h-3.5 w-3.5" />}
+              title={t("locationDetail.routeTips")}
+              items={tips}
+              tone="stone"
+            />
+          )}
+          {hiking.warnings.length > 0 && (
+            <RouteNoteBlock
+              icon={<AlertTriangle className="h-3.5 w-3.5" />}
+              title={t("common.precautions")}
+              items={hiking.warnings}
+              tone="warning"
+            />
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function getMetricItems(
+  route: NormalizedLocationHiking,
+  t: (key: string, vars?: Record<string, string | number>) => string
+) {
+  const diffInfo = route.difficulty
+    ? DIFFICULTY_CONFIG[route.difficulty] ?? DIFFICULTY_CONFIG.easy
+    : null;
+
+  return [
+    {
+      icon: <Mountain className="h-4 w-4" />,
+      label: t("locations.difficultyLabel"),
+      value: route.difficulty ? t(`enums.difficulty.${route.difficulty}`) : t("common.unknown"),
+      accent: diffInfo?.textColor ?? "text-stone-600 dark:text-stone-400",
+      bg: diffInfo?.bgColor ?? "bg-stone-50 dark:bg-stone-900",
+    },
+    {
+      icon: <Clock className="h-4 w-4" />,
+      label: t("locations.estimatedTime"),
+      value: metricValue(route.duration, t),
+      accent: "text-sky-700 dark:text-sky-400",
+      bg: "bg-sky-50 dark:bg-sky-950/30",
+    },
+    {
+      icon: <Ruler className="h-4 w-4" />,
+      label: t("locations.routeLength"),
+      value: metricValue(route.distance, t),
+      accent: "text-violet-600 dark:text-violet-400",
+      bg: "bg-violet-50 dark:bg-violet-950/30",
+    },
+    {
+      icon: <TrendingUp className="h-4 w-4" />,
+      label: t("locations.totalElevation"),
+      value: metricValue(route.elevation, t),
+      accent: "text-emerald-700 dark:text-emerald-400",
+      bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    },
+  ];
+}
+
+function metricValue(
+  metric: RouteMetric | undefined,
+  t: (key: string, vars?: Record<string, string | number>) => string
+) {
+  if (!metric) return "—";
+  const unit = metric.unit ? t(`locationDetail.metricUnits.${metric.unit}`) : "";
+  return unit ? `${metric.value} ${unit}` : metric.value;
+}
+
+function MetricTile({
+  icon,
+  label,
+  value,
+  accent,
+  bg,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent: string;
+  bg: string;
+}) {
+  return (
+    <div className="rounded-xl border border-stone-100 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-900/50 p-3">
+      <div className={cn("mb-2 flex h-8 w-8 items-center justify-center rounded-lg", bg)}>
+        <span className={accent}>{icon}</span>
+      </div>
+      <p className="text-3xs font-semibold uppercase text-stone-600 dark:text-stone-400">{label}</p>
+      <p className={cn("mt-1 text-sm font-black leading-tight", accent)}>{value}</p>
+    </div>
+  );
+}
+
+function RouteNoteBlock({
+  icon,
+  title,
+  items,
+  tone,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  items: string[];
+  tone: "stone" | "warning";
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border px-3.5 py-3",
+        tone === "warning"
+          ? "border-orange-100 bg-orange-50/70 dark:border-orange-900/40 dark:bg-orange-950/20"
+          : "border-stone-100 bg-stone-50/70 dark:border-stone-800 dark:bg-stone-900/50"
+      )}
+    >
+      <p
+        className={cn(
+          "mb-2 flex items-center gap-1.5 text-2xs font-bold uppercase",
+          tone === "warning" ? "text-orange-700 dark:text-orange-400" : "text-stone-500 dark:text-stone-400"
+        )}
+      >
+        {icon}
+        {title}
+      </p>
+      <ul className="space-y-1.5">
+        {items.map((item, index) => (
+          <li key={`${item}-${index}`} className="flex items-start gap-2 text-xs leading-relaxed text-stone-600 dark:text-stone-400">
+            <span
+              className={cn(
+                "mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full",
+                tone === "warning" ? "bg-orange-300" : "bg-stone-300 dark:bg-stone-600"
+              )}
+            />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

@@ -6,17 +6,16 @@
 
 - 生产域名：`https://gomate.live`
 - Worker 服务：`gomate`（唯一生产 Worker）
-- Worker 入口：`frontend/src/worker.ts`
-- API：同源 `/api/*`，进程内交给 `api/src/app.ts`
-- D1：binding `DB`，`gomate-db-v2`，UUID `befa3d89-6551-4a25-8a1c-670efe62a315`
-- KV：binding `CACHE_KV`，`gomate-cache-v2`，ID `f9904d1fa72140c18067e07d541ca92b`
+- Worker 入口：`src/worker.ts`
+- API：同源 `/api/*`，进程内交给 `src/server/app.ts`
+- D1：binding `DB`，目标数据库 `gomate-db-v3`（生产数据库必须由受保护环境按名称绑定；仓库不携带旧数据库 UUID）
 - R2：binding `R2`，bucket `gomate`
 - Rate Limiting bindings：`AUTH_SIGN_IN_RATE_LIMITER`、`AUTH_SIGN_UP_RATE_LIMITER`、`AUTH_EMAIL_RATE_LIMITER`
-- GitHub `production` environment secrets：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_ZONE_ID`、`BETTER_AUTH_SECRET`、`RESEND_API_KEY`、`PRODUCTION_APP_URL`；受保护部署根据生产 origin 生成 Worker runtime secret `APP_URL`
+- Cloudflare Workers Builds 的 Git 连接负责发布授权；运行时 secret（`BETTER_AUTH_SECRET`、`RESEND_API_KEY`）只在受保护 production 环境配置，仓库不保存 Cloudflare 或应用 secret。
 
-旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除。`pnpm check:legacy-removal` 阻止这些标识重新进入运行时代码或工作流。
+旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除；当前 Worker 不引入 KV 运行时缓存。
 
-仓库 migration 链的目标结构为 19 张业务表、13 个触发器；seed 与运行时代码依赖稳定
+仓库 migration baseline 为 19 张业务表、13 个触发器；seed 与运行时代码依赖稳定
 Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 `region-cn-shenzhen` 还是匿名 local-circle fallback，不得随意改名。生产实际 migration
 状态必须从只读 inventory 验证，不能由仓库文件推断。
@@ -36,32 +35,43 @@ Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 
 禁止在开发机直接运行生产 Cloudflare 写命令。只读 inventory/health 检查可以在任务范围内执行，但不得据此扩大写入权限。
 
-当前仓库不包含满足上述条件的 CI/CD 或生产发布入口，因此所有生产写入保持冻结，直到新流水线经过代码审查、验证并正式落地。
+当前仓库只包含 PR/`main` 的只读质量检查，不包含生产写入入口；所有生产写入保持冻结，直到 Cloudflare Builds 发布流程经过代码审查、验证并正式落地。
 
-## 3. 当前发布能力
+## 3. 发布能力
 
-仓库当前没有 GitHub Actions workflow、自动 CI、Worker 发布、D1 migration 或 Worker rollback 流水线。合并或 push `main` 不会触发部署，也没有受支持的仓库内生产写入命令。
+PR 使用仓库内 `pnpm test:ci` 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，负责
+preview 构建和生产发布；生产环境必须启用 protected environment 审核。构建阶段只做校验和
+dry-run，部署阶段先执行目标环境 D1 migration，再发布不可变 Worker version。
 
-流水线重构至少必须重新建立：变更验证、生产配置核对、migration 兼容性判断、不可变 Worker version、候选冒烟、受保护推广、发布后观察、失败恢复、证据留存和独立回滚。在这些能力全部经过测试和审核前，不得通过 Dashboard、本机 Wrangler 或一次性脚本绕过冻结状态。
+Workers Builds 的推荐配置为：
+
+1. Build command：`pnpm install --frozen-lockfile && pnpm i18n:build && pnpm test:ci && pnpm worker:dry-run`；
+2. Deploy command：由受保护环境执行 `wrangler d1 migrations apply DB --remote --env <target>` 后再
+   执行 `wrangler deploy --env <target>`；
+3. Preview 与 production 使用不同的 D1/database、secrets 和 Git 分支规则；production 仅允许
+   `main`，并要求人工审批；
+4. 发布后用 `/api/health`、SSR 页面和关键只读 API 做 smoke，记录 version ID、migration 结果和
+   构建 run URL。
 
 ## 4. D1、KV 与 R2
 
-- 所有 DDL 只通过 `api/db/migrations/`；不得用 `d1 execute` 手工修改生产 schema。
+- 所有 DDL 只通过 `migrations/`；不得用 `d1 execute` 手工修改生产 schema。
 - migration 采用 expand/code/contract：先应用旧代码可接受的增量 schema，再发布使用新 schema 的代码；删除列、表、约束等 contract migration 必须先发布同时兼容旧/新 schema 的 Worker，完成观察并关闭旧版本回滚窗口后再执行。
 - contract migration 必须等待新的受保护流水线落地，并在执行前证明当前 Worker 同时兼容新旧 schema、关闭不兼容版本的回滚入口。
-- 已应用迁移（包括 `0000_init.sql`）不可改写；新增迁移、Drizzle schema、journal 和 snapshot 必须同步，本地运行 `pnpm --filter @gomate/api check:migrations`。
-- `api/db/seed.sql` 只用于 local/development，禁止应用到生产。
+- 新 D1 v3 以 `0000_init.sql` 作为 fresh baseline；已应用 migration 不可改写。后续新增迁移、Drizzle schema、journal 和 snapshot 必须同步，本地运行 `pnpm db:check`。
+- 生产 D1 v3 的创建/绑定是独立的受保护基础设施变更；在该资源完成只读核对前，禁止把旧 D1 UUID 填回 `wrangler.jsonc`，也禁止执行远程 migration。
+- `migrations/seed.sql` 只用于 local/development，禁止应用到生产。
 - 多语句原子写使用 D1 `batch()` 与条件 DML；禁止 `db.transaction()` 和裸 `BEGIN`/`COMMIT`。
 - JSON 列在 SQLite 为带 CHECK 的 TEXT，在 Drizzle 使用 `mode: "json"`；业务层传对象/数组。
 - R2 对象删除、批量迁移或 bucket 配置变化必须独立列出 key/prefix 与恢复方式；“部署 Worker”不隐含任何 R2 修改授权。
-- KV 只承载缓存/限流纵深，不是权限、计费或精确全局计数真相；不得把 session 或原始 PII 放入 KV。
+- 不使用 KV 作为运行时缓存、session、权限、计费或精确计数真相；不得重新引入共享边缘缓存来承载用户相关数据。
 
 ## 5. 回滚与事故处理
 
 1. 生产写路径异常时，优先把同一 Worker 恢复为 `WRITE_MODE=protected`，阻止新的业务写入。
 2. 仓库当前没有受支持的自动回滚入口。事故期间只进行只读核对并暂停进一步写入；任何恢复操作必须等待精确目标、schema 兼容性和数据恢复方案获得单独批准，并通过重建后的受保护流程执行。
 3. 旧 Worker、旧 route 和旧 D1 已不存在，不得重建 split deployment 作为回滚。
-4. 数据问题使用 D1 Time Travel/备份或经单独批准的新 V2 数据库恢复；不得修改已应用 migration。
+4. 数据问题使用 D1 Time Travel/备份或经单独批准的新 v3 数据库恢复；不得修改已应用 migration。
 5. R2/KV 恢复必须基于本次变更预先记录的对象/namespace 证据，不执行模糊前缀或全 bucket 删除。
 6. 任一自动验证、日志证据或人工审批缺失时停止，不用本机命令手工补写。
 
@@ -87,14 +97,12 @@ Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 本地至少执行与变更范围匹配的 lint、type-check、test 和 build；生产相关改动还必须执行：
 
 ```bash
-pnpm check:legacy-removal
-pnpm test:delivery
+pnpm test:ci
 pnpm audit --prod --audit-level high
-pnpm --filter @gomate/api check:migrations
-pnpm --filter @gomate/frontend worker:types:check
-pnpm --filter @gomate/frontend worker:dry-run
-pnpm --filter @gomate/frontend worker:startup
-pnpm e2e
+pnpm worker:types
+pnpm worker:dry-run
+pnpm worker:size
+pnpm test:e2e:ci
 ```
 
-仓库当前没有远程 CI；PR 必须记录实际完成的本地验证和未执行项。本地检查通过只说明代码具备合并条件，不等于获得生产写入授权。
+PR CI 与本地检查必须记录实际完成的验证和未执行项。检查通过只说明代码具备合并条件，不等于获得生产写入授权。

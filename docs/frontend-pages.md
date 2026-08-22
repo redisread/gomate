@@ -1,8 +1,8 @@
 # GoMate 前端页面与运行时
 
 前端使用 Astro SSR 与 React islands，并和 Hono API 运行在同一个 Cloudflare Worker。
-页面入口以 [`frontend/src/pages/`](../frontend/src/pages/) 为准，交互组件位于
-[`frontend/src/components/`](../frontend/src/components/)。
+页面入口以 [`src/pages/`](../src/pages/) 为准，交互组件位于
+[`src/components/`](../src/components/)。
 
 ## 页面目录
 
@@ -29,7 +29,7 @@
 
 - 访客看到 Hero、公开 Team、地点推荐与注册入口。
 - 登录用户看到下一次行程、推荐和 onboarding。
-- 本地圈公共部分按 Region 缓存；当前用户附近 Team 每次从 D1 合并，不能进入公共 KV。
+- 本地圈公共部分直接从 D1 读取并按请求合并当前用户数据，不把用户相关结果写入共享缓存。
 - 全国地图读取 `/api/locations/stats` 的 Region DTO。
 
 ### 地点
@@ -62,8 +62,8 @@
 ## 运行时约束
 
 - 浏览器 API helper 只接受资源路径，例如 `/teams`，并统一添加 `/api` 前缀。
-- SSR 使用 [`frontend/src/lib/server-api.ts`](../frontend/src/lib/server-api.ts) 进程内调用 API，不请求自身域名。
-- [`frontend/src/worker.ts`](../frontend/src/worker.ts) 将 `/api/*` 交给 Hono，其余请求交给 Astro handler。
+- SSR 使用 [`src/lib/server-api.ts`](../src/lib/server-api.ts) 进程内调用 API，不请求自身域名。
+- [`src/worker.ts`](../src/worker.ts) 将 `/api/*` 交给 Hono，其余请求交给 Astro 官方 Cloudflare handler。
 - 用户可见文案全部来自 i18n；locale 变化后运行 build、validate、lint、type-check、test 和 build 门禁。
 - 只有需要客户端状态的交互使用 React island；纯展示保持 Astro SSR。
 - UI 规则与验证清单见 [`design-system.md`](design-system.md)。

@@ -1,9 +1,9 @@
 # GoMate API 合同
 
 API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以 `/api` 开头。
-路由实现以 [`api/src/app.ts`](../api/src/app.ts) 与
-[`api/src/routes/`](../api/src/routes/) 为准；跨端 DTO 以
-[`packages/types`](../packages/types/) 为准。
+路由实现以 [`src/server/app.ts`](../src/server/app.ts) 与
+[`src/server/routes/`](../src/server/routes/) 为准；跨端 DTO 以
+[`src/contracts/`](../src/contracts/) 为准。
 
 ## 运行边界
 
@@ -38,7 +38,7 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 
 除上述认证端点外，`/auth/*` 固定返回 404。验证和重置 token 只放在邮件 URL fragment，
 页面清除 fragment 后通过同源 POST body 提交；token 不得进入 path、query、日志或数据库明文。
-登录、注册和邮件发送使用 Cloudflare Rate Limiting bindings，并保留 Better Auth 的 KV 限流作为纵深。
+登录、注册和邮件发送使用 Cloudflare Rate Limiting bindings；运行时不依赖 KV 缓存。
 
 ### Region、地点与标签
 
@@ -161,8 +161,8 @@ Story 图片先上传到当前用户的临时 namespace，创建或更新时再�
 API 行为、DTO、认证或错误格式变化时同步更新本文，并至少运行：
 
 ```bash
-pnpm --filter @gomate/api lint
-pnpm --filter @gomate/api type-check
-pnpm --filter @gomate/api test
-pnpm --filter @gomate/api build
+pnpm lint
+pnpm type-check
+pnpm test:server
+pnpm build
 ```

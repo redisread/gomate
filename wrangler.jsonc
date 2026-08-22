@@ -1,0 +1,142 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gomate",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-06-18",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA",
+  },
+  "dev": {
+    "ip": "0.0.0.0",
+    "port": 5432,
+  },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api", "/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gomate-db-v3",
+      "migrations_dir": "./migrations",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "gomate",
+    },
+  ],
+  "ratelimits": [
+    {
+      "name": "AUTH_SIGN_IN_RATE_LIMITER",
+      "namespace_id": "26081",
+      "simple": { "limit": 5, "period": 60 },
+    },
+    {
+      "name": "AUTH_SIGN_UP_RATE_LIMITER",
+      "namespace_id": "26082",
+      "simple": { "limit": 3, "period": 60 },
+    },
+    {
+      "name": "AUTH_EMAIL_RATE_LIMITER",
+      "namespace_id": "26083",
+      "simple": { "limit": 5, "period": 60 },
+    },
+  ],
+  "vars": {
+    "APP_URL": "http://localhost:5432",
+    "R2_PUBLIC_URL": "https://gomate.cos.jiahongw.com",
+    "RESEND_FROM_EMAIL": "GoMate <noreply@gomate.live>",
+    "WRITE_MODE": "open",
+  },
+  "secrets": {
+    "required": ["BETTER_AUTH_SECRET", "RESEND_API_KEY"],
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true,
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1,
+      "persist": true,
+    },
+  },
+  "env": {
+    "production": {
+      "main": "./src/worker.ts",
+      "name": "gomate",
+      "routes": [{ "pattern": "gomate.live", "custom_domain": true }],
+      "assets": {
+        "directory": "./dist",
+        "binding": "ASSETS",
+        "run_worker_first": ["/api", "/api/*"],
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "gomate-db-v3",
+          "migrations_dir": "./migrations",
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "gomate",
+        },
+      ],
+      "ratelimits": [
+        {
+          "name": "AUTH_SIGN_IN_RATE_LIMITER",
+          "namespace_id": "26081",
+          "simple": { "limit": 5, "period": 60 },
+        },
+        {
+          "name": "AUTH_SIGN_UP_RATE_LIMITER",
+          "namespace_id": "26082",
+          "simple": { "limit": 3, "period": 60 },
+        },
+        {
+          "name": "AUTH_EMAIL_RATE_LIMITER",
+          "namespace_id": "26083",
+          "simple": { "limit": 5, "period": 60 },
+        },
+      ],
+      "vars": {
+        "APP_URL": "https://gomate.live",
+        "R2_PUBLIC_URL": "https://gomate.cos.jiahongw.com",
+        "RESEND_FROM_EMAIL": "GoMate <noreply@gomate.live>",
+        "WRITE_MODE": "protected",
+      },
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA",
+      },
+      "secrets": {
+        "required": ["BETTER_AUTH_SECRET", "RESEND_API_KEY"],
+      },
+      "observability": {
+        "enabled": true,
+        "logs": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "invocation_logs": true,
+          "persist": true,
+        },
+        "traces": {
+          "enabled": true,
+          "head_sampling_rate": 0.1,
+          "persist": true,
+        },
+      },
+    },
+  },
+}

@@ -1,7 +1,7 @@
 /**
  * 构建时预读翻译文件
  *
- * 读取 frontend/public/locales/ 所有 JSON，生成 frontend/src/i18n/locales-data.ts
+ * 读取 public/locales/ 所有 JSON，生成 src/i18n/locales-data.ts
  * 用于 Cloudflare Workers 环境（无文件系统访问）
  */
 
@@ -9,7 +9,7 @@ import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 try {
-  const localesDir = "./frontend/public/locales";
+  const localesDir = "./public/locales";
   const result: Record<string, Record<string, unknown>> = {};
 
   for (const locale of readdirSync(localesDir)) {
@@ -31,7 +31,7 @@ try {
 export const localesData = ${JSON.stringify(result)} as Record<string, Record<string, Record<string, unknown>>>;
 `;
 
-  writeFileSync("./frontend/src/i18n/locales-data.ts", output);
+  writeFileSync("./src/i18n/locales-data.ts", output);
   console.log("✅ locales-data.ts generated successfully");
 } catch (err) {
   console.error("Failed to generate locales-data.ts:", (err as Error).message);

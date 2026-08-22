@@ -1,0 +1,50 @@
+name: Validate unified Worker
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build locale data
+        run: pnpm i18n:build
+
+      - name: Run application gates
+        run: pnpm test:ci
+
+      - name: Generate Worker runtime types
+        run: pnpm worker:types
+
+      - name: Validate Wrangler bundle
+        run: pnpm worker:dry-run
+
+      - name: Enforce Worker size budget
+        run: pnpm worker:size

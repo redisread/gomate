@@ -10,8 +10,7 @@ import { fileURLToPath } from "node:url";
 const DEFAULT_WEB_PORT = 5432;
 const MAX_TRIES = 200;
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const FRONTEND_DIR = path.join(ROOT, "frontend");
-const WRANGLER_CONFIG = path.join(FRONTEND_DIR, "wrangler.jsonc");
+const WRANGLER_CONFIG = path.join(ROOT, "wrangler.jsonc");
 
 function isPortFree(port) {
   const check = (address) =>
@@ -47,7 +46,7 @@ async function main() {
   }
 
   const configName = `.wrangler.dev.${process.pid}.${webPort}.jsonc`;
-  const configPath = path.join(FRONTEND_DIR, configName);
+  const configPath = path.join(ROOT, configName);
   const config = JSON.parse(readFileSync(WRANGLER_CONFIG, "utf8"));
   config.dev = { ...config.dev, port: webPort };
   config.vars = {
@@ -82,7 +81,7 @@ async function main() {
 
   const pnpmPath = process.env.npm_execpath;
   const executable = pnpmPath ? process.execPath : "pnpm";
-  const args = pnpmPath ? [pnpmPath, "web:dev"] : ["web:dev"];
+  const args = pnpmPath ? [pnpmPath, "dev"] : ["dev"];
   const child = spawn(executable, args, {
     cwd: ROOT,
     env,

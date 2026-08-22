@@ -1,0 +1,358 @@
+---
+/**
+ * 主布局 - 包含 HTML 骨架、全局样式和 React 导航栏
+ *
+ * CSS 优化策略：
+ * 1. 关键 CSS 内联 — 确保首屏即时渲染
+ * 2. 非关键 CSS 延迟加载 — 通过 rel="preload" + onload
+ */
+import "../styles/globals.css";
+import { Navbar } from "../components/layout/navbar";
+import { Footer } from "../components/layout/footer";
+import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, getSSRT } from "../i18n";
+import { loadLocaleData } from "../i18n/ssr-loader.server";
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Open Graph image URL */
+  ogImage?: string;
+  /** 是否显示导航栏，默认 true */
+  showNavbar?: boolean;
+  /** 是否显示页脚，默认 true */
+  showFooter?: boolean;
+}
+
+const {
+  title: propTitle = "GoMate - 发现趣处，组队同行",
+  description: propDesc = "GoMate 是一个极简的「地点组队」平台，帮助户外爱好者找到志同道合的徒步伙伴。",
+  ogImage,
+  showNavbar = true,
+  showFooter = true,
+} = Astro.props;
+const resolvedOgImage = ogImage
+  ? new URL(ogImage, Astro.url.origin).toString()
+  : undefined;
+
+// 从 middleware 设置的 locals 或 cookie 读取 locale
+const localsLocale = (Astro.locals as any)?.locale as Locale | undefined;
+const cookieLocale = Astro.cookies.get("gomate_locale")?.value as Locale | undefined;
+const resolvedLocale = localsLocale || cookieLocale;
+const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale)) ? resolvedLocale : DEFAULT_LOCALE;
+// ─── SSR i18n 数据加载 ──────────────────────────────────────────────
+// 从 locals 读取页面声明的 namespaces
+const declaredNs = (Astro.locals as any)?.__i18n_namespaces || [];
+// 注入全局 namespace（nav/common 用于 Navbar/Footer）+ content（用于 SEO 标题）
+const nsList = [...new Set([...declaredNs, "nav", "common", "content"])];
+let ssrLocaleData: Record<Locale, Record<string, Record<string, unknown>>> = {} as any;
+let ssrLoadedData: Record<string, Record<string, unknown>> | undefined;
+try {
+  const origin = Astro.url.origin;
+  ssrLoadedData = await loadLocaleData(nsList, locale, origin);
+  ssrLocaleData = { [locale]: ssrLoadedData } as Record<Locale, Record<string, Record<string, unknown>>>;
+} catch {
+  // SSR 加载失败，客户端会 fallback 到 fetch
+}
+
+const ssr = getSSRT(locale, ssrLocaleData);
+
+// ─── 关键 CSS 内联（Phase 3 Task 2 优化）──────────────────────────────
+// 使用内联字符串（边缘环境兼容，无需文件系统访问）
+const criticalCSS = `
+:root {
+  color-scheme: light;
+  --primary-50: var(--primary-foreground);
+  --primary-300: var(--primary-300);
+  --primary-400: var(--primary-400);
+  --primary-500: var(--primary);
+  --neutral-50: var(--background);
+  --neutral-100: var(--secondary);
+  --neutral-200: var(--border);
+  --neutral-500: var(--muted-foreground);
+  --neutral-900: var(--foreground);
+  --background: var(--background);
+  --foreground: var(--foreground);
+  --card: color-mix(in oklab, white 85%, transparent);
+  --card-foreground: var(--foreground);
+  --popover: color-mix(in oklab, white 100%, transparent);
+  --popover-foreground: var(--foreground);
+  --primary: var(--primary);
+  --primary-foreground: var(--primary-foreground);
+  --secondary: var(--secondary);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--secondary);
+  --muted-foreground: var(--muted-foreground);
+  --accent: var(--primary-foreground);
+  --accent-foreground: var(--accent-foreground);
+  --destructive: var(--destructive);
+  --border: var(--border);
+  --input: var(--border);
+  --ring: var(--primary);
+}
+.dark {
+  color-scheme: dark;
+  --background: var(--background);
+  --foreground: var(--foreground);
+  --card: oklch(0.22 0.013 78 / 0.90);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.22 0.013 78);
+  --popover-foreground: var(--foreground);
+  --primary: var(--primary-400);
+  --primary-foreground: oklch(0.182 0.039 74.2);
+  --secondary: var(--secondary);
+  --secondary-foreground: oklch(0.809 0.018 73);
+  --muted: var(--secondary);
+  --muted-foreground: oklch(0.546 0.023 64.9);
+  --accent: oklch(0.277 0.063 63.6);
+  --accent-foreground: var(--primary-300);
+  --destructive: oklch(0.742 0.15 21.4);
+  --border: var(--muted-foreground);
+  --input: var(--muted-foreground);
+  --ring: var(--primary-400);
+}
+@layer base {
+  *,*::before,*::after{box-sizing:border-box;border-color:var(--border)}
+  html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;-webkit-text-size-adjust:100%;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+  body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;background-color:var(--background);color:var(--foreground);line-height:1.6;min-height:100vh}
+  h1,h2,h3,h4,h5,h6{margin:0;line-height:1.25}
+  p{margin:0}
+  a{color:inherit;text-decoration:none}
+  ::selection{background-color:color-mix(in oklab, var(--primary) 18%, transparent)}
+  .min-h-screen{min-height:100vh}
+  .bg-background{background-color:var(--background)}
+  .text-foreground{color:var(--foreground)}
+}
+`.replace(/\n/g, '');
+
+// 页面级标题映射
+const titleMap: Record<string, string> = {
+  "GoMate - 发现趣处，组队同行": "content.title",
+  "GoMate 是一个极简的「地点组队」平台，帮助户外爱好者找到志同道合的徒步伙伴。": "content.description",
+  "探索地点 - GoMate": "content.seo_pages.locations",
+  "探索队伍 - GoMate": "content.seo_pages.teams",
+  "登录 - GoMate": "content.seo_pages.login",
+  "注册 - GoMate": "content.seo_pages.register",
+  "忘记密码 - GoMate": "content.seo_pages.forgotPassword",
+  "重置密码 - GoMate": "content.seo_pages.resetPassword",
+  "个人资料 - GoMate": "content.seo_pages.profile",
+  "编辑资料 - GoMate": "content.seo_pages.profileEdit",
+  "我的队伍 - GoMate": "content.seo_pages.myTeams",
+  "消息中心 - GoMate": "content.seo_pages.messages",
+  "聊天 - GoMate": "content.seo_pages.chat",
+  "发布队伍 - GoMate": "content.seo_pages.createTeam",
+  "编辑队伍 - GoMate": "content.seo_pages.editTeam",
+  "地点详情 - GoMate": "content.seo_pages.locationDetail",
+  "队伍详情 - GoMate": "content.seo_pages.teamDetail",
+  "我的收藏 - GoMate": "content.seo_pages.favorites",
+  "用户资料 - GoMate": "content.seo_pages.userDetail",
+  "联系我们 - GoMate": "content.seo_pages.contact",
+  "反馈建议 - GoMate": "content.seo_pages.feedback",
+  "关于我们 - GoMate": "content.seo_pages.about",
+  "帮助中心 - GoMate": "content.seo_pages.help",
+  "隐私政策 - GoMate": "content.seo_pages.privacy",
+  "服务条款 - GoMate": "content.seo_pages.terms",
+  "管理地点 - GoMate": "content.seo_pages.adminLocations",
+  "发布故事": "content.seo_pages.storyCreate",
+  "编辑故事": "content.seo_pages.storyEdit",
+};
+
+const titleKey = titleMap[propTitle];
+const descKey = titleMap[propDesc];
+
+// 标题逻辑：如果传入的是默认标题则翻译，否则拼接翻译后缀
+const title = titleKey ? ssr.t(titleKey as any) : `${propTitle}${ssr.t("content.titleSuffix" as any)}`;
+const description = descKey ? ssr.t(descKey as any) : propDesc;
+
+// 读取主题 cookie，服务端设置 html class
+const themeCookie = Astro.cookies.get("theme")?.value;
+const isDark = themeCookie === "dark" || (!themeCookie && false); // 默认 light，客户端会校正
+
+// 获取当前路径（不含 locale 前缀）
+const url = new URL(Astro.request.url);
+const canonicalUrl = new URL(Astro.url);
+canonicalUrl.search = "";
+canonicalUrl.hash = "";
+const pathSegments = url.pathname.split("/").filter(Boolean);
+const hasLocalePrefix = SUPPORTED_LOCALES.includes(pathSegments[0] as Locale);
+const cleanSegments = hasLocalePrefix ? pathSegments.slice(1) : pathSegments;
+const cleanPath = "/" + cleanSegments.join("/");
+
+// 生成 hreflang 链接
+function getHreflangUrl(loc: Locale) {
+  if (loc === "zh-CN") {
+    return `https://gomate.live${cleanPath === "/" ? "/" : cleanPath}`;
+  }
+  return `https://gomate.live/${loc}${cleanPath === "/" ? "" : cleanPath}`;
+}
+---
+
+<!doctype html>
+<html lang={locale} class={isDark ? "dark" : ""}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={isDark ? "var(--background)" : "var(--background)"} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="var(--background)" media="(prefers-color-scheme: dark)" />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    {/* Open Graph meta tags */}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl.href} />
+    {resolvedOgImage && <meta property="og:image" content={resolvedOgImage} />}
+    {resolvedOgImage && <meta property="og:image:width" content="1200" />}
+    {resolvedOgImage && <meta property="og:image:height" content="630" />}
+
+    {/* Twitter Card meta tags */}
+    <meta name="twitter:card" content={resolvedOgImage ? "summary_large_image" : "summary"} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {resolvedOgImage && <meta name="twitter:image" content={resolvedOgImage} />}
+
+    {/* ═══════════════════════════════════════════════════════════════
+       Phase 3 Task 2: Critical CSS 内联优化
+
+       策略：
+       1. 关键 CSS 内联 — 避免阻塞渲染的 CSS 请求，首屏即时呈现
+       2. 非关键 CSS 通过 Tailwind 延迟加载 — 构建时已优化
+
+       收益：
+       - 首屏渲染时间减少（无 CSS 请求阻塞）
+       - Lighthouse "Render-blocking resources" 分数提升
+       ═══════════════════════════════════════════════════════════════ */}
+    {criticalCSS && (
+      <style set:html={criticalCSS}></style>
+    )}
+
+    {/* 字体：当前使用系统字体栈（PingFang SC 等），无需预连接外部字体 */}
+
+    {/* API 域名预连接（减少 TTFB） */}
+
+    {/* R2 存储预连接（图片加载优化） */}
+    <link rel="dns-prefetch" href="https://cos.gomate.live" />
+    <link rel="preconnect" href="https://cos.gomate.live" crossorigin />
+
+    {/* hreflang alternate links */}
+    {SUPPORTED_LOCALES.map((loc) => (
+      <link rel="alternate" hreflang={loc} href={getHreflangUrl(loc)} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={getHreflangUrl(DEFAULT_LOCALE)} />
+
+    <script is:inline>
+      (function () {
+        try {
+          var match = document.cookie.match(/theme=(light|dark|system)/);
+          var theme = match ? match[1] : 'system';
+          var isDark;
+          if (theme === 'dark') {
+            isDark = true;
+          } else if (theme === 'light') {
+            isDark = false;
+          } else {
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          }
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    {/* SSR i18n 内联数据 */}
+    <script is:inline set:html={`window.__I18N_DATA__=${JSON.stringify(ssrLocaleData)};`}></script>
+
+    {/* ═══════════════════════════════════════════════════════════════
+       Phase 3 Task 3: 路由预加载优化（边缘环境兼容版）
+
+       策略：
+       1. 关键路由预加载 — 使用 requestIdleCallback 在空闲时预加载
+       2. Hover 预加载 — 鼠标悬停时自动预加载目标页面
+       3. 内联脚本 — 无需外部组件，边缘环境完全兼容
+       ═══════════════════════════════════════════════════════════════ */}
+    <script is:inline>
+      (function() {
+        // 关键路由预加载（延迟执行，避免阻塞首屏）
+        var criticalRoutes = ["/locations", "/teams"];
+
+        // 使用 requestIdleCallback 在空闲时预加载
+        function prefetchWhenIdle(routes) {
+          var prefetch = function(route) {
+            var link = document.createElement("link");
+            link.rel = "prefetch";
+            link.href = route;
+            link.as = "document";
+            document.head.appendChild(link);
+          };
+
+          if (typeof requestIdleCallback !== "undefined") {
+            requestIdleCallback(function() {
+              routes.forEach(function(route, i) {
+                setTimeout(function() { prefetch(route); }, i * 200);
+              });
+            }, { timeout: 2000 });
+          } else {
+            // 降级：setTimeout
+            setTimeout(function() {
+              routes.forEach(function(route, i) {
+                setTimeout(function() { prefetch(route); }, i * 200);
+              });
+            }, 2000);
+          }
+        }
+
+        // 启动预加载
+        if (document.readyState === "complete") {
+          prefetchWhenIdle(criticalRoutes);
+        } else {
+          window.addEventListener("load", function() {
+            prefetchWhenIdle(criticalRoutes);
+          });
+        }
+
+        // Hover 预加载（鼠标悬停在链接上时）
+        document.addEventListener("mouseover", function(e) {
+          var target = e.target.closest("a[href^=\"/\"]");
+          if (!target) return;
+          var href = target.getAttribute("href");
+          // 过滤外部链接和当前页面
+          if (!href || href.startsWith("//") || href === "/" || href === window.location.pathname) return;
+
+          // 检查是否已经预加载
+          var existing = document.querySelector('link[rel="prefetch"][href="' + href + '"]');
+          if (existing) return;
+
+          var link = document.createElement("link");
+          link.rel = "prefetch";
+          link.href = href;
+          link.as = "document";
+          document.head.appendChild(link);
+        }, { passive: true });
+      })();
+    </script>
+
+  </head>
+  <body class={["min-h-screen", isDark ? "dark bg-[var(--background)]" : "bg-[var(--background)]"].join(" ")}>
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-amber-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
+    >
+      {ssr.t("common.skipToContent")}
+    </a>
+    {showNavbar && <Navbar client:visible />}
+    {/*
+      #main-content 是 skip-link 锚点，不是 <main>：
+      各 page/组件（skeleton.tsx、create-team、home-main、story-detail 等）自带 <main> landmark，
+      Layout 层再包 <main> 会造成嵌套双 landmark。tabindex=-1 让键盘焦点可跳到内容起点。
+    */}
+    <div id="main-content" tabindex="-1" class="outline-none">
+      <slot />
+    </div>
+    {showFooter && <Footer client:idle />}
+  </body>
+</html>
