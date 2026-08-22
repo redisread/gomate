@@ -5,7 +5,7 @@
   "type": "module",
   "description": "GoMate - 极简地点组队平台 on Cloudflare Workers",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "dev": "astro dev --port ${GOMATE_WEB_PORT:-5432}",
