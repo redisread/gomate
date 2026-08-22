@@ -5,6 +5,7 @@ import { ArrowLeft, MapPinned } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import {
   getMapTransform,
+  getMapMarkerRadius,
   MAP_PROVINCE_PARAM,
   parseMapProvince,
   projectChina,
@@ -347,10 +348,11 @@ export function ChinaMap({ className }: { className?: string }) {
                   <circle
                     cx={position.x}
                     cy={position.y}
-                    r={focusedProvince ? 5.5 : 5}
+                    r={getMapMarkerRadius(focusedProvince ? 5.5 : 5, mapTransform.scale)}
                     fill="var(--primary)"
                     stroke="#fff"
                     strokeWidth={1.2}
+                    vectorEffect="non-scaling-stroke"
                     pointerEvents="none"
                     className="transition-[r] duration-150 motion-reduce:transition-none"
                   />
