@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 describe("production Worker boundary", () => {
   it("serves health through the real workerd pipeline", async () => {
     const response = await exports.default.fetch(
-      new Request("https://gomate.test/health"),
+      new Request("https://gomate.test/api/health"),
     );
 
     expect(response.status).toBe(200);
@@ -14,10 +14,19 @@ describe("production Worker boundary", () => {
 
   it("keeps unknown API paths as JSON instead of falling through to Astro", async () => {
     const response = await exports.default.fetch(
-      new Request("https://gomate.test/unknown"),
+      new Request("https://gomate.test/api/unknown"),
     );
 
     expect(response.status).toBe(404);
     expect(response.headers.get("content-type")).toContain("application/json");
+  });
+
+  it("serves an SSR page outside the API boundary", async () => {
+    const response = await exports.default.fetch(
+      new Request("https://gomate.test/login"),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toContain("GoMate");
   });
 });

@@ -4,8 +4,8 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      main: "./tests/worker/entry.ts",
-      wrangler: { configPath: "./wrangler.jsonc" },
+      main: "./dist/server/entry.mjs",
+      wrangler: { configPath: "./wrangler.jsonc", environment: "production" },
     }),
   ],
   test: {

@@ -105,6 +105,9 @@ importers:
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
+      es-module-lexer:
+        specifier: ^2.1.0
+        version: 2.1.0
       eslint:
         specifier: ^9.0.0
         version: 9.39.4(jiti@2.7.0)(supports-color@10.2.2)
