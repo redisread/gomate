@@ -1,6 +1,6 @@
 # GoMate 生产变更规约
 
-本文只描述当前生产拓扑、授权边界和生产写入冻结状态。已完成的一次性迁移、割接与退役过程由 Git 历史保留，不作为现行操作手册继续维护。
+本文只描述当前生产拓扑、授权边界和自动发布状态。已完成的一次性迁移、割接与退役过程由 Git 历史保留，不作为现行操作手册继续维护。
 
 ## 1. 当前生产拓扑
 
@@ -29,41 +29,44 @@ Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 
 以下操作均属于生产写入：创建/删除 Cloudflare 资源、D1 remote migration/execute、KV/R2 写入、secret 写入、Worker 部署、version promotion、route/custom-domain 变更和 `WRITE_MODE` 变更。
 
-每次生产写入必须同时满足：
+生产基础设施写入和每次进入 `main` 的应用变更必须同时满足：
 
 1. 在任务或 PR 中列出精确资源、预期状态、影响面、验证和回滚方式；
-2. 获得用户对本次精确范围的显式批准；
-3. 从 `main` 通过经过审核的受保护流水线执行；
-4. 使用正常的生产环境审核，不使用 admin bypass；
+2. 基础设施变更获得用户对本次精确范围的显式批准；应用发布则以已审核 PR 合并到受保护的 `main` 作为发布批准；
+3. Worker 部署与 D1 migration 从 `main` 通过 Cloudflare Workers Builds 执行；
+4. 不使用 admin bypass；
 5. secrets 只在需要它的步骤暴露，且不得写入日志、artifact、PR、命令参数或仓库级 Actions secrets；
 6. 执行后保存 run URL、head SHA、资源/version 结果与只读验证证据。
 
 禁止在开发机直接运行生产 Cloudflare 写命令。只读 inventory/health 检查可以在任务范围内执行，但不得据此扩大写入权限。
 
 仓库提供 `pnpm deploy:production` 作为 Cloudflare Workers Builds 的生产部署入口；该命令只能由
-受保护的 production environment 调用。GitHub Actions 仍只执行只读质量检查，不配置生产
-Cloudflare 或应用 secrets，也不提供本机生产写入路径。未经单独批准，生产写入依然保持冻结。
+`main` 分支的 Workers Build 调用。GitHub Actions 仍只执行只读质量检查，不配置生产
+Cloudflare 或应用 secrets，也不提供本机生产写入路径。合并到 `main` 后不再等待第二次人工确认。
 
 ## 3. 发布能力
 
 PR 使用仓库内 `pnpm test:ci` 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，
-只负责 `main` 分支的生产构建和发布；非 `main` 分支不生成远程 Preview，生产环境必须启用
-protected environment 审核。构建阶段只做校验和 dry-run，部署阶段先执行目标环境 D1
+只负责 `main` 分支的生产构建和自动发布；非 `main` 分支不生成远程 Preview。PR 审核与
+受保护分支是发布授权边界。构建阶段只做校验和 dry-run，部署阶段先执行目标环境 D1
 migration，再发布不可变 Worker version。
 
 Workers Builds 的推荐配置为：
 
 1. Build command：`pnpm install --frozen-lockfile && pnpm i18n:build && pnpm test:ci && pnpm worker:dry-run`；
-2. Deploy command：`pnpm deploy:production`。脚本先执行
+2. Build variables：`NODE_VERSION=22.13.0`、`PNPM_VERSION=11.19.0`、
+   `SKIP_DEPENDENCY_INSTALL=1`；启用 build cache。仓库同时通过 `.node-version` 和
+   `packageManager` 固定本地与 CI 工具链；
+3. Deploy command：`pnpm deploy:production`。脚本先执行
    `wrangler d1 migrations apply DB --remote --env production --config wrangler.jsonc`，只有
    migration 成功后才执行 `wrangler deploy --env production`；
-3. Deploy command 依赖同一次 Build 已生成的 `dist/`；migration 失败时不得继续部署，Worker
+4. Deploy command 依赖同一次 Build 已生成的 `dist/`；migration 失败时不得继续部署，Worker
    发布失败也不得回滚或手工补写数据库；
-4. 当前采用单一远程环境策略：`main` 是唯一生产分支，构建脚本拒绝 Workers Builds 传入的
+5. 当前采用单一远程环境策略：`main` 是唯一生产分支，构建脚本拒绝 Workers Builds 传入的
    非 `main` 分支，`wrangler.jsonc` 的根配置使用本地资源，`production` 显式关闭
    `workers_dev` 和 `preview_urls`。未来若要提供在线 Preview，必须先创建独立的 Worker、
    D1、R2、secrets 和访问控制，不能把版本预览当作数据隔离；
-5. 发布后用 `/api/health`、SSR 页面和关键只读 API 做 smoke，记录 version ID、migration 结果和
+6. 发布后用 `/api/health`、SSR 页面和关键只读 API 做 smoke，记录 version ID、migration 结果和
    构建 run URL。任何 smoke 失败都停止后续推广。
 
 ## 4. D1、KV 与 R2
@@ -73,7 +76,7 @@ Workers Builds 的推荐配置为：
 - contract migration 必须等待新的受保护流水线落地，并在执行前证明当前 Worker 同时兼容新旧 schema、关闭不兼容版本的回滚入口。
 - 新 D1 v3 以 `0000_init.sql` 作为 fresh baseline；已应用 migration 不可改写。后续新增迁移、Drizzle schema、journal 和 snapshot 必须同步，本地运行 `pnpm db:check`。
 - 生产 D1 v3 的创建/绑定是独立的受保护基础设施变更；在该资源完成只读核对前，禁止把旧 D1 UUID 填回 `wrangler.jsonc`，也禁止执行远程 migration。
-- `migrations/seed.sql` 只用于 local/development，禁止应用到生产。
+- `db/seed.sql` 只用于 local/development，禁止放入 `migrations/` 或应用到生产。
 - 多语句原子写使用 D1 `batch()` 与条件 DML；禁止 `db.transaction()` 和裸 `BEGIN`/`COMMIT`。
 - JSON 列在 SQLite 为带 CHECK 的 TEXT，在 Drizzle 使用 `mode: "json"`；业务层传对象/数组。
 - R2 对象删除、批量迁移或 bucket 配置变化必须独立列出 key/prefix 与恢复方式；“部署 Worker”不隐含任何 R2 修改授权。

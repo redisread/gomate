@@ -42,7 +42,7 @@
 - 当前模型为 19 张业务表、13 个业务触发器。所有 DDL 只通过 migration；不得手工对生产 D1 执行 DDL。
 - 多语句原子写使用 D1 `batch()` 与条件 DML；不要使用 `db.transaction()` 或裸 `BEGIN`/`COMMIT`。
 - JSON 列在 Drizzle 使用 `mode: "json"`，业务层只传对象/数组，不增加字符串兼容层。
-- `migrations/seed.sql` 仅用于本地开发/测试，不得应用到生产。
+- `db/seed.sql` 仅用于本地开发/测试，不得放入 `migrations/` 或应用到生产。
 - R2 binding 为 `R2`（bucket `gomate`）。运行时不依赖 KV；不得重新引入已退役的 Worker、KV、域名或旧 binding。
 
 ## 前端规则
@@ -84,8 +84,8 @@ pnpm db:check
 
 ## 交付与生产红线
 
-- PR 通过统一的 `pnpm test:ci` 质量门禁；Cloudflare Workers Builds 负责从 Git 构建和部署，生产环境必须保持受保护审核。
+- PR 通过统一的 `pnpm test:ci` 质量门禁；Cloudflare Workers Builds 负责在受保护的 `main` 分支更新后自动从 Git 构建和部署。合并已审核 PR 即授权该提交发布，不再设置第二个人工发布步骤。
 - 生产发布流水线只允许从受保护的 Cloudflare/Git 集成执行；禁止任何远程 D1、R2、Worker、route/domain 或 secret 写入绕过该流程。
 - 不在本机直接执行生产 Cloudflare 写命令，不使用 admin bypass，不把生产 secrets 放到仓库级 Actions secrets、日志、PR 或命令参数。
-- 不得用临时脚本、Dashboard 手工发布或本机命令替代受保护流水线。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。
+- 不得用临时脚本、Dashboard 手工发布或本机命令替代 `main` 流水线。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。
 - 生产异常先恢复/保持 `WRITE_MODE=protected`，再回滚到已验证 Worker version；旧 split Worker、旧 route 与旧数据库已退役，不得重建为回滚手段。
