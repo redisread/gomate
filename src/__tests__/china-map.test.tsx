@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChinaMap } from "../components/features/home/china-map";
+import { getMapMarkerRadius } from "../lib/china-map";
 
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
@@ -81,6 +82,11 @@ describe("ChinaMap", () => {
     expect(screen.getByText(/中国 \/ 广东省/)).toBeInTheDocument();
     expect(screen.getByLabelText("梧桐山")).toBeInTheDocument();
 
+    const marker = document.querySelector('circle[fill="var(--primary)"]');
+    expect(Number(marker?.getAttribute("r"))).toBeCloseTo(getMapMarkerRadius(5.5, 3));
+    const hitTarget = document.querySelector('circle[fill="transparent"]');
+    expect(Number(hitTarget?.getAttribute("r"))).toBe(12);
+
     await waitFor(() => {
       expect(screen.queryByLabelText("四姑娘山")).not.toBeInTheDocument();
     });
@@ -88,5 +94,10 @@ describe("ChinaMap", () => {
     fireEvent.click(guangdong);
 
     expect(historyBack).toHaveBeenCalledOnce();
+  });
+
+  it("calculates marker radii in the map's unscaled coordinate space", () => {
+    expect(getMapMarkerRadius(5, 1)).toBe(5);
+    expect(getMapMarkerRadius(5, 3)).toBeCloseTo(5 / 3);
   });
 });

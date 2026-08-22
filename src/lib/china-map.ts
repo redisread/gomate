@@ -52,6 +52,11 @@ export function transformMapPoint(point: MapPointPosition, transform: MapTransfo
   };
 }
 
+/** Keep marker geometry stable while the map content is zoomed. */
+export function getMapMarkerRadius(radius: number, mapScale: number): number {
+  return radius / mapScale;
+}
+
 export function parseMapProvince(search: string): string | null {
   const province = new URLSearchParams(search).get(MAP_PROVINCE_PARAM);
   return province && PROVINCE_CENTERS[province] ? province : null;
