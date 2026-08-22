@@ -99,7 +99,8 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
         (SELECT COUNT(*) FROM tags) AS tag_count,
         (SELECT COUNT(*) FROM location_tags) AS location_tag_count,
         (SELECT COUNT(*) FROM d1_migrations) AS migration_count,
-        (SELECT COUNT(*) FROM locations WHERE id = 'location-shenzhen-wutongshan') AS retained_v3_location_count;`,
+        (SELECT COUNT(*) FROM locations WHERE id = 'location-shenzhen-wutongshan') AS retained_v3_location_count,
+        (SELECT cover_image_url FROM locations WHERE id = 'location-shenzhen-wutongshan') AS wutongshan_cover_url;`,
     ]);
     const [catalog] = JSON.parse(catalogOutput).flatMap(
       (entry) => entry.results ?? [],
@@ -109,8 +110,10 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
       location_count: 37,
       tag_count: 3,
       location_tag_count: 3,
-      migration_count: 4,
+      migration_count: 5,
       retained_v3_location_count: 1,
+      wutongshan_cover_url:
+        "https://gomate.cos.jiahongw.com/locations/hiking/wutong-mountain/wutongshan_01.jpg",
     });
 
     const foreignKeyOutput = run(WRANGLER, [
