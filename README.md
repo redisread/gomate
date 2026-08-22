@@ -2,6 +2,7 @@
 
 > 发现有趣地点，找到同行伙伴
 
+[![CI](https://github.com/redisread/gomate/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/redisread/gomate/actions/workflows/ci.yml)
 [![Live](https://img.shields.io/badge/Live-gomate.live-blue)](https://gomate.live)
 
 ## 产品定位
