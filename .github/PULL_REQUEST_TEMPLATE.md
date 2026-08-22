@@ -23,6 +23,7 @@
 - [ ] `pnpm test:ci`
 - [ ] `pnpm worker:types && pnpm worker:dry-run && pnpm worker:size`
 - [ ] `pnpm test:e2e:ci`
+- [ ] 生产发布（如适用）仅由受保护 Workers Builds 执行 `pnpm deploy:production`
 
 补充手动验证：
 

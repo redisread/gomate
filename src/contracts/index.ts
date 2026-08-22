@@ -82,7 +82,6 @@ export interface Location {
   coverImageUrl: string;
   images: string[];
   extra: LocationExtra;
-  createdByUserId: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   region?: Region;

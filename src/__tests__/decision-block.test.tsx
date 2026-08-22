@@ -43,7 +43,6 @@ function makeLocation(overrides: Partial<Location> = {}): Location {
     coverImageUrl: "https://gomate.cos.jiahongw.com/locations/test.jpg",
     images: [],
     extra: {},
-    createdByUserId: null,
     createdAt: "2026-08-16T00:00:00.000Z",
     updatedAt: "2026-08-16T00:00:00.000Z",
   };

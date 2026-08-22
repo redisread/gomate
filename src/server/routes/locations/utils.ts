@@ -329,7 +329,6 @@ export function projectLocation(
     coverImageUrl: location.coverImageUrl,
     images: location.images,
     extra: mapLocationExtra(location.extra),
-    createdByUserId: location.createdByUserId,
     createdAt: location.createdAt.toISOString(),
     updatedAt: location.updatedAt.toISOString(),
     region: projectRegion(region),

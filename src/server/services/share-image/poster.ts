@@ -37,7 +37,6 @@ export const POSTER_TEMPLATE_VERSION = "v2";
 
 export interface RenderPosterOptions {
   locale?: PosterLocale;
-  refresh?: boolean;
 }
 
 export interface RenderPosterResult {
@@ -88,7 +87,6 @@ async function buildLocationPoster(
   locationId: string,
   locale: PosterLocale,
   fonts: Awaited<ReturnType<typeof loadPosterFonts>>,
-  refresh: boolean,
 ): Promise<RenderPosterResult> {
   const db = createDb(env.DB);
   const location = await db.query.locations.findFirst({
@@ -132,7 +130,6 @@ async function buildLocationPoster(
   const { svg } = await cachedPosterRender({
     env,
     cacheKey,
-    refresh,
     render: async () => {
       let coverImageBase64: string | null = null;
       if (location.coverImageUrl) {
@@ -210,12 +207,11 @@ async function buildTeamPoster(
   teamId: string,
   locale: PosterLocale,
   fonts: Awaited<ReturnType<typeof loadPosterFonts>>,
-  refresh: boolean,
 ): Promise<RenderPosterResult> {
   const db = createDb(env.DB);
   const team = await db.query.teams.findFirst({
     where: eq(schema.teams.id, teamId),
-    with: { location: true, leader: true },
+    with: { location: true },
   });
   if (!team) throw new PosterNotFoundError("team", teamId);
 
@@ -248,14 +244,10 @@ async function buildTeamPoster(
   const { svg } = await cachedPosterRender({
     env,
     cacheKey,
-    refresh,
     render: async () => {
-      const [coverImageBase64, leaderAvatarBase64, qrCodeDataUrl] = await Promise.all([
+      const [coverImageBase64, qrCodeDataUrl] = await Promise.all([
         team.location?.coverImageUrl
           ? loadImageAsBase64(team.location.coverImageUrl, env, 3000)
-          : Promise.resolve(null),
-        team.leader?.image
-          ? loadImageAsBase64(team.leader.image, env, 3000)
           : Promise.resolve(null),
         generateQrDataUrl(`https://gomate.live/teams/${team.id}`),
       ]);
@@ -268,8 +260,8 @@ async function buildTeamPoster(
         coverImage: coverImageBase64,
         activeParticipantCount,
         maxParticipants,
-        leaderName: team.leader?.name ?? null,
-        leaderAvatar: leaderAvatarBase64,
+        leaderName: null,
+        leaderAvatar: null,
         spotsToForm,
         qrCodeDataUrl,
         fonts,
@@ -290,13 +282,11 @@ async function buildStoryPoster(
   env: Env,
   storyId: string,
   fonts: Awaited<ReturnType<typeof loadPosterFonts>>,
-  refresh: boolean,
 ): Promise<RenderPosterResult> {
   const db = createDb(env.DB);
   const story = await db.query.stories.findFirst({
     where: eq(schema.stories.id, storyId),
     with: {
-      author: true,
       location: { with: { region: true } },
     },
   });
@@ -317,7 +307,6 @@ async function buildStoryPoster(
     title: story.title,
     summary: story.summary,
     images: story.images,
-    authorId: story.authorId,
     locationId: story.locationId,
     createdAt: story.createdAt,
   });
@@ -326,19 +315,17 @@ async function buildStoryPoster(
   const { svg } = await cachedPosterRender({
     env,
     cacheKey,
-    refresh,
     render: async () => {
-      const [coverImageBase64, authorAvatarBase64, qrCodeDataUrl] = await Promise.all([
+      const [coverImageBase64, qrCodeDataUrl] = await Promise.all([
         story.images[0] ? loadImageAsBase64(story.images[0], env, 3000) : Promise.resolve(null),
-        story.author?.image ? loadImageAsBase64(story.author.image, env, 3000) : Promise.resolve(null),
         generateQrDataUrl(`https://gomate.live/discover/${story.id}`),
       ]);
       const svg = await renderStoryPoster({
         title: story.title ?? "GoMate Story",
         summary: story.summary ?? story.content.slice(0, 160),
         coverImage: coverImageBase64 ?? undefined,
-        authorName: (story.author?.name || story.author?.nickname) ?? undefined,
-        authorAvatar: authorAvatarBase64 ?? undefined,
+        authorName: undefined,
+        authorAvatar: undefined,
         locationName: story.location?.name ?? undefined,
         qrCodeDataUrl,
         fonts,
@@ -364,15 +351,14 @@ export async function renderPoster(
   id: string,
   opts: RenderPosterOptions = {},
 ): Promise<RenderPosterResult> {
-  const refresh = opts.refresh === true;
   const locale = opts.locale ?? "zh-CN";
   const fonts = await loadPosterFonts(env);
 
   if (kind === "location") {
-    return buildLocationPoster(env, id, locale, fonts, refresh);
+    return buildLocationPoster(env, id, locale, fonts);
   }
   if (kind === "team") {
-    return buildTeamPoster(env, id, locale, fonts, refresh);
+    return buildTeamPoster(env, id, locale, fonts);
   }
-  return buildStoryPoster(env, id, fonts, refresh);
+  return buildStoryPoster(env, id, fonts);
 }

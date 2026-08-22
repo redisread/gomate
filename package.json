@@ -34,7 +34,7 @@
     "worker:types": "wrangler types src/server/worker-configuration.d.ts --config wrangler.jsonc --env production --check && git diff --exit-code -- src/server/worker-configuration.d.ts",
     "worker:dry-run": "node scripts/worker-dry-run.mjs",
     "worker:size": "node scripts/check-worker-bundle-size.mjs",
-    "deploy:production": "wrangler d1 migrations apply DB --remote --env production --config wrangler.jsonc && wrangler deploy"
+    "deploy:production": "wrangler d1 migrations apply DB --remote --env production --config wrangler.jsonc && wrangler deploy --env production"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.3",

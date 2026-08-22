@@ -27,7 +27,6 @@ const locations: Location[] = ["香港", "麦理浩径", "大理", "牛奶排", 
   coverImageUrl: `/images/${index}.jpg`,
   images: [],
   extra: {},
-  createdByUserId: null,
   createdAt: "2026-01-01",
   updatedAt: "2026-01-01",
   region: {

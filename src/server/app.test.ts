@@ -55,4 +55,17 @@ describe("API boundary", () => {
       error: { code: "NOT_FOUND" },
     });
   });
+
+  it("rejects the public poster refresh bypass", async () => {
+    const response = await apiApp.fetch(
+      new Request("http://localhost/share-image/location/location-1?refresh=1"),
+      env(),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: { code: "BAD_REQUEST" },
+    });
+  });
 });

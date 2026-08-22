@@ -31,20 +31,18 @@ export function useShareImage({ type, id }: UseShareImageOptions) {
 
   /**
    * 生成分享图片
-   * @param refresh - 强制刷新缓存
    */
   const generateImage = useCallback(
-    async (refresh = false): Promise<ShareImageResult | null> => {
+    async (): Promise<ShareImageResult | null> => {
       setIsLoading(true);
       setError(null);
 
       try {
         const endpoint = (() => {
-          const qs = refresh ? "?refresh=1" : "";
           switch (type) {
-            case "location": return `${API_BASE}/share-image/location/${id}${qs}`;
-            case "team":     return `${API_BASE}/share-image/team/${id}${qs}`;
-            case "story":    return `${API_BASE}/share-image/story/${id}${qs}`;
+            case "location": return `${API_BASE}/share-image/location/${id}`;
+            case "team":     return `${API_BASE}/share-image/team/${id}`;
+            case "story":    return `${API_BASE}/share-image/story/${id}`;
           }
         })();
 

@@ -69,7 +69,6 @@ const location = {
   coverImageUrl: "https://example.com/location.jpg",
   images: [],
   extra: {},
-  createdByUserId: null,
   createdAt: "2026-08-01T00:00:00Z",
   updatedAt: "2026-08-01T00:00:00Z",
   region: {

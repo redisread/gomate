@@ -18,7 +18,6 @@ function locationFixture(overrides: Partial<Location> = {}): Location {
     coverImageUrl: "https://gomate.cos.jiahongw.com/locations/wutong.jpg",
     images: [],
     extra: {},
-    createdByUserId: null,
     createdAt: "2026-08-16T00:00:00.000Z",
     updatedAt: "2026-08-16T00:00:00.000Z",
     ...overrides,

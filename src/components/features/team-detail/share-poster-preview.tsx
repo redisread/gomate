@@ -151,7 +151,7 @@ export function SharePosterPreview({
 
   const handleRetry = () => {
     setShowRetry(false);
-    generateImage(true); // 强制刷新
+    generateImage();
   };
 
   // 手势处理 - 开始拖动

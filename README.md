@@ -114,10 +114,11 @@ pnpm env:check
 
 ## 部署
 
-PR 通过 `pnpm test:ci` 后由 Cloudflare Workers Builds 从 Git 构建；preview 使用隔离的
-Cloudflare 环境，生产部署使用 protected environment 和 migration gate。线上由统一 Worker
-`gomate` 提供 `gomate.live`。禁止从本机或临时命令执行生产 Worker、D1、R2、secret 或
-route 写入，详见 `docs/prod-change-policy.md`。
+PR 通过 `pnpm test:ci` 后由 Cloudflare Workers Builds 从 Git 构建；生产部署使用 protected
+environment 和 migration gate。preview/production 资源隔离仍需单独完成审核，线上由统一
+Worker `gomate` 提供 `gomate.live`。禁止从本机或临时命令执行生产 Worker、D1、R2、secret
+或 route 写入；受保护的 Workers Builds deploy command 使用 `pnpm deploy:production`，详见
+`docs/prod-change-policy.md`。
 
 ## 相关仓库
 

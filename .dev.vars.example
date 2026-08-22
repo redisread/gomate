@@ -1,4 +1,4 @@
-# Unified Worker local secrets. Copy this file to frontend/.dev.vars.
+# Unified Worker local secrets. Copy this file to .dev.vars.
 # BETTER_AUTH_SECRET must contain at least 32 characters.
 BETTER_AUTH_SECRET=local-dev-secret-key-32chars-long-12345
 

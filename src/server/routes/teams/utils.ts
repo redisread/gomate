@@ -173,7 +173,6 @@ export function toTeamResponse(input: TeamResponseInput): TeamDto {
         coverImageUrl: input.location.coverImageUrl,
         images: parseStringArray(input.location.images),
         extra: mapLocationExtra(input.location.extra),
-        createdByUserId: input.location.createdByUserId,
         createdAt: asIso(input.location.createdAt),
         updatedAt: asIso(input.location.updatedAt),
         ...(input.region ? {

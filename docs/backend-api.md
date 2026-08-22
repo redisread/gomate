@@ -59,7 +59,8 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 
 Location 使用全局 ID 路由，不提供 slug fallback。公开读取只返回 `published` 且属于
 `serviceEnabled=true` city Region 的地点。HTTP `extra` 使用 camelCase，服务层负责与
-D1 JSON 的 snake_case 结构转换。
+D1 JSON 的 snake_case 结构转换。公开和管理员 Location DTO 都不包含内部
+`createdByUserId`；该字段只保留在数据库和服务端写入链路。
 
 ### Team
 
@@ -155,6 +156,8 @@ Story 图片先上传到当前用户的临时 namespace，创建或更新时再�
 
 上传会同时校验大小、MIME、扩展名和文件魔数，并以临时对象、最终对象、条件 DML 和补偿清理
 维护 R2/D1 一致性。Local-circle KV 只缓存无用户身份的公共部分，个性化数据每次从 D1 合并。
+海报接口不接受公开 `refresh` 参数；海报缓存只包含地点、行程和故事的公开内容，不渲染
+用户姓名、头像或用户 ID。
 
 ## 变更检查
 

@@ -57,7 +57,6 @@ const teams: Team[] = ["周末去梧桐山", "海边日落散步", "城市骑行
         coverImageUrl: `/images/location-${index}.jpg`,
         images: [],
         extra: {},
-        createdByUserId: null,
         createdAt: "2026-08-01",
         updatedAt: "2026-08-01",
       },

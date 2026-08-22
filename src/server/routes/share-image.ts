@@ -3,7 +3,7 @@
  *
  * Replaces the prior four-handler shape (preview, location, team, story)
  * collapsed under one dispatcher in `services/share-image/poster.ts`.
- * Query: ?locale=zh-CN|en|ja | ?refresh=1
+ * Query: ?locale=zh-CN|en|ja
  *
  * Skill: `zero-tech-debt` — Step 3 "Reshape around the final product surface".
  */
@@ -48,7 +48,8 @@ function svgResponse(
 ): Response {
   const headers: Record<string, string> = {
     "Content-Type": "image/svg+xml; charset=utf-8",
-    "Cache-Control": "public, max-age=86400",
+    "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+    Vary: "Accept-Language",
     "X-Content-Type-Options": "nosniff",
     "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:",
     "X-Cache-Key": opts.cacheKey,
@@ -70,12 +71,17 @@ shareImageRoute.get("/:kind/:id", async (c) => {
     );
   }
   const kind = kindParam as PosterKind;
-  const refresh = c.req.query("refresh") === "1";
+  if (c.req.query("refresh") !== undefined) {
+    return c.json(
+      APIErrors.badRequest("Poster refresh is not supported; retry without the refresh parameter"),
+      400,
+    );
+  }
   // accept-language falls back to ?locale; ?locale must be supported.
   const locale = resolvePosterLocale(c.req.header("accept-language"), c.req.query("locale"));
 
   try {
-    const result = await renderPoster(c.env, kind, id, { locale, refresh });
+    const result = await renderPoster(c.env, kind, id, { locale });
     return svgResponse(result.svg, { cacheKey: result.cacheKey });
   } catch (error) {
     if (error instanceof PosterNotFoundError) {

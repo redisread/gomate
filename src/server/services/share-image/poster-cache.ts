@@ -3,7 +3,8 @@ import type { Env } from "../../lib/auth";
 import { logger } from "../../lib/logger";
 import { loadFonts } from "./load-fonts";
 
-const MAX_EMBEDDED_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_EMBEDDED_IMAGE_BYTES = 5 * 1024 * 1024;
+const POSTER_CACHE_PATH = "/__poster-cache/";
 
 export async function loadPosterFonts(env: Env) {
   return loadFonts(env);
@@ -63,17 +64,45 @@ const FALLBACK_QR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25
 export async function cachedPosterRender({
   env,
   cacheKey,
-  refresh,
   render,
 }: {
   env: Env;
   cacheKey: string;
-  refresh: boolean;
   render: () => Promise<string>;
 }): Promise<{ svg: string; cacheKey: string; cached: boolean }> {
-  void env;
-  void refresh;
+  const cache = (
+    globalThis.caches as CacheStorage & { default?: Cache } | undefined
+  )?.default;
+  const cacheRequest = cache
+    ? new Request(
+        `${env.APP_URL.replace(/\/$/u, "")}${POSTER_CACHE_PATH}${encodeURIComponent(cacheKey)}`,
+      )
+    : null;
+
+  if (cache && cacheRequest) {
+    const hit = await cache.match(cacheRequest).catch(() => undefined);
+    if (hit) {
+      const svg = await hit.text();
+      if (svg) return { svg, cacheKey, cached: true };
+    }
+  }
+
   const svg = await render();
+
+  if (cache && cacheRequest) {
+    await cache
+      .put(
+        cacheRequest,
+        new Response(svg, {
+          headers: {
+            "Content-Type": "image/svg+xml; charset=utf-8",
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        }),
+      )
+      .catch(() => undefined);
+  }
+
   return { svg, cacheKey, cached: false };
 }
 
@@ -96,14 +125,51 @@ function isAllowedImageUrl(url: URL, env: Env): boolean {
   );
 }
 
+async function readImageBodyWithLimit(response: Response): Promise<Uint8Array | null> {
+  if (!response.body) return null;
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+
+      const chunk = value instanceof Uint8Array ? value : new Uint8Array(value);
+      totalBytes += chunk.byteLength;
+      if (totalBytes > MAX_EMBEDDED_IMAGE_BYTES) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(chunk);
+    }
+  } catch {
+    return null;
+  } finally {
+    reader.releaseLock();
+  }
+
+  if (totalBytes === 0) return null;
+  const buffer = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    buffer.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return buffer;
+}
+
 async function readImageResponse(response: Response): Promise<string | null> {
   if (!response.ok || response.status >= 300) return null;
   const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim();
   if (!contentType?.startsWith("image/")) return null;
   const declaredLength = Number(response.headers.get("content-length") || 0);
   if (declaredLength > MAX_EMBEDDED_IMAGE_BYTES) return null;
-  const buffer = await response.arrayBuffer();
-  if (buffer.byteLength === 0 || buffer.byteLength > MAX_EMBEDDED_IMAGE_BYTES) return null;
+  const buffer = await readImageBodyWithLimit(response);
+  if (!buffer) return null;
   return `data:${contentType};base64,${bufferToBase64(buffer)}`;
 }
 

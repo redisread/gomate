@@ -32,7 +32,6 @@ const location = {
   extra: {
     hiking: { durationMin: 120, durationMax: 180, distanceKm: 5.5 },
   },
-  createdByUserId: null,
   createdAt: "2026-08-16T00:00:00.000Z",
   updatedAt: "2026-08-16T00:00:00.000Z",
   region: {

@@ -37,7 +37,6 @@ const location: Location = {
     },
     facilities: ["restroom"],
   },
-  createdByUserId: "admin-1",
   createdAt: "2026-08-16T00:00:00.000Z",
   updatedAt: "2026-08-16T00:00:00.000Z",
   tags: [{ id: "tag-1", name: "山野", slug: "mountain" }],

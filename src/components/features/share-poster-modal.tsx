@@ -128,7 +128,7 @@ export function SharePosterModal({
    * 生成分享图片
    */
   const generateImage = useCallback(
-    async (refresh = false): Promise<string | null> => {
+    async (): Promise<string | null> => {
       setIsGenerating(true);
       setError(null);
       setShowRetry(false);
@@ -137,7 +137,6 @@ export function SharePosterModal({
         // 把当前语言传给后端，让海报文案跟随用户语言
         const locale = getLocale();
         const qs = new URLSearchParams({ locale, v: POSTER_TEMPLATE_VERSION });
-        if (refresh) qs.set("refresh", "1");
         const endpoint =
           type === "location"
             ? `${API_BASE}/share-image/location/${id}?${qs.toString()}`
@@ -253,7 +252,7 @@ export function SharePosterModal({
   };
 
   const handleRetry = () => {
-    generateImage(true);
+    generateImage();
   };
 
   const isLoading = isGenerating;

@@ -35,7 +35,9 @@ Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 
 禁止在开发机直接运行生产 Cloudflare 写命令。只读 inventory/health 检查可以在任务范围内执行，但不得据此扩大写入权限。
 
-当前仓库只包含 PR/`main` 的只读质量检查，不包含生产写入入口；所有生产写入保持冻结，直到 Cloudflare Builds 发布流程经过代码审查、验证并正式落地。
+仓库提供 `pnpm deploy:production` 作为 Cloudflare Workers Builds 的生产部署入口；该命令只能由
+受保护的 production environment 调用。GitHub Actions 仍只执行只读质量检查，不配置生产
+Cloudflare 或应用 secrets，也不提供本机生产写入路径。未经单独批准，生产写入依然保持冻结。
 
 ## 3. 发布能力
 
@@ -46,12 +48,15 @@ dry-run，部署阶段先执行目标环境 D1 migration，再发布不可变 Wo
 Workers Builds 的推荐配置为：
 
 1. Build command：`pnpm install --frozen-lockfile && pnpm i18n:build && pnpm test:ci && pnpm worker:dry-run`；
-2. Deploy command：由受保护环境执行 `wrangler d1 migrations apply DB --remote --env <target>` 后再
-   执行 `wrangler deploy --env <target>`；
-3. Preview 与 production 使用不同的 D1/database、secrets 和 Git 分支规则；production 仅允许
-   `main`，并要求人工审批；
-4. 发布后用 `/api/health`、SSR 页面和关键只读 API 做 smoke，记录 version ID、migration 结果和
-   构建 run URL。
+2. Deploy command：`pnpm deploy:production`。脚本先执行
+   `wrangler d1 migrations apply DB --remote --env production --config wrangler.jsonc`，只有
+   migration 成功后才执行 `wrangler deploy --env production`；
+3. Deploy command 依赖同一次 Build 已生成的 `dist/`；migration 失败时不得继续部署，Worker
+   发布失败也不得回滚或手工补写数据库；
+4. Preview 与 production 的资源隔离、secret 边界和分支规则仍需单独完成审核（本次改动不处理
+   问题 1，也不改变 `wrangler.jsonc` 的环境资源声明）；production 仅允许 `main`，并要求人工审批；
+5. 发布后用 `/api/health`、SSR 页面和关键只读 API 做 smoke，记录 version ID、migration 结果和
+   构建 run URL。任何 smoke 失败都停止后续推广。
 
 ## 4. D1、KV 与 R2
 
@@ -87,6 +92,8 @@ Workers Builds 的推荐配置为：
 - SSR 页面为 2xx，且 `X-Worker-Version-ID` 等于同一目标；
 - 关键 API 响应有 `X-Request-ID`，Workers Logs 可定位对应 completion；
 - 公开 Location 与稳定深圳 Region 可读；
+- 公开海报只渲染地点/队伍/故事的公开内容和通用创建者标签，不把用户姓名、头像或用户 ID
+  带入共享边缘缓存；
 - 日志不包含 smoke 使用的 email/token 或故障注入信息。
 
 仓库未声明 Cloudflare notification、外部 OTel destination、Sentry/PagerDuty 或自动值班通知。

@@ -65,7 +65,6 @@ function makeTeam(overrides: Partial<Team> = {}): Team {
       coverImageUrl: "https://example.com/wutong.jpg",
       images: [],
       extra: { hiking: { difficulty: "moderate" } },
-      createdByUserId: null,
       createdAt: "2026-08-01T00:00:00.000Z",
       updatedAt: "2026-08-01T00:00:00.000Z",
     },
