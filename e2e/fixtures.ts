@@ -35,7 +35,7 @@ function localAuthSecret() {
   const fromEnvironment = process.env.BETTER_AUTH_SECRET?.trim();
   if (fromEnvironment) return fromEnvironment;
 
-  const devVarsPath = path.join(process.cwd(), "frontend", ".dev.vars");
+  const devVarsPath = path.join(process.cwd(), ".dev.vars");
   if (existsSync(devVarsPath)) {
     const match = readFileSync(devVarsPath, "utf8").match(
       /^BETTER_AUTH_SECRET=(.+)$/mu,
