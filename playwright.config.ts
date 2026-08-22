@@ -4,9 +4,9 @@ import { defineConfig, devices } from "@playwright/test";
  * Playwright E2E 配置
  *
  * 用法：
- *   pnpm e2e          # 运行所有 E2E 测试
- *   pnpm e2e:ui       # 带 UI 调试模式
- *   pnpm e2e:debug    # 调试模式
+ *   pnpm test:e2e          # 运行所有 E2E 测试
+ *   pnpm exec playwright test --ui  # 带 UI 调试模式
+ *   pnpm exec playwright test --debug  # 调试模式
  *
  * 前置：
  *   pnpm exec playwright install chromium
@@ -52,21 +52,23 @@ export default defineConfig({
     },
   ],
 
-  // Astro dev loads the unified Worker entrypoint, so one process serves both
-  // SSR pages and /api. CI prepares D1 before Playwright starts this server.
+  // Preview the built unified Worker so browser tests exercise the same
+  // Hono/Astro boundary that Wrangler deploys. CI prepares D1 before this.
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : process.env.CI
       ? {
-          command: "pnpm web:dev",
+          command: "pnpm build && pnpm exec astro preview --port 5432",
           url: "http://localhost:5432/api/health",
           reuseExistingServer: false,
           timeout: 180_000,
+          env: { ASTRO_PREVIEW_BACKGROUND: "0" },
         }
       : {
-          command: "pnpm dev:fresh",
+          command: "pnpm build && pnpm exec astro preview --port 5432",
           url: "http://localhost:5432/api/health",
           reuseExistingServer: false,
           timeout: 180_000,
+          env: { ASTRO_PREVIEW_BACKGROUND: "0" },
         },
 });

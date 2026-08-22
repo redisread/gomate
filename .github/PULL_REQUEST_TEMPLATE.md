@@ -20,12 +20,11 @@
 
 ## 验证证据
 
-- [ ] `pnpm check:legacy-removal`
-- [ ] `pnpm test:delivery && pnpm audit --prod --audit-level high`
-- [ ] `pnpm --filter @gomate/api lint && pnpm --filter @gomate/api type-check && pnpm --filter @gomate/api build && pnpm --filter @gomate/api test`
-- [ ] `pnpm i18n:build && pnpm --filter @gomate/frontend i18n:validate && pnpm --filter @gomate/frontend lint && pnpm --filter @gomate/frontend type-check && pnpm --filter @gomate/frontend test && pnpm --filter @gomate/frontend build`
-- [ ] `pnpm --filter @gomate/frontend worker:types:check && pnpm --filter @gomate/frontend worker:dry-run && pnpm --filter @gomate/frontend worker:size && pnpm --filter @gomate/frontend worker:startup`
-- [ ] `pnpm e2e:ci`
+- [ ] `pnpm test:ci`
+- [ ] `pnpm worker:types && pnpm worker:dry-run && pnpm worker:size`
+- [ ] `pnpm test:e2e:ci`
+- [ ] 生产发布（如适用）仅由受保护 Workers Builds 执行 `pnpm deploy:production`
+- [ ] 非 `main` 分支不发布远程 Workers Preview；在线 Preview 需要独立资源和 secrets
 
 补充手动验证：
 

@@ -2,8 +2,8 @@
 
 本文记录当前 D1 模型的领域边界、关系和必须长期保持的约束。可执行事实的优先级为：
 
-1. [`api/src/db/schema.ts`](../api/src/db/schema.ts)
-2. [`api/db/migrations/`](../api/db/migrations/)
+1. [`src/server/db/schema.ts`](../src/server/db/schema.ts)
+2. [`migrations/`](../migrations/)
 3. migration journal、snapshot 与数据库合同测试
 4. 本文
 
@@ -11,13 +11,12 @@
 
 ## 基线与约定
 
-- Cloudflare D1 / SQLite，binding 为 `DB`，数据库为 `gomate-db-v2`。
-- 当前 migration 链包含 `0000_init.sql` baseline 与 2 个后续 migration，共 3 条 journal entry
-  和 3 份 snapshot。
+- Cloudflare D1 / SQLite，binding 为 `DB`，数据库为 `gomate-db-v3`。
+- 当前 migration 链只有新的 `0000_init.sql` baseline，共 1 条 journal entry 和 1 份 snapshot。
 - 当前 schema 包含 19 张业务表和 13 个触发器；CI 会校验 schema、migration 链与 snapshot 一致。
 - 时间在 D1 中存 Unix 毫秒，HTTP DTO 输出 ISO 8601。
 - JSON 列使用 Drizzle `mode: "json"`，D1 通过 `json_valid` 与 `json_type` CHECK 约束形状；业务层只传对象或数组。
-- `api/db/seed.sql` 仅用于本地开发和测试，不得应用到生产。
+- `migrations/seed.sql` 仅用于本地开发和测试，不得应用到生产。
 - 所有 DDL 只通过 migration；已应用 migration 不可改写。
 
 ## 领域表
@@ -130,15 +129,15 @@ Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和
   creator/decision 引用使用 SET NULL。
 - 账户删除保留匿名用户墓碑与历史 Team、Story、Conversation、Message 引用，不物理删除用户行。
 - R2 保存媒体对象；D1 保存所有权和业务引用。媒体写入采用临时对象、最终对象、条件 DML 与补偿清理。
-- `CACHE_KV` 只用于公共缓存和限流纵深，不保存原始 PII，也不承担权限或精确计数真相。
+- 运行时不使用共享 KV 缓存；用户相关数据只从 D1/R2 按请求读取，避免 isolate 级跨请求泄漏。
 
 ## 迁移与验证
 
 新增 migration 时必须同步更新 Drizzle schema、journal 和 snapshot，并运行：
 
 ```bash
-pnpm --filter @gomate/api check:migrations
-pnpm --filter @gomate/api test
+pnpm db:check
+pnpm test:server
 ```
 
 生产 migration、恢复和 rollback 还必须遵守 [`prod-change-policy.md`](prod-change-policy.md)。

@@ -45,7 +45,7 @@ yarn-error.log*
 
 # Cloudflare
 .wrangler/
-frontend/.wrangler.dev.*.jsonc
+.wrangler.dev.*.jsonc
 .dev.vars
 
 # Build output
@@ -72,9 +72,6 @@ midscene_run/
 # .claude/
 # .opencode/
 # openspec/
-
-# Auto-generated i18n data
-frontend/src/i18n/locales-data.ts
 
 # Astro generated files
 .astro/

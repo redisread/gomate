@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Reset only the unified Worker's DB binding and apply the V2 seed. */
+/** Reset only the unified Worker's DB binding and apply the v3 seed. */
 
 import { execFileSync } from "node:child_process";
 import os from "node:os";
@@ -7,8 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const FRONTEND_DIR = path.join(ROOT, "frontend");
-const WRANGLER = path.join(FRONTEND_DIR, "node_modules", ".bin", "wrangler");
+const WRANGLER = path.join(ROOT, "node_modules", ".bin", "wrangler");
 const DEFAULT_STATE = path.join(os.homedir(), ".gomate", "wrangler-state");
 const LOCAL_STATE = path.resolve(process.env.GOMATE_LOCAL_STATE ?? DEFAULT_STATE);
 function log(message) {
@@ -17,14 +16,14 @@ function log(message) {
 
 function run(args) {
   log(`wrangler ${args.join(" ")}`);
-  execFileSync(WRANGLER, args, { cwd: FRONTEND_DIR, stdio: "inherit" });
+  execFileSync(WRANGLER, args, { cwd: ROOT, stdio: "inherit" });
 }
 
 function query(command) {
   const output = execFileSync(
     WRANGLER,
     ["d1", "execute", ...sharedArgs, "--json", "--command", command],
-    { cwd: FRONTEND_DIR, encoding: "utf8" },
+    { cwd: ROOT, encoding: "utf8" },
   );
   return JSON.parse(output).flatMap((result) => result.results ?? []);
 }
@@ -111,7 +110,7 @@ run([
   "execute",
   ...sharedArgs,
   "--file",
-  "../api/db/seed.sql",
+  "migrations/seed.sql",
 ]);
 
-log("✅ 本地 V2 数据库已重置；运行 pnpm dev 启动统一 Worker。");
+log("✅ 本地 v3 数据库已重置；运行 pnpm dev 启动统一 Worker。");

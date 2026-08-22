@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "..");
-const LOCALES_DIR = path.join(PROJECT_ROOT, "frontend", "public", "locales");
+const LOCALES_DIR = path.join(PROJECT_ROOT, "public", "locales");
 // task #158：ja 纳入 key 一致性校验（此前仅 zh-CN/en，漏 ja 的 key  CI 不拦截）
 const LOCALES = ["zh-CN", "en", "ja"];
 const BASE_LOCALE = "zh-CN";
@@ -92,7 +92,7 @@ function loadJSON(filePath) {
 
 // ─── Check 5 helpers: island ns coverage ────────────────────────────────────
 
-const SRC_DIR = path.join(PROJECT_ROOT, "frontend", "src");
+const SRC_DIR = path.join(PROJECT_ROOT, "src");
 const PAGES_DIR = path.join(SRC_DIR, "pages");
 // Layout.astro 对每页固定加载的基座 ns（见 Layout.astro nsList 拼接）
 const BASE_NS = ["nav", "common", "content"];

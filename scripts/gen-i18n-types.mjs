@@ -14,8 +14,8 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "..");
-const LOCALES_DIR = path.join(PROJECT_ROOT, "frontend", "public", "locales", "zh-CN");
-const OUTPUT_FILE = path.join(PROJECT_ROOT, "frontend", "src", "i18n", "types.ts");
+const LOCALES_DIR = path.join(PROJECT_ROOT, "public", "locales", "zh-CN");
+const OUTPUT_FILE = path.join(PROJECT_ROOT, "src", "i18n", "types.ts");
 
 /**
  * Collect all leaf key paths from a nested object.

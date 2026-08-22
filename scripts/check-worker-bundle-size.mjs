@@ -26,7 +26,7 @@ function formatMiB(bytes) {
 
 if (!existsSync(BUNDLE_DIR) || !statSync(BUNDLE_DIR).isDirectory()) {
   console.error(
-    "Worker dry-run output is missing. Run the frontend worker:dry-run script first.",
+    "Worker dry-run output is missing. Run pnpm worker:dry-run first.",
   );
   process.exit(1);
 }

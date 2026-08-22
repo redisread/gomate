@@ -1,9 +1,9 @@
 # GoMate API 合同
 
 API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以 `/api` 开头。
-路由实现以 [`api/src/app.ts`](../api/src/app.ts) 与
-[`api/src/routes/`](../api/src/routes/) 为准；跨端 DTO 以
-[`packages/types`](../packages/types/) 为准。
+路由实现以 [`src/server/app.ts`](../src/server/app.ts) 与
+[`src/server/routes/`](../src/server/routes/) 为准；跨端 DTO 以
+[`src/contracts/`](../src/contracts/) 为准。
 
 ## 运行边界
 
@@ -38,7 +38,7 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 
 除上述认证端点外，`/auth/*` 固定返回 404。验证和重置 token 只放在邮件 URL fragment，
 页面清除 fragment 后通过同源 POST body 提交；token 不得进入 path、query、日志或数据库明文。
-登录、注册和邮件发送使用 Cloudflare Rate Limiting bindings，并保留 Better Auth 的 KV 限流作为纵深。
+登录、注册和邮件发送使用 Cloudflare Rate Limiting bindings；运行时不依赖 KV 缓存。
 
 ### Region、地点与标签
 
@@ -59,7 +59,8 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 
 Location 使用全局 ID 路由，不提供 slug fallback。公开读取只返回 `published` 且属于
 `serviceEnabled=true` city Region 的地点。HTTP `extra` 使用 camelCase，服务层负责与
-D1 JSON 的 snake_case 结构转换。
+D1 JSON 的 snake_case 结构转换。公开和管理员 Location DTO 都不包含内部
+`createdByUserId`；该字段只保留在数据库和服务端写入链路。
 
 ### Team
 
@@ -155,14 +156,16 @@ Story 图片先上传到当前用户的临时 namespace，创建或更新时再�
 
 上传会同时校验大小、MIME、扩展名和文件魔数，并以临时对象、最终对象、条件 DML 和补偿清理
 维护 R2/D1 一致性。Local-circle KV 只缓存无用户身份的公共部分，个性化数据每次从 D1 合并。
+海报接口不接受公开 `refresh` 参数；海报缓存只包含地点、行程和故事的公开内容，不渲染
+用户姓名、头像或用户 ID。
 
 ## 变更检查
 
 API 行为、DTO、认证或错误格式变化时同步更新本文，并至少运行：
 
 ```bash
-pnpm --filter @gomate/api lint
-pnpm --filter @gomate/api type-check
-pnpm --filter @gomate/api test
-pnpm --filter @gomate/api build
+pnpm lint
+pnpm type-check
+pnpm test:server
+pnpm build
 ```

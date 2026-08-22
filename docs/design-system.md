@@ -1,9 +1,9 @@
 # GoMate 前端设计系统
 
 设计 token 与基础样式的事实来源是
-[`frontend/src/styles/globals.css`](../frontend/src/styles/globals.css)；Tailwind 补充配置在
-[`frontend/tailwind.config.ts`](../frontend/tailwind.config.ts)，共享组件在
-[`frontend/src/components/ui/`](../frontend/src/components/ui/)。本文只记录稳定的使用约束。
+[`src/styles/globals.css`](../src/styles/globals.css)；Tailwind 补充配置在
+[`tailwind.config.ts`](../tailwind.config.ts)，共享组件在
+[`src/components/ui/`](../src/components/ui/)。本文只记录稳定的使用约束。
 
 ## 视觉基础
 
@@ -69,9 +69,9 @@ UI 变更至少检查键盘、可访问名称、移动端、dark mode 和 reduce
 
 ```bash
 pnpm i18n:build
-pnpm --filter @gomate/frontend i18n:validate
-pnpm --filter @gomate/frontend lint
-pnpm --filter @gomate/frontend type-check
-pnpm --filter @gomate/frontend test
-pnpm --filter @gomate/frontend build
+pnpm i18n:validate
+pnpm lint
+pnpm type-check
+pnpm test
+pnpm build
 ```

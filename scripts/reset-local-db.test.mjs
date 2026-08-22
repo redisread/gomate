@@ -7,7 +7,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const WRANGLER = path.join(ROOT, "frontend", "node_modules", ".bin", "wrangler");
+const WRANGLER = path.join(ROOT, "node_modules", ".bin", "wrangler");
 const EXPECTED_TABLES = [
   "accounts",
   "conversations",
@@ -45,7 +45,7 @@ function run(command, args, options = {}) {
   return result.stdout;
 }
 
-test("binding-level reset removes unknown tables and rebuilds exactly V2", () => {
+test("binding-level reset removes unknown tables and rebuilds exactly v3", () => {
   const state = mkdtempSync(path.join(os.tmpdir(), "gomate-reset-test-"));
   const env = { ...process.env, GOMATE_LOCAL_STATE: state };
   try {
@@ -58,7 +58,7 @@ test("binding-level reset removes unknown tables and rebuilds exactly V2", () =>
       "--persist-to",
       state,
       "--config",
-      "frontend/wrangler.jsonc",
+      "wrangler.jsonc",
       "--command",
       "CREATE TABLE reset_probe (id TEXT PRIMARY KEY);",
     ]);
@@ -72,7 +72,7 @@ test("binding-level reset removes unknown tables and rebuilds exactly V2", () =>
       "--persist-to",
       state,
       "--config",
-      "frontend/wrangler.jsonc",
+      "wrangler.jsonc",
       "--json",
       "--command",
       "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name;",

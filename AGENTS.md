@@ -20,53 +20,54 @@
 
 ## 当前架构
 
-- 唯一 Worker 入口是 `frontend/src/worker.ts`：`/api/*` 进程内交给 `api/src/app.ts`，其余请求交给 Astro Cloudflare handler。
+- 正式 Worker 入口是 `src/worker.ts`：`/api/*` 进程内交给 `src/server/app.ts`，其余请求交给 Astro Cloudflare handler；入口使用 Astro 官方 Hono pipeline。`pnpm dev` 为保留 HMR 使用 Astro 默认开发入口，并由 `src/middleware.ts` 将 `/api/*` 交给同一个 Hono app，不形成第二套 API。
 - 页面、SSR、认证 Cookie 和 API 同源；浏览器 API 固定使用 `/api/*`，不引入独立 API origin、CORS 或前后端双进程。
-- 前端入口位于 `frontend/src/pages/`，交互组件位于 `frontend/src/components/`，共享客户端调用位于 `frontend/src/lib/`。
-- API 路由位于 `api/src/routes/`，通用能力位于 `api/src/lib/`，Drizzle schema 位于 `api/src/db/schema.ts`。
-- 跨包公开类型放在 `packages/types`；不要在前后端各自维护同一 DTO 的兼容副本。
+- 页面入口位于 `src/pages/`，交互组件位于 `src/components/`，共享客户端调用位于 `src/lib/`。
+- API 路由位于 `src/server/routes/`，通用能力位于 `src/server/lib/`，Drizzle schema 位于 `src/server/db/schema.ts`。
+- 跨端公开类型统一放在 `src/contracts/`；不要维护前后端 DTO 的兼容副本。
 - 生产域名是 `https://gomate.live`，当前 Cloudflare Worker 服务名为 `gomate`。
 
 ## 工作方式
 
 - 每次会话先完整读取 `.codex/skills/using-agent-skills/SKILL.md`，再按任务加载最少的适用技能。
 - 修改前检查 `git status` 和现有实现；用户或其他 worktree 的改动不得被顺手回滚、覆盖或格式化。
-- 使用 Node `>=22.12.0` 与 pnpm；不要用 npm、Yarn 等其他包管理器刷新 lockfile。
+- 使用 Node `>=22.13.0` 与 pnpm；不要用 npm、Yarn 等其他包管理器刷新 lockfile。
 - 多 worktree 首次运行 `pnpm init:worktree`，之后用 `pnpm dev:wt` 启动统一 Worker；具体见本地开发文档。
 - 行为改动必须有能先失败后通过的测试；纯文档改动至少验证链接、格式、引用和受影响的静态门禁。
 - 变更保持单一目的，分支默认使用 `codex/` 前缀；合并前检查 staged diff、秘密、生成物和无关文件。
 
 ## 数据库与存储硬约束
 
-- D1 binding 为 `DB`，数据库为 `gomate-db-v2`。迁移链包含 `0000_init.sql` baseline 与后续有序 migration；schema、journal、snapshot 与 migration 必须同步。
+- D1 binding 为 `DB`，数据库为 `gomate-db-v3`。当前迁移链只有新的 `0000_init.sql` baseline；schema、journal、snapshot 与 migration 必须同步。
 - 当前模型为 19 张业务表、13 个业务触发器。所有 DDL 只通过 migration；不得手工对生产 D1 执行 DDL。
 - 多语句原子写使用 D1 `batch()` 与条件 DML；不要使用 `db.transaction()` 或裸 `BEGIN`/`COMMIT`。
 - JSON 列在 Drizzle 使用 `mode: "json"`，业务层只传对象/数组，不增加字符串兼容层。
-- `api/db/seed.sql` 仅用于本地开发/测试，不得应用到生产。
-- R2 binding 为 `R2`（bucket `gomate`），KV binding 为 `CACHE_KV`（namespace `gomate-cache-v2`）。不得重新引入已退役的 Worker、D1、KV、域名或旧 binding。
+- `migrations/seed.sql` 仅用于本地开发/测试，不得应用到生产。
+- R2 binding 为 `R2`（bucket `gomate`）。运行时不依赖 KV；不得重新引入已退役的 Worker、KV、域名或旧 binding。
 
 ## 前端规则
 
 - 用户可见文案全部走 i18n；namespace 必须保持完整（例如 `content.discover.*`）。修改 locale 后运行 i18n build、validate 和类型检查。
 - Astro 负责 SSR/页面边界，React island 只承载需要客户端状态的交互；不要把纯展示无理由改成 client component。
 - SSR 调用 API 使用进程内 dispatcher，浏览器调用使用同源 `/api`；不得从 Worker 内 self-fetch 生产域名。
-- 使用共享 DTO 和 V2 字段，不增加旧字段、旧响应 envelope 或旧分页参数别名。
+- 使用共享 DTO 和当前 schema 字段，不增加旧字段、旧响应 envelope 或旧分页参数别名。
 - UI 改动遵循 `docs/design-system.md`，并验证键盘、可访问名称、移动端和 reduced-motion。
 
-前端最低门禁：
+统一 Worker 最低门禁：
 
 ```bash
 pnpm i18n:build
-pnpm --filter @gomate/frontend i18n:validate
-pnpm --filter @gomate/frontend lint
-pnpm --filter @gomate/frontend type-check
-pnpm --filter @gomate/frontend test
-pnpm --filter @gomate/frontend build
+pnpm i18n:validate
+pnpm lint
+pnpm type-check
+pnpm test
+pnpm test:server
+pnpm build
 ```
 
 ## API 与认证规则
 
-- 新增/修改路由遵循 `api/src/app.ts` 和现有 `routes/` 边界；错误使用统一 API error/envelope，列表使用有界 limit 与 opaque cursor。
+- 新增/修改路由遵循 `src/server/app.ts` 和现有 `routes/` 边界；错误使用统一 API error/envelope，列表使用有界 limit 与 opaque cursor。
 - 权限与跨表不变量必须在最终写语句中复核，不能只依赖先查后写；关键批处理需覆盖竞争与回滚测试。
 - 认证只接受同源受控入口。邮箱验证和密码重置 token 只经 URL fragment 到页面，再以同源 POST body 提交；不得把 token 放进 path/query、日志或数据库明文。
 - 日志事件名必须是稳定的 lowercase snake_case 字面量；禁止记录 body、headers、cookie、token、secret、原始 email/IP、用户资料或 Error message/stack/cause。
@@ -75,17 +76,16 @@ pnpm --filter @gomate/frontend build
 API 最低门禁：
 
 ```bash
-pnpm --filter @gomate/api lint
-pnpm --filter @gomate/api type-check
-pnpm --filter @gomate/api build
-pnpm --filter @gomate/api test
-pnpm --filter @gomate/api check:migrations
+pnpm lint
+pnpm type-check
+pnpm test:server
+pnpm db:check
 ```
 
 ## 交付与生产红线
 
-- 仓库暂不包含 CI/CD 流水线。PR 至少在本地运行与变更范围匹配的测试；合并前运行 `pnpm check:legacy-removal` 与 `pnpm test:delivery`，并记录实际执行结果。
-- 生产发布流水线正在重构。在新流程经过审核并落地前，禁止任何远程 D1、KV、R2、Worker、route/domain 或 secret 写入。
+- PR 通过统一的 `pnpm test:ci` 质量门禁；Cloudflare Workers Builds 负责从 Git 构建和部署，生产环境必须保持受保护审核。
+- 生产发布流水线只允许从受保护的 Cloudflare/Git 集成执行；禁止任何远程 D1、R2、Worker、route/domain 或 secret 写入绕过该流程。
 - 不在本机直接执行生产 Cloudflare 写命令，不使用 admin bypass，不把生产 secrets 放到仓库级 Actions secrets、日志、PR 或命令参数。
-- 不得用临时脚本、Dashboard 手工部署或本机命令替代待重构的受保护流水线。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。
+- 不得用临时脚本、Dashboard 手工发布或本机命令替代受保护流水线。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。
 - 生产异常先恢复/保持 `WRITE_MODE=protected`，再回滚到已验证 Worker version；旧 split Worker、旧 route 与旧数据库已退役，不得重建为回滚手段。

@@ -4,7 +4,7 @@
  *
  * Git worktrees do not copy ignored secrets or local D1 state. This script
  * restores the one Worker secret file, generates i18n data, and idempotently
- * applies the V2 baseline plus seed to the shared local D1 state.
+ * applies the v3 baseline plus seed to the shared local D1 state.
  */
 
 import { execFileSync } from "node:child_process";
@@ -13,10 +13,9 @@ import os from "node:os";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const FRONTEND_DIR = path.join(ROOT, "frontend");
-const WRANGLER = path.join(FRONTEND_DIR, "node_modules", ".bin", "wrangler");
+const WRANGLER = path.join(ROOT, "node_modules", ".bin", "wrangler");
 const TSX = path.join(ROOT, "node_modules", ".bin", "tsx");
-const DEV_VARS = path.join(FRONTEND_DIR, ".dev.vars");
+const DEV_VARS = path.join(ROOT, ".dev.vars");
 const LOCAL_STATE = path.resolve(
   process.env.GOMATE_LOCAL_STATE ??
     path.join(os.homedir(), ".gomate", "wrangler-state"),
@@ -38,15 +37,15 @@ function run(executable, args, cwd = ROOT) {
 
 let failed = false;
 if (existsSync(DEV_VARS)) {
-  log("✅ frontend/.dev.vars 已存在");
+  log("✅ .dev.vars 已存在");
 } else if (devVarsSource && existsSync(devVarsSource)) {
   copyFileSync(devVarsSource, DEV_VARS);
-  log(`✅ 已从 ${devVarsSource} 复制 frontend/.dev.vars`);
+  log(`✅ 已从 ${devVarsSource} 复制 .dev.vars`);
 } else {
   failed = true;
   console.error(
-    "[init:worktree] ❌ frontend/.dev.vars 缺失。请复制 " +
-      "frontend/.dev.vars.example，或使用 --dev-vars-from <path>。",
+    "[init:worktree] ❌ .dev.vars 缺失。请复制 " +
+      ".dev.vars.example，或使用 --dev-vars-from <path>。",
   );
 }
 
@@ -69,7 +68,7 @@ try {
       "--config",
       "wrangler.jsonc",
     ],
-    FRONTEND_DIR,
+    ROOT,
   );
   run(
     WRANGLER,
@@ -83,11 +82,11 @@ try {
       "--config",
       "wrangler.jsonc",
       "--file",
-      "../api/db/seed.sql",
+      "migrations/seed.sql",
     ],
-    FRONTEND_DIR,
+    ROOT,
   );
-  log(`✅ V2 D1 已就绪：${LOCAL_STATE}`);
+  log(`✅ v3 D1 已就绪：${LOCAL_STATE}`);
 } catch (error) {
   failed = true;
   console.error(`[init:worktree] ❌ 初始化失败：${error.message}`);

@@ -1,0 +1,6 @@
+# Unified Worker local secrets. Copy this file to .dev.vars.
+# BETTER_AUTH_SECRET must contain at least 32 characters.
+BETTER_AUTH_SECRET=local-dev-secret-key-32chars-long-12345
+
+# Optional locally; production deploys require a real Resend key.
+RESEND_API_KEY=
