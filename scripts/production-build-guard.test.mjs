@@ -76,11 +76,15 @@ test("requires normal production deployments to keep writes open", () => {
   );
 });
 
-test("keeps the checked-in production configuration open by default", async () => {
+test("keeps required production variables in checked-in configuration", async () => {
   const source = await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8");
   const config = parseJsonc(source);
 
   assert.equal(config.env?.production?.vars?.WRITE_MODE, "open");
+  assert.equal(
+    config.env?.production?.vars?.PREVIEW_HOST_SUFFIX,
+    "wujiahong2013.workers.dev",
+  );
 });
 
 test("rejects production deployment outside Workers Builds", () => {

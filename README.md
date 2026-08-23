@@ -125,8 +125,8 @@ PR 由 GitHub Actions 完成 `pnpm test:ci`、Worker bundle 校验和隔离 D1 E
 `pnpm deploy:preview` 上传同一 `gomate` Worker 的 Preview version，并按分支生成稳定
 alias，关联 PR 时由 Cloudflare 原生 Git 集成评论 Preview URL。Preview 使用生产 D1/R2，
 且 Preview 上传命令显式注入 `WRITE_MODE=protected` 拒绝业务写入，仅允许在合法 Preview
-域名上登录/退出并创建认证 session。生产环境变量 `PREVIEW_HOST_SUFFIX` 必须配置为当前账号的
-`<account-subdomain>.workers.dev`，不可提交到仓库。禁止从本机或临时命令执行生产 Worker、
+域名上登录/退出并创建认证 session。公开的账号后缀通过 production `vars` 中的
+`PREVIEW_HOST_SUFFIX` 固定，避免部署时丢失。禁止从本机或临时命令执行生产 Worker、
 D1、R2、secret 或 route 写入；详见 `docs/prod-change-policy.md`。
 
 ## 相关仓库
