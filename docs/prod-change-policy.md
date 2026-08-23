@@ -11,6 +11,7 @@
 - D1：binding `DB`，目标数据库 `gomate-db-v3`（生产数据库必须由受保护环境按名称绑定；仓库不携带旧数据库 UUID）
 - R2：binding `R2`，bucket `gomate`
 - Rate Limiting bindings：`AUTH_SIGN_IN_RATE_LIMITER`、`AUTH_SIGN_UP_RATE_LIMITER`、`AUTH_EMAIL_RATE_LIMITER`
+- Preview URL：同一 `gomate` Worker 的 version/alias Preview；不创建独立 Worker、D1 或 R2
 - 正常生产 `WRITE_MODE` 为 `open`；`protected` 只用于经过审批的事故写保护，不作为常规发布配置。
 - Cloudflare Workers Builds 的 Git 连接负责发布授权；运行时 secret（`BETTER_AUTH_SECRET`、`RESEND_API_KEY`）只在受保护 production 环境配置，仓库不保存 Cloudflare 或应用 secret。
 
@@ -49,28 +50,33 @@ Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 ## 3. 发布能力
 
 PR 使用仓库内 `pnpm test:ci` 加隔离 D1 的 6 条 Chromium E2E 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，
-只负责 `main` 分支的最小生产构建和自动发布；非 `main` 分支不生成远程 Preview。PR 审核与
-受保护分支是发布授权边界。所有测试、类型检查、bundle dry-run 和 size gate 都在 PR 完成；
-Workers Build 只安装锁定依赖、生成 locale 并构建当前 `main` 的 `dist/`，随后先执行目标环境
-D1 migration，再发布不可变 Worker version。
+`main` 分支执行生产构建和自动发布，所有非 `main` 分支执行远程 Preview 构建；关联 PR 时由
+Cloudflare 原生 Git 集成评论 Preview URL。PR 审核与受保护分支仍是正式发布授权边界。
+Preview 只上传不可提升的 Worker version，不执行 D1 migration。所有测试、类型检查、bundle
+dry-run 和 size gate 都在 PR 完成；Workers Build 只安装锁定依赖、生成 locale 并构建当前分支的
+`dist/`，随后按分支执行对应 deploy command。
 
 Workers Builds 的推荐配置为：
 
 1. Build command：`pnpm install --frozen-lockfile && pnpm i18n:build && pnpm build`；该阶段只生成
-   当前 `main` 的生产 artifact，不重复执行 PR 已通过的 `pnpm test:ci`、E2E 或 dry-run；
+   当前分支的 artifact，不重复执行 PR 已通过的 `pnpm test:ci`、E2E 或 dry-run；
 2. Build variables：`NODE_VERSION=22.13.0`、`PNPM_VERSION=11.19.0`、
    `SKIP_DEPENDENCY_INSTALL=1`；启用 build cache。仓库同时通过 `.node-version` 和
    `packageManager` 固定本地与 CI 工具链；
 3. Deploy command：`pnpm deploy:production`。脚本先执行
    `wrangler d1 migrations apply DB --remote --env production --config wrangler.jsonc`，只有
    migration 成功后才执行 `wrangler deploy --env production`；
-4. Deploy command 依赖同一次 Build 已生成的 `dist/`；migration 失败时不得继续部署，Worker
+4. Preview deploy command：`pnpm deploy:preview`。脚本只执行
+   `wrangler versions upload --env production --config dist/server/wrangler.json --keep-vars --var WRITE_MODE:protected --preview-alias <alias>`；
+   命令使用同一次 Build 生成的 Astro bundle 配置，显式覆盖业务写保护并保留 Dashboard 中的 `PREVIEW_HOST_SUFFIX`，不执行 migration、
+   `wrangler deploy` 或 version promotion。alias 由完整分支名稳定生成；
+5. Deploy command 依赖同一次 Build 已生成的 `dist/`；migration 失败时不得继续部署，Worker
    发布失败也不得回滚或手工补写数据库；
-5. 当前采用单一远程环境策略：`main` 是唯一生产分支，构建脚本拒绝 Workers Builds 传入的
-   非 `main` 分支，`wrangler.jsonc` 的根配置使用本地资源，`production` 显式关闭
-   `workers_dev` 和 `preview_urls`。未来若要提供在线 Preview，必须先创建独立的 Worker、
-   D1、R2、secrets 和访问控制，不能把版本预览当作数据隔离；
-6. 发布后用 `/api/health`、SSR 页面、注册边界 smoke 和关键只读 API 做 smoke，记录 version ID、migration 结果和
+6. 当前采用单一远程环境策略：`main` 是唯一生产分支，非 `main` Preview 使用
+   `--env production` 读取正式 D1/R2；生产 `WRITE_MODE=protected` 拒绝业务写入，仅在合法
+   Preview host 上允许登录/退出所需的认证 session 写入。Preview host 后缀通过受保护环境变量
+   `PREVIEW_HOST_SUFFIX` 配置为当前账号的 `<account-subdomain>.workers.dev`，不得提交到仓库；
+7. 发布后用 `/api/health`、SSR 页面、注册边界 smoke 和关键只读 API 做 smoke，记录 version ID、migration 结果和
    构建 run URL。任何 smoke 失败都停止后续推广。
 
 ## 4. D1、KV 与 R2
@@ -94,6 +100,10 @@ Workers Builds 的推荐配置为：
 4. 数据问题使用 D1 Time Travel/备份或经单独批准的新 v3 数据库恢复；不得修改已应用 migration。
 5. R2/KV 恢复必须基于本次变更预先记录的对象/namespace 证据，不执行模糊前缀或全 bucket 删除。
 6. 任一自动验证、日志证据或人工审批缺失时停止，不用本机命令手工补写。
+
+Preview 事故先在 Workers Builds 中关闭非生产分支 Preview 或恢复 Preview deploy command；正式
+Worker 继续按受保护版本流程回滚。Preview 不执行 migration，且业务写入被拦截，因此不需要
+回滚 D1 schema；认证 session 写入仍属于共享生产认证数据，需按认证数据保留策略处理。
 
 ## 6. 可观测性与隐私
 
