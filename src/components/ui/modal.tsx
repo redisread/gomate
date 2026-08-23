@@ -32,6 +32,8 @@ interface ModalProps {
   panelStyle?: React.CSSProperties;
   /** 打开时锁定 body 滚动（bottom sheet / 全屏场景） */
   lockBodyScroll?: boolean;
+  /** 打开后优先聚焦的弹窗内元素；省略时聚焦首个可交互元素 */
+  initialFocusRef?: React.RefObject<HTMLElement | null>;
   children: React.ReactNode;
 }
 
@@ -46,12 +48,13 @@ export function Modal({
   panelClassName,
   panelStyle,
   lockBodyScroll = false,
+  initialFocusRef,
   children,
   ...rest
 }: ModalProps & React.HTMLAttributes<HTMLDivElement>) {
   const panelRef = React.useRef<HTMLDivElement>(null);
   const portalRef = React.useRef<HTMLDivElement | null>(null);
-  useModalA11y(open, panelRef, onClose);
+  useModalA11y(open, panelRef, onClose, initialFocusRef);
 
   // 背景 inert：打开时把 <body> 下非本 portal 的直接子树标记 inert
   React.useEffect(() => {
