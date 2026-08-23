@@ -17,8 +17,8 @@ export function assertProductionWriteMode(environment = process.env) {
 
 /**
  * Keep the one-environment release policy fail-closed in Workers Builds.
- * Local builds may run without Workers CI metadata, but a Workers Build must
- * come from the production branch and select the production Cloudflare env.
+ * Local builds may run without Workers CI metadata, while both production and
+ * non-production branches build against the production-compatible Worker env.
  */
 export function assertProductionBuildEnvironment(environment = process.env) {
   const selectedEnvironment = environment.CLOUDFLARE_ENV;
@@ -29,11 +29,24 @@ export function assertProductionBuildEnvironment(environment = process.env) {
     throw new Error("生产构建只允许 CLOUDFLARE_ENV=production");
   }
 
+}
+
+export function assertPreviewDeployEnvironment(environment = process.env) {
+  const selectedEnvironment = environment.CLOUDFLARE_ENV;
   if (
-    environment.WORKERS_CI === "1" &&
-    environment.WORKERS_CI_BRANCH !== "main"
+    selectedEnvironment &&
+    selectedEnvironment !== PRODUCTION_ENVIRONMENT
   ) {
-    throw new Error("Workers Builds 只允许 main 分支进行生产构建");
+    throw new Error("Preview 构建只允许 CLOUDFLARE_ENV=production");
+  }
+  if (environment.WORKERS_CI !== "1") {
+    throw new Error("Preview 部署只允许由 Workers Builds 执行");
+  }
+  if (!environment.WORKERS_CI_BRANCH) {
+    throw new Error("Preview 部署缺少 WORKERS_CI_BRANCH");
+  }
+  if (environment.WORKERS_CI_BRANCH === "main") {
+    throw new Error("Preview 部署不允许使用 main 分支");
   }
 }
 

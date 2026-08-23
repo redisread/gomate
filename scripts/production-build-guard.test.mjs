@@ -6,8 +6,10 @@ import {
   assertProductionDeployEnvironment,
   assertProductionWriteMode,
   parseJsonc,
+  assertPreviewDeployEnvironment,
 } from "./production-build-guard.mjs";
 import { PRODUCTION_WRANGLER_COMMANDS } from "./deploy-production.mjs";
+import { previewDeployCommand } from "./deploy-preview.mjs";
 
 test("allows local production-parity builds", () => {
   assert.doesNotThrow(() =>
@@ -25,14 +27,13 @@ test("allows the production branch in Workers Builds", () => {
   );
 });
 
-test("rejects non-production Workers Builds branches", () => {
-  assert.throws(
-    () =>
-      assertProductionBuildEnvironment({
-        WORKERS_CI: "1",
-        WORKERS_CI_BRANCH: "feature/example",
-      }),
-    /只允许 main/u,
+test("allows non-main branches to build Preview versions", () => {
+  assert.doesNotThrow(() =>
+    assertProductionBuildEnvironment({
+      CLOUDFLARE_ENV: "production",
+      WORKERS_CI: "1",
+      WORKERS_CI_BRANCH: "feature/example",
+    }),
   );
 });
 
@@ -90,6 +91,53 @@ test("rejects production deployment outside Workers Builds", () => {
       }),
     /只允许由 main 分支的 Workers Builds 执行/u,
   );
+});
+
+test("allows Preview deployment only from a non-main Workers Build", () => {
+  assert.doesNotThrow(() =>
+    assertPreviewDeployEnvironment({
+      CLOUDFLARE_ENV: "production",
+      WORKERS_CI: "1",
+      WORKERS_CI_BRANCH: "feature/example",
+    }),
+  );
+});
+
+test("rejects Preview deployment from main or outside Workers Builds", () => {
+  assert.throws(
+    () =>
+      assertPreviewDeployEnvironment({
+        WORKERS_CI: "1",
+        WORKERS_CI_BRANCH: "main",
+      }),
+    /不允许使用 main/u,
+  );
+  assert.throws(
+    () =>
+      assertPreviewDeployEnvironment({ WORKERS_CI_BRANCH: "feature/example" }),
+    /只允许由 Workers Builds/u,
+  );
+});
+
+test("uploads only a version with a stable branch alias", () => {
+  const result = previewDeployCommand({
+    CLOUDFLARE_ENV: "production",
+    WORKERS_CI: "1",
+    WORKERS_CI_BRANCH: "feature/example",
+  });
+  assert.match(result.alias, /^[a-z][a-z0-9-]*$/u);
+  assert.deepEqual(result.args, [
+    "versions",
+    "upload",
+    "--env",
+    "production",
+    "--config",
+    "wrangler.jsonc",
+    "--preview-alias",
+    result.alias,
+  ]);
+  assert.equal(result.args.includes("deploy"), false);
+  assert.equal(result.args.includes("migrations"), false);
 });
 
 test("deploys the Astro build through Wranglers redirected config", () => {
