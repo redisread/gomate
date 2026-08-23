@@ -1,6 +1,6 @@
 # Task List: admin-platform
 
-状态：Phase 3 已批准（2026-08-23），Phase 4 Task 1 实施中
+状态：Phase 3 已批准（2026-08-23），Phase 4 Task 1 已完成，Task 2 待实施
 
 规格：[SPEC-admin-platform.md](../SPEC-admin-platform.md)
 
@@ -18,15 +18,15 @@
 
 **Acceptance criteria:**
 
-- [ ] 判别联合准确区分 `authorized`、`unauthenticated`、`forbidden`，并从当前 D1 用户行复核 active 状态和角色。
-- [ ] 地点管理员查询与写入都消费共享 adapter，不再从 location utils 自行解析管理员角色。
-- [ ] 无 session、普通用户、已撤权 session 和管理员路径均有先失败后通过的自动化断言。
+- [x] 判别联合准确区分 `authorized`、`unauthenticated`、`forbidden`，并从当前 D1 用户行复核 active 状态和角色。
+- [x] 地点管理员查询与写入都消费共享 adapter，不再从 location utils 自行解析管理员角色。
+- [x] 无 session、普通用户、已撤权 session 和管理员路径均有先失败后通过的自动化断言。
 
 **Verification:**
 
-- [ ] `pnpm exec vitest run --config vitest.server.config.ts src/server/lib/admin-access.test.ts src/server/routes/locations/utils.test.ts`
-- [ ] `pnpm lint`
-- [ ] `pnpm type-check`
+- [x] `pnpm exec vitest run --config vitest.server.config.ts src/server/lib/admin-access.test.ts src/server/routes/locations/utils.test.ts`
+- [x] `pnpm lint`
+- [x] `pnpm type-check`
 
 **Dependencies:** None
 

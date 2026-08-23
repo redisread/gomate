@@ -10,11 +10,15 @@ import {
   sql,
   type SQL,
 } from "drizzle-orm";
-import { Hono, type Context } from "hono";
+import { Hono } from "hono";
 import { z } from "zod";
 
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
+import {
+  adminAccessErrorResponse,
+  requireAdmin,
+} from "../../lib/admin-access";
 import { APIErrors } from "../../lib/api-errors";
 import type { Env } from "../../lib/auth";
 import { setPublicCacheHeaders } from "../../lib/http-cache";
@@ -27,10 +31,8 @@ import { validateRequest } from "../../lib/validation";
 import {
   ACTIVITY_TYPES,
   loadLocationTags,
-  LocationAccessError,
   projectLocation,
   projectRegion,
-  requireAdmin,
   safeErrorMetadata,
 } from "./utils";
 
@@ -63,13 +65,6 @@ const locationListQuerySchema = z.object({
 });
 
 type Db = ReturnType<typeof createDb>;
-
-function adminAccessError(c: Context<{ Bindings: Env }>, error: unknown) {
-  if (!(error instanceof LocationAccessError)) return null;
-  return error.kind === "unauthorized"
-    ? c.json(APIErrors.unauthorized("Authentication required"), 401)
-    : c.json(APIErrors.forbidden("Administrator access required"), 403);
-}
 
 export function buildLocationPageQuery(
   db: Db,
@@ -339,7 +334,7 @@ queries.get("/:id/admin", async (c) => {
       ),
     });
   } catch (error) {
-    const denied = adminAccessError(c, error);
+    const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
     logger.error("location_admin_get_failed", safeErrorMetadata(error));
     return c.json(APIErrors.internalError("Failed to get location"), 500);

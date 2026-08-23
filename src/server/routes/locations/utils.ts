@@ -7,10 +7,8 @@ import type {
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
-import { createDb, type Db } from "../../db";
+import type { Db } from "../../db";
 import * as schema from "../../db/schema";
-import type { Env } from "../../lib/auth";
-import { getActiveSession } from "../../lib/active-session";
 
 export const ACTIVITY_TYPES = [
   "hiking",
@@ -132,32 +130,6 @@ export const replaceLocationTagsSchema = z.object({
       message: "Tag IDs must be unique",
     }),
 });
-
-export class LocationAccessError extends Error {
-  constructor(readonly kind: "unauthorized" | "forbidden") {
-    super(kind);
-    this.name = "LocationAccessError";
-  }
-}
-
-export async function requireAdmin(c: {
-  env: Env;
-  req: { raw: Request };
-}) {
-  const session = await getActiveSession(c.env, c.req.raw.headers);
-  if (!session) throw new LocationAccessError("unauthorized");
-
-  const db = createDb(c.env.DB);
-  const [user] = await db
-    .select({ role: schema.users.role })
-    .from(schema.users)
-    .where(eq(schema.users.id, session.user.id))
-    .limit(1);
-  if (!user || user.role !== "admin") {
-    throw new LocationAccessError("forbidden");
-  }
-  return session;
-}
 
 export async function findOpenCityRegion(db: Db, regionId: string) {
   const [target] = await db

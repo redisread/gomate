@@ -1,8 +1,12 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { Hono, type Context } from "hono";
+import { Hono } from "hono";
 
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
+import {
+  adminAccessErrorResponse,
+  requireAdmin,
+} from "../../lib/admin-access";
 import { APIErrors } from "../../lib/api-errors";
 import type { Env } from "../../lib/auth";
 import { generateId } from "../../lib/id";
@@ -28,12 +32,10 @@ import {
   createLocationInputSchema,
   findOpenCityRegion,
   loadLocationTags,
-  LocationAccessError,
   locationImagesAreAllowed,
   normalizeLocationExtraForStorage,
   projectLocation,
   replaceLocationTagsSchema,
-  requireAdmin,
   safeErrorMetadata,
   updateLocationInputSchema,
 } from "./utils";
@@ -52,18 +54,11 @@ function generatedSlug(id: string) {
   return `location-${suffix || crypto.randomUUID()}`;
 }
 
-function accessError(c: Context<{ Bindings: Env }>, error: unknown) {
-  if (!(error instanceof LocationAccessError)) return null;
-  return error.kind === "unauthorized"
-    ? c.json(APIErrors.unauthorized("Authentication required"), 401)
-    : c.json(APIErrors.forbidden("Administrator access required"), 403);
-}
-
 mutations.post("/", async (c) => {
   let preparedMedia: PreparedLocationMedia | null = null;
   let databaseCommitted = false;
   try {
-    const session = await requireAdmin(c);
+    const admin = await requireAdmin(c);
     const parsed = await validateRequest(
       c,
       "json",
@@ -90,7 +85,7 @@ mutations.post("/", async (c) => {
     }
 
     const id = generateId();
-    preparedMedia = await prepareLocationMedia(c.env, session.user.id, id, {
+    preparedMedia = await prepareLocationMedia(c.env, admin.id, id, {
       coverImageUrl: parsed.coverImageUrl,
       images: parsed.images,
     });
@@ -125,7 +120,7 @@ mutations.post("/", async (c) => {
         preparedMedia.coverImageUrl,
         JSON.stringify(preparedMedia.images),
         JSON.stringify(normalizeLocationExtraForStorage(parsed.extra)),
-        session.user.id,
+        admin.id,
         now,
         now,
         parsed.regionId,
@@ -172,7 +167,7 @@ mutations.post("/", async (c) => {
           ),
       );
     }
-    const denied = accessError(c, error);
+    const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
     if (error instanceof LocationMediaError) {
       return c.json(
@@ -193,7 +188,7 @@ mutations.put("/", async (c) => {
   let preparedMedia: PreparedLocationMedia | null = null;
   let databaseCommitted = false;
   try {
-    const session = await requireAdmin(c);
+    const admin = await requireAdmin(c);
     const parsed = await validateRequest(
       c,
       "json",
@@ -247,7 +242,7 @@ mutations.put("/", async (c) => {
 
     preparedMedia = await prepareLocationMedia(
       c.env,
-      session.user.id,
+      admin.id,
       id,
       nextImages,
     );
@@ -394,7 +389,7 @@ mutations.put("/", async (c) => {
           ),
       );
     }
-    const denied = accessError(c, error);
+    const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
     if (error instanceof LocationMediaError) {
       return c.json(
@@ -508,7 +503,7 @@ mutations.delete("/:id", async (c) => {
         () => undefined,
       );
     }
-    const denied = accessError(c, error);
+    const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
     logger.error("location_delete_failed", safeErrorMetadata(error));
     return c.json(APIErrors.internalError("Failed to delete location"), 500);
@@ -573,7 +568,7 @@ mutations.put("/:id/tags", async (c) => {
       tags: parsed.tagIds.map((tagId) => byId.get(tagId)!),
     });
   } catch (error) {
-    const denied = accessError(c, error);
+    const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
     logger.error("location_tags_replace_failed", safeErrorMetadata(error));
     return c.json(
