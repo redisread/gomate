@@ -6,6 +6,7 @@ export function buildLocationUpdateSql(
     UPDATE locations
     SET ${assignments.join(", ")}
     WHERE id = ?
+      AND updated_at = ?
       AND cover_image_url IS ?
       AND images = ?
       AND region_id = ?

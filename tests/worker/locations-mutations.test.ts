@@ -57,6 +57,7 @@ describe("location update conditional DML", () => {
       2,
       "Updated draft",
       "location-1",
+      1,
       null,
       "[]",
       "region-1",
@@ -104,6 +105,7 @@ describe("location update conditional DML", () => {
       3,
       "published",
       "location-1",
+      1,
       "https://media.example.com/cover.webp",
       "[]",
       "region-1",
@@ -120,5 +122,53 @@ describe("location update conditional DML", () => {
         .bind("location-1")
         .first(),
     ).resolves.toEqual({ status: "draft", latitude: null });
+  });
+
+  it("rejects a stale edit after an unrelated concurrent field update", async () => {
+    await createCatalogTables();
+    await env.DB.prepare(`
+      INSERT INTO locations (
+        id, region_id, name, supported_activity_types, status,
+        latitude, longitude, cover_image_url, images, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      "location-1",
+      "region-1",
+      "Original name",
+      "[]",
+      "draft",
+      null,
+      null,
+      null,
+      "[]",
+      1,
+    ).run();
+    await env.DB.prepare(
+      "UPDATE locations SET name = 'Concurrent name', updated_at = 2 WHERE id = ?",
+    ).bind("location-1").run();
+
+    const result = await env.DB.prepare(
+      buildLocationUpdateSql(["updated_at = ?", "name = ?"], ""),
+    ).bind(
+      3,
+      "Stale name",
+      "location-1",
+      1,
+      null,
+      "[]",
+      "region-1",
+      "[]",
+      "draft",
+      null,
+      null,
+      "region-1",
+    ).run();
+
+    expect(result.meta.changes).toBe(0);
+    await expect(
+      env.DB.prepare("SELECT name FROM locations WHERE id = ?")
+        .bind("location-1")
+        .first(),
+    ).resolves.toEqual({ name: "Concurrent name" });
   });
 });

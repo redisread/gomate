@@ -277,7 +277,9 @@ mutations.put("/", async (c) => {
     );
 
     const assignments = ["updated_at = ?"];
-    const values: unknown[] = [Date.now()];
+    const values: unknown[] = [
+      Math.max(Date.now(), existing.updatedAt.getTime() + 1),
+    ];
     const addAssignment = (column: string, value: unknown) => {
       assignments.push(`${column} = ?`);
       values.push(value);
@@ -323,6 +325,7 @@ mutations.put("/", async (c) => {
 
     values.push(
       id,
+      existing.updatedAt.getTime(),
       existing.coverImageUrl,
       JSON.stringify(existing.images),
       existing.regionId,
