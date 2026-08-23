@@ -42,19 +42,22 @@ Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 禁止在开发机直接运行生产 Cloudflare 写命令。只读 inventory/health 检查可以在任务范围内执行，但不得据此扩大写入权限。
 
 仓库提供 `pnpm deploy:production` 作为 Cloudflare Workers Builds 的生产部署入口；该命令只能由
-`main` 分支的 Workers Build 调用。GitHub Actions 仍只执行只读质量检查，不配置生产
-Cloudflare 或应用 secrets，也不提供本机生产写入路径。合并到 `main` 后不再等待第二次人工确认。
+`main` 分支的 Workers Build 调用。GitHub Actions 只在目标为 `main` 的 PR 上执行只读质量
+检查，不监听 `push main`，不配置生产 Cloudflare 或应用 secrets，也不提供本机生产写入路径。
+合并到 `main` 后不再等待第二次人工确认。
 
 ## 3. 发布能力
 
-PR 使用仓库内 `pnpm test:ci` 加隔离 D1 的 5 条 Chromium E2E 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，
-只负责 `main` 分支的生产构建和自动发布；非 `main` 分支不生成远程 Preview。PR 审核与
-受保护分支是发布授权边界。构建阶段只做校验和 dry-run，部署阶段先执行目标环境 D1
-migration，再发布不可变 Worker version。
+PR 使用仓库内 `pnpm test:ci` 加隔离 D1 的 6 条 Chromium E2E 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，
+只负责 `main` 分支的最小生产构建和自动发布；非 `main` 分支不生成远程 Preview。PR 审核与
+受保护分支是发布授权边界。所有测试、类型检查、bundle dry-run 和 size gate 都在 PR 完成；
+Workers Build 只安装锁定依赖、生成 locale 并构建当前 `main` 的 `dist/`，随后先执行目标环境
+D1 migration，再发布不可变 Worker version。
 
 Workers Builds 的推荐配置为：
 
-1. Build command：`pnpm install --frozen-lockfile && pnpm i18n:build && pnpm test:ci && pnpm worker:dry-run`；
+1. Build command：`pnpm install --frozen-lockfile && pnpm i18n:build && pnpm build`；该阶段只生成
+   当前 `main` 的生产 artifact，不重复执行 PR 已通过的 `pnpm test:ci`、E2E 或 dry-run；
 2. Build variables：`NODE_VERSION=22.13.0`、`PNPM_VERSION=11.19.0`、
    `SKIP_DEPENDENCY_INSTALL=1`；启用 build cache。仓库同时通过 `.node-version` 和
    `packageManager` 固定本地与 CI 工具链；
