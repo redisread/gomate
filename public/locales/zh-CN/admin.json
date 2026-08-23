@@ -176,5 +176,26 @@
   "validationLngInvalid": "经度范围为 -180 到 180",
   "validationNameRequired": "地点名称不能为空",
   "validationNameTooLong": "地点名称不能超过 200 字",
-  "warningsPlaceholder": "如：悬崖路段注意安全，勿靠近边缘"
+  "warningsPlaceholder": "如：悬崖路段注意安全，勿靠近边缘",
+  "platform": {
+    "brand": "GoMate 管理后台",
+    "homeTitle": "管理后台",
+    "homeDescription": "快速维护当前已开放的 GoMate 内容。",
+    "navigationLabel": "后台导航",
+    "navHome": "后台首页",
+    "navNewLocation": "新增地点",
+    "backToFrontend": "返回前台",
+    "openNavigation": "打开后台导航",
+    "closeNavigation": "关闭后台导航",
+    "availableActions": "可用操作",
+    "newLocationTitle": "录入新地点",
+    "newLocationDescription": "记录地点信息并保存为草稿或发布。",
+    "newLocationAction": "新增地点",
+    "forbiddenTitle": "无法访问管理后台",
+    "forbiddenDescription": "当前账号没有管理员权限。",
+    "backHome": "返回首页",
+    "quickActionLabel": "快速添加地点",
+    "quickActionTitle": "快速记录地点",
+    "closeQuickAction": "关闭快速录入"
+  }
 }

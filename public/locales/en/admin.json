@@ -176,5 +176,26 @@
   "validationLngInvalid": "Longitude must be between -180 and 180",
   "validationNameRequired": "Location name is required",
   "validationNameTooLong": "Location name cannot exceed 200 characters",
-  "warningsPlaceholder": "e.g., Watch out for cliff sections, stay away from edges"
+  "warningsPlaceholder": "e.g., Watch out for cliff sections, stay away from edges",
+  "platform": {
+    "brand": "GoMate Admin",
+    "homeTitle": "Admin",
+    "homeDescription": "Quickly maintain the GoMate content available today.",
+    "navigationLabel": "Admin navigation",
+    "navHome": "Admin home",
+    "navNewLocation": "Add location",
+    "backToFrontend": "Back to site",
+    "openNavigation": "Open admin navigation",
+    "closeNavigation": "Close admin navigation",
+    "availableActions": "Available actions",
+    "newLocationTitle": "Add a new location",
+    "newLocationDescription": "Record location details and save a draft or publish it.",
+    "newLocationAction": "Add location",
+    "forbiddenTitle": "Admin access unavailable",
+    "forbiddenDescription": "This account does not have administrator access.",
+    "backHome": "Back to home",
+    "quickActionLabel": "Quick add location",
+    "quickActionTitle": "Quickly record a location",
+    "closeQuickAction": "Close quick entry"
+  }
 }

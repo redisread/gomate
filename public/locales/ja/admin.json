@@ -176,5 +176,26 @@
   "validationLngInvalid": "経度は-180〜180の範囲で入力してください",
   "validationNameRequired": "スポット名を入力してください",
   "validationNameTooLong": "スポット名は200文字以下にしてください",
-  "warningsPlaceholder": "例：崖の路段は注意安全。縁に近づかないでください"
+  "warningsPlaceholder": "例：崖の路段は注意安全。縁に近づかないでください",
+  "platform": {
+    "brand": "GoMate 管理画面",
+    "homeTitle": "管理画面",
+    "homeDescription": "現在利用できる GoMate のコンテンツをすばやく管理します。",
+    "navigationLabel": "管理ナビゲーション",
+    "navHome": "管理トップ",
+    "navNewLocation": "スポットを追加",
+    "backToFrontend": "サイトに戻る",
+    "openNavigation": "管理ナビゲーションを開く",
+    "closeNavigation": "管理ナビゲーションを閉じる",
+    "availableActions": "利用可能な操作",
+    "newLocationTitle": "新しいスポットを登録",
+    "newLocationDescription": "スポット情報を記録し、下書き保存または公開します。",
+    "newLocationAction": "スポットを追加",
+    "forbiddenTitle": "管理画面にアクセスできません",
+    "forbiddenDescription": "このアカウントには管理者権限がありません。",
+    "backHome": "ホームに戻る",
+    "quickActionLabel": "スポットをすばやく追加",
+    "quickActionTitle": "スポットをすばやく記録",
+    "closeQuickAction": "クイック入力を閉じる"
+  }
 }

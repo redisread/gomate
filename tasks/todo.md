@@ -1,6 +1,6 @@
 # Task List: admin-platform
 
-状态：Phase 3 已批准（2026-08-23），Phase 4 Checkpoint B 已完成，Task 5 待实施
+状态：Phase 3 已批准（2026-08-23），Phase 4 Task 5 已完成，Task 6 待实施
 
 规格：[SPEC-admin-platform.md](../SPEC-admin-platform.md)
 
@@ -148,16 +148,16 @@
 
 **Acceptance criteria:**
 
-- [ ] 三种 locale 具有相同 key topology，且文案允许换行与长字符串增长。
-- [ ] 新增 key 只覆盖 `/admin` 壳层、当前地点入口、403 和快速操作容器，不包含未来模块占位文案。
-- [ ] 生成文件只由项目脚本产生，没有手工修改或无关 locale churn。
+- [x] 三种 locale 具有相同 key topology，且文案允许换行与长字符串增长。
+- [x] 新增 key 只覆盖 `/admin` 壳层、当前地点入口、403 和快速操作容器，不包含未来模块占位文案。
+- [x] 生成文件只由项目脚本产生，没有手工修改或无关 locale churn。
 
 **Verification:**
 
-- [ ] `pnpm i18n:build`
-- [ ] `pnpm i18n:gen-types`
-- [ ] `pnpm i18n:validate`
-- [ ] `pnpm type-check`
+- [x] `pnpm i18n:build`
+- [x] `pnpm i18n:gen-types`
+- [x] `pnpm i18n:validate`
+- [x] `pnpm type-check`
 
 **Dependencies:** Checkpoint B
 
