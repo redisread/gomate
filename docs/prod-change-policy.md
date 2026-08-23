@@ -68,14 +68,14 @@ Workers Builds 的推荐配置为：
    migration 成功后才执行 `wrangler deploy --env production`；
 4. Preview deploy command：`pnpm deploy:preview`。脚本只执行
    `wrangler versions upload --env production --config dist/server/wrangler.json --keep-vars --var WRITE_MODE:protected --preview-alias <alias>`；
-   命令使用同一次 Build 生成的 Astro bundle 配置，显式覆盖业务写保护并保留 Dashboard 中的 `PREVIEW_HOST_SUFFIX`，不执行 migration、
+   命令使用同一次 Build 生成的 Astro bundle 配置，显式覆盖业务写保护并保留 production `vars` 中的 `PREVIEW_HOST_SUFFIX`，不执行 migration、
    `wrangler deploy` 或 version promotion。alias 由完整分支名稳定生成；
 5. Deploy command 依赖同一次 Build 已生成的 `dist/`；migration 失败时不得继续部署，Worker
    发布失败也不得回滚或手工补写数据库；
 6. 当前采用单一远程环境策略：`main` 是唯一生产分支，非 `main` Preview 使用
    `--env production` 读取正式 D1/R2；生产 `WRITE_MODE=protected` 拒绝业务写入，仅在合法
-   Preview host 上允许登录/退出所需的认证 session 写入。Preview host 后缀通过受保护环境变量
-   `PREVIEW_HOST_SUFFIX` 配置为当前账号的 `<account-subdomain>.workers.dev`，不得提交到仓库；
+   Preview host 上允许登录/退出所需的认证 session 写入。Preview host 的公开账号后缀通过
+   `wrangler.jsonc` 的 production `PREVIEW_HOST_SUFFIX` 固定，配置回归测试防止后续部署丢失；
 7. 发布后用 `/api/health`、SSR 页面、注册边界 smoke 和关键只读 API 做 smoke，记录 version ID、migration 结果和
    构建 run URL。任何 smoke 失败都停止后续推广。
 

@@ -13,7 +13,7 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 - 正常生产使用 `WRITE_MODE=open`；事故保护期间切换为 `protected` 后，非 GET/HEAD/OPTIONS 请求返回 503 和 `Retry-After: 60`；合法 Preview origin 仅额外允许 `POST /auth/sign-in/email` 和 `POST /auth/sign-out`。
 - Preview 的 `GET /auth/get-session` 可读取当前登录 session；Preview 禁止注册、邮箱验证、密码重置、账户资料修改和所有业务写入。
 - Preview 使用生产 D1/R2 读取真实授权数据；认证 session 写入生产 D1 是只读业务模式下唯一允许的写入例外。
-- Preview host 必须匹配 `*-gomate.<account-subdomain>.workers.dev`，其中账号后缀通过生产环境变量 `PREVIEW_HOST_SUFFIX` 配置；URL 本身不是访问控制。
+- Preview host 必须匹配 `*-gomate.<account-subdomain>.workers.dev`，其中公开账号后缀通过 `wrangler.jsonc` 的 production `PREVIEW_HOST_SUFFIX` 固定；URL 本身不是访问控制。
 - 未匹配的 `/api` 或 `/api/*` 返回 JSON 404，不进入 Astro 页面路由。
 - 时间在 HTTP DTO 中使用 ISO 8601，在 D1 中存 Unix 毫秒。
 - 业务错误统一为 `{ success: false, error: { code, message, details? } }`。

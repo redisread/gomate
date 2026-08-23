@@ -115,6 +115,7 @@
       ],
       "vars": {
         "APP_URL": "https://gomate.live",
+        "PREVIEW_HOST_SUFFIX": "wujiahong2013.workers.dev",
         "R2_PUBLIC_URL": "https://gomate.cos.jiahongw.com",
         "RESEND_FROM_EMAIL": "GoMate <noreply@gomate.live>",
         "WRITE_MODE": "open",
