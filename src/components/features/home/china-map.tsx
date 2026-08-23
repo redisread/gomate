@@ -53,6 +53,15 @@ interface Tooltip {
   subtitle?: string;
 }
 
+interface MapLens {
+  x: number;
+  y: number;
+  radius: number;
+}
+
+const MAP_LENS_RADIUS = 32;
+const MAP_LENS_SCALE = 1.16;
+
 function provinceFill(count: number, max: number): string {
   if (count === 0) return "#f2ede7";
   const t = 0.35 + 0.65 * (count / Math.max(1, max));
@@ -100,6 +109,7 @@ export function ChinaMap({ className }: { className?: string }) {
   const [tooltip, setTooltip] = React.useState<Tooltip | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [focusedProvince, setFocusedProvince] = React.useState<string | null>(null);
+  const [lens, setLens] = React.useState<MapLens | null>(null);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const transitionTimer = React.useRef<number | null>(null);
   const pushedMapState = React.useRef(false);
@@ -182,6 +192,7 @@ export function ChinaMap({ className }: { className?: string }) {
       pushedMapState.current = false;
       setFocusedProvince(province);
       setTooltip(null);
+      setLens(null);
       setIsTransitioning(false);
     };
 
@@ -210,6 +221,7 @@ export function ChinaMap({ className }: { className?: string }) {
 
   const leaveProvince = () => {
     setTooltip(null);
+    setLens(null);
     if (pushedMapState.current) {
       pushedMapState.current = false;
       window.history.back();
@@ -226,6 +238,7 @@ export function ChinaMap({ className }: { className?: string }) {
       return;
     }
     setTooltip(null);
+    setLens(null);
     setIsTransitioning(true);
     if (!focusedProvince) {
       pushedMapState.current = true;
@@ -268,6 +281,7 @@ export function ChinaMap({ className }: { className?: string }) {
       title: point.name,
       subtitle: regionSubtitle,
     });
+    setLens({ x: position.x, y: position.y, radius: MAP_LENS_RADIUS });
   };
 
   const handleInteractiveKeyDown = (event: React.KeyboardEvent, action: () => void) => {
@@ -289,7 +303,10 @@ export function ChinaMap({ className }: { className?: string }) {
               : t("home.mapAriaLabel")
           }
           className="block h-auto w-full select-none"
-          onMouseLeave={() => setTooltip(null)}
+          onMouseLeave={() => {
+            setTooltip(null);
+            setLens(null);
+          }}
         >
           <g
             transform={`matrix(${mapTransform.scale} 0 0 ${mapTransform.scale} ${mapTransform.translateX} ${mapTransform.translateY})`}
@@ -336,6 +353,10 @@ export function ChinaMap({ className }: { className?: string }) {
                     onMouseDown={(event) => event.preventDefault()}
                     onMouseEnter={() => handlePointEnter(point)}
                     onFocus={() => handlePointEnter(point)}
+                    onBlur={() => {
+                      setTooltip(null);
+                      setLens(null);
+                    }}
                     onClick={() => {
                       window.location.href = `/locations/${point.id}`;
                     }}
@@ -360,6 +381,115 @@ export function ChinaMap({ className }: { className?: string }) {
               );
             })}
           </g>
+
+          {lens && (
+            <g
+              data-testid="map-glass-lens"
+              aria-hidden="true"
+              className="map-glass-lens-effect pointer-events-none motion-reduce:hidden"
+            >
+              <defs>
+                <clipPath id="map-glass-clip" clipPathUnits="userSpaceOnUse">
+                  <circle cx={lens.x} cy={lens.y} r={lens.radius} />
+                </clipPath>
+                <filter
+                  id="map-glass-filter"
+                  x={lens.x - lens.radius - 8}
+                  y={lens.y - lens.radius - 8}
+                  width={(lens.radius + 8) * 2}
+                  height={(lens.radius + 8) * 2}
+                  filterUnits="userSpaceOnUse"
+                  filterRes="160"
+                >
+                  <feTurbulence
+                    type="fractalNoise"
+                    baseFrequency="0.035"
+                    numOctaves="1"
+                    seed="7"
+                    result="lensNoise"
+                  />
+                  <feDisplacementMap
+                    in="SourceGraphic"
+                    in2="lensNoise"
+                    scale="5"
+                    xChannelSelector="R"
+                    yChannelSelector="G"
+                  />
+                </filter>
+                <radialGradient id="map-glass-shine" cx="30%" cy="24%" r="76%">
+                  <stop offset="0%" stopColor="var(--background)" stopOpacity="0.32" />
+                  <stop offset="52%" stopColor="var(--background)" stopOpacity="0.05" />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.2" />
+                </radialGradient>
+              </defs>
+
+              <g
+                clipPath="url(#map-glass-clip)"
+                filter="url(#map-glass-filter)"
+                transform={`translate(${lens.x} ${lens.y}) scale(${MAP_LENS_SCALE}) translate(${-lens.x} ${-lens.y})`}
+              >
+                <g
+                  transform={`matrix(${mapTransform.scale} 0 0 ${mapTransform.scale} ${mapTransform.translateX} ${mapTransform.translateY})`}
+                >
+                  {svgPaths.map((path) => {
+                    const count = provinceCount.get(path.name) ?? 0;
+                    const isFocused = focusedProvince === path.name;
+                    return (
+                      <path
+                        key={path.name}
+                        d={path.d}
+                        fill={provinceFill(count, maxCount)}
+                        stroke="#ffffff"
+                        strokeWidth={isFocused ? 1.4 : 0.6}
+                        opacity={focusedProvince && !isFocused ? 0.2 : 1}
+                      />
+                    );
+                  })}
+
+                  {mapPoints.map((point) => {
+                    const position = projectChina(point.latitude, point.longitude);
+                    return (
+                      <circle
+                        key={point.id}
+                        cx={position.x}
+                        cy={position.y}
+                        r={getMapMarkerRadius(focusedProvince ? 5.5 : 5, mapTransform.scale)}
+                        fill="var(--primary)"
+                        stroke="#fff"
+                        strokeWidth={1.2}
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    );
+                  })}
+                </g>
+              </g>
+
+              <circle
+                cx={lens.x}
+                cy={lens.y}
+                r={lens.radius}
+                fill="url(#map-glass-shine)"
+              />
+              <circle
+                data-testid="map-glass-border"
+                cx={lens.x}
+                cy={lens.y}
+                r={lens.radius - 1}
+                fill="none"
+                stroke="var(--background)"
+                strokeOpacity="0.72"
+                strokeWidth="1.5"
+                vectorEffect="non-scaling-stroke"
+              />
+              <circle
+                cx={lens.x - lens.radius * 0.32}
+                cy={lens.y - lens.radius * 0.36}
+                r={lens.radius * 0.12}
+                fill="var(--background)"
+                opacity="0.38"
+              />
+            </g>
+          )}
         </svg>
 
         {focusedProvince && (
