@@ -21,6 +21,8 @@ const LOCALES_DIR = path.join(PROJECT_ROOT, "public", "locales");
 // task #158：ja 纳入 key 一致性校验（此前仅 zh-CN/en，漏 ja 的 key  CI 不拦截）
 const LOCALES = ["zh-CN", "en", "ja"];
 const BASE_LOCALE = "zh-CN";
+// home.howItWorks.steps.*.title/description legitimately uses four levels.
+const MAX_NESTING_DEPTH = 4;
 
 let errors = 0;
 let warnings = 0;
@@ -49,9 +51,9 @@ function collectKeys(obj, prefix = "") {
 }
 
 /**
- * Check max nesting depth (max 3 levels).
+ * Check max nesting depth.
  */
-function checkDepth(obj, prefix = "", maxDepth = 3) {
+function checkDepth(obj, prefix = "", maxDepth = MAX_NESTING_DEPTH) {
   const deep = [];
   for (const k of Object.keys(obj)) {
     const full = prefix ? `${prefix}.${k}` : k;
@@ -290,20 +292,20 @@ function main() {
   }
 
   // ── Check 3: Nesting Depth ──
-  console.log("\n── Nesting Depth (max 3) ──");
+  console.log(`\n── Nesting Depth (max ${MAX_NESTING_DEPTH}) ──`);
   let depthErrors = 0;
   for (const file of nsFiles) {
     const baseData = loadJSON(path.join(baseDir, file));
     if (!baseData) continue;
     const deep = checkDepth(baseData);
     if (deep.length > 0) {
-      log("warn", `${file}: ${deep.length} keys exceed 3 levels`);
+      log("warn", `${file}: ${deep.length} keys exceed ${MAX_NESTING_DEPTH} levels`);
       deep.slice(0, 3).forEach((k) => log("warn", `  ${k} (${k.split(".").length} levels)`));
       depthErrors += deep.length;
     }
   }
   if (depthErrors === 0) {
-    console.log("  ✓ All keys within 3 levels");
+    console.log(`  ✓ All keys within ${MAX_NESTING_DEPTH} levels`);
   }
 
   // ── Check 4: Empty Values ──

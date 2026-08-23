@@ -5,11 +5,9 @@ import { useTeamDetail } from "./use-team-detail";
 import { TeamApplicationsSection } from "./team-detail-applications";
 import { TeamProgress } from "@/components/features/teams/shared";
 import { getTeamDisplayStatus } from "@/lib/team-display";
+import { ShareOptionsSheet } from "./share-options-sheet";
+import { SharePosterPreview } from "./share-poster-preview";
 import * as React from "react";
-
-// 懒加载分享相关组件
-const ShareOptionsSheet = React.lazy(() => import("./share-options-sheet").then(m => ({ default: m.ShareOptionsSheet })));
-const SharePosterPreview = React.lazy(() => import("./share-poster-preview").then(m => ({ default: m.SharePosterPreview })));
 
 // Reuse the same hook from bottom-bar
 function useTeamShare(team: Team | null) {
@@ -94,23 +92,18 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
         />
       )}
 
-      {/* Share Modals - 懒加载 */}
-      <React.Suspense fallback={null}>
-        <ShareOptionsSheet
-          open={share.showOptions}
-          onClose={share.closeOptions}
-          onGeneratePoster={share.handleGeneratePoster}
-          onCopyLink={share.handleCopyLink}
-        />
-      </React.Suspense>
-      <React.Suspense fallback={null}>
-        <SharePosterPreview
-          open={share.showPreview}
-          teamId={team.id}
-          teamTitle={team.title}
-          onClose={share.closePreview}
-        />
-      </React.Suspense>
+      <ShareOptionsSheet
+        open={share.showOptions}
+        onClose={share.closeOptions}
+        onGeneratePoster={share.handleGeneratePoster}
+        onCopyLink={share.handleCopyLink}
+      />
+      <SharePosterPreview
+        open={share.showPreview}
+        teamId={team.id}
+        teamTitle={team.title}
+        onClose={share.closePreview}
+      />
     </aside>
   );
 }

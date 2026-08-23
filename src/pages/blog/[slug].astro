@@ -5,14 +5,6 @@ import { declareI18nNs } from "@/middleware";
 
 declareI18nNs(Astro.locals, ["share", "content"]);
 
-export async function getStaticPaths() {
-  const posts = await getCollection("blog");
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }));
-}
-
 interface Props {
   post?: CollectionEntry<"blog">;
 }
