@@ -1,5 +1,20 @@
 export const PRODUCTION_ENVIRONMENT = "production";
 
+export function parseJsonc(source) {
+  return JSON.parse(
+    source
+      .replace(/\/\*[\s\S]*?\*\//gu, "")
+      .replace(/^\s*\/\/.*$/gmu, "")
+      .replace(/,\s*([}\]])/gu, "$1"),
+  );
+}
+
+export function assertProductionWriteMode(environment = process.env) {
+  if (environment.WRITE_MODE !== "open") {
+    throw new Error("正常生产部署必须使用 WRITE_MODE=open");
+  }
+}
+
 /**
  * Keep the one-environment release policy fail-closed in Workers Builds.
  * Local builds may run without Workers CI metadata, but a Workers Build must

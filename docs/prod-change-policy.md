@@ -11,6 +11,7 @@
 - D1：binding `DB`，目标数据库 `gomate-db-v3`（生产数据库必须由受保护环境按名称绑定；仓库不携带旧数据库 UUID）
 - R2：binding `R2`，bucket `gomate`
 - Rate Limiting bindings：`AUTH_SIGN_IN_RATE_LIMITER`、`AUTH_SIGN_UP_RATE_LIMITER`、`AUTH_EMAIL_RATE_LIMITER`
+- 正常生产 `WRITE_MODE` 为 `open`；`protected` 只用于经过审批的事故写保护，不作为常规发布配置。
 - Cloudflare Workers Builds 的 Git 连接负责发布授权；运行时 secret（`BETTER_AUTH_SECRET`、`RESEND_API_KEY`）只在受保护 production 环境配置，仓库不保存 Cloudflare 或应用 secret。
 
 旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除；当前 Worker 不引入 KV 运行时缓存。
@@ -66,7 +67,7 @@ Workers Builds 的推荐配置为：
    非 `main` 分支，`wrangler.jsonc` 的根配置使用本地资源，`production` 显式关闭
    `workers_dev` 和 `preview_urls`。未来若要提供在线 Preview，必须先创建独立的 Worker、
    D1、R2、secrets 和访问控制，不能把版本预览当作数据隔离；
-6. 发布后用 `/api/health`、SSR 页面和关键只读 API 做 smoke，记录 version ID、migration 结果和
+6. 发布后用 `/api/health`、SSR 页面、注册边界 smoke 和关键只读 API 做 smoke，记录 version ID、migration 结果和
    构建 run URL。任何 smoke 失败都停止后续推广。
 
 ## 4. D1、KV 与 R2
@@ -100,6 +101,7 @@ Workers Builds 的推荐配置为：
 发布或回滚后至少验证：
 
 - `/api/health` 为 2xx、`status=ok`，body `versionId` 与响应 `X-Worker-Version-ID` 都等于本次推广或回滚目标；
+- 正常生产 `/api/health` 的 `writeMode` 必须为 `open`；事故保护发布必须明确记录为 `protected`；
 - SSR 页面为 2xx，且 `X-Worker-Version-ID` 等于同一目标；
 - 关键 API 响应有 `X-Request-ID`，Workers Logs 可定位对应 completion；
 - 公开 Location 与稳定深圳 Region 可读；

@@ -10,7 +10,7 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 - 浏览器只访问同源 `/api/*`；Astro SSR 通过 `apiApp.fetch()` 进程内分发，不 self-fetch。
 - Better Auth 只开放下表列出的产品端点，session 使用同源 HttpOnly Cookie。
 - 携带 Cookie 的非安全方法必须来自 `APP_URL` 同源；不符合要求时在读取业务 body 前返回 403。
-- `WRITE_MODE=protected` 时，非 GET/HEAD/OPTIONS 请求返回 503 和 `Retry-After: 60`。
+- 正常生产使用 `WRITE_MODE=open`；事故保护期间切换为 `protected` 后，非 GET/HEAD/OPTIONS 请求返回 503 和 `Retry-After: 60`。
 - 未匹配的 `/api` 或 `/api/*` 返回 JSON 404，不进入 Astro 页面路由。
 - 时间在 HTTP DTO 中使用 ISO 8601，在 D1 中存 Unix 毫秒。
 - 业务错误统一为 `{ success: false, error: { code, message, details? } }`。
@@ -24,7 +24,7 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 
 | 方法      | 路径                            | 认证 | 用途                                   |
 | --------- | ------------------------------- | ---- | -------------------------------------- |
-| GET       | `/health`                       | 否   | 健康检查；生产可返回 Worker version ID |
+| GET       | `/health`                       | 否   | 健康检查；返回 Worker version ID 与写入模式 |
 | POST      | `/auth/sign-up/email`           | 否   | 注册；固定响应避免账号枚举             |
 | POST      | `/auth/sign-in/email`           | 否   | 登录；成功响应不暴露 session token     |
 | GET、POST | `/auth/get-session`             | 可选 | 强制回源 D1 获取当前 session           |

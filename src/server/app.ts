@@ -29,6 +29,10 @@ export type ApiBindings = WorkerEnv;
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 const WRITE_PROTECTION_RETRY_SECONDS = 60;
 
+export function resolveWriteMode(value: unknown): WriteMode {
+  return value === "open" ? "open" : "protected";
+}
+
 export const apiApp = new Hono<{ Bindings: ApiBindings }>();
 
 apiApp.use("*", async (c, next) => {
@@ -54,7 +58,7 @@ apiApp.use("*", async (c, next) => {
 });
 
 apiApp.use("*", async (c, next) => {
-  const writeMode: string | undefined = c.env?.WRITE_MODE;
+  const writeMode = resolveWriteMode(c.env?.WRITE_MODE);
   if (
     writeMode === "protected" &&
     !SAFE_METHODS.has(c.req.method.toUpperCase())
@@ -103,6 +107,7 @@ apiApp.get("/health", (c) => {
   const versionId = c.env?.CF_VERSION_METADATA?.id;
   return c.json({
     status: "ok",
+    writeMode: resolveWriteMode(c.env?.WRITE_MODE),
     timestamp: new Date().toISOString(),
     ...(versionId ? { versionId } : {}),
   });

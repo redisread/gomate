@@ -21,8 +21,26 @@ describe("API boundary", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({ status: "ok" });
+    await expect(response.json()).resolves.toMatchObject({
+      status: "ok",
+      writeMode: "open",
+    });
     expect(response.headers.get("x-request-id")).toBeTruthy();
+  });
+
+  it("fails closed when the write mode is missing", async () => {
+    const response = await apiApp.fetch(
+      new Request("http://localhost/contact", {
+        method: "POST",
+        body: "{}",
+      }),
+      env({ WRITE_MODE: undefined }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "WRITE_PROTECTED" },
+    });
   });
 
   it("blocks cookie writes while the deployment is protected", async () => {

@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { assertProductionDeployEnvironment } from "./production-build-guard.mjs";
+import {
+  assertProductionDeployEnvironment,
+  assertProductionWriteMode,
+  parseJsonc,
+} from "./production-build-guard.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WRANGLER = process.platform === "win32" ? "wrangler.cmd" : "wrangler";
@@ -44,9 +49,34 @@ function runWrangler(args) {
   });
 }
 
+function runNodeScript(scriptPath) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [scriptPath], {
+      cwd: ROOT,
+      env: process.env,
+      stdio: "inherit",
+    });
+    child.once("error", reject);
+    child.once("exit", (code, signal) => {
+      if (signal) {
+        reject(new Error(`node script stopped by ${signal}`));
+      } else if (code !== 0) {
+        reject(new Error(`node script exited with code ${code ?? 1}`));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 async function main() {
   assertProductionDeployEnvironment();
+  const config = parseJsonc(await readFile(path.join(ROOT, "wrangler.jsonc"), "utf8"));
+  assertProductionWriteMode({
+    WRITE_MODE: config.env?.production?.vars?.WRITE_MODE,
+  });
   for (const args of PRODUCTION_WRANGLER_COMMANDS) await runWrangler(args);
+  await runNodeScript(path.join(ROOT, "scripts/smoke-production-write-boundary.mjs"));
 }
 
 if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
