@@ -35,8 +35,6 @@ const createLocationSchema = z.object({
   extra: z.record(z.unknown()).nullable().optional(),
   parkingAvailable: z.boolean().nullable().optional(),
   parkingInfo: z.string().max(100).optional(),
-  gearEssential: z.array(z.string().min(1).max(20)).max(10).optional(),
-  gearOptional: z.array(z.string().min(1).max(20)).max(10).optional(),
 });
 
 writeLocations.post("/", idempotencyMiddleware, async (c) => {
@@ -91,8 +89,6 @@ writeLocations.post("/", idempotencyMiddleware, async (c) => {
       extra: data.extra ? JSON.stringify(data.extra) : null,
       parkingAvailable: data.parkingAvailable ?? null,
       parkingInfo: data.parkingInfo ?? null,
-      gearEssential: data.gearEssential?.join(",") ?? null,
-      gearOptional: data.gearOptional?.join(",") ?? null,
       createdAt: now,
       updatedAt: now,
       actorApiKeyId: actorApiKeyId ?? null,

@@ -68,8 +68,6 @@ locations.get("/", async (c) => {
         images: true,
         bestSeason: true,
         coordinates: true,
-        gearEssential: true,
-        gearOptional: true,
         extra: true,
       },
       orderBy: (locations, { desc }) => [desc(locations.createdAt)],
@@ -89,8 +87,6 @@ locations.get("/", async (c) => {
       images: safeJsonParse(loc.images, []),
       bestSeason: safeJsonParse(loc.bestSeason, []),
       coordinates: safeJsonParse(loc.coordinates, { lat: 0, lng: 0 }),
-      gearEssential: parseCsvField(loc.gearEssential),
-      gearOptional: parseCsvField(loc.gearOptional),
     }));
 
     return c.json({ success: true, locations: locations_, pagination: { page, pageSize, total, totalPages, hasMore } });
@@ -191,8 +187,6 @@ locations.get("/:id", async (c) => {
         images: safeJsonParse(location.images, []),
         bestSeason: safeJsonParse(location.bestSeason, []),
         coordinates: safeJsonParse(location.coordinates, { lat: 0, lng: 0 }),
-        gearEssential: parseCsvField(location.gearEssential),
-        gearOptional: parseCsvField(location.gearOptional),
         tags,
       },
     });
@@ -201,11 +195,5 @@ locations.get("/:id", async (c) => {
     return c.json(APIErrors.internalError("获取地点详情失败"), 500);
   }
 });
-
-function parseCsvField(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  return raw.split(/[,、]/).map((s) => s.trim()).filter(Boolean);
-}
-
 
 export { locations as locationsRoute };

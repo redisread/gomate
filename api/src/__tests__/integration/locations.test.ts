@@ -214,21 +214,21 @@ describe("Locations API 集成测试", () => {
   // ==================== P0-B T2 (task #169): GET /locations/:id/transportation ====================
   ;
 
-  // ==================== P0-B T4 (task #171): 决策信息 4 字段 CRUD ====================
-  describe("P0-B T4: 决策信息（停车 tri-state + 装备 CSV）", () => {
+  // ==================== 地点装备决策退役 ====================
+  describe("地点装备决策退役", () => {
     beforeEach(async () => {
       // admin 会话（seedUser 已插入 admin@test.com）
       const [admin] = await testDb.select().from(schema.users).where(eq(schema.users.email, "admin@test.com"));
       currentSession = { user: { id: admin.id, email: admin.email, name: admin.name } };
     });
 
-    it("POST 创建时接受 4 字段，GET 详情按前端形态回传", async () => {
+    it("内部 API 忽略旧装备字段且不再回传，同时保留停车信息", async () => {
       const createRes = await req(app, "/locations", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          name: "决策测试",
-          description: "包含决策 4 字段的地点，超过十字",
+          name: "退役契约测试",
+          description: "验证地点装备字段已经退出接口契约",
           cityId: city.id,
           coverImage: "https://example.com/cover.jpg",
           parkingAvailable: true,
@@ -241,76 +241,27 @@ describe("Locations API 集成测试", () => {
       const { location } = await createRes.json() as { location: { id: string } };
 
       const getRes = await req(app, `/locations/${location.id}`);
-      const getJson = await getRes.json() as {
-        location: {
-          parkingAvailable: boolean | null;
-          parkingInfo: string | null;
-          gearEssential: string[];
-          gearOptional: string[];
-        };
-      };
+      const getJson = await getRes.json() as { location: Record<string, unknown> };
       expect(getJson.location.parkingAvailable).toBe(true);
       expect(getJson.location.parkingInfo).toBe("主入口右侧，5 元一次");
-      expect(getJson.location.gearEssential).toEqual(["登山鞋", "雨衣"]);
-      expect(getJson.location.gearOptional).toEqual(["登山杖"]);
+      expect(getJson.location).not.toHaveProperty("gearEssential");
+      expect(getJson.location).not.toHaveProperty("gearOptional");
     });
 
-    it("PUT 支持 parkingAvailable=null（信息缺失）与 gear=[]（清空）", async () => {
-      const loc = await seedLocation(testDb, city.id, { name: "清空测试" });
-      // 先设定值
-      await req(app, "/locations", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          id: loc.id,
-          parkingAvailable: false,
-          gearEssential: ["Item A"],
-        }),
+    it("公开 v1 列表与详情不再回传地点装备字段", async () => {
+      const loc = await seedLocation(testDb, city.id, {
+        name: "公开契约测试",
       });
-      // 再清空
-      const putRes = await req(app, "/locations", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          id: loc.id,
-          parkingAvailable: null,
-          gearEssential: [],
-        }),
-      });
-      expect(putRes.status).toBe(200);
 
-      const getRes = await req(app, `/locations/${loc.id}`);
-      const getJson = await getRes.json() as {
-        location: { parkingAvailable: boolean | null; gearEssential: string[] };
-      };
-      expect(getJson.location.parkingAvailable).toBeNull();
-      expect(getJson.location.gearEssential).toEqual([]);
-    });
+      const listRes = await req(app, "/v1/locations");
+      const listJson = await listRes.json() as { locations: Record<string, unknown>[] };
+      expect(listJson.locations[0]).not.toHaveProperty("gearEssential");
+      expect(listJson.locations[0]).not.toHaveProperty("gearOptional");
 
-    it("装备超过 10 项、单项超过 20 字应 400", async () => {
-      const tooMany = Array.from({ length: 11 }, (_, i) => `item${i}`);
-      const tooLong = "这是一段超过二十个字符的很长很长的装备名称测试";
-      const res1 = await req(app, "/locations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: "校验测试", description: "描述至少十个字符长度", cityId: city.id,
-          coverImage: "https://example.com/c.jpg",
-          gearEssential: tooMany,
-        }),
-      });
-      expect(res1.status).toBe(400);
-
-      const res2 = await req(app, "/locations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: "校验测试2", description: "描述至少十个字符长度", cityId: city.id,
-          coverImage: "https://example.com/c.jpg",
-          gearOptional: [tooLong],
-        }),
-      });
-      expect(res2.status).toBe(400);
+      const detailRes = await req(app, `/v1/locations/${loc.id}`);
+      const detailJson = await detailRes.json() as { location: Record<string, unknown> };
+      expect(detailJson.location).not.toHaveProperty("gearEssential");
+      expect(detailJson.location).not.toHaveProperty("gearOptional");
     });
   });
 });

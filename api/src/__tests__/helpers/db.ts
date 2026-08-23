@@ -105,8 +105,6 @@ export function createTestDb() {
       coordinates TEXT NOT NULL,
       parking_available INTEGER,
       parking_info TEXT,
-      gear_essential TEXT,
-      gear_optional TEXT,
       extra TEXT,
       actor_api_key_id TEXT,
       created_at INTEGER NOT NULL,

@@ -249,18 +249,6 @@
           "coordinates": {
             "$ref": "#/components/schemas/Coordinates"
           },
-          "gearEssential": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "gearOptional": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "tags": {
             "type": "array",
             "items": {
@@ -849,18 +837,6 @@
                     "items": {
                       "type": "string"
                     }
-                  },
-                  "gearEssential": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "gearOptional": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
                   }
                 },
                 "required": ["name", "description", "cityId", "coverImage"]
@@ -888,7 +864,7 @@
       "get": {
         "operationId": "getLocationDetail",
         "summary": "获取地点详情",
-        "description": "公开读端点，支持按 ID 或 slug 查询。返回坐标、标签、装备建议等完整信息。",
+        "description": "公开读端点，支持按 ID 或 slug 查询。返回坐标、标签等完整信息。",
         "parameters": [
           {
             "name": "id",

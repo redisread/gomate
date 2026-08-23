@@ -152,12 +152,9 @@ export const locations = sqliteTable(
     coverImage: text("cover_image").notNull(),
     images: text("images").notNull(),
     coordinates: text("coordinates").notNull(),
-    // P0-B T1（task #168）：决策信息字段（依据 spec §6 v1.1）
-    // 4 字段全 nullable：旧数据自动兼容（35 条 prod locations 全 null，前端按未填处理）
+    // P0-B T1（task #168）：停车决策信息字段（依据 spec §6 v1.1）
     parkingAvailable: integer("parking_available", { mode: "boolean" }), // spec §3.4-A boolean 三态：true=有 / false=无 / null=信息缺失
     parkingInfo: text("parking_info"), // 停车信息自由文本，业务层 zod .max(100) 校验（DB 层不加 CHECK）
-    gearEssential: text("gear_essential"), // 必带装备，comma-separated
-    gearOptional: text("gear_optional"), // 选带装备，comma-separated
     extra: text("extra"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()).notNull(),
