@@ -75,6 +75,9 @@ Location 使用全局 ID 路由，不提供 slug fallback。公开读取只返�
 `serviceEnabled=true` city Region 的地点。HTTP `extra` 使用 camelCase，服务层负责与
 D1 JSON 的 snake_case 结构转换。公开和管理员 Location DTO 都不包含内部
 `createdByUserId`；该字段只保留在数据库和服务端写入链路。
+`extra.hiking` 只承载难度、时长、距离、爬升、季节、概述、提示与注意事项；地点级
+`gearEssential` / `gearOptional` 已退出写入合同和所有 Location 响应。Team 行动本中的装备清单
+是独立合同，不受影响。
 
 快速创建 Location 默认保存 `draft`，只要求 `name`、`description` 与启用的 city
 `regionId`；坐标、封面、标签和推荐活动类型可后补。发布边界要求坐标与封面，但推荐活动类型

@@ -37,6 +37,8 @@
 - 列表只展示 `published` 且所属 city Region 已启用服务的地点。
 - 详情路由只使用全局 Location ID，slug 不参与路由解析。
 - 页面消费共享 Location DTO：`region`、`supportedActivityTypes`、`coverImageUrl`、`images` 与结构化 `extra`。
+- 徒步攻略展示路线参数、概述、提示与注意事项；地点详情不展示必带/选带装备。到达信息继续提供
+  地图导航，季节信息继续来自 `extra.hiking.bestSeasons`。
 - 地点 Story 使用 `/api/stories?locationId=<id>`；收藏使用 `/api/favorites/locations`。
 
 ### Team
@@ -67,7 +69,8 @@
   站内 `returnTo`，active 普通用户得到 HTTP 403，管理员响应使用 `private, no-store`。
 - 后台不渲染公共 Navbar 或 Footer。宽布局使用固定侧栏，内容无法继续容纳时切换为移动顶部栏
   和抽屉；导航包含地点列表/新增、活动类型、标签、用户以及返回前台入口。
-- 地点新增、编辑继续按可见性懒加载现有表单，但只使用统一后台壳层，不再重复渲染公共导航。
+- 地点新增、编辑继续按可见性懒加载现有表单，但只使用统一后台壳层，不再重复渲染公共导航；
+  表单保留徒步参数、季节、路线概述、提示与注意事项，不再编辑地点装备清单。
 - 地点管理列表可搜索并按 draft/published/archived 筛选；删除默认归档，永久删除只在归档后
   通过精确 ID 确认发起，后端仍会拒绝存在业务引用的地点。
 - 活动类型后台支持新增、改名、排序和启停；标签后台支持新增、改名、查看引用计数并确认解除
