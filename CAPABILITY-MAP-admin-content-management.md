@@ -1,6 +1,6 @@
 # Capability Map: 管理员内容管理与地点快速录入
 
-状态：已批准（2026-08-23）
+状态：持续规划（`admin-platform` 已完成，2026-08-23）
 
 | Module id                   | Responsibility                                                                                    | Depends on                                          |
 | --------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
@@ -24,6 +24,11 @@ user-role-admin ──┘
 `activity-catalog`、`tag-catalog` 和 `user-role-admin` 在 `admin-platform`
 完成后可以并行。`user-role-admin` 不构成地点流程的技术依赖，但属于同一首期后台范围。
 
-## Module specs
+## 当前状态
 
-- [`admin-platform`](SPEC-admin-platform.md)：Phase 4 实施中（Task 5 已完成，Task 6 待实施）
+- `admin-platform` 已完成；当前行为由
+  [`docs/frontend-pages.md`](docs/frontend-pages.md)、
+  [`docs/backend-api.md`](docs/backend-api.md) 和
+  [`docs/design-system.md`](docs/design-system.md) 维护。
+- 下一模块为 `activity-catalog`；实施前单独完成规格、任务拆分与批准，不在当前后台导航中
+  展示尚不可用的活动类型、标签或用户管理入口。

@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchCurrentUser, refreshCurrentUser } from "@/lib/api";
+import type { SessionUser } from "@/lib/types";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleToggle } from "@/components/layout/locale-toggle";
@@ -23,6 +24,11 @@ interface NavbarProps {
   renderAdminQuickAction?: () => React.ReactNode;
 }
 
+type NavbarUser = Pick<
+  SessionUser,
+  "id" | "name" | "nickname" | "email" | "image"
+>;
+
 /**
  * 响应式导航栏（Design System v3.0）
  * - 滚动前透明；滚动后毛玻璃（暖白 + blur）
@@ -40,8 +46,8 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   const [currentPath, setCurrentPath] = React.useState("");
   const [session, setSession] = React.useState<{
-    user?: { id: string; name: string; nickname?: string; email: string; image?: string };
-    isAdmin?: boolean;
+    user: NavbarUser;
+    isAdmin: boolean;
   } | null | undefined>(undefined);
   // 延迟应用活跃状态，避免 SSR/CSR 不一致导致 hydration mismatch
   const [_mounted, setMounted] = React.useState(false);
@@ -72,13 +78,7 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
       setSession(
         u
           ? {
-              user: u as {
-                id: string;
-                name: string;
-                nickname?: string;
-                email: string;
-                image?: string;
-              },
+              user: u,
               isAdmin: u.role === "admin",
             }
           : null,

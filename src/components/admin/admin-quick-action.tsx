@@ -30,6 +30,8 @@ export function AdminQuickAction({
     },
     [onOpenChange],
   );
+  const openAction = React.useCallback(() => updateOpen(true), [updateOpen]);
+  const closeAction = React.useCallback(() => updateOpen(false), [updateOpen]);
 
   return (
     <>
@@ -38,7 +40,7 @@ export function AdminQuickAction({
         aria-label={label}
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => updateOpen(true)}
+        onClick={openAction}
         className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-[background-color,scale] duration-100 hover:bg-primary/90 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         <MapPinPlus className="size-5 shrink-0" strokeWidth={2} aria-hidden="true" />
@@ -47,7 +49,7 @@ export function AdminQuickAction({
 
       <Modal
         open={open}
-        onClose={() => updateOpen(false)}
+        onClose={closeAction}
         labelledBy={titleId}
         initialFocusRef={initialFocusRef}
         lockBodyScroll
@@ -66,7 +68,7 @@ export function AdminQuickAction({
           <button
             type="button"
             aria-label={closeLabel}
-            onClick={() => updateOpen(false)}
+            onClick={closeAction}
             className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-[background-color,color,scale] duration-100 hover:bg-muted hover:text-foreground active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             <X className="size-5" strokeWidth={2} aria-hidden="true" />

@@ -56,7 +56,10 @@ async function expectNoHorizontalOverflow(page: Page) {
 test.describe("admin platform", () => {
   test.describe.configure({ mode: "serial" });
 
-  test.beforeAll(async (_fixtures, workerInfo) => {
+  test.beforeAll(async ({ browserName }, workerInfo) => {
+    if (browserName !== "chromium") {
+      throw new Error("Admin platform E2E requires Chromium");
+    }
     const baseURL = String(workerInfo.project.use.baseURL ?? LOCAL_ORIGIN);
     const hostname = new URL(baseURL).hostname;
     if (hostname !== "localhost" && hostname !== "127.0.0.1") {
