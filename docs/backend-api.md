@@ -82,6 +82,8 @@ D1 JSON 的 snake_case 结构转换。公开和管理员 Location DTO 都不包�
 快速创建 Location 默认保存 `draft`，只要求 `name`、`description` 与启用的 city
 `regionId`；坐标、封面、标签和推荐活动类型可后补。发布边界要求坐标与封面，但推荐活动类型
 始终可空。`supportedActivityTypes` 是可选的地点推荐信息，写入时必须全部来自当前启用目录。
+Location DTO 同时返回这些推荐项的 `activityTypes` 目录信息；目录项停用后，历史地点仍可展示其名称。
+编辑地点时可继续保留原有的停用推荐项，但不能新增停用项。
 普通 `DELETE /locations/:id` 只归档；永久删除必须同时提交
 `permanent=true&confirm=<locationId>`，且最终删除语句复核没有 Team、Story 或收藏引用。
 

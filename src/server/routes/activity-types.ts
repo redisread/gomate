@@ -28,7 +28,7 @@ const activitySlug = z
   .trim()
   .min(1)
   .max(80)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
+  .regex(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u);
 
 const createSchema = z.object({
   name: activityName,
@@ -48,7 +48,7 @@ function slugify(value: string) {
   return value
     .normalize("NFKC")
     .toLocaleLowerCase("en-US")
-    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
     .replace(/^-+|-+$/gu, "")
     .slice(0, 80);
 }

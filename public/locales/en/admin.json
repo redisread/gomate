@@ -245,6 +245,7 @@
     "save": "Save draft",
     "saving": "Saving…",
     "saved": "Your idea is saved as a draft.",
+    "optionalSaveFailed": "The draft was saved, but its tags could not be attached. Retry in the full editor.",
     "continueEditing": "Continue with all fields"
   },
   "locationsManagement": {

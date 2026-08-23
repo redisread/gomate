@@ -72,6 +72,29 @@ describe("tag catalog management", () => {
     });
   });
 
+  it("does not mark the administrator reference view as publicly cacheable", async () => {
+    mocks.requireAdmin.mockResolvedValue({ id: "admin-1" });
+    const countFrom = vi.fn().mockResolvedValue([{ value: 0 }]);
+    const offset = vi.fn().mockResolvedValue([]);
+    const limit = vi.fn(() => ({ offset }));
+    const orderBy = vi.fn(() => ({ limit }));
+    const listFrom = vi.fn(() => ({ orderBy }));
+    mocks.createDb.mockReturnValue({
+      select: vi.fn()
+        .mockReturnValueOnce({ from: countFrom })
+        .mockReturnValueOnce({ from: listFrom }),
+    });
+
+    const response = await tagsRoute.request(
+      "/?includeReferences=true",
+      undefined,
+      env,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.has("Cache-Control")).toBe(false);
+  });
+
   it("detaches all references only after explicit delete confirmation", async () => {
     mocks.requireAdmin.mockResolvedValue({ id: "admin-1" });
     const limit = vi.fn().mockResolvedValue([

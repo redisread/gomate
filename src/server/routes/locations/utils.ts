@@ -1,4 +1,5 @@
 import type {
+  ActivityTypeInfo,
   Location as LocationDto,
   LocationExtra as LocationExtraDto,
   Region as RegionDto,
@@ -16,6 +17,14 @@ export const LEGACY_ACTIVITY_TYPES = [
   "leisure",
   "travel",
 ] as const;
+
+export function activityTypesRequiringActiveValidation(
+  requested: string[],
+  existing: string[],
+) {
+  const preserved = new Set(existing);
+  return requested.filter((id) => !preserved.has(id));
+}
 
 const activityTypeSchema = z.string().trim().min(1).max(128);
 const locationStatusSchema = z.enum(["draft", "published", "archived"]);
@@ -298,7 +307,9 @@ export function projectLocation(
   location: schema.Location,
   region: schema.Region,
   tags: TagDto[],
+  activityTypes: ActivityTypeInfo[] = [],
 ): LocationDto {
+  const supportedActivityTypes = new Set(location.supportedActivityTypes);
   return {
     id: location.id,
     regionId: location.regionId,
@@ -316,9 +327,27 @@ export function projectLocation(
     extra: mapLocationExtra(location.extra),
     createdAt: location.createdAt.toISOString(),
     updatedAt: location.updatedAt.toISOString(),
+    activityTypes: activityTypes.filter(({ id }) => supportedActivityTypes.has(id)),
     region: projectRegion(region),
     tags,
   };
+}
+
+export async function loadActivityTypes(db: Db): Promise<ActivityTypeInfo[]> {
+  return db
+    .select({
+      id: schema.activityTypes.id,
+      name: schema.activityTypes.name,
+      slug: schema.activityTypes.slug,
+      isActive: schema.activityTypes.isActive,
+      sortOrder: schema.activityTypes.sortOrder,
+    })
+    .from(schema.activityTypes)
+    .orderBy(
+      asc(schema.activityTypes.sortOrder),
+      asc(schema.activityTypes.name),
+      asc(schema.activityTypes.id),
+    );
 }
 
 export async function loadLocationTags(db: Db, locationIds: string[]) {

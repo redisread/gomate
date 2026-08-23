@@ -27,6 +27,7 @@ export function AdminQuickLocationForm({
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState("");
   const [created, setCreated] = React.useState<Location | null>(null);
+  const [optionalSaveFailed, setOptionalSaveFailed] = React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -69,10 +70,14 @@ export function AdminQuickLocationForm({
           coverImageUrl: coverImageUrl.trim() || null,
         },
       );
-      if (tagIds.length > 0) {
-        await apiPut(`/locations/${result.location.id}/tags`, { tagIds });
-      }
       setCreated(result.location);
+      if (tagIds.length > 0) {
+        try {
+          await apiPut(`/locations/${result.location.id}/tags`, { tagIds });
+        } catch {
+          setOptionalSaveFailed(true);
+        }
+      }
     } catch (cause) {
       setError(cause instanceof Error
         ? cause.message
@@ -88,6 +93,11 @@ export function AdminQuickLocationForm({
         <p className="rounded-lg bg-primary/10 p-3 text-sm font-medium text-foreground">
           {t("admin.quickDraft.saved")}
         </p>
+        {optionalSaveFailed && (
+          <p role="alert" className="rounded-lg bg-amber-500/10 p-3 text-sm text-foreground">
+            {t("admin.quickDraft.optionalSaveFailed")}
+          </p>
+        )}
         <a href={`/admin/locations/${created.id}/edit`} className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
           {t("admin.quickDraft.continueEditing")}
         </a>

@@ -92,6 +92,7 @@ export interface Location {
   extra: LocationExtra;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  activityTypes?: ActivityTypeInfo[];
   region?: Region;
   tags?: Tag[];
 }

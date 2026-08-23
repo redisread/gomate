@@ -109,7 +109,7 @@ export function AdminActivityTypesManager() {
         </label>
         <label className="grid gap-1.5 text-sm font-medium">
           {t("admin.management.slugOptional")}
-          <input pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={slug} onChange={(event) => setSlug(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
+          <input value={slug} onChange={(event) => setSlug(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
         </label>
         <button disabled={savingId === "new"} className="min-h-11 self-end rounded-lg bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50">
           {t("admin.management.add")}

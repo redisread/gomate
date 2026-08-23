@@ -245,6 +245,7 @@
     "save": "下書き保存",
     "saving": "保存中…",
     "saved": "アイデアを下書きとして保存しました。",
+    "optionalSaveFailed": "下書きは保存されましたが、タグを関連付けできませんでした。完全編集画面で再試行してください。",
     "continueEditing": "すべての項目を編集する"
   },
   "locationsManagement": {

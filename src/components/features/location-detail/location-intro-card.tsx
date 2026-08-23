@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
+import { activityTypeLabel } from "@/lib/activity-types";
 import { openExternalLink } from "@/lib/open-external";
 import { cn } from "@/lib/utils";
 import type { Location, Tag } from "@/lib/types";
@@ -148,7 +149,7 @@ export function LocationIntroCard({
           </h2>
           {location.supportedActivityTypes.map((activityType) => (
             <span key={activityType} className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50">
-              {t(`enums.locationType.${activityType}`)}
+              {activityTypeLabel(activityType, location.activityTypes ?? [])}
             </span>
           ))}
         </div>

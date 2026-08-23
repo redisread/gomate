@@ -30,8 +30,10 @@ import {
 } from "../../lib/r2-media";
 import { validateRequest } from "../../lib/validation";
 import {
+  activityTypesRequiringActiveValidation,
   createLocationInputSchema,
   findOpenCityRegion,
+  loadActivityTypes,
   loadLocationTags,
   locationImagesAreAllowed,
   normalizeLocationExtraForStorage,
@@ -187,10 +189,11 @@ mutations.post("/", async (c) => {
         ),
     );
 
+    const activityTypes = await loadActivityTypes(db);
     return c.json(
       {
         success: true as const,
-        location: projectLocation(location, targetRegion, []),
+        location: projectLocation(location, targetRegion, [], activityTypes),
       },
       201,
     );
@@ -272,7 +275,13 @@ mutations.put("/", async (c) => {
 
     if (
       changes.supportedActivityTypes !== undefined &&
-      !await allActivityTypesAreActive(db, changes.supportedActivityTypes)
+      !await allActivityTypesAreActive(
+        db,
+        activityTypesRequiringActiveValidation(
+          changes.supportedActivityTypes,
+          existing.supportedActivityTypes,
+        ),
+      )
     ) {
       return c.json(
         APIErrors.badRequest("Every activity type must be active"),
@@ -356,6 +365,7 @@ mutations.put("/", async (c) => {
       existing.coverImageUrl,
       JSON.stringify(existing.images),
       existing.regionId,
+      JSON.stringify(existing.supportedActivityTypes),
       nextRegionId,
     );
     const activityTypeGuard = changes.supportedActivityTypes !== undefined
@@ -367,11 +377,17 @@ mutations.put("/", async (c) => {
               ON activity_type.id = requested_activity.value
               AND activity_type.is_active = 1
             WHERE activity_type.id IS NULL
+              AND NOT EXISTS (
+                SELECT 1
+                FROM json_each(?) AS preserved_activity
+                WHERE preserved_activity.value = requested_activity.value
+              )
           )
         `
       : "";
     if (changes.supportedActivityTypes !== undefined) {
       values.push(JSON.stringify(changes.supportedActivityTypes));
+      values.push(JSON.stringify(existing.supportedActivityTypes));
     }
     const updateResult = await c.env.DB.prepare(
       `
@@ -381,6 +397,7 @@ mutations.put("/", async (c) => {
           AND cover_image_url = ?
           AND images = ?
           AND region_id = ?
+          AND supported_activity_types = ?
           AND EXISTS (
             SELECT 1
             FROM region AS target_region
@@ -428,10 +445,18 @@ mutations.put("/", async (c) => {
         ),
     );
 
-    const tags = await loadLocationTags(db, [id]);
+    const [tags, activityTypes] = await Promise.all([
+      loadLocationTags(db, [id]),
+      loadActivityTypes(db),
+    ]);
     return c.json({
       success: true as const,
-      location: projectLocation(updated, targetRegion, tags.get(id) ?? []),
+      location: projectLocation(
+        updated,
+        targetRegion,
+        tags.get(id) ?? [],
+        activityTypes,
+      ),
     });
   } catch (error) {
     if (preparedMedia && !databaseCommitted) {

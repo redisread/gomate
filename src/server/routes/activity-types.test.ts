@@ -89,7 +89,7 @@ describe("activity type catalog", () => {
       {
         id: "activity-1",
         name: "攀岩",
-        slug: "climbing",
+        slug: "攀岩",
         isActive: true,
         sortOrder: 50,
       },
@@ -106,7 +106,6 @@ describe("activity type catalog", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: "攀岩",
-          slug: "climbing",
           sortOrder: 50,
         }),
       },
@@ -116,8 +115,9 @@ describe("activity type catalog", () => {
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toMatchObject({
       success: true,
-      activityType: { name: "攀岩", slug: "climbing", isActive: true },
+      activityType: { name: "攀岩", slug: "攀岩", isActive: true },
     });
+    expect(values).toHaveBeenCalledWith(expect.objectContaining({ slug: "攀岩" }));
     expect(mocks.requireAdmin).toHaveBeenCalledOnce();
   });
 

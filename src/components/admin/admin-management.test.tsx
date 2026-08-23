@@ -145,6 +145,39 @@ describe("admin catalog managers", () => {
     expect(await screen.findByText("admin.quickDraft.saved")).toBeInTheDocument();
   });
 
+  it("keeps the saved draft when optional tag attachment fails", async () => {
+    api.fetchAPI
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        tags: [{ id: "tag-1", name: "亲子", slug: "family" }],
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ activityTypes: [] }), { status: 200 }));
+    api.apiPost.mockResolvedValue({
+      success: true,
+      location: { id: "location-1", status: "draft" },
+    });
+    api.apiPut.mockRejectedValue(new Error("tag update failed"));
+
+    render(<AdminQuickLocationForm initialFocusRef={{ current: null }} />);
+    fireEvent.change(screen.getByLabelText("admin.quickDraft.name"), {
+      target: { value: "灵感地点" },
+    });
+    fireEvent.change(screen.getByLabelText("admin.quickDraft.description"), {
+      target: { value: "刚刚想到，先记录下来" },
+    });
+    await screen.findByRole("option", { name: "深圳" });
+    fireEvent.change(screen.getByLabelText("admin.quickDraft.region"), {
+      target: { value: "region-sz" },
+    });
+    fireEvent.click(screen.getByText("admin.quickDraft.optionalFields"));
+    fireEvent.click(await screen.findByLabelText("亲子"));
+    fireEvent.click(screen.getByRole("button", { name: "admin.quickDraft.save" }));
+
+    expect(await screen.findByText("admin.quickDraft.saved")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "admin.quickDraft.optionalSaveFailed",
+    );
+  });
+
   it("archives a location through the default delete action", async () => {
     api.fetchAPI
       .mockResolvedValueOnce(new Response(JSON.stringify({

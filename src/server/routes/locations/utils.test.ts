@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
 import * as schema from "../../db/schema";
-import { createLocationInputSchema, projectLocation } from "./utils";
+import {
+  activityTypesRequiringActiveValidation,
+  createLocationInputSchema,
+  projectLocation,
+} from "./utils";
 
 describe("location input", () => {
+  it("validates only newly attached activity types during an update", () => {
+    expect(activityTypesRequiringActiveValidation(
+      ["hiking", "new-activity"],
+      ["hiking"],
+    )).toEqual(["new-activity"]);
+  });
+
   it("accepts a draft with only name, description, and region", () => {
     const result = createLocationInputSchema.safeParse({
       name: "突然想到的地点",
@@ -84,11 +95,22 @@ describe("location response projection", () => {
       sortOrder: 1,
     } as unknown as schema.Region;
 
-    const projected = projectLocation(location, region, []);
+    const projected = projectLocation(location, region, [], [
+      {
+        id: "hiking",
+        name: "徒步",
+        slug: "hiking",
+        isActive: false,
+        sortOrder: 10,
+      },
+    ]);
 
     expect(projected).not.toHaveProperty("createdByUserId");
     expect(projected).toMatchObject({
       id: "location-1",
+      activityTypes: [
+        { id: "hiking", name: "徒步", isActive: false },
+      ],
       region: { id: "region-1" },
     });
   });

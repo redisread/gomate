@@ -245,6 +245,7 @@
     "save": "保存为草稿",
     "saving": "正在保存…",
     "saved": "灵感已保存为草稿。",
+    "optionalSaveFailed": "草稿已保存，但标签关联失败；请在完整编辑页重试。",
     "continueEditing": "继续完善全部字段"
   },
   "locationsManagement": {

@@ -127,7 +127,7 @@ tagsRoute.get("/", async (c) => {
           .limit(pageSize)
           .offset((page - 1) * pageSize);
     const totalPages = Math.ceil(total / pageSize);
-    setPublicCacheHeaders(c);
+    if (!includeReferences) setPublicCacheHeaders(c);
     return c.json({
       success: true,
       tags: result.map((tag) => {
@@ -160,7 +160,9 @@ tagsRoute.get("/", async (c) => {
       },
     });
   } catch (error) {
-    logger.error("tags_list_failed", error);
+    logger.error("tags_list_failed", {
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
     return c.json(APIErrors.internalError("Failed to load tags"), 500);
   }
 });
@@ -200,7 +202,9 @@ tagsRoute.post("/", async (c) => {
     await db.insert(schema.tags).values({ id, name: parsed.name, slug });
     return c.json({ success: true, tagId: id, existing: false }, 201);
   } catch (error) {
-    logger.error("tags_create_failed", error);
+    logger.error("tags_create_failed", {
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
     return c.json(APIErrors.conflict("Tag already exists"), 409);
   }
 });
