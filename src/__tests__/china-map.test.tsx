@@ -87,6 +87,22 @@ describe("ChinaMap", () => {
     const hitTarget = document.querySelector('circle[fill="transparent"]');
     expect(Number(hitTarget?.getAttribute("r"))).toBe(12);
 
+    fireEvent.mouseEnter(screen.getByLabelText("梧桐山"));
+    const lens = screen.getByTestId("map-glass-lens");
+    expect(lens).toHaveAttribute("aria-hidden", "true");
+    expect(lens.querySelector('g[filter="url(#map-glass-filter)"]')).not.toBeNull();
+    expect(lens.querySelector('circle[data-testid="map-glass-border"]')).not.toBeNull();
+    expect(lens.querySelector('[role="button"]')).toBeNull();
+
+    fireEvent.mouseLeave(screen.getByRole("group"));
+    expect(screen.queryByTestId("map-glass-lens")).not.toBeInTheDocument();
+
+    const point = screen.getByLabelText("梧桐山");
+    fireEvent.focus(point);
+    expect(screen.getByTestId("map-glass-lens")).toBeInTheDocument();
+    fireEvent.blur(point);
+    expect(screen.queryByTestId("map-glass-lens")).not.toBeInTheDocument();
+
     await waitFor(() => {
       expect(screen.queryByLabelText("四姑娘山")).not.toBeInTheDocument();
     });

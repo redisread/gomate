@@ -4,7 +4,7 @@
  * - Accepts optional namespace list for auto-loading
  * - Reads locale from cookie on client side
  * - Provides t() function with loaded translations
- * - 同步检查 SSR 缓存，避免首屏闪烁
+ * - 保持 SSR 与客户端 hydration 的首帧一致
  */
 
 import * as React from "react";
@@ -25,7 +25,7 @@ interface UseI18nReturn {
 
 /**
  * 同步检查所有 namespace 是否已在缓存中
- * 用于 SSR  hydration 后立即判断 loading 状态
+ * 用于 hydration 后立即判断 loading 状态
  */
 function areAllNsCached(nsList: string[] | undefined, locale: Locale): boolean {
   if (!nsList || nsList.length === 0) return true;
@@ -44,8 +44,8 @@ function areAllNsCached(nsList: string[] | undefined, locale: Locale): boolean {
  */
 export function useI18n(nsList?: string[]): UseI18nReturn {
   const [locale, setLocale] = React.useState<Locale>(getLocale());
-  // 同步检查缓存：如果 SSR 数据已注入，直接设置 loading=false
-  const [loading, setLoading] = React.useState(() => !areAllNsCached(nsList, getLocale()));
+  // SSR 与客户端首帧必须使用相同的 loading 状态；客户端在 effect 中复用 SSR 缓存。
+  const [loading, setLoading] = React.useState(() => Boolean(nsList?.length));
 
   React.useEffect(() => {
     if (!nsList || nsList.length === 0) {
@@ -95,14 +95,14 @@ export function useI18n(nsList?: string[]): UseI18nReturn {
   );
 
   const getNsData = React.useCallback(() => {
-    if (!nsList || nsList.length === 0) return null;
+    if (loading || !nsList || nsList.length === 0) return null;
     const results: Record<string, unknown> = {};
     for (const ns of nsList) {
       const data = getNamespaceData(ns, locale);
       if (data) results[ns] = data;
     }
     return Object.keys(results).length > 0 ? results : null;
-  }, [locale, nsList]);
+  }, [loading, locale, nsList]);
 
   return { t: tFn, getNsData, locale, loading };
 }
