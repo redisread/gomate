@@ -16,15 +16,12 @@
 import * as React from "react";
 import { Plus, X, AlertCircle, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { API_BASE } from "@/lib/api";
+import {
+  LOCATION_IMAGE_ACCEPT,
+  locationImageUploadMessage,
+  uploadLocationImage,
+} from "@/lib/location-image-upload";
 import { useI18n } from "@/hooks/useI18n";
-
-/* ================================================================
-   常量
-   ================================================================ */
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPT_TYPES = "image/*";
 
 /* ================================================================
    圆形进度条（与 CoverImageUpload 保持一致）
@@ -104,10 +101,6 @@ function genKey() {
   return `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-function getApiBase(): string {
-  return API_BASE;
-}
-
 /* ================================================================
    主组件
    ================================================================ */
@@ -138,14 +131,6 @@ export function MultiImageUpload({
   /* ---- 上传核心逻辑 ---- */
   const uploadFile = React.useCallback(
     (file: File) => {
-      if (!file.type.startsWith("image/")) {
-        // 静默跳过非图片，或可以弹提示
-        return;
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        return;
-      }
-
       const itemKey = genKey();
 
       // 插入上传中占位
@@ -154,62 +139,28 @@ export function MultiImageUpload({
         { url: "", progress: 0, key: itemKey },
       ]);
 
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 100);
-          setUploadingItems((prev) =>
-            prev.map((u) => (u.key === itemKey ? { ...u, progress: pct } : u))
-          );
-        }
-      });
-
-      xhr.addEventListener("load", () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const data = JSON.parse(xhr.responseText) as { url?: string };
-            if (data.url) {
-              // 上传成功：从 uploadingItems 移除，追加到 values
-              setUploadingItems((prev) => prev.filter((u) => u.key !== itemKey));
-              onChange([...values, data.url]);
-            } else {
-              setUploadingItems((prev) =>
-                prev.map((u) =>
-                  u.key === itemKey ? { ...u, progress: null, error: t("ui.upload.uploadServerError") } : u
-                )
-              );
-            }
-          } catch {
-            setUploadingItems((prev) =>
-              prev.map((u) =>
-                u.key === itemKey ? { ...u, progress: null, error: t("ui.upload.uploadFailed") } : u
-              )
-            );
-          }
-        } else {
+      void uploadLocationImage(file, (progress) => {
+        setUploadingItems((prev) =>
+          prev.map((u) => (u.key === itemKey ? { ...u, progress } : u))
+        );
+      })
+        .then((url) => {
+          setUploadingItems((prev) => prev.filter((u) => u.key !== itemKey));
+          onChange([...values, url]);
+        })
+        .catch((error: unknown) => {
           setUploadingItems((prev) =>
             prev.map((u) =>
-              u.key === itemKey ? { ...u, progress: null, error: t("ui.upload.uploadHttpError").replace("{status}", String(xhr.status)) } : u
-            )
+              u.key === itemKey
+                ? {
+                    ...u,
+                    progress: null,
+                    error: locationImageUploadMessage(error, t),
+                  }
+                : u,
+            ),
           );
-        }
-      });
-
-      xhr.addEventListener("error", () => {
-        setUploadingItems((prev) =>
-          prev.map((u) =>
-            u.key === itemKey ? { ...u, progress: null, error: t("ui.upload.uploadNetworkError") } : u
-          )
-        );
-      });
-
-      xhr.open("POST", `${getApiBase()}/upload/location`);
-      xhr.withCredentials = true;
-      xhr.send(formData);
+        });
     },
     [values, onChange, t]
   );
@@ -424,7 +375,7 @@ export function MultiImageUpload({
       <input
         ref={fileInputRef}
         type="file"
-        accept={ACCEPT_TYPES}
+        accept={LOCATION_IMAGE_ACCEPT}
         multiple
         className="sr-only"
         onChange={(e) => {
