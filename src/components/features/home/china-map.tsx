@@ -26,14 +26,19 @@ interface MapPoint {
   slug: Location["slug"];
   region: Region;
   provinceName: string | null;
-  latitude: Location["latitude"];
-  longitude: Location["longitude"];
+  latitude: number;
+  longitude: number;
 }
 
 interface LocationStatsResponse {
   success: boolean;
   regions: Array<{ region: Region; count: number }>;
-  points: Array<Omit<MapPoint, "provinceName">>;
+  points: Array<
+    Omit<MapPoint, "provinceName" | "latitude" | "longitude"> & {
+      latitude: number | null;
+      longitude: number | null;
+    }
+  >;
 }
 
 interface RegionsResponse {
@@ -165,12 +170,18 @@ export function ChinaMap({ className }: { className?: string }) {
         }
         const nextStats: MapStats = {
           provinces: [...provinceCountByName].map(([province, count]) => ({ province, count })),
-          points: data.points.map((point) => ({
-            ...point,
-            provinceName: point.region.parentId
-              ? provinceNameById.get(point.region.parentId) ?? null
-              : null,
-          })),
+          points: data.points.flatMap((point) =>
+            point.latitude === null || point.longitude === null
+              ? []
+              : [{
+                  ...point,
+                  latitude: point.latitude,
+                  longitude: point.longitude,
+                  provinceName: point.region.parentId
+                    ? provinceNameById.get(point.region.parentId) ?? null
+                    : null,
+                }],
+          ),
         };
         if (!cancelled) setStats(nextStats);
       } catch {

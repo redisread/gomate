@@ -1,6 +1,7 @@
 import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { ACTIVITY_TYPES } from "@/contracts";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import { APIErrors, ErrorCode } from "../../lib/api-errors";
@@ -17,14 +18,15 @@ import { toTeamResponse } from "./utils";
 
 const mutations = new Hono<{ Bindings: Env }>();
 
-const activityTypeSchema = z.enum(["hiking", "explore", "leisure", "travel"]);
+const activityTypeSchema = z.enum(ACTIVITY_TYPES);
+const activityTypesJson = JSON.stringify(ACTIVITY_TYPES);
 const requirementSchema = z.string().trim().min(1).max(200);
 const tagIdsSchema = z
   .array(z.string().trim().min(1).max(100))
   .max(20)
   .transform((values) => [...new Set(values)]);
 
-const createTeamSchema = z
+export const createTeamSchema = z
   .object({
     locationId: z.string().trim().min(1).max(100),
     activityType: activityTypeSchema,
@@ -56,7 +58,7 @@ const createTeamSchema = z
     }
   });
 
-const updateTeamSchema = z
+export const updateTeamSchema = z
   .object({
     locationId: z.string().trim().min(1).max(100).optional(),
     activityType: activityTypeSchema.optional(),
@@ -173,10 +175,7 @@ mutations.post("/", async (c) => {
       FROM locations AS location
       WHERE location.id = ?
         AND location.status = 'published'
-        AND EXISTS (
-          SELECT 1 FROM json_each(location.supported_activity_types)
-          WHERE json_each.value = ?
-        )
+        AND ? IN (SELECT value FROM json_each(?))
     `,
     ).bind(
       teamId,
@@ -193,6 +192,7 @@ mutations.post("/", async (c) => {
       now,
       data.locationId,
       data.activityType,
+      activityTypesJson,
     );
     const tagStatements = data.tagIds.map((tagId) =>
       c.env.DB.prepare(
@@ -207,7 +207,7 @@ mutations.post("/", async (c) => {
     const results = await c.env.DB.batch([createTeam, ...tagStatements]);
     if (changes(results[0]) !== 1) {
       return c.json(
-        APIErrors.validationError("地点不存在、未发布或不支持该活动类型"),
+        APIErrors.validationError("地点不存在、未发布或活动类型不可用"),
         422,
       );
     }
@@ -298,11 +298,8 @@ mutations.put("/:id", async (c) => {
           SELECT 1 FROM locations AS location
           WHERE location.id = ?
             AND location.status = 'published'
-            AND EXISTS (
-              SELECT 1 FROM json_each(location.supported_activity_types)
-              WHERE json_each.value = ?
-            )
         )
+        AND ? IN (SELECT value FROM json_each(?))
     `,
     ).bind(
       locationId,
@@ -320,6 +317,7 @@ mutations.put("/:id", async (c) => {
       now,
       locationId,
       activityType,
+      activityTypesJson,
     );
 
     const statements = data.tagIds
@@ -333,7 +331,7 @@ mutations.put("/:id", async (c) => {
     if (changes(results[0]) !== 1) {
       return c.json(
         APIErrors.conflict(
-          "队伍已成行、已取消、已出发，或地点不支持该活动类型",
+          "队伍已成行、已取消、已出发、地点不可用，或活动类型无效",
         ),
         409,
       );

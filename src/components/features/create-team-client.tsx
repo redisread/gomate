@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
+import { orderActivityTypesForLocation } from "@/lib/activity-types";
+import { isActivityType } from "@/lib/activity-types";
+import { ACTIVITY_TYPES } from "@/contracts";
 import { DURATION_OPTION_DEFS, snapToDurationOption } from "@/lib/duration-options";
 import type { ActivityType, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
@@ -131,6 +134,14 @@ export function CreateTeamClient() {
     };
   }, [formData.locationId]);
 
+  const orderedActivityTypes = React.useMemo(
+    () => orderActivityTypesForLocation(
+      ACTIVITY_TYPES,
+      selectedLocation?.supportedActivityTypes ?? [],
+    ),
+    [selectedLocation],
+  );
+
   // 当用户手动修改时长时，标记为已手动编辑
   const handleDurationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     durationManuallyEditedRef.current = true;
@@ -194,7 +205,7 @@ export function CreateTeamClient() {
       if (
         !activityType ||
         selectedLocation?.id !== formData.locationId ||
-        !selectedLocation.supportedActivityTypes.includes(activityType)
+        !isActivityType(activityType)
       ) {
         setError(t("errors.createTeamFailed"));
         setIsSubmitting(false);
@@ -365,10 +376,12 @@ export function CreateTeamClient() {
                   <option value="">
                     {t("teams.formPlaceholder.activityType")}
                   </option>
-                  {selectedLocation.supportedActivityTypes.map(
+                  {orderedActivityTypes.map(
                     (activityType) => (
                       <option key={activityType} value={activityType}>
-                        {t(`enums.locationType.${activityType}`)}
+                        {selectedLocation.supportedActivityTypes.includes(activityType)
+                          ? t("teams.recommendedActivityType", { name: t(`enums.locationType.${activityType}`) })
+                          : t(`enums.locationType.${activityType}`)}
                       </option>
                     ),
                   )}

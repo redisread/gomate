@@ -9,6 +9,7 @@ interface TeamsSelectedFiltersProps {
   startDate: string;
   endDate: string;
   selectedActivityType: ActivityType | "";
+  availableActivityTypes: readonly ActivityType[];
   selectedRecruitmentStatus: RecruitmentStatus | "";
   availableTags: { id: string; name: string }[];
   selectedTags: string[];

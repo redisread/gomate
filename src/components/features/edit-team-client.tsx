@@ -4,7 +4,8 @@ import * as React from "react";
 import { ArrowLeft, Clock, Users, AlertCircle, Loader2, Pencil } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
-import type { Team, Location } from "@/lib/types";
+import { ACTIVITY_TYPES } from "@/contracts";
+import type { ActivityType, Team, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -17,7 +18,7 @@ interface EditTeamClientProps {
 }
 
 export function EditTeamClient({ teamId }: EditTeamClientProps) {
-  const { t } = useI18n(["teams", "errors", "common"]);
+  const { t } = useI18n(["teams", "errors", "common", "enums"]);
   const [team, setTeam] = React.useState<Team | null>(null);
   const [location, setLocation] = React.useState<Location | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -34,6 +35,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
     maxParticipants: "",
     description: "",
     requirements: [] as string[],
+    activityType: "" as ActivityType | "",
   });
 
   React.useEffect(() => {
@@ -74,6 +76,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             maxParticipants: String(t2.maxParticipants),
             description: t2.description || "",
             requirements: Array.isArray(t2.requirements) ? t2.requirements : [],
+            activityType: t2.activityType,
           });
         } else {
           setError(t("errors.editTeamInfoFailed"));
@@ -151,6 +154,9 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
           startAt: startAt.toISOString(),
           endAt: endAt.toISOString(),
           requirements: reqList,
+          ...(formData.activityType !== team?.activityType
+            ? { activityType: formData.activityType }
+            : {}),
         }),
       });
       const data = await res.json();
@@ -261,6 +267,23 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 <AlertCircle className="h-3 w-3" />
                 {t("teams.editLocationLocked")}
               </p>
+            </FieldGroup>
+
+            <FieldGroup icon="🧭" label={t("teams.formLabel.activityType")} required>
+              <select
+                id="activityType"
+                name="activityType"
+                value={formData.activityType}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+              >
+                {ACTIVITY_TYPES.map((activityType) => (
+                  <option key={activityType} value={activityType}>
+                    {t(`enums.locationType.${activityType}`)}
+                  </option>
+                ))}
+              </select>
             </FieldGroup>
 
             <FieldGroup icon="📅" label={t("teams.formLabel.date")}>

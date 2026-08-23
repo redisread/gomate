@@ -5,6 +5,10 @@ import { z } from "zod";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { getActiveSession } from "../lib/active-session";
+import {
+  adminAccessErrorResponse,
+  requireAdmin,
+} from "../lib/admin-access";
 import { APIErrors } from "../lib/api-errors";
 import type { Env } from "../lib/auth";
 import {
@@ -407,18 +411,7 @@ upload.delete("/avatar", async (c) => {
 upload.post("/location", async (c) => {
   let attemptedKey: string | null = null;
   try {
-    const session = await getActiveSession(c.env, c.req.raw.headers);
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-    const db = createDb(c.env.DB);
-    const [user] = await db
-      .select({ role: schema.users.role })
-      .from(schema.users)
-      .where(eq(schema.users.id, session.user.id))
-      .limit(1);
-    if (!user || user.role !== "admin") {
-      return c.json(APIErrors.forbidden("无权限访问"), 403);
-    }
+    const admin = await requireAdmin(c);
 
     const storage = storageConfiguration(c);
     if (!storage) {
@@ -428,7 +421,7 @@ upload.post("/location", async (c) => {
     const file = await validatedFormFile(c, formData);
     if (file instanceof Response) return file;
     const { buffer, ext } = await validatedImage(file);
-    const key = `temp/locations/${session.user.id}/${generateId()}.${ext}`;
+    const key = `temp/locations/${admin.id}/${generateId()}.${ext}`;
     attemptedKey = key;
     await storage.bucket.put(key, buffer, {
       httpMetadata: { contentType: file.type },
@@ -442,6 +435,8 @@ upload.post("/location", async (c) => {
       type: file.type,
     });
   } catch (error) {
+    const denied = adminAccessErrorResponse(c, error);
+    if (denied) return denied;
     if (error instanceof UploadRequestError) return requestErrorResponse(c, error);
     if (attemptedKey && c.env.R2) {
       await deleteR2ObjectsWithRetry(c.env.R2, [attemptedKey]).catch(

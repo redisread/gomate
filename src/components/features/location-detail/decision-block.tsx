@@ -25,8 +25,13 @@ interface DecisionBlockProps {
  * 会让占位坐标漏过 hasCoords 校验 → transport fetch 触发 → mapUrl 指向非洲外海。
  * `buildFallbackMapUrl` 走同一 helper，保证 error fallback 也不生成 (0,0) 链接。
  */
-function hasValidCoords(latitude: number, longitude: number): boolean {
+function hasValidCoords(
+  latitude: number | null,
+  longitude: number | null,
+): boolean {
   return (
+    latitude !== null &&
+    longitude !== null &&
     Number.isFinite(latitude) &&
     Number.isFinite(longitude) &&
     !(latitude === 0 && longitude === 0)
@@ -106,6 +111,7 @@ function OpenInMapButton({ href, t }: { href: string; t: Translate }) {
 }
 
 function buildFallbackMapUrl(location: Location): string {
+  if (location.latitude === null || location.longitude === null) return "";
   if (!hasValidCoords(location.latitude, location.longitude)) return "";
   return (
     "https://uri.amap.com/marker?position=" +

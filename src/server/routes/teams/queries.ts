@@ -1,4 +1,5 @@
 import type { ActivityType, RecruitmentStatus, TeamLifecycle } from "@/contracts";
+import { isActivityType } from "@/lib/activity-types";
 import {
   and,
   asc,
@@ -31,12 +32,6 @@ import { toTeamResponse } from "./utils";
 
 const queries = new Hono<{ Bindings: Env }>();
 
-const ACTIVITY_TYPES = new Set<ActivityType>([
-  "hiking",
-  "explore",
-  "leisure",
-  "travel",
-]);
 const RECRUITMENT_STATUSES = new Set<RecruitmentStatus>(["open", "closed"]);
 const LIFECYCLES = new Set<TeamLifecycle>([
   "cancelled",
@@ -175,7 +170,7 @@ queries.get("/", async (c) => {
     const startAtFrom = parseDateBoundary(c.req.query("startDateFrom"), false);
     const startAtTo = parseDateBoundary(c.req.query("startDateTo"), true);
 
-    if (activityType && !ACTIVITY_TYPES.has(activityType)) {
+    if (activityType && !isActivityType(activityType)) {
       return c.json(APIErrors.validationError("activityType 无效"), 400);
     }
     if (recruitmentStatus && !RECRUITMENT_STATUSES.has(recruitmentStatus)) {

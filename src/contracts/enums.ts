@@ -1,4 +1,12 @@
-export type ActivityType = "hiking" | "explore" | "leisure" | "travel";
+/** Stable activity identifiers. Additions are shipped with code and translations. */
+export const ACTIVITY_TYPES = [
+  "hiking",
+  "explore",
+  "leisure",
+  "travel",
+] as const;
+
+export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
 export type Difficulty = "easy" | "moderate" | "hard" | "expert";
 

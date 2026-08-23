@@ -4,20 +4,12 @@ import type {
   Region as RegionDto,
   Tag as TagDto,
 } from "@/contracts";
+import { ACTIVITY_TYPES } from "@/contracts";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
-import { createDb, type Db } from "../../db";
+import type { Db } from "../../db";
 import * as schema from "../../db/schema";
-import type { Env } from "../../lib/auth";
-import { getActiveSession } from "../../lib/active-session";
-
-export const ACTIVITY_TYPES = [
-  "hiking",
-  "explore",
-  "leisure",
-  "travel",
-] as const;
 
 const activityTypeSchema = z.enum(ACTIVITY_TYPES);
 const locationStatusSchema = z.enum(["draft", "published", "archived"]);
@@ -39,7 +31,7 @@ const httpsUrlSchema = z
 
 const supportedActivityTypesSchema = z
   .array(activityTypeSchema)
-  .max(ACTIVITY_TYPES.length)
+  .max(50)
   .refine((values) => new Set(values).size === values.length, {
     message: "Activity types must be unique",
   });
@@ -93,14 +85,14 @@ const locationFieldsSchema = z.object({
     .max(200)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
     .optional(),
-  supportedActivityTypes: supportedActivityTypesSchema,
-  status: locationStatusSchema.default("published"),
+  supportedActivityTypes: supportedActivityTypesSchema.default([]),
+  status: locationStatusSchema.default("draft"),
   subtitle: z.string().trim().max(500).nullable().optional(),
   description: z.string().trim().min(1).max(10_000),
   address: z.string().trim().max(500).nullable().optional(),
-  latitude: z.number().finite().min(-90).max(90),
-  longitude: z.number().finite().min(-180).max(180),
-  coverImageUrl: httpsUrlSchema,
+  latitude: z.number().finite().min(-90).max(90).nullable().default(null),
+  longitude: z.number().finite().min(-180).max(180).nullable().default(null),
+  coverImageUrl: httpsUrlSchema.nullable().default(null),
   images: z.array(httpsUrlSchema).max(20).default([]),
   extra: locationExtraInputSchema.default({}),
 }).strict();
@@ -108,13 +100,26 @@ const locationFieldsSchema = z.object({
 export const createLocationInputSchema = locationFieldsSchema.superRefine(
   (value, context) => {
     if (
-      value.status === "published" &&
-      value.supportedActivityTypes.length === 0
+      value.status === "published" && value.latitude === null
     ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["supportedActivityTypes"],
-        message: "Published locations require at least one activity type",
+        path: ["latitude"],
+        message: "Published locations require latitude",
+      });
+    }
+    if (value.status === "published" && value.longitude === null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["longitude"],
+        message: "Published locations require longitude",
+      });
+    }
+    if (value.status === "published" && value.coverImageUrl === null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["coverImageUrl"],
+        message: "Published locations require a cover image",
       });
     }
   },
@@ -132,32 +137,6 @@ export const replaceLocationTagsSchema = z.object({
       message: "Tag IDs must be unique",
     }),
 });
-
-export class LocationAccessError extends Error {
-  constructor(readonly kind: "unauthorized" | "forbidden") {
-    super(kind);
-    this.name = "LocationAccessError";
-  }
-}
-
-export async function requireAdmin(c: {
-  env: Env;
-  req: { raw: Request };
-}) {
-  const session = await getActiveSession(c.env, c.req.raw.headers);
-  if (!session) throw new LocationAccessError("unauthorized");
-
-  const db = createDb(c.env.DB);
-  const [user] = await db
-    .select({ role: schema.users.role })
-    .from(schema.users)
-    .where(eq(schema.users.id, session.user.id))
-    .limit(1);
-  if (!user || user.role !== "admin") {
-    throw new LocationAccessError("forbidden");
-  }
-  return session;
-}
 
 export async function findOpenCityRegion(db: Db, regionId: string) {
   const [target] = await db
@@ -392,10 +371,12 @@ export function isAllowedLocationImageUrl(value: string, env: Env) {
 }
 
 export function locationImagesAreAllowed(
-  input: { coverImageUrl: string; images: string[] },
+  input: { coverImageUrl: string | null; images: string[] },
   env: Env,
 ) {
-  return [input.coverImageUrl, ...input.images].every((url) =>
+  return [input.coverImageUrl, ...input.images]
+    .filter((url): url is string => url !== null)
+    .every((url) =>
     isAllowedLocationImageUrl(url, env),
   );
 }

@@ -130,7 +130,7 @@ function teamSummary(row: {
   updatedAt: Date;
   activeParticipantCount: number;
   locationName: string;
-  locationCoverImageUrl: string;
+  locationCoverImageUrl: string | null;
 }) {
   return {
     id: row.id,

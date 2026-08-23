@@ -203,6 +203,25 @@ describe("useTeams", () => {
     expect(fetchPublicAPI).toHaveBeenCalledWith("/tags?limit=200");
   });
 
+  it("uses the code activity enum without fetching a catalog", () => {
+    const { result } = renderHook(() =>
+      useTeams({
+        teams: [],
+        pagination: { limit: 12, total: 0, nextCursor: null },
+        availableTags: [],
+        availableRegions: [selectableRegion()],
+      }),
+    );
+
+    expect(result.current.availableActivityTypes).toEqual([
+      "hiking",
+      "explore",
+      "leisure",
+      "travel",
+    ]);
+    expect(fetchPublicAPI).not.toHaveBeenCalledWith("/activity-types");
+  });
+
   it("hydrates the 30-day shortcut instead of hiding it as an unlimited date", () => {
     const range = getDateRangeByQuickType("30days")!;
     const { result } = renderHook(() =>

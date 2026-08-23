@@ -14,6 +14,8 @@ export function useModalA11y(
   open: boolean,
   panelRef: React.RefObject<HTMLElement | null>,
   onClose: () => void,
+  initialFocusRef?: React.RefObject<HTMLElement | null>,
+  returnFocusRef?: React.RefObject<HTMLElement | null>,
 ) {
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
 
@@ -22,9 +24,14 @@ export function useModalA11y(
     const panel = panelRef.current;
     if (!panel) return;
 
-    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    previousFocusRef.current = returnFocusRef?.current
+      ?? document.activeElement as HTMLElement | null;
 
-    const target = panel.querySelector<HTMLElement>(FOCUSABLE);
+    const requestedTarget = initialFocusRef?.current;
+    const target =
+      requestedTarget && panel.contains(requestedTarget)
+        ? requestedTarget
+        : panel.querySelector<HTMLElement>(FOCUSABLE);
     let attempts = 0;
     let cancelled = false;
     const tryFocus = () => {
@@ -67,8 +74,10 @@ export function useModalA11y(
       cancelled = true;
       document.removeEventListener("keydown", onKeyDown);
       const prev = previousFocusRef.current;
-      if (prev && document.contains(prev)) prev.focus();
       previousFocusRef.current = null;
+      queueMicrotask(() => {
+        if (prev && document.contains(prev)) prev.focus();
+      });
     };
-  }, [open, panelRef, onClose]);
+  }, [open, panelRef, onClose, initialFocusRef, returnFocusRef]);
 }

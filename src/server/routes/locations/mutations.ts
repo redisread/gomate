@@ -1,8 +1,13 @@
-import { and, eq, inArray } from "drizzle-orm";
-import { Hono, type Context } from "hono";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { Hono } from "hono";
+import { z } from "zod";
 
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
+import {
+  adminAccessErrorResponse,
+  requireAdmin,
+} from "../../lib/admin-access";
 import { APIErrors } from "../../lib/api-errors";
 import type { Env } from "../../lib/auth";
 import { generateId } from "../../lib/id";
@@ -24,21 +29,27 @@ import {
   getR2PublicBaseUrl,
 } from "../../lib/r2-media";
 import { validateRequest } from "../../lib/validation";
+import { ACTIVITY_TYPES } from "@/contracts";
 import {
   createLocationInputSchema,
   findOpenCityRegion,
   loadLocationTags,
-  LocationAccessError,
   locationImagesAreAllowed,
   normalizeLocationExtraForStorage,
   projectLocation,
   replaceLocationTagsSchema,
-  requireAdmin,
   safeErrorMetadata,
   updateLocationInputSchema,
 } from "./utils";
+import { buildLocationUpdateSql } from "./update-sql";
 
 const mutations = new Hono<{ Bindings: Env }>();
+const activityTypesJson = JSON.stringify(ACTIVITY_TYPES);
+
+const deleteLocationQuerySchema = z.object({
+  permanent: z.enum(["true", "false"]).optional(),
+  confirm: z.string().max(128).optional(),
+}).strict();
 
 function d1Changes(result: D1Result<unknown> | undefined): number {
   return Number(result?.meta?.changes ?? 0);
@@ -52,18 +63,11 @@ function generatedSlug(id: string) {
   return `location-${suffix || crypto.randomUUID()}`;
 }
 
-function accessError(c: Context<{ Bindings: Env }>, error: unknown) {
-  if (!(error instanceof LocationAccessError)) return null;
-  return error.kind === "unauthorized"
-    ? c.json(APIErrors.unauthorized("Authentication required"), 401)
-    : c.json(APIErrors.forbidden("Administrator access required"), 403);
-}
-
 mutations.post("/", async (c) => {
   let preparedMedia: PreparedLocationMedia | null = null;
   let databaseCommitted = false;
   try {
-    const session = await requireAdmin(c);
+    const admin = await requireAdmin(c);
     const parsed = await validateRequest(
       c,
       "json",
@@ -88,13 +92,13 @@ mutations.post("/", async (c) => {
         400,
       );
     }
-
     const id = generateId();
-    preparedMedia = await prepareLocationMedia(c.env, session.user.id, id, {
+    preparedMedia = await prepareLocationMedia(c.env, admin.id, id, {
       coverImageUrl: parsed.coverImageUrl,
       images: parsed.images,
     });
     const now = Date.now();
+    const storedActivityTypes = JSON.stringify(parsed.supportedActivityTypes);
     const insertResult = await c.env.DB.prepare(
       `
         INSERT INTO locations (
@@ -109,13 +113,19 @@ mutations.post("/", async (c) => {
         WHERE target_region.id = ?
           AND target_region.level = 'city'
           AND target_region.service_enabled = 1
+          AND NOT EXISTS (
+            SELECT 1 FROM json_each(?) AS requested_activity
+            WHERE requested_activity.value NOT IN (
+              SELECT value FROM json_each(?)
+            )
+          )
       `,
     )
       .bind(
         id,
         parsed.name,
         parsed.slug ?? generatedSlug(id),
-        JSON.stringify(parsed.supportedActivityTypes),
+        storedActivityTypes,
         parsed.status,
         parsed.subtitle ?? null,
         parsed.description,
@@ -125,10 +135,12 @@ mutations.post("/", async (c) => {
         preparedMedia.coverImageUrl,
         JSON.stringify(preparedMedia.images),
         JSON.stringify(normalizeLocationExtraForStorage(parsed.extra)),
-        session.user.id,
+        admin.id,
         now,
         now,
         parsed.regionId,
+        storedActivityTypes,
+        activityTypesJson,
       )
       .run();
     if (d1Changes(insertResult) !== 1) {
@@ -172,7 +184,7 @@ mutations.post("/", async (c) => {
           ),
       );
     }
-    const denied = accessError(c, error);
+    const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
     if (error instanceof LocationMediaError) {
       return c.json(
@@ -193,7 +205,7 @@ mutations.put("/", async (c) => {
   let preparedMedia: PreparedLocationMedia | null = null;
   let databaseCommitted = false;
   try {
-    const session = await requireAdmin(c);
+    const admin = await requireAdmin(c);
     const parsed = await validateRequest(
       c,
       "json",
@@ -213,21 +225,33 @@ mutations.put("/", async (c) => {
       .limit(1);
     if (!existing) return c.json(APIErrors.notFound("Location not found"), 404);
 
-    const nextActivities =
-      changes.supportedActivityTypes ?? existing.supportedActivityTypes;
     const nextStatus = changes.status ?? existing.status;
     const nextRegionId = changes.regionId ?? existing.regionId;
-    if (nextStatus === "published" && nextActivities.length === 0) {
+    const nextLatitude = changes.latitude !== undefined
+      ? changes.latitude
+      : existing.latitude;
+    const nextLongitude = changes.longitude !== undefined
+      ? changes.longitude
+      : existing.longitude;
+    const nextCoverImageUrl = changes.coverImageUrl !== undefined
+      ? changes.coverImageUrl
+      : existing.coverImageUrl;
+    if (
+      nextStatus === "published" &&
+      (nextLatitude === null ||
+        nextLongitude === null ||
+        nextCoverImageUrl === null)
+    ) {
       return c.json(
         APIErrors.validationError(
-          "Published locations require at least one activity type",
+          "Published locations require coordinates and a cover image",
         ),
         400,
       );
     }
 
     const nextImages = {
-      coverImageUrl: changes.coverImageUrl ?? existing.coverImageUrl,
+      coverImageUrl: nextCoverImageUrl,
       images: changes.images ?? existing.images,
     };
     if (!locationImagesAreAllowed(nextImages, c.env)) {
@@ -247,16 +271,15 @@ mutations.put("/", async (c) => {
 
     preparedMedia = await prepareLocationMedia(
       c.env,
-      session.user.id,
+      admin.id,
       id,
       nextImages,
     );
 
-    const removedActivities = existing.supportedActivityTypes.filter(
-      (activity) => !nextActivities.includes(activity),
-    );
     const assignments = ["updated_at = ?"];
-    const values: unknown[] = [Date.now()];
+    const values: unknown[] = [
+      Math.max(Date.now(), existing.updatedAt.getTime() + 1),
+    ];
     const addAssignment = (column: string, value: unknown) => {
       assignments.push(`${column} = ?`);
       values.push(value);
@@ -302,45 +325,33 @@ mutations.put("/", async (c) => {
 
     values.push(
       id,
+      existing.updatedAt.getTime(),
       existing.coverImageUrl,
       JSON.stringify(existing.images),
       existing.regionId,
+      JSON.stringify(existing.supportedActivityTypes),
+      existing.status,
+      existing.latitude,
+      existing.longitude,
       nextRegionId,
     );
-    let activityGuard = "";
-    if (removedActivities.length > 0) {
-      activityGuard = `
-        AND NOT EXISTS (
-          SELECT 1
-          FROM teams AS blocking_team
-          WHERE blocking_team.location_id = locations.id
-            AND blocking_team.cancelled_at IS NULL
-            AND blocking_team.end_at > ?
-            AND blocking_team.activity_type IN (
-              ${removedActivities.map(() => "?").join(", ")}
-            )
-        )
-      `;
-      values.push(Date.now(), ...removedActivities);
-    }
-
-    const updateResult = await c.env.DB.prepare(
-      `
-        UPDATE locations
-        SET ${assignments.join(", ")}
-        WHERE id = ?
-          AND cover_image_url = ?
-          AND images = ?
-          AND region_id = ?
-          AND EXISTS (
+    const activityTypeGuard = changes.supportedActivityTypes !== undefined
+      ? `
+          AND NOT EXISTS (
             SELECT 1
-            FROM region AS target_region
-            WHERE target_region.id = ?
-              AND target_region.level = 'city'
-              AND target_region.service_enabled = 1
+            FROM json_each(?) AS requested_activity
+            WHERE requested_activity.value NOT IN (
+              SELECT value FROM json_each(?)
+            )
           )
-          ${activityGuard}
-      `,
+        `
+      : "";
+    if (changes.supportedActivityTypes !== undefined) {
+      values.push(JSON.stringify(changes.supportedActivityTypes));
+      values.push(activityTypesJson);
+    }
+    const updateResult = await c.env.DB.prepare(
+      buildLocationUpdateSql(assignments, activityTypeGuard),
     )
       .bind(...values)
       .run();
@@ -382,7 +393,11 @@ mutations.put("/", async (c) => {
     const tags = await loadLocationTags(db, [id]);
     return c.json({
       success: true as const,
-      location: projectLocation(updated, targetRegion, tags.get(id) ?? []),
+      location: projectLocation(
+        updated,
+        targetRegion,
+        tags.get(id) ?? [],
+      ),
     });
   } catch (error) {
     if (preparedMedia && !databaseCommitted) {
@@ -394,7 +409,7 @@ mutations.put("/", async (c) => {
           ),
       );
     }
-    const denied = accessError(c, error);
+    const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
     if (error instanceof LocationMediaError) {
       return c.json(
@@ -417,6 +432,14 @@ mutations.delete("/:id", async (c) => {
   let databaseDeleted = false;
   try {
     await requireAdmin(c);
+    const query = await validateRequest(
+      c,
+      "query",
+      deleteLocationQuerySchema,
+      "Invalid location delete options",
+      "issues",
+    );
+    if (query instanceof Response) return query;
     const db = createDb(c.env.DB);
     const locationId = c.req.param("id");
     const [existing] = await db
@@ -427,7 +450,51 @@ mutations.delete("/:id", async (c) => {
     if (!existing) {
       return c.json(APIErrors.notFound("Location not found"), 404);
     }
-    if (!getR2PublicBaseUrl(c.env)) {
+
+    if (query.permanent !== "true") {
+      const [archived] = await db
+        .update(schema.locations)
+        .set({ status: "archived", updatedAt: new Date() })
+        .where(eq(schema.locations.id, locationId))
+        .returning({ id: schema.locations.id });
+      if (!archived) {
+        return c.json(APIErrors.conflict("Location changed concurrently"), 409);
+      }
+      return c.json({ success: true as const, id: locationId, status: "archived" as const });
+    }
+
+    if (query.confirm !== locationId) {
+      return c.json(
+        APIErrors.validationError("Permanent deletion requires the location ID"),
+        400,
+      );
+    }
+    const [references] = await db
+      .select({
+        teams: sql<number>`(select count(*) from teams where teams.location_id = ${locationId})`,
+        stories: sql<number>`(select count(*) from stories where stories.location_id = ${locationId})`,
+        favorites: sql<number>`(select count(*) from user_location_favorites where user_location_favorites.location_id = ${locationId})`,
+      })
+      .from(schema.locations)
+      .where(eq(schema.locations.id, locationId))
+      .limit(1);
+    const blockingReferences = {
+      teams: Number(references?.teams ?? 0),
+      stories: Number(references?.stories ?? 0),
+      favorites: Number(references?.favorites ?? 0),
+    };
+    if (Object.values(blockingReferences).some((count) => count > 0)) {
+      return c.json({
+        ...APIErrors.conflict("Referenced locations cannot be permanently deleted"),
+        references: blockingReferences,
+      }, 409);
+    }
+
+    const mediaKeys = ownedLocationMediaKeys(c.env, locationId, {
+      coverImageUrl: existing.coverImageUrl,
+      images: existing.images,
+    });
+    if (mediaKeys.length > 0 && !getR2PublicBaseUrl(c.env)) {
       return c.json(
         APIErrors.internalError(
           "Location media storage is not safely configured",
@@ -436,10 +503,6 @@ mutations.delete("/:id", async (c) => {
       );
     }
 
-    const mediaKeys = ownedLocationMediaKeys(c.env, locationId, {
-      coverImageUrl: existing.coverImageUrl,
-      images: existing.images,
-    });
     if (mediaKeys.length > 0) {
       if (!c.env.R2) {
         return c.json(
@@ -457,8 +520,11 @@ mutations.delete("/:id", async (c) => {
       .where(
         and(
           eq(schema.locations.id, locationId),
-          eq(schema.locations.coverImageUrl, existing.coverImageUrl),
+          sql`${schema.locations.coverImageUrl} is ${existing.coverImageUrl}`,
           eq(schema.locations.images, existing.images),
+          sql`not exists (select 1 from teams where teams.location_id = ${locationId})`,
+          sql`not exists (select 1 from stories where stories.location_id = ${locationId})`,
+          sql`not exists (select 1 from user_location_favorites where user_location_favorites.location_id = ${locationId})`,
         ),
       )
       .returning({ id: schema.locations.id });
@@ -508,7 +574,7 @@ mutations.delete("/:id", async (c) => {
         () => undefined,
       );
     }
-    const denied = accessError(c, error);
+    const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
     logger.error("location_delete_failed", safeErrorMetadata(error));
     return c.json(APIErrors.internalError("Failed to delete location"), 500);
@@ -573,7 +639,7 @@ mutations.put("/:id/tags", async (c) => {
       tags: parsed.tagIds.map((tagId) => byId.get(tagId)!),
     });
   } catch (error) {
-    const denied = accessError(c, error);
+    const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
     logger.error("location_tags_replace_failed", safeErrorMetadata(error));
     return c.json(

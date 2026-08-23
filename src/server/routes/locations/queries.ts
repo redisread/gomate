@@ -10,11 +10,16 @@ import {
   sql,
   type SQL,
 } from "drizzle-orm";
-import { Hono, type Context } from "hono";
+import { Hono } from "hono";
 import { z } from "zod";
+import { ACTIVITY_TYPES } from "@/contracts";
 
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
+import {
+  adminAccessErrorResponse,
+  requireAdmin,
+} from "../../lib/admin-access";
 import { APIErrors } from "../../lib/api-errors";
 import type { Env } from "../../lib/auth";
 import { setPublicCacheHeaders } from "../../lib/http-cache";
@@ -25,12 +30,9 @@ import {
 } from "../../lib/content-cursor";
 import { validateRequest } from "../../lib/validation";
 import {
-  ACTIVITY_TYPES,
   loadLocationTags,
-  LocationAccessError,
   projectLocation,
   projectRegion,
-  requireAdmin,
   safeErrorMetadata,
 } from "./utils";
 
@@ -62,14 +64,14 @@ const locationListQuerySchema = z.object({
     .refine((values) => values.length <= 20, "At most 20 tag IDs are allowed"),
 });
 
-type Db = ReturnType<typeof createDb>;
+const adminLocationListQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(30),
+  cursor: z.string().optional(),
+  search: z.string().trim().max(100).optional(),
+  status: z.enum(["draft", "published", "archived"]).optional(),
+}).strict();
 
-function adminAccessError(c: Context<{ Bindings: Env }>, error: unknown) {
-  if (!(error instanceof LocationAccessError)) return null;
-  return error.kind === "unauthorized"
-    ? c.json(APIErrors.unauthorized("Authentication required"), 401)
-    : c.json(APIErrors.forbidden("Administrator access required"), 403);
-}
+type Db = ReturnType<typeof createDb>;
 
 export function buildLocationPageQuery(
   db: Db,
@@ -87,6 +89,69 @@ export function buildLocationPageQuery(
     .orderBy(desc(schema.locations.createdAt), desc(schema.locations.id))
     .limit(limit);
 }
+
+queries.get("/admin", async (c) => {
+  try {
+    await requireAdmin(c);
+  } catch (error) {
+    const denied = adminAccessErrorResponse(c, error);
+    if (denied) return denied;
+    throw error;
+  }
+  const parsed = await validateRequest(
+    c,
+    "query",
+    adminLocationListQuerySchema,
+    "Invalid admin location filters",
+    "issues",
+  );
+  if (parsed instanceof Response) return parsed;
+
+  const conditions: SQL[] = [];
+  if (parsed.search) {
+    conditions.push(like(schema.locations.name, `%${parsed.search}%`));
+  }
+  if (parsed.status) {
+    conditions.push(eq(schema.locations.status, parsed.status));
+  }
+  if (parsed.cursor) {
+    const cursor = decodeContentCursor(parsed.cursor);
+    if (!cursor) return c.json(APIErrors.badRequest("Invalid location cursor"), 400);
+    const createdAt = new Date(cursor.t);
+    conditions.push(or(
+      lt(schema.locations.createdAt, createdAt),
+      and(eq(schema.locations.createdAt, createdAt), lt(schema.locations.id, cursor.id)),
+    )!);
+  }
+
+  try {
+    const db = createDb(c.env.DB);
+    const rows = await buildLocationPageQuery(
+      db,
+      conditions.length > 0 ? and(...conditions) : undefined,
+      parsed.limit + 1,
+    );
+    const hasMore = rows.length > parsed.limit;
+    const page = rows.slice(0, parsed.limit);
+    const tags = await loadLocationTags(
+      db,
+      page.map(({ location }) => location.id),
+    );
+    const oldest = page.at(-1)?.location;
+    return c.json({
+      success: true as const,
+      locations: page.map(({ location, region }) =>
+        projectLocation(location, region, tags.get(location.id) ?? []),
+      ),
+      nextCursor: hasMore && oldest
+        ? encodeContentCursor({ t: oldest.createdAt.getTime(), id: oldest.id })
+        : null,
+    });
+  } catch (error) {
+    logger.error("admin_locations_list_failed", safeErrorMetadata(error));
+    return c.json(APIErrors.internalError("Failed to list admin locations"), 500);
+  }
+});
 
 queries.get("/", async (c) => {
   if (
@@ -339,7 +404,7 @@ queries.get("/:id/admin", async (c) => {
       ),
     });
   } catch (error) {
-    const denied = adminAccessError(c, error);
+    const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
     logger.error("location_admin_get_failed", safeErrorMetadata(error));
     return c.json(APIErrors.internalError("Failed to get location"), 500);

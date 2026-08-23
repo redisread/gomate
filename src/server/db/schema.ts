@@ -1,4 +1,5 @@
-import type { TeamChecklist } from "@/contracts";
+import type { ActivityType, TeamChecklist } from "@/contracts";
+export type { ActivityType } from "@/contracts";
 import { relations, sql } from "drizzle-orm";
 import {
   check,
@@ -12,7 +13,6 @@ import {
   type AnySQLiteColumn,
 } from "drizzle-orm/sqlite-core";
 
-export type ActivityType = "hiking" | "explore" | "leisure" | "travel";
 export type UserRole = "user" | "admin";
 export type UserStatus = "active" | "suspended" | "banned" | "deleted";
 export type UserGender = "male" | "female" | "other";
@@ -299,9 +299,9 @@ export const locations = sqliteTable(
     subtitle: text("subtitle"),
     description: text("description").notNull(),
     address: text("address"),
-    latitude: real("latitude").notNull(),
-    longitude: real("longitude").notNull(),
-    coverImageUrl: text("cover_image_url").notNull(),
+    latitude: real("latitude"),
+    longitude: real("longitude"),
+    coverImageUrl: text("cover_image_url"),
     images: text("images", { mode: "json" })
       .$type<string[]>()
       .notNull()
@@ -338,11 +338,11 @@ export const locations = sqliteTable(
     ),
     check(
       "locations_latitude_check",
-      sql`${table.latitude} between -90 and 90`,
+      sql`${table.latitude} is null or ${table.latitude} between -90 and 90`,
     ),
     check(
       "locations_longitude_check",
-      sql`${table.longitude} between -180 and 180`,
+      sql`${table.longitude} is null or ${table.longitude} between -180 and 180`,
     ),
     check(
       "locations_images_json_check",
@@ -351,10 +351,6 @@ export const locations = sqliteTable(
     check(
       "locations_extra_json_check",
       sql`json_valid(${table.extra}) and json_type(${table.extra}) = 'object'`,
-    ),
-    check(
-      "locations_published_activity_check",
-      sql`${table.status} <> 'published' or json_array_length(${table.supportedActivityTypes}) > 0`,
     ),
   ],
 );
@@ -369,7 +365,9 @@ export const teams = sqliteTable(
     leaderId: text("leader_id")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
-    activityType: text("activity_type").$type<ActivityType>().notNull(),
+    activityType: text("activity_type")
+      .$type<ActivityType>()
+      .notNull(),
     title: text("title").notNull(),
     description: text("description"),
     startAt: integer("start_at", { mode: "timestamp_ms" }).notNull(),
@@ -412,10 +410,6 @@ export const teams = sqliteTable(
       table.id,
     ),
     index("teams_end_idx").on(table.cancelledAt, table.endAt, table.id),
-    check(
-      "teams_activity_type_check",
-      sql`${table.activityType} in ('hiking', 'explore', 'leisure', 'travel')`,
-    ),
     check("teams_time_range_check", sql`${table.endAt} >= ${table.startAt}`),
     check(
       "teams_capacity_check",

@@ -9,22 +9,16 @@ import { getActiveSession } from "../../lib/active-session";
 import { logger } from "../../lib/logger";
 import { parseUserExtra } from "../../lib/user-extra";
 import { getRecommendOnboarding } from "../../services/recommend-onboarding";
+import { isActivityType } from "@/lib/activity-types";
 
 const recommendOnboarding = new Hono<{ Bindings: Env }>();
-const ACTIVITY_TYPES = new Set<ActivityType>([
-  "hiking",
-  "explore",
-  "leisure",
-  "travel",
-]);
-
 recommendOnboarding.get("/recommend-onboarding", async (c) => {
   try {
     const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const requestedActivityType = c.req.query("activityType")?.trim();
-    if (requestedActivityType && !ACTIVITY_TYPES.has(requestedActivityType as ActivityType)) {
+    if (requestedActivityType && !isActivityType(requestedActivityType)) {
       return c.json(APIErrors.validationError("activityType 无效"), 400);
     }
 

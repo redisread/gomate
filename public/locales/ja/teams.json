@@ -57,6 +57,8 @@
   "createBtn": "チームを投稿",
   "createBtnLoading": "投稿中...",
   "createTip": "ヒント：チームを投稿後、他のユーザーが参加申請できます。正確な情報を入力し、アクティビティ開始前にチームメイトと集合詳細を共有してください。",
+  "recommendedActivityType": "{name}（この場所のおすすめ）",
+  "inactiveActivityType": "{name}（停止済み、履歴として保持）",
   "wechatRequiredTitle": "WeChat IDを入力してください",
   "wechatRequiredDesc": "チーム作成前にプロフィールにWeChat IDを入力する必要があります。チームメイトが連絡できるようになります。",
   "wechatRequiredJoinTitle": "WeChat IDを入力してください",

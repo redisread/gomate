@@ -77,9 +77,9 @@ export interface Location {
   subtitle: string | null;
   description: string;
   address: string | null;
-  latitude: number;
-  longitude: number;
-  coverImageUrl: string;
+  latitude: number | null;
+  longitude: number | null;
+  coverImageUrl: string | null;
   images: string[];
   extra: LocationExtra;
   createdAt: Timestamp;
@@ -108,6 +108,17 @@ export interface SessionUser {
   role: UserRole;
   status: UserStatus;
   extra: UserExtra;
+  createdAt: Timestamp;
+}
+
+export interface AdminUserSummary {
+  id: string;
+  name: string;
+  nickname: string | null;
+  email: string;
+  image: string | null;
+  role: UserRole;
+  status: UserStatus;
   createdAt: Timestamp;
 }
 

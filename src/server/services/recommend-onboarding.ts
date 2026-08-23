@@ -82,7 +82,7 @@ export async function getRecommendOnboarding(params: {
       filters.push(eq(schema.teams.activityType, filterActivityType));
     }
 
-    return db
+    const rows = await db
       .select({
         id: schema.teams.id,
         title: schema.teams.title,
@@ -104,6 +104,11 @@ export async function getRecommendOnboarding(params: {
         asc(schema.teams.id),
       )
       .limit(CANDIDATE_LIMIT);
+    return rows.flatMap((candidate) =>
+      candidate.coverImageUrl === null
+        ? []
+        : [{ ...candidate, coverImageUrl: candidate.coverImageUrl }],
+    );
   };
 
   let candidates = await queryCandidates(activityType);

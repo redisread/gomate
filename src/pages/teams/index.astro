@@ -10,6 +10,7 @@ import { getDateRangeByQuickType } from "../../lib/date-beijing";
 import { parseTeamTagFilters } from "../../lib/team-filter-params";
 import type { TeamsInitialData } from "../../components/features/teams/use-teams";
 import type { ActivityType, RecruitmentStatus, Region, Team } from "../../lib/types";
+import { isActivityType } from "../../lib/activity-types";
 
 declareI18nNs(Astro.locals, ["teams", "filter", "enums", "content"]); // task #158：TeamCard/FilterPanel 难度标签走 enums
 
@@ -17,8 +18,8 @@ const params = Astro.url.searchParams;
 const searchQuery = (params.get("q") || "").slice(0, 120);
 const selectedRegionId = (params.get("regionId") || "").slice(0, 64);
 const activityTypeParam = params.get("activityType");
-const selectedActivityType: ActivityType | "" = ["hiking", "explore", "leisure", "travel"].includes(activityTypeParam ?? "")
-  ? activityTypeParam as ActivityType
+const selectedActivityType: ActivityType | "" = isActivityType(activityTypeParam)
+  ? activityTypeParam
   : "";
 const recruitmentStatusParam = params.get("recruitmentStatus");
 const selectedRecruitmentStatus: RecruitmentStatus | "" = recruitmentStatusParam === "all"

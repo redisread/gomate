@@ -4,6 +4,7 @@ import * as React from "react";
 import { apiPost, apiPut, fetchAPI } from "@/lib/api";
 import { fetchSelectableRegions } from "@/lib/regions";
 import { useI18n } from "@/hooks/useI18n";
+import { ACTIVITY_TYPES } from "@/contracts";
 import type {
   ActivityType,
   Difficulty,
@@ -56,9 +57,9 @@ export interface LocationMutationPayload {
   subtitle: string | null;
   description: string;
   address: string | null;
-  latitude: number;
-  longitude: number;
-  coverImageUrl: string;
+  latitude: number | null;
+  longitude: number | null;
+  coverImageUrl: string | null;
   images: string[];
   extra: {
     hiking?: {
@@ -88,6 +89,7 @@ interface UseLocationFormReturn {
   location: Location | null;
   regions: Region[];
   allTags: Tag[];
+  activityTypes: readonly ActivityType[];
   formData: LocationFormData;
   errors: Record<string, string | undefined>;
   isLoading: boolean;
@@ -159,9 +161,9 @@ export function locationToFormData(location: Location): LocationFormData {
     description: location.description,
     address: location.address ?? "",
     regionId: location.regionId,
-    latitude: location.latitude,
-    longitude: location.longitude,
-    coverImageUrl: location.coverImageUrl,
+    latitude: location.latitude ?? "",
+    longitude: location.longitude ?? "",
+    coverImageUrl: location.coverImageUrl ?? "",
     images: [...location.images],
     extra: {
       hiking: {
@@ -219,9 +221,9 @@ export function formDataToLocationPayload(form: LocationFormData): LocationMutat
     subtitle: form.subtitle.trim() || null,
     description: form.description.trim(),
     address: form.address.trim() || null,
-    latitude: Number(form.latitude),
-    longitude: Number(form.longitude),
-    coverImageUrl: form.coverImageUrl.trim(),
+    latitude: form.latitude === "" ? null : Number(form.latitude),
+    longitude: form.longitude === "" ? null : Number(form.longitude),
+    coverImageUrl: form.coverImageUrl.trim() || null,
     images: form.images,
     extra: {
       hiking: hasHiking ? hikingPayload : undefined,
@@ -327,9 +329,9 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     }
     if (key === "description" && !value.trim()) return t("admin.validationDescRequired");
     if (key === "regionId" && !value) return t("admin.validationRegionRequired");
-    if (key === "coverImageUrl" && !value.trim()) return t("admin.validationCoverRequired");
+    if (key === "coverImageUrl" && !value.trim()) return undefined;
     if (key === "latitude" || key === "longitude") {
-      if (value === "") return key === "latitude" ? t("admin.validationLatInvalid") : t("admin.validationLngInvalid");
+      if (value === "") return undefined;
       const number = Number(value);
       const [min, max] = key === "latitude" ? [-90, 90] : [-180, 180];
       if (!Number.isFinite(number) || number < min || number > max) {
@@ -375,14 +377,19 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
       name: formData.name,
       description: formData.description,
       regionId: formData.regionId,
-      coverImageUrl: formData.coverImageUrl,
-      latitude: String(formData.latitude),
-      longitude: String(formData.longitude),
     })) {
       nextErrors[key] = validateField(key, value);
     }
-    if (formData.status === "published" && formData.supportedActivityTypes.length === 0) {
-      nextErrors.supportedActivityTypes = t("admin.validationActivityRequired");
+    if (formData.status === "published") {
+      nextErrors.coverImageUrl = formData.coverImageUrl.trim()
+        ? validateField("coverImageUrl", formData.coverImageUrl)
+        : t("admin.validationCoverRequired");
+      nextErrors.latitude = formData.latitude === ""
+        ? t("admin.validationLatInvalid")
+        : validateField("latitude", String(formData.latitude));
+      nextErrors.longitude = formData.longitude === ""
+        ? t("admin.validationLngInvalid")
+        : validateField("longitude", String(formData.longitude));
     }
     const min = optionalNumber(formData.extra.hiking.durationMin);
     const max = optionalNumber(formData.extra.hiking.durationMax);
@@ -446,6 +453,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     location,
     regions,
     allTags,
+    activityTypes: ACTIVITY_TYPES,
     formData,
     errors,
     isLoading,

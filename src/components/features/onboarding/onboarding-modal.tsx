@@ -61,7 +61,7 @@ export function OnboardingModal() {
 }
 
 function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: RecommendOnboardingResponse }) {
-  const { t } = useI18n(["onboarding", "locations", "teams", "common"]);
+  const { t } = useI18n(["onboarding", "locations", "teams", "common", "enums"]);
   const { show: showToast } = useToast();
   const roleConfig = getRoleConfig(t);
 
@@ -120,6 +120,12 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
   if (closed) return null;
 
   const candidate: OnboardingCandidate | undefined = pool.candidates[poolIndex];
+  const candidatePreference = candidate && PREFERENCE_TYPES.includes(
+    candidate.activityType as PreferenceType,
+  )
+    ? candidate.activityType as PreferenceType
+    : null;
+  const candidateRole = candidatePreference ? roleConfig[candidatePreference] : null;
 
   /** 第 1 步：选偏好 → 立即进第 2 步（§4.2）；「都可以」复用 gating 时已取的无 type 池 */
   const choosePreference = async (pref: PreferenceType | "") => {
@@ -281,11 +287,11 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
             {candidate ? (
               <div className="rounded-2xl border border-stone-100 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-800/40 p-5 mb-5">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-2xl">{roleConfig[candidate.activityType].emoji}</span>
+                  <span className="text-2xl">{candidateRole?.emoji ?? "🧭"}</span>
                   <h3 className="text-base font-bold text-foreground">{candidate.title}</h3>
                 </div>
                 <p className="text-sm text-stone-600 dark:text-stone-400">
-                  {roleConfig[candidate.activityType].label}
+                  {candidateRole?.label ?? t(`enums.locationType.${candidate.activityType}`)}
                   {" · "}
                   {formatStartTime(candidate.startAt, t)}
                 </p>

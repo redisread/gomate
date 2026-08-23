@@ -114,6 +114,9 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <span className="absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+            {t(`enums.locationType.${team.activityType}`)}
+          </span>
         </div>
         <div className="flex flex-1 flex-col p-4">
           {location?.name && (
@@ -285,6 +288,7 @@ export function Pagination({ current, hasNext, onChange }: { current: number; ha
 interface FilterPanelProps {
   selectedActivityType: ActivityType | "";
   selectedRecruitmentStatus: RecruitmentStatus | "";
+  availableActivityTypes: readonly ActivityType[];
   availableTags: { id: string; name: string }[];
   selectedTags: string[];
   activeFiltersCount: number;
@@ -295,7 +299,7 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({
-  selectedActivityType, selectedRecruitmentStatus, availableTags, selectedTags, activeFiltersCount,
+  selectedActivityType, selectedRecruitmentStatus, availableActivityTypes, availableTags, selectedTags, activeFiltersCount,
   onActivityTypeSelect, onRecruitmentStatusSelect, onTagToggle, onClearAll,
 }: FilterPanelProps) {
   const { t } = useI18n(["teams", "filter", "common", "enums"]);
@@ -304,7 +308,7 @@ export function FilterPanel({
       <div>
         <span className="mb-2 block text-sm font-semibold text-stone-600 dark:text-stone-300">{t("common.activityLocation")}</span>
         <div className="flex flex-wrap gap-2">
-          {(["hiking", "explore", "leisure", "travel"] as const).map((activityType) => {
+          {availableActivityTypes.map((activityType) => {
             const isSelected = selectedActivityType === activityType;
             return (
               <button key={activityType} type="button" onClick={() => onActivityTypeSelect(isSelected ? "" : activityType)} aria-pressed={isSelected}

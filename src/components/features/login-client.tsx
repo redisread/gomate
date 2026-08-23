@@ -3,14 +3,23 @@
 import * as React from "react";
 import { Eye, EyeOff, Loader2, Mountain, ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
+import { resolveAdminReturnPath } from "@/lib/admin-return-path";
 import { signIn } from "@/lib/auth-client";
+
+interface LoginClientProps {
+  onNavigate?: (path: string) => void;
+}
 
 /**
  * 登录页 — 温暖品牌双栏布局
  * 左侧：品牌故事 + 山脉装饰（桌面端可见）
  * 右侧：表单区
  */
-export function LoginClient() {
+export function LoginClient({
+  onNavigate = (path) => {
+    window.location.href = path;
+  },
+}: LoginClientProps = {}) {
   const { t } = useI18n(["auth"]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -39,7 +48,10 @@ export function LoginClient() {
         return;
       }
 
-      window.location.href = "/";
+      const returnTo = new URLSearchParams(window.location.search).get(
+        "returnTo",
+      );
+      onNavigate(resolveAdminReturnPath(returnTo));
     } catch {
       setError(t("auth.loginErrorRetry"));
     } finally {

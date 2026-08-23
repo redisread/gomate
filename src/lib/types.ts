@@ -1,5 +1,6 @@
 export type {
   ActivityType,
+  AdminUserSummary,
   Conversation,
   Difficulty,
   Location,

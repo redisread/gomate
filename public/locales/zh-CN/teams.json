@@ -57,6 +57,8 @@
   "createBtn": "发布队伍",
   "createBtnLoading": "发布中...",
   "createTip": "提示：发布队伍后，其他用户可以申请加入。请确保填写的信息准确，并在活动开始前及时与队员沟通集合细节。",
+  "recommendedActivityType": "{name}（地点推荐）",
+  "inactiveActivityType": "{name}（已停用，仅保留历史）",
   "wechatRequiredTitle": "请填写微信号",
   "wechatRequiredDesc": "创建队伍前需要在个人资料中填写微信号，以便队友联系您。",
   "wechatRequiredJoinTitle": "请填写微信号",

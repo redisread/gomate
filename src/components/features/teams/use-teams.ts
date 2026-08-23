@@ -1,4 +1,6 @@
 import * as React from "react";
+import { ACTIVITY_TYPES } from "@/contracts";
+import { isActivityType } from "@/lib/activity-types";
 import type { ActivityType, RecruitmentStatus, Region, Team } from "@/lib/types";
 import { fetchPublicAPI } from "@/lib/api";
 import { fetchSelectableRegions } from "@/lib/regions";
@@ -126,8 +128,8 @@ export function useTeams(initialData?: TeamsInitialData) {
     const params = new URLSearchParams(window.location.search);
     const q = (params.get("q") || "").slice(0, 120);
     const activityTypeParam = params.get("activityType");
-    const activityType = ["hiking", "explore", "leisure", "travel"].includes(activityTypeParam ?? "")
-      ? activityTypeParam as ActivityType
+    const activityType = isActivityType(activityTypeParam)
+      ? activityTypeParam
       : "";
     const recruitmentStatusParam = params.get("recruitmentStatus");
     const recruitmentStatus = recruitmentStatusParam === "all"
@@ -342,6 +344,7 @@ export function useTeams(initialData?: TeamsInitialData) {
     startDate,
     endDate,
     availableTags,
+    availableActivityTypes: ACTIVITY_TYPES,
     availableRegions,
     regionsLoading,
     regionsError,

@@ -49,11 +49,12 @@ export function HomeLocationStack({ locations }: { locations: Location[] }) {
         className="relative -mx-4 flex h-[29rem] items-center overflow-x-auto px-4 pb-4 pt-4 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:h-[34rem] lg:overflow-visible lg:px-0"
         aria-label={t("home.heroLocations.listLabel")}
       >
-        {featuredLocations.map((location, index) => {
+        {featuredLocations.flatMap((location, index) => {
+          if (!location.coverImageUrl) return [];
           const style = CARD_STYLES[index];
           const address = location.address || location.region?.name || t("locations.defaultRegion");
 
-          return (
+          return [(
             <a
               key={location.id}
               href={`/locations/${location.id}`}
@@ -90,7 +91,7 @@ export function HomeLocationStack({ locations }: { locations: Location[] }) {
                 </div>
               </article>
             </a>
-          );
+          )];
         })}
       </div>
 

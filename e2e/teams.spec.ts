@@ -40,7 +40,7 @@ test.describe("Team Flow", () => {
     await locationSelect.selectOption("location-shenzhen-wutongshan");
     await page
       .locator("[data-testid='create-team-activity-type']")
-      .selectOption("hiking");
+      .selectOption("explore");
 
     const startDate = new Date();
     startDate.setUTCDate(startDate.getUTCDate() + 7);

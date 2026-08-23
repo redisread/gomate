@@ -1,11 +1,11 @@
 ---
-import Layout from "../../../layouts/Layout.astro";
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { LazyLocationCreateClient } from "../../../components/features/lazy-location-create-client";
 import { declareI18nNs } from "../../../middleware";
 
 declareI18nNs(Astro.locals, ["admin", "ui", "content"]);
 ---
 
-<Layout title="新增地点 - GoMate" showNavbar={false} showFooter={false}>
+<AdminLayout title="新增地点 - GoMate">
   <LazyLocationCreateClient client:visible />
-</Layout>
+</AdminLayout>

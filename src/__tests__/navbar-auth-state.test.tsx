@@ -39,12 +39,15 @@ describe("Navbar auth state", () => {
   it("does not flash guest actions while authentication is loading", async () => {
     let resolveUser: ((user: null) => void) | undefined;
     fetchCurrentUserMock.mockReturnValue(new Promise<null>((resolve) => { resolveUser = resolve; }));
+    const renderAdminQuickAction = vi.fn(() => <button>Quick action</button>);
 
-    render(<Navbar />);
+    render(<Navbar renderAdminQuickAction={renderAdminQuickAction} />);
 
     expect(screen.getByTestId("nav-auth-loading")).toBeInTheDocument();
     expect(screen.queryByTestId("nav-login")).not.toBeInTheDocument();
     expect(screen.queryByTestId("nav-register")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("nav-admin")).not.toBeInTheDocument();
+    expect(renderAdminQuickAction).not.toHaveBeenCalled();
 
     await act(async () => resolveUser?.(null));
   });
@@ -105,5 +108,70 @@ describe("Navbar auth state", () => {
 
     expect(await screen.findByTestId("nav-create-team")).toBeInTheDocument();
     expect(refreshCurrentUserMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows real admin capabilities only after the admin role resolves", async () => {
+    const renderAdminQuickAction = vi.fn(() => (
+      <button type="button" data-testid="injected-admin-quick-action">
+        Quick action
+      </button>
+    ));
+    fetchCurrentUserMock.mockResolvedValue({
+      id: "admin-1",
+      name: "Admin",
+      nickname: null,
+      email: "admin@example.com",
+      image: null,
+      role: "admin",
+      extra: {},
+    });
+
+    render(<Navbar renderAdminQuickAction={renderAdminQuickAction} />);
+
+    const adminLink = await screen.findByTestId("nav-admin");
+    expect(adminLink).toHaveAttribute("href", "/admin");
+    expect(screen.getByTestId("injected-admin-quick-action")).toBeInTheDocument();
+    expect(renderAdminQuickAction).toHaveBeenCalled();
+  });
+
+  it("does not call the quick action renderer for a regular user", async () => {
+    const renderAdminQuickAction = vi.fn(() => <button>Quick action</button>);
+    fetchCurrentUserMock.mockResolvedValue({
+      id: "user-1",
+      name: "User",
+      nickname: null,
+      email: "user@example.com",
+      image: null,
+      role: "user",
+      extra: {},
+    });
+
+    render(<Navbar renderAdminQuickAction={renderAdminQuickAction} />);
+
+    expect(await screen.findByTestId("nav-create-team")).toBeInTheDocument();
+    expect(screen.queryByTestId("nav-admin")).not.toBeInTheDocument();
+    expect(renderAdminQuickAction).not.toHaveBeenCalled();
+  });
+
+  it("does not render an empty quick action entry when no consumer exists", async () => {
+    fetchCurrentUserMock.mockResolvedValue({
+      id: "admin-1",
+      name: "Admin",
+      nickname: null,
+      email: "admin@example.com",
+      image: null,
+      role: "admin",
+      extra: {},
+    });
+
+    render(<Navbar />);
+
+    expect(await screen.findByTestId("nav-admin")).toHaveAttribute(
+      "href",
+      "/admin",
+    );
+    expect(
+      screen.queryByTestId("injected-admin-quick-action"),
+    ).not.toBeInTheDocument();
   });
 });

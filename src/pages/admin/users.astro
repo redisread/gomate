@@ -1,0 +1,21 @@
+---
+import { AdminUsersManager } from "../../components/admin/admin-users-manager";
+import { getSSRT } from "../../i18n";
+import { loadLocaleData } from "../../i18n/ssr-loader.server";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { declareI18nNs } from "../../middleware";
+
+declareI18nNs(Astro.locals, ["admin"]);
+const locale = Astro.locals.locale;
+const data = await loadLocaleData(["admin"], locale, Astro.url.origin);
+const t = getSSRT(locale, { [locale]: data } as never).t;
+const title = t("admin.management.usersTitle");
+---
+
+<AdminLayout title={title} description={t("admin.management.usersDescription")}>
+  <header class="mb-8 space-y-2">
+    <h1 class="text-3xl font-bold tracking-tight">{title}</h1>
+    <p class="max-w-2xl text-muted-foreground">{t("admin.management.usersDescription")}</p>
+  </header>
+  <AdminUsersManager adminId={Astro.locals.admin!.id} client:load />
+</AdminLayout>

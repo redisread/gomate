@@ -1,0 +1,70 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  getSSRT,
+  type Locale,
+} from "../../i18n";
+import { loadLocaleData } from "../../i18n/ssr-loader.server";
+import { declareI18nNs } from "../../middleware";
+
+declareI18nNs(Astro.locals, ["admin"]);
+const cookieLocale = Astro.cookies.get("gomate_locale")?.value as
+  | Locale
+  | undefined;
+const resolvedLocale = Astro.locals.locale ?? cookieLocale;
+const locale =
+  resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale)
+    ? resolvedLocale
+    : DEFAULT_LOCALE;
+const loadedData = await loadLocaleData(["admin"], locale, Astro.url.origin);
+const ssr = getSSRT(locale, {
+  [locale]: loadedData,
+} as Record<Locale, Record<string, Record<string, unknown>>>);
+const copy = {
+  title: ssr.t("admin.platform.homeTitle"),
+  description: ssr.t("admin.platform.homeDescription"),
+  availableActions: ssr.t("admin.platform.availableActions"),
+  locationTitle: ssr.t("admin.platform.newLocationTitle"),
+  locationDescription: ssr.t("admin.platform.newLocationDescription"),
+  locationAction: ssr.t("admin.platform.newLocationAction"),
+};
+---
+
+<AdminLayout title={copy.title} description={copy.description}>
+  <div class="max-w-3xl">
+    <header class="space-y-2">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">
+        {copy.title}
+      </h1>
+      <p class="max-w-2xl text-base leading-7 text-muted-foreground">
+        {copy.description}
+      </p>
+    </header>
+
+    <section class="mt-10" aria-labelledby="admin-actions-title">
+      <h2 id="admin-actions-title" class="text-sm font-semibold text-foreground">
+        {copy.availableActions}
+      </h2>
+      <article
+        class="mt-4 rounded-xl bg-card p-5 shadow-[0_0_0_1px_color-mix(in_oklab,var(--foreground)_8%,transparent),0_2px_8px_color-mix(in_oklab,var(--foreground)_5%,transparent)] sm:p-6"
+      >
+        <div class="space-y-2">
+          <h3 class="text-lg font-semibold text-foreground">
+            {copy.locationTitle}
+          </h3>
+          <p class="max-w-xl text-sm leading-6 text-muted-foreground">
+            {copy.locationDescription}
+          </p>
+        </div>
+        <a
+          href="/admin/locations/new"
+          class="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-[background-color,scale] duration-100 hover:bg-primary/90 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card motion-reduce:transition-none motion-reduce:active:scale-100"
+        >
+          {copy.locationAction}
+        </a>
+      </article>
+    </section>
+  </div>
+</AdminLayout>

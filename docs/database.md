@@ -14,8 +14,8 @@
 - Cloudflare D1 / SQLite，binding 为 `DB`，数据库为 `gomate-db-v3`。
 - 当前 migration 链为 `0000_init.sql` baseline、`0001_reference_data.sql` 稳定参考数据、
   `0002_account_issuer.sql` Better Auth 账户 issuer 升级、`0003_import_v2_catalog.sql`
-  旧库公开目录导入，以及 `0004_fix_wutongshan_cover_image.sql` 梧桐山封面 URL 修复；journal
-  与 snapshot 必须逐条对应。
+  旧库公开目录导入、`0004_fix_wutongshan_cover_image.sql` 梧桐山封面 URL 修复，以及
+  `0005_admin_location_drafts.sql` 地点草稿与活动类型代码枚举升级；journal 与 snapshot 必须逐条对应。
 - 当前 schema 包含 19 张业务表和 13 个触发器；CI 会校验 schema、migration 链与 snapshot 一致。
 - 时间在 D1 中存 Unix 毫秒，HTTP DTO 输出 ISO 8601。
 - JSON 列使用 Drizzle `mode: "json"`，D1 通过 `json_valid` 与 `json_type` CHECK 约束形状；业务层只传对象或数组。
@@ -31,7 +31,7 @@
 | 领域 | 表                                                 | 核心职责                                |
 | ---- | -------------------------------------------------- | --------------------------------------- |
 | 认证 | `users`, `sessions`, `accounts`, `verifications`   | 用户、凭据、会话与一次性 challenge      |
-| 地理 | `region`, `locations`                              | Region 层级、地点内容与支持的活动类型   |
+| 地理 | `region`, `locations`                              | Region 层级、地点内容与推荐活动类型     |
 | 标签 | `tags`, `location_tags`, `team_tags`, `story_tags` | 共享标签词典与明确的资源关联            |
 | 组队 | `teams`, `team_join_requests`, `team_members`      | Team 生命周期、申请和 active membership |
 | 内容 | `stories`, `story_likes`                           | 普通 Story、队伍回顾与点赞计数          |
@@ -82,8 +82,19 @@ Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和
 
 - `region` 是自引用层级；只有字段完整的 city Region 可以启用服务。
 - Location 必须属于 Region，slug 只在 Region 内唯一；公开路由使用全局 Location ID。
-- Location 保存可支持的 `supported_activity_types`；Team 必须显式选择其中一种 `activity_type`。
+- Location 保存可选的多值 `supported_activity_types`，语义是地点推荐活动，不是 Team 的选择约束。
+- 草稿 Location 只要求 Region、名称和介绍；坐标与封面可空。切换为 `published` 时 API 必须补齐
+  坐标和封面，推荐活动类型仍可为空。
 - 地点图片与活动扩展保存在有形状约束的 JSON 中；创建者引用允许 `SET NULL`，业务内容仍保留。
+
+### 活动类型与 Team
+
+- 活动类型是 [`src/contracts/enums.ts`](../src/contracts/enums.ts) 中的小型代码枚举，名称由
+  i18n 提供；新增类型需要同步代码、三种语言文案与测试，不建立运行时目录表。
+- Team 的 `activity_type` 必填。API schema 与最终条件 DML 都必须复核值属于代码枚举；地点推荐
+  只影响客户端排序，不限制可选集合。
+- `teams.activity_type` 不设置数据库 CHECK 或目录外键，避免每次扩展枚举都必须重建 D1 表；写入
+  完整性由共享契约、输入校验和最终条件写语句共同保证。
 
 ### Team 生命周期与成员
 
@@ -133,7 +144,9 @@ Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和
 ## 删除与存储边界
 
 - 凭据、session、成员/申请、标签连接、点赞和收藏按父记录级联。
-- Region 和被 Team 引用的 Location 使用 RESTRICT，避免破坏业务历史。
+- Region 与被 Team 引用的 Location 使用 RESTRICT，避免破坏业务历史。
+- 管理员删除 Location 默认改为 `archived`；只有显式永久确认且不存在 Team、Story 或收藏引用时
+  才物理删除。
 - Story 的 Team 回顾引用使用 RESTRICT，Location 引用删除时置空；需要保留历史的
   creator/decision 引用使用 SET NULL。
 - 账户删除保留匿名用户墓碑与历史 Team、Story、Conversation、Message 引用，不物理删除用户行。
