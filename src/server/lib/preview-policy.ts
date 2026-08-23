@@ -61,8 +61,9 @@ export function isPreviewAuthMutation(
   path: string,
   env: PreviewPolicyEnv,
 ): boolean {
+  const normalizedPath = path.replace(/^\/api(?=\/|$)/u, "") || "/";
   return request.method.toUpperCase() === "POST" &&
-    PREVIEW_AUTH_MUTATION_PATHS.has(path) &&
+    PREVIEW_AUTH_MUTATION_PATHS.has(normalizedPath) &&
     isPreviewRequest(request, env);
 }
 

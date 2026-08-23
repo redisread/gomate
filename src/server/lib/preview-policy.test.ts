@@ -65,10 +65,11 @@ describe("Preview request policy", () => {
     );
 
     expect(isPreviewAuthMutation(request, "/auth/sign-in/email", env)).toBe(true);
+    expect(isPreviewAuthMutation(request, "/api/auth/sign-in/email", env)).toBe(true);
     expect(
       isPreviewAuthMutation(
         new Request(request.url, { method: "POST" }),
-        "/auth/sign-out",
+        "/api/auth/sign-out",
         env,
       ),
     ).toBe(true);
