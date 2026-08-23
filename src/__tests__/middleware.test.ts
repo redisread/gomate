@@ -24,6 +24,10 @@ function contextFor(request: Request) {
   };
 }
 
+function assertResponse(value: void | Response): asserts value is Response {
+  if (!(value instanceof Response)) throw new Error("Expected response");
+}
+
 describe("i18n middleware query preservation", () => {
   it("dispatches API requests through the route-relative Hono app", async () => {
     const context = contextFor(new Request("https://gomate.test/api/health"));
@@ -94,6 +98,7 @@ describe("administrator page middleware", () => {
 
     const response = await onRequest(context as never, next as never);
 
+    assertResponse(response);
     expect(context.redirect).toHaveBeenCalledWith(
       "https://gomate.test/login?returnTo=%2Fadmin%2Flocations%2Fnew%3Fsource%3Dnavbar",
       302,
@@ -133,6 +138,7 @@ describe("administrator page middleware", () => {
 
     const response = await onRequest(context as never, next as never);
 
+    assertResponse(response);
     expect(response.status).toBe(403);
     expect(await response.text()).toBe("forbidden");
     expect(response.headers.get("cache-control")).toBe("private, no-store");
@@ -157,6 +163,7 @@ describe("administrator page middleware", () => {
 
     const response = await onRequest(context as never, next as never);
 
+    assertResponse(response);
     expect(next).toHaveBeenCalledOnce();
     expect(context.locals).toMatchObject({ admin });
     expect(response.status).toBe(200);
@@ -175,6 +182,7 @@ describe("administrator page middleware", () => {
 
     const response = await onRequest(context as never, vi.fn() as never);
 
+    assertResponse(response);
     expect(context.locals).toMatchObject({ locale: "en", admin });
     expect(context.rewrite).toHaveBeenCalledWith(
       new URL("https://gomate.test/admin/locations/new"),
