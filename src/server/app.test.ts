@@ -3,7 +3,6 @@ import { apiApp, type ApiBindings } from "./app";
 
 type TestOverrides = Omit<Partial<ApiBindings>, "WRITE_MODE"> & {
   WRITE_MODE?: "open" | "protected";
-  PREVIEW_HOST_SUFFIX?: string;
 };
 
 function env(overrides: TestOverrides = {}): ApiBindings {
@@ -65,14 +64,17 @@ describe("API boundary", () => {
   it("allows only the Preview sign-in boundary through write protection", async () => {
     const response = await apiApp.fetch(
       new Request(
-        "https://b-feature-login-12345678-gomate.account.workers.dev/auth/sign-in/email",
+        "https://b-feature-login-12345678-gomate.wujiahong2013.workers.dev/auth/sign-in/email",
         {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: "{}",
         },
       ),
-      env({ WRITE_MODE: "protected", PREVIEW_HOST_SUFFIX: "account.workers.dev" }),
+      env({
+        WRITE_MODE: "protected",
+        PREVIEW_HOST_SUFFIX: "wujiahong2013.workers.dev",
+      }),
     );
 
     expect(response.status).toBe(400);
@@ -81,18 +83,18 @@ describe("API boundary", () => {
   it("keeps Preview business writes and account mutations protected", async () => {
     const previewEnv = env({
       WRITE_MODE: "protected",
-      PREVIEW_HOST_SUFFIX: "account.workers.dev",
+      PREVIEW_HOST_SUFFIX: "wujiahong2013.workers.dev",
     });
     const businessWrite = await apiApp.fetch(
       new Request(
-        "https://b-feature-login-12345678-gomate.account.workers.dev/contact",
+        "https://b-feature-login-12345678-gomate.wujiahong2013.workers.dev/contact",
         { method: "POST", body: "{}" },
       ),
       previewEnv,
     );
     const accountWrite = await apiApp.fetch(
       new Request(
-        "https://b-feature-login-12345678-gomate.account.workers.dev/auth/sign-up/email",
+        "https://b-feature-login-12345678-gomate.wujiahong2013.workers.dev/auth/sign-up/email",
         { method: "POST", body: "{}" },
       ),
       previewEnv,
