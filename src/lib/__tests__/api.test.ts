@@ -6,6 +6,8 @@ import {
   apiPost,
   fetchAPI,
   fetchPublicAPI,
+  fetchCurrentUser,
+  refreshCurrentUser,
   getApiErrorMessage,
 } from "../api";
 
@@ -78,5 +80,20 @@ describe("same-origin API client", () => {
       "top-level",
     );
     expect(getApiErrorMessage(null, "fallback")).toBe("fallback");
+  });
+
+  it("can refresh a previously memoized guest session", async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response('{"user":null}', { status: 200 }))
+      .mockResolvedValueOnce(new Response('{"user":{"id":"user-1"}}', { status: 200 }));
+
+    await expect(fetchCurrentUser()).resolves.toBeNull();
+    await expect(refreshCurrentUser()).resolves.toMatchObject({ id: "user-1" });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      "/api/users/me",
+      expect.objectContaining({ cache: "no-store", credentials: "include" }),
+    );
   });
 });

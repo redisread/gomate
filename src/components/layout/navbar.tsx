@@ -4,7 +4,7 @@ import * as React from "react";
 import { authClient } from "@/lib/auth-client";
 import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchCurrentUser } from "@/lib/api";
+import { fetchCurrentUser, refreshCurrentUser } from "@/lib/api";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleToggle } from "@/components/layout/locale-toggle";
@@ -65,13 +65,31 @@ export function Navbar({ className }: NavbarProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // 获取登录会话（两步加载，绕过 KV 缓存）
-  React.useEffect(() => {
-    (async () => {
-      const u = await fetchCurrentUser(); // 静默失败，不跳转
+  const updateSession = React.useCallback((refresh: boolean) => {
+    const request = refresh ? refreshCurrentUser() : fetchCurrentUser();
+    void request.then((u) => {
       setSession(u ? { user: u as { id: string; name: string; nickname?: string; email: string; image?: string } } : null);
-    })();
+    });
   }, []);
+
+  // 获取登录会话，并在页面恢复后重新读取，避免旧访客态永久驻留。
+  React.useEffect(() => {
+    updateSession(false);
+
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) updateSession(true);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") updateSession(true);
+    };
+
+    window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [updateSession]);
 
   // 移动菜单打开时锁定滚动
   React.useEffect(() => {
