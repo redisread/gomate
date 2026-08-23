@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 export const DEFAULT_WORKER_NAME = "gomate";
 export const MAX_DNS_LABEL_LENGTH = 63;
+export const PREVIEW_WRANGLER_CONFIG = "dist/server/wrangler.json";
 
 function branchHash(branch) {
   return createHash("sha256").update(branch, "utf8").digest("hex").slice(0, 8);
@@ -44,7 +45,10 @@ export function previewWranglerCommand(alias) {
     "--env",
     "production",
     "--config",
-    "wrangler.jsonc",
+    PREVIEW_WRANGLER_CONFIG,
+    "--keep-vars",
+    "--var",
+    "WRITE_MODE:protected",
     "--preview-alias",
     alias,
   ];

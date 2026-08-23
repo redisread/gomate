@@ -132,7 +132,10 @@ test("uploads only a version with a stable branch alias", () => {
     "--env",
     "production",
     "--config",
-    "wrangler.jsonc",
+    "dist/server/wrangler.json",
+    "--keep-vars",
+    "--var",
+    "WRITE_MODE:protected",
     "--preview-alias",
     result.alias,
   ]);

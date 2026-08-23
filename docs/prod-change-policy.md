@@ -67,8 +67,9 @@ Workers Builds 的推荐配置为：
    `wrangler d1 migrations apply DB --remote --env production --config wrangler.jsonc`，只有
    migration 成功后才执行 `wrangler deploy --env production`；
 4. Preview deploy command：`pnpm deploy:preview`。脚本只执行
-   `wrangler versions upload --env production --config wrangler.jsonc --preview-alias <alias>`；
-   不执行 migration、`wrangler deploy` 或 version promotion。alias 由完整分支名稳定生成；
+   `wrangler versions upload --env production --config dist/server/wrangler.json --keep-vars --var WRITE_MODE:protected --preview-alias <alias>`；
+   命令使用同一次 Build 生成的 Astro bundle 配置，显式覆盖业务写保护并保留 Dashboard 中的 `PREVIEW_HOST_SUFFIX`，不执行 migration、
+   `wrangler deploy` 或 version promotion。alias 由完整分支名稳定生成；
 5. Deploy command 依赖同一次 Build 已生成的 `dist/`；migration 失败时不得继续部署，Worker
    发布失败也不得回滚或手工补写数据库；
 6. 当前采用单一远程环境策略：`main` 是唯一生产分支，非 `main` Preview 使用

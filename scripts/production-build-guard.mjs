@@ -28,7 +28,6 @@ export function assertProductionBuildEnvironment(environment = process.env) {
   ) {
     throw new Error("生产构建只允许 CLOUDFLARE_ENV=production");
   }
-
 }
 
 export function assertPreviewDeployEnvironment(environment = process.env) {
