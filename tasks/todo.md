@@ -1,6 +1,6 @@
 # Task List: admin-platform
 
-状态：Phase 3 已批准（2026-08-23），Phase 4 Task 1 已完成，Task 2 待实施
+状态：Phase 3 已批准（2026-08-23），Phase 4 Checkpoint A 已完成，Task 3 待实施
 
 规格：[SPEC-admin-platform.md](../SPEC-admin-platform.md)
 
@@ -47,15 +47,15 @@
 
 **Acceptance criteria:**
 
-- [ ] `POST /tags` 和管理员地点上传路径不再自行查询或信任客户端角色。
-- [ ] 两条路径保持现有成功响应和统一 401/403 error envelope。
-- [ ] Story 的 author-or-admin 语义未被顺手改写，diff 不包含无关权限重构。
+- [x] `POST /tags` 和管理员地点上传路径不再自行查询或信任客户端角色。
+- [x] 两条路径保持现有成功响应和统一 401/403 error envelope。
+- [x] Story 的 author-or-admin 语义未被顺手改写，diff 不包含无关权限重构。
 
 **Verification:**
 
-- [ ] `pnpm exec vitest run --config vitest.server.config.ts src/server/routes/admin-access-consumers.test.ts`
-- [ ] `pnpm test:server`
-- [ ] `pnpm lint`
+- [x] `pnpm exec vitest run --config vitest.server.config.ts src/server/routes/admin-access-consumers.test.ts`
+- [x] `pnpm test:server`
+- [x] `pnpm lint`
 
 **Dependencies:** Task 1
 
@@ -69,10 +69,10 @@
 
 ## Checkpoint A: API authorization
 
-- [ ] Task 1–2 的 focused tests、`pnpm test:server`、lint、type-check 全部通过。
-- [ ] 当前所有纯管理员 API 都使用共享访问合同；401/403 envelope 未变化。
-- [ ] `git diff --check` 通过，且没有 schema、migration、依赖或无关文件变化。
-- [ ] 检查点通过前不开始页面授权工作。
+- [x] Task 1–2 的 focused tests、`pnpm test:server`、lint、type-check 全部通过。
+- [x] 当前所有纯管理员 API 都使用共享访问合同；401/403 envelope 未变化。
+- [x] `git diff --check` 通过，且没有 schema、migration、依赖或无关文件变化。
+- [x] 检查点通过前不开始页面授权工作。
 
 ## Phase B: Protected page path
 

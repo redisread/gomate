@@ -3,9 +3,12 @@ import { z } from "zod";
 import { asc, eq, sql } from "drizzle-orm";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
+import {
+  adminAccessErrorResponse,
+  requireAdmin,
+} from "../lib/admin-access";
 import { APIErrors } from "../lib/api-errors";
 import type { Env } from "../lib/auth";
-import { getActiveSession } from "../lib/active-session";
 import { setPublicCacheHeaders } from "../lib/http-cache";
 import { generateId } from "../lib/id";
 import { logger } from "../lib/logger";
@@ -42,18 +45,6 @@ function slugify(name: string): string {
     .replace(/[^\p{L}\p{N}]+/gu, "-")
     .replace(/^-+|-+$/gu, "")
     .slice(0, 80);
-}
-
-async function isAdmin(c: { env: Env; req: { raw: Request } }) {
-  const session = await getActiveSession(c.env, c.req.raw.headers);
-  if (!session) return "unauthorized" as const;
-  const db = createDb(c.env.DB);
-  const [user] = await db
-    .select({ role: schema.users.role })
-    .from(schema.users)
-    .where(eq(schema.users.id, session.user.id))
-    .limit(1);
-  return user?.role === "admin" ? ("ok" as const) : ("forbidden" as const);
 }
 
 tagsRoute.get("/", async (c) => {
@@ -113,9 +104,13 @@ tagsRoute.get("/", async (c) => {
 });
 
 tagsRoute.post("/", async (c) => {
-  const access = await isAdmin(c);
-  if (access === "unauthorized") return c.json(APIErrors.unauthorized(), 401);
-  if (access === "forbidden") return c.json(APIErrors.forbidden(), 403);
+  try {
+    await requireAdmin(c);
+  } catch (error) {
+    const denied = adminAccessErrorResponse(c, error);
+    if (denied) return denied;
+    throw error;
+  }
   const parsed = await validateRequest(
     c,
     "json",

@@ -1,0 +1,176 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { Env } from "../lib/auth";
+
+const mocks = vi.hoisted(() => {
+  class MockAdminAccessError extends Error {
+    constructor(readonly kind: "unauthenticated" | "forbidden") {
+      super(kind);
+    }
+  }
+
+  return {
+    MockAdminAccessError,
+    createDb: vi.fn(),
+    requireAdmin: vi.fn(),
+  };
+});
+
+vi.mock("../db", () => ({ createDb: mocks.createDb }));
+vi.mock("../lib/admin-access", () => ({
+  requireAdmin: mocks.requireAdmin,
+  adminAccessErrorResponse: (
+    c: { json: (body: unknown, status: 401 | 403) => Response },
+    error: unknown,
+  ) => {
+    if (!(error instanceof mocks.MockAdminAccessError)) return null;
+    const unauthorized = error.kind === "unauthenticated";
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: unauthorized ? "UNAUTHORIZED" : "FORBIDDEN",
+          message: unauthorized
+            ? "Authentication required"
+            : "Administrator access required",
+        },
+      },
+      unauthorized ? 401 : 403,
+    );
+  },
+}));
+
+const { tagsRoute } = await import("./tags");
+const { uploadRoute } = await import("./upload");
+
+const r2 = {
+  put: vi.fn().mockResolvedValue(undefined),
+  delete: vi.fn().mockResolvedValue(undefined),
+} as unknown as R2Bucket;
+
+const env = {
+  DB: {} as D1Database,
+  R2: r2,
+  R2_PUBLIC_URL: "https://media.example.com",
+} as unknown as Env;
+
+function tagDb() {
+  mocks.createDb.mockReturnValue({
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue([]) })),
+      })),
+    })),
+    insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue(undefined) })),
+  });
+}
+
+function locationImageBody() {
+  const form = new FormData();
+  form.set(
+    "file",
+    new File(
+      [
+        new Uint8Array([
+          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+        ]),
+      ],
+      "cover.png",
+      { type: "image/png" },
+    ),
+  );
+  return form;
+}
+
+describe("shared administrator access consumers", () => {
+  beforeEach(() => {
+    mocks.createDb.mockReset();
+    mocks.requireAdmin.mockReset();
+    vi.mocked(r2.put).mockClear();
+  });
+
+  it.each([
+    ["tag creation", "unauthenticated", 401, "UNAUTHORIZED"],
+    ["tag creation", "forbidden", 403, "FORBIDDEN"],
+    ["location upload", "unauthenticated", 401, "UNAUTHORIZED"],
+    ["location upload", "forbidden", 403, "FORBIDDEN"],
+  ] as const)(
+    "maps %s access result %s to %i",
+    async (consumer, kind, status, code) => {
+      mocks.requireAdmin.mockRejectedValue(
+        new mocks.MockAdminAccessError(kind),
+      );
+
+      const response =
+        consumer === "tag creation"
+          ? await tagsRoute.request(
+              "/",
+              {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ name: "徒步" }),
+              },
+              env,
+            )
+          : await uploadRoute.request(
+              "/location",
+              { method: "POST", body: locationImageBody() },
+              env,
+            );
+
+      expect(response.status).toBe(status);
+      await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: { code },
+      });
+    },
+  );
+
+  it("creates a tag after the shared adapter authorizes the administrator", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      id: "admin-1",
+      displayName: "Admin",
+      image: null,
+    });
+    tagDb();
+
+    const response = await tagsRoute.request(
+      "/",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "徒步", slug: "hiking" }),
+      },
+      env,
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      existing: false,
+    });
+    expect(mocks.requireAdmin).toHaveBeenCalledOnce();
+  });
+
+  it("uploads a location image under the authorized administrator ID", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      id: "admin-1",
+      displayName: "Admin",
+      image: null,
+    });
+
+    const response = await uploadRoute.request(
+      "/location",
+      { method: "POST", body: locationImageBody() },
+      env,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      url: expect.stringContaining("/temp/locations/admin-1/"),
+    });
+    expect(mocks.requireAdmin).toHaveBeenCalledOnce();
+    expect(vi.mocked(r2.put)).toHaveBeenCalledOnce();
+  });
+});
