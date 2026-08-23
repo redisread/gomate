@@ -1,0 +1,21 @@
+---
+import { AdminTagsManager } from "../../components/admin/admin-tags-manager";
+import { getSSRT } from "../../i18n";
+import { loadLocaleData } from "../../i18n/ssr-loader.server";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { declareI18nNs } from "../../middleware";
+
+declareI18nNs(Astro.locals, ["admin"]);
+const locale = Astro.locals.locale;
+const data = await loadLocaleData(["admin"], locale, Astro.url.origin);
+const t = getSSRT(locale, { [locale]: data } as never).t;
+const title = t("admin.management.tagsTitle");
+---
+
+<AdminLayout title={title} description={t("admin.management.tagsDescription")}>
+  <header class="mb-8 space-y-2">
+    <h1 class="text-3xl font-bold tracking-tight">{title}</h1>
+    <p class="max-w-2xl text-muted-foreground">{t("admin.management.tagsDescription")}</p>
+  </header>
+  <AdminTagsManager client:load />
+</AdminLayout>

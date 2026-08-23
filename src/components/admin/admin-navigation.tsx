@@ -1,9 +1,12 @@
 import {
+  Activity,
   ExternalLink,
   House,
   MapPinPlus,
   Menu,
   Mountain,
+  Tags,
+  Users,
   X,
 } from "lucide-react";
 import * as React from "react";
@@ -15,6 +18,9 @@ export interface AdminNavigationCopy {
   navigationLabel: string;
   navHome: string;
   navNewLocation: string;
+  navActivityTypes: string;
+  navTags: string;
+  navUsers: string;
   backToFrontend: string;
   openNavigation: string;
   closeNavigation: string;
@@ -35,6 +41,9 @@ function navigationItems(copy: AdminNavigationCopy) {
       icon: MapPinPlus,
       exact: false,
     },
+    { href: "/admin/activity-types", label: copy.navActivityTypes, icon: Activity, exact: false },
+    { href: "/admin/tags", label: copy.navTags, icon: Tags, exact: false },
+    { href: "/admin/users", label: copy.navUsers, icon: Users, exact: false },
   ];
 }
 

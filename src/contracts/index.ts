@@ -119,6 +119,17 @@ export interface SessionUser {
   createdAt: Timestamp;
 }
 
+export interface AdminUserSummary {
+  id: string;
+  name: string;
+  nickname: string | null;
+  email: string;
+  image: string | null;
+  role: UserRole;
+  status: UserStatus;
+  createdAt: Timestamp;
+}
+
 export interface TeamParticipant {
   userId: string;
   joinedAt: Timestamp;
