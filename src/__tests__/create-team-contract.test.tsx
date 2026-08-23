@@ -20,6 +20,14 @@ vi.mock("@/hooks/useI18n", () => ({
     t: (key: string, vars?: Record<string, string>) =>
       key === "teams.recommendedActivityType"
         ? `${vars?.name} recommended`
+        : key === "enums.locationType.hiking"
+          ? "徒步"
+        : key === "enums.locationType.travel"
+          ? "旅行"
+          : key === "enums.locationType.explore"
+            ? "探索"
+            : key === "enums.locationType.leisure"
+              ? "休闲"
         : key,
     locale: "zh-CN",
     loading: false,
@@ -73,17 +81,6 @@ function arrangeRequests() {
     if (path === "/locations?limit=100") {
       return jsonResponse({ success: true, locations: [locationA, locationB] });
     }
-    if (path === "/activity-types") {
-      return jsonResponse({
-        success: true,
-        activityTypes: [
-          { id: "hiking", name: "徒步", slug: "hiking", isActive: true, sortOrder: 10 },
-          { id: "explore", name: "探索", slug: "explore", isActive: true, sortOrder: 20 },
-          { id: "leisure", name: "休闲", slug: "leisure", isActive: true, sortOrder: 30 },
-          { id: "travel", name: "旅行", slug: "travel", isActive: true, sortOrder: 40 },
-        ],
-      });
-    }
     if (path === `/locations/${locationA.id}`) {
       return jsonResponse({ success: true, location: locationA });
     }
@@ -103,7 +100,7 @@ describe("CreateTeamClient contract", () => {
     window.history.replaceState({}, "", "/teams/create");
   });
 
-  it("prioritizes location recommendations without filtering the active catalog", async () => {
+  it("prioritizes location recommendations without filtering the code enum", async () => {
     arrangeRequests();
     render(<CreateTeamClient />);
 

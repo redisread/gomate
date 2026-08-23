@@ -4,7 +4,7 @@ import * as React from "react";
 import { MapPin, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
-import type { ActivityTypeInfo, Region } from "@/lib/types";
+import type { ActivityType, Region } from "@/lib/types";
 import type { FormData } from "./use-location-form";
 import { RegionSelect } from "@/components/ui/region-select";
 
@@ -88,13 +88,13 @@ interface LocationFormBasicFieldsProps {
   formData: FormData;
   errors: Record<string, string | undefined>;
   regions: Region[];
-  activityTypes: ActivityTypeInfo[];
+  activityTypes: readonly ActivityType[];
   updateField: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
   touch: (key: string, value: string) => void;
   }
 
 export function LocationFormBasicFields({ formData, errors, regions, activityTypes, updateField, touch }: LocationFormBasicFieldsProps) {
-  const { t } = useI18n(["admin"]);
+  const { t } = useI18n(["admin", "enums"]);
   return (
     <div className="space-y-4">
       {/* 基本信息 */}
@@ -114,20 +114,18 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
         </Field>
         <Field label={t("admin.formLocationType")}>
           <div className="flex flex-wrap gap-2">
-            {activityTypes.map((activity) => {
-              const selected = formData.supportedActivityTypes.includes(activity.id);
-              return <button key={activity.id} type="button"
-                disabled={!activity.isActive && !selected}
+            {activityTypes.map((activityType) => {
+              const selected = formData.supportedActivityTypes.includes(activityType);
+              return <button key={activityType} type="button"
                 onClick={() => updateField(
                   "supportedActivityTypes",
                   selected
-                    ? formData.supportedActivityTypes.filter((value) => value !== activity.id)
-                    : [...formData.supportedActivityTypes, activity.id],
+                    ? formData.supportedActivityTypes.filter((value) => value !== activityType)
+                    : [...formData.supportedActivityTypes, activityType],
                 )}
                 className={cn("px-3.5 py-1.5 rounded-full text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow]",
-                  selected ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700",
-                  "disabled:cursor-not-allowed disabled:opacity-50")}>
-                {activity.name}{!activity.isActive ? ` · ${t("admin.management.deactivate")}` : ""}
+                  selected ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700")}>
+                {t(`enums.locationType.${activityType}`)}
               </button>;
             })}
           </div>

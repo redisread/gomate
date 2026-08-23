@@ -17,6 +17,7 @@ import { TeamsSelectedFilters } from "../components/features/teams/teams-selecte
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
     t: (key: string, vars?: Record<string, string | number>) => {
+      if (key === "enums.locationType.hiking") return "徒步";
       if (!vars) return key;
       return Object.entries(vars).reduce(
         (text, [name, value]) => text.replace(`{${name}}`, String(value)),
@@ -148,9 +149,7 @@ describe("teams list UI", () => {
         <FilterPanel
           selectedActivityType=""
           selectedRecruitmentStatus="open"
-          availableActivityTypes={[
-            { id: "hiking", name: "徒步", slug: "hiking", isActive: true, sortOrder: 10 },
-          ]}
+          availableActivityTypes={["hiking"]}
           availableTags={[{ id: "tag-1", name: "日出" }]}
           selectedTags={[]}
           activeFiltersCount={0}

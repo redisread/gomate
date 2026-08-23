@@ -1,25 +1,23 @@
 import { describe, expect, it } from "vitest";
 
-import type { ActivityTypeInfo } from "@/contracts";
+import { ACTIVITY_TYPES } from "@/contracts";
 import {
-  activityTypeLabel,
+  isActivityType,
   orderActivityTypesForLocation,
 } from "./activity-types";
 
-const types: ActivityTypeInfo[] = [
-  { id: "hiking", name: "徒步", slug: "hiking", isActive: true, sortOrder: 10 },
-  { id: "paddling", name: "桨板", slug: "paddling", isActive: true, sortOrder: 20 },
-  { id: "travel", name: "旅行", slug: "travel", isActive: true, sortOrder: 30 },
-];
-
-describe("activity type presentation", () => {
-  it("prioritizes location recommendations without filtering the catalog", () => {
-    expect(orderActivityTypesForLocation(types, ["travel"]).map(({ id }) => id))
-      .toEqual(["travel", "hiking", "paddling"]);
+describe("activity type enum", () => {
+  it("keeps the complete activity catalog in code", () => {
+    expect(ACTIVITY_TYPES).toEqual(["hiking", "explore", "leisure", "travel"]);
   });
 
-  it("uses catalog names and safely falls back to the stable id", () => {
-    expect(activityTypeLabel("paddling", types)).toBe("桨板");
-    expect(activityTypeLabel("retired-type", types)).toBe("retired-type");
+  it("prioritizes location recommendations without filtering the catalog", () => {
+    expect(orderActivityTypesForLocation(ACTIVITY_TYPES, ["travel"]))
+      .toEqual(["travel", "hiking", "explore", "leisure"]);
+  });
+
+  it("rejects values outside the code enum", () => {
+    expect(isActivityType("hiking")).toBe(true);
+    expect(isActivityType("paddling")).toBe(false);
   });
 });

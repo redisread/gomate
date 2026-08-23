@@ -4,7 +4,8 @@ import * as React from "react";
 import { ArrowLeft, Clock, Users, AlertCircle, Loader2, Pencil } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
-import type { ActivityType, ActivityTypeInfo, Team, Location } from "@/lib/types";
+import { ACTIVITY_TYPES } from "@/contracts";
+import type { ActivityType, Team, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -17,10 +18,9 @@ interface EditTeamClientProps {
 }
 
 export function EditTeamClient({ teamId }: EditTeamClientProps) {
-  const { t } = useI18n(["teams", "errors", "common"]);
+  const { t } = useI18n(["teams", "errors", "common", "enums"]);
   const [team, setTeam] = React.useState<Team | null>(null);
   const [location, setLocation] = React.useState<Location | null>(null);
-  const [activityTypes, setActivityTypes] = React.useState<ActivityTypeInfo[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
   const [isLeader, setIsLeader] = React.useState(false);
@@ -45,12 +45,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
       setIsAuthenticated(true);
 
       try {
-        const [res, activityResponse] = await Promise.all([
-          fetchAPI(`/teams/${teamId}`),
-          fetchAPI("/activity-types"),
-        ]);
-        const activityData = await activityResponse.json();
-        if (activityData.success) setActivityTypes(activityData.activityTypes ?? []);
+        const res = await fetchAPI(`/teams/${teamId}`);
         if (res.status === 404) {
           setError(t("errors.teamNotFound"));
           setIsLoading(false);
@@ -94,13 +89,6 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
       }
     })();
   }, [teamId, t]);
-
-  const selectableActivityTypes = React.useMemo(() => {
-    if (!team?.activityTypeInfo || activityTypes.some(({ id }) => id === team.activityType)) {
-      return activityTypes;
-    }
-    return [team.activityTypeInfo, ...activityTypes];
-  }, [activityTypes, team]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -290,15 +278,9 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 required
                 className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
               >
-                {selectableActivityTypes.map((activityType) => (
-                  <option
-                    key={activityType.id}
-                    value={activityType.id}
-                    disabled={!activityType.isActive && activityType.id !== team.activityType}
-                  >
-                    {activityType.isActive
-                      ? activityType.name
-                      : t("teams.inactiveActivityType", { name: activityType.name })}
+                {ACTIVITY_TYPES.map((activityType) => (
+                  <option key={activityType} value={activityType}>
+                    {t(`enums.locationType.${activityType}`)}
                   </option>
                 ))}
               </select>

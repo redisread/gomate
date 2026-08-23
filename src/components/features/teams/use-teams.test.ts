@@ -52,8 +52,6 @@ describe("useTeams", () => {
         teams: [],
         pagination: { limit: 12, total: 0, nextCursor: null },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [selectableRegion()],
       }),
     );
@@ -71,8 +69,6 @@ describe("useTeams", () => {
         teams: [],
         pagination: { limit: 12, total: 0, nextCursor: null },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [
           selectableRegion({ id: "city-shenzhen", code: "440300", name: "深圳", slug: "shenzhen" }),
         ],
@@ -102,8 +98,6 @@ describe("useTeams", () => {
         teams: [],
         pagination: { limit: 12, total: 0, nextCursor: null },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [selectableRegion()],
       }),
     );
@@ -138,8 +132,6 @@ describe("useTeams", () => {
         teams: [],
         pagination: { limit: 12, total: 0, nextCursor: null },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [selectableRegion()],
       }),
     );
@@ -178,8 +170,6 @@ describe("useTeams", () => {
         teams: [],
         pagination: { limit: 12, total: 0, nextCursor: null },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [],
       }),
     );
@@ -203,8 +193,6 @@ describe("useTeams", () => {
         pagination: { limit: 12, total: 0, nextCursor: null },
         availableTags: [],
         tagsComplete: false,
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [selectableRegion()],
       }),
     );
@@ -215,35 +203,23 @@ describe("useTeams", () => {
     expect(fetchPublicAPI).toHaveBeenCalledWith("/tags?limit=200");
   });
 
-  it("retries the activity catalog when the SSR request failed", async () => {
-    vi.mocked(fetchPublicAPI).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        activityTypes: [{
-          id: "paddling",
-          name: "桨板",
-          slug: "paddling",
-          isActive: true,
-          sortOrder: 10,
-        }],
-      }),
-    } as Response);
-
+  it("uses the code activity enum without fetching a catalog", () => {
     const { result } = renderHook(() =>
       useTeams({
         teams: [],
         pagination: { limit: 12, total: 0, nextCursor: null },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: false,
         availableRegions: [selectableRegion()],
       }),
     );
 
-    await waitFor(() => expect(result.current.availableActivityTypes).toHaveLength(1));
-    expect(result.current.availableActivityTypes[0]?.name).toBe("桨板");
-    expect(fetchPublicAPI).toHaveBeenCalledWith("/activity-types");
+    expect(result.current.availableActivityTypes).toEqual([
+      "hiking",
+      "explore",
+      "leisure",
+      "travel",
+    ]);
+    expect(fetchPublicAPI).not.toHaveBeenCalledWith("/activity-types");
   });
 
   it("hydrates the 30-day shortcut instead of hiding it as an unlimited date", () => {
@@ -253,8 +229,6 @@ describe("useTeams", () => {
         teams: [],
         pagination: { limit: 12, total: 0, nextCursor: null },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [selectableRegion()],
         filters: {
           ...EMPTY_FILTERS,
@@ -279,8 +253,6 @@ describe("useTeams", () => {
         teams: [],
         pagination: { limit: 12, total: 20, nextCursor: "cursor-page-2" },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [selectableRegion()],
       }),
     );
@@ -306,8 +278,6 @@ describe("useTeams", () => {
         teams: [],
         pagination: { limit: 12, total: 20, nextCursor: "cursor-page-3" },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [selectableRegion()],
         filters: {
           ...EMPTY_FILTERS,
@@ -326,8 +296,6 @@ describe("useTeams", () => {
         teams: [],
         pagination: { limit: 12, total: 20, nextCursor: "cursor-page-3" },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [selectableRegion()],
         filters: {
           ...EMPTY_FILTERS,
@@ -349,8 +317,6 @@ describe("useTeams", () => {
         teams: [],
         pagination: { limit: 12, total: 0, nextCursor: null },
         availableTags: [],
-        availableActivityTypes: [],
-        activityTypesComplete: true,
         availableRegions: [selectableRegion()],
       }),
     );

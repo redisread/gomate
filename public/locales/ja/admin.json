@@ -185,7 +185,6 @@
     "navHome": "管理トップ",
     "navNewLocation": "スポットを追加",
     "navLocations": "スポット管理",
-    "navActivityTypes": "アクティビティ",
     "navTags": "タグ管理",
     "navUsers": "ユーザー管理",
     "backToFrontend": "サイトに戻る",
@@ -203,8 +202,6 @@
     "closeQuickAction": "クイック入力を閉じる"
   },
   "management": {
-    "activityTypesTitle": "アクティビティ管理",
-    "activityTypesDescription": "チームが選べる共通カタログを管理します。無効化しても履歴は保持されます。",
     "tagsTitle": "タグ管理",
     "tagsDescription": "タグの追加、名称変更、関連解除を安全に行います。",
     "usersTitle": "ユーザーと管理者",

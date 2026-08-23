@@ -1,4 +1,5 @@
-import type { TeamChecklist } from "@/contracts";
+import type { ActivityType, TeamChecklist } from "@/contracts";
+export type { ActivityType } from "@/contracts";
 import { relations, sql } from "drizzle-orm";
 import {
   check,
@@ -12,7 +13,6 @@ import {
   type AnySQLiteColumn,
 } from "drizzle-orm/sqlite-core";
 
-export type ActivityType = string;
 export type UserRole = "user" | "admin";
 export type UserStatus = "active" | "suspended" | "banned" | "deleted";
 export type UserGender = "male" | "female" | "other";
@@ -279,34 +279,6 @@ export const tags = sqliteTable(
   (table) => [uniqueIndex("tags_slug_unique").on(table.slug)],
 );
 
-export const activityTypes = sqliteTable(
-  "activity_types",
-  {
-    id: text("id").notNull().primaryKey(),
-    name: text("name").notNull(),
-    slug: text("slug").notNull(),
-    isActive: integer("is_active", { mode: "boolean" })
-      .notNull()
-      .default(true),
-    sortOrder: integer("sort_order").notNull().default(0),
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .notNull()
-      .default(nowMs),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-      .notNull()
-      .default(nowMs),
-  },
-  (table) => [
-    uniqueIndex("activity_types_slug_unique").on(table.slug),
-    index("activity_types_active_sort_idx").on(
-      table.isActive,
-      table.sortOrder,
-      table.id,
-    ),
-    check("activity_types_active_check", sql`${table.isActive} in (0, 1)`),
-  ],
-);
-
 export const locations = sqliteTable(
   "locations",
   {
@@ -395,8 +367,7 @@ export const teams = sqliteTable(
       .references(() => users.id, { onDelete: "restrict" }),
     activityType: text("activity_type")
       .$type<ActivityType>()
-      .notNull()
-      .references(() => activityTypes.id, { onDelete: "restrict" }),
+      .notNull(),
     title: text("title").notNull(),
     description: text("description"),
     startAt: integer("start_at", { mode: "timestamp_ms" }).notNull(),
@@ -871,9 +842,6 @@ export const tagsRelations = relations(tags, ({ many }) => ({
   teams: many(teamTags),
   stories: many(storyTags),
 }));
-export const activityTypesRelations = relations(activityTypes, ({ many }) => ({
-  teams: many(teams),
-}));
 export const teamsRelations = relations(teams, ({ one, many }) => ({
   location: one(locations, {
     fields: [teams.locationId],
@@ -883,10 +851,6 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
     fields: [teams.leaderId],
     references: [users.id],
     relationName: "teamLeader",
-  }),
-  activityTypeInfo: one(activityTypes, {
-    fields: [teams.activityType],
-    references: [activityTypes.id],
   }),
   joinRequests: many(teamJoinRequests),
   members: many(teamMembers),
@@ -1021,8 +985,6 @@ export type Location = typeof locations.$inferSelect;
 export type NewLocation = typeof locations.$inferInsert;
 export type Tag = typeof tags.$inferSelect;
 export type NewTag = typeof tags.$inferInsert;
-export type ActivityTypeRecord = typeof activityTypes.$inferSelect;
-export type NewActivityTypeRecord = typeof activityTypes.$inferInsert;
 export type LocationTag = typeof locationTags.$inferSelect;
 export type NewLocationTag = typeof locationTags.$inferInsert;
 export type Team = typeof teams.$inferSelect;

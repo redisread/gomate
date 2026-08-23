@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AdminActivityTypesManager } from "./admin-activity-types-manager";
 import { AdminTagsManager } from "./admin-tags-manager";
 import { AdminUsersManager } from "./admin-users-manager";
 import { AdminLocationsManager } from "./admin-locations-manager";
@@ -32,42 +31,6 @@ describe("admin catalog managers", () => {
     api.apiPost.mockReset();
     api.apiPatch.mockReset();
     api.apiPut.mockReset();
-  });
-
-  it("shows activity reference counts and allows deactivation", async () => {
-    api.fetchAPI.mockResolvedValue(new Response(JSON.stringify({
-      success: true,
-      activityTypes: [{
-        id: "hiking",
-        name: "徒步",
-        slug: "hiking",
-        isActive: true,
-        sortOrder: 10,
-        references: { teams: 2, locations: 3 },
-      }],
-    }), { status: 200 }));
-    api.apiPatch.mockResolvedValue({
-      success: true,
-      activityType: {
-        id: "hiking",
-        name: "徒步",
-        slug: "hiking",
-        isActive: false,
-        sortOrder: 10,
-      },
-    });
-
-    render(<AdminActivityTypesManager />);
-
-    expect(await screen.findByDisplayValue("徒步")).toBeInTheDocument();
-    expect(screen.getByText("2 / 3")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", {
-      name: "admin.management.deactivate",
-    }));
-    await waitFor(() => expect(api.apiPatch).toHaveBeenCalledWith(
-      "/activity-types/hiking",
-      { isActive: false },
-    ));
   });
 
   it("shows tag reference counts before deletion", async () => {
@@ -112,9 +75,9 @@ describe("admin catalog managers", () => {
   });
 
   it("saves the three required quick fields as a server draft", async () => {
-    api.fetchAPI
-      .mockResolvedValueOnce(new Response(JSON.stringify({ tags: [] }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ activityTypes: [] }), { status: 200 }));
+    api.fetchAPI.mockResolvedValueOnce(
+      new Response(JSON.stringify({ tags: [] }), { status: 200 }),
+    );
     api.apiPost.mockResolvedValue({
       success: true,
       location: { id: "location-1", status: "draft" },
@@ -146,11 +109,9 @@ describe("admin catalog managers", () => {
   });
 
   it("keeps the saved draft when optional tag attachment fails", async () => {
-    api.fetchAPI
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        tags: [{ id: "tag-1", name: "亲子", slug: "family" }],
-      }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ activityTypes: [] }), { status: 200 }));
+    api.fetchAPI.mockResolvedValueOnce(new Response(JSON.stringify({
+      tags: [{ id: "tag-1", name: "亲子", slug: "family" }],
+    }), { status: 200 }));
     api.apiPost.mockResolvedValue({
       success: true,
       location: { id: "location-1", status: "draft" },

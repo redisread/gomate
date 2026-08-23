@@ -13,7 +13,6 @@ type ParticipantRow = schema.TeamMember & { user?: schema.User };
 
 export interface TeamResponseInput {
   team: schema.Team;
-  activityTypeInfo?: schema.ActivityTypeRecord;
   activeParticipantCount: number;
   leader?: schema.User;
   location?: schema.Location;
@@ -129,15 +128,6 @@ export function toTeamResponse(input: TeamResponseInput): TeamDto {
     locationId: team.locationId,
     leaderId: team.leaderId,
     activityType: team.activityType,
-    ...(input.activityTypeInfo ? {
-      activityTypeInfo: {
-        id: input.activityTypeInfo.id,
-        name: input.activityTypeInfo.name,
-        slug: input.activityTypeInfo.slug,
-        isActive: input.activityTypeInfo.isActive,
-        sortOrder: input.activityTypeInfo.sortOrder,
-      },
-    } : {}),
     title: team.title,
     description: team.description,
     startAt: asIso(team.startAt),

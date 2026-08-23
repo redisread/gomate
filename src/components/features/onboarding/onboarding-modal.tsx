@@ -61,7 +61,7 @@ export function OnboardingModal() {
 }
 
 function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: RecommendOnboardingResponse }) {
-  const { t } = useI18n(["onboarding", "locations", "teams", "common"]);
+  const { t } = useI18n(["onboarding", "locations", "teams", "common", "enums"]);
   const { show: showToast } = useToast();
   const roleConfig = getRoleConfig(t);
 
@@ -291,7 +291,7 @@ function OnboardingModalInner({ user, initial }: { user: SessionUser; initial: R
                   <h3 className="text-base font-bold text-foreground">{candidate.title}</h3>
                 </div>
                 <p className="text-sm text-stone-600 dark:text-stone-400">
-                  {candidateRole?.label ?? candidate.activityTypeName}
+                  {candidateRole?.label ?? t(`enums.locationType.${candidate.activityType}`)}
                   {" · "}
                   {formatStartTime(candidate.startAt, t)}
                 </p>

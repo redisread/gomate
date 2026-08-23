@@ -1,4 +1,5 @@
 import type { ActivityType, RecruitmentStatus, TeamLifecycle } from "@/contracts";
+import { isActivityType } from "@/lib/activity-types";
 import {
   and,
   asc,
@@ -131,17 +132,12 @@ export function buildTeamPageQuery(
   return db
     .select({
       team: schema.teams,
-      activityTypeInfo: schema.activityTypes,
       leader: schema.users,
       location: schema.locations,
       region: schema.region,
       activeParticipantCount,
     })
     .from(schema.teams)
-    .innerJoin(
-      schema.activityTypes,
-      eq(schema.activityTypes.id, schema.teams.activityType),
-    )
     .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
     .innerJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
     .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
@@ -174,7 +170,7 @@ queries.get("/", async (c) => {
     const startAtFrom = parseDateBoundary(c.req.query("startDateFrom"), false);
     const startAtTo = parseDateBoundary(c.req.query("startDateTo"), true);
 
-    if (activityType && activityType.length > 128) {
+    if (activityType && !isActivityType(activityType)) {
       return c.json(APIErrors.validationError("activityType 无效"), 400);
     }
     if (recruitmentStatus && !RECRUITMENT_STATUSES.has(recruitmentStatus)) {
@@ -362,17 +358,12 @@ queries.get("/:id", async (c) => {
     const rows = await db
       .select({
         team: schema.teams,
-        activityTypeInfo: schema.activityTypes,
         leader: schema.users,
         location: schema.locations,
         region: schema.region,
         activeParticipantCount,
       })
       .from(schema.teams)
-      .innerJoin(
-        schema.activityTypes,
-        eq(schema.activityTypes.id, schema.teams.activityType),
-      )
       .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
       .innerJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
       .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))

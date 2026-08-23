@@ -10,7 +10,6 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WRANGLER = path.join(ROOT, "node_modules", ".bin", "wrangler");
 const EXPECTED_TABLES = [
   "accounts",
-  "activity_types",
   "conversations",
   "d1_migrations",
   "location_tags",
@@ -98,7 +97,6 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
         (SELECT COUNT(*) FROM region) AS region_count,
         (SELECT COUNT(*) FROM locations) AS location_count,
         (SELECT COUNT(*) FROM tags) AS tag_count,
-        (SELECT COUNT(*) FROM activity_types) AS activity_type_count,
         (SELECT COUNT(*) FROM location_tags) AS location_tag_count,
         (SELECT COUNT(*) FROM d1_migrations) AS migration_count,
         (SELECT COUNT(*) FROM locations WHERE id = 'location-shenzhen-wutongshan') AS retained_v3_location_count,
@@ -111,7 +109,6 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
       region_count: 19,
       location_count: 37,
       tag_count: 3,
-      activity_type_count: 4,
       location_tag_count: 3,
       migration_count: 6,
       retained_v3_location_count: 1,
@@ -141,8 +138,8 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
   }
 });
 
-test("admin catalog migration preserves the existing location and team graph", () => {
-  const state = mkdtempSync(path.join(os.tmpdir(), "gomate-catalog-migration-test-"));
+test("admin location draft migration preserves the existing location and team graph", () => {
+  const state = mkdtempSync(path.join(os.tmpdir(), "gomate-location-migration-test-"));
   const commonArgs = [
     "d1",
     "execute",
@@ -194,7 +191,7 @@ test("admin catalog migration preserves the existing location and team graph", (
     run(WRANGLER, [
       ...commonArgs,
       "--file",
-      path.join("migrations", "0005_admin_content_catalogs.sql"),
+      path.join("migrations", "0005_admin_location_drafts.sql"),
     ]);
 
     const output = run(WRANGLER, [
@@ -214,7 +211,9 @@ test("admin catalog migration preserves the existing location and team graph", (
         (SELECT COUNT(*) FROM user_story_favorites WHERE story_id = 'migration-story') AS story_favorites,
         (SELECT COUNT(*) FROM conversations WHERE id = 'migration-conversation' AND last_message_preview = 'Migration message') AS conversations,
         (SELECT COUNT(*) FROM messages WHERE id = 'migration-message') AS messages,
-        (SELECT COUNT(*) FROM activity_types WHERE is_active = 1) AS active_activity_types;`,
+        (SELECT COUNT(*) FROM pragma_foreign_key_list('teams') WHERE "from" = 'activity_type') AS activity_type_foreign_keys,
+        (SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name = 'teams' AND sql LIKE '%teams_activity_type_check%') AS activity_type_checks,
+        (SELECT "notnull" FROM pragma_table_info('locations') WHERE name = 'cover_image_url') AS cover_not_null;`,
     ]);
     const [preserved] = JSON.parse(output).flatMap(
       (entry) => entry.results ?? [],
@@ -232,7 +231,9 @@ test("admin catalog migration preserves the existing location and team graph", (
       story_favorites: 1,
       conversations: 1,
       messages: 1,
-      active_activity_types: 4,
+      activity_type_foreign_keys: 0,
+      activity_type_checks: 0,
+      cover_not_null: 0,
     });
 
     const foreignKeyOutput = run(WRANGLER, [

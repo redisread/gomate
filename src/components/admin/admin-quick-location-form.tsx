@@ -5,7 +5,8 @@ import * as React from "react";
 import { useI18n } from "@/hooks/useI18n";
 import { apiPost, apiPut, fetchAPI, getApiErrorMessage } from "@/lib/api";
 import { fetchSelectableRegions } from "@/lib/regions";
-import type { ActivityTypeInfo, Location, Region, Tag } from "@/lib/types";
+import { ACTIVITY_TYPES, type ActivityType } from "@/contracts";
+import type { Location, Region, Tag } from "@/lib/types";
 
 interface AdminQuickLocationFormProps {
   initialFocusRef: React.RefObject<HTMLInputElement>;
@@ -14,16 +15,15 @@ interface AdminQuickLocationFormProps {
 export function AdminQuickLocationForm({
   initialFocusRef,
 }: AdminQuickLocationFormProps) {
-  const { t } = useI18n(["admin"]);
+  const { t } = useI18n(["admin", "enums"]);
   const [regions, setRegions] = React.useState<Region[]>([]);
   const [tags, setTags] = React.useState<Tag[]>([]);
-  const [activityTypes, setActivityTypes] = React.useState<ActivityTypeInfo[]>([]);
   const [name, setName] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [regionId, setRegionId] = React.useState("");
   const [coverImageUrl, setCoverImageUrl] = React.useState("");
   const [tagIds, setTagIds] = React.useState<string[]>([]);
-  const [activityTypeIds, setActivityTypeIds] = React.useState<string[]>([]);
+  const [activityTypeIds, setActivityTypeIds] = React.useState<ActivityType[]>([]);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState("");
   const [created, setCreated] = React.useState<Location | null>(null);
@@ -34,22 +34,20 @@ export function AdminQuickLocationForm({
     Promise.all([
       fetchSelectableRegions(),
       fetchAPI("/tags?limit=200").then((response) => response.json()),
-      fetchAPI("/activity-types").then((response) => response.json()),
-    ]).then(([nextRegions, tagData, activityData]) => {
+    ]).then(([nextRegions, tagData]) => {
       if (!active) return;
       setRegions(nextRegions);
       setTags((tagData as { tags?: Tag[] }).tags ?? []);
-      setActivityTypes((activityData as { activityTypes?: ActivityTypeInfo[] }).activityTypes ?? []);
     }).catch(() => {
       if (active) setError(t("admin.management.loadFailed"));
     });
     return () => { active = false; };
   }, [t]);
 
-  const toggle = (
-    value: string,
-    selected: string[],
-    update: React.Dispatch<React.SetStateAction<string[]>>,
+  const toggle = <T extends string,>(
+    value: T,
+    selected: T[],
+    update: React.Dispatch<React.SetStateAction<T[]>>,
   ) => update(selected.includes(value)
     ? selected.filter((candidate) => candidate !== value)
     : [...selected, value]);
@@ -130,19 +128,17 @@ export function AdminQuickLocationForm({
             {t("admin.quickDraft.cover")}
             <input type="url" inputMode="url" placeholder="https://" value={coverImageUrl} onChange={(event) => setCoverImageUrl(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
           </label>
-          {activityTypes.length > 0 && (
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">{t("admin.quickDraft.activityTypes")}</legend>
-              <div className="flex flex-wrap gap-2">
-                {activityTypes.map((activity) => (
-                  <label key={activity.id} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
-                    <input type="checkbox" checked={activityTypeIds.includes(activity.id)} onChange={() => toggle(activity.id, activityTypeIds, setActivityTypeIds)} />
-                    {activity.name}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          )}
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">{t("admin.quickDraft.activityTypes")}</legend>
+            <div className="flex flex-wrap gap-2">
+              {ACTIVITY_TYPES.map((activityType) => (
+                <label key={activityType} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
+                  <input type="checkbox" checked={activityTypeIds.includes(activityType)} onChange={() => toggle(activityType, activityTypeIds, setActivityTypeIds)} />
+                  {t(`enums.locationType.${activityType}`)}
+                </label>
+              ))}
+            </div>
+          </fieldset>
           {tags.length > 0 && (
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium">{t("admin.quickDraft.tags")}</legend>

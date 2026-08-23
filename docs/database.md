@@ -15,8 +15,8 @@
 - 当前 migration 链为 `0000_init.sql` baseline、`0001_reference_data.sql` 稳定参考数据、
   `0002_account_issuer.sql` Better Auth 账户 issuer 升级、`0003_import_v2_catalog.sql`
   旧库公开目录导入、`0004_fix_wutongshan_cover_image.sql` 梧桐山封面 URL 修复，以及
-  `0005_admin_content_catalogs.sql` 活动目录与地点草稿升级；journal 与 snapshot 必须逐条对应。
-- 当前 schema 包含 20 张业务表和 13 个触发器；CI 会校验 schema、migration 链与 snapshot 一致。
+  `0005_admin_location_drafts.sql` 地点草稿与活动类型代码枚举升级；journal 与 snapshot 必须逐条对应。
+- 当前 schema 包含 19 张业务表和 13 个触发器；CI 会校验 schema、migration 链与 snapshot 一致。
 - 时间在 D1 中存 Unix 毫秒，HTTP DTO 输出 ISO 8601。
 - JSON 列使用 Drizzle `mode: "json"`，D1 通过 `json_valid` 与 `json_type` CHECK 约束形状；业务层只传对象或数组。
 - 稳定 Region、Location、Tag 参考数据由 `0001_reference_data.sql` 管理；
@@ -31,7 +31,6 @@
 | 领域 | 表                                                 | 核心职责                                |
 | ---- | -------------------------------------------------- | --------------------------------------- |
 | 认证 | `users`, `sessions`, `accounts`, `verifications`   | 用户、凭据、会话与一次性 challenge      |
-| 目录 | `activity_types`                                   | 全局活动类型名称、排序与启停状态        |
 | 地理 | `region`, `locations`                              | Region 层级、地点内容与推荐活动类型     |
 | 标签 | `tags`, `location_tags`, `team_tags`, `story_tags` | 共享标签词典与明确的资源关联            |
 | 组队 | `teams`, `team_join_requests`, `team_members`      | Team 生命周期、申请和 active membership |
@@ -58,7 +57,6 @@ erDiagram
 
     REGION ||--o{ REGION : contains
     REGION ||--o{ LOCATIONS : contains
-    ACTIVITY_TYPES ||--o{ TEAMS : classifies
     LOCATIONS ||--o{ TEAMS : hosts
     LOCATIONS ||--o{ STORIES : references
     TEAMS ||--o{ TEAM_JOIN_REQUESTS : receives
@@ -89,12 +87,14 @@ Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和
   坐标和封面，推荐活动类型仍可为空。
 - 地点图片与活动扩展保存在有形状约束的 JSON 中；创建者引用允许 `SET NULL`，业务内容仍保留。
 
-### 活动目录与 Team
+### 活动类型与 Team
 
-- `activity_types.id` 是稳定业务 ID；名称可修改，停用不删除历史引用。
-- Team 的 `activity_type` 必填并引用全局目录。新建 Team 或显式修改活动类型时，最终条件 DML
-  必须复核类型仍启用；地点推荐只影响客户端排序，不限制可选集合。
-- 已引用的活动类型允许停用，历史 Team 通过目录外键继续读取原名称。
+- 活动类型是 [`src/contracts/enums.ts`](../src/contracts/enums.ts) 中的小型代码枚举，名称由
+  i18n 提供；新增类型需要同步代码、三种语言文案与测试，不建立运行时目录表。
+- Team 的 `activity_type` 必填。API schema 与最终条件 DML 都必须复核值属于代码枚举；地点推荐
+  只影响客户端排序，不限制可选集合。
+- `teams.activity_type` 不设置数据库 CHECK 或目录外键，避免每次扩展枚举都必须重建 D1 表；写入
+  完整性由共享契约、输入校验和最终条件写语句共同保证。
 
 ### Team 生命周期与成员
 

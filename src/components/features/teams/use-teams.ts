@@ -1,5 +1,7 @@
 import * as React from "react";
-import type { ActivityType, ActivityTypeInfo, RecruitmentStatus, Region, Team } from "@/lib/types";
+import { ACTIVITY_TYPES } from "@/contracts";
+import { isActivityType } from "@/lib/activity-types";
+import type { ActivityType, RecruitmentStatus, Region, Team } from "@/lib/types";
 import { fetchPublicAPI } from "@/lib/api";
 import { fetchSelectableRegions } from "@/lib/regions";
 import { parseTeamTagFilters } from "@/lib/team-filter-params";
@@ -19,8 +21,6 @@ export interface TeamsInitialData {
   pagination: TeamsPagination;
   availableTags: { id: string; name: string }[];
   tagsComplete?: boolean;
-  availableActivityTypes?: ActivityTypeInfo[];
-  activityTypesComplete?: boolean;
   availableRegions: Region[];
   regionsComplete?: boolean;
   filters?: {
@@ -38,9 +38,6 @@ export function useTeams(initialData?: TeamsInitialData) {
   const initialFilters = initialData?.filters;
   const hasInitialData = Boolean(initialData);
   const shouldLoadTags = !initialData || initialData.tagsComplete === false;
-  const shouldLoadActivityTypes = !initialData ||
-    initialData.activityTypesComplete === false ||
-    initialData.availableActivityTypes === undefined;
   const shouldLoadFullRegions = !initialData || initialData.regionsComplete === false || initialData.availableRegions.length === 0;
   const [teams, setTeams] = React.useState<Team[]>(initialData?.teams ?? []);
   const [isLoading, setIsLoading] = React.useState(!initialData);
@@ -56,7 +53,6 @@ export function useTeams(initialData?: TeamsInitialData) {
   const [startDate, setStartDate] = React.useState(initialFilters?.startDate ?? "");
   const [endDate, setEndDate] = React.useState(initialFilters?.endDate ?? "");
   const [availableTags, setAvailableTags] = React.useState<{ id: string; name: string }[]>(initialData?.availableTags ?? []);
-  const [availableActivityTypes, setAvailableActivityTypes] = React.useState<ActivityTypeInfo[]>(initialData?.availableActivityTypes ?? []);
   const [selectedTags, setSelectedTags] = React.useState<string[]>(initialFilters?.selectedTags ?? []);
   const [availableRegions, setAvailableRegions] = React.useState<Region[]>(initialData?.availableRegions ?? []);
   const [regionsLoading, setRegionsLoading] = React.useState(shouldLoadFullRegions);
@@ -132,8 +128,8 @@ export function useTeams(initialData?: TeamsInitialData) {
     const params = new URLSearchParams(window.location.search);
     const q = (params.get("q") || "").slice(0, 120);
     const activityTypeParam = params.get("activityType");
-    const activityType = activityTypeParam && activityTypeParam.length <= 128
-      ? activityTypeParam as ActivityType
+    const activityType = isActivityType(activityTypeParam)
+      ? activityTypeParam
       : "";
     const recruitmentStatusParam = params.get("recruitmentStatus");
     const recruitmentStatus = recruitmentStatusParam === "all"
@@ -185,18 +181,6 @@ export function useTeams(initialData?: TeamsInitialData) {
       .then((data) => { if (data.success && data.tags) setAvailableTags(data.tags); })
       .catch(() => {});
   }, [shouldLoadTags]);
-
-  React.useEffect(() => {
-    if (!shouldLoadActivityTypes) return;
-    fetchPublicAPI("/activity-types")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success && data.activityTypes) {
-          setAvailableActivityTypes(data.activityTypes);
-        }
-      })
-      .catch(() => {});
-  }, [shouldLoadActivityTypes]);
 
   const loadAllRegions = React.useCallback(async () => {
     regionsAbortRef.current?.abort();
@@ -360,7 +344,7 @@ export function useTeams(initialData?: TeamsInitialData) {
     startDate,
     endDate,
     availableTags,
-    availableActivityTypes,
+    availableActivityTypes: ACTIVITY_TYPES,
     availableRegions,
     regionsLoading,
     regionsError,

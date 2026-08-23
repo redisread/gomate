@@ -22,7 +22,7 @@
 `production` 环境显式绑定线上 Worker、D1、R2 和 route。根配置不再指向任何生产资源，
 生产命令必须显式传入 `--env production`。
 
-仓库 migration baseline 为 20 张业务表、13 个触发器；seed 与运行时代码依赖稳定
+仓库 migration baseline 为 19 张业务表、13 个触发器；seed 与运行时代码依赖稳定
 Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 `region-cn-shenzhen` 还是匿名 local-circle fallback，不得随意改名。生产实际 migration
 状态必须从只读 inventory 验证，不能由仓库文件推断。

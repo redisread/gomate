@@ -8,7 +8,6 @@ export interface OnboardingCandidate {
   id: string;
   title: string;
   activityType: ActivityType;
-  activityTypeName: string;
   startAt: string;
   maxParticipants: number;
   activeParticipantCount: number;

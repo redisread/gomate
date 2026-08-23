@@ -185,7 +185,6 @@
     "navHome": "后台首页",
     "navNewLocation": "新增地点",
     "navLocations": "地点管理",
-    "navActivityTypes": "活动类型",
     "navTags": "标签管理",
     "navUsers": "用户管理",
     "backToFrontend": "返回前台",
@@ -203,8 +202,6 @@
     "closeQuickAction": "关闭快速录入"
   },
   "management": {
-    "activityTypesTitle": "活动类型管理",
-    "activityTypesDescription": "维护队伍可选的全局活动目录；停用不会影响历史记录。",
     "tagsTitle": "标签管理",
     "tagsDescription": "新增、重命名并安全解除标签关联。",
     "usersTitle": "用户与管理员",

@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
-import type { ActivityType, ActivityTypeInfo, RecruitmentStatus, Team } from "@/lib/types";
+import type { ActivityType, RecruitmentStatus, Team } from "@/lib/types";
 import { formatTeamStart, getTeamDisplayStatus } from "@/lib/team-display";
 import {
   DIFFICULTY_CONFIG,
@@ -115,7 +115,7 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <span className="absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-            {team.activityTypeInfo?.name ?? team.activityType}
+            {t(`enums.locationType.${team.activityType}`)}
           </span>
         </div>
         <div className="flex flex-1 flex-col p-4">
@@ -288,7 +288,7 @@ export function Pagination({ current, hasNext, onChange }: { current: number; ha
 interface FilterPanelProps {
   selectedActivityType: ActivityType | "";
   selectedRecruitmentStatus: RecruitmentStatus | "";
-  availableActivityTypes: ActivityTypeInfo[];
+  availableActivityTypes: readonly ActivityType[];
   availableTags: { id: string; name: string }[];
   selectedTags: string[];
   activeFiltersCount: number;
@@ -309,13 +309,13 @@ export function FilterPanel({
         <span className="mb-2 block text-sm font-semibold text-stone-600 dark:text-stone-300">{t("common.activityLocation")}</span>
         <div className="flex flex-wrap gap-2">
           {availableActivityTypes.map((activityType) => {
-            const isSelected = selectedActivityType === activityType.id;
+            const isSelected = selectedActivityType === activityType;
             return (
-              <button key={activityType.id} type="button" onClick={() => onActivityTypeSelect(isSelected ? "" : activityType.id)} aria-pressed={isSelected}
+              <button key={activityType} type="button" onClick={() => onActivityTypeSelect(isSelected ? "" : activityType)} aria-pressed={isSelected}
                 className={cn("min-h-10 rounded-full border px-3 text-xs transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]",
                   isSelected ? "border-amber-400 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300" : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
                 )}>
-                {activityType.name}
+                {t(`enums.locationType.${activityType}`)}
               </button>
             );
           })}

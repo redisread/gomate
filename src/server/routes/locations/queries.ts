@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { ACTIVITY_TYPES } from "@/contracts";
 
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
@@ -29,7 +30,6 @@ import {
 } from "../../lib/content-cursor";
 import { validateRequest } from "../../lib/validation";
 import {
-  loadActivityTypes,
   loadLocationTags,
   projectLocation,
   projectRegion,
@@ -43,7 +43,7 @@ const locationListQuerySchema = z.object({
   cursor: z.string().optional(),
   search: z.string().trim().max(100).optional(),
   regionId: z.string().trim().min(1).max(128).optional(),
-  activityType: z.string().trim().min(1).max(128).optional(),
+  activityType: z.enum(ACTIVITY_TYPES).optional(),
   tagIds: z
     .string()
     .trim()
@@ -133,15 +133,15 @@ queries.get("/admin", async (c) => {
     );
     const hasMore = rows.length > parsed.limit;
     const page = rows.slice(0, parsed.limit);
-    const [tags, activityTypes] = await Promise.all([
-      loadLocationTags(db, page.map(({ location }) => location.id)),
-      loadActivityTypes(db),
-    ]);
+    const tags = await loadLocationTags(
+      db,
+      page.map(({ location }) => location.id),
+    );
     const oldest = page.at(-1)?.location;
     return c.json({
       success: true as const,
       locations: page.map(({ location, region }) =>
-        projectLocation(location, region, tags.get(location.id) ?? [], activityTypes),
+        projectLocation(location, region, tags.get(location.id) ?? []),
       ),
       nextCursor: hasMore && oldest
         ? encodeContentCursor({ t: oldest.createdAt.getTime(), id: oldest.id })
@@ -244,16 +244,15 @@ queries.get("/", async (c) => {
     const hasMore = fetchedRows.length > limit;
     const rows = fetchedRows.slice(0, limit);
 
-    const [tagsByLocation, activityTypes] = await Promise.all([
-      loadLocationTags(db, rows.map((row) => row.location.id)),
-      loadActivityTypes(db),
-    ]);
+    const tagsByLocation = await loadLocationTags(
+      db,
+      rows.map((row) => row.location.id),
+    );
     const locations = rows.map((row) =>
       projectLocation(
         row.location,
         row.region,
         tagsByLocation.get(row.location.id) ?? [],
-        activityTypes,
       ),
     );
     const oldest = rows.at(-1)?.location;
@@ -395,17 +394,13 @@ queries.get("/:id/admin", async (c) => {
       .limit(1);
 
     if (!row) return c.json(APIErrors.notFound("Location not found"), 404);
-    const [tags, activityTypes] = await Promise.all([
-      loadLocationTags(db, [row.location.id]),
-      loadActivityTypes(db),
-    ]);
+    const tags = await loadLocationTags(db, [row.location.id]);
     return c.json({
       success: true as const,
       location: projectLocation(
         row.location,
         row.region,
         tags.get(row.location.id) ?? [],
-        activityTypes,
       ),
     });
   } catch (error) {
@@ -438,17 +433,13 @@ queries.get("/:id", async (c) => {
       .limit(1);
 
     if (!row) return c.json(APIErrors.notFound("Location not found"), 404);
-    const [tags, activityTypes] = await Promise.all([
-      loadLocationTags(db, [row.location.id]),
-      loadActivityTypes(db),
-    ]);
+    const tags = await loadLocationTags(db, [row.location.id]);
     return c.json({
       success: true as const,
       location: projectLocation(
         row.location,
         row.region,
         tags.get(row.location.id) ?? [],
-        activityTypes,
       ),
     });
   } catch (error) {

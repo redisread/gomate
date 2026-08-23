@@ -1,6 +1,7 @@
 import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { ACTIVITY_TYPES } from "@/contracts";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import { APIErrors, ErrorCode } from "../../lib/api-errors";
@@ -17,7 +18,8 @@ import { toTeamResponse } from "./utils";
 
 const mutations = new Hono<{ Bindings: Env }>();
 
-const activityTypeSchema = z.string().trim().min(1).max(128);
+const activityTypeSchema = z.enum(ACTIVITY_TYPES);
+const activityTypesJson = JSON.stringify(ACTIVITY_TYPES);
 const requirementSchema = z.string().trim().min(1).max(200);
 const tagIdsSchema = z
   .array(z.string().trim().min(1).max(100))
@@ -91,17 +93,12 @@ async function readTeamResponse(
   const rows = await db
     .select({
       team: schema.teams,
-      activityTypeInfo: schema.activityTypes,
       leader: schema.users,
       location: schema.locations,
       region: schema.region,
       activeParticipantCount: activeCount,
     })
     .from(schema.teams)
-    .innerJoin(
-      schema.activityTypes,
-      eq(schema.activityTypes.id, schema.teams.activityType),
-    )
     .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
     .innerJoin(
       schema.locations,
@@ -178,11 +175,7 @@ mutations.post("/", async (c) => {
       FROM locations AS location
       WHERE location.id = ?
         AND location.status = 'published'
-        AND EXISTS (
-          SELECT 1 FROM activity_types AS activity_type
-          WHERE activity_type.id = ?
-            AND activity_type.is_active = 1
-        )
+        AND ? IN (SELECT value FROM json_each(?))
     `,
     ).bind(
       teamId,
@@ -199,6 +192,7 @@ mutations.post("/", async (c) => {
       now,
       data.locationId,
       data.activityType,
+      activityTypesJson,
     );
     const tagStatements = data.tagIds.map((tagId) =>
       c.env.DB.prepare(
@@ -305,14 +299,7 @@ mutations.put("/:id", async (c) => {
           WHERE location.id = ?
             AND location.status = 'published'
         )
-        AND (
-          ? = 0
-          OR EXISTS (
-            SELECT 1 FROM activity_types AS activity_type
-            WHERE activity_type.id = ?
-              AND activity_type.is_active = 1
-          )
-        )
+        AND ? IN (SELECT value FROM json_each(?))
     `,
     ).bind(
       locationId,
@@ -329,8 +316,8 @@ mutations.put("/:id", async (c) => {
       session.user.id,
       now,
       locationId,
-      data.activityType === undefined ? 0 : 1,
       activityType,
+      activityTypesJson,
     );
 
     const statements = data.tagIds
@@ -344,7 +331,7 @@ mutations.put("/:id", async (c) => {
     if (changes(results[0]) !== 1) {
       return c.json(
         APIErrors.conflict(
-          "队伍已成行、已取消、已出发、地点不可用，或活动类型已停用",
+          "队伍已成行、已取消、已出发、地点不可用，或活动类型无效",
         ),
         409,
       );

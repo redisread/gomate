@@ -4,9 +4,9 @@ import * as React from "react";
 import { apiPost, apiPut, fetchAPI } from "@/lib/api";
 import { fetchSelectableRegions } from "@/lib/regions";
 import { useI18n } from "@/hooks/useI18n";
+import { ACTIVITY_TYPES } from "@/contracts";
 import type {
   ActivityType,
-  ActivityTypeInfo,
   Difficulty,
   Location,
   LocationStatus,
@@ -89,7 +89,7 @@ interface UseLocationFormReturn {
   location: Location | null;
   regions: Region[];
   allTags: Tag[];
-  activityTypes: ActivityTypeInfo[];
+  activityTypes: readonly ActivityType[];
   formData: LocationFormData;
   errors: Record<string, string | undefined>;
   isLoading: boolean;
@@ -247,7 +247,6 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
   const [location, setLocation] = React.useState<Location | null>(null);
   const [regions, setRegions] = React.useState<Region[]>([]);
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
-  const [activityTypes, setActivityTypes] = React.useState<ActivityTypeInfo[]>([]);
   const [formData, setFormData] = React.useState<LocationFormData>(DEFAULT_LOCATION_FORM);
   const [errors, setErrors] = React.useState<Record<string, string | undefined>>({});
   const [isLoading, setIsLoading] = React.useState(true);
@@ -276,20 +275,16 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
       fetchAPI("/tags?limit=200").then((response) =>
         jsonOrThrow<{ success: boolean; tags: Tag[] }>(response, t("admin.loadLocationFailed")),
       ),
-      fetchAPI("/activity-types?includeInactive=true").then((response) =>
-        jsonOrThrow<{ success: boolean; activityTypes: ActivityTypeInfo[] }>(response, t("admin.loadLocationFailed")),
-      ),
       locationId
         ? fetchAPI(`/locations/${locationId}/admin`).then((response) =>
             jsonOrThrow<LocationResponse>(response, t("admin.loadLocationFailed")),
           )
         : Promise.resolve(null),
     ])
-      .then(([nextRegions, tagsData, activityData, locationData]) => {
+      .then(([nextRegions, tagsData, locationData]) => {
         if (!active) return;
         setRegions(nextRegions);
         setAllTags(tagsData.tags ?? []);
-        setActivityTypes(activityData.activityTypes ?? []);
         const serverForm = locationData?.location
           ? locationToFormData(locationData.location)
           : DEFAULT_LOCATION_FORM;
@@ -458,7 +453,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     location,
     regions,
     allTags,
-    activityTypes,
+    activityTypes: ACTIVITY_TYPES,
     formData,
     errors,
     isLoading,

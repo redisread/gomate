@@ -51,14 +51,11 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 注册的固定成功响应还会在 Better Auth 返回后回查 D1：新用户必须同时存在 `users` 与
 `local:credential` 账户；持久化不完整时返回 5xx，不伪装成注册成功。
 
-### Region、活动目录、地点与标签
+### Region、地点与标签
 
 | 方法   | 路径                   | 认证  | 用途                                    |
 | ------ | ---------------------- | ----- | --------------------------------------- |
 | GET    | `/regions`             | 否    | 按国家、层级、父级与服务状态筛选 Region |
-| GET    | `/activity-types`      | 否/admin | 启用活动目录；admin 可请求停用项和引用计数 |
-| POST   | `/activity-types`      | admin | 新增活动类型                          |
-| PATCH  | `/activity-types/:id`  | admin | 改名、排序或启停活动类型              |
 | GET    | `/locations`           | 否    | published 地点 cursor feed              |
 | GET    | `/locations/admin`     | admin | 搜索并分页读取任意状态地点              |
 | GET    | `/locations/stats`     | 否    | Region 与地图点统计                     |
@@ -81,9 +78,8 @@ D1 JSON 的 snake_case 结构转换。公开和管理员 Location DTO 都不包�
 
 快速创建 Location 默认保存 `draft`，只要求 `name`、`description` 与启用的 city
 `regionId`；坐标、封面、标签和推荐活动类型可后补。发布边界要求坐标与封面，但推荐活动类型
-始终可空。`supportedActivityTypes` 是可选的地点推荐信息，写入时必须全部来自当前启用目录。
-Location DTO 同时返回这些推荐项的 `activityTypes` 目录信息；目录项停用后，历史地点仍可展示其名称。
-编辑地点时可继续保留原有的停用推荐项，但不能新增停用项。
+始终可空。`supportedActivityTypes` 是可选的地点推荐信息，写入时必须全部来自共享代码枚举；
+名称由客户端 i18n 根据枚举值展示。
 普通 `DELETE /locations/:id` 只归档；永久删除必须同时提交
 `permanent=true&confirm=<locationId>`，且最终删除语句复核没有 Team、Story 或收藏引用。
 
@@ -115,9 +111,9 @@ Location DTO 同时返回这些推荐项的 `activityTypes` 目录信息；目�
 条件 DML 与容量 trigger 保证最终写入时权限、状态和名额仍有效。行动本上限为 2048 UTF-8
 bytes；覆盖、认领和取消认领使用内容 CAS，冲突返回 409。
 
-Team 的 `activityType` 必填并来自全局启用活动目录。Location 的推荐活动类型只用于客户端
-优先排序，不限制创建或编辑选择；创建及显式修改活动类型的最终条件 DML 会再次验证目录项
-仍启用。Team DTO 返回 `activityTypeInfo`，因此目录项停用后历史 Team 仍显示原名称。
+Team 的 `activityType` 必填并来自共享代码枚举。Location 的推荐活动类型只用于客户端优先排序，
+不限制创建或编辑选择；创建及修改活动类型的最终条件 DML 会再次验证枚举成员。Team DTO 只返回
+稳定的 `activityType` 值，客户端通过 i18n 显示名称。
 
 ### 用户
 

@@ -14,8 +14,10 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
 import { orderActivityTypesForLocation } from "@/lib/activity-types";
+import { isActivityType } from "@/lib/activity-types";
+import { ACTIVITY_TYPES } from "@/contracts";
 import { DURATION_OPTION_DEFS, snapToDurationOption } from "@/lib/duration-options";
-import type { ActivityType, ActivityTypeInfo, Location } from "@/lib/types";
+import type { ActivityType, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -30,7 +32,6 @@ import { Footer } from "@/components/layout/footer";
 export function CreateTeamClient() {
   const { t } = useI18n(["teams", "errors", "common", "enums"]);
   const [locations, setLocations] = React.useState<Location[]>([]);
-  const [activityTypes, setActivityTypes] = React.useState<ActivityTypeInfo[]>([]);
   const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
   const [recommendedDuration, setRecommendedDuration] = React.useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
@@ -70,13 +71,6 @@ export function CreateTeamClient() {
       .then((r) => r.json())
       .then((data) => {
         if (data.success) setLocations(data.locations || []);
-      })
-      .catch(() => {});
-
-    fetchAPI("/activity-types")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) setActivityTypes(data.activityTypes || []);
       })
       .catch(() => {});
 
@@ -142,10 +136,10 @@ export function CreateTeamClient() {
 
   const orderedActivityTypes = React.useMemo(
     () => orderActivityTypesForLocation(
-      activityTypes,
+      ACTIVITY_TYPES,
       selectedLocation?.supportedActivityTypes ?? [],
     ),
-    [activityTypes, selectedLocation],
+    [selectedLocation],
   );
 
   // 当用户手动修改时长时，标记为已手动编辑
@@ -211,7 +205,7 @@ export function CreateTeamClient() {
       if (
         !activityType ||
         selectedLocation?.id !== formData.locationId ||
-        !activityTypes.some(({ id }) => id === activityType)
+        !isActivityType(activityType)
       ) {
         setError(t("errors.createTeamFailed"));
         setIsSubmitting(false);
@@ -384,10 +378,10 @@ export function CreateTeamClient() {
                   </option>
                   {orderedActivityTypes.map(
                     (activityType) => (
-                      <option key={activityType.id} value={activityType.id}>
-                        {selectedLocation.supportedActivityTypes.includes(activityType.id)
-                          ? t("teams.recommendedActivityType", { name: activityType.name })
-                          : activityType.name}
+                      <option key={activityType} value={activityType}>
+                        {selectedLocation.supportedActivityTypes.includes(activityType)
+                          ? t("teams.recommendedActivityType", { name: t(`enums.locationType.${activityType}`) })
+                          : t(`enums.locationType.${activityType}`)}
                       </option>
                     ),
                   )}

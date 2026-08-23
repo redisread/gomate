@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c17d2385-eea4-4c10-8f3b-b37c5d32dfe3",
+  "id": "817400b7-0b34-4010-a2c4-81a6de367a91",
   "prevId": "7a4f3e22-6d6f-4f0d-9d6d-74a3b57f1c28",
   "tables": {
     "accounts": {
@@ -150,91 +150,6 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
-    },
-    "activity_types": {
-      "name": "activity_types",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "slug": {
-          "name": "slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "sort_order": {
-          "name": "sort_order",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch() * 1000)"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch() * 1000)"
-        }
-      },
-      "indexes": {
-        "activity_types_slug_unique": {
-          "name": "activity_types_slug_unique",
-          "columns": [
-            "slug"
-          ],
-          "isUnique": true
-        },
-        "activity_types_active_sort_idx": {
-          "name": "activity_types_active_sort_idx",
-          "columns": [
-            "is_active",
-            "sort_order",
-            "id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "activity_types_active_check": {
-          "name": "activity_types_active_check",
-          "value": "\"activity_types\".\"is_active\" in (0, 1)"
-        }
-      }
     },
     "conversations": {
       "name": "conversations",
@@ -1991,19 +1906,6 @@
           "tableTo": "users",
           "columnsFrom": [
             "leader_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "teams_activity_type_activity_types_id_fk": {
-          "name": "teams_activity_type_activity_types_id_fk",
-          "tableFrom": "teams",
-          "tableTo": "activity_types",
-          "columnsFrom": [
-            "activity_type"
           ],
           "columnsTo": [
             "id"

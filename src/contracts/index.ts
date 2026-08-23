@@ -48,14 +48,6 @@ export interface Tag {
   slug: string;
 }
 
-export interface ActivityTypeInfo {
-  id: ActivityType;
-  name: string;
-  slug: string;
-  isActive: boolean;
-  sortOrder: number;
-}
-
 export interface HikingLocationExtra {
   difficulty?: Difficulty;
   durationMin?: number;
@@ -92,7 +84,6 @@ export interface Location {
   extra: LocationExtra;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  activityTypes?: ActivityTypeInfo[];
   region?: Region;
   tags?: Tag[];
 }
@@ -155,7 +146,6 @@ export interface Team {
   locationId: string;
   leaderId: string;
   activityType: ActivityType;
-  activityTypeInfo?: ActivityTypeInfo;
   title: string;
   description: string | null;
   startAt: Timestamp;

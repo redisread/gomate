@@ -16,7 +16,7 @@
 | 收藏     | `/favorites`                                                                  | 地点与 Story 收藏                                   |
 | 消息     | `/messages`, `/messages/[id]`                                                 | 会话 inbox 与 cursor 消息历史                       |
 | 用户     | `/my-teams`, `/profile`, `/profile/edit`, `/users/[id]`                       | 当前用户队伍、资料和公开主页                        |
-| 管理后台 | `/admin`, `/admin/locations`, `/admin/locations/new`, `/admin/locations/[id]/edit`, `/admin/activity-types`, `/admin/tags`, `/admin/users` | 地点、活动目录、标签与用户角色管理 |
+| 管理后台 | `/admin`, `/admin/locations`, `/admin/locations/new`, `/admin/locations/[id]/edit`, `/admin/tags`, `/admin/users` | 地点、标签与用户角色管理 |
 | 博客     | `/blog`, `/blog/[slug]`                                                       | 内容集合与详情                                      |
 | 信息页   | `/about`, `/contact`, `/feedback`, `/help`, `/privacy`, `/terms`              | 产品与法律信息                                      |
 | 创建入口 | `/create`                                                                     | 创建 Team 或 Story 的统一入口                       |
@@ -42,9 +42,9 @@
 ### Team
 
 - 列表按 Region、活动类型、时间和派生 lifecycle 筛选。
-- 创建和编辑 Team 时，`activityType` 必须来自全局启用活动目录；所选地点的
+- 创建和编辑 Team 时，`activityType` 必须来自共享代码枚举；所选地点的
   `supportedActivityTypes` 只把推荐项排在前面，不过滤其他活动类型。
-- Team 列表筛选读取动态活动目录；Team DTO 的 `activityTypeInfo` 保留停用后的历史名称。
+- Team 列表筛选直接读取共享代码枚举，名称统一通过 i18n 展示。
 - 详情展示 leader、active members、申请、行程和行动本；member 离队直接结束 active membership。
 - 已结束且成行的 Team 中，leader 或 active member 可通过 `/discover/create?teamId=<id>` 发布回顾。
 

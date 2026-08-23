@@ -1,22 +1,3 @@
-CREATE TABLE `activity_types` (
-	`id` text PRIMARY KEY NOT NULL,
-	`name` text NOT NULL,
-	`slug` text NOT NULL,
-	`is_active` integer DEFAULT true NOT NULL,
-	`sort_order` integer DEFAULT 0 NOT NULL,
-	`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
-	`updated_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
-	CONSTRAINT "activity_types_active_check" CHECK("activity_types"."is_active" in (0, 1))
-);
---> statement-breakpoint
-CREATE UNIQUE INDEX `activity_types_slug_unique` ON `activity_types` (`slug`);--> statement-breakpoint
-CREATE INDEX `activity_types_active_sort_idx` ON `activity_types` (`is_active`,`sort_order`,`id`);--> statement-breakpoint
-INSERT INTO `activity_types` (`id`, `name`, `slug`, `is_active`, `sort_order`)
-VALUES
-	('hiking', '徒步', 'hiking', 1, 10),
-	('explore', '探索', 'explore', 1, 20),
-	('leisure', '休闲', 'leisure', 1, 30),
-	('travel', '旅行', 'travel', 1, 40);--> statement-breakpoint
 DROP TRIGGER `team_members_capacity_validate_insert`;--> statement-breakpoint
 DROP TRIGGER `team_members_capacity_validate_reactivate`;--> statement-breakpoint
 DROP TRIGGER `team_members_leader_validate_insert`;--> statement-breakpoint
@@ -96,7 +77,6 @@ CREATE TABLE `__new_teams` (
 	`updated_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
 	FOREIGN KEY (`location_id`) REFERENCES `locations`(`id`) ON UPDATE no action ON DELETE restrict,
 	FOREIGN KEY (`leader_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE restrict,
-	FOREIGN KEY (`activity_type`) REFERENCES `activity_types`(`id`) ON UPDATE no action ON DELETE restrict,
 	CONSTRAINT "teams_time_range_check" CHECK("__new_teams"."end_at" >= "__new_teams"."start_at"),
 	CONSTRAINT "teams_capacity_check" CHECK("__new_teams"."max_participants" between 1 and 49),
 	CONSTRAINT "teams_requirements_json_check" CHECK(json_valid("__new_teams"."requirements") and json_type("__new_teams"."requirements") = 'array'),

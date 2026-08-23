@@ -1,5 +1,4 @@
 import {
-  Activity,
   ExternalLink,
   House,
   MapPinned,
@@ -20,7 +19,6 @@ export interface AdminNavigationCopy {
   navHome: string;
   navNewLocation: string;
   navLocations: string;
-  navActivityTypes: string;
   navTags: string;
   navUsers: string;
   backToFrontend: string;
@@ -44,7 +42,6 @@ function navigationItems(copy: AdminNavigationCopy) {
       icon: MapPinPlus,
       exact: false,
     },
-    { href: "/admin/activity-types", label: copy.navActivityTypes, icon: Activity, exact: false },
     { href: "/admin/tags", label: copy.navTags, icon: Tags, exact: false },
     { href: "/admin/users", label: copy.navUsers, icon: Users, exact: false },
   ];

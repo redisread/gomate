@@ -29,11 +29,10 @@ import {
   getR2PublicBaseUrl,
 } from "../../lib/r2-media";
 import { validateRequest } from "../../lib/validation";
+import { ACTIVITY_TYPES } from "@/contracts";
 import {
-  activityTypesRequiringActiveValidation,
   createLocationInputSchema,
   findOpenCityRegion,
-  loadActivityTypes,
   loadLocationTags,
   locationImagesAreAllowed,
   normalizeLocationExtraForStorage,
@@ -44,6 +43,7 @@ import {
 } from "./utils";
 
 const mutations = new Hono<{ Bindings: Env }>();
+const activityTypesJson = JSON.stringify(ACTIVITY_TYPES);
 
 const deleteLocationQuerySchema = z.object({
   permanent: z.enum(["true", "false"]).optional(),
@@ -60,21 +60,6 @@ function generatedSlug(id: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
   return `location-${suffix || crypto.randomUUID()}`;
-}
-
-async function allActivityTypesAreActive(
-  db: ReturnType<typeof createDb>,
-  activityTypeIds: string[],
-) {
-  if (activityTypeIds.length === 0) return true;
-  const [result] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(schema.activityTypes)
-    .where(and(
-      inArray(schema.activityTypes.id, activityTypeIds),
-      eq(schema.activityTypes.isActive, true),
-    ));
-  return Number(result?.count ?? 0) === activityTypeIds.length;
 }
 
 mutations.post("/", async (c) => {
@@ -106,13 +91,6 @@ mutations.post("/", async (c) => {
         400,
       );
     }
-    if (!await allActivityTypesAreActive(db, parsed.supportedActivityTypes)) {
-      return c.json(
-        APIErrors.badRequest("Every activity type must be active"),
-        400,
-      );
-    }
-
     const id = generateId();
     preparedMedia = await prepareLocationMedia(c.env, admin.id, id, {
       coverImageUrl: parsed.coverImageUrl,
@@ -135,12 +113,10 @@ mutations.post("/", async (c) => {
           AND target_region.level = 'city'
           AND target_region.service_enabled = 1
           AND NOT EXISTS (
-            SELECT 1
-            FROM json_each(?) AS requested_activity
-            LEFT JOIN activity_types AS activity_type
-              ON activity_type.id = requested_activity.value
-              AND activity_type.is_active = 1
-            WHERE activity_type.id IS NULL
+            SELECT 1 FROM json_each(?) AS requested_activity
+            WHERE requested_activity.value NOT IN (
+              SELECT value FROM json_each(?)
+            )
           )
       `,
     )
@@ -163,6 +139,7 @@ mutations.post("/", async (c) => {
         now,
         parsed.regionId,
         storedActivityTypes,
+        activityTypesJson,
       )
       .run();
     if (d1Changes(insertResult) !== 1) {
@@ -189,11 +166,10 @@ mutations.post("/", async (c) => {
         ),
     );
 
-    const activityTypes = await loadActivityTypes(db);
     return c.json(
       {
         success: true as const,
-        location: projectLocation(location, targetRegion, [], activityTypes),
+        location: projectLocation(location, targetRegion, []),
       },
       201,
     );
@@ -269,22 +245,6 @@ mutations.put("/", async (c) => {
         APIErrors.validationError(
           "Published locations require coordinates and a cover image",
         ),
-        400,
-      );
-    }
-
-    if (
-      changes.supportedActivityTypes !== undefined &&
-      !await allActivityTypesAreActive(
-        db,
-        activityTypesRequiringActiveValidation(
-          changes.supportedActivityTypes,
-          existing.supportedActivityTypes,
-        ),
-      )
-    ) {
-      return c.json(
-        APIErrors.badRequest("Every activity type must be active"),
         400,
       );
     }
@@ -373,21 +333,15 @@ mutations.put("/", async (c) => {
           AND NOT EXISTS (
             SELECT 1
             FROM json_each(?) AS requested_activity
-            LEFT JOIN activity_types AS activity_type
-              ON activity_type.id = requested_activity.value
-              AND activity_type.is_active = 1
-            WHERE activity_type.id IS NULL
-              AND NOT EXISTS (
-                SELECT 1
-                FROM json_each(?) AS preserved_activity
-                WHERE preserved_activity.value = requested_activity.value
-              )
+            WHERE requested_activity.value NOT IN (
+              SELECT value FROM json_each(?)
+            )
           )
         `
       : "";
     if (changes.supportedActivityTypes !== undefined) {
       values.push(JSON.stringify(changes.supportedActivityTypes));
-      values.push(JSON.stringify(existing.supportedActivityTypes));
+      values.push(activityTypesJson);
     }
     const updateResult = await c.env.DB.prepare(
       `
@@ -445,17 +399,13 @@ mutations.put("/", async (c) => {
         ),
     );
 
-    const [tags, activityTypes] = await Promise.all([
-      loadLocationTags(db, [id]),
-      loadActivityTypes(db),
-    ]);
+    const tags = await loadLocationTags(db, [id]);
     return c.json({
       success: true as const,
       location: projectLocation(
         updated,
         targetRegion,
         tags.get(id) ?? [],
-        activityTypes,
       ),
     });
   } catch (error) {

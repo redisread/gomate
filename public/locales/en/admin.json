@@ -185,7 +185,6 @@
     "navHome": "Admin home",
     "navNewLocation": "Add location",
     "navLocations": "Locations",
-    "navActivityTypes": "Activity types",
     "navTags": "Tags",
     "navUsers": "Users",
     "backToFrontend": "Back to site",
@@ -203,8 +202,6 @@
     "closeQuickAction": "Close quick entry"
   },
   "management": {
-    "activityTypesTitle": "Activity types",
-    "activityTypesDescription": "Manage the global activity catalog. Deactivation preserves history.",
     "tagsTitle": "Tags",
     "tagsDescription": "Create, rename, and safely detach tags.",
     "usersTitle": "Users and administrators",

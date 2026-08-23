@@ -1,19 +1,11 @@
 import { describe, expect, it } from "vitest";
 import * as schema from "../../db/schema";
 import {
-  activityTypesRequiringActiveValidation,
   createLocationInputSchema,
   projectLocation,
 } from "./utils";
 
 describe("location input", () => {
-  it("validates only newly attached activity types during an update", () => {
-    expect(activityTypesRequiringActiveValidation(
-      ["hiking", "new-activity"],
-      ["hiking"],
-    )).toEqual(["new-activity"]);
-  });
-
   it("accepts a draft with only name, description, and region", () => {
     const result = createLocationInputSchema.safeParse({
       name: "突然想到的地点",
@@ -55,6 +47,15 @@ describe("location input", () => {
       expect(complete.data.supportedActivityTypes).toEqual([]);
     }
   });
+
+  it("rejects activity types outside the code enum", () => {
+    expect(createLocationInputSchema.safeParse({
+      name: "水上地点",
+      description: "测试未知活动类型",
+      regionId: "region-cn-shenzhen",
+      supportedActivityTypes: ["paddling"],
+    }).success).toBe(false);
+  });
 });
 
 describe("location response projection", () => {
@@ -95,23 +96,13 @@ describe("location response projection", () => {
       sortOrder: 1,
     } as unknown as schema.Region;
 
-    const projected = projectLocation(location, region, [], [
-      {
-        id: "hiking",
-        name: "徒步",
-        slug: "hiking",
-        isActive: false,
-        sortOrder: 10,
-      },
-    ]);
+    const projected = projectLocation(location, region, []);
 
     expect(projected).not.toHaveProperty("createdByUserId");
     expect(projected).toMatchObject({
       id: "location-1",
-      activityTypes: [
-        { id: "hiking", name: "徒步", isActive: false },
-      ],
       region: { id: "region-1" },
     });
+    expect(projected).not.toHaveProperty("activityTypes");
   });
 });
