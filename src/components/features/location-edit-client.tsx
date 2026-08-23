@@ -9,8 +9,6 @@
 import * as React from "react";
 import { ArrowLeft, Eye, EyeOff, MapPin as MapPinIcon, Image as ImageIcon, Navigation } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 import { StickyActionBar } from "@/components/ui/sticky-action-bar";
 import { EditProgressBar } from "@/components/ui/season-picker";
 import { cn } from "@/lib/utils";
@@ -32,7 +30,6 @@ import {
 function EditSkeleton() {
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
-      <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-8 animate-pulse">
         <div className="h-5 w-24 bg-stone-200 dark:bg-stone-800 rounded mb-6" />
         <div className="h-7 w-48 bg-stone-200 dark:bg-stone-800 rounded mb-8" />
@@ -132,7 +129,6 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 pb-24">
-      <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Top nav */}
         <div className="flex items-center justify-between mb-6">
@@ -198,7 +194,6 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
         </div>
       </div>
 
-      <Footer />
       <StickyActionBar isDirty={form.isDirty} isSaving={form.isSaving} lastSaved={null}
         onSave={form.handleSave} onDiscard={form.handleDiscard} />
 

@@ -72,8 +72,10 @@ export function useModalA11y(
       cancelled = true;
       document.removeEventListener("keydown", onKeyDown);
       const prev = previousFocusRef.current;
-      if (prev && document.contains(prev)) prev.focus();
       previousFocusRef.current = null;
+      queueMicrotask(() => {
+        if (prev && document.contains(prev)) prev.focus();
+      });
     };
   }, [open, panelRef, onClose, initialFocusRef]);
 }

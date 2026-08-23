@@ -21,6 +21,9 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 - JSON、query、path 等 API 边界统一使用 `@hono/standard-validator` 对接现有 Zod
   Standard Schema；校验失败继续返回现有 API error envelope。认证 JSON 和 multipart 上传在
  读取前分别保留大小限制，因此会在有界读取后调用同一 Standard Schema 校验协议。
+- 纯管理员 API 共用一个访问解析器：先验证同源 session，再从当前 D1 `users` 行复核账号为
+  active 且 `role=admin`。无 session 使用统一 401 envelope，当前角色或状态不满足时使用统一
+  403 envelope；不信任客户端 UI 或 session 中缓存的旧角色。
 
 ## 端点目录
 
@@ -113,6 +116,8 @@ bytes；覆盖、认领和取消认领使用内容 CAS，冲突返回 409。
 
 资料修改不能指定目标 user ID。`PATCH /users/me` 不接受头像字段；头像只能通过上传 command
 修改。`extra` 的 partial patch 在单条 SQL 中合并，避免并发 read-merge-write 覆盖。
+`GET /users/me` 的 canonical DTO 包含当前 `role`；Navbar 只用它控制管理员入口可见性，最终
+页面和 API 授权仍分别由 SSR guard 与上述管理员访问解析器执行。
 
 `DELETE /users/me` 只接受 `{ "confirmation": "DELETE" }`。命令先清理当前用户自有
 头像，再通过一个 D1 `batch()` 将用户替换为匿名墓碑，并删除 `accounts`、`sessions`

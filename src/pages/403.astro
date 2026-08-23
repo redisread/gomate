@@ -11,7 +11,7 @@ import { declareI18nNs } from "../middleware";
 
 Astro.response.status = 403;
 Astro.response.headers.set("Cache-Control", "private, no-store");
-declareI18nNs(Astro.locals, ["errors", "common"]);
+declareI18nNs(Astro.locals, ["admin"]);
 
 const localsLocale = Astro.locals.locale;
 const cookieLocale = Astro.cookies.get("gomate_locale")?.value as
@@ -23,7 +23,7 @@ const locale =
     ? resolvedLocale
     : DEFAULT_LOCALE;
 const loadedData = await loadLocaleData(
-  ["errors", "common"],
+  ["admin"],
   locale,
   Astro.url.origin,
 );
@@ -32,18 +32,27 @@ const ssr = getSSRT(locale, {
 } as Record<Locale, Record<string, Record<string, unknown>>>);
 ---
 
-<Layout title={ssr.t("errors.noPermission")} showNavbar={false} showFooter={false}>
+<Layout
+  title={ssr.t("admin.platform.forbiddenTitle")}
+  showNavbar={false}
+  showFooter={false}
+>
   <main class="grid min-h-screen place-items-center bg-background px-6 py-12 text-foreground">
     <div class="max-w-md text-center">
       <p class="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">
         403
       </p>
-      <h1 class="text-2xl font-bold">{ssr.t("errors.noPermission")}</h1>
+      <h1 class="text-2xl font-bold">
+        {ssr.t("admin.platform.forbiddenTitle")}
+      </h1>
+      <p class="mt-3 text-sm leading-6 text-muted-foreground">
+        {ssr.t("admin.platform.forbiddenDescription")}
+      </p>
       <a
         href="/"
         class="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
-        {ssr.t("common.backHome")}
+        {ssr.t("admin.platform.backHome")}
       </a>
     </div>
   </main>

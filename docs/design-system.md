@@ -55,6 +55,17 @@
 - 交互目标至少 44×44 CSS px；键盘焦点不得只依赖颜色变化。
 - 页面优先使用 Astro SSR，只有需要客户端状态的交互才建立 React island。
 
+### 后台壳层与快速操作
+
+- 后台以 `AdminLayout` 为唯一页面壳层：桌面在 leading edge 保留固定侧栏，`lg` 以下改用
+  移动顶部栏和抽屉，主内容保持最少 16px inline margin，页面仍只有一个 `<h1>`。
+- 后台导航只展示真实可达的静态路由，当前项使用 `aria-current="page"`；移动抽屉提供可访问
+  名称、44×44 触发目标、Escape 关闭和关闭后焦点恢复。
+- `AdminQuickAction` 只负责表现层：宽布局居中为 Dialog，窄布局贴底为 Bottom Sheet；业务
+  内容通过 `children` 注入。标题固定可达，内容区域独立滚动，底部计算 safe area。
+- 快速操作打开时锁定 body 滚动并使背景 `inert`，Tab/Shift+Tab 圈定在弹层内；关闭时先清理
+  `inert` 和滚动状态，再恢复原触发器焦点。所有位移动效遵守 reduced-motion。
+
 ## 可访问性与内容
 
 - 正文和控件文字达到 WCAG 2 AA 对比度：普通文本至少 4.5:1，大文本至少 3:1。

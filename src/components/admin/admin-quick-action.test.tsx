@@ -115,7 +115,7 @@ describe("AdminQuickAction", () => {
     fireEvent.keyDown(document, { key: "Escape" });
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(trigger).toHaveFocus();
+    await waitFor(() => expect(trigger).toHaveFocus());
     expect(container).not.toHaveAttribute("inert");
     expect(document.body.style.overflow).toBe("");
     expect(onOpenChange).toHaveBeenNthCalledWith(1, true);

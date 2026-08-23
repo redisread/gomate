@@ -16,7 +16,7 @@
 | 收藏     | `/favorites`                                                                  | 地点与 Story 收藏                                   |
 | 消息     | `/messages`, `/messages/[id]`                                                 | 会话 inbox 与 cursor 消息历史                       |
 | 用户     | `/my-teams`, `/profile`, `/profile/edit`, `/users/[id]`                       | 当前用户队伍、资料和公开主页                        |
-| 地点管理 | `/admin/locations/new`, `/admin/locations/[id]/edit`                          | Admin 创建与编辑地点                                |
+| 管理后台 | `/admin`, `/admin/locations/new`, `/admin/locations/[id]/edit`                | 独立后台首页，以及地点创建与编辑                    |
 | 博客     | `/blog`, `/blog/[slug]`                                                       | 内容集合与详情                                      |
 | 信息页   | `/about`, `/contact`, `/feedback`, `/help`, `/privacy`, `/terms`              | 产品与法律信息                                      |
 | 创建入口 | `/create`                                                                     | 创建 Team 或 Story 的统一入口                       |
@@ -58,6 +58,18 @@
 - 会话由 `teamId + memberUserId` 唯一确定，只有该 member 或 Team 当前 leader 可访问。
 - 首屏读取最新消息；加载历史和轮询都使用服务端 opaque cursor，并按消息 ID 去重。
 - 轮询不能覆盖用户当前的历史 cursor；遇到无重叠的最新页时沿 cursor 回溯并合并缺口。
+
+### 管理后台
+
+- `/admin/*` 在 Astro middleware 中先完成服务端授权：访客以 302 前往登录页并携带经过校验的
+  站内 `returnTo`，active 普通用户得到 HTTP 403，管理员响应使用 `private, no-store`。
+- 后台不渲染公共 Navbar 或 Footer。宽布局使用固定侧栏，内容无法继续容纳时切换为移动顶部栏
+  和抽屉；导航只包含已经存在的 `/admin`、地点新增和返回前台入口。
+- 地点新增、编辑继续按可见性懒加载现有表单，但只使用统一后台壳层，不再重复渲染公共导航。
+- 公共 Navbar 从 `/api/users/me` 的当前 `role` 判断是否显示 `/admin` 和快速地点入口；访客、
+  loading 与普通用户不渲染这些能力。快速入口当前打开响应式 Dialog/Bottom Sheet，并链接到
+  真实的完整地点录入页，不在公共首屏下载地点表单 bundle。
+- 无前缀及 `en`、`ja` locale 前缀的后台路径使用同一授权与布局合同。
 
 ## 运行时约束
 

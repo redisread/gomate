@@ -7,7 +7,7 @@
  * 2. 非关键 CSS 延迟加载 — 通过 rel="preload" + onload
  */
 import "../styles/globals.css";
-import { Navbar } from "../components/layout/navbar";
+import { PublicNavbar } from "../components/layout/public-navbar";
 import { Footer } from "../components/layout/footer";
 import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, getSSRT } from "../i18n";
 import { loadLocaleData } from "../i18n/ssr-loader.server";
@@ -43,7 +43,7 @@ const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLoc
 // 从 locals 读取页面声明的 namespaces
 const declaredNs = (Astro.locals as any)?.__i18n_namespaces || [];
 // 注入全局 namespace（nav/common 用于 Navbar/Footer）+ content（用于 SEO 标题）
-const nsList = [...new Set([...declaredNs, "nav", "common", "content"])];
+const nsList = [...new Set([...declaredNs, "nav", "common", "content", "admin"])];
 let ssrLocaleData: Record<Locale, Record<string, Record<string, unknown>>> = {} as any;
 let ssrLoadedData: Record<string, Record<string, unknown>> | undefined;
 try {
@@ -344,7 +344,7 @@ function getHreflangUrl(loc: Locale) {
     >
       {ssr.t("common.skipToContent")}
     </a>
-    {showNavbar && <Navbar client:visible />}
+    {showNavbar && <PublicNavbar client:visible />}
     {/*
       #main-content 是 skip-link 锚点，不是 <main>：
       各 page/组件（skeleton.tsx、create-team、home-main、story-detail 等）自带 <main> landmark，
