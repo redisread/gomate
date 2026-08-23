@@ -16,7 +16,7 @@
 | 收藏     | `/favorites`                                                                  | 地点与 Story 收藏                                   |
 | 消息     | `/messages`, `/messages/[id]`                                                 | 会话 inbox 与 cursor 消息历史                       |
 | 用户     | `/my-teams`, `/profile`, `/profile/edit`, `/users/[id]`                       | 当前用户队伍、资料和公开主页                        |
-| 管理后台 | `/admin`, `/admin/locations/new`, `/admin/locations/[id]/edit`                | 独立后台首页，以及地点创建与编辑                    |
+| 管理后台 | `/admin`, `/admin/locations`, `/admin/locations/new`, `/admin/locations/[id]/edit`, `/admin/activity-types`, `/admin/tags`, `/admin/users` | 地点、活动目录、标签与用户角色管理 |
 | 博客     | `/blog`, `/blog/[slug]`                                                       | 内容集合与详情                                      |
 | 信息页   | `/about`, `/contact`, `/feedback`, `/help`, `/privacy`, `/terms`              | 产品与法律信息                                      |
 | 创建入口 | `/create`                                                                     | 创建 Team 或 Story 的统一入口                       |
@@ -42,7 +42,9 @@
 ### Team
 
 - 列表按 Region、活动类型、时间和派生 lifecycle 筛选。
-- 创建 Team 时，`activityType` 必须来自所选地点的 `supportedActivityTypes`；切换地点要清理失效值。
+- 创建和编辑 Team 时，`activityType` 必须来自全局启用活动目录；所选地点的
+  `supportedActivityTypes` 只把推荐项排在前面，不过滤其他活动类型。
+- Team 列表筛选读取动态活动目录；Team DTO 的 `activityTypeInfo` 保留停用后的历史名称。
 - 详情展示 leader、active members、申请、行程和行动本；member 离队直接结束 active membership。
 - 已结束且成行的 Team 中，leader 或 active member 可通过 `/discover/create?teamId=<id>` 发布回顾。
 
@@ -64,11 +66,16 @@
 - `/admin/*` 在 Astro middleware 中先完成服务端授权：访客以 302 前往登录页并携带经过校验的
   站内 `returnTo`，active 普通用户得到 HTTP 403，管理员响应使用 `private, no-store`。
 - 后台不渲染公共 Navbar 或 Footer。宽布局使用固定侧栏，内容无法继续容纳时切换为移动顶部栏
-  和抽屉；导航只包含已经存在的 `/admin`、地点新增和返回前台入口。
+  和抽屉；导航包含地点列表/新增、活动类型、标签、用户以及返回前台入口。
 - 地点新增、编辑继续按可见性懒加载现有表单，但只使用统一后台壳层，不再重复渲染公共导航。
+- 地点管理列表可搜索并按 draft/published/archived 筛选；删除默认归档，永久删除只在归档后
+  通过精确 ID 确认发起，后端仍会拒绝存在业务引用的地点。
+- 活动类型后台支持新增、改名、排序和启停；标签后台支持新增、改名、查看引用计数并确认解除
+  引用后删除；用户后台可搜索并授予或撤销管理员角色，但不能修改自己或撤销最后一名管理员。
 - 公共 Navbar 从 `/api/users/me` 的当前 `role` 判断是否显示 `/admin` 和快速地点入口；访客、
-  loading 与普通用户不渲染这些能力。快速入口当前打开响应式 Dialog/Bottom Sheet，并链接到
-  真实的完整地点录入页，不在公共首屏下载地点表单 bundle。
+  loading 与普通用户不渲染这些能力。快速入口打开响应式 Dialog/Bottom Sheet，管理员填写
+  地点名称、介绍和地区即可直接保存草稿；封面、标签和推荐活动类型折叠为可选扩展，保存后可
+  继续进入完整编辑页。
 - 无前缀及 `en`、`ja` locale 前缀的后台路径使用同一授权与布局合同。
 
 ## 运行时约束

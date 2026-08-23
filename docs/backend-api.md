@@ -51,27 +51,39 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 注册的固定成功响应还会在 Better Auth 返回后回查 D1：新用户必须同时存在 `users` 与
 `local:credential` 账户；持久化不完整时返回 5xx，不伪装成注册成功。
 
-### Region、地点与标签
+### Region、活动目录、地点与标签
 
 | 方法   | 路径                   | 认证  | 用途                                    |
 | ------ | ---------------------- | ----- | --------------------------------------- |
 | GET    | `/regions`             | 否    | 按国家、层级、父级与服务状态筛选 Region |
+| GET    | `/activity-types`      | 否/admin | 启用活动目录；admin 可请求停用项和引用计数 |
+| POST   | `/activity-types`      | admin | 新增活动类型                          |
+| PATCH  | `/activity-types/:id`  | admin | 改名、排序或启停活动类型              |
 | GET    | `/locations`           | 否    | published 地点 cursor feed              |
+| GET    | `/locations/admin`     | admin | 搜索并分页读取任意状态地点              |
 | GET    | `/locations/stats`     | 否    | Region 与地图点统计                     |
 | GET    | `/locations/:id`       | 否    | 公开地点详情                            |
 | GET    | `/locations/:id/tags`  | 否    | 公开地点标签                            |
 | GET    | `/locations/:id/admin` | admin | 任意状态地点详情                        |
 | POST   | `/locations`           | admin | 创建地点                                |
 | PUT    | `/locations`           | admin | 更新地点；body 必须包含 `id`            |
-| DELETE | `/locations/:id`       | admin | 删除未被 Team 引用的地点                |
+| DELETE | `/locations/:id`       | admin | 默认归档；显式确认后尝试永久删除         |
 | PUT    | `/locations/:id/tags`  | admin | 原子替换地点标签                        |
 | GET    | `/tags`                | 否    | 标签目录                                |
 | POST   | `/tags`                | admin | 创建标签                                |
+| PATCH  | `/tags/:id`            | admin | 重命名标签并保留稳定 slug               |
+| DELETE | `/tags/:id`            | admin | 确认后解除引用并删除标签                 |
 
 Location 使用全局 ID 路由，不提供 slug fallback。公开读取只返回 `published` 且属于
 `serviceEnabled=true` city Region 的地点。HTTP `extra` 使用 camelCase，服务层负责与
 D1 JSON 的 snake_case 结构转换。公开和管理员 Location DTO 都不包含内部
 `createdByUserId`；该字段只保留在数据库和服务端写入链路。
+
+快速创建 Location 默认保存 `draft`，只要求 `name`、`description` 与启用的 city
+`regionId`；坐标、封面、标签和推荐活动类型可后补。发布边界要求坐标与封面，但推荐活动类型
+始终可空。`supportedActivityTypes` 是可选的地点推荐信息，写入时必须全部来自当前启用目录。
+普通 `DELETE /locations/:id` 只归档；永久删除必须同时提交
+`permanent=true&confirm=<locationId>`，且最终删除语句复核没有 Team、Story 或收藏引用。
 
 ### Team
 
@@ -101,6 +113,10 @@ D1 JSON 的 snake_case 结构转换。公开和管理员 Location DTO 都不包�
 条件 DML 与容量 trigger 保证最终写入时权限、状态和名额仍有效。行动本上限为 2048 UTF-8
 bytes；覆盖、认领和取消认领使用内容 CAS，冲突返回 409。
 
+Team 的 `activityType` 必填并来自全局启用活动目录。Location 的推荐活动类型只用于客户端
+优先排序，不限制创建或编辑选择；创建及显式修改活动类型的最终条件 DML 会再次验证目录项
+仍启用。Team DTO 返回 `activityTypeInfo`，因此目录项停用后历史 Team 仍显示原名称。
+
 ### 用户
 
 | 方法   | 路径                              | 认证 | 用途                           |
@@ -113,11 +129,14 @@ bytes；覆盖、认领和取消认领使用内容 CAS，冲突返回 409。
 | GET    | `/users/me/join-requests`         | 是   | 当前用户全部加入申请           |
 | GET    | `/users/me/pending-join-requests` | 是   | 当前用户待处理申请             |
 | GET    | `/users/:id`                      | 否   | 公开用户资料                   |
+| GET    | `/admin/users`                    | admin | 搜索并分页读取用户角色与状态   |
+| PATCH  | `/admin/users/:id/role`           | admin | 在 user/admin 之间变更角色     |
 
 资料修改不能指定目标 user ID。`PATCH /users/me` 不接受头像字段；头像只能通过上传 command
 修改。`extra` 的 partial patch 在单条 SQL 中合并，避免并发 read-merge-write 覆盖。
 `GET /users/me` 的 canonical DTO 包含当前 `role`；Navbar 只用它控制管理员入口可见性，最终
 页面和 API 授权仍分别由 SSR guard 与上述管理员访问解析器执行。
+管理员不能修改自己的角色，也不能撤销最后一个 active admin；这些条件在最终更新语句中复核。
 
 `DELETE /users/me` 只接受 `{ "confirmation": "DELETE" }`。命令先清理当前用户自有
 头像，再通过一个 D1 `batch()` 将用户替换为匿名墓碑，并删除 `accounts`、`sessions`
