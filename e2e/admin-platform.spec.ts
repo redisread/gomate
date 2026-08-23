@@ -167,9 +167,23 @@ test.describe("admin platform", () => {
     await expect(
       page.getByRole("button", { name: "管理ナビゲーションを閉じる" }),
     ).toBeFocused();
+    await expect(page.locator("body > [inert]")).not.toHaveCount(0);
+    await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
+
+    const drawerLinks = drawer.getByRole("link");
+    const firstDrawerLink = drawerLinks.first();
+    const lastDrawerLink = drawerLinks.last();
+    await lastDrawerLink.focus();
+    await page.keyboard.press("Tab");
+    await expect(firstDrawerLink).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(lastDrawerLink).toBeFocused();
+
     await page.keyboard.press("Escape");
     await expect(drawer).toHaveCount(0);
     await expect(trigger).toBeFocused();
+    await expect(page.locator("body > [inert]")).toHaveCount(0);
+    await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
     await expectNoHorizontalOverflow(page);
 
     const cdp = await page.context().newCDPSession(page);
