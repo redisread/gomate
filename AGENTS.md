@@ -84,7 +84,7 @@ pnpm db:check
 
 ## 交付与生产红线
 
-- PR 通过统一的 `pnpm test:ci` 质量门禁；Cloudflare Workers Builds 负责在受保护的 `main` 分支更新后自动从 Git 构建和部署。合并已审核 PR 即授权该提交发布，不再设置第二个人工发布步骤。
+- GitHub Actions 只在目标为 `main` 的 PR 上执行统一 `validate` 质量门禁；Cloudflare Workers Builds 负责在受保护的 `main` 更新后做最小生产构建、D1 migration 和 Worker 部署。合并已审核 PR 即授权该提交发布，不在 `push main` 后重复运行 GitHub CI，也不设置第二个人工发布步骤。
 - 生产发布流水线只允许从受保护的 Cloudflare/Git 集成执行；禁止任何远程 D1、R2、Worker、route/domain 或 secret 写入绕过该流程。
 - 不在本机直接执行生产 Cloudflare 写命令，不使用 admin bypass，不把生产 secrets 放到仓库级 Actions secrets、日志、PR 或命令参数。
 - 不得用临时脚本、Dashboard 手工发布或本机命令替代 `main` 流水线。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。

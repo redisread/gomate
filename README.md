@@ -2,7 +2,7 @@
 
 > 发现有趣地点，找到同行伙伴
 
-[![CI](https://github.com/redisread/gomate/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/redisread/gomate/actions/workflows/ci.yml)
+[![CI](https://github.com/redisread/gomate/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/redisread/gomate/actions/workflows/ci.yml)
 [![Live](https://img.shields.io/badge/Live-gomate.live-blue)](https://gomate.live)
 
 ## 产品定位
@@ -66,7 +66,7 @@ pnpm db:promote-admin --email admin@test.com
 
 ### Playwright（推荐）
 
-固定保留 5 条高价值路径：首页与健康检查、登录、未登录访问保护、创建队伍、申请并审批。
+固定保留 6 条高价值路径：首页与健康检查、注册、登录、未登录访问保护、创建队伍、申请并审批。
 测试使用构建后的本地 Worker 和隔离 D1，不访问 Cloudflare 远程资源；GitHub PR CI 会自动运行。
 
 ```bash
@@ -119,8 +119,9 @@ pnpm env:check
 
 ## 部署
 
-PR 通过 `pnpm test:ci` 后由 Cloudflare Workers Builds 从 Git 构建；当前只保留一套远程生产
-环境：只有 `main` 分支允许发布，非 `main` 分支不构建 Cloudflare Preview，Preview URL 也
+PR 由 GitHub Actions 完成 `pnpm test:ci`、Worker bundle 校验和隔离 D1 E2E；合并后不再
+重复运行 GitHub CI，由 Cloudflare Workers Builds 对 `main` 做最小生产构建并自动发布。
+当前只保留一套远程生产环境：非 `main` 分支不构建 Cloudflare Preview，Preview URL 也
 关闭。线上由统一 Worker `gomate` 提供 `gomate.live`；本地开发使用根配置中的本地
 D1/R2。禁止从本机或临时命令执行生产 Worker、D1、R2、secret 或 route 写入；受保护的
 `main` 分支合并即授权 Cloudflare 自动发布，
