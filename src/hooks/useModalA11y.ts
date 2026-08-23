@@ -15,6 +15,7 @@ export function useModalA11y(
   panelRef: React.RefObject<HTMLElement | null>,
   onClose: () => void,
   initialFocusRef?: React.RefObject<HTMLElement | null>,
+  returnFocusRef?: React.RefObject<HTMLElement | null>,
 ) {
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
 
@@ -23,7 +24,8 @@ export function useModalA11y(
     const panel = panelRef.current;
     if (!panel) return;
 
-    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    previousFocusRef.current = returnFocusRef?.current
+      ?? document.activeElement as HTMLElement | null;
 
     const requestedTarget = initialFocusRef?.current;
     const target =
@@ -77,5 +79,5 @@ export function useModalA11y(
         if (prev && document.contains(prev)) prev.focus();
       });
     };
-  }, [open, panelRef, onClose, initialFocusRef]);
+  }, [open, panelRef, onClose, initialFocusRef, returnFocusRef]);
 }

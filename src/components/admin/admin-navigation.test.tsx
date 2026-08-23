@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { AdminNavigation } from "./admin-navigation";
 
@@ -17,6 +17,35 @@ const copy = {
 };
 
 describe("AdminNavigation", () => {
+  let offsetParentDescriptor: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    offsetParentDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "offsetParent",
+    );
+    Object.defineProperty(HTMLElement.prototype, "offsetParent", {
+      configurable: true,
+      get() {
+        return this.parentElement;
+      },
+    });
+  });
+
+  afterEach(() => {
+    if (offsetParentDescriptor) {
+      Object.defineProperty(
+        HTMLElement.prototype,
+        "offsetParent",
+        offsetParentDescriptor,
+      );
+    } else {
+      delete (HTMLElement.prototype as { offsetParent?: Element | null })
+        .offsetParent;
+    }
+    document.body.style.overflow = "";
+  });
+
   it("renders only real routes and marks the current page", () => {
     render(
       <AdminNavigation
@@ -69,7 +98,7 @@ describe("AdminNavigation", () => {
     ).toHaveFocus();
   });
 
-  it("closes on Escape and restores focus to the trigger", () => {
+  it("closes on Escape and restores focus to the trigger", async () => {
     render(
       <AdminNavigation
         copy={copy}
@@ -85,6 +114,43 @@ describe("AdminNavigation", () => {
     fireEvent.keyDown(document, { key: "Escape" });
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(trigger).toHaveFocus();
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it("makes the page inert, locks scrolling, and traps drawer focus", async () => {
+    const { container } = render(
+      <AdminNavigation
+        copy={copy}
+        currentPath="/admin"
+        admin={{ id: "admin-1", displayName: "Admin", image: null }}
+      />,
+    );
+    const trigger = screen.getByRole("button", {
+      name: copy.openNavigation,
+    });
+    fireEvent.click(trigger);
+
+    const drawer = screen.getByRole("dialog", {
+      name: copy.navigationLabel,
+    });
+    const brand = within(drawer).getByRole("link", { name: copy.brand });
+    const lastLink = within(drawer).getByRole("link", {
+      name: copy.backToFrontend,
+    });
+    await waitFor(() => expect(container).toHaveAttribute("inert"));
+    expect(document.body).toHaveStyle({ overflow: "hidden" });
+
+    lastLink.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(brand).toHaveFocus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(lastLink).toHaveFocus();
+
+    fireEvent.click(within(drawer).getByRole("button", {
+      name: copy.closeNavigation,
+    }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(container).not.toHaveAttribute("inert");
+    expect(document.body.style.overflow).toBe("");
   });
 });
