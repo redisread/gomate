@@ -1,0 +1,95 @@
+name: Pull Request Labeler
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: labeler-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ensure path labels exist
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const labels = [
+              {
+                name: "frontend",
+                color: "1d76db",
+                description: "Frontend pages, components, styles, and public assets",
+              },
+              {
+                name: "backend",
+                color: "5319e7",
+                description: "API, server, contracts, and Worker runtime",
+              },
+              {
+                name: "database",
+                color: "006b75",
+                description: "D1 schema, migrations, and database tooling",
+              },
+              {
+                name: "i18n",
+                color: "fbca04",
+                description: "Translations, locale data, and i18n tooling",
+              },
+              {
+                name: "tests",
+                color: "bfdadc",
+                description: "Unit, server, Worker, or end-to-end tests",
+              },
+              {
+                name: "actions",
+                color: "2f363d",
+                description: "GitHub Actions and repository automation",
+              },
+              {
+                name: "dependencies",
+                color: "0366d6",
+                description: "Package manifests, lockfiles, and toolchain versions",
+              },
+              {
+                name: "documentation",
+                color: "0075ca",
+                description: "Documentation and contributor guidance",
+              },
+            ];
+
+            const existingLabels = await github.paginate(
+              github.rest.issues.listLabelsForRepo,
+              { ...context.repo, per_page: 100 },
+            );
+            const existingNames = new Set(
+              existingLabels.map(({ name }) => name.toLowerCase()),
+            );
+
+            for (const label of labels) {
+              if (existingNames.has(label.name.toLowerCase())) continue;
+
+              try {
+                await github.rest.issues.createLabel({ ...context.repo, ...label });
+              } catch (error) {
+                if (error.status !== 422) throw error;
+
+                // Another concurrent run may have created the same label.
+                await github.rest.issues.getLabel({
+                  ...context.repo,
+                  name: label.name,
+                });
+              }
+            }
+
+      - name: Label changed paths
+        uses: actions/labeler@v7
+        with:
+          sync-labels: true
