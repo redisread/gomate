@@ -159,9 +159,9 @@ export function locationToFormData(location: Location): LocationFormData {
     description: location.description,
     address: location.address ?? "",
     regionId: location.regionId,
-    latitude: location.latitude,
-    longitude: location.longitude,
-    coverImageUrl: location.coverImageUrl,
+    latitude: location.latitude ?? "",
+    longitude: location.longitude ?? "",
+    coverImageUrl: location.coverImageUrl ?? "",
     images: [...location.images],
     extra: {
       hiking: {

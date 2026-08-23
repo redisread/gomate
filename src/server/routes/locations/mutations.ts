@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 
 import { createDb } from "../../db";
@@ -452,7 +452,7 @@ mutations.delete("/:id", async (c) => {
       .where(
         and(
           eq(schema.locations.id, locationId),
-          eq(schema.locations.coverImageUrl, existing.coverImageUrl),
+          sql`${schema.locations.coverImageUrl} is ${existing.coverImageUrl}`,
           eq(schema.locations.images, existing.images),
         ),
       )

@@ -1,4 +1,5 @@
-export type ActivityType = "hiking" | "explore" | "leisure" | "travel";
+/** Stable activity catalog identifier. Values are managed at runtime. */
+export type ActivityType = string;
 
 export type Difficulty = "easy" | "moderate" | "hard" | "expert";
 

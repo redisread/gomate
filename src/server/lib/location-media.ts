@@ -19,7 +19,7 @@ export class LocationMediaError extends Error {
 }
 
 export type LocationMediaValues = {
-  coverImageUrl: string;
+  coverImageUrl: string | null;
   images: string[];
 };
 
@@ -47,7 +47,8 @@ export async function prepareLocationMedia(
   const replacements = new Map<string, string>();
   const tempKeys: string[] = [];
   const finalKeys: string[] = [];
-  const urls = [...new Set([values.coverImageUrl, ...values.images])];
+  const urls = [...new Set([values.coverImageUrl, ...values.images])]
+    .filter((value): value is string => value !== null);
 
   for (const value of urls) {
     const anyR2Key = exactR2KeyFromPublicUrl(env, value);
@@ -95,7 +96,9 @@ export async function prepareLocationMedia(
   }
 
   return {
-    coverImageUrl: replacements.get(values.coverImageUrl) ?? values.coverImageUrl,
+    coverImageUrl: values.coverImageUrl === null
+      ? null
+      : replacements.get(values.coverImageUrl) ?? values.coverImageUrl,
     images: values.images.map((url) => replacements.get(url) ?? url),
     tempKeys,
     finalKeys,
@@ -128,6 +131,7 @@ export function ownedLocationMediaKeys(
   values: LocationMediaValues,
 ) {
   return [...new Set([values.coverImageUrl, ...values.images]
+    .filter((url): url is string => url !== null)
     .map((url) => ownedFinalLocationKey(env, url, locationId))
     .filter((key): key is string => Boolean(key)))];
 }

@@ -364,10 +364,12 @@ export function isAllowedLocationImageUrl(value: string, env: Env) {
 }
 
 export function locationImagesAreAllowed(
-  input: { coverImageUrl: string; images: string[] },
+  input: { coverImageUrl: string | null; images: string[] },
   env: Env,
 ) {
-  return [input.coverImageUrl, ...input.images].every((url) =>
+  return [input.coverImageUrl, ...input.images]
+    .filter((url): url is string => url !== null)
+    .every((url) =>
     isAllowedLocationImageUrl(url, env),
   );
 }

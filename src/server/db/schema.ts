@@ -12,7 +12,7 @@ import {
   type AnySQLiteColumn,
 } from "drizzle-orm/sqlite-core";
 
-export type ActivityType = "hiking" | "explore" | "leisure" | "travel";
+export type ActivityType = string;
 export type UserRole = "user" | "admin";
 export type UserStatus = "active" | "suspended" | "banned" | "deleted";
 export type UserGender = "male" | "female" | "other";
@@ -279,6 +279,34 @@ export const tags = sqliteTable(
   (table) => [uniqueIndex("tags_slug_unique").on(table.slug)],
 );
 
+export const activityTypes = sqliteTable(
+  "activity_types",
+  {
+    id: text("id").notNull().primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    isActive: integer("is_active", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(nowMs),
+  },
+  (table) => [
+    uniqueIndex("activity_types_slug_unique").on(table.slug),
+    index("activity_types_active_sort_idx").on(
+      table.isActive,
+      table.sortOrder,
+      table.id,
+    ),
+    check("activity_types_active_check", sql`${table.isActive} in (0, 1)`),
+  ],
+);
+
 export const locations = sqliteTable(
   "locations",
   {
@@ -299,9 +327,9 @@ export const locations = sqliteTable(
     subtitle: text("subtitle"),
     description: text("description").notNull(),
     address: text("address"),
-    latitude: real("latitude").notNull(),
-    longitude: real("longitude").notNull(),
-    coverImageUrl: text("cover_image_url").notNull(),
+    latitude: real("latitude"),
+    longitude: real("longitude"),
+    coverImageUrl: text("cover_image_url"),
     images: text("images", { mode: "json" })
       .$type<string[]>()
       .notNull()
@@ -338,11 +366,11 @@ export const locations = sqliteTable(
     ),
     check(
       "locations_latitude_check",
-      sql`${table.latitude} between -90 and 90`,
+      sql`${table.latitude} is null or ${table.latitude} between -90 and 90`,
     ),
     check(
       "locations_longitude_check",
-      sql`${table.longitude} between -180 and 180`,
+      sql`${table.longitude} is null or ${table.longitude} between -180 and 180`,
     ),
     check(
       "locations_images_json_check",
@@ -351,10 +379,6 @@ export const locations = sqliteTable(
     check(
       "locations_extra_json_check",
       sql`json_valid(${table.extra}) and json_type(${table.extra}) = 'object'`,
-    ),
-    check(
-      "locations_published_activity_check",
-      sql`${table.status} <> 'published' or json_array_length(${table.supportedActivityTypes}) > 0`,
     ),
   ],
 );
@@ -369,7 +393,10 @@ export const teams = sqliteTable(
     leaderId: text("leader_id")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
-    activityType: text("activity_type").$type<ActivityType>().notNull(),
+    activityType: text("activity_type")
+      .$type<ActivityType>()
+      .notNull()
+      .references(() => activityTypes.id, { onDelete: "restrict" }),
     title: text("title").notNull(),
     description: text("description"),
     startAt: integer("start_at", { mode: "timestamp_ms" }).notNull(),
@@ -412,10 +439,6 @@ export const teams = sqliteTable(
       table.id,
     ),
     index("teams_end_idx").on(table.cancelledAt, table.endAt, table.id),
-    check(
-      "teams_activity_type_check",
-      sql`${table.activityType} in ('hiking', 'explore', 'leisure', 'travel')`,
-    ),
     check("teams_time_range_check", sql`${table.endAt} >= ${table.startAt}`),
     check(
       "teams_capacity_check",
@@ -848,6 +871,9 @@ export const tagsRelations = relations(tags, ({ many }) => ({
   teams: many(teamTags),
   stories: many(storyTags),
 }));
+export const activityTypesRelations = relations(activityTypes, ({ many }) => ({
+  teams: many(teams),
+}));
 export const teamsRelations = relations(teams, ({ one, many }) => ({
   location: one(locations, {
     fields: [teams.locationId],
@@ -857,6 +883,10 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
     fields: [teams.leaderId],
     references: [users.id],
     relationName: "teamLeader",
+  }),
+  activityTypeInfo: one(activityTypes, {
+    fields: [teams.activityType],
+    references: [activityTypes.id],
   }),
   joinRequests: many(teamJoinRequests),
   members: many(teamMembers),
