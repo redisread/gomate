@@ -351,14 +351,14 @@ Better Auth 代理，处理注册、登录、登出、会话刷新等所有认�
 获取地点详情（支持 id 或 slug）
 
 - **认证：** 否
-- **响应：** 地点完整信息 + `tags` + `gearEssential` / `gearOptional`（数组）+ `extra`
+- **响应：** 地点完整信息 + `tags` + `extra`
 
 ### POST `/locations`
 
 创建地点
 
 - **认证：** 是（仅管理员）
-- **Body：** `{ "name", "slug", "subtitle", "description", "address", "cityId", "cityName", "type", "coverImage", "images", "bestSeason", "coordinates", "extra", "parkingAvailable", "parkingInfo", "gearEssential", "gearOptional" }`
+- **Body：** `{ "name", "slug", "subtitle", "description", "address", "cityId", "cityName", "type", "coverImage", "images", "bestSeason", "coordinates", "extra", "parkingAvailable", "parkingInfo" }`
 - **响应：** `{ "success": true, "location": { "id", "slug" } }`
 
 ### PUT `/locations`

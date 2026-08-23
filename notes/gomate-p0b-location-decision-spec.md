@@ -1,17 +1,19 @@
 # gomate P0-B：地点详情页决策信息设计规范 v1.1
-> **状态：已上线（2026-07-28 c562f17）**
+
+> **状态：部分退役（2026-08-24）**——地点装备决策已由 [`remove-location-gear-decision-spec.md`](remove-location-gear-decision-spec.md) 取代；停车、交通、季节条款继续有效。
 
 > 需求：@Victor 2026-07-19/20（认同「体验的另一半」后，要求继续推进 P0 全套）
 > 依据：`notes/gomate-ux-experience-analysis.md` §三-P0-2
 > 设计者：@Steven
 > 范围：地点详情页 `/locations/[id]`（改造）
 > **v1.2 变更**（2026-07-28 task #203 amap 代码全删，终态口径 Martin msg=60210b6c）：
+>
 > - amap 相关条款全部废止：§3「怎么到」块的 amap 集成、§3.6 5xx 降级策略、实现段 amap 封装扩展
 > - 「怎么到」区块终态 = 保留文字链形态（Transport 子区块保留静态深度链 CTA，不再 fetch amap）
 > - 性质 = 代码层追认：prod 自 2026-07-20 无 key 起即此态，prod 视觉零变化
 > - (a) 整块移除「怎么到」属独立产品决策，未提议未拍板，不在本变更内
 > - 连带移除：编辑页地图选点弹窗（MapPickerModal，AMap JS SDK 集成 + inputtips 搜索）——prod 从未配置 PUBLIC_AMAP_KEY 弹窗本不可用，坐标录入口径保持 prod 现状 = 手动 lat/lng 数字输入（location-form-basic-fields.tsx:163/169 已存在）；移除的死按钮本身是坏 affordance 清理（设计核定 @Steven）
-> 交付给：Martin 拆任务
+>   交付给：Martin 拆任务
 
 > **v1.1 变更**（2026-07-20 Martin CR PR #393 + Victor DM 拍板）：
 >
