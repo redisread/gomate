@@ -24,6 +24,7 @@
 - [ ] `pnpm test:e2e:ci`（涉及关键用户流程时）
 - [ ] UI：桌面端、移动端、键盘、可访问名称和 i18n 已验证（涉及界面时）
 - [ ] 其他自动或手动验证：
+- [ ] Preview：PR 评论 URL、分支 alias、重新登录、私有读取和业务写入拦截已验证（涉及时）
 - 未运行项及原因：
 
 ## Cloudflare 与数据影响
@@ -33,6 +34,7 @@
 - [ ] 不涉及 Cloudflare 运行时或远程数据
 - [ ] Worker 代码、Static Assets、兼容日期或 flags
 - [ ] route、custom domain 或 Workers Builds 配置
+- [ ] Preview URL、alias 或 Preview host/只读认证边界
 - [ ] D1 schema、migration 或生产数据
 - [ ] R2 bucket、对象或公开 URL
 - [ ] bindings、变量、rate limit 或 secrets

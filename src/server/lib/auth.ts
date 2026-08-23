@@ -10,6 +10,10 @@ import {
 import { logger } from "./logger";
 import { isUserActive } from "./session-policy";
 import { authPassword } from "./auth-password";
+import {
+  getAuthBaseUrl,
+  getAuthTrustedOrigins,
+} from "./preview-policy";
 
 /** Better Auth 用户类型（包含扩展字段） */
 interface AuthUser {
@@ -192,8 +196,8 @@ export function createAuth(
       },
     },
     secret: authSecret,
-    baseURL: env.APP_URL,
+    baseURL: getAuthBaseUrl(env),
     basePath: "/api/auth",
-    trustedOrigins: [env.APP_URL],
+    trustedOrigins: (request) => getAuthTrustedOrigins(request, env),
   });
 }

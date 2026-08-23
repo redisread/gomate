@@ -121,13 +121,13 @@ pnpm env:check
 
 PR 由 GitHub Actions 完成 `pnpm test:ci`、Worker bundle 校验和隔离 D1 E2E；合并后不再
 重复运行 GitHub CI，由 Cloudflare Workers Builds 对 `main` 做最小生产构建并自动发布。
-当前只保留一套远程生产环境：非 `main` 分支不构建 Cloudflare Preview，Preview URL 也
-关闭。线上由统一 Worker `gomate` 提供 `gomate.live`；本地开发使用根配置中的本地
-D1/R2。禁止从本机或临时命令执行生产 Worker、D1、R2、secret 或 route 写入；受保护的
-`main` 分支合并即授权 Cloudflare 自动发布，
-Workers Builds deploy command 使用 `pnpm deploy:production`，详见
-`docs/prod-change-policy.md`。如未来需要在线预览，必须先创建独立的 Worker、D1、R2 和
-secrets，不能把版本预览当作数据隔离。
+`main` 使用 `pnpm deploy:production` 发布正式 Worker；非 `main` 使用
+`pnpm deploy:preview` 上传同一 `gomate` Worker 的 Preview version，并按分支生成稳定
+alias，关联 PR 时由 Cloudflare 原生 Git 集成评论 Preview URL。Preview 使用生产 D1/R2，
+但 `WRITE_MODE=protected` 拒绝业务写入，仅允许在合法 Preview 域名上登录/退出并创建认证
+session。生产环境变量 `PREVIEW_HOST_SUFFIX` 必须配置为当前账号的
+`<account-subdomain>.workers.dev`，不可提交到仓库。禁止从本机或临时命令执行生产 Worker、
+D1、R2、secret 或 route 写入；详见 `docs/prod-change-policy.md`。
 
 ## 相关仓库
 

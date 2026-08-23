@@ -20,6 +20,10 @@ import storiesRoute from "./routes/stories";
 import { shareImageRoute } from "./routes/share-image";
 import { localCircleHomeRoute } from "./routes/local-circle/home";
 import { apiValidator } from "./lib/validation";
+import {
+  getRequestOrigin,
+  isPreviewAuthMutation,
+} from "./lib/preview-policy";
 
 export type WriteMode = "open" | "protected";
 
@@ -64,7 +68,8 @@ apiApp.use("*", async (c, next) => {
   const writeMode = resolveWriteMode(c.env?.WRITE_MODE);
   if (
     writeMode === "protected" &&
-    !SAFE_METHODS.has(c.req.method.toUpperCase())
+    !SAFE_METHODS.has(c.req.method.toUpperCase()) &&
+    !isPreviewAuthMutation(c.req.raw, c.req.path, c.env)
   ) {
     c.header("Retry-After", String(WRITE_PROTECTION_RETRY_SECONDS));
     return c.json(APIErrors.writeProtected(), 503);
@@ -79,15 +84,11 @@ apiApp.use("*", async (c, next) => {
     return;
   }
 
-  let allowedOrigin: string;
-  try {
-    const configured = new URL(c.env.APP_URL);
-    if (configured.href !== `${configured.origin}/`) throw new Error("APP_URL");
-    allowedOrigin = configured.origin;
-  } catch {
+  const allowedOrigin = getRequestOrigin(c.req.raw, c.env);
+  if (!allowedOrigin) {
     return c.json(
-      APIErrors.serviceUnavailable("Origin protection unavailable"),
-      503,
+      APIErrors.forbidden("Cross-origin cookie write rejected"),
+      403,
     );
   }
 

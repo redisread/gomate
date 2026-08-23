@@ -8,7 +8,7 @@ function branchHash(branch) {
 }
 
 function branchSlug(branch) {
-  const ascii = branch.normalize("NFKD").replace(/[^\x00-\x7F]/g, "");
+  const ascii = branch.normalize("NFKD").replace(/[^\p{ASCII}]/gu, "");
   return ascii.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "branch";
 }
 

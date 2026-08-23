@@ -76,7 +76,7 @@
       "main": "./src/worker.ts",
       "name": "gomate",
       "workers_dev": false,
-      "preview_urls": false,
+      "preview_urls": true,
       "routes": [{ "pattern": "gomate.live", "custom_domain": true }],
       "assets": {
         "directory": "./dist",

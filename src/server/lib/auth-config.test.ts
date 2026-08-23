@@ -182,4 +182,48 @@ describe("createAuth security configuration", () => {
     expect(options.onAPIError).toEqual({ throw: true });
   });
 
+  it("derives Better Auth origins from the validated Preview host", async () => {
+    createAuth({
+      DB: {} as D1Database,
+      BETTER_AUTH_SECRET: "test-secret-key-for-testing-32chars",
+      APP_URL: "https://gomate.live",
+      PREVIEW_HOST_SUFFIX: "account.workers.dev",
+    } as never);
+
+    const options = mocks.betterAuth.mock.calls[0]?.[0] as {
+      baseURL: {
+        allowedHosts: string[];
+        fallback: string;
+        protocol: string;
+      };
+      trustedOrigins: (request?: Request) => (string | null)[];
+      advanced: {
+        defaultCookieAttributes: {
+          sameSite: string;
+          secure: boolean;
+          path: string;
+          domain?: string;
+        };
+      };
+    };
+
+    expect(options.baseURL).toEqual({
+      allowedHosts: ["*-gomate.account.workers.dev"],
+      fallback: "https://gomate.live",
+      protocol: "https",
+    });
+    expect(options.trustedOrigins(
+      new Request("https://b-feature-gomate.account.workers.dev/api/auth/sign-in/email"),
+    )).toEqual([
+      "https://gomate.live",
+      "https://b-feature-gomate.account.workers.dev",
+    ]);
+    expect(options.advanced.defaultCookieAttributes).toMatchObject({
+      sameSite: "lax",
+      secure: true,
+      path: "/",
+    });
+    expect(options.advanced.defaultCookieAttributes.domain).toBeUndefined();
+  });
+
 });
