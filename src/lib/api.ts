@@ -151,7 +151,7 @@ let currentUserMemo: Promise<import("./types").SessionUser | null> | null = null
 
 async function loadCurrentUser(): Promise<import("./types").SessionUser | null> {
   try {
-    const userRes = await fetchAPI("/users/me");
+    const userRes = await fetchAPI("/users/me", { cache: "no-store" });
     if (!userRes.ok) return null;
     const userData = await userRes.json();
     return userData.user ?? null;
@@ -162,6 +162,22 @@ async function loadCurrentUser(): Promise<import("./types").SessionUser | null> 
 
 export function fetchCurrentUser(redirectOnFail?: string): Promise<import("./types").SessionUser | null> {
   if (!currentUserMemo) currentUserMemo = loadCurrentUser();
+  return currentUserMemo.then((user) => {
+    if (!user && redirectOnFail) window.location.href = redirectOnFail;
+    return user;
+  });
+}
+
+/**
+ * 重新读取当前登录用户，绕过同页 memo。
+ *
+ * 登录发生在其他标签页、页面从 bfcache 恢复或认证 Cookie 刚刚建立时，
+ * 旧的访客结果不能继续代表当前会话；调用方应在这些状态边界使用本函数。
+ */
+export function refreshCurrentUser(
+  redirectOnFail?: string,
+): Promise<import("./types").SessionUser | null> {
+  currentUserMemo = loadCurrentUser();
   return currentUserMemo.then((user) => {
     if (!user && redirectOnFail) window.location.href = redirectOnFail;
     return user;

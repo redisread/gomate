@@ -318,6 +318,8 @@ export function buildPendingJoinRequestsPageQuery(
 }
 
 usersRoute.get("/me", async (c) => {
+  c.header("Cache-Control", "no-store");
+  c.header("Pragma", "no-cache");
   const userId = await currentUserId(c);
   if (!userId) return c.json(APIErrors.unauthorized(), 401);
   const db = createDb(c.env.DB);
