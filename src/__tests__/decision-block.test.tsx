@@ -8,7 +8,7 @@ import type { Location } from "../lib/types";
  *
  * 覆盖矩阵：
  *   1. 全空 location → 整块不渲染（返回 null）
- *   2. 只有 gear 数据 → 只渲染 gear sub-block
+ *   2. 只有已退役 gear 数据 → 整块不渲染
  *   3. 有坐标 → 渲染 fallbackHint + openInMap CTA
  */
 
@@ -99,7 +99,7 @@ describe("DecisionBlock", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("只有 gear 数据 → 只渲染 gear sub-block", () => {
+  it("只有已退役 gear 数据 → 不渲染装备或空壳区块", () => {
     const location = makeLocation({
       latitude: Number.NaN,
       longitude: Number.NaN,
@@ -108,13 +108,12 @@ describe("DecisionBlock", () => {
           gearEssential: ["登山鞋", "帽子"],
           gearOptional: ["登山杖"],
         },
-      },
+      } as unknown as Location["extra"],
     });
-    render(<DecisionBlock location={location} />);
-    expect(screen.getByText("locationDetail.gear.title")).toBeInTheDocument();
-    expect(screen.getByText("登山鞋")).toBeInTheDocument();
-    expect(screen.getByText("帽子")).toBeInTheDocument();
-    expect(screen.getByText("登山杖")).toBeInTheDocument();
+    const { container } = render(<DecisionBlock location={location} />);
+    expect(container.firstChild).toBeNull();
+    expect(screen.queryByText("locationDetail.gear.title")).toBeNull();
+    expect(screen.queryByText("登山鞋")).toBeNull();
   });
 
 ;

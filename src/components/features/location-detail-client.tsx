@@ -979,7 +979,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               />
             </div>
             <RouteInfoCard location={location} />
-            <DecisionBlock location={location} showGear={false} />
+            <DecisionBlock location={location} />
             <div>
               <TeamListSection teams={teams} locationId={location.id} />
             </div>

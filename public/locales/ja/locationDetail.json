@@ -24,18 +24,12 @@
     "meter": "m"
   },
   "decision": {
-    "title": "行き方と装備",
-    "subtitle": "先にアクセス方法と持ち物を確認しましょう"
+    "title": "アクセス情報",
+    "subtitle": "地図で正確な場所とルートを確認できます"
   },
   "transport": {
     "title": "行き方",
     "openInMap": "高德地図で開く",
     "fallbackHint": "地図を開いて、場所とナビルートを確認"
-  },
-  "gear": {
-    "title": "装備リスト",
-    "essential": "必携",
-    "optional": "任意",
-    "notes": "注意事項"
   }
 }

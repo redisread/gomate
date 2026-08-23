@@ -36,7 +36,7 @@ const location: Location = {
       warnings: ["雨天路滑"],
     },
     facilities: ["restroom"],
-  },
+  } as unknown as Location["extra"],
   createdAt: "2026-08-16T00:00:00.000Z",
   updatedAt: "2026-08-16T00:00:00.000Z",
   tags: [{ id: "tag-1", name: "山野", slug: "mountain" }],
@@ -44,7 +44,8 @@ const location: Location = {
 
 describe("Location form projection", () => {
   it("maps the public camelCase DTO without legacy flat fields", () => {
-    expect(locationToFormData(location)).toMatchObject({
+    const form = locationToFormData(location);
+    expect(form).toMatchObject({
       regionId: "region-sz",
       supportedActivityTypes: ["hiking", "travel"],
       status: "published",
@@ -56,17 +57,17 @@ describe("Location form projection", () => {
           difficulty: "moderate",
           distanceKm: 5.5,
           elevationGainM: 700,
-          gearEssential: ["登山鞋"],
         },
       },
       tagIds: ["tag-1"],
     });
+    expect(form.extra.hiking).not.toHaveProperty("gearEssential");
+    expect(form.extra.hiking).not.toHaveProperty("gearOptional");
   });
 
   it("emits the exact mutation payload and trims JSON arrays", () => {
     const form = locationToFormData(location);
     form.extra.hiking.tips = [" 早点出发 ", ""];
-    form.extra.hiking.gearOptional = [];
 
     expect(formDataToLocationPayload(form)).toEqual({
       regionId: "region-sz",
@@ -89,8 +90,6 @@ describe("Location form projection", () => {
           distanceKm: 5.5,
           elevationGainM: 700,
           bestSeasons: ["autumn"],
-          gearEssential: ["登山鞋"],
-          gearOptional: [],
           overview: "泰山涧上山",
           tips: ["早点出发"],
           warnings: ["雨天路滑"],
