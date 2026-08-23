@@ -41,6 +41,7 @@ import {
   safeErrorMetadata,
   updateLocationInputSchema,
 } from "./utils";
+import { buildLocationUpdateSql } from "./update-sql";
 
 const mutations = new Hono<{ Bindings: Env }>();
 const activityTypesJson = JSON.stringify(ACTIVITY_TYPES);
@@ -326,6 +327,9 @@ mutations.put("/", async (c) => {
       JSON.stringify(existing.images),
       existing.regionId,
       JSON.stringify(existing.supportedActivityTypes),
+      existing.status,
+      existing.latitude,
+      existing.longitude,
       nextRegionId,
     );
     const activityTypeGuard = changes.supportedActivityTypes !== undefined
@@ -344,23 +348,7 @@ mutations.put("/", async (c) => {
       values.push(activityTypesJson);
     }
     const updateResult = await c.env.DB.prepare(
-      `
-        UPDATE locations
-        SET ${assignments.join(", ")}
-        WHERE id = ?
-          AND cover_image_url = ?
-          AND images = ?
-          AND region_id = ?
-          AND supported_activity_types = ?
-          AND EXISTS (
-            SELECT 1
-            FROM region AS target_region
-            WHERE target_region.id = ?
-              AND target_region.level = 'city'
-              AND target_region.service_enabled = 1
-          )
-          ${activityTypeGuard}
-      `,
+      buildLocationUpdateSql(assignments, activityTypeGuard),
     )
       .bind(...values)
       .run();
