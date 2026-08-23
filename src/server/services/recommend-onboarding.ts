@@ -14,6 +14,7 @@ export interface RecommendOnboardingCandidate {
   id: string;
   title: string;
   activityType: ActivityType;
+  activityTypeName: string;
   startAt: Date;
   maxParticipants: number;
   activeParticipantCount: number;
@@ -87,6 +88,7 @@ export async function getRecommendOnboarding(params: {
         id: schema.teams.id,
         title: schema.teams.title,
         activityType: schema.teams.activityType,
+        activityTypeName: schema.activityTypes.name,
         startAt: schema.teams.startAt,
         maxParticipants: schema.teams.maxParticipants,
         activeParticipantCount,
@@ -95,6 +97,10 @@ export async function getRecommendOnboarding(params: {
         coverImageUrl: schema.locations.coverImageUrl,
       })
       .from(schema.teams)
+      .innerJoin(
+        schema.activityTypes,
+        eq(schema.activityTypes.id, schema.teams.activityType),
+      )
       .innerJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
       .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
       .where(and(...filters))

@@ -1,5 +1,5 @@
 import type { ActivityType } from "@/contracts";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
@@ -11,24 +11,28 @@ import { parseUserExtra } from "../../lib/user-extra";
 import { getRecommendOnboarding } from "../../services/recommend-onboarding";
 
 const recommendOnboarding = new Hono<{ Bindings: Env }>();
-const ACTIVITY_TYPES = new Set<ActivityType>([
-  "hiking",
-  "explore",
-  "leisure",
-  "travel",
-]);
-
 recommendOnboarding.get("/recommend-onboarding", async (c) => {
   try {
     const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const requestedActivityType = c.req.query("activityType")?.trim();
-    if (requestedActivityType && !ACTIVITY_TYPES.has(requestedActivityType as ActivityType)) {
+    if (requestedActivityType && requestedActivityType.length > 128) {
       return c.json(APIErrors.validationError("activityType 无效"), 400);
     }
 
     const db = createDb(c.env.DB);
+    if (requestedActivityType) {
+      const activeActivityType = await db.query.activityTypes.findFirst({
+        where: and(
+          eq(schema.activityTypes.id, requestedActivityType),
+          eq(schema.activityTypes.isActive, true),
+        ),
+      });
+      if (!activeActivityType) {
+        return c.json(APIErrors.validationError("activityType 无效"), 400);
+      }
+    }
     const user = await db.query.users.findFirst({
       where: eq(schema.users.id, session.user.id),
     });

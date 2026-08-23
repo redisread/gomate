@@ -148,6 +148,9 @@ describe("teams list UI", () => {
         <FilterPanel
           selectedActivityType=""
           selectedRecruitmentStatus="open"
+          availableActivityTypes={[
+            { id: "hiking", name: "徒步", slug: "hiking", isActive: true, sortOrder: 10 },
+          ]}
           availableTags={[{ id: "tag-1", name: "日出" }]}
           selectedTags={[]}
           activeFiltersCount={0}
@@ -160,7 +163,7 @@ describe("teams list UI", () => {
       </>,
     );
 
-    expect(screen.getByRole("button", { name: "enums.locationType.hiking" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "徒步" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("link", { name: "teams.createBtn" })).toHaveAttribute("href", "/teams/create");
     expect(screen.queryByRole("button", { name: "teams.createBtn" })).not.toBeInTheDocument();
   });
@@ -222,6 +225,7 @@ describe("teams list UI", () => {
         startDate="2026-08-08"
         endDate="2026-08-09"
         selectedActivityType=""
+        availableActivityTypes={[]}
         selectedRecruitmentStatus="open"
         availableTags={[]}
         selectedTags={[]}
@@ -249,6 +253,7 @@ describe("teams list UI", () => {
         startDate="2026-08-08"
         endDate="2026-08-10"
         selectedActivityType=""
+        availableActivityTypes={[]}
         selectedRecruitmentStatus="open"
         availableTags={[]}
         selectedTags={[]}

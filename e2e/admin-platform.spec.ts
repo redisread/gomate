@@ -180,7 +180,7 @@ test.describe("admin platform", () => {
     await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
   });
 
-  test("public navbar mounts the admin quick action without loading the location form", async ({
+  test("public navbar saves a quick location draft without loading the full editor", async ({
     page,
   }) => {
     const scriptUrls = new Set<string>();
@@ -203,26 +203,37 @@ test.describe("admin platform", () => {
     await expect(page.getByTestId("nav-admin")).toHaveAttribute("href", "/admin");
     expect(
       [...scriptUrls].some((url) =>
-        /location-(?:edit|form)|lazy-location/u.test(url),
+        /location-edit|lazy-location/u.test(url),
       ),
     ).toBe(false);
 
     const trigger = page.getByRole("button", { name: "快速添加地点" });
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: "快速记录地点" });
-    const action = page.getByRole("link", { name: "新增地点" }).last();
     await expect(dialog).toBeVisible();
-    await expect(action).toBeFocused();
+    const nameInput = dialog.getByLabel("地点名称");
+    await expect(nameInput).toBeFocused();
     const desktopBox = await dialog.boundingBox();
     expect(desktopBox).not.toBeNull();
     expect(desktopBox!.width).toBeLessThan(700);
     expect(desktopBox!.y).toBeGreaterThan(0);
+    await nameInput.fill(`E2E 灵感地点 ${RUN_ID}`);
+    await dialog.getByLabel("地点介绍").fill("快速记下，稍后继续完善。");
+    const region = dialog.getByLabel("地区");
+    await expect(region.locator("option")).not.toHaveCount(1);
+    await region.selectOption({ index: 1 });
+    await dialog.getByRole("button", { name: "保存为草稿" }).click();
+    await expect(dialog.getByText("灵感已保存为草稿。")).toBeVisible();
+    await expect(dialog.getByRole("link", { name: "继续完善全部字段" }))
+      .toHaveAttribute("href", /\/admin\/locations\/[^/]+\/edit/u);
     await page.keyboard.press("Escape");
     await expect(trigger).toBeFocused();
 
     await page.setViewportSize({ width: 320, height: 720 });
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await trigger.click();
+    await page.goto("/");
+    const mobileTrigger = page.getByRole("button", { name: "快速添加地点" });
+    await mobileTrigger.click();
     await expect(dialog).toBeVisible();
     const mobileBox = await dialog.boundingBox();
     expect(mobileBox).not.toBeNull();

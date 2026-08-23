@@ -13,8 +13,9 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
+import { orderActivityTypesForLocation } from "@/lib/activity-types";
 import { DURATION_OPTION_DEFS, snapToDurationOption } from "@/lib/duration-options";
-import type { ActivityType, Location } from "@/lib/types";
+import type { ActivityType, ActivityTypeInfo, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -29,6 +30,7 @@ import { Footer } from "@/components/layout/footer";
 export function CreateTeamClient() {
   const { t } = useI18n(["teams", "errors", "common", "enums"]);
   const [locations, setLocations] = React.useState<Location[]>([]);
+  const [activityTypes, setActivityTypes] = React.useState<ActivityTypeInfo[]>([]);
   const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
   const [recommendedDuration, setRecommendedDuration] = React.useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
@@ -68,6 +70,13 @@ export function CreateTeamClient() {
       .then((r) => r.json())
       .then((data) => {
         if (data.success) setLocations(data.locations || []);
+      })
+      .catch(() => {});
+
+    fetchAPI("/activity-types")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) setActivityTypes(data.activityTypes || []);
       })
       .catch(() => {});
 
@@ -130,6 +139,14 @@ export function CreateTeamClient() {
       cancelled = true;
     };
   }, [formData.locationId]);
+
+  const orderedActivityTypes = React.useMemo(
+    () => orderActivityTypesForLocation(
+      activityTypes,
+      selectedLocation?.supportedActivityTypes ?? [],
+    ),
+    [activityTypes, selectedLocation],
+  );
 
   // 当用户手动修改时长时，标记为已手动编辑
   const handleDurationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -194,7 +211,7 @@ export function CreateTeamClient() {
       if (
         !activityType ||
         selectedLocation?.id !== formData.locationId ||
-        !selectedLocation.supportedActivityTypes.includes(activityType)
+        !activityTypes.some(({ id }) => id === activityType)
       ) {
         setError(t("errors.createTeamFailed"));
         setIsSubmitting(false);
@@ -365,10 +382,12 @@ export function CreateTeamClient() {
                   <option value="">
                     {t("teams.formPlaceholder.activityType")}
                   </option>
-                  {selectedLocation.supportedActivityTypes.map(
+                  {orderedActivityTypes.map(
                     (activityType) => (
-                      <option key={activityType} value={activityType}>
-                        {t(`enums.locationType.${activityType}`)}
+                      <option key={activityType.id} value={activityType.id}>
+                        {selectedLocation.supportedActivityTypes.includes(activityType.id)
+                          ? t("teams.recommendedActivityType", { name: activityType.name })
+                          : activityType.name}
                       </option>
                     ),
                   )}

@@ -57,6 +57,8 @@
   "createBtn": "Create Team",
   "createBtnLoading": "Creating...",
   "createTip": "Tip: After creating a team, other users can apply to join. Please ensure your information is accurate and communicate meeting details with members before the activity.",
+  "recommendedActivityType": "{name} (recommended for this place)",
+  "inactiveActivityType": "{name} (inactive, kept for history)",
   "wechatRequiredTitle": "Please Fill in WeChat ID",
   "wechatRequiredDesc": "You need to fill in your WeChat ID in your profile before creating a team so teammates can contact you.",
   "wechatRequiredJoinTitle": "Please Fill in WeChat ID",

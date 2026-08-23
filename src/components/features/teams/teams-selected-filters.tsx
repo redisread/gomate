@@ -1,7 +1,8 @@
 import { X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { TEAM_DATE_OPTIONS } from "./teams-filter-options";
-import type { ActivityType, RecruitmentStatus } from "@/lib/types";
+import type { ActivityType, ActivityTypeInfo, RecruitmentStatus } from "@/lib/types";
+import { activityTypeLabel } from "@/lib/activity-types";
 
 interface TeamsSelectedFiltersProps {
   selectedRegionName?: string;
@@ -9,6 +10,7 @@ interface TeamsSelectedFiltersProps {
   startDate: string;
   endDate: string;
   selectedActivityType: ActivityType | "";
+  availableActivityTypes: ActivityTypeInfo[];
   selectedRecruitmentStatus: RecruitmentStatus | "";
   availableTags: { id: string; name: string }[];
   selectedTags: string[];
@@ -25,6 +27,7 @@ export function TeamsSelectedFilters({
   startDate,
   endDate,
   selectedActivityType,
+  availableActivityTypes,
   selectedRecruitmentStatus,
   availableTags,
   selectedTags,
@@ -46,8 +49,8 @@ export function TeamsSelectedFilters({
     dateLabel ? { id: "date", label: dateLabel, ariaLabel: t("teams.removeDateFilter"), remove: () => onDateQuickSelect("clear") } : null,
     selectedActivityType ? {
       id: "activityType",
-      label: t(`enums.locationType.${selectedActivityType}`),
-      ariaLabel: t("teams.removeFilter", { name: t(`enums.locationType.${selectedActivityType}`) }),
+      label: activityTypeLabel(selectedActivityType, availableActivityTypes),
+      ariaLabel: t("teams.removeFilter", { name: activityTypeLabel(selectedActivityType, availableActivityTypes) }),
       remove: () => onActivityTypeSelect(""),
     } : null,
     selectedRecruitmentStatus && selectedRecruitmentStatus !== "open" ? {

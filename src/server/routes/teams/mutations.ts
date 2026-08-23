@@ -17,14 +17,14 @@ import { toTeamResponse } from "./utils";
 
 const mutations = new Hono<{ Bindings: Env }>();
 
-const activityTypeSchema = z.enum(["hiking", "explore", "leisure", "travel"]);
+const activityTypeSchema = z.string().trim().min(1).max(128);
 const requirementSchema = z.string().trim().min(1).max(200);
 const tagIdsSchema = z
   .array(z.string().trim().min(1).max(100))
   .max(20)
   .transform((values) => [...new Set(values)]);
 
-const createTeamSchema = z
+export const createTeamSchema = z
   .object({
     locationId: z.string().trim().min(1).max(100),
     activityType: activityTypeSchema,
@@ -56,7 +56,7 @@ const createTeamSchema = z
     }
   });
 
-const updateTeamSchema = z
+export const updateTeamSchema = z
   .object({
     locationId: z.string().trim().min(1).max(100).optional(),
     activityType: activityTypeSchema.optional(),
@@ -91,12 +91,17 @@ async function readTeamResponse(
   const rows = await db
     .select({
       team: schema.teams,
+      activityTypeInfo: schema.activityTypes,
       leader: schema.users,
       location: schema.locations,
       region: schema.region,
       activeParticipantCount: activeCount,
     })
     .from(schema.teams)
+    .innerJoin(
+      schema.activityTypes,
+      eq(schema.activityTypes.id, schema.teams.activityType),
+    )
     .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
     .innerJoin(
       schema.locations,
@@ -174,8 +179,9 @@ mutations.post("/", async (c) => {
       WHERE location.id = ?
         AND location.status = 'published'
         AND EXISTS (
-          SELECT 1 FROM json_each(location.supported_activity_types)
-          WHERE json_each.value = ?
+          SELECT 1 FROM activity_types AS activity_type
+          WHERE activity_type.id = ?
+            AND activity_type.is_active = 1
         )
     `,
     ).bind(
@@ -207,7 +213,7 @@ mutations.post("/", async (c) => {
     const results = await c.env.DB.batch([createTeam, ...tagStatements]);
     if (changes(results[0]) !== 1) {
       return c.json(
-        APIErrors.validationError("地点不存在、未发布或不支持该活动类型"),
+        APIErrors.validationError("地点不存在、未发布或活动类型不可用"),
         422,
       );
     }
@@ -298,10 +304,14 @@ mutations.put("/:id", async (c) => {
           SELECT 1 FROM locations AS location
           WHERE location.id = ?
             AND location.status = 'published'
-            AND EXISTS (
-              SELECT 1 FROM json_each(location.supported_activity_types)
-              WHERE json_each.value = ?
-            )
+        )
+        AND (
+          ? = 0
+          OR EXISTS (
+            SELECT 1 FROM activity_types AS activity_type
+            WHERE activity_type.id = ?
+              AND activity_type.is_active = 1
+          )
         )
     `,
     ).bind(
@@ -319,6 +329,7 @@ mutations.put("/:id", async (c) => {
       session.user.id,
       now,
       locationId,
+      data.activityType === undefined ? 0 : 1,
       activityType,
     );
 
@@ -333,7 +344,7 @@ mutations.put("/:id", async (c) => {
     if (changes(results[0]) !== 1) {
       return c.json(
         APIErrors.conflict(
-          "队伍已成行、已取消、已出发，或地点不支持该活动类型",
+          "队伍已成行、已取消、已出发、地点不可用，或活动类型已停用",
         ),
         409,
       );

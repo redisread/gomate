@@ -4,7 +4,7 @@ import * as React from "react";
 import { ArrowLeft, Clock, Users, AlertCircle, Loader2, Pencil } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
-import type { Team, Location } from "@/lib/types";
+import type { ActivityType, ActivityTypeInfo, Team, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -20,6 +20,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
   const { t } = useI18n(["teams", "errors", "common"]);
   const [team, setTeam] = React.useState<Team | null>(null);
   const [location, setLocation] = React.useState<Location | null>(null);
+  const [activityTypes, setActivityTypes] = React.useState<ActivityTypeInfo[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
   const [isLeader, setIsLeader] = React.useState(false);
@@ -34,6 +35,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
     maxParticipants: "",
     description: "",
     requirements: [] as string[],
+    activityType: "" as ActivityType | "",
   });
 
   React.useEffect(() => {
@@ -43,7 +45,12 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
       setIsAuthenticated(true);
 
       try {
-        const res = await fetchAPI(`/teams/${teamId}`);
+        const [res, activityResponse] = await Promise.all([
+          fetchAPI(`/teams/${teamId}`),
+          fetchAPI("/activity-types"),
+        ]);
+        const activityData = await activityResponse.json();
+        if (activityData.success) setActivityTypes(activityData.activityTypes ?? []);
         if (res.status === 404) {
           setError(t("errors.teamNotFound"));
           setIsLoading(false);
@@ -74,6 +81,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             maxParticipants: String(t2.maxParticipants),
             description: t2.description || "",
             requirements: Array.isArray(t2.requirements) ? t2.requirements : [],
+            activityType: t2.activityType,
           });
         } else {
           setError(t("errors.editTeamInfoFailed"));
@@ -86,6 +94,13 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
       }
     })();
   }, [teamId, t]);
+
+  const selectableActivityTypes = React.useMemo(() => {
+    if (!team?.activityTypeInfo || activityTypes.some(({ id }) => id === team.activityType)) {
+      return activityTypes;
+    }
+    return [team.activityTypeInfo, ...activityTypes];
+  }, [activityTypes, team]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -151,6 +166,9 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
           startAt: startAt.toISOString(),
           endAt: endAt.toISOString(),
           requirements: reqList,
+          ...(formData.activityType !== team?.activityType
+            ? { activityType: formData.activityType }
+            : {}),
         }),
       });
       const data = await res.json();
@@ -261,6 +279,29 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                 <AlertCircle className="h-3 w-3" />
                 {t("teams.editLocationLocked")}
               </p>
+            </FieldGroup>
+
+            <FieldGroup icon="🧭" label={t("teams.formLabel.activityType")} required>
+              <select
+                id="activityType"
+                name="activityType"
+                value={formData.activityType}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+              >
+                {selectableActivityTypes.map((activityType) => (
+                  <option
+                    key={activityType.id}
+                    value={activityType.id}
+                    disabled={!activityType.isActive && activityType.id !== team.activityType}
+                  >
+                    {activityType.isActive
+                      ? activityType.name
+                      : t("teams.inactiveActivityType", { name: activityType.name })}
+                  </option>
+                ))}
+              </select>
             </FieldGroup>
 
             <FieldGroup icon="📅" label={t("teams.formLabel.date")}>

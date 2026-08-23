@@ -40,6 +40,7 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
           <FilterPanel
             selectedActivityType={ctx.selectedActivityType}
             selectedRecruitmentStatus={ctx.selectedRecruitmentStatus}
+            availableActivityTypes={ctx.availableActivityTypes}
             availableTags={ctx.availableTags}
             selectedTags={ctx.selectedTags}
             activeFiltersCount={ctx.advancedFiltersCount}
@@ -68,6 +69,7 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
                   startDate={ctx.startDate}
                   endDate={ctx.endDate}
                   selectedActivityType={ctx.selectedActivityType}
+                  availableActivityTypes={ctx.availableActivityTypes}
                   selectedRecruitmentStatus={ctx.selectedRecruitmentStatus}
                   availableTags={ctx.availableTags}
                   selectedTags={ctx.selectedTags}

@@ -197,7 +197,7 @@ export async function createTeamAs(
   user: FixtureUser,
   team: {
     locationId: string;
-    activityType: "hiking" | "explore" | "leisure" | "travel";
+    activityType: string;
     title: string;
     startAt: string;
     endAt: string;

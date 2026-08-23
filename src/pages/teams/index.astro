@@ -9,7 +9,7 @@ import { serverApiGet } from "../../lib/server-api";
 import { getDateRangeByQuickType } from "../../lib/date-beijing";
 import { parseTeamTagFilters } from "../../lib/team-filter-params";
 import type { TeamsInitialData } from "../../components/features/teams/use-teams";
-import type { ActivityType, RecruitmentStatus, Region, Team } from "../../lib/types";
+import type { ActivityType, ActivityTypeInfo, RecruitmentStatus, Region, Team } from "../../lib/types";
 
 declareI18nNs(Astro.locals, ["teams", "filter", "enums", "content"]); // task #158：TeamCard/FilterPanel 难度标签走 enums
 
@@ -17,7 +17,7 @@ const params = Astro.url.searchParams;
 const searchQuery = (params.get("q") || "").slice(0, 120);
 const selectedRegionId = (params.get("regionId") || "").slice(0, 64);
 const activityTypeParam = params.get("activityType");
-const selectedActivityType: ActivityType | "" = ["hiking", "explore", "leisure", "travel"].includes(activityTypeParam ?? "")
+const selectedActivityType: ActivityType | "" = activityTypeParam && activityTypeParam.length <= 128
   ? activityTypeParam as ActivityType
   : "";
 const recruitmentStatusParam = params.get("recruitmentStatus");
@@ -42,10 +42,11 @@ const endDate = quickRange?.end || params.get("endDate");
 if (startDate) listQuery.set("startDateFrom", startDate);
 if (endDate) listQuery.set("startDateTo", endDate);
 
-const [teamsData, tagsData, regionsData] = await Promise.all([
+const [teamsData, tagsData, regionsData, activityTypesData] = await Promise.all([
   serverApiGet<{ success: boolean; teams: Team[]; total: number; nextCursor: string | null }>(Astro.request, Astro.locals, `/teams?${listQuery}`),
   serverApiGet<{ success: boolean; tags: { id: string; name: string }[] }>(Astro.request, Astro.locals, "/tags?limit=200"),
   serverApiGet<{ success: boolean; regions: Region[] }>(Astro.request, Astro.locals, "/regions?countryCode=CN&level=city&serviceEnabled=true"),
+  serverApiGet<{ success: boolean; activityTypes: ActivityTypeInfo[] }>(Astro.request, Astro.locals, "/activity-types"),
 ]);
 
 const initialData = teamsData?.success
@@ -58,6 +59,8 @@ const initialData = teamsData?.success
       },
       availableTags: tagsData?.success ? tagsData.tags ?? [] : [],
       tagsComplete: Boolean(tagsData?.success),
+      availableActivityTypes: activityTypesData?.success ? activityTypesData.activityTypes ?? [] : [],
+      activityTypesComplete: Boolean(activityTypesData?.success),
       availableRegions: regionsData?.success ? regionsData.regions ?? [] : [],
       regionsComplete: Boolean(regionsData?.success),
       filters: {

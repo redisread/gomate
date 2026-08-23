@@ -154,6 +154,7 @@ export interface Team {
   locationId: string;
   leaderId: string;
   activityType: ActivityType;
+  activityTypeInfo?: ActivityTypeInfo;
   title: string;
   description: string | null;
   startAt: Timestamp;

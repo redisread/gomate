@@ -1,3 +1,5 @@
+import type { ActivityType } from "@/contracts";
+
 /**
  * 首次引导流类型定义。
  */
@@ -5,7 +7,8 @@
 export interface OnboardingCandidate {
   id: string;
   title: string;
-  activityType: PreferenceType;
+  activityType: ActivityType;
+  activityTypeName: string;
   startAt: string;
   maxParticipants: number;
   activeParticipantCount: number;
