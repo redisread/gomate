@@ -1,6 +1,6 @@
 # Task List: admin-platform
 
-状态：Phase 3 已批准（2026-08-23），Phase 4 Checkpoint A 已完成，Task 3 待实施
+状态：Phase 3 已批准（2026-08-23），Phase 4 Task 3 已完成，Task 4 待实施
 
 规格：[SPEC-admin-platform.md](../SPEC-admin-platform.md)
 
@@ -83,15 +83,15 @@
 
 **Acceptance criteria:**
 
-- [ ] 合法 `/admin` 与嵌套后台路径可往返并保留安全 query；fragment 不进入服务端返回合同。
-- [ ] 外部 URL、协议相对 URL、反斜杠、双重编码和非后台路径全部回退 `/`。
-- [ ] 无 `returnTo` 的既有登录仍跳转首页，失败与 loading 行为不回归。
+- [x] 合法 `/admin` 与嵌套后台路径可往返并保留安全 query；fragment 不进入服务端返回合同。
+- [x] 外部 URL、协议相对 URL、反斜杠、双重编码和非后台路径全部回退 `/`。
+- [x] 无 `returnTo` 的既有登录仍跳转首页，失败与 loading 行为不回归。
 
 **Verification:**
 
-- [ ] `pnpm exec vitest run --config vitest.config.ts src/lib/admin-return-path.test.ts src/components/features/login-return.test.tsx`
-- [ ] `pnpm test`
-- [ ] `pnpm type-check`
+- [x] `pnpm exec vitest run --config vitest.config.ts src/lib/admin-return-path.test.ts src/components/features/login-return.test.tsx`
+- [x] `pnpm test`
+- [x] `pnpm type-check`
 
 **Dependencies:** Checkpoint A
 
