@@ -849,17 +849,6 @@
   .animate-bounce-in  { animation: var(--animate-bounce-in); }
     .animate-spin-in    { animation: var(--animate-spin-in); }
 
-  /* Profile staggered fade-up (slower, more deliberate) */
-  @keyframes fade-up-slow {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .profile-stagger-1 { animation: fade-up-slow 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0ms both; }
-  .profile-stagger-2 { animation: fade-up-slow 0.5s cubic-bezier(0.16, 1, 0.3, 1) 60ms both; }
-  .profile-stagger-3 { animation: fade-up-slow 0.5s cubic-bezier(0.16, 1, 0.3, 1) 120ms both; }
-  .profile-stagger-4 { animation: fade-up-slow 0.5s cubic-bezier(0.16, 1, 0.3, 1) 180ms both; }
-  .profile-stagger-5 { animation: fade-up-slow 0.5s cubic-bezier(0.16, 1, 0.3, 1) 240ms both; }
-
   /* 搜索框 focus glow — 通过 JS inline style 控制，这里仅作备用 */
   .search-glow-focus {
     box-shadow: 0 4px 18px oklch(0.666 0.157 58.3 / 0.22), 0 0 0 3px oklch(0.666 0.157 58.3 / 0.12);

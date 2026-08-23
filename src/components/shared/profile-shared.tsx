@@ -11,25 +11,25 @@ export const LEVEL_CONFIG: Record<string, {
   emoji: string;
 }> = {
   beginner: {
-    badge: "bg-amber-50 text-amber-700 border border-amber-200",
+    badge: "border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400",
     glow: "shadow-amber-100",
     icon: "text-amber-500",
     emoji: "🌱",
   },
   intermediate: {
-    badge: "bg-sky-50 text-sky-700 border border-sky-200",
+    badge: "border border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-400",
     glow: "shadow-sky-100",
     icon: "text-sky-500",
     emoji: "⛰️",
   },
   advanced: {
-    badge: "bg-violet-50 text-violet-700 border border-violet-200",
+    badge: "border border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-400",
     glow: "shadow-violet-100",
     icon: "text-violet-500",
     emoji: "🏔️",
   },
   expert: {
-    badge: "bg-amber-50 text-amber-700 border border-amber-200",
+    badge: "border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400",
     glow: "shadow-amber-100",
     icon: "text-amber-500",
     emoji: "🦅",
