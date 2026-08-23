@@ -10,22 +10,38 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
   const { t } = useI18n(["admin"]);
   const [users, setUsers] = React.useState<AdminUserSummary[]>([]);
   const [query, setQuery] = React.useState("");
+  const [activeQuery, setActiveQuery] = React.useState("");
+  const [nextCursor, setNextCursor] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  const load = React.useCallback(async (search = "") => {
-    setLoading(true);
+  const load = React.useCallback(async (
+    search = "",
+    cursor?: string,
+    append = false,
+  ) => {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     setError("");
     try {
-      const suffix = search ? `&q=${encodeURIComponent(search)}` : "";
-      const response = await fetchAPI(`/admin/users?limit=50${suffix}`);
-      const body = await response.json() as { users?: AdminUserSummary[] };
+      const params = new URLSearchParams({ limit: "50" });
+      if (search) params.set("q", search);
+      if (cursor) params.set("cursor", cursor);
+      const response = await fetchAPI(`/admin/users?${params}`);
+      const body = await response.json() as {
+        users?: AdminUserSummary[];
+        nextCursor?: string | null;
+      };
       if (!response.ok || !body.users) throw new Error(getApiErrorMessage(body, t("admin.management.loadFailed")));
-      setUsers(body.users);
+      const loadedUsers = body.users;
+      setUsers((current) => append ? [...current, ...loadedUsers] : loadedUsers);
+      setNextCursor(body.nextCursor ?? null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t("admin.management.loadFailed"));
     } finally {
-      setLoading(false);
+      if (append) setLoadingMore(false);
+      else setLoading(false);
     }
   }, [t]);
 
@@ -46,7 +62,7 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={(event) => { event.preventDefault(); void load(query); }} role="search" className="flex gap-3 rounded-xl bg-card p-4 shadow-sm sm:p-5">
+      <form onSubmit={(event) => { event.preventDefault(); setActiveQuery(query); void load(query); }} role="search" className="flex gap-3 rounded-xl bg-card p-4 shadow-sm sm:p-5">
         <label className="grid flex-1 gap-1.5 text-sm font-medium">
           {t("admin.management.searchUsers")}
           <input type="search" maxLength={100} value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
@@ -73,6 +89,11 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
               </article>
             );
           })}
+          {nextCursor && (
+            <button type="button" disabled={loadingMore} onClick={() => void load(activeQuery, nextCursor, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
+              {loadingMore ? t("admin.management.loading") : t("admin.management.loadMore")}
+            </button>
+          )}
         </div>
       )}
     </div>

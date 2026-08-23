@@ -215,6 +215,7 @@
     "activate": "Activate",
     "deactivate": "Deactivate",
     "loading": "Loading…",
+    "loadMore": "Load more",
     "loadFailed": "Failed to load. Try again.",
     "saveFailed": "Failed to save. Try again.",
     "deleteFailed": "Failed to delete. Try again.",

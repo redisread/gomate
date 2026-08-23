@@ -215,6 +215,7 @@
     "activate": "有効化",
     "deactivate": "無効化",
     "loading": "読み込み中…",
+    "loadMore": "さらに読み込む",
     "loadFailed": "読み込みに失敗しました。もう一度お試しください。",
     "saveFailed": "保存に失敗しました。もう一度お試しください。",
     "deleteFailed": "削除に失敗しました。もう一度お試しください。",

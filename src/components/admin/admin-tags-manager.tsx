@@ -16,21 +16,38 @@ export function AdminTagsManager() {
   const { t } = useI18n(["admin"]);
   const [items, setItems] = React.useState<ManagedTag[]>([]);
   const [name, setName] = React.useState("");
+  const [page, setPage] = React.useState(1);
+  const [hasMore, setHasMore] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  const load = React.useCallback(async () => {
-    setLoading(true);
+  const load = React.useCallback(async (targetPage = 1, append = false) => {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     setError("");
     try {
-      const response = await fetchAPI("/tags?includeReferences=true&pageSize=200");
-      const body = await response.json() as { tags?: ManagedTag[] };
+      const query = new URLSearchParams({
+        includeReferences: "true",
+        pageSize: "200",
+        page: String(targetPage),
+      });
+      if (targetPage === 1) query.delete("page");
+      const response = await fetchAPI(`/tags?${query}`);
+      const body = await response.json() as {
+        tags?: ManagedTag[];
+        pagination?: { page?: number; hasMore?: boolean };
+      };
       if (!response.ok || !body.tags) throw new Error(getApiErrorMessage(body, t("admin.management.loadFailed")));
-      setItems(body.tags);
+      const loadedTags = body.tags;
+      setItems((current) => append ? [...current, ...loadedTags] : loadedTags);
+      setPage(body.pagination?.page ?? targetPage);
+      setHasMore(body.pagination?.hasMore ?? false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t("admin.management.loadFailed"));
     } finally {
-      setLoading(false);
+      if (append) setLoadingMore(false);
+      else setLoading(false);
     }
   }, [t]);
 
@@ -97,6 +114,11 @@ export function AdminTagsManager() {
               </div>
             </article>
           ))}
+          {hasMore && (
+            <button type="button" disabled={loadingMore} onClick={() => void load(page + 1, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
+              {loadingMore ? t("admin.management.loading") : t("admin.management.loadMore")}
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -215,6 +215,7 @@
     "activate": "启用",
     "deactivate": "停用",
     "loading": "正在加载…",
+    "loadMore": "加载更多",
     "loadFailed": "加载失败，请重试",
     "saveFailed": "保存失败，请重试",
     "deleteFailed": "删除失败，请重试",

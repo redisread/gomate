@@ -11,24 +11,39 @@ export function AdminLocationsManager() {
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<LocationStatus | "">("");
+  const [activeFilters, setActiveFilters] = React.useState({ search: "", status: "" });
+  const [nextCursor, setNextCursor] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  const load = React.useCallback(async (filters?: { search: string; status: string }) => {
-    setLoading(true);
+  const load = React.useCallback(async (
+    filters = { search: "", status: "" },
+    cursor?: string,
+    append = false,
+  ) => {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     setError("");
     try {
       const query = new URLSearchParams({ limit: "100" });
-      if (filters?.search) query.set("search", filters.search);
-      if (filters?.status) query.set("status", filters.status);
+      if (filters.search) query.set("search", filters.search);
+      if (filters.status) query.set("status", filters.status);
+      if (cursor) query.set("cursor", cursor);
       const response = await fetchAPI(`/locations/admin?${query}`);
-      const body = await response.json() as { locations?: Location[] };
+      const body = await response.json() as {
+        locations?: Location[];
+        nextCursor?: string | null;
+      };
       if (!response.ok || !body.locations) throw new Error(getApiErrorMessage(body, t("admin.management.loadFailed")));
-      setLocations(body.locations);
+      const loadedLocations = body.locations;
+      setLocations((current) => append ? [...current, ...loadedLocations] : loadedLocations);
+      setNextCursor(body.nextCursor ?? null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t("admin.management.loadFailed"));
     } finally {
-      setLoading(false);
+      if (append) setLoadingMore(false);
+      else setLoading(false);
     }
   }, [t]);
 
@@ -66,7 +81,7 @@ export function AdminLocationsManager() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={(event) => { event.preventDefault(); void load({ search, status }); }} role="search" className="grid gap-3 rounded-xl bg-card p-4 shadow-sm sm:grid-cols-[1fr_12rem_auto] sm:items-end sm:p-5">
+      <form onSubmit={(event) => { event.preventDefault(); const filters = { search, status }; setActiveFilters(filters); void load(filters); }} role="search" className="grid gap-3 rounded-xl bg-card p-4 shadow-sm sm:grid-cols-[1fr_12rem_auto] sm:items-end sm:p-5">
         <label className="grid gap-1.5 text-sm font-medium">
           {t("admin.locationsManagement.search")}
           <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
@@ -105,6 +120,11 @@ export function AdminLocationsManager() {
               </div>
             </article>
           ))}
+          {nextCursor && (
+            <button type="button" disabled={loadingMore} onClick={() => void load(activeFilters, nextCursor, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
+              {loadingMore ? t("admin.management.loading") : t("admin.management.loadMore")}
+            </button>
+          )}
         </div>
       )}
     </div>

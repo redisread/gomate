@@ -74,6 +74,137 @@ describe("admin catalog managers", () => {
     expect(button).toBeDisabled();
   });
 
+  it("loads the next cursor page of users without replacing earlier results", async () => {
+    api.fetchAPI
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        users: [{
+          id: "user-1",
+          name: "First user",
+          nickname: null,
+          email: "first@example.com",
+          role: "user",
+          status: "active",
+          createdAt: new Date(0).toISOString(),
+        }],
+        nextCursor: "users-page-2",
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        users: [{
+          id: "user-2",
+          name: "Second user",
+          nickname: null,
+          email: "second@example.com",
+          role: "user",
+          status: "active",
+          createdAt: new Date(1).toISOString(),
+        }],
+        nextCursor: null,
+      }), { status: 200 }));
+
+    render(<AdminUsersManager adminId="admin-1" />);
+    expect(await screen.findByText("First user")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", {
+      name: "admin.management.loadMore",
+    }));
+
+    expect(await screen.findByText("Second user")).toBeInTheDocument();
+    expect(screen.getByText("First user")).toBeInTheDocument();
+    expect(api.fetchAPI).toHaveBeenLastCalledWith(
+      "/admin/users?limit=50&cursor=users-page-2",
+    );
+  });
+
+  it("loads the next cursor page of locations with the applied filters", async () => {
+    api.fetchAPI
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        locations: [{
+          id: "location-1",
+          name: "Initial location",
+          description: "Initial description",
+          status: "draft",
+          region: { name: "深圳" },
+        }],
+        nextCursor: null,
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        locations: [{
+          id: "location-2",
+          name: "First filtered location",
+          description: "First filtered description",
+          status: "draft",
+          region: { name: "深圳" },
+        }],
+        nextCursor: "locations-page-2",
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        locations: [{
+          id: "location-3",
+          name: "Second filtered location",
+          description: "Second filtered description",
+          status: "draft",
+          region: { name: "深圳" },
+        }],
+        nextCursor: null,
+      }), { status: 200 }));
+
+    render(<AdminLocationsManager />);
+    expect(await screen.findByText("Initial location")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("admin.locationsManagement.search"), {
+      target: { value: "trail" },
+    });
+    fireEvent.change(screen.getByLabelText("admin.locationsManagement.status"), {
+      target: { value: "draft" },
+    });
+    fireEvent.click(screen.getByRole("button", {
+      name: "admin.management.search",
+    }));
+
+    expect(await screen.findByText("First filtered location")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", {
+      name: "admin.management.loadMore",
+    }));
+
+    expect(await screen.findByText("Second filtered location")).toBeInTheDocument();
+    expect(screen.getByText("First filtered location")).toBeInTheDocument();
+    expect(api.fetchAPI).toHaveBeenLastCalledWith(
+      "/locations/admin?limit=100&search=trail&status=draft&cursor=locations-page-2",
+    );
+  });
+
+  it("loads the next numbered page of tags without replacing earlier results", async () => {
+    api.fetchAPI
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        tags: [{
+          id: "tag-1",
+          name: "First tag",
+          slug: "first-tag",
+          references: { locations: 0, teams: 0, stories: 0 },
+        }],
+        pagination: { page: 1, pageSize: 200, hasMore: true },
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        tags: [{
+          id: "tag-2",
+          name: "Second tag",
+          slug: "second-tag",
+          references: { locations: 0, teams: 0, stories: 0 },
+        }],
+        pagination: { page: 2, pageSize: 200, hasMore: false },
+      }), { status: 200 }));
+
+    render(<AdminTagsManager />);
+    expect(await screen.findByDisplayValue("First tag")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", {
+      name: "admin.management.loadMore",
+    }));
+
+    expect(await screen.findByDisplayValue("Second tag")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("First tag")).toBeInTheDocument();
+    expect(api.fetchAPI).toHaveBeenLastCalledWith(
+      "/tags?includeReferences=true&pageSize=200&page=2",
+    );
+  });
+
   it("saves the three required quick fields as a server draft", async () => {
     api.fetchAPI.mockResolvedValueOnce(
       new Response(JSON.stringify({ tags: [] }), { status: 200 }),
