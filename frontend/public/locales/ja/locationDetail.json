@@ -24,8 +24,8 @@
     "meter": "m"
   },
   "decision": {
-    "title": "行き方と装備",
-    "subtitle": "先にアクセス方法と持ち物を確認しましょう"
+    "title": "アクセス情報",
+    "subtitle": "アクセス方法と駐車場情報を先に確認しましょう"
   },
   "transport": {
     "title": "行き方",
@@ -36,11 +36,5 @@
     "title": "駐車場",
     "available": "駐車場あり",
     "noParking": "駐車場なし · 公共交通機関推奨"
-  },
-  "gear": {
-    "title": "装備リスト",
-    "essential": "必携",
-    "optional": "任意",
-    "notes": "注意事項"
   }
 }

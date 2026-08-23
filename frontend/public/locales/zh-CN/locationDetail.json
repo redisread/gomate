@@ -25,7 +25,7 @@
   },
   "decision": {
     "title": "决策信息",
-    "subtitle": "先看清楚怎么到、要带什么"
+    "subtitle": "先看清楚怎么到和停车信息"
   },
   "transport": {
     "title": "怎么到",
@@ -36,11 +36,5 @@
     "title": "停车",
     "available": "有停车",
     "noParking": "无停车 · 建议公共交通"
-  },
-  "gear": {
-    "title": "装备清单",
-    "essential": "必带",
-    "optional": "选带",
-    "notes": "注意事项"
   }
 }

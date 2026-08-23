@@ -9,11 +9,8 @@ import type { Location } from "../lib/types";
  * 覆盖矩阵：
  *   1. 全空 location → 整块不渲染（返回 null）
  *   2. 只有 parking 数据 → 只渲染 parking sub-block（跳过 transport fetch）
- *   3. 只有 gear 数据 → 只渲染 gear sub-block
- *   4. 有坐标，fetch 返回 ready（subway+driving）→ 渲染 subway / driving / openInMap
- *   5. 有坐标，fetch 返回 amapAllFailed → 只渲染 fallbackHint + openInMap CTA
- *   6. 有坐标，fetch 失败 → 渲染 error fallback（fallbackHint + retry + coord-based mapUrl）
- *   7. staleDays >= 7 → 渲染 stale 提示
+ *   3. 旧响应残留 gear 字段 → 不渲染
+ *   4. 有坐标 → 渲染地图 CTA
  */
 
 vi.mock("@/hooks/useI18n", () => ({
@@ -66,7 +63,7 @@ describe("DecisionBlock", () => {
     vi.clearAllMocks();
   });
 
-  it("全空 location（无坐标 + 无停车 + 无装备）→ 不渲染", () => {
+  it("全空 location（无坐标 + 无停车）→ 不渲染", () => {
     const location = makeLocation({
       coordinates: { lat: Number.NaN, lng: Number.NaN },
     });
@@ -112,17 +109,17 @@ describe("DecisionBlock", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("只有 gear 数据 → 只渲染 gear sub-block", () => {
-    const location = makeLocation({
-      coordinates: { lat: Number.NaN, lng: Number.NaN },
+  it("旧响应残留 gear 字段 → 不渲染", () => {
+    const location = {
+      ...makeLocation({
+        coordinates: { lat: Number.NaN, lng: Number.NaN },
+      }),
       gearEssential: ["登山鞋", "帽子"],
       gearOptional: ["登山杖"],
-    });
+    } as Location;
     render(<DecisionBlock location={location} />);
-    expect(screen.getByText("locationDetail.gear.title")).toBeInTheDocument();
-    expect(screen.getByText("登山鞋")).toBeInTheDocument();
-    expect(screen.getByText("帽子")).toBeInTheDocument();
-    expect(screen.getByText("登山杖")).toBeInTheDocument();
+    expect(screen.queryByText("locationDetail.gear.title")).not.toBeInTheDocument();
+    expect(screen.queryByText("登山鞋")).not.toBeInTheDocument();
   });
 
 ;

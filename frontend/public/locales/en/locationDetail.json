@@ -25,7 +25,7 @@
   },
   "decision": {
     "title": "Decision Info",
-    "subtitle": "See how to get there and what to bring first"
+    "subtitle": "Check directions and parking before you go"
   },
   "transport": {
     "title": "Getting There",
@@ -36,11 +36,5 @@
     "title": "Parking",
     "available": "Parking available",
     "noParking": "No parking · Public transit recommended"
-  },
-  "gear": {
-    "title": "Gear List",
-    "essential": "Essential",
-    "optional": "Optional",
-    "notes": "Notes"
   }
 }

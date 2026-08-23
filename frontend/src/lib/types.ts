@@ -47,16 +47,9 @@ export interface Location {
     lat: number;
     lng: number;
   };
-  /**
-   * P0-B T2/T3（spec §3.4 / §5.4）：详情页决策信息 4 字段
-   * - `parkingAvailable` boolean 三态：true=有停车 / false=无停车 / null=信息缺失（不渲染）
-   * - `parkingInfo` 自由文本 (<100)
-   * - `gearEssential/gearOptional` API 层已切好 string[]（源自 CSV 存储）
-   */
+  /** P0-B T2/T3：停车决策信息。 */
   parkingAvailable?: boolean | null;
   parkingInfo?: string | null;
-  gearEssential?: string[] | null;
-  gearOptional?: string[] | null;
   extra?: {
     facilities?: string[];  // ["parking", "restroom", "water", "food"]
     tips?: string | string[];
