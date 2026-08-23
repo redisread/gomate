@@ -42,8 +42,6 @@ export interface LocationExtra {
     distance_km?: number;
     elevation_gain_m?: number;
     best_seasons?: string[];
-    gear_essential?: string[];
-    gear_optional?: string[];
     overview?: string | null;
     tips?: string[];
     warnings?: string[];

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as schema from "../../db/schema";
 import {
   createLocationInputSchema,
+  mapLocationExtra,
   projectLocation,
 } from "./utils";
 
@@ -56,6 +57,20 @@ describe("location input", () => {
       supportedActivityTypes: ["paddling"],
     }).success).toBe(false);
   });
+
+  it("rejects retired location gear fields", () => {
+    expect(createLocationInputSchema.safeParse({
+      name: "旧客户端地点",
+      description: "仍然提交已经退役的地点装备字段",
+      regionId: "region-cn-shenzhen",
+      extra: {
+        hiking: {
+          gearEssential: ["登山鞋"],
+          gearOptional: ["登山杖"],
+        },
+      },
+    }).success).toBe(false);
+  });
 });
 
 describe("location response projection", () => {
@@ -104,5 +119,23 @@ describe("location response projection", () => {
       region: { id: "region-1" },
     });
     expect(projected).not.toHaveProperty("activityTypes");
+  });
+
+  it("does not project retired gear keys from stored location JSON", () => {
+    const projected = mapLocationExtra({
+      hiking: {
+        best_seasons: ["autumn"],
+        gear_essential: ["登山鞋"],
+        gear_optional: ["登山杖"],
+        warnings: ["雨天路滑"],
+      },
+    });
+
+    expect(projected.hiking).toMatchObject({
+      bestSeasons: ["autumn"],
+      warnings: ["雨天路滑"],
+    });
+    expect(projected.hiking).not.toHaveProperty("gearEssential");
+    expect(projected.hiking).not.toHaveProperty("gearOptional");
   });
 });

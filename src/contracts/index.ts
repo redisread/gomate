@@ -55,8 +55,6 @@ export interface HikingLocationExtra {
   distanceKm?: number;
   elevationGainM?: number;
   bestSeasons?: string[];
-  gearEssential?: string[];
-  gearOptional?: string[];
   overview?: string | null;
   tips?: string[];
   warnings?: string[];

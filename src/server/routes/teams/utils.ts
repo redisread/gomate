@@ -75,8 +75,6 @@ function mapLocationExtra(value: unknown): LocationExtraDto {
       distanceKm: typeof hiking.distance_km === "number" ? hiking.distance_km : undefined,
       elevationGainM: typeof hiking.elevation_gain_m === "number" ? hiking.elevation_gain_m : undefined,
       bestSeasons: parseStringArray(hiking.best_seasons),
-      gearEssential: parseStringArray(hiking.gear_essential),
-      gearOptional: parseStringArray(hiking.gear_optional),
       overview: typeof hiking.overview === "string" || hiking.overview === null
         ? hiking.overview
         : undefined,

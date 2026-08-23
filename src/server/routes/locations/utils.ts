@@ -47,8 +47,6 @@ const hikingExtraSchema = z
     distanceKm: z.number().finite().nonnegative().optional(),
     elevationGainM: z.number().finite().nonnegative().optional(),
     bestSeasons: extraStringArraySchema.optional(),
-    gearEssential: extraStringArraySchema.optional(),
-    gearOptional: extraStringArraySchema.optional(),
     overview: z.string().trim().max(10_000).nullable().optional(),
     tips: extraStringArraySchema.optional(),
     warnings: extraStringArraySchema.optional(),
@@ -179,12 +177,6 @@ export function normalizeLocationExtraForStorage(
     if (extra.hiking.bestSeasons !== undefined) {
       hiking.best_seasons = extra.hiking.bestSeasons;
     }
-    if (extra.hiking.gearEssential !== undefined) {
-      hiking.gear_essential = extra.hiking.gearEssential;
-    }
-    if (extra.hiking.gearOptional !== undefined) {
-      hiking.gear_optional = extra.hiking.gearOptional;
-    }
     if (extra.hiking.overview !== undefined) {
       hiking.overview = extra.hiking.overview;
     }
@@ -235,8 +227,6 @@ export function mapLocationExtra(value: unknown): LocationExtraDto {
     const distanceKm = readFiniteNumber(hikingStored.distance_km);
     const elevationGainM = readFiniteNumber(hikingStored.elevation_gain_m);
     const bestSeasons = readStringArray(hikingStored.best_seasons);
-    const gearEssential = readStringArray(hikingStored.gear_essential);
-    const gearOptional = readStringArray(hikingStored.gear_optional);
     const tips = readStringArray(hikingStored.tips);
     const warnings = readStringArray(hikingStored.warnings);
     extra.hiking = {
@@ -253,8 +243,6 @@ export function mapLocationExtra(value: unknown): LocationExtraDto {
       ...(distanceKm !== undefined ? { distanceKm } : {}),
       ...(elevationGainM !== undefined ? { elevationGainM } : {}),
       ...(bestSeasons !== undefined ? { bestSeasons } : {}),
-      ...(gearEssential !== undefined ? { gearEssential } : {}),
-      ...(gearOptional !== undefined ? { gearOptional } : {}),
       ...(typeof hikingStored.overview === "string" ||
       hikingStored.overview === null
         ? { overview: hikingStored.overview }
