@@ -1,0 +1,50 @@
+---
+import Layout from "../layouts/Layout.astro";
+import {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  getSSRT,
+  type Locale,
+} from "../i18n";
+import { loadLocaleData } from "../i18n/ssr-loader.server";
+import { declareI18nNs } from "../middleware";
+
+Astro.response.status = 403;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+declareI18nNs(Astro.locals, ["errors", "common"]);
+
+const localsLocale = Astro.locals.locale;
+const cookieLocale = Astro.cookies.get("gomate_locale")?.value as
+  | Locale
+  | undefined;
+const resolvedLocale = localsLocale ?? cookieLocale;
+const locale =
+  resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale)
+    ? resolvedLocale
+    : DEFAULT_LOCALE;
+const loadedData = await loadLocaleData(
+  ["errors", "common"],
+  locale,
+  Astro.url.origin,
+);
+const ssr = getSSRT(locale, {
+  [locale]: loadedData,
+} as Record<Locale, Record<string, Record<string, unknown>>>);
+---
+
+<Layout title={ssr.t("errors.noPermission")} showNavbar={false} showFooter={false}>
+  <main class="grid min-h-screen place-items-center bg-background px-6 py-12 text-foreground">
+    <div class="max-w-md text-center">
+      <p class="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">
+        403
+      </p>
+      <h1 class="text-2xl font-bold">{ssr.t("errors.noPermission")}</h1>
+      <a
+        href="/"
+        class="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        {ssr.t("common.backHome")}
+      </a>
+    </div>
+  </main>
+</Layout>

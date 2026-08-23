@@ -10,7 +10,10 @@
 
 import type { MiddlewareHandler } from "astro";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from "@/i18n";
+import { resolveAdminReturnPath } from "@/lib/admin-return-path";
 import type { ApiBindings } from "@/server/app";
+import { resolveAdminAccess } from "@/server/lib/admin-access";
+import type { AdminIdentity } from "@/server/lib/admin-access";
 
 // Astro 6 changed locals type, use unknown for compatibility
 interface AppLocals {
@@ -18,6 +21,14 @@ interface AppLocals {
   /** Set only while an internal locale-prefix rewrite is being resolved. */
   __localeRewritten?: boolean;
   __i18n_namespaces?: string[];
+  admin?: AdminIdentity;
+}
+
+const PRIVATE_NO_STORE = "private, no-store";
+
+function privateNoStore(response: Response) {
+  response.headers.set("Cache-Control", PRIVATE_NO_STORE);
+  return response;
 }
 
 // ─── SSR i18n Helpers ──────────────────────────────────────────────────
@@ -121,6 +132,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   const firstSegment = segments[0] as Locale | undefined;
   const hasLocalePrefix = SUPPORTED_LOCALES.includes(firstSegment as Locale);
   const pageSegment = segments[hasLocalePrefix ? 1 : 0];
+  const isAdminPage = pageSegment === "admin";
 
   if (pageSegment === "api" || url.pathname === "/api") {
     return dispatchDevApi(context);
@@ -138,6 +150,44 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     response.headers.set("Cache-Control", "no-store");
     response.headers.set("Referrer-Policy", "no-referrer");
     return response;
+  }
+
+  if (hasLocalePrefix) {
+    (context.locals as AppLocals).locale = firstSegment as Locale;
+    (context.locals as AppLocals).__localeRewritten = true;
+    context.cookies.set("gomate_locale", firstSegment as string, {
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "lax",
+    });
+  }
+
+  if (isAdminPage) {
+    const { env } = await import("cloudflare:workers");
+    const access = await resolveAdminAccess(
+      env as ApiBindings,
+      context.request.headers,
+    );
+
+    if (access.kind === "unauthenticated") {
+      const cleanPathname = hasLocalePrefix
+        ? `/${segments.slice(1).join("/")}`
+        : url.pathname;
+      const returnTo = resolveAdminReturnPath(
+        `${cleanPathname}${url.search}`,
+      );
+      const loginUrl = new URL("/login", url);
+      loginUrl.searchParams.set("returnTo", returnTo);
+      return privateNoStore(context.redirect(loginUrl.toString(), 302));
+    }
+
+    if (access.kind === "forbidden") {
+      const forbiddenUrl = new URL("/403", url);
+      forbiddenUrl.search = "";
+      return privateNoStore(await context.rewrite(forbiddenUrl));
+    }
+
+    (context.locals as AppLocals).admin = access.admin;
   }
 
   // 如果 URL 没有 locale 前缀，且检测到的语言不是默认语言
@@ -161,22 +211,13 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   if (hasLocalePrefix) {
     const cleanPath = "/" + segments.slice(1).join("/") || "/";
 
-    // 设置 locale 供后续 middleware 和 Layout.astro 读取
-    (context.locals as AppLocals).locale = firstSegment as Locale;
-    (context.locals as AppLocals).__localeRewritten = true;
-
-    // 设置 locale cookie 供 React Islands 读取
-    context.cookies.set("gomate_locale", firstSegment as string, {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    });
-
     // 重写 URL，让 Astro 路由匹配正确的页面
     const rewriteUrl = new URL(url);
     rewriteUrl.pathname = cleanPath;
-    return context.rewrite(rewriteUrl);
+    const response = await context.rewrite(rewriteUrl);
+    return isAdminPage ? privateNoStore(response) : response;
   }
 
-  return next();
+  const response = await next();
+  return isAdminPage ? privateNoStore(response) : response;
 };

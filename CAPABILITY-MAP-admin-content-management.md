@@ -26,4 +26,4 @@ user-role-admin ──┘
 
 ## Module specs
 
-- [`admin-platform`](SPEC-admin-platform.md)：Phase 4 实施中（Task 3 已完成，Task 4 待实施）
+- [`admin-platform`](SPEC-admin-platform.md)：Phase 4 实施中（Checkpoint B 已完成，Task 5 待实施）

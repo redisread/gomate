@@ -1,6 +1,6 @@
 # Task List: admin-platform
 
-状态：Phase 3 已批准（2026-08-23），Phase 4 Task 3 已完成，Task 4 待实施
+状态：Phase 3 已批准（2026-08-23），Phase 4 Checkpoint B 已完成，Task 5 待实施
 
 规格：[SPEC-admin-platform.md](../SPEC-admin-platform.md)
 
@@ -111,15 +111,15 @@
 
 **Acceptance criteria:**
 
-- [ ] 访客得到携带安全 `returnTo` 的 302，active 普通用户得到真实 HTTP 403，管理员进入后续页面管线。
-- [ ] `/admin`、嵌套路径和所有支持 locale 的等价行为一致，不产生 rewrite/redirect 循环。
-- [ ] `Astro.locals.admin` 只暴露规格允许的最小字段；管理员与 403 响应均为 `private, no-store`。
+- [x] 访客得到携带安全 `returnTo` 的 302，active 普通用户得到真实 HTTP 403，管理员进入后续页面管线。
+- [x] `/admin`、嵌套路径和所有支持 locale 的等价行为一致，不产生 rewrite/redirect 循环。
+- [x] `Astro.locals.admin` 只暴露规格允许的最小字段；管理员与 403 响应均为 `private, no-store`。
 
 **Verification:**
 
-- [ ] `pnpm exec vitest run --config vitest.config.ts src/__tests__/middleware.test.ts`
-- [ ] `pnpm test`
-- [ ] `pnpm build`
+- [x] `pnpm exec vitest run --config vitest.config.ts src/__tests__/middleware.test.ts`
+- [x] `pnpm test`
+- [x] `pnpm build`
 
 **Dependencies:** Task 1, Task 3
 
@@ -134,10 +134,10 @@
 
 ## Checkpoint B: Page authorization
 
-- [ ] Task 3–4 focused tests、unit suite 和 production build 通过。
-- [ ] 恶意 `returnTo`、locale 绕过、旧角色授权和非管理员 HTML 泄露用例均被自动化覆盖。
-- [ ] 浏览器手动确认访客、普通用户、管理员三条 `/admin` 路径。
-- [ ] 检查点通过前不创建后台壳层。
+- [x] Task 3–4 focused tests、unit suite 和 production build 通过。
+- [x] 恶意 `returnTo`、locale 绕过、旧角色授权和非管理员 HTML 泄露用例均被自动化覆盖。
+- [x] 浏览器手动确认访客、普通用户、管理员三条 `/admin` 路径。
+- [x] 检查点通过前不创建后台壳层。
 
 ## Phase C: Responsive admin shell
 

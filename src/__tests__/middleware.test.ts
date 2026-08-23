@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { onRequest } from "../middleware";
+const mocks = vi.hoisted(() => ({ resolveAdminAccess: vi.fn() }));
+
+vi.mock("@/server/lib/admin-access", () => ({
+  resolveAdminAccess: mocks.resolveAdminAccess,
+}));
+
+const { onRequest } = await import("../middleware");
 
 function contextFor(request: Request) {
   return {
@@ -10,7 +16,11 @@ function contextFor(request: Request) {
     redirect: vi.fn((location: string, status: number) =>
       new Response(null, { status, headers: { location } })
     ),
-    rewrite: vi.fn((_target: URL) => new Response("rewritten")),
+    rewrite: vi.fn((target: URL) =>
+      new Response(target.pathname === "/403" ? "forbidden" : "rewritten", {
+        status: target.pathname === "/403" ? 403 : 200,
+      }),
+    ),
   };
 }
 
@@ -71,5 +81,104 @@ describe("i18n middleware query preservation", () => {
     expect((target as URL).toString()).toBe(
       "https://gomate.test/reset-password?source=email",
     );
+  });
+});
+
+describe("administrator page middleware", () => {
+  it("redirects an unauthenticated administrator request to login safely", async () => {
+    mocks.resolveAdminAccess.mockResolvedValueOnce({ kind: "unauthenticated" });
+    const context = contextFor(
+      new Request("https://gomate.test/admin/locations/new?source=navbar"),
+    );
+    const next = vi.fn(() => new Response("private admin content"));
+
+    const response = await onRequest(context as never, next as never);
+
+    expect(context.redirect).toHaveBeenCalledWith(
+      "https://gomate.test/login?returnTo=%2Fadmin%2Flocations%2Fnew%3Fsource%3Dnavbar",
+      302,
+    );
+    expect(next).not.toHaveBeenCalled();
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+  });
+
+  it.each(["zh-CN", "en", "ja"])(
+    "guards the %s locale-prefixed administrator path",
+    async (locale) => {
+      mocks.resolveAdminAccess.mockResolvedValueOnce({
+        kind: "unauthenticated",
+      });
+      const context = contextFor(
+        new Request(`https://gomate.test/${locale}/admin/locations/new`),
+      );
+
+      await onRequest(context as never, vi.fn() as never);
+
+      expect(context.cookies.set).toHaveBeenCalledWith(
+        "gomate_locale",
+        locale,
+        expect.objectContaining({ path: "/" }),
+      );
+      expect(context.redirect).toHaveBeenCalledWith(
+        "https://gomate.test/login?returnTo=%2Fadmin%2Flocations%2Fnew",
+        302,
+      );
+    },
+  );
+
+  it("returns a real 403 without rendering administrator content", async () => {
+    mocks.resolveAdminAccess.mockResolvedValueOnce({ kind: "forbidden" });
+    const context = contextFor(new Request("https://gomate.test/admin"));
+    const next = vi.fn(() => new Response("private admin content"));
+
+    const response = await onRequest(context as never, next as never);
+
+    expect(response.status).toBe(403);
+    expect(await response.text()).toBe("forbidden");
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(context.rewrite).toHaveBeenCalledWith(
+      new URL("https://gomate.test/403"),
+    );
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("exposes only the minimal administrator identity to the page", async () => {
+    const admin = {
+      id: "admin-1",
+      displayName: "Visible Admin",
+      image: null,
+    };
+    mocks.resolveAdminAccess.mockResolvedValueOnce({
+      kind: "authorized",
+      admin,
+    });
+    const context = contextFor(new Request("https://gomate.test/admin"));
+    const next = vi.fn(() => new Response("admin home"));
+
+    const response = await onRequest(context as never, next as never);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(context.locals).toMatchObject({ admin });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+  });
+
+  it("keeps authorization through a locale rewrite", async () => {
+    const admin = { id: "admin-1", displayName: "Admin", image: null };
+    mocks.resolveAdminAccess.mockResolvedValueOnce({
+      kind: "authorized",
+      admin,
+    });
+    const context = contextFor(
+      new Request("https://gomate.test/en/admin/locations/new"),
+    );
+
+    const response = await onRequest(context as never, vi.fn() as never);
+
+    expect(context.locals).toMatchObject({ locale: "en", admin });
+    expect(context.rewrite).toHaveBeenCalledWith(
+      new URL("https://gomate.test/admin/locations/new"),
+    );
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
 });
