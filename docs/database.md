@@ -144,7 +144,7 @@ Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和
 ## 删除与存储边界
 
 - 凭据、session、成员/申请、标签连接、点赞和收藏按父记录级联。
-- Region、被 Team 引用的 Location，以及被 Team 引用的活动类型使用 RESTRICT，避免破坏业务历史。
+- Region 与被 Team 引用的 Location 使用 RESTRICT，避免破坏业务历史。
 - 管理员删除 Location 默认改为 `archived`；只有显式永久确认且不存在 Team、Story 或收藏引用时
   才物理删除。
 - Story 的 Team 回顾引用使用 RESTRICT，Location 引用删除时置空；需要保留历史的
