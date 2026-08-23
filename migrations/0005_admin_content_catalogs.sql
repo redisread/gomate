@@ -23,6 +23,26 @@ DROP TRIGGER `team_members_leader_validate_insert`;--> statement-breakpoint
 DROP TRIGGER `team_members_leader_validate_reactivate`;--> statement-breakpoint
 DROP TRIGGER `teams_capacity_validate_update`;--> statement-breakpoint
 DROP TRIGGER `teams_leader_validate_update`;--> statement-breakpoint
+DROP TRIGGER `story_likes_count_after_insert`;--> statement-breakpoint
+DROP TRIGGER `story_likes_count_after_delete`;--> statement-breakpoint
+DROP TRIGGER `messages_summary_after_insert`;--> statement-breakpoint
+CREATE TABLE `__backup_locations` AS SELECT * FROM `locations`;--> statement-breakpoint
+CREATE TABLE `__backup_location_tags` AS SELECT * FROM `location_tags`;--> statement-breakpoint
+CREATE TABLE `__backup_user_location_favorites` AS SELECT * FROM `user_location_favorites`;--> statement-breakpoint
+CREATE TABLE `__backup_teams` AS SELECT * FROM `teams`;--> statement-breakpoint
+CREATE TABLE `__backup_team_tags` AS SELECT * FROM `team_tags`;--> statement-breakpoint
+CREATE TABLE `__backup_team_join_requests` AS SELECT * FROM `team_join_requests`;--> statement-breakpoint
+CREATE TABLE `__backup_team_members` AS SELECT * FROM `team_members`;--> statement-breakpoint
+CREATE TABLE `__backup_stories` AS SELECT * FROM `stories`;--> statement-breakpoint
+CREATE TABLE `__backup_story_tags` AS SELECT * FROM `story_tags`;--> statement-breakpoint
+CREATE TABLE `__backup_story_likes` AS SELECT * FROM `story_likes`;--> statement-breakpoint
+CREATE TABLE `__backup_user_story_favorites` AS SELECT * FROM `user_story_favorites`;--> statement-breakpoint
+CREATE TABLE `__backup_conversations` AS SELECT * FROM `conversations`;--> statement-breakpoint
+CREATE TABLE `__backup_messages` AS SELECT * FROM `messages`;--> statement-breakpoint
+DELETE FROM `conversations`;--> statement-breakpoint
+DELETE FROM `stories`;--> statement-breakpoint
+DELETE FROM `teams`;--> statement-breakpoint
+DELETE FROM `locations`;--> statement-breakpoint
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE `__new_locations` (
 	`id` text PRIMARY KEY NOT NULL,
@@ -91,6 +111,32 @@ CREATE INDEX `teams_location_start_idx` ON `teams` (`location_id`,`start_at`,`id
 CREATE INDEX `teams_location_activity_feed_idx` ON `teams` (`location_id`,`activity_type`,`recruitment_status`,`start_at`,`id`);--> statement-breakpoint
 CREATE INDEX `teams_leader_created_idx` ON `teams` (`leader_id`,`created_at`,`id`);--> statement-breakpoint
 CREATE INDEX `teams_end_idx` ON `teams` (`cancelled_at`,`end_at`,`id`);--> statement-breakpoint
+INSERT INTO `locations` SELECT * FROM `__backup_locations`;--> statement-breakpoint
+INSERT INTO `teams` SELECT * FROM `__backup_teams`;--> statement-breakpoint
+INSERT INTO `location_tags` SELECT * FROM `__backup_location_tags`;--> statement-breakpoint
+INSERT INTO `user_location_favorites` SELECT * FROM `__backup_user_location_favorites`;--> statement-breakpoint
+INSERT INTO `team_tags` SELECT * FROM `__backup_team_tags`;--> statement-breakpoint
+INSERT INTO `team_join_requests` SELECT * FROM `__backup_team_join_requests`;--> statement-breakpoint
+INSERT INTO `team_members` SELECT * FROM `__backup_team_members`;--> statement-breakpoint
+INSERT INTO `stories` SELECT * FROM `__backup_stories`;--> statement-breakpoint
+INSERT INTO `story_tags` SELECT * FROM `__backup_story_tags`;--> statement-breakpoint
+INSERT INTO `story_likes` SELECT * FROM `__backup_story_likes`;--> statement-breakpoint
+INSERT INTO `user_story_favorites` SELECT * FROM `__backup_user_story_favorites`;--> statement-breakpoint
+INSERT INTO `conversations` SELECT * FROM `__backup_conversations`;--> statement-breakpoint
+INSERT INTO `messages` SELECT * FROM `__backup_messages`;--> statement-breakpoint
+DROP TABLE `__backup_location_tags`;--> statement-breakpoint
+DROP TABLE `__backup_locations`;--> statement-breakpoint
+DROP TABLE `__backup_user_location_favorites`;--> statement-breakpoint
+DROP TABLE `__backup_teams`;--> statement-breakpoint
+DROP TABLE `__backup_team_tags`;--> statement-breakpoint
+DROP TABLE `__backup_team_join_requests`;--> statement-breakpoint
+DROP TABLE `__backup_team_members`;--> statement-breakpoint
+DROP TABLE `__backup_stories`;--> statement-breakpoint
+DROP TABLE `__backup_story_tags`;--> statement-breakpoint
+DROP TABLE `__backup_story_likes`;--> statement-breakpoint
+DROP TABLE `__backup_user_story_favorites`;--> statement-breakpoint
+DROP TABLE `__backup_conversations`;--> statement-breakpoint
+DROP TABLE `__backup_messages`;--> statement-breakpoint
 CREATE TRIGGER `team_members_capacity_validate_insert`
 BEFORE INSERT ON `team_members`
 WHEN NEW.`left_at` IS NULL
@@ -156,5 +202,26 @@ WHEN EXISTS (
 )
 BEGIN
 	SELECT RAISE(ABORT, 'TEAM_LEADER_MEMBER_CONFLICT');
+END;--> statement-breakpoint
+CREATE TRIGGER `story_likes_count_after_insert`
+AFTER INSERT ON `story_likes`
+BEGIN
+	UPDATE `stories` SET `like_count` = `like_count` + 1 WHERE `id` = NEW.`story_id`;
+	SELECT RAISE(ABORT, 'STORY_LIKE_COUNT_FAILED') WHERE changes() <> 1;
+END;--> statement-breakpoint
+CREATE TRIGGER `story_likes_count_after_delete`
+AFTER DELETE ON `story_likes`
+BEGIN
+	UPDATE `stories` SET `like_count` = max(0, `like_count` - 1) WHERE `id` = OLD.`story_id`;
+END;--> statement-breakpoint
+CREATE TRIGGER `messages_summary_after_insert`
+AFTER INSERT ON `messages`
+BEGIN
+	UPDATE `conversations`
+	SET `last_message_preview` = substr(NEW.`content`, 1, 100),
+		`last_message_at` = NEW.`created_at`,
+		`updated_at` = NEW.`created_at`
+	WHERE `id` = NEW.`conversation_id`;
+	SELECT RAISE(ABORT, 'MESSAGE_SUMMARY_FAILED') WHERE changes() <> 1;
 END;--> statement-breakpoint
 PRAGMA foreign_keys=ON;
