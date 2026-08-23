@@ -1,0 +1,89 @@
+# Configuration for actions/labeler v7.
+# A pull request may receive more than one label when its changes span areas.
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/pages/**"
+          - "src/components/**"
+          - "src/layouts/**"
+          - "src/hooks/**"
+          - "src/stores/**"
+          - "src/styles/**"
+          - "src/content/**"
+          - "src/content.config.ts"
+          - "public/**"
+          - "astro.config.mjs"
+          - "tailwind.config.ts"
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/server/**"
+          - "src/contracts/**"
+          - "src/worker.ts"
+          - "src/middleware.ts"
+          - "src/lib/server-api.ts"
+          - "wrangler.jsonc"
+
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "migrations/**"
+          - "src/server/db/**"
+          - "drizzle.config.ts"
+          - "scripts/check-migrations-sync.mjs"
+          - "scripts/reset-local-db.mjs"
+          - "scripts/reset-local-db.test.mjs"
+          - "scripts/promote-admin.mjs"
+
+i18n:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/i18n/**"
+          - "public/locales/**"
+          - "src/hooks/useI18n.ts"
+          - "src/hooks/useI18n.test.tsx"
+          - "src/hooks/useMessages.ts"
+          - "scripts/build-locales.ts"
+          - "scripts/gen-i18n-types.mjs"
+          - "scripts/validate-i18n-keys.mjs"
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "e2e/**"
+          - "tests/**"
+          - "src/__tests__/**"
+          - "src/**/__tests__/**"
+          - "src/**/*.test.*"
+          - "src/**/*.spec.*"
+          - "scripts/*.test.mjs"
+          - "playwright.config.ts"
+          - "vitest.config.ts"
+          - "vitest.server.config.ts"
+          - "vitest.worker.config.ts"
+
+actions:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**"
+          - ".github/labeler.yml"
+          - "scripts/ci-workflow-policy.test.mjs"
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "package.json"
+          - "pnpm-lock.yaml"
+          - "pnpm-workspace.yaml"
+          - ".node-version"
+          - ".npmrc"
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "*.md"
+          - "docs/**"
+          - ".github/**/*.md"
+          - ".codex/**"
