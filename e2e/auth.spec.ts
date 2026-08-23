@@ -11,7 +11,7 @@ test.describe("Auth", () => {
     await page.waitForLoadState("networkidle");
     await page.locator("[data-testid='register-name']").fill(`Register ${RUN_ID}`);
     await page.locator("[data-testid='register-email']").fill(
-      `register-${RUN_ID}@e2e.gomate.test`,
+      `register-${RUN_ID}@gmail.com`,
     );
     await page.locator("[data-testid='register-password']").fill(PASSWORD);
     await page.locator("[data-testid='register-confirm-password']").fill(PASSWORD);
@@ -26,7 +26,7 @@ test.describe("Auth", () => {
 
   test("successful login redirects to home", async ({ page }) => {
     const user = await signUpUser(
-      `auth-${RUN_ID}@e2e.gomate.test`,
+      `auth-${RUN_ID}@gmail.com`,
       PASSWORD,
       `Auth ${RUN_ID}`,
     );
