@@ -7,6 +7,7 @@ import * as schema from "../../db/schema";
 
 let currentSession: { user: { id: string; email: string; name: string } } | null = null;
 let testDb: ReturnType<typeof createTestDb>["db"];
+let testSqlite: ReturnType<typeof createTestDb>["sqlite"];
 
 vi.mock("../../lib/auth", () => ({
   createAuth: (_env: unknown) => ({
@@ -46,6 +47,7 @@ describe("Locations API 集成测试", () => {
   beforeEach(async () => {
     const fresh = createTestDb();
     testDb = fresh.db;
+    testSqlite = fresh.sqlite;
     app = createApp();
     currentSession = null;
 
@@ -239,6 +241,9 @@ describe("Locations API 集成测试", () => {
       });
       expect(createRes.status).toBe(200);
       const { location } = await createRes.json() as { location: { id: string } };
+      testSqlite.prepare(
+        "UPDATE locations SET gear_essential = ?, gear_optional = ? WHERE id = ?",
+      ).run("登山鞋,雨衣", "登山杖", location.id);
 
       const getRes = await req(app, `/locations/${location.id}`);
       const getJson = await getRes.json() as { location: Record<string, unknown> };
@@ -252,6 +257,9 @@ describe("Locations API 集成测试", () => {
       const loc = await seedLocation(testDb, city.id, {
         name: "公开契约测试",
       });
+      testSqlite.prepare(
+        "UPDATE locations SET gear_essential = ?, gear_optional = ? WHERE id = ?",
+      ).run("登山鞋,雨衣", "登山杖", loc.id);
 
       const listRes = await req(app, "/v1/locations");
       const listJson = await listRes.json() as { locations: Record<string, unknown>[] };

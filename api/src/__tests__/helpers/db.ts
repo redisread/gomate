@@ -105,6 +105,9 @@ export function createTestDb() {
       coordinates TEXT NOT NULL,
       parking_available INTEGER,
       parking_info TEXT,
+      -- PR1 过渡态：物理列保留，应用 schema/API 已不再暴露；PR2 再删列。
+      gear_essential TEXT,
+      gear_optional TEXT,
       extra TEXT,
       actor_api_key_id TEXT,
       created_at INTEGER NOT NULL,
