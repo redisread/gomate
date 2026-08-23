@@ -1,6 +1,12 @@
 const ADMIN_ROOT = "/admin";
 const ENCODED_PATH_BYPASS = /%(?:2e|2f|5c|25)/iu;
-const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/u;
+
+function containsControlCharacter(value: string) {
+  return [...value].some((character) => {
+    const code = character.charCodeAt(0);
+    return code <= 0x1f || code === 0x7f;
+  });
+}
 
 export function resolveAdminReturnPath(value: string | null | undefined) {
   if (
@@ -8,7 +14,7 @@ export function resolveAdminReturnPath(value: string | null | undefined) {
     !value.startsWith("/") ||
     value.startsWith("//") ||
     value.includes("\\") ||
-    CONTROL_CHARACTER.test(value)
+    containsControlCharacter(value)
   ) {
     return "/";
   }
