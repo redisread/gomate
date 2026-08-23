@@ -20,6 +20,7 @@ const navLinks = (t: (key: string) => string) => [
 
 interface NavbarProps {
   className?: string;
+  renderAdminQuickAction?: () => React.ReactNode;
 }
 
 /**
@@ -31,7 +32,7 @@ interface NavbarProps {
  * - 移动端：从右侧 slide-in 抽屉
  * - 用户菜单：hover 展开下拉
  */
-export function Navbar({ className }: NavbarProps) {
+export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
   const { t } = useI18n(["nav", "common"]);
   // SSR/CSR 初始状态必须一致，避免 hydration mismatch
   const [isScrolled, setIsScrolled] = React.useState(false);
@@ -68,7 +69,20 @@ export function Navbar({ className }: NavbarProps) {
   const updateSession = React.useCallback((refresh: boolean) => {
     const request = refresh ? refreshCurrentUser() : fetchCurrentUser();
     void request.then((u) => {
-      setSession(u ? { user: u as { id: string; name: string; nickname?: string; email: string; image?: string } } : null);
+      setSession(
+        u
+          ? {
+              user: u as {
+                id: string;
+                name: string;
+                nickname?: string;
+                email: string;
+                image?: string;
+              },
+              isAdmin: u.role === "admin",
+            }
+          : null,
+      );
     });
   }, []);
 
@@ -123,6 +137,10 @@ export function Navbar({ className }: NavbarProps) {
     if (href === "/") return currentPath === "/";
     return currentPath.startsWith(href);
   };
+  const adminQuickAction =
+    session?.isAdmin && renderAdminQuickAction
+      ? renderAdminQuickAction()
+      : null;
 
   return (
     <>
@@ -199,10 +217,11 @@ export function Navbar({ className }: NavbarProps) {
 
               {session?.isAdmin && (
                 <a
-                  href="/admin/locations"
-                  className="flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
+                  href="/admin"
+                  data-testid="nav-admin"
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-stone-600 transition-colors duration-150 hover:bg-accent hover:text-foreground dark:text-stone-400"
                 >
-                  <Settings className="h-4 w-4" />
+                  <Settings className="h-4 w-4" aria-hidden="true" />
                   {t("nav.admin")}
                 </a>
               )}
@@ -311,6 +330,12 @@ export function Navbar({ className }: NavbarProps) {
               )}
             </div>
 
+            {adminQuickAction && (
+              <div className="ms-auto shrink-0 md:ms-0" data-testid="nav-admin-quick-action">
+                {adminQuickAction}
+              </div>
+            )}
+
             {/* ---- 移动端汉堡按钮 ---- */}
             <button
               type="button"
@@ -412,6 +437,17 @@ export function Navbar({ className }: NavbarProps) {
                 <div className="h-24 animate-pulse rounded-xl bg-muted motion-reduce:animate-none" aria-hidden="true" />
               ) : session?.user ? (
                 <>
+                  {session.isAdmin && (
+                    <a
+                      href="/admin"
+                      data-testid="nav-admin-mobile"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                    >
+                      <Settings className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                      {t("nav.admin")}
+                    </a>
+                  )}
                   <a
                     href="/profile"
                     onClick={() => setIsMobileMenuOpen(false)}

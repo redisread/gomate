@@ -35,13 +35,14 @@ export function AdminQuickAction({
     <>
       <button
         type="button"
+        aria-label={label}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => updateOpen(true)}
         className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-[background-color,scale] duration-100 hover:bg-primary/90 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         <MapPinPlus className="size-5 shrink-0" strokeWidth={2} aria-hidden="true" />
-        <span className="min-w-0 break-words">{label}</span>
+        <span className="hidden min-w-0 break-words sm:inline">{label}</span>
       </button>
 
       <Modal
