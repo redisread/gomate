@@ -17,7 +17,10 @@ vi.mock("@/lib/api", () => ({
 
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
-    t: (key: string) => key,
+    t: (key: string, vars?: Record<string, string>) =>
+      key === "teams.recommendedActivityType"
+        ? `${vars?.name} recommended`
+        : key,
     locale: "zh-CN",
     loading: false,
     getNsData: () => null,
@@ -70,6 +73,17 @@ function arrangeRequests() {
     if (path === "/locations?limit=100") {
       return jsonResponse({ success: true, locations: [locationA, locationB] });
     }
+    if (path === "/activity-types") {
+      return jsonResponse({
+        success: true,
+        activityTypes: [
+          { id: "hiking", name: "徒步", slug: "hiking", isActive: true, sortOrder: 10 },
+          { id: "explore", name: "探索", slug: "explore", isActive: true, sortOrder: 20 },
+          { id: "leisure", name: "休闲", slug: "leisure", isActive: true, sortOrder: 30 },
+          { id: "travel", name: "旅行", slug: "travel", isActive: true, sortOrder: 40 },
+        ],
+      });
+    }
     if (path === `/locations/${locationA.id}`) {
       return jsonResponse({ success: true, location: locationA });
     }
@@ -89,7 +103,7 @@ describe("CreateTeamClient contract", () => {
     window.history.replaceState({}, "", "/teams/create");
   });
 
-  it("offers only a location's supported activity types and clears an unsupported choice after switching", async () => {
+  it("prioritizes location recommendations without filtering the active catalog", async () => {
     arrangeRequests();
     render(<CreateTeamClient />);
 
@@ -101,14 +115,14 @@ describe("CreateTeamClient contract", () => {
     });
     expect(activitySelect).toHaveValue("");
     expect(
-      screen.getByRole("option", { name: "enums.locationType.hiking" }),
+      await screen.findByRole("option", { name: "徒步 recommended" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("option", { name: "enums.locationType.travel" }),
+      screen.getByRole("option", { name: "旅行 recommended" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("option", { name: "enums.locationType.explore" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("option", { name: "探索" }),
+    ).toBeInTheDocument();
 
     fireEvent.change(activitySelect, { target: { value: "travel" } });
     expect(activitySelect).toHaveValue("travel");
@@ -120,10 +134,10 @@ describe("CreateTeamClient contract", () => {
       ).toHaveValue("");
     });
     expect(
-      screen.queryByRole("option", { name: "enums.locationType.travel" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("option", { name: "旅行" }),
+    ).toBeInTheDocument();
     expect(
-      screen.getByRole("option", { name: "enums.locationType.explore" }),
+      screen.getByRole("option", { name: "探索 recommended" }),
     ).toBeInTheDocument();
   });
 
@@ -137,7 +151,7 @@ describe("CreateTeamClient contract", () => {
     const activitySelect = await screen.findByRole("combobox", {
       name: "teams.formLabel.activityType",
     });
-    fireEvent.change(activitySelect, { target: { value: "travel" } });
+    fireEvent.change(activitySelect, { target: { value: "explore" } });
     fireEvent.change(screen.getByTestId("create-team-title"), {
       target: { value: "周末旅行" },
     });
@@ -171,7 +185,7 @@ describe("CreateTeamClient contract", () => {
     const payload = JSON.parse((createCall?.[1] as RequestInit).body as string);
     expect(payload).toMatchObject({
       locationId: locationA.id,
-      activityType: "travel",
+      activityType: "explore",
       requirements: ["自备饮用水", "防晒用品"],
     });
   });
