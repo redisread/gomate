@@ -6,11 +6,16 @@ import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseJsonc } from "./production-build-guard.mjs";
 
 const DEFAULT_WEB_PORT = 5432;
 const MAX_TRIES = 200;
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WRANGLER_CONFIG = path.join(ROOT, "wrangler.jsonc");
+
+export function readWranglerConfig() {
+  return parseJsonc(readFileSync(WRANGLER_CONFIG, "utf8"));
+}
 
 function isPortFree(port) {
   const check = (address) =>
@@ -47,7 +52,7 @@ async function main() {
 
   const configName = `.wrangler.dev.${process.pid}.${webPort}.jsonc`;
   const configPath = path.join(ROOT, configName);
-  const config = JSON.parse(readFileSync(WRANGLER_CONFIG, "utf8"));
+  const config = readWranglerConfig();
   config.dev = { ...config.dev, port: webPort };
   config.vars = {
     ...config.vars,
@@ -106,7 +111,9 @@ async function main() {
   process.on("exit", cleanupConfig);
 }
 
-main().catch((error) => {
-  console.error(`[dev:wt] ❌ ${error.message}`);
-  process.exit(1);
-});
+if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(`[dev:wt] ❌ ${error.message}`);
+    process.exit(1);
+  });
+}
