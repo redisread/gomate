@@ -184,6 +184,7 @@
     "navigationLabel": "Admin navigation",
     "navHome": "Admin home",
     "navNewLocation": "Add location",
+    "navLocations": "Locations",
     "navActivityTypes": "Activity types",
     "navTags": "Tags",
     "navUsers": "Users",
@@ -231,5 +232,31 @@
     "makeAdmin": "Make admin",
     "revokeAdmin": "Revoke admin",
     "roleConfirm": "Confirm this administrator role change?"
+  },
+  "quickDraft": {
+    "name": "Location name",
+    "description": "Location introduction",
+    "region": "Region",
+    "chooseRegion": "Choose a region",
+    "optionalFields": "Optional: cover, activities, and tags",
+    "cover": "Cover URL",
+    "activityTypes": "Recommended activities",
+    "tags": "Tags",
+    "save": "Save draft",
+    "saving": "Saving…",
+    "saved": "Your idea is saved as a draft.",
+    "continueEditing": "Continue with all fields"
+  },
+  "locationsManagement": {
+    "title": "Locations",
+    "description": "Manage drafts, published locations, and archives in one place.",
+    "search": "Search locations",
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "archive": "Archive",
+    "archiveConfirm": "Archive this location? Historical references are preserved.",
+    "permanentDelete": "Delete permanently",
+    "permanentPrompt": "Only unreferenced locations can be permanently deleted. Enter the location ID to confirm.",
+    "permanentBlocked": "This location still has historical references and cannot be deleted"
   }
 }

@@ -114,6 +114,23 @@ describe("Location form projection", () => {
     expect(payload.extra.hiking).toBeUndefined();
   });
 
+  it("keeps unknown draft coordinates and cover as null", () => {
+    const payload = formDataToLocationPayload({
+      ...DEFAULT_LOCATION_FORM,
+      regionId: "region-sz",
+      name: "灵感地点",
+      description: "先记录下来",
+    });
+
+    expect(payload).toMatchObject({
+      status: "draft",
+      latitude: null,
+      longitude: null,
+      coverImageUrl: null,
+      supportedActivityTypes: [],
+    });
+  });
+
   it("keeps non-public locations in the admin editor after save", () => {
     expect(locationSaveRedirect({ ...location, status: "draft" })).toBe(
       "/admin/locations/loc-1/edit",

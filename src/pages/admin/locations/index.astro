@@ -1,0 +1,24 @@
+---
+import { AdminLocationsManager } from "../../../components/admin/admin-locations-manager";
+import { getSSRT } from "../../../i18n";
+import { loadLocaleData } from "../../../i18n/ssr-loader.server";
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { declareI18nNs } from "../../../middleware";
+
+declareI18nNs(Astro.locals, ["admin"]);
+const locale = Astro.locals.locale;
+const data = await loadLocaleData(["admin"], locale, Astro.url.origin);
+const t = getSSRT(locale, { [locale]: data } as never).t;
+const title = t("admin.locationsManagement.title");
+---
+
+<AdminLayout title={title} description={t("admin.locationsManagement.description")}>
+  <header class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="space-y-2">
+      <h1 class="text-3xl font-bold tracking-tight">{title}</h1>
+      <p class="max-w-2xl text-muted-foreground">{t("admin.locationsManagement.description")}</p>
+    </div>
+    <a href="/admin/locations/new" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">{t("admin.createLocation")}</a>
+  </header>
+  <AdminLocationsManager client:load />
+</AdminLayout>

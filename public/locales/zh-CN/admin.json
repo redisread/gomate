@@ -184,6 +184,7 @@
     "navigationLabel": "后台导航",
     "navHome": "后台首页",
     "navNewLocation": "新增地点",
+    "navLocations": "地点管理",
     "navActivityTypes": "活动类型",
     "navTags": "标签管理",
     "navUsers": "用户管理",
@@ -231,5 +232,31 @@
     "makeAdmin": "设为管理员",
     "revokeAdmin": "撤销管理员",
     "roleConfirm": "确认变更该用户的管理员权限吗？"
+  },
+  "quickDraft": {
+    "name": "地点名称",
+    "description": "地点介绍",
+    "region": "地区",
+    "chooseRegion": "选择地区",
+    "optionalFields": "可选：封面、活动类型和标签",
+    "cover": "封面 URL",
+    "activityTypes": "推荐活动类型",
+    "tags": "标签",
+    "save": "保存为草稿",
+    "saving": "正在保存…",
+    "saved": "灵感已保存为草稿。",
+    "continueEditing": "继续完善全部字段"
+  },
+  "locationsManagement": {
+    "title": "地点管理",
+    "description": "集中处理草稿、已发布和已归档地点。",
+    "search": "搜索地点",
+    "status": "状态",
+    "allStatuses": "全部状态",
+    "archive": "归档",
+    "archiveConfirm": "确认将这个地点归档吗？历史引用会保留。",
+    "permanentDelete": "永久删除",
+    "permanentPrompt": "仅无历史引用的地点可永久删除。请输入地点 ID 确认。",
+    "permanentBlocked": "地点仍有历史引用，不能永久删除"
   }
 }

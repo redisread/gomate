@@ -8,6 +8,7 @@ const copy = {
   navigationLabel: "Admin navigation",
   navHome: "Admin home",
   navNewLocation: "Add location",
+  navLocations: "Locations",
   navActivityTypes: "Activity types",
   navTags: "Tags",
   navUsers: "Users",
@@ -32,6 +33,7 @@ describe("AdminNavigation", () => {
     const links = Array.from(navigation.querySelectorAll("a"));
     expect(links.map((link) => link.getAttribute("href"))).toEqual([
       "/admin",
+      "/admin/locations",
       "/admin/locations/new",
       "/admin/activity-types",
       "/admin/tags",

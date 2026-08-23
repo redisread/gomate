@@ -1,6 +1,50 @@
 import { describe, expect, it } from "vitest";
 import * as schema from "../../db/schema";
-import { projectLocation } from "./utils";
+import { createLocationInputSchema, projectLocation } from "./utils";
+
+describe("location input", () => {
+  it("accepts a draft with only name, description, and region", () => {
+    const result = createLocationInputSchema.safeParse({
+      name: "突然想到的地点",
+      description: "先把灵感记录下来，稍后补齐坐标和封面。",
+      regionId: "region-cn-shenzhen",
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data).toMatchObject({
+      status: "draft",
+      supportedActivityTypes: [],
+      latitude: null,
+      longitude: null,
+      coverImageUrl: null,
+    });
+  });
+
+  it("requires coordinates and a cover to publish but not an activity type", () => {
+    const incomplete = createLocationInputSchema.safeParse({
+      name: "完整地点",
+      description: "地点介绍",
+      regionId: "region-cn-shenzhen",
+      status: "published",
+    });
+    expect(incomplete.success).toBe(false);
+
+    const complete = createLocationInputSchema.safeParse({
+      name: "完整地点",
+      description: "地点介绍",
+      regionId: "region-cn-shenzhen",
+      status: "published",
+      latitude: 22.5,
+      longitude: 114.1,
+      coverImageUrl: "https://media.example.com/cover.jpg",
+    });
+    expect(complete.success).toBe(true);
+    if (complete.success) {
+      expect(complete.data.supportedActivityTypes).toEqual([]);
+    }
+  });
+});
 
 describe("location response projection", () => {
   it("does not expose the creator identifier in public DTOs", () => {

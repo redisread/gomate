@@ -4,14 +4,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AdminActivityTypesManager } from "./admin-activity-types-manager";
 import { AdminTagsManager } from "./admin-tags-manager";
 import { AdminUsersManager } from "./admin-users-manager";
+import { AdminLocationsManager } from "./admin-locations-manager";
+import { AdminQuickLocationForm } from "./admin-quick-location-form";
 
 const api = vi.hoisted(() => ({
   fetchAPI: vi.fn(),
   apiPost: vi.fn(),
   apiPatch: vi.fn(),
+  apiPut: vi.fn(),
 }));
 
 vi.mock("@/lib/api", () => api);
+vi.mock("@/lib/regions", () => ({
+  fetchSelectableRegions: vi.fn().mockResolvedValue([
+    { id: "region-sz", name: "深圳", level: "city" },
+  ]),
+}));
 
 const translate = (key: string) => key;
 vi.mock("@/hooks/useI18n", () => ({
@@ -23,6 +31,7 @@ describe("admin catalog managers", () => {
     api.fetchAPI.mockReset();
     api.apiPost.mockReset();
     api.apiPatch.mockReset();
+    api.apiPut.mockReset();
   });
 
   it("shows activity reference counts and allows deactivation", async () => {
@@ -100,5 +109,68 @@ describe("admin catalog managers", () => {
       name: "admin.management.currentUser",
     });
     expect(button).toBeDisabled();
+  });
+
+  it("saves the three required quick fields as a server draft", async () => {
+    api.fetchAPI
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tags: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ activityTypes: [] }), { status: 200 }));
+    api.apiPost.mockResolvedValue({
+      success: true,
+      location: { id: "location-1", status: "draft" },
+    });
+    const initialFocusRef = { current: null };
+
+    render(<AdminQuickLocationForm initialFocusRef={initialFocusRef} />);
+    fireEvent.change(screen.getByLabelText("admin.quickDraft.name"), {
+      target: { value: "灵感地点" },
+    });
+    fireEvent.change(screen.getByLabelText("admin.quickDraft.description"), {
+      target: { value: "刚刚想到，先记录下来" },
+    });
+    await screen.findByRole("option", { name: "深圳" });
+    fireEvent.change(screen.getByLabelText("admin.quickDraft.region"), {
+      target: { value: "region-sz" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "admin.quickDraft.save" }));
+
+    await waitFor(() => expect(api.apiPost).toHaveBeenCalledWith("/locations", {
+      name: "灵感地点",
+      description: "刚刚想到，先记录下来",
+      regionId: "region-sz",
+      status: "draft",
+      supportedActivityTypes: [],
+      coverImageUrl: null,
+    }));
+    expect(await screen.findByText("admin.quickDraft.saved")).toBeInTheDocument();
+  });
+
+  it("archives a location through the default delete action", async () => {
+    api.fetchAPI
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        locations: [{
+          id: "location-1",
+          name: "梧桐山",
+          description: "地点介绍",
+          status: "published",
+          region: { name: "深圳" },
+        }],
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        success: true,
+        id: "location-1",
+        status: "archived",
+      }), { status: 200 }));
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<AdminLocationsManager />);
+    fireEvent.click(await screen.findByRole("button", {
+      name: "admin.locationsManagement.archive",
+    }));
+
+    await waitFor(() => expect(api.fetchAPI).toHaveBeenLastCalledWith(
+      "/locations/location-1",
+      { method: "DELETE" },
+    ));
   });
 });

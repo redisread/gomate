@@ -39,16 +39,19 @@ export async function prepareLocationMedia(
   locationId: string,
   values: LocationMediaValues,
 ): Promise<PreparedLocationMedia> {
-  const publicBaseUrl = getR2PublicBaseUrl(env);
-  if (!publicBaseUrl) {
-    throw new LocationMediaError("Location media storage is not safely configured", 500);
-  }
-
   const replacements = new Map<string, string>();
   const tempKeys: string[] = [];
   const finalKeys: string[] = [];
   const urls = [...new Set([values.coverImageUrl, ...values.images])]
     .filter((value): value is string => value !== null);
+  if (urls.length === 0) {
+    return { ...values, tempKeys, finalKeys };
+  }
+
+  const publicBaseUrl = getR2PublicBaseUrl(env);
+  if (!publicBaseUrl) {
+    throw new LocationMediaError("Location media storage is not safely configured", 500);
+  }
 
   for (const value of urls) {
     const anyR2Key = exactR2KeyFromPublicUrl(env, value);

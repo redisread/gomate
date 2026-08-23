@@ -10,14 +10,14 @@ import { z } from "zod";
 import type { Db } from "../../db";
 import * as schema from "../../db/schema";
 
-export const ACTIVITY_TYPES = [
+export const LEGACY_ACTIVITY_TYPES = [
   "hiking",
   "explore",
   "leisure",
   "travel",
 ] as const;
 
-const activityTypeSchema = z.enum(ACTIVITY_TYPES);
+const activityTypeSchema = z.string().trim().min(1).max(128);
 const locationStatusSchema = z.enum(["draft", "published", "archived"]);
 
 const httpsUrlSchema = z
@@ -37,7 +37,7 @@ const httpsUrlSchema = z
 
 const supportedActivityTypesSchema = z
   .array(activityTypeSchema)
-  .max(ACTIVITY_TYPES.length)
+  .max(50)
   .refine((values) => new Set(values).size === values.length, {
     message: "Activity types must be unique",
   });
@@ -91,14 +91,14 @@ const locationFieldsSchema = z.object({
     .max(200)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
     .optional(),
-  supportedActivityTypes: supportedActivityTypesSchema,
-  status: locationStatusSchema.default("published"),
+  supportedActivityTypes: supportedActivityTypesSchema.default([]),
+  status: locationStatusSchema.default("draft"),
   subtitle: z.string().trim().max(500).nullable().optional(),
   description: z.string().trim().min(1).max(10_000),
   address: z.string().trim().max(500).nullable().optional(),
-  latitude: z.number().finite().min(-90).max(90),
-  longitude: z.number().finite().min(-180).max(180),
-  coverImageUrl: httpsUrlSchema,
+  latitude: z.number().finite().min(-90).max(90).nullable().default(null),
+  longitude: z.number().finite().min(-180).max(180).nullable().default(null),
+  coverImageUrl: httpsUrlSchema.nullable().default(null),
   images: z.array(httpsUrlSchema).max(20).default([]),
   extra: locationExtraInputSchema.default({}),
 }).strict();
@@ -106,13 +106,26 @@ const locationFieldsSchema = z.object({
 export const createLocationInputSchema = locationFieldsSchema.superRefine(
   (value, context) => {
     if (
-      value.status === "published" &&
-      value.supportedActivityTypes.length === 0
+      value.status === "published" && value.latitude === null
     ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["supportedActivityTypes"],
-        message: "Published locations require at least one activity type",
+        path: ["latitude"],
+        message: "Published locations require latitude",
+      });
+    }
+    if (value.status === "published" && value.longitude === null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["longitude"],
+        message: "Published locations require longitude",
+      });
+    }
+    if (value.status === "published" && value.coverImageUrl === null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["coverImageUrl"],
+        message: "Published locations require a cover image",
       });
     }
   },

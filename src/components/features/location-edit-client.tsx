@@ -178,7 +178,7 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
         {/* Main content: two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
           <div className={cn("space-y-4", showPreview && "hidden lg:block")}>
-            <LocationFormBasicFields formData={form.formData} errors={form.errors} regions={form.regions}
+            <LocationFormBasicFields formData={form.formData} errors={form.errors} regions={form.regions} activityTypes={form.activityTypes}
               updateField={form.updateField} touch={form.touch}  />
             <LocationFormContentFields formData={form.formData} isSaving={form.isSaving} updateField={form.updateField} />
             <LocationFormSettingsFields formData={form.formData} allTags={form.allTags} updateField={form.updateField} />

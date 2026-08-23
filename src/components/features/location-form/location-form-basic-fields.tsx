@@ -4,7 +4,7 @@ import * as React from "react";
 import { MapPin, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
-import type { Region } from "@/lib/types";
+import type { ActivityTypeInfo, Region } from "@/lib/types";
 import type { FormData } from "./use-location-form";
 import { RegionSelect } from "@/components/ui/region-select";
 
@@ -84,22 +84,17 @@ function styledInput(hasError?: boolean) {
    LocationFormBasicFields
    ================================================================ */
 
-const LOCATION_TYPE_OPTIONS = (t: (key: string) => string) => [
-  { value: "hiking", label: t("admin.locationTypeHiking") }, { value: "explore", label: t("admin.locationTypeExplore") },
-  { value: "leisure", label: t("admin.locationTypeLeisure") }, { value: "travel", label: t("admin.locationTypeTravel") },
-] as const;
-
 interface LocationFormBasicFieldsProps {
   formData: FormData;
   errors: Record<string, string | undefined>;
   regions: Region[];
+  activityTypes: ActivityTypeInfo[];
   updateField: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
   touch: (key: string, value: string) => void;
   }
 
-export function LocationFormBasicFields({ formData, errors, regions, updateField, touch }: LocationFormBasicFieldsProps) {
+export function LocationFormBasicFields({ formData, errors, regions, activityTypes, updateField, touch }: LocationFormBasicFieldsProps) {
   const { t } = useI18n(["admin"]);
-  const locationTypeOptions = LOCATION_TYPE_OPTIONS(t);
   return (
     <div className="space-y-4">
       {/* 基本信息 */}
@@ -119,19 +114,22 @@ export function LocationFormBasicFields({ formData, errors, regions, updateField
         </Field>
         <Field label={t("admin.formLocationType")}>
           <div className="flex flex-wrap gap-2">
-            {locationTypeOptions.map((opt) => (
-              <button key={opt.value} type="button"
+            {activityTypes.map((activity) => {
+              const selected = formData.supportedActivityTypes.includes(activity.id);
+              return <button key={activity.id} type="button"
+                disabled={!activity.isActive && !selected}
                 onClick={() => updateField(
                   "supportedActivityTypes",
-                  formData.supportedActivityTypes.includes(opt.value)
-                    ? formData.supportedActivityTypes.filter((value) => value !== opt.value)
-                    : [...formData.supportedActivityTypes, opt.value],
+                  selected
+                    ? formData.supportedActivityTypes.filter((value) => value !== activity.id)
+                    : [...formData.supportedActivityTypes, activity.id],
                 )}
                 className={cn("px-3.5 py-1.5 rounded-full text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow]",
-                  formData.supportedActivityTypes.includes(opt.value) ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700")}>
-                {opt.label}
-              </button>
-            ))}
+                  selected ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700",
+                  "disabled:cursor-not-allowed disabled:opacity-50")}>
+                {activity.name}{!activity.isActive ? ` · ${t("admin.management.deactivate")}` : ""}
+              </button>;
+            })}
           </div>
           {errors.supportedActivityTypes && <p className="mt-1 text-xs text-red-500">{errors.supportedActivityTypes}</p>}
         </Field>

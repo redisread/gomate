@@ -2,6 +2,7 @@ import {
   Activity,
   ExternalLink,
   House,
+  MapPinned,
   MapPinPlus,
   Menu,
   Mountain,
@@ -18,6 +19,7 @@ export interface AdminNavigationCopy {
   navigationLabel: string;
   navHome: string;
   navNewLocation: string;
+  navLocations: string;
   navActivityTypes: string;
   navTags: string;
   navUsers: string;
@@ -35,6 +37,7 @@ interface AdminNavigationProps {
 function navigationItems(copy: AdminNavigationCopy) {
   return [
     { href: "/admin", label: copy.navHome, icon: House, exact: true },
+    { href: "/admin/locations", label: copy.navLocations, icon: MapPinned, exact: true },
     {
       href: "/admin/locations/new",
       label: copy.navNewLocation,
