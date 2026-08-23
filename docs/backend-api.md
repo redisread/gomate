@@ -25,7 +25,7 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 | 方法      | 路径                            | 认证 | 用途                                   |
 | --------- | ------------------------------- | ---- | -------------------------------------- |
 | GET       | `/health`                       | 否   | 健康检查；返回 Worker version ID 与写入模式 |
-| POST      | `/auth/sign-up/email`           | 否   | 注册；固定响应避免账号枚举             |
+| POST      | `/auth/sign-up/email`           | 否   | 注册；仅在用户与 credential 账户落库后返回固定响应，避免账号枚举 |
 | POST      | `/auth/sign-in/email`           | 否   | 登录；成功响应不暴露 session token     |
 | GET、POST | `/auth/get-session`             | 可选 | 强制回源 D1 获取当前 session           |
 | POST      | `/auth/sign-out`                | 是   | 注销当前 session                       |
@@ -39,6 +39,8 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 除上述认证端点外，`/auth/*` 固定返回 404。验证和重置 token 只放在邮件 URL fragment，
 页面清除 fragment 后通过同源 POST body 提交；token 不得进入 path、query、日志或数据库明文。
 登录、注册和邮件发送使用 Cloudflare Rate Limiting bindings；运行时不依赖 KV 缓存。
+注册的固定成功响应还会在 Better Auth 返回后回查 D1：新用户必须同时存在 `users` 与
+`local:credential` 账户；持久化不完整时返回 5xx，不伪装成注册成功。
 
 ### Region、地点与标签
 
