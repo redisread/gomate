@@ -23,6 +23,7 @@ import {
   decodeContentCursor,
   encodeContentCursor,
 } from "../../lib/content-cursor";
+import { validateRequest } from "../../lib/validation";
 import {
   ACTIVITY_TYPES,
   loadLocationTags,
@@ -48,7 +49,14 @@ const locationListQuerySchema = z.object({
     .optional()
     .transform((value) =>
       value
-        ? [...new Set(value.split(",").map((item) => item.trim()).filter(Boolean))]
+        ? [
+            ...new Set(
+              value
+                .split(",")
+                .map((item) => item.trim())
+                .filter(Boolean),
+            ),
+          ]
         : [],
     )
     .refine((values) => values.length <= 20, "At most 20 tag IDs are allowed"),
@@ -81,34 +89,34 @@ export function buildLocationPageQuery(
 }
 
 queries.get("/", async (c) => {
-  if (c.req.query("page") !== undefined || c.req.query("pageSize") !== undefined) {
+  if (
+    c.req.query("page") !== undefined ||
+    c.req.query("pageSize") !== undefined
+  ) {
     return c.json(
       APIErrors.badRequest("page pagination is not supported; use cursor"),
       400,
     );
   }
-  const parsed = locationListQuerySchema.safeParse({
-    limit: c.req.query("limit"),
-    cursor: c.req.query("cursor"),
-    search: c.req.query("search"),
-    regionId: c.req.query("regionId"),
-    activityType: c.req.query("activityType"),
-    tagIds: c.req.query("tagIds"),
-  });
-  if (!parsed.success) {
-    return c.json(
-      APIErrors.validationError(
-        "Invalid location filters",
-        parsed.error.flatten(),
-      ),
-      400,
-    );
-  }
+  const parsed = await validateRequest(
+    c,
+    "query",
+    locationListQuerySchema,
+    "Invalid location filters",
+    "flatten",
+  );
+  if (parsed instanceof Response) return parsed;
 
   try {
     const db = createDb(c.env.DB);
-    const { limit, cursor: encodedCursor, search, regionId, activityType, tagIds } =
-      parsed.data;
+    const {
+      limit,
+      cursor: encodedCursor,
+      search,
+      regionId,
+      activityType,
+      tagIds,
+    } = parsed;
     const baseConditions: SQL[] = [
       eq(schema.locations.status, "published"),
       eq(schema.region.level, "city"),
@@ -297,7 +305,7 @@ queries.get("/:id/tags", async (c) => {
     }
     return c.json({
       success: true as const,
-      tags: rows.flatMap(({ tag }) => tag ? [tag] : []),
+      tags: rows.flatMap(({ tag }) => (tag ? [tag] : [])),
     });
   } catch (error) {
     logger.error("location_tags_get_failed", safeErrorMetadata(error));

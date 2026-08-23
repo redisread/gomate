@@ -7,6 +7,7 @@ import * as schema from "../../db/schema";
 import { APIErrors } from "../../lib/api-errors";
 import type { Env } from "../../lib/auth";
 import { getActiveSession } from "../../lib/active-session";
+import { validateRequest } from "../../lib/validation";
 import { logger } from "../../lib/logger";
 import {
   getLocalCircleHome,
@@ -17,6 +18,14 @@ import {
 const SHENZHEN_REGION_ID = "region-cn-shenzhen";
 const languageSchema = z.enum(["zh-CN", "en", "ja"]);
 const regionIdSchema = z.string().trim().min(1).max(128);
+const homeQuerySchema = z
+  .object({
+    language: languageSchema.optional(),
+  })
+  .passthrough();
+const regionQuerySchema = z
+  .object({ regionId: regionIdSchema.optional() })
+  .passthrough();
 
 const home = new Hono<{ Bindings: Env }>();
 
@@ -35,8 +44,7 @@ function resolveLanguage(
   acceptLanguage: string | undefined,
 ): LocalCircleLanguage | null {
   if (requested !== undefined) {
-    const parsed = languageSchema.safeParse(requested);
-    return parsed.success ? parsed.data : null;
+    return requested as LocalCircleLanguage;
   }
   const primary = acceptLanguage?.split(",", 1)[0]?.trim().toLowerCase();
   if (primary?.startsWith("en")) return "en";
@@ -65,9 +73,7 @@ async function resolveRegion(
   cfIpCity: string | undefined,
 ): Promise<ResolvedRegion | null> {
   if (requestedRegionId !== undefined) {
-    const parsed = regionIdSchema.safeParse(requestedRegionId);
-    if (!parsed.success) return null;
-    return findOpenCityById(db, parsed.data);
+    return findOpenCityById(db, requestedRegionId);
   }
 
   const cityName = cfIpCity?.trim();
@@ -93,7 +99,28 @@ async function resolveRegion(
 }
 
 home.get("/", async (c) => {
-  const requestedLanguage = c.req.query("language");
+  const query = await validateRequest(
+    c,
+    "query",
+    homeQuerySchema,
+    "language must be zh-CN, en or ja",
+    "none",
+    "language must be zh-CN, en or ja",
+  );
+  if (query instanceof Response) return query;
+
+  const regionQuery = await validateRequest(
+    c,
+    "query",
+    regionQuerySchema,
+    "regionId must reference an enabled city Region",
+    "none",
+    "regionId must reference an enabled city Region",
+    APIErrors.badRequest,
+  );
+  if (regionQuery instanceof Response) return regionQuery;
+
+  const requestedLanguage = query.language;
   const language = resolveLanguage(
     requestedLanguage,
     c.req.header("accept-language"),
@@ -107,7 +134,7 @@ home.get("/", async (c) => {
 
   try {
     const db = createDb(c.env.DB);
-    const requestedRegionId = c.req.query("regionId");
+    const requestedRegionId = regionQuery.regionId;
     const region = await resolveRegion(
       db,
       requestedRegionId,
@@ -116,7 +143,9 @@ home.get("/", async (c) => {
     if (!region) {
       if (requestedRegionId !== undefined) {
         return c.json(
-          APIErrors.badRequest("regionId must reference an enabled city Region"),
+          APIErrors.badRequest(
+            "regionId must reference an enabled city Region",
+          ),
           400,
         );
       }

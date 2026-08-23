@@ -39,9 +39,12 @@ const GENERIC_SIGN_IN_ERROR = APIErrors.unauthorized("邮箱或密码错误");
 
 const signUpEmailSchema = z
   .object({
-    email: z.string().trim().max(254).email().transform((value) =>
-      value.toLocaleLowerCase("en-US")
-    ),
+    email: z
+      .string()
+      .trim()
+      .max(254)
+      .email()
+      .transform((value) => value.toLocaleLowerCase("en-US")),
     password: z.string().min(8).max(128),
     name: z.string().trim().min(1).max(100),
     callbackURL: z.string().max(2_048).optional(),
@@ -50,9 +53,12 @@ const signUpEmailSchema = z
 
 const signInEmailSchema = z
   .object({
-    email: z.string().trim().max(254).email().transform((value) =>
-      value.toLocaleLowerCase("en-US")
-    ),
+    email: z
+      .string()
+      .trim()
+      .max(254)
+      .email()
+      .transform((value) => value.toLocaleLowerCase("en-US")),
     password: z.string().min(1).max(128),
     callbackURL: z.string().max(2_048).optional(),
     rememberMe: z.boolean().optional(),
@@ -61,9 +67,12 @@ const signInEmailSchema = z
 
 const verificationEmailSchema = z
   .object({
-    email: z.string().trim().max(254).email().transform((value) =>
-      value.toLocaleLowerCase("en-US")
-    ),
+    email: z
+      .string()
+      .trim()
+      .max(254)
+      .email()
+      .transform((value) => value.toLocaleLowerCase("en-US")),
     callbackURL: z.string().max(2_048).optional(),
   })
   .strict();
@@ -97,14 +106,17 @@ async function readBoundedJson<T>(
   c: AuthContext,
   schema: z.ZodType<T>,
 ): Promise<{ data: T } | { response: Response }> {
-  const contentType = c.req.header("content-type")
+  const contentType = c.req
+    .header("content-type")
     ?.split(";", 1)[0]
     ?.trim()
     .toLowerCase();
   if (contentType !== "application/json") {
     return {
       response: c.json(
-        APIErrors.badRequest("Authentication requests require application/json"),
+        APIErrors.badRequest(
+          "Authentication requests require application/json",
+        ),
         415,
       ),
     };
@@ -114,16 +126,28 @@ async function readBoundedJson<T>(
   if (contentLength) {
     const declared = Number(contentLength);
     if (!Number.isSafeInteger(declared) || declared < 0) {
-      return { response: c.json(APIErrors.badRequest("Invalid Content-Length"), 400) };
+      return {
+        response: c.json(APIErrors.badRequest("Invalid Content-Length"), 400),
+      };
     }
     if (declared > MAX_AUTH_JSON_BYTES) {
-      return { response: c.json(APIErrors.badRequest("Authentication payload is too large"), 413) };
+      return {
+        response: c.json(
+          APIErrors.badRequest("Authentication payload is too large"),
+          413,
+        ),
+      };
     }
   }
 
   const reader = c.req.raw.body?.getReader();
   if (!reader) {
-    return { response: c.json(APIErrors.validationError("Invalid authentication payload"), 400) };
+    return {
+      response: c.json(
+        APIErrors.validationError("Invalid authentication payload"),
+        400,
+      ),
+    };
   }
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -132,7 +156,12 @@ async function readBoundedJson<T>(
     if (done) break;
     total += value.byteLength;
     if (total > MAX_AUTH_JSON_BYTES) {
-      return { response: c.json(APIErrors.badRequest("Authentication payload is too large"), 413) };
+      return {
+        response: c.json(
+          APIErrors.badRequest("Authentication payload is too large"),
+          413,
+        ),
+      };
     }
     chunks.push(value);
   }
@@ -150,13 +179,23 @@ async function readBoundedJson<T>(
       new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(bytes),
     );
   } catch {
-    return { response: c.json(APIErrors.validationError("Invalid authentication payload"), 400) };
+    return {
+      response: c.json(
+        APIErrors.validationError("Invalid authentication payload"),
+        400,
+      ),
+    };
   }
-  const parsed = schema.safeParse(raw);
-  if (!parsed.success) {
-    return { response: c.json(APIErrors.validationError("Invalid authentication payload"), 400) };
+  const parsed = await schema["~standard"].validate(raw);
+  if (parsed.issues) {
+    return {
+      response: c.json(
+        APIErrors.validationError("Invalid authentication payload"),
+        400,
+      ),
+    };
   }
-  return { data: parsed.data };
+  return { data: parsed.value };
 }
 
 async function privateRateLimitKey(scope: string, kind: string, value: string) {
@@ -165,7 +204,7 @@ async function privateRateLimitKey(scope: string, kind: string, value: string) {
     new TextEncoder().encode(`${scope}\n${kind}\n${value}`),
   );
   return Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0")
+    byte.toString(16).padStart(2, "0"),
   ).join("");
 }
 
@@ -191,7 +230,10 @@ async function enforceNativeRateLimit(
     logger.error("auth_rate_limiter_failed", {
       errorType: error instanceof Error ? error.name : "UnknownRateLimitError",
     });
-    return c.json(APIErrors.serviceUnavailable("Authentication protection unavailable"), 503);
+    return c.json(
+      APIErrors.serviceUnavailable("Authentication protection unavailable"),
+      503,
+    );
   }
 
   c.header("Retry-After", String(AUTH_RATE_LIMIT_WINDOW_SECONDS));
@@ -201,9 +243,10 @@ async function enforceNativeRateLimit(
 export function normalizeBetterAuthUrl(input: string): string {
   const url = new URL(input);
   const authMarker = url.pathname.match(/\/auth(?=\/|$)/u);
-  const endpointPath = authMarker?.index === undefined
-    ? url.pathname
-    : url.pathname.slice(authMarker.index + authMarker[0].length);
+  const endpointPath =
+    authMarker?.index === undefined
+      ? url.pathname
+      : url.pathname.slice(authMarker.index + authMarker[0].length);
   url.pathname = `/api/auth${endpointPath.startsWith("/") ? endpointPath : `/${endpointPath}`}`;
   return url.toString();
 }
@@ -231,10 +274,7 @@ function noStoreResponse(response: Response): Response {
   });
 }
 
-function noStoreJsonResponse(
-  response: Response,
-  payload: unknown,
-): Response {
+function noStoreJsonResponse(response: Response, payload: unknown): Response {
   const headers = new Headers(response.headers);
   headers.delete("content-length");
   headers.set("content-type", "application/json; charset=UTF-8");
@@ -253,14 +293,20 @@ function authErrorCode(error: unknown): string | undefined {
     code?: unknown;
     body?: { code?: unknown; error?: { code?: unknown } };
   };
-  const code = candidate.code ?? candidate.body?.code ?? candidate.body?.error?.code;
+  const code =
+    candidate.code ?? candidate.body?.code ?? candidate.body?.error?.code;
   return typeof code === "string" && /^[A-Z][A-Z0-9_]{0,63}$/u.test(code)
     ? code
     : undefined;
 }
 
-async function responseErrorCode(response: Response): Promise<string | undefined> {
-  const payload = await response.clone().json().catch(() => null) as {
+async function responseErrorCode(
+  response: Response,
+): Promise<string | undefined> {
+  const payload = (await response
+    .clone()
+    .json()
+    .catch(() => null)) as {
     code?: unknown;
     error?: { code?: unknown };
   } | null;
@@ -281,23 +327,28 @@ async function verifySignUpPersistence(
   email: string,
   response: Response,
 ): Promise<boolean> {
-  const payload = await response.clone().json().catch(() => null) as {
+  const payload = (await response
+    .clone()
+    .json()
+    .catch(() => null)) as {
     user?: { id?: unknown; email?: unknown };
   } | null;
-  const responseUserId = typeof payload?.user?.id === "string"
-    ? payload.user.id
-    : undefined;
-  const responseEmail = typeof payload?.user?.email === "string"
-    ? payload.user.email.toLocaleLowerCase("en-US")
-    : undefined;
+  const responseUserId =
+    typeof payload?.user?.id === "string" ? payload.user.id : undefined;
+  const responseEmail =
+    typeof payload?.user?.email === "string"
+      ? payload.user.email.toLocaleLowerCase("en-US")
+      : undefined;
   if (!responseUserId || responseEmail !== email) return false;
 
   const db = createDb(c.env.DB);
-  const persistedUser = (await db
-    .select({ id: schema.users.id })
-    .from(schema.users)
-    .where(eq(schema.users.email, email))
-    .limit(1))[0];
+  const persistedUser = (
+    await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.email, email))
+      .limit(1)
+  )[0];
   if (!persistedUser) return false;
 
   // Better Auth intentionally returns a synthetic user for duplicate sign-up
@@ -305,15 +356,19 @@ async function verifySignUpPersistence(
   // it must not turn an unpersisted first registration into a 200 response.
   if (persistedUser.id !== responseUserId) return true;
 
-  const credentialAccount = (await db
-    .select({ id: schema.accounts.id })
-    .from(schema.accounts)
-    .where(and(
-      eq(schema.accounts.userId, persistedUser.id),
-      eq(schema.accounts.issuer, "local:credential"),
-      eq(schema.accounts.accountId, persistedUser.id),
-    ))
-    .limit(1))[0];
+  const credentialAccount = (
+    await db
+      .select({ id: schema.accounts.id })
+      .from(schema.accounts)
+      .where(
+        and(
+          eq(schema.accounts.userId, persistedUser.id),
+          eq(schema.accounts.issuer, "local:credential"),
+          eq(schema.accounts.accountId, persistedUser.id),
+        ),
+      )
+      .limit(1)
+  )[0];
   return Boolean(credentialAccount);
 }
 
@@ -321,9 +376,10 @@ async function browserSafeSignInResponse(
   c: AuthContext,
   response: Response,
 ): Promise<Response> {
-  const payload = await response.clone().json().catch(() => null) as
-    | Record<string, unknown>
-    | null;
+  const payload = (await response
+    .clone()
+    .json()
+    .catch(() => null)) as Record<string, unknown> | null;
   if (!payload || Array.isArray(payload)) {
     logger.error("auth_sign_in_response_invalid");
     return c.json(APIErrors.internalError("Unable to sign in"), 500, {
@@ -364,7 +420,8 @@ auth.post("/forgot-password", async (c) => {
           issued.displayName,
           c.env,
         );
-        if (!result.success) logger.error("password_reset_email_delivery_failed");
+        if (!result.success)
+          logger.error("password_reset_email_delivery_failed");
       })
       .catch((error) => {
         // The stable event carries no email, token, SQL or adapter message.
@@ -429,7 +486,7 @@ async function handleEmailSignUp(c: AuthContext) {
   }
 
   try {
-    if (!await verifySignUpPersistence(c, parsed.data.email, response)) {
+    if (!(await verifySignUpPersistence(c, parsed.data.email, response))) {
       logger.error("auth_sign_up_persistence_failed", {
         errorType: "AuthPersistenceError",
       });
@@ -557,7 +614,8 @@ async function handlePasswordReset(c: AuthContext) {
 auth.post("/reset-password", handlePasswordReset);
 
 function handleSignOut(c: AuthContext) {
-  return createAuth(c.env, getExecutionContext(c)).handler(c.req.raw)
+  return createAuth(c.env, getExecutionContext(c))
+    .handler(c.req.raw)
     .then(noStoreResponse);
 }
 
@@ -571,12 +629,13 @@ async function handleGetSession(c: AuthContext) {
     asResponse: true,
   });
   if (!response.ok) return noStoreResponse(response);
-  const session = await response.clone().json().catch(() => null) as
-    | {
-        session?: Record<string, unknown>;
-        user?: { id?: string };
-      }
-    | null;
+  const session = (await response
+    .clone()
+    .json()
+    .catch(() => null)) as {
+    session?: Record<string, unknown>;
+    user?: { id?: string };
+  } | null;
   if (!session?.user?.id) return noStoreResponse(response);
   if (await enforceActiveSession(c.env, { user: { id: session.user.id } })) {
     const sessionRecord = session.session;
@@ -648,7 +707,10 @@ auth.all("/*", async (c) => {
   if (c.req.method === "POST" && path === "/api/auth/sign-out") {
     return handleSignOut(c);
   }
-  if (["GET", "POST"].includes(c.req.method) && path === "/api/auth/get-session") {
+  if (
+    ["GET", "POST"].includes(c.req.method) &&
+    path === "/api/auth/get-session"
+  ) {
     return handleGetSession(c);
   }
   return unavailableAuthEndpoint(c);

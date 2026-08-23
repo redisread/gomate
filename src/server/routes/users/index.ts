@@ -18,10 +18,7 @@ import { APIErrors } from "../../lib/api-errors";
 import type { Env } from "../../lib/auth";
 import { getActiveSession } from "../../lib/active-session";
 import { logger } from "../../lib/logger";
-import {
-  parseUserExtra,
-  userExtraPatchExpression,
-} from "../../lib/user-extra";
+import { parseUserExtra, userExtraPatchExpression } from "../../lib/user-extra";
 import {
   decodeContentCursor,
   encodeContentCursor,
@@ -32,6 +29,7 @@ import { eraseAccount } from "../../lib/account-erasure";
 import { ownedAvatarKeyFromStoredValue } from "../../lib/avatar-media";
 import { deleteR2ObjectsWithRetry } from "../../lib/r2-media";
 import { activeTeamMemberCount } from "../../lib/team-participant-count";
+import { validateRequest } from "../../lib/validation";
 import {
   getUserOngoingTeams,
   getUserStats,
@@ -53,7 +51,9 @@ const updateProfileSchema = z
     birthday: z.string().datetime().nullable().optional(),
     extra: z
       .object({
-        level: z.enum(["beginner", "intermediate", "advanced", "expert"]).optional(),
+        level: z
+          .enum(["beginner", "intermediate", "advanced", "expert"])
+          .optional(),
         wechat: nullableText(100).optional(),
         city: z.string().trim().min(1).max(64).nullable().optional(),
       })
@@ -61,11 +61,16 @@ const updateProfileSchema = z
       .optional(),
   })
   .strict()
-  .refine((value) => Object.keys(value).length > 0, "At least one field is required");
+  .refine(
+    (value) => Object.keys(value).length > 0,
+    "At least one field is required",
+  );
 
-const deleteAccountSchema = z.object({
-  confirmation: z.literal("DELETE"),
-}).strict();
+const deleteAccountSchema = z
+  .object({
+    confirmation: z.literal("DELETE"),
+  })
+  .strict();
 
 async function currentUserId(c: {
   env: Env;
@@ -80,7 +85,10 @@ function parseCursorPage(c: {
 }):
   | { ok: true; limit: number; cursor: ContentCursor | null }
   | { ok: false; message: string } {
-  if (c.req.query("page") !== undefined || c.req.query("pageSize") !== undefined) {
+  if (
+    c.req.query("page") !== undefined ||
+    c.req.query("pageSize") !== undefined
+  ) {
     return {
       ok: false,
       message: "page pagination is not supported; use cursor",
@@ -95,9 +103,8 @@ function parseCursorPage(c: {
     return { ok: false, message: "limit must be an integer between 1 and 50" };
   }
   const encodedCursor = c.req.query("cursor");
-  const cursor = encodedCursor === undefined
-    ? null
-    : decodeContentCursor(encodedCursor);
+  const cursor =
+    encodedCursor === undefined ? null : decodeContentCursor(encodedCursor);
   if (encodedCursor !== undefined && !cursor) {
     return { ok: false, message: "Invalid timeline cursor" };
   }
@@ -182,10 +189,7 @@ function descendingTeamCursor(cursor: ContentCursor | null): SQL | undefined {
   const cursorDate = new Date(cursor.t);
   return or(
     lt(schema.teams.createdAt, cursorDate),
-    and(
-      eq(schema.teams.createdAt, cursorDate),
-      lt(schema.teams.id, cursor.id),
-    ),
+    and(eq(schema.teams.createdAt, cursorDate), lt(schema.teams.id, cursor.id)),
   );
 }
 
@@ -198,11 +202,11 @@ export function buildCreatedTeamsPageQuery(
   return db
     .select(teamSummarySelection)
     .from(schema.teams)
-    .innerJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
-    .where(and(
-      eq(schema.teams.leaderId, userId),
-      descendingTeamCursor(cursor),
-    ))
+    .innerJoin(
+      schema.locations,
+      eq(schema.locations.id, schema.teams.locationId),
+    )
+    .where(and(eq(schema.teams.leaderId, userId), descendingTeamCursor(cursor)))
     .orderBy(desc(schema.teams.createdAt), desc(schema.teams.id))
     .limit(limit);
 }
@@ -216,7 +220,10 @@ export function buildJoinedTeamsPageQuery(
   return db
     .select(teamSummarySelection)
     .from(schema.teams)
-    .innerJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+    .innerJoin(
+      schema.locations,
+      eq(schema.locations.id, schema.teams.locationId),
+    )
     .innerJoin(
       schema.teamMembers,
       and(
@@ -282,11 +289,16 @@ export function buildOwnJoinRequestsPageQuery(
   return db
     .select(ownJoinRequestSelection)
     .from(schema.teamJoinRequests)
-    .innerJoin(schema.teams, eq(schema.teams.id, schema.teamJoinRequests.teamId))
-    .where(and(
-      eq(schema.teamJoinRequests.userId, userId),
-      descendingJoinRequestCursor(cursor),
-    ))
+    .innerJoin(
+      schema.teams,
+      eq(schema.teams.id, schema.teamJoinRequests.teamId),
+    )
+    .where(
+      and(
+        eq(schema.teamJoinRequests.userId, userId),
+        descendingJoinRequestCursor(cursor),
+      ),
+    )
     .orderBy(
       desc(schema.teamJoinRequests.createdAt),
       desc(schema.teamJoinRequests.id),
@@ -303,13 +315,21 @@ export function buildPendingJoinRequestsPageQuery(
   return db
     .select(pendingJoinRequestSelection)
     .from(schema.teamJoinRequests)
-    .innerJoin(schema.teams, eq(schema.teams.id, schema.teamJoinRequests.teamId))
-    .innerJoin(schema.users, eq(schema.users.id, schema.teamJoinRequests.userId))
-    .where(and(
-      eq(schema.teams.leaderId, leaderId),
-      eq(schema.teamJoinRequests.status, "pending"),
-      descendingJoinRequestCursor(cursor),
-    ))
+    .innerJoin(
+      schema.teams,
+      eq(schema.teams.id, schema.teamJoinRequests.teamId),
+    )
+    .innerJoin(
+      schema.users,
+      eq(schema.users.id, schema.teamJoinRequests.userId),
+    )
+    .where(
+      and(
+        eq(schema.teams.leaderId, leaderId),
+        eq(schema.teamJoinRequests.status, "pending"),
+        descendingJoinRequestCursor(cursor),
+      ),
+    )
     .orderBy(
       desc(schema.teamJoinRequests.createdAt),
       desc(schema.teamJoinRequests.id),
@@ -335,10 +355,14 @@ usersRoute.get("/me", async (c) => {
 usersRoute.patch("/me", async (c) => {
   const userId = await currentUserId(c);
   if (!userId) return c.json(APIErrors.unauthorized(), 401);
-  const parsed = updateProfileSchema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) {
-    return c.json(APIErrors.validationError("Invalid profile", parsed.error.issues), 400);
-  }
+  const parsed = await validateRequest(
+    c,
+    "json",
+    updateProfileSchema,
+    "Invalid profile",
+    "issues",
+  );
+  if (parsed instanceof Response) return parsed;
   const db = createDb(c.env.DB);
   const [current] = await db
     .select()
@@ -347,20 +371,23 @@ usersRoute.patch("/me", async (c) => {
     .limit(1);
   if (!current) return c.json(APIErrors.notFound("User not found"), 404);
 
-  if (parsed.data.extra?.city) {
+  if (parsed.extra?.city) {
     const [region] = await db
       .select({ id: schema.region.id })
       .from(schema.region)
       .where(
         and(
-          eq(schema.region.id, parsed.data.extra.city),
+          eq(schema.region.id, parsed.extra.city),
           eq(schema.region.level, "city"),
           eq(schema.region.serviceEnabled, true),
         ),
       )
       .limit(1);
     if (!region) {
-      return c.json(APIErrors.validationError("City must be a service-enabled city region"), 400);
+      return c.json(
+        APIErrors.validationError("City must be a service-enabled city region"),
+        400,
+      );
     }
   }
 
@@ -368,23 +395,18 @@ usersRoute.patch("/me", async (c) => {
     updatedAt: new Date(),
   };
   for (const key of ["name", "nickname", "bio", "gender"] as const) {
-    if (parsed.data[key] !== undefined) update[key] = parsed.data[key] as never;
+    if (parsed[key] !== undefined) update[key] = parsed[key] as never;
   }
-  if (parsed.data.birthday !== undefined) {
-    update.birthday = parsed.data.birthday
-      ? new Date(parsed.data.birthday)
-      : null;
+  if (parsed.birthday !== undefined) {
+    update.birthday = parsed.birthday ? new Date(parsed.birthday) : null;
   }
-  if (parsed.data.extra) {
-    update.extra = userExtraPatchExpression(
-      schema.users.extra,
-      parsed.data.extra,
-    );
+  if (parsed.extra) {
+    update.extra = userExtraPatchExpression(schema.users.extra, parsed.extra);
   }
 
   try {
     let updateCondition = eq(schema.users.id, userId);
-    const requestedCity = parsed.data.extra?.city;
+    const requestedCity = parsed.extra?.city;
     if (requestedCity !== undefined && requestedCity !== null) {
       const openCity = db
         .select({ value: sql<number>`1` })
@@ -545,12 +567,14 @@ usersRoute.delete("/me", async (c) => {
   const userId = await currentUserId(c);
   if (!userId) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-  const parsed = deleteAccountSchema.safeParse(
-    await c.req.json().catch(() => null),
+  const parsed = await validateRequest(
+    c,
+    "json",
+    deleteAccountSchema,
+    "请输入 DELETE 确认删除账户",
+    "none",
   );
-  if (!parsed.success) {
-    return c.json(APIErrors.validationError("请输入 DELETE 确认删除账户"), 400);
-  }
+  if (parsed instanceof Response) return parsed;
 
   const db = createDb(c.env.DB);
   const [user] = await db
@@ -600,7 +624,10 @@ usersRoute.delete("/me", async (c) => {
   } catch (error) {
     const current = await c.env.DB.prepare(
       "SELECT status, email FROM users WHERE id = ?",
-    ).bind(userId).first<{ status: string; email: string }>().catch(() => null);
+    )
+      .bind(userId)
+      .first<{ status: string; email: string }>()
+      .catch(() => null);
     if (current?.status === "deleted" && current.email === deletedEmail) {
       return c.json({ success: true });
     }
@@ -617,12 +644,14 @@ usersRoute.get("/:id", async (c) => {
   const [user] = await db
     .select()
     .from(schema.users)
-    .where(and(
-      eq(schema.users.id, id),
-      eq(schema.users.status, "active"),
-      eq(schema.users.emailVerified, true),
-      isNull(schema.users.deletedAt),
-    ))
+    .where(
+      and(
+        eq(schema.users.id, id),
+        eq(schema.users.status, "active"),
+        eq(schema.users.emailVerified, true),
+        isNull(schema.users.deletedAt),
+      ),
+    )
     .limit(1);
   if (!user) {
     return c.json(APIErrors.notFound("User not found"), 404);

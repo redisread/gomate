@@ -10,6 +10,7 @@ import { getActiveSession } from "../../lib/active-session";
 import { generateId } from "../../lib/id";
 import { emitTeamActionbookEvent } from "../../lib/team-events";
 import { parseChecklist } from "../../lib/team-checklist-utils";
+import { validateRequest } from "../../lib/validation";
 import type { TeamChecklist, ActionbookAssignment } from "@/contracts";
 
 /**
@@ -210,29 +211,29 @@ checklist.put("/:id/checklist", async (c) => {
     if (team.leaderId !== session.user.id)
       return c.json(APIErrors.forbidden("只有队长可以编辑行动本"), 403);
 
-    const body = await c.req.json().catch(() => null);
-    const parsed = checklistPutSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(
-        APIErrors.validationError("输入无效", parsed.error.errors),
-        400,
-      );
-    }
+    const parsed = await validateRequest(
+      c,
+      "json",
+      checklistPutSchema,
+      "输入无效",
+      "issues",
+    );
+    if (parsed instanceof Response) return parsed;
 
     const existing = parseChecklist(team.checklist);
     const normalizedAssignments = normalizeAssignments(
-      parsed.data.assignments,
+      parsed.assignments,
       existing?.assignments,
     );
 
     // B1（Martin CR）：spec 是「队长覆盖式更新整个 checklist」，未传字段视为清空。
     // 之前用条件展开会保留旧值 → 与 spec 矛盾。这里改为无条件字段赋值。
     const next: TeamChecklist = {
-      meetingPoint: parsed.data.meetingPoint,
-      transport: parsed.data.transport,
-      gear: parsed.data.gear,
+      meetingPoint: parsed.meetingPoint,
+      transport: parsed.transport,
+      gear: parsed.gear,
       assignments: normalizedAssignments,
-      notes: parsed.data.notes,
+      notes: parsed.notes,
     };
 
     // S1（Martin CR）：<2KB 软上限从 zod refine 挪到落盘前显式校验，

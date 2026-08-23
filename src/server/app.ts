@@ -1,9 +1,7 @@
 import { Hono } from "hono";
 import { routePath } from "hono/route";
-import {
-  createRequestId,
-  logger,
-} from "./lib/logger";
+import { z } from "zod";
+import { createRequestId, logger } from "./lib/logger";
 import { fetchWithTimeout } from "./lib/timeout";
 import { APIErrors } from "./lib/api-errors";
 import type { WorkerEnv } from "./env";
@@ -21,6 +19,7 @@ import messagesRoute from "./routes/messages";
 import storiesRoute from "./routes/stories";
 import { shareImageRoute } from "./routes/share-image";
 import { localCircleHomeRoute } from "./routes/local-circle/home";
+import { apiValidator } from "./lib/validation";
 
 export type WriteMode = "open" | "protected";
 
@@ -34,6 +33,10 @@ export function resolveWriteMode(value: unknown): WriteMode {
 }
 
 export const apiApp = new Hono<{ Bindings: ApiBindings }>();
+
+const queryValueSchema = z.union([z.string(), z.array(z.string())]);
+const queryInputSchema = z.record(queryValueSchema);
+const paramInputSchema = z.record(z.string());
 
 apiApp.use("*", async (c, next) => {
   const requestId = createRequestId(c.req.header("CF-Ray"));
@@ -102,6 +105,12 @@ apiApp.use("*", async (c, next) => {
 
   await next();
 });
+
+apiApp.use(
+  "*",
+  apiValidator("query", queryInputSchema, "Invalid query", "none") as never,
+  apiValidator("param", paramInputSchema, "Invalid path", "none") as never,
+);
 
 apiApp.get("/health", (c) => {
   const versionId = c.env?.CF_VERSION_METADATA?.id;

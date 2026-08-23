@@ -10,6 +10,7 @@ import { mapDatabaseError } from "../../lib/database-errors";
 import { generateId } from "../../lib/id";
 import { logger } from "../../lib/logger";
 import { createTeamApprovalBatch } from "../../lib/team-approval";
+import { validateRequest } from "../../lib/validation";
 
 const membership = new Hono<{ Bindings: Env }>();
 
@@ -30,16 +31,22 @@ membership.post("/join", async (c) => {
     const session = await getSession(c);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-    const parsed = joinSchema.safeParse(await c.req.json().catch(() => ({})));
-    if (!parsed.success) {
-      return c.json(APIErrors.validationError("输入无效", parsed.error.flatten()), 400);
-    }
+    const parsed = await validateRequest(
+      c,
+      "json",
+      joinSchema,
+      "输入无效",
+      "flatten",
+    );
+    if (parsed instanceof Response) return parsed;
 
     const teamId = c.req.param("id");
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
     const userId = session.user.id;
     const db = createDb(c.env.DB);
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    const team = await db.query.teams.findFirst({
+      where: eq(schema.teams.id, teamId),
+    });
 
     if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (team.leaderId === userId) {
@@ -48,7 +55,8 @@ membership.post("/join", async (c) => {
 
     const requestId = generateId();
     const now = Date.now();
-    const statement = c.env.DB.prepare(`
+    const statement = c.env.DB.prepare(
+      `
       INSERT INTO team_join_requests (
         id, team_id, user_id, status, message,
         decided_by_user_id, decided_at, created_at, updated_at
@@ -76,10 +84,11 @@ membership.post("/join", async (c) => {
             AND pending.user_id = ?
             AND pending.status = 'pending'
         )
-    `).bind(
+    `,
+    ).bind(
       requestId,
       userId,
-      parsed.data.message ?? null,
+      parsed.message ?? null,
       now,
       now,
       teamId,
@@ -123,11 +132,16 @@ membership.post("/join-requests/:requestId/approve", async (c) => {
         leaderId: schema.teams.leaderId,
       })
       .from(schema.teamJoinRequests)
-      .innerJoin(schema.teams, eq(schema.teams.id, schema.teamJoinRequests.teamId))
-      .where(and(
-        eq(schema.teamJoinRequests.id, requestId),
-        eq(schema.teamJoinRequests.teamId, teamId),
-      ))
+      .innerJoin(
+        schema.teams,
+        eq(schema.teams.id, schema.teamJoinRequests.teamId),
+      )
+      .where(
+        and(
+          eq(schema.teamJoinRequests.id, requestId),
+          eq(schema.teamJoinRequests.teamId, teamId),
+        ),
+      )
       .limit(1);
     const row = rows[0];
 
@@ -191,7 +205,9 @@ membership.post("/join-requests/:requestId/reject", async (c) => {
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
     const requestId = c.req.param("requestId");
     const db = createDb(c.env.DB);
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    const team = await db.query.teams.findFirst({
+      where: eq(schema.teams.id, teamId),
+    });
     if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (team.leaderId !== session.user.id) {
       return c.json(APIErrors.forbidden("只有队长可以审批申请"), 403);
@@ -206,11 +222,13 @@ membership.post("/join-requests/:requestId/reject", async (c) => {
         decidedAt: now,
         updatedAt: now,
       })
-      .where(and(
-        eq(schema.teamJoinRequests.id, requestId),
-        eq(schema.teamJoinRequests.teamId, teamId),
-        eq(schema.teamJoinRequests.status, "pending"),
-      ))
+      .where(
+        and(
+          eq(schema.teamJoinRequests.id, requestId),
+          eq(schema.teamJoinRequests.teamId, teamId),
+          eq(schema.teamJoinRequests.status, "pending"),
+        ),
+      )
       .returning({ id: schema.teamJoinRequests.id });
 
     if (updated.length !== 1) {
@@ -241,12 +259,14 @@ membership.post("/join-requests/:requestId/cancel", async (c) => {
         decidedAt: now,
         updatedAt: now,
       })
-      .where(and(
-        eq(schema.teamJoinRequests.id, requestId),
-        eq(schema.teamJoinRequests.teamId, teamId),
-        eq(schema.teamJoinRequests.userId, session.user.id),
-        eq(schema.teamJoinRequests.status, "pending"),
-      ))
+      .where(
+        and(
+          eq(schema.teamJoinRequests.id, requestId),
+          eq(schema.teamJoinRequests.teamId, teamId),
+          eq(schema.teamJoinRequests.userId, session.user.id),
+          eq(schema.teamJoinRequests.status, "pending"),
+        ),
+      )
       .returning({ id: schema.teamJoinRequests.id });
 
     if (updated.length !== 1) {
@@ -271,11 +291,13 @@ membership.post("/leave", async (c) => {
     const updated = await db
       .update(schema.teamMembers)
       .set({ leftAt })
-      .where(and(
-        eq(schema.teamMembers.teamId, teamId),
-        eq(schema.teamMembers.userId, session.user.id),
-        isNull(schema.teamMembers.leftAt),
-      ))
+      .where(
+        and(
+          eq(schema.teamMembers.teamId, teamId),
+          eq(schema.teamMembers.userId, session.user.id),
+          isNull(schema.teamMembers.leftAt),
+        ),
+      )
       .returning({ userId: schema.teamMembers.userId });
 
     if (updated.length !== 1) {
@@ -297,7 +319,9 @@ membership.post("/members/:userId/remove", async (c) => {
     if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
     const targetUserId = c.req.param("userId");
     const db = createDb(c.env.DB);
-    const team = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    const team = await db.query.teams.findFirst({
+      where: eq(schema.teams.id, teamId),
+    });
     if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (team.leaderId !== session.user.id) {
       return c.json(APIErrors.forbidden("只有队长可以移除成员"), 403);
@@ -309,11 +333,13 @@ membership.post("/members/:userId/remove", async (c) => {
     const updated = await db
       .update(schema.teamMembers)
       .set({ leftAt: new Date() })
-      .where(and(
-        eq(schema.teamMembers.teamId, teamId),
-        eq(schema.teamMembers.userId, targetUserId),
-        isNull(schema.teamMembers.leftAt),
-      ))
+      .where(
+        and(
+          eq(schema.teamMembers.teamId, teamId),
+          eq(schema.teamMembers.userId, targetUserId),
+          isNull(schema.teamMembers.leftAt),
+        ),
+      )
       .returning({ userId: schema.teamMembers.userId });
 
     if (updated.length !== 1) {

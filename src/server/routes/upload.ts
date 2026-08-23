@@ -1,5 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { Hono, type Context } from "hono";
+import { z } from "zod";
 
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -16,6 +17,7 @@ import {
   deleteR2ObjectsWithRetry,
   getR2PublicBaseUrl,
 } from "../lib/r2-media";
+import { validateRequest, validateValue } from "../lib/validation";
 
 const upload = new Hono<{ Bindings: Env }>();
 type UploadContext = Context<{ Bindings: Env }>;
@@ -23,6 +25,10 @@ type UploadContext = Context<{ Bindings: Env }>;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 // Keep total buffering bounded while allowing normal multipart framing.
 const MAX_MULTIPART_BODY_SIZE = MAX_FILE_SIZE + 64 * 1024;
+const uploadFormSchema = z.object({ file: z.instanceof(File) }).strict();
+const avatarKeyQuerySchema = z
+  .object({ key: z.string().trim().min(1) })
+  .passthrough();
 
 type ImageFormat = "jpeg" | "png" | "gif" | "webp";
 
@@ -210,6 +216,22 @@ function requestErrorResponse(c: UploadContext, error: UploadRequestError) {
   return c.json(APIErrors.badRequest(error.message), error.status);
 }
 
+async function validatedFormFile(
+  c: UploadContext,
+  formData: FormData,
+): Promise<File | Response> {
+  const parsed = await validateValue(
+    c,
+    { file: formData.get("file") },
+    uploadFormSchema,
+    "No file provided",
+    "none",
+    "No file provided",
+    APIErrors.badRequest,
+  );
+  return parsed instanceof Response ? parsed : parsed.file;
+}
+
 upload.post("/avatar", async (c) => {
   const createdKeys: string[] = [];
   try {
@@ -221,10 +243,8 @@ upload.post("/avatar", async (c) => {
       return c.json(APIErrors.internalError("R2 storage is not safely configured"), 500);
     }
     const formData = await boundedFormData(c.req.raw);
-    const file = formData.get("file");
-    if (!(file instanceof File)) {
-      return c.json(APIErrors.badRequest("No file provided"), 400);
-    }
+    const file = await validatedFormFile(c, formData);
+    if (file instanceof Response) return file;
     const { buffer, ext } = await validatedImage(file);
 
     const db = createDb(c.env.DB);
@@ -311,8 +331,17 @@ upload.delete("/avatar", async (c) => {
     const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-    const key = c.req.query("key");
-    if (!key) return c.json(APIErrors.badRequest("Object key is required"), 400);
+    const query = await validateRequest(
+      c,
+      "query",
+      avatarKeyQuerySchema,
+      "Object key is required",
+      "none",
+      "Object key is required",
+      APIErrors.badRequest,
+    );
+    if (query instanceof Response) return query;
+    const { key } = query;
     if (!c.env.R2) {
       return c.json(APIErrors.internalError("R2 storage not configured"), 500);
     }
@@ -396,10 +425,8 @@ upload.post("/location", async (c) => {
       return c.json(APIErrors.internalError("R2 storage is not safely configured"), 500);
     }
     const formData = await boundedFormData(c.req.raw);
-    const file = formData.get("file");
-    if (!(file instanceof File)) {
-      return c.json(APIErrors.badRequest("No file provided"), 400);
-    }
+    const file = await validatedFormFile(c, formData);
+    if (file instanceof Response) return file;
     const { buffer, ext } = await validatedImage(file);
     const key = `temp/locations/${session.user.id}/${generateId()}.${ext}`;
     attemptedKey = key;
@@ -439,10 +466,8 @@ upload.post("/story", async (c) => {
       return c.json(APIErrors.internalError("R2 storage is not safely configured"), 500);
     }
     const formData = await boundedFormData(c.req.raw);
-    const file = formData.get("file");
-    if (!(file instanceof File)) {
-      return c.json(APIErrors.badRequest("No file provided"), 400);
-    }
+    const file = await validatedFormFile(c, formData);
+    if (file instanceof Response) return file;
     const { buffer, ext } = await validatedImage(file);
     const key = `temp/stories/${session.user.id}/${generateId()}.${ext}`;
     attemptedKey = key;

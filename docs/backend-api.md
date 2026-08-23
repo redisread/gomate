@@ -15,6 +15,9 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 - 时间在 HTTP DTO 中使用 ISO 8601，在 D1 中存 Unix 毫秒。
 - 业务错误统一为 `{ success: false, error: { code, message, details? } }`。
 - 列表使用有界 `limit` 与 opaque `cursor`；具体排序和响应形状由对应路由 schema 定义。
+- JSON、query、path 等 API 边界统一使用 `@hono/standard-validator` 对接现有 Zod
+  Standard Schema；校验失败继续返回现有 API error envelope。认证 JSON 和 multipart 上传在
+ 读取前分别保留大小限制，因此会在有界读取后调用同一 Standard Schema 校验协议。
 
 ## 端点目录
 
