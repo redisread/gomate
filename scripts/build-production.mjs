@@ -11,12 +11,31 @@ import {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PNPM = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+// Astro only needs these bindings present while compiling locally. Workers CI
+// deliberately skips this fallback so production builds still require secrets.
+const LOCAL_BUILD_SECRET_FALLBACKS = {
+  BETTER_AUTH_SECRET: "local-build-only-placeholder-32-characters",
+  RESEND_API_KEY: "local-build-only-placeholder",
+};
+
+function buildEnvironment() {
+  const environment = {
+    ...process.env,
+    CLOUDFLARE_ENV: PRODUCTION_ENVIRONMENT,
+  };
+  if (environment.WORKERS_CI !== "1") {
+    for (const [name, value] of Object.entries(LOCAL_BUILD_SECRET_FALLBACKS)) {
+      if (!environment[name]) environment[name] = value;
+    }
+  }
+  return environment;
+}
 
 function runAstroBuild() {
   return new Promise((resolve, reject) => {
     const child = spawn(PNPM, ["exec", "astro", "build"], {
       cwd: ROOT,
-      env: { ...process.env, CLOUDFLARE_ENV: PRODUCTION_ENVIRONMENT },
+      env: buildEnvironment(),
       stdio: "inherit",
     });
     child.once("error", reject);

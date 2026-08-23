@@ -30,17 +30,22 @@ import {
   decodeMessageCursor,
   encodeMessageCursor,
 } from "../lib/message-cursor";
+import { validateRequest } from "../lib/validation";
 
 const messagesRoute = new Hono<{ Bindings: Env }>();
 
-const createConversationSchema = z.object({
-  teamId: z.string().trim().min(1).max(64),
-  memberUserId: z.string().trim().min(1).max(64).optional(),
-}).strict();
+const createConversationSchema = z
+  .object({
+    teamId: z.string().trim().min(1).max(64),
+    memberUserId: z.string().trim().min(1).max(64).optional(),
+  })
+  .strict();
 
-const sendMessageSchema = z.object({
-  content: z.string().trim().min(1).max(1000),
-}).strict();
+const sendMessageSchema = z
+  .object({
+    content: z.string().trim().min(1).max(1000),
+  })
+  .strict();
 
 type Db = ReturnType<typeof createDb>;
 
@@ -100,14 +105,13 @@ export function buildMessageHistoryQuery(
     .from(messages)
     .innerJoin(conversations, eq(conversations.id, messages.conversationId))
     .innerJoin(teams, eq(teams.id, conversations.teamId))
-    .where(and(
-      where,
-      activeConversationMemberExists,
-      or(
-        eq(conversations.memberUserId, userId),
-        eq(teams.leaderId, userId),
+    .where(
+      and(
+        where,
+        activeConversationMemberExists,
+        or(eq(conversations.memberUserId, userId), eq(teams.leaderId, userId)),
       ),
-    ))
+    )
     .orderBy(desc(messages.createdAt), desc(messages.id))
     .limit(limit);
 }
@@ -146,7 +150,11 @@ async function resolveConversationMember(
   requestedMemberUserId?: string,
 ): Promise<
   | { ok: true; memberUserId: string }
-  | { ok: false; status: 400 | 403 | 404; body: ReturnType<typeof APIErrors.badRequest> }
+  | {
+      ok: false;
+      status: 400 | 403 | 404;
+      body: ReturnType<typeof APIErrors.badRequest>;
+    }
 > {
   const [team] = await db
     .select({ leaderId: teams.leaderId })
@@ -154,7 +162,11 @@ async function resolveConversationMember(
     .where(eq(teams.id, teamId))
     .limit(1);
   if (!team) {
-    return { ok: false, status: 404, body: APIErrors.notFound("Team not found") };
+    return {
+      ok: false,
+      status: 404,
+      body: APIErrors.notFound("Team not found"),
+    };
   }
 
   if (team.leaderId === requesterId) {
@@ -162,7 +174,9 @@ async function resolveConversationMember(
       return {
         ok: false,
         status: 400,
-        body: APIErrors.badRequest("memberUserId is required for a team leader"),
+        body: APIErrors.badRequest(
+          "memberUserId is required for a team leader",
+        ),
       };
     }
     if (!(await activeMember(db, teamId, requestedMemberUserId))) {
@@ -179,14 +193,18 @@ async function resolveConversationMember(
     return {
       ok: false,
       status: 403,
-      body: APIErrors.forbidden("Members cannot choose another conversation member"),
+      body: APIErrors.forbidden(
+        "Members cannot choose another conversation member",
+      ),
     };
   }
   if (!(await activeMember(db, teamId, requesterId))) {
     return {
       ok: false,
       status: 403,
-      body: APIErrors.forbidden("Only an active team member can start this conversation"),
+      body: APIErrors.forbidden(
+        "Only an active team member can start this conversation",
+      ),
     };
   }
   return { ok: true, memberUserId: requesterId };
@@ -282,18 +300,24 @@ messagesRoute.get("/", async (c) => {
   const userId = await sessionUserId(c);
   if (!userId) return c.json(APIErrors.unauthorized(), 401);
   const db = createDb(c.env.DB);
-  if (c.req.query("page") !== undefined || c.req.query("pageSize") !== undefined) {
-    return c.json(APIErrors.badRequest("page pagination is not supported; use cursor"), 400);
+  if (
+    c.req.query("page") !== undefined ||
+    c.req.query("pageSize") !== undefined
+  ) {
+    return c.json(
+      APIErrors.badRequest("page pagination is not supported; use cursor"),
+      400,
+    );
   }
   const limit = parseLimit(c.req.query("limit"), 20, 50);
   if (limit === null) {
-    return c.json(APIErrors.badRequest("limit must be an integer between 1 and 50"), 400);
+    return c.json(
+      APIErrors.badRequest("limit must be an integer between 1 and 50"),
+      400,
+    );
   }
   const conditions = [
-    or(
-      eq(conversations.memberUserId, userId),
-      eq(teams.leaderId, userId),
-    )!,
+    or(eq(conversations.memberUserId, userId), eq(teams.leaderId, userId))!,
   ];
   const encodedCursor = c.req.query("cursor");
   if (encodedCursor !== undefined) {
@@ -340,7 +364,9 @@ messagesRoute.get("/", async (c) => {
           .from(users)
           .where(inArray(users.id, otherUserIds))
       : [];
-    const userById = new Map(otherUsers.map((user) => [user.id, publicUser(user)]));
+    const userById = new Map(
+      otherUsers.map((user) => [user.id, publicUser(user)]),
+    );
 
     const ids = rows.map((row) => row.id);
     const unreadRows = ids.length
@@ -378,9 +404,10 @@ messagesRoute.get("/", async (c) => {
         createdAt: row.createdAt.toISOString(),
         updatedAt: row.updatedAt.toISOString(),
         team: { id: row.teamId, title: row.teamTitle },
-        otherUser: userById.get(
-          row.memberUserId === userId ? row.leaderId : row.memberUserId,
-        ) ?? null,
+        otherUser:
+          userById.get(
+            row.memberUserId === userId ? row.leaderId : row.memberUserId,
+          ) ?? null,
         unreadCount: unreadByConversation.get(row.id) ?? 0,
       })),
       nextCursor:
@@ -400,21 +427,25 @@ messagesRoute.get("/", async (c) => {
 messagesRoute.post("/", async (c) => {
   const userId = await sessionUserId(c);
   if (!userId) return c.json(APIErrors.unauthorized(), 401);
-  const parsed = createConversationSchema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) {
-    return c.json(APIErrors.validationError("Invalid input", parsed.error.issues), 400);
-  }
+  const parsed = await validateRequest(
+    c,
+    "json",
+    createConversationSchema,
+    "Invalid input",
+    "issues",
+  );
+  if (parsed instanceof Response) return parsed;
   const db = createDb(c.env.DB);
   const participants = await resolveConversationMember(
     db,
-    parsed.data.teamId,
+    parsed.teamId,
     userId,
-    parsed.data.memberUserId,
+    parsed.memberUserId,
   );
   if (!participants.ok) return c.json(participants.body, participants.status);
 
   const where = and(
-    eq(conversations.teamId, parsed.data.teamId),
+    eq(conversations.teamId, parsed.teamId),
     eq(conversations.memberUserId, participants.memberUserId),
   );
   const id = generateId();
@@ -430,7 +461,7 @@ messagesRoute.post("/", async (c) => {
         ON authorized_member.team_id = authorized_team.id
         AND authorized_member.user_id = ${participants.memberUserId}
         AND authorized_member.left_at IS NULL
-      WHERE authorized_team.id = ${parsed.data.teamId}
+      WHERE authorized_team.id = ${parsed.teamId}
         AND (
           authorized_team.leader_id = ${userId}
           OR authorized_member.user_id = ${userId}
@@ -448,16 +479,21 @@ messagesRoute.post("/", async (c) => {
           isNull(teamMembers.leftAt),
         ),
       )
-      .where(and(
-        where,
-        or(
-          eq(conversations.memberUserId, userId),
-          eq(teams.leaderId, userId),
+      .where(
+        and(
+          where,
+          or(
+            eq(conversations.memberUserId, userId),
+            eq(teams.leaderId, userId),
+          ),
         ),
-      ))
+      )
       .limit(1);
     if (!created) {
-      return c.json(APIErrors.forbidden("Conversation participants are no longer active"), 403);
+      return c.json(
+        APIErrors.forbidden("Conversation participants are no longer active"),
+        403,
+      );
     }
     const isNew = changedRows(result) === 1 && created.id === id;
     return c.json(
@@ -512,14 +548,20 @@ messagesRoute.get("/:conversationId", async (c) => {
   const db = createDb(c.env.DB);
   const conversationId = c.req.param("conversationId");
   if (c.req.query("since") !== undefined) {
-    return c.json(APIErrors.badRequest("since is not supported; use cursor"), 400);
+    return c.json(
+      APIErrors.badRequest("since is not supported; use cursor"),
+      400,
+    );
   }
   const access = await getConversationAccess(db, conversationId, userId);
   if (!access) return c.json(APIErrors.forbidden("Access denied"), 403);
 
   const limit = parseLimit(c.req.query("limit"), 20, 50);
   if (limit === null) {
-    return c.json(APIErrors.badRequest("limit must be an integer between 1 and 50"), 400);
+    return c.json(
+      APIErrors.badRequest("limit must be an integer between 1 and 50"),
+      400,
+    );
   }
   const conditions = [eq(messages.conversationId, conversationId)];
   const encodedCursor = c.req.query("cursor");
@@ -545,8 +587,14 @@ messagesRoute.get("/:conversationId", async (c) => {
       userId,
       limit + 1,
     );
-    if (rows.length === 0 && !(await getConversationAccess(db, conversationId, userId))) {
-      return c.json(APIErrors.forbidden("Access changed before messages were loaded"), 403);
+    if (
+      rows.length === 0 &&
+      !(await getConversationAccess(db, conversationId, userId))
+    ) {
+      return c.json(
+        APIErrors.forbidden("Access changed before messages were loaded"),
+        403,
+      );
     }
     const hasMore = rows.length > limit;
     const page = rows.slice(0, limit);
@@ -562,7 +610,9 @@ messagesRoute.get("/:conversationId", async (c) => {
           .from(users)
           .where(inArray(users.id, senderIds))
       : [];
-    const senderById = new Map(senders.map((sender) => [sender.id, publicUser(sender)]));
+    const senderById = new Map(
+      senders.map((sender) => [sender.id, publicUser(sender)]),
+    );
     const otherUserId =
       access.memberUserId === userId ? access.leaderId : access.memberUserId;
     const [otherUser] = await db
@@ -589,7 +639,10 @@ messagesRoute.get("/:conversationId", async (c) => {
         .reverse(),
       nextCursor:
         hasMore && oldest
-          ? encodeMessageCursor({ t: oldest.createdAt.getTime(), id: oldest.id })
+          ? encodeMessageCursor({
+              t: oldest.createdAt.getTime(),
+              id: oldest.id,
+            })
           : null,
       conversation: {
         id: access.id,
@@ -609,10 +662,14 @@ messagesRoute.get("/:conversationId", async (c) => {
 messagesRoute.post("/:conversationId", async (c) => {
   const userId = await sessionUserId(c);
   if (!userId) return c.json(APIErrors.unauthorized(), 401);
-  const parsed = sendMessageSchema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) {
-    return c.json(APIErrors.validationError("Invalid input", parsed.error.issues), 400);
-  }
+  const parsed = await validateRequest(
+    c,
+    "json",
+    sendMessageSchema,
+    "Invalid input",
+    "issues",
+  );
+  if (parsed instanceof Response) return parsed;
   const db = createDb(c.env.DB);
   const conversationId = c.req.param("conversationId");
   if (!(await getConversationAccess(db, conversationId, userId))) {
@@ -623,7 +680,7 @@ messagesRoute.post("/:conversationId", async (c) => {
   try {
     const result = await db.run(sql`
       INSERT INTO messages (id, conversation_id, sender_id, content)
-      SELECT ${id}, authorized_conversation.id, ${userId}, ${parsed.data.content}
+      SELECT ${id}, authorized_conversation.id, ${userId}, ${parsed.content}
       FROM conversations AS authorized_conversation
       INNER JOIN teams AS authorized_team
         ON authorized_team.id = authorized_conversation.team_id
@@ -638,7 +695,10 @@ messagesRoute.post("/:conversationId", async (c) => {
         )
     `);
     if (changedRows(result) !== 1) {
-      return c.json(APIErrors.forbidden("Access changed before the message was sent"), 403);
+      return c.json(
+        APIErrors.forbidden("Access changed before the message was sent"),
+        403,
+      );
     }
     const [message] = await db
       .select()
@@ -683,8 +743,14 @@ messagesRoute.patch("/:conversationId/read", async (c) => {
           currentConversationAccessCondition(conversationId, userId),
         ),
       );
-    if (changedRows(result) === 0 && !(await getConversationAccess(db, conversationId, userId))) {
-      return c.json(APIErrors.forbidden("Access changed before messages were marked read"), 403);
+    if (
+      changedRows(result) === 0 &&
+      !(await getConversationAccess(db, conversationId, userId))
+    ) {
+      return c.json(
+        APIErrors.forbidden("Access changed before messages were marked read"),
+        403,
+      );
     }
     return c.json({ success: true });
   } catch (error) {

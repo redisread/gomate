@@ -9,6 +9,7 @@ import { getActiveSession } from "../lib/active-session";
 import { setPublicCacheHeaders } from "../lib/http-cache";
 import { generateId } from "../lib/id";
 import { logger } from "../lib/logger";
+import { validateRequest } from "../lib/validation";
 
 const tagsRoute = new Hono<{ Bindings: Env }>();
 
@@ -24,6 +25,15 @@ const createTagSchema = z
       .optional(),
   })
   .strict();
+
+const tagsQuerySchema = z
+  .object({
+    type: z.string().optional(),
+    page: z.string().optional(),
+    pageSize: z.string().optional(),
+    limit: z.string().optional(),
+  })
+  .passthrough();
 
 function slugify(name: string): string {
   return name
@@ -47,14 +57,22 @@ async function isAdmin(c: { env: Env; req: { raw: Request } }) {
 }
 
 tagsRoute.get("/", async (c) => {
-  if (c.req.query("type") !== undefined) {
+  const query = await validateRequest(
+    c,
+    "query",
+    tagsQuerySchema,
+    "Invalid tag filters",
+    "none",
+  );
+  if (query instanceof Response) return query;
+  if (query.type !== undefined) {
     return c.json(
       APIErrors.badRequest("Tag type filtering is not supported"),
       400,
     );
   }
-  const rawPage = Number(c.req.query("page") ?? 1);
-  const rawPageSize = Number(c.req.query("pageSize") ?? c.req.query("limit") ?? 50);
+  const rawPage = Number(query.page ?? 1);
+  const rawPageSize = Number(query.pageSize ?? query.limit ?? 50);
   const page = Number.isInteger(rawPage) ? Math.max(1, rawPage) : 1;
   const pageSize = Number.isInteger(rawPageSize)
     ? Math.min(200, Math.max(1, rawPageSize))
@@ -75,7 +93,11 @@ tagsRoute.get("/", async (c) => {
     setPublicCacheHeaders(c);
     return c.json({
       success: true,
-      tags: result.map((tag) => ({ id: tag.id, name: tag.name, slug: tag.slug })),
+      tags: result.map((tag) => ({
+        id: tag.id,
+        name: tag.name,
+        slug: tag.slug,
+      })),
       pagination: {
         page,
         pageSize,
@@ -94,11 +116,15 @@ tagsRoute.post("/", async (c) => {
   const access = await isAdmin(c);
   if (access === "unauthorized") return c.json(APIErrors.unauthorized(), 401);
   if (access === "forbidden") return c.json(APIErrors.forbidden(), 403);
-  const parsed = createTagSchema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) {
-    return c.json(APIErrors.validationError("Invalid tag", parsed.error.issues), 400);
-  }
-  const slug = parsed.data.slug ?? slugify(parsed.data.name);
+  const parsed = await validateRequest(
+    c,
+    "json",
+    createTagSchema,
+    "Invalid tag",
+    "issues",
+  );
+  if (parsed instanceof Response) return parsed;
+  const slug = parsed.slug ?? slugify(parsed.name);
   if (!slug) return c.json(APIErrors.validationError("Tag slug is empty"), 400);
   const db = createDb(c.env.DB);
   const [existing] = await db
@@ -107,14 +133,14 @@ tagsRoute.post("/", async (c) => {
     .where(eq(schema.tags.slug, slug))
     .limit(1);
   if (existing) {
-    if (existing.name !== parsed.data.name) {
+    if (existing.name !== parsed.name) {
       return c.json(APIErrors.conflict("Tag slug already exists"), 409);
     }
     return c.json({ success: true, tagId: existing.id, existing: true });
   }
   const id = generateId();
   try {
-    await db.insert(schema.tags).values({ id, name: parsed.data.name, slug });
+    await db.insert(schema.tags).values({ id, name: parsed.name, slug });
     return c.json({ success: true, tagId: id, existing: false }, 201);
   } catch (error) {
     logger.error("tags_create_failed", error);

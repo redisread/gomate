@@ -27,10 +27,8 @@ import {
 import { mapDatabaseError } from "../lib/database-errors";
 import { generateId } from "../lib/id";
 import { logger } from "../lib/logger";
-import {
-  deleteR2ObjectsWithRetry,
-  getR2PublicBaseUrl,
-} from "../lib/r2-media";
+import { validateRequest } from "../lib/validation";
+import { deleteR2ObjectsWithRetry, getR2PublicBaseUrl } from "../lib/r2-media";
 import {
   createStoryTagUpdateBatch,
   createStoryTagWriteStatements,
@@ -133,6 +131,7 @@ const listStoriesQuery = z
   .strict();
 
 const idQuery = z.string().trim().min(1).max(200);
+const storyIdParams = z.object({ id: idQuery });
 
 function changes(result: D1Result<unknown> | undefined): number {
   return Number(result?.meta?.changes ?? 0);
@@ -258,10 +257,7 @@ type StoryDatabaseOperation =
   | "toggleLike"
   | "update";
 
-function logDatabaseFailure(
-  operation: StoryDatabaseOperation,
-  error: unknown,
-) {
+function logDatabaseFailure(operation: StoryDatabaseOperation, error: unknown) {
   const metadata = {
     errorType: error instanceof Error ? error.name : "UnknownDatabaseError",
   };
@@ -325,10 +321,6 @@ function canManageStory(
   return Boolean(
     session && (session.user.id === story.authorId || isAdminSession(session)),
   );
-}
-
-async function readJson(c: StoriesContext): Promise<unknown> {
-  return c.req.json().catch(() => null);
 }
 
 async function loadTagsByStoryIds(
@@ -428,7 +420,10 @@ stories.get("/stats", async (c) => {
     const [{ total: weeklyNewStories }] = await db
       .select({ total: count() })
       .from(schema.stories)
-      .leftJoin(schema.locations, eq(schema.locations.id, schema.stories.locationId))
+      .leftJoin(
+        schema.locations,
+        eq(schema.locations.id, schema.stories.locationId),
+      )
       .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
       .where(
         and(
@@ -446,7 +441,10 @@ stories.get("/stats", async (c) => {
         storyCount: count(),
       })
       .from(schema.stories)
-      .leftJoin(schema.locations, eq(schema.locations.id, schema.stories.locationId))
+      .leftJoin(
+        schema.locations,
+        eq(schema.locations.id, schema.stories.locationId),
+      )
       .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
       .where(
         and(
@@ -501,7 +499,10 @@ stories.get("/tags", async (c) => {
         schema.stories,
         eq(schema.storyTags.storyId, schema.stories.id),
       )
-      .leftJoin(schema.locations, eq(schema.locations.id, schema.stories.locationId))
+      .leftJoin(
+        schema.locations,
+        eq(schema.locations.id, schema.stories.locationId),
+      )
       .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
       .where(
         and(
@@ -520,40 +521,39 @@ stories.get("/tags", async (c) => {
 });
 
 stories.get("/", async (c) => {
-  const parsed = listStoriesQuery.safeParse(c.req.query());
-  if (!parsed.success) {
-    return c.json(
-      APIErrors.validationError("查询参数无效", parsed.error.flatten()),
-      400,
-    );
-  }
+  const parsed = await validateRequest(
+    c,
+    "query",
+    listStoriesQuery,
+    "查询参数无效",
+    "flatten",
+  );
+  if (parsed instanceof Response) return parsed;
 
-  const cursor = parsed.data.cursor
-    ? decodeContentCursor(parsed.data.cursor)
-    : null;
-  if (parsed.data.cursor && !cursor) {
+  const cursor = parsed.cursor ? decodeContentCursor(parsed.cursor) : null;
+  if (parsed.cursor && !cursor) {
     return c.json(APIErrors.validationError("游标无效"), 400);
   }
 
   const session = await getOptionalSession(c);
-  if (parsed.data.status === "draft" && !session) {
+  if (parsed.status === "draft" && !session) {
     return c.json(APIErrors.unauthorized("请先登录"), 401);
   }
 
   try {
     const db = createDb(c.env.DB);
     const conditions = [
-      eq(schema.stories.status, parsed.data.status),
+      eq(schema.stories.status, parsed.status),
       publicStoryLocationCondition(),
     ];
-    if (parsed.data.status === "draft" && session) {
+    if (parsed.status === "draft" && session) {
       conditions.push(eq(schema.stories.authorId, session.user.id));
     }
-    if (parsed.data.locationId) {
-      conditions.push(eq(schema.stories.locationId, parsed.data.locationId));
+    if (parsed.locationId) {
+      conditions.push(eq(schema.stories.locationId, parsed.locationId));
     }
-    if (parsed.data.teamId) {
-      conditions.push(eq(schema.stories.teamId, parsed.data.teamId));
+    if (parsed.teamId) {
+      conditions.push(eq(schema.stories.teamId, parsed.teamId));
     }
     if (cursor) {
       const cursorDate = new Date(cursor.t);
@@ -567,12 +567,12 @@ stories.get("/", async (c) => {
         )!,
       );
     }
-    if (parsed.data.tag) {
+    if (parsed.tag) {
       const matchingStoryIds = db
         .select({ storyId: schema.storyTags.storyId })
         .from(schema.storyTags)
         .innerJoin(schema.tags, eq(schema.storyTags.tagId, schema.tags.id))
-        .where(eq(schema.tags.name, parsed.data.tag));
+        .where(eq(schema.tags.name, parsed.tag));
       conditions.push(inArray(schema.stories.id, matchingStoryIds));
     }
 
@@ -602,10 +602,10 @@ stories.get("/", async (c) => {
       .leftJoin(schema.teams, eq(schema.stories.teamId, schema.teams.id))
       .where(and(...conditions))
       .orderBy(desc(schema.stories.createdAt), desc(schema.stories.id))
-      .limit(parsed.data.limit + 1);
+      .limit(parsed.limit + 1);
 
-    const hasMore = rows.length > parsed.data.limit;
-    const pageRows = rows.slice(0, parsed.data.limit);
+    const hasMore = rows.length > parsed.limit;
+    const pageRows = rows.slice(0, parsed.limit);
     const storyIds = pageRows.map(({ story }) => story.id);
     const [tagsByStory, likedStoryIds] = await Promise.all([
       loadTagsByStoryIds(db, storyIds),
@@ -637,9 +637,14 @@ stories.get("/", async (c) => {
 });
 
 stories.get("/:id", async (c) => {
-  const id = idQuery.safeParse(c.req.param("id"));
-  if (!id.success)
-    return c.json(APIErrors.validationError("故事 ID 无效"), 400);
+  const id = await validateRequest(
+    c,
+    "param",
+    storyIdParams,
+    "故事 ID 无效",
+    "none",
+  );
+  if (id instanceof Response) return id;
 
   try {
     const db = createDb(c.env.DB);
@@ -668,12 +673,7 @@ stories.get("/:id", async (c) => {
       )
       .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
       .leftJoin(schema.teams, eq(schema.stories.teamId, schema.teams.id))
-      .where(
-        and(
-          eq(schema.stories.id, id.data),
-          publicStoryLocationCondition(),
-        ),
-      )
+      .where(and(eq(schema.stories.id, id.id), publicStoryLocationCondition()))
       .limit(1)
       .then((rows) => rows[0]);
 
@@ -710,15 +710,16 @@ stories.post("/", async (c) => {
   const session = await getSession(c).catch(() => null);
   if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-  const parsed = createStoryInput.safeParse(await readJson(c));
-  if (!parsed.success) {
-    return c.json(
-      APIErrors.validationError("输入验证失败", parsed.error.flatten()),
-      400,
-    );
-  }
+  const parsed = await validateRequest(
+    c,
+    "json",
+    createStoryInput,
+    "输入验证失败",
+    "flatten",
+  );
+  if (parsed instanceof Response) return parsed;
 
-  const tempKeys = parsed.data.imageKeys ?? [];
+  const tempKeys = parsed.imageKeys ?? [];
   if (tempKeys.some((key) => !isOwnedTempStoryKey(key, session.user.id))) {
     return c.json(APIErrors.forbidden("只能使用当前用户上传的临时图片"), 403);
   }
@@ -729,7 +730,7 @@ stories.post("/", async (c) => {
 
   try {
     const db = createDb(c.env.DB);
-    const input = parsed.data;
+    const input = parsed;
     let recapTeam: schema.Team | undefined;
     let locationId = input.locationId ?? null;
 
@@ -868,23 +869,23 @@ stories.post("/", async (c) => {
             locationId,
           )
         : c.env.DB.prepare(
-          `
+            `
           INSERT INTO stories (
             id, author_id, team_id, location_id, title, summary, content,
             images, status, view_count, like_count, created_at, updated_at
           ) VALUES (?, ?, NULL, NULL, ?, ?, ?, ?, ?, 0, 0, ?, ?)
         `,
-        ).bind(
-          storyId,
-          session.user.id,
-          input.title,
-          input.summary ?? null,
-          input.content,
-          JSON.stringify(images),
-          input.status,
-          now,
-          now,
-        );
+          ).bind(
+            storyId,
+            session.user.id,
+            input.title,
+            input.summary ?? null,
+            input.content,
+            JSON.stringify(images),
+            input.status,
+            now,
+            now,
+          );
 
     const results = await c.env.DB.batch([
       insertStory,
@@ -892,10 +893,7 @@ stories.post("/", async (c) => {
     ]);
     if (changes(results[0]) !== 1) {
       if (copyStarted) scheduleR2Delete(c, [...finalKeys, ...tempKeys]);
-      return c.json(
-        APIErrors.conflict("故事关联状态已变化，未创建故事"),
-        409,
-      );
+      return c.json(APIErrors.conflict("故事关联状态已变化，未创建故事"), 409);
     }
 
     if (tempKeys.length > 0) scheduleR2Delete(c, tempKeys);
@@ -910,29 +908,34 @@ stories.put("/:id", async (c) => {
   const session = await getSession(c).catch(() => null);
   if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-  const id = idQuery.safeParse(c.req.param("id"));
-  const parsed = updateStoryInput.safeParse(await readJson(c));
-  if (!id.success || !parsed.success) {
-    return c.json(
-      APIErrors.validationError(
-        "输入验证失败",
-        parsed.success ? undefined : parsed.error.flatten(),
-      ),
-      400,
-    );
-  }
+  const id = await validateRequest(
+    c,
+    "param",
+    storyIdParams,
+    "故事 ID 无效",
+    "none",
+  );
+  if (id instanceof Response) return id;
+  const parsed = await validateRequest(
+    c,
+    "json",
+    updateStoryInput,
+    "输入验证失败",
+    "flatten",
+  );
+  if (parsed instanceof Response) return parsed;
 
   try {
     const db = createDb(c.env.DB);
     const story = await db.query.stories.findFirst({
-      where: eq(schema.stories.id, id.data),
+      where: eq(schema.stories.id, id.id),
     });
     if (!story) return c.json(APIErrors.notFound("故事不存在"), 404);
     if (!canManageStory(session, story)) {
       return c.json(APIErrors.forbidden("无权修改该故事"), 403);
     }
 
-    const input = parsed.data;
+    const input = parsed;
     if (
       input.images &&
       input.images.some((image) => !story.images.includes(image))
@@ -1011,13 +1014,14 @@ stories.put("/:id", async (c) => {
     const update = c.env.DB.prepare(
       `UPDATE stories SET ${fields.join(", ")} WHERE id = ? ${locationVisibility}`,
     ).bind(...values);
-    const statements = input.tags === undefined
-      ? [update]
-      : createStoryTagUpdateBatch(c.env.DB, update, {
-          storyId: story.id,
-          tags: input.tags,
-          now,
-        });
+    const statements =
+      input.tags === undefined
+        ? [update]
+        : createStoryTagUpdateBatch(c.env.DB, update, {
+            storyId: story.id,
+            tags: input.tags,
+            now,
+          });
 
     const results = await c.env.DB.batch(statements);
     if (changes(results[0]) !== 1) {
@@ -1041,14 +1045,19 @@ stories.delete("/:id", async (c) => {
   const session = await getSession(c).catch(() => null);
   if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-  const id = idQuery.safeParse(c.req.param("id"));
-  if (!id.success)
-    return c.json(APIErrors.validationError("故事 ID 无效"), 400);
+  const id = await validateRequest(
+    c,
+    "param",
+    storyIdParams,
+    "故事 ID 无效",
+    "none",
+  );
+  if (id instanceof Response) return id;
 
   try {
     const db = createDb(c.env.DB);
     const story = await db.query.stories.findFirst({
-      where: eq(schema.stories.id, id.data),
+      where: eq(schema.stories.id, id.id),
     });
     if (!story) return c.json(APIErrors.notFound("故事不存在"), 404);
     if (!canManageStory(session, story)) {
@@ -1079,20 +1088,28 @@ stories.post("/:id/like", async (c) => {
   const session = await getSession(c).catch(() => null);
   if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-  const id = idQuery.safeParse(c.req.param("id"));
-  if (!id.success)
-    return c.json(APIErrors.validationError("故事 ID 无效"), 400);
+  const id = await validateRequest(
+    c,
+    "param",
+    storyIdParams,
+    "故事 ID 无效",
+    "none",
+  );
+  if (id instanceof Response) return id;
 
   try {
     const db = createDb(c.env.DB);
     const [story] = await db
       .select({ id: schema.stories.id })
       .from(schema.stories)
-      .leftJoin(schema.locations, eq(schema.locations.id, schema.stories.locationId))
+      .leftJoin(
+        schema.locations,
+        eq(schema.locations.id, schema.stories.locationId),
+      )
       .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
       .where(
         and(
-          eq(schema.stories.id, id.data),
+          eq(schema.stories.id, id.id),
           eq(schema.stories.status, "published"),
           publicStoryLocationCondition(),
         ),

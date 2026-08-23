@@ -12,49 +12,64 @@ import { logger } from "../../lib/logger";
 import { parseUserExtra } from "../../lib/user-extra";
 import { createTeamTagUpdateBatch } from "../../lib/team-tag-write";
 import { activeTeamMemberCount } from "../../lib/team-participant-count";
+import { validateRequest } from "../../lib/validation";
 import { toTeamResponse } from "./utils";
 
 const mutations = new Hono<{ Bindings: Env }>();
 
 const activityTypeSchema = z.enum(["hiking", "explore", "leisure", "travel"]);
 const requirementSchema = z.string().trim().min(1).max(200);
-const tagIdsSchema = z.array(z.string().trim().min(1).max(100)).max(20)
+const tagIdsSchema = z
+  .array(z.string().trim().min(1).max(100))
+  .max(20)
   .transform((values) => [...new Set(values)]);
 
-const createTeamSchema = z.object({
-  locationId: z.string().trim().min(1).max(100),
-  activityType: activityTypeSchema,
-  title: z.string().trim().min(1).max(100),
-  description: z.string().trim().max(2_000).nullable().optional(),
-  startAt: z.string().datetime({ offset: true }),
-  endAt: z.string().datetime({ offset: true }),
-  maxParticipants: z.number().int().min(1).max(49),
-  requirements: z.array(requirementSchema).max(20).default([]),
-  recruitmentStatus: z.enum(["open", "closed"]).default("open"),
-  tagIds: tagIdsSchema.default([]),
-}).superRefine((value, ctx) => {
-  const startAt = Date.parse(value.startAt);
-  const endAt = Date.parse(value.endAt);
-  if (startAt <= Date.now()) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["startAt"], message: "startAt 必须在未来" });
-  }
-  if (endAt < startAt) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["endAt"], message: "endAt 不能早于 startAt" });
-  }
-});
+const createTeamSchema = z
+  .object({
+    locationId: z.string().trim().min(1).max(100),
+    activityType: activityTypeSchema,
+    title: z.string().trim().min(1).max(100),
+    description: z.string().trim().max(2_000).nullable().optional(),
+    startAt: z.string().datetime({ offset: true }),
+    endAt: z.string().datetime({ offset: true }),
+    maxParticipants: z.number().int().min(1).max(49),
+    requirements: z.array(requirementSchema).max(20).default([]),
+    recruitmentStatus: z.enum(["open", "closed"]).default("open"),
+    tagIds: tagIdsSchema.default([]),
+  })
+  .superRefine((value, ctx) => {
+    const startAt = Date.parse(value.startAt);
+    const endAt = Date.parse(value.endAt);
+    if (startAt <= Date.now()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["startAt"],
+        message: "startAt 必须在未来",
+      });
+    }
+    if (endAt < startAt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endAt"],
+        message: "endAt 不能早于 startAt",
+      });
+    }
+  });
 
-const updateTeamSchema = z.object({
-  locationId: z.string().trim().min(1).max(100).optional(),
-  activityType: activityTypeSchema.optional(),
-  title: z.string().trim().min(1).max(100).optional(),
-  description: z.string().trim().max(2_000).nullable().optional(),
-  startAt: z.string().datetime({ offset: true }).optional(),
-  endAt: z.string().datetime({ offset: true }).optional(),
-  maxParticipants: z.number().int().min(1).max(49).optional(),
-  requirements: z.array(requirementSchema).max(20).optional(),
-  recruitmentStatus: z.enum(["open", "closed"]).optional(),
-  tagIds: tagIdsSchema.optional(),
-}).strict();
+const updateTeamSchema = z
+  .object({
+    locationId: z.string().trim().min(1).max(100).optional(),
+    activityType: activityTypeSchema.optional(),
+    title: z.string().trim().min(1).max(100).optional(),
+    description: z.string().trim().max(2_000).nullable().optional(),
+    startAt: z.string().datetime({ offset: true }).optional(),
+    endAt: z.string().datetime({ offset: true }).optional(),
+    maxParticipants: z.number().int().min(1).max(49).optional(),
+    requirements: z.array(requirementSchema).max(20).optional(),
+    recruitmentStatus: z.enum(["open", "closed"]).optional(),
+    tagIds: tagIdsSchema.optional(),
+  })
+  .strict();
 
 type Db = ReturnType<typeof createDb>;
 
@@ -67,7 +82,11 @@ function isConstraintError(error: unknown): boolean {
   return /constraint|foreign key|unique|check failed/i.test(message);
 }
 
-async function readTeamResponse(db: Db, teamId: string, checklistVisible: boolean) {
+async function readTeamResponse(
+  db: Db,
+  teamId: string,
+  checklistVisible: boolean,
+) {
   const activeCount = activeTeamMemberCount(schema.teams.id);
   const rows = await db
     .select({
@@ -79,7 +98,10 @@ async function readTeamResponse(db: Db, teamId: string, checklistVisible: boolea
     })
     .from(schema.teams)
     .innerJoin(schema.users, eq(schema.users.id, schema.teams.leaderId))
-    .innerJoin(schema.locations, eq(schema.locations.id, schema.teams.locationId))
+    .innerJoin(
+      schema.locations,
+      eq(schema.locations.id, schema.teams.locationId),
+    )
     .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
     .where(eq(schema.teams.id, teamId))
     .limit(1);
@@ -115,25 +137,32 @@ mutations.post("/", async (c) => {
     const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-    const parsed = createTeamSchema.safeParse(await c.req.json().catch(() => null));
-    if (!parsed.success) {
-      return c.json(APIErrors.validationError("输入无效", parsed.error.flatten()), 400);
-    }
+    const parsed = await validateRequest(
+      c,
+      "json",
+      createTeamSchema,
+      "输入无效",
+      "flatten",
+    );
+    if (parsed instanceof Response) return parsed;
 
     const db = createDb(c.env.DB);
-    const user = await db.query.users.findFirst({ where: eq(schema.users.id, session.user.id) });
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.id, session.user.id),
+    });
     if (!user) return c.json(APIErrors.unauthorized("用户不存在"), 401);
     if (!parseUserExtra(user.extra).wechat) {
       return c.json(APIErrors.badRequest("请先填写微信号才能创建队伍"), 400);
     }
-    if (!await validateTagIds(db, parsed.data.tagIds)) {
+    if (!(await validateTagIds(db, parsed.tagIds))) {
       return c.json(APIErrors.validationError("tagIds 包含不存在的标签"), 422);
     }
 
     const teamId = generateId();
     const now = Date.now();
-    const data = parsed.data;
-    const createTeam = c.env.DB.prepare(`
+    const data = parsed;
+    const createTeam = c.env.DB.prepare(
+      `
       INSERT INTO teams (
         id, location_id, leader_id, activity_type, title, description,
         start_at, end_at, max_participants, requirements,
@@ -148,7 +177,8 @@ mutations.post("/", async (c) => {
           SELECT 1 FROM json_each(location.supported_activity_types)
           WHERE json_each.value = ?
         )
-    `).bind(
+    `,
+    ).bind(
       teamId,
       session.user.id,
       data.activityType,
@@ -164,11 +194,15 @@ mutations.post("/", async (c) => {
       data.locationId,
       data.activityType,
     );
-    const tagStatements = data.tagIds.map((tagId) => c.env.DB.prepare(`
+    const tagStatements = data.tagIds.map((tagId) =>
+      c.env.DB.prepare(
+        `
       INSERT INTO team_tags (team_id, tag_id, created_at)
       SELECT ?, ?, ?
       WHERE EXISTS (SELECT 1 FROM teams WHERE id = ?)
-    `).bind(teamId, tagId, now, teamId));
+    `,
+      ).bind(teamId, tagId, now, teamId),
+    );
 
     const results = await c.env.DB.batch([createTeam, ...tagStatements]);
     if (changes(results[0]) !== 1) {
@@ -196,32 +230,40 @@ mutations.put("/:id", async (c) => {
     const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-    const parsed = updateTeamSchema.safeParse(await c.req.json().catch(() => null));
-    if (!parsed.success) {
-      return c.json(APIErrors.validationError("输入无效", parsed.error.flatten()), 400);
-    }
-    if (Object.keys(parsed.data).length === 0) {
+    const parsed = await validateRequest(
+      c,
+      "json",
+      updateTeamSchema,
+      "输入无效",
+      "flatten",
+    );
+    if (parsed instanceof Response) return parsed;
+    if (Object.keys(parsed).length === 0) {
       return c.json(APIErrors.validationError("至少提供一个更新字段"), 400);
     }
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
-    const existing = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    const existing = await db.query.teams.findFirst({
+      where: eq(schema.teams.id, teamId),
+    });
     if (!existing) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (existing.leaderId !== session.user.id) {
       return c.json(APIErrors.forbidden("只有队长可以修改队伍"), 403);
     }
 
-    const data = parsed.data;
+    const data = parsed;
     const locationId = data.locationId ?? existing.locationId;
     const activityType = data.activityType ?? existing.activityType;
     const title = data.title ?? existing.title;
-    const description = data.description === undefined ? existing.description : data.description;
+    const description =
+      data.description === undefined ? existing.description : data.description;
     const startAt = data.startAt ? new Date(data.startAt) : existing.startAt;
     const endAt = data.endAt ? new Date(data.endAt) : existing.endAt;
     const maxParticipants = data.maxParticipants ?? existing.maxParticipants;
     const requirements = data.requirements ?? existing.requirements;
-    const recruitmentStatus = data.recruitmentStatus ?? existing.recruitmentStatus;
+    const recruitmentStatus =
+      data.recruitmentStatus ?? existing.recruitmentStatus;
 
     if (startAt.getTime() <= Date.now()) {
       return c.json(APIErrors.validationError("startAt 必须在未来"), 400);
@@ -229,12 +271,13 @@ mutations.put("/:id", async (c) => {
     if (endAt.getTime() < startAt.getTime()) {
       return c.json(APIErrors.validationError("endAt 不能早于 startAt"), 400);
     }
-    if (data.tagIds && !await validateTagIds(db, data.tagIds)) {
+    if (data.tagIds && !(await validateTagIds(db, data.tagIds))) {
       return c.json(APIErrors.validationError("tagIds 包含不存在的标签"), 422);
     }
 
     const now = Date.now();
-    const updateTeam = c.env.DB.prepare(`
+    const updateTeam = c.env.DB.prepare(
+      `
       UPDATE teams
       SET location_id = ?,
           activity_type = ?,
@@ -260,7 +303,8 @@ mutations.put("/:id", async (c) => {
               WHERE json_each.value = ?
             )
         )
-    `).bind(
+    `,
+    ).bind(
       locationId,
       activityType,
       title,
@@ -288,7 +332,9 @@ mutations.put("/:id", async (c) => {
     const results = await c.env.DB.batch(statements);
     if (changes(results[0]) !== 1) {
       return c.json(
-        APIErrors.conflict("队伍已成行、已取消、已出发，或地点不支持该活动类型"),
+        APIErrors.conflict(
+          "队伍已成行、已取消、已出发，或地点不支持该活动类型",
+        ),
         409,
       );
     }
@@ -298,7 +344,10 @@ mutations.put("/:id", async (c) => {
     return c.json({ success: true, team });
   } catch (error) {
     const mapped = mapDatabaseError(error);
-    if (mapped.body.error.code === ErrorCode.TEAM_CAPACITY_EXCEEDED || isConstraintError(error)) {
+    if (
+      mapped.body.error.code === ErrorCode.TEAM_CAPACITY_EXCEEDED ||
+      isConstraintError(error)
+    ) {
       return c.json(mapped.body, mapped.status);
     }
     logger.error("team_update_failed", error);
@@ -313,13 +362,16 @@ mutations.delete("/:id", async (c) => {
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
-    const existing = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    const existing = await db.query.teams.findFirst({
+      where: eq(schema.teams.id, teamId),
+    });
     if (!existing) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (existing.leaderId !== session.user.id) {
       return c.json(APIErrors.forbidden("只有队长可以删除队伍"), 403);
     }
 
-    const result = await c.env.DB.prepare(`
+    const result = await c.env.DB.prepare(
+      `
       DELETE FROM teams
       WHERE id = ?
         AND leader_id = ?
@@ -331,9 +383,15 @@ mutations.delete("/:id", async (c) => {
           WHERE team_members.team_id = teams.id AND team_members.left_at IS NULL
         )
         AND NOT EXISTS (SELECT 1 FROM stories WHERE stories.team_id = teams.id)
-    `).bind(teamId, session.user.id, Date.now()).run();
+    `,
+    )
+      .bind(teamId, session.user.id, Date.now())
+      .run();
     if (changes(result) !== 1) {
-      return c.json(APIErrors.conflict("仅可删除尚未成行且没有活动成员或回顾的未来队伍"), 409);
+      return c.json(
+        APIErrors.conflict("仅可删除尚未成行且没有活动成员或回顾的未来队伍"),
+        409,
+      );
     }
     return c.json({ success: true });
   } catch (error) {
@@ -349,7 +407,9 @@ mutations.post("/:id/form", async (c) => {
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
-    const existing = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    const existing = await db.query.teams.findFirst({
+      where: eq(schema.teams.id, teamId),
+    });
     if (!existing) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (existing.leaderId !== session.user.id) {
       return c.json(APIErrors.forbidden("只有队长可以确认成行"), 403);
@@ -359,13 +419,15 @@ mutations.post("/:id/form", async (c) => {
     const updated = await db
       .update(schema.teams)
       .set({ formedAt: now, recruitmentStatus: "closed", updatedAt: now })
-      .where(and(
-        eq(schema.teams.id, teamId),
-        eq(schema.teams.leaderId, session.user.id),
-        isNull(schema.teams.formedAt),
-        isNull(schema.teams.cancelledAt),
-        gt(schema.teams.startAt, now),
-      ))
+      .where(
+        and(
+          eq(schema.teams.id, teamId),
+          eq(schema.teams.leaderId, session.user.id),
+          isNull(schema.teams.formedAt),
+          isNull(schema.teams.cancelledAt),
+          gt(schema.teams.startAt, now),
+        ),
+      )
       .returning({ id: schema.teams.id });
     if (updated.length !== 1) {
       return c.json(APIErrors.conflict("队伍当前无法确认成行"), 409);
@@ -387,7 +449,9 @@ mutations.post("/:id/cancel", async (c) => {
 
     const teamId = c.req.param("id");
     const db = createDb(c.env.DB);
-    const existing = await db.query.teams.findFirst({ where: eq(schema.teams.id, teamId) });
+    const existing = await db.query.teams.findFirst({
+      where: eq(schema.teams.id, teamId),
+    });
     if (!existing) return c.json(APIErrors.notFound("队伍不存在"), 404);
     if (existing.leaderId !== session.user.id) {
       return c.json(APIErrors.forbidden("只有队长可以取消队伍"), 403);
@@ -397,12 +461,14 @@ mutations.post("/:id/cancel", async (c) => {
     const updated = await db
       .update(schema.teams)
       .set({ cancelledAt: now, recruitmentStatus: "closed", updatedAt: now })
-      .where(and(
-        eq(schema.teams.id, teamId),
-        eq(schema.teams.leaderId, session.user.id),
-        isNull(schema.teams.cancelledAt),
-        gt(schema.teams.endAt, now),
-      ))
+      .where(
+        and(
+          eq(schema.teams.id, teamId),
+          eq(schema.teams.leaderId, session.user.id),
+          isNull(schema.teams.cancelledAt),
+          gt(schema.teams.endAt, now),
+        ),
+      )
       .returning({ id: schema.teams.id });
     if (updated.length !== 1) {
       return c.json(APIErrors.conflict("队伍当前无法取消"), 409);

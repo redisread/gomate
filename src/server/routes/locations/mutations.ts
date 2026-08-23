@@ -1,8 +1,4 @@
-import {
-  and,
-  eq,
-  inArray,
-} from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Hono, type Context } from "hono";
 
 import { createDb } from "../../db";
@@ -27,6 +23,7 @@ import {
   deleteR2ObjectsWithRetry,
   getR2PublicBaseUrl,
 } from "../../lib/r2-media";
+import { validateRequest } from "../../lib/validation";
 import {
   createLocationInputSchema,
   findOpenCityRegion,
@@ -48,7 +45,10 @@ function d1Changes(result: D1Result<unknown> | undefined): number {
 }
 
 function generatedSlug(id: string) {
-  const suffix = id.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const suffix = id
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
   return `location-${suffix || crypto.randomUUID()}`;
 }
 
@@ -64,24 +64,16 @@ mutations.post("/", async (c) => {
   let databaseCommitted = false;
   try {
     const session = await requireAdmin(c);
-    let body: unknown;
-    try {
-      body = await c.req.json();
-    } catch {
-      return c.json(APIErrors.validationError("Invalid JSON body"), 400);
-    }
-
-    const parsed = createLocationInputSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(
-        APIErrors.validationError(
-          "Invalid location input",
-          parsed.error.flatten(),
-        ),
-        400,
-      );
-    }
-    if (!locationImagesAreAllowed(parsed.data, c.env)) {
+    const parsed = await validateRequest(
+      c,
+      "json",
+      createLocationInputSchema,
+      "Invalid location input",
+      "flatten",
+      "Invalid JSON body",
+    );
+    if (parsed instanceof Response) return parsed;
+    if (!locationImagesAreAllowed(parsed, c.env)) {
       return c.json(
         APIErrors.validationError("Location images use a disallowed host"),
         400,
@@ -89,7 +81,7 @@ mutations.post("/", async (c) => {
     }
 
     const db = createDb(c.env.DB);
-    const targetRegion = await findOpenCityRegion(db, parsed.data.regionId);
+    const targetRegion = await findOpenCityRegion(db, parsed.regionId);
     if (!targetRegion) {
       return c.json(
         APIErrors.badRequest("regionId must reference an enabled city Region"),
@@ -98,15 +90,10 @@ mutations.post("/", async (c) => {
     }
 
     const id = generateId();
-    preparedMedia = await prepareLocationMedia(
-      c.env,
-      session.user.id,
-      id,
-      {
-        coverImageUrl: parsed.data.coverImageUrl,
-        images: parsed.data.images,
-      },
-    );
+    preparedMedia = await prepareLocationMedia(c.env, session.user.id, id, {
+      coverImageUrl: parsed.coverImageUrl,
+      images: parsed.images,
+    });
     const now = Date.now();
     const insertResult = await c.env.DB.prepare(
       `
@@ -123,25 +110,27 @@ mutations.post("/", async (c) => {
           AND target_region.level = 'city'
           AND target_region.service_enabled = 1
       `,
-    ).bind(
-      id,
-      parsed.data.name,
-      parsed.data.slug ?? generatedSlug(id),
-      JSON.stringify(parsed.data.supportedActivityTypes),
-      parsed.data.status,
-      parsed.data.subtitle ?? null,
-      parsed.data.description,
-      parsed.data.address ?? null,
-      parsed.data.latitude,
-      parsed.data.longitude,
-      preparedMedia.coverImageUrl,
-      JSON.stringify(preparedMedia.images),
-      JSON.stringify(normalizeLocationExtraForStorage(parsed.data.extra)),
-      session.user.id,
-      now,
-      now,
-      parsed.data.regionId,
-    ).run();
+    )
+      .bind(
+        id,
+        parsed.name,
+        parsed.slug ?? generatedSlug(id),
+        JSON.stringify(parsed.supportedActivityTypes),
+        parsed.status,
+        parsed.subtitle ?? null,
+        parsed.description,
+        parsed.address ?? null,
+        parsed.latitude,
+        parsed.longitude,
+        preparedMedia.coverImageUrl,
+        JSON.stringify(preparedMedia.images),
+        JSON.stringify(normalizeLocationExtraForStorage(parsed.extra)),
+        session.user.id,
+        now,
+        now,
+        parsed.regionId,
+      )
+      .run();
     if (d1Changes(insertResult) !== 1) {
       await discardPreparedLocationMedia(c.env, preparedMedia);
       preparedMedia = null;
@@ -159,23 +148,28 @@ mutations.post("/", async (c) => {
       .limit(1);
     if (!location) throw new Error("Created location could not be read back");
     await finalizeLocationMedia(c.env, preparedMedia).catch(
-      (cleanupError: unknown) => logger.error(
-        "location_create_media_cleanup_failed",
-        safeErrorMetadata(cleanupError),
-      ),
+      (cleanupError: unknown) =>
+        logger.error(
+          "location_create_media_cleanup_failed",
+          safeErrorMetadata(cleanupError),
+        ),
     );
 
-    return c.json({
-      success: true as const,
-      location: projectLocation(location, targetRegion, []),
-    }, 201);
+    return c.json(
+      {
+        success: true as const,
+        location: projectLocation(location, targetRegion, []),
+      },
+      201,
+    );
   } catch (error) {
     if (preparedMedia && !databaseCommitted) {
       await discardPreparedLocationMedia(c.env, preparedMedia).catch(
-        (cleanupError: unknown) => logger.error(
-          "location_create_media_compensation_failed",
-          safeErrorMetadata(cleanupError),
-        ),
+        (cleanupError: unknown) =>
+          logger.error(
+            "location_create_media_compensation_failed",
+            safeErrorMetadata(cleanupError),
+          ),
       );
     }
     const denied = accessError(c, error);
@@ -200,25 +194,17 @@ mutations.put("/", async (c) => {
   let databaseCommitted = false;
   try {
     const session = await requireAdmin(c);
-    let body: unknown;
-    try {
-      body = await c.req.json();
-    } catch {
-      return c.json(APIErrors.validationError("Invalid JSON body"), 400);
-    }
+    const parsed = await validateRequest(
+      c,
+      "json",
+      updateLocationInputSchema,
+      "Invalid location input",
+      "flatten",
+      "Invalid JSON body",
+    );
+    if (parsed instanceof Response) return parsed;
 
-    const parsed = updateLocationInputSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(
-        APIErrors.validationError(
-          "Invalid location input",
-          parsed.error.flatten(),
-        ),
-        400,
-      );
-    }
-
-    const { id, ...changes } = parsed.data;
+    const { id, ...changes } = parsed;
     const db = createDb(c.env.DB);
     const [existing] = await db
       .select()
@@ -293,7 +279,8 @@ mutations.put("/", async (c) => {
     if (changes.description !== undefined) {
       addAssignment("description", changes.description);
     }
-    if (changes.address !== undefined) addAssignment("address", changes.address);
+    if (changes.address !== undefined)
+      addAssignment("address", changes.address);
     if (changes.latitude !== undefined) {
       addAssignment("latitude", changes.latitude);
     }
@@ -354,7 +341,9 @@ mutations.put("/", async (c) => {
           )
           ${activityGuard}
       `,
-    ).bind(...values).run();
+    )
+      .bind(...values)
+      .run();
     if (d1Changes(updateResult) !== 1) {
       await discardPreparedLocationMedia(c.env, preparedMedia);
       preparedMedia = null;
@@ -372,37 +361,37 @@ mutations.put("/", async (c) => {
       .limit(1);
     if (!updated) throw new Error("Updated location could not be read back");
 
-    const retainedKeys = new Set(ownedLocationMediaKeys(c.env, id, {
-      coverImageUrl: preparedMedia.coverImageUrl,
-      images: preparedMedia.images,
-    }));
+    const retainedKeys = new Set(
+      ownedLocationMediaKeys(c.env, id, {
+        coverImageUrl: preparedMedia.coverImageUrl,
+        images: preparedMedia.images,
+      }),
+    );
     const staleKeys = ownedLocationMediaKeys(c.env, id, {
       coverImageUrl: existing.coverImageUrl,
       images: existing.images,
     }).filter((key) => !retainedKeys.has(key));
     await finalizeLocationMedia(c.env, preparedMedia, staleKeys).catch(
-      (cleanupError: unknown) => logger.error(
-        "location_update_media_cleanup_failed",
-        safeErrorMetadata(cleanupError),
-      ),
+      (cleanupError: unknown) =>
+        logger.error(
+          "location_update_media_cleanup_failed",
+          safeErrorMetadata(cleanupError),
+        ),
     );
 
     const tags = await loadLocationTags(db, [id]);
     return c.json({
       success: true as const,
-      location: projectLocation(
-        updated,
-        targetRegion,
-        tags.get(id) ?? [],
-      ),
+      location: projectLocation(updated, targetRegion, tags.get(id) ?? []),
     });
   } catch (error) {
     if (preparedMedia && !databaseCommitted) {
       await discardPreparedLocationMedia(c.env, preparedMedia).catch(
-        (cleanupError: unknown) => logger.error(
-          "location_update_media_compensation_failed",
-          safeErrorMetadata(cleanupError),
-        ),
+        (cleanupError: unknown) =>
+          logger.error(
+            "location_update_media_compensation_failed",
+            safeErrorMetadata(cleanupError),
+          ),
       );
     }
     const denied = accessError(c, error);
@@ -440,7 +429,9 @@ mutations.delete("/:id", async (c) => {
     }
     if (!getR2PublicBaseUrl(c.env)) {
       return c.json(
-        APIErrors.internalError("Location media storage is not safely configured"),
+        APIErrors.internalError(
+          "Location media storage is not safely configured",
+        ),
         500,
       );
     }
@@ -451,7 +442,10 @@ mutations.delete("/:id", async (c) => {
     });
     if (mediaKeys.length > 0) {
       if (!c.env.R2) {
-        return c.json(APIErrors.internalError("Location media storage is not configured"), 500);
+        return c.json(
+          APIErrors.internalError("Location media storage is not configured"),
+          500,
+        );
       }
       mediaBackups = await backupLocationMedia(c.env.R2, locationId, mediaKeys);
       originalsRemovalAttempted = true;
@@ -460,11 +454,13 @@ mutations.delete("/:id", async (c) => {
 
     const deleted = await db
       .delete(schema.locations)
-      .where(and(
-        eq(schema.locations.id, locationId),
-        eq(schema.locations.coverImageUrl, existing.coverImageUrl),
-        eq(schema.locations.images, existing.images),
-      ))
+      .where(
+        and(
+          eq(schema.locations.id, locationId),
+          eq(schema.locations.coverImageUrl, existing.coverImageUrl),
+          eq(schema.locations.images, existing.images),
+        ),
+      )
       .returning({ id: schema.locations.id });
     if (deleted.length === 0) {
       // A concurrent media update won the conditional DML. Restore only keys
@@ -478,14 +474,10 @@ mutations.delete("/:id", async (c) => {
         .where(eq(schema.locations.id, locationId))
         .limit(1);
       if (c.env.R2) {
-        const retainedKeys = new Set(current
-          ? ownedLocationMediaKeys(c.env, locationId, current)
-          : []);
-        await restoreLocationMediaBackups(
-          c.env.R2,
-          mediaBackups,
-          retainedKeys,
+        const retainedKeys = new Set(
+          current ? ownedLocationMediaKeys(c.env, locationId, current) : [],
         );
+        await restoreLocationMediaBackups(c.env.R2, mediaBackups, retainedKeys);
       }
       originalsRemovalAttempted = false;
       return c.json(APIErrors.conflict("Location changed concurrently"), 409);
@@ -494,20 +486,22 @@ mutations.delete("/:id", async (c) => {
     originalsRemovalAttempted = false;
     if (c.env.R2) {
       await discardLocationMediaBackups(c.env.R2, mediaBackups).catch(
-        (cleanupError: unknown) => logger.error(
-          "location_delete_media_backup_cleanup_failed",
-          safeErrorMetadata(cleanupError),
-        ),
+        (cleanupError: unknown) =>
+          logger.error(
+            "location_delete_media_backup_cleanup_failed",
+            safeErrorMetadata(cleanupError),
+          ),
       );
     }
     return c.json({ success: true as const, id: deleted[0].id });
   } catch (error) {
     if (!databaseDeleted && originalsRemovalAttempted && c.env.R2) {
       await restoreLocationMediaBackups(c.env.R2, mediaBackups).catch(
-        (restoreError: unknown) => logger.error(
-          "location_delete_media_rollback_failed",
-          safeErrorMetadata(restoreError),
-        ),
+        (restoreError: unknown) =>
+          logger.error(
+            "location_delete_media_rollback_failed",
+            safeErrorMetadata(restoreError),
+          ),
       );
     } else if (!databaseDeleted && mediaBackups.length > 0 && c.env.R2) {
       await discardLocationMediaBackups(c.env.R2, mediaBackups).catch(
@@ -524,19 +518,15 @@ mutations.delete("/:id", async (c) => {
 mutations.put("/:id/tags", async (c) => {
   try {
     await requireAdmin(c);
-    let body: unknown;
-    try {
-      body = await c.req.json();
-    } catch {
-      return c.json(APIErrors.validationError("Invalid JSON body"), 400);
-    }
-    const parsed = replaceLocationTagsSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(
-        APIErrors.validationError("Invalid tag input", parsed.error.flatten()),
-        400,
-      );
-    }
+    const parsed = await validateRequest(
+      c,
+      "json",
+      replaceLocationTagsSchema,
+      "Invalid tag input",
+      "flatten",
+      "Invalid JSON body",
+    );
+    if (parsed instanceof Response) return parsed;
 
     const locationId = c.req.param("id");
     const db = createDb(c.env.DB);
@@ -547,13 +537,18 @@ mutations.put("/:id/tags", async (c) => {
       .limit(1);
     if (!location) return c.json(APIErrors.notFound("Location not found"), 404);
 
-    const selectedTags = parsed.data.tagIds.length > 0
-      ? await db
-          .select({ id: schema.tags.id, name: schema.tags.name, slug: schema.tags.slug })
-          .from(schema.tags)
-          .where(inArray(schema.tags.id, parsed.data.tagIds))
-      : [];
-    if (selectedTags.length !== parsed.data.tagIds.length) {
+    const selectedTags =
+      parsed.tagIds.length > 0
+        ? await db
+            .select({
+              id: schema.tags.id,
+              name: schema.tags.name,
+              slug: schema.tags.slug,
+            })
+            .from(schema.tags)
+            .where(inArray(schema.tags.id, parsed.tagIds))
+        : [];
+    if (selectedTags.length !== parsed.tagIds.length) {
       return c.json(
         APIErrors.badRequest("Every tagId must reference an existing tag"),
         400,
@@ -566,16 +561,16 @@ mutations.put("/:id/tags", async (c) => {
     if (selectedTags.length === 0) {
       await deleteExisting;
     } else {
-      const insertNext = db.insert(schema.locationTags).values(
-        parsed.data.tagIds.map((tagId) => ({ locationId, tagId })),
-      );
+      const insertNext = db
+        .insert(schema.locationTags)
+        .values(parsed.tagIds.map((tagId) => ({ locationId, tagId })));
       await db.batch([deleteExisting, insertNext]);
     }
 
     const byId = new Map(selectedTags.map((tag) => [tag.id, tag]));
     return c.json({
       success: true as const,
-      tags: parsed.data.tagIds.map((tagId) => byId.get(tagId)!),
+      tags: parsed.tagIds.map((tagId) => byId.get(tagId)!),
     });
   } catch (error) {
     const denied = accessError(c, error);

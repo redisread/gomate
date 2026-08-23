@@ -5,11 +5,14 @@ import { z } from "zod";
 import { sendFeedbackEmail } from "../lib/email";
 import type { Env } from "../lib/auth";
 import type { EmailLocale } from "../lib/email-i18n";
+import { validateRequest } from "../lib/validation";
 
 const feedback = new Hono<{ Bindings: Env }>();
 
 const feedbackSchema = z.object({
-  type: z.enum(["suggestion", "bug"], { message: "类型必须是 suggestion 或 bug" }),
+  type: z.enum(["suggestion", "bug"], {
+    message: "类型必须是 suggestion 或 bug",
+  }),
   name: z.string().min(1).max(100),
   email: z.string().email("请输入有效的邮箱地址"),
   content: z.string().min(1).max(5000),
@@ -25,18 +28,23 @@ const feedbackSchema = z.object({
  */
 feedback.post("/", async (c) => {
   try {
-    const body = await c.req.json();
-    const parsed = feedbackSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(APIErrors.validationError("输入无效", parsed.error.errors), 400);
-    }
-
-    const { type, name, email, content, device, browser, steps, pageUrl } = parsed.data;
+    const input = await validateRequest(
+      c,
+      "json",
+      feedbackSchema,
+      "输入无效",
+      "issues",
+    );
+    if (input instanceof Response) return input;
+    const { type, name, email, content, device, browser, steps, pageUrl } =
+      input;
 
     // 提取用户 locale
     const cookie = c.req.raw.headers.get("Cookie") || "";
     const localeMatch = cookie.match(/gomate_locale=(zh-CN|en|ja)/);
-    const locale: EmailLocale = localeMatch ? (localeMatch[1] as EmailLocale) : "zh-CN";
+    const locale: EmailLocale = localeMatch
+      ? (localeMatch[1] as EmailLocale)
+      : "zh-CN";
 
     // 发送邮件
     const result = await sendFeedbackEmail(
@@ -51,7 +59,7 @@ feedback.post("/", async (c) => {
         pageUrl: pageUrl?.trim(),
       },
       c.env,
-      locale
+      locale,
     );
 
     if (!result.success) {
@@ -61,7 +69,7 @@ feedback.post("/", async (c) => {
 
     return c.json({
       success: true,
-      message: "感谢您的反馈！我们会认真查看每一条反馈，持续改进产品。"
+      message: "感谢您的反馈！我们会认真查看每一条反馈，持续改进产品。",
     });
   } catch (error) {
     logger.error("feedback_request_failed", error);
