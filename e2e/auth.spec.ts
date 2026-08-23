@@ -6,6 +6,19 @@ const RUN_ID = Date.now().toString(36);
 const PASSWORD = "test1234";
 
 test.describe("Auth", () => {
+  test("login page hydrates without client errors", async ({ page }) => {
+    const pageErrors: Error[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error));
+
+    await page.goto("/login");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("h1")).toHaveText(/\S/u);
+    await expect(page.locator("[data-testid='login-email']")).toBeVisible();
+    await expect(page.locator("[data-testid='login-password']")).toBeVisible();
+    expect(pageErrors.map((error) => error.message)).toEqual([]);
+  });
+
   test("registration form reaches email verification state", async ({ page }) => {
     await page.goto("/register");
     await page.waitForLoadState("networkidle");
