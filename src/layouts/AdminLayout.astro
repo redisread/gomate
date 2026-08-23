@@ -1,0 +1,65 @@
+---
+import { AdminNavigation } from "../components/admin/admin-navigation";
+import {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  getSSRT,
+  type Locale,
+} from "../i18n";
+import { loadLocaleData } from "../i18n/ssr-loader.server";
+import Layout from "./Layout.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const localeFromCookie = Astro.cookies.get("gomate_locale")?.value as
+  | Locale
+  | undefined;
+const resolvedLocale = Astro.locals.locale ?? localeFromCookie;
+const locale =
+  resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale)
+    ? resolvedLocale
+    : DEFAULT_LOCALE;
+const loadedData = await loadLocaleData(["admin"], locale, Astro.url.origin);
+const ssr = getSSRT(locale, {
+  [locale]: loadedData,
+} as Record<Locale, Record<string, Record<string, unknown>>>);
+const copy = {
+  brand: ssr.t("admin.platform.brand"),
+  navigationLabel: ssr.t("admin.platform.navigationLabel"),
+  navHome: ssr.t("admin.platform.navHome"),
+  navNewLocation: ssr.t("admin.platform.navNewLocation"),
+  backToFrontend: ssr.t("admin.platform.backToFrontend"),
+  openNavigation: ssr.t("admin.platform.openNavigation"),
+  closeNavigation: ssr.t("admin.platform.closeNavigation"),
+};
+const pathSegments = Astro.url.pathname.split("/").filter(Boolean);
+const currentPath = SUPPORTED_LOCALES.includes(pathSegments[0] as Locale)
+  ? `/${pathSegments.slice(1).join("/")}`
+  : Astro.url.pathname;
+const admin = Astro.locals.admin!;
+---
+
+<Layout
+  title={title}
+  description={description}
+  showNavbar={false}
+  showFooter={false}
+>
+  <div class="min-h-screen bg-background text-foreground">
+    <AdminNavigation
+      copy={copy}
+      currentPath={currentPath}
+      admin={admin}
+      client:load
+    />
+    <main id="admin-main" class="min-w-0 lg:ps-64">
+      <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <slot />
+      </div>
+    </main>
+  </div>
+</Layout>
