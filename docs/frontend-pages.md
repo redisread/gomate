@@ -65,5 +65,6 @@
 - SSR 使用 [`src/lib/server-api.ts`](../src/lib/server-api.ts) 进程内调用 API，不请求自身域名。
 - [`src/worker.ts`](../src/worker.ts) 将 `/api/*` 交给 Hono，其余请求交给 Astro 官方 Cloudflare handler。
 - 用户可见文案全部来自 i18n；locale 变化后运行 build、validate、lint、type-check、test 和 build 门禁。
+- React island 的 i18n 首次渲染必须在 SSR 与浏览器端保持同一加载态；浏览器在 hydration 后再消费页面注入的 namespace 缓存。
 - 只有需要客户端状态的交互使用 React island；纯展示保持 Astro SSR。
 - UI 规则与验证清单见 [`design-system.md`](design-system.md)。
