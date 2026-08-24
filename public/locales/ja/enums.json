@@ -7,8 +7,8 @@
   },
   "locationType": {
     "hiking": "アウトドアハイキング",
-    "explore": "街歩き探索",
-    "leisure": "カジュアル探店",
+    "explore": "街歩き",
+    "leisure": "カフェ・グルメ巡り",
     "travel": "旅行"
   },
   "userRole": {

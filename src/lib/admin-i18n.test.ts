@@ -7,6 +7,8 @@ import {
 import { SEASONS } from "@/contracts/enums";
 import {
   adminActionErrorKey,
+  adminCatchMessage,
+  adminJsonOrThrow,
   locationStatusKey,
   readAdminErrorReason,
   seasonKey,
@@ -39,13 +41,15 @@ describe("administrator i18n error contract", () => {
   });
 
   it("reads only a known reason from error details", () => {
-    expect(readAdminErrorReason({
-      error: {
-        code: "CONFLICT",
-        message: "Diagnostic message",
-        details: { reason: "tag_update_conflict" },
-      },
-    })).toBe("tag_update_conflict");
+    expect(
+      readAdminErrorReason({
+        error: {
+          code: "CONFLICT",
+          message: "Diagnostic message",
+          details: { reason: "tag_update_conflict" },
+        },
+      }),
+    ).toBe("tag_update_conflict");
   });
 
   it.each([
@@ -76,7 +80,9 @@ describe("administrator enum presentation keys", () => {
 
   it("maps every location status to a shared enum key", () => {
     expect(locationStatusKey("draft")).toBe("enums.locationStatus.draft");
-    expect(locationStatusKey("published")).toBe("enums.locationStatus.published");
+    expect(locationStatusKey("published")).toBe(
+      "enums.locationStatus.published",
+    );
     expect(locationStatusKey("archived")).toBe("enums.locationStatus.archived");
   });
 
@@ -96,22 +102,111 @@ describe("administrator action error presentation keys", () => {
     ["admin_last_active_revoke", "admin.errors.adminLastActiveRevoke"],
     ["tag_already_exists", "admin.errors.tagAlreadyExists"],
     ["tag_update_conflict", "admin.errors.tagUpdateConflict"],
-    ["location_changed_concurrently", "admin.errors.locationChangedConcurrently"],
+    [
+      "location_changed_concurrently",
+      "admin.errors.locationChangedConcurrently",
+    ],
     ["location_has_references", "admin.errors.locationHasReferences"],
     ["location_invalid_region", "admin.errors.locationInvalidRegion"],
-    ["location_image_host_disallowed", "admin.errors.locationImageHostDisallowed"],
+    [
+      "location_image_host_disallowed",
+      "admin.errors.locationImageHostDisallowed",
+    ],
   ] as const)("maps %s to %s", (reason, expectedKey) => {
-    expect(adminActionErrorKey({
-      error: { details: { reason } },
-    })).toBe(expectedKey);
+    expect(
+      adminActionErrorKey({
+        error: { details: { reason } },
+      }),
+    ).toBe(expectedKey);
   });
 
   it("returns null instead of exposing an unknown server message", () => {
-    expect(adminActionErrorKey({
-      error: {
-        message: "Do not render this diagnostic",
-        details: { reason: "unknown_reason" },
-      },
-    })).toBeNull();
+    expect(
+      adminActionErrorKey({
+        error: {
+          message: "Do not render this diagnostic",
+          details: { reason: "unknown_reason" },
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("localizes a known structured error without exposing its message", async () => {
+    const response = new Response(
+      JSON.stringify({
+        error: {
+          message: "Diagnostic text must stay hidden",
+          details: { reason: "location_invalid_region" },
+        },
+      }),
+      { status: 400 },
+    );
+
+    await expect(
+      adminJsonOrThrow(
+        response,
+        (key) => `translated:${key}`,
+        "admin.management.saveFailed",
+      ),
+    ).rejects.toThrow("translated:admin.errors.locationInvalidRegion");
+  });
+
+  it("uses a localized fallback for an unknown structured error", async () => {
+    const response = new Response(
+      JSON.stringify({
+        error: { message: "Unknown diagnostic text" },
+      }),
+      { status: 500 },
+    );
+
+    await expect(
+      adminJsonOrThrow(
+        response,
+        (key) => `translated:${key}`,
+        "admin.management.saveFailed",
+      ),
+    ).rejects.toThrow("translated:admin.management.saveFailed");
+  });
+
+  it("returns a successful JSON response", async () => {
+    const response = new Response(JSON.stringify({ success: true }));
+
+    await expect(
+      adminJsonOrThrow(response, (key) => key, "admin.management.loadFailed"),
+    ).resolves.toEqual({ success: true });
+  });
+
+  it("keeps localized response errors but replaces network diagnostics", async () => {
+    const response = new Response(
+      JSON.stringify({
+        error: { details: { reason: "tag_already_exists" } },
+      }),
+      { status: 409 },
+    );
+    let localizedCause: unknown;
+    try {
+      await adminJsonOrThrow(
+        response,
+        (key) => `translated:${key}`,
+        "admin.management.saveFailed",
+      );
+    } catch (cause) {
+      localizedCause = cause;
+    }
+
+    expect(
+      adminCatchMessage(
+        localizedCause,
+        (key) => `translated:${key}`,
+        "admin.management.saveFailed",
+      ),
+    ).toBe("translated:admin.errors.tagAlreadyExists");
+    expect(
+      adminCatchMessage(
+        new Error("Failed to fetch internal diagnostic"),
+        (key) => `translated:${key}`,
+        "admin.management.saveFailed",
+      ),
+    ).toBe("translated:admin.management.saveFailed");
   });
 });

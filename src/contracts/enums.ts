@@ -18,6 +18,10 @@ export const SEASONS = ["spring", "summer", "autumn", "winter"] as const;
 
 export type Season = (typeof SEASONS)[number];
 
+export function isSeason(value: unknown): value is Season {
+  return typeof value === "string" && SEASONS.includes(value as Season);
+}
+
 export type RecruitmentStatus = "open" | "closed";
 
 export type TeamLifecycle =
@@ -28,7 +32,11 @@ export type TeamLifecycle =
   | "completed"
   | "expired_unformed";
 
-export type TeamJoinRequestStatus = "pending" | "approved" | "rejected" | "cancelled";
+export type TeamJoinRequestStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "cancelled";
 
 export type StoryStatus = "draft" | "published" | "hidden";
 

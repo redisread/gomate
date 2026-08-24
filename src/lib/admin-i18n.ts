@@ -62,7 +62,9 @@ export function seasonKey(season: Season): TranslationKey {
   return SEASON_KEY[season];
 }
 
-export function readAdminErrorReason(payload: unknown): AdminErrorReason | null {
+export function readAdminErrorReason(
+  payload: unknown,
+): AdminErrorReason | null {
   if (!payload || typeof payload !== "object") return null;
 
   const error = (payload as { error?: unknown }).error;
@@ -78,4 +80,30 @@ export function readAdminErrorReason(payload: unknown): AdminErrorReason | null 
 export function adminActionErrorKey(payload: unknown): TranslationKey | null {
   const reason = readAdminErrorReason(payload);
   return reason ? ADMIN_ERROR_KEY[reason] : null;
+}
+
+class AdminLocalizedError extends Error {}
+
+export async function adminJsonOrThrow<T>(
+  response: Response,
+  translate: (key: TranslationKey) => string,
+  fallbackKey: TranslationKey,
+): Promise<T> {
+  const payload = (await response.json().catch(() => null)) as unknown;
+  if (!response.ok || payload === null) {
+    throw new AdminLocalizedError(
+      translate(adminActionErrorKey(payload) ?? fallbackKey),
+    );
+  }
+  return payload as T;
+}
+
+export function adminCatchMessage(
+  cause: unknown,
+  translate: (key: TranslationKey) => string,
+  fallbackKey: TranslationKey,
+): string {
+  return cause instanceof AdminLocalizedError
+    ? cause.message
+    : translate(fallbackKey);
 }
