@@ -3,8 +3,9 @@ import type { Location } from "@/lib/types";
 import {
   DEFAULT_LOCATION_FORM,
   formDataToLocationPayload,
-  locationSaveRedirect,
+  locationSaveDestination,
   locationToFormData,
+  resolveLocationSaveStatus,
 } from "./use-location-form";
 
 const location: Location = {
@@ -131,13 +132,18 @@ describe("Location form projection", () => {
     });
   });
 
-  it("keeps non-public locations in the admin editor after save", () => {
-    expect(locationSaveRedirect({ ...location, status: "draft" })).toBe(
+  it("resolves explicit save intents without inferring state from button copy", () => {
+    expect(resolveLocationSaveStatus("draft", "keep")).toBe("draft");
+    expect(resolveLocationSaveStatus("draft", "publish")).toBe("published");
+    expect(resolveLocationSaveStatus("archived", "restore")).toBe("draft");
+    expect(resolveLocationSaveStatus("archived", "publish")).toBe("archived");
+    expect(resolveLocationSaveStatus("published", "keep")).toBe("published");
+  });
+
+  it("navigates only after first creation and always stays in the admin editor", () => {
+    expect(locationSaveDestination("create", "loc-1")).toBe(
       "/admin/locations/loc-1/edit",
     );
-    expect(locationSaveRedirect({ ...location, status: "archived" })).toBe(
-      "/admin/locations/loc-1/edit",
-    );
-    expect(locationSaveRedirect(location)).toBe("/locations/loc-1");
+    expect(locationSaveDestination("edit", "loc-1")).toBeNull();
   });
 });

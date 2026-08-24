@@ -45,6 +45,7 @@ export interface LocationFormData {
 }
 
 export type FormData = LocationFormData;
+export type LocationSaveIntent = "keep" | "publish" | "restore";
 
 export interface LocationMutationPayload {
   regionId: string;
@@ -96,7 +97,7 @@ interface UseLocationFormReturn {
   pendingDraft: LocationFormData | null;
   updateField: <K extends keyof LocationFormData>(key: K, value: LocationFormData[K]) => void;
   touch: (key: string, value: string) => void;
-  handleSave: () => Promise<void>;
+  handleSave: (intent?: LocationSaveIntent) => Promise<void>;
   handleDiscard: () => void;
   handleRestoreDraft: () => void;
   handleDiscardDraft: () => void;
@@ -177,12 +178,20 @@ export function locationToFormData(location: Location): LocationFormData {
   };
 }
 
-export function locationSaveRedirect(
-  location: Pick<Location, "id" | "status">,
-): string {
-  return location.status === "published"
-    ? `/locations/${location.id}`
-    : `/admin/locations/${location.id}/edit`;
+export function resolveLocationSaveStatus(
+  currentStatus: LocationStatus,
+  intent: LocationSaveIntent,
+): LocationStatus {
+  if (intent === "restore") return currentStatus === "archived" ? "draft" : currentStatus;
+  if (intent === "publish") return currentStatus === "archived" ? currentStatus : "published";
+  return currentStatus;
+}
+
+export function locationSaveDestination(
+  mode: "create" | "edit",
+  locationId: string,
+): string | null {
+  return mode === "create" ? `/admin/locations/${locationId}/edit` : null;
 }
 
 export function formDataToLocationPayload(form: LocationFormData): LocationMutationPayload {
@@ -361,7 +370,8 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     localStorage.removeItem(draftKey(locationId));
   }, [locationId]);
 
-  const handleSave = React.useCallback(async () => {
+  const handleSave = React.useCallback(async (intent: LocationSaveIntent = "keep") => {
+    const nextStatus = resolveLocationSaveStatus(formData.status, intent);
     const nextErrors: Record<string, string | undefined> = {};
     for (const [key, value] of Object.entries({
       name: formData.name,
@@ -370,7 +380,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     })) {
       nextErrors[key] = validateField(key, value);
     }
-    if (formData.status === "published") {
+    if (nextStatus === "published") {
       nextErrors.coverImageUrl = formData.coverImageUrl.trim()
         ? validateField("coverImageUrl", formData.coverImageUrl)
         : t("admin.validationCoverRequired");
@@ -392,18 +402,18 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     setIsSaving(true);
     setSaveMessage(null);
     try {
-      const payload = formDataToLocationPayload(formData);
+      const payload = formDataToLocationPayload({ ...formData, status: nextStatus });
       const response = locationId
         ? await apiPut<LocationResponse>("/locations", { id: locationId, ...payload })
         : await apiPost<LocationResponse>("/locations", payload);
       await apiPut(`/locations/${response.location.id}/tags`, { tagIds: formData.tagIds });
       setLocation(response.location);
+      setFormData((previous) => ({ ...previous, status: response.location.status }));
       clearDraft();
       setIsDirty(false);
       setSaveMessage({ type: "success", text: t("admin.saveSuccess") });
-      window.setTimeout(() => {
-        window.location.href = locationSaveRedirect(response.location);
-      }, 800);
+      const destination = locationSaveDestination(mode, response.location.id);
+      if (destination) window.location.href = destination;
     } catch (error) {
       setSaveMessage({
         type: "error",
@@ -412,7 +422,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     } finally {
       setIsSaving(false);
     }
-  }, [clearDraft, formData, locationId, t, validateField]);
+  }, [clearDraft, formData, locationId, mode, t, validateField]);
 
   const handleDiscard = React.useCallback(() => {
     if (!window.confirm(t("admin.discardConfirm"))) return;
