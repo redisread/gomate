@@ -48,6 +48,7 @@ export function LocaleToggle({
   );
   const [isOpen, setIsOpen] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
 
   React.useEffect(() => {
     if (!initialLocale) setCurrent(getLocale());
@@ -70,14 +71,23 @@ export function LocaleToggle({
   // 点击外部关闭下拉菜单（仅桌面端需要）
   React.useEffect(() => {
     if (!isOpen || isMobile) return;
-    const handler = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.closest("[data-locale-toggle]")) {
         setIsOpen(false);
       }
     };
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    };
+    document.addEventListener("click", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("click", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [isOpen, isMobile]);
 
   const handleSelect = (locale: Locale) => {
@@ -125,6 +135,7 @@ export function LocaleToggle({
   return (
     <div className="relative" data-locale-toggle>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
@@ -132,6 +143,7 @@ export function LocaleToggle({
           "hover:bg-accent hover:text-foreground transition-colors duration-150",
         )}
         aria-label={getLocaleName(current)}
+        aria-haspopup="menu"
         aria-expanded={isOpen}
       >
         <Globe className="h-4 w-4" />
@@ -140,6 +152,7 @@ export function LocaleToggle({
 
       {isOpen && (
         <div
+          role="menu"
           className="absolute right-0 top-full mt-1.5 w-36 rounded-xl overflow-hidden z-50 bg-popover border border-border shadow-lg"
           style={{
             animation: "fade-up 0.15s cubic-bezier(0.16,1,0.3,1) both",
@@ -150,6 +163,8 @@ export function LocaleToggle({
             return (
               <button
                 key={locale}
+                role="menuitemradio"
+                aria-checked={isActive}
                 type="button"
                 onClick={() => handleSelect(locale)}
                 className={cn(

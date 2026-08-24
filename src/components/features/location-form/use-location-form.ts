@@ -99,10 +99,7 @@ interface UseLocationFormReturn {
   saveMessage: { type: "success" | "error"; text: string } | null;
   showDraftBanner: boolean;
   pendingDraft: LocationFormData | null;
-  updateField: <K extends keyof LocationFormData>(
-    key: K,
-    value: LocationFormData[K],
-  ) => void;
+  updateField: <K extends keyof LocationFormData>(key: K, value: LocationFormData[K]) => void;
   touch: (key: string, value: string) => void;
   handleSave: (intent?: LocationSaveIntent) => Promise<LocationSaveResult>;
   handleDiscard: () => void;
@@ -189,10 +186,8 @@ export function resolveLocationSaveStatus(
   currentStatus: LocationStatus,
   intent: LocationSaveIntent,
 ): LocationStatus {
-  if (intent === "restore")
-    return currentStatus === "archived" ? "draft" : currentStatus;
-  if (intent === "publish")
-    return currentStatus === "archived" ? currentStatus : "published";
+  if (intent === "restore") return currentStatus === "archived" ? "draft" : currentStatus;
+  if (intent === "publish") return currentStatus === "archived" ? currentStatus : "published";
   return currentStatus;
 }
 
@@ -203,26 +198,21 @@ export function locationSaveDestination(
   return mode === "create" ? `/admin/locations/${locationId}/edit` : null;
 }
 
-export function formDataToLocationPayload(
-  form: LocationFormData,
-): LocationMutationPayload {
+export function formDataToLocationPayload(form: LocationFormData): LocationMutationPayload {
   const hiking = form.extra.hiking;
-  const hikingPayload: NonNullable<LocationMutationPayload["extra"]["hiking"]> =
-    {
-      difficulty: hiking.difficulty || undefined,
-      durationMin: optionalNumber(hiking.durationMin),
-      durationMax: optionalNumber(hiking.durationMax),
-      distanceKm: optionalNumber(hiking.distanceKm),
-      elevationGainM: optionalNumber(hiking.elevationGainM),
-      bestSeasons: cleanStrings(hiking.bestSeasons),
-      overview: hiking.overview.trim() || null,
-      tips: cleanStrings(hiking.tips),
-      warnings: cleanStrings(hiking.warnings),
-    };
+  const hikingPayload: NonNullable<LocationMutationPayload["extra"]["hiking"]> = {
+    difficulty: hiking.difficulty || undefined,
+    durationMin: optionalNumber(hiking.durationMin),
+    durationMax: optionalNumber(hiking.durationMax),
+    distanceKm: optionalNumber(hiking.distanceKm),
+    elevationGainM: optionalNumber(hiking.elevationGainM),
+    bestSeasons: cleanStrings(hiking.bestSeasons),
+    overview: hiking.overview.trim() || null,
+    tips: cleanStrings(hiking.tips),
+    warnings: cleanStrings(hiking.warnings),
+  };
   const hasHiking = Object.values(hikingPayload).some((value) =>
-    Array.isArray(value)
-      ? value.length > 0
-      : value !== undefined && value !== null && value !== "",
+    Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== "",
   );
 
   return {
@@ -249,28 +239,21 @@ function draftKey(locationId?: string): string {
   return `location-${locationId ? `edit-${locationId}` : "create"}-draft`;
 }
 
+
 export function useLocationForm(locationId?: string): UseLocationFormReturn {
   const { t } = useI18n(["admin"]);
   const mode = locationId ? "edit" : "create";
   const [location, setLocation] = React.useState<Location | null>(null);
   const [regions, setRegions] = React.useState<Region[]>([]);
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
-  const [formData, setFormData] = React.useState<LocationFormData>(
-    DEFAULT_LOCATION_FORM,
-  );
-  const [errors, setErrors] = React.useState<
-    Record<string, string | undefined>
-  >({});
+  const [formData, setFormData] = React.useState<LocationFormData>(DEFAULT_LOCATION_FORM);
+  const [errors, setErrors] = React.useState<Record<string, string | undefined>>({});
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDirty, setIsDirty] = React.useState(false);
-  const [saveMessage, setSaveMessage] = React.useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
+  const [saveMessage, setSaveMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showDraftBanner, setShowDraftBanner] = React.useState(false);
-  const [pendingDraft, setPendingDraft] =
-    React.useState<LocationFormData | null>(null);
+  const [pendingDraft, setPendingDraft] = React.useState<LocationFormData | null>(null);
 
   React.useEffect(() => {
     fetchAPI("/auth/get-session")
@@ -289,19 +272,11 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     Promise.all([
       fetchSelectableRegions(),
       fetchAPI("/tags?limit=200").then((response) =>
-        adminJsonOrThrow<{ success: boolean; tags: Tag[] }>(
-          response,
-          t,
-          "admin.loadLocationFailed",
-        ),
+        adminJsonOrThrow<{ success: boolean; tags: Tag[] }>(response, t, "admin.loadLocationFailed"),
       ),
       locationId
         ? fetchAPI(`/locations/${locationId}/admin`).then((response) =>
-            adminJsonOrThrow<LocationResponse>(
-              response,
-              t,
-              "admin.loadLocationFailed",
-            ),
+            adminJsonOrThrow<LocationResponse>(response, t, "admin.loadLocationFailed"),
           )
         : Promise.resolve(null),
     ])
@@ -316,23 +291,14 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
 
         try {
           const raw = localStorage.getItem(draftKey(locationId));
-          const draft = raw
-            ? (JSON.parse(raw) as {
-                version?: number;
-                expiresAt?: number;
-                data?: LocationFormData;
-              })
-            : null;
-          if (
-            draft?.version === 2 &&
-            draft.expiresAt &&
-            draft.expiresAt > Date.now() &&
-            draft.data
-          ) {
+          const draft = raw ? JSON.parse(raw) as {
+            version?: number;
+            expiresAt?: number;
+            data?: LocationFormData;
+          } : null;
+          if (draft?.version === 2 && draft.expiresAt && draft.expiresAt > Date.now() && draft.data) {
             setPendingDraft(draft.data);
-            setShowDraftBanner(
-              JSON.stringify(draft.data) !== JSON.stringify(serverForm),
-            );
+            setShowDraftBanner(JSON.stringify(draft.data) !== JSON.stringify(serverForm));
           }
         } catch {
           localStorage.removeItem(draftKey(locationId));
@@ -355,163 +321,127 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     };
   }, [locationId, t]);
 
-  const validateField = React.useCallback(
-    (key: string, value: string) => {
-      if (key === "name") {
-        if (!value.trim()) return t("admin.validationNameRequired");
-        if (value.trim().length > 200) return t("admin.validationNameTooLong");
+  const validateField = React.useCallback((key: string, value: string) => {
+    if (key === "name") {
+      if (!value.trim()) return t("admin.validationNameRequired");
+      if (value.trim().length > 200) return t("admin.validationNameTooLong");
+    }
+    if (key === "description" && !value.trim()) return t("admin.validationDescRequired");
+    if (key === "regionId" && !value) return t("admin.validationRegionRequired");
+    if (key === "coverImageUrl" && !value.trim()) return undefined;
+    if (key === "latitude" || key === "longitude") {
+      if (value === "") return undefined;
+      const number = Number(value);
+      const [min, max] = key === "latitude" ? [-90, 90] : [-180, 180];
+      if (!Number.isFinite(number) || number < min || number > max) {
+        return key === "latitude" ? t("admin.validationLatInvalid") : t("admin.validationLngInvalid");
       }
-      if (key === "description" && !value.trim())
-        return t("admin.validationDescRequired");
-      if (key === "regionId" && !value)
-        return t("admin.validationRegionRequired");
-      if (key === "coverImageUrl" && !value.trim()) return undefined;
-      if (key === "latitude" || key === "longitude") {
-        if (value === "") return undefined;
-        const number = Number(value);
-        const [min, max] = key === "latitude" ? [-90, 90] : [-180, 180];
-        if (!Number.isFinite(number) || number < min || number > max) {
-          return key === "latitude"
-            ? t("admin.validationLatInvalid")
-            : t("admin.validationLngInvalid");
-        }
-      }
-      return undefined;
-    },
-    [t],
-  );
+    }
+    return undefined;
+  }, [t]);
 
-  const touch = React.useCallback(
-    (key: string, value: string) => {
-      setErrors((previous) => ({
-        ...previous,
-        [key]: validateField(key, value),
-      }));
-    },
-    [validateField],
-  );
+  const touch = React.useCallback((key: string, value: string) => {
+    setErrors((previous) => ({ ...previous, [key]: validateField(key, value) }));
+  }, [validateField]);
 
   React.useEffect(() => {
     if (!isDirty || !formData.name) return;
     const timer = window.setTimeout(() => {
-      localStorage.setItem(
-        draftKey(locationId),
-        JSON.stringify({
-          version: 2,
-          expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-          data: formData,
-        }),
-      );
+      localStorage.setItem(draftKey(locationId), JSON.stringify({
+        version: 2,
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        data: formData,
+      }));
     }, 2_000);
     return () => window.clearTimeout(timer);
   }, [formData, isDirty, locationId]);
 
-  const updateField = React.useCallback(
-    <K extends keyof LocationFormData>(key: K, value: LocationFormData[K]) => {
-      setFormData((previous) => ({ ...previous, [key]: value }));
-      setIsDirty(true);
-      setSaveMessage(null);
-      if (typeof value === "string") touch(key, value);
-    },
-    [touch],
-  );
+  const updateField = React.useCallback(<K extends keyof LocationFormData>(
+    key: K,
+    value: LocationFormData[K],
+  ) => {
+    setFormData((previous) => ({ ...previous, [key]: value }));
+    setIsDirty(true);
+    setSaveMessage(null);
+    if (typeof value === "string") touch(key, value);
+  }, [touch]);
 
   const clearDraft = React.useCallback(() => {
     localStorage.removeItem(draftKey(locationId));
   }, [locationId]);
 
-  const handleSave = React.useCallback(
-    async (
-      intent: LocationSaveIntent = "keep",
-    ): Promise<LocationSaveResult> => {
-      const nextStatus = resolveLocationSaveStatus(formData.status, intent);
-      const nextErrors: Record<string, string | undefined> = {};
-      for (const [key, value] of Object.entries({
-        name: formData.name,
-        description: formData.description,
-        regionId: formData.regionId,
-      })) {
-        nextErrors[key] = validateField(key, value);
-      }
-      if (nextStatus === "published") {
-        nextErrors.coverImageUrl = formData.coverImageUrl.trim()
-          ? validateField("coverImageUrl", formData.coverImageUrl)
-          : t("admin.validationCoverRequired");
-        nextErrors.latitude =
-          formData.latitude === ""
-            ? t("admin.validationLatInvalid")
-            : validateField("latitude", String(formData.latitude));
-        nextErrors.longitude =
-          formData.longitude === ""
-            ? t("admin.validationLngInvalid")
-            : validateField("longitude", String(formData.longitude));
-      }
-      const min = optionalNumber(formData.extra.hiking.durationMin);
-      const max = optionalNumber(formData.extra.hiking.durationMax);
-      if (min !== undefined && max !== undefined && max < min) {
-        nextErrors.durationMax = t("admin.validationDurationRange");
-      }
-      setErrors(nextErrors);
-      const firstInvalidField = Object.entries(nextErrors).find(([, error]) =>
-        Boolean(error),
-      )?.[0];
-      if (firstInvalidField) return { ok: false, firstInvalidField };
+  const handleSave = React.useCallback(async (
+    intent: LocationSaveIntent = "keep",
+  ): Promise<LocationSaveResult> => {
+    const nextStatus = resolveLocationSaveStatus(formData.status, intent);
+    const nextErrors: Record<string, string | undefined> = {};
+    for (const [key, value] of Object.entries({
+      name: formData.name,
+      description: formData.description,
+      regionId: formData.regionId,
+    })) {
+      nextErrors[key] = validateField(key, value);
+    }
+    if (nextStatus === "published") {
+      nextErrors.coverImageUrl = formData.coverImageUrl.trim()
+        ? validateField("coverImageUrl", formData.coverImageUrl)
+        : t("admin.validationCoverRequired");
+      nextErrors.latitude = formData.latitude === ""
+        ? t("admin.validationLatInvalid")
+        : validateField("latitude", String(formData.latitude));
+      nextErrors.longitude = formData.longitude === ""
+        ? t("admin.validationLngInvalid")
+        : validateField("longitude", String(formData.longitude));
+    }
+    const min = optionalNumber(formData.extra.hiking.durationMin);
+    const max = optionalNumber(formData.extra.hiking.durationMax);
+    if (min !== undefined && max !== undefined && max < min) {
+      nextErrors.durationMax = t("admin.validationDurationRange");
+    }
+    setErrors(nextErrors);
+    const firstInvalidField = Object.entries(nextErrors).find(([, error]) => Boolean(error))?.[0];
+    if (firstInvalidField) return { ok: false, firstInvalidField };
 
-      setIsSaving(true);
-      setSaveMessage(null);
-      try {
-        const payload = formDataToLocationPayload({
-          ...formData,
-          status: nextStatus,
-        });
-        const mutationResponse = await fetchAPI("/locations", {
-          method: locationId ? "PUT" : "POST",
-          body: JSON.stringify(
-            locationId ? { id: locationId, ...payload } : payload,
-          ),
-        });
-        const response = await adminJsonOrThrow<LocationResponse>(
-          mutationResponse,
-          t,
-          "admin.saveFailed",
-        );
-        const tagsResponse = await fetchAPI(
-          `/locations/${response.location.id}/tags`,
-          {
-            method: "PUT",
-            body: JSON.stringify({ tagIds: formData.tagIds }),
-          },
-        );
-        await adminJsonOrThrow(tagsResponse, t, "admin.saveFailed");
-        setLocation(response.location);
-        setFormData((previous) => ({
-          ...previous,
-          status: response.location.status,
-        }));
-        clearDraft();
-        setIsDirty(false);
-        setSaveMessage({ type: "success", text: t("admin.saveSuccess") });
-        const destination = locationSaveDestination(mode, response.location.id);
-        if (destination) window.location.href = destination;
-        return { ok: true };
-      } catch (error) {
-        setSaveMessage({
-          type: "error",
-          text: adminCatchMessage(error, t, "admin.saveFailed"),
-        });
-        return { ok: false };
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [clearDraft, formData, locationId, mode, t, validateField],
-  );
+    setIsSaving(true);
+    setSaveMessage(null);
+    try {
+      const payload = formDataToLocationPayload({ ...formData, status: nextStatus });
+      const mutationResponse = await fetchAPI("/locations", {
+        method: locationId ? "PUT" : "POST",
+        body: JSON.stringify(locationId ? { id: locationId, ...payload } : payload),
+      });
+      const response = await adminJsonOrThrow<LocationResponse>(
+        mutationResponse,
+        t,
+        "admin.saveFailed",
+      );
+      const tagsResponse = await fetchAPI(`/locations/${response.location.id}/tags`, {
+        method: "PUT",
+        body: JSON.stringify({ tagIds: formData.tagIds }),
+      });
+      await adminJsonOrThrow(tagsResponse, t, "admin.saveFailed");
+      setLocation(response.location);
+      setFormData((previous) => ({ ...previous, status: response.location.status }));
+      clearDraft();
+      setIsDirty(false);
+      setSaveMessage({ type: "success", text: t("admin.saveSuccess") });
+      const destination = locationSaveDestination(mode, response.location.id);
+      if (destination) window.location.href = destination;
+      return { ok: true };
+    } catch (error) {
+      setSaveMessage({
+        type: "error",
+        text: adminCatchMessage(error, t, "admin.saveFailed"),
+      });
+      return { ok: false };
+    } finally {
+      setIsSaving(false);
+    }
+  }, [clearDraft, formData, locationId, mode, t, validateField]);
 
   const handleDiscard = React.useCallback(() => {
     if (!window.confirm(t("admin.discardConfirm"))) return;
-    setFormData(
-      location ? locationToFormData(location) : DEFAULT_LOCATION_FORM,
-    );
+    setFormData(location ? locationToFormData(location) : DEFAULT_LOCATION_FORM);
     clearDraft();
     setIsDirty(false);
     setErrors({});

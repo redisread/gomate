@@ -198,4 +198,28 @@ describe("AdminNavigation", () => {
       expect(control).toHaveClass("min-h-11", "min-w-11");
     }
   });
+
+  it("closes the administrator language menu with Escape and restores focus", () => {
+    render(
+      <AdminNavigation
+        copy={copy}
+        currentPath="/admin"
+        locale="en"
+        admin={{ id: "admin-1", displayName: "Admin", image: null }}
+      />,
+    );
+
+    const trigger = screen.getAllByRole("button", { name: "English" })[0];
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(
+      screen.getByRole("menuitemradio", { name: "日本語" }),
+    ).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(
+      screen.queryByRole("menuitemradio", { name: "日本語" }),
+    ).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
 });

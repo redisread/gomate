@@ -23,7 +23,6 @@ interface LocationIntroCardProps {
   showGallery?: boolean;
   showTravelMeta?: boolean;
 }
-
 /**
  * 地点介绍卡片
  * - 超过 4 行时截断，点击「展开全文」可查看完整描述
@@ -37,13 +36,7 @@ export function LocationIntroCard({
   showGallery = true,
   showTravelMeta = true,
 }: LocationIntroCardProps) {
-  const { t } = useI18n([
-    "locations",
-    "enums",
-    "common",
-    "locationDetail",
-    "admin",
-  ]);
+  const { t } = useI18n(["locations", "enums", "common", "locationDetail", "admin"]);
   const [expanded, setExpanded] = React.useState(false);
   const [isOverflow, setIsOverflow] = React.useState(false);
   const descRef = React.useRef<HTMLParagraphElement>(null);
@@ -52,8 +45,8 @@ export function LocationIntroCard({
   const [copied, setCopied] = React.useState(false);
   const hasValidCoordinates = Boolean(
     Number.isFinite(location.latitude) &&
-    Number.isFinite(location.longitude) &&
-    !(location.latitude === 0 && location.longitude === 0),
+      Number.isFinite(location.longitude) &&
+      !(location.latitude === 0 && location.longitude === 0),
   );
 
   const handleCopy = async () => {
@@ -94,13 +87,13 @@ export function LocationIntroCard({
 
   const seasonLabels: Record<string, string> = {
     spring: t("enums.season.spring"),
-    春季: t("enums.season.spring"),
+    "春季": t("enums.season.spring"),
     summer: t("enums.season.summer"),
-    夏季: t("enums.season.summer"),
+    "夏季": t("enums.season.summer"),
     autumn: t("enums.season.autumn"),
-    秋季: t("enums.season.autumn"),
+    "秋季": t("enums.season.autumn"),
     winter: t("enums.season.winter"),
-    冬季: t("enums.season.winter"),
+    "冬季": t("enums.season.winter"),
   };
 
   const openLightbox = (idx: number) => {
@@ -110,43 +103,38 @@ export function LocationIntroCard({
 
   return (
     <section className="overflow-hidden rounded-2xl bg-card shadow-warm-sm">
+
       {((showGallery && galleryImages.length > 0) || actions) && (
         <div className="px-5 pt-5 pb-0">
           <div className="flex items-center gap-3 pb-1">
             {showGallery && (
-              <div className="flex gap-2 overflow-x-auto scrollbar-none flex-1">
-                {galleryImages.slice(0, 6).map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => openLightbox(idx)}
-                    className="relative flex-shrink-0 w-[88px] h-[66px] rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 group"
-                    aria-label={t("locationDetail.imageAlt", {
-                      index: String(idx + 1),
-                    })}
-                  >
-                    <img
-                      src={img}
-                      alt={t("locationDetail.imageAlt", {
-                        index: String(idx + 1),
-                      })}
-                      className="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 transition-transform duration-300 group-hover:scale-108 dark:outline-white/10"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-200 rounded-xl" />
-                    {idx === 5 && galleryImages.length > 6 && (
-                      <div className="absolute inset-0 bg-black/55 flex items-center justify-center rounded-xl">
-                        <span className="text-white text-xs font-bold flex flex-col items-center gap-0.5">
-                          <ImageIcon className="h-4 w-4" />+
-                          {galleryImages.length - 6}
-                        </span>
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
+            <div className="flex gap-2 overflow-x-auto scrollbar-none flex-1">
+            {galleryImages.slice(0, 6).map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => openLightbox(idx)}
+                className="relative flex-shrink-0 w-[88px] h-[66px] rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 group"
+                aria-label={t("locationDetail.imageAlt", { index: String(idx + 1) })}
+              >
+                <img
+                  src={img}
+                  alt={t("locationDetail.imageAlt", { index: String(idx + 1) })}
+                  className="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 transition-transform duration-300 group-hover:scale-108 dark:outline-white/10"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-200 rounded-xl" />
+                {idx === 5 && galleryImages.length > 6 && (
+                  <div className="absolute inset-0 bg-black/55 flex items-center justify-center rounded-xl">
+                    <span className="text-white text-xs font-bold flex flex-col items-center gap-0.5">
+                      <ImageIcon className="h-4 w-4" />
+                      +{galleryImages.length - 6}
+                    </span>
+                  </div>
+                )}
+              </button>
+            ))}
+            </div>
             )}
-            {actions && (
-              <div className="flex items-center gap-2 shrink-0">{actions}</div>
-            )}
+            {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
           </div>
         </div>
       )}
@@ -155,13 +143,10 @@ export function LocationIntroCard({
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
             <span className="h-5 w-1 rounded-full bg-amber-400" />
-            {t("locations.locationIntro")}
+            {t('locations.locationIntro')}
           </h2>
           {location.supportedActivityTypes.map((activityType) => (
-            <span
-              key={activityType}
-              className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50"
-            >
+            <span key={activityType} className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50">
               {t(`enums.locationType.${activityType}`)}
             </span>
           ))}
@@ -172,7 +157,7 @@ export function LocationIntroCard({
             ref={descRef}
             className={cn(
               "max-w-3xl text-[0.9375rem] leading-8 text-stone-600 transition-[opacity,max-height] duration-200 dark:text-stone-400",
-              !expanded && "line-clamp-4",
+              !expanded && "line-clamp-4"
             )}
           >
             {location.description}
@@ -188,15 +173,9 @@ export function LocationIntroCard({
             className="mt-2.5 inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-semibold transition-colors"
           >
             {expanded ? (
-              <>
-                {" "}
-                {t("common.collapse")} <ChevronUp className="h-3.5 w-3.5" />
-              </>
+              <> {t("common.collapse")} <ChevronUp className="h-3.5 w-3.5" /></>
             ) : (
-              <>
-                {" "}
-                {t("common.expandAll")} <ChevronDown className="h-3.5 w-3.5" />
-              </>
+              <> {t("common.expandAll")} <ChevronDown className="h-3.5 w-3.5" /></>
             )}
           </button>
         )}
@@ -217,59 +196,55 @@ export function LocationIntroCard({
         {showTravelMeta &&
           (address ||
             (location.extra.hiking?.bestSeasons?.length ?? 0) > 0) && (
-            <div className="mt-5 border-t border-stone-100 pt-5 dark:border-stone-800">
-              {address && (
-                <div className="flex items-start gap-2.5 mb-3">
-                  <MapPin className="h-4 w-4 text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed flex-1">
-                    {address}
-                  </span>
-                  <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
-                    {hasValidCoordinates && (
-                      <button
-                        type="button"
-                        onClick={handleNavigate}
-                        title={t("locations.navigateTooltip")}
-                        aria-label={t("locations.navigateTooltip")}
-                        className="text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
-                      >
-                        <Navigation className="h-4 w-4" />
-                      </button>
-                    )}
+          <div className="mt-5 border-t border-stone-100 pt-5 dark:border-stone-800">
+            {address && (
+              <div className="flex items-start gap-2.5 mb-3">
+                <MapPin className="h-4 w-4 text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <span className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed flex-1">{address}</span>
+                <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+                  {hasValidCoordinates && (
                     <button
                       type="button"
-                      onClick={handleCopy}
-                      title={t("common.copyAddress")}
-                      aria-label={t("common.copyAddress")}
-                      className="opacity-60 hover:opacity-100 transition-opacity"
+                      onClick={handleNavigate}
+                      title={t('locations.navigateTooltip')}
+                      aria-label={t('locations.navigateTooltip')}
+                      className="text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
                     >
-                      {copied ? (
-                        <Check className="h-4 w-4 text-emerald-500" />
-                      ) : (
-                        <Copy className="h-4 w-4 text-amber-700 dark:text-amber-400" />
-                      )}
+                      <Navigation className="h-4 w-4" />
                     </button>
-                  </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    title={t("common.copyAddress")}
+                    aria-label={t("common.copyAddress")}
+                    className="opacity-60 hover:opacity-100 transition-opacity"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+                    )}
+                  </button>
                 </div>
-              )}
-              {(location.extra.hiking?.bestSeasons?.length ?? 0) > 0 && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
-                  <span className="text-xs text-stone-600 dark:text-stone-400">
-                    {t("locations.detailSeasonsLabel")}：
+              </div>
+            )}
+            {(location.extra.hiking?.bestSeasons?.length ?? 0) > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <Sparkles className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
+                <span className="text-xs text-stone-600 dark:text-stone-400">{t('locations.detailSeasonsLabel')}：</span>
+                {location.extra.hiking!.bestSeasons!.map((s) => (
+                  <span
+                    key={s}
+                    className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50"
+                  >
+                    {seasonLabels[s] ?? s}
                   </span>
-                  {location.extra.hiking!.bestSeasons!.map((s) => (
-                    <span
-                      key={s}
-                      className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50"
-                    >
-                      {seasonLabels[s] ?? s}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {showGallery && lightboxIndex !== null && (
@@ -283,12 +258,7 @@ export function LocationIntroCard({
           {galleryImages.length > 1 && (
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setLightboxActive(
-                  (i) => (i - 1 + galleryImages.length) % galleryImages.length,
-                );
-              }}
+              onClick={(e) => { e.stopPropagation(); setLightboxActive((i) => (i - 1 + galleryImages.length) % galleryImages.length); }}
               className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 dark:bg-black/20 dark:hover:bg-black/30 flex items-center justify-center transition-colors"
               aria-label={t("locationDetail.prevImage")}
             >
@@ -297,28 +267,21 @@ export function LocationIntroCard({
           )}
           <img
             src={galleryImages[lightboxActive]}
-            alt={t("locationDetail.imageAlt", {
-              index: String(lightboxActive + 1),
-            })}
+            alt={t("locationDetail.imageAlt", { index: String(lightboxActive + 1) })}
             className="max-h-[88vh] max-w-[90vw] rounded-xl object-contain shadow-2xl outline outline-1 -outline-offset-1 outline-white/10"
             onClick={(e) => e.stopPropagation()}
           />
           {galleryImages.length > 1 && (
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setLightboxActive((i) => (i + 1) % galleryImages.length);
-              }}
+              onClick={(e) => { e.stopPropagation(); setLightboxActive((i) => (i + 1) % galleryImages.length); }}
               className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 dark:bg-black/20 dark:hover:bg-black/30 flex items-center justify-center transition-colors"
               aria-label={t("locationDetail.nextImage")}
             >
               <ChevronRight className="h-5 w-5 text-white" />
             </button>
           )}
-          <p className="absolute bottom-6 text-white/50 text-xs">
-            {t("common.posterNavHint")}
-          </p>
+          <p className="absolute bottom-6 text-white/50 text-xs">{t("common.posterNavHint")}</p>
         </div>
       )}
     </section>

@@ -18,11 +18,7 @@ function promoteLocalAdmin(userId: string) {
   try {
     execFileSync(
       process.execPath,
-      [
-        path.join(process.cwd(), "scripts/promote-admin.mjs"),
-        "--user-id",
-        userId,
-      ],
+      [path.join(process.cwd(), "scripts/promote-admin.mjs"), "--user-id", userId],
       { cwd: process.cwd(), env: process.env, stdio: "pipe" },
     );
   } catch {
@@ -44,9 +40,9 @@ async function authenticate(page: Page, user: FixtureUser) {
 }
 
 async function useChineseLocale(page: Page) {
-  await page
-    .context()
-    .addCookies([{ name: "gomate_locale", value: "zh-CN", url: LOCAL_ORIGIN }]);
+  await page.context().addCookies([
+    { name: "gomate_locale", value: "zh-CN", url: LOCAL_ORIGIN },
+  ]);
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -54,9 +50,7 @@ async function expectNoHorizontalOverflow(page: Page) {
     clientWidth: document.documentElement.clientWidth,
     scrollWidth: document.documentElement.scrollWidth,
   }));
-  expect(dimensions.scrollWidth).toBeLessThanOrEqual(
-    dimensions.clientWidth + 1,
-  );
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
 }
 
 test.describe("admin platform", () => {
@@ -112,9 +106,9 @@ test.describe("admin platform", () => {
     const response = await page.goto("/admin");
     expect(response?.status()).toBe(403);
     await expect(page.locator("h1")).toHaveCount(1);
-    await expect(
-      page.getByRole("navigation", { name: "后台导航" }),
-    ).toHaveCount(0);
+    await expect(page.getByRole("navigation", { name: "后台导航" })).toHaveCount(
+      0,
+    );
 
     const localizedResponse = await page.goto("/en/admin/locations/new");
     expect(localizedResponse?.status()).toBe(403);
@@ -141,9 +135,9 @@ test.describe("admin platform", () => {
     await page.goto("/admin/locations/new");
     await expect(page.locator("h1")).toHaveCount(1);
     await expect(page.locator("aside")).toHaveCount(1);
-    await expect(
-      page.getByRole("link", { name: "GoMate", exact: true }),
-    ).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "GoMate", exact: true })).toHaveCount(
+      0,
+    );
 
     await page.goto(`/admin/locations/${locationId}/edit`);
     await expect(page.locator("h1")).toHaveCount(1);
@@ -151,9 +145,7 @@ test.describe("admin platform", () => {
     await expectNoHorizontalOverflow(page);
 
     await page.goto("/ja/admin");
-    await expect(
-      page.getByRole("heading", { level: 1, name: "管理画面" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "管理画面" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
     expect(pageErrors).toEqual([]);
   });
@@ -203,9 +195,7 @@ test.describe("admin platform", () => {
         .first();
       await expect(navigation).toBeVisible();
       await expect(
-        navigation.getByRole("link", {
-          name: /地点管理|Locations|スポット管理/u,
-        }),
+        navigation.getByRole("link", { name: /地点管理|Locations|スポット管理/u }),
       ).toHaveAttribute("href", locale.locationsHref);
       await expect(
         page.getByRole("button", { name: locale.language }).first(),
@@ -225,9 +215,7 @@ test.describe("admin platform", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await authenticate(page, admin);
 
-    const sourceResponse = await page.request.get(
-      `/api/locations/${locationId}/admin`,
-    );
+    const sourceResponse = await page.request.get(`/api/locations/${locationId}/admin`);
     expect(sourceResponse.ok()).toBe(true);
     const source = (await sourceResponse.json()) as {
       location: { regionId: string };
@@ -247,34 +235,30 @@ test.describe("admin platform", () => {
     expect(draftResponse.ok(), JSON.stringify(draft)).toBe(true);
 
     await page.goto(`/admin/locations/${draft.location.id}/edit`);
-    await expect(
-      page.getByRole("link", { name: "返回", exact: true }),
-    ).toHaveAttribute("href", "/admin/locations");
+    await expect(page.getByRole("link", { name: "返回", exact: true })).toHaveAttribute(
+      "href",
+      "/admin/locations",
+    );
     await expect(page.getByRole("link", { name: "查看公开页" })).toHaveCount(0);
 
     const actions = page.getByRole("region", { name: "地点保存与发布操作" });
     await expect(actions.getByRole("status")).toHaveText("草稿");
-    await expect(
-      actions.getByRole("button", { name: "保存草稿" }),
-    ).toBeDisabled();
+    await expect(actions.getByRole("button", { name: "保存草稿" })).toBeDisabled();
     await actions.getByRole("button", { name: "发布地点" }).click();
 
     const coverField = page.locator("#location-field-coverImageUrl");
     await expect(coverField.getByText("请上传封面图片")).toBeVisible();
     await expect(page.getByText("纬度范围为 -90 到 90")).toBeVisible();
     await expect(page.getByText("经度范围为 -180 到 180")).toBeVisible();
-    await expect
-      .poll(() =>
-        coverField.evaluate((element) =>
-          element.contains(document.activeElement),
-        ),
-      )
-      .toBe(true);
+    await expect.poll(() => coverField.evaluate((element) =>
+      element.contains(document.activeElement),
+    )).toBe(true);
 
     await page.goto(`/admin/locations/${locationId}/edit`);
-    await expect(
-      page.getByRole("link", { name: "查看公开页" }),
-    ).toHaveAttribute("href", `/locations/${locationId}`);
+    await expect(page.getByRole("link", { name: "查看公开页" })).toHaveAttribute(
+      "href",
+      `/locations/${locationId}`,
+    );
 
     await page.setViewportSize({ width: 320, height: 720 });
     await expect(actions).toBeVisible();
@@ -348,12 +332,11 @@ test.describe("admin platform", () => {
       await expect(onboarding).toHaveCount(0);
     }
 
-    await expect(page.getByTestId("nav-admin")).toHaveAttribute(
-      "href",
-      "/admin",
-    );
+    await expect(page.getByTestId("nav-admin")).toHaveAttribute("href", "/admin");
     expect(
-      [...scriptUrls].some((url) => /location-edit|lazy-location/u.test(url)),
+      [...scriptUrls].some((url) =>
+        /location-edit|lazy-location/u.test(url),
+      ),
     ).toBe(false);
 
     const trigger = page.getByRole("button", { name: "快速添加地点" });
@@ -373,9 +356,8 @@ test.describe("admin platform", () => {
     await region.selectOption({ index: 1 });
     await dialog.getByRole("button", { name: "保存为草稿" }).click();
     await expect(dialog.getByText("灵感已保存为草稿。")).toBeVisible();
-    await expect(
-      dialog.getByRole("link", { name: "继续完善全部字段" }),
-    ).toHaveAttribute("href", /\/admin\/locations\/[^/]+\/edit/u);
+    await expect(dialog.getByRole("link", { name: "继续完善全部字段" }))
+      .toHaveAttribute("href", /\/admin\/locations\/[^/]+\/edit/u);
     await page.keyboard.press("Escape");
     await expect(trigger).toBeFocused();
 

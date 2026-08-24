@@ -23,7 +23,7 @@ const STATIC_KEY_PATTERN = /\bt\(\s*["']((?:admin|enums)\.[^"']+)["']/gu;
 const LITERAL_TITLE_PATTERN =
   /<AdminLayout\b[^>]*\btitle\s*=\s*["'][^"']+["']/gu;
 const JSX_TEXT_PATTERN =
-  /<[A-Za-z][\w.:-]*(?:\s[^>]*)?>\s*([^<{\n][^<{\n]*?)\s*<\//gu;
+  /<([A-Za-z][\w.:-]*)\b[^<]*>\s*([^<{\n][^<{\n]*?)\s*<\/\1>/gu;
 const UI_ATTRIBUTE_PATTERN =
   /\b(?:aria-label|title|placeholder)\s*=\s*["']([^"']+)["']/gu;
 const NATURAL_LANGUAGE_PATTERN =
@@ -105,16 +105,20 @@ export function auditAdminI18nSource({ filePath, code, localeKeys }) {
     }
   }
 
-  for (const pattern of [JSX_TEXT_PATTERN, UI_ATTRIBUTE_PATTERN]) {
+  for (const [pattern, valueIndex] of [
+    [JSX_TEXT_PATTERN, 2],
+    [UI_ATTRIBUTE_PATTERN, 1],
+  ]) {
     pattern.lastIndex = 0;
     let copyMatch;
     while ((copyMatch = pattern.exec(code))) {
-      if (isNaturalUiCopy(copyMatch[1])) {
+      const copy = copyMatch[valueIndex];
+      if (isNaturalUiCopy(copy)) {
         issues.push({
           filePath,
           line: lineNumber(code, copyMatch.index),
           rule: "hardcoded_ui_copy",
-          message: `Hardcoded administrator UI copy: ${copyMatch[1].trim()}`,
+          message: `Hardcoded administrator UI copy: ${copy.trim()}`,
         });
       }
     }

@@ -18,15 +18,12 @@ interface LocationActionBarProps {
   onRestore: () => void;
   onDiscard: () => void;
 }
-
 const statusTone: Record<LocationStatus, string> = {
-  draft:
-    "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900",
-  published:
-    "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900",
-  archived:
-    "bg-stone-100 text-stone-600 ring-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-700",
+  draft: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900",
+  published: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900",
+  archived: "bg-stone-100 text-stone-600 ring-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-700",
 };
+
 
 export function LocationActionBar({
   status,
@@ -40,8 +37,7 @@ export function LocationActionBar({
 }: LocationActionBarProps) {
   const { t } = useI18n(["admin", "enums"]);
 
-  const saveLabel =
-    status === "draft" ? t("admin.saveDraft") : t("admin.saveChanges");
+  const saveLabel = status === "draft" ? t("admin.saveDraft") : t("admin.saveChanges");
 
   return (
     <div
@@ -57,10 +53,7 @@ export function LocationActionBar({
           </span>
           <span
             role="status"
-            className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset",
-              statusTone[status],
-            )}
+            className={cn("rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset", statusTone[status])}
           >
             {t(locationStatusKey(status))}
           </span>
@@ -84,11 +77,7 @@ export function LocationActionBar({
             disabled={isSaving || !isDirty}
             className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-800 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:hover:bg-stone-800"
           >
-            {savingIntent === "keep" ? (
-              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save aria-hidden="true" className="h-4 w-4" />
-            )}
+            {savingIntent === "keep" ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Save aria-hidden="true" className="h-4 w-4" />}
             {savingIntent === "keep" ? t("admin.saving") : saveLabel}
           </button>
 
@@ -99,14 +88,8 @@ export function LocationActionBar({
               disabled={isSaving}
               className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
             >
-              {savingIntent === "publish" ? (
-                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send aria-hidden="true" className="h-4 w-4" />
-              )}
-              {savingIntent === "publish"
-                ? t("admin.publishingLocation")
-                : t("admin.publishLocation")}
+              {savingIntent === "publish" ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Send aria-hidden="true" className="h-4 w-4" />}
+              {savingIntent === "publish" ? t("admin.publishingLocation") : t("admin.publishLocation")}
             </button>
           )}
 
@@ -117,14 +100,8 @@ export function LocationActionBar({
               disabled={isSaving}
               className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
             >
-              {savingIntent === "restore" ? (
-                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-              ) : (
-                <RotateCcw aria-hidden="true" className="h-4 w-4" />
-              )}
-              {savingIntent === "restore"
-                ? t("admin.restoringDraft")
-                : t("admin.restoreToDraft")}
+              {savingIntent === "restore" ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <RotateCcw aria-hidden="true" className="h-4 w-4" />}
+              {savingIntent === "restore" ? t("admin.restoringDraft") : t("admin.restoreToDraft")}
             </button>
           )}
         </div>

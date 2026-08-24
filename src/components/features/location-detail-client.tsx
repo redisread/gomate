@@ -29,15 +29,10 @@ import { LocationIntroCard } from "@/components/features/location-detail/locatio
 import { RouteInfoCard } from "@/components/features/location-detail/route-info-card";
 import { TeamListSection } from "@/components/features/location-detail/team-list-section";
 import { LocationStoryRecapFeed } from "@/components/features/discover/story-recap-feed";
-import {
-  normalizeLocationHiking,
-  type RouteMetric,
-} from "@/components/features/location-detail/route-utils";
+import { normalizeLocationHiking, type RouteMetric } from "@/components/features/location-detail/route-utils";
 
 // 动态导入 SharePosterModal
-const SharePosterModal = React.lazy(() =>
-  import("./share-poster-modal").then((m) => ({ default: m.SharePosterModal })),
-);
+const SharePosterModal = React.lazy(() => import("./share-poster-modal").then(m => ({ default: m.SharePosterModal })));
 
 // ─── 季节映射 ─────────────────────────────────────────────────────────────────
 function getSeasonLabel(t: (key: TranslationKey) => string) {
@@ -48,7 +43,6 @@ function getSeasonLabel(t: (key: TranslationKey) => string) {
     winter: t("enums.season.winter"),
   };
 }
-
 function getDifficultyInfo(t: (key: TranslationKey) => string) {
   return {
     easy: {
@@ -150,15 +144,7 @@ interface LightboxProps {
 }
 
 function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
-  const { t } = useI18n([
-    "locationDetail",
-    "locations",
-    "common",
-    "errors",
-    "admin",
-    "nav",
-    "enums",
-  ]);
+  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   React.useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -191,10 +177,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
       {/* 上一张 */}
       {images.length > 1 && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onPrev();
-          }}
+          onClick={(e) => { e.stopPropagation(); onPrev(); }}
           className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors"
           aria-label={t("locationDetail.prevImage")}
         >
@@ -213,10 +196,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
       {/* 下一张 */}
       {images.length > 1 && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onNext();
-          }}
+          onClick={(e) => { e.stopPropagation(); onNext(); }}
           className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors"
           aria-label={t("locationDetail.nextImage")}
         >
@@ -235,17 +215,12 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
               key={i}
               onClick={() => {
                 const diff = i - index;
-                if (diff > 0) {
-                  for (let j = 0; j < diff; j++) onNext();
-                } else {
-                  for (let j = 0; j < -diff; j++) onPrev();
-                }
+                if (diff > 0) { for (let j = 0; j < diff; j++) onNext(); }
+                else { for (let j = 0; j < -diff; j++) onPrev(); }
               }}
               className={cn(
                 "w-10 h-10 rounded-lg overflow-hidden border-2 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
-                i === index
-                  ? "border-white scale-110"
-                  : "border-white/30 hover:border-white/60",
+                i === index ? "border-white scale-110" : "border-white/30 hover:border-white/60"
               )}
             >
               <img src={img} alt="" className="w-full h-full object-cover" />
@@ -264,28 +239,12 @@ interface ActionCardProps {
 }
 
 function ActionCard({ location, teams }: ActionCardProps) {
-  const { t } = useI18n([
-    "locationDetail",
-    "locations",
-    "common",
-    "errors",
-    "admin",
-    "nav",
-    "enums",
-  ]);
-  const totalParticipants = teams.reduce(
-    (sum, team) => sum + team.activeParticipantCount,
-    0,
-  );
-  const avatarLeaders = teams
-    .filter((team) => Boolean(team.leader?.image))
-    .slice(0, 5);
+  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
+  const totalParticipants = teams.reduce((sum, team) => sum + team.activeParticipantCount, 0);
+  const avatarLeaders = teams.filter((team) => Boolean(team.leader?.image)).slice(0, 5);
   const socialProofText =
     teams.length > 0
-      ? t("locationDetail.socialProof", {
-          participants: totalParticipants,
-          teams: teams.length,
-        })
+      ? t("locationDetail.socialProof", { participants: totalParticipants, teams: teams.length })
       : t("locationDetail.firstCreator");
 
   return (
@@ -295,10 +254,7 @@ function ActionCard({ location, teams }: ActionCardProps) {
     >
       <div>
         {/* 情感标题 */}
-        <h2
-          id="location-action-title"
-          className="text-base font-bold text-foreground"
-        >
+        <h2 id="location-action-title" className="text-base font-bold text-foreground">
           {t("locations.detailParticipate")}
         </h2>
 
@@ -324,7 +280,9 @@ function ActionCard({ location, teams }: ActionCardProps) {
 
         {/* 活跃度指示 */}
         {teams.length > 0 && (
-          <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
+          <div
+            className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50"
+          >
             <Flame className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
             <span className="text-2xs font-semibold text-emerald-700 dark:text-emerald-400">
               {t("locationDetail.activeRecruiting")}
@@ -363,43 +321,16 @@ interface RelatedLocationsProps {
  * 角色：视觉总监
  */
 function RelatedLocations({ locations }: RelatedLocationsProps) {
-  const { t } = useI18n([
-    "locationDetail",
-    "locations",
-    "common",
-    "errors",
-    "admin",
-    "nav",
-    "enums",
-  ]);
+  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   const diffInfo = getDifficultyInfo(t);
 
   if (locations.length === 0) return null;
 
-  const diffBadgeConfig: Record<
-    string,
-    { bg: string; text: string; dot: string }
-  > = {
-    easy: {
-      bg: "bg-emerald-50 dark:bg-emerald-950/30",
-      text: "text-emerald-700 dark:text-emerald-400",
-      dot: "bg-emerald-400",
-    },
-    moderate: {
-      bg: "bg-amber-50 dark:bg-amber-950/30",
-      text: "text-amber-700 dark:text-amber-400",
-      dot: "bg-amber-400",
-    },
-    hard: {
-      bg: "bg-orange-50 dark:bg-orange-950/30",
-      text: "text-orange-700 dark:text-orange-400",
-      dot: "bg-orange-500",
-    },
-    expert: {
-      bg: "bg-red-50 dark:bg-red-950/30",
-      text: "text-red-700 dark:text-red-400",
-      dot: "bg-red-500",
-    },
+  const diffBadgeConfig: Record<string, { bg: string; text: string; dot: string }> = {
+    easy: { bg: "bg-emerald-50 dark:bg-emerald-950/30", text: "text-emerald-700 dark:text-emerald-400", dot: "bg-emerald-400" },
+    moderate: { bg: "bg-amber-50 dark:bg-amber-950/30", text: "text-amber-700 dark:text-amber-400", dot: "bg-amber-400" },
+    hard: { bg: "bg-orange-50 dark:bg-orange-950/30", text: "text-orange-700 dark:text-orange-400", dot: "bg-orange-500" },
+    expert: { bg: "bg-red-50 dark:bg-red-950/30", text: "text-red-700 dark:text-red-400", dot: "bg-red-500" },
   };
 
   return (
@@ -444,23 +375,12 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
               </div>
 
               <div className="flex-1 min-w-0">
-                <h4
-                  title={loc.name}
-                  className="font-semibold text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors text-sm truncate leading-snug"
-                >
+                <h4 title={loc.name} className="font-semibold text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors text-sm truncate leading-snug">
                   {loc.name}
                 </h4>
                 {diff && diffLabel && (
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-3xs font-semibold",
-                      diff.bg,
-                      diff.text,
-                    )}
-                  >
-                    <span
-                      className={cn("w-1.5 h-1.5 rounded-full", diff.dot)}
-                    />
+                  <span className={cn("inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-3xs font-semibold", diff.bg, diff.text)}>
+                    <span className={cn("w-1.5 h-1.5 rounded-full", diff.dot)} />
                     {diffLabel}
                   </span>
                 )}
@@ -489,15 +409,7 @@ interface MobileFloatingCTAProps {
  * - 双按钮：浏览队伍 + 发起组队
  */
 function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
-  const { t } = useI18n([
-    "locationDetail",
-    "locations",
-    "common",
-    "errors",
-    "admin",
-    "nav",
-    "enums",
-  ]);
+  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   const [heroLeft, setHeroLeft] = React.useState(false);
 
   React.useEffect(() => {
@@ -505,7 +417,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
     if (!target) return;
     const observer = new IntersectionObserver(
       ([entry]) => setHeroLeft(!entry.isIntersecting),
-      { threshold: 0.1 },
+      { threshold: 0.1 }
     );
     observer.observe(target);
     return () => observer.disconnect();
@@ -515,9 +427,7 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
     <div
       className={cn(
         "lg:hidden fixed bottom-0 left-0 right-0 z-40 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 bg-white/96 dark:bg-stone-900/96 backdrop-blur-md",
-        heroLeft
-          ? "translate-y-0 opacity-100"
-          : "translate-y-full opacity-0 pointer-events-none",
+        heroLeft ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
       )}
       style={{
         borderTop: "1px solid rgba(217,119,6,0.12)",
@@ -527,32 +437,19 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
       <div className="max-w-7xl mx-auto px-3 py-3 flex items-center gap-2.5 sm:px-4 sm:gap-3 max-[360px]:px-2 max-[360px]:gap-2">
         {/* 地点信息 */}
         <div className="flex-1 min-w-0 max-[360px]:hidden">
-          <p className="text-3xs text-stone-500 dark:text-stone-500 font-semibold uppercase tracking-wide">
-            {t("locationDetail.destination")}
-          </p>
-          <p
-            title={location.name}
-            className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight"
-          >
-            {location.name}
-          </p>
+          <p className="text-3xs text-stone-500 dark:text-stone-500 font-semibold uppercase tracking-wide">{t("locationDetail.destination")}</p>
+          <p title={location.name} className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight">{location.name}</p>
         </div>
 
         {/* 浏览队伍 */}
-        <a
-          href={`/teams?locationId=${location.id}`}
-          className="flex-shrink-0 max-[360px]:flex-1"
-        >
+        <a href={`/teams?locationId=${location.id}`} className="flex-shrink-0 max-[360px]:flex-1">
           <span className="flex min-h-11 items-center justify-center rounded-xl border border-stone-200 px-3 text-sm font-semibold text-foreground transition-[transform,background-color,border-color] duration-150 hover:bg-stone-50 active:scale-[0.96] dark:border-stone-700 dark:hover:bg-stone-800 sm:px-4 max-[360px]:w-full max-[360px]:px-2">
             {t("locationDetail.browseTeams")}
           </span>
         </a>
 
         {/* 主 CTA */}
-        <a
-          href={`/teams/create?locationId=${location.id}`}
-          className="flex-shrink-0 max-[360px]:flex-1"
-        >
+        <a href={`/teams/create?locationId=${location.id}`} className="flex-shrink-0 max-[360px]:flex-1">
           <span className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-amber-700 px-4 text-sm font-bold text-white shadow-glow transition-[transform,background-color] duration-150 hover:bg-amber-800 active:scale-[0.96] dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400 max-[360px]:px-2 sm:px-5">
             <Users className="h-4 w-4" />
             {t("locationDetail.gatherPartners")}
@@ -567,12 +464,10 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
 
 function formatRouteMetric(
   metric: RouteMetric | undefined,
-  t: (key: string, vars?: Record<string, string | number>) => string,
+  t: (key: string, vars?: Record<string, string | number>) => string
 ) {
   if (!metric) return null;
-  const unit = metric.unit
-    ? t(`locationDetail.metricUnits.${metric.unit}`)
-    : "";
+  const unit = metric.unit ? t(`locationDetail.metricUnits.${metric.unit}`) : "";
   return unit ? `${metric.value} ${unit}` : metric.value;
 }
 
@@ -639,29 +534,18 @@ function HeroActions({
           <button
             type="button"
             onClick={onFavorite}
-            title={
-              isFavorited
-                ? t("locationDetail.unfavorite")
-                : t("locationDetail.favorite")
-            }
-            aria-label={
-              isFavorited
-                ? t("locationDetail.unfavorite")
-                : t("locationDetail.favorite")
-            }
+            title={isFavorited ? t("locationDetail.unfavorite") : t("locationDetail.favorite")}
+            aria-label={isFavorited ? t("locationDetail.unfavorite") : t("locationDetail.favorite")}
             className="flex h-10 w-10 items-center justify-center rounded-full text-white transition-[background-color,transform] duration-150 hover:bg-white/15 active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/20"
           >
             <Heart
               className={cn(
                 "h-4 w-4 transition-[transform,color,fill] duration-200",
-                isFavorited ? "fill-red-400 text-red-400" : "text-white",
+                isFavorited ? "fill-red-400 text-red-400" : "text-white"
               )}
               style={
                 heartAnimating
-                  ? {
-                      animation:
-                        "heartbeat 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards",
-                    }
+                  ? { animation: "heartbeat 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards" }
                   : undefined
               }
             />
@@ -681,25 +565,13 @@ interface LocationDetailClientProps {
  * 地点详情页客户端组件
  * 角色：视觉总监 + 交互设计师 + 转化率优化师 三位一体
  */
-export function LocationDetailClient({
-  locationId,
-}: LocationDetailClientProps) {
-  const { t } = useI18n([
-    "locationDetail",
-    "locations",
-    "common",
-    "errors",
-    "admin",
-    "nav",
-    "enums",
-  ]);
+export function LocationDetailClient({ locationId }: LocationDetailClientProps) {
+  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   const [location, setLocation] = React.useState<Location | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [teams, setTeams] = React.useState<Team[]>([]);
-  const [relatedLocations, setRelatedLocations] = React.useState<Location[]>(
-    [],
-  );
+  const [relatedLocations, setRelatedLocations] = React.useState<Location[]>([]);
   const [isFavorited, setIsFavorited] = React.useState(false);
   const [heartAnimating, setHeartAnimating] = React.useState(false);
   const [isAdmin, setIsAdmin] = React.useState(false);
@@ -723,8 +595,7 @@ export function LocationDetailClient({
     const handleScroll = () => {
       if (!heroRef.current) return;
       const scrollY = window.scrollY;
-      const heroBottom =
-        heroRef.current.getBoundingClientRect().bottom + scrollY;
+      const heroBottom = heroRef.current.getBoundingClientRect().bottom + scrollY;
       if (scrollY < heroBottom) {
         setParallaxOffset(scrollY * 0.28);
       }
@@ -755,17 +626,13 @@ export function LocationDetailClient({
         if (cursor) query.set("cursor", cursor);
         const response = await fetchAPI(`/favorites/locations?${query}`);
         if (!response.ok) return;
-        const result = (await response.json()) as {
+        const result = await response.json() as {
           data?: {
             items?: { location: { id: string } }[];
             nextCursor?: string | null;
           };
         };
-        if (
-          result.data?.items?.some(
-            (item) => item.location.id === resolvedLocationId,
-          )
-        ) {
+        if (result.data?.items?.some((item) => item.location.id === resolvedLocationId)) {
           if (!cancelled) setIsFavorited(true);
           return;
         }
@@ -803,9 +670,7 @@ export function LocationDetailClient({
 
   const loadTeams = async (locId: string) => {
     try {
-      const res = await fetchAPI(
-        `/teams?locationId=${locId}&recruitmentStatus=open&limit=5`,
-      );
+      const res = await fetchAPI(`/teams?locationId=${locId}&recruitmentStatus=open&limit=5`);
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
     } catch (err) {
@@ -819,9 +684,7 @@ export function LocationDetailClient({
       const data = await res.json();
       if (data.success) {
         setRelatedLocations(
-          (data.locations || [])
-            .filter((l: Location) => l.id !== currentLocationId)
-            .slice(0, 3),
+          (data.locations || []).filter((l: Location) => l.id !== currentLocationId).slice(0, 3)
         );
       }
     } catch (err) {
@@ -846,10 +709,7 @@ export function LocationDetailClient({
 
   /** 收藏 */
   const handleFavorite = async () => {
-    if (!userId) {
-      window.location.href = "/login";
-      return;
-    }
+    if (!userId) { window.location.href = "/login"; return; }
     setHeartAnimating(true);
     setTimeout(() => setHeartAnimating(false), 400);
     const newFavorited = !isFavorited;
@@ -868,8 +728,7 @@ export function LocationDetailClient({
           { method: "DELETE" },
         );
       }
-      if (!response.ok)
-        throw new Error(`Favorite request failed: ${response.status}`);
+      if (!response.ok) throw new Error(`Favorite request failed: ${response.status}`);
     } catch {
       setIsFavorited(!newFavorited);
     }
@@ -893,10 +752,7 @@ export function LocationDetailClient({
             <h1 className="text-xl font-bold text-stone-700 dark:text-stone-300 mb-3">
               {error || t("errors.locationNotFound")}
             </h1>
-            <a
-              href="/locations"
-              className="text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium underline underline-offset-2 transition-colors"
-            >
+            <a href="/locations" className="text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium underline underline-offset-2 transition-colors">
               {t("common.back")}
             </a>
           </div>
@@ -908,9 +764,7 @@ export function LocationDetailClient({
 
   const heroHiking = normalizeLocationHiking(location);
   const heroDifficulty = heroHiking?.difficulty;
-  const diffInfo = getDifficultyInfo(t)[
-    heroDifficulty as keyof ReturnType<typeof getDifficultyInfo>
-  ] ?? {
+  const diffInfo = getDifficultyInfo(t)[heroDifficulty as keyof ReturnType<typeof getDifficultyInfo>] ?? {
     label: heroDifficulty || "",
     dot: "bg-stone-400",
     text: "text-stone-700",
@@ -984,13 +838,11 @@ export function LocationDetailClient({
             onClick={() => setLightboxIndex(activeImageIndex)}
             className={cn(
               "absolute bottom-6 right-5 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md text-white text-xs font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 border border-white/15",
-              showArrows ? "opacity-100" : "opacity-0 pointer-events-none",
+              showArrows ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
           >
             <ZoomIn className="h-3.5 w-3.5" />
-            {galleryImages.length > 1
-              ? `${galleryImages.length} ${t("locationDetail.imagesCount")}`
-              : t("locationDetail.viewLargeImage")}
+            {galleryImages.length > 1 ? `${galleryImages.length} ${t("locationDetail.imagesCount")}` : t("locationDetail.viewLargeImage")}
           </button>
         )}
 
@@ -1003,9 +855,7 @@ export function LocationDetailClient({
                 "absolute left-4 top-1/2 -translate-y-1/2 z-10",
                 "w-11 h-11 rounded-full bg-black/35 hover:bg-black/55 backdrop-blur-md",
                 "flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 border border-white/10",
-                showArrows
-                  ? "opacity-100 translate-x-0"
-                  : "opacity-0 -translate-x-3 pointer-events-none",
+                showArrows ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-3 pointer-events-none"
               )}
               aria-label={t("locationDetail.prevImage")}
             >
@@ -1017,9 +867,7 @@ export function LocationDetailClient({
                 "absolute right-4 top-1/2 -translate-y-1/2 z-10",
                 "w-11 h-11 rounded-full bg-black/35 hover:bg-black/55 backdrop-blur-md",
                 "flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 border border-white/10",
-                showArrows
-                  ? "opacity-100 translate-x-0"
-                  : "opacity-0 translate-x-3 pointer-events-none",
+                showArrows ? "opacity-100 translate-x-0" : "opacity-0 translate-x-3 pointer-events-none"
               )}
               aria-label={t("locationDetail.nextImage")}
             >
@@ -1031,6 +879,7 @@ export function LocationDetailClient({
         {/* 底部内容区 */}
         <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-7">
           <div className="max-w-7xl mx-auto">
+
             {/* 面包屑 */}
             <a
               href="/locations"
@@ -1044,26 +893,18 @@ export function LocationDetailClient({
             {/* 徽章行 */}
             <div className="flex items-center gap-2 mb-2.5 flex-wrap">
               {diffInfo.label && (
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-sm",
-                    diffInfo.pill,
-                  )}
-                >
-                  <span
-                    className={cn("w-1.5 h-1.5 rounded-full", diffInfo.dot)}
-                  />
+                <span className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-sm",
+                  diffInfo.pill
+                )}>
+                  <span className={cn("w-1.5 h-1.5 rounded-full", diffInfo.dot)} />
                   {diffInfo.label}
                 </span>
               )}
               {(location.extra.hiking?.bestSeasons?.length ?? 0) > 0 && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/15 text-white backdrop-blur-sm border border-white/20">
                   <Sparkles className="w-3 h-3" />
-                  {getSeasonLabel(t)[
-                    location.extra.hiking!.bestSeasons![0] as keyof ReturnType<
-                      typeof getSeasonLabel
-                    >
-                  ] ?? location.extra.hiking!.bestSeasons![0]}
+                  {getSeasonLabel(t)[location.extra.hiking!.bestSeasons![0] as keyof ReturnType<typeof getSeasonLabel>] ?? location.extra.hiking!.bestSeasons![0]}
                 </span>
               )}
             </div>
@@ -1073,9 +914,7 @@ export function LocationDetailClient({
               {location.name}
             </h1>
             {location.subtitle && (
-              <p className="text-white/75 text-sm sm:text-base font-medium mb-1">
-                {location.subtitle}
-              </p>
+              <p className="text-white/75 text-sm sm:text-base font-medium mb-1">{location.subtitle}</p>
             )}
 
             {/* 快速数据条 */}
@@ -1107,17 +946,13 @@ export function LocationDetailClient({
                       "rounded-full transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
                       idx === activeImageIndex
                         ? "w-6 h-2 bg-white shadow-sm"
-                        : "w-2 h-2 bg-white/35 hover:bg-white/60",
+                        : "w-2 h-2 bg-white/35 hover:bg-white/60"
                     )}
-                    aria-label={t("locationDetail.switchImage", {
-                      index: String(idx + 1),
-                    })}
+                    aria-label={t("locationDetail.switchImage", { index: String(idx + 1) })}
                   />
                 ))}
                 {galleryImages.length > 8 && (
-                  <span className="text-white/50 text-3xs ml-0.5">
-                    +{galleryImages.length - 8}
-                  </span>
+                  <span className="text-white/50 text-3xs ml-0.5">+{galleryImages.length - 8}</span>
                 )}
               </div>
             )}
@@ -1130,6 +965,7 @@ export function LocationDetailClient({
           ================================================================ */}
       <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
+
           {/* 左/中栏 */}
           <div className="flex flex-col gap-6 pt-6 lg:pt-8">
             <div>
@@ -1170,14 +1006,8 @@ export function LocationDetailClient({
           images={galleryImages}
           index={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
-          onPrev={() =>
-            setLightboxIndex(
-              (i) => (i! - 1 + galleryImages.length) % galleryImages.length,
-            )
-          }
-          onNext={() =>
-            setLightboxIndex((i) => (i! + 1) % galleryImages.length)
-          }
+          onPrev={() => setLightboxIndex((i) => (i! - 1 + galleryImages.length) % galleryImages.length)}
+          onNext={() => setLightboxIndex((i) => (i! + 1) % galleryImages.length)}
         />
       )}
 
