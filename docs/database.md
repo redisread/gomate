@@ -15,7 +15,8 @@
 - 当前 migration 链为 `0000_init.sql` baseline、`0001_reference_data.sql` 稳定参考数据、
   `0002_account_issuer.sql` Better Auth 账户 issuer 升级、`0003_import_v2_catalog.sql`
   旧库公开目录导入、`0004_fix_wutongshan_cover_image.sql` 梧桐山封面 URL 修复，以及
-  `0005_admin_location_drafts.sql` 地点草稿与活动类型代码枚举升级；journal 与 snapshot 必须逐条对应。
+  `0005_admin_location_drafts.sql` 地点草稿与活动类型代码枚举升级、
+  `0006_remove_location_decision_info.sql` 地点装备 JSON 清理；journal 与 snapshot 必须逐条对应。
 - 当前 schema 包含 19 张业务表和 13 个触发器；CI 会校验 schema、migration 链与 snapshot 一致。
 - 时间在 D1 中存 Unix 毫秒，HTTP DTO 输出 ISO 8601。
 - JSON 列使用 Drizzle `mode: "json"`，D1 通过 `json_valid` 与 `json_type` CHECK 约束形状；业务层只传对象或数组。
@@ -85,7 +86,10 @@ Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和
 - Location 保存可选的多值 `supported_activity_types`，语义是地点推荐活动，不是 Team 的选择约束。
 - 草稿 Location 只要求 Region、名称和介绍；坐标与封面可空。切换为 `published` 时 API 必须补齐
   坐标和封面，推荐活动类型仍可为空。
-- 地点图片与活动扩展保存在有形状约束的 JSON 中；创建者引用允许 `SET NULL`，业务内容仍保留。
+- 地点图片与活动扩展保存在有形状约束的 JSON 中；hiking 扩展只保存路线事实、季节、概述、
+  提示和警告，不保存地点层级的必带或选带装备。`0006` 只移除历史 JSON 中的
+  `gear_essential` 与 `gear_optional` 路径，Team 行动本装备仍归 Team 所有。
+- 创建者引用允许 `SET NULL`，业务内容仍保留。
 
 ### 活动类型与 Team
 

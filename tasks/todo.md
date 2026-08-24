@@ -351,7 +351,7 @@ all three locales and generated artifacts, with Team language untouched.
 
 ## Phase F: Current Documentation
 
-### [ ] F1. Document the reduced Location contract and migration baseline
+### [x] F1. Document the reduced Location contract and migration baseline
 
 **Depends on:** Checkpoints C, D, E
 
