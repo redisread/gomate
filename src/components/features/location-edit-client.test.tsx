@@ -2,7 +2,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Location } from "@/lib/types";
 import { DEFAULT_LOCATION_FORM } from "./location-form/use-location-form";
-import { LocationEditClient, focusLocationFormField } from "./location-edit-client";
+import {
+  LocationEditClient,
+  focusLocationFormField,
+} from "./location-edit-client";
 
 const mockUseLocationForm = vi.hoisted(() => vi.fn());
 
@@ -20,16 +23,27 @@ vi.mock("./location-form", () => ({
   LocationFormBasicFields: () => <div>basic-fields</div>,
   LocationFormContentFields: () => <div>content-fields</div>,
   LocationFormSettingsFields: () => <div>settings-fields</div>,
-  LocationActionBar: ({ status, onSave, onPublish, onRestore }: {
+  LocationActionBar: ({
+    status,
+    onSave,
+    onPublish,
+    onRestore,
+  }: {
     status: string;
     onSave: () => void;
     onPublish: () => void;
     onRestore: () => void;
   }) => (
     <div data-testid="action-bar" data-status={status}>
-      <button type="button" onClick={onSave}>save</button>
-      <button type="button" onClick={onPublish}>publish</button>
-      <button type="button" onClick={onRestore}>restore</button>
+      <button type="button" onClick={onSave}>
+        save
+      </button>
+      <button type="button" onClick={onPublish}>
+        publish
+      </button>
+      <button type="button" onClick={onRestore}>
+        restore
+      </button>
     </div>
   ),
 }));
@@ -95,20 +109,29 @@ describe("LocationEditClient publish workflow", () => {
 
     render(<LocationEditClient locationId="location-1" />);
 
-    expect(screen.getByRole("link", { name: "common.back" })).toHaveAttribute("href", "/admin/locations");
-    expect(screen.queryByRole("link", { name: "admin.viewPublicLocation" })).not.toBeInTheDocument();
-    expect(screen.getByTestId("action-bar")).toHaveAttribute("data-status", "draft");
+    expect(screen.getByRole("link", { name: "common.back" })).toHaveAttribute(
+      "href",
+      "/admin/locations",
+    );
+    expect(
+      screen.queryByRole("link", { name: "admin.viewPublicLocation" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("action-bar")).toHaveAttribute(
+      "data-status",
+      "draft",
+    );
   });
 
   it("shows the public link only for the persisted published status", () => {
-    mockUseLocationForm.mockReturnValue(formState({ ...baseLocation, status: "published" }));
+    mockUseLocationForm.mockReturnValue(
+      formState({ ...baseLocation, status: "published" }),
+    );
 
     render(<LocationEditClient locationId="location-1" />);
 
-    expect(screen.getByRole("link", { name: "admin.viewPublicLocation" })).toHaveAttribute(
-      "href",
-      "/locations/location-1",
-    );
+    expect(
+      screen.getByRole("link", { name: "admin.viewPublicLocation" }),
+    ).toHaveAttribute("href", "/locations/location-1");
   });
 
   it("passes explicit workflow intents to the save hook", () => {
@@ -119,6 +142,17 @@ describe("LocationEditClient publish workflow", () => {
     fireEvent.click(screen.getByRole("button", { name: "publish" }));
 
     expect(form.handleSave).toHaveBeenCalledWith("publish");
+  });
+
+  it("renders best seasons through shared enum copy", () => {
+    const form = formState(baseLocation);
+    form.formData.extra.hiking.bestSeasons = ["spring"];
+    mockUseLocationForm.mockReturnValue(form);
+
+    render(<LocationEditClient locationId="location-1" />);
+
+    expect(screen.getByText(/enums\.season\.spring/u)).toBeInTheDocument();
+    expect(screen.queryByText(/^spring$/u)).not.toBeInTheDocument();
   });
 
   it("focuses the requested form field", () => {

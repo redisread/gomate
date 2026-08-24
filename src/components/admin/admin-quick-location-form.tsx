@@ -3,7 +3,8 @@
 import * as React from "react";
 
 import { useI18n } from "@/hooks/useI18n";
-import { apiPost, apiPut, fetchAPI, getApiErrorMessage } from "@/lib/api";
+import { fetchAPI } from "@/lib/api";
+import { adminCatchMessage, adminJsonOrThrow } from "@/lib/admin-i18n";
 import { fetchSelectableRegions } from "@/lib/regions";
 import { ACTIVITY_TYPES, type ActivityType } from "@/contracts";
 import type { Location, Region, Tag } from "@/lib/types";
@@ -33,7 +34,9 @@ export function AdminQuickLocationForm({
     let active = true;
     Promise.all([
       fetchSelectableRegions(),
-      fetchAPI("/tags?limit=200").then((response) => response.json()),
+      fetchAPI("/tags?limit=200").then((response) =>
+        adminJsonOrThrow<{ tags?: Tag[] }>(response, t, "admin.management.loadFailed"),
+      ),
     ]).then(([nextRegions, tagData]) => {
       if (!active) return;
       setRegions(nextRegions);
@@ -57,29 +60,36 @@ export function AdminQuickLocationForm({
     setSaving(true);
     setError("");
     try {
-      const result = await apiPost<{ success: true; location: Location }>(
-        "/locations",
-        {
+      const createResponse = await fetchAPI("/locations", {
+        method: "POST",
+        body: JSON.stringify({
           name,
           description,
           regionId,
           status: "draft",
           supportedActivityTypes: activityTypeIds,
           coverImageUrl: coverImageUrl.trim() || null,
-        },
+        }),
+      });
+      const result = await adminJsonOrThrow<{ success: true; location: Location }>(
+        createResponse,
+        t,
+        "admin.management.saveFailed",
       );
       setCreated(result.location);
       if (tagIds.length > 0) {
         try {
-          await apiPut(`/locations/${result.location.id}/tags`, { tagIds });
+          const tagsResponse = await fetchAPI(`/locations/${result.location.id}/tags`, {
+            method: "PUT",
+            body: JSON.stringify({ tagIds }),
+          });
+          await adminJsonOrThrow(tagsResponse, t, "admin.quickDraft.optionalSaveFailed");
         } catch {
           setOptionalSaveFailed(true);
         }
       }
     } catch (cause) {
-      setError(cause instanceof Error
-        ? cause.message
-        : getApiErrorMessage(cause, t("admin.management.saveFailed")));
+      setError(adminCatchMessage(cause, t, "admin.management.saveFailed"));
     } finally {
       setSaving(false);
     }

@@ -72,6 +72,60 @@ describe("tag catalog management", () => {
     });
   });
 
+  it("classifies a non-idempotent tag creation conflict", async () => {
+    mocks.requireAdmin.mockResolvedValue({ id: "admin-1" });
+    const limit = vi.fn().mockResolvedValue([
+      { id: "tag-1", name: "已有名称" },
+    ]);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    mocks.createDb.mockReturnValue({ select: vi.fn(() => ({ from })) });
+
+    const response = await tagsRoute.request(
+      "/",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "新名称", slug: "shared-slug" }),
+      },
+      env,
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: "CONFLICT",
+        details: { reason: "tag_already_exists" },
+      },
+    });
+  });
+
+  it("classifies a tag update conflict", async () => {
+    mocks.requireAdmin.mockResolvedValue({ id: "admin-1" });
+    const returning = vi.fn().mockRejectedValue(new Error("unique conflict"));
+    const where = vi.fn(() => ({ returning }));
+    const set = vi.fn(() => ({ where }));
+    mocks.createDb.mockReturnValue({ update: vi.fn(() => ({ set })) });
+
+    const response = await tagsRoute.request(
+      "/tag-1",
+      {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "重复名称" }),
+      },
+      env,
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: "CONFLICT",
+        details: { reason: "tag_update_conflict" },
+      },
+    });
+  });
+
   it("does not mark the administrator reference view as publicly cacheable", async () => {
     mocks.requireAdmin.mockResolvedValue({ id: "admin-1" });
     const countFrom = vi.fn().mockResolvedValue([{ value: 0 }]);

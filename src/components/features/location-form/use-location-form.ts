@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { apiPost, apiPut, fetchAPI } from "@/lib/api";
+import { fetchAPI } from "@/lib/api";
+import { adminCatchMessage, adminJsonOrThrow } from "@/lib/admin-i18n";
 import { fetchSelectableRegions } from "@/lib/regions";
 import { useI18n } from "@/hooks/useI18n";
 import { ACTIVITY_TYPES } from "@/contracts";
@@ -238,10 +239,6 @@ function draftKey(locationId?: string): string {
   return `location-${locationId ? `edit-${locationId}` : "create"}-draft`;
 }
 
-async function jsonOrThrow<T>(response: Response, message: string): Promise<T> {
-  if (!response.ok) throw new Error(message);
-  return response.json() as Promise<T>;
-}
 
 export function useLocationForm(locationId?: string): UseLocationFormReturn {
   const { t } = useI18n(["admin"]);
@@ -275,11 +272,11 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     Promise.all([
       fetchSelectableRegions(),
       fetchAPI("/tags?limit=200").then((response) =>
-        jsonOrThrow<{ success: boolean; tags: Tag[] }>(response, t("admin.loadLocationFailed")),
+        adminJsonOrThrow<{ success: boolean; tags: Tag[] }>(response, t, "admin.loadLocationFailed"),
       ),
       locationId
         ? fetchAPI(`/locations/${locationId}/admin`).then((response) =>
-            jsonOrThrow<LocationResponse>(response, t("admin.loadLocationFailed")),
+            adminJsonOrThrow<LocationResponse>(response, t, "admin.loadLocationFailed"),
           )
         : Promise.resolve(null),
     ])
@@ -312,7 +309,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
         if (active) {
           setSaveMessage({
             type: "error",
-            text: error instanceof Error ? error.message : t("admin.loadLocationFailed"),
+            text: adminCatchMessage(error, t, "admin.loadLocationFailed"),
           });
         }
       })
@@ -409,10 +406,20 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     setSaveMessage(null);
     try {
       const payload = formDataToLocationPayload({ ...formData, status: nextStatus });
-      const response = locationId
-        ? await apiPut<LocationResponse>("/locations", { id: locationId, ...payload })
-        : await apiPost<LocationResponse>("/locations", payload);
-      await apiPut(`/locations/${response.location.id}/tags`, { tagIds: formData.tagIds });
+      const mutationResponse = await fetchAPI("/locations", {
+        method: locationId ? "PUT" : "POST",
+        body: JSON.stringify(locationId ? { id: locationId, ...payload } : payload),
+      });
+      const response = await adminJsonOrThrow<LocationResponse>(
+        mutationResponse,
+        t,
+        "admin.saveFailed",
+      );
+      const tagsResponse = await fetchAPI(`/locations/${response.location.id}/tags`, {
+        method: "PUT",
+        body: JSON.stringify({ tagIds: formData.tagIds }),
+      });
+      await adminJsonOrThrow(tagsResponse, t, "admin.saveFailed");
       setLocation(response.location);
       setFormData((previous) => ({ ...previous, status: response.location.status }));
       clearDraft();
@@ -424,7 +431,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     } catch (error) {
       setSaveMessage({
         type: "error",
-        text: error instanceof Error ? error.message : t("admin.saveFailed"),
+        text: adminCatchMessage(error, t, "admin.saveFailed"),
       });
       return { ok: false };
     } finally {

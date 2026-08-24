@@ -95,6 +95,15 @@
   转换或权限错误；iPhone 相册可能转换图片内容但保留原文件元数据，上传端点以实际可解码格式
   为准，HEIC/HEIF 图片转为 WebP，管理员无需手工转码。
 - 无前缀及 `en`、`ja` locale 前缀的后台路径使用同一授权与布局合同。
+- 后台桌面侧栏和移动顶部栏都提供 `zh-CN`、`en`、`ja` 语言切换；切换时保留当前后台路径，
+  后台内部导航也保留当前 locale 前缀。服务端把当前 locale 传给切换 island，避免 hydration 前
+  短暂显示错误语言。
+- 角色、账号状态、地点状态、季节和活动类型等内部值必须通过共享 `enums` namespace 的穷尽
+  映射展示，不把 `admin`、`draft`、`spring` 等原始枚举值渲染给用户。后台流程、确认和操作
+  错误属于 `admin` namespace。
+- 管理员操作失败只根据已知 `error.details.reason` 选择本地化文案；未知 payload 使用当前操作
+  的本地化 fallback，不能把 server message 当作 UI 文案。地点名、地区名、标签名、用户昵称等
+  D1 业务内容保持原样，不由界面翻译；这套展示合同不需要数据库或迁移变化。
 
 #### 后台地点保存与发布
 
@@ -124,6 +133,9 @@
 - SSR 使用 [`src/lib/server-api.ts`](../src/lib/server-api.ts) 进程内调用 API，不请求自身域名。
 - [`src/worker.ts`](../src/worker.ts) 将 `/api/*` 交给 Hono，其余请求交给 Astro 官方 Cloudflare handler。
 - 用户可见文案全部来自 i18n；locale 变化后运行 build、validate、lint、type-check、test 和 build 门禁。
+- `pnpm i18n:validate` 除了校验三语言 key 和 island namespace，还扫描后台页面与管理组件，拒绝
+  硬编码标题/展示文案、无效静态 key、退役后台枚举 key、原始角色/状态输出和可能泄露服务端
+  message 的通用错误 helper；三语言后台关键路径由 Chromium E2E 覆盖。
 - React island 的 i18n 首次渲染必须在 SSR 与浏览器端保持同一加载态；浏览器在 hydration 后再消费页面注入的 namespace 缓存。
 - 只有需要客户端状态的交互使用 React island；纯展示保持 Astro SSR。
 - UI 规则与验证清单见 [`design-system.md`](design-system.md)。

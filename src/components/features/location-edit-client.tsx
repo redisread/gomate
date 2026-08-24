@@ -11,6 +11,8 @@ import { ArrowLeft, ExternalLink, Eye, EyeOff, MapPin as MapPinIcon, Image as Im
 import { useI18n } from "@/hooks/useI18n";
 import { EditProgressBar } from "@/components/ui/season-picker";
 import { cn } from "@/lib/utils";
+import { isSeason, type Season } from "@/contracts";
+import { seasonKey } from "@/lib/admin-i18n";
 
 import type { FormData, LocationSaveIntent } from "./location-form";
 import {
@@ -46,7 +48,6 @@ function EditSkeleton() {
     </div>
   );
 }
-
 /* ================================================================
    地图选点弹窗（独立组件，因其复杂度高）
    ================================================================ */
@@ -56,8 +57,8 @@ function EditSkeleton() {
 interface PreviewPanelProps { data: FormData; regionName: string; }
 
 function PreviewPanel({ data, regionName }: PreviewPanelProps) {
-  const { t } = useI18n(["admin", "common", "locations"]);
-  const seasonEmojis: Record<string, string> = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: "❄️" };
+  const { t } = useI18n(["admin", "common", "enums", "locations"]);
+  const seasonEmojis: Record<Season, string> = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: "❄️" };
   return (
     <div className="sticky top-20">
       <div className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
@@ -87,7 +88,7 @@ function PreviewPanel({ data, regionName }: PreviewPanelProps) {
             <div className="flex flex-wrap gap-1.5">
               {data.extra.hiking.bestSeasons.map((s) => (
                 <span key={s} className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium border border-amber-100 dark:border-amber-900/50">
-                  {seasonEmojis[s]} {s}
+                  {isSeason(s) ? `${seasonEmojis[s]} ${t(seasonKey(s))}` : t("common.unknown")}
                 </span>
               ))}
             </div>

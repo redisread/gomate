@@ -150,6 +150,65 @@ test.describe("admin platform", () => {
     expect(pageErrors).toEqual([]);
   });
 
+  test("administrator shell and location terminology stay localized in all supported locales", async ({
+    page,
+  }) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticate(page, admin);
+
+    const locales = [
+      {
+        pathPrefix: "",
+        heading: "管理后台",
+        navigation: "后台导航",
+        language: "中文",
+        locationsHref: "/admin/locations",
+        activityLabel: "适合的活动类型",
+      },
+      {
+        pathPrefix: "/en",
+        heading: "Admin",
+        navigation: "Admin navigation",
+        language: "English",
+        locationsHref: "/en/admin/locations",
+        activityLabel: "Suitable activities",
+      },
+      {
+        pathPrefix: "/ja",
+        heading: "管理画面",
+        navigation: "管理ナビゲーション",
+        language: "日本語",
+        locationsHref: "/ja/admin/locations",
+        activityLabel: "適したアクティビティ",
+      },
+    ] as const;
+
+    for (const locale of locales) {
+      await page.goto(`${locale.pathPrefix}/admin`);
+      await expect(
+        page.getByRole("heading", { level: 1, name: locale.heading }),
+      ).toBeVisible();
+      const navigation = page
+        .getByRole("navigation", { name: locale.navigation })
+        .first();
+      await expect(navigation).toBeVisible();
+      await expect(
+        navigation.getByRole("link", { name: /地点管理|Locations|スポット管理/u }),
+      ).toHaveAttribute("href", locale.locationsHref);
+      await expect(
+        page.getByRole("button", { name: locale.language }).first(),
+      ).toBeVisible();
+
+      await page.goto(`${locale.pathPrefix}/admin/locations/new`);
+      await expect(page.getByText(locale.activityLabel).first()).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+
+    expect(pageErrors).toEqual([]);
+  });
+
   test("location editor keeps draft navigation inside admin and exposes explicit publish controls", async ({
     page,
   }) => {

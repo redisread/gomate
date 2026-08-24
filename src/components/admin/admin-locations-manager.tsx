@@ -3,11 +3,12 @@
 import * as React from "react";
 
 import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI, getApiErrorMessage } from "@/lib/api";
+import { fetchAPI } from "@/lib/api";
+import { adminCatchMessage, adminJsonOrThrow, locationStatusKey } from "@/lib/admin-i18n";
 import type { Location, LocationStatus } from "@/lib/types";
 
 export function AdminLocationsManager() {
-  const { t } = useI18n(["admin"]);
+  const { t } = useI18n(["admin", "enums"]);
   const [locations, setLocations] = React.useState<Location[]>([]);
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<LocationStatus | "">("");
@@ -31,16 +32,16 @@ export function AdminLocationsManager() {
       if (filters.status) query.set("status", filters.status);
       if (cursor) query.set("cursor", cursor);
       const response = await fetchAPI(`/locations/admin?${query}`);
-      const body = await response.json() as {
+      const body = await adminJsonOrThrow<{
         locations?: Location[];
         nextCursor?: string | null;
-      };
-      if (!response.ok || !body.locations) throw new Error(getApiErrorMessage(body, t("admin.management.loadFailed")));
+      }>(response, t, "admin.management.loadFailed");
+      if (!body.locations) throw new Error();
       const loadedLocations = body.locations;
       setLocations((current) => append ? [...current, ...loadedLocations] : loadedLocations);
       setNextCursor(body.nextCursor ?? null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("admin.management.loadFailed"));
+      setError(adminCatchMessage(cause, t, "admin.management.loadFailed"));
     } finally {
       if (append) setLoadingMore(false);
       else setLoading(false);
@@ -51,33 +52,32 @@ export function AdminLocationsManager() {
 
   const archive = async (location: Location) => {
     if (!window.confirm(t("admin.locationsManagement.archiveConfirm"))) return;
-    const response = await fetchAPI(`/locations/${encodeURIComponent(location.id)}`, { method: "DELETE" });
-    if (!response.ok) {
-      setError(getApiErrorMessage(await response.json(), t("admin.management.saveFailed")));
-      return;
+    try {
+      const response = await fetchAPI(`/locations/${encodeURIComponent(location.id)}`, { method: "DELETE" });
+      await adminJsonOrThrow(response, t, "admin.management.saveFailed");
+      setLocations((current) => current.map((candidate) =>
+        candidate.id === location.id ? { ...candidate, status: "archived" } : candidate,
+      ));
+    } catch (cause) {
+      setError(adminCatchMessage(cause, t, "admin.management.saveFailed"));
     }
-    setLocations((current) => current.map((candidate) =>
-      candidate.id === location.id ? { ...candidate, status: "archived" } : candidate,
-    ));
   };
 
   const permanentlyDelete = async (location: Location) => {
     const confirmation = window.prompt(t("admin.locationsManagement.permanentPrompt"), "");
     if (confirmation !== location.id) return;
     const query = new URLSearchParams({ permanent: "true", confirm: confirmation });
-    const response = await fetchAPI(`/locations/${encodeURIComponent(location.id)}?${query}`, { method: "DELETE" });
-    if (!response.ok) {
-      setError(getApiErrorMessage(await response.json(), t("admin.locationsManagement.permanentBlocked")));
-      return;
+    try {
+      const response = await fetchAPI(`/locations/${encodeURIComponent(location.id)}?${query}`, { method: "DELETE" });
+      await adminJsonOrThrow(response, t, "admin.locationsManagement.permanentBlocked");
+      setLocations((current) => current.filter((candidate) => candidate.id !== location.id));
+    } catch (cause) {
+      setError(adminCatchMessage(cause, t, "admin.locationsManagement.permanentBlocked"));
     }
-    setLocations((current) => current.filter((candidate) => candidate.id !== location.id));
   };
 
-  const statusCopy = (locationStatus: LocationStatus) => ({
-    draft: t("admin.statusDraft"),
-    published: t("admin.statusPublished"),
-    archived: t("admin.statusArchived"),
-  })[locationStatus];
+  const statusCopy = (locationStatus: LocationStatus) =>
+    t(locationStatusKey(locationStatus));
 
   return (
     <div className="space-y-6">
@@ -90,9 +90,9 @@ export function AdminLocationsManager() {
           {t("admin.locationsManagement.status")}
           <select value={status} onChange={(event) => setStatus(event.target.value as LocationStatus | "")} className="min-h-11 rounded-lg border border-border bg-background px-3">
             <option value="">{t("admin.locationsManagement.allStatuses")}</option>
-            <option value="draft">{t("admin.statusDraft")}</option>
-            <option value="published">{t("admin.statusPublished")}</option>
-            <option value="archived">{t("admin.statusArchived")}</option>
+            <option value="draft">{t(locationStatusKey("draft"))}</option>
+            <option value="published">{t(locationStatusKey("published"))}</option>
+            <option value="archived">{t(locationStatusKey("archived"))}</option>
           </select>
         </label>
         <button className="min-h-11 rounded-lg bg-primary px-4 font-semibold text-primary-foreground">{t("admin.management.search")}</button>

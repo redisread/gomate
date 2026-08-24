@@ -4,6 +4,7 @@ import * as React from "react";
 import { Loader2, RotateCcw, Save, Send } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
+import { locationStatusKey } from "@/lib/admin-i18n";
 import type { LocationStatus } from "@/lib/types";
 import type { LocationSaveIntent } from "./use-location-form";
 
@@ -17,18 +18,12 @@ interface LocationActionBarProps {
   onRestore: () => void;
   onDiscard: () => void;
 }
-
 const statusTone: Record<LocationStatus, string> = {
   draft: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900",
   published: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900",
   archived: "bg-stone-100 text-stone-600 ring-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-700",
 };
 
-const statusLabel = {
-  draft: "admin.statusDraft",
-  published: "admin.statusPublished",
-  archived: "admin.statusArchived",
-} as const satisfies Record<LocationStatus, string>;
 
 export function LocationActionBar({
   status,
@@ -40,7 +35,7 @@ export function LocationActionBar({
   onRestore,
   onDiscard,
 }: LocationActionBarProps) {
-  const { t } = useI18n(["admin"]);
+  const { t } = useI18n(["admin", "enums"]);
 
   const saveLabel = status === "draft" ? t("admin.saveDraft") : t("admin.saveChanges");
 
@@ -60,7 +55,7 @@ export function LocationActionBar({
             role="status"
             className={cn("rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset", statusTone[status])}
           >
-            {t(statusLabel[status])}
+            {t(locationStatusKey(status))}
           </span>
         </div>
 

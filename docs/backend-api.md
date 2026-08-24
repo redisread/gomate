@@ -24,6 +24,12 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 - 纯管理员 API 共用一个访问解析器：先验证同源 session，再从当前 D1 `users` 行复核账号为
   active 且 `role=admin`。无 session 使用统一 401 envelope，当前角色或状态不满足时使用统一
   403 envelope；不信任客户端 UI 或 session 中缓存的旧角色。
+- 管理员写入的可操作冲突或校验失败在 `error.details.reason` 提供语言无关分类；服务端
+  `message` 只用于诊断，管理员 UI 不直接展示。当前稳定 reason 为
+  `admin_self_role_change`、`admin_last_active_revoke`、`tag_already_exists`、
+  `tag_update_conflict`、`location_changed_concurrently`、`location_has_references`、
+  `location_invalid_region`、`location_image_host_disallowed`。客户端只翻译已知 reason；未知、
+  畸形、授权、网络和服务端错误使用对应操作的本地化通用失败文案。
 
 ## 端点目录
 

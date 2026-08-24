@@ -37,13 +37,12 @@ const SharePosterModal = React.lazy(() => import("./share-poster-modal").then(m 
 // ─── 季节映射 ─────────────────────────────────────────────────────────────────
 function getSeasonLabel(t: (key: TranslationKey) => string) {
   return {
-    spring: t("admin.seasons.spring"),
-    summer: t("admin.seasons.summer"),
-    autumn: t("admin.seasons.autumn"),
-    winter: t("admin.seasons.winter"),
+    spring: t("enums.season.spring"),
+    summer: t("enums.season.summer"),
+    autumn: t("enums.season.autumn"),
+    winter: t("enums.season.winter"),
   };
 }
-
 function getDifficultyInfo(t: (key: TranslationKey) => string) {
   return {
     easy: {

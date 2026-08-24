@@ -5,13 +5,18 @@
  */
 import AdminLayout from "../../../../layouts/AdminLayout.astro";
 import { LazyLocationEditClient } from "../../../../components/features/lazy-location-edit-client";
+import { getSSRT } from "../../../../i18n";
+import { loadLocaleData } from "../../../../i18n/ssr-loader.server";
 import { declareI18nNs } from "../../../../middleware";
 
-declareI18nNs(Astro.locals, ["admin", "ui", "content"]);
+declareI18nNs(Astro.locals, ["admin", "ui", "content", "enums"]);
 
 const { id } = Astro.params;
+const locale = Astro.locals.locale;
+const data = await loadLocaleData(["admin"], locale, Astro.url.origin);
+const t = getSSRT(locale, { [locale]: data } as never).t;
 ---
 
-<AdminLayout title="编辑地点 - GoMate">
+<AdminLayout title={t("admin.editLocation")}>
   <LazyLocationEditClient locationId={id!} client:visible />
 </AdminLayout>
