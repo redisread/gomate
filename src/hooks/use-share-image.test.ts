@@ -68,6 +68,27 @@ describe("useShareImage", () => {
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
   });
 
+  it("does not keep a stale preview when the selected preset fails", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(svgResponse("<svg>dusk</svg>"))
+      .mockRejectedValueOnce(new Error("poster unavailable"));
+
+    const { result, rerender } = renderHook(
+      ({ preset }: { preset: PosterPresetId }) =>
+        useShareImage({ type: "team", id: "team-1", preset }),
+      { initialProps: { preset: "dusk" as PosterPresetId } },
+    );
+
+    await act(async () => void (await result.current.generateImage()));
+    expect(result.current.imageUrl).toBe("blob:poster");
+
+    rerender({ preset: "journal" });
+    await act(async () => void (await result.current.generateImage()));
+
+    expect(result.current.error).toBe("poster unavailable");
+    expect(result.current.imageUrl).toBeNull();
+  });
+
   it("revokes every cached Blob URL on cleanup", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(svgResponse("<svg />"));
     const { result } = renderHook(() =>

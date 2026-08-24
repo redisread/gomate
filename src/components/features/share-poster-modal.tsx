@@ -76,7 +76,7 @@ export function SharePosterModal({
   onToast,
 }: SharePosterModalProps) {
   const { t } = useI18n(["common", "share"]);
-  const [preset, setPreset] = usePosterPreset();
+  const [preset, setPreset, isPresetReady] = usePosterPreset();
   const { isLoading, imageUrl, error, generateImage } = useShareImage({
     type,
     id,
@@ -123,8 +123,8 @@ export function SharePosterModal({
 
   // Generate on open and whenever the selected preset changes.
   useEffect(() => {
-    void generateImage();
-  }, [generateImage]);
+    if (isPresetReady) void generateImage();
+  }, [generateImage, isPresetReady]);
 
   const handleDownload = async () => {
     if (!imageUrl || isDownloading) return;

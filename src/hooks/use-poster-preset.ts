@@ -21,13 +21,16 @@ function readStoredPreset(): PosterPresetId {
 }
 
 export function usePosterPreset(): readonly [
-  PosterPresetId,
-  (preset: PosterPresetId) => void,
+  preset: PosterPresetId,
+  setPreset: (preset: PosterPresetId) => void,
+  isReady: boolean,
 ] {
   const [preset, setPresetState] = useState<PosterPresetId>(DEFAULT_POSTER_PRESET);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     setPresetState(readStoredPreset());
+    setIsReady(true);
   }, []);
 
   const setPreset = useCallback((nextPreset: PosterPresetId) => {
@@ -39,5 +42,5 @@ export function usePosterPreset(): readonly [
     }
   }, []);
 
-  return [preset, setPreset] as const;
+  return [preset, setPreset, isReady] as const;
 }

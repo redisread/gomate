@@ -26,7 +26,7 @@ export function SharePosterPreview({
   onClose,
 }: SharePosterPreviewProps) {
   const { t } = useI18n(["teams", "common", "share"]);
-  const [preset, setPreset] = usePosterPreset();
+  const [preset, setPreset, isPresetReady] = usePosterPreset();
   const [copied, setCopied] = useState(false);
   const [showRetry, setShowRetry] = useState(false);
   const teamUrl = typeof window !== "undefined" ? `${window.location.origin}/teams/${teamId}` : "";
@@ -53,8 +53,8 @@ export function SharePosterPreview({
 
   // 打开时自动生成
   React.useEffect(() => {
-    if (open) void generateImage();
-  }, [open, generateImage]);
+    if (open && isPresetReady) void generateImage();
+  }, [open, generateImage, isPresetReady]);
 
   // 关闭时清理
   React.useEffect(() => {

@@ -87,6 +87,7 @@ export function useShareImage({
       if (controller.signal.aborted || requestSequence !== requestSequenceRef.current) {
         return null;
       }
+      setImageUrl(null);
       setError(caught instanceof Error ? caught.message : "Failed to generate image");
       return null;
     } finally {

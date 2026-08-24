@@ -223,4 +223,23 @@ describe("SharePosterModal layout", () => {
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
     expect(vi.mocked(fetch).mock.calls[1][0]).toContain("preset=ridge");
   });
+
+  it("uses the stored preset for the first generated preview", async () => {
+    localStorage.setItem("gomate.poster-preset", "ridge");
+    mockGeneratedPoster();
+
+    render(
+      <SharePosterModal
+        type="location"
+        id="location-1"
+        title="梧桐山"
+        url="https://gomate.live/locations/location-1"
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain("preset=ridge");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
 });
