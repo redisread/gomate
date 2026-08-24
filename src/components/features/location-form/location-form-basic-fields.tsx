@@ -49,12 +49,12 @@ function SectionCard({ icon, title, badge, children, defaultOpen = true, collaps
 }
 
 interface FieldProps {
-  label: string; required?: boolean; hint?: string; error?: string; children: React.ReactNode;
+  label: string; required?: boolean; hint?: string; error?: string; fieldId?: string; children: React.ReactNode;
 }
 
-function Field({ label, required, hint, error, children }: FieldProps) {
+function Field({ label, required, hint, error, fieldId, children }: FieldProps) {
   return (
-    <div className="space-y-1.5">
+    <div id={fieldId ? `location-field-${fieldId}` : undefined} className="space-y-1.5">
       <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
         {label}{required && <span className="ml-1 text-red-400">*</span>}
       </label>
@@ -99,7 +99,7 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
     <div className="space-y-4">
       {/* 基本信息 */}
       <SectionCard icon={<FileText className="h-4 w-4" />} title={t("admin.formBasicTitle")}>
-        <Field label={t("admin.formNameRequired")} required error={errors.name}>
+        <Field label={t("admin.formNameRequired")} required error={errors.name} fieldId="name">
           <input type="text" value={formData.name} onChange={(e) => updateField("name", e.target.value)}
             onBlur={(e) => touch("name", e.target.value)} className={cn(styledInput(!!errors.name))} />
         </Field>
@@ -131,16 +131,7 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
           </div>
           {errors.supportedActivityTypes && <p className="mt-1 text-xs text-red-500">{errors.supportedActivityTypes}</p>}
         </Field>
-        <Field label={t("admin.formStatus")}>
-          <select value={formData.status}
-            onChange={(e) => updateField("status", e.target.value as FormData["status"])}
-            className={cn(styledInput())}>
-            <option value="draft">{t("admin.statusDraft")}</option>
-            <option value="published">{t("admin.statusPublished")}</option>
-            <option value="archived">{t("admin.statusArchived")}</option>
-          </select>
-        </Field>
-        <Field label={t("admin.formDescriptionRequired")} required error={errors.description}
+        <Field label={t("admin.formDescriptionRequired")} required error={errors.description} fieldId="description"
           hint={t("admin.charCountHint", { count: formData.description.length })}>
           <div className="relative">
             <textarea rows={6} value={formData.description} onChange={(e) => updateField("description", e.target.value)}
@@ -162,7 +153,7 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
 
       {/* 位置信息 */}
       <SectionCard icon={<MapPin className="h-4 w-4" />} title={t("admin.formLocationTitle")}>
-        <Field label={t("admin.formRegion")} required error={errors.regionId}>
+        <Field label={t("admin.formRegion")} required error={errors.regionId} fieldId="regionId">
           <RegionSelect value={formData.regionId} onChange={(id) => { updateField("regionId", id); touch("regionId", id); }}
             regions={regions} error={errors.regionId} />
         </Field>
@@ -175,13 +166,13 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
             <div className="flex-1 grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-2xs text-stone-400 mb-1">{t("admin.latLabel")}</label>
-                <input type="number" step="any" value={formData.latitude} onChange={(e) => updateField("latitude", e.target.value)}
+                <input id="location-field-latitude" type="number" step="any" value={formData.latitude} onChange={(e) => updateField("latitude", e.target.value)}
                   onBlur={(e) => touch("latitude", e.target.value)} placeholder="22.5619" className={cn(styledInput(!!errors.latitude))} />
                 {errors.latitude && <p className="text-xs text-red-500 mt-1">{errors.latitude}</p>}
               </div>
               <div>
                 <label className="block text-2xs text-stone-400 dark:text-stone-500 mb-1">{t("admin.lngLabel")}</label>
-                <input type="number" step="any" value={formData.longitude} onChange={(e) => updateField("longitude", e.target.value)}
+                <input id="location-field-longitude" type="number" step="any" value={formData.longitude} onChange={(e) => updateField("longitude", e.target.value)}
                   onBlur={(e) => touch("longitude", e.target.value)} placeholder="114.1985" className={cn(styledInput(!!errors.longitude))} />
                 {errors.longitude && <p className="text-xs text-red-500 mt-1">{errors.longitude}</p>}
               </div>

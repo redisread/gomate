@@ -46,6 +46,9 @@ export interface LocationFormData {
 
 export type FormData = LocationFormData;
 export type LocationSaveIntent = "keep" | "publish" | "restore";
+export type LocationSaveResult =
+  | { ok: true }
+  | { ok: false; firstInvalidField?: string };
 
 export interface LocationMutationPayload {
   regionId: string;
@@ -97,7 +100,7 @@ interface UseLocationFormReturn {
   pendingDraft: LocationFormData | null;
   updateField: <K extends keyof LocationFormData>(key: K, value: LocationFormData[K]) => void;
   touch: (key: string, value: string) => void;
-  handleSave: (intent?: LocationSaveIntent) => Promise<void>;
+  handleSave: (intent?: LocationSaveIntent) => Promise<LocationSaveResult>;
   handleDiscard: () => void;
   handleRestoreDraft: () => void;
   handleDiscardDraft: () => void;
@@ -370,7 +373,9 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     localStorage.removeItem(draftKey(locationId));
   }, [locationId]);
 
-  const handleSave = React.useCallback(async (intent: LocationSaveIntent = "keep") => {
+  const handleSave = React.useCallback(async (
+    intent: LocationSaveIntent = "keep",
+  ): Promise<LocationSaveResult> => {
     const nextStatus = resolveLocationSaveStatus(formData.status, intent);
     const nextErrors: Record<string, string | undefined> = {};
     for (const [key, value] of Object.entries({
@@ -397,7 +402,8 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
       nextErrors.durationMax = t("admin.validationDurationRange");
     }
     setErrors(nextErrors);
-    if (Object.values(nextErrors).some(Boolean)) return;
+    const firstInvalidField = Object.entries(nextErrors).find(([, error]) => Boolean(error))?.[0];
+    if (firstInvalidField) return { ok: false, firstInvalidField };
 
     setIsSaving(true);
     setSaveMessage(null);
@@ -414,11 +420,13 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
       setSaveMessage({ type: "success", text: t("admin.saveSuccess") });
       const destination = locationSaveDestination(mode, response.location.id);
       if (destination) window.location.href = destination;
+      return { ok: true };
     } catch (error) {
       setSaveMessage({
         type: "error",
         text: error instanceof Error ? error.message : t("admin.saveFailed"),
       });
+      return { ok: false };
     } finally {
       setIsSaving(false);
     }

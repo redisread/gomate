@@ -7,13 +7,13 @@
  */
 
 import * as React from "react";
-import { ArrowLeft, Eye, EyeOff, MapPin as MapPinIcon, Image as ImageIcon, Navigation } from "lucide-react";
+import { ArrowLeft, ExternalLink, Eye, EyeOff, MapPin as MapPinIcon, Image as ImageIcon, Navigation } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { StickyActionBar } from "@/components/ui/sticky-action-bar";
 import { EditProgressBar } from "@/components/ui/season-picker";
 import { cn } from "@/lib/utils";
 
 import type { FormData } from "./location-form";
+import type { LocationSaveIntent } from "./location-form/use-location-form";
 import {
   useLocationForm,
   LocationFormBasicFields,
@@ -107,10 +107,25 @@ function PreviewPanel({ data, regionName }: PreviewPanelProps) {
 
 interface LocationFormClientProps { locationId?: string; }
 
+export function focusLocationFormField(field: string): boolean {
+  const container = document.getElementById(`location-field-${field}`);
+  if (!container) return false;
+
+  const focusTarget = container.matches("input, select, textarea, button, [tabindex]")
+    ? container
+    : container.querySelector<HTMLElement>("input, select, textarea, button, [tabindex]");
+  if (!focusTarget) return false;
+
+  focusTarget.focus({ preventScroll: true });
+  focusTarget.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  return true;
+}
+
 function LocationFormClient({ locationId }: LocationFormClientProps) {
   const { t } = useI18n(["admin", "common", "locations"]);
   const form = useLocationForm(locationId);
   const [showPreview, setShowPreview] = React.useState(false);
+  const [savingIntent, setSavingIntent] = React.useState<LocationSaveIntent | null>(null);
 
   const currentRegionName = React.useMemo(
     () => form.regions.find((region) => region.id === form.formData.regionId)?.name ?? "",
@@ -124,21 +139,44 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
     { id: "finish", label: t("admin.progressStep4"), done: !!form.formData.name && !!form.formData.description && !!form.formData.regionId && !!form.formData.coverImageUrl },
   ];
 
+  const handleSave = React.useCallback(async (intent: LocationSaveIntent) => {
+    setSavingIntent(intent);
+    try {
+      const result = await form.handleSave(intent);
+      if (!result.ok && result.firstInvalidField) {
+        focusLocationFormField(result.firstInvalidField);
+      }
+    } finally {
+      setSavingIntent(null);
+    }
+  }, [form]);
+
   if (form.isLoading) return <EditSkeleton />;
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 pb-24">
+    <div className="min-h-screen bg-stone-50 pb-44 dark:bg-stone-950 sm:pb-28">
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Top nav */}
         <div className="flex items-center justify-between mb-6">
-          <a href={form.location ? `/locations/${form.location.id}` : "/locations"} className="inline-flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 hover:opacity-70 transition-opacity">
+          <a href="/admin/locations" className="inline-flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 hover:opacity-70 transition-opacity">
             <ArrowLeft className="h-4 w-4" />{t("common.back")}
           </a>
-          <button type="button" onClick={() => setShowPreview((v) => !v)}
-            className="lg:hidden flex items-center gap-1.5 text-xs text-stone-500 hover:text-amber-600 transition-colors">
-            {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showPreview ? t("admin.closePreview") : t("admin.previewEffect")}
-          </button>
+          <div className="flex items-center gap-3">
+            {form.location?.status === "published" && (
+              <a
+                href={`/locations/${form.location.id}`}
+                className="inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-emerald-700 transition-colors hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+              >
+                <ExternalLink aria-hidden="true" className="h-4 w-4" />
+                {t("admin.viewPublicLocation")}
+              </a>
+            )}
+            <button type="button" onClick={() => setShowPreview((v) => !v)}
+              className="flex min-h-11 items-center gap-1.5 text-xs text-stone-500 transition-colors hover:text-amber-600 lg:hidden">
+              {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPreview ? t("admin.closePreview") : t("admin.previewEffect")}
+            </button>
+          </div>
         </div>
 
         {/* Title */}
@@ -179,9 +217,8 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
           <div className={cn("space-y-4", showPreview && "hidden lg:block")}>
             <LocationFormBasicFields formData={form.formData} errors={form.errors} regions={form.regions} activityTypes={form.activityTypes}
               updateField={form.updateField} touch={form.touch}  />
-            <LocationFormContentFields formData={form.formData} isSaving={form.isSaving} updateField={form.updateField} />
+            <LocationFormContentFields formData={form.formData} errors={form.errors} isSaving={form.isSaving} updateField={form.updateField} />
             <LocationFormSettingsFields formData={form.formData} allTags={form.allTags} updateField={form.updateField} />
-            <LocationActionBar isDirty={form.isDirty} isSaving={form.isSaving} onSave={form.handleSave} onDiscard={form.handleDiscard} />
           </div>
 
           {/* Right column: preview */}
@@ -191,8 +228,16 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
         </div>
       </div>
 
-      <StickyActionBar isDirty={form.isDirty} isSaving={form.isSaving} lastSaved={null}
-        onSave={form.handleSave} onDiscard={form.handleDiscard} />
+      <LocationActionBar
+        status={form.formData.status}
+        isDirty={form.isDirty}
+        isSaving={form.isSaving}
+        savingIntent={savingIntent}
+        onSave={() => void handleSave("keep")}
+        onPublish={() => void handleSave("publish")}
+        onRestore={() => void handleSave("restore")}
+        onDiscard={form.handleDiscard}
+      />
 
     </div>
   );
