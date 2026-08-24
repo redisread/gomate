@@ -35,6 +35,17 @@ const SEASON_KEY = {
   winter: "enums.season.winter",
 } satisfies Record<Season, TranslationKey>;
 
+const ADMIN_ERROR_KEY = {
+  admin_self_role_change: "admin.errors.adminSelfRoleChange",
+  admin_last_active_revoke: "admin.errors.adminLastActiveRevoke",
+  tag_already_exists: "admin.errors.tagAlreadyExists",
+  tag_update_conflict: "admin.errors.tagUpdateConflict",
+  location_changed_concurrently: "admin.errors.locationChangedConcurrently",
+  location_has_references: "admin.errors.locationHasReferences",
+  location_invalid_region: "admin.errors.locationInvalidRegion",
+  location_image_host_disallowed: "admin.errors.locationImageHostDisallowed",
+} satisfies Record<AdminErrorReason, TranslationKey>;
+
 export function userRoleKey(role: UserRole): TranslationKey {
   return USER_ROLE_KEY[role];
 }
@@ -62,4 +73,9 @@ export function readAdminErrorReason(payload: unknown): AdminErrorReason | null 
 
   const reason = (details as { reason?: unknown }).reason;
   return isAdminErrorReason(reason) ? reason : null;
+}
+
+export function adminActionErrorKey(payload: unknown): TranslationKey | null {
+  const reason = readAdminErrorReason(payload);
+  return reason ? ADMIN_ERROR_KEY[reason] : null;
 }

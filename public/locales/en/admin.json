@@ -223,6 +223,16 @@
     "revokeAdmin": "Revoke admin",
     "roleConfirm": "Confirm this administrator role change?"
   },
+  "errors": {
+    "adminSelfRoleChange": "You cannot change administrator access for your current account.",
+    "adminLastActiveRevoke": "At least one active administrator must remain.",
+    "tagAlreadyExists": "A tag with this name or identifier already exists. Choose another name.",
+    "tagUpdateConflict": "This tag changed in another operation. Reload and try again.",
+    "locationChangedConcurrently": "This location changed in another operation. Reload and try again.",
+    "locationHasReferences": "This location still has historical references and cannot be permanently deleted.",
+    "locationInvalidRegion": "Choose an enabled city region.",
+    "locationImageHostDisallowed": "Use an image URL created by the administrator upload tool."
+  },
   "quickDraft": {
     "name": "Location name",
     "description": "Location introduction",

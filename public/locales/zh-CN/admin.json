@@ -223,6 +223,16 @@
     "revokeAdmin": "撤销管理员",
     "roleConfirm": "确认变更该用户的管理员权限吗？"
   },
+  "errors": {
+    "adminSelfRoleChange": "不能更改当前账号的管理员权限。",
+    "adminLastActiveRevoke": "至少需要保留一名状态正常的管理员。",
+    "tagAlreadyExists": "已存在同名或相同标识的标签，请使用其他名称。",
+    "tagUpdateConflict": "标签已被其他操作更新，请重新加载后再试。",
+    "locationChangedConcurrently": "地点已被其他操作更新，请重新加载后再试。",
+    "locationHasReferences": "地点仍有历史引用，无法永久删除。",
+    "locationInvalidRegion": "请选择已启用的城市地区。",
+    "locationImageHostDisallowed": "请使用后台上传生成的图片地址。"
+  },
   "quickDraft": {
     "name": "地点名称",
     "description": "地点介绍",

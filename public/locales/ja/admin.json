@@ -223,6 +223,16 @@
     "revokeAdmin": "管理者を解除",
     "roleConfirm": "このユーザーの管理者権限を変更しますか？"
   },
+  "errors": {
+    "adminSelfRoleChange": "現在のアカウントの管理者権限は変更できません。",
+    "adminLastActiveRevoke": "有効な管理者を少なくとも1人残す必要があります。",
+    "tagAlreadyExists": "同じ名前または識別子のタグがすでにあります。別の名前を指定してください。",
+    "tagUpdateConflict": "別の操作でタグが更新されました。再読み込みしてやり直してください。",
+    "locationChangedConcurrently": "別の操作でスポットが更新されました。再読み込みしてやり直してください。",
+    "locationHasReferences": "このスポットには履歴参照があるため完全削除できません。",
+    "locationInvalidRegion": "有効な市区地域を選択してください。",
+    "locationImageHostDisallowed": "管理画面のアップロード機能で作成した画像 URL を使用してください。"
+  },
   "quickDraft": {
     "name": "スポット名",
     "description": "スポット紹介",

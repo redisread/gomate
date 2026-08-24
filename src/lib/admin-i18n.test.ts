@@ -6,6 +6,7 @@ import {
 } from "@/contracts/admin-i18n";
 import { SEASONS } from "@/contracts/enums";
 import {
+  adminActionErrorKey,
   locationStatusKey,
   readAdminErrorReason,
   seasonKey,
@@ -86,5 +87,31 @@ describe("administrator enum presentation keys", () => {
       "enums.season.autumn",
       "enums.season.winter",
     ]);
+  });
+});
+
+describe("administrator action error presentation keys", () => {
+  it.each([
+    ["admin_self_role_change", "admin.errors.adminSelfRoleChange"],
+    ["admin_last_active_revoke", "admin.errors.adminLastActiveRevoke"],
+    ["tag_already_exists", "admin.errors.tagAlreadyExists"],
+    ["tag_update_conflict", "admin.errors.tagUpdateConflict"],
+    ["location_changed_concurrently", "admin.errors.locationChangedConcurrently"],
+    ["location_has_references", "admin.errors.locationHasReferences"],
+    ["location_invalid_region", "admin.errors.locationInvalidRegion"],
+    ["location_image_host_disallowed", "admin.errors.locationImageHostDisallowed"],
+  ] as const)("maps %s to %s", (reason, expectedKey) => {
+    expect(adminActionErrorKey({
+      error: { details: { reason } },
+    })).toBe(expectedKey);
+  });
+
+  it("returns null instead of exposing an unknown server message", () => {
+    expect(adminActionErrorKey({
+      error: {
+        message: "Do not render this diagnostic",
+        details: { reason: "unknown_reason" },
+      },
+    })).toBeNull();
   });
 });
