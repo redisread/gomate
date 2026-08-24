@@ -116,7 +116,7 @@ export function focusLocationFormField(field: string): boolean {
   if (!focusTarget) return false;
 
   focusTarget.focus({ preventScroll: true });
-  focusTarget.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  focusTarget.scrollIntoView?.({ block: "center" });
   return true;
 }
 
