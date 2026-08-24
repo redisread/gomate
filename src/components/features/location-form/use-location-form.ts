@@ -35,8 +35,6 @@ export interface LocationFormData {
       distanceKm: number | string;
       elevationGainM: number | string;
       bestSeasons: string[];
-      gearEssential: string[];
-      gearOptional: string[];
       overview: string;
       tips: string[];
       warnings: string[];
@@ -69,8 +67,6 @@ export interface LocationMutationPayload {
       distanceKm?: number;
       elevationGainM?: number;
       bestSeasons?: string[];
-      gearEssential?: string[];
-      gearOptional?: string[];
       overview?: string | null;
       tips?: string[];
       warnings?: string[];
@@ -113,8 +109,6 @@ const EMPTY_HIKING: LocationFormData["extra"]["hiking"] = {
   distanceKm: "",
   elevationGainM: "",
   bestSeasons: [],
-  gearEssential: [],
-  gearOptional: [],
   overview: "",
   tips: [],
   warnings: [],
@@ -173,8 +167,6 @@ export function locationToFormData(location: Location): LocationFormData {
         distanceKm: hiking?.distanceKm ?? "",
         elevationGainM: hiking?.elevationGainM ?? "",
         bestSeasons: [...(hiking?.bestSeasons ?? [])],
-        gearEssential: [...(hiking?.gearEssential ?? [])],
-        gearOptional: [...(hiking?.gearOptional ?? [])],
         overview: hiking?.overview ?? "",
         tips: [...(hiking?.tips ?? [])],
         warnings: [...(hiking?.warnings ?? [])],
@@ -202,8 +194,6 @@ export function formDataToLocationPayload(form: LocationFormData): LocationMutat
     distanceKm: optionalNumber(hiking.distanceKm),
     elevationGainM: optionalNumber(hiking.elevationGainM),
     bestSeasons: cleanStrings(hiking.bestSeasons),
-    gearEssential: cleanStrings(hiking.gearEssential),
-    gearOptional: cleanStrings(hiking.gearOptional),
     overview: hiking.overview.trim() || null,
     tips: cleanStrings(hiking.tips),
     warnings: cleanStrings(hiking.warnings),

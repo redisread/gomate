@@ -90,7 +90,7 @@ and supported route guidance still passes.
 
 ## Phase B: Admin Location Form
 
-### [ ] B1. Remove equipment inputs, validation, state, and payload
+### [x] B1. Remove equipment inputs, validation, state, and payload
 
 **Depends on:** Checkpoint A
 
