@@ -55,6 +55,12 @@ describe("administrator user role management", () => {
     );
 
     expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: "CONFLICT",
+        details: { reason: "admin_self_role_change" },
+      },
+    });
     expect(mocks.createDb).not.toHaveBeenCalled();
   });
 
@@ -117,7 +123,10 @@ describe("administrator user role management", () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toMatchObject({
-      error: { code: "CONFLICT" },
+      error: {
+        code: "CONFLICT",
+        details: { reason: "admin_last_active_revoke" },
+      },
     });
   });
 });
