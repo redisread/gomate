@@ -342,13 +342,48 @@ describe("shared administrator access consumers", () => {
     expect(vi.mocked(r2.put)).toHaveBeenCalledOnce();
   });
 
-  it("returns a stable reason when Cloudflare cannot decode the image", async () => {
+  it.each([
+    [9402, "invalid_image_content"],
+    [9412, "invalid_image_content"],
+    [9413, "invalid_image_content"],
+    [9520, "unsupported_image_format"],
+  ] as const)(
+    "maps Cloudflare image inspection error %i to %s",
+    async (code, reason) => {
+      mocks.requireAdmin.mockResolvedValue({
+        id: "admin-1",
+        displayName: "Admin",
+        image: null,
+      });
+      imageInfo.mockRejectedValueOnce(
+        Object.assign(new Error("image inspection failed"), { code }),
+      );
+
+      const response = await uploadRoute.request(
+        "/location",
+        { method: "POST", body: mismatchedLocationImageBody() },
+        env,
+      );
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          details: { reason },
+        },
+      });
+      expect(vi.mocked(r2.put)).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps unexpected Cloudflare inspection failures as server errors", async () => {
     mocks.requireAdmin.mockResolvedValue({
       id: "admin-1",
       displayName: "Admin",
       image: null,
     });
-    imageInfo.mockRejectedValueOnce(Object.assign(new Error("decode failed"), { code: 9412 }));
+    imageInfo.mockRejectedValueOnce(new Error("service unavailable"));
 
     const response = await uploadRoute.request(
       "/location",
@@ -356,13 +391,10 @@ describe("shared administrator access consumers", () => {
       env,
     );
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(500);
     await expect(response.json()).resolves.toMatchObject({
       success: false,
-      error: {
-        code: "BAD_REQUEST",
-        details: { reason: "invalid_image_content" },
-      },
+      error: { code: "INTERNAL_ERROR" },
     });
     expect(vi.mocked(r2.put)).not.toHaveBeenCalled();
   });

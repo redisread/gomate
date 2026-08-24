@@ -79,7 +79,14 @@ const IMAGE_UPLOAD_DIAGNOSTIC_CODES: Record<ImageUploadReason, string> = {
   missing_file: "IMAGE_FILE_MISSING",
 };
 
-const IMAGE_CONTENT_ERROR_CODES = new Set([9402, 9412, 9413]);
+const IMAGE_INPUT_ERROR_REASON: Readonly<
+  Partial<Record<number, ImageUploadReason>>
+> = {
+  9402: "invalid_image_content",
+  9412: "invalid_image_content",
+  9413: "invalid_image_content",
+  9520: "unsupported_image_format",
+};
 
 class UploadRequestError extends Error {
   constructor(
@@ -120,11 +127,14 @@ async function validatedImage(file: File, images: ImagesBinding) {
   try {
     info = await images.info(input);
   } catch (error) {
-    if (imagesErrorCode(error) === 9412) {
+    const reason = IMAGE_INPUT_ERROR_REASON[imagesErrorCode(error) ?? -1];
+    if (reason) {
       throw new UploadRequestError(
-        "Image content could not be decoded",
+        reason === "unsupported_image_format"
+          ? "Image format is not supported"
+          : "Image content could not be decoded",
         400,
-        "invalid_image_content",
+        reason,
       );
     }
     throw error;
@@ -172,7 +182,7 @@ async function normalizedImage(file: File, images: ImagesBinding) {
     response = transformed.response();
     if (!response.ok) throw new Error("Unable to convert HEIC image");
   } catch (error) {
-    if (IMAGE_CONTENT_ERROR_CODES.has(imagesErrorCode(error) ?? -1)) {
+    if (IMAGE_INPUT_ERROR_REASON[imagesErrorCode(error) ?? -1]) {
       throw new UploadRequestError(
         "Unable to convert HEIC image",
         400,
