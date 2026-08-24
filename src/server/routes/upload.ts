@@ -36,6 +36,12 @@ const avatarKeyQuerySchema = z
 
 type ImageFormat = "jpeg" | "png" | "gif" | "webp" | "heic";
 
+type StoredImageFormat = Readonly<{
+  format: ImageFormat;
+  ext: "jpg" | "png" | "gif" | "webp";
+  contentType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+}>;
+
 const MIME_FORMAT: Record<string, ImageFormat> = {
   "image/jpeg": "jpeg",
   "image/png": "png",
@@ -55,6 +61,26 @@ const EXT_FORMAT: Record<string, ImageFormat> = {
   heif: "heic",
 };
 
+const DETECTED_IMAGE_FORMAT: Record<string, StoredImageFormat | undefined> = {
+  "image/jpeg": { format: "jpeg", ext: "jpg", contentType: "image/jpeg" },
+  "image/png": { format: "png", ext: "png", contentType: "image/png" },
+  "image/gif": { format: "gif", ext: "gif", contentType: "image/gif" },
+  "image/webp": { format: "webp", ext: "webp", contentType: "image/webp" },
+  "image/heic": { format: "heic", ext: "webp", contentType: "image/webp" },
+  "image/heif": { format: "heic", ext: "webp", contentType: "image/webp" },
+};
+
+const IMAGE_UPLOAD_DIAGNOSTIC_CODES: Record<ImageUploadReason, string> = {
+  unsupported_image_format: "IMAGE_FORMAT_UNSUPPORTED",
+  invalid_image_content: "IMAGE_DECODE_FAILED",
+  image_conversion_failed: "IMAGE_CONVERSION_FAILED",
+  file_too_large: "IMAGE_FILE_TOO_LARGE",
+  invalid_upload_body: "IMAGE_UPLOAD_BODY_INVALID",
+  missing_file: "IMAGE_FILE_MISSING",
+};
+
+const IMAGE_CONTENT_ERROR_CODES = new Set([9402, 9412, 9413]);
+
 class UploadRequestError extends Error {
   constructor(
     message: string,
@@ -66,72 +92,11 @@ class UploadRequestError extends Error {
   }
 }
 
-function detectedImageFormat(buffer: ArrayBuffer): ImageFormat | null {
-  const bytes = new Uint8Array(buffer);
-  if (
-    bytes.length >= 3 &&
-    bytes[0] === 0xff &&
-    bytes[1] === 0xd8 &&
-    bytes[2] === 0xff
-  ) {
-    return "jpeg";
+function imagesErrorCode(error: unknown): number | null {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return null;
   }
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47 &&
-    bytes[4] === 0x0d &&
-    bytes[5] === 0x0a &&
-    bytes[6] === 0x1a &&
-    bytes[7] === 0x0a
-  ) {
-    return "png";
-  }
-  if (
-    bytes.length >= 6 &&
-    bytes[0] === 0x47 &&
-    bytes[1] === 0x49 &&
-    bytes[2] === 0x46 &&
-    bytes[3] === 0x38 &&
-    (bytes[4] === 0x37 || bytes[4] === 0x39) &&
-    bytes[5] === 0x61
-  ) {
-    return "gif";
-  }
-  if (
-    bytes.length >= 12 &&
-    bytes[0] === 0x52 &&
-    bytes[1] === 0x49 &&
-    bytes[2] === 0x46 &&
-    bytes[3] === 0x46 &&
-    bytes[8] === 0x57 &&
-    bytes[9] === 0x45 &&
-    bytes[10] === 0x42 &&
-    bytes[11] === 0x50
-  ) {
-    return "webp";
-  }
-  if (
-    bytes.length >= 16 &&
-    bytes[4] === 0x66 &&
-    bytes[5] === 0x74 &&
-    bytes[6] === 0x79 &&
-    bytes[7] === 0x70
-  ) {
-    const boxSize = new DataView(buffer).getUint32(0);
-    const boxEnd = Math.min(bytes.length, boxSize);
-    for (let offset = 8; offset + 4 <= boxEnd; offset += 4) {
-      // Bytes 12-15 are the minor version, not a compatible brand.
-      if (offset === 12) continue;
-      const brand = String.fromCharCode(...bytes.slice(offset, offset + 4));
-      if (["heic", "heix", "hevc", "hevx", "heim", "heis"].includes(brand)) {
-        return "heic";
-      }
-    }
-  }
-  return null;
+  return typeof error.code === "number" ? error.code : null;
 }
 
 function fileExtension(file: File): string | null {
@@ -139,31 +104,7 @@ function fileExtension(file: File): string | null {
   return match?.[1]?.toLowerCase() ?? null;
 }
 
-async function validatedImage(file: File) {
-  const ext = fileExtension(file);
-  const mimeFormat = MIME_FORMAT[file.type];
-  const extensionFormat = ext ? EXT_FORMAT[ext] : undefined;
-  if (!ext || !extensionFormat) {
-    throw new UploadRequestError(
-      "Invalid file extension. Allowed: jpg, jpeg, png, gif, webp, heic, heif",
-      400,
-      "unsupported_image_format",
-    );
-  }
-  if (!mimeFormat) {
-    throw new UploadRequestError(
-      "Invalid file type. Allowed: JPEG, PNG, GIF, WebP, HEIC, HEIF",
-      400,
-      "unsupported_image_format",
-    );
-  }
-  if (mimeFormat !== extensionFormat) {
-    throw new UploadRequestError(
-      `MIME type ${file.type} does not match extension .${ext}`,
-      400,
-      "invalid_image_content",
-    );
-  }
+async function validatedImage(file: File, images: ImagesBinding) {
   if (file.size > MAX_FILE_SIZE) {
     throw new UploadRequestError(
       "File too large. Maximum size: 5MB",
@@ -173,32 +114,73 @@ async function validatedImage(file: File) {
   }
 
   const buffer = await file.arrayBuffer();
-  const contentFormat = detectedImageFormat(buffer);
-  if (!contentFormat || contentFormat !== mimeFormat) {
+  const input = new Response(buffer).body;
+  if (!input) throw new Error("Unable to read image body");
+  let info: ImageInfoResponse;
+  try {
+    info = await images.info(input);
+  } catch (error) {
+    if (imagesErrorCode(error) === 9412) {
+      throw new UploadRequestError(
+        "Image content could not be decoded",
+        400,
+        "invalid_image_content",
+      );
+    }
+    throw error;
+  }
+  const detected = DETECTED_IMAGE_FORMAT[info.format];
+  if (!detected) {
     throw new UploadRequestError(
-      "File extension, MIME type, and image content must describe the same format",
+      "Unsupported decoded image format",
       400,
-      "invalid_image_content",
+      "unsupported_image_format",
     );
   }
-  return { buffer, ext, format: contentFormat };
+
+  const ext = fileExtension(file);
+  const declaredMimeFormat = MIME_FORMAT[file.type];
+  const declaredExtensionFormat = ext ? EXT_FORMAT[ext] : undefined;
+  if (
+    declaredMimeFormat !== detected.format ||
+    declaredExtensionFormat !== detected.format
+  ) {
+    logger.info("image_upload_metadata_normalized", {
+      errorCode: "IMAGE_FORMAT_DECLARATION_MISMATCH",
+    });
+  }
+  return { buffer, ...detected };
 }
 
 async function normalizedImage(file: File, images: ImagesBinding) {
-  const validated = await validatedImage(file);
+  const validated = await validatedImage(file, images);
   if (validated.format !== "heic") {
     return {
       buffer: validated.buffer,
       ext: validated.ext,
-      contentType: file.type,
+      contentType: validated.contentType,
     };
   }
 
   const input = new Response(validated.buffer).body;
   if (!input) throw new Error("Unable to read HEIC image body");
-  const transformed = await images.input(input).output({ format: "image/webp" });
-  const response = transformed.response();
-  if (!response.ok) throw new Error("Unable to convert HEIC image");
+  let response: Response;
+  try {
+    const transformed = await images
+      .input(input)
+      .output({ format: "image/webp" });
+    response = transformed.response();
+    if (!response.ok) throw new Error("Unable to convert HEIC image");
+  } catch (error) {
+    if (IMAGE_CONTENT_ERROR_CODES.has(imagesErrorCode(error) ?? -1)) {
+      throw new UploadRequestError(
+        "Unable to convert HEIC image",
+        400,
+        "image_conversion_failed",
+      );
+    }
+    throw error;
+  }
   return {
     buffer: await response.arrayBuffer(),
     ext: "webp",
@@ -292,6 +274,9 @@ function uploadUrl(c: UploadContext, publicBaseUrl: string, key: string) {
 }
 
 function requestErrorResponse(c: UploadContext, error: UploadRequestError) {
+  logger.warn("image_upload_rejected", {
+    errorCode: IMAGE_UPLOAD_DIAGNOSTIC_CODES[error.reason],
+  });
   return c.json(
     APIErrors.badRequest(error.message, { reason: error.reason }),
     error.status,

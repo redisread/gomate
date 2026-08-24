@@ -98,6 +98,46 @@ describe("location image uploads", () => {
     expect(await screen.findAllByText("ui.upload.invalidImageContent")).not.toHaveLength(0);
   });
 
+  it("shows a specific message when HEIC conversion fails", async () => {
+    const { container } = render(
+      <CoverImageUpload value="" onChange={vi.fn()} />,
+    );
+    const input = container.querySelector('input[type="file"]');
+
+    fireEvent.change(input!, {
+      target: {
+        files: [new File(["heic"], "photo.heic", { type: "image/heic" })],
+      },
+    });
+    MockXMLHttpRequest.instances[0]?.respond(
+      400,
+      JSON.stringify({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          details: { reason: "image_conversion_failed" },
+        },
+      }),
+    );
+
+    expect(await screen.findAllByText("ui.upload.imageConversionFailed")).not.toHaveLength(0);
+  });
+
+  it("lets the server inspect iPhone files whose MIME and extension disagree", () => {
+    const { container } = render(
+      <CoverImageUpload value="" onChange={vi.fn()} />,
+    );
+    const input = container.querySelector('input[type="file"]');
+
+    fireEvent.change(input!, {
+      target: {
+        files: [new File(["jpeg"], "photo.heic", { type: "image/jpeg" })],
+      },
+    });
+
+    expect(MockXMLHttpRequest.instances).toHaveLength(1);
+  });
+
   it("renders an actionable error for unsupported gallery files", async () => {
     const { container } = render(
       <MultiImageUpload values={[]} onChange={vi.fn()} />,
