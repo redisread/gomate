@@ -184,8 +184,11 @@ Story 图片先上传到当前用户的临时 namespace，创建或更新时再�
 | GET          | `/proxy-image`           | 否    | 代理 allowlist 内的 HTTPS raster 图片       |
 | GET          | `/r2/*`                  | 否    | 仅 localhost 可用的本地 R2 读取             |
 
-上传会同时校验大小、MIME、扩展名和文件魔数，并以临时对象、最终对象、条件 DML 和补偿清理
-维护 R2/D1 一致性。Local-circle KV 只缓存无用户身份的公共部分，个性化数据每次从 D1 合并。
+上传会同时校验大小、MIME、扩展名和文件魔数；`BAD_REQUEST` 的 `error.details.reason`
+提供稳定的失败分类供客户端本地化展示。JPEG、PNG、GIF 与 WebP 保留原格式，HEIC/HEIF
+通过 Cloudflare Images binding 转为 WebP 后再写入 R2。媒体写入继续以临时对象、最终对象、
+条件 DML 和补偿清理维护 R2/D1 一致性。Local-circle KV 只缓存无用户身份的公共部分，
+个性化数据每次从 D1 合并。
 海报接口不接受公开 `refresh` 参数；海报缓存只包含地点、行程和故事的公开内容，不渲染
 用户姓名、头像或用户 ID。
 

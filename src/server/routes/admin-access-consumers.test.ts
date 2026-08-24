@@ -48,9 +48,26 @@ const r2 = {
   delete: vi.fn().mockResolvedValue(undefined),
 } as unknown as R2Bucket;
 
+const imageOutput = {
+  response: () => new Response(
+    new Uint8Array([
+      0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00,
+      0x57, 0x45, 0x42, 0x50,
+    ]),
+    { headers: { "content-type": "image/webp" } },
+  ),
+};
+const imageTransformer = {
+  output: vi.fn().mockResolvedValue(imageOutput),
+};
+const images = {
+  input: vi.fn(() => imageTransformer),
+} as unknown as ImagesBinding;
+
 const env = {
   DB: {} as D1Database,
   R2: r2,
+  IMAGES: images,
   R2_PUBLIC_URL: "https://media.example.com",
 } as unknown as Env;
 
@@ -82,11 +99,47 @@ function locationImageBody() {
   return form;
 }
 
+function locationHeicBody() {
+  const form = new FormData();
+  form.set(
+    "file",
+    new File(
+      [
+        new Uint8Array([
+          0x00, 0x00, 0x00, 0x18,
+          0x66, 0x74, 0x79, 0x70,
+          0x6d, 0x69, 0x66, 0x31,
+          0x00, 0x00, 0x00, 0x00,
+          0x68, 0x65, 0x69, 0x63,
+        ]),
+      ],
+      "iphone.heic",
+      { type: "image/heic" },
+    ),
+  );
+  return form;
+}
+
+function mismatchedLocationImageBody() {
+  const form = new FormData();
+  form.set(
+    "file",
+    new File(
+      [new Uint8Array([0x89, 0x50, 0x4e, 0x47])],
+      "renamed.jpg",
+      { type: "image/jpeg" },
+    ),
+  );
+  return form;
+}
+
 describe("shared administrator access consumers", () => {
   beforeEach(() => {
     mocks.createDb.mockReset();
     mocks.requireAdmin.mockReset();
     vi.mocked(r2.put).mockClear();
+    vi.mocked(images.input).mockClear();
+    imageTransformer.output.mockClear();
   });
 
   it.each([
@@ -172,5 +225,59 @@ describe("shared administrator access consumers", () => {
     });
     expect(mocks.requireAdmin).toHaveBeenCalledOnce();
     expect(vi.mocked(r2.put)).toHaveBeenCalledOnce();
+    expect(vi.mocked(images.input)).not.toHaveBeenCalled();
+  });
+
+  it("converts an iPhone HEIC image to WebP before storing it", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      id: "admin-1",
+      displayName: "Admin",
+      image: null,
+    });
+
+    const response = await uploadRoute.request(
+      "/location",
+      { method: "POST", body: locationHeicBody() },
+      env,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      size: 12,
+      type: "image/webp",
+      url: expect.stringMatching(/\.webp$/u),
+    });
+    expect(vi.mocked(images.input)).toHaveBeenCalledOnce();
+    expect(imageTransformer.output).toHaveBeenCalledWith({ format: "image/webp" });
+    expect(vi.mocked(r2.put)).toHaveBeenCalledWith(
+      expect.stringMatching(/\.webp$/u),
+      expect.any(ArrayBuffer),
+      { httpMetadata: { contentType: "image/webp" } },
+    );
+  });
+
+  it("returns a stable reason when image content does not match its declaration", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      id: "admin-1",
+      displayName: "Admin",
+      image: null,
+    });
+
+    const response = await uploadRoute.request(
+      "/location",
+      { method: "POST", body: mismatchedLocationImageBody() },
+      env,
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: {
+        code: "BAD_REQUEST",
+        details: { reason: "invalid_image_content" },
+      },
+    });
+    expect(vi.mocked(r2.put)).not.toHaveBeenCalled();
   });
 });

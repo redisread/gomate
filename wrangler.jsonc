@@ -31,6 +31,9 @@
       "bucket_name": "gomate-local",
     },
   ],
+  "images": {
+    "binding": "IMAGES",
+  },
   "ratelimits": [
     {
       "name": "AUTH_SIGN_IN_RATE_LIMITER",
@@ -96,6 +99,9 @@
           "bucket_name": "gomate",
         },
       ],
+      "images": {
+        "binding": "IMAGES",
+      },
       "ratelimits": [
         {
           "name": "AUTH_SIGN_IN_RATE_LIMITER",
