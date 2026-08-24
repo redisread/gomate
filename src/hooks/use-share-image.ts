@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  DEFAULT_POSTER_PRESET,
+  POSTER_RENDER_VERSION,
+  type PosterPresetId,
+} from "@/contracts/share-image";
+import { getLocale } from "@/i18n";
 import { API_BASE } from "@/lib/api";
 import { readShareImageBlob } from "@/lib/share-image-client";
 
 interface UseShareImageOptions {
   type: "location" | "team" | "story";
   id: string;
+  preset?: PosterPresetId;
 }
 
 interface ShareImageResult {
@@ -14,101 +21,109 @@ interface ShareImageResult {
   url: string;
 }
 
-/**
- * 使用后端 API 生成分享图片
- * 替代 html-to-image 客户端生成
- */
-export function useShareImage({ type, id }: UseShareImageOptions) {
+export function useShareImage({
+  type,
+  id,
+  preset = DEFAULT_POSTER_PRESET,
+}: UseShareImageOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const cacheRef = useRef(new Map<string, ShareImageResult>());
+  const activeControllerRef = useRef<AbortController | null>(null);
+  const requestSequenceRef = useRef(0);
 
-  useEffect(() => {
-    return () => {
-      if (imageUrl) URL.revokeObjectURL(imageUrl);
-    };
-  }, [imageUrl]);
+  const releaseResources = useCallback(() => {
+    requestSequenceRef.current += 1;
+    activeControllerRef.current?.abort();
+    activeControllerRef.current = null;
+    for (const result of cacheRef.current.values()) {
+      URL.revokeObjectURL(result.url);
+    }
+    cacheRef.current.clear();
+  }, []);
 
-  /**
-   * 生成分享图片
-   */
-  const generateImage = useCallback(
-    async (): Promise<ShareImageResult | null> => {
-      setIsLoading(true);
+  useEffect(() => releaseResources, [releaseResources]);
+
+  const generateImage = useCallback(async (): Promise<ShareImageResult | null> => {
+    const locale = getLocale();
+    const params = new URLSearchParams({ locale });
+    if (type !== "story") params.set("preset", preset);
+    params.set("v", POSTER_RENDER_VERSION);
+
+    const endpoint = `${API_BASE}/share-image/${type}/${id}?${params.toString()}`;
+    const cacheKey = `${type}:${id}:${locale}:${type === "story" ? "story" : preset}`;
+    const cached = cacheRef.current.get(cacheKey);
+
+    requestSequenceRef.current += 1;
+    const requestSequence = requestSequenceRef.current;
+    activeControllerRef.current?.abort();
+
+    if (cached) {
+      activeControllerRef.current = null;
+      setImageUrl(cached.url);
       setError(null);
+      setIsLoading(false);
+      return cached;
+    }
 
-      try {
-        const endpoint = (() => {
-          switch (type) {
-            case "location": return `${API_BASE}/share-image/location/${id}`;
-            case "team":     return `${API_BASE}/share-image/team/${id}`;
-            case "story":    return `${API_BASE}/share-image/story/${id}`;
-          }
-        })();
+    const controller = new AbortController();
+    activeControllerRef.current = controller;
+    setIsLoading(true);
+    setError(null);
 
-        const response = await fetch(endpoint);
-
-        const blob = await readShareImageBlob(response);
-        const url = URL.createObjectURL(blob);
-
-        setImageUrl((previousUrl) => {
-          if (previousUrl) URL.revokeObjectURL(previousUrl);
-          return url;
-        });
-
-        return { blob, url };
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to generate image";
-        setError(message);
+    try {
+      const response = await fetch(endpoint, { signal: controller.signal });
+      const blob = await readShareImageBlob(response);
+      if (controller.signal.aborted || requestSequence !== requestSequenceRef.current) {
         return null;
-      } finally {
+      }
+
+      const result = { blob, url: URL.createObjectURL(blob) };
+      cacheRef.current.set(cacheKey, result);
+      setImageUrl(result.url);
+      return result;
+    } catch (caught) {
+      if (controller.signal.aborted || requestSequence !== requestSequenceRef.current) {
+        return null;
+      }
+      setError(caught instanceof Error ? caught.message : "Failed to generate image");
+      return null;
+    } finally {
+      if (requestSequence === requestSequenceRef.current) {
+        activeControllerRef.current = null;
         setIsLoading(false);
       }
-    },
-    [type, id]
-  );
+    }
+  }, [id, preset, type]);
 
-  /**
-   * 下载图片
-   */
-  const downloadImage = useCallback(
-    async (filename?: string) => {
-      const result = imageUrl ? null : await generateImage();
-      const url = imageUrl ?? result?.url;
-      if (!url) return false;
+  const downloadImage = useCallback(async (filename?: string) => {
+    const result = imageUrl ? null : await generateImage();
+    const url = imageUrl ?? result?.url;
+    if (!url) return false;
 
-      try {
-        const link = document.createElement("a");
-        link.href = url;
-        link.download =
-          filename || `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.svg`;
-        link.click();
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    [generateImage, imageUrl, type, id]
-  );
+    try {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename || `gomate-${type}-${id.slice(0, 8)}-${Date.now()}.svg`;
+      link.click();
+      return true;
+    } catch {
+      return false;
+    }
+  }, [generateImage, id, imageUrl, type]);
 
-  /**
-   * 获取下载链接（用于 iOS Safari）
-   */
   const getDownloadUrl = useCallback(async (): Promise<string | null> => {
     const result = await generateImage();
-    return result?.url || null;
+    return result?.url ?? null;
   }, [generateImage]);
 
-  /**
-   * 清理资源
-   */
   const cleanup = useCallback(() => {
-    if (imageUrl) {
-      URL.revokeObjectURL(imageUrl);
-      setImageUrl(null);
-    }
-  }, [imageUrl]);
+    releaseResources();
+    setImageUrl(null);
+    setError(null);
+    setIsLoading(false);
+  }, [releaseResources]);
 
   return {
     isLoading,

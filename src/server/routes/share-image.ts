@@ -3,7 +3,7 @@
  *
  * Replaces the prior four-handler shape (preview, location, team, story)
  * collapsed under one dispatcher in `services/share-image/poster.ts`.
- * Query: ?locale=zh-CN|en|ja
+ * Query: ?locale=zh-CN|en|ja&preset=dusk|ridge|journal
  *
  * Skill: `zero-tech-debt` — Step 3 "Reshape around the final product surface".
  */
@@ -17,6 +17,7 @@ import {
   type PosterKind,
 } from "../services/share-image/poster";
 import { SUPPORTED_POSTER_LOCALES, resolvePosterLocale } from "../services/share-image/poster-i18n";
+import { resolvePosterPreset } from "../../contracts/share-image";
 
 const POSTER_KINDS = new Set<PosterKind>(["location", "team", "story"]);
 
@@ -77,11 +78,18 @@ shareImageRoute.get("/:kind/:id", async (c) => {
       400,
     );
   }
+  const preset = resolvePosterPreset(c.req.query("preset"));
+  if (!preset) {
+    return c.json(
+      APIErrors.badRequest("Unknown poster preset"),
+      400,
+    );
+  }
   // accept-language falls back to ?locale; ?locale must be supported.
   const locale = resolvePosterLocale(c.req.header("accept-language"), c.req.query("locale"));
 
   try {
-    const result = await renderPoster(c.env, kind, id, { locale });
+    const result = await renderPoster(c.env, kind, id, { locale, preset });
     return svgResponse(result.svg, { cacheKey: result.cacheKey });
   } catch (error) {
     if (error instanceof PosterNotFoundError) {

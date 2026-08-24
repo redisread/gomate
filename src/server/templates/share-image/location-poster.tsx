@@ -1,7 +1,8 @@
 import satori from "satori";
+import type { PosterPresetId } from "../../../contracts/share-image";
 import type { PosterLocale } from "../../services/share-image/poster-i18n";
 import { localizeDifficulty } from "../../services/share-image/poster-i18n";
-import { POSTER_TOKENS } from "./poster-tokens";
+import { getPosterPreset, type PosterPalette } from "./poster-presets";
 
 interface RouteMetrics {
   difficulty?: string | null;
@@ -12,6 +13,7 @@ interface RouteMetrics {
 }
 
 interface LocationPosterData {
+  preset?: PosterPresetId;
   title: string;
   subtitle?: string | null;
   description: string;
@@ -44,19 +46,8 @@ interface LocationPosterData {
   }>;
 }
 
-// ─── 调色板 ──────────────────────────────────────────────────────────────────
-const T = POSTER_TOKENS;
-const C = {
-  ...T,
-  primaryDark: "#B45309",
-  border: "#E7E5E4",
-  amber50: "#FFFBEB",
-  amber100: "#FEF3C7",
-};
-
 // 尺寸常量
 const W = 375;
-const COVER_H = 210; // 16:9 → 375/211
 export const LOCATION_POSTER_HEIGHT = 584;
 export const LOCATION_POSTER_FOOTER_MIN_HEIGHT = 112;
 const HERO_STRIP = 4;
@@ -149,6 +140,9 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
     fonts,
   } = data;
 
+  const { palette: C, location: layout } = getPosterPreset(data.preset);
+  const coverWidth = W - layout.coverInset * 2;
+
   const fontFamily = fonts.length > 0 ? fonts[0].name : "system-ui";
   const i18n = data.i18n ?? {};
 
@@ -206,10 +200,12 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
               style: {
                 display: "flex",
                 position: "relative",
-                width: W,
-                height: COVER_H,
+                width: coverWidth,
+                height: layout.coverHeight,
+                margin: layout.coverInset > 0 ? `${layout.coverInset}px ${layout.coverInset}px 0` : 0,
+                borderRadius: layout.coverInset > 0 ? layout.cardRadius : 0,
                 overflow: "hidden",
-                backgroundColor: "#E7E5E4",
+                backgroundColor: C.border,
               },
               children: [
                 // 1. 封面图
@@ -223,8 +219,8 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                           position: "absolute",
                           top: 0,
                           left: 0,
-                          width: W,
-                          height: COVER_H,
+                          width: coverWidth,
+                          height: layout.coverHeight,
                           objectFit: "cover",
                         },
                       },
@@ -237,9 +233,9 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                           position: "absolute",
                           top: 0,
                           left: 0,
-                          width: W,
-                          height: COVER_H,
-                          background: "linear-gradient(135deg, #FEF3C7 0%, #FED7AA 100%)",
+                          width: coverWidth,
+                          height: layout.coverHeight,
+                          background: `linear-gradient(135deg, ${C.tagBackground} 0%, ${C.sunGlow} 100%)`,
                           alignItems: "center",
                           justifyContent: "center",
                         },
@@ -263,7 +259,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      background: "linear-gradient(180deg, rgba(42,59,92,0.45) 0%, transparent 60%)",
+                      background: C.coverOverlay,
                     },
                   },
                 },
@@ -278,7 +274,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                       right: 0,
                       bottom: 0,
                       height: 240,
-                      background: "linear-gradient(180deg, rgba(28,25,23,0) 0%, rgba(42,59,92,0.30) 45%, rgba(232,144,48,0.55) 100%)",
+                      background: C.coverGlow,
                     },
                   },
                 },
@@ -318,8 +314,8 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                             fontSize: 22,
                             lineHeight: "28px",
                             fontWeight: 800,
-                            color: "#FFFFFF",
-                            textShadow: "0 0 16px rgba(232,144,48,0.5)",
+                            color: C.white,
+                            textShadow: C.titleShadow,
                             maxHeight: 56,
                             overflow: "hidden",
                           },
@@ -388,7 +384,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                 margin: "14px 14px 12px",
                 padding: "14px 16px",
                 backgroundColor: C.surface,
-                borderRadius: 14,
+                borderRadius: layout.cardRadius,
                 border: `1px solid ${C.border}`,
               },
               children: [
@@ -408,17 +404,17 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                           children: [
                             ...(distanceText
                               ? [
-                                  metricPill(distanceLabel, distanceText),
+                                  metricPill(distanceLabel, distanceText, C),
                                 ]
                               : []),
                             ...(durationText
                               ? [
-                                  metricPill(durationLabel, durationText),
+                                  metricPill(durationLabel, durationText, C),
                                 ]
                               : []),
                             ...(elevationText
                               ? [
-                                  metricPill(elevationLabel, elevationText),
+                                  metricPill(elevationLabel, elevationText, C),
                                 ]
                               : []),
                             ...(routeMetrics?.difficulty
@@ -426,6 +422,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                                   metricPill(
                                     difficultyLabel,
                                     difficultyChip(locale, routeMetrics.difficulty),
+                                    C,
                                   ),
                                 ]
                               : []),
@@ -482,7 +479,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                             gap: 6,
                             marginBottom: displayAddress ? 8 : 0,
                           },
-                          children: displayTags.map((tag) => tagPill(tag)),
+                          children: displayTags.map((tag) => tagPill(tag, C)),
                         },
                       },
                     ]
@@ -521,8 +518,8 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                 justifyContent: "space-between",
                 margin: "0 14px",
                 padding: "12px 14px",
-                backgroundColor: "rgba(232,144,48,0.04)",
-                borderRadius: 14,
+                backgroundColor: C.footerTint,
+                borderRadius: layout.cardRadius,
                 border: `1px solid ${C.border}`,
                 minHeight: LOCATION_POSTER_FOOTER_MIN_HEIGHT,
               },
@@ -586,7 +583,7 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
                     style: {
                       display: "flex",
                       padding: 6,
-                      backgroundColor: "#FFFFFF",
+                      backgroundColor: C.white,
                       border: `1px solid ${C.border}`,
                       borderRadius: 10,
                       flexShrink: 0,
@@ -654,15 +651,15 @@ export async function renderLocationPoster(data: LocationPosterData): Promise<st
 }
 
 // ─── 小组件 ─────────────────────────────────────────────────────────────────
-function tagPill(label: string) {
+function tagPill(label: string, C: PosterPalette) {
   return {
     type: "div",
     props: {
       style: {
         display: "flex",
         padding: "3px 8px",
-        backgroundColor: C.amber50,
-        border: `1px solid ${C.amber100}`,
+        backgroundColor: C.tagBackground,
+        border: `1px solid ${C.tagBorder}`,
         borderRadius: 99,
       },
       children: {
@@ -682,7 +679,7 @@ function tagPill(label: string) {
   };
 }
 
-function metricPill(label: string, value: string) {
+function metricPill(label: string, value: string, C: PosterPalette) {
   return {
     type: "div",
     props: {

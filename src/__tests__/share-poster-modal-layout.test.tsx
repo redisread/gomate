@@ -22,6 +22,7 @@ vi.mock("@/lib/api", () => ({
 describe("SharePosterModal layout", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
   function mockGeneratedPoster() {
@@ -201,5 +202,25 @@ describe("SharePosterModal layout", () => {
       expect(click).not.toHaveBeenCalled();
       expect(screen.getByRole("status")).toHaveTextContent("share.posterDownloaded");
     });
+  });
+
+  it("regenerates the preview for the selected preset", async () => {
+    mockGeneratedPoster();
+
+    render(
+      <SharePosterModal
+        type="location"
+        id="location-1"
+        title="梧桐山"
+        url="https://gomate.live/locations/location-1"
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("radio", { name: /posterPresetRidge/ }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(fetch).mock.calls[1][0]).toContain("preset=ridge");
   });
 });

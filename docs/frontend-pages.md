@@ -49,6 +49,17 @@
 - Team 列表筛选直接读取共享代码枚举，名称统一通过 i18n 展示。
 - 详情展示 leader、active members、申请、行程和行动本；member 离队直接结束 active membership。
 - 已结束且成行的 Team 中，leader 或 active member 可通过 `/discover/create?teamId=<id>` 发布回顾。
+- Team 详情的通用分享弹窗与移动端底部分享面板共用三套 SVG 海报预设；切换预设时保留旧预览，
+  直到新预览生成完成。
+
+### 分享海报
+
+- Location 与 Team 的分享入口提供 `dusk`、`ridge`、`journal` 三套固定预设；名称、说明和选择器
+  文案都通过 `share` namespace 本地化。Story 不在本轮预设范围内。
+- 选择只作为当前设备的本地偏好，不写入 D1、R2 或用户资料；服务端只按 allowlist query 生成
+  SVG，不提供自由编辑、任意 CSS、PNG 导出或已渲染海报持久化。
+- 切换期间保留上一个可用 Blob 预览、取消过期请求并缓存本次打开期间已浏览的变体；关闭分享面板
+  时撤销全部 Blob URL。
 
 ### Story
 

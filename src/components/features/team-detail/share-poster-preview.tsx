@@ -4,6 +4,8 @@ import * as React from "react";
 import { useState, useRef, useCallback } from "react";
 import { useI18n } from "@/hooks/useI18n";
 import { Link2, X, CheckCircle, Download, Loader2, Share2, RefreshCw } from "lucide-react";
+import { PosterPresetSelector } from "@/components/features/poster-preset-selector";
+import { usePosterPreset } from "@/hooks/use-poster-preset";
 import { useShareImage } from "@/hooks/use-share-image";
 
 interface SharePosterPreviewProps {
@@ -23,7 +25,8 @@ export function SharePosterPreview({
   teamTitle,
   onClose,
 }: SharePosterPreviewProps) {
-  const { t } = useI18n(["teams", "common"]);
+  const { t } = useI18n(["teams", "common", "share"]);
+  const [preset, setPreset] = usePosterPreset();
   const [copied, setCopied] = useState(false);
   const [showRetry, setShowRetry] = useState(false);
   const teamUrl = typeof window !== "undefined" ? `${window.location.origin}/teams/${teamId}` : "";
@@ -45,14 +48,13 @@ export function SharePosterPreview({
   } = useShareImage({
     type: "team",
     id: teamId,
+    preset,
   });
 
   // 打开时自动生成
   React.useEffect(() => {
-    if (open && !imageUrl) {
-      generateImage();
-    }
-  }, [open, imageUrl, generateImage]);
+    if (open) void generateImage();
+  }, [open, generateImage]);
 
   // 关闭时清理
   React.useEffect(() => {
@@ -250,7 +252,27 @@ export function SharePosterPreview({
         {/* Poster Preview */}
         <div className="p-4 flex flex-col items-center bg-gradient-to-b from-amber-50/50 to-background">
           {/* Display generated poster */}
-          {isLoading ? (
+          {imageUrl ? (
+            <div
+              className="relative w-full max-w-[280px] overflow-hidden rounded-2xl"
+              style={{ aspectRatio: "375 / 468", maxHeight: "min(55dvh, 350px)" }}
+            >
+              <img
+                src={imageUrl}
+                alt={t("teams.shareTeam")}
+                className="block h-full w-full object-contain shadow-2xl"
+              />
+              {isLoading && (
+                <div className="absolute inset-x-0 top-0 flex items-center justify-center gap-2 bg-white/90 py-2 text-xs text-stone-600" role="status">
+                  <Loader2 className="size-3.5 animate-spin text-amber-600" />
+                  {t("teams.generatingPoster")}
+                </div>
+              )}
+              <div className="absolute -bottom-3 -right-3 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                <CheckCircle className="w-4 h-4 text-white" />
+              </div>
+            </div>
+          ) : isLoading ? (
             <div
               className="flex w-full max-w-[280px] flex-col items-center justify-center rounded-2xl bg-muted shadow-lg"
               style={{ aspectRatio: "375 / 468", maxHeight: "min(55dvh, 350px)" }}
@@ -262,21 +284,6 @@ export function SharePosterPreview({
               <p className="text-xs text-muted-foreground/70 mt-2">
                 {t("teams.posterGeneratingDesc")}
               </p>
-            </div>
-          ) : imageUrl ? (
-            <div
-              className="relative w-full max-w-[280px] overflow-hidden rounded-2xl"
-              style={{ aspectRatio: "375 / 468", maxHeight: "min(55dvh, 350px)" }}
-            >
-              <img
-                src={imageUrl}
-                alt="Team Poster"
-                className="block h-full w-full object-contain shadow-2xl"
-              />
-              {/* Decorative corner */}
-              <div className="absolute -bottom-3 -right-3 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                <CheckCircle className="w-4 h-4 text-white" />
-              </div>
             </div>
           ) : error ? (
             <div
@@ -303,6 +310,10 @@ export function SharePosterPreview({
               )}
             </div>
           ) : null}
+
+          <div className="mt-4 w-full max-w-sm">
+            <PosterPresetSelector value={preset} onChange={setPreset} />
+          </div>
 
           {/* Hint */}
           <div className="mt-4 text-center">
