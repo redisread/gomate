@@ -35,6 +35,9 @@
 - 多 worktree 首次运行 `pnpm init:worktree`，之后用 `pnpm dev:wt` 启动统一 Worker；具体见本地开发文档。
 - 行为改动必须有能先失败后通过的测试；纯文档改动至少验证链接、格式、引用和受影响的静态门禁。
 - 变更保持单一目的，分支默认使用 `codex/` 前缀；合并前检查 staged diff、秘密、生成物和无关文件。
+- 创建或更新 PR 前必须先读取并遵循 [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md)；
+  标题与正文默认使用中文（可保留 `feat:`、`fix:` 等类型前缀），除非用户明确指定其他语言。不得用
+  通用 `Summary` / `Verification` 结构替换仓库模板，且只能勾选实际通过的验证项。
 
 ## 数据库与存储硬约束
 
