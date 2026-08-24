@@ -39,7 +39,7 @@ describe("normalizeLocationHiking", () => {
           gearEssential: ["登山鞋"],
           gearOptional: ["登山杖"],
           warnings: ["雨天路滑"],
-        },
+        } as unknown as NonNullable<Location["extra"]["hiking"]>,
       },
     }));
 
@@ -50,14 +50,14 @@ describe("normalizeLocationHiking", () => {
       duration: { value: "2-3", unit: "hour" },
       distance: { value: "5.5", unit: "kilometer" },
       elevation: { value: "700", unit: "meter" },
-      gearEssential: ["登山鞋"],
-      gearOptional: ["登山杖"],
       warnings: ["雨天路滑"],
       routeGuide: {
         overview: "沿泰山涧步道上山。",
         tips: ["后半段较陡"],
       },
     });
+    expect(hiking).not.toHaveProperty("gearEssential");
+    expect(hiking).not.toHaveProperty("gearOptional");
   });
 
   it("时长换算：不足 1 小时用分钟单位，单值不重复", () => {
@@ -85,7 +85,22 @@ describe("normalizeLocationHiking", () => {
       id: "loc-4",
       name: "空攻略山",
       extra: {
-        hiking: { overview: null, tips: [], gearEssential: [], gearOptional: [], warnings: [] },
+        hiking: { overview: null, tips: [], warnings: [] },
+      },
+    }));
+
+    expect(hiking).toBeNull();
+  });
+
+  it("legacy equipment alone does not create route content", () => {
+    const hiking = normalizeLocationHiking(locationFixture({
+      id: "loc-5",
+      name: "旧装备数据",
+      extra: {
+        hiking: {
+          gearEssential: ["登山鞋"],
+          gearOptional: ["登山杖"],
+        } as unknown as NonNullable<Location["extra"]["hiking"]>,
       },
     }));
 

@@ -42,7 +42,7 @@ pnpm vitest run --config vitest.config.ts src/__tests__/location-detail-composit
 rg -n "DecisionBlock|location-detail/decision-block" src
 ```
 
-### [ ] A2. Remove Location equipment from route guidance
+### [x] A2. Remove Location equipment from route guidance
 
 **Depends on:** A1
 
