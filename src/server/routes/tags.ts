@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { asc, eq, sql } from "drizzle-orm";
+import type { AdminErrorReason } from "@/contracts/admin-i18n";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import {
@@ -193,7 +194,9 @@ tagsRoute.post("/", async (c) => {
     .limit(1);
   if (existing) {
     if (existing.name !== parsed.name) {
-      return c.json(APIErrors.conflict("Tag slug already exists"), 409);
+      return c.json(APIErrors.conflict("Tag slug already exists", {
+        reason: "tag_already_exists" satisfies AdminErrorReason,
+      }), 409);
     }
     return c.json({ success: true, tagId: existing.id, existing: true });
   }
@@ -205,7 +208,9 @@ tagsRoute.post("/", async (c) => {
     logger.error("tags_create_failed", {
       errorType: error instanceof Error ? error.name : "UnknownError",
     });
-    return c.json(APIErrors.conflict("Tag already exists"), 409);
+    return c.json(APIErrors.conflict("Tag already exists", {
+      reason: "tag_already_exists" satisfies AdminErrorReason,
+    }), 409);
   }
 });
 
@@ -239,7 +244,9 @@ tagsRoute.patch("/:id", async (c) => {
     if (!updated) return c.json(APIErrors.notFound("Tag not found"), 404);
     return c.json({ success: true as const, tag: updated });
   } catch {
-    return c.json(APIErrors.conflict("Tag update conflicts"), 409);
+    return c.json(APIErrors.conflict("Tag update conflicts", {
+      reason: "tag_update_conflict" satisfies AdminErrorReason,
+    }), 409);
   }
 });
 
