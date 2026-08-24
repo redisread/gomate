@@ -1,37 +1,24 @@
-# Implementation Plan: admin-copy-experience
+# Implementation Plan: admin-i18n-guardrails
 
 状态：已批准（2026-08-25，用户授权连续完成全部阶段）
 
 ## Overview
 
-从共享展示合同向外迁移全部管理员消费者：先修复资源与 SSR 标题，再迁移结构化错误和枚举，最后接入语言切换并执行三语言组件/浏览器检查。
-
-## Architecture Decisions
-
-- 后台请求继续使用同源 `fetchAPI`；需要展示失败时读取原始 JSON，再交给 `adminActionErrorKey`。
-- `LocaleToggle` 复用现有路径前缀与 cookie 行为，不建立第二套 locale 状态。
-- 共享 domain 值由 `enums` namespace 所有，后台流程 copy 由 `admin` 所有。
-- 只修复文本与轻量入口布局，不改后台信息架构。
+先用独立 fixture 锁定后台专项静态规则，再把检查接入现有 `i18n:validate`；随后扩展管理员平台 E2E，覆盖三语言 shell、前缀导航和关键新增地点术语。
 
 ## Dependency Order
 
-`locale copy/SSR titles` → `safe errors and enum consumers` → `locale switcher` → `component and browser verification`
+`negative fixtures` → `static validator` → `i18n:validate integration` → `three-locale Chromium smoke` → `durable docs`
 
 ## Risks and Mitigations
 
 | Risk | Mitigation |
 |---|---|
-| `apiPost/apiPatch` 丢弃结构化 payload | 管理员消费者迁移到 `fetchAPI`，不改通用 helper |
-| locale 切换丢失管理员路径 | 复用并测试 `LocaleToggle` 的 locale 前缀替换 |
-| namespace 迁移导致 island 缺 key | 同步 declare/load namespaces，并运行 i18n coverage gate |
-| PR #610 新增状态操作文案遗漏 | 以当前主线文件和三语言运行时路径为审计清单 |
-
-## Checkpoints
-
-1. SSR 标题与三语言资源通过 i18n build/validate。
-2. 组件测试证明错误 message 隔离和枚举本地化。
-3. 语言切换、三语言关键路径和全量构建通过。
+| 文本正则误报技术值 | 排除测试、URL、数字坐标和非展示代码，只扫描明确 UI 语法 |
+| key 动态拼接无法静态求值 | 只检查静态 key，动态枚举由穷尽映射与类型检查负责 |
+| E2E 扩大运行时间 | 复用现有串行管理员 fixture，在一个参数化测试中验证三语言 |
+| 门禁与 locale parity 重复 | 专项脚本只负责后台消费者，现有脚本继续负责资源一致性 |
 
 ## Rollback Boundary
 
-纯前端与 locale 资源变更；无数据回滚。可按文案、消费者、切换入口三个原子提交独立回退。
+静态脚本、package script、E2E 和文档均可单独回退；无运行时数据影响。

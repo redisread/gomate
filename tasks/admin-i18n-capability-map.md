@@ -5,7 +5,7 @@
 | Module ID | 责任 | 依赖 |
 |---|---|---|
 | `admin-i18n-contract`（已完成） | 定义三语言词汇、namespace 归属、角色/状态/季节/活动类型展示映射、API 错误本地化边界 | — |
-| `admin-copy-experience` | 修复全部管理员触点的标题、表单、动态枚举、反馈状态和日文质量，并增加后台语言切换入口 | `admin-i18n-contract` |
+| `admin-copy-experience`（已完成） | 修复全部管理员触点的标题、表单、动态枚举、反馈状态和日文质量，并增加后台语言切换入口 | `admin-i18n-contract` |
 | `admin-i18n-guardrails` | 增加硬编码、无效 key、原始枚举、namespace 覆盖检查，以及三语言关键路径运行时测试 | `admin-i18n-contract`、`admin-copy-experience` |
 
 构建顺序：

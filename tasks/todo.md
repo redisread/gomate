@@ -1,33 +1,25 @@
-# Task List: admin-copy-experience
+# Task List: admin-i18n-guardrails
 
 状态：已批准（2026-08-25，用户授权连续完成全部阶段）
 
-## Task 1: 修复 SSR 标题与三语言语义
+## Task 1: 静态门禁 TDD
 
-- [ ] 测试先锁定新增/编辑页标题 key 与术语。
-- [ ] 修复 `formLocationType`、日文警告示例及相关三语言 copy。
-- [ ] 验证：`pnpm i18n:build && pnpm i18n:gen-types && pnpm i18n:validate`。
+- [ ] 用 fixture 覆盖硬编码标题/文案、无效 key、旧 key、原始枚举和不安全错误 helper。
+- [ ] 实现可测试的后台源码扫描器并验证当前仓库正向通过。
 
-## Task 2: 迁移管理员错误展示
+## Task 2: 默认质量门禁
 
-- [ ] 测试证明已知 reason 本地化、未知 message 使用 fallback。
-- [ ] 用户、标签、地点、快速草稿不再展示异常或服务端 message。
-- [ ] 验证：admin management 聚焦组件测试。
+- [ ] 将专项扫描接入 `pnpm i18n:validate`。
+- [ ] 保持现有 locale parity、namespace coverage 和类型生成行为。
 
-## Task 3: 迁移原始枚举与季节展示
+## Task 3: 三语言 Chromium 冒烟
 
-- [ ] 用户角色/状态、地点状态通过共享 `enums` key 展示。
-- [ ] 地点编辑预览与相关共享季节展示不再输出 `spring` 等标识。
-- [ ] 验证：组件测试与 `pnpm type-check`。
+- [ ] 验证中文、英文、日文后台 shell 与语言入口。
+- [ ] 验证 locale 前缀导航和新增地点活动类型术语。
+- [ ] 验证关键路径无页面错误和横向溢出。
 
-## Task 4: 接入后台语言切换
+## Task 4: 长期文档与最终门禁
 
-- [ ] 桌面侧栏和移动后台头部均可访问语言切换。
-- [ ] 可访问名称、触控尺寸和路径保留通过测试。
-- [ ] 验证：admin navigation/locale toggle 组件测试。
-
-## Task 5: 三语言运行时验收
-
-- [ ] `zh-CN`、`en`、`ja` 后台首页、列表、新增/编辑入口关键文案正确。
-- [ ] 页面无控制台错误，关键链接和 locale 切换正确。
-- [ ] 全量前端门禁通过。
+- [ ] 更新 `docs/frontend-pages.md`。
+- [ ] 运行完整质量门禁和代码审查。
+- [ ] 删除临时任务文档后创建 PR。
