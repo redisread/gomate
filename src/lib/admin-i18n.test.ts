@@ -4,7 +4,14 @@ import {
   ADMIN_ERROR_REASONS,
   isAdminErrorReason,
 } from "@/contracts/admin-i18n";
-import { readAdminErrorReason } from "./admin-i18n";
+import { SEASONS } from "@/contracts/enums";
+import {
+  locationStatusKey,
+  readAdminErrorReason,
+  seasonKey,
+  userRoleKey,
+  userStatusKey,
+} from "./admin-i18n";
 
 describe("administrator i18n error contract", () => {
   it("recognizes every stable administrator error reason", () => {
@@ -50,5 +57,34 @@ describe("administrator i18n error contract", () => {
     { error: { details: { reason: 1 } } },
   ])("does not expose message or malformed payload values: %j", (payload) => {
     expect(readAdminErrorReason(payload)).toBeNull();
+  });
+});
+
+describe("administrator enum presentation keys", () => {
+  it("maps user roles to shared enum keys", () => {
+    expect(userRoleKey("user")).toBe("enums.userRole.user");
+    expect(userRoleKey("admin")).toBe("enums.userRole.admin");
+  });
+
+  it("maps every user status to a shared enum key", () => {
+    expect(userStatusKey("active")).toBe("enums.userStatus.active");
+    expect(userStatusKey("suspended")).toBe("enums.userStatus.suspended");
+    expect(userStatusKey("banned")).toBe("enums.userStatus.banned");
+    expect(userStatusKey("deleted")).toBe("enums.userStatus.deleted");
+  });
+
+  it("maps every location status to a shared enum key", () => {
+    expect(locationStatusKey("draft")).toBe("enums.locationStatus.draft");
+    expect(locationStatusKey("published")).toBe("enums.locationStatus.published");
+    expect(locationStatusKey("archived")).toBe("enums.locationStatus.archived");
+  });
+
+  it("maps every supported season to a shared enum key", () => {
+    expect(SEASONS.map(seasonKey)).toEqual([
+      "enums.season.spring",
+      "enums.season.summer",
+      "enums.season.autumn",
+      "enums.season.winter",
+    ]);
   });
 });

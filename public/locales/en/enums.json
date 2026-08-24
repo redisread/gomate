@@ -11,6 +11,27 @@
     "leisure": "Leisure Exploration",
     "travel": "Travel"
   },
+  "userRole": {
+    "user": "User",
+    "admin": "Administrator"
+  },
+  "userStatus": {
+    "active": "Active",
+    "suspended": "Suspended",
+    "banned": "Banned",
+    "deleted": "Deleted"
+  },
+  "locationStatus": {
+    "draft": "Draft",
+    "published": "Published",
+    "archived": "Archived"
+  },
+  "season": {
+    "spring": "Spring",
+    "summer": "Summer",
+    "autumn": "Autumn",
+    "winter": "Winter"
+  },
   "teamStatus": {
     "recruiting": "Join Us",
     "full": "Almost Full",

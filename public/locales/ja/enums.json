@@ -11,6 +11,27 @@
     "leisure": "カジュアル探店",
     "travel": "旅行"
   },
+  "userRole": {
+    "user": "ユーザー",
+    "admin": "管理者"
+  },
+  "userStatus": {
+    "active": "有効",
+    "suspended": "一時停止",
+    "banned": "利用停止",
+    "deleted": "削除済み"
+  },
+  "locationStatus": {
+    "draft": "下書き",
+    "published": "公開済み",
+    "archived": "アーカイブ済み"
+  },
+  "season": {
+    "spring": "春",
+    "summer": "夏",
+    "autumn": "秋",
+    "winter": "冬"
+  },
   "teamStatus": {
     "recruiting": "参加募集中",
     "full": "残りわずか",
