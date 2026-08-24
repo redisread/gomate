@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Location } from "@/lib/types";
+import { DEFAULT_LOCATION_FORM } from "./location-form/use-location-form";
 import { LocationEditClient, focusLocationFormField } from "./location-edit-client";
 
 const mockUseLocationForm = vi.hoisted(() => vi.fn());
@@ -60,33 +61,13 @@ function formState(location: Location) {
     allTags: [],
     activityTypes: ["hiking"],
     formData: {
+      ...DEFAULT_LOCATION_FORM,
       name: location.name,
       slug: location.slug,
       supportedActivityTypes: location.supportedActivityTypes,
       status: location.status,
-      subtitle: "",
       description: location.description,
-      address: "",
       regionId: location.regionId,
-      latitude: "",
-      longitude: "",
-      coverImageUrl: "",
-      images: [],
-      extra: {
-        hiking: {
-          difficulty: "" as const,
-          durationMin: "",
-          durationMax: "",
-          distanceKm: "",
-          elevationGainM: "",
-          bestSeasons: [],
-          overview: "",
-          tips: [],
-          warnings: [],
-        },
-        facilities: [],
-      },
-      tagIds: [],
     },
     errors: {},
     isLoading: false,

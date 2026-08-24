@@ -12,8 +12,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { EditProgressBar } from "@/components/ui/season-picker";
 import { cn } from "@/lib/utils";
 
-import type { FormData } from "./location-form";
-import type { LocationSaveIntent } from "./location-form/use-location-form";
+import type { FormData, LocationSaveIntent } from "./location-form";
 import {
   useLocationForm,
   LocationFormBasicFields,
@@ -139,7 +138,7 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
     { id: "finish", label: t("admin.progressStep4"), done: !!form.formData.name && !!form.formData.description && !!form.formData.regionId && !!form.formData.coverImageUrl },
   ];
 
-  const handleSave = React.useCallback(async (intent: LocationSaveIntent) => {
+  const submitLocation = React.useCallback(async (intent: LocationSaveIntent) => {
     setSavingIntent(intent);
     try {
       const result = await form.handleSave(intent);
@@ -233,9 +232,9 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
         isDirty={form.isDirty}
         isSaving={form.isSaving}
         savingIntent={savingIntent}
-        onSave={() => void handleSave("keep")}
-        onPublish={() => void handleSave("publish")}
-        onRestore={() => void handleSave("restore")}
+        onSave={() => void submitLocation("keep")}
+        onPublish={() => void submitLocation("publish")}
+        onRestore={() => void submitLocation("restore")}
         onDiscard={form.handleDiscard}
       />
 
