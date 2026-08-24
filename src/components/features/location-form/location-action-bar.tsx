@@ -24,6 +24,12 @@ const statusTone: Record<LocationStatus, string> = {
   archived: "bg-stone-100 text-stone-600 ring-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-700",
 };
 
+const statusLabel = {
+  draft: "admin.statusDraft",
+  published: "admin.statusPublished",
+  archived: "admin.statusArchived",
+} as const satisfies Record<LocationStatus, string>;
+
 export function LocationActionBar({
   status,
   isDirty,
@@ -54,7 +60,7 @@ export function LocationActionBar({
             role="status"
             className={cn("rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset", statusTone[status])}
           >
-            {t(`admin.status${status[0].toUpperCase()}${status.slice(1)}`)}
+            {t(statusLabel[status])}
           </span>
         </div>
 
