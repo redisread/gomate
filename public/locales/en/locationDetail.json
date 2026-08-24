@@ -22,20 +22,5 @@
     "minute": "min",
     "kilometer": "km",
     "meter": "m"
-  },
-  "decision": {
-    "title": "Decision Info",
-    "subtitle": "See how to get there and what to bring first"
-  },
-  "transport": {
-    "title": "Getting There",
-    "openInMap": "Open in Amap",
-    "fallbackHint": "Open the map to view the location & get directions"
-  },
-  "gear": {
-    "title": "Gear List",
-    "essential": "Essential",
-    "optional": "Optional",
-    "notes": "Notes"
   }
 }

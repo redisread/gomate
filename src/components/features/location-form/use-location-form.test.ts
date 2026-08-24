@@ -34,7 +34,7 @@ const location: Location = {
       overview: "泰山涧上山",
       tips: ["早点出发"],
       warnings: ["雨天路滑"],
-    },
+    } as unknown as NonNullable<Location["extra"]["hiking"]>,
     facilities: ["restroom"],
   },
   createdAt: "2026-08-16T00:00:00.000Z",
@@ -56,17 +56,17 @@ describe("Location form projection", () => {
           difficulty: "moderate",
           distanceKm: 5.5,
           elevationGainM: 700,
-          gearEssential: ["登山鞋"],
         },
       },
       tagIds: ["tag-1"],
     });
+    expect(locationToFormData(location).extra.hiking).not.toHaveProperty("gearEssential");
+    expect(locationToFormData(location).extra.hiking).not.toHaveProperty("gearOptional");
   });
 
   it("emits the exact mutation payload and trims JSON arrays", () => {
     const form = locationToFormData(location);
     form.extra.hiking.tips = [" 早点出发 ", ""];
-    form.extra.hiking.gearOptional = [];
 
     expect(formDataToLocationPayload(form)).toEqual({
       regionId: "region-sz",
@@ -89,8 +89,6 @@ describe("Location form projection", () => {
           distanceKm: 5.5,
           elevationGainM: 700,
           bestSeasons: ["autumn"],
-          gearEssential: ["登山鞋"],
-          gearOptional: [],
           overview: "泰山涧上山",
           tips: ["早点出发"],
           warnings: ["雨天路滑"],
@@ -98,6 +96,8 @@ describe("Location form projection", () => {
         facilities: ["restroom"],
       },
     });
+    expect(formDataToLocationPayload(form).extra.hiking).not.toHaveProperty("gearEssential");
+    expect(formDataToLocationPayload(form).extra.hiking).not.toHaveProperty("gearOptional");
   });
 
   it("omits an empty hiking object for non-hiking locations", () => {

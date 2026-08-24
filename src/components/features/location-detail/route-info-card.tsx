@@ -1,7 +1,6 @@
 import * as React from "react";
 import {
   AlertTriangle,
-  Backpack,
   Clock,
   Lightbulb,
   Mountain,
@@ -24,8 +23,8 @@ interface RouteInfoCardProps {
 
 /**
  * 「徒步攻略」区块，严格读取 `Location.extra.hiking`。
- * 布局（Steven 定稿）：标题 + 4 参数 tiles + overview 引导段 + tips/装备/注意事项 notes。
- * 数据：路线参数、攻略、装备和警告均来自同一 nested DTO。
+ * 布局（Steven 定稿）：标题 + 4 参数 tiles + overview 引导段 + tips/注意事项 notes。
+ * 数据：路线参数、攻略和警告均来自同一 nested DTO。
  * 空态：4 参数全空且无 hiking 内容 → 整区块不渲染。
  */
 export function RouteInfoCard({ location }: RouteInfoCardProps) {
@@ -37,8 +36,6 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
   const metrics = getMetricItems(hiking, t);
   const tips = hiking.routeGuide?.tips ?? [];
   const hasRouteNotes =
-    hiking.gearEssential.length > 0 ||
-    hiking.gearOptional.length > 0 ||
     hiking.warnings.length > 0 ||
     tips.length > 0;
 
@@ -70,14 +67,6 @@ export function RouteInfoCard({ location }: RouteInfoCardProps) {
 
       {hasRouteNotes && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {(hiking.gearEssential.length > 0 || hiking.gearOptional.length > 0) && (
-            <RouteNoteBlock
-              icon={<Backpack className="h-3.5 w-3.5" />}
-              title={t("common.recommendedGear")}
-              items={[...hiking.gearEssential, ...hiking.gearOptional]}
-              tone="stone"
-            />
-          )}
           {tips.length > 0 && (
             <RouteNoteBlock
               icon={<Lightbulb className="h-3.5 w-3.5" />}

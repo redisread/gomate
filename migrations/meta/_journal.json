@@ -43,6 +43,13 @@
       "when": 1787494894981,
       "tag": "0005_admin_location_drafts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1787536669073,
+      "tag": "0006_remove_location_decision_info",
+      "breakpoints": true
     }
   ]
 }

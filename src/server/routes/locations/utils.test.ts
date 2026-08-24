@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import * as schema from "../../db/schema";
 import {
   createLocationInputSchema,
+  normalizeLocationExtraForStorage,
   projectLocation,
+  updateLocationInputSchema,
 } from "./utils";
 
 describe("location input", () => {
@@ -56,6 +58,54 @@ describe("location input", () => {
       supportedActivityTypes: ["paddling"],
     }).success).toBe(false);
   });
+
+  it("accepts but discards retired location equipment on create and update", () => {
+    const extra = {
+      hiking: {
+        difficulty: "moderate" as const,
+        gearEssential: ["登山鞋"],
+        gearOptional: ["登山杖"],
+        tips: ["早点出发"],
+      },
+    };
+    const created = createLocationInputSchema.safeParse({
+      name: "兼容旧客户端",
+      description: "旧装备字段只用于兼容输入",
+      regionId: "region-cn-shenzhen",
+      extra,
+    });
+    const updated = updateLocationInputSchema.safeParse({
+      id: "location-1",
+      extra,
+    });
+
+    expect(created.success).toBe(true);
+    expect(updated.success).toBe(true);
+    if (!created.success || !updated.success) return;
+    for (const parsed of [created.data.extra, updated.data.extra]) {
+      expect(parsed?.hiking).toMatchObject({
+        difficulty: "moderate",
+        tips: ["早点出发"],
+      });
+      expect(parsed?.hiking).not.toHaveProperty("gearEssential");
+      expect(parsed?.hiking).not.toHaveProperty("gearOptional");
+      expect(normalizeLocationExtraForStorage(parsed ?? {})).toEqual({
+        hiking: {
+          difficulty: "moderate",
+          tips: ["早点出发"],
+        },
+      });
+    }
+  });
+
+  it("continues to reject unrelated unknown hiking fields", () => {
+    expect(createLocationInputSchema.safeParse({
+      name: "未知字段",
+      description: "严格校验必须保留",
+      regionId: "region-cn-shenzhen",
+      extra: { hiking: { routeColor: "blue" } },
+    }).success).toBe(false);
+  });
 });
 
 describe("location response projection", () => {
@@ -74,7 +124,14 @@ describe("location response projection", () => {
       longitude: 114.1,
       coverImageUrl: "",
       images: [],
-      extra: {},
+      extra: {
+        hiking: {
+          difficulty: "moderate",
+          gear_essential: ["登山鞋"],
+          gear_optional: ["登山杖"],
+          tips: ["早点出发"],
+        },
+      },
       createdByUserId: "private-user-id",
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -104,5 +161,11 @@ describe("location response projection", () => {
       region: { id: "region-1" },
     });
     expect(projected).not.toHaveProperty("activityTypes");
+    expect(projected.extra.hiking).toMatchObject({
+      difficulty: "moderate",
+      tips: ["早点出发"],
+    });
+    expect(projected.extra.hiking).not.toHaveProperty("gearEssential");
+    expect(projected.extra.hiking).not.toHaveProperty("gearOptional");
   });
 });

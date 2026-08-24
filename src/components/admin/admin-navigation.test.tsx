@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { renderToString } from "react-dom/server";
 
 import { AdminNavigation } from "./admin-navigation";
 
@@ -44,6 +45,18 @@ describe("AdminNavigation", () => {
         .offsetParent;
     }
     document.body.style.overflow = "";
+  });
+
+  it("keeps the mobile trigger disabled until client hydration", () => {
+    const html = renderToString(
+      <AdminNavigation
+        copy={copy}
+        currentPath="/admin"
+        admin={{ id: "admin-1", displayName: "Admin", image: null }}
+      />,
+    );
+
+    expect(html).toContain("disabled=\"\"");
   });
 
   it("renders only real routes and marks the current page", () => {

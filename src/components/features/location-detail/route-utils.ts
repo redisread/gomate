@@ -14,8 +14,6 @@ export interface NormalizedLocationHiking {
   duration?: RouteMetric;
   distance?: RouteMetric;
   elevation?: RouteMetric;
-  gearEssential: string[];
-  gearOptional: string[];
   warnings: string[];
   routeGuide?: {
     overview?: string;
@@ -88,14 +86,11 @@ export function normalizeLocationHiking(location: Location): NormalizedLocationH
     duration: formatDurationMetric(hiking.durationMin, hiking.durationMax),
     distance: formatDistanceMetric(hiking.distanceKm),
     elevation: formatElevationMetric(hiking.elevationGainM),
-    gearEssential: readStringArray(hiking.gearEssential),
-    gearOptional: readStringArray(hiking.gearOptional),
     warnings: readStringArray(hiking.warnings),
     routeGuide: normalizeRouteGuide(hiking),
   };
   const hasAnyMetric = normalized.difficulty || normalized.duration || normalized.distance || normalized.elevation;
   const hasAnyNote = Boolean(normalized.routeGuide?.overview) || (normalized.routeGuide?.tips.length ?? 0) > 0
-    || normalized.gearEssential.length > 0 || normalized.gearOptional.length > 0
     || normalized.warnings.length > 0;
   return hasAnyMetric || hasAnyNote ? normalized : null;
 }

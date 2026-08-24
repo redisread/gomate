@@ -22,20 +22,5 @@
     "minute": "分钟",
     "kilometer": "km",
     "meter": "m"
-  },
-  "decision": {
-    "title": "决策信息",
-    "subtitle": "先看清楚怎么到、要带什么"
-  },
-  "transport": {
-    "title": "怎么到",
-    "openInMap": "在高德地图打开",
-    "fallbackHint": "打开地图，查看具体位置和导航路线"
-  },
-  "gear": {
-    "title": "装备清单",
-    "essential": "必带",
-    "optional": "选带",
-    "notes": "注意事项"
   }
 }

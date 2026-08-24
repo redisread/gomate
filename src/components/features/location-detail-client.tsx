@@ -25,7 +25,6 @@ import type { Location, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { DecisionBlock } from "@/components/features/location-detail/decision-block";
 import { LocationIntroCard } from "@/components/features/location-detail/location-intro-card";
 import { RouteInfoCard } from "@/components/features/location-detail/route-info-card";
 import { TeamListSection } from "@/components/features/location-detail/team-list-section";
@@ -979,7 +978,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               />
             </div>
             <RouteInfoCard location={location} />
-            <DecisionBlock location={location} showGear={false} />
             <div>
               <TeamListSection teams={teams} locationId={location.id} />
             </div>
