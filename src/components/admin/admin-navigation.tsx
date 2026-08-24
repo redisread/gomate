@@ -104,11 +104,14 @@ export function AdminNavigation({
   currentPath,
   admin,
 }: AdminNavigationProps) {
+  const [hydrated, setHydrated] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const closeRef = React.useRef<HTMLButtonElement>(null);
   const titleId = React.useId();
   const closeNavigation = React.useCallback(() => setOpen(false), []);
+
+  React.useEffect(() => setHydrated(true), []);
 
   return (
     <>
@@ -133,8 +136,9 @@ export function AdminNavigation({
           aria-label={copy.openNavigation}
           aria-haspopup="dialog"
           aria-expanded={open}
+          disabled={!hydrated}
           onClick={() => setOpen(true)}
-          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-foreground transition-[background-color,scale] duration-100 hover:bg-muted active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:active:scale-100"
+          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-foreground transition-[background-color,scale] duration-100 hover:bg-muted active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none motion-reduce:active:scale-100"
         >
           <Menu className="size-5" strokeWidth={2} aria-hidden="true" />
         </button>
