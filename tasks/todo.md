@@ -291,7 +291,7 @@ pnpm i18n:validate
 rg -n 'formDecisionTitle|formGear' public/locales/*/admin.json
 ```
 
-### [ ] E2. Remove public decision, map-action, and gear translations
+### [x] E2. Remove public decision, map-action, and gear translations
 
 **Depends on:** A1, A2
 
