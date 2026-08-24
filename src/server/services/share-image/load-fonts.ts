@@ -8,6 +8,21 @@ interface FontData {
   style: string;
 }
 
+const FONT_SIGNATURES = {
+  opentype: [0x4f, 0x54, 0x54, 0x4f],
+  truetype: [0x00, 0x01, 0x00, 0x00],
+  woff: [0x77, 0x4f, 0x46, 0x46],
+} as const;
+
+export function isSupportedSatoriFontData(data: ArrayBuffer): boolean {
+  const signature = new Uint8Array(data, 0, Math.min(data.byteLength, 4));
+  if (signature.byteLength < 4) return false;
+
+  return Object.values(FONT_SIGNATURES).some((expected) =>
+    expected.every((byte, index) => signature[index] === byte)
+  );
+}
+
 // 字体缓存
 let fontCache: FontData[] | null = null;
 let fontCacheTime = 0;
@@ -57,6 +72,10 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
         const fontObject = await env.R2?.get(path);
         if (fontObject) {
           const fontData = await fontObject.arrayBuffer();
+          if (!isSupportedSatoriFontData(fontData)) {
+            logger.warn("share_image_font_unsupported_format");
+            return null;
+          }
           return {
             name,
             data: fontData,
@@ -91,6 +110,9 @@ export async function loadFonts(env: Env): Promise<FontData[]> {
 
         if (fallbackResponse.ok) {
           const fontData = await fallbackResponse.arrayBuffer();
+          if (!isSupportedSatoriFontData(fontData)) {
+            throw new Error("Unsupported fallback font format");
+          }
           fonts.push({
             name: "Noto Sans SC",
             data: fontData,

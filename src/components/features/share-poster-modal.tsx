@@ -1,16 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { API_BASE } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
-import { getLocale } from "@/i18n";
-import { readShareImageBlob } from "@/lib/share-image-client";
+import { usePosterPreset } from "@/hooks/use-poster-preset";
+import { useShareImage } from "@/hooks/use-share-image";
+import { PosterPresetSelector } from "./poster-preset-selector";
 import { CheckCircle, Loader2, ImageIcon, Link2, X, Download, RefreshCw } from "lucide-react";
-
-// Keep the request URL in step with the server-side poster template version.
-// This also bypasses an older browser/CDN response cached under the stable
-// endpoint URL after a poster dimension change.
-const POSTER_TEMPLATE_VERSION = "v2";
 
 interface SharePosterModalProps {
   type: "team" | "location";
@@ -81,10 +76,12 @@ export function SharePosterModal({
   onToast,
 }: SharePosterModalProps) {
   const { t } = useI18n(["common", "share"]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [showRetry, setShowRetry] = useState(false);
+  const [preset, setPreset, isPresetReady] = usePosterPreset();
+  const { isLoading, imageUrl, error, generateImage } = useShareImage({
+    type,
+    id,
+    preset,
+  });
   const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
@@ -124,61 +121,10 @@ export function SharePosterModal({
     };
   }, []);
 
-  /**
-   * 生成分享图片
-   */
-  const generateImage = useCallback(
-    async (): Promise<string | null> => {
-      setIsGenerating(true);
-      setError(null);
-      setShowRetry(false);
-
-      try {
-        // 把当前语言传给后端，让海报文案跟随用户语言
-        const locale = getLocale();
-        const qs = new URLSearchParams({ locale, v: POSTER_TEMPLATE_VERSION });
-        const endpoint =
-          type === "location"
-            ? `${API_BASE}/share-image/location/${id}?${qs.toString()}`
-            : `${API_BASE}/share-image/team/${id}?${qs.toString()}`;
-
-        const response = await fetch(endpoint);
-
-        const blob = await readShareImageBlob(response);
-        const url = URL.createObjectURL(blob);
-        setImageUrl((previousUrl) => {
-          if (previousUrl) URL.revokeObjectURL(previousUrl);
-          return url;
-        });
-        return url;
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to generate image";
-        setError(message);
-        setShowRetry(true);
-        return null;
-      } finally {
-        setIsGenerating(false);
-      }
-    },
-    [type, id]
-  );
-
-  // 打开时自动生成
+  // Generate on open and whenever the selected preset changes.
   useEffect(() => {
-    if (!imageUrl) {
-      generateImage();
-    }
-  }, [imageUrl, generateImage]);
-
-  // imageUrl 变化时 revoke 旧的 blob URL，组件卸载时也 revoke
-  useEffect(() => {
-    return () => {
-      if (imageUrl) {
-        URL.revokeObjectURL(imageUrl);
-      }
-    };
-  }, [imageUrl]);
+    if (isPresetReady) void generateImage();
+  }, [generateImage, isPresetReady]);
 
   const handleDownload = async () => {
     if (!imageUrl || isDownloading) return;
@@ -252,10 +198,8 @@ export function SharePosterModal({
   };
 
   const handleRetry = () => {
-    generateImage();
+    void generateImage();
   };
-
-  const isLoading = isGenerating;
 
   return (
     <div
@@ -292,19 +236,27 @@ export function SharePosterModal({
               ? { aspectRatio: "375 / 584" }
               : { aspectRatio: "375 / 468" }}
           >
-            {isLoading ? (
+            {imageUrl ? (
+              <div className="relative size-full">
+                <img
+                  src={imageUrl}
+                  alt={type === "team" ? t("share.title") : t("share.locationTitle")}
+                  className="size-full object-contain"
+                />
+                {isLoading && (
+                  <div className="absolute inset-x-0 top-0 flex items-center justify-center gap-2 bg-white/90 py-2 text-xs text-stone-600" role="status">
+                    <Loader2 className="size-3.5 animate-spin text-amber-600" />
+                    {t("share.generating")}
+                  </div>
+                )}
+              </div>
+            ) : isLoading ? (
               <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-2" />
                 <span className="text-sm text-stone-500">
                   {t("share.generating")}
                 </span>
               </div>
-            ) : imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={type === "team" ? t("share.title") : t("share.locationTitle")}
-                className="w-full h-full object-contain"
-              />
             ) : error ? (
               <div className="w-full h-full bg-muted flex flex-col items-center justify-center p-4">
                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-2">
@@ -313,21 +265,22 @@ export function SharePosterModal({
                 <span className="text-sm text-red-500 mb-1" role="alert">
                   {t("share.generateFailed")}
                 </span>
-                {showRetry && (
-                  <button
-                    onClick={handleRetry}
-                    className="mt-3 flex items-center gap-1 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    {t("common.retry")}
-                  </button>
-                )}
+                <button
+                  onClick={handleRetry}
+                  className="mt-3 flex min-h-11 items-center gap-1 rounded-lg bg-amber-600 px-3 py-1.5 text-sm text-white hover:bg-amber-700"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  {t("common.retry")}
+                </button>
               </div>
             ) : (
               <div className="w-full h-full bg-muted flex items-center justify-center">
                 <ImageIcon className="w-8 h-8 text-stone-300" />
               </div>
             )}
+          </div>
+          <div className="mx-auto mt-4 w-full">
+            <PosterPresetSelector value={preset} onChange={setPreset} />
           </div>
         </div>
 

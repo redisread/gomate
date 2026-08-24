@@ -1,8 +1,10 @@
 import satori from "satori";
+import type { PosterPresetId } from "../../../contracts/share-image";
 import type { PosterStrings } from "../../services/share-image/poster-i18n";
-import { POSTER_TOKENS } from "./poster-tokens";
+import { getPosterPreset, type PosterPalette } from "./poster-presets";
 
 interface TeamPosterData {
+  preset?: PosterPresetId;
   title: string;
   date: string;
   locationName?: string | null;
@@ -25,15 +27,6 @@ interface TeamPosterData {
 const POSTER_WIDTH = 375;
 const POSTER_HEIGHT = 468;
 const CARD_WIDTH = 343;
-const COVER_HEIGHT = 108;
-
-const T = POSTER_TOKENS;
-const C = {
-  ...T,
-  primaryDark: "#B45309",
-  white: "#ffffff",
-  border: "#e7e5e4",
-};
 
 function clampText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
@@ -41,7 +34,7 @@ function clampText(text: string, maxLength: number): string {
 }
 
 // 日历图标
-function CalendarIcon() {
+function CalendarIcon(C: PosterPalette) {
   return {
     type: "svg",
     props: {
@@ -65,7 +58,7 @@ function CalendarIcon() {
 }
 
 // 位置图标
-function LocationIcon() {
+function LocationIcon(C: PosterPalette) {
   return {
     type: "svg",
     props: {
@@ -87,7 +80,7 @@ function LocationIcon() {
 }
 
 // 用户图标
-function UsersIcon() {
+function UsersIcon(C: PosterPalette) {
   return {
     type: "svg",
     props: {
@@ -111,7 +104,7 @@ function UsersIcon() {
 }
 
 // 渐变状态标签
-function gradientPill(label: string) {
+function gradientPill(label: string, C: PosterPalette) {
   return {
     type: "div",
     props: {
@@ -139,7 +132,7 @@ function gradientPill(label: string) {
   };
 }
 
-function infoCard(label: string, value: string, icon?: unknown) {
+function infoCard(label: string, value: string, C: PosterPalette, icon?: unknown) {
   return {
     type: "div",
     props: {
@@ -224,6 +217,9 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
     fonts,
   } = data;
 
+  const { palette: C, team: layout } = getPosterPreset(data.preset);
+  const coverWidth = POSTER_WIDTH - layout.coverInset * 2;
+
   const fontFamily = fonts.length > 0 ? fonts[0].name : "system-ui";
   const hasCover = !!coverImage;
   const safeMaxParticipants = Math.max(maxParticipants || activeParticipantCount || 1, 1);
@@ -258,12 +254,14 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
         props: {
           style: {
             display: "flex",
-            width: POSTER_WIDTH,
-            height: COVER_HEIGHT,
+            width: coverWidth,
+            height: layout.coverHeight,
+            margin: layout.coverInset > 0 ? `${layout.coverInset}px ${layout.coverInset}px 0` : 0,
             position: "relative",
             overflow: "hidden",
-            borderBottomLeftRadius: 16,
-            borderBottomRightRadius: 16,
+            borderRadius: layout.coverInset > 0 ? layout.cardRadius : 0,
+            borderBottomLeftRadius: layout.cardRadius,
+            borderBottomRightRadius: layout.cardRadius,
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
           },
           children: [
@@ -273,8 +271,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                 src: coverImage,
                 style: {
                   display: "flex",
-                  width: POSTER_WIDTH,
-                  height: COVER_HEIGHT,
+                  width: coverWidth,
+                  height: layout.coverHeight,
                   objectFit: "cover",
                 },
               },
@@ -286,8 +284,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   display: "flex",
                   position: "absolute",
                   inset: 0,
-                  background:
-                    "linear-gradient(180deg, rgba(42,59,92,0.45) 0%, rgba(26,37,64,0.65) 100%)",
+                  background: C.coverOverlay,
                 },
               },
             },
@@ -300,7 +297,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   top: 14,
                   left: 16,
                 },
-                children: gradientPill(statusText),
+                children: gradientPill(statusText, C),
               },
             },
             {
@@ -321,7 +318,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   props: {
                     style: {
                       display: "flex",
-                      color: "#ffffff",
+                      color: C.white,
                       fontSize: 11,
                       fontWeight: 700,
                     },
@@ -339,9 +336,11 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
           style: {
             display: "flex",
             flexDirection: "column",
-            width: POSTER_WIDTH,
-            height: 84,
+            width: coverWidth,
+            height: layout.emptyCoverHeight,
+            margin: layout.coverInset > 0 ? `${layout.coverInset}px ${layout.coverInset}px 0` : 0,
             padding: "16px 20px 0 20px",
+            borderRadius: layout.coverInset > 0 ? layout.cardRadius : 0,
             background: `linear-gradient(135deg, ${C.skyDeep} 0%, ${C.sky} 100%)`,
           },
           children: [
@@ -355,7 +354,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                   justifyContent: "space-between",
                 },
                 children: [
-                  gradientPill(statusText),
+                  gradientPill(statusText, C),
                   {
                     type: "span",
                     props: {
@@ -414,7 +413,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                 width: CARD_WIDTH,
                 margin: "8px 16px 0 16px",
                 padding: "10px 14px",
-                borderRadius: 18,
+                borderRadius: layout.cardRadius,
                 backgroundColor: C.surface,
                 border: `1px solid ${C.border}`,
               },
@@ -432,8 +431,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       maxHeight: 52,
                       overflow: "hidden",
                       letterSpacing: "-0.2px",
-                      textAlign: "center",
-                      justifyContent: "center",
+                      textAlign: layout.titleAlign,
+                      justifyContent: layout.titleAlign === "center" ? "center" : "flex-start",
                     },
                     children: clampText(title, 32),
                   },
@@ -448,8 +447,8 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       marginTop: 8,
                     },
                     children: [
-                      infoCard(copy.teamDepartureLabel, date, CalendarIcon()),
-                      infoCard(copy.teamLocationLabel, locationText, LocationIcon()),
+                      infoCard(copy.teamDepartureLabel, date, C, CalendarIcon(C)),
+                      infoCard(copy.teamLocationLabel, locationText, C, LocationIcon(C)),
                     ],
                   },
                 },
@@ -487,7 +486,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   gap: 6,
                                 },
                                 children: [
-                                  UsersIcon(),
+                                  UsersIcon(C),
                                   {
                                     type: "span",
                                     props: {
@@ -574,7 +573,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                 width: CARD_WIDTH,
                 margin: "8px 16px 0 16px",
                 padding: "8px 14px",
-                borderRadius: 18,
+                borderRadius: layout.cardRadius,
                 backgroundColor: C.surface,
                 border: `1px solid ${C.border}`,
               },
@@ -618,7 +617,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                 justifyContent: "center",
                                 fontSize: 14,
                                 fontWeight: 800,
-                                color: "#ffffff",
+                                color: C.white,
                                 border: `2px solid ${C.primary}`,
                               },
                               children: leaderInitial,
@@ -640,7 +639,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   display: "flex",
                                   fontSize: 10,
                                   fontWeight: 700,
-                                  color: "#B45309",
+                                  color: C.primaryDark,
                                 },
                                 children: copy.teamLeaderLabel,
                               },
@@ -652,7 +651,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                   display: "flex",
                                   fontSize: 13,
                                   fontWeight: 700,
-                                  color: "#1C1917",
+                                  color: C.title,
                                   maxHeight: 18,
                                   overflow: "hidden",
                                 },
@@ -694,7 +693,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                             display: "flex",
                             fontSize: 10,
                             fontWeight: 800,
-                            color: "#B45309",
+                            color: C.primaryDark,
                           },
                           children: copy.teamScanJoin,
                         },
@@ -705,7 +704,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                           style: {
                             display: "flex",
                             padding: 4,
-                            backgroundColor: "#ffffff",
+                            backgroundColor: C.white,
                             borderRadius: 12,
                             border: `1px solid ${C.border}`,
                             boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
@@ -729,11 +728,11 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                                     display: "flex",
                                     width: 88,
                                     height: 88,
-                                    backgroundColor: "#FAF7F2",
+                                    backgroundColor: C.bg,
                                     alignItems: "center",
                                     justifyContent: "center",
                                     fontSize: 11,
-                                    color: "#A8A29E",
+                                    color: C.muted,
                                   },
                                   children: "QR",
                                 },
@@ -765,7 +764,7 @@ export async function renderTeamPoster(data: TeamPosterData): Promise<string> {
                       display: "flex",
                       fontSize: 11,
                       fontWeight: 800,
-                      color: "#B45309",
+                      color: C.primaryDark,
                     },
                     children: "GoMate",
                   },

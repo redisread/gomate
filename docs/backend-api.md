@@ -198,7 +198,9 @@ HEIC 转换失败。JPEG、PNG、GIF 与 WebP 按识别结果生成扩展名和 
 最终对象、条件 DML 和补偿清理维护 R2/D1 一致性。Local-circle KV 只缓存无用户身份的公共
 部分，个性化数据每次从 D1 合并。
 海报接口不接受公开 `refresh` 参数；海报缓存只包含地点、行程和故事的公开内容，不渲染
-用户姓名、头像或用户 ID。
+用户姓名、头像或用户 ID。`location` 与 `team` 支持 `preset=dusk|ridge|journal`，省略时使用
+`dusk`，其他值在读取业务数据前返回 400；预设 ID 和渲染版本属于缓存身份的一部分。
+`story` 不提供预设选择 UI。
 
 ## 变更检查
 
