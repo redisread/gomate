@@ -226,7 +226,7 @@ other input, and the Location domain has no equipment properties.
 
 ## Phase D: Existing Data
 
-### [ ] D1. Add migration 0006 for Location JSON cleanup
+### [x] D1. Add migration 0006 for Location JSON cleanup
 
 **Depends on:** Checkpoint C
 

@@ -110,7 +110,7 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
       location_count: 37,
       tag_count: 3,
       location_tag_count: 3,
-      migration_count: 6,
+      migration_count: 7,
       retained_v3_location_count: 1,
       wutongshan_cover_url:
         "https://gomate.cos.jiahongw.com/locations/hiking/wutong-mountain/wutongshan_01.jpg",
@@ -246,6 +246,109 @@ test("admin location draft migration preserves the existing location and team gr
       JSON.parse(foreignKeyOutput).flatMap((entry) => entry.results ?? []),
       [],
     );
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
+test("location decision cleanup removes only retired equipment JSON paths", () => {
+  const state = mkdtempSync(path.join(os.tmpdir(), "gomate-location-decision-cleanup-test-"));
+  const commonArgs = [
+    "d1",
+    "execute",
+    "DB",
+    "--local",
+    "--persist-to",
+    state,
+    "--config",
+    "wrangler.jsonc",
+  ];
+  try {
+    for (const migration of [
+      "0000_init.sql",
+      "0001_reference_data.sql",
+      "0002_account_issuer.sql",
+      "0003_import_v2_catalog.sql",
+      "0004_fix_wutongshan_cover_image.sql",
+      "0005_admin_location_drafts.sql",
+    ]) {
+      run(WRANGLER, [
+        ...commonArgs,
+        "--file",
+        path.join("migrations", migration),
+      ]);
+    }
+
+    run(WRANGLER, [
+      ...commonArgs,
+      "--command",
+      `UPDATE locations
+       SET extra = json('{"hiking":{"difficulty":"moderate","gear_essential":["登山鞋"],"gear_optional":["登山杖"],"tips":["早点出发"]},"facilities":["restroom"],"custom":{"keep":true}}')
+       WHERE id = 'location-shenzhen-wutongshan';`,
+    ]);
+
+    const schemaBeforeOutput = run(WRANGLER, [
+      ...commonArgs,
+      "--json",
+      "--command",
+      `SELECT type, COUNT(*) AS count
+       FROM sqlite_schema
+       WHERE name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'
+       GROUP BY type
+       ORDER BY type;`,
+    ]);
+    const schemaBefore = JSON.parse(schemaBeforeOutput).flatMap(
+      (entry) => entry.results ?? [],
+    );
+
+    run(WRANGLER, [
+      ...commonArgs,
+      "--file",
+      path.join("migrations", "0006_remove_location_decision_info.sql"),
+    ]);
+
+    const output = run(WRANGLER, [
+      ...commonArgs,
+      "--json",
+      "--command",
+      `SELECT
+        json_type(extra, '$.hiking.gear_essential') AS essential_type,
+        json_type(extra, '$.hiking.gear_optional') AS optional_type,
+        json_extract(extra, '$.hiking.difficulty') AS difficulty,
+        json_extract(extra, '$.hiking.tips') AS tips,
+        json_extract(extra, '$.facilities') AS facilities,
+        json_extract(extra, '$.custom.keep') AS custom_keep,
+        json_valid(extra) AS extra_valid
+       FROM locations
+       WHERE id = 'location-shenzhen-wutongshan';`,
+    ]);
+    const [cleaned] = JSON.parse(output).flatMap(
+      (entry) => entry.results ?? [],
+    );
+    assert.deepEqual(cleaned, {
+      essential_type: null,
+      optional_type: null,
+      difficulty: "moderate",
+      tips: '["早点出发"]',
+      facilities: '["restroom"]',
+      custom_keep: 1,
+      extra_valid: 1,
+    });
+
+    const schemaAfterOutput = run(WRANGLER, [
+      ...commonArgs,
+      "--json",
+      "--command",
+      `SELECT type, COUNT(*) AS count
+       FROM sqlite_schema
+       WHERE name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'
+       GROUP BY type
+       ORDER BY type;`,
+    ]);
+    const schemaAfter = JSON.parse(schemaAfterOutput).flatMap(
+      (entry) => entry.results ?? [],
+    );
+    assert.deepEqual(schemaAfter, schemaBefore);
   } finally {
     rmSync(state, { recursive: true, force: true });
   }
