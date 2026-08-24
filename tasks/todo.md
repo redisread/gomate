@@ -268,7 +268,7 @@ is narrowly cleaned, and migration metadata is synchronized.
 
 ## Phase E: i18n Cleanup
 
-### [ ] E1. Remove admin Location equipment translations
+### [x] E1. Remove admin Location equipment translations
 
 **Depends on:** B1
 
