@@ -182,7 +182,7 @@ pnpm vitest run --config vitest.server.config.ts \
   src/server/routes/teams/utils.test.ts
 ```
 
-### [ ] C2. Remove retired public and stored type properties
+### [x] C2. Remove retired public and stored type properties
 
 **Depends on:** C1
 
