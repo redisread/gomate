@@ -39,7 +39,8 @@ export function LocationActionBar({
   const saveLabel = status === "draft" ? t("admin.saveDraft") : t("admin.saveChanges");
 
   return (
-    <aside
+    <div
+      role="region"
       aria-label={t("admin.locationActions")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 backdrop-blur-md dark:border-stone-800 dark:bg-stone-950/95"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
@@ -104,6 +105,6 @@ export function LocationActionBar({
           )}
         </div>
       </div>
-    </aside>
+    </div>
   );
 }
