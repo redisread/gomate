@@ -1,6 +1,7 @@
 export const IMAGE_UPLOAD_REASONS = [
   "unsupported_image_format",
   "invalid_image_content",
+  "image_conversion_failed",
   "file_too_large",
   "invalid_upload_body",
   "missing_file",

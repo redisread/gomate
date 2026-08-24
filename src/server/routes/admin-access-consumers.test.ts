@@ -60,7 +60,9 @@ const imageOutput = {
 const imageTransformer = {
   output: vi.fn().mockResolvedValue(imageOutput),
 };
+const imageInfo = vi.fn();
 const images = {
+  info: imageInfo,
   input: vi.fn(() => imageTransformer),
 } as unknown as ImagesBinding;
 
@@ -133,11 +135,31 @@ function mismatchedLocationImageBody() {
   return form;
 }
 
+function iphoneTranscodedImageBody() {
+  const form = new FormData();
+  form.set(
+    "file",
+    new File(
+      [new Uint8Array([0xff, 0xd8, 0xff, 0xd9])],
+      "iphone.heic",
+      { type: "image/heic" },
+    ),
+  );
+  return form;
+}
+
 describe("shared administrator access consumers", () => {
   beforeEach(() => {
     mocks.createDb.mockReset();
     mocks.requireAdmin.mockReset();
     vi.mocked(r2.put).mockClear();
+    imageInfo.mockReset();
+    imageInfo.mockResolvedValue({
+      format: "image/png",
+      fileSize: 8,
+      width: 1,
+      height: 1,
+    });
     vi.mocked(images.input).mockClear();
     imageTransformer.output.mockClear();
   });
@@ -234,6 +256,12 @@ describe("shared administrator access consumers", () => {
       displayName: "Admin",
       image: null,
     });
+    imageInfo.mockResolvedValueOnce({
+      format: "image/heic",
+      fileSize: 20,
+      width: 1,
+      height: 1,
+    });
 
     const response = await uploadRoute.request(
       "/location",
@@ -257,7 +285,42 @@ describe("shared administrator access consumers", () => {
     );
   });
 
-  it("returns a stable reason when image content does not match its declaration", async () => {
+  it("accepts iPhone HEIC metadata when the photo library sends JPEG bytes", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      id: "admin-1",
+      displayName: "Admin",
+      image: null,
+    });
+    imageInfo.mockResolvedValueOnce({
+      format: "image/jpeg",
+      fileSize: 4,
+      width: 1,
+      height: 1,
+    });
+
+    const response = await uploadRoute.request(
+      "/location",
+      { method: "POST", body: iphoneTranscodedImageBody() },
+      env,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      size: 4,
+      type: "image/jpeg",
+      url: expect.stringMatching(/\.jpg$/u),
+    });
+    expect(imageInfo).toHaveBeenCalledOnce();
+    expect(vi.mocked(images.input)).not.toHaveBeenCalled();
+    expect(vi.mocked(r2.put)).toHaveBeenCalledWith(
+      expect.stringMatching(/\.jpg$/u),
+      expect.any(ArrayBuffer),
+      { httpMetadata: { contentType: "image/jpeg" } },
+    );
+  });
+
+  it("stores a decodable image using its detected format instead of its declaration", async () => {
     mocks.requireAdmin.mockResolvedValue({
       id: "admin-1",
       displayName: "Admin",
@@ -270,13 +333,154 @@ describe("shared administrator access consumers", () => {
       env,
     );
 
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      type: "image/png",
+      url: expect.stringMatching(/\.png$/u),
+    });
+    expect(vi.mocked(r2.put)).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    [9402, "invalid_image_content"],
+    [9412, "invalid_image_content"],
+    [9413, "invalid_image_content"],
+    [9520, "unsupported_image_format"],
+  ] as const)(
+    "maps Cloudflare image inspection error %i to %s",
+    async (code, reason) => {
+      mocks.requireAdmin.mockResolvedValue({
+        id: "admin-1",
+        displayName: "Admin",
+        image: null,
+      });
+      imageInfo.mockRejectedValueOnce(
+        Object.assign(new Error("image inspection failed"), { code }),
+      );
+
+      const response = await uploadRoute.request(
+        "/location",
+        { method: "POST", body: mismatchedLocationImageBody() },
+        env,
+      );
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+          code: "BAD_REQUEST",
+          details: { reason },
+        },
+      });
+      expect(vi.mocked(r2.put)).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps unexpected Cloudflare inspection failures as server errors", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      id: "admin-1",
+      displayName: "Admin",
+      image: null,
+    });
+    imageInfo.mockRejectedValueOnce(new Error("service unavailable"));
+
+    const response = await uploadRoute.request(
+      "/location",
+      { method: "POST", body: mismatchedLocationImageBody() },
+      env,
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: { code: "INTERNAL_ERROR" },
+    });
+    expect(vi.mocked(r2.put)).not.toHaveBeenCalled();
+  });
+
+  it("rejects decoded SVG content instead of storing an active document", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      id: "admin-1",
+      displayName: "Admin",
+      image: null,
+    });
+    imageInfo.mockResolvedValueOnce({ format: "image/svg+xml" });
+
+    const response = await uploadRoute.request(
+      "/location",
+      { method: "POST", body: mismatchedLocationImageBody() },
+      env,
+    );
+
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
       success: false,
       error: {
         code: "BAD_REQUEST",
-        details: { reason: "invalid_image_content" },
+        details: { reason: "unsupported_image_format" },
       },
+    });
+    expect(vi.mocked(r2.put)).not.toHaveBeenCalled();
+  });
+
+  it("returns a distinct reason when HEIC conversion fails", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      id: "admin-1",
+      displayName: "Admin",
+      image: null,
+    });
+    imageInfo.mockResolvedValueOnce({
+      format: "image/heic",
+      fileSize: 20,
+      width: 1,
+      height: 1,
+    });
+    imageTransformer.output.mockRejectedValueOnce(
+      Object.assign(new Error("image area too large"), { code: 9413 }),
+    );
+
+    const response = await uploadRoute.request(
+      "/location",
+      { method: "POST", body: locationHeicBody() },
+      env,
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: {
+        code: "BAD_REQUEST",
+        details: { reason: "image_conversion_failed" },
+      },
+    });
+    expect(vi.mocked(r2.put)).not.toHaveBeenCalled();
+  });
+
+  it("keeps unexpected Cloudflare conversion failures as server errors", async () => {
+    mocks.requireAdmin.mockResolvedValue({
+      id: "admin-1",
+      displayName: "Admin",
+      image: null,
+    });
+    imageInfo.mockResolvedValueOnce({
+      format: "image/heic",
+      fileSize: 20,
+      width: 1,
+      height: 1,
+    });
+    imageTransformer.output.mockRejectedValueOnce(new Error("service unavailable"));
+
+    const response = await uploadRoute.request(
+      "/location",
+      { method: "POST", body: locationHeicBody() },
+      env,
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: { code: "INTERNAL_ERROR" },
     });
     expect(vi.mocked(r2.put)).not.toHaveBeenCalled();
   });

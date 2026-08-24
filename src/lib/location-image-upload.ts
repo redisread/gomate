@@ -42,6 +42,7 @@ const EXTENSION_FAMILY: Record<string, ImageFamily> = {
 export type LocationImageUploadErrorCode =
   | "unsupported_format"
   | "invalid_image_content"
+  | "image_conversion_failed"
   | "file_too_large"
   | "upload_rejected"
   | "auth_required"
@@ -67,7 +68,7 @@ function validateLocationImage(file: File) {
   const extension = fileExtension(file);
   const mimeFamily = MIME_FAMILY[file.type];
   const extensionFamily = extension ? EXTENSION_FAMILY[extension] : undefined;
-  if (!mimeFamily || !extensionFamily || mimeFamily !== extensionFamily) {
+  if (!mimeFamily && !extensionFamily) {
     throw new LocationImageUploadError("unsupported_format");
   }
 }
@@ -86,6 +87,7 @@ function rejectionCode(status: number, responseText: string): LocationImageUploa
   if (isImageUploadReason(reason)) {
     if (reason === "unsupported_image_format") return "unsupported_format";
     if (reason === "invalid_image_content") return "invalid_image_content";
+    if (reason === "image_conversion_failed") return "image_conversion_failed";
     if (reason === "file_too_large") return "file_too_large";
     return "upload_rejected";
   }
@@ -142,6 +144,7 @@ export async function uploadLocationImage(
 type UploadTranslationKey =
   | "ui.upload.invalidType"
   | "ui.upload.invalidImageContent"
+  | "ui.upload.imageConversionFailed"
   | "ui.upload.fileTooLarge"
   | "ui.upload.uploadRejected"
   | "ui.upload.uploadAuthError"
@@ -162,6 +165,8 @@ export function locationImageUploadMessage(
       return translate("ui.upload.invalidType");
     case "invalid_image_content":
       return translate("ui.upload.invalidImageContent");
+    case "image_conversion_failed":
+      return translate("ui.upload.imageConversionFailed");
     case "file_too_large":
       return translate("ui.upload.fileTooLarge", { size: "5" });
     case "upload_rejected":
