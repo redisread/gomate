@@ -140,7 +140,7 @@ concept, without changing other full-editor fields.
 
 ## Phase C: API and Domain Model
 
-### [ ] C1. Discard retired input and suppress all Location response output
+### [x] C1. Discard retired input and suppress all Location response output
 
 **Depends on:** Checkpoint B
 
