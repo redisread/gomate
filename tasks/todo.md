@@ -9,7 +9,7 @@ approved.
 
 ## Phase A: Public Location UI
 
-### [ ] A1. Delete DecisionBlock and its map-open action
+### [x] A1. Delete DecisionBlock and its map-open action
 
 **Depends on:** approved specification and plan
 
