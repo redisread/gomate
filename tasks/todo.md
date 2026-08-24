@@ -316,7 +316,7 @@ rg -n '"decision"|"transport"|"gear"|openInMap|fallbackHint' \
   public/locales/*/locationDetail.json
 ```
 
-### [ ] E3. Remove the shared Location label and regenerate artifacts
+### [x] E3. Remove the shared Location label and regenerate artifacts
 
 **Depends on:** E1, E2
 
