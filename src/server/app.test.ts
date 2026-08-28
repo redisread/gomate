@@ -104,6 +104,32 @@ describe("API boundary", () => {
     expect(accountWrite.status).toBe(503);
   });
 
+  it("forces Preview requests into protected mode when deployment vars drift", async () => {
+    const previewEnv = env({
+      WRITE_MODE: "open",
+      PREVIEW_HOST_SUFFIX: "wujiahong2013.workers.dev",
+    });
+    const health = await apiApp.fetch(
+      new Request(
+        "https://c07842d6-gomate.wujiahong2013.workers.dev/health",
+      ),
+      previewEnv,
+    );
+    const businessWrite = await apiApp.fetch(
+      new Request(
+        "https://c07842d6-gomate.wujiahong2013.workers.dev/contact",
+        { method: "POST", body: "{}" },
+      ),
+      previewEnv,
+    );
+
+    await expect(health.json()).resolves.toMatchObject({
+      status: "ok",
+      writeMode: "protected",
+    });
+    expect(businessWrite.status).toBe(503);
+  });
+
   it("keeps unknown API resources inside the JSON error contract", async () => {
     const response = await apiApp.fetch(
       new Request("http://localhost/does-not-exist"),
