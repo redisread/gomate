@@ -67,6 +67,8 @@ interface MapLens {
 
 const MAP_LENS_RADIUS = 32;
 const MAP_LENS_SCALE = 1.16;
+const useClientLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 
 function provinceFill(count: number, max: number): string {
   if (count === 0) return "#f2ede7";
@@ -115,7 +117,8 @@ export function ChinaMap({ className }: { className?: string }) {
   const [tooltip, setTooltip] = React.useState<Tooltip | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [focusedProvince, setFocusedProvince] = React.useState<string | null>(null);
-  const [provinceBounds, setProvinceBounds] = React.useState<Record<string, MapBounds>>({});
+  const [provinceBounds, setProvinceBounds] =
+    React.useState<Record<string, MapBounds> | null>(null);
   const [lens, setLens] = React.useState<MapLens | null>(null);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const transitionTimer = React.useRef<number | null>(null);
@@ -149,7 +152,9 @@ export function ChinaMap({ className }: { className?: string }) {
     };
   }, []);
 
-  React.useEffect(() => {
+  useClientLayoutEffect(() => {
+    if (svgPaths.length === 0) return;
+
     const nextBounds: Record<string, MapBounds> = {};
 
     for (const [name, path] of provincePathRefs.current) {
@@ -164,7 +169,7 @@ export function ChinaMap({ className }: { className?: string }) {
       };
     }
 
-    if (Object.keys(nextBounds).length > 0) setProvinceBounds(nextBounds);
+    setProvinceBounds(nextBounds);
   }, [svgPaths]);
 
   React.useEffect(() => {
@@ -251,7 +256,7 @@ export function ChinaMap({ className }: { className?: string }) {
     () =>
       getMapTransform(
         focusedProvince,
-        focusedProvince ? provinceBounds[focusedProvince] : undefined,
+        focusedProvince ? provinceBounds?.[focusedProvince] : undefined,
       ),
     [focusedProvince, provinceBounds],
   );
@@ -263,6 +268,7 @@ export function ChinaMap({ className }: { className?: string }) {
     [focusedProvince, stats],
   );
   const focusedCount = focusedProvince ? provinceCount.get(focusedProvince) ?? 0 : 0;
+  const isFocusedMapMeasuring = focusedProvince !== null && provinceBounds === null;
 
   const leaveProvince = () => {
     setTooltip(null);
@@ -354,6 +360,7 @@ export function ChinaMap({ className }: { className?: string }) {
         >
           <g
             data-testid="map-content"
+            visibility={isFocusedMapMeasuring ? "hidden" : undefined}
             transform={`matrix(${mapTransform.scale} 0 0 ${mapTransform.scale} ${mapTransform.translateX} ${mapTransform.translateY})`}
             className={
               isTransitioning
