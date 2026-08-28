@@ -27,6 +27,18 @@
 - 跨端公开类型统一放在 `src/contracts/`；不要维护前后端 DTO 的兼容副本。
 - 生产域名是 `https://gomate.live`，当前 Cloudflare Worker 服务名为 `gomate`。
 
+## 技术栈
+
+- 运行时与部署：Cloudflare Workers（统一 Worker，`nodejs_compat`），生产域名 `https://gomate.live`；本地开发使用 Node `>=22.13.0` 与 pnpm。
+- 页面与交互：Astro 7（`@astrojs/cloudflare` SSR adapter）+ React 18 islands；样式使用 Tailwind CSS 4（`@tailwindcss/vite`）。
+- UI 组件与渲染：lucide-react 图标、react-markdown + remark-gfm，以及使用 satori + qrcode 生成分享海报、OG 图与二维码。
+- API：Hono 4 承载 `/api/*`，请求校验使用 zod + `@hono/standard-validator`（Standard Schema）。
+- 数据层：Cloudflare D1（SQLite 语义）+ Drizzle ORM；drizzle-kit 生成 migration 并维护 journal/snapshot。
+- 存储与媒体：Cloudflare R2（生产 bucket `gomate`，本地 bucket `gomate-local`）以及 Workers Images binding `IMAGES`。
+- 认证与邮件：Better Auth + Resend（邮箱验证、密码重置邮件）。
+- 平台能力：Workers Rate Limiting bindings（登录、注册和邮件限流）以及 Workers Observability（日志和追踪）。
+- 质量工具：TypeScript 5、ESLint 9、Prettier、Vitest（unit / server / worker 三层测试配置）+ Playwright（Chromium e2e）、wrangler 4。
+
 ## 工作方式
 
 - 每次会话先完整读取 `.codex/skills/using-agent-skills/SKILL.md`，再按任务加载最少的适用技能。
