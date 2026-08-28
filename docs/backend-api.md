@@ -88,8 +88,8 @@ Location 的 `extra.hiking` 只承载难度、时长、距离、爬升、季节�
 退役键外，未知 hiking 字段仍按 strict schema 拒绝。
 
 快速创建 Location 默认保存 `draft`，只要求 `name`、`description` 与启用的 city
-`regionId`；坐标、封面、标签和推荐活动类型可后补。发布边界要求坐标与封面，但推荐活动类型
-始终可空。`supportedActivityTypes` 是可选的地点推荐信息，写入时必须全部来自共享代码枚举；
+`regionId`；坐标、封面、标签和推荐活动类型可后补。发布边界要求封面；坐标可以同时为空，
+但纬度和经度如果填写则必须成对出现。推荐活动类型始终可空。`supportedActivityTypes` 是可选的地点推荐信息，写入时必须全部来自共享代码枚举；
 名称由客户端 i18n 根据枚举值展示。
 普通 `DELETE /locations/:id` 只归档；永久删除必须同时提交
 `permanent=true&confirm=<locationId>`，且最终删除语句复核没有 Team、Story 或收藏引用。
