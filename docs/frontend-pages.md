@@ -46,6 +46,8 @@
 - 列表按 Region、活动类型、时间和派生 lifecycle 筛选。
 - 创建和编辑 Team 时，`activityType` 必须来自共享代码枚举；所选地点的
   `supportedActivityTypes` 只把推荐项排在前面，不过滤其他活动类型。
+- 创建 Team 的地点选择器通过 `/api/locations?search=<name>` 按名称搜索公开地点，并在结果中
+  显示所属地区；表单把 `startAt` 的时间部分统一标为“活动开始时间”，不再称为“集合时间”。
 - Team 列表筛选直接读取共享代码枚举，名称统一通过 i18n 展示。
 - 详情展示 leader、active members、申请、行程和行动本；member 离队直接结束 active membership。
 - 已结束且成行的 Team 中，leader 或 active member 可通过 `/discover/create?teamId=<id>` 发布回顾。

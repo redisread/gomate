@@ -297,7 +297,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             </FieldGroup>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FieldGroup icon="⏰" label={t("teams.formLabel.meetTime")}>
+              <FieldGroup icon="⏰" label={t("teams.formLabel.startTime")}>
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
