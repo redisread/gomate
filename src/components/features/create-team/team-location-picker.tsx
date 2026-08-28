@@ -99,13 +99,11 @@ export function TeamLocationPicker({
       <button
         ref={triggerRef}
         type="button"
-        role="combobox"
         data-testid="create-team-location"
         aria-label={t("teams.formLabel.location")}
-        aria-required="true"
-        aria-haspopup="listbox"
+        aria-haspopup="dialog"
         aria-expanded={open}
-        aria-controls="create-team-location-options"
+        aria-controls="create-team-location-dialog"
         onClick={() => {
           if (open) {
             close();
@@ -133,17 +131,25 @@ export function TeamLocationPicker({
       </button>
 
       {open && (
-        <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-popover p-2 shadow-xl shadow-stone-950/10">
+        <div
+          id="create-team-location-dialog"
+          role="dialog"
+          aria-label={t("teams.formLabel.location")}
+          className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-popover p-2 shadow-xl shadow-stone-950/10"
+        >
           <label className="flex min-h-11 items-center gap-2 rounded-xl bg-muted px-3">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             <span className="sr-only">{t("teams.locationSearchLabel")}</span>
             <input
               ref={searchRef}
               type="search"
+              role="combobox"
               data-testid="create-team-location-search"
               maxLength={100}
               value={query}
               aria-label={t("teams.locationSearchLabel")}
+              aria-required="true"
+              aria-expanded="true"
               aria-controls="create-team-location-options"
               aria-activedescendant={
                 highlightIndex >= 0

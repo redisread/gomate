@@ -198,7 +198,7 @@ describe("CreateTeamClient contract", () => {
 
     fireEvent.click(await screen.findByTestId("create-team-location"));
     fireEvent.change(
-      screen.getByRole("searchbox", { name: "teams.locationSearchLabel" }),
+      screen.getByRole("combobox", { name: "teams.locationSearchLabel" }),
       { target: { value: locationB.name } },
     );
 
@@ -227,7 +227,7 @@ describe("CreateTeamClient contract", () => {
     const picker = await screen.findByTestId("create-team-location");
     fireEvent.click(picker);
     await screen.findByRole("option", { name: new RegExp(locationA.name) });
-    const search = screen.getByRole("searchbox", {
+    const search = screen.getByRole("combobox", {
       name: "teams.locationSearchLabel",
     });
     fireEvent.keyDown(search, { key: "ArrowDown" });
