@@ -1,9 +1,8 @@
 ---
 import { AdminNavigation } from "../components/admin/admin-navigation";
 import {
-  DEFAULT_LOCALE,
-  SUPPORTED_LOCALES,
   getSSRT,
+  resolveLocale,
   type Locale,
 } from "../i18n";
 import { loadLocaleData } from "../i18n/ssr-loader.server";
@@ -15,14 +14,9 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
-const localeFromCookie = Astro.cookies.get("gomate_locale")?.value as
-  | Locale
-  | undefined;
-const resolvedLocale = Astro.locals.locale ?? localeFromCookie;
-const locale =
-  resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale)
-    ? resolvedLocale
-    : DEFAULT_LOCALE;
+const locale = resolveLocale(
+  Astro.locals.locale || Astro.cookies.get("gomate_locale")?.value,
+);
 const loadedData = await loadLocaleData(["admin"], locale, Astro.url.origin);
 const ssr = getSSRT(locale, {
   [locale]: loadedData,

@@ -1,12 +1,14 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { LazyLocationCreateClient } from "../../../components/features/lazy-location-create-client";
-import { getSSRT } from "../../../i18n";
+import { getSSRT, resolveLocale } from "../../../i18n";
 import { loadLocaleData } from "../../../i18n/ssr-loader.server";
 import { declareI18nNs } from "../../../middleware";
 
 declareI18nNs(Astro.locals, ["admin", "ui", "content", "enums"]);
-const locale = Astro.locals.locale;
+const locale = resolveLocale(
+  Astro.locals.locale || Astro.cookies.get("gomate_locale")?.value,
+);
 const data = await loadLocaleData(["admin"], locale, Astro.url.origin);
 const t = getSSRT(locale, { [locale]: data } as never).t;
 ---
