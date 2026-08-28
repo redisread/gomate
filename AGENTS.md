@@ -41,7 +41,6 @@
 
 ## 工作方式
 
-- 每次会话先完整读取 `.codex/skills/using-agent-skills/SKILL.md`，再按任务加载最少的适用技能。
 - 修改前检查 `git status` 和现有实现；用户或其他 worktree 的改动不得被顺手回滚、覆盖或格式化。
 - 使用 Node `>=22.13.0` 与 pnpm；不要用 npm、Yarn 等其他包管理器刷新 lockfile。
 - 多 worktree 首次运行 `pnpm init:worktree`，之后用 `pnpm dev:wt` 启动统一 Worker；具体见本地开发文档。
