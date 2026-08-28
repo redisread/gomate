@@ -6,7 +6,6 @@ import {
   Clock,
   Users,
   Calendar,
-  MapPin,
   AlertCircle,
   Loader2,
   Sparkles,
@@ -22,6 +21,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { QuickDurationButton } from "./create-team/quick-duration-button";
+import { TeamLocationPicker } from "./create-team/team-location-picker";
 import { TeamLocationPreview } from "./teams/shared/team-location-preview";
 import { Footer } from "@/components/layout/footer";
 
@@ -32,6 +32,10 @@ import { Footer } from "@/components/layout/footer";
 export function CreateTeamClient() {
   const { t } = useI18n(["teams", "errors", "common", "enums"]);
   const [locations, setLocations] = React.useState<Location[]>([]);
+  const [locationSearch, setLocationSearch] = React.useState("");
+  const [locationSearchVersion, setLocationSearchVersion] = React.useState(0);
+  const [locationsLoading, setLocationsLoading] = React.useState(true);
+  const [locationsError, setLocationsError] = React.useState(false);
   const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
   const [recommendedDuration, setRecommendedDuration] = React.useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
@@ -67,17 +71,43 @@ export function CreateTeamClient() {
       setHasWechat(!!u.extra.wechat);
     })();
 
-    fetchAPI("/locations?limit=100")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) setLocations(data.locations || []);
-      })
-      .catch(() => {});
-
     const params = new URLSearchParams(window.location.search);
     const locId = params.get("locationId");
     if (locId) setFormData((prev) => ({ ...prev, locationId: locId }));
   }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const query = locationSearch.trim();
+    setLocationsLoading(true);
+    setLocationsError(false);
+    const timer = window.setTimeout(() => {
+      const path = query
+        ? `/locations?search=${encodeURIComponent(query)}&limit=20`
+        : "/locations?limit=20";
+      fetchAPI(path)
+        .then((response) => response.json())
+        .then((data) => {
+          if (cancelled) return;
+          if (!data.success) throw new Error("Location search failed");
+          setLocations(data.locations ?? []);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setLocations([]);
+            setLocationsError(true);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLocationsLoading(false);
+        });
+    }, query ? 300 : 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [locationSearch, locationSearchVersion]);
 
   // 当地点变化时，获取地点详情和路线列表
   React.useEffect(() => {
@@ -188,8 +218,7 @@ export function CreateTeamClient() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleLocationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const locationId = e.target.value;
+  const handleLocationChange = (locationId: string) => {
     setSelectedLocation(null);
     setRecommendedDuration(null);
     durationManuallyEditedRef.current = false;
@@ -329,23 +358,16 @@ export function CreateTeamClient() {
 
             {/* 目的地 */}
             <FieldGroup icon="📍" label={t("teams.formLabel.location")} required>
-              <div className="relative">
-                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-                <select
-                  id="locationId"
-                  data-testid="create-team-location"
-                  name="locationId"
-                  value={formData.locationId}
-                  onChange={handleLocationChange}
-                  required
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-                >
-                  <option value="">{t("teams.formPlaceholder.location")}</option>
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                  ))}
-                </select>
-              </div>
+              <TeamLocationPicker
+                value={formData.locationId}
+                selectedLocation={selectedLocation}
+                locations={locations}
+                loading={locationsLoading}
+                error={locationsError}
+                onSearch={setLocationSearch}
+                onRetry={() => setLocationSearchVersion((version) => version + 1)}
+                onSelect={handleLocationChange}
+              />
               {selectedLocation && (
                 <TeamLocationPreview
                   location={selectedLocation}
@@ -408,7 +430,7 @@ export function CreateTeamClient() {
                 </div>
               </FieldGroup>
 
-              <FieldGroup icon="⏰" label={t("teams.formLabel.meetTime")} required>
+              <FieldGroup icon="⏰" label={t("teams.formLabel.startTime")} required>
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input

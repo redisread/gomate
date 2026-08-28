@@ -78,8 +78,11 @@ function arrangeRequests() {
     extra: { wechat: "gomate-leader" },
   });
   fetchAPI.mockImplementation(async (path: string, init?: RequestInit) => {
-    if (path === "/locations?limit=100") {
+    if (path === "/locations?limit=20") {
       return jsonResponse({ success: true, locations: [locationA, locationB] });
+    }
+    if (path === `/locations?search=${encodeURIComponent(locationB.name)}&limit=20`) {
+      return jsonResponse({ success: true, locations: [locationB] });
     }
     if (path === `/locations/${locationA.id}`) {
       return jsonResponse({ success: true, location: locationA });
@@ -94,6 +97,11 @@ function arrangeRequests() {
   });
 }
 
+async function selectLocation(name: string) {
+  fireEvent.click(await screen.findByTestId("create-team-location"));
+  fireEvent.click(await screen.findByRole("option", { name: new RegExp(name) }));
+}
+
 describe("CreateTeamClient contract", () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -104,8 +112,7 @@ describe("CreateTeamClient contract", () => {
     arrangeRequests();
     render(<CreateTeamClient />);
 
-    const locationSelect = await screen.findByTestId("create-team-location");
-    fireEvent.change(locationSelect, { target: { value: locationA.id } });
+    await selectLocation(locationA.name);
 
     const activitySelect = await screen.findByRole("combobox", {
       name: "teams.formLabel.activityType",
@@ -124,7 +131,7 @@ describe("CreateTeamClient contract", () => {
     fireEvent.change(activitySelect, { target: { value: "travel" } });
     expect(activitySelect).toHaveValue("travel");
 
-    fireEvent.change(locationSelect, { target: { value: locationB.id } });
+    await selectLocation(locationB.name);
     await waitFor(() => {
       expect(
         screen.getByRole("combobox", { name: "teams.formLabel.activityType" }),
@@ -142,9 +149,7 @@ describe("CreateTeamClient contract", () => {
     arrangeRequests();
     render(<CreateTeamClient />);
 
-    fireEvent.change(await screen.findByTestId("create-team-location"), {
-      target: { value: locationA.id },
-    });
+    await selectLocation(locationA.name);
     const activitySelect = await screen.findByRole("combobox", {
       name: "teams.formLabel.activityType",
     });
@@ -184,6 +189,53 @@ describe("CreateTeamClient contract", () => {
       locationId: locationA.id,
       activityType: "explore",
       requirements: ["自备饮用水", "防晒用品"],
+    });
+  });
+
+  it("searches published locations by name before selection", async () => {
+    arrangeRequests();
+    render(<CreateTeamClient />);
+
+    fireEvent.click(await screen.findByTestId("create-team-location"));
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "teams.locationSearchLabel" }),
+      { target: { value: locationB.name } },
+    );
+
+    await waitFor(() => {
+      expect(fetchAPI).toHaveBeenCalledWith(
+        `/locations?search=${encodeURIComponent(locationB.name)}&limit=20`,
+      );
+    });
+
+    fireEvent.click(
+      await screen.findByRole("option", { name: new RegExp(locationB.name) }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("create-team-location")).toHaveTextContent(
+        locationB.name,
+      );
+      expect(fetchAPI).toHaveBeenCalledWith(`/locations/${locationB.id}`);
+    });
+  });
+
+  it("supports keyboard selection and restores focus to the picker", async () => {
+    arrangeRequests();
+    render(<CreateTeamClient />);
+
+    const picker = await screen.findByTestId("create-team-location");
+    fireEvent.click(picker);
+    await screen.findByRole("option", { name: new RegExp(locationA.name) });
+    const search = screen.getByRole("combobox", {
+      name: "teams.locationSearchLabel",
+    });
+    fireEvent.keyDown(search, { key: "ArrowDown" });
+    fireEvent.keyDown(search, { key: "Enter" });
+
+    await waitFor(() => {
+      expect(picker).toHaveTextContent(locationA.name);
+      expect(picker).toHaveFocus();
     });
   });
 });
