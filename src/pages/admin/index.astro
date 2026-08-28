@@ -1,23 +1,17 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import {
-  DEFAULT_LOCALE,
-  SUPPORTED_LOCALES,
   getSSRT,
+  resolveLocale,
   type Locale,
 } from "../../i18n";
 import { loadLocaleData } from "../../i18n/ssr-loader.server";
 import { declareI18nNs } from "../../middleware";
 
 declareI18nNs(Astro.locals, ["admin"]);
-const cookieLocale = Astro.cookies.get("gomate_locale")?.value as
-  | Locale
-  | undefined;
-const resolvedLocale = Astro.locals.locale ?? cookieLocale;
-const locale =
-  resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale)
-    ? resolvedLocale
-    : DEFAULT_LOCALE;
+const locale = resolveLocale(
+  Astro.locals.locale || Astro.cookies.get("gomate_locale")?.value,
+);
 const loadedData = await loadLocaleData(["admin"], locale, Astro.url.origin);
 const ssr = getSSRT(locale, {
   [locale]: loadedData,

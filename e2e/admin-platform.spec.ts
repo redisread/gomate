@@ -209,6 +209,83 @@ test.describe("admin platform", () => {
     expect(pageErrors).toEqual([]);
   });
 
+  test("all administrator management page headings render translated text", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticate(page, admin);
+
+    const pages = [
+      {
+        path: "/admin/locations",
+        heading: "地点管理",
+        locale: "zh-CN",
+      },
+      {
+        path: "/en/admin/locations",
+        heading: "Locations",
+        locale: "en",
+      },
+      {
+        path: "/ja/admin/locations",
+        heading: "スポット管理",
+        locale: "ja",
+      },
+      {
+        path: "/admin/tags",
+        heading: "标签管理",
+        locale: "zh-CN",
+      },
+      {
+        path: "/en/admin/tags",
+        heading: "Tags",
+        locale: "en",
+      },
+      {
+        path: "/ja/admin/tags",
+        heading: "タグ管理",
+        locale: "ja",
+      },
+      {
+        path: "/admin/users",
+        heading: "用户与管理员",
+        locale: "zh-CN",
+      },
+      {
+        path: "/en/admin/users",
+        heading: "Users and administrators",
+        locale: "en",
+      },
+      {
+        path: "/ja/admin/users",
+        heading: "ユーザーと管理者",
+        locale: "ja",
+      },
+    ] as const;
+
+    for (const { path, heading, locale } of pages) {
+      await page.context().addCookies([
+        { name: "gomate_locale", value: locale, url: LOCAL_ORIGIN },
+      ]);
+      const response = await page.request.get(path);
+      expect(response?.status()).toBe(200);
+      const serverHtml = await response.text();
+      const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+      expect(serverHtml).toMatch(
+        new RegExp(`<h1\\b[^>]*>\\s*${escapedHeading}\\s*</h1>`, "u"),
+      );
+      expect(serverHtml).not.toMatch(
+        /\b(?:admin|enums|ui|content|nav|common)\.[A-Za-z]/u,
+      );
+
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+      await expect(page.locator("body")).not.toContainText(
+        /\b(?:admin|enums|ui|content|nav|common)\.[A-Za-z]/u,
+      );
+    }
+  });
+
   test("location editor keeps draft navigation inside admin and exposes explicit publish controls", async ({
     page,
   }) => {

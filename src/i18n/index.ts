@@ -329,6 +329,16 @@ export function getLocaleFromCookie(cookieStr: string): Locale {
 }
 
 /**
+ * Normalize a locale value received from Astro locals, cookies, or other
+ * request data before loading server-side translations.
+ */
+export function resolveLocale(value: unknown): Locale {
+  return typeof value === "string" && SUPPORTED_LOCALES.includes(value as Locale)
+    ? (value as Locale)
+    : DEFAULT_LOCALE;
+}
+
+/**
  * 获取语言显示名称
  */
 export function getLocaleName(locale: Locale): string {
