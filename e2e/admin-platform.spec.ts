@@ -325,11 +325,15 @@ test.describe("admin platform", () => {
 
     const coverField = page.locator("#location-field-coverImageUrl");
     await expect(coverField.getByText("请上传封面图片")).toBeVisible();
-    await expect(page.getByText("纬度范围为 -90 到 90")).toBeVisible();
-    await expect(page.getByText("经度范围为 -180 到 180")).toBeVisible();
+    await expect(page.getByText("坐标可选；如填写，请同时填写纬度和经度。可在高德地图/百度地图右键复制坐标")).toBeVisible();
+    await expect(page.getByText("纬度和经度需要同时填写")).toHaveCount(0);
     await expect.poll(() => coverField.evaluate((element) =>
       element.contains(document.activeElement),
     )).toBe(true);
+
+    await page.locator("#location-field-latitude").fill("22.5");
+    await actions.getByRole("button", { name: "发布地点" }).click();
+    await expect(page.getByText("纬度和经度需要同时填写")).toBeVisible();
 
     await page.goto(`/admin/locations/${locationId}/edit`);
     await expect(page.getByRole("link", { name: "查看公开页" })).toHaveAttribute(
