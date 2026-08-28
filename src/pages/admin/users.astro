@@ -5,7 +5,7 @@ import { loadLocaleData } from "../../i18n/ssr-loader.server";
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { declareI18nNs } from "../../middleware";
 
-declareI18nNs(Astro.locals, ["admin"]);
+declareI18nNs(Astro.locals, ["admin", "enums"]);
 const locale = Astro.locals.locale;
 const data = await loadLocaleData(["admin"], locale, Astro.url.origin);
 const t = getSSRT(locale, { [locale]: data } as never).t;

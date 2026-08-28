@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { renderToString } from "react-dom/server";
 
 import { AdminNavigation } from "./admin-navigation";
 
@@ -46,11 +47,25 @@ describe("AdminNavigation", () => {
     document.body.style.overflow = "";
   });
 
+  it("keeps the mobile trigger disabled until client hydration", () => {
+    const html = renderToString(
+      <AdminNavigation
+        copy={copy}
+        currentPath="/admin"
+        locale="zh-CN"
+        admin={{ id: "admin-1", displayName: "Admin", image: null }}
+      />,
+    );
+
+    expect(html).toContain("disabled=\"\"");
+  });
+
   it("renders only real routes and marks the current page", () => {
     render(
       <AdminNavigation
         copy={copy}
         currentPath="/admin"
+        locale="zh-CN"
         admin={{ id: "admin-1", displayName: "Admin", image: null }}
       />,
     );
@@ -77,6 +92,7 @@ describe("AdminNavigation", () => {
       <AdminNavigation
         copy={copy}
         currentPath="/admin"
+        locale="zh-CN"
         admin={{ id: "admin-1", displayName: "Admin", image: null }}
       />,
     );
@@ -103,6 +119,7 @@ describe("AdminNavigation", () => {
       <AdminNavigation
         copy={copy}
         currentPath="/admin/locations/new"
+        locale="zh-CN"
         admin={{ id: "admin-1", displayName: "Admin", image: null }}
       />,
     );
@@ -122,6 +139,7 @@ describe("AdminNavigation", () => {
       <AdminNavigation
         copy={copy}
         currentPath="/admin"
+        locale="zh-CN"
         admin={{ id: "admin-1", displayName: "Admin", image: null }}
       />,
     );
@@ -152,5 +170,56 @@ describe("AdminNavigation", () => {
     await waitFor(() => expect(trigger).toHaveFocus());
     expect(container).not.toHaveAttribute("inert");
     expect(document.body.style.overflow).toBe("");
+  });
+
+  it("keeps admin navigation and language controls in the active locale", () => {
+    render(
+      <AdminNavigation
+        copy={copy}
+        currentPath="/admin"
+        locale="en"
+        admin={{ id: "admin-1", displayName: "Admin", image: null }}
+      />,
+    );
+
+    const desktopNavigation = screen.getAllByRole("navigation", {
+      name: copy.navigationLabel,
+    })[0];
+    expect(
+      within(desktopNavigation).getByRole("link", { name: copy.navLocations }),
+    ).toHaveAttribute("href", "/en/admin/locations");
+    expect(
+      within(desktopNavigation).getByRole("link", { name: copy.backToFrontend }),
+    ).toHaveAttribute("href", "/en");
+
+    const languageControls = screen.getAllByRole("button", { name: "English" });
+    expect(languageControls).toHaveLength(2);
+    for (const control of languageControls) {
+      expect(control).toHaveClass("min-h-11", "min-w-11");
+    }
+  });
+
+  it("closes the administrator language menu with Escape and restores focus", () => {
+    render(
+      <AdminNavigation
+        copy={copy}
+        currentPath="/admin"
+        locale="en"
+        admin={{ id: "admin-1", displayName: "Admin", image: null }}
+      />,
+    );
+
+    const trigger = screen.getAllByRole("button", { name: "English" })[0];
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(
+      screen.getByRole("menuitemradio", { name: "日本語" }),
+    ).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(
+      screen.queryByRole("menuitemradio", { name: "日本語" }),
+    ).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 });

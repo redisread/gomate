@@ -3,8 +3,9 @@ import type { Location } from "@/lib/types";
 import {
   DEFAULT_LOCATION_FORM,
   formDataToLocationPayload,
-  locationSaveRedirect,
+  locationSaveDestination,
   locationToFormData,
+  resolveLocationSaveStatus,
 } from "./use-location-form";
 
 const location: Location = {
@@ -34,9 +35,9 @@ const location: Location = {
       overview: "泰山涧上山",
       tips: ["早点出发"],
       warnings: ["雨天路滑"],
-    },
+    } as unknown as NonNullable<Location["extra"]["hiking"]>,
     facilities: ["restroom"],
-  } as unknown as Location["extra"],
+  },
   createdAt: "2026-08-16T00:00:00.000Z",
   updatedAt: "2026-08-16T00:00:00.000Z",
   tags: [{ id: "tag-1", name: "山野", slug: "mountain" }],
@@ -44,8 +45,7 @@ const location: Location = {
 
 describe("Location form projection", () => {
   it("maps the public camelCase DTO without legacy flat fields", () => {
-    const form = locationToFormData(location);
-    expect(form).toMatchObject({
+    expect(locationToFormData(location)).toMatchObject({
       regionId: "region-sz",
       supportedActivityTypes: ["hiking", "travel"],
       status: "published",
@@ -61,8 +61,8 @@ describe("Location form projection", () => {
       },
       tagIds: ["tag-1"],
     });
-    expect(form.extra.hiking).not.toHaveProperty("gearEssential");
-    expect(form.extra.hiking).not.toHaveProperty("gearOptional");
+    expect(locationToFormData(location).extra.hiking).not.toHaveProperty("gearEssential");
+    expect(locationToFormData(location).extra.hiking).not.toHaveProperty("gearOptional");
   });
 
   it("emits the exact mutation payload and trims JSON arrays", () => {
@@ -97,6 +97,8 @@ describe("Location form projection", () => {
         facilities: ["restroom"],
       },
     });
+    expect(formDataToLocationPayload(form).extra.hiking).not.toHaveProperty("gearEssential");
+    expect(formDataToLocationPayload(form).extra.hiking).not.toHaveProperty("gearOptional");
   });
 
   it("omits an empty hiking object for non-hiking locations", () => {
@@ -130,13 +132,18 @@ describe("Location form projection", () => {
     });
   });
 
-  it("keeps non-public locations in the admin editor after save", () => {
-    expect(locationSaveRedirect({ ...location, status: "draft" })).toBe(
+  it("resolves explicit save intents without inferring state from button copy", () => {
+    expect(resolveLocationSaveStatus("draft", "keep")).toBe("draft");
+    expect(resolveLocationSaveStatus("draft", "publish")).toBe("published");
+    expect(resolveLocationSaveStatus("archived", "restore")).toBe("draft");
+    expect(resolveLocationSaveStatus("archived", "publish")).toBe("archived");
+    expect(resolveLocationSaveStatus("published", "keep")).toBe("published");
+  });
+
+  it("navigates only after first creation and always stays in the admin editor", () => {
+    expect(locationSaveDestination("create", "loc-1")).toBe(
       "/admin/locations/loc-1/edit",
     );
-    expect(locationSaveRedirect({ ...location, status: "archived" })).toBe(
-      "/admin/locations/loc-1/edit",
-    );
-    expect(locationSaveRedirect(location)).toBe("/locations/loc-1");
+    expect(locationSaveDestination("edit", "loc-1")).toBeNull();
   });
 });

@@ -3,7 +3,8 @@
 import * as React from "react";
 
 import { useI18n } from "@/hooks/useI18n";
-import { apiPatch, apiPost, fetchAPI, getApiErrorMessage } from "@/lib/api";
+import { fetchAPI } from "@/lib/api";
+import { adminCatchMessage, adminJsonOrThrow } from "@/lib/admin-i18n";
 
 interface ManagedTag {
   id: string;
@@ -34,17 +35,17 @@ export function AdminTagsManager() {
       });
       if (targetPage === 1) query.delete("page");
       const response = await fetchAPI(`/tags?${query}`);
-      const body = await response.json() as {
+      const body = await adminJsonOrThrow<{
         tags?: ManagedTag[];
         pagination?: { page?: number; hasMore?: boolean };
-      };
-      if (!response.ok || !body.tags) throw new Error(getApiErrorMessage(body, t("admin.management.loadFailed")));
+      }>(response, t, "admin.management.loadFailed");
+      if (!body.tags) throw new Error();
       const loadedTags = body.tags;
       setItems((current) => append ? [...current, ...loadedTags] : loadedTags);
       setPage(body.pagination?.page ?? targetPage);
       setHasMore(body.pagination?.hasMore ?? false);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("admin.management.loadFailed"));
+      setError(adminCatchMessage(cause, t, "admin.management.loadFailed"));
     } finally {
       if (append) setLoadingMore(false);
       else setLoading(false);
@@ -56,20 +57,28 @@ export function AdminTagsManager() {
   const create = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      await apiPost("/tags", { name });
+      const response = await fetchAPI("/tags", {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      });
+      await adminJsonOrThrow(response, t, "admin.management.saveFailed");
       setName("");
       await load();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("admin.management.saveFailed"));
+      setError(adminCatchMessage(cause, t, "admin.management.saveFailed"));
     }
   };
 
   const rename = async (tag: ManagedTag) => {
     try {
-      await apiPatch(`/tags/${encodeURIComponent(tag.id)}`, { name: tag.name });
+      const response = await fetchAPI(`/tags/${encodeURIComponent(tag.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: tag.name }),
+      });
+      await adminJsonOrThrow(response, t, "admin.management.saveFailed");
       await load();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("admin.management.saveFailed"));
+      setError(adminCatchMessage(cause, t, "admin.management.saveFailed"));
     }
   };
 
@@ -77,13 +86,13 @@ export function AdminTagsManager() {
     const total = Object.values(tag.references).reduce((sum, count) => sum + count, 0);
     if (total > 0 && !window.confirm(t("admin.management.detachTagConfirm"))) return;
     if (total === 0 && !window.confirm(t("admin.management.deleteTagConfirm"))) return;
-    const response = await fetchAPI(`/tags/${encodeURIComponent(tag.id)}?confirmDetach=true`, { method: "DELETE" });
-    if (!response.ok) {
-      const body = await response.json();
-      setError(getApiErrorMessage(body, t("admin.management.deleteFailed")));
-      return;
+    try {
+      const response = await fetchAPI(`/tags/${encodeURIComponent(tag.id)}?confirmDetach=true`, { method: "DELETE" });
+      await adminJsonOrThrow(response, t, "admin.management.deleteFailed");
+      setItems((current) => current.filter((candidate) => candidate.id !== tag.id));
+    } catch (cause) {
+      setError(adminCatchMessage(cause, t, "admin.management.deleteFailed"));
     }
-    setItems((current) => current.filter((candidate) => candidate.id !== tag.id));
   };
 
   return (

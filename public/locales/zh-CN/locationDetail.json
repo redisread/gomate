@@ -22,14 +22,5 @@
     "minute": "分钟",
     "kilometer": "km",
     "meter": "m"
-  },
-  "decision": {
-    "title": "到达信息",
-    "subtitle": "打开地图查看具体位置与导航路线"
-  },
-  "transport": {
-    "title": "怎么到",
-    "openInMap": "在高德地图打开",
-    "fallbackHint": "打开地图，查看具体位置和导航路线"
   }
 }

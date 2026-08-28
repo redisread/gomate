@@ -47,6 +47,8 @@ const hikingExtraSchema = z
     distanceKm: z.number().finite().nonnegative().optional(),
     elevationGainM: z.number().finite().nonnegative().optional(),
     bestSeasons: extraStringArraySchema.optional(),
+    gearEssential: z.unknown().optional(),
+    gearOptional: z.unknown().optional(),
     overview: z.string().trim().max(10_000).nullable().optional(),
     tips: extraStringArraySchema.optional(),
     warnings: extraStringArraySchema.optional(),
@@ -64,7 +66,12 @@ const hikingExtraSchema = z
         message: "durationMax must be greater than or equal to durationMin",
       });
     }
-  });
+  })
+  .transform(({
+    gearEssential: _gearEssential,
+    gearOptional: _gearOptional,
+    ...hiking
+  }) => hiking);
 
 export const locationExtraInputSchema = z
   .object({

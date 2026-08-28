@@ -150,6 +150,124 @@ test.describe("admin platform", () => {
     expect(pageErrors).toEqual([]);
   });
 
+  test("administrator shell and location terminology stay localized in all supported locales", async ({
+    page,
+  }) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticate(page, admin);
+
+    const locales = [
+      {
+        pathPrefix: "",
+        heading: "管理后台",
+        navigation: "后台导航",
+        language: "中文",
+        locationsHref: "/admin/locations",
+        activityLabel: "适合的活动类型",
+      },
+      {
+        pathPrefix: "/en",
+        heading: "Admin",
+        navigation: "Admin navigation",
+        language: "English",
+        locationsHref: "/en/admin/locations",
+        activityLabel: "Suitable activities",
+      },
+      {
+        pathPrefix: "/ja",
+        heading: "管理画面",
+        navigation: "管理ナビゲーション",
+        language: "日本語",
+        locationsHref: "/ja/admin/locations",
+        activityLabel: "適したアクティビティ",
+      },
+    ] as const;
+
+    for (const locale of locales) {
+      await page.goto(`${locale.pathPrefix}/admin`);
+      await expect(
+        page.getByRole("heading", { level: 1, name: locale.heading }),
+      ).toBeVisible();
+      const navigation = page
+        .getByRole("navigation", { name: locale.navigation })
+        .first();
+      await expect(navigation).toBeVisible();
+      await expect(
+        navigation.getByRole("link", { name: /地点管理|Locations|スポット管理/u }),
+      ).toHaveAttribute("href", locale.locationsHref);
+      await expect(
+        page.getByRole("button", { name: locale.language }).first(),
+      ).toBeVisible();
+
+      await page.goto(`${locale.pathPrefix}/admin/locations/new`);
+      await expect(page.getByText(locale.activityLabel).first()).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+
+    expect(pageErrors).toEqual([]);
+  });
+
+  test("location editor keeps draft navigation inside admin and exposes explicit publish controls", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await authenticate(page, admin);
+
+    const sourceResponse = await page.request.get(`/api/locations/${locationId}/admin`);
+    expect(sourceResponse.ok()).toBe(true);
+    const source = (await sourceResponse.json()) as {
+      location: { regionId: string };
+    };
+    const draftResponse = await page.request.post("/api/locations", {
+      headers: { Origin: LOCAL_ORIGIN },
+      data: {
+        name: `E2E 发布流程 ${RUN_ID}`,
+        description: "验证草稿发布操作和后台返回路径。",
+        regionId: source.location.regionId,
+        status: "draft",
+      },
+    });
+    const draft = (await draftResponse.json()) as {
+      location: { id: string };
+    };
+    expect(draftResponse.ok(), JSON.stringify(draft)).toBe(true);
+
+    await page.goto(`/admin/locations/${draft.location.id}/edit`);
+    await expect(page.getByRole("link", { name: "返回", exact: true })).toHaveAttribute(
+      "href",
+      "/admin/locations",
+    );
+    await expect(page.getByRole("link", { name: "查看公开页" })).toHaveCount(0);
+
+    const actions = page.getByRole("region", { name: "地点保存与发布操作" });
+    await expect(actions.getByRole("status")).toHaveText("草稿");
+    await expect(actions.getByRole("button", { name: "保存草稿" })).toBeDisabled();
+    await actions.getByRole("button", { name: "发布地点" }).click();
+
+    const coverField = page.locator("#location-field-coverImageUrl");
+    await expect(coverField.getByText("请上传封面图片")).toBeVisible();
+    await expect(page.getByText("纬度范围为 -90 到 90")).toBeVisible();
+    await expect(page.getByText("经度范围为 -180 到 180")).toBeVisible();
+    await expect.poll(() => coverField.evaluate((element) =>
+      element.contains(document.activeElement),
+    )).toBe(true);
+
+    await page.goto(`/admin/locations/${locationId}/edit`);
+    await expect(page.getByRole("link", { name: "查看公开页" })).toHaveAttribute(
+      "href",
+      `/locations/${locationId}`,
+    );
+
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect(actions).toBeVisible();
+    const box = await actions.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.y + box!.height).toBeCloseTo(720, 0);
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("mobile admin navigation survives dark mode, reduced motion and 200% scale", async ({
     page,
   }) => {

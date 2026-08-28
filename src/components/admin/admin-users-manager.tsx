@@ -3,11 +3,12 @@
 import * as React from "react";
 
 import { useI18n } from "@/hooks/useI18n";
-import { apiPatch, fetchAPI, getApiErrorMessage } from "@/lib/api";
+import { fetchAPI } from "@/lib/api";
+import { adminCatchMessage, adminJsonOrThrow, userRoleKey, userStatusKey } from "@/lib/admin-i18n";
 import type { AdminUserSummary } from "@/lib/types";
 
 export function AdminUsersManager({ adminId }: { adminId: string }) {
-  const { t } = useI18n(["admin"]);
+  const { t } = useI18n(["admin", "enums"]);
   const [users, setUsers] = React.useState<AdminUserSummary[]>([]);
   const [query, setQuery] = React.useState("");
   const [activeQuery, setActiveQuery] = React.useState("");
@@ -29,16 +30,16 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
       if (search) params.set("q", search);
       if (cursor) params.set("cursor", cursor);
       const response = await fetchAPI(`/admin/users?${params}`);
-      const body = await response.json() as {
+      const body = await adminJsonOrThrow<{
         users?: AdminUserSummary[];
         nextCursor?: string | null;
-      };
-      if (!response.ok || !body.users) throw new Error(getApiErrorMessage(body, t("admin.management.loadFailed")));
+      }>(response, t, "admin.management.loadFailed");
+      if (!body.users) throw new Error();
       const loadedUsers = body.users;
       setUsers((current) => append ? [...current, ...loadedUsers] : loadedUsers);
       setNextCursor(body.nextCursor ?? null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("admin.management.loadFailed"));
+      setError(adminCatchMessage(cause, t, "admin.management.loadFailed"));
     } finally {
       if (append) setLoadingMore(false);
       else setLoading(false);
@@ -51,12 +52,16 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
     const role = user.role === "admin" ? "user" : "admin";
     if (!window.confirm(t("admin.management.roleConfirm"))) return;
     try {
-      await apiPatch(`/admin/users/${encodeURIComponent(user.id)}/role`, { role });
+      const response = await fetchAPI(`/admin/users/${encodeURIComponent(user.id)}/role`, {
+        method: "PATCH",
+        body: JSON.stringify({ role }),
+      });
+      await adminJsonOrThrow(response, t, "admin.management.saveFailed");
       setUsers((current) => current.map((candidate) =>
         candidate.id === user.id ? { ...candidate, role } : candidate,
       ));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("admin.management.saveFailed"));
+      setError(adminCatchMessage(cause, t, "admin.management.saveFailed"));
     }
   };
 
@@ -81,7 +86,7 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate font-semibold">{user.nickname ?? user.name}</h2>
                   <p className="truncate text-sm text-muted-foreground">{user.email}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{user.status} · {user.role}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t(userStatusKey(user.status))} · {t(userRoleKey(user.role))}</p>
                 </div>
                 <button type="button" disabled={isCurrent} aria-label={isCurrent ? t("admin.management.currentUser") : undefined} onClick={() => void changeRole(user)} className="min-h-11 rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                   {isCurrent ? t("admin.management.currentUser") : t(user.role === "admin" ? "admin.management.revokeAdmin" : "admin.management.makeAdmin")}

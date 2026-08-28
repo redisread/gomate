@@ -39,8 +39,8 @@ describe("normalizeLocationHiking", () => {
           gearEssential: ["登山鞋"],
           gearOptional: ["登山杖"],
           warnings: ["雨天路滑"],
-        },
-      } as unknown as Location["extra"],
+        } as unknown as NonNullable<Location["extra"]["hiking"]>,
+      },
     }));
 
     expect(hiking).toMatchObject({
@@ -86,6 +86,21 @@ describe("normalizeLocationHiking", () => {
       name: "空攻略山",
       extra: {
         hiking: { overview: null, tips: [], warnings: [] },
+      },
+    }));
+
+    expect(hiking).toBeNull();
+  });
+
+  it("legacy equipment alone does not create route content", () => {
+    const hiking = normalizeLocationHiking(locationFixture({
+      id: "loc-5",
+      name: "旧装备数据",
+      extra: {
+        hiking: {
+          gearEssential: ["登山鞋"],
+          gearOptional: ["登山杖"],
+        } as unknown as NonNullable<Location["extra"]["hiking"]>,
       },
     }));
 

@@ -22,14 +22,5 @@
     "minute": "分",
     "kilometer": "km",
     "meter": "m"
-  },
-  "decision": {
-    "title": "アクセス情報",
-    "subtitle": "地図で正確な場所とルートを確認できます"
-  },
-  "transport": {
-    "title": "行き方",
-    "openInMap": "高德地図で開く",
-    "fallbackHint": "地図を開いて、場所とナビルートを確認"
   }
 }

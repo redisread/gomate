@@ -25,7 +25,6 @@ import type { Location, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { DecisionBlock } from "@/components/features/location-detail/decision-block";
 import { LocationIntroCard } from "@/components/features/location-detail/location-intro-card";
 import { RouteInfoCard } from "@/components/features/location-detail/route-info-card";
 import { TeamListSection } from "@/components/features/location-detail/team-list-section";
@@ -38,13 +37,12 @@ const SharePosterModal = React.lazy(() => import("./share-poster-modal").then(m 
 // ─── 季节映射 ─────────────────────────────────────────────────────────────────
 function getSeasonLabel(t: (key: TranslationKey) => string) {
   return {
-    spring: t("admin.seasons.spring"),
-    summer: t("admin.seasons.summer"),
-    autumn: t("admin.seasons.autumn"),
-    winter: t("admin.seasons.winter"),
+    spring: t("enums.season.spring"),
+    summer: t("enums.season.summer"),
+    autumn: t("enums.season.autumn"),
+    winter: t("enums.season.winter"),
   };
 }
-
 function getDifficultyInfo(t: (key: TranslationKey) => string) {
   return {
     easy: {
@@ -979,7 +977,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               />
             </div>
             <RouteInfoCard location={location} />
-            <DecisionBlock location={location} />
             <div>
               <TeamListSection teams={teams} locationId={location.id} />
             </div>

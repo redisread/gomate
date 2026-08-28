@@ -22,14 +22,5 @@
     "minute": "min",
     "kilometer": "km",
     "meter": "m"
-  },
-  "decision": {
-    "title": "Getting There",
-    "subtitle": "Open the map for the exact location and directions"
-  },
-  "transport": {
-    "title": "Getting There",
-    "openInMap": "Open in Amap",
-    "fallbackHint": "Open the map to view the location & get directions"
   }
 }

@@ -25,6 +25,11 @@ import {
 import { renderLocationPoster } from "../../templates/share-image/location-poster";
 import { renderTeamPoster } from "../../templates/share-image/team-poster";
 import { renderStoryPoster } from "../../templates/share-image/story-poster";
+import {
+  DEFAULT_POSTER_PRESET,
+  POSTER_RENDER_VERSION,
+  type PosterPresetId,
+} from "../../../contracts/share-image";
 
 export type PosterKind = "location" | "team" | "story";
 
@@ -33,10 +38,9 @@ export type PosterKind = "location" | "team" | "story";
  * changes. The value is part of the content hash so old cached SVGs cannot be
  * returned after a template deployment.
  */
-export const POSTER_TEMPLATE_VERSION = "v2";
-
 export interface RenderPosterOptions {
   locale?: PosterLocale;
+  preset?: PosterPresetId;
 }
 
 export interface RenderPosterResult {
@@ -57,7 +61,15 @@ async function hashContent(data: unknown): Promise<string> {
 
 /** Build canonical cache key for a (kind, id) pair. */
 function buildCacheKey(prefix: string, id: string, hash: string): string {
-  return `poster:v3:${prefix}:${id}:${hash}`;
+  return `poster:${POSTER_RENDER_VERSION}:${prefix}:${id}:${hash}`;
+}
+
+export async function buildPosterCacheKey(
+  prefix: string,
+  id: string,
+  content: unknown,
+): Promise<string> {
+  return buildCacheKey(prefix, id, await hashContent(content));
 }
 
 /**
@@ -86,6 +98,7 @@ async function buildLocationPoster(
   env: Env,
   locationId: string,
   locale: PosterLocale,
+  preset: PosterPresetId,
   fonts: Awaited<ReturnType<typeof loadPosterFonts>>,
 ): Promise<RenderPosterResult> {
   const db = createDb(env.DB);
@@ -112,7 +125,8 @@ async function buildLocationPoster(
   const bestSeason = hiking?.best_seasons ?? [];
   const coverPath = location.coverImageUrl ?? location.images[0] ?? null;
   const hashSeed = {
-    templateVersion: POSTER_TEMPLATE_VERSION,
+    renderVersion: POSTER_RENDER_VERSION,
+    preset,
     title: location.name,
     locale,
     subtitle: location.subtitle,
@@ -124,8 +138,7 @@ async function buildLocationPoster(
     tags,
     activityTypes: location.supportedActivityTypes,
   };
-  const hash = await hashContent(hashSeed);
-  const cacheKey = buildCacheKey("share/location", location.id, hash);
+  const cacheKey = await buildPosterCacheKey("share/location", location.id, hashSeed);
 
   const { svg } = await cachedPosterRender({
     env,
@@ -167,6 +180,7 @@ async function buildLocationPoster(
 
       const i18n = lookupPosterStrings(locale);
       const svg = await renderLocationPoster({
+        preset,
         title: location.name,
         subtitle: location.subtitle,
         description: location.description,
@@ -206,6 +220,7 @@ async function buildTeamPoster(
   env: Env,
   teamId: string,
   locale: PosterLocale,
+  preset: PosterPresetId,
   fonts: Awaited<ReturnType<typeof loadPosterFonts>>,
 ): Promise<RenderPosterResult> {
   const db = createDb(env.DB);
@@ -228,8 +243,9 @@ async function buildTeamPoster(
   const maxParticipants = team.maxParticipants;
   const spotsToForm = Math.max(0, maxParticipants - activeParticipantCount);
 
-  const hash = await hashContent({
-    templateVersion: POSTER_TEMPLATE_VERSION,
+  const cacheKey = await buildPosterCacheKey("share/team", team.id, {
+    renderVersion: POSTER_RENDER_VERSION,
+    preset,
     title: team.title,
     startAt: team.startAt,
     locationName: team.location?.name,
@@ -239,7 +255,6 @@ async function buildTeamPoster(
     locale,
     updatedAt: team.updatedAt,
   });
-  const cacheKey = buildCacheKey("share/team", team.id, hash);
 
   const { svg } = await cachedPosterRender({
     env,
@@ -254,6 +269,7 @@ async function buildTeamPoster(
       const date = formatTeamDate(team.startAt, locale);
       const i18n = lookupPosterStrings(locale);
       const svg = await renderTeamPoster({
+        preset,
         title: team.title,
         date,
         locationName: team.location?.name ?? null,
@@ -302,15 +318,14 @@ async function buildStoryPoster(
     throw new PosterNotFoundError("story", storyId);
   }
 
-  const hash = await hashContent({
-    templateVersion: POSTER_TEMPLATE_VERSION,
+  const cacheKey = await buildPosterCacheKey("share/story", story.id, {
+    renderVersion: POSTER_RENDER_VERSION,
     title: story.title,
     summary: story.summary,
     images: story.images,
     locationId: story.locationId,
     createdAt: story.createdAt,
   });
-  const cacheKey = buildCacheKey("share/story", story.id, hash);
 
   const { svg } = await cachedPosterRender({
     env,
@@ -352,13 +367,14 @@ export async function renderPoster(
   opts: RenderPosterOptions = {},
 ): Promise<RenderPosterResult> {
   const locale = opts.locale ?? "zh-CN";
+  const preset = opts.preset ?? DEFAULT_POSTER_PRESET;
   const fonts = await loadPosterFonts(env);
 
   if (kind === "location") {
-    return buildLocationPoster(env, id, locale, fonts);
+    return buildLocationPoster(env, id, locale, preset, fonts);
   }
   if (kind === "team") {
-    return buildTeamPoster(env, id, locale, fonts);
+    return buildTeamPoster(env, id, locale, preset, fonts);
   }
   return buildStoryPoster(env, id, fonts);
 }

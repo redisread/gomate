@@ -17,7 +17,11 @@
 import * as React from "react";
 import { Upload, Image as ImageIcon, X, Link, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { API_BASE } from "@/lib/api";
+import {
+  LOCATION_IMAGE_ACCEPT,
+  locationImageUploadMessage,
+  uploadLocationImage,
+} from "@/lib/location-image-upload";
 import { useI18n } from "@/hooks/useI18n";
 import { CircularProgress } from "./circular-progress";
 
@@ -44,9 +48,6 @@ type UploadState =
 /* ================================================================
    常量
    ================================================================ */
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPT_TYPES = "image/*";
 
 /** 将字节数格式化为可读字符串 */
 function formatBytes(bytes: number): string {
@@ -83,60 +84,11 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
    */
   const uploadFile = React.useCallback(
     async (file: File) => {
-      // 类型校验
-      if (!file.type.startsWith("image/")) {
-        setUploadState({ phase: "error", message: t("ui.upload.invalidType") });
-        return;
-      }
-      // 大小校验
-      if (file.size > MAX_FILE_SIZE) {
-        setUploadState({ phase: "error", message: t("ui.upload.fileTooLarge", { size: "5" }) });
-        return;
-      }
-
       setUploadState({ phase: "uploading", progress: 0 });
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        // 使用 XMLHttpRequest 获取上传进度事件
-        const url = await new Promise<string>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-
-          xhr.upload.addEventListener("progress", (e) => {
-            if (e.lengthComputable) {
-              const pct = Math.round((e.loaded / e.total) * 100);
-              setUploadState({ phase: "uploading", progress: pct });
-            }
-          });
-
-          xhr.addEventListener("load", () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const data = JSON.parse(xhr.responseText) as { url?: string; error?: string };
-                if (data.url) {
-                  resolve(data.url);
-                } else {
-                  reject(new Error(t("ui.upload.uploadServerError")));
-                }
-              } catch {
-                reject(new Error(t("ui.upload.uploadInvalidResponse")));
-              }
-            } else {
-              reject(new Error(t("ui.upload.uploadHttpError").replace("{status}", String(xhr.status))));
-            }
-          });
-
-          xhr.addEventListener("error", () => reject(new Error(t("ui.upload.uploadNetworkError"))));
-          xhr.addEventListener("abort", () => reject(new Error("上传已取消")));
-
-          // 构建请求地址（复用 API_BASE）
-          const apiBase = API_BASE;
-
-          xhr.open("POST", `${apiBase}/upload/location`);
-          xhr.withCredentials = true;
-          xhr.send(formData);
+        const url = await uploadLocationImage(file, (progress) => {
+          setUploadState({ phase: "uploading", progress });
         });
 
         onChange(url);
@@ -146,8 +98,10 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
           fileSize: formatBytes(file.size),
         });
       } catch (err) {
-        const msg = err instanceof Error ? err.message : t("ui.upload.uploadUnknownError");
-        setUploadState({ phase: "error", message: msg });
+        setUploadState({
+          phase: "error",
+          message: locationImageUploadMessage(err, t),
+        });
       }
     },
     [onChange, t]
@@ -339,7 +293,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
         <input
           ref={fileInputRef}
           type="file"
-          accept={ACCEPT_TYPES}
+          accept={LOCATION_IMAGE_ACCEPT}
           className="sr-only"
           onChange={handleFileChange}
           disabled={disabled || isUploading}
@@ -553,7 +507,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
       <input
         ref={fileInputRef}
         type="file"
-        accept={ACCEPT_TYPES}
+        accept={LOCATION_IMAGE_ACCEPT}
         className="sr-only"
         onChange={handleFileChange}
         disabled={disabled || isUploading}

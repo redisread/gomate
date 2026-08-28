@@ -24,6 +24,12 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 - 纯管理员 API 共用一个访问解析器：先验证同源 session，再从当前 D1 `users` 行复核账号为
   active 且 `role=admin`。无 session 使用统一 401 envelope，当前角色或状态不满足时使用统一
   403 envelope；不信任客户端 UI 或 session 中缓存的旧角色。
+- 管理员写入的可操作冲突或校验失败在 `error.details.reason` 提供语言无关分类；服务端
+  `message` 只用于诊断，管理员 UI 不直接展示。当前稳定 reason 为
+  `admin_self_role_change`、`admin_last_active_revoke`、`tag_already_exists`、
+  `tag_update_conflict`、`location_changed_concurrently`、`location_has_references`、
+  `location_invalid_region`、`location_image_host_disallowed`。客户端只翻译已知 reason；未知、
+  畸形、授权、网络和服务端错误使用对应操作的本地化通用失败文案。
 
 ## 端点目录
 
@@ -75,9 +81,11 @@ Location 使用全局 ID 路由，不提供 slug fallback。公开读取只返�
 `serviceEnabled=true` city Region 的地点。HTTP `extra` 使用 camelCase，服务层负责与
 D1 JSON 的 snake_case 结构转换。公开和管理员 Location DTO 都不包含内部
 `createdByUserId`；该字段只保留在数据库和服务端写入链路。
-`extra.hiking` 只承载难度、时长、距离、爬升、季节、概述、提示与注意事项；地点级
-`gearEssential` / `gearOptional` 已退出写入合同和所有 Location 响应。Team 行动本中的装备清单
-是独立合同，不受影响。
+
+Location 的 `extra.hiking` 只承载难度、时长、距离、爬升、季节、路线概述、提示和警告，
+不包含地点装备决策。旧客户端提交 `gearEssential` 或 `gearOptional` 时，输入校验会接受并
+丢弃这两个键，不写入 D1；Location 及 Team 内嵌 Location 响应也不会输出它们。除这两个
+退役键外，未知 hiking 字段仍按 strict schema 拒绝。
 
 快速创建 Location 默认保存 `draft`，只要求 `name`、`description` 与启用的 city
 `regionId`；坐标、封面、标签和推荐活动类型可后补。发布边界要求坐标与封面，但推荐活动类型
@@ -187,10 +195,18 @@ Story 图片先上传到当前用户的临时 namespace，创建或更新时再�
 | GET          | `/proxy-image`           | 否    | 代理 allowlist 内的 HTTPS raster 图片       |
 | GET          | `/r2/*`                  | 否    | 仅 localhost 可用的本地 R2 读取             |
 
-上传会同时校验大小、MIME、扩展名和文件魔数，并以临时对象、最终对象、条件 DML 和补偿清理
-维护 R2/D1 一致性。Local-circle KV 只缓存无用户身份的公共部分，个性化数据每次从 D1 合并。
+上传先限制请求体和文件大小，再通过 Cloudflare Images binding 的 `info()` 从实际字节识别
+图片；客户端 MIME 与扩展名仅作为选择提示，不作为拒绝合法图片的依据。只接受 JPEG、PNG、
+GIF、WebP 与 HEIC/HEIF 栅格图片，SVG 和 AVIF 即使可以解码也会拒绝。`BAD_REQUEST` 的
+`error.details.reason` 提供稳定的失败分类供客户端本地化展示，包括无法解码、格式不支持和
+HEIC 转换失败。JPEG、PNG、GIF 与 WebP 按识别结果生成扩展名和 Content-Type 并保留原始
+字节，HEIC/HEIF 通过 Images binding 转为 WebP 后再写入 R2。媒体写入继续以临时对象、
+最终对象、条件 DML 和补偿清理维护 R2/D1 一致性。Local-circle KV 只缓存无用户身份的公共
+部分，个性化数据每次从 D1 合并。
 海报接口不接受公开 `refresh` 参数；海报缓存只包含地点、行程和故事的公开内容，不渲染
-用户姓名、头像或用户 ID。
+用户姓名、头像或用户 ID。`location` 与 `team` 支持 `preset=dusk|ridge|journal`，省略时使用
+`dusk`，其他值在读取业务数据前返回 400；预设 ID 和渲染版本属于缓存身份的一部分。
+`story` 不提供预设选择 UI。
 
 ## 变更检查
 

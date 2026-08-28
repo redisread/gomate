@@ -70,6 +70,15 @@
 - 快速操作打开时锁定 body 滚动并使背景 `inert`，Tab/Shift+Tab 圈定在弹层内；关闭时先清理
   `inert` 和滚动状态，再恢复原触发器焦点。所有位移动效遵守 reduced-motion。
 
+### 分享海报预设
+
+- 分享选择器使用原生 radio group，三列卡片在 320px 视口仍保持至少 44px 高；预设名称和说明
+  始终可见，不能只依靠色条区分当前选择。
+- 网页选择器继续使用语义色 token；服务端 Satori 海报的独立色板与版式定义集中在
+  `src/server/templates/share-image/poster-presets.ts`，不得反向导入网页 CSS。
+- `dusk` 保留黄昏户外层级，`ridge` 使用更紧凑的冷色信息层级，`journal` 使用纸张暖色、
+  内嵌封面和低圆角。Location 与 Team 共享色彩主题，但各自保留内容专用版式。
+
 ## 可访问性与内容
 
 - 正文和控件文字达到 WCAG 2 AA 对比度：普通文本至少 4.5:1，大文本至少 3:1。

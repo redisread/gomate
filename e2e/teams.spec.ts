@@ -13,6 +13,12 @@ test.describe("Team Flow", () => {
   });
 
   test("create team flow", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const browserErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
     const user = await signUpUser(
       `team-create-${RUN_ID}@e2e.gomate.test`,
       PASSWORD,
@@ -31,13 +37,13 @@ test.describe("Team Flow", () => {
       .locator("[data-testid='create-team-title']")
       .fill("E2E Test Team");
 
-    // Select a location from the dropdown
-    const locationSelect = page.locator("[data-testid='create-team-location']");
-    await expect(locationSelect).toBeVisible();
-    // The placeholder plus 37 catalog entries must be available after all migrations.
-    await expect(locationSelect.locator("option")).toHaveCount(38);
-    // Select the original v3 reference row to prove the v2 import did not replace it.
-    await locationSelect.selectOption("location-shenzhen-wutongshan");
+    // Search and select a public location by name.
+    const locationPicker = page.locator("[data-testid='create-team-location']");
+    await expect(locationPicker).toBeVisible();
+    await locationPicker.click();
+    await page.locator("[data-testid='create-team-location-search']").fill("梧桐山");
+    await page.getByRole("option", { name: /梧桐山/u }).first().click();
+    await expect(locationPicker).toContainText("梧桐山");
     await page
       .locator("[data-testid='create-team-activity-type']")
       .selectOption("explore");
@@ -47,6 +53,11 @@ test.describe("Team Flow", () => {
     await page
       .locator("[data-testid='create-team-date']")
       .fill(startDate.toISOString().slice(0, 10));
+    await expect(
+      page.getByText(/活动开始时间|Activity Start Time|アクティビティ開始時間/u, {
+        exact: true,
+      }),
+    ).toBeVisible();
     await page.locator("[data-testid='create-team-time']").fill("10:00");
     await page.locator("[data-testid='create-team-max-members']").fill("5");
     await page
@@ -63,5 +74,6 @@ test.describe("Team Flow", () => {
       page.getByText("E2E Test Team", { exact: true }).first(),
     ).toBeVisible();
     await expect(page.locator("text=Internal Server Error")).not.toBeVisible();
+    expect(browserErrors).toEqual([]);
   });
 });

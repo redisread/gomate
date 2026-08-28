@@ -23,7 +23,6 @@ interface LocationIntroCardProps {
   showGallery?: boolean;
   showTravelMeta?: boolean;
 }
-
 /**
  * 地点介绍卡片
  * - 超过 4 行时截断，点击「展开全文」可查看完整描述
@@ -87,14 +86,14 @@ export function LocationIntroCard({
   }, [location.coverImageUrl, location.images]);
 
   const seasonLabels: Record<string, string> = {
-    spring: t("admin.seasons.spring"),
-    "春季": t("admin.seasons.spring"),
-    summer: t("admin.seasons.summer"),
-    "夏季": t("admin.seasons.summer"),
-    autumn: t("admin.seasons.autumn"),
-    "秋季": t("admin.seasons.autumn"),
-    winter: t("admin.seasons.winter"),
-    "冬季": t("admin.seasons.winter"),
+    spring: t("enums.season.spring"),
+    "春季": t("enums.season.spring"),
+    summer: t("enums.season.summer"),
+    "夏季": t("enums.season.summer"),
+    autumn: t("enums.season.autumn"),
+    "秋季": t("enums.season.autumn"),
+    winter: t("enums.season.winter"),
+    "冬季": t("enums.season.winter"),
   };
 
   const openLightbox = (idx: number) => {

@@ -1,4 +1,5 @@
 import type { AdminUserSummary } from "@/contracts";
+import type { AdminErrorReason } from "@/contracts/admin-i18n";
 import { and, desc, eq, like, lt, or, type SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -123,7 +124,9 @@ adminUsersRoute.patch("/:id/role", async (c) => {
   const targetId = c.req.param("id");
   if (targetId === admin.id) {
     return c.json(
-      APIErrors.conflict("Administrators cannot change their own role"),
+      APIErrors.conflict("Administrators cannot change their own role", {
+        reason: "admin_self_role_change" satisfies AdminErrorReason,
+      }),
       409,
     );
   }
@@ -162,7 +165,9 @@ adminUsersRoute.patch("/:id/role", async (c) => {
       return c.json({ success: true as const, id: targetId, role: target.role });
     }
     return c.json(
-      APIErrors.conflict("The last active administrator cannot be revoked"),
+      APIErrors.conflict("The last active administrator cannot be revoked", {
+        reason: "admin_last_active_revoke" satisfies AdminErrorReason,
+      }),
       409,
     );
   }

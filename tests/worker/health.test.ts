@@ -1,7 +1,22 @@
-import { exports } from "cloudflare:workers";
+import { env, exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 
 describe("production Worker boundary", () => {
+  it("detects raster image content through the configured Images binding", async () => {
+    const bytes = Uint8Array.from(
+      atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="),
+      (character) => character.charCodeAt(0),
+    );
+    const body = new Response(bytes).body;
+
+    expect(body).not.toBeNull();
+    await expect(env.IMAGES.info(body!)).resolves.toMatchObject({
+      format: "image/png",
+      width: 1,
+      height: 1,
+    });
+  });
+
   it("serves health through the real workerd pipeline", async () => {
     const response = await exports.default.fetch(
       new Request("https://gomate.test/api/health"),

@@ -31,14 +31,16 @@
 - 登录用户看到下一次行程、推荐和 onboarding。
 - 本地圈公共部分直接从 D1 读取并按请求合并当前用户数据，不把用户相关结果写入共享缓存。
 - 全国地图读取 `/api/locations/stats` 的 Region DTO。
+- 点击省份后按实际 SVG 轮廓自适应缩放到控件之间的安全区域；地点可见标记保持稳定尺寸，
+  透明点击区域不随缩放缩小，键盘与 reduced-motion 使用同一聚焦状态。
 
 ### 地点
 
 - 列表只展示 `published` 且所属 city Region 已启用服务的地点。
 - 详情路由只使用全局 Location ID，slug 不参与路由解析。
 - 页面消费共享 Location DTO：`region`、`supportedActivityTypes`、`coverImageUrl`、`images` 与结构化 `extra`。
-- 徒步攻略展示路线参数、概述、提示与注意事项；地点详情不展示必带/选带装备。到达信息继续提供
-  地图导航，季节信息继续来自 `extra.hiking.bestSeasons`。
+- 详情的徒步攻略保留路线参数、概述、提示和警告；不展示地点装备或“决策信息”区块，原区块中的
+  地图打开入口也不迁移到其他位置。
 - 地点 Story 使用 `/api/stories?locationId=<id>`；收藏使用 `/api/favorites/locations`。
 
 ### Team
@@ -46,9 +48,23 @@
 - 列表按 Region、活动类型、时间和派生 lifecycle 筛选。
 - 创建和编辑 Team 时，`activityType` 必须来自共享代码枚举；所选地点的
   `supportedActivityTypes` 只把推荐项排在前面，不过滤其他活动类型。
+- 创建 Team 的地点选择器通过 `/api/locations?search=<name>` 按名称搜索公开地点，并在结果中
+  显示所属地区；表单把 `startAt` 的时间部分统一标为“活动开始时间”，不再称为“集合时间”。
 - Team 列表筛选直接读取共享代码枚举，名称统一通过 i18n 展示。
 - 详情展示 leader、active members、申请、行程和行动本；member 离队直接结束 active membership。
 - 已结束且成行的 Team 中，leader 或 active member 可通过 `/discover/create?teamId=<id>` 发布回顾。
+- Team 详情的通用分享弹窗与移动端底部分享面板共用三套 SVG 海报预设；切换预设时保留旧预览，
+  直到新预览生成完成。
+
+### 分享海报
+
+- Location 与 Team 的分享入口提供 `dusk`、`ridge`、`journal` 三套固定预设；名称、说明和选择器
+  文案都通过 `share` namespace 本地化。Story 不在本轮预设范围内。
+- 选择只作为当前设备的本地偏好，不写入 D1、R2 或用户资料；服务端只按 allowlist query 生成
+  SVG，不提供自由编辑、任意 CSS、PNG 导出或已渲染海报持久化。
+- 切换期间保留上一个可用 Blob 预览、取消过期请求并缓存本次打开期间已浏览的变体；若新预设
+  生成失败，则清除当前可下载预览并显示重试状态，避免把旧预设误作当前选择。关闭分享面板时
+  撤销全部 Blob URL。
 
 ### Story
 
@@ -69,8 +85,8 @@
   站内 `returnTo`，active 普通用户得到 HTTP 403，管理员响应使用 `private, no-store`。
 - 后台不渲染公共 Navbar 或 Footer。宽布局使用固定侧栏，内容无法继续容纳时切换为移动顶部栏
   和抽屉；导航包含地点列表/新增、活动类型、标签、用户以及返回前台入口。
-- 地点新增、编辑继续按可见性懒加载现有表单，但只使用统一后台壳层，不再重复渲染公共导航；
-  表单保留徒步参数、季节、路线概述、提示与注意事项，不再编辑地点装备清单。
+- 地点新增、编辑继续按可见性懒加载现有表单，但只使用统一后台壳层，不再重复渲染公共导航。
+- 地点完整编辑表单不采集或校验必带、选带装备；Team 行动本中的装备清单是独立能力，保持不变。
 - 地点管理列表可搜索并按 draft/published/archived 筛选；删除默认归档，永久删除只在归档后
   通过精确 ID 确认发起，后端仍会拒绝存在业务引用的地点。
 - 活动类型后台支持新增、改名、排序和启停；标签后台支持新增、改名、查看引用计数并确认解除
@@ -79,7 +95,41 @@
   loading 与普通用户不渲染这些能力。快速入口打开响应式 Dialog/Bottom Sheet，管理员填写
   地点名称、介绍和地区即可直接保存草稿；封面、标签和推荐活动类型折叠为可选扩展，保存后可
   继续进入完整编辑页。
+- 地点封面和相册只开放服务端实际支持的格式，并在客户端即时提示格式、大小、内容识别、HEIC
+  转换或权限错误；iPhone 相册可能转换图片内容但保留原文件元数据，上传端点以实际可解码格式
+  为准，HEIC/HEIF 图片转为 WebP，管理员无需手工转码。
 - 无前缀及 `en`、`ja` locale 前缀的后台路径使用同一授权与布局合同。
+- 后台桌面侧栏和移动顶部栏都提供 `zh-CN`、`en`、`ja` 语言切换；切换时保留当前后台路径，
+  后台内部导航也保留当前 locale 前缀。服务端把当前 locale 传给切换 island，避免 hydration 前
+  短暂显示错误语言。
+- 角色、账号状态、地点状态、季节和活动类型等内部值必须通过共享 `enums` namespace 的穷尽
+  映射展示，不把 `admin`、`draft`、`spring` 等原始枚举值渲染给用户。后台流程、确认和操作
+  错误属于 `admin` namespace。
+- 管理员操作失败只根据已知 `error.details.reason` 选择本地化文案；未知 payload 使用当前操作
+  的本地化 fallback，不能把 server message 当作 UI 文案。地点名、地区名、标签名、用户昵称等
+  D1 业务内容保持原样，不由界面翻译；这套展示合同不需要数据库或迁移变化。
+
+#### 后台地点保存与发布
+
+完整地点表单将“保存内容”和“改变发布状态”分开，`locations.status` 是唯一发布状态来源：
+
+| 当前状态 | 编辑页主要操作 | 公开页入口 |
+| -------- | -------------- | ---------- |
+| `draft` | 保存草稿、发布地点 | 不显示 |
+| `published` | 保存更改 | 显示“查看公开页” |
+| `archived` | 保存更改、恢复为草稿 | 不显示，且不能直接发布 |
+
+- 表单用只读状态标识和状态相关操作代替通用状态下拉框。发布操作显式提交
+  `status: "published"`；恢复操作显式提交 `status: "draft"`，普通保存保持当前状态。
+- 编辑现有地点成功后停留在当前后台编辑页并显示成功状态，不再延时跳转。首次创建成功后只进入
+  新地点的 `/admin/locations/<id>/edit`，不自动进入公开详情。
+- 后台编辑页的“返回”始终指向 `/admin/locations`。只有 `published` 地点提供独立的
+  `/locations/<id>` 查看入口。
+- 发布前必须在客户端和 API 两侧继续验证封面、纬度、经度；客户端展示字段错误并把焦点移到
+  第一个缺失字段。验证失败不得发送发布请求或改变现有状态。
+- 快速创建入口仍只创建 `draft`，并继续引导管理员进入完整编辑页。
+- 状态转换由操作显式表达，不从按钮文案或 DOM 推断；公开链接只从服务端已保存状态派生。
+- 此流程不包含批量发布、定时发布、审批流或 `published_at`。
 
 ## 运行时约束
 
@@ -87,6 +137,9 @@
 - SSR 使用 [`src/lib/server-api.ts`](../src/lib/server-api.ts) 进程内调用 API，不请求自身域名。
 - [`src/worker.ts`](../src/worker.ts) 将 `/api/*` 交给 Hono，其余请求交给 Astro 官方 Cloudflare handler。
 - 用户可见文案全部来自 i18n；locale 变化后运行 build、validate、lint、type-check、test 和 build 门禁。
+- `pnpm i18n:validate` 除了校验三语言 key 和 island namespace，还扫描后台页面与管理组件，拒绝
+  硬编码标题/展示文案、无效静态 key、退役后台枚举 key、原始角色/状态输出和可能泄露服务端
+  message 的通用错误 helper；三语言后台关键路径由 Chromium E2E 覆盖。
 - React island 的 i18n 首次渲染必须在 SSR 与浏览器端保持同一加载态；浏览器在 hydration 后再消费页面注入的 namespace 缓存。
 - 只有需要客户端状态的交互使用 React island；纯展示保持 Astro SSR。
 - UI 规则与验证清单见 [`design-system.md`](design-system.md)。

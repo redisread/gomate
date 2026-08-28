@@ -11,6 +11,27 @@
     "leisure": "休闲探店",
     "travel": "旅行"
   },
+  "userRole": {
+    "user": "用户",
+    "admin": "管理员"
+  },
+  "userStatus": {
+    "active": "正常",
+    "suspended": "已暂停",
+    "banned": "已封禁",
+    "deleted": "已删除"
+  },
+  "locationStatus": {
+    "draft": "草稿",
+    "published": "已发布",
+    "archived": "已归档"
+  },
+  "season": {
+    "spring": "春季",
+    "summer": "夏季",
+    "autumn": "秋季",
+    "winter": "冬季"
+  },
   "teamStatus": {
     "recruiting": "等你一起",
     "full": "名额告急，可关注",

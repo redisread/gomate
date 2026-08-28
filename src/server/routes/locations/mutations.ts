@@ -30,6 +30,7 @@ import {
 } from "../../lib/r2-media";
 import { validateRequest } from "../../lib/validation";
 import { ACTIVITY_TYPES } from "@/contracts";
+import type { AdminErrorReason } from "@/contracts/admin-i18n";
 import {
   createLocationInputSchema,
   findOpenCityRegion,
@@ -79,7 +80,9 @@ mutations.post("/", async (c) => {
     if (parsed instanceof Response) return parsed;
     if (!locationImagesAreAllowed(parsed, c.env)) {
       return c.json(
-        APIErrors.validationError("Location images use a disallowed host"),
+        APIErrors.validationError("Location images use a disallowed host", {
+          reason: "location_image_host_disallowed" satisfies AdminErrorReason,
+        }),
         400,
       );
     }
@@ -88,7 +91,9 @@ mutations.post("/", async (c) => {
     const targetRegion = await findOpenCityRegion(db, parsed.regionId);
     if (!targetRegion) {
       return c.json(
-        APIErrors.badRequest("regionId must reference an enabled city Region"),
+        APIErrors.badRequest("regionId must reference an enabled city Region", {
+          reason: "location_invalid_region" satisfies AdminErrorReason,
+        }),
         400,
       );
     }
@@ -147,7 +152,9 @@ mutations.post("/", async (c) => {
       await discardPreparedLocationMedia(c.env, preparedMedia);
       preparedMedia = null;
       return c.json(
-        APIErrors.conflict("Target Region changed concurrently"),
+        APIErrors.conflict("Target Region changed concurrently", {
+          reason: "location_invalid_region" satisfies AdminErrorReason,
+        }),
         409,
       );
     }
@@ -256,7 +263,9 @@ mutations.put("/", async (c) => {
     };
     if (!locationImagesAreAllowed(nextImages, c.env)) {
       return c.json(
-        APIErrors.validationError("Location images use a disallowed host"),
+        APIErrors.validationError("Location images use a disallowed host", {
+          reason: "location_image_host_disallowed" satisfies AdminErrorReason,
+        }),
         400,
       );
     }
@@ -264,7 +273,9 @@ mutations.put("/", async (c) => {
     const targetRegion = await findOpenCityRegion(db, nextRegionId);
     if (!targetRegion) {
       return c.json(
-        APIErrors.badRequest("regionId must reference an enabled city Region"),
+        APIErrors.badRequest("regionId must reference an enabled city Region", {
+          reason: "location_invalid_region" satisfies AdminErrorReason,
+        }),
         400,
       );
     }
@@ -359,7 +370,9 @@ mutations.put("/", async (c) => {
       await discardPreparedLocationMedia(c.env, preparedMedia);
       preparedMedia = null;
       return c.json(
-        APIErrors.conflict("Location or target Region changed concurrently"),
+        APIErrors.conflict("Location or target Region changed concurrently", {
+          reason: "location_changed_concurrently" satisfies AdminErrorReason,
+        }),
         409,
       );
     }
@@ -458,7 +471,9 @@ mutations.delete("/:id", async (c) => {
         .where(eq(schema.locations.id, locationId))
         .returning({ id: schema.locations.id });
       if (!archived) {
-        return c.json(APIErrors.conflict("Location changed concurrently"), 409);
+        return c.json(APIErrors.conflict("Location changed concurrently", {
+          reason: "location_changed_concurrently" satisfies AdminErrorReason,
+        }), 409);
       }
       return c.json({ success: true as const, id: locationId, status: "archived" as const });
     }
@@ -485,7 +500,10 @@ mutations.delete("/:id", async (c) => {
     };
     if (Object.values(blockingReferences).some((count) => count > 0)) {
       return c.json({
-        ...APIErrors.conflict("Referenced locations cannot be permanently deleted"),
+        ...APIErrors.conflict(
+          "Referenced locations cannot be permanently deleted",
+          { reason: "location_has_references" satisfies AdminErrorReason },
+        ),
         references: blockingReferences,
       }, 409);
     }
@@ -546,7 +564,9 @@ mutations.delete("/:id", async (c) => {
         await restoreLocationMediaBackups(c.env.R2, mediaBackups, retainedKeys);
       }
       originalsRemovalAttempted = false;
-      return c.json(APIErrors.conflict("Location changed concurrently"), 409);
+      return c.json(APIErrors.conflict("Location changed concurrently", {
+        reason: "location_changed_concurrently" satisfies AdminErrorReason,
+      }), 409);
     }
     databaseDeleted = true;
     originalsRemovalAttempted = false;

@@ -38,12 +38,12 @@ function SectionCard({ icon, title, badge, children, defaultOpen = true, collaps
 }
 
 interface FieldProps {
-  label: string; required?: boolean; hint?: string; error?: string; children: React.ReactNode;
+  label: string; required?: boolean; hint?: string; error?: string; fieldId?: string; children: React.ReactNode;
 }
 
-function Field({ label, required, hint, error, children }: FieldProps) {
+function Field({ label, required, hint, error, fieldId, children }: FieldProps) {
   return (
-    <div className="space-y-1.5">
+    <div id={fieldId ? `location-field-${fieldId}` : undefined} className="space-y-1.5">
       <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
         {label}{required && <span className="ml-1 text-red-400">*</span>}
       </label>
@@ -56,15 +56,16 @@ function Field({ label, required, hint, error, children }: FieldProps) {
 
 interface LocationFormContentFieldsProps {
   formData: FormData;
+  errors: Record<string, string | undefined>;
   isSaving: boolean;
   updateField: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
 }
 
-export function LocationFormContentFields({ formData, isSaving, updateField }: LocationFormContentFieldsProps) {
+export function LocationFormContentFields({ formData, errors, isSaving, updateField }: LocationFormContentFieldsProps) {
   const { t } = useI18n(["admin", "ui"]);
   return (
     <SectionCard icon={<ImageIcon className="h-4 w-4" />} title={t("admin.formContentTitle")}>
-      <Field label={t("admin.formCoverImageRequired")} hint={t("ui.selectFromAlbum")}>
+      <Field label={t("admin.formCoverImageRequired")} hint={t("ui.selectFromAlbum")} error={errors.coverImageUrl} fieldId="coverImageUrl">
         <CoverImageUpload value={formData.coverImageUrl} onChange={(url) => updateField("coverImageUrl", url)} disabled={isSaving} />
       </Field>
       <Field label={t("admin.formAlbumTitle")} hint={t("ui.coverHint")}>
