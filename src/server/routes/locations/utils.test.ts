@@ -26,7 +26,7 @@ describe("location input", () => {
     });
   });
 
-  it("requires coordinates and a cover to publish but not an activity type", () => {
+  it("allows publishing without coordinates but still requires a cover", () => {
     const incomplete = createLocationInputSchema.safeParse({
       name: "完整地点",
       description: "地点介绍",
@@ -34,6 +34,31 @@ describe("location input", () => {
       status: "published",
     });
     expect(incomplete.success).toBe(false);
+
+    const withoutCoordinates = createLocationInputSchema.safeParse({
+      name: "无坐标地点",
+      description: "地点介绍",
+      regionId: "region-cn-shenzhen",
+      status: "published",
+      coverImageUrl: "https://media.example.com/cover.jpg",
+    });
+    expect(withoutCoordinates.success).toBe(true);
+    if (withoutCoordinates.success) {
+      expect(withoutCoordinates.data).toMatchObject({
+        latitude: null,
+        longitude: null,
+      });
+    }
+
+    const partialCoordinates = createLocationInputSchema.safeParse({
+      name: "半坐标地点",
+      description: "地点介绍",
+      regionId: "region-cn-shenzhen",
+      status: "published",
+      latitude: 22.5,
+      coverImageUrl: "https://media.example.com/cover.jpg",
+    });
+    expect(partialCoordinates.success).toBe(false);
 
     const complete = createLocationInputSchema.safeParse({
       name: "完整地点",

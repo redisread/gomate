@@ -179,6 +179,26 @@ describe("administrator location mutation error reasons", () => {
     });
   });
 
+  it("rejects an update that leaves only one coordinate", async () => {
+    mocks.createDb.mockReturnValue(dbWithSelectPages([[existingLocation]]));
+
+    const response = await mutations.request(
+      "/",
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: "location-1", latitude: 22.5 }),
+      },
+      envWithChanges(),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "VALIDATION_ERROR" },
+    });
+    expect(mocks.findOpenCityRegion).not.toHaveBeenCalled();
+  });
+
   it("classifies a concurrent archive", async () => {
     const database = dbWithSelectPages([[existingLocation]]) as ReturnType<typeof dbWithSelectPages> & {
       update: ReturnType<typeof vi.fn>;

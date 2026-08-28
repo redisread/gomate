@@ -149,6 +149,19 @@ function optionalNumber(value: number | string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+export function getCoordinatePairErrors(
+  latitude: number | string,
+  longitude: number | string,
+  message: string,
+): Record<"latitude" | "longitude", string | undefined> {
+  const latitudeBlank = latitude === "";
+  const longitudeBlank = longitude === "";
+  return {
+    latitude: latitudeBlank && !longitudeBlank ? message : undefined,
+    longitude: longitudeBlank && !latitudeBlank ? message : undefined,
+  };
+}
+
 export function locationToFormData(location: Location): LocationFormData {
   const hiking = location.extra.hiking;
   return {
@@ -382,16 +395,25 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     })) {
       nextErrors[key] = validateField(key, value);
     }
+    const coordinatePairErrors = getCoordinatePairErrors(
+      formData.latitude,
+      formData.longitude,
+      t("admin.coordinatesPairRequired"),
+    );
+    nextErrors.latitude = coordinatePairErrors.latitude ?? (
+      formData.latitude === ""
+        ? undefined
+        : validateField("latitude", String(formData.latitude))
+    );
+    nextErrors.longitude = coordinatePairErrors.longitude ?? (
+      formData.longitude === ""
+        ? undefined
+        : validateField("longitude", String(formData.longitude))
+    );
     if (nextStatus === "published") {
       nextErrors.coverImageUrl = formData.coverImageUrl.trim()
         ? validateField("coverImageUrl", formData.coverImageUrl)
         : t("admin.validationCoverRequired");
-      nextErrors.latitude = formData.latitude === ""
-        ? t("admin.validationLatInvalid")
-        : validateField("latitude", String(formData.latitude));
-      nextErrors.longitude = formData.longitude === ""
-        ? t("admin.validationLngInvalid")
-        : validateField("longitude", String(formData.longitude));
     }
     const min = optionalNumber(formData.extra.hiking.durationMin);
     const max = optionalNumber(formData.extra.hiking.durationMax);
